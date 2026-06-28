@@ -18103,22 +18103,60 @@
           "children": [
             {
               "type": "frame",
-              "id": "ixwdg",
-              "name": "Mobile Bottom Tabs",
-              "width": "fill_container",
-              "height": 58,
+              "id": "k1K5et",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
               "fill": "$rx-surface-paper",
               "cornerRadius": 999,
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
               "gap": 4,
+              "padding": 6,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "m0VMUH",
-                  "name": "Tab - 审核",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "Nl79T",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "W5Tca0",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "kZVG4",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "总览",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "S1RU0P",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
                   "fill": "$rx-brand-soft",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -18128,32 +18166,33 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "N9myww",
+                      "id": "DR4gI",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "shield-alert",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
                       "library": "lucide",
                       "fill": "$rx-brand-deep"
                     },
                     {
                       "type": "text",
-                      "id": "f5GzX",
+                      "id": "gPS3N",
                       "name": "Tab Label",
                       "fill": "$rx-brand-deep",
-                      "content": "审核",
+                      "content": "治理",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "bgShh",
-                  "name": "Tab - 文档",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "eztpp",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
                   "fill": "#00000000",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -18163,32 +18202,33 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "DwPj2",
+                      "id": "seltm",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "file-search",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
                       "library": "lucide",
                       "fill": "$rx-text-muted"
                     },
                     {
                       "type": "text",
-                      "id": "iBzqd",
+                      "id": "qmdpi",
                       "name": "Tab Label",
                       "fill": "$rx-text-muted",
-                      "content": "文档",
+                      "content": "资产",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "rd76Q",
-                  "name": "Tab - 台账",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "RUK6b",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
                   "fill": "#00000000",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -18198,32 +18238,33 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "hk4P5",
+                      "id": "n878A1",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "activity",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
                       "library": "lucide",
                       "fill": "$rx-text-muted"
                     },
                     {
                       "type": "text",
-                      "id": "AK6YC",
+                      "id": "EAu2h",
                       "name": "Tab Label",
                       "fill": "$rx-text-muted",
-                      "content": "台账",
+                      "content": "权限",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "Vn0po",
-                  "name": "Tab - 设置",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "ztHNA",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
                   "fill": "#00000000",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -18233,23 +18274,24 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "E59Nl7",
+                      "id": "CuBVX",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "sliders-horizontal",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
                       "library": "lucide",
                       "fill": "$rx-text-muted"
                     },
                     {
                       "type": "text",
-                      "id": "aZ2pJ",
+                      "id": "oM2DE",
                       "name": "Tab Label",
                       "fill": "$rx-text-muted",
-                      "content": "设置",
+                      "content": "运维",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -19678,22 +19720,24 @@
           "children": [
             {
               "type": "frame",
-              "id": "WW5v3",
-              "name": "Mobile Bottom Tabs",
-              "width": "fill_container",
-              "height": 58,
+              "id": "poS4w",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
               "fill": "$rx-surface-paper",
               "cornerRadius": 999,
               "stroke": "$rx-border-soft",
               "strokeWidth": 1,
               "gap": 4,
+              "padding": 6,
+              "alignItems": "center",
               "children": [
                 {
                   "type": "frame",
-                  "id": "hNGCF",
-                  "name": "Tab - 审核",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "RzEDI",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
                   "fill": "#00000000",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -19703,67 +19747,33 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "d2NsbG",
+                      "id": "habrO",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "shield-alert",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
                       "library": "lucide",
                       "fill": "$rx-text-muted"
                     },
                     {
                       "type": "text",
-                      "id": "HlfT9",
+                      "id": "abutC",
                       "name": "Tab Label",
                       "fill": "$rx-text-muted",
-                      "content": "审核",
+                      "content": "总览",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "kJIIg",
-                  "name": "Tab - 文档",
-                  "width": "fill_container",
-                  "height": 50,
-                  "fill": "#00000000",
-                  "cornerRadius": 999,
-                  "layout": "vertical",
-                  "gap": 2,
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "Z9nnKf",
-                      "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "file-search",
-                      "library": "lucide",
-                      "fill": "$rx-text-muted"
-                    },
-                    {
-                      "type": "text",
-                      "id": "o0CuQ",
-                      "name": "Tab Label",
-                      "fill": "$rx-text-muted",
-                      "content": "文档",
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 10,
-                      "fontWeight": "750"
-                    }
-                  ]
-                },
-                {
-                  "type": "frame",
-                  "id": "s6daYr",
-                  "name": "Tab - 台账",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "v0Yud",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
                   "fill": "$rx-brand-soft",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -19773,32 +19783,33 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "r3kTp",
+                      "id": "SlKLp",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "activity",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
                       "library": "lucide",
                       "fill": "$rx-brand-deep"
                     },
                     {
                       "type": "text",
-                      "id": "ps23B",
+                      "id": "EauUO",
                       "name": "Tab Label",
                       "fill": "$rx-brand-deep",
-                      "content": "台账",
+                      "content": "治理",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "Z0QRj",
-                  "name": "Tab - 设置",
-                  "width": "fill_container",
-                  "height": 50,
+                  "id": "x4dsj",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
                   "fill": "#00000000",
                   "cornerRadius": 999,
                   "layout": "vertical",
@@ -19808,23 +19819,96 @@
                   "children": [
                     {
                       "type": "icon",
-                      "id": "OroAf",
+                      "id": "kSPlF",
                       "name": "Tab Icon",
-                      "width": 13,
-                      "height": 13,
-                      "icon": "sliders-horizontal",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
                       "library": "lucide",
                       "fill": "$rx-text-muted"
                     },
                     {
                       "type": "text",
-                      "id": "w86rTE",
+                      "id": "VNk5c",
                       "name": "Tab Label",
                       "fill": "$rx-text-muted",
-                      "content": "设置",
+                      "content": "资产",
+                      "lineHeight": 1.3,
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
-                      "fontWeight": "750"
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Yhb0J",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "czYD2",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fA6ff",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "权限",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TWg6W",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "B3scgD",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "A6zpei",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "运维",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
                     }
                   ]
                 }
@@ -60568,202 +60652,211 @@
         },
         {
           "type": "frame",
-          "id": "tVPEJ",
-          "name": "Mobile Bottom Tabs",
+          "id": "D5uP5Z",
+          "name": "Mobile Bottom Tab Area",
           "width": "fill_container",
           "height": 80,
-          "fill": "#FFFDFC",
-          "stroke": "#E5D8C8",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 4,
+          "fill": "$rx-surface-app",
+          "layout": "vertical",
           "padding": [
-            10,
-            18,
-            14,
-            18
+            8,
+            16
           ],
-          "justifyContent": "space_between",
-          "alignItems": "center",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
-              "id": "JmNNw",
-              "name": "Tab - 总览",
-              "width": 62,
-              "height": 52,
-              "fill": "#F6DDE7",
-              "cornerRadius": 18,
-              "layout": "vertical",
+              "id": "wHmtU",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
+              "fill": "$rx-surface-paper",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
               "gap": 4,
-              "justifyContent": "center",
+              "padding": 6,
               "alignItems": "center",
               "children": [
                 {
-                  "type": "icon",
-                  "id": "PMycq",
-                  "name": "Tab Icon - 总览",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "layout-dashboard",
-                  "library": "lucide",
-                  "fill": "#B9345B"
+                  "type": "frame",
+                  "id": "ak373",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "j0ctY",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-brand-deep"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wMzJt",
+                      "name": "Tab Label",
+                      "fill": "$rx-brand-deep",
+                      "content": "总览",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "QoyZE",
-                  "name": "Tab Label - 总览",
-                  "fill": "#B9345B",
-                  "content": "总览",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "pcbVs",
-              "name": "Tab - 治理",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "Fecql",
-                  "name": "Tab Icon - 治理",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "gavel",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "GDUFF",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "XMVcV",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "n98DFw",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "治理",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "K9H65p",
-                  "name": "Tab Label - 治理",
-                  "fill": "#8A7B6B",
-                  "content": "治理",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "KwCr4",
-              "name": "Tab - 资产",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "UtF7u",
-                  "name": "Tab Icon - 资产",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "receipt",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "MnG7Y",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "E4h3e",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CDFN1",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "资产",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "Lk3Jy",
-                  "name": "Tab Label - 资产",
-                  "fill": "#8A7B6B",
-                  "content": "资产",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "LqW4t",
-              "name": "Tab - 权限",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "KrCOn",
-                  "name": "Tab Icon - 权限",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "shield",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "rre9r",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "h4bveY",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "aete5",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "权限",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "iEfrv",
-                  "name": "Tab Label - 权限",
-                  "fill": "#8A7B6B",
-                  "content": "权限",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "quHtO",
-              "name": "Tab - 运维",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "aCcYo",
-                  "name": "Tab Icon - 运维",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "timer",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
-                },
-                {
-                  "type": "text",
-                  "id": "DT5aa",
-                  "name": "Tab Label - 运维",
-                  "fill": "#8A7B6B",
-                  "content": "运维",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
+                  "type": "frame",
+                  "id": "SB77s",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "gJb9N",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cUKjw",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "运维",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 }
               ]
             }
@@ -61479,202 +61572,211 @@
         },
         {
           "type": "frame",
-          "id": "Nx2Jk",
-          "name": "Mobile Bottom Tabs",
+          "id": "nSROr",
+          "name": "Mobile Bottom Tab Area",
           "width": "fill_container",
           "height": 80,
-          "fill": "#FFFDFC",
-          "stroke": "#E5D8C8",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 4,
+          "fill": "$rx-surface-app",
+          "layout": "vertical",
           "padding": [
-            10,
-            18,
-            14,
-            18
+            8,
+            16
           ],
-          "justifyContent": "space_between",
-          "alignItems": "center",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
-              "id": "NOjYY",
-              "name": "Tab - 总览",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
+              "id": "Kwzqf",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
+              "fill": "$rx-surface-paper",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
               "gap": 4,
-              "justifyContent": "center",
+              "padding": 6,
               "alignItems": "center",
               "children": [
                 {
-                  "type": "icon",
-                  "id": "Q4YCEN",
-                  "name": "Tab Icon - 总览",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "layout-dashboard",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "u47d8X",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "VHsMZ",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "zRWNh",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "总览",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "fyoS6",
-                  "name": "Tab Label - 总览",
-                  "fill": "#8A7B6B",
-                  "content": "总览",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "G3CGwJ",
-              "name": "Tab - 治理",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "ueGxA",
-                  "name": "Tab Icon - 治理",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "gavel",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "Zwshj",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "xnC2C",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gtpb6",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "治理",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "Zsm0J",
-                  "name": "Tab Label - 治理",
-                  "fill": "#8A7B6B",
-                  "content": "治理",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "kQQeP",
-              "name": "Tab - 资产",
-              "width": 62,
-              "height": 52,
-              "fill": "#F6DDE7",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "u7aZA",
-                  "name": "Tab Icon - 资产",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "receipt",
-                  "library": "lucide",
-                  "fill": "#B9345B"
+                  "type": "frame",
+                  "id": "ycscP",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "V29nPY",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
+                      "library": "lucide",
+                      "fill": "$rx-brand-deep"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uQDIT",
+                      "name": "Tab Label",
+                      "fill": "$rx-brand-deep",
+                      "content": "资产",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "GBuAI",
-                  "name": "Tab Label - 资产",
-                  "fill": "#B9345B",
-                  "content": "资产",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "IWSrw",
-              "name": "Tab - 权限",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "MMVUe",
-                  "name": "Tab Icon - 权限",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "shield",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "f80GE5",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "kBnie",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "k5oFvv",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "权限",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "ZMoiE",
-                  "name": "Tab Label - 权限",
-                  "fill": "#8A7B6B",
-                  "content": "权限",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "w7158b",
-              "name": "Tab - 运维",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "GH1Zi",
-                  "name": "Tab Icon - 运维",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "timer",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
-                },
-                {
-                  "type": "text",
-                  "id": "mefyG",
-                  "name": "Tab Label - 运维",
-                  "fill": "#8A7B6B",
-                  "content": "运维",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
+                  "type": "frame",
+                  "id": "MC9qv",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "b64jb7",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NOE94",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "运维",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 }
               ]
             }
@@ -62385,202 +62487,211 @@
         },
         {
           "type": "frame",
-          "id": "RHI1M",
-          "name": "Mobile Bottom Tabs",
+          "id": "xj4Ui",
+          "name": "Mobile Bottom Tab Area",
           "width": "fill_container",
           "height": 80,
-          "fill": "#FFFDFC",
-          "stroke": "#E5D8C8",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 4,
+          "fill": "$rx-surface-app",
+          "layout": "vertical",
           "padding": [
-            10,
-            18,
-            14,
-            18
+            8,
+            16
           ],
-          "justifyContent": "space_between",
-          "alignItems": "center",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
-              "id": "PMAbQ",
-              "name": "Tab - 总览",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
+              "id": "VJz9Q",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
+              "fill": "$rx-surface-paper",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
               "gap": 4,
-              "justifyContent": "center",
+              "padding": 6,
               "alignItems": "center",
               "children": [
                 {
-                  "type": "icon",
-                  "id": "sM5Um",
-                  "name": "Tab Icon - 总览",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "layout-dashboard",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "OublV",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "nh8jX",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "H6tiDp",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "总览",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "rF3U8",
-                  "name": "Tab Label - 总览",
-                  "fill": "#8A7B6B",
-                  "content": "总览",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "Z0Q2G",
-              "name": "Tab - 治理",
-              "width": 62,
-              "height": 52,
-              "fill": "#F6DDE7",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "FrtCI",
-                  "name": "Tab Icon - 治理",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "gavel",
-                  "library": "lucide",
-                  "fill": "#B9345B"
+                  "type": "frame",
+                  "id": "C1Au8P",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "H7Vjnc",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
+                      "library": "lucide",
+                      "fill": "$rx-brand-deep"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nynIG",
+                      "name": "Tab Label",
+                      "fill": "$rx-brand-deep",
+                      "content": "治理",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "b3cqr",
-                  "name": "Tab Label - 治理",
-                  "fill": "#B9345B",
-                  "content": "治理",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "x1urdR",
-              "name": "Tab - 资产",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "WAbzd",
-                  "name": "Tab Icon - 资产",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "receipt",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "am1jM",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "UUBE6",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "g93cE3",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "资产",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "D0zwfj",
-                  "name": "Tab Label - 资产",
-                  "fill": "#8A7B6B",
-                  "content": "资产",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "BAXQ8",
-              "name": "Tab - 权限",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "j0YRm2",
-                  "name": "Tab Icon - 权限",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "shield",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "sC0qQ",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "fycqI",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Bcy0C",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "权限",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "mBAar",
-                  "name": "Tab Label - 权限",
-                  "fill": "#8A7B6B",
-                  "content": "权限",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "pifbr",
-              "name": "Tab - 运维",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "TovS0",
-                  "name": "Tab Icon - 运维",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "timer",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
-                },
-                {
-                  "type": "text",
-                  "id": "Iv7OR",
-                  "name": "Tab Label - 运维",
-                  "fill": "#8A7B6B",
-                  "content": "运维",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
+                  "type": "frame",
+                  "id": "DRPug",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "P8nqc",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "q1Tf4a",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "运维",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 }
               ]
             }
@@ -63387,202 +63498,211 @@
         },
         {
           "type": "frame",
-          "id": "jwODL",
-          "name": "Mobile Bottom Tabs",
+          "id": "JF1PL",
+          "name": "Mobile Bottom Tab Area",
           "width": "fill_container",
           "height": 80,
-          "fill": "#FFFDFC",
-          "stroke": "#E5D8C8",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 4,
+          "fill": "$rx-surface-app",
+          "layout": "vertical",
           "padding": [
-            10,
-            18,
-            14,
-            18
+            8,
+            16
           ],
-          "justifyContent": "space_between",
-          "alignItems": "center",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
-              "id": "J6hIn",
-              "name": "Tab - 总览",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
+              "id": "Lv3Q8",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
+              "fill": "$rx-surface-paper",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
               "gap": 4,
-              "justifyContent": "center",
+              "padding": 6,
               "alignItems": "center",
               "children": [
                 {
-                  "type": "icon",
-                  "id": "dHDbM",
-                  "name": "Tab Icon - 总览",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "layout-dashboard",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "GcyMu",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "nI8tU",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "fzn3x",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "总览",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "m1wMRU",
-                  "name": "Tab Label - 总览",
-                  "fill": "#8A7B6B",
-                  "content": "总览",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "qJQQx",
-              "name": "Tab - 治理",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "VprP3",
-                  "name": "Tab Icon - 治理",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "gavel",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "u4DoRj",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "X3BINf",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "R2nqL",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "治理",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "pTEKk",
-                  "name": "Tab Label - 治理",
-                  "fill": "#8A7B6B",
-                  "content": "治理",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "t6jxws",
-              "name": "Tab - 资产",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "JIqyY",
-                  "name": "Tab Icon - 资产",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "receipt",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "a5u7P",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "OjWtN",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "SdDo9",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "资产",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "HqRrN",
-                  "name": "Tab Label - 资产",
-                  "fill": "#8A7B6B",
-                  "content": "资产",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "ZAjbb",
-              "name": "Tab - 权限",
-              "width": 62,
-              "height": 52,
-              "fill": "#F6DDE7",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "t7bFQ0",
-                  "name": "Tab Icon - 权限",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "shield",
-                  "library": "lucide",
-                  "fill": "#B9345B"
+                  "type": "frame",
+                  "id": "noIPk",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "zmuYf",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
+                      "library": "lucide",
+                      "fill": "$rx-brand-deep"
+                    },
+                    {
+                      "type": "text",
+                      "id": "m6RIQE",
+                      "name": "Tab Label",
+                      "fill": "$rx-brand-deep",
+                      "content": "权限",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "H9gEr",
-                  "name": "Tab Label - 权限",
-                  "fill": "#B9345B",
-                  "content": "权限",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "p3zHYP",
-              "name": "Tab - 运维",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "hgSfL",
-                  "name": "Tab Icon - 运维",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "timer",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
-                },
-                {
-                  "type": "text",
-                  "id": "vDB7J",
-                  "name": "Tab Label - 运维",
-                  "fill": "#8A7B6B",
-                  "content": "运维",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
+                  "type": "frame",
+                  "id": "GI7q2",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "IjqLx",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "l9T72",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "运维",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 }
               ]
             }
@@ -64425,202 +64545,211 @@
         },
         {
           "type": "frame",
-          "id": "Gdu4c",
-          "name": "Mobile Bottom Tabs",
+          "id": "RbqyJ",
+          "name": "Mobile Bottom Tab Area",
           "width": "fill_container",
           "height": 80,
-          "fill": "#FFFDFC",
-          "stroke": "#E5D8C8",
-          "strokeWidth": {
-            "top": 1
-          },
-          "gap": 4,
+          "fill": "$rx-surface-app",
+          "layout": "vertical",
           "padding": [
-            10,
-            18,
-            14,
-            18
+            8,
+            16
           ],
-          "justifyContent": "space_between",
-          "alignItems": "center",
+          "justifyContent": "center",
           "children": [
             {
               "type": "frame",
-              "id": "LOlKl",
-              "name": "Tab - 总览",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
+              "id": "u4DeoC",
+              "name": "Mobile Bottom Tab",
+              "width": 358,
+              "height": 64,
+              "fill": "$rx-surface-paper",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
               "gap": 4,
-              "justifyContent": "center",
+              "padding": 6,
               "alignItems": "center",
               "children": [
                 {
-                  "type": "icon",
-                  "id": "W7Vw25",
-                  "name": "Tab Icon - 总览",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "layout-dashboard",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "zqf99",
+                  "name": "Tab - 总览",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "qZN9R",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "D8xQhA",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "总览",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "AYbFL",
-                  "name": "Tab Label - 总览",
-                  "fill": "#8A7B6B",
-                  "content": "总览",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "Y2OU6K",
-              "name": "Tab - 治理",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "KGMkT",
-                  "name": "Tab Icon - 治理",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "gavel",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "vQQYj",
+                  "name": "Tab - 治理",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "g1Pfg",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "gavel",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ITbdM",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "治理",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "HkAIe",
-                  "name": "Tab Label - 治理",
-                  "fill": "#8A7B6B",
-                  "content": "治理",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "Xrsvs",
-              "name": "Tab - 资产",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "CdySn",
-                  "name": "Tab Icon - 资产",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "receipt",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "HYiMR",
+                  "name": "Tab - 资产",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "lIiOq",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "receipt",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XKB62",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "资产",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "q65sG",
-                  "name": "Tab Label - 资产",
-                  "fill": "#8A7B6B",
-                  "content": "资产",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "HoCR0",
-              "name": "Tab - 权限",
-              "width": 62,
-              "height": 52,
-              "fill": "#00000000",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "O3X5q",
-                  "name": "Tab Icon - 权限",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "shield",
-                  "library": "lucide",
-                  "fill": "#9A8A78"
+                  "type": "frame",
+                  "id": "HKXqG",
+                  "name": "Tab - 权限",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "#00000000",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "kNWyp",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "shield",
+                      "library": "lucide",
+                      "fill": "$rx-text-muted"
+                    },
+                    {
+                      "type": "text",
+                      "id": "gQJyV",
+                      "name": "Tab Label",
+                      "fill": "$rx-text-muted",
+                      "content": "权限",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 },
                 {
-                  "type": "text",
-                  "id": "pwT4w",
-                  "name": "Tab Label - 权限",
-                  "fill": "#8A7B6B",
-                  "content": "权限",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "fo9wA",
-              "name": "Tab - 运维",
-              "width": 62,
-              "height": 52,
-              "fill": "#F6DDE7",
-              "cornerRadius": 18,
-              "layout": "vertical",
-              "gap": 4,
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "icon",
-                  "id": "n921I",
-                  "name": "Tab Icon - 运维",
-                  "width": 15,
-                  "height": 15,
-                  "icon": "timer",
-                  "library": "lucide",
-                  "fill": "#B9345B"
-                },
-                {
-                  "type": "text",
-                  "id": "XkkqD",
-                  "name": "Tab Label - 运维",
-                  "fill": "#B9345B",
-                  "content": "运维",
-                  "lineHeight": 1.18,
-                  "fontFamily": "Inter",
-                  "fontSize": 10,
-                  "fontWeight": "800"
+                  "type": "frame",
+                  "id": "Bsrlr",
+                  "name": "Tab - 运维",
+                  "width": 64,
+                  "height": 52,
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "gap": 2,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "AxqJM",
+                      "name": "Tab Icon",
+                      "width": 19,
+                      "height": 19,
+                      "icon": "timer",
+                      "library": "lucide",
+                      "fill": "$rx-brand-deep"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cp0LS",
+                      "name": "Tab Label",
+                      "fill": "$rx-brand-deep",
+                      "content": "运维",
+                      "lineHeight": 1.3,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
                 }
               ]
             }
