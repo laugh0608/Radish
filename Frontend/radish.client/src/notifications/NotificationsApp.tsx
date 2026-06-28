@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ToastContainer } from '@radish/ui/toast';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '@radish/ui/icon';
+import { WebStateSlot } from '@/components/web-shell';
 import { NotificationCenter } from '@/apps/notification/NotificationCenter';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
@@ -107,13 +107,12 @@ export const NotificationsApp = () => {
   const renderContent = () => {
     if (!authReady || !loggedIn) {
       return (
-        <section className={styles.statusPanel}>
-          <Icon icon="mdi:bell-ring-outline" size={24} />
-          <div>
-            <h1>{t('notification.title')}</h1>
-            <p>{t(redirecting ? 'notification.web.redirecting' : 'notification.web.loading')}</p>
-          </div>
-        </section>
+        <WebStateSlot
+          tone="auth"
+          icon="mdi:bell-ring-outline"
+          title={t('notification.title')}
+          description={t(redirecting ? 'notification.web.redirecting' : 'notification.web.loading')}
+        />
       );
     }
 
@@ -127,6 +126,8 @@ export const NotificationsApp = () => {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="messages"
         brandMark="萝"
         brandName={t('notification.title')}
         brandSubline={t('notification.web.shellSubline')}

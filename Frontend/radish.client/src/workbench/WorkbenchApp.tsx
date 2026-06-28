@@ -185,6 +185,8 @@ export const WorkbenchApp = () => {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="workbench"
         brandMark="台"
         brandName={t('workbench.title')}
         brandSubline={t('workbench.shellSubline')}

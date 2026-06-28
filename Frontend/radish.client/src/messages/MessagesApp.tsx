@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToastContainer } from '@radish/ui/toast';
-import { Icon } from '@radish/ui/icon';
+import { WebStateSlot } from '@/components/web-shell';
 import { ChatApp, type ChatAppProfileNavigationTarget } from '@/apps/chat/ChatApp';
 import { CurrentWindowProvider } from '@/desktop/CurrentWindowContext';
 import type { WindowState } from '@/desktop/types';
@@ -143,13 +143,12 @@ export const MessagesApp = () => {
   const renderContent = () => {
     if (!authReady || !loggedIn) {
       return (
-        <section className={styles.statusPanel}>
-          <Icon icon="mdi:message-text-outline" size={24} />
-          <div>
-            <h1>{t('messages.title')}</h1>
-            <p>{t(redirecting ? 'messages.auth.redirecting' : 'messages.auth.loading')}</p>
-          </div>
-        </section>
+        <WebStateSlot
+          tone="auth"
+          icon="mdi:message-text-outline"
+          title={t('messages.title')}
+          description={t(redirecting ? 'messages.auth.redirecting' : 'messages.auth.loading')}
+        />
       );
     }
 
@@ -165,6 +164,8 @@ export const MessagesApp = () => {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="messages"
         brandMark="聊"
         brandName={t('messages.title')}
         brandSubline={t('messages.shellSubline')}

@@ -675,6 +675,8 @@ export function DocsAuthorApp() {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="author"
         brandMark="文"
         brandName="文档作者台"
         brandSubline="正式 Web 文档写作入口"

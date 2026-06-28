@@ -1,6 +1,6 @@
-import { Icon } from '@radish/ui/icon';
+import type { MouseEvent } from 'react';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { handlePublicForumLinkClick } from './publicForumLinkHandlers';
-import styles from './PublicForumApp.module.css';
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound' | 'info';
 
@@ -29,62 +29,36 @@ export function PublicStatusCard({
   primaryAction,
   secondaryAction
 }: PublicStatusCardProps) {
-  const icon = tone === 'loading'
-    ? 'mdi:progress-clock'
-    : tone === 'empty'
-      ? 'mdi:text-box-search-outline'
-      : tone === 'notFound'
-        ? 'mdi:file-search-outline'
-        : tone === 'info'
-          ? 'mdi:information-outline'
-          : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = [];
+
+  if (primaryAction) {
+    actions.push({
+      label: primaryAction.label,
+      href: primaryAction.href,
+      onClick: primaryAction.href
+        ? (event) => handlePublicForumLinkClick(event as MouseEvent<HTMLAnchorElement>, primaryAction.onClick)
+        : () => primaryAction.onClick(),
+    });
+  }
+
+  if (secondaryAction) {
+    actions.push({
+      label: secondaryAction.label,
+      href: secondaryAction.href,
+      kind: 'secondary',
+      onClick: secondaryAction.href
+        ? (event) => handlePublicForumLinkClick(event as MouseEvent<HTMLAnchorElement>, secondaryAction.onClick)
+        : () => secondaryAction.onClick(),
+    });
+  }
 
   return (
-    <div
-      className={`${styles.statusCard} ${compact ? styles.statusCardCompact : ''}`}
-      data-tone={tone}
-    >
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={compact ? 18 : 22} />
-      </div>
-      <div className={styles.statusBody}>
-        <h2 className={styles.statusTitle}>{title}</h2>
-        <p className={styles.statusDescription}>{description}</p>
-        {(primaryAction || secondaryAction) && (
-          <div className={styles.statusActions}>
-            {primaryAction && (
-              primaryAction.href ? (
-                <a
-                  className={styles.retryButton}
-                  href={primaryAction.href}
-                  onClick={(event) => handlePublicForumLinkClick(event, primaryAction.onClick)}
-                >
-                  {primaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.retryButton} onClick={primaryAction.onClick}>
-                  {primaryAction.label}
-                </button>
-              )
-            )}
-            {secondaryAction && (
-              secondaryAction.href ? (
-                <a
-                  className={styles.secondaryButton}
-                  href={secondaryAction.href}
-                  onClick={(event) => handlePublicForumLinkClick(event, secondaryAction.onClick)}
-                >
-                  {secondaryAction.label}
-                </a>
-              ) : (
-                <button type="button" className={styles.secondaryButton} onClick={secondaryAction.onClick}>
-                  {secondaryAction.label}
-                </button>
-              )
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      compact={compact}
+      actions={actions}
+    />
   );
 }

@@ -16,6 +16,7 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildShopPath, createDefaultShopRoute, parseShopRoute, type ShopRoute } from './shopRouteState';
 import styles from '@/apps/shop/ShopApp.module.css';
 
@@ -308,35 +309,39 @@ export function ShopWebApp() {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <a className={styles.title} href={publicShopHref}>
-            🛒 {t('shop.title')}
-          </a>
-
-          <nav className={styles.nav} aria-label={t('shop.title')}>
-            <a className={styles.navButton} href={publicShopHref}>
-              {t('shop.nav.home')}
-            </a>
-            <a
-              className={`${styles.navButton} ${route.kind === 'orders' || route.kind === 'order-detail' ? styles.active : ''}`}
-              href={ordersHref}
-              onClick={handleOrdersLinkClick}
-            >
-              {t('shop.nav.orders')}
-            </a>
-            <a
-              className={`${styles.navButton} ${route.kind === 'inventory' ? styles.active : ''}`}
-              href={inventoryHref}
-              onClick={handleInventoryLinkClick}
-            >
-              {t('shop.nav.inventory')}
-            </a>
-          </nav>
-        </div>
-      </div>
+      <PublicShellHeader
+        variant="private"
+        activeKey="assets"
+        brandMark="商"
+        brandName={t('shop.title')}
+        brandSubline={t('shop.privateShellSubline', { defaultValue: '订单、背包与购买回流' })}
+        discoverHref={publicShopHref}
+        discoverLabel={t('shop.nav.home')}
+        desktopLabel={t('public.shell.desktopAction')}
+        onBrandClick={navigate.toPublicShop}
+        onNavigateToDiscover={navigate.toPublicShop}
+      />
 
       <div className={styles.content}>
+        <nav className={styles.privateRouteNav} aria-label={t('shop.title')}>
+          <a className={styles.privateRouteNavItem} href={publicShopHref}>
+            {t('shop.nav.home')}
+          </a>
+          <a
+            className={`${styles.privateRouteNavItem} ${route.kind === 'orders' || route.kind === 'order-detail' ? styles.privateRouteNavItemActive : ''}`}
+            href={ordersHref}
+            onClick={handleOrdersLinkClick}
+          >
+            {t('shop.nav.orders')}
+          </a>
+          <a
+            className={`${styles.privateRouteNavItem} ${route.kind === 'inventory' ? styles.privateRouteNavItemActive : ''}`}
+            href={inventoryHref}
+            onClick={handleInventoryLinkClick}
+          >
+            {t('shop.nav.inventory')}
+          </a>
+        </nav>
         <Suspense fallback={renderShopLoadingFallback()}>
           {renderContent()}
         </Suspense>

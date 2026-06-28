@@ -13,6 +13,7 @@ import {
   type PetStatLog,
 } from '@/api/pet';
 import { getApiBaseUrl } from '@/config/env';
+import { WebStateSlot } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
@@ -366,13 +367,7 @@ export const PetApp = () => {
   };
 
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:leaf') => (
-    <section className={styles.statusPanel}>
-      <Icon icon={icon} size={24} />
-      <div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-    </section>
+    <WebStateSlot tone={icon === 'mdi:progress-clock' ? 'loading' : 'auth'} title={title} description={description} icon={icon} />
   );
 
   const renderClaimPanel = () => (
@@ -597,6 +592,8 @@ export const PetApp = () => {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="me"
         brandMark="萝"
         brandName={t('pet.title')}
         brandSubline={t('pet.shellSubline')}

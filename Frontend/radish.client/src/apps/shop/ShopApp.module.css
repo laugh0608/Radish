@@ -76,6 +76,45 @@
   box-sizing: border-box;
 }
 
+.privateRouteNav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.privateRouteNavItem {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.privateRouteNavItem:hover {
+  transform: translateY(-1px);
+  color: var(--theme-brand-primary);
+}
+
+.privateRouteNavItemActive {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  color: var(--theme-brand-primary);
+}
+
 .lazyLoading {
   display: flex;
   min-height: 240px;
@@ -227,6 +266,16 @@
 
   .content {
     padding: 16px;
+  }
+
+  .privateRouteNav {
+    position: sticky;
+    top: 8px;
+    z-index: 6;
+  }
+
+  .privateRouteNavItem {
+    flex: 1 1 92px;
   }
 
   .errorToast {

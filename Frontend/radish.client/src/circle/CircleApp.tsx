@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'reac
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
+import { WebStateSlot } from '@/components/web-shell';
 import {
   getMyFollowers,
   getMyFollowing,
@@ -372,13 +373,12 @@ export const CircleApp = () => {
   const renderContent = () => {
     if (!authReady || redirecting || !loggedIn) {
       return (
-        <section className={styles.statusPanel}>
-          <Icon icon="mdi:account-clock-outline" size={24} />
-          <div>
-            <h2>{redirecting ? t('circle.redirectingTitle') : t('circle.authLoadingTitle')}</h2>
-            <p>{redirecting ? t('circle.redirectingDescription') : t('circle.authLoadingDescription')}</p>
-          </div>
-        </section>
+        <WebStateSlot
+          tone="auth"
+          icon="mdi:account-clock-outline"
+          title={redirecting ? t('circle.redirectingTitle') : t('circle.authLoadingTitle')}
+          description={redirecting ? t('circle.redirectingDescription') : t('circle.authLoadingDescription')}
+        />
       );
     }
 
@@ -388,16 +388,15 @@ export const CircleApp = () => {
 
     if (errorMessage) {
       return (
-        <section className={styles.statusPanel}>
-          <Icon icon="mdi:alert-circle-outline" size={24} />
-          <div>
-            <h2>{t('circle.loadFailedTitle')}</h2>
-            <p>{errorMessage}</p>
-            <button type="button" className={styles.retryButton} onClick={() => void loadCircleData(route)}>
-              {t('common.retry')}
-            </button>
-          </div>
-        </section>
+        <WebStateSlot
+          tone="error"
+          title={t('circle.loadFailedTitle')}
+          description={errorMessage}
+          actions={[{
+            label: t('common.retry'),
+            onClick: () => void loadCircleData(route),
+          }]}
+        />
       );
     }
 
@@ -407,6 +406,8 @@ export const CircleApp = () => {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="me"
         brandMark="萝"
         brandName={t('circle.title')}
         brandSubline={t('circle.shellSubline')}
