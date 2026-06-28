@@ -2,9 +2,9 @@
 
 > 日期：2026-06-28（Asia/Shanghai）
 >
-> 状态：跨设计源移动底栏样式已统一；当前作为 `radish.client` 视觉实现前口径
+> 状态：跨设计源移动底栏样式已统一；复审反馈已补齐公开移动工作台、Private 移动页密度和 Console P13 纸色背景；当前作为 `radish.client` 视觉实现前口径
 >
-> 结论：`web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 和 `console-governance-workbench.pen` 的移动底栏已统一为浮动胶囊样式。`/workbench` 继续作为正式 Web 功能地图，承接导航无法展示的功能入口。
+> 结论：`web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 和 `console-governance-workbench.pen` 的移动底栏已统一为浮动胶囊样式。`/workbench` 继续作为正式 Web 功能地图，承接导航无法展示的功能入口；公开端移动 `P13` 已改为真实工作台页，Private 移动页已提高功能密度，Console `P13` 已回到纸色运维工具页。
 
 ## 背景
 
@@ -22,6 +22,13 @@
 - `public-web-unified-experience.pen`：`P10-P16` 移动公开底栏统一为 `发现 / 论坛 / 文档 / 工作台 / 我的`。
 - `private-web-workflows.pen`：保持当前已达标的 `工作台 / 资产 / 创作 / 消息 / 我的` 胶囊底栏，作为业务源参考样式。
 - `console-governance-workbench.pen`：`P07 / P08 / P14-P18` 移动 Console 底栏统一为 `总览 / 治理 / 资产 / 权限 / 运维`。
+
+## 复审补充
+
+- 公开端 `P13` 不再是商城与榜单页面，已修正为移动 `/workbench`：底部选中态、标题和页面内容统一为“工作台”，商城、榜单、聊天室仅作为功能入口承接。
+- Private 端 `P21-P30` 移动页补齐今日队列、指标、任务表、通知处理队列、会话上下文、圈子动态、宠物状态和创作发布台；不再保留 `fit_content(0)` 空白模板壳。
+- Private 端 `P18 / P20` Docs 作者态继续按文档树、文档表格、版本对比、发布状态和侧栏证据提高信息密度，不套用泛化卡片列表。
+- Console 端 `P13` 已按其他 Console PC 页的纸色背景重建，主体聚焦系统配置、任务队列、失败重试和运行审计，避免独立白底页面。
 
 ## 设计口径
 

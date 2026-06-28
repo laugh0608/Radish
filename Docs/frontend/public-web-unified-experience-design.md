@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-28（Asia/Shanghai）：公开移动底栏已对齐共享基座的浮动胶囊样式，固定为 `发现 / 论坛 / 文档 / 工作台 / 我的`。商城、榜单、聊天室等无法全部展示在一级底栏的公开能力由 `/workbench` 功能地图或页面内入口承接。
+> 更新：2026-06-28（Asia/Shanghai）：公开移动底栏已对齐共享基座的浮动胶囊样式，固定为 `发现 / 论坛 / 文档 / 工作台 / 我的`。商城、榜单、聊天室等无法全部展示在一级底栏的公开能力由 `/workbench` 功能地图或页面内入口承接；`P13` 已从“商城与榜单”修正为真正的移动工作台页面。
 >
 > 状态：设计源 `P01-P16` 已补齐；当前作为实现前说明，不进入视觉代码实现
 
@@ -28,7 +28,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
 | `P11 - Mobile Post Detail` | 移动端帖子详情、正文、轻回应、父评论神评、子回复沙发和登录评论 |
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
-| `P13 - Mobile Shop Leaderboard` | 移动端商城商品、购买 intent 与榜单浏览 |
+| `P13 - Mobile Workbench` | 移动端 `/workbench` 功能地图、继续探索队列和公开低频入口承接；商城、榜单和聊天室只作为功能入口，不作为工作台页面主体 |
 | `P14 - Mobile Public Profile` | 移动端公开主页、公开内容 tab 和关注回流 |
 | `P15 - Public Chat Room` | `/chat` / `/chat/:room` 公开聊天室，覆盖房间列表、左右 IM 气泡、引用帖子、回复、表情 reaction、在线成员和登录发言，首屏保持多消息可扫读 |
 | `P16 - Mobile Chat Reply Flow` | 移动端聊天室 / 引用回复任务流，覆盖房间头部、引用帖子、左右消息气泡、快捷 reaction、输入框和聊天 tab |
