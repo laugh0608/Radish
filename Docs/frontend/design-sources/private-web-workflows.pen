@@ -27014,110 +27014,107 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "t5bTL",
-                      "name": "Kicker",
+                      "id": "ZgYJ6",
+                      "name": "Route Badge",
                       "fill": "$rx-brand-primary",
                       "content": "/docs/compose 或 /docs/edit/:id",
-                      "lineHeight": 1.32,
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 12,
-                      "fontWeight": "800"
-                    },
-                    {
-                      "type": "text",
-                      "id": "y8Ksig",
-                      "name": "Title",
-                      "fill": "$rx-text-primary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "编辑文档",
-                      "lineHeight": 1.32,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 26,
-                      "fontWeight": "800"
+                      "fontFamily": "$rx-font-mono",
+                      "fontSize": 13,
+                      "fontWeight": "700"
                     },
                     {
                       "type": "frame",
-                      "id": "urZqU",
-                      "name": "Docs Meta Line",
+                      "id": "z2uhj5",
+                      "name": "Editor Header Row",
                       "width": "fill_container",
-                      "gap": 10,
+                      "height": 68,
+                      "gap": 12,
+                      "alignItems": "center",
                       "children": [
                         {
                           "type": "frame",
-                          "id": "h3bZk",
-                          "name": "Chip - slug: private-web-workflows",
-                          "fill": "#dde8f0",
-                          "cornerRadius": 999,
-                          "gap": 6,
-                          "padding": [
-                            5,
-                            10
-                          ],
-                          "alignItems": "center",
+                          "id": "K5RzMb",
+                          "name": "Title And Save State",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
                           "children": [
                             {
                               "type": "text",
-                              "id": "xdjGZ",
-                              "name": "Chip Label",
-                              "fill": "$rx-accent-ink",
-                              "content": "slug: private-web-workflows",
-                              "lineHeight": 1.32,
+                              "id": "vqWvQ",
+                              "name": "Page Title",
+                              "fill": "$rx-text-primary",
+                              "content": "编辑文档",
+                              "fontFamily": "$rx-font-heading",
+                              "fontSize": 30,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "fSB4e",
+                              "name": "Save Status",
+                              "fill": "$rx-text-secondary",
+                              "content": "草稿已自动保存 · 2 分钟前 · 发布前需完成校验",
                               "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "600"
+                              "fontSize": 13,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "w32dcn",
-                          "name": "Chip - visibility: Authenticated",
-                          "fill": "#dde8f0",
-                          "cornerRadius": 999,
-                          "gap": 6,
-                          "padding": [
-                            5,
-                            10
-                          ],
+                          "id": "xR09U",
+                          "name": "Header Status Cluster",
+                          "gap": 8,
                           "alignItems": "center",
                           "children": [
                             {
-                              "type": "text",
-                              "id": "jVE4G",
-                              "name": "Chip Label",
-                              "fill": "$rx-accent-ink",
-                              "content": "visibility: Authenticated",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "600"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "tD0co",
-                          "name": "Chip - parent: 设计说明",
-                          "fill": "#dde8f0",
-                          "cornerRadius": 999,
-                          "gap": 6,
-                          "padding": [
-                            5,
-                            10
-                          ],
-                          "alignItems": "center",
-                          "children": [
+                              "type": "frame",
+                              "id": "vzH0t",
+                              "name": "Status Pill",
+                              "fill": "$rx-brand-soft",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "I3Njqu",
+                                  "name": "Status Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "有未发布修改",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
                             {
-                              "type": "text",
-                              "id": "p3nwc5",
-                              "name": "Chip Label",
-                              "fill": "$rx-accent-ink",
-                              "content": "parent: 设计说明",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "600"
+                              "type": "frame",
+                              "id": "z3gWG",
+                              "name": "Status Pill",
+                              "fill": "#dceee7",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                12
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "z6qjdr",
+                                  "name": "Status Label",
+                                  "fill": "#2e7d63",
+                                  "content": "84% 完成",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
                             }
                           ]
                         }
@@ -27125,41 +27122,715 @@
                     },
                     {
                       "type": "frame",
-                      "id": "PdiRp",
-                      "name": "Docs Markdown Area",
+                      "id": "c5R1os",
+                      "name": "Editor Meta Pills",
                       "width": "fill_container",
-                      "height": 560,
-                      "fill": "$rx-bg-muted",
-                      "cornerRadius": 8,
-                      "layout": "vertical",
-                      "gap": 10,
-                      "padding": 14,
+                      "height": 30,
+                      "gap": 8,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "iYnpa",
-                          "name": "Markdown Toolbar",
-                          "fill": "$rx-text-secondary",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "标题  列表  链接  上传图片  上传文档  预览",
-                          "lineHeight": 1.32,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
-                          "fontWeight": "700"
+                          "type": "frame",
+                          "id": "LksWy",
+                          "name": "Meta Pill",
+                          "fill": "#d4e1f1",
+                          "cornerRadius": "$rx-radius-control",
+                          "padding": [
+                            6,
+                            11
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dB8Pm",
+                              "name": "Meta Label",
+                              "fill": "$rx-accent-ink",
+                              "content": "slug: private-web-workflows",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
                         },
                         {
-                          "type": "text",
-                          "id": "NLdHn",
-                          "name": "Markdown Body",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
+                          "type": "frame",
+                          "id": "pE5By",
+                          "name": "Meta Pill",
+                          "fill": "#dceee7",
+                          "cornerRadius": "$rx-radius-control",
+                          "padding": [
+                            6,
+                            11
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "h88KJ",
+                              "name": "Meta Label",
+                              "fill": "#2e7d63",
+                              "content": "visibility: 登录可见",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Hk4F1",
+                          "name": "Meta Pill",
+                          "fill": "#efe7db",
+                          "cornerRadius": "$rx-radius-control",
+                          "padding": [
+                            6,
+                            11
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "g4I1p",
+                              "name": "Meta Label",
+                              "fill": "$rx-accent-earth",
+                              "content": "parent: 设计说明",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "A78SsS",
+                          "name": "Meta Pill",
+                          "fill": "$rx-brand-soft",
+                          "cornerRadius": "$rx-radius-control",
+                          "padding": [
+                            6,
+                            11
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "LHOSo",
+                              "name": "Meta Label",
+                              "fill": "$rx-brand-primary",
+                              "content": "version: v4 草稿",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NDTEo",
+                      "name": "Editor Workbench",
+                      "clip": true,
+                      "width": "fill_container",
+                      "height": 712,
+                      "fill": "#fbf7f0",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "aYQti",
+                          "name": "Editor Toolbar",
                           "width": "fill_container",
-                          "content": "# 私域与作者态 Web 工作流\n\n设计说明应描述真实路由、响应式行为、状态槽和停止线。",
-                          "lineHeight": 1.32,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 16,
-                          "fontWeight": "500"
+                          "height": 48,
+                          "fill": "#f5eee3",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "gap": 8,
+                          "padding": [
+                            8,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "pXtR2",
+                              "name": "Toolbar Group",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "TQ4n6",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "pLjYe",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "标题",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "RpHgn",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "bUxkA",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "正文",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "mpBtW",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "hnMK0",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "引用",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "n6YXqO",
+                              "name": "Toolbar Group",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "nfiP0",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "dF6bU",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "B",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "AV3dJ",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "mbhaL",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "I",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "iuvBU",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "o0lW3y",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "链接",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "mCAtX",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "O6EaVB",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "图片",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "D177Fv",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "kKocL",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "附件",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "z3nugy",
+                              "name": "Toolbar Group",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "r574sL",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "JLztl",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "预览",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Z2HMD",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "dvLLe",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "历史",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "snvjM",
+                                  "name": "Toolbar Button",
+                                  "height": 30,
+                                  "fill": "#fbf7f0",
+                                  "cornerRadius": 6,
+                                  "stroke": "$rx-border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Cd5IN",
+                                      "name": "Toolbar Label",
+                                      "fill": "$rx-text-secondary",
+                                      "content": "更多",
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 12,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ItFrZ",
+                          "name": "Editor Body",
+                          "width": "fill_container",
+                          "height": 602,
+                          "fill": "#fbf7f0",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "x2kH0g",
+                              "name": "Markdown Write Pane",
+                              "width": 536,
+                              "height": "fill_container",
+                              "layout": "vertical",
+                              "gap": 12,
+                              "padding": 18,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "JbmJu",
+                                  "name": "Editor Document Title",
+                                  "fill": "$rx-text-primary",
+                                  "content": "私域与作者态 Web 工作流",
+                                  "fontFamily": "$rx-font-heading",
+                                  "fontSize": 25,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "NEH9W",
+                                  "name": "Editor Lead",
+                                  "fill": "$rx-text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "用于说明登录后复访、作者创作、订单与资产回流之间的页面关系。当前文档保留草稿，发布后公开详情页只展示可阅读内容。",
+                                  "lineHeight": 1.5,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 14,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "uRs9s",
+                                  "name": "Markdown Line",
+                                  "fill": "$rx-text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "## 发布前检查",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$rx-font-mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "oEbv9",
+                                  "name": "Markdown Line",
+                                  "fill": "$rx-text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "- 标题、摘要、slug 与可见性必须完整。",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$rx-font-mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "V2muf",
+                                  "name": "Markdown Line",
+                                  "fill": "$rx-text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "- 附件引用需要通过统一上传入口，不直接写入临时 URL。",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$rx-font-mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "zP8nv",
+                                  "name": "Markdown Line",
+                                  "fill": "$rx-text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "- 保存草稿不会覆盖已发布版本，发布后生成 PostEditHistory。",
+                                  "lineHeight": 1.45,
+                                  "fontFamily": "$rx-font-mono",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "O4jFGK",
+                              "name": "Preview Pane",
+                              "width": 288,
+                              "height": "fill_container",
+                              "fill": "#f6efe5",
+                              "stroke": "$rx-border-soft",
+                              "strokeWidth": {
+                                "left": 1
+                              },
+                              "layout": "vertical",
+                              "gap": 14,
+                              "padding": 18,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "is15o",
+                                  "name": "Preview Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "预览",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "B8Q1i",
+                                  "name": "Preview Title",
+                                  "fill": "$rx-text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "私域与作者态 Web 工作流",
+                                  "fontFamily": "$rx-font-heading",
+                                  "fontSize": 22,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "FcF9F",
+                                  "name": "Preview Body",
+                                  "fill": "$rx-text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "发布前检查会确认标题、摘要、访问控制、附件引用和版本归档。预览区只展示最终阅读效果，不承载编辑控件。",
+                                  "lineHeight": 1.55,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Cpj7p",
+                          "name": "Editor Status Bar",
+                          "width": "fill_container",
+                          "height": 62,
+                          "fill": "#f5eee3",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": {
+                            "top": 1
+                          },
+                          "gap": 12,
+                          "padding": [
+                            10,
+                            14
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "McLjr",
+                              "name": "Validation Summary",
+                              "fill": "$rx-text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "校验：标题通过 · 摘要通过 · 附件 1 项待确认 · 可见性登录可见",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 13,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "tymFh",
+                              "name": "Editor Action",
+                              "height": 36,
+                              "fill": "#fbf7f0",
+                              "cornerRadius": "$rx-radius-control",
+                              "stroke": "$rx-border-soft",
+                              "strokeWidth": 1,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "IRkHT",
+                                  "name": "Editor Action Label",
+                                  "fill": "$rx-text-primary",
+                                  "content": "保存草稿",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "YkZqO",
+                              "name": "Editor Action",
+                              "height": 36,
+                              "fill": "$rx-brand-primary",
+                              "cornerRadius": "$rx-radius-control",
+                              "stroke": "$rx-brand-primary",
+                              "strokeWidth": 1,
+                              "padding": [
+                                0,
+                                16
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "tO9Hy",
+                                  "name": "Editor Action Label",
+                                  "fill": "#ffffff",
+                                  "content": "发布文档",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
                         }
                       ]
                     }
@@ -27167,12 +27838,12 @@
                 },
                 {
                   "type": "frame",
-                  "id": "PN5mF",
-                  "name": "Document Settings",
+                  "id": "g9N3hw",
+                  "name": "Document Publish Sidebar",
                   "width": 496,
                   "height": 916,
-                  "fill": "$rx-bg-surface",
-                  "cornerRadius": 8,
+                  "fill": "#fbf7f0",
+                  "cornerRadius": "$rx-radius-card",
                   "stroke": "$rx-border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
@@ -27181,91 +27852,299 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "nPvDA",
-                      "name": "Settings Title",
+                      "id": "Qfx4j",
+                      "name": "Sidebar Title",
                       "fill": "$rx-text-primary",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "文档设置",
-                      "lineHeight": 1.32,
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 22,
-                      "fontWeight": "800"
+                      "content": "发布检查",
+                      "fontFamily": "$rx-font-heading",
+                      "fontSize": 26,
+                      "fontWeight": "700"
                     },
                     {
                       "type": "frame",
-                      "id": "JQ7wC",
-                      "name": "Row - 标题",
+                      "id": "b2QKW",
+                      "name": "Publish Checklist",
                       "width": "fill_container",
-                      "height": 62,
-                      "fill": "#ffffff",
-                      "cornerRadius": 8,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "gap": 12,
-                      "padding": [
-                        10,
-                        12
-                      ],
-                      "alignItems": "center",
+                      "layout": "vertical",
+                      "gap": 10,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "P24PES",
-                          "name": "Row Mark",
-                          "width": 34,
-                          "height": 34,
-                          "fill": "$rx-brand-soft",
-                          "cornerRadius": 8,
-                          "layout": "vertical",
-                          "justifyContent": "center",
+                          "id": "lgztS",
+                          "name": "Checklist Row",
+                          "width": "fill_container",
+                          "height": 64,
+                          "fill": "#ffffff",
+                          "cornerRadius": "$rx-radius-card",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "gap": 12,
+                          "padding": 12,
                           "alignItems": "center",
                           "children": [
                             {
-                              "type": "icon",
-                              "id": "tpGt2",
-                              "name": "Row Icon",
-                              "width": 16,
-                              "height": 16,
-                              "icon": "sparkle",
-                              "library": "lucide",
-                              "fill": "$rx-brand-primary"
+                              "type": "frame",
+                              "id": "mtG7J",
+                              "name": "Checklist Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Ltcca",
+                                  "name": "Checklist Label",
+                                  "fill": "$rx-text-primary",
+                                  "content": "标题与摘要",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "YxjzL",
+                                  "name": "Checklist Hint",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "已填写，摘要将在公开卡片展示",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Q022UF",
+                              "name": "Checklist Status",
+                              "fill": "#dceee7",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "z6AFn",
+                                  "name": "Checklist Status Label",
+                                  "fill": "#2e7d63",
+                                  "content": "通过",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
                             }
                           ]
                         },
                         {
                           "type": "frame",
-                          "id": "JpLkY",
-                          "name": "Row Copy",
+                          "id": "KPi8Y",
+                          "name": "Checklist Row",
                           "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 3,
+                          "height": 64,
+                          "fill": "#ffffff",
+                          "cornerRadius": "$rx-radius-card",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "gap": 12,
+                          "padding": 12,
+                          "alignItems": "center",
                           "children": [
                             {
-                              "type": "text",
-                              "id": "Qss0x",
-                              "name": "Row Title",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
+                              "type": "frame",
+                              "id": "i7dKjp",
+                              "name": "Checklist Text",
                               "width": "fill_container",
-                              "content": "标题",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 14,
-                              "fontWeight": "700"
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cGeEB",
+                                  "name": "Checklist Label",
+                                  "fill": "$rx-text-primary",
+                                  "content": "访问控制",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "scQ2T",
+                                  "name": "Checklist Hint",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "登录可见，公开页不会收录",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
                             },
                             {
-                              "type": "text",
-                              "id": "R5dvKL",
-                              "name": "Row Meta",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
+                              "type": "frame",
+                              "id": "ih6Yp",
+                              "name": "Checklist Status",
+                              "fill": "#dceee7",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "vMq7I",
+                                  "name": "Checklist Status Label",
+                                  "fill": "#2e7d63",
+                                  "content": "通过",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "prySU",
+                          "name": "Checklist Row",
+                          "width": "fill_container",
+                          "height": 64,
+                          "fill": "#ffffff",
+                          "cornerRadius": "$rx-radius-card",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "gap": 12,
+                          "padding": 12,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "NZlKN",
+                              "name": "Checklist Text",
                               "width": "fill_container",
-                              "content": "私域与作者态 Web 工作流",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "500"
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "miOnf",
+                                  "name": "Checklist Label",
+                                  "fill": "$rx-text-primary",
+                                  "content": "附件引用",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "JYWEe",
+                                  "name": "Checklist Hint",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "1 张图片待确认长期链接",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "m7Pxk",
+                              "name": "Checklist Status",
+                              "fill": "$rx-brand-soft",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "v2tDdS",
+                                  "name": "Checklist Status Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "待确认",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "NIFjJ",
+                          "name": "Checklist Row",
+                          "width": "fill_container",
+                          "height": 64,
+                          "fill": "#ffffff",
+                          "cornerRadius": "$rx-radius-card",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "gap": 12,
+                          "padding": 12,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "mcOhX",
+                              "name": "Checklist Text",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 4,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "SPS2g",
+                                  "name": "Checklist Label",
+                                  "fill": "$rx-text-primary",
+                                  "content": "版本归档",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 14,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "hEDcC",
+                                  "name": "Checklist Hint",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "发布后保留 v3 公开版本",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "x5QKn",
+                              "name": "Checklist Status",
+                              "fill": "#efe7db",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "c7zfT",
+                                  "name": "Checklist Status Label",
+                                  "fill": "$rx-accent-earth",
+                                  "content": "待发布",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                }
+                              ]
                             }
                           ]
                         }
@@ -27273,271 +28152,21 @@
                     },
                     {
                       "type": "frame",
-                      "id": "gdHzO",
-                      "name": "Row - 摘要",
-                      "width": "fill_container",
-                      "height": 62,
-                      "fill": "#ffffff",
-                      "cornerRadius": 8,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "gap": 12,
-                      "padding": [
-                        10,
-                        12
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "M3nQq",
-                          "name": "Row Mark",
-                          "width": 34,
-                          "height": 34,
-                          "fill": "$rx-brand-soft",
-                          "cornerRadius": 8,
-                          "layout": "vertical",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "OjwTg",
-                              "name": "Row Icon",
-                              "width": 16,
-                              "height": 16,
-                              "icon": "sparkle",
-                              "library": "lucide",
-                              "fill": "$rx-brand-primary"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "rM5Iv",
-                          "name": "Row Copy",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 3,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "crJlP",
-                              "name": "Row Title",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "摘要",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 14,
-                              "fontWeight": "700"
-                            },
-                            {
-                              "type": "text",
-                              "id": "Oulxk",
-                              "name": "Row Meta",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "进入视觉实现前说明",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "pHFwo",
-                      "name": "Row - 排序",
-                      "width": "fill_container",
-                      "height": 62,
-                      "fill": "#ffffff",
-                      "cornerRadius": 8,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "gap": 12,
-                      "padding": [
-                        10,
-                        12
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "x96vbJ",
-                          "name": "Row Mark",
-                          "width": 34,
-                          "height": 34,
-                          "fill": "$rx-brand-soft",
-                          "cornerRadius": 8,
-                          "layout": "vertical",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "dkSNB",
-                              "name": "Row Icon",
-                              "width": 16,
-                              "height": 16,
-                              "icon": "sparkle",
-                              "library": "lucide",
-                              "fill": "$rx-brand-primary"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "uMxOi",
-                          "name": "Row Copy",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 3,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "Ei08A",
-                              "name": "Row Title",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "排序",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 14,
-                              "fontWeight": "700"
-                            },
-                            {
-                              "type": "text",
-                              "id": "aqPCU",
-                              "name": "Row Meta",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "建议值 40",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "GPdzc",
-                      "name": "Row - 访问控制",
-                      "width": "fill_container",
-                      "height": 62,
-                      "fill": "#ffffff",
-                      "cornerRadius": 8,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "gap": 12,
-                      "padding": [
-                        10,
-                        12
-                      ],
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "mKsry",
-                          "name": "Row Mark",
-                          "width": 34,
-                          "height": 34,
-                          "fill": "$rx-brand-soft",
-                          "cornerRadius": 8,
-                          "layout": "vertical",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "hWmZ0",
-                              "name": "Row Icon",
-                              "width": 16,
-                              "height": 16,
-                              "icon": "sparkle",
-                              "library": "lucide",
-                              "fill": "$rx-brand-primary"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "vH8Ps",
-                          "name": "Row Copy",
-                          "width": "fill_container",
-                          "layout": "vertical",
-                          "gap": 3,
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "cnJGO",
-                              "name": "Row Title",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "访问控制",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 14,
-                              "fontWeight": "700"
-                            },
-                            {
-                              "type": "text",
-                              "id": "f84t3",
-                              "name": "Row Meta",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": "fill_container",
-                              "content": "登录可见",
-                              "lineHeight": 1.32,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "500"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "iu2vf",
-                      "name": "Button - 保存文档",
+                      "id": "MMvcC",
+                      "name": "Primary Publish Action",
+                      "width": 150,
+                      "height": 40,
                       "fill": "$rx-brand-primary",
-                      "cornerRadius": 999,
-                      "gap": 8,
-                      "padding": [
-                        10,
-                        16
-                      ],
+                      "cornerRadius": "$rx-radius-control",
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
-                        {
-                          "type": "icon",
-                          "id": "ReXrd",
-                          "name": "Button Icon",
-                          "width": 16,
-                          "height": 16,
-                          "icon": "save",
-                          "library": "lucide",
-                          "fill": "#ffffff"
-                        },
                         {
                           "type": "text",
-                          "id": "yniig",
-                          "name": "Button Label",
+                          "id": "Lj0zo",
+                          "name": "Primary Publish Label",
                           "fill": "#ffffff",
-                          "content": "保存文档",
-                          "lineHeight": 1.32,
+                          "content": "发布文档",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 14,
                           "fontWeight": "700"
@@ -27546,39 +28175,119 @@
                     },
                     {
                       "type": "frame",
-                      "id": "iCX31",
-                      "name": "Button - 查看公开页",
-                      "fill": "$rx-bg-surface",
-                      "cornerRadius": 999,
+                      "id": "nvJH2",
+                      "name": "Secondary Preview Action",
+                      "width": 150,
+                      "height": 40,
+                      "fill": "#fbf7f0",
+                      "cornerRadius": "$rx-radius-control",
                       "stroke": "$rx-border-soft",
                       "strokeWidth": 1,
-                      "gap": 8,
-                      "padding": [
-                        10,
-                        16
-                      ],
+                      "justifyContent": "center",
                       "alignItems": "center",
                       "children": [
                         {
-                          "type": "icon",
-                          "id": "XYCDm",
-                          "name": "Button Icon",
-                          "width": 16,
-                          "height": 16,
-                          "icon": "external-link",
-                          "library": "lucide",
-                          "fill": "$rx-text-secondary"
-                        },
-                        {
                           "type": "text",
-                          "id": "r2DerK",
-                          "name": "Button Label",
+                          "id": "y9C4WT",
+                          "name": "Secondary Preview Label",
                           "fill": "$rx-text-primary",
                           "content": "查看公开页",
-                          "lineHeight": 1.32,
                           "fontFamily": "$rx-font-body",
                           "fontSize": 14,
                           "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lHpaW",
+                      "name": "Version And Recovery",
+                      "width": "fill_container",
+                      "fill": "#f5eee3",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "A6B4cd",
+                          "name": "Version Title",
+                          "fill": "$rx-text-primary",
+                          "content": "版本与恢复",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "K9peyo",
+                          "name": "Version Item",
+                          "fill": "$rx-text-secondary",
+                          "content": "v4 草稿 · 当前编辑中",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "DW1Is",
+                          "name": "Version Item",
+                          "fill": "$rx-text-secondary",
+                          "content": "v3 已发布 · 公开可见",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I60mA",
+                          "name": "Version Item",
+                          "fill": "$rx-text-secondary",
+                          "content": "v2 归档 · 可回看",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qM06p",
+                      "name": "State Coverage Notes",
+                      "width": "fill_container",
+                      "fill": "#ffffff",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "reH3k",
+                          "name": "State Coverage Title",
+                          "fill": "$rx-text-primary",
+                          "content": "实现状态覆盖",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "PelqL",
+                          "name": "State Coverage Body",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "编辑器需覆盖自动保存中、保存失败、附件上传失败、权限不足、发布成功与发布冲突六种状态。",
+                          "lineHeight": 1.45,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }

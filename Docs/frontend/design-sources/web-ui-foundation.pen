@@ -2451,6 +2451,38 @@
                       "fontWeight": "normal"
                     }
                   ]
+                },
+                {
+                  "type": "frame",
+                  "id": "LTwJ5",
+                  "name": "Rule 小字号状态色必须优先保证对比度。",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "h8GrfC",
+                      "name": "Rule Icon 小字号状态色必须优先保证对比度。",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "circle-check",
+                      "library": "lucide",
+                      "fill": "$rx-accent-jade"
+                    },
+                    {
+                      "type": "text",
+                      "id": "c1IbN",
+                      "name": "Rule Text 小字号状态色必须优先保证对比度。",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "小字号状态文字优先使用深色 token；浅玉青、muted 或 brand-soft 只作为背景，不直接承载关键文本。",
+                      "lineHeight": 1.38,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 }
               ]
             }
