@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ToastContainer } from '@radish/ui/toast';
+import { Icon } from '@radish/ui/icon';
 import { WebStateSlot } from '@/components/web-shell';
 import { ChatApp, type ChatAppProfileNavigationTarget } from '@/apps/chat/ChatApp';
 import { CurrentWindowProvider } from '@/desktop/CurrentWindowContext';
@@ -14,6 +15,7 @@ import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import { buildMessagesReturnPath } from '@/services/authReturnPath';
 import { chatHub } from '@/services/chatHub';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '@/stores/chatStore';
 import { useUserStore } from '@/stores/userStore';
 import { normalizeEntityId } from '@/types/chat';
 import { log } from '@/utils/logger';
@@ -34,6 +36,9 @@ export const MessagesApp = () => {
   const route = useMemo(() => parseInitialRoute(), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
+  const channels = useChatStore(state => state.channels);
+  const activeChannelId = useChatStore(state => state.activeChannelId);
+  const connectionState = useChatStore(state => state.connectionState);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
@@ -143,21 +148,55 @@ export const MessagesApp = () => {
   const renderContent = () => {
     if (!authReady || !loggedIn) {
       return (
-        <WebStateSlot
-          tone="auth"
-          icon="mdi:message-text-outline"
-          title={t('messages.title')}
-          description={t(redirecting ? 'messages.auth.redirecting' : 'messages.auth.loading')}
-        />
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="auth"
+            icon="mdi:message-text-outline"
+            title={t('messages.title')}
+            description={t(redirecting ? 'messages.auth.redirecting' : 'messages.auth.loading')}
+          />
+        </section>
       );
     }
 
     return (
-      <section className={styles.chatShell}>
-        <CurrentWindowProvider value={virtualWindow}>
-          <ChatApp onOpenUserProfile={handleOpenUserProfile} />
-        </CurrentWindowProvider>
-      </section>
+      <div className={styles.contentGrid}>
+        <section className={styles.summaryPanel} aria-label={t('messages.web.summaryLabel')}>
+          <div className={styles.summaryHeader}>
+            <span className={styles.kicker}>{t('messages.web.kicker')}</span>
+            <h1>{t('messages.web.heading')}</h1>
+            <p>{t('messages.web.description')}</p>
+          </div>
+          <div className={styles.summaryCards}>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryIcon}>
+                <Icon icon="mdi:forum-outline" size={22} />
+              </span>
+              <strong>{channels.length}</strong>
+              <span>{t('messages.web.channelsMetric')}</span>
+            </div>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryIcon}>
+                <Icon icon={activeChannelId ? 'mdi:message-text-outline' : 'mdi:message-outline'} size={22} />
+              </span>
+              <strong>{activeChannelId ? t('messages.web.openMetricValue') : t('messages.web.pendingMetricValue')}</strong>
+              <span>{t('messages.web.routeMetric')}</span>
+            </div>
+            <div className={styles.summaryCard}>
+              <span className={styles.summaryIcon}>
+                <Icon icon="mdi:access-point" size={22} />
+              </span>
+              <strong>{connectionState === 'connected' ? t('messages.web.connectedMetricValue') : t('messages.web.connectingMetricValue')}</strong>
+              <span>{t('messages.web.connectionMetric')}</span>
+            </div>
+          </div>
+        </section>
+        <section className={styles.chatShell}>
+          <CurrentWindowProvider value={virtualWindow}>
+            <ChatApp onOpenUserProfile={handleOpenUserProfile} />
+          </CurrentWindowProvider>
+        </section>
+      </div>
     );
   };
 

@@ -153,6 +153,7 @@
    - `P3-12-B6` 身份语义二次收口设计、代码前盘点、分批方案、`B6-1` 至 `B6-6` 代码侧与启动前验证已完成；该专题触达 Auth、注册登录、公开展示、搜索 / 艾特、资产流水、Console 设置和数据库结构口径。运行态 Gateway PC / mobile 页面 smoke 待用户明确前后端已启动后补验。
   - `P3-12-D1` 统一 UI 设计准备已启动；页面级 UI 设计与美化必须统一使用 Pencil 先做设计稿，再更新设计 / 说明文档，最后进入视觉实现。`P3-12-D2` 已将 `public-web-unified-experience.pen` 重构并强化为 `P01-P16` 公开社区 App 页面族，覆盖公开首页、发现内容流、论坛列表 / 详情、紧凑评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流。`P3-12-D3` 已将 `private-web-workflows.pen` 二次重构为 `P01-P30` 真实路由驱动的私域 / 作者态页面族，覆盖 `/workbench`、`/me` 系列、资产流水、订单、背包、通知、消息、圈子、宠物、论坛作者态、Docs 作者态和移动端 10 个单任务页面；`P3-12-D4` 已新增 `web-ui-foundation.pen` 共享 UI 基座，并补 `F02` client 公共壳层组件契约，用于约束跨 public / private / console 的 header、按钮、卡片、状态槽、移动 tab 和 client shell；`P3-12-D5` 已完成 `console-governance-workbench.pen` 的 `P00-P18` Console 设计源收口；`P3-12-D6` 已完成 Console 视觉代码实现前盘点；`P3-12-D7` 已统一 public / private / console / foundation 的移动底栏样式，并补齐公开移动工作台、Private 移动页密度和 Console `P13` 纸色运维页；`P3-12-D8` 已完成 `radish.client` 共享壳层、公开 / 私域状态槽、公开内容宽度 token 和移动底部留白首批代码对齐。当前下一步继续推进 `radish.client` 第二批视觉实现，优先私域 / 作者态真实数据面和移动单列任务流；Console 代码实现后移承接。
   - `P3-12-D9` 已完成 `radish.client` 私域交易数据面第二批视觉实现：资产流水、订单列表、订单详情和背包入口补共享状态槽、私域数据卡片节奏和移动单列任务流；`radish.client` 构建、仓库卫生检查和 `git diff --check` 通过。下一步继续通知 / 消息、圈子 / 宠物、论坛作者态和 Docs 作者态视觉实现。
+  - `P3-12-D10` 已完成 `radish.client` 通知 / 消息任务面视觉实现：`/notifications` 与 `/messages` 增加私域任务摘要、入口级状态槽容器、Web 宽高约束和移动单列布局；本批保留通知中心、聊天协议和 SignalR 逻辑不变，记录见 [P3-12-D10 radish.client 通知与消息任务面视觉实现记录](/records/p3-12-d10-radish-client-notification-message-visual-implementation-2026-06-29)。下一步继续圈子 / 宠物、论坛作者态和 Docs 作者态视觉实现。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -236,7 +237,7 @@
 
 ## 明日事项
 
-- 先读取本页、[2026-06-28 收工回顾与明日事项](/records/daily-handoff-2026-06-28)、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D8 radish.client 视觉实现首批记录](/records/p3-12-d8-radish-client-visual-first-implementation-2026-06-28)、[Web UI 共享基座设计说明](/frontend/web-ui-foundation-design)、[公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)，确认 D8 后的 client 第二批实现范围。
+- 先读取本页、[2026-06-28 收工回顾与明日事项](/records/daily-handoff-2026-06-28)、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D8 radish.client 视觉实现首批记录](/records/p3-12-d8-radish-client-visual-first-implementation-2026-06-28)、[P3-12-D10 radish.client 通知与消息任务面视觉实现记录](/records/p3-12-d10-radish-client-notification-message-visual-implementation-2026-06-29)、[Web UI 共享基座设计说明](/frontend/web-ui-foundation-design)、[公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design) 和 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)，确认 D10 后的 client 第二批剩余实现范围。
 - 第一顺位：推进 `radish.client` 第二批视觉实现，优先对齐私域 / 作者态真实页面的数据面和任务流，包括资产 / 流水、订单 / 背包、通知 / 消息、圈子 / 宠物、论坛作者态和 Docs 作者态。
 - 第二顺位：继续收敛共享壳层与状态槽复用点，检查 `WebShellHeader`、`WebStateSlot`、公开内容宽度 token、移动单列底部留白在 public / private 页面间是否仍有分叉。
 - 第三顺位：完成代码后执行 `radish.client` 类型检查 / 构建、仓库卫生检查和 `git diff --check`；真实 Gateway PC / mobile smoke 只在阶段验收或用户明确要求时，在用户确认前后端已启动后执行。
