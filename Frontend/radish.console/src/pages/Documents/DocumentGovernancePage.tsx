@@ -44,6 +44,13 @@ import {
   type WikiDocumentRevisionItemVo,
   type WikiDocumentVo,
 } from '@/api/wikiGovernanceApi';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
@@ -555,105 +562,138 @@ export const DocumentGovernancePage = () => {
     },
   ];
 
+  const documentHeaderActions = (
+    <>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".md,.markdown,.txt,text/markdown,text/plain"
+        style={{ display: 'none' }}
+        onChange={(event) => {
+          void handleImportFile(event);
+        }}
+      />
+      {canImport ? (
+        <Button
+          variant="primary"
+          icon={<FileTextOutlined />}
+          disabled={importing}
+          onClick={() => importInputRef.current?.click()}
+        >
+          {importing ? '导入中...' : '导入 Markdown'}
+        </Button>
+      ) : null}
+      <Button
+        variant="ghost"
+        icon={<ReloadOutlined />}
+        onClick={() => {
+          void loadDocuments();
+        }}
+      >
+        刷新
+      </Button>
+    </>
+  );
+
   return (
-    <div className="admin-feature-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <FileTextOutlined /> 文档治理
-            </h2>
-            <p className="admin-feature-subtle">治理文档发布状态、访问策略、版本回滚、导入导出与回收站。</p>
-          </div>
-          <Space wrap>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".md,.markdown,.txt,text/markdown,text/plain"
-              style={{ display: 'none' }}
-              onChange={(event) => {
-                void handleImportFile(event);
+    <div className="admin-feature-page document-governance-page">
+      <ConsolePageHeader
+        eyebrow="DOCUMENT GOVERNANCE"
+        title="文档治理"
+        description="治理文档发布状态、访问策略、版本回滚、导入导出与回收站。"
+        icon={<FileTextOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canView ? 'success' : 'danger'}>
+            {canView ? '可查看' : '无权限'}
+          </ConsoleStatusChip>
+        )}
+        actions={documentHeaderActions}
+      />
+
+      <ConsoleMetricGrid label="文档治理指标">
+        <ConsoleMetricCard label="当前页文档" value={documents.length} description="当前页可见文档" tone="info" />
+        <ConsoleMetricCard label="当前页已发布" value={publishedCount} description="已发布且未删除" tone="success" />
+        <ConsoleMetricCard label="当前页受限" value={restrictedCount} description="受限访问策略文档" tone="warning" />
+        <ConsoleMetricCard label="当前页内置" value={builtInCount} description="内置文档不可直接写入" />
+      </ConsoleMetricGrid>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <ConsoleToolbar
+            title="筛选文档"
+            description="按标题、slug、状态、可见性、来源和回收站范围定位治理对象。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
+            <div className="admin-table-toolbar__filters">
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="标题、slug、摘要、来源路径"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+              <Select value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
+              <Select value={visibilityFilter} options={visibilityOptions} onChange={setVisibilityFilter} />
+              <Select value={sourceTypeFilter} options={sourceTypeOptions} onChange={setSourceTypeFilter} />
+              <Select value={deletedFilter} options={deletedOptions} onChange={setDeletedFilter} />
+            </div>
+          </ConsoleToolbar>
+
+          <section className="admin-table-panel">
+            <Table
+              rowKey="voId"
+              loading={loading}
+              columns={columns}
+              dataSource={documents}
+              scroll={{ x: 1500 }}
+              pagination={{
+                current: pageIndex,
+                pageSize,
+                total,
+                showSizeChanger: true,
+                onChange: (nextPage, nextPageSize) => {
+                  void loadDocuments(nextPage, nextPageSize);
+                },
               }}
             />
-            {canImport ? (
-              <Button
-                variant="primary"
-                icon={<FileTextOutlined />}
-                disabled={importing}
-                onClick={() => importInputRef.current?.click()}
-              >
-                {importing ? '导入中...' : '导入 Markdown'}
-              </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                void loadDocuments();
-              }}
-            >
-              刷新
-            </Button>
-          </Space>
-        </div>
-      </section>
+          </section>
+        </main>
 
-      <section className="admin-feature-metrics">
-        <div className="admin-feature-metric">
-          当前页文档
-          <strong>{documents.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前页已发布
-          <strong>{publishedCount}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前页受限
-          <strong>{restrictedCount}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前页内置
-          <strong>{builtInCount}</strong>
-        </div>
-      </section>
-
-      <section className="admin-table-toolbar">
-        <div className="admin-table-toolbar__title">
-          <span>筛选条件{activeFilterCount > 0 ? `（${activeFilterCount}）` : ''}</span>
-        </div>
-        <div className="admin-table-toolbar__filters">
-          <Input
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder="标题、slug、摘要、来源路径"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-          <Select value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
-          <Select value={visibilityFilter} options={visibilityOptions} onChange={setVisibilityFilter} />
-          <Select value={sourceTypeFilter} options={sourceTypeOptions} onChange={setSourceTypeFilter} />
-          <Select value={deletedFilter} options={deletedOptions} onChange={setDeletedFilter} />
-        </div>
-      </section>
-
-      <section className="admin-table-panel">
-        <Table
-          rowKey="voId"
-          loading={loading}
-          columns={columns}
-          dataSource={documents}
-          scroll={{ x: 1500 }}
-          pagination={{
-            current: pageIndex,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            onChange: (nextPage, nextPageSize) => {
-              void loadDocuments(nextPage, nextPageSize);
-            },
-          }}
-        />
-      </section>
+        <aside className="admin-table-aside">
+          <h3>治理区块</h3>
+          <p className="admin-feature-subtle">文档治理按列表定位、详情证据、访问策略和版本回滚分区承载。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '未筛选'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">发布治理</span>
+              <span className="admin-table-summary__value">
+                {canPublish || canArchive ? '可处理发布 / 归档' : '仅查看发布状态'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">访问策略</span>
+              <span className="admin-table-summary__value">
+                {canUpdatePermissions ? '可调整可见性' : '无访问策略权限'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">版本治理</span>
+              <span className="admin-table-summary__value">
+                {canRollback ? '可回滚非当前版本' : '仅查看版本'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <Modal
         title="文档详情"
