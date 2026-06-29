@@ -1,7 +1,9 @@
 import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
+import { WebStateSlot } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './Inventory.module.css';
 
@@ -212,10 +214,11 @@ export const Inventory = ({
   if (loading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-          <p>{t('shop.loading')}</p>
-        </div>
+        <WebStateSlot
+          tone="loading"
+          title={t('shop.loading')}
+          description={t('shop.inventory.title')}
+        />
       </div>
     );
   }
@@ -229,14 +232,31 @@ export const Inventory = ({
             href={backHref}
             onClick={(event) => handleInventoryLinkClick(event, onBack)}
           >
-            ← {t('shop.back')}
+            <Icon icon="mdi:arrow-left" size={17} />
+            <span>{t('shop.back')}</span>
           </a>
         ) : (
           <button type="button" className={styles.backButton} onClick={onBack}>
-            ← {t('shop.back')}
+            <Icon icon="mdi:arrow-left" size={17} />
+            <span>{t('shop.back')}</span>
           </button>
         )}
-        <h1 className={styles.title}>{t('shop.inventory.title')}</h1>
+        <div className={styles.headerCopy}>
+          <p className={styles.kicker}>{t('shop.title')}</p>
+          <h1 className={styles.title}>{t('shop.inventory.title')}</h1>
+          <p className={styles.description}>{t('shop.inventory.emptyBenefitsHint')}</p>
+        </div>
+      </div>
+
+      <div className={styles.summaryGrid}>
+        <article className={styles.summaryCard}>
+          <span>{t('shop.inventory.tabBenefits', { count: benefits.length })}</span>
+          <strong>{benefits.length}</strong>
+        </article>
+        <article className={styles.summaryCard}>
+          <span>{t('shop.inventory.tabItems', { count: inventory.length })}</span>
+          <strong>{inventory.length}</strong>
+        </article>
       </div>
 
       <div className={styles.tabs}>
@@ -258,11 +278,12 @@ export const Inventory = ({
         {activeTab === 'benefits' ? (
           <div className={styles.benefitList}>
             {benefits.length === 0 ? (
-              <div className={styles.empty}>
-                <div className={styles.emptyIcon}>🎁</div>
-                <p>{t('shop.inventory.emptyBenefits')}</p>
-                <p className={styles.emptyHint}>{t('shop.inventory.emptyBenefitsHint')}</p>
-              </div>
+              <WebStateSlot
+                tone="empty"
+                icon="mdi:gift-outline"
+                title={t('shop.inventory.emptyBenefits')}
+                description={t('shop.inventory.emptyBenefitsHint')}
+              />
             ) : (
               benefits.map((benefit) => {
                 const benefitIconUrl = resolveMediaUrl(benefit.voBenefitIcon);
@@ -387,11 +408,12 @@ export const Inventory = ({
         ) : (
           <div className={styles.consumableList}>
             {inventory.length === 0 ? (
-              <div className={styles.empty}>
-                <div className={styles.emptyIcon}>📦</div>
-                <p>{t('shop.inventory.emptyItems')}</p>
-                <p className={styles.emptyHint}>{t('shop.inventory.emptyItemsHint')}</p>
-              </div>
+              <WebStateSlot
+                tone="empty"
+                icon="mdi:package-variant-closed"
+                title={t('shop.inventory.emptyItems')}
+                description={t('shop.inventory.emptyItemsHint')}
+              />
             ) : (
               inventory.map((item) => {
                 const itemIconUrl = resolveMediaUrl(item.voItemIcon);

@@ -8,6 +8,7 @@ import {
   type CoinTransaction,
   type UserBalance,
 } from '@/api/coin';
+import { WebStateSlot } from '@/components/web-shell';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { buildMePath, type MeRoute } from './meRouteState';
@@ -229,21 +230,25 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
         )}
 
         {error ? (
-          <div className={styles.statusBlock}>
-            <Icon icon="mdi:alert-circle-outline" size={24} />
-            <div>
-              <strong>{t('me.assets.loadFailed')}</strong>
-              <p>{error}</p>
-            </div>
-          </div>
+          <WebStateSlot
+            tone="error"
+            compact
+            title={t('me.assets.loadFailed')}
+            description={error}
+            actions={[
+              {
+                label: t('me.refresh'),
+                onClick: () => void loadAssetsData(),
+              },
+            ]}
+          />
         ) : loading && pageData.transactions.length === 0 ? (
-          <div className={styles.statusBlock}>
-            <Icon icon="mdi:loading" size={24} className={styles.spin} />
-            <div>
-              <strong>{t('me.assets.loading')}</strong>
-              <p>{t('me.assets.loadingDescription')}</p>
-            </div>
-          </div>
+          <WebStateSlot
+            tone="loading"
+            compact
+            title={t('me.assets.loading')}
+            description={t('me.assets.loadingDescription')}
+          />
         ) : pageData.transactions.length > 0 ? (
           <div className={styles.transactionList}>
             {pageData.transactions.map((transaction) => (
@@ -271,13 +276,13 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
             ))}
           </div>
         ) : (
-          <div className={styles.statusBlock}>
-            <Icon icon="mdi:receipt-text-outline" size={24} />
-            <div>
-              <strong>{t('me.assets.empty')}</strong>
-              <p>{t('me.assets.emptyDescription')}</p>
-            </div>
-          </div>
+          <WebStateSlot
+            tone="empty"
+            compact
+            icon="mdi:receipt-text-outline"
+            title={t('me.assets.empty')}
+            description={t('me.assets.emptyDescription')}
+          />
         )}
 
         {isTransactionsMode && pageData.totalPages > 1 && (

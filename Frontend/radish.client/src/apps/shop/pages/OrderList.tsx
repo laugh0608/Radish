@@ -2,7 +2,9 @@ import type { MouseEvent } from 'react';
 import type { OrderListItem } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import { getOrderStatusColor } from '@/api/shop';
+import { WebStateSlot } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './OrderList.module.css';
 
@@ -58,23 +60,35 @@ export const OrderList = ({
             href={backHref}
             onClick={(event) => handleOrderListLinkClick(event, onBack)}
           >
-            ← {t('shop.back')}
+            <Icon icon="mdi:arrow-left" size={17} />
+            <span>{t('shop.back')}</span>
           </a>
         ) : (
           <button type="button" className={styles.backButton} onClick={onBack}>
-            ← {t('shop.back')}
+            <Icon icon="mdi:arrow-left" size={17} />
+            <span>{t('shop.back')}</span>
           </button>
         )}
-        <h1 className={styles.title}>{t('shop.orders.title')}</h1>
+        <div className={styles.headerCopy}>
+          <p className={styles.kicker}>{t('shop.title')}</p>
+          <h1 className={styles.title}>{t('shop.orders.title')}</h1>
+          <p className={styles.description}>{t('shop.orders.emptyDescription')}</p>
+        </div>
       </div>
 
       {loading ? (
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-          <p>{t('shop.loading')}</p>
-        </div>
+        <WebStateSlot
+          tone="loading"
+          title={t('shop.loading')}
+          description={t('shop.orders.title')}
+        />
       ) : orders.length > 0 ? (
         <>
+          <div className={styles.summaryBar}>
+            <span>{t('shop.orders.title')}</span>
+            <strong>{orders.length}</strong>
+            <span>{t('shop.orders.pageInfo', { current: currentPage, total: totalPages })}</span>
+          </div>
           <div className={styles.orderList}>
             {orders.map((order) => {
               const productIconUrl = resolveMediaUrl(order.voProductIcon);
@@ -93,12 +107,16 @@ export const OrderList = ({
 
                   <div className={styles.orderContent}>
                     <div className={styles.productInfo}>
-                      {productIconUrl && (
+                      {productIconUrl ? (
                         <img
                           src={productIconUrl}
                           alt={order.voProductName}
                           className={styles.productIcon}
                         />
+                      ) : (
+                        <div className={styles.productIconFallback}>
+                          <Icon icon="mdi:gift-outline" size={22} />
+                        </div>
                       )}
                       <div className={styles.productDetails}>
                         <h3 className={styles.productName}>{order.voProductName}</h3>
@@ -129,7 +147,15 @@ export const OrderList = ({
                 <div
                   key={order.voId}
                   className={styles.orderCard}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onOrderClick(order.voId)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onOrderClick(order.voId);
+                    }
+                  }}
                 >
                   {orderContent}
                 </div>
@@ -160,11 +186,26 @@ export const OrderList = ({
           )}
         </>
       ) : (
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>📦</div>
-          <h3>{t('shop.orders.emptyTitle')}</h3>
-          <p>{t('shop.orders.emptyDescription')}</p>
-        </div>
+        <WebStateSlot
+          tone="empty"
+          icon="mdi:package-variant-closed"
+          title={t('shop.orders.emptyTitle')}
+          description={t('shop.orders.emptyDescription')}
+          actions={[
+            backHref
+              ? {
+                  label: t('shop.nav.home'),
+                  href: backHref,
+                  kind: 'secondary',
+                  onClick: (event) => handleOrderListLinkClick(event as MouseEvent<HTMLAnchorElement>, onBack),
+                }
+              : {
+                  label: t('shop.nav.home'),
+                  kind: 'secondary',
+                  onClick: onBack,
+                },
+          ]}
+        />
       )}
     </div>
   );
