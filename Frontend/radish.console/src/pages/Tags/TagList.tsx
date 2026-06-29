@@ -30,6 +30,13 @@ import {
   type TagVo,
 } from '@/api/tagApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { usePermission } from '@/hooks/usePermission';
 import { TagForm } from './TagForm';
 import { log } from '@/utils/logger';
@@ -310,15 +317,18 @@ export const TagList = () => {
   ];
   return (
     <div className="admin-feature-page tag-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <TagsOutlined /> 标签管理
-            </h2>
-            <p className="admin-feature-subtle">维护社区内容标签、固定标签和排序权重。</p>
-          </div>
-          <div className="tag-list-header-actions">
+      <ConsolePageHeader
+        eyebrow="CONTENT TAXONOMY"
+        title="标签管理"
+        description="维护社区内容标签、固定标签和排序权重。"
+        icon={<TagsOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canCreateTag ? 'success' : 'neutral'}>
+            {canCreateTag ? '可新增' : '只读'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
+          <>
             <Button icon={<ReloadOutlined />} onClick={() => {
               void loadTags();
             }}>
@@ -329,36 +339,28 @@ export const TagList = () => {
                 新增标签
               </Button>
             ) : null}
-          </div>
-        </div>
-      </section>
+          </>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="标签列表指标">
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{total}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页标签
-          <strong>{tags.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页启用
-          <strong>{enabledTags}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          固定标签
-          <strong>{fixedTags}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="标签列表指标">
+        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的标签数量" tone="info" />
+        <ConsoleMetricCard label="本页标签" value={tags.length} description="当前页可见标签" />
+        <ConsoleMetricCard label="本页启用" value={enabledTags} description="当前页启用标签" tone="success" />
+        <ConsoleMetricCard label="固定标签" value={fixedTags} description="固定标签数量" tone="warning" />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="标签筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选标签</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选标签"
+            description="按标签名称、描述、类型、启用状态和软删除范围定位标签。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
             <div className="admin-table-toolbar__filters">
               <Input
                 className="tag-list-filter-input"
@@ -401,7 +403,7 @@ export const TagList = () => {
                 ]}
               />
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table<TagVo>

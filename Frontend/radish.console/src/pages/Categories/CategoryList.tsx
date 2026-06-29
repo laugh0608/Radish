@@ -30,6 +30,13 @@ import {
   type CategoryVo,
 } from '@/api/categoryApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { CategoryForm } from './CategoryForm';
@@ -317,15 +324,18 @@ export const CategoryList = () => {
 
   return (
     <div className="admin-feature-page category-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <AppstoreOutlined /> 分类管理
-            </h2>
-            <p className="admin-feature-subtle">维护社区内容分类、层级关系和排序权重。</p>
-          </div>
-          <div className="category-list-header-actions">
+      <ConsolePageHeader
+        eyebrow="CONTENT TAXONOMY"
+        title="分类管理"
+        description="维护社区内容分类、层级关系和排序权重。"
+        icon={<AppstoreOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canCreateCategory ? 'success' : 'neutral'}>
+            {canCreateCategory ? '可新增' : '只读'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
+          <>
             <Button icon={<ReloadOutlined />} onClick={() => {
               void loadCategories();
             }}>
@@ -336,36 +346,28 @@ export const CategoryList = () => {
                 新增分类
               </Button>
             ) : null}
-          </div>
-        </div>
-      </section>
+          </>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="分类列表指标">
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{total}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页分类
-          <strong>{categories.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页启用
-          <strong>{enabledCategories}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          顶级分类
-          <strong>{rootCategories}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="分类列表指标">
+        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的分类数量" tone="info" />
+        <ConsoleMetricCard label="本页分类" value={categories.length} description="当前页可见分类" />
+        <ConsoleMetricCard label="本页启用" value={enabledCategories} description="当前页启用分类" tone="success" />
+        <ConsoleMetricCard label="顶级分类" value={rootCategories} description="当前页顶级分类" tone="warning" />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="分类筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选分类</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选分类"
+            description="按分类名称、描述、Slug、启用状态和软删除范围定位分类。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
             <div className="admin-table-toolbar__filters">
               <Input
                 className="category-list-filter-input"
@@ -397,7 +399,7 @@ export const CategoryList = () => {
                 ]}
               />
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table<CategoryVo>
