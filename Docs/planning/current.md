@@ -162,7 +162,7 @@
   - `P3-12-D16` 已完成 `radish.console` 用户表格代表页视觉迁移：`UserList` 的页头、指标和筛选工具条已迁入 D14 语义组件，保留用户管理 API、查看权限、关键词 / 状态 / 角色筛选、分页、详情路由、表格列和对象摘要侧栏不变；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，记录见 [P3-12-D16 radish.console 用户表格代表页视觉迁移记录](/records/p3-12-d16-radish-console-user-table-visual-migration-2026-06-29)。下一步继续迁移商品 / 文档等表格 CRUD 页，权限矩阵和治理工作台继续后置到区块边界明确后推进。
   - `P3-12-D17` 已完成 `radish.console` 商品表格代表页视觉迁移：`ProductList` 的页头、指标和筛选工具条已迁入 D14 语义组件，保留商品 API、权限、URL 查询、分页、表格列、详情抽屉、创建 / 编辑、上下架、删除、关联订单跳转和对象摘要侧栏不变；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，记录见 [P3-12-D17 radish.console 商品表格代表页视觉迁移记录](/records/p3-12-d17-radish-console-product-table-visual-migration-2026-06-29)。下一步评估文档治理页是否先拆分治理工作台区块，再迁入语义组件；标签、分类、贴纸等低风险列表页可作为普通 CRUD 收尾候选。
   - `P3-12-D18` 已完成 `radish.console` 文档治理页区块边界与首批语义迁移：`DocumentGovernancePage` 的页头、指标和筛选区已迁入 D14 语义组件，首屏右侧补治理区块摘要，明确列表定位、详情证据、访问策略和版本回滚边界；文档治理 API、权限、筛选、分页、发布 / 下架 / 归档、访问策略、导入导出、删除 / 恢复、版本列表和回滚契约保持不变；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，记录见 [P3-12-D18 radish.console 文档治理页区块边界与首批语义迁移记录](/records/p3-12-d18-radish-console-document-governance-visual-boundary-2026-06-29)。下一步可继续评估文档治理详情 / 访问策略 / 版本治理是否拆出稳定工作台区块，或先迁移标签 / 分类 / 贴纸等低风险普通列表页做 Console 表格视觉收口。
-  - `P3-12-D19` 已完成 `radish.console` 标签 / 分类普通列表视觉迁移：`TagList` 与 `CategoryList` 的页头、指标和筛选工具条已迁入 D14 语义组件，保留标签 / 分类 API、权限、关键词 / 类型 / 状态 / 回收站筛选、分页、批量删除、排序、启停、固定标签、删除 / 恢复和表格密度不变；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，记录见 [P3-12-D19 radish.console 标签与分类列表视觉迁移记录](/records/p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29)。下一步优先评估贴纸分组 / 贴纸列表是否按同口径迁移，或先做 Console 表格视觉成组静态收口检查。
+  - `P3-12-D19` 已完成 `radish.console` 标签 / 分类普通列表视觉迁移：`TagList` 与 `CategoryList` 的页头、指标和筛选工具条已迁入 D14 语义组件，保留标签 / 分类 API、权限、关键词 / 类型 / 状态 / 回收站筛选、分页、批量删除、排序、启停、固定标签、删除 / 恢复和表格密度不变；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，Gateway PC `1920x1080` 与移动 `390x844` CSS 视图真实联调已覆盖 Console 登录回流、标签 / 分类页面渲染和关键词筛选，记录见 [P3-12-D19 radish.console 标签与分类列表视觉迁移记录](/records/p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29)。下一步优先评估贴纸分组 / 贴纸列表是否按同口径迁移，或先做 Console 表格视觉成组静态收口检查。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -246,10 +246,10 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D19 radish.console 标签与分类列表视觉迁移记录](/records/p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29)、[P3-12-D18 radish.console 文档治理页区块边界与首批语义迁移记录](/records/p3-12-d18-radish-console-document-governance-visual-boundary-2026-06-29) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认 Console 视觉实现下一批页面范围。
-- 第一顺位：继续评估贴纸分组 / 贴纸列表是否按标签 / 分类同口径迁移；如果本阶段准备转入阶段验收，先做 Console 表格视觉成组静态收口检查。
-- 第二顺位：保持 Console shell、侧栏、顶栏、页面语义组件在 PC / mobile 视图下的可读性检查；真实 Gateway PC / mobile smoke 只在阶段验收或用户明确要求时，在用户确认前后端已启动后执行。
-- 第三顺位：完成代码后执行 `radish.console` 类型检查 / 构建、仓库卫生检查和 `git diff --check`。
+- 先读取本页、[2026-06-29 收工回顾与明日事项](/records/daily-handoff-2026-06-29)、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D19 radish.console 标签与分类列表视觉迁移记录](/records/p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29)、[P3-12-D18 radish.console 文档治理页区块边界与首批语义迁移记录](/records/p3-12-d18-radish-console-document-governance-visual-boundary-2026-06-29) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认 Console 视觉实现下一批页面范围。
+- 第一顺位：进入 `P3-12-D20` 判断贴纸分组 / 贴纸列表迁移边界。若页面仍按普通 CRUD 承载，沿用 D14 语义组件迁移页头、指标和筛选工具条；若图片素材、分组详情、上传预览或批量素材动作会改变工作流，应先拆清媒体资产列表与分组详情边界，再进入代码。
+- 第二顺位：如贴纸页暂不推进，做 Console 表格视觉成组静态收口检查，覆盖 D14-D19 的侧栏分组、页头、指标、筛选工具条、批量动作、权限反馈、表格密度和移动 CSS 视图可用性。
+- 第三顺位：完成代码后执行 `radish.console` 类型检查 / 构建、仓库卫生检查和 `git diff --check`；真实 Gateway PC / mobile smoke 只在阶段验收或用户明确要求时，在用户确认前后端已启动后执行。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
 ## 并行维护项

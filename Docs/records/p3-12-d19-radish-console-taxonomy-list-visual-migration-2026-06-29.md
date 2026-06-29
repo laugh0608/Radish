@@ -23,7 +23,7 @@
 - 不修改标签 / 分类 API、权限键、筛选参数、分页行为、表格列、排序、启停、固定标签、删除 / 恢复、批量删除或后端契约。
 - 不新增批量启停、批量恢复、分类树重排工作台或标签分类合并能力。
 - 不调整 `TagForm`、`CategoryForm`、对象侧栏、确认弹窗或错误提示契约。
-- 不执行 Gateway PC / mobile 真实页面 smoke；该项继续按阶段验收或用户明确要求执行，且执行前需等待用户确认前后端已启动。
+- 代码提交时未执行 Gateway PC / mobile 真实页面 smoke；本轮收工前用户已确认前后端启动，随后已补真实联调，结果见验证部分。
 
 ## 验证
 
@@ -31,8 +31,12 @@
 - `npm run build --workspace=radish.console`：通过。
 - `npm run check:repo-hygiene:changed`：通过。
 - `git diff --check`：通过。
+- Gateway PC 真实联调：通过。使用 `https://localhost:5000/console/`，本地开发种子账号 `admin@radishx.com / admin123456` 登录，OIDC 登录与授权回流成功；PC `1920x1080` 覆盖 `/console/tags` 与 `/console/categories`，页头、指标、筛选工具条、表格、排序输入、行级动作和摘要侧栏均正常渲染；标签关键词“公告”和分类关键词“技术”筛选均返回 200，并正确更新指标、筛选状态和列表数据。
+- Gateway 移动视图联调：通过。使用 `390x844` CSS 视口覆盖 `/console/categories` 与 `/console/tags`，页头、指标、筛选、表格和行级动作在移动宽度下仍可访问；CLI 本轮未单独设置 DPR，因此该结论代表移动 CSS 布局宽度检查，不等同于高 DPR 物理屏完整 smoke。
+- 浏览器控制台：未发现 error / warning；`Tag/GetPage` 与 `Category/GetPage` 相关请求均返回 200。
 
 ## 下一步
 
-- 继续评估贴纸分组 / 贴纸列表是否按标签 / 分类同口径迁移。
+- 下一步优先评估贴纸分组 / 贴纸列表是否按标签 / 分类同口径迁移。
+- 贴纸列表带图片、分组跳转和素材管理语义，推进前应先确认表情包管理页面是否仍属于普通 CRUD 收尾，还是需要拆成媒体资产列表与分组详情两层迁移。
 - 若不继续扩展页面范围，先做 Console 表格视觉成组静态收口检查，重点看页头、指标、筛选工具条、批量动作和移动端密度是否一致。
