@@ -367,7 +367,9 @@ export const PetApp = () => {
   };
 
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:leaf') => (
-    <WebStateSlot tone={icon === 'mdi:progress-clock' ? 'loading' : 'auth'} title={title} description={description} icon={icon} />
+    <section className={styles.stateShell}>
+      <WebStateSlot tone={icon === 'mdi:progress-clock' ? 'loading' : 'auth'} title={title} description={description} icon={icon} />
+    </section>
   );
 
   const renderClaimPanel = () => (
@@ -417,6 +419,29 @@ export const PetApp = () => {
               <span>{pet.voMoodDisplay}</span>
               <span>{t('pet.growthValue', { value: pet.voGrowthValue })}</span>
               {loadedAtLabel ? <span>{t('pet.refreshedAt', { time: loadedAtLabel })}</span> : null}
+            </div>
+            <div className={styles.heroMetrics} aria-label={t('pet.metricsLabel')}>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>
+                  <Icon icon="mdi:sprout-outline" size={20} />
+                </span>
+                <strong>{pet.voGrowthValue}</strong>
+                <span>{t('pet.metric.growth')}</span>
+              </div>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>
+                  <Icon icon="mdi:history" size={20} />
+                </span>
+                <strong>{pageData.logs.length}</strong>
+                <span>{t('pet.metric.logs')}</span>
+              </div>
+              <div className={styles.heroMetric}>
+                <span className={styles.heroMetricIcon}>
+                  <Icon icon={pet.voIsPublic ? 'mdi:eye-outline' : 'mdi:eye-off-outline'} size={20} />
+                </span>
+                <strong>{t(pet.voIsPublic ? 'pet.metric.visibility.public' : 'pet.metric.visibility.private')}</strong>
+                <span>{t('pet.metric.visibility')}</span>
+              </div>
             </div>
           </div>
           <div className={styles.heroActions}>

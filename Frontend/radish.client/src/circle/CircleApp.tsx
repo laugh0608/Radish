@@ -291,7 +291,16 @@ export const CircleApp = () => {
 
   const renderFeed = () => {
     if (feedItems.length === 0) {
-      return <div className={styles.empty}>{t('circle.feedEmpty')}</div>;
+      return (
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="empty"
+            icon="mdi:forum-outline"
+            title={t('circle.empty.feedTitle')}
+            description={t('circle.feedEmpty')}
+          />
+        </section>
+      );
     }
 
     return (
@@ -333,7 +342,16 @@ export const CircleApp = () => {
 
   const renderUsers = () => {
     if (userItems.length === 0) {
-      return <div className={styles.empty}>{route.tab === 'following' ? t('circle.followingEmpty') : t('circle.followersEmpty')}</div>;
+      return (
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="empty"
+            icon={route.tab === 'following' ? 'mdi:account-heart-outline' : 'mdi:account-group-outline'}
+            title={t(route.tab === 'following' ? 'circle.empty.followingTitle' : 'circle.empty.followersTitle')}
+            description={route.tab === 'following' ? t('circle.followingEmpty') : t('circle.followersEmpty')}
+          />
+        </section>
+      );
     }
 
     return (
@@ -373,30 +391,43 @@ export const CircleApp = () => {
   const renderContent = () => {
     if (!authReady || redirecting || !loggedIn) {
       return (
-        <WebStateSlot
-          tone="auth"
-          icon="mdi:account-clock-outline"
-          title={redirecting ? t('circle.redirectingTitle') : t('circle.authLoadingTitle')}
-          description={redirecting ? t('circle.redirectingDescription') : t('circle.authLoadingDescription')}
-        />
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="auth"
+            icon="mdi:account-clock-outline"
+            title={redirecting ? t('circle.redirectingTitle') : t('circle.authLoadingTitle')}
+            description={redirecting ? t('circle.redirectingDescription') : t('circle.authLoadingDescription')}
+          />
+        </section>
       );
     }
 
     if (loading) {
-      return <div className={styles.loading}>{t('common.loading')}</div>;
+      return (
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="loading"
+            icon="mdi:progress-clock"
+            title={t('circle.loadingTitle')}
+            description={t('circle.loadingDescription')}
+          />
+        </section>
+      );
     }
 
     if (errorMessage) {
       return (
-        <WebStateSlot
-          tone="error"
-          title={t('circle.loadFailedTitle')}
-          description={errorMessage}
-          actions={[{
-            label: t('common.retry'),
-            onClick: () => void loadCircleData(route),
-          }]}
-        />
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="error"
+            title={t('circle.loadFailedTitle')}
+            description={errorMessage}
+            actions={[{
+              label: t('common.retry'),
+              onClick: () => void loadCircleData(route),
+            }]}
+          />
+        </section>
       );
     }
 
@@ -426,14 +457,27 @@ export const CircleApp = () => {
             <p className={styles.kicker}>{t('circle.heroKicker')}</p>
             <h1 className={styles.introTitle}>{t('circle.heroTitle')}</h1>
             <p className={styles.introDescription}>{t('circle.heroDescription')}</p>
-            <div className={styles.summary} aria-label={t('circle.summaryLabel')}>
-              <div className={styles.summaryItem}>
-                <span>{t('circle.summary.following')}</span>
+            <div className={styles.summaryGrid} aria-label={t('circle.summaryLabel')}>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryIcon}>
+                  <Icon icon="mdi:account-heart-outline" size={20} />
+                </span>
                 <strong>{summary.voFollowingCount}</strong>
+                <span>{t('circle.summary.following')}</span>
               </div>
-              <div className={styles.summaryItem}>
-                <span>{t('circle.summary.followers')}</span>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryIcon}>
+                  <Icon icon="mdi:account-group-outline" size={20} />
+                </span>
                 <strong>{summary.voFollowerCount}</strong>
+                <span>{t('circle.summary.followers')}</span>
+              </div>
+              <div className={styles.summaryCard}>
+                <span className={styles.summaryIcon}>
+                  <Icon icon={route.tab === 'feed' ? 'mdi:newspaper-variant-outline' : 'mdi:card-account-details-outline'} size={20} />
+                </span>
+                <strong>{total}</strong>
+                <span>{t(`circle.summary.${route.tab}`)}</span>
               </div>
             </div>
           </div>

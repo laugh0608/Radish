@@ -21,11 +21,15 @@
 .intro {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
+  align-items: stretch;
   gap: 20px;
-  padding: 4px 0 18px;
+  padding: 20px;
   margin-bottom: 14px;
-  border-bottom: 1px solid var(--theme-border-soft);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
+  box-shadow: var(--theme-shadow-soft);
 }
 
 .introBody {
@@ -63,34 +67,46 @@
   flex-wrap: wrap;
 }
 
-.summary {
-  display: inline-flex;
-  align-items: stretch;
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
   gap: 10px;
-  flex-wrap: wrap;
   margin-top: 16px;
 }
 
-.summaryItem {
-  min-width: 120px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px;
+.summaryCard {
+  min-width: 0;
+  padding: 14px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
 }
 
-.summaryItem span {
-  color: var(--theme-text-secondary);
-  font-size: 13px;
+.summaryIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: var(--theme-accent-ink);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
 }
 
-.summaryItem strong {
+.summaryCard strong {
+  display: block;
   font-size: 20px;
   color: var(--theme-brand-primary);
+  line-height: 1.2;
+}
+
+.summaryCard span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .forumLink,
@@ -195,8 +211,7 @@
 .feedItem,
 .userItem,
 .statusPanel,
-.loading,
-.empty {
+.stateShell {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
@@ -346,13 +361,8 @@
   font-weight: 700;
 }
 
-.loading,
-.empty {
-  min-height: 220px;
-  display: grid;
-  place-items: center;
-  padding: 28px;
-  color: var(--theme-text-secondary);
+.stateShell {
+  overflow: hidden;
 }
 
 .pagination {
@@ -397,13 +407,22 @@
     flex-direction: column;
   }
 
-  .summary {
+  .summaryGrid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
-  .summaryItem {
-    min-width: 0;
+  .summaryCard {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .summaryIcon {
+    grid-row: span 2;
+    margin-bottom: 0;
   }
 
   .forumLink {

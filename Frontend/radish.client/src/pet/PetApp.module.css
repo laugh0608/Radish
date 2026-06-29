@@ -11,7 +11,7 @@
   padding: 24px 0 42px;
 }
 
-.statusPanel,
+.stateShell,
 .claimPanel,
 .heroPanel,
 .statCard,
@@ -25,17 +25,10 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
-.statusPanel {
-  min-height: 260px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 32px;
-  color: var(--theme-text-secondary);
+.stateShell {
+  overflow: hidden;
 }
 
-.statusPanel h1,
 .claimBody h1,
 .heroBody h1,
 .sectionHeader h2 {
@@ -43,12 +36,6 @@
   color: var(--theme-text-primary);
 }
 
-.statusPanel h1 {
-  margin-bottom: 6px;
-  font-size: 18px;
-}
-
-.statusPanel p,
 .sectionHeader p,
 .emptyText {
   margin: 0;
@@ -138,6 +125,49 @@
   margin-top: 10px;
   color: var(--theme-text-secondary);
   font-size: 13px;
+}
+
+.heroMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.heroMetric {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+}
+
+.heroMetricIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: var(--theme-accent-ink);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+}
+
+.heroMetric strong {
+  display: block;
+  color: var(--theme-text-primary);
+  font-size: 18px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.heroMetric span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .heroActions {
@@ -600,12 +630,6 @@
     padding: 14px 0 28px;
   }
 
-  .statusPanel {
-    min-height: 220px;
-    align-items: flex-start;
-    justify-content: flex-start;
-  }
-
   .claimPanel,
   .heroPanel {
     grid-template-columns: 1fr;
@@ -625,8 +649,22 @@
 
   .claimForm,
   .heroActions,
-  .actionGrid {
+  .actionGrid,
+  .heroMetrics {
     grid-template-columns: 1fr;
+  }
+
+  .heroMetric {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .heroMetricIcon {
+    grid-row: span 2;
+    margin-bottom: 0;
   }
 
   .primaryButton,
