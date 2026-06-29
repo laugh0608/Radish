@@ -65,6 +65,8 @@ P3-12-A 已于 2026-06-21 完成只读盘点。结论：
 
 `P3-12-B4` 已完成文档作者态归属裁决，结论见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)。`B4-1` 正式 Web 作者入口首批代码已完成：公开 `/docs` 保持阅读、搜索、正文内链和分享；新增 `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id` 承接登录态创建、编辑和版本回看；发布、撤回、归档、恢复、受限可见性、角色 / 权限配置、导入导出和回滚等治理动作归 Console；WebOS `WikiApp` 只作为 `/desktop` 历史维护入口保留。`B4-2` Console 文档治理首批代码已完成：新增 `/console/documents` 对应内部路由 `/documents`、治理专用读取 / 权限策略 API、Console 权限键、资源种子和权限覆盖矩阵；正文创建 / 编辑继续归正式 Web 作者入口，公开 `/docs` 继续只读。
 
+文档本地源与在线编辑冲突不进入 P3-12 当前开发批次，后续按 [文档本地源与在线编辑冲突治理](/planning/document-local-source-conflict-governance) 单独评审；当前仍保持固定文档只读、在线文档数据库写入权威、Markdown 导入作为在线副本的稳定口径。
+
 `P3-12-D1` 统一 UI 设计准备已启动，结论见 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)。当前已完成页面矩阵、设计源拆分、停止线和后续执行顺序；用户确认前后端已启动后，B4 / D1 阶段 Gateway PC / mobile smoke 已补齐，结论见 [P3-12 B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。
 
 `P3-12-D2` 公开 Web 统一体验设计源已扩展并收口，结论见 [P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24)，实现口径见 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)。`public-web-unified-experience.pen` 当前包含 `P01-P16`，覆盖公开首页、发现流、论坛列表 / 详情、紧凑评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流；已按用户反馈收紧 P03 / P04 / P07 / P15 与移动页信息密度。本批仍停留在 Pencil 设计源和说明文档阶段，不进入 `radish.client` 视觉代码。
