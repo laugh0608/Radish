@@ -31,13 +31,14 @@ import { getAuthServerBaseUrl, getPostLogoutRedirectUri, getAvatarUrl } from '@/
 import { tokenService } from '../../services/tokenService';
 import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
-import { getActiveMenuKey, getSidebarRoutes } from '@/router/routeMeta';
+import { getActiveMenuKey, getSidebarRouteGroups, type ConsoleRouteIconKey } from '@/router/routeMeta';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
 
 const MOBILE_SIDEBAR_MEDIA_QUERY = '(max-width: 768px)';
+const DESKTOP_SIDEBAR_WIDTH = 300;
 const DESKTOP_COLLAPSED_WIDTH = 88;
 const MOBILE_COLLAPSED_WIDTH = 64;
 
@@ -49,22 +50,21 @@ function isMobileSidebarLayout(): boolean {
   return window.matchMedia(MOBILE_SIDEBAR_MEDIA_QUERY).matches;
 }
 
-const menuIconMap: Record<string, ReactNode> = {
+const menuIconMap: Record<ConsoleRouteIconKey, ReactNode> = {
   dashboard: <DashboardOutlined />,
-  applications: <AppstoreOutlined />,
-  products: <ShoppingOutlined />,
-  orders: <FileTextOutlined />,
-  users: <TeamOutlined />,
-  roles: <SafetyOutlined />,
-  categories: <AppstoreOutlined />,
-  tags: <TagsOutlined />,
-  documents: <FileTextOutlined />,
-  stickers: <AppstoreOutlined />,
+  application: <AppstoreOutlined />,
+  product: <ShoppingOutlined />,
+  order: <FileTextOutlined />,
+  user: <TeamOutlined />,
+  role: <SafetyOutlined />,
+  taxonomy: <TagsOutlined />,
+  document: <FileTextOutlined />,
+  sticker: <AppstoreOutlined />,
   moderation: <SafetyOutlined />,
-  coins: <WalletOutlined />,
+  coin: <WalletOutlined />,
   experience: <TrophyOutlined />,
-  'system-config': <SettingOutlined />,
-  hangfire: <ClockCircleOutlined />,
+  setting: <SettingOutlined />,
+  task: <ClockCircleOutlined />,
 };
 
 export interface AdminLayoutProps {
@@ -85,14 +85,27 @@ export function AdminLayout({ children }: AdminLayoutProps) {
 
   useGlobalSearchHotkey(() => setSearchVisible(true));
 
-  const sidebarRoutes = useMemo(() => getSidebarRoutes(user), [user]);
+  const sidebarGroups = useMemo(() => getSidebarRouteGroups(user), [user]);
+  const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(
-    () => sidebarRoutes.map((route) => ({
-      key: route.key,
-      icon: menuIconMap[route.key],
-      label: route.title,
+    () => sidebarGroups.map((group) => ({
+      key: `group:${group.key}`,
+      label: collapsed ? undefined : group.label,
+      type: 'group',
+      children: group.routes.map((route) => ({
+        key: route.key,
+        icon: route.iconKey ? menuIconMap[route.iconKey] : undefined,
+        label: route.badgeText ? (
+          <span className="admin-menu-label">
+            <span>{route.title}</span>
+            <span className={`admin-menu-badge admin-menu-badge--${route.badgeTone ?? 'neutral'}`}>
+              {route.badgeText}
+            </span>
+          </span>
+        ) : route.title,
+      })),
     })),
-    [sidebarRoutes]
+    [collapsed, sidebarGroups]
   );
 
   const userMenuItems: MenuProps['items'] = [
@@ -188,7 +201,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         trigger={null}
         collapsible
         collapsed={collapsed}
-        width={268}
+        width={DESKTOP_SIDEBAR_WIDTH}
         collapsedWidth={isMobileLayout ? MOBILE_COLLAPSED_WIDTH : DESKTOP_COLLAPSED_WIDTH}
         className="admin-sider"
       >

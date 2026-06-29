@@ -11,7 +11,7 @@
   top: 0;
   bottom: 0;
   z-index: 10;
-  padding: 0 14px;
+  padding: 0 16px;
   background: var(--console-bg-muted) !important;
   border-right: 1px solid var(--console-border-subtle);
 }
@@ -68,14 +68,22 @@
 }
 
 .admin-sider .ant-menu {
-  margin-top: 20px;
+  margin-top: 18px;
   background: transparent;
   border-inline-end: 0 !important;
 }
 
+.admin-sider .ant-menu-item-group-title {
+  padding: 14px 10px 6px;
+  color: var(--console-text-muted);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
 .admin-sider .ant-menu-item {
-  width: 240px;
-  height: 40px;
+  width: 266px;
+  height: 42px;
   margin: 5px 0;
   padding-inline: 14px !important;
   color: var(--console-text-secondary);
@@ -109,14 +117,42 @@
   padding-inline: 0 !important;
 }
 
+.admin-sider.ant-layout-sider-collapsed .ant-menu-item-group-title {
+  display: none;
+}
+
+.admin-menu-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-menu-badge {
+  display: inline-flex;
+  min-width: 24px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0 6px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+  color: var(--console-text-secondary);
+  background: var(--console-bg-surface);
+  font-size: 11px;
+  font-weight: 750;
+}
+
 /* 根据侧边栏展开/折叠状态调整右侧布局的左边距 */
 .admin-layout > .ant-layout {
-  margin-left: 268px;
+  margin-left: 300px;
   transition: margin-left 0.2s;
   display: flex;
   flex-direction: column;
   flex: 1;
-  width: calc(100% - 268px);
+  width: calc(100% - 300px);
   background: var(--console-bg-app);
 }
 
@@ -129,7 +165,7 @@
   position: sticky;
   top: 0;
   z-index: 9;
-  height: 74px;
+  height: 84px;
   padding: 0 30px;
   background: var(--console-bg-surface);
   display: flex;

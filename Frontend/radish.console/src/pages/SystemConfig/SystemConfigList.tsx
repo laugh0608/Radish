@@ -34,6 +34,13 @@ import { uploadAttachmentImage } from '@/api/attachmentApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { getAvatarUrl } from '@/config/env';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { SystemConfigForm } from './SystemConfigForm';
 import { log } from '@/utils/logger';
 import '../adminFeature.css';
@@ -550,14 +557,17 @@ export const SystemConfigList = () => {
 
   return (
     <div className="admin-feature-page system-config-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <SettingOutlined /> 系统设置
-            </h2>
-            <p className="admin-feature-subtle">按注册定义查看默认值、当前覆盖值、风险等级和生效方式。</p>
-          </div>
+      <ConsolePageHeader
+        eyebrow="SYSTEM POLICY"
+        title="系统设置"
+        description="按注册定义查看默认值、当前覆盖值、风险等级和生效方式。"
+        icon={<SettingOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canEditSystemConfig ? 'success' : 'neutral'}>
+            {canEditSystemConfig ? '可编辑低风险设置' : '只读查看'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
           <div className="system-config-header-actions">
             <Button
               icon={<ReloadOutlined />}
@@ -566,27 +576,15 @@ export const SystemConfigList = () => {
               刷新
             </Button>
           </div>
-        </div>
-      </section>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="系统设置指标">
-        <div className="admin-feature-metric">
-          注册设置
-          <strong>{configs.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{filteredConfigs.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          已覆盖
-          <strong>{overriddenConfigs}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          可编辑
-          <strong>{editableConfigs}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="系统设置指标">
+        <ConsoleMetricCard label="注册设置" value={configs.length} description="代码注册的设置定义" tone="info" />
+        <ConsoleMetricCard label="当前结果" value={filteredConfigs.length} description="当前筛选后的设置数量" />
+        <ConsoleMetricCard label="已覆盖" value={overriddenConfigs} description="存在运行时覆盖值" tone="warning" />
+        <ConsoleMetricCard label="可编辑" value={editableConfigs} description="允许在 Console 调整" tone="success" />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
@@ -649,11 +647,15 @@ export const SystemConfigList = () => {
             </div>
           </section>
 
-          <section className="admin-table-toolbar" aria-label="系统设置筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选设置</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选设置"
+            description="按分类、设置名称、设置键或说明定位配置项。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
             <div className="admin-table-toolbar__filters">
               <Select
                 className="system-config-filter-select"
@@ -673,7 +675,7 @@ export const SystemConfigList = () => {
               />
               <Button onClick={handleResetFilter}>重置</Button>
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table
