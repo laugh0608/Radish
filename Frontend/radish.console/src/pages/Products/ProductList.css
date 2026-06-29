@@ -2,12 +2,6 @@
   min-width: 0;
 }
 
-.product-list-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .product-list-filter-input {
   width: 200px;
 }
@@ -98,10 +92,4 @@
 .product-detail-empty {
   padding: 24px 0;
   color: var(--console-text-secondary);
-}
-
-@media (max-width: 768px) {
-  .product-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
 }

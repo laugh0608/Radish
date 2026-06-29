@@ -32,6 +32,13 @@ import {
 } from '../../api/shopApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import type { Product, ProductCategory } from '../../api/types';
 import { ProductType } from '../../api/types';
 import { ProductForm } from './ProductForm';
@@ -475,57 +482,48 @@ export const ProductList = () => {
 
   return (
     <div className="admin-feature-page product-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <ShoppingOutlined /> 商品管理
-            </h2>
-            <p className="admin-feature-subtle">维护商城商品、上架状态、库存与关联订单入口。</p>
-          </div>
-          <div className="product-list-header-actions">
-            {canCreateProduct ? (
-              <Button
-                variant="primary"
-                icon={<PlusOutlined />}
-                onClick={() => {
-                  setEditingProduct(undefined);
-                  setFormVisible(true);
-                }}
-              >
-                新建商品
-              </Button>
-            ) : null}
-          </div>
-        </div>
-      </section>
+      <ConsolePageHeader
+        eyebrow="COMMERCE CATALOG"
+        title="商品管理"
+        description="维护商城商品、上架状态、库存与关联订单入口。"
+        icon={<ShoppingOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canCreateProduct ? 'success' : 'neutral'}>
+            {canCreateProduct ? '可新建' : '只读'}
+          </ConsoleStatusChip>
+        )}
+        actions={canCreateProduct ? (
+          <Button
+            variant="primary"
+            icon={<PlusOutlined />}
+            onClick={() => {
+              setEditingProduct(undefined);
+              setFormVisible(true);
+            }}
+          >
+            新建商品
+          </Button>
+        ) : undefined}
+      />
 
-      <section className="admin-feature-metrics" aria-label="商品列表指标">
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{total}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页商品
-          <strong>{products.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页上架
-          <strong>{onSaleProducts}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页启用
-          <strong>{enabledProducts}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="商品列表指标">
+        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的商品数量" tone="info" />
+        <ConsoleMetricCard label="本页商品" value={products.length} description="当前页可见商品" />
+        <ConsoleMetricCard label="本页上架" value={onSaleProducts} description="当前页已上架商品" tone="success" />
+        <ConsoleMetricCard label="本页启用" value={enabledProducts} description="当前页启用商品" tone="success" />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="商品筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选商品</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选商品"
+            description="按分类、商品类型、上架状态或商品名称定位商城条目。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
             <div className="admin-table-toolbar__filters">
               <Select
                 className="product-list-filter-select"
@@ -581,7 +579,7 @@ export const ProductList = () => {
                 重置
               </Button>
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table
