@@ -35,6 +35,83 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
+.authorHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: stretch;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
+  border-radius: 18px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.authorHeroCopy {
+  min-width: 0;
+}
+
+.authorHeroTitle {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-serif);
+  font-size: 30px;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+}
+
+.authorHeroDescription {
+  max-width: 640px;
+  margin: 8px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.authorSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(118px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.authorSummaryCard {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+}
+
+.authorSummaryIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  color: var(--theme-accent-ink);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+}
+
+.authorSummaryCard strong {
+  display: block;
+  color: var(--theme-text-primary);
+  font-size: 18px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.authorSummaryCard span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .navItem,
 .navItemActive,
 .primaryButton,
@@ -94,8 +171,7 @@
   color: var(--theme-text-primary);
 }
 
-.panel,
-.statusPanel {
+.panel {
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, transparent);
   border-radius: 24px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
@@ -274,34 +350,7 @@
 
 .statusPanel {
   margin: 20px;
-  padding: 24px;
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
-
-.statusIcon {
-  width: 44px;
-  height: 44px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
-}
-
-.statusBody {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.statusTitle {
-  font-size: 20px;
 }
 
 .inlineNotice {
@@ -480,6 +529,27 @@
 }
 
 @media (max-width: 860px) {
+  .authorHero {
+    grid-template-columns: 1fr;
+  }
+
+  .authorSummaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .authorSummaryCard {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .authorSummaryIcon {
+    grid-row: span 2;
+    margin-bottom: 0;
+  }
+
   .summaryGrid,
   .formGrid,
   .revisionLayout,

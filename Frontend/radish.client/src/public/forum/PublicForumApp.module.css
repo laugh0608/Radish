@@ -387,6 +387,49 @@
   padding: 22px 28px 28px;
 }
 
+.composeSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 18px 28px 0;
+}
+
+.composeSummaryCard {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 44%, var(--theme-bg-surface) 56%);
+}
+
+.composeSummaryIcon {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  color: var(--theme-accent-ink);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+}
+
+.composeSummaryCard strong {
+  display: block;
+  color: var(--theme-text-primary);
+  font-size: 18px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.composeSummaryCard span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .errorText {
   margin: 16px 28px 0;
   padding: 12px 14px;
@@ -814,6 +857,24 @@
     margin-right: 14px;
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .composeSummaryGrid {
+    grid-template-columns: 1fr;
+    padding: 14px 18px 0;
+  }
+
+  .composeSummaryCard {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    padding: 12px;
+  }
+
+  .composeSummaryIcon {
+    grid-row: span 2;
+    margin-bottom: 0;
   }
 
   .composePanel {

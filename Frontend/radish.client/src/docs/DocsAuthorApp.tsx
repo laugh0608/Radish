@@ -42,6 +42,7 @@ import type {
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
+import { WebStateSlot, type WebStateSlotTone } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicDocsPath } from '@/public/docsRouteState';
@@ -689,6 +690,39 @@ export function DocsAuthorApp() {
       />
 
       <main className={styles.main}>
+        <section className={styles.authorHero} aria-label="文档作者任务摘要">
+          <div className={styles.authorHeroCopy}>
+            <p className={styles.kicker}>Author Workspace</p>
+            <h1 className={styles.authorHeroTitle}>文档作者台</h1>
+            <p className={styles.authorHeroDescription}>
+              维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。
+            </p>
+          </div>
+          <div className={styles.authorSummaryGrid}>
+            <div className={styles.authorSummaryCard}>
+              <span className={styles.authorSummaryIcon}>
+                <Icon icon="mdi:file-tree-outline" size={20} />
+              </span>
+              <strong>{collectionState.tree.length}</strong>
+              <span>目录节点</span>
+            </div>
+            <div className={styles.authorSummaryCard}>
+              <span className={styles.authorSummaryIcon}>
+                <Icon icon="mdi:file-document-multiple-outline" size={20} />
+              </span>
+              <strong>{collectionState.totalDocuments}</strong>
+              <span>文档总数</span>
+            </div>
+            <div className={styles.authorSummaryCard}>
+              <span className={styles.authorSummaryIcon}>
+                <Icon icon={canUseAuthorTools ? 'mdi:shield-check-outline' : 'mdi:shield-alert-outline'} size={20} />
+              </span>
+              <strong>{canUseAuthorTools ? '可写' : '受限'}</strong>
+              <span>{route.kind === 'mine' ? '当前列表' : route.kind === 'compose' ? '新建草稿' : route.kind === 'edit' ? '编辑文档' : '修订查看'}</span>
+            </div>
+          </div>
+        </section>
+
         <div className={styles.navBar}>
           <a
             className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
@@ -727,20 +761,27 @@ interface StatusPanelProps {
 }
 
 function StatusPanel({ icon, title, description, actionHref, actionLabel }: StatusPanelProps) {
+  const tone: WebStateSlotTone = icon === 'mdi:progress-clock'
+    ? 'loading'
+    : icon === 'mdi:shield-alert-outline'
+      ? 'permission'
+      : icon === 'mdi:alert-circle-outline'
+        ? 'error'
+        : icon === 'mdi:file-document-outline' || icon === 'mdi:history'
+          ? 'empty'
+          : icon === 'mdi:lock-outline'
+            ? 'auth'
+            : 'info';
+
   return (
     <section className={styles.statusPanel}>
-      <span className={styles.statusIcon}>
-        <Icon icon={icon} size={24} />
-      </span>
-      <div className={styles.statusBody}>
-        <h1 className={styles.statusTitle}>{title}</h1>
-        <p className={styles.statusDescription}>{description}</p>
-        {actionHref && actionLabel ? (
-          <a className={styles.secondaryButton} href={actionHref}>
-            {actionLabel}
-          </a>
-        ) : null}
-      </div>
+      <WebStateSlot
+        tone={tone}
+        icon={icon}
+        title={title}
+        description={description}
+        actions={actionHref && actionLabel ? [{ label: actionLabel, href: actionHref }] : undefined}
+      />
     </section>
   );
 }
