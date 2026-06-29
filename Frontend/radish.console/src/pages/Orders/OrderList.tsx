@@ -30,6 +30,13 @@ import {
 } from '../../api/shopApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import type { Order, OrderStatus } from '../../api/types';
 import { OrderDetail } from './OrderDetail';
 import {
@@ -459,51 +466,46 @@ export const OrderList = () => {
 
   return (
     <div className="admin-feature-page order-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <FileTextOutlined /> 订单管理
-            </h2>
-            <p className="admin-feature-subtle">查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。</p>
-          </div>
-          <Space wrap>
-            {returnTo?.startsWith('/') ? (
-              <Button onClick={() => navigate(returnTo)}>
-                返回来源
-              </Button>
-            ) : null}
-            <Tag>{canRemarkOrder ? '可备注' : '只读'}</Tag>
-          </Space>
-        </div>
-      </section>
+      <ConsolePageHeader
+        eyebrow="COMMERCE OPERATIONS"
+        title="订单管理"
+        description="查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。"
+        icon={<FileTextOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canRemarkOrder ? 'success' : 'neutral'}>
+            {canRemarkOrder ? '可备注' : '只读'}
+          </ConsoleStatusChip>
+        )}
+        actions={returnTo?.startsWith('/') ? (
+          <Button onClick={() => navigate(returnTo)}>
+            返回来源
+          </Button>
+        ) : undefined}
+      />
 
-      <section className="admin-feature-metrics" aria-label="订单列表指标">
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{total}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页订单
-          <strong>{orders.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页完成
-          <strong>{completedOrders}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          发放失败
-          <strong>{failedOrders}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="订单列表指标">
+        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的订单数量" tone="info" />
+        <ConsoleMetricCard label="本页订单" value={orders.length} description="当前页可见订单" />
+        <ConsoleMetricCard label="本页完成" value={completedOrders} description="本页已完成订单" tone="success" />
+        <ConsoleMetricCard
+          label="发放失败"
+          value={failedOrders}
+          description="本页需关注的失败订单"
+          tone={failedOrders > 0 ? 'danger' : 'neutral'}
+        />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="订单筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选订单</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选订单"
+            description="按用户、订单状态、商品或订单号定位交易记录。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
             <div className="admin-table-toolbar__filters">
               <Input
                 className="order-list-filter-input order-list-filter-input--id"
@@ -555,7 +557,7 @@ export const OrderList = () => {
                 重置
               </Button>
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table

@@ -45,9 +45,3 @@
   background: var(--console-warning-bg);
   color: var(--console-warning-text);
 }
-
-@media (max-width: 768px) {
-  .order-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
-}
