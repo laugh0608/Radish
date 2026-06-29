@@ -117,10 +117,6 @@
 }
 
 .stateShell {
-  border: 1px solid var(--theme-border-soft);
-  border-radius: 8px;
-  background: var(--theme-bg-surface);
-  box-shadow: var(--theme-shadow-soft);
   overflow: hidden;
 }
 

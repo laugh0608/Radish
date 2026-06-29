@@ -398,7 +398,7 @@
   min-width: 0;
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
-  border-radius: 18px;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-muted) 44%, var(--theme-bg-surface) 56%);
 }
 
@@ -409,7 +409,7 @@
   align-items: center;
   justify-content: center;
   margin-bottom: 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--theme-accent-ink);
   background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
 }

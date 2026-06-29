@@ -210,8 +210,7 @@
 
 .feedItem,
 .userItem,
-.statusPanel,
-.stateShell {
+.statusPanel {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
