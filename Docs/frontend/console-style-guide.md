@@ -1,9 +1,11 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-06-29
+> 最后更新：2026-06-30
 
 本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 的 `P00-P18` Console 治理工作台画板和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 为当前设计基准。
+
+表格、操作列、分页和弹窗 / 抽屉内表格的细化规则见 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 
 ## 1. 当前边界
 
@@ -38,21 +40,22 @@ Console 治理工作台是当前推荐的后台风格，目标是从旧式深色
 - `Console Table CRUD - User Management`：普通表格 CRUD 页面。
 - `Console Settings - Governance Policy`：设置 / 权限 / 配置型页面。
 
-已完成的首批实现落点：
+已完成的当前实现落点：
 
 - 壳层与通用基座：`AdminLayout`、`Breadcrumb`、`index.css`、`adminFeature.css`。
 - 调度总览：`Dashboard`。
-- 表格 CRUD：`UserList`、`TagList`、`CategoryList`、`SystemConfigList`、`RoleList`、`Applications`、`StickerGroupList`、`StickerList`、`ProductList`、`OrderList`。
-- 设置 / 详情 / 配置扩展：`Settings`、`UserProfile`、`UserDetail`、`RolePermissionPage`、`CoinAdminPage`。
+- 表格 CRUD：`Applications`、`UserList`、`RoleList`、`TagList`、`CategoryList`、`SystemConfigList`、`StickerGroupList`、`StickerList`、`ProductList`、`OrderList`。
+- 治理 / 工具 / 运维：`ModerationPage`、`ExperienceAdminPage`、`CoinAdminPage`、`HangfirePage`。
+- 设置 / 详情 / 配置扩展：`Settings`、`UserProfile`、`UserDetail`、`RolePermissionPage`、`OrderDetail`、`ProductDetail`、`DocumentGovernancePage` 深层区块。
 
 这些页面按页面类型复用视觉语言，但保留原 API、权限、表单字段、数据契约和业务语义。
 
-`P3-12-D14-D19` 新增语义组件和代表页迁移：
+`P3-12-D14-D35` 新增语义组件、代表页迁移和表格交互治理：
 
 - 公共侧栏：`AdminLayout` 按总览、商业与资产、内容与文档、治理与权限、系统工具分组渲染。
 - 页面组件：`ConsolePageHeader`、`ConsoleStatusChip`、`ConsoleMetricGrid`、`ConsoleMetricCard`、`ConsoleToolbar`。
-- 已迁移页面：`SystemConfigList`、`OrderList`、`UserList`、`ProductList`、`DocumentGovernancePage`、`TagList`、`CategoryList`。
-- 迁移边界：只迁移页头、指标、筛选工具条和首屏区块承载，不改变 API、权限、业务动作、表格列、分页、表单字段或后端契约。
+- 已迁移页面：系统设置、订单、用户、商品、文档治理首屏、标签 / 分类、贴纸类、角色权限、内容治理、经验治理、应用管理、萝卜币、系统工具和详情 / 抽屉代表页。
+- 迁移边界：只迁移页头、指标、筛选工具条、首屏区块承载、局部滚动和响应式布局，不改变 API、权限、业务动作、表格列、分页、表单字段或后端契约。
 
 ## 2.1 页面类型实现口径
 
@@ -84,6 +87,17 @@ Console 治理工作台是当前推荐的后台风格，目标是从旧式深色
 - 筛选控件、表格列、批量动作、确认弹窗和业务按钮仍按原页面契约保留；组件只承载视觉与语义结构。
 - 复杂治理页先判断区块边界，再迁移外层组件；不要把发布、访问策略、版本回滚、导入导出等动作强行塞进普通表格工具条。
 - 贴纸分组 / 贴纸列表因包含图片预览、分组详情、单个新增、批量上传和批量排序，迁移前应先确认是普通 CRUD 收尾还是媒体资产工作流拆分。
+
+### 2.3 表格与操作区口径
+
+Console 表格优先保证中宽 PC 和移动窄屏下“能读、能操作、能返回上下文”，不要把表格硬撑出主内容区。
+
+- 普通表格页使用 `admin-table-layout`、`admin-table-panel`、`admin-table-toolbar` 和 `admin-table-aside` 承载；摘要侧栏只放上下文和权限提示，不替代主表格操作。
+- 嵌在 Dashboard、详情页、弹窗或抽屉里的表格需要放在 `admin-table-scroll-region` 或等价局部滚动容器内，避免宽表撑破父容器。
+- 固定右侧操作列要给稳定宽度，操作按钮组使用 `Space wrap` 或等价 `flex-wrap`，不允许靠压缩按钮文字解决窄屏问题。
+- 分页器需要允许换行，移动视图下分页、筛选和工具条可以上下排列，但不能遮挡表格或把操作按钮挤出可见区域。
+- 弹窗 / 抽屉里的表格默认优先使用局部横向滚动；不要为了显示完整列而把 Modal / Drawer 强行改成超出视口的固定宽度。
+- 表格列内的弱文本、正负金额、状态色、预格式化备注等只用 CSS class 和 Console token 表达，不在 render 函数里写 inline 色值。
 
 ## 3. 页面类型
 
@@ -129,7 +143,9 @@ Console 治理工作台是当前推荐的后台风格，目标是从旧式深色
 
 - `index.css`：只放 Console 根级 token、全局 box model、`body` 与 `#root` 基础样式。
 - `AdminLayout.css`：只放后台壳层、侧边栏、顶部栏、内容区等布局样式；移动端侧栏收敛规则也归这里维护，不下沉到业务页面。
-- `adminFeature.css`：承接通用功能页结构，例如功能页容器、卡片、标题区、banner、指标网格、表单栅格。
+- `adminFeature.css`：承接通用功能页结构，例如功能页容器、卡片、标题区、banner、指标网格、表格布局、表格滚动区、分页换行、工具条、详情布局和摘要栏。
+- `adminForm.css`：承接深层表单、上传预览、隐藏输入、全宽 / 半宽控件、弱提示和弹窗 footer 动作区，商品、分类、贴纸、贴纸分组等表单不再各自复制这些样式。
+- `routerComponents.css`：承接路由认证中、无 Console 权限和懒加载状态，不在路由组件 JSX 里写 inline 样式。
 - 具体页面 CSS：只放该页面不可复用的布局或业务状态样式，避免复制 `adminFeature.css` 已有结构。
 
 ## 6. 开发规则

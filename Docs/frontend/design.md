@@ -399,7 +399,7 @@ export const tokens = {
 - Console 后续新增或明显改动页面优先使用 `--console-*` 局部变量承接 `@radish/ui` / `--theme-*` token，并按页面类型复用 `adminFeature.css` 中的功能页、表格、设置、详情、工作台和摘要栏结构，不启动后台整站视觉重构
 - 后续只在真实联调中处理残余边角，不在设计入口继续追加流水
 
-主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference)、[UI 设计灵感参考](/frontend/ui-design-inspiration) 与 [Console 样式与 Token 使用说明](/frontend/console-style-guide)。
+主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference)、[UI 设计灵感参考](/frontend/ui-design-inspiration)、[Console 样式与 Token 使用说明](/frontend/console-style-guide) 与 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 
 ### 8.1.2 Web UI 设计源与 Pencil 约束
 
