@@ -791,67 +791,69 @@ export const DocumentGovernancePage = () => {
       >
         <div className="admin-table-layout">
           <div className="admin-table-main">
-            <Table
-              rowKey="voId"
-              size="small"
-              loading={revisionLoading}
-              dataSource={revisionItems}
-              pagination={false}
-              columns={[
-                {
-                  title: '版本',
-                  dataIndex: 'voVersion',
-                  key: 'voVersion',
-                  width: 80,
-                  render: (version, record) => record.voIsCurrent ? <Tag color="success">v{version}</Tag> : `v${version}`,
-                },
-                {
-                  title: '说明',
-                  dataIndex: 'voChangeSummary',
-                  key: 'voChangeSummary',
-                  render: (summary) => summary || '-',
-                },
-                {
-                  title: '时间',
-                  key: 'voCreateTime',
-                  width: 170,
-                  render: (_, record) => formatDateTime(record.voCreateTime),
-                },
-                {
-                  title: '操作',
-                  key: 'actions',
-                  width: 170,
-                  render: (_, record) => (
-                    <Space size="small" wrap>
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        onClick={() => {
-                          void loadRevisionDetail(record.voId);
-                        }}
-                      >
-                        查看
-                      </Button>
-                      {canRollback && revisionDocument && !isBuiltInDocument(revisionDocument) && !revisionDocument.voIsDeleted && !record.voIsCurrent ? (
-                        <Popconfirm
-                          title="回滚版本"
-                          description={`确定要回滚到 v${record.voVersion} 吗？`}
-                          okText="确认"
-                          cancelText="取消"
-                          onConfirm={() => {
-                            void handleRollback(record.voId);
+            <div className="admin-table-scroll-region">
+              <Table
+                rowKey="voId"
+                size="small"
+                loading={revisionLoading}
+                dataSource={revisionItems}
+                pagination={false}
+                columns={[
+                  {
+                    title: '版本',
+                    dataIndex: 'voVersion',
+                    key: 'voVersion',
+                    width: 80,
+                    render: (version, record) => record.voIsCurrent ? <Tag color="success">v{version}</Tag> : `v${version}`,
+                  },
+                  {
+                    title: '说明',
+                    dataIndex: 'voChangeSummary',
+                    key: 'voChangeSummary',
+                    render: (summary) => summary || '-',
+                  },
+                  {
+                    title: '时间',
+                    key: 'voCreateTime',
+                    width: 170,
+                    render: (_, record) => formatDateTime(record.voCreateTime),
+                  },
+                  {
+                    title: '操作',
+                    key: 'actions',
+                    width: 170,
+                    render: (_, record) => (
+                      <Space size="small" wrap>
+                        <Button
+                          variant="ghost"
+                          size="small"
+                          onClick={() => {
+                            void loadRevisionDetail(record.voId);
                           }}
                         >
-                          <Button variant="ghost" size="small">
-                            回滚
-                          </Button>
-                        </Popconfirm>
-                      ) : null}
-                    </Space>
-                  ),
-                },
-              ]}
-            />
+                          查看
+                        </Button>
+                        {canRollback && revisionDocument && !isBuiltInDocument(revisionDocument) && !revisionDocument.voIsDeleted && !record.voIsCurrent ? (
+                          <Popconfirm
+                            title="回滚版本"
+                            description={`确定要回滚到 v${record.voVersion} 吗？`}
+                            okText="确认"
+                            cancelText="取消"
+                            onConfirm={() => {
+                              void handleRollback(record.voId);
+                            }}
+                          >
+                            <Button variant="ghost" size="small">
+                              回滚
+                            </Button>
+                          </Popconfirm>
+                        ) : null}
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </div>
           </div>
           <aside className="admin-table-aside">
             <h3>版本内容</h3>

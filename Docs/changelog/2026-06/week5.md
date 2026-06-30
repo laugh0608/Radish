@@ -31,3 +31,4 @@
 - `P3-12-D32` 完成 `radish.console` 数据补验与 Auth 静态根目录收口：本地安全测试数据补齐 `OrderDetail`、分组表情列表和 `StickerBatchUploadModal` 的 Gateway PC / mobile CSS 视图复核；贴纸批量上传弹窗 `Alert.message` 运行态告警改为 `title`，`Radish.Auth/wwwroot/.gitkeep` 收口 Auth `WebRootPath was not found` 启动告警；`radish.console` type-check / build、host runtime、仓库卫生检查和 `git diff --check` 均通过。
 - `P3-12-D33` 完成 `radish.console` 表格可读性首批代码侧收口：分类、标签、贴纸分组、分组表情、角色和文档版本治理表格的操作列按钮组补 `wrap`，贴纸排序输入宽度样式迁入 CSS；真实 Gateway 中宽 PC / 移动 CSS 视口扫描因当前宿主未监听而待补验。
 - `P3-12-D34` 完成 `radish.console` 运维与治理表格静态收口：应用管理操作列补 `wrap`，萝卜币正负金额颜色与交易表格外边距迁入 CSS / Console token，系统设置数字输入宽度迁入 CSS；本批不申请真实联调，运行态扫描并入成组验收。
+- `P3-12-D35` 完成 `radish.console` 表格交互代码侧收口：新增通用表格滚动区域和移动端分页换行约束，Dashboard 最近订单、用户详情内嵌表格、系统设置历史、文档版本弹窗和贴纸批量上传表格已补滚动隔离；业务列、权限、路由和提交载荷保持不变。

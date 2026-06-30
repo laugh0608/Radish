@@ -747,15 +747,17 @@ export const SystemConfigList = () => {
           {historyConfig ? <code>{historyConfig.voKey}</code> : null}
           {historyConfig ? <Tag color={getRiskTagColor(historyConfig.voRiskLevel)}>{historyConfig.voRiskLevel}</Tag> : null}
         </div>
-        <Table
-          columns={historyColumns}
-          dataSource={historyLogs}
-          rowKey="voId"
-          loading={historyLoading}
-          pagination={false}
-          scroll={{ x: 1150 }}
-          locale={{ emptyText: '暂无变更历史' }}
-        />
+        <div className="admin-table-scroll-region">
+          <Table
+            columns={historyColumns}
+            dataSource={historyLogs}
+            rowKey="voId"
+            loading={historyLoading}
+            pagination={false}
+            scroll={{ x: 1150 }}
+            locale={{ emptyText: '暂无变更历史' }}
+          />
+        </div>
       </Modal>
     </div>
   );

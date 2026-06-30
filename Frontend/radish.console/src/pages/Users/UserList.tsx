@@ -160,7 +160,7 @@ export const UserList = () => {
       key: 'actions',
       width: 160,
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {canViewUsers ? (
             <Button
               variant="ghost"

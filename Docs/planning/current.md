@@ -173,7 +173,7 @@
   - `P3-12-D27` 已完成 `radish.console` 系统工具与运维外壳收口：`/hangfire` 已从路由临时组件迁入 `SystemTools/HangfirePage`，外层接入 D14 语义页头、指标和状态组件，iframe 容器样式迁入 CSS；`SystemConfigList` 继续作为当前内部系统设置代表页，`/hangfire` 仍仅承载受保护的外部 Hangfire Dashboard，不扩展为项目内任务队列 / 失败重试 / 运行审计平台；记录见 [P3-12-D27 radish.console 系统工具与运维外壳收口记录](/records/p3-12-d27-radish-console-system-ops-shell-2026-06-30)。随后进入 D28 阶段静态收口；如需内部运维平台，先补数据来源与 API 契约设计。
   - `P3-12-D28` 已完成 `radish.console` D14-D27 阶段静态收口：路由认证中、无 Console 权限和懒加载状态的旧 inline 样式已迁入 `routerComponents.css`，`routerComponents` 与 `SystemTools` 不再命中目标样式残留；阶段记录已归档深层表单、详情抽屉和批量上传弹窗的剩余静态风险，记录见 [P3-12-D28 radish.console 阶段静态收口记录](/records/p3-12-d28-radish-console-stage-static-closure-2026-06-30)。
   - `P3-12-D29 / D30` 已完成 `radish.console` 深层表单与详情 / 抽屉静态收口：商品、分类、贴纸和贴纸分组表单的上传预览、隐藏输入、控件宽度、弱提示文本和弹窗 footer 样式已迁入 `adminForm.css`；`OrderDetail`、`ProductDetail`、`DocumentGovernancePage` 的危险色、图片展示、隐藏输入和抽屉全宽布局已迁入 CSS，`StickerBatchUploadModal.css` 历史提示色同步改为 Console token；业务 API、权限、路由、上传、备注、访问策略和版本回滚动作保持不变，记录见 [P3-12-D29 radish.console 深层表单静态收口记录](/records/p3-12-d29-radish-console-deep-form-static-closure-2026-06-30) 与 [P3-12-D30 radish.console 详情 / 抽屉静态收口记录](/records/p3-12-d30-radish-console-detail-drawer-static-closure-2026-06-30)。
-  - `P3-12-D31 / D32` 已完成 `radish.console` 阶段运行态复核和数据补验：Gateway 下覆盖 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态、表情分组空态，以及补安全测试数据后的 `OrderDetail`、分组表情列表和 `StickerBatchUploadModal` PC / mobile CSS 视口；贴纸弹窗 AntD `Alert.message` 告警与 Auth `wwwroot` 缺失启动告警已收口，本地 SQLite 测试数据不进入 Git，记录见 [P3-12-D31 运行态复核](/records/p3-12-d31-radish-console-stage-smoke-2026-06-30) 与 [P3-12-D32 数据补验](/records/p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30)。
+  - `P3-12-D31-D35` 已完成 `radish.console` 阶段运行态复核、数据补验和表格交互代码侧收口：Gateway 下已覆盖 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态、表情分组空态，以及补安全测试数据后的 `OrderDetail`、分组表情列表和 `StickerBatchUploadModal` PC / mobile CSS 视口；D33-D35 已完成操作列换行、运维 / 治理静态残留、Dashboard 最近订单、用户详情内嵌表格、系统设置历史、文档版本弹窗和贴纸批量上传表格滚动 / 分页布局收口；贴纸弹窗 AntD `Alert.message` 告警与 Auth `wwwroot` 缺失启动告警已收口，记录见 [P3-12-D31 运行态复核](/records/p3-12-d31-radish-console-stage-smoke-2026-06-30)、[P3-12-D32 数据补验](/records/p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30)、[P3-12-D33 表格可读性首批](/records/p3-12-d33-radish-console-table-readability-first-closure-2026-06-30)、[P3-12-D34 运维与治理表格静态收口](/records/p3-12-d34-radish-console-ops-table-static-closure-2026-06-30) 与 [P3-12-D35 表格交互代码侧收口](/records/p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30)。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -257,8 +257,8 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D34 radish.console 运维与治理表格静态收口记录](/records/p3-12-d34-radish-console-ops-table-static-closure-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步继续推进 `P3-12-D` UI 专题收口。
-- 第一顺位：继续围绕 Ant Table 固定列中宽交互、移动窄屏表格可读性和 Console 已迁移页面真实可用性做代码侧目标扫描；若剩余问题主要依赖运行态观察，再集中申请一次 Gateway PC / mobile 真实联调，不逐批申请。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D35 radish.console 表格交互代码侧收口记录](/records/p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步继续推进 `P3-12-D` UI 专题收口。
+- 第一顺位：继续评估 Console 已迁移页面是否还有代码侧可确认的中宽 PC / 移动窄屏表格问题；若剩余问题主要依赖运行态观察，再集中申请一次 Gateway PC / mobile 真实联调，不逐批申请。
 - `P3-12-E` 发布候选准备后置到 UI 专题完成后；届时再刷新完整验证矩阵、PR 范围、剩余风险和回滚口径，并执行 baseline / identity / host runtime / Gateway 页面矩阵。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 

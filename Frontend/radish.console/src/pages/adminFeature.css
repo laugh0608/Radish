@@ -96,6 +96,28 @@
   gap: 16px;
 }
 
+.admin-table-scroll-region {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table-scroll-region > .ant-table-wrapper,
+.admin-table-panel > .ant-table-wrapper,
+.admin-overview-panel > .ant-table-wrapper,
+.admin-feature-card > .ant-table-wrapper {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.admin-table-scroll-region .ant-pagination,
+.admin-table-panel .ant-pagination,
+.admin-overview-panel .ant-pagination,
+.admin-feature-card .ant-pagination {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
 .admin-table-aside {
   position: sticky;
   top: 24px;
@@ -527,6 +549,28 @@
   .admin-table-toolbar__filters .ant-select {
     width: 100% !important;
     min-width: 0;
+  }
+
+  .admin-table-scroll-region .ant-pagination,
+  .admin-table-panel .ant-pagination,
+  .admin-overview-panel .ant-pagination,
+  .admin-feature-card .ant-pagination {
+    justify-content: flex-start;
+  }
+
+  .admin-table-scroll-region .ant-pagination-options,
+  .admin-table-panel .ant-pagination-options,
+  .admin-overview-panel .ant-pagination-options,
+  .admin-feature-card .ant-pagination-options {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+
+  .admin-table-scroll-region .ant-pagination-options-quick-jumper,
+  .admin-table-panel .ant-pagination-options-quick-jumper,
+  .admin-overview-panel .ant-pagination-options-quick-jumper,
+  .admin-feature-card .ant-pagination-options-quick-jumper {
+    margin-inline-start: 0;
   }
 
   .admin-feature-header > .ant-space .ant-input,

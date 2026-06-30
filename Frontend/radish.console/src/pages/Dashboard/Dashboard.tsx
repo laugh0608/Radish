@@ -307,14 +307,17 @@ export const Dashboard = () => {
                   查看全部
                 </Button>
               </div>
-              <Table
-                columns={orderColumns}
-                dataSource={recentOrders}
-                rowKey="voId"
-                loading={loading}
-                pagination={false}
-                size="small"
-              />
+              <div className="admin-table-scroll-region">
+                <Table
+                  columns={orderColumns}
+                  dataSource={recentOrders}
+                  rowKey="voId"
+                  loading={loading}
+                  pagination={false}
+                  size="small"
+                  scroll={{ x: 760 }}
+                />
+              </div>
             </section>
           ) : null}
         </main>
