@@ -24,3 +24,4 @@
 - `P3-12-D25` 完成 `radish.console` 治理工作台内部区块样式收口首批：`ExperienceObservationSummary`、`ExperienceTransactionSection`、`ExperienceGovernanceReviewSection` 和内容治理内部提示 / 筛选区迁出目标 inline 样式与硬编码色；下一步进入 D23-D25 成组静态检查。
 - `P3-12-D26` 完成 `radish.console` 角色权限、内容治理和经验治理页面成组静态收口：目标目录不再命中 `style=`、硬编码十六进制色或 `rgba(...)`；角色权限树缩进、治理表单控件和表格列弱文本 / 分组 / 正负状态已迁入 CSS。
 - `P3-12-D27` 完成 `radish.console` 系统工具与运维外壳收口：`/hangfire` 从路由临时组件迁入 `SystemTools/HangfirePage`，外层接入 Console 语义页头、指标和状态组件；继续保留受保护外部 Hangfire Dashboard，不扩展内部任务队列、失败重试或运行审计平台。
+- `P3-12-D28` 完成 `radish.console` D14-D27 阶段静态收口：路由认证中、无 Console 权限和懒加载状态的旧 inline 样式迁入 CSS；剩余风险集中到商品 / 分类 / 贴纸表单、订单 / 商品详情、文档治理抽屉和贴纸批量上传弹窗，后续按深层表单 / 详情专题治理。

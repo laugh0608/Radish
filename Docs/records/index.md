@@ -127,6 +127,7 @@
 - [p3-12-d25-radish-console-governance-workbench-internal-style-convergence-2026-06-30](/records/p3-12-d25-radish-console-governance-workbench-internal-style-convergence-2026-06-30)
 - [p3-12-d26-radish-console-governance-static-closure-2026-06-30](/records/p3-12-d26-radish-console-governance-static-closure-2026-06-30)
 - [p3-12-d27-radish-console-system-ops-shell-2026-06-30](/records/p3-12-d27-radish-console-system-ops-shell-2026-06-30)
+- [p3-12-d28-radish-console-stage-static-closure-2026-06-30](/records/p3-12-d28-radish-console-stage-static-closure-2026-06-30)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)

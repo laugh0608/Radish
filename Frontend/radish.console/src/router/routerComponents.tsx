@@ -5,6 +5,7 @@ import { RouteGuard } from '../components/PermissionGuard';
 import { useUser } from '../hooks/useUser';
 import { tokenService } from '../services/tokenService';
 import { canEnterConsole, consoleRouteMetaMap } from './routeMeta';
+import './routerComponents.css';
 
 export function AuthenticatedLayout() {
   const token = tokenService.getAccessToken();
@@ -25,7 +26,11 @@ export function AuthenticatedLayout() {
   }
 
   if (loading) {
-    return <div style={{ padding: '24px' }}>正在校验 Console 访问权限...</div>;
+    return (
+      <div className="console-route-state console-route-state--loading" role="status">
+        正在校验 Console 访问权限...
+      </div>
+    );
   }
 
   if (!user) {
@@ -34,9 +39,9 @@ export function AuthenticatedLayout() {
 
   if (!canEnterConsole(user)) {
     return (
-      <div style={{ padding: '48px 24px', maxWidth: '720px', margin: '0 auto' }}>
-        <h2 style={{ marginBottom: '12px' }}>当前账号未开通 Console 访问权限</h2>
-        <p style={{ margin: 0, color: '#666' }}>
+      <div className="console-route-state console-route-state--permission">
+        <h2>当前账号未开通 Console 访问权限</h2>
+        <p>
           请联系管理员为当前角色分配至少一个 Console 页面权限；入口权限会随授权自动收口。
         </p>
       </div>
@@ -51,7 +56,11 @@ export function AuthenticatedLayout() {
 }
 
 export function RouteLoading() {
-  return <div style={{ padding: '24px' }}>正在加载页面...</div>;
+  return (
+    <div className="console-route-state console-route-state--loading" role="status">
+      正在加载页面...
+    </div>
+  );
 }
 
 export function SuspenseRoute({ children }: { children: ReactNode }) {
