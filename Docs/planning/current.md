@@ -257,9 +257,9 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D36 UI 专题差距与退出标准整理记录](/records/p3-12-d36-ui-topic-gap-and-exit-criteria-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步仍在 `P3-12-D` UI 专题内。
-- 第一顺位：推进 `P3-12-D36+`，整理 public / private / foundation / console 设计源与代码页面族的对齐矩阵，区分已落地、首轮落地、需继续代码治理和需运行态观察的缺口；Console 表格中宽 PC / 移动窄屏问题继续按页面类型成组评估。
-- `P3-12-E` 发布候选准备必须后置到 UI 专题退出条件确认后；届时再刷新完整验证矩阵、PR 范围、剩余风险和回滚口径，并执行 baseline / identity / host runtime / Gateway 页面矩阵。
+- 先读取本页、[2026-06-30 收工回顾与明日事项](/records/daily-handoff-2026-06-30)、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D36 UI 专题差距与退出标准整理记录](/records/p3-12-d36-ui-topic-gap-and-exit-criteria-2026-06-30) 和 public / private / foundation / console 四份设计说明，确认下一步仍在 `P3-12-D` UI 专题内。
+- 第一顺位：推进 `P3-12-D37` 差距矩阵落地，按 public / private / foundation / console 四类设计源列出画板、真实路由 / 页面族、当前代码状态、验证证据和剩余动作，并优先标注 Console 表格中宽 PC / 移动窄屏、操作区、弹窗 / 抽屉内表格、分页与工具条布局。
+- 差距矩阵完成后再判断进入成组代码治理、Pencil / 说明回拉或一次 Gateway PC / mobile 阶段验收；`P3-12-E` 发布候选准备必须后置到 UI 专题退出条件确认后。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
 ## 并行维护项
