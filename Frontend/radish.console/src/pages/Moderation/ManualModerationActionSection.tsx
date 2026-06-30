@@ -145,7 +145,7 @@ export function ManualModerationActionSection({
       </div>
 
       {contextHint ? (
-        <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+        <div className="admin-feature-banner moderation-section-banner">
           {contextHint}
         </div>
       ) : null}
@@ -262,7 +262,7 @@ export function ManualModerationActionSection({
                     ? [{ required: true, message: '请输入禁言时长' }]
                     : []}
                 >
-                  <InputNumber min={1} max={720} style={{ width: '100%' }} placeholder={currentActionType === MANUAL_ACTION_TYPE.mute ? '例如 24' : '留空表示永久封禁'} />
+                  <InputNumber min={1} max={720} className="moderation-full-width-control" placeholder={currentActionType === MANUAL_ACTION_TYPE.mute ? '例如 24' : '留空表示永久封禁'} />
                 </Form.Item>
               );
             }}

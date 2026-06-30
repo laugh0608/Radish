@@ -59,6 +59,34 @@
   font-weight: 600;
 }
 
+.moderation-section-banner {
+  margin-top: 16px;
+}
+
+.moderation-filter-control {
+  max-width: 100%;
+}
+
+.moderation-filter-control--sm {
+  width: 160px;
+}
+
+.moderation-filter-control--md {
+  width: 200px;
+}
+
+.moderation-filter-control--lg {
+  width: 280px;
+}
+
+.moderation-filter-control--xl {
+  width: 320px;
+}
+
+.moderation-full-width-control {
+  width: 100%;
+}
+
 .moderation-manual-status {
   margin-top: 16px;
   border: 1px solid var(--console-border-subtle);

@@ -54,6 +54,7 @@ import { ExperienceObservationSummary } from './ExperienceObservationSummary';
 import { ExperienceTransactionSection } from './ExperienceTransactionSection';
 import { ExperienceUserQuerySummary } from './ExperienceUserQuerySummary';
 import '../adminFeature.css';
+import './ExperienceAdminPage.css';
 
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');

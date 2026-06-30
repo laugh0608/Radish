@@ -1,0 +1,117 @@
+.experience-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.experience-inline-actions--compact {
+  gap: 8px;
+}
+
+.experience-inline-actions--center {
+  align-items: center;
+}
+
+.experience-section-gap-sm {
+  margin-top: 16px;
+}
+
+.experience-section-gap-xs {
+  margin-top: 12px;
+}
+
+.experience-section-gap-md {
+  margin-top: 20px;
+}
+
+.experience-section-gap-lg {
+  margin-top: 24px;
+}
+
+.experience-empty-hint,
+.experience-metric-note {
+  color: var(--console-text-secondary);
+}
+
+.experience-empty-hint {
+  margin-top: 20px;
+}
+
+.experience-metric-note {
+  margin-top: 6px;
+}
+
+.experience-banner-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.experience-rule-summary {
+  margin-top: 16px;
+}
+
+.experience-rule-summary__title,
+.experience-section-title {
+  color: var(--console-text-primary);
+  font-weight: 600;
+}
+
+.experience-rule-summary__title {
+  margin-bottom: 12px;
+}
+
+.experience-rule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.experience-rule-card {
+  padding: 16px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 12px;
+  background: var(--console-bg-surface);
+}
+
+.experience-rule-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.experience-rule-card__description,
+.experience-rule-card__facts,
+.experience-rule-card__recommendation {
+  margin-top: 10px;
+}
+
+.experience-review-draft-reason {
+  margin-top: 8px;
+}
+
+.experience-rule-card__description {
+  color: var(--console-text-secondary);
+}
+
+.experience-rule-card__facts {
+  display: grid;
+  gap: 6px;
+}
+
+.experience-rule-card__recommendation,
+.experience-review-target,
+.experience-review-draft-reason {
+  color: var(--console-text-secondary);
+}
+
+.experience-filter-control {
+  width: 100%;
+}
+
+.experience-form-spaced,
+.experience-table-spaced {
+  margin-top: 20px;
+}

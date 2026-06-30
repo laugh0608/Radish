@@ -21,3 +21,4 @@
 - `P3-12-D22` 完成 Console 复杂页面类型边界评估：角色管理 / 权限配置归入 `P12` 权限矩阵首批候选，内容治理归入 `P02` 治理工作台，经验治理归入 `P03` 经验台账工作台，系统设置与 Hangfire 外壳归入 `P13`；下一步优先推进 `P3-12-D23` 角色权限外层语义迁移。
 - `P3-12-D23` 完成 `radish.console` 角色权限外层语义迁移：`RoleList` 与 `RolePermissionPage` 迁入 D14 语义页头、指标和上下文工具区，保留角色 API、授权资源树、勾选继承、保存载荷、权限键 / 接口映射预览、路由守卫和表格动作不变；`radish.console` type-check / build 通过。
 - `P3-12-D24` 完成 `radish.console` 内容治理与经验治理工作台外层语义收口：`ModerationPage` 与 `ExperienceAdminPage` 接入 D14 语义页头、状态 chip 和工作台指标，内容治理局部硬编码颜色改为 Console token；保留举报审核、手动治理、治理日志、经验复核、调经验、冻结 / 解冻和等级配置 API 不变。
+- `P3-12-D25` 完成 `radish.console` 治理工作台内部区块样式收口首批：`ExperienceObservationSummary`、`ExperienceTransactionSection`、`ExperienceGovernanceReviewSection` 和内容治理内部提示 / 筛选区迁出目标 inline 样式与硬编码色；下一步进入 D23-D25 成组静态检查。

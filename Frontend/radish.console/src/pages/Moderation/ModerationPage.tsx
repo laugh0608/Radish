@@ -686,7 +686,7 @@ export const ModerationPage = () => {
               <Space wrap>
                 <Select
                   value={statusFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={REVIEW_STATUS_OPTIONS}
                   onChange={(value) => {
                     setQueueContextHint(null);
@@ -695,7 +695,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={queueTargetTypeFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={TARGET_TYPE_OPTIONS}
                   allowClear
                   placeholder="目标类型"
@@ -706,7 +706,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={queueReasonTypeFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={REASON_TYPE_OPTIONS}
                   allowClear
                   placeholder="举报原因"
@@ -717,7 +717,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={queueNavigationStatusFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={TARGET_NAVIGATION_STATUS_OPTIONS}
                   allowClear
                   placeholder="回看状态"
@@ -735,7 +735,7 @@ export const ModerationPage = () => {
                     setQueueKeywordInput(event.target.value);
                   }}
                   onPressEnter={applyQueueKeywordSearch}
-                  style={{ width: 320 }}
+                  className="moderation-filter-control moderation-filter-control--xl"
                 />
                 <Button
                   variant="primary"
@@ -750,7 +750,7 @@ export const ModerationPage = () => {
             </div>
 
             {queueContextHint ? (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+              <div className="admin-feature-banner moderation-section-banner">
                 {queueContextHint}
               </div>
             ) : null}
@@ -812,7 +812,7 @@ export const ModerationPage = () => {
                     setLogContextHint(null);
                     setLogTargetUserIdInput(event.target.value);
                   }}
-                  style={{ width: 200 }}
+                  className="moderation-filter-control moderation-filter-control--md"
                 />
                 <Input
                   placeholder="关联举报单 ID"
@@ -821,11 +821,11 @@ export const ModerationPage = () => {
                     setLogContextHint(null);
                     setLogSourceReportIdInput(event.target.value);
                   }}
-                  style={{ width: 200 }}
+                  className="moderation-filter-control moderation-filter-control--md"
                 />
                 <Select
                   value={logActionTypeFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={ACTION_LOG_ACTION_TYPE_OPTIONS}
                   allowClear
                   placeholder="治理动作"
@@ -836,7 +836,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={logIsActiveFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={ACTION_LOG_STATUS_OPTIONS}
                   allowClear
                   placeholder="动作状态"
@@ -854,7 +854,7 @@ export const ModerationPage = () => {
                     setLogKeywordInput(event.target.value);
                   }}
                   onPressEnter={applyLogFilters}
-                  style={{ width: 280 }}
+                  className="moderation-filter-control moderation-filter-control--lg"
                 />
                 <Button
                   variant="primary"
@@ -869,7 +869,7 @@ export const ModerationPage = () => {
             </div>
 
             {logContextHint ? (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+              <div className="admin-feature-banner moderation-section-banner">
                 {logContextHint}
               </div>
             ) : null}
@@ -940,7 +940,7 @@ export const ModerationPage = () => {
                   ? [{ required: true, message: '请输入动作时长' }]
                   : []}
               >
-                <InputNumber min={1} max={720} style={{ width: '100%' }} disabled={getFieldValue('actionType') === 0} />
+                <InputNumber min={1} max={720} className="moderation-full-width-control" disabled={getFieldValue('actionType') === 0} />
               </Form.Item>
             )}
           </Form.Item>
