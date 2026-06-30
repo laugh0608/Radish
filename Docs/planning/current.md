@@ -165,6 +165,7 @@
   - `P3-12-D19` 已完成 `radish.console` 标签 / 分类普通列表视觉迁移：`TagList` 与 `CategoryList` 的页头、指标和筛选工具条已迁入 D14 语义组件，保留标签 / 分类 API、权限、关键词 / 类型 / 状态 / 回收站筛选、分页、批量删除、排序、启停、固定标签、删除 / 恢复和表格密度不变；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，Gateway PC `1920x1080` 与移动 `390x844` CSS 视图真实联调已覆盖 Console 登录回流、标签 / 分类页面渲染和关键词筛选，记录见 [P3-12-D19 radish.console 标签与分类列表视觉迁移记录](/records/p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29)。
   - `P3-12-D20` 已完成 `radish.console` 贴纸分组 / 分组表情列表视觉迁移：`StickerGroupList` 与 `StickerList` 的页头、指标和筛选工具条已迁入 D14 语义组件，保留贴纸 API、权限、路由、图片预览、分组详情跳转、单个新增、批量上传、批量排序、删除确认和表格密度不变；本批确认贴纸页当前仍按普通 CRUD 外层迁移，不拆媒体资产工作台；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，记录见 [P3-12-D20 radish.console 贴纸列表视觉迁移记录](/records/p3-12-d20-radish-console-sticker-visual-migration-2026-06-30)。
   - `P3-12-D21` 已完成 Console D14-D20 表格视觉成组静态收口检查：系统设置、订单、用户、商品、文档治理首屏、标签 / 分类和贴纸类页面均保持语义页头、指标网格、工具条、表格和摘要侧栏扫描顺序；本批移除 `SystemConfigList` 旧页头移动样式残留，并将 `StickerGroupList` 封面占位硬编码颜色改为 Console 语义 token；`radish.console` type-check / build、仓库卫生检查和 `git diff --check` 通过，记录见 [P3-12-D21 radish.console 表格视觉成组静态收口记录](/records/p3-12-d21-radish-console-table-visual-static-closure-2026-06-30)。下一步评估角色权限、内容治理、经验治理和运维任务页的页面类型边界。
+  - `P3-12-D22` 已完成 Console 复杂页面类型边界评估：角色管理与角色权限配置归入 `P12` 权限矩阵首批候选；内容治理归入 `P02` 治理工作台；经验治理归入 `P03` 经验台账工作台；系统设置已在 D21 收口，`/hangfire` 当前仅为外部 iframe 运维入口，不扩展为项目内任务调度平台；记录见 [P3-12-D22 Console 复杂页面类型边界评估记录](/records/p3-12-d22-console-complex-page-boundary-2026-06-30)。下一步优先推进 `P3-12-D23` 角色权限外层语义迁移。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -184,7 +185,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D21` 已进入 Console 视觉代码实现并完成壳层首批、订单 / 用户 / 商品表格代表页、文档治理首屏区块、标签 / 分类普通列表、贴纸分组 / 分组表情列表迁移以及成组静态收口，下一步评估复杂 Console 页面类型边界。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D22` 已完成 Console 首批视觉迁移、成组静态收口和复杂页面类型边界评估，下一步优先推进 `P12` 角色权限外层语义迁移。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -248,9 +249,9 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D21 radish.console 表格视觉成组静态收口记录](/records/p3-12-d21-radish-console-table-visual-static-closure-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认 Console 复杂页面的下一批边界。
-- 第一顺位：评估角色权限、内容治理、经验治理和运维任务页的页面类型边界，先确定是权限矩阵、治理工作台还是运维任务流，再决定是否进入代码。
-- 第二顺位：如选择具体页面推进，先对照 `P12 / P02 / P03 / P13` 设计端点确认首屏区块、动作区、留痕和移动任务流边界；普通表格迁移口径不直接套用到复杂治理页。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D22 Console 复杂页面类型边界评估记录](/records/p3-12-d22-console-complex-page-boundary-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认 `P12` 角色权限首批迁移口径。
+- 第一顺位：推进 `P3-12-D23` 角色权限外层语义迁移，优先覆盖 `RoleList` 与 `RolePermissionPage`；保留角色 API、授权资源树、勾选继承、保存载荷、权限键预览和路由守卫。
+- 第二顺位：完成 D23 后再评估 `P02 / P03` 内容治理与经验治理工作台外层语义收口；`P13` 运维任务页暂不扩展项目内任务平台。
 - 第三顺位：完成代码后执行 `radish.console` 类型检查 / 构建、仓库卫生检查和 `git diff --check`；真实 Gateway PC / mobile smoke 只在阶段验收或用户明确要求时，在用户确认前后端已启动后执行。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
