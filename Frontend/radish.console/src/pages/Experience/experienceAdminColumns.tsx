@@ -28,10 +28,6 @@ interface DailyStatsColumnActions {
   onDayFreezeReason: (record: UserExpDailyStatsVo) => void;
 }
 
-const mutedTextStyle = { color: '#8c8c8c' };
-const inlineGroupStyle = { display: 'flex', gap: 12, flexWrap: 'wrap' } as const;
-const compactInlineGroupStyle = { display: 'flex', gap: 8, flexWrap: 'wrap' } as const;
-
 export function createLevelColumns(): TableColumnsType<LevelConfigVo> {
   return [
     {
@@ -41,7 +37,7 @@ export function createLevelColumns(): TableColumnsType<LevelConfigVo> {
       render: (_, record) => (
         <div>
           <div>L{record.voLevel}</div>
-          <div style={mutedTextStyle}>{record.voLevelName}</div>
+          <div className="experience-table-muted">{record.voLevelName}</div>
         </div>
       ),
     },
@@ -86,7 +82,7 @@ export function createDailyStatsColumns({
       render: (_, record) => (
         <div>
           <div>{formatStatDate(record.voStatDate)}</div>
-          <div style={mutedTextStyle}>{dayjs(record.voStatDate).format('ddd')}</div>
+          <div className="experience-table-muted">{dayjs(record.voStatDate).format('ddd')}</div>
         </div>
       ),
     },
@@ -99,7 +95,7 @@ export function createDailyStatsColumns({
         <div>
           <div>{value}</div>
           {dailyLimits?.voDailyLimitEnabled && (
-            <div style={mutedTextStyle}>
+            <div className="experience-table-muted">
               上限 {formatLimitValue(value, dailyLimits.voMaxDailyExp, dailyLimits)}
             </div>
           )}
@@ -111,7 +107,7 @@ export function createDailyStatsColumns({
       key: 'sources',
       width: 360,
       render: (_, record) => (
-        <div style={inlineGroupStyle}>
+        <div className="experience-table-inline">
           <span>发帖 {formatLimitValue(record.voExpFromPost, dailyLimits?.voMaxExpFromPost ?? 0, dailyLimits)}</span>
           <span>评论 {formatLimitValue(record.voExpFromComment, dailyLimits?.voMaxExpFromComment ?? 0, dailyLimits)}</span>
           <span>点赞 {formatLimitValue(record.voExpFromLike, dailyLimits?.voMaxExpFromLike ?? 0, dailyLimits)}</span>
@@ -125,7 +121,7 @@ export function createDailyStatsColumns({
       key: 'counts',
       width: 320,
       render: (_, record) => (
-        <div style={inlineGroupStyle}>
+        <div className="experience-table-inline">
           <span>发帖 {record.voPostCount}</span>
           <span>评论 {record.voCommentCount}</span>
           <span>点赞 {record.voLikeGivenCount}</span>
@@ -142,25 +138,25 @@ export function createDailyStatsColumns({
         const contextObservations = observations.filter((observation) => observation.voKind !== 'anomaly');
         const anomalyObservations = observations.filter((observation) => observation.voKind === 'anomaly');
         return (
-          <div style={{ display: 'grid', gap: 10 }}>
+          <div className="experience-table-observation">
             <div>
-              <div style={{ color: '#8c8c8c', marginBottom: 6 }}>来源 / 状态</div>
-              <div style={compactInlineGroupStyle}>
+              <div className="experience-table-observation__label">来源 / 状态</div>
+              <div className="experience-table-inline experience-table-inline--compact">
                 {contextObservations.length > 0 ? contextObservations.map((observation) => (
                   <Tag key={observation.voRuleCode} color={observation.voTone} title={observation.voDescription ?? undefined}>
                     {observation.voLabel}
                   </Tag>
-                )) : <span style={mutedTextStyle}>-</span>}
+                )) : <span className="experience-table-muted">-</span>}
               </div>
             </div>
             <div>
-              <div style={{ color: '#8c8c8c', marginBottom: 6 }}>异常判定</div>
-              <div style={compactInlineGroupStyle}>
+              <div className="experience-table-observation__label">异常判定</div>
+              <div className="experience-table-inline experience-table-inline--compact">
                 {anomalyObservations.length > 0 ? anomalyObservations.map((observation) => (
                   <Tag key={observation.voRuleCode} color={observation.voTone} title={observation.voDescription ?? undefined}>
                     {observation.voLabel}
                   </Tag>
-                )) : <span style={mutedTextStyle}>未命中</span>}
+                )) : <span className="experience-table-muted">未命中</span>}
               </div>
             </div>
           </div>
@@ -174,11 +170,11 @@ export function createDailyStatsColumns({
       render: (_, record) => {
         const hasAnomaly = (record.voObservations ?? []).some((observation) => observation.voKind === 'anomaly');
         if (!hasAnomaly) {
-          return <span style={mutedTextStyle}>-</span>;
+          return <span className="experience-table-muted">-</span>;
         }
 
         return (
-          <div style={compactInlineGroupStyle}>
+          <div className="experience-table-inline experience-table-inline--compact">
             <Button onClick={() => onDayReview(record)}>
               查看流水
             </Button>
@@ -219,7 +215,7 @@ export function createTransactionColumns(): TableColumnsType<ExpTransactionVo> {
       render: (_, record) => (
         <div>
           <div>{record.voExpTypeDisplay}</div>
-          <div style={mutedTextStyle}>{record.voExpType}</div>
+          <div className="experience-table-muted">{record.voExpType}</div>
         </div>
       ),
     },
@@ -229,7 +225,7 @@ export function createTransactionColumns(): TableColumnsType<ExpTransactionVo> {
       key: 'voExpAmount',
       width: 110,
       render: (value: number) => (
-        <span style={{ color: value >= 0 ? '#389e0d' : '#cf1322', fontWeight: 600 }}>
+        <span className={value >= 0 ? 'experience-transaction-amount experience-transaction-amount--positive' : 'experience-transaction-amount experience-transaction-amount--negative'}>
           {formatTransactionAmount(value)}
         </span>
       ),
@@ -245,7 +241,7 @@ export function createTransactionColumns(): TableColumnsType<ExpTransactionVo> {
       key: 'levelRange',
       width: 170,
       render: (_, record) => (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div className="experience-table-inline experience-table-inline--compact experience-table-inline--center">
           <span>{`L${record.voLevelBefore} -> L${record.voLevelAfter}`}</span>
           {record.voLevelAfter > record.voLevelBefore ? <Tag color="success">升级</Tag> : null}
         </div>
@@ -258,7 +254,7 @@ export function createTransactionColumns(): TableColumnsType<ExpTransactionVo> {
       render: (_, record) => (
         <div>
           <div>{record.voOperatorName || 'System'}</div>
-          <div style={mutedTextStyle}>ID: {record.voOperatorId}</div>
+          <div className="experience-table-muted">ID: {record.voOperatorId}</div>
         </div>
       ),
     },
@@ -278,14 +274,14 @@ export function createGovernanceActionColumns(): TableColumnsType<UserExperience
       key: 'actionType',
       width: 200,
       render: (_, record) => (
-        <div style={{ display: 'grid', gap: 6 }}>
+        <div className="experience-table-stack">
           <div>
             <Tag color={getGovernanceActionTagColor(record.voActionType)}>
               {record.voActionTypeDisplay}
             </Tag>
           </div>
           {record.voActionType === 'Freeze' && (
-            <span style={mutedTextStyle}>
+            <span className="experience-table-muted">
               到期：{record.voFrozenUntil ? formatDisplayTime(record.voFrozenUntil) : '永久冻结'}
             </span>
           )}
@@ -300,17 +296,17 @@ export function createGovernanceActionColumns(): TableColumnsType<UserExperience
         <Tag color={getGovernanceReviewResultTagColor(record.voReviewResult)}>
           {record.voReviewResultDisplay}
         </Tag>
-      ) : <span style={mutedTextStyle}>-</span>,
+      ) : <span className="experience-table-muted">-</span>,
     },
     {
       title: '证据快照',
       key: 'evidence',
       width: 360,
       render: (_, record) => (
-        <div style={{ display: 'grid', gap: 6 }}>
+        <div className="experience-table-stack">
           <span>{record.voEvidenceSummary || '-'}</span>
           {record.voRecommendationReason && (
-            <span style={mutedTextStyle}>
+            <span className="experience-table-muted">
               建议原因：{record.voRecommendationReason}
             </span>
           )}
@@ -323,7 +319,7 @@ export function createGovernanceActionColumns(): TableColumnsType<UserExperience
       key: 'voRemark',
       width: 320,
       render: (value: string) => (
-        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        <div className="experience-table-prewrap">
           {value}
         </div>
       ),
@@ -333,9 +329,9 @@ export function createGovernanceActionColumns(): TableColumnsType<UserExperience
       key: 'operator',
       width: 220,
       render: (_, record) => (
-        <div style={{ display: 'grid', gap: 6 }}>
+        <div className="experience-table-stack">
           <span>{record.voOperatorName || 'System'}（ID: {record.voOperatorId}）</span>
-          <span style={mutedTextStyle}>{formatDisplayTime(record.voCreateTime)}</span>
+          <span className="experience-table-muted">{formatDisplayTime(record.voCreateTime)}</span>
         </div>
       ),
     },

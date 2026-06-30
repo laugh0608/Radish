@@ -66,10 +66,7 @@ function ResourceNode({
 
   return (
     <div className="role-permission-node">
-      <div
-        className="role-permission-node__row"
-        style={{ paddingLeft: `${level * 24}px` }}
-      >
+      <div className="role-permission-node__row">
         <Checkbox
           checked={state.checked}
           indeterminate={state.indeterminate}
@@ -90,10 +87,7 @@ function ResourceNode({
       </div>
 
       {node.voApiBindings.length > 0 ? (
-        <div
-          className="role-permission-node__apis"
-          style={{ paddingLeft: `${level * 24 + 28}px` }}
-        >
+        <div className="role-permission-node__apis">
           {node.voApiBindings.map((binding) => (
             <code key={`${binding.voResourceId}:${binding.voApiModuleId}`}>
               {binding.voLinkUrl}

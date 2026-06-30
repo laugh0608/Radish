@@ -25,13 +25,13 @@ export const ExperienceUserQuerySummary = ({
           <h3>用户经验查询</h3>
           <p className="admin-feature-subtle">输入用户 ID 查看当前等级、总经验、下一级与冻结状态。</p>
         </div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div className="experience-inline-actions">
           <Input
             placeholder="用户 ID"
             value={queryUserId}
             onChange={(event) => onQueryUserIdChange(event.target.value)}
             onPressEnter={onQuery}
-            style={{ width: 220 }}
+            className="experience-query-control"
           />
           <Button variant="primary" onClick={onQuery} disabled={loadingExperience}>
             {loadingExperience ? '查询中...' : '查询'}
@@ -39,8 +39,8 @@ export const ExperienceUserQuerySummary = ({
         </div>
       </div>
 
-      <div className="admin-feature-metrics" style={{ marginTop: 20 }}>
-        <div style={{ marginBottom: 12, color: '#8c8c8c' }}>
+      <div className="admin-feature-metrics experience-section-gap-md">
+        <div className="experience-query-current">
           {loadedUserId && experience
             ? `当前展示：${experience.voUserName || '未命名用户'}（ID: ${loadedUserId}）`
             : '当前未加载用户经验数据'}
@@ -63,7 +63,7 @@ export const ExperienceUserQuerySummary = ({
         </div>
       </div>
       {experience?.voExpFrozen && (
-        <div style={{ marginTop: 16, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div className="experience-inline-actions experience-inline-actions--center experience-section-gap-sm">
           <Tag color="warning">冻结中</Tag>
           <span>到期时间：{experience.voFrozenUntil || '永久冻结'}</span>
           <span>原因：{experience.voFrozenReason || '未填写'}</span>

@@ -2,6 +2,10 @@
   color: var(--console-text-secondary);
 }
 
+.moderation-table-muted {
+  color: var(--console-text-secondary);
+}
+
 .moderation-target {
   display: flex;
   flex-direction: column;

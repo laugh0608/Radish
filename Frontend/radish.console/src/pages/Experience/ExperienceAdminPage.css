@@ -115,3 +115,66 @@
 .experience-table-spaced {
   margin-top: 20px;
 }
+
+.experience-query-control {
+  width: 220px;
+  max-width: 100%;
+}
+
+.experience-query-current {
+  margin-bottom: 12px;
+  color: var(--console-text-secondary);
+}
+
+.experience-table-muted {
+  color: var(--console-text-secondary);
+}
+
+.experience-table-inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.experience-table-inline--compact {
+  gap: 8px;
+}
+
+.experience-table-inline--center {
+  align-items: center;
+}
+
+.experience-table-stack,
+.experience-table-observation {
+  display: grid;
+}
+
+.experience-table-stack {
+  gap: 6px;
+}
+
+.experience-table-observation {
+  gap: 10px;
+}
+
+.experience-table-observation__label {
+  margin-bottom: 6px;
+  color: var(--console-text-secondary);
+}
+
+.experience-transaction-amount {
+  font-weight: 600;
+}
+
+.experience-transaction-amount--positive {
+  color: var(--console-success);
+}
+
+.experience-transaction-amount--negative {
+  color: var(--console-danger);
+}
+
+.experience-table-prewrap {
+  white-space: pre-wrap;
+  word-break: break-word;
+}

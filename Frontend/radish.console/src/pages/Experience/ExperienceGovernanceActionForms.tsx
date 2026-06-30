@@ -52,7 +52,7 @@ export const ExperienceGovernanceActionForms = ({
               { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' },
             ]}
           >
-            <Input style={{ width: '100%' }} />
+            <Input className="experience-filter-control" />
           </Form.Item>
 
           <Form.Item
@@ -60,7 +60,7 @@ export const ExperienceGovernanceActionForms = ({
             label="经验变动量"
             rules={[{ required: true, message: '请输入经验变动量' }]}
           >
-            <InputNumber style={{ width: '100%' }} />
+            <InputNumber className="experience-filter-control" />
           </Form.Item>
 
           <Form.Item name="reason" label="调整原因">
@@ -98,14 +98,14 @@ export const ExperienceGovernanceActionForms = ({
               { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' },
             ]}
           >
-            <Input style={{ width: '100%' }} />
+            <Input className="experience-filter-control" />
           </Form.Item>
 
           <Form.Item name="frozenUntil" label="冻结到期时间">
             <DatePicker
               showTime
               allowClear
-              style={{ width: '100%' }}
+              className="experience-filter-control"
               placeholder="留空表示永久冻结"
             />
           </Form.Item>
@@ -118,7 +118,7 @@ export const ExperienceGovernanceActionForms = ({
             <Input.TextArea rows={4} maxLength={500} showCount placeholder="例如：异常刷经验、待人工复核" />
           </Form.Item>
 
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="experience-inline-actions">
             <Button
               variant="primary"
               disabled={!canFreeze || freezing}
