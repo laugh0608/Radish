@@ -28,6 +28,13 @@ import {
   type StickerVo,
 } from '@/api/stickerApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { usePermission } from '@/hooks/usePermission';
 import { ROUTES } from '@/router/routes';
 import { getAvatarUrl } from '@/config/env';
@@ -268,14 +275,13 @@ export const StickerList = () => {
   if (!isValidGroupId) {
     return (
       <div className="admin-feature-page sticker-item-list-page">
-        <section className="admin-feature-card">
-          <div className="admin-feature-header">
-            <div>
-              <h2>
-                <AppstoreOutlined /> 分组表情管理
-              </h2>
-              <p className="admin-feature-subtle">分组 ID 无效，无法加载表情列表。</p>
-            </div>
+        <ConsolePageHeader
+          eyebrow="STICKER ASSETS"
+          title="分组表情管理"
+          description="分组 ID 无效，无法加载表情列表。"
+          icon={<AppstoreOutlined />}
+          status={<ConsoleStatusChip tone="warning">无效分组</ConsoleStatusChip>}
+          actions={(
             <Button
               icon={<LeftOutlined />}
               onClick={() => {
@@ -284,22 +290,25 @@ export const StickerList = () => {
             >
               返回分组列表
             </Button>
-          </div>
-        </section>
+          )}
+        />
       </div>
     );
   }
   return (
     <div className="admin-feature-page sticker-item-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <AppstoreOutlined /> 分组表情管理
-            </h2>
-            <p className="admin-feature-subtle">当前分组：{normalizedGroupId}。维护表情图片、编码、内嵌能力和排序权重。</p>
-          </div>
-          <div className="sticker-list-header-actions">
+      <ConsolePageHeader
+        eyebrow="STICKER ASSETS"
+        title="分组表情管理"
+        description={`当前分组：${normalizedGroupId}。维护表情图片、编码、内嵌能力和排序权重。`}
+        icon={<AppstoreOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canCreateSticker ? 'success' : 'neutral'}>
+            {canCreateSticker ? '可新增' : '只读'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
+          <>
             <Button
               onClick={() => {
                 navigate(ROUTES.STICKERS);
@@ -338,36 +347,38 @@ export const StickerList = () => {
                 批量上传
               </Button>
             ) : null}
-          </div>
-        </div>
-      </section>
+          </>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="分组表情指标">
-        <div className="admin-feature-metric">
-          全部表情
-          <strong>{stickers.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{filteredStickers.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          启用表情
-          <strong>{enabledStickers}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          排序草稿
-          <strong>{sortDraftCount}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="分组表情指标">
+        <ConsoleMetricCard label="全部表情" value={stickers.length} description="当前分组表情总数" />
+        <ConsoleMetricCard label="当前结果" value={filteredStickers.length} description="当前筛选后的表情" tone="info" />
+        <ConsoleMetricCard label="启用表情" value={enabledStickers} description="当前启用表情数量" tone="success" />
+        <ConsoleMetricCard label="排序草稿" value={sortDraftCount} description="尚未保存的排序变更" tone={sortDraftCount > 0 ? 'warning' : 'neutral'} />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="分组表情筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选表情</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选表情"
+            description="按表情名称和 Code 定位当前分组素材，排序草稿继续通过表格列批量保存。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+            actions={canSortSticker ? (
+              <Button
+                disabled={savingSort}
+                onClick={() => {
+                  void handleSaveSort();
+                }}
+              >
+                保存排序
+              </Button>
+            ) : null}
+          >
             <div className="admin-table-toolbar__filters">
               <Input
                 allowClear
@@ -377,18 +388,8 @@ export const StickerList = () => {
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
               />
-              {canSortSticker ? (
-                <Button
-                  disabled={savingSort}
-                  onClick={() => {
-                    void handleSaveSort();
-                  }}
-                >
-                  保存排序
-                </Button>
-              ) : null}
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table<StickerVo>

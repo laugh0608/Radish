@@ -22,18 +22,6 @@
   object-fit: cover;
 }
 
-.sticker-list-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .sticker-list-filter-input {
   width: 280px;
-}
-
-@media (max-width: 768px) {
-  .sticker-group-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
 }
