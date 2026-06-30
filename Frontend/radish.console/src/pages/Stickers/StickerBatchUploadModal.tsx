@@ -559,7 +559,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Alert
             type="info"
             showIcon
-            message={`单次最多上传 ${MAX_BATCH_COUNT} 张，建议保持图片名称语义化，系统会自动清洗 code。`}
+            title={`单次最多上传 ${MAX_BATCH_COUNT} 张，建议保持图片名称语义化，系统会自动清洗 code。`}
           />
           <Upload.Dragger
             multiple
@@ -602,7 +602,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Alert
             type={uploading ? 'info' : 'warning'}
             showIcon
-            message={uploading ? '正在上传附件，请勿关闭弹窗' : `上传完成：成功 ${successCount}，失败 ${failCount}`}
+            title={uploading ? '正在上传附件，请勿关闭弹窗' : `上传完成：成功 ${successCount}，失败 ${failCount}`}
           />
           <Progress percent={overallPercent} status={uploading ? 'active' : 'normal'} />
           <Table<BatchUploadRow>
@@ -622,7 +622,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Alert
             type={failedUploadRows.length > 0 ? 'warning' : 'success'}
             showIcon
-            message={`已上传 ${uploadedRows.length} / ${rows.length}，失败 ${failedUploadRows.length}`}
+            title={`已上传 ${uploadedRows.length} / ${rows.length}，失败 ${failedUploadRows.length}`}
             description="确认 code、显示名和允许内嵌开关后提交。上传失败项可先重传。"
           />
           <Table<BatchUploadRow>
@@ -643,7 +643,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
         <Alert
           type="error"
           showIcon
-          message={`待修复 ${retryRows.length} 项`}
+          title={`待修复 ${retryRows.length} 项`}
           description="请修改冲突项后重提。"
         />
         <Table<BatchUploadRow>

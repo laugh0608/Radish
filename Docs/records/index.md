@@ -131,6 +131,7 @@
 - [p3-12-d29-radish-console-deep-form-static-closure-2026-06-30](/records/p3-12-d29-radish-console-deep-form-static-closure-2026-06-30)
 - [p3-12-d30-radish-console-detail-drawer-static-closure-2026-06-30](/records/p3-12-d30-radish-console-detail-drawer-static-closure-2026-06-30)
 - [p3-12-d31-radish-console-stage-smoke-2026-06-30](/records/p3-12-d31-radish-console-stage-smoke-2026-06-30)
+- [p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30](/records/p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
