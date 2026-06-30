@@ -120,6 +120,7 @@
 - [p3-12-d18-radish-console-document-governance-visual-boundary-2026-06-29](/records/p3-12-d18-radish-console-document-governance-visual-boundary-2026-06-29)
 - [p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29](/records/p3-12-d19-radish-console-taxonomy-list-visual-migration-2026-06-29)
 - [p3-12-d20-radish-console-sticker-visual-migration-2026-06-30](/records/p3-12-d20-radish-console-sticker-visual-migration-2026-06-30)
+- [p3-12-d21-radish-console-table-visual-static-closure-2026-06-30](/records/p3-12-d21-radish-console-table-visual-static-closure-2026-06-30)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)

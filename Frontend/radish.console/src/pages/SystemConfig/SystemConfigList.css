@@ -216,10 +216,6 @@
 }
 
 @media (max-width: 768px) {
-  .system-config-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
-
   .branding-card__main {
     flex-direction: column;
     align-items: flex-start;
