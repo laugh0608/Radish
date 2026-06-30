@@ -8,7 +8,9 @@
 >
 > 更新：2026-06-29（Asia/Shanghai）：`P3-12-D9-D13` 已完成 `radish.client` 私域 / 作者态第二批视觉实现与成组验收；`P3-12-D14-D19` 已开始将 Console 侧栏分组、页面语义组件和表格代表页迁入代码。
 >
-> 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` 首轮视觉实现已完成，Console 已进入 D14-D19 语义组件和代表页迁移阶段
+> 更新：2026-06-30（Asia/Shanghai）：`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核和表格交互代码侧治理；D36+ 将复核 `F01-F02` 与 public / private / console 代码实现的共享结构漂移。
+>
+> 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` 与 Console 均完成首轮代码对齐，尚需 D36+ 差距矩阵确认跨源一致性
 
 ## 设计源
 
@@ -106,13 +108,13 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - 资产、订单、背包、通知、消息、圈子、宠物、论坛作者态和 Docs 作者态已按本说明接入状态槽、摘要节奏和移动单列任务流。
 - D13 已收口重复卡片和摘要卡圆角分叉，并完成 Gateway PC / mobile 成组验收。
 
-`P3-12-D14-D19` 已开始 Console 侧代码落地：
+`P3-12-D14-D35` 已完成 Console 侧首轮代码落地与阶段治理：
 
 - `radish.console` 侧栏已按总览 / 商业与资产 / 内容与文档 / 治理与权限 / 系统工具分组。
 - 新增 `ConsolePageHeader`、`ConsoleStatusChip`、`ConsoleMetricGrid`、`ConsoleMetricCard`、`ConsoleToolbar`，用于承接 Console 页头、指标和筛选工具条。
-- 系统设置、订单、用户、商品、文档治理首屏、标签和分类已迁入上述语义组件；迁移不改变 API、权限、表单字段或业务动作。
+- 系统设置、订单、用户、商品、文档治理首屏、标签 / 分类、贴纸类、角色权限、内容 / 经验治理、系统工具、深层表单、详情 / 抽屉和表格交互已完成首轮迁移或代码侧治理；迁移不改变 API、权限、表单字段或业务动作。
 
-后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。
+后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。D36+ 需要补齐设计源与代码实现的差距矩阵后，再判断是否进入成组实现或运行态验收。
 
 ## radish.client 组件使用口径
 
@@ -191,6 +193,6 @@ loading / empty / error / notFound / permission / auth / info
 - 不把所有页面合并进一个巨型 `.pen`。
 - 不创建跨文件实时组件库。
 - 不把 D8 首批实现扩大为 Console 或全量页面重写。
-- 不把 D14-D19 的 Console 语义组件反向套到公开 / 私域 Web；Console 仍按治理和表格密度独立承接。
+- 不把 Console 语义组件反向套到公开 / 私域 Web；Console 仍按治理和表格密度独立承接。
 - 不借共享基座重做 public / private / console 全量画板。
 - 不把 `F02` 当作业务页面；public / private 仍需在各自业务设计源补齐具体页面族和移动任务流。
