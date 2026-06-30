@@ -45,3 +45,26 @@
   background: var(--console-warning-bg);
   color: var(--console-warning-text);
 }
+
+.order-detail-danger,
+.order-detail-price {
+  color: var(--console-danger);
+}
+
+.order-detail-price {
+  font-weight: 700;
+}
+
+.order-detail-price--total {
+  font-size: 16px;
+}
+
+.order-detail-remark {
+  margin-top: 16px;
+}
+
+.order-detail-remark__label {
+  margin-bottom: 8px;
+  color: var(--console-text-primary);
+  font-weight: 600;
+}

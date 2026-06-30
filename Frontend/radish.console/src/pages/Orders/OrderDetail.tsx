@@ -206,7 +206,7 @@ export const OrderDetail = ({
 
             <Descriptions.Item label="失败原因" span={2}>
               {currentOrder.voFailReason ? (
-                <span style={{ color: '#ff4d4f' }}>{currentOrder.voFailReason}</span>
+                <span className="order-detail-danger">{currentOrder.voFailReason}</span>
               ) : '-'}
             </Descriptions.Item>
 
@@ -235,13 +235,13 @@ export const OrderDetail = ({
             </Descriptions.Item>
 
             <Descriptions.Item label="单价">
-              <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
+              <span className="order-detail-price">
                 {currentOrder.voUnitPrice} 胡萝卜
               </span>
             </Descriptions.Item>
 
             <Descriptions.Item label="总价">
-              <span style={{ color: '#ff4d4f', fontWeight: 'bold', fontSize: '16px' }}>
+              <span className="order-detail-price order-detail-price--total">
                 {currentOrder.voTotalPrice} 胡萝卜
               </span>
             </Descriptions.Item>
@@ -266,8 +266,8 @@ export const OrderDetail = ({
           ) : null}
 
           {canRemark ? (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ marginBottom: 8, fontWeight: 600 }}>管理员备注</div>
+            <div className="order-detail-remark">
+              <div className="order-detail-remark__label">管理员备注</div>
               <Input.TextArea
                 rows={4}
                 maxLength={500}

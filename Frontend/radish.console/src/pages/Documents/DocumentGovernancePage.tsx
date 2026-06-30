@@ -55,6 +55,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import '../adminForm.css';
 import '../adminFeature.css';
 
 const DOCUMENT_STATUS = {
@@ -568,7 +569,7 @@ export const DocumentGovernancePage = () => {
         ref={importInputRef}
         type="file"
         accept=".md,.markdown,.txt,text/markdown,text/plain"
-        style={{ display: 'none' }}
+        className="admin-form-hidden-input"
         onChange={(event) => {
           void handleImportFile(event);
         }}
@@ -708,7 +709,7 @@ export const DocumentGovernancePage = () => {
         {detailLoading ? (
           <p className="admin-feature-subtle">正在加载文档详情...</p>
         ) : detailDocument ? (
-          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
             <Space wrap>
               {getStatusTag(detailDocument.voStatus)}
               {getVisibilityTag(detailDocument.voVisibility)}
@@ -752,12 +753,12 @@ export const DocumentGovernancePage = () => {
         }}
         onCancel={() => setAccessDocument(null)}
       >
-        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
           <p className="admin-feature-subtle">
             访问策略只影响文档可见性和受限访问列表，不修改正文、发布状态或版本内容。
           </p>
           <Select
-            style={{ width: '100%' }}
+            className="admin-feature-control-full"
             value={accessVisibility}
             options={visibilityOptions.filter((option) => option.value !== 'all')}
             onChange={setAccessVisibility}
@@ -857,7 +858,7 @@ export const DocumentGovernancePage = () => {
             {revisionDetailLoading ? (
               <p className="admin-feature-subtle">正在加载版本详情...</p>
             ) : revisionDetail ? (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
                 <Tag color={revisionDetail.voIsCurrent ? 'success' : 'default'}>v{revisionDetail.voVersion}</Tag>
                 <p className="admin-feature-subtle">{revisionDetail.voChangeSummary || '无变更说明'}</p>
                 <Input.TextArea value={revisionDetail.voMarkdownContent} readOnly rows={12} />

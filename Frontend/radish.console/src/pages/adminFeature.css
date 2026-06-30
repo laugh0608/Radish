@@ -73,6 +73,11 @@
   gap: 16px;
 }
 
+.admin-feature-modal-stack,
+.admin-feature-control-full {
+  width: 100%;
+}
+
 .admin-table-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);

@@ -11,18 +11,18 @@
 }
 
 .sticker-batch-summary {
-  color: #666;
+  color: var(--console-text-secondary);
   font-size: 13px;
 }
 
 .sticker-batch-row-conflict td {
-  background: #fff7e6 !important;
+  background: var(--console-warning-bg) !important;
 }
 
 .sticker-batch-issue-text {
-  color: #d46b08;
+  color: var(--console-warning-text);
 }
 
 .sticker-batch-error-text {
-  color: #cf1322;
+  color: var(--console-danger);
 }

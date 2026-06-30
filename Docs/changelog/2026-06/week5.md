@@ -26,3 +26,4 @@
 - `P3-12-D27` 完成 `radish.console` 系统工具与运维外壳收口：`/hangfire` 从路由临时组件迁入 `SystemTools/HangfirePage`，外层接入 Console 语义页头、指标和状态组件；继续保留受保护外部 Hangfire Dashboard，不扩展内部任务队列、失败重试或运行审计平台。
 - `P3-12-D28` 完成 `radish.console` D14-D27 阶段静态收口：路由认证中、无 Console 权限和懒加载状态的旧 inline 样式迁入 CSS；剩余风险集中到商品 / 分类 / 贴纸表单、订单 / 商品详情、文档治理抽屉和贴纸批量上传弹窗，后续按深层表单 / 详情专题治理。
 - `P3-12-D29` 完成 `radish.console` 深层表单静态收口首批：商品、分类、贴纸和贴纸分组表单的上传预览、隐藏输入、控件宽度、弱提示文本和弹窗 footer 样式迁入 `adminForm.css`；上传 API、附件字段、校验和保存载荷保持不变。
+- `P3-12-D30` 完成 `radish.console` 详情 / 抽屉静态收口：`OrderDetail`、`ProductDetail`、`DocumentGovernancePage` 的危险色、图片展示、隐藏输入和抽屉全宽布局迁入 CSS，`StickerBatchUploadModal.css` 历史提示色同步改为 Console token；业务契约、权限、路由和保存动作保持不变。
