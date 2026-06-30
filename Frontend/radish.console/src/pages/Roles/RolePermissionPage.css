@@ -2,7 +2,6 @@
   min-width: 0;
 }
 
-.role-permission-page__heading,
 .role-permission-page__actions {
   display: flex;
   align-items: flex-start;
@@ -10,8 +9,8 @@
   flex-wrap: wrap;
 }
 
-.role-permission-page__heading h2 {
-  margin: 0;
+.role-permission-page__role-card {
+  width: 100%;
 }
 
 .role-permission-page__content {

@@ -7,9 +7,3 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-
-@media (max-width: 768px) {
-  .role-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
-}

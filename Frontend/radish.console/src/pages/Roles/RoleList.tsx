@@ -22,6 +22,13 @@ import {
 import { getRoleList, deleteRole, toggleRoleStatus, type RoleVo } from '@/api/roleApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { RoleForm } from './RoleForm';
 import { log } from '@/utils/logger';
 import '../adminFeature.css';
@@ -238,14 +245,17 @@ export const RoleList = () => {
   ];
   return (
     <div className="admin-feature-page role-list-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <SafetyOutlined /> 角色管理
-            </h2>
-            <p className="admin-feature-subtle">维护后台角色、权限范围和权限配置入口。</p>
-          </div>
+      <ConsolePageHeader
+        eyebrow="RBAC PERMISSIONS"
+        title="角色管理"
+        description="维护后台角色、权限范围和权限配置入口。"
+        icon={<SafetyOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canViewRoles ? 'success' : 'danger'}>
+            {canViewRoles ? '可查看' : '无权限'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
           <div className="role-list-header-actions">
             <Button
               icon={<ReloadOutlined />}
@@ -263,37 +273,27 @@ export const RoleList = () => {
               </Button>
             ) : null}
           </div>
-        </div>
-      </section>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="角色列表指标">
-        <div className="admin-feature-metric">
-          全部角色
-          <strong>{roles.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          启用角色
-          <strong>{enabledRoles}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          禁用角色
-          <strong>{roles.length - enabledRoles}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          自定义权限
-          <strong>{customScopeRoles}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="角色列表指标">
+        <ConsoleMetricCard label="全部角色" value={roles.length} description="当前已加载角色数量" tone="info" />
+        <ConsoleMetricCard label="启用角色" value={enabledRoles} description="可参与授权的角色" tone="success" />
+        <ConsoleMetricCard label="禁用角色" value={roles.length - enabledRoles} description="当前不可用角色" />
+        <ConsoleMetricCard label="自定义权限" value={customScopeRoles} description="自定义权限范围角色" tone="warning" />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="角色列表状态">
-            <div className="admin-table-toolbar__title">
-              <span>角色列表</span>
-              <Tag>{loading ? '加载中' : '全部角色'}</Tag>
-            </div>
-            <p className="admin-feature-subtle">角色权限配置会跳转到独立权限页，当前列表仅承载角色基础信息和启停状态。</p>
-          </section>
+          <ConsoleToolbar
+            title="角色列表"
+            description="角色权限配置会跳转到独立权限页，当前列表仅承载角色基础信息和启停状态。"
+            meta={(
+              <ConsoleStatusChip tone={loading ? 'info' : 'neutral'}>
+                {loading ? '加载中' : '全部角色'}
+              </ConsoleStatusChip>
+            )}
+          />
 
           <section className="admin-table-panel">
             <Table
