@@ -158,12 +158,12 @@ export const SystemConfigForm = ({
       case 'number':
         return (
           <InputNumber
+            className="system-config-form-control-full"
             min={hasNumberConstraint(config.voMinNumberValue) ? config.voMinNumberValue : undefined}
             max={hasNumberConstraint(config.voMaxNumberValue) ? config.voMaxNumberValue : undefined}
             precision={config.voRequiresInteger ? 0 : undefined}
             step={config.voRequiresInteger ? 1 : undefined}
             placeholder="请输入数字值"
-            style={{ width: '100%' }}
           />
         );
       case 'boolean':

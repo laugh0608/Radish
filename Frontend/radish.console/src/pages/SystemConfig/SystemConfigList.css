@@ -180,6 +180,10 @@
   margin-top: 16px;
 }
 
+.system-config-form-control-full {
+  width: 100%;
+}
+
 .system-config-risk-note {
   margin-top: 12px;
   padding: 10px 12px;

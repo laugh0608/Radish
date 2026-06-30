@@ -40,11 +40,15 @@
 }
 
 .coin-admin-signed-amount--positive {
-  color: #2f7a4f;
+  color: var(--console-success);
 }
 
 .coin-admin-signed-amount--negative {
-  color: #a64242;
+  color: var(--console-danger);
+}
+
+.coin-admin-transaction-table {
+  margin-top: 20px;
 }
 
 @media (max-width: 768px) {

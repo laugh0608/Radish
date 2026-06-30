@@ -257,8 +257,8 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D33 radish.console 表格可读性首批收口记录](/records/p3-12-d33-radish-console-table-readability-first-closure-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步继续推进 `P3-12-D` UI 专题收口。
-- 第一顺位：宿主恢复后补 D33 Gateway 中宽 PC / 移动 CSS 视口真实扫描；通过后继续围绕 Ant Table 固定列中宽交互、移动窄屏表格可读性和 Console 已迁移页面的真实可用性做目标扫描评估，命中真实问题后按页面类型成组修复，不默认扩大成全站样式重构。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D34 radish.console 运维与治理表格静态收口记录](/records/p3-12-d34-radish-console-ops-table-static-closure-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步继续推进 `P3-12-D` UI 专题收口。
+- 第一顺位：继续围绕 Ant Table 固定列中宽交互、移动窄屏表格可读性和 Console 已迁移页面真实可用性做代码侧目标扫描；若剩余问题主要依赖运行态观察，再集中申请一次 Gateway PC / mobile 真实联调，不逐批申请。
 - `P3-12-E` 发布候选准备后置到 UI 专题完成后；届时再刷新完整验证矩阵、PR 范围、剩余风险和回滚口径，并执行 baseline / identity / host runtime / Gateway 页面矩阵。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
