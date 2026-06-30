@@ -822,7 +822,7 @@ export const DocumentGovernancePage = () => {
                   key: 'actions',
                   width: 170,
                   render: (_, record) => (
-                    <Space size="small">
+                    <Space size="small" wrap>
                       <Button
                         variant="ghost"
                         size="small"

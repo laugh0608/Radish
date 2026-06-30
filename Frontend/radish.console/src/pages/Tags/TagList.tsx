@@ -249,7 +249,7 @@ export const TagList = () => {
       width: 300,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {record.voIsDeleted && canRestoreTag && (
             <Button
               variant="ghost"

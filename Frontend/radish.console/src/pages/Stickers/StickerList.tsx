@@ -222,11 +222,11 @@ export const StickerList = () => {
       width: 120,
       render: (_, record) => (
         <InputNumber
+          className="sticker-item-sort-input"
           disabled={!canSortSticker}
           min={0}
           value={sortDrafts[record.voId] ?? record.voSort}
           onChange={(value) => handleSortChange(record.voId, value)}
-          style={{ width: '100%' }}
         />
       ),
     },
@@ -236,7 +236,7 @@ export const StickerList = () => {
       width: 220,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {canEditSticker ? (
             <Button
               variant="ghost"

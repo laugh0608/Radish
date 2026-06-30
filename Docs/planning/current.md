@@ -193,7 +193,7 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D32` 已完成 Console 首批视觉迁移、成组静态收口、复杂页面类型边界评估、角色权限、治理工作台外层语义、点名内部区块样式迁移、治理页面成组静态收口、系统工具 / 运维外壳收口、阶段静态收口、深层表单静态收口、详情 / 抽屉静态收口、阶段运行态复核和数据补验。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D33` 已完成 Console 首批视觉迁移、成组静态收口、复杂页面类型边界评估、角色权限、治理工作台外层语义、点名内部区块样式迁移、治理页面成组静态收口、系统工具 / 运维外壳收口、阶段静态收口、深层表单静态收口、详情 / 抽屉静态收口、阶段运行态复核、数据补验和表格可读性首批代码侧收口。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
   - 页面迁移齐后进入 `P3-12-D` 统一 UI 设计与美化专题，并走 Pencil 设计稿 -> 设计 / 说明文档 -> 代码实现 -> PC / mobile 复核。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
@@ -257,8 +257,8 @@
 
 ## 明日事项
 
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D32 radish.console 数据补验与 Auth 静态根目录收口记录](/records/p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步继续推进 `P3-12-D` UI 专题收口。
-- 第一顺位：围绕 Ant Table 固定列中宽交互、移动窄屏表格可读性和 Console 已迁移页面的真实可用性做目标扫描评估；命中真实问题后按页面类型成组修复，不默认扩大成全站样式重构。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D33 radish.console 表格可读性首批收口记录](/records/p3-12-d33-radish-console-table-readability-first-closure-2026-06-30) 和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)，确认下一步继续推进 `P3-12-D` UI 专题收口。
+- 第一顺位：宿主恢复后补 D33 Gateway 中宽 PC / 移动 CSS 视口真实扫描；通过后继续围绕 Ant Table 固定列中宽交互、移动窄屏表格可读性和 Console 已迁移页面的真实可用性做目标扫描评估，命中真实问题后按页面类型成组修复，不默认扩大成全站样式重构。
 - `P3-12-E` 发布候选准备后置到 UI 专题完成后；届时再刷新完整验证矩阵、PR 范围、剩余风险和回滚口径，并执行 baseline / identity / host runtime / Gateway 页面矩阵。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 

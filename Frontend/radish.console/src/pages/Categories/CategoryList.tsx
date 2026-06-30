@@ -255,7 +255,7 @@ export const CategoryList = () => {
       width: 300,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {record.voIsDeleted && canRestoreCategory && (
             <Button
               variant="ghost"

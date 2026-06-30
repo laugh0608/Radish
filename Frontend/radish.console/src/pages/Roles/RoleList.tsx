@@ -191,7 +191,7 @@ export const RoleList = () => {
       width: 380,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {canEditRole ? (
             <Button
               variant="ghost"

@@ -216,7 +216,7 @@ export const StickerGroupList = () => {
       width: 360,
       fixed: 'right',
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {canViewStickers ? (
             <Button
               variant="ghost"
