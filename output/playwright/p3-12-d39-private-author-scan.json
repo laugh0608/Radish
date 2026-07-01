@@ -1,0 +1,2689 @@
+{
+  "dynamic": {
+    "post": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4",
+    "doc": "/docs/index",
+    "product": "/shop/product/100061",
+    "leaderboardType": "/leaderboard/balance",
+    "user": "/u/usr_019ef99117377efb85389bfe6d9d55a5"
+  },
+  "summary": {
+    "batch": "private-author",
+    "total": 44,
+    "detectedCounts": {},
+    "problemPages": []
+  },
+  "results": [
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "工作台",
+      "path": "/workbench",
+      "info": {
+        "bodyLength": 605,
+        "bodySample": "台\n工作台\n功能总入口\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\nP3-12 Web 完全化\n\n正式 Web 功能总入口\n\n集中进入公开阅读、登录态私域、治理后台和保留的 WebOS 桌面版入口。\n\n我的状态\n消息\n公开阅读\n\n不进入桌面壳层，直接承接公开浏览与继续阅读。\n\n社区发现\n公开可用\n从 Web 默认入口浏览帖子、文档、榜单和商城推荐。\n打开\n论坛\n公开可用\n阅读公开帖子，也可进入登录态作者流程。\n阅读\n创作\n文档\n公开可用\n阅读公开文档，并进入个人文档作者区。\n阅读\n我的\n创作\n排行榜\n",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "正式 Web 功能总入口",
+          "公开阅读",
+          "登录态私域",
+          "治理与兼容"
+        ],
+        "iframeCount": 0,
+        "linkCount": 47,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "工作台 · Radish",
+        "url": "https://localhost:5000/workbench"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "我的状态",
+      "path": "/me",
+      "info": {
+        "bodyLength": 390,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n登录账号\n\nAdmin\n@Admin#2\n更新于 2026-07-01 21:12:35\n打开公开主页\n我的内容\n我的圈子\n我的附件\n通知中心\n电子宠物\n账号概览\n\n只读查看成长、资产和最近复访路径。\n\n刷新\n成长\nLv.0\n凡人\n0\n/\n累计经验\n0\n距下一级\n100\n资产\n0.050\n冻结\n0.000\n累计获得\n50\n最近复访\n2\n\n最近可阅读路径已可直接返回。\n\n电子宠物\n\n还没有领取电子宠物。\n\n近期成长\n成长详情\n\n暂无近期",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "Admin",
+          "账号概览"
+        ],
+        "iframeCount": 0,
+        "linkCount": 23,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "我的状态 · Radish",
+        "url": "https://localhost:5000/me"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "我的内容",
+      "path": "/me/content",
+      "info": {
+        "bodyLength": 226,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n个人中心\n\n我的内容\n\n查看当前账号发布过的帖子、评论和轻回应。\n\n返回我的状态\n帖子\n评论\n轻回应\n测试帖子\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子 测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子 测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子 测试帖子测试帖子测试...\n\n22\n0\n0\n2026-06-27 20:22:07",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "我的内容"
+        ],
+        "iframeCount": 0,
+        "linkCount": 17,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "我的内容 · Radish",
+        "url": "https://localhost:5000/me/content"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "浏览历史",
+      "path": "/me/history",
+      "info": {
+        "bodyLength": 352,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n个人中心\n\n浏览历史\n\n查看最近访问过的公开页面，并直接回到正式 Web 路径。\n\n返回我的状态\n帖子\n2026-07-01 21:11:55\n测试帖子\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子 测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子 测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子 测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n浏览 22 次\n/forum/post/pst_",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "浏览历史"
+        ],
+        "iframeCount": 0,
+        "linkCount": 15,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "浏览历史 · Radish",
+        "url": "https://localhost:5000/me/history"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "附件管理",
+      "path": "/me/attachments",
+      "info": {
+        "bodyLength": 173,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n个人中心\n\n我的附件\n\n管理当前账号上传过的文件，包含筛选、下载链接和删除。\n\n返回我的状态\n全部\n通用\n帖子\n评论\n头像\n文档\n搜索\n1 条\ntouxiang1.jpg\n46.19 KB\nAvatar\n2026-06-25 04:18:16\n下载\n复制链接\n删除",
+        "buttonCount": 4,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "我的附件"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "我的附件 · Radish",
+        "url": "https://localhost:5000/me/attachments"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "经验详情",
+      "path": "/me/experience",
+      "info": {
+        "bodyLength": 206,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n个人中心\n\n成长详情\n\n查看等级进度和分页经验流水。\n\n返回我的状态\n等级\n当前等级进度\nLv.0\n凡人\n0\n/\n0100\n总进度（到满级）\nLv.0\n凡人 → 满级\n0\n/\n100\n当前等级\nLv.0 凡人\n当前经验值\n0\n累计经验值\n0\n距下一级\n100\n经验值趋势\n最近7天\n最近30天\n经验值\n经验值明细\n\n暂无经验值记录",
+        "buttonCount": 3,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "成长详情",
+          "等级",
+          "经验值趋势",
+          "经验值明细"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 1435,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "成长详情 · Radish",
+        "url": "https://localhost:5000/me/experience"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "资产概览",
+      "path": "/me/assets",
+      "info": {
+        "bodyLength": 225,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n账户资产\n\n资产\n\n查看余额、冻结余额、累计获得、累计支出和最近流水。\n\n返回我的状态\n刷新\n可用余额\n0.050\n冻结\n0.000\n累计获得\n50\n累计支出\n0\n近期资产\n\n共 1 条记录，这里展示最新资产动态。\n\n完整流水\n系统赠送\n2026-06-24 20:37:46 · 成功\nUserRegistration · 20001 · 新用户注册奖励\n0.050",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "资产",
+          "近期资产"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "资产 · Radish",
+        "url": "https://localhost:5000/me/assets"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "资产流水",
+      "path": "/me/assets/transactions",
+      "info": {
+        "bodyLength": 281,
+        "bodySample": "我\n我的状态\n登录复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\n账户资产\n\n资产流水\n\n按交易类型和状态浏览当前账号的完整资产流水。\n\n返回我的状态\n刷新\n可用余额\n0.050\n冻结\n0.000\n累计获得\n50\n累计支出\n0\n全部流水\n\n共 1 条记录\n\n返回资产\n交易类型\n全部类型\n系统发放\n点赞奖励\n评论奖励\n神评奖励\n转账\n打赏\n消费\n退款\n扣罚\n管理员调整\n状态\n全部状态\n处理中\n成功\n失败\n系统赠送\n2026-06-24 20:37:46 · 成功\nUserRegistration · ",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "资产流水",
+          "全部流水"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "资产流水 · Radish",
+        "url": "https://localhost:5000/me/assets/transactions"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "订单列表",
+      "path": "/shop/orders",
+      "info": {
+        "bodyLength": 175,
+        "bodySample": "商\n萝卜商城\n订单、背包与购买回流\n工作台\n我的状态\n资产\n创作\n消息\n首页\n圈子\n首页\n订单\n背包\n返回\n\n萝卜商城\n\n我的订单\n\n您还没有购买过任何商品\n\n我的订单\n1\n第 1 页，共 1 页\n订单号：P3D32-ORDER-20260630-001\n已完成\n经验卡（100点）\n数量：1\n总价：50 胡萝卜\n2026/6/30 20:05:36",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "我的订单"
+        ],
+        "iframeCount": 0,
+        "linkCount": 17,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "萝卜商城 · Radish",
+        "url": "https://localhost:5000/shop/orders"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "订单详情",
+      "path": "/shop/order/931200000001",
+      "info": {
+        "bodyLength": 273,
+        "bodySample": "商\n萝卜商城\n订单、背包与购买回流\n工作台\n我的状态\n资产\n创作\n消息\n首页\n圈子\n首页\n订单\n背包\n返回\n\n萝卜商城\n\n订单详情\n\n订单号：P3D32-ORDER-20260630-001\n\n已完成\n订单号：P3D32-ORDER-20260630-001\n商品信息\n查看商品\n消耗品\n经验卡（100点）\n单价：\n50 胡萝卜\n数量：\n1 件商品\n总价：\n50 胡萝卜\n有效期：\n永久\n订单跟踪\n创建订单\n2026/06/30 20:05:36\n支付完成\n2026/06/30 20:05:36\n订单完成\n2026/0",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "订单详情",
+          "商品信息",
+          "订单跟踪"
+        ],
+        "iframeCount": 0,
+        "linkCount": 17,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "萝卜商城 · Radish",
+        "url": "https://localhost:5000/shop/order/931200000001"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "背包",
+      "path": "/shop/inventory",
+      "info": {
+        "bodyLength": 127,
+        "bodySample": "商\n萝卜商城\n订单、背包与购买回流\n工作台\n我的状态\n资产\n创作\n消息\n首页\n圈子\n首页\n订单\n背包\n返回\n\n萝卜商城\n\n我的背包\n\n去商城购买权益商品吧\n\n权益 (0)\n0\n道具 (0)\n0\n权益 (0)\n道具 (0)\n暂无权益\n\n去商城购买权益商品吧",
+        "buttonCount": 3,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "我的背包",
+          "暂无权益"
+        ],
+        "iframeCount": 0,
+        "linkCount": 16,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "萝卜商城 · Radish",
+        "url": "https://localhost:5000/shop/inventory"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "通知",
+      "path": "/notifications",
+      "info": {
+        "bodyLength": 176,
+        "bodySample": "萝\n通知中心\n通知复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n私域任务流\n集中处理提及、评论和系统更新\n\n把通知筛选、已读处理和内容回跳放在同一个工作区，降低从移动端或公开页回访时的操作成本。\n\n0\n未读通知\n0\n近期通知\n已就绪\n回跳链路\n通知中心\n全部已读\n全部\n未读\n@我\n评论\n点赞\n🔔\n暂无通知\n当有新通知时，会显示在这里",
+        "buttonCount": 6,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "集中处理提及、评论和系统更新",
+          "通知中心"
+        ],
+        "iframeCount": 0,
+        "linkCount": 12,
+        "scrollHeight": 1101,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "通知中心 · Radish",
+        "url": "https://localhost:5000/notifications"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "消息",
+      "path": "/messages",
+      "info": {
+        "bodyLength": 198,
+        "bodySample": "聊\n消息\n会话复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n私域任务流\n继续频道会话和个人主页跳转\n\nWeb 入口承载会话恢复、成员查看、消息回复和公开个人页跳转，不需要先进入桌面壳层。\n\n2\n频道\n已打开\n聚焦会话\n在线\n实时连接\n聊天室\n🌐 公共闲聊\n❓ 问题求助\n🌐 公共闲聊\n公共租户默认频道：日常交流\n还没有消息，发一条试试\n图片\n发送\n成员\n1\n<\nAdmin#2",
+        "buttonCount": 7,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "继续频道会话和个人主页跳转"
+        ],
+        "iframeCount": 0,
+        "linkCount": 12,
+        "scrollHeight": 1101,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "消息 · Radish",
+        "url": "https://localhost:5000/messages"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "圈子",
+      "path": "/circle",
+      "info": {
+        "bodyLength": 189,
+        "bodySample": "萝\n圈子\nRELATION FEED\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n\n私域复访\n\n我的圈子\n\n这里聚合关注动态、我的关注和我的粉丝；帖子详情和公开主页仍回到各自公开路由阅读。\n\n0\n关注\n0\n粉丝\n0\n当前动态\n论坛\n我的状态\n动态\n关注\n粉丝\n关注动态\n\n来自已关注用户的公开帖子，继续阅读时进入公开帖子详情。\n\n0 条\n暂无关注动态\n\n你关注的人还没有新动态",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "我的圈子",
+          "关注动态",
+          "暂无关注动态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 16,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "圈子 · Radish",
+        "url": "https://localhost:5000/circle"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "private",
+      "name": "宠物",
+      "path": "/pet",
+      "info": {
+        "bodyLength": 82,
+        "bodySample": "萝\nRadish 电子宠物\n日常复访\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n萝\n\n首次领取\n\n领取你的 Radish 电子宠物\n宠物名称\n领取宠物",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "领取你的 Radish 电子宠物"
+        ],
+        "iframeCount": 0,
+        "linkCount": 12,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "Radish 电子宠物 · Radish",
+        "url": "https://localhost:5000/pet"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "论坛发布",
+      "path": "/forum/compose",
+      "info": {
+        "bodyLength": 539,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n论坛创作\n\n发布论坛帖子\n\n在正式 Web 论坛流程里写帖子；草稿、分类、标签、问答、投票、抽奖、图片和文档附件继续复用现有论坛发布器。\n\n已就绪\n登录状态\n3\n可选分类\n幂等\n提交保护\n返回论坛\nMarkdown\n富文本\n未选分类\n0 个标签\n普通帖\n0/4 就绪\n收起设置\n全屏创作\n默认编辑模式，可在工具栏切换预览或分栏\n0/100\n水印\n多尺寸\n缩放\n30%\n50%\n70%\n75%\n100%\n\n帖子设置\n\n分类、标签与附加功能\n分类\n未",
+        "buttonCount": 34,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "发布论坛帖子"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "论坛 - Radish",
+        "url": "https://localhost:5000/forum/compose"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "论坛回答",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=answer",
+      "info": {
+        "bodyLength": 782,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n返回论坛\n复制链接\n公开浏览\n浏览 23\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 23\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨",
+        "buttonCount": 16,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=answer"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "论坛编辑",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=edit",
+      "info": {
+        "bodyLength": 935,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n返回论坛\n复制链接\n公开浏览\n浏览 25\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 25\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨",
+        "buttonCount": 40,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区",
+          "编辑帖子"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=edit"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "论坛历史",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=history",
+      "info": {
+        "bodyLength": 815,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n返回论坛\n复制链接\n公开浏览\n浏览 27\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 27\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨",
+        "buttonCount": 19,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区",
+          "历史"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=history"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "文档作者库",
+      "path": "/docs/mine",
+      "info": {
+        "bodyLength": 13082,
+        "bodySample": "文\n文档作者台\n正式 WEB 文档写作入口\n工作台\n我的状态\n资产\n创作\n消息\n公开文档\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。\n\n1\n目录节点\n403\n文档总数\n可写\n当前列表\n我的文档\n新建文档\n公开阅读\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n集中处理文档草稿、内容修订和公开阅读入口，不承载发布与治理动作。\n\n新建文档\n刷新\n目录节点\n1\n文档总数\n403\n本页加载\n100\n已",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "文档作者台",
+          "文档作者台",
+          "2026 年 7 月第 1 周开发日志",
+          "2026 年 6 月第 1 周开发日志",
+          "2026 年 5 月第 2 周开发日志",
+          "2026-04 第一周 (04-02 ~ 04-05)"
+        ],
+        "iframeCount": 0,
+        "linkCount": 215,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "文档作者台 · Radish",
+        "url": "https://localhost:5000/docs/mine"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "文档创建",
+      "path": "/docs/compose",
+      "info": {
+        "bodyLength": 10198,
+        "bodySample": "文\n文档作者台\n正式 WEB 文档写作入口\n工作台\n我的状态\n资产\n创作\n消息\n公开文档\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。\n\n1\n目录节点\n403\n文档总数\n可写\n新建草稿\n我的文档\n新建文档\n公开阅读\n\nDOCUMENT DRAFT\n\n新建文档\n\n默认创建登录可见草稿，发布、归档和权限治理留在 Console。\n\n返回列表\n标题\nSlug\n上级文档\n根目录\n文档\n　└ Adr\n　　└ A",
+        "buttonCount": 19,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "文档作者台",
+          "新建文档"
+        ],
+        "iframeCount": 0,
+        "linkCount": 15,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "文档作者台 · Radish",
+        "url": "https://localhost:5000/docs/compose"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "author",
+      "name": "文档版本",
+      "path": "/docs/revisions/2072303610636533760",
+      "info": {
+        "bodyLength": 1163,
+        "bodySample": "文\n文档作者台\n正式 WEB 文档写作入口\n工作台\n我的状态\n资产\n创作\n消息\n公开文档\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。\n\n1\n目录节点\n403\n文档总数\n可写\n修订查看\n我的文档\n新建文档\n公开阅读\n\nREVISION HISTORY\n\n2026 年 7 月第 1 周开发日志\n\n查看历史快照内容，不在作者入口执行回滚治理动作。\n\n返回列表\nv1\n固定文档同步\n2026/7/1 20:5",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "文档作者台",
+          "2026 年 7 月第 1 周开发日志",
+          "v1",
+          "2026 年 7 月第 1 周开发日志",
+          "2026-07-01"
+        ],
+        "iframeCount": 0,
+        "linkCount": 15,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "文档作者台 · Radish",
+        "url": "https://localhost:5000/docs/revisions/2072303610636533760"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "工作台",
+      "path": "/workbench",
+      "info": {
+        "bodyLength": 587,
+        "bodySample": "台\n工作台\n工作台\n资产\n创作\n消息\n我的\n\nP3-12 Web 完全化\n\n正式 Web 功能总入口\n\n集中进入公开阅读、登录态私域、治理后台和保留的 WebOS 桌面版入口。\n\n我的状态\n消息\n公开阅读\n\n不进入桌面壳层，直接承接公开浏览与继续阅读。\n\n社区发现\n公开可用\n从 Web 默认入口浏览帖子、文档、榜单和商城推荐。\n打开\n论坛\n公开可用\n阅读公开帖子，也可进入登录态作者流程。\n阅读\n创作\n文档\n公开可用\n阅读公开文档，并进入个人文档作者区。\n阅读\n我的\n创作\n排行榜\n公开可用\n查看经验、发帖和商品等公开",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "正式 Web 功能总入口",
+          "公开阅读",
+          "登录态私域",
+          "治理与兼容"
+        ],
+        "iframeCount": 0,
+        "linkCount": 47,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "工作台 · Radish",
+        "url": "https://localhost:5000/workbench"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "我的状态",
+      "path": "/me",
+      "info": {
+        "bodyLength": 425,
+        "bodySample": "我\n我的状态\n工作台\n资产\n创作\n消息\n我的\n\n登录账号\n\nAdmin\n@Admin#2\n更新于 2026-07-01 21:13:14\n打开公开主页\n我的内容\n我的圈子\n我的附件\n通知中心\n电子宠物\n账号概览\n\n只读查看成长、资产和最近复访路径。\n\n刷新\n成长\nLv.0\n凡人\n0\n/\n累计经验\n0\n距下一级\n100\n资产\n0.050\n冻结\n0.000\n累计获得\n50\n最近复访\n3\n\n最近可阅读路径已可直接返回。\n\n电子宠物\n\n还没有领取电子宠物。\n\n近期成长\n成长详情\n\n暂无近期成长记录。\n\n近期资产\n完整钱包\n",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "Admin",
+          "账号概览"
+        ],
+        "iframeCount": 0,
+        "linkCount": 24,
+        "scrollHeight": 2336,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "我的状态 · Radish",
+        "url": "https://localhost:5000/me"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "我的内容",
+      "path": "/me/content",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/me/content"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "浏览历史",
+      "path": "/me/history",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/me/history"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "附件管理",
+      "path": "/me/attachments",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/me/attachments"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "经验详情",
+      "path": "/me/experience",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/me/experience"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "资产概览",
+      "path": "/me/assets",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/me/assets"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "资产流水",
+      "path": "/me/assets/transactions",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/me/assets/transactions"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "订单列表",
+      "path": "/shop/orders",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/shop/orders"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "订单详情",
+      "path": "/shop/order/931200000001",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/shop/order/931200000001"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "背包",
+      "path": "/shop/inventory",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/shop/inventory"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "通知",
+      "path": "/notifications",
+      "info": {
+        "bodyLength": 30,
+        "bodySample": "系统初始化\n\n无法确认初始化状态\n\nHTTP 429\n\n重试",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "无法确认初始化状态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish",
+        "url": "https://localhost:5000/notifications"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "消息",
+      "path": "/messages",
+      "info": {
+        "bodyLength": 166,
+        "bodySample": "聊\n消息\n工作台\n资产\n创作\n消息\n我的\n私域任务流\n继续频道会话和个人主页跳转\n\nWeb 入口承载会话恢复、成员查看、消息回复和公开个人页跳转，不需要先进入桌面壳层。\n\n2\n频道\n已打开\n聚焦会话\n在线\n实时连接\n聊天室\n🌐 公共闲聊\n❓ 问题求助\n🌐 公共闲聊\n公共租户默认频道：日常交流\n还没有消息，发一条试试\n图片\n发送",
+        "buttonCount": 7,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "继续频道会话和个人主页跳转"
+        ],
+        "iframeCount": 0,
+        "linkCount": 12,
+        "scrollHeight": 1232,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "消息 · Radish",
+        "url": "https://localhost:5000/messages"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "圈子",
+      "path": "/circle",
+      "info": {
+        "bodyLength": 168,
+        "bodySample": "萝\n圈子\n工作台\n资产\n创作\n消息\n我的\n\n私域复访\n\n我的圈子\n\n这里聚合关注动态、我的关注和我的粉丝；帖子详情和公开主页仍回到各自公开路由阅读。\n\n0\n关注\n0\n粉丝\n0\n当前动态\n论坛\n我的状态\n动态\n关注\n粉丝\n关注动态\n\n来自已关注用户的公开帖子，继续阅读时进入公开帖子详情。\n\n0 条\n暂无关注动态\n\n你关注的人还没有新动态",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "我的圈子",
+          "关注动态",
+          "暂无关注动态"
+        ],
+        "iframeCount": 0,
+        "linkCount": 16,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "圈子 · Radish",
+        "url": "https://localhost:5000/circle"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "private",
+      "name": "宠物",
+      "path": "/pet",
+      "info": {
+        "bodyLength": 65,
+        "bodySample": "萝\nRadish 电子宠物\n工作台\n资产\n创作\n消息\n我的\n萝\n\n首次领取\n\n领取你的 Radish 电子宠物\n宠物名称\n领取宠物",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "领取你的 Radish 电子宠物"
+        ],
+        "iframeCount": 0,
+        "linkCount": 12,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish 电子宠物 · Radish",
+        "url": "https://localhost:5000/pet"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "论坛发布",
+      "path": "/forum/compose",
+      "info": {
+        "bodyLength": 504,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n\n论坛创作\n\n发布论坛帖子\n\n在正式 Web 论坛流程里写帖子；草稿、分类、标签、问答、投票、抽奖、图片和文档附件继续复用现有论坛发布器。\n\n已就绪\n登录状态\n3\n可选分类\n幂等\n提交保护\n返回论坛\nMarkdown\n富文本\n未选分类\n0 个标签\n普通帖\n0/4 就绪\n帖子设置\n全屏创作\n0/100\n水印\n多尺寸\n缩放\n30%\n50%\n70%\n75%\n100%\n\n帖子设置\n\n分类、标签与附加功能\n分类\n未选分类\n标签\n0/5\n帖子类型\n普通帖\n发布准备\n0/4\n帖子分类\n发",
+        "buttonCount": 33,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "发布论坛帖子"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "论坛 - Radish",
+        "url": "https://localhost:5000/forum/compose"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "论坛回答",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=answer",
+      "info": {
+        "bodyLength": 763,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n返回论坛\n复制链接\n公开浏览\n浏览 29\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 29\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨论\n编辑\n历史\n公开阅读\n公开",
+        "buttonCount": 16,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=answer"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "论坛编辑",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=edit",
+      "info": {
+        "bodyLength": 916,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n返回论坛\n复制链接\n公开浏览\n浏览 31\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 31\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨论\n编辑\n历史\n公开阅读\n公开",
+        "buttonCount": 40,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区",
+          "编辑帖子"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=edit"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "论坛历史",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=history",
+      "info": {
+        "bodyLength": 796,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n返回论坛\n复制链接\n公开浏览\n浏览 33\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 33\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨论\n编辑\n历史\n公开阅读\n公开",
+        "buttonCount": 19,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区",
+          "历史"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4?intent=history"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "文档作者库",
+      "path": "/docs/mine",
+      "info": {
+        "bodyLength": 13061,
+        "bodySample": "文\n文档作者台\n工作台\n资产\n创作\n消息\n我的\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。\n\n1\n目录节点\n403\n文档总数\n可写\n当前列表\n我的文档\n新建文档\n公开阅读\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n集中处理文档草稿、内容修订和公开阅读入口，不承载发布与治理动作。\n\n新建文档\n刷新\n目录节点\n1\n文档总数\n403\n本页加载\n100\n已发布\n公开\n内置\nv1\n2026 年 7 ",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "文档作者台",
+          "文档作者台",
+          "2026 年 7 月第 1 周开发日志",
+          "2026 年 6 月第 1 周开发日志",
+          "2026 年 5 月第 2 周开发日志",
+          "2026-04 第一周 (04-02 ~ 04-05)"
+        ],
+        "iframeCount": 0,
+        "linkCount": 215,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "文档作者台 · Radish",
+        "url": "https://localhost:5000/docs/mine"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "文档创建",
+      "path": "/docs/compose",
+      "info": {
+        "bodyLength": 10167,
+        "bodySample": "文\n文档作者台\n工作台\n资产\n创作\n消息\n我的\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。\n\n1\n目录节点\n403\n文档总数\n可写\n新建草稿\n我的文档\n新建文档\n公开阅读\n\nDOCUMENT DRAFT\n\n新建文档\n\n默认创建登录可见草稿，发布、归档和权限治理留在 Console。\n\n返回列表\n标题\nSlug\n上级文档\n根目录\n文档\n　└ Adr\n　　└ ADR 0001: Branch And P",
+        "buttonCount": 19,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "文档作者台",
+          "新建文档"
+        ],
+        "iframeCount": 0,
+        "linkCount": 15,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "文档作者台 · Radish",
+        "url": "https://localhost:5000/docs/compose"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        },
+        {
+          "level": "warn",
+          "message": "The width(-1) and height(-1) of chart should be greater than 0,\n       please check the style of container, or the props width(100%) and height(100%),\n       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the\n       height and width.",
+          "timestamp": "2026-07-01T13:12:39.810Z",
+          "url": "https://localhost:5000/node_modules/.vite/deps/recharts.js?v=251cea42"
+        }
+      ]
+    },
+    {
+      "batch": "private-author",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "author",
+      "name": "文档版本",
+      "path": "/docs/revisions/2072303610636533760",
+      "info": {
+        "bodyLength": 1142,
+        "bodySample": "文\n文档作者台\n工作台\n资产\n创作\n消息\n我的\n\nAUTHOR WORKSPACE\n\n文档作者台\n\n维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。\n\n1\n目录节点\n403\n文档总数\n可写\n修订查看\n我的文档\n新建文档\n公开阅读\n\nREVISION HISTORY\n\n2026 年 7 月第 1 周开发日志\n\n查看历史快照内容，不在作者入口执行回滚治理动作。\n\n返回列表\nv1\n固定文档同步\n2026/7/1 20:57:36 · System\n当前\nv1\n\n",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "文档作者台",
+          "2026 年 7 月第 1 周开发日志",
+          "v1",
+          "2026 年 7 月第 1 周开发日志",
+          "2026-07-01"
+        ],
+        "iframeCount": 0,
+        "linkCount": 15,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "文档作者台 · Radish",
+        "url": "https://localhost:5000/docs/revisions/2072303610636533760"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    }
+  ]
+}

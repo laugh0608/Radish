@@ -9,3 +9,5 @@
 - D37 差距矩阵作为 `P3-12-D38` 边界裁决输入；若发布前边界明确为后置，再等待用户确认前后端已启动后组织 Gateway PC / mobile 阶段验收。
 - `P3-12-D38` 完成 UI 边界裁决与阶段验收清单：发布前不新增独立 `PublicHomeApp`，公开首页 `P01` 由 `/discover` 承接；公开聊天室 `P15 / P16` 后置评审，不作为 D 退出条件和 E 前置项；Console 内部调度中心、内部 Jobs 平台和独立移动 Console 应用后置。
 - D38 已同步 public / private / foundation / console 四份设计说明，下一步进入 `P3-12-D39` Gateway PC / mobile 阶段验收准备；真实页面复核仍需等待用户明确说明前后端已启动。
+- `P3-12-D39` 完成 Gateway PC / mobile 阶段验收：`check:host-runtime -- --details` 通过；public / private / author / console 共 53 个代表页面覆盖 PC `1920x1080` 与移动 CSS `390x844`，未发现挂载失败、登录误跳、授权页停留、横向溢出或页面错误文案。
+- Console 订单详情、用户详情、角色权限和系统设置历史只读交互补验通过；移动 Console 作为响应式后台验收参考通过。下一步进入 `P3-12-D40` UI 专题退出判断与发布候选前置清单整理。
