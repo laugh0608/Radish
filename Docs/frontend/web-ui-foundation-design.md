@@ -10,6 +10,8 @@
 >
 > 更新：2026-06-30（Asia/Shanghai）：`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核和表格交互代码侧治理；D36+ 将复核 `F01-F02` 与 public / private / console 代码实现的共享结构漂移。
 >
+> 更新：2026-07-01（Asia/Shanghai）：D38 未新增共享组件变体；`/workbench` 继续承接 public / private 低频入口，移动 Console 仍按响应式 Console 验收，不拆独立移动应用壳层。
+>
 > 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` 与 Console 均完成首轮代码对齐，尚需 D36+ 差距矩阵确认跨源一致性
 
 ## 设计源
