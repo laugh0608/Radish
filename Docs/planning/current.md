@@ -257,10 +257,10 @@
   - 继续保留公开 head、分享、移动 / PC 布局、LongId 兼容读取和 PublicId 分享路由回归。
 
 ## 明日事项
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D37 UI 设计源差距矩阵记录](/records/p3-12-d37-ui-design-source-gap-matrix-2026-07-01) 和 [P3-12-D41 页面开发缺口源码核对记录](/records/p3-12-d41-page-development-gap-source-audit-2026-07-01)，确认下一步仍在 `P3-12-D` 页面开发内。
-- 第一顺位：准备可编辑测试文档并复核作者文档编辑、保存、上传、版本历史和公开阅读回跳。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D41 页面开发缺口源码核对记录](/records/p3-12-d41-page-development-gap-source-audit-2026-07-01) 和 [2026-07-01 收工回顾与明日事项](/records/daily-handoff-2026-07-01)，确认下一步仍在 `P3-12-D` 页面开发内。
+- 第一顺位进入 `P3-12-D42`：围绕 Docs 作者态准备非内置、未删除的安全测试文档，复核 `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id` 的编辑、保存、上传、版本历史和公开阅读回跳。
+- D42 若只做测试数据准备、代码侧补漏或文档同步，优先使用构建、类型检查、定向测试、仓库卫生检查和 `git diff --check`；需要 Gateway PC / mobile 真实页面复核时，先告知用户启动前后端并等待明确确认。
 - 发布候选准备必须后置到 UI 专题真实退出之后；当前不整理 PR 发布材料，不创建 tag，不进入 M15 测试 / 生产部署流程。
-- B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
 ## 并行维护项
 
