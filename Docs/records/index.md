@@ -136,6 +136,7 @@
 - [p3-12-d34-radish-console-ops-table-static-closure-2026-06-30](/records/p3-12-d34-radish-console-ops-table-static-closure-2026-06-30)
 - [p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30](/records/p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30)
 - [p3-12-d36-ui-topic-gap-and-exit-criteria-2026-06-30](/records/p3-12-d36-ui-topic-gap-and-exit-criteria-2026-06-30)
+- [p3-12-d37-ui-design-source-gap-matrix-2026-07-01](/records/p3-12-d37-ui-design-source-gap-matrix-2026-07-01)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
