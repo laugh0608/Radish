@@ -876,6 +876,18 @@ function SummaryTile({ label, value }: SummaryTileProps) {
   );
 }
 
+function getDocumentEditBlockedReason(document: WikiDocumentVo): string | null {
+  if (document.voIsDeleted) {
+    return '已删除只读';
+  }
+
+  if (isBuiltInWikiDocument(document)) {
+    return '内置只读';
+  }
+
+  return null;
+}
+
 interface DocumentRowProps {
   document: WikiDocumentVo;
   language?: string;
@@ -886,7 +898,8 @@ function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
   const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voId };
   const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voId };
   const publicHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
-  const canEdit = !isBuiltInWikiDocument(document) && !document.voIsDeleted;
+  const editBlockedReason = getDocumentEditBlockedReason(document);
+  const canEdit = !editBlockedReason;
 
   return (
     <article className={styles.documentRow}>
@@ -915,7 +928,11 @@ function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
           >
             编辑
           </a>
-        ) : null}
+        ) : (
+          <span className={styles.readOnlyButton} title={editBlockedReason ?? undefined}>
+            {editBlockedReason ?? '只读'}
+          </span>
+        )}
         <a
           className={styles.secondaryButton}
           href={buildDocsAuthorPath(revisionsRoute)}

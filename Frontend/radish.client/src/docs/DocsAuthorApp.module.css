@@ -115,7 +115,8 @@
 .navItem,
 .navItemActive,
 .primaryButton,
-.secondaryButton {
+.secondaryButton,
+.readOnlyButton {
   min-width: 0;
   display: inline-flex;
   align-items: center;
@@ -169,6 +170,13 @@
   background: var(--theme-bg-surface);
   border-color: var(--theme-border-strong);
   color: var(--theme-text-primary);
+}
+
+.readOnlyButton {
+  background: color-mix(in srgb, var(--theme-bg-muted) 74%, var(--theme-bg-surface) 26%);
+  border-color: color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
+  color: var(--theme-text-secondary);
+  cursor: default;
 }
 
 .panel {
@@ -583,7 +591,8 @@
   .navItem,
   .navItemActive,
   .primaryButton,
-  .secondaryButton {
+  .secondaryButton,
+  .readOnlyButton {
     flex: 1 1 138px;
   }
 

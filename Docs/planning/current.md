@@ -174,7 +174,7 @@
   - `P3-12-D28` 已完成 `radish.console` D14-D27 阶段静态收口：路由认证中、无 Console 权限和懒加载状态的旧 inline 样式已迁入 `routerComponents.css`，`routerComponents` 与 `SystemTools` 不再命中目标样式残留；阶段记录已归档深层表单、详情抽屉和批量上传弹窗的剩余静态风险，记录见 [P3-12-D28 radish.console 阶段静态收口记录](/records/p3-12-d28-radish-console-stage-static-closure-2026-06-30)。
   - `P3-12-D29 / D30` 已完成 `radish.console` 深层表单与详情 / 抽屉静态收口：商品、分类、贴纸和贴纸分组表单的上传预览、隐藏输入、控件宽度、弱提示文本和弹窗 footer 样式已迁入 `adminForm.css`；`OrderDetail`、`ProductDetail`、`DocumentGovernancePage` 的危险色、图片展示、隐藏输入和抽屉全宽布局已迁入 CSS，`StickerBatchUploadModal.css` 历史提示色同步改为 Console token；业务 API、权限、路由、上传、备注、访问策略和版本回滚动作保持不变，记录见 [P3-12-D29 radish.console 深层表单静态收口记录](/records/p3-12-d29-radish-console-deep-form-static-closure-2026-06-30) 与 [P3-12-D30 radish.console 详情 / 抽屉静态收口记录](/records/p3-12-d30-radish-console-detail-drawer-static-closure-2026-06-30)。
   - `P3-12-D31-D35` 已完成 `radish.console` 阶段运行态复核、数据补验和表格交互代码侧收口：Gateway 下已覆盖 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态、表情分组空态，以及补安全测试数据后的 `OrderDetail`、分组表情列表和 `StickerBatchUploadModal` PC / mobile CSS 视口；D33-D35 已完成操作列换行、运维 / 治理静态残留、Dashboard 最近订单、用户详情内嵌表格、系统设置历史、文档版本弹窗和贴纸批量上传表格滚动 / 分页布局收口；贴纸弹窗 AntD `Alert.message` 告警与 Auth `wwwroot` 缺失启动告警已收口。D35 只是 Console 表格交互代码侧收口，不代表 `P3-12-D` UI 专题完成，记录见 [P3-12-D31 运行态复核](/records/p3-12-d31-radish-console-stage-smoke-2026-06-30)、[P3-12-D32 数据补验](/records/p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30)、[P3-12-D33 表格可读性首批](/records/p3-12-d33-radish-console-table-readability-first-closure-2026-06-30)、[P3-12-D34 运维与治理表格静态收口](/records/p3-12-d34-radish-console-ops-table-static-closure-2026-06-30) 与 [P3-12-D35 表格交互代码侧收口](/records/p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30)。
-  - `P3-12-D36-D40` 已完成 UI 专题退出口径、四类设计源差距矩阵、边界裁决、阶段验收清单、Gateway PC / mobile 阶段验收和退出判断修正：D39 只能证明已有代表页面无阻断级运行态问题，不能证明设计源页面全部开发完成；`P3-12-D` 不能退出，下一步进入 `P3-12-D41` 页面开发缺口排序与成组实现。
+  - `P3-12-D36-D41` 已完成 UI 专题退出口径、四类设计源差距矩阵、边界裁决、阶段验收清单、Gateway PC / mobile 阶段验收、退出判断修正和页面开发缺口源码核对：`P3-12-D` 不能退出，下一步优先复核作者文档真实写动作与可编辑数据态。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -196,7 +196,7 @@
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
   - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D36-D40` 已完成退出口径、矩阵、裁决、验收与纠偏，结论是 UI 专题继续开发，不能进入发布候选。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
-  - `P3-12-D` 未完成退出；下一步进入 `P3-12-D41`，按 D37 矩阵回到源码逐页确认页面开发缺口，再按页面族成组推进实现。
+  - `P3-12-D` 未完成退出；下一步进入作者文档真实写动作与可编辑数据复核，再按 D41 排序推进 public / private 与 Console 页面组。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
   - `P3-11-A / B / D` 已完成；当前不恢复 PR、不发布、不创建 tag，`P3-11-C` 未触发。
   - 若后续真实验收命中明确阻断，再回拉定向修复；否则不继续围绕 P3-11 决策停留。
@@ -257,8 +257,8 @@
   - 继续保留公开 head、分享、移动 / PC 布局、LongId 兼容读取和 PublicId 分享路由回归。
 
 ## 明日事项
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D37 UI 设计源差距矩阵记录](/records/p3-12-d37-ui-design-source-gap-matrix-2026-07-01)、[P3-12-D39 Gateway PC / Mobile 阶段验收记录](/records/p3-12-d39-gateway-pc-mobile-stage-acceptance-2026-07-01) 和 [P3-12-D40 UI 专题退出判断修正](/records/p3-12-d40-ui-topic-exit-decision-2026-07-01)，确认下一步仍在 `P3-12-D` 页面开发内。
-- 第一顺位：推进 `P3-12-D41`，按 public / private / author / console 逐页核对设计源、源码路由、真实数据态和关键动作，输出页面开发缺口排序。
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D37 UI 设计源差距矩阵记录](/records/p3-12-d37-ui-design-source-gap-matrix-2026-07-01) 和 [P3-12-D41 页面开发缺口源码核对记录](/records/p3-12-d41-page-development-gap-source-audit-2026-07-01)，确认下一步仍在 `P3-12-D` 页面开发内。
+- 第一顺位：准备可编辑测试文档并复核作者文档编辑、保存、上传、版本历史和公开阅读回跳。
 - 发布候选准备必须后置到 UI 专题真实退出之后；当前不整理 PR 发布材料，不创建 tag，不进入 M15 测试 / 生产部署流程。
 - B6 剩余验收项：真实 Gateway PC / mobile 页面 smoke 需要先确认前后端已启动；本地旧 SQLite 若缺少 `UserDisplayNameChangeRecord` 或 `SystemBootstrapState.CompletedEmail`，按 B6 破坏性 schema 口径删除 / 初始化或执行迁移补齐，不编写旧库兼容迁移。
 
