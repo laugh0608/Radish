@@ -110,6 +110,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - 不新增独立“作者工作台”路由；作者态由 `/forum/compose`、`/forum/post/:id?intent=answer|edit|history`、`/docs/mine`、`/docs/compose`、`/docs/edit/:id` 和 `/docs/revisions/:id` 承接。
 - 论坛作者态与文档作者态在视觉节奏上保持一致，但页面形态必须贴合真实功能：论坛是发帖 / 编辑 / 问答，Docs 是文档树 / Markdown 编辑 / 版本回看。
 - 写入继续保留 `clientSubmissionId`、草稿同步、保存状态、发布成功和发布失败反馈。
+- Docs 作者库的编辑入口按数据态展示：非内置、未删除文档可进入编辑；内置固定文档和已删除文档必须展示只读原因，并继续允许修订回看和公开阅读。
 - 作者态不包含审核治理、权限策略、文档治理列表、回收站或 Console 管理动作；普通作者的导出 / 分享只作为低风险二级动作呈现。
 
 代码对齐状态：

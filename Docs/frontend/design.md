@@ -1,6 +1,6 @@
 # 前端设计文档
 
-> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始演进出公开内容壳层、Flutter 移动客户端与 Tauri 桌面壳验证。`2026-05-25` 路线复盘后，前端主线收敛为 **纯 Web + Flutter**：根路径 `/` 与默认浏览器入口转向纯 Web，`/desktop` 仅保留为 WebOS 历史入口，PC/Tauri 后置且不再绑定 WebOS。`2026-06-21` 起，公开商品购买回流、订单 / 背包、完整个人中心子路径和论坛作者态首批能力已进入正式 Web 路由；`2026-06-23` 起，`/workbench` 承担正式 Web 功能地图，公共头部“工作台”动作默认进入 `/workbench`，再由其中的历史入口进入 `/desktop`。本文档描述当前前端事实、演进方向与相关实现约束。
+> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始演进出公开内容壳层、Flutter 移动客户端与 Tauri 桌面壳验证。`2026-05-25` 路线复盘后，前端主线收敛为 **纯 Web + Flutter**：根路径 `/` 与默认浏览器入口转向纯 Web，`/desktop` 仅保留为 WebOS 历史入口，PC/Tauri 后置且不再绑定 WebOS。`2026-06-21` 起，公开商品购买回流、订单 / 背包、完整个人中心子路径、论坛作者态和 Docs 作者态首批能力已进入正式 Web 路由；`2026-06-23` 起，`/workbench` 承担正式 Web 功能地图，公共头部“工作台”动作默认进入 `/workbench`，再由其中的历史入口进入 `/desktop`。本文档描述当前前端事实、演进方向与相关实现约束。
 
 ## 1. 设计理念
 
@@ -55,7 +55,7 @@
 - WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；forum 回流统一优先使用 `postPublicId`，旧 `postId` 仅作为兼容 fallback，docs / shop 仍保留现有 slug 或 long 路由兼容但不把旧 long 路径作为用户可见文案；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
 - 公开内容壳层当前已完成 `/discover`、forum、docs、个人公开页、公开榜单与公开商城浏览入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/discover`、`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:identifier`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，公开个人页路由参数当前可承接 `User.PublicId` 或旧 long 字符串，canonical / 分享 / 普通内容入口优先使用 `PublicId`
 - 纯 Web 已开始承担根路径 `/` 与默认浏览器入口；普通浏览器 `/` 当前进入 `/discover` 公开分发页，公开内容壳层的已有路径是纯 Web 主线的第一批基础，不再回塞进 WebOS 窗口系统
-- 纯 Web 登录态私域入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`：分别承接通知列表 / 目标分流、关注动态与关系链复访、个人状态与完整个人中心子路径、商城购买结果 / 订单 / 背包、会话 / 消息定位、电子宠物领取与照顾；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
+- 纯 Web 登录态私域与作者态入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`、`/forum/compose`、`/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`：分别承接通知列表 / 目标分流、关注动态与关系链复访、个人状态与完整个人中心子路径、商城购买结果 / 订单 / 背包、会话 / 消息定位、电子宠物领取与照顾、论坛发帖和 Docs 作者入口；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 与 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
 - `/workbench` 当前作为正式 Web 功能总入口，按公开浏览、登录态私域、后台治理和历史桌面四组汇总已迁移功能；公共头部“工作台”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - 公开内容壳层当前已形成共享头部视觉和动作基线：forum / docs / discover / leaderboard / shop / `u/:identifier` 在窄屏下统一使用品牌字、图标与按钮 token；主动作收口为“社区发现 / 我的圈子 / 工作台”，其中“工作台”进入 `/workbench`，不直接打开 WebOS 桌面壳；共享头部和移动底栏由 `components/web-shell/WebShellHeader` 承接，页面状态槽由 `WebStateSlot` 承接
 - `P3-12-D2` 已将公开 Web 统一体验设计源 `Docs/frontend/design-sources/public-web-unified-experience.pen` 扩展为 `P01-P16` 公开社区 App 页面族，覆盖公开首页、发现流、论坛列表 / 详情、紧凑评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流；实现口径见 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
