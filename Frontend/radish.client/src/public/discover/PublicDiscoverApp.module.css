@@ -1171,6 +1171,7 @@
 
 @media (max-width: 720px) {
   .main {
+    padding-top: 14px;
     padding-bottom: var(--rx-mobile-shell-offset);
   }
 
@@ -1180,25 +1181,135 @@
 
   .heroCard,
   .sectionCard {
-    padding: 16px;
-    border-radius: 22px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .heroTitleRow {
+    margin-bottom: 8px;
+  }
+
+  .heroActions {
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .heroActions .primaryButton,
+  .heroActions .secondaryButton {
+    flex: 1 1 148px;
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 14px;
+  }
+
+  .pageIntro {
+    margin-top: 8px;
+    font-size: 0.92rem;
+    line-height: 1.55;
   }
 
   .heroGuideGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
   }
 
   .routeGrid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .feedGrid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .sectionHeader {
     flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .sectionDescription {
+    line-height: 1.55;
+    font-size: 0.9rem;
+  }
+
+  .sectionCueRow {
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  .sectionCueChip {
+    min-height: 26px;
+    padding: 0 10px;
+    font-size: 0.76rem;
+  }
+
+  .sectionLink {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 0.82rem;
+  }
+
+  .streamSection,
+  .guideSection,
+  .sectionGrid,
+  .sectionGrid + .sectionCard {
+    margin-top: 14px;
+  }
+
+  .streamHeader {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .streamStatusPanel {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .feedPostItem {
+    padding: 10px 10px 0;
+  }
+
+  .feedContentButton,
+  .docsItem,
+  .productItem,
+  .leaderboardItem,
+  .routeButton,
+  .statusCard {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .feedItemHeader {
+    margin-bottom: 8px;
+  }
+
+  .feedContentSummary,
+  .docsSummary,
+  .productSummary,
+  .leaderboardSummary,
+  .statusDescription,
+  .streamBoundaryDescription {
+    font-size: 0.86rem;
+    line-height: 1.5;
+  }
+
+  .streamFooter {
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .streamBoundaryIcon,
+  .leaderboardIcon,
+  .statusIcon {
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
   }
 
   .statusActions {
@@ -1213,33 +1324,70 @@
     min-height: 0;
   }
 
+  .summaryTop {
+    gap: 8px;
+  }
+
+  .summaryIcon {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+  }
+
+  .summaryLabel {
+    font-size: 0.76rem;
+  }
+
+  .summaryStatus {
+    min-height: 22px;
+    padding: 0 8px;
+    font-size: 0.68rem;
+  }
+
   .summaryValue {
     margin-top: 0;
-    font-size: 1.6rem;
+    font-size: 1.42rem;
   }
 
   .summaryMeaning {
-    font-size: 0.84rem;
+    font-size: 0.8rem;
+    line-height: 1.45;
+  }
+
+  .summaryDestination {
+    gap: 2px;
+    padding-top: 0;
+  }
+
+  .summaryDestinationLabel {
+    display: none;
+  }
+
+  .summaryDestinationText {
+    font-size: 0.78rem;
   }
 
   .summaryPreviewButton {
-    padding: 14px 14px 10px;
-    gap: 8px;
+    padding: 12px 12px 8px;
+    gap: 7px;
   }
 
   .summaryActionRow {
     flex-direction: column;
     align-items: stretch;
-    padding: 10px 14px 12px;
+    gap: 8px;
+    padding: 8px 12px 10px;
   }
 
   .summaryActionButton {
     width: 100%;
     justify-content: center;
+    min-height: 32px;
   }
 
   .summaryActionHint {
     justify-content: center;
+    font-size: 0.74rem;
   }
 
   .inlineNotice {
@@ -1260,21 +1408,35 @@
 
   .heroGuideCard,
   .routeMetaRow {
-    padding: 12px;
+    padding: 10px;
+  }
+
+  .heroGuideCard {
+    gap: 10px;
+  }
+
+  .heroGuideIcon,
+  .routeIcon {
+    width: 32px;
+    height: 32px;
+    border-radius: 11px;
   }
 
   .feedProductHead {
-    flex-direction: column;
+    gap: 10px;
+  }
+
+  .feedProductImage,
+  .feedProductImageFallback,
+  .productImage,
+  .productImageFallback {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
   }
 
   .feedItemHeader {
     align-items: flex-start;
     flex-direction: column;
-  }
-}
-
-@media (max-width: 560px) {
-  .heroGuideGrid {
-    grid-template-columns: 1fr;
   }
 }

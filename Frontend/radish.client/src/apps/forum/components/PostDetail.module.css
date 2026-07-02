@@ -1226,4 +1226,64 @@
     font-size: 21px;
     line-height: 1.35;
   }
+
+  .container {
+    margin-bottom: 14px;
+  }
+
+  .postMeta {
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    line-height: 1.5;
+  }
+
+  .postBody,
+  .lotteryDescription,
+  .answerBody {
+    font-size: 13px;
+    line-height: 1.58;
+  }
+
+  .postTags {
+    gap: 6px;
+    padding-top: 10px;
+  }
+
+  .tag,
+  .statusBadge,
+  .pollBadge,
+  .lotteryBadge,
+  .questionSectionBadge,
+  .questionState,
+  .acceptedBadge {
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+
+  .pollCard,
+  .lotteryCard,
+  .questionCard,
+  .answerItem {
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+
+  .pollOptions,
+  .answerList {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .pollOption {
+    padding: 10px;
+  }
+
+  .questionHeaderActions,
+  .pollActionButtons,
+  .answerActions {
+    justify-content: flex-start;
+    gap: 6px;
+  }
 }

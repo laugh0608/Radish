@@ -355,18 +355,30 @@
 
 @media (max-width: 640px) {
   .lane {
-    overflow-x: auto;
-    padding-bottom: 4px;
+    overflow: visible;
+    padding-bottom: 0;
     mask-image: none;
   }
 
   .laneTrack,
   .laneTrackAnimated {
-    min-width: max-content;
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    align-items: stretch;
     animation: none;
   }
 
   .pill {
-    max-width: 88vw;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 16px;
+  }
+
+  .content {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 }

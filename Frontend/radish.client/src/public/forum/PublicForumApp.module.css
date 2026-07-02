@@ -797,16 +797,33 @@
 @media (max-width: 720px) {
   .main {
     width: calc(100vw - 20px);
+    padding-top: 14px;
+    padding-bottom: var(--rx-mobile-shell-offset);
+  }
+
+  .sectionCard {
+    border-radius: 20px;
+  }
+
+  .listSectionCard,
+  .composeSectionCard {
+    min-height: auto;
   }
 
   .sectionHeader {
-    padding: 22px 18px 16px;
+    padding: 18px 14px 14px;
   }
 
   .statusCard {
-    padding: 18px;
+    padding: 14px;
     gap: 12px;
     border-radius: 20px;
+  }
+
+  .statusIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 13px;
   }
 
   .statusTitle {
@@ -823,11 +840,11 @@
   }
 
   .readingGuide {
-    margin-top: 16px;
+    margin-top: 12px;
   }
 
   .categorySpotlight {
-    gap: 12px;
+    gap: 10px;
   }
 
   .categoryCoverWrap {
@@ -835,11 +852,35 @@
   }
 
   .categoryCover {
-    max-height: 144px;
+    max-height: 128px;
   }
 
   .categoryRail {
-    padding: 14px 18px 0;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding: 12px 14px 0;
+  }
+
+  .categoryChip {
+    min-height: 32px;
+    padding: 7px 11px;
+    white-space: normal;
+  }
+
+  .toolbar {
+    margin-top: 12px;
+  }
+
+  .segmented {
+    gap: 8px;
+  }
+
+  .segmentButton {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 10px;
+    overflow-wrap: anywhere;
   }
 
   .searchForm {
@@ -864,6 +905,8 @@
     margin-right: 14px;
     flex-direction: column;
     align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 14px;
   }
 
   .composeSummaryGrid {
@@ -899,28 +942,29 @@
   }
 
   .listSectionCard {
-    min-height: calc(100dvh - 132px);
+    min-height: auto;
   }
 
   .postList,
   .detailStack {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .pagination {
     justify-content: flex-start;
     padding-left: 14px;
     padding-right: 14px;
+    padding-bottom: 18px;
   }
 
   .detailTopbar {
-    padding-left: 14px;
-    padding-right: 14px;
+    padding: 14px 12px 0;
   }
 
   .detailTopbarActions {
     width: 100%;
+    gap: 8px;
   }
 
   .detailTopbarActions .backButton,
@@ -947,20 +991,36 @@
     font-size: 11px;
   }
 
+  .detailStack {
+    gap: 14px;
+    padding-top: 14px;
+    padding-bottom: 18px;
+  }
+
   .workspaceActionPanel {
     flex-direction: column;
-    padding: 16px 14px;
+    gap: 12px;
+    padding: 14px 12px;
     border-radius: 20px;
+  }
+
+  .workspaceActionTitle,
+  .sectionShellTitle,
+  .commentTitle {
+    font-size: 16px;
   }
 
   .workspaceActionButtons {
     width: 100%;
     justify-content: stretch;
+    gap: 8px;
   }
 
   .workspaceActionButton {
     flex: 1 1 150px;
     min-width: 0;
+    min-height: 38px;
+    padding: 8px 12px;
   }
 
   .workspaceActionButton span {
@@ -969,16 +1029,24 @@
   }
 
   .sectionShell {
-    padding: 16px 14px;
+    gap: 12px;
+    padding: 14px 12px;
     border-radius: 20px;
   }
 
   .commentHeading {
     flex-direction: column;
+    gap: 8px;
   }
 
   .commentSection {
-    padding: 16px 14px;
+    padding: 14px 12px;
     border-radius: 20px;
+  }
+
+  .commentIntro,
+  .workspaceActionDescription,
+  .inlineNoticeText {
+    line-height: 1.55;
   }
 }
