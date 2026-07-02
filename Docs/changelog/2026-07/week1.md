@@ -30,4 +30,5 @@
 - `P3-12-D46` 完成 Pencil UI 实现完成度复核与剩余实现清单：确认当前发布前范围未命中新的页面级 UI 实现缺口，公开聊天室、内部调度、内部 Jobs 和独立移动 Console 继续后置。
 - `P3-12-D47` 完成 UI 实现证据收口与候选前验证清单准备：整理 D36-D46 的设计源、代码实现、真实页面复核、真实数据态复核、工具限制、启动前自动化入口和启动后 Gateway 复核约束。
 - `P3-12-D48` 完成 UI 候选前启动前验证：`validate:ci -- --report`、`validate:baseline`、`validate:identity` 与 `validate:baseline:host -- --report` 均通过，当前具备进入真实 Gateway 页面复核的前置条件。
-- 下一步继续留在 `P3-12-D49` 做 UI 候选前 Gateway 真实页面复核；真实 Gateway 页面复核仍需等待用户明确说明前后端已经启动，不直接进入 `P3-12-E`。
+- `P3-12-D49` 完成 UI 候选前 Gateway 真实页面复核：`check:host-runtime -- --details --report` 通过，Browser 覆盖 PC `1920x1080` 与 mobile `390x844 @ DPR 3` 的 public / private / author / console 代表路径；首次高频 Console 直达的权限降级页经间隔复测恢复，不作为 UI 实现阻断。
+- 下一步进入 `P3-12-E` 正式版发布候选准备；当前不直接创建 tag、不进入 M15 测试 / 生产部署流程。
