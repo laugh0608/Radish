@@ -38,3 +38,14 @@
 - `P3-12-D53` 完成 Public Web Pencil 首轮真实页面对齐收口：通过 Pencil MCP 读取 `public-web-unified-experience.pen`，并在 Gateway mobile `390x844` 覆盖 `/discover`、`/forum`、论坛详情、`/docs`、Docs 详情、`/shop`、商品详情、`/leaderboard` 和有效公开主页。
 - 本批修正公开说明卡前置、论坛详情说明插队和商品详情移动首屏信息后移问题：公开论坛、Docs、商城、榜单和公开主页的说明区退到真实列表 / 目录 / 商品 / 内容之后，商品详情移动端优先展示商品名、价格和购买状态。
 - 本批未新增业务 API、权限键、数据库结构、路由语义、登录回流或保存 / 提交载荷；当前仍留在 `P3-12-D` 做 public / private / console 成组退出条件判断，不直接创建 tag、不进入 `P3-12-E`、M15 测试或生产部署流程。
+
+### 今日提交回顾
+
+- 2026-07-02 共完成 11 个 `dev` 提交，范围从 Docs 作者态动作、Public / Private 主路径链接契约、Console 深层权限态和系统设置移动抽样，推进到 D47-D50 纠偏与验证口径、D51 私域 / 作者态移动任务流、D52 Public Web 移动任务流和 D53 Public Web Pencil 真实页面对齐。
+- 代码侧实际改动集中在 `radish.client` 作者 / 公开路径、`radish.console` 深层管理动作与系统设置移动响应式；相关文档已同步到 planning、records、changelog、public / private 设计说明和 records 索引。
+
+### 明天事项（2026-07-03）
+
+- 建议推进 `P3-12-D54 Private / Author Pencil 首轮真实页面对齐复核`：先用 Pencil MCP 读取 `private-web-workflows.pen`，再对照 `/workbench`、`/me` 系列、资产 / 订单 / 背包、通知、消息、圈子、宠物、论坛作者态和 Docs 作者态真实页面。
+- D54 重点判断 D51 后是否仍存在移动首屏密度、任务摘要顺序、状态槽、tab / 筛选、底部空间或横向溢出缺口；不新增业务 API、权限键、数据库结构、路由语义或保存 / 提交载荷。
+- 若需要真实 Gateway smoke，仍需当日先确认前后端已启动；当前不进入 `P3-12-E`、不创建 tag、不进入 M15 测试或生产部署流程。

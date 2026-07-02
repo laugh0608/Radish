@@ -196,7 +196,7 @@
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
   - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D36-D53` 已确认 D49 只代表当前已实现页面无阻断，并完成私域 / 作者态移动任务流 UI 首批、Public Web 移动公开任务流 UI 对齐和 Public Web Pencil 首轮真实页面对齐收口。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
-  - `P3-12-D` 继续进行；D53 已完成 Public Web 设计源到真实 mobile 页面首轮对齐收口，下一步按 public / private / console 成组退出条件判断是否还需 PC 视图、更多真实数据态或回归补验，不进入 `P3-12-E`。
+  - `P3-12-D` 继续进行；D53 已完成 Public Web 设计源到真实 mobile 页面首轮对齐收口，下一步建议推进 D54 Private / Author Pencil 首轮真实页面对齐复核，再判断是否还需 PC 视图、更多真实数据态或回归补验，不进入 `P3-12-E`。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
   - `P3-11-A / B / D` 已完成；当前不恢复 PR、不发布、不创建 tag，`P3-11-C` 未触发。
   - 若后续真实验收命中明确阻断，再回拉定向修复；否则不继续围绕 P3-11 决策停留。
@@ -256,11 +256,11 @@
   - 将 `/discover` 从公开导航聚合页调整为可持续浏览的内容流方案。
   - 继续保留公开 head、分享、移动 / PC 布局、LongId 兼容读取和 PublicId 分享路由回归。
 
-## 后续事项
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[P3-12-D53 Public Web Pencil 首轮真实页面对齐收口](/records/p3-12-d53-public-web-pencil-first-alignment-closure-2026-07-02)，确认下一步仍在 `P3-12-D` UI 实现内。
-- `P3-12-D53 Public Web Pencil 首轮真实页面对齐收口` 已完成：通过 Pencil MCP 读取公开设计源，并在 Gateway mobile `390x844` 真实页面中修正公开说明卡前置压住真实内容、论坛详情说明插队和商品详情首屏信息后移问题。
-- 后续仍留在 `P3-12-D` 做收口判断；不新增业务 API、权限键、数据库结构或保存载荷，不直接进入 `P3-12-E`。
-- 当前不直接创建 tag，不进入 `P3-12-E`、M15 测试或生产部署流程。
+## 明天事项（2026-07-03）
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)、[私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)、[P3-12-D51 radish.client 私域 / 作者态移动任务流 UI 对齐首批](/records/p3-12-d51-radish-client-private-author-mobile-ui-first-closure-2026-07-02) 与 [P3-12-D53 Public Web Pencil 首轮真实页面对齐收口](/records/p3-12-d53-public-web-pencil-first-alignment-closure-2026-07-02)，确认下一步仍在 `P3-12-D` UI 实现内。
+- 下一顺位建议推进 `P3-12-D54 Private / Author Pencil 首轮真实页面对齐复核`：用 Pencil MCP 读取 `private-web-workflows.pen`，对照 `/workbench`、`/me` 系列、资产 / 订单 / 背包、通知、消息、圈子、宠物、`/forum/compose` 和 Docs 作者态真实页面，判断 D51 后是否还有移动首屏密度、任务摘要顺序、状态槽、tab / 筛选、底部空间或横向溢出缺口。
+- 若需要真实 Gateway smoke，仍必须先由用户在当日明确说明前后端已启动；普通开发优先使用 `radish.client` 类型检查 / 构建、repo hygiene 和 `git diff --check`。
+- 不新增业务 API、权限键、数据库结构、路由语义或保存 / 提交载荷；不直接进入 `P3-12-E`，不创建 tag，不进入 M15 测试或生产部署流程。
 
 ## 并行维护项
 

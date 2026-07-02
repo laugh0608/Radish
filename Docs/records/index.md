@@ -151,6 +151,8 @@
 - [p3-12-d49-ui-candidate-gateway-smoke-2026-07-02](/records/p3-12-d49-ui-candidate-gateway-smoke-2026-07-02)
 - [p3-12-d50-ui-gap-recheck-and-next-implementation-order-2026-07-02](/records/p3-12-d50-ui-gap-recheck-and-next-implementation-order-2026-07-02)
 - [p3-12-d51-radish-client-private-author-mobile-ui-first-closure-2026-07-02](/records/p3-12-d51-radish-client-private-author-mobile-ui-first-closure-2026-07-02)
+- [p3-12-d52-radish-client-public-mobile-ui-alignment-2026-07-02](/records/p3-12-d52-radish-client-public-mobile-ui-alignment-2026-07-02)
+- [p3-12-d53-public-web-pencil-first-alignment-closure-2026-07-02](/records/p3-12-d53-public-web-pencil-first-alignment-closure-2026-07-02)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
