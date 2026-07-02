@@ -562,6 +562,13 @@
   box-shadow: 0 10px 18px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 
+.workspaceActionButton[aria-disabled='true'] {
+  cursor: wait;
+  opacity: 0.62;
+  transform: none;
+  box-shadow: none;
+}
+
 .workspaceActionButtonPrimary {
   border-color: color-mix(in srgb, var(--theme-brand-primary) 68%, transparent);
   background: var(--theme-brand-primary);

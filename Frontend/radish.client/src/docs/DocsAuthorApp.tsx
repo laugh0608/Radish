@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
@@ -265,9 +265,14 @@ export function DocsAuthorApp() {
   const [collectionState, setCollectionState] = useState<CollectionState>(initialCollectionState);
   const [editorState, setEditorState] = useState<EditorState>(initialEditorState);
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
+  const treeRef = useRef<WikiDocumentTreeNodeVo[]>([]);
 
   const mineHref = buildDocsAuthorPath({ kind: 'mine' });
   const composeHref = buildDocsAuthorPath({ kind: 'compose' });
+
+  useEffect(() => {
+    treeRef.current = collectionState.tree;
+  }, [collectionState.tree]);
 
   const navigateToRoute = useCallback((nextRoute: DocsAuthorRoute, options?: { replace?: boolean }) => {
     const nextPath = buildDocsAuthorPath(nextRoute);
@@ -312,8 +317,10 @@ export function DocsAuthorApp() {
   }, []);
 
   const loadEditor = useCallback(async (nextRoute: DocsAuthorRoute) => {
+    const currentTree = treeRef.current;
+
     if (nextRoute.kind === 'compose') {
-      const draft = createDraftForCompose(collectionState.tree);
+      const draft = createDraftForCompose(currentTree);
       setEditorState({
         ...initialEditorState,
         draft,
@@ -341,7 +348,7 @@ export function DocsAuthorApp() {
         loading: false,
         submitting: false,
         error: null,
-        sortSuggestion: String(getSuggestedSortValue(collectionState.tree, document.voParentId, document.voId)),
+        sortSuggestion: String(getSuggestedSortValue(currentTree, document.voParentId, document.voId)),
       });
     } catch (error) {
       log.error('DocsAuthorApp', '加载文档编辑详情失败:', error);
@@ -353,7 +360,7 @@ export function DocsAuthorApp() {
         error: getErrorMessage(error, '加载文档详情失败'),
       }));
     }
-  }, [collectionState.tree]);
+  }, []);
 
   const loadRevisionDetail = useCallback(async (revisionId: LongId) => {
     setRevisionState((current) => ({
@@ -642,6 +649,7 @@ export function DocsAuthorApp() {
           tree={collectionState.tree}
           state={editorState}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
+          onNavigate={handleRouteLinkClick}
           onParentChange={handleParentChange}
           onSetDraft={setDraft}
           onSave={handleSave}
@@ -953,6 +961,7 @@ interface DocsEditorPageProps {
   tree: WikiDocumentTreeNodeVo[];
   state: EditorState;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
   onParentChange: (parentId: string) => void;
   onSetDraft: (updater: (current: EditorDraft) => EditorDraft) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
@@ -965,6 +974,7 @@ function DocsEditorPage({
   tree,
   state,
   onBack,
+  onNavigate,
   onParentChange,
   onSetDraft,
   onSave,
@@ -980,6 +990,9 @@ function DocsEditorPage({
   const pageIntro = route.kind === 'compose'
     ? '默认创建登录可见草稿，发布、归档和权限治理留在 Console。'
     : '编辑正文、摘要和目录位置；当前入口不处理发布状态切换。';
+  const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
+    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
+    : null;
 
   if (state.loading) {
     return (
@@ -1022,9 +1035,16 @@ function DocsEditorPage({
             <a
               className={styles.secondaryButton}
               href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
+              onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
             >
               <Icon icon="mdi:history" size={18} />
               <span>修订记录</span>
+            </a>
+          ) : null}
+          {publicReadHref ? (
+            <a className={styles.secondaryButton} href={publicReadHref}>
+              <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+              <span>公开阅读</span>
             </a>
           ) : null}
         </div>
@@ -1154,6 +1174,10 @@ interface DocsRevisionsPageProps {
 }
 
 function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }: DocsRevisionsPageProps) {
+  const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
+    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
+    : null;
+
   return (
     <section className={styles.panel}>
       <div className={styles.panelHeader}>
@@ -1175,6 +1199,12 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
             >
               <Icon icon="mdi:pencil-outline" size={18} />
               <span>编辑文档</span>
+            </a>
+          ) : null}
+          {publicReadHref ? (
+            <a className={styles.secondaryButton} href={publicReadHref}>
+              <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+              <span>公开阅读</span>
             </a>
           ) : null}
         </div>

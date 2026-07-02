@@ -141,6 +141,8 @@
 - [p3-12-d39-gateway-pc-mobile-stage-acceptance-2026-07-01](/records/p3-12-d39-gateway-pc-mobile-stage-acceptance-2026-07-01)
 - [p3-12-d40-ui-topic-exit-decision-2026-07-01](/records/p3-12-d40-ui-topic-exit-decision-2026-07-01)
 - [p3-12-d41-page-development-gap-source-audit-2026-07-01](/records/p3-12-d41-page-development-gap-source-audit-2026-07-01)
+- [p3-12-d42-docs-author-action-closure-2026-07-02](/records/p3-12-d42-docs-author-action-closure-2026-07-02)
+- [p3-12-d43-public-private-data-state-closure-2026-07-02](/records/p3-12-d43-public-private-data-state-closure-2026-07-02)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
