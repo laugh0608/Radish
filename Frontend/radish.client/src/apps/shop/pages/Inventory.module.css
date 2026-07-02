@@ -589,7 +589,11 @@
 
   .header {
     flex-direction: column;
-    padding: 18px;
+    padding: 16px;
+  }
+
+  .backButton {
+    width: 100%;
   }
 
   .title {
@@ -597,7 +601,16 @@
   }
 
   .summaryGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .summaryCard {
+    padding: 12px;
+  }
+
+  .summaryCard strong {
+    font-size: 22px;
   }
 
   .benefitCard,
@@ -631,7 +644,8 @@
   }
 
   .tabs {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .modalFooter {

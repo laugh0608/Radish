@@ -647,9 +647,7 @@
   }
 
   .claimForm,
-  .heroActions,
-  .actionGrid,
-  .heroMetrics {
+  .heroActions {
     grid-template-columns: 1fr;
   }
 
@@ -664,6 +662,25 @@
   .heroMetricIcon {
     grid-row: span 2;
     margin-bottom: 0;
+  }
+
+  .heroMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .heroMetric:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .actionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .actionButton {
+    min-height: 112px;
+    padding: 12px;
   }
 
   .primaryButton,

@@ -142,7 +142,7 @@
   }
 
   .summaryCards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .summaryCard {
@@ -150,16 +150,32 @@
     grid-template-columns: auto minmax(0, 1fr);
     column-gap: 12px;
     align-items: center;
-    padding: 12px;
+    min-height: 68px;
+    padding: 10px;
+  }
+
+  .summaryCard:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .summaryCard strong {
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .summaryCard span:last-child {
+    margin-top: 0;
   }
 
   .summaryIcon {
+    width: 32px;
+    height: 32px;
     grid-row: span 2;
     margin-bottom: 0;
   }
 
   .centerShell {
-    min-height: 560px;
-    height: calc(100vh - 300px);
+    min-height: 500px;
+    height: clamp(500px, calc(100dvh - 278px), 620px);
   }
 }

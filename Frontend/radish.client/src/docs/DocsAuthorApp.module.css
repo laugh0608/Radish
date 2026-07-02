@@ -542,7 +542,7 @@
   }
 
   .authorSummaryGrid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .authorSummaryCard {
@@ -558,11 +558,14 @@
     margin-bottom: 0;
   }
 
-  .summaryGrid,
   .formGrid,
   .revisionLayout,
   .documentRow {
     grid-template-columns: 1fr;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .documentActions,
@@ -574,6 +577,25 @@
 @media (max-width: 640px) {
   .main {
     width: calc(100vw - 20px);
+  }
+
+  .authorHero {
+    padding: 16px;
+  }
+
+  .authorHeroTitle {
+    font-size: 24px;
+  }
+
+  .authorSummaryGrid,
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .authorSummaryCard:first-child,
+  .summaryTile:first-child {
+    grid-column: 1 / -1;
   }
 
   .panelHeader,
@@ -599,5 +621,21 @@
   .statusPanel {
     margin: 14px;
     padding: 18px;
+  }
+
+  .documentRow {
+    gap: 12px;
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .documentActions {
+    align-items: stretch;
+  }
+
+  .documentActions .primaryButton,
+  .documentActions .secondaryButton,
+  .documentActions .readOnlyButton {
+    flex: 1 1 128px;
   }
 }

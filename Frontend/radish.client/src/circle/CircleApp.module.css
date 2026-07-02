@@ -395,7 +395,7 @@
     grid-template-columns: 1fr;
     align-items: stretch;
     gap: 14px;
-    padding-bottom: 16px;
+    padding: 16px;
   }
 
   .introTitle {
@@ -408,7 +408,8 @@
 
   .summaryGrid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
   }
 
   .summaryCard {
@@ -416,10 +417,26 @@
     grid-template-columns: auto minmax(0, 1fr);
     column-gap: 12px;
     align-items: center;
-    padding: 12px;
+    min-height: 68px;
+    padding: 10px;
+  }
+
+  .summaryCard:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .summaryCard strong {
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .summaryCard span:last-child {
+    margin-top: 0;
   }
 
   .summaryIcon {
+    width: 32px;
+    height: 32px;
     grid-row: span 2;
     margin-bottom: 0;
   }
@@ -439,7 +456,14 @@
   }
 
   .tabs {
+    position: sticky;
+    top: 8px;
+    z-index: 5;
     gap: 6px;
+    padding: 4px;
+    border: 1px solid var(--theme-border-soft);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   }
 
   .tab {

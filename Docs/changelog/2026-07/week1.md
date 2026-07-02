@@ -32,4 +32,5 @@
 - `P3-12-D48` 完成 UI 候选前启动前验证：`validate:ci -- --report`、`validate:baseline`、`validate:identity` 与 `validate:baseline:host -- --report` 均通过，当前具备进入真实 Gateway 页面复核的前置条件。
 - `P3-12-D49` 完成 UI 候选前 Gateway 真实页面复核：`check:host-runtime -- --details --report` 通过，Browser 覆盖 PC `1920x1080` 与 mobile `390x844 @ DPR 3` 的 public / private / author / console 代表路径；首次高频 Console 直达的权限降级页经间隔复测恢复，不作为 UI 实现阻断。
 - `P3-12-D50` 完成 D49 后口径纠偏和下一批 UI 实现排序：D49 只能说明当前已实现页面无阻断，不能说明整个 app 已按 Pencil 完成 UI 实现，也不能直接进入 `P3-12-E`。
-- 下一步继续留在 `P3-12-D51`，推进 `radish.client` 私域 / 作者态移动任务流 UI 对齐首批；当前不直接创建 tag、不进入 M15 测试 / 生产部署流程。
+- `P3-12-D51` 完成 `radish.client` 私域 / 作者态移动任务流 UI 对齐首批：资产、订单 / 背包、通知、消息、圈子、宠物和 Docs 作者态移动摘要与任务列表密度已按 `P21-P30` 首批收紧；本批未新增业务 API、权限、路由或保存载荷。
+- 下一步继续留在 `P3-12-D52`，推进 Public Web 移动公开任务流 UI 对齐；当前不直接创建 tag、不进入 M15 测试 / 生产部署流程。
