@@ -624,11 +624,11 @@ export const OrderList = () => {
         canRemark={canRemarkOrder}
         savingRemark={savingRemark}
         onClose={handleCloseDetail}
-        onRetry={() => {
+        onRetry={canRetryOrder ? () => {
           if (selectedOrderPreview) {
             handleRetry(selectedOrderPreview);
           }
-        }}
+        } : undefined}
         onViewUser={canViewUsers ? handleViewUser : undefined}
         onViewProduct={canViewProducts ? handleViewProduct : undefined}
         onViewCoinTransaction={canViewCoins ? handleViewCoinTransaction : undefined}

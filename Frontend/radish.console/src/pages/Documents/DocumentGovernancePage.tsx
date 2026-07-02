@@ -279,6 +279,11 @@ export const DocumentGovernancePage = () => {
   };
 
   const openAccessPolicy = (record: WikiDocumentVo) => {
+    if (!canUpdatePermissions || record.voIsDeleted || isBuiltInDocument(record)) {
+      message.error('当前文档不可调整访问策略');
+      return;
+    }
+
     setAccessDocument(record);
     setAccessVisibility(String(record.voVisibility || DOCUMENT_VISIBILITY.authenticated));
     setAccessRolesText((record.voAllowedRoles || []).join('\n'));
@@ -287,6 +292,11 @@ export const DocumentGovernancePage = () => {
 
   const saveAccessPolicy = async () => {
     if (!accessDocument) {
+      return;
+    }
+
+    if (!canUpdatePermissions || accessDocument.voIsDeleted || isBuiltInDocument(accessDocument)) {
+      message.error('当前文档不可调整访问策略');
       return;
     }
 
@@ -349,6 +359,11 @@ export const DocumentGovernancePage = () => {
   };
 
   const handleRollback = async (revisionId: LongId) => {
+    if (!canRollback || !revisionDocument || revisionDocument.voIsDeleted || isBuiltInDocument(revisionDocument)) {
+      message.error('当前版本不可回滚');
+      return;
+    }
+
     await runDocumentAction(
       async () => {
         await rollbackWikiRevision(revisionId);
@@ -366,6 +381,11 @@ export const DocumentGovernancePage = () => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) {
+      return;
+    }
+
+    if (!canImport) {
+      message.error('无文档导入权限');
       return;
     }
 
@@ -388,6 +408,11 @@ export const DocumentGovernancePage = () => {
   };
 
   const handleExport = async (record: WikiDocumentVo) => {
+    if (!canExport) {
+      message.error('无文档导出权限');
+      return;
+    }
+
     try {
       const result = await exportWikiMarkdown(record.voId);
       triggerDownload(result.blob, result.fileName);

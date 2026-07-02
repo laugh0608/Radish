@@ -139,8 +139,8 @@ export const SystemConfigList = () => {
   const editableConfigs = filteredConfigs.filter((config) => config.voIsEditable).length;
 
   const handleRestoreDefaultFavicon = async () => {
-    if (!faviconConfig) {
-      message.error('站点图标配置尚未加载完成');
+    if (!canEditSystemConfig || !faviconConfig) {
+      message.error(canEditSystemConfig ? '站点图标配置尚未加载完成' : '无系统设置编辑权限');
       return;
     }
 
@@ -164,6 +164,13 @@ export const SystemConfigList = () => {
 
   const handleFaviconUpload: UploadProps['customRequest'] = async (options) => {
     const file = options.file;
+    if (!canEditSystemConfig) {
+      const uploadError = new Error('无系统设置编辑权限');
+      options.onError?.(uploadError);
+      message.error(uploadError.message);
+      return;
+    }
+
     if (!(file instanceof File)) {
       const uploadError = new Error('无效的图标文件');
       options.onError?.(uploadError);
@@ -228,6 +235,11 @@ export const SystemConfigList = () => {
 
   // 编辑系统设置覆盖值
   const handleEdit = (record: SystemConfigVo) => {
+    if (!canEditSystemConfig || !record.voIsEditable) {
+      message.error(canEditSystemConfig ? '该设置不允许编辑' : '无系统设置编辑权限');
+      return;
+    }
+
     setEditingConfigId(record.voId);
     setFormVisible(true);
   };

@@ -42,6 +42,30 @@ test('Console 跨模块订单排障入口应复用订单详情路径 helper', ()
   assert.doesNotMatch(coinAdminSource, /new URLSearchParams\(\{\s*orderId:/s);
 });
 
+test('Console 商品与订单详情 footer 动作应继承列表权限态', () => {
+  const productListSource = readConsoleSource('src/pages/Products/ProductList.tsx');
+  const orderListSource = readConsoleSource('src/pages/Orders/OrderList.tsx');
+
+  assert.match(productListSource, /onEdit=\{canEditProduct \? handleEditProduct : undefined\}/);
+  assert.match(orderListSource, /onRetry=\{canRetryOrder \? \(\) => \{/);
+  assert.doesNotMatch(productListSource, /<ProductDetail[\s\S]*onEdit=\{handleEditProduct\}/);
+  assert.doesNotMatch(orderListSource, /<OrderDetail[\s\S]*onRetry=\{\(\) => \{/);
+});
+
+test('Console 深层写入 handler 应复核权限态', () => {
+  const rolePermissionSource = readConsoleSource('src/pages/Roles/RolePermissionPage.tsx');
+  const documentGovernanceSource = readConsoleSource('src/pages/Documents/DocumentGovernancePage.tsx');
+  const systemConfigSource = readConsoleSource('src/pages/SystemConfig/SystemConfigList.tsx');
+
+  assert.match(rolePermissionSource, /if \(saveDisabled\) \{/);
+  assert.match(documentGovernanceSource, /if \(!canUpdatePermissions \|\| accessDocument\.voIsDeleted \|\| isBuiltInDocument\(accessDocument\)\) \{/);
+  assert.match(documentGovernanceSource, /if \(!canRollback \|\| !revisionDocument \|\| revisionDocument\.voIsDeleted \|\| isBuiltInDocument\(revisionDocument\)\) \{/);
+  assert.match(documentGovernanceSource, /if \(!canImport\) \{/);
+  assert.match(documentGovernanceSource, /if \(!canExport\) \{/);
+  assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !faviconConfig\) \{/);
+  assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !record\.voIsEditable\) \{/);
+});
+
 test('Console 内容治理入口应支持用户排障深链与来源返回', () => {
   const searchParams = buildModerationSearchParams({
     section: 'manual',

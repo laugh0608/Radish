@@ -214,6 +214,10 @@ export const RolePermissionPage = () => {
   };
 
   const handleSave = async () => {
+    if (saveDisabled) {
+      return;
+    }
+
     if (!snapshot) {
       return;
     }

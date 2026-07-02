@@ -638,7 +638,7 @@ export const ProductList = () => {
         fallbackProduct={selectedProductSnapshot}
         reloadToken={detailReloadToken}
         onClose={handleCloseDetail}
-        onEdit={handleEditProduct}
+        onEdit={canEditProduct ? handleEditProduct : undefined}
         onViewOrders={canViewOrders ? handleViewOrders : undefined}
         onReturnToSource={queryReturnTo ? handleReturnToSource : undefined}
       />
