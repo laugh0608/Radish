@@ -68,6 +68,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 普通点击可以通过会话状态保留来源返回。
 - 新开标签、复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带来源状态。
 - 公开集合页的 tab、搜索、排序和分页应能恢复到 URL 或明确的 query 状态。
+- 论坛详情工作区动作也属于可导航动作：轻回应、评论、问答回答、作者编辑和历史查看必须使用真实 `intent` 链接，普通点击再拦截为当前页工作区展开或作者态加载。
 
 ### 身份展示
 
@@ -82,6 +83,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 论坛详情的阅读说明属于辅助区，应位于正文、帖子级轻回应、评论入口和评论区之后，不插在正文与互动任务之间。
 - 论坛详情的“神评”“沙发”只作为评论树内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露；神评属于父评论高亮，沙发属于子回复 / 楼中楼首条回复语境。
 - 帖子详情必须表达帖子级轻回应、评论级轻回应、表情 reaction、回复入口、引用回复和登录评论回流。
+- 登录参与和作者态入口只承接受控 `intent`：`quickReply`、`comment`、`answer`、`edit`、`history`。这些 intent 只用于当前标签页工作区恢复或登录回流，不进入 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
 - 评论树视觉应优先表达父子层级：父评论是完整评论卡，子回复缩进并保留引用 chip、回复、点赞和举报动作。
 - forum 作者态入口通过正式 Web 路由承接，文档作者态入口通过正式 Web 作者页承接。
 - 文档公开详情保持只读；编辑、发布、版本治理、权限策略和回滚归作者页或 Console。

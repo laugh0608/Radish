@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-06-22
+> 最后更新：2026-07-02
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -40,20 +40,20 @@
 | --- | --- | --- | --- | --- | --- | --- |
 | Dashboard | `/` | `console.dashboard.view` | `console.orders.view`、`console.products.create`、`console.users.view`、`console.applications.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 最近订单按订单查看权限单独控制，并支持带 `orderNo` 深链进入订单治理面 |
 | Applications | `/applications` | `console.applications.view` | `console.applications.create/edit/delete/reset-secret` | `Client/GetClients`、`GetClient/.+`、`CreateClient`、`UpdateClient/.+`、`DeleteClient/.+`、`ResetClientSecret/.+` | ✅ | 列表与弹窗链路均已闭环 |
-| Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`AdminGetProduct/.+`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | 已接商品详情弹窗、商品到订单回跳和订单回看入口 |
-| Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`AdminGetOrder/.+`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情已改为独立真实接口加载，并支持订单到用户 / 商品治理回跳 |
+| Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`AdminGetProduct/.+`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | 已接商品详情弹窗、商品到订单回跳和订单回看入口；详情编辑 footer 仅在 `console.products.edit` 下传入写入回调 |
+| Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`AdminGetOrder/.+`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情已改为独立真实接口加载，并支持订单到用户 / 商品治理回跳；失败重试 footer 仅在 `console.orders.retry` 下传入写入回调 |
 | Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 未落地操作已收口，不再保留伪权限 |
 | User Detail | `/users/:userId` | `console.users.view` | 无额外操作权限 | 当前页面仍以 mock 为主，无新增真实资源依赖 | ✅ | 路由边界已稳定，后续若接真接口需重新补矩阵 |
 | Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |
 | Categories | `/categories` | `console.categories.view` | `console.categories.create/edit/delete/restore/toggle/sort` | `Category/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 分类与标签已拆分为独立后台模块 |
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
-| Documents | `/documents` | `console.docs.view` | `console.docs.publish/archive/delete/restore/permissions/rollback/import/export` | `Wiki/AdminGetList`、`AdminGetTree`、`AdminGetById/\\d+`、`GetRevisionList/\\d+`、`GetRevisionDetail/\\d+`、`Publish/\\d+`、`Unpublish/\\d+`、`Archive/\\d+`、`Delete/\\d+`、`Restore/\\d+`、`UpdateAccessPolicy/\\d+`、`Rollback/\\d+`、`ImportMarkdown`、`ExportMarkdown/\\d+` | ✅ | Console 只承接文档治理；正文创建 / 编辑继续归正式 Web 作者入口，不新增 `console.docs.create/edit` |
+| Documents | `/documents` | `console.docs.view` | `console.docs.publish/archive/delete/restore/permissions/rollback/import/export` | `Wiki/AdminGetList`、`AdminGetTree`、`AdminGetById/\\d+`、`GetRevisionList/\\d+`、`GetRevisionDetail/\\d+`、`Publish/\\d+`、`Unpublish/\\d+`、`Archive/\\d+`、`Delete/\\d+`、`Restore/\\d+`、`UpdateAccessPolicy/\\d+`、`Rollback/\\d+`、`ImportMarkdown`、`ExportMarkdown/\\d+` | ✅ | Console 只承接文档治理；正文创建 / 编辑继续归正式 Web 作者入口；访问策略、回滚、导入、导出 handler 会复核对应权限和文档只读状态 |
 | Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
 | Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前已纳管 `Post / Comment / PostQuickReply / ChatMessage / Product` 举报审核链路，并支持创建时快照、当前状态、回看与失效降级并列展示 |
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 管理端查询指定用户余额、交易流水与调账能力；流水支持按业务类型 / 业务 ID 定位订单扣款；调账后同页刷新 `ADMIN_ADJUST` 流水用于人工复核 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
-| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | `CreateConfig` 兼容旧路由但拒绝新增未知设置；`DeleteConfig` 兼容旧路由并收敛为恢复默认；Medium 设置要求原因与确认参数 |
+| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | `CreateConfig` 兼容旧路由但拒绝新增未知设置；`DeleteConfig` 兼容旧路由并收敛为恢复默认；Medium 设置要求原因与确认参数；favicon 上传 / 恢复默认和编辑抽屉 handler 会复核 `console.system-config.edit` 与可编辑状态 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
 ## 3. `authOnly` 路由矩阵
