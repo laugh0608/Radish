@@ -349,14 +349,6 @@ export const PublicForumSearch = ({
           </div>
         </div>
 
-        <PublicReadingGuide
-          className={styles.readingGuide}
-          label={readingGuide.label}
-          title={readingGuide.title}
-          description={readingGuide.description}
-          items={readingGuide.items}
-        />
-
         <div className={styles.searchPanel}>
           <div className={styles.searchForm}>
             <div className={styles.searchInputWrap}>
@@ -537,6 +529,14 @@ export const PublicForumSearch = ({
           onPageChange={setCurrentPage}
         />
       )}
+
+      <PublicReadingGuide
+        className={styles.readingGuide}
+        label={readingGuide.label}
+        title={readingGuide.title}
+        description={readingGuide.description}
+        items={readingGuide.items}
+      />
     </section>
   );
 };

@@ -678,16 +678,6 @@ const PublicDocsList = ({
       </div>
 
       <div className={styles.contentWrap}>
-        <PublicReadingGuide
-          label={t('wiki.public.listGuideKicker')}
-          title={t('wiki.public.listGuideTitle')}
-          description={t('wiki.public.listGuideDescription')}
-          items={listGuideItems.map((item) => ({
-            label: t(item.labelKey),
-            value: t(item.valueKey),
-          }))}
-        />
-
         {isLoading ? (
           <PublicStatusCard
             tone="loading"
@@ -817,6 +807,16 @@ const PublicDocsList = ({
                 )}
               </section>
             </div>
+
+            <PublicReadingGuide
+              label={t('wiki.public.listGuideKicker')}
+              title={t('wiki.public.listGuideTitle')}
+              description={t('wiki.public.listGuideDescription')}
+              items={listGuideItems.map((item) => ({
+                label: t(item.labelKey),
+                value: t(item.valueKey),
+              }))}
+            />
           </>
         )}
       </div>
@@ -996,16 +996,6 @@ const PublicDocsSearch = ({
       </div>
 
       <div className={styles.contentWrap}>
-        <PublicReadingGuide
-          label={t('wiki.public.searchGuideKicker')}
-          title={t('wiki.public.searchGuideTitle')}
-          description={t('wiki.public.searchGuideDescription')}
-          items={searchGuideItems.map((item) => ({
-            label: t(item.labelKey),
-            value: t(item.valueKey),
-          }))}
-        />
-
         <section className={styles.searchPanel}>
           <form className={styles.searchForm} onSubmit={handleSubmit}>
             <div className={styles.searchInputWrap}>
@@ -1159,6 +1149,16 @@ const PublicDocsSearch = ({
             )}
           </section>
         )}
+
+        <PublicReadingGuide
+          label={t('wiki.public.searchGuideKicker')}
+          title={t('wiki.public.searchGuideTitle')}
+          description={t('wiki.public.searchGuideDescription')}
+          items={searchGuideItems.map((item) => ({
+            label: t(item.labelKey),
+            value: t(item.valueKey),
+          }))}
+        />
       </div>
     </section>
   );

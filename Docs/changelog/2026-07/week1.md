@@ -35,3 +35,6 @@
 - `P3-12-D51` 完成 `radish.client` 私域 / 作者态移动任务流 UI 对齐首批：资产、订单 / 背包、通知、消息、圈子、宠物和 Docs 作者态移动摘要与任务列表密度已按 `P21-P30` 首批收紧；本批未新增业务 API、权限、路由或保存载荷。
 - `P3-12-D52` 完成 `radish.client` Public Web 移动公开任务流 UI 对齐：覆盖 `/discover`、`/forum`、论坛详情、`/docs`、Docs 详情、`/shop`、商品详情、`/leaderboard` 和公开主页，收紧移动摘要区、卡片 / 列表节奏、状态槽、筛选 / tab、底部空间和横向溢出风险。
 - 本批未新增业务 API、权限键、数据库结构、路由语义、登录回流或保存 / 提交载荷；`radish.client` build / type-check、changed repo hygiene 与 `git diff --check` 均通过。当前仍留在 `P3-12-D` 做后续收口判断，不直接创建 tag、不进入 M15 测试 / 生产部署流程。
+- `P3-12-D53` 完成 Public Web Pencil 首轮真实页面对齐收口：通过 Pencil MCP 读取 `public-web-unified-experience.pen`，并在 Gateway mobile `390x844` 覆盖 `/discover`、`/forum`、论坛详情、`/docs`、Docs 详情、`/shop`、商品详情、`/leaderboard` 和有效公开主页。
+- 本批修正公开说明卡前置、论坛详情说明插队和商品详情移动首屏信息后移问题：公开论坛、Docs、商城、榜单和公开主页的说明区退到真实列表 / 目录 / 商品 / 内容之后，商品详情移动端优先展示商品名、价格和购买状态。
+- 本批未新增业务 API、权限键、数据库结构、路由语义、登录回流或保存 / 提交载荷；当前仍留在 `P3-12-D` 做 public / private / console 成组退出条件判断，不直接创建 tag、不进入 `P3-12-E`、M15 测试或生产部署流程。

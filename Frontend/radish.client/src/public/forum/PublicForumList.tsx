@@ -427,13 +427,6 @@ export const PublicForumList = ({
           </div>
         </div>
 
-        <PublicReadingGuide
-          className={styles.readingGuide}
-          label={readingGuide.label}
-          title={readingGuide.title}
-          description={readingGuide.description}
-          items={readingGuide.items}
-        />
       </div>
 
       <div className={styles.categoryRail}>
@@ -585,6 +578,14 @@ export const PublicForumList = ({
           onPageChange={setCurrentPage}
         />
       )}
+
+      <PublicReadingGuide
+        className={styles.readingGuide}
+        label={readingGuide.label}
+        title={readingGuide.title}
+        description={readingGuide.description}
+        items={readingGuide.items}
+      />
     </section>
   );
 };

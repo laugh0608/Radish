@@ -1121,6 +1121,10 @@ export const PublicShopApp = ({
             </div>
           </div>
 
+          <div className={styles.contentWrap}>
+            {route.kind === 'home' ? renderHome() : route.kind === 'products' ? renderProducts() : renderDetail()}
+          </div>
+
           <div className={styles.guideSection}>
             <PublicReadingGuide
               label={t('shop.public.guideKicker')}
@@ -1131,10 +1135,6 @@ export const PublicShopApp = ({
                 value: t(item.valueKey),
               }))}
             />
-          </div>
-
-          <div className={styles.contentWrap}>
-            {route.kind === 'home' ? renderHome() : route.kind === 'products' ? renderProducts() : renderDetail()}
           </div>
         </section>
       </main>

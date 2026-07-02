@@ -1417,13 +1417,6 @@ export const PublicForumDetail = ({
               onLotteryClick={onOpenLottery}
             />
 
-            <PublicReadingGuide
-              label={readingGuide.label}
-              title={readingGuide.title}
-              description={readingGuide.description}
-              items={readingGuide.items}
-            />
-
             {(commentReturnPath || quickReplyReturnPath || answerReturnPath || (isAuthenticated && isCurrentUserAuthor && (editReturnPath || historyReturnPath))) && (
               <section className={styles.workspaceActionPanel}>
                 <div className={styles.workspaceActionCopy}>
@@ -1667,6 +1660,13 @@ export const PublicForumDetail = ({
                 </>
               )}
             </section>
+
+            <PublicReadingGuide
+              label={readingGuide.label}
+              title={readingGuide.title}
+              description={readingGuide.description}
+              items={readingGuide.items}
+            />
 
             {isEditModalOpen && (
               <Suspense fallback={null}>
