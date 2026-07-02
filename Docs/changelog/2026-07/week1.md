@@ -25,4 +25,6 @@
 - 本批确认商城订单 / 背包、我的内容 / 历史 / 附件已有正式 Web 路由、数据态、分页 / 筛选 URL 状态和真实公开链接契约；未新增后端 API、权限、路由接口或商城来源回退模型，未执行 Gateway PC / mobile 真实页面复核。
 - `P3-12-D44` 完成 Console 深层管理动作代码侧复核：商品详情编辑与订单详情失败重试 footer 已继承列表权限态，角色权限保存、文档治理访问策略 / 回滚 / 导入导出、系统设置 favicon / 编辑抽屉 handler 已补同层权限复核。
 - 本批确认用户详情、内容治理队列 / 日志和手动治理动作未发现新的无条件写入入口；新增 Console 静态契约测试锁定深层 footer 权限态与写入 handler 复核，`radish.console` 构建通过。
-- 下一步进入移动响应式抽样：按 D41 排序复核 public / private / author / console 已落地页面在移动 CSS 视口下的导航、主动作、表格 / 列表、弹窗 / 抽屉和只读权限态；真实 Gateway PC / mobile 复核仍需先等待用户确认前后端已启动。
+- `P3-12-D45` 完成 Gateway 移动 CSS 视口抽样：使用仓库种子管理员账号登录，覆盖 public / private / author / console 主路径，未发现挂载失败、误跳登录或页面级横向溢出。
+- 本批修复 Console 系统设置页移动视口下品牌卡片撑宽内容区的问题；`/console/system-config` 修复后内容区与品牌卡 `scrollWidth` 均回到自身 `clientWidth`，表格横向滚动继续保留在 `.ant-table-content` 内。
+- 下一步进入 `P3-12-D46 UI 专题退出复核`：汇总 D37-D45 证据，对照 D36 退出条件判断是否可以转入 `P3-12-E` 发布候选准备。
