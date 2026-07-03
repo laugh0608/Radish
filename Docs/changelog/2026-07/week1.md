@@ -1,0 +1,51 @@
+# 2026 年 7 月第 1 周开发日志
+
+## 2026-07-01
+
+- `P3-12-D37` 完成 UI 设计源差距矩阵：按 public / private / foundation / console 四类设计源列出每个画板对应的真实路由 / 页面族、当前代码状态、验证证据和剩余动作。
+- 当前明确公开 Web `P15 / P16` 聊天室画板没有正式 `/chat` 路由；现有聊天能力仍主要位于 WebOS `ChatApp` 和私域 `/messages`，下一步需先裁决是否进入 P3-12 发布前范围。
+- 当前明确公开首页 `P01` 由 `/discover` 承接，Console `P04 / P13 / P18` 的内部调度 / 运维平台能力缺少后端数据来源和 API 契约；移动 Console `P07 / P08 / P14-P17` 先作为响应式验收参考，不直接扩成独立移动 Console 应用。
+- 本批只做文档矩阵与规划口径同步，不修改 Pencil、业务代码、API、权限、路由、保存动作或载荷，不启动 Gateway 页面联调，不进入 `P3-12-E` 发布候选。
+- D37 差距矩阵作为 `P3-12-D38` 边界裁决输入；若发布前边界明确为后置，再等待用户确认前后端已启动后组织 Gateway PC / mobile 阶段验收。
+- `P3-12-D38` 完成 UI 边界裁决与阶段验收清单：发布前不新增独立 `PublicHomeApp`，公开首页 `P01` 由 `/discover` 承接；公开聊天室 `P15 / P16` 后置评审，不作为 D 退出条件和 E 前置项；Console 内部调度中心、内部 Jobs 平台和独立移动 Console 应用后置。
+- D38 已同步 public / private / foundation / console 四份设计说明，下一步进入 `P3-12-D39` Gateway PC / mobile 阶段验收准备；真实页面复核仍需等待用户明确说明前后端已启动。
+- `P3-12-D39` 完成 Gateway PC / mobile 阶段验收：`check:host-runtime -- --details` 通过；public / private / author / console 共 53 个代表页面覆盖 PC `1920x1080` 与移动 CSS `390x844`，未发现挂载失败、登录误跳、授权页停留、横向溢出或页面错误文案。
+- Console 订单详情、用户详情、角色权限和系统设置历史只读交互补验通过；移动 Console 作为响应式后台验收参考通过。下一步进入 `P3-12-D40` UI 专题退出判断与发布候选前置清单整理。
+- `P3-12-D40` 修正 UI 专题退出判断：D39 的代表页面运行态验收不能替代设计源页面全量开发，`P3-12-D` 不满足退出条件，不能进入发布候选准备。
+- 下一步继续 `P3-12-D41` 页面开发缺口排序与成组实现：按 public / private / author / console 逐页核对设计源、源码路由、真实数据态和关键动作，不提前创建 tag 或进入部署流程。
+- `P3-12-D41` 完成页面开发缺口源码核对：public / private / author / console 主要页面族均有真实路由和组件；公开聊天室、内部调度中心、内部 Jobs 平台和独立移动 Console 继续后置；Docs 作者态 `/docs/edit/:id` 不是路由缺失，而是内置 / 已删除测试数据不可编辑导致入口隐藏。
+- 本批同步修正 Docs 作者列表只读状态表达：内置或已删除文档展示“内置只读 / 已删除只读”，不改变权限、保存、上传、路由或 API 契约。下一步优先准备可编辑测试文档并复核作者文档编辑、保存、上传、版本历史和公开阅读回跳。
+
+## 2026-07-02
+
+- `P3-12-D42` 完成 Docs 作者态真实动作代码侧补漏：编辑页“修订记录”改为作者台内部导航，编辑页与修订页补齐公开阅读真实链接，目录异步加载不再重置 `/docs/compose` 或 `/docs/edit/:id` 的编辑器草稿。
+- 本批保持 B4 职责边界：未新增后端 API、权限、数据库结构、上传 / 保存载荷，未把发布、撤回、归档、恢复、导入、导出或回滚放入正式 Web 作者入口。
+- 同步刷新 `publicSeoStatic` 中已过期的共享 `WebStateSlot` / `WebShellHeader` 静态断言，继续锁定真实 `href` 与普通点击拦截契约；`radish.client` 构建、定向路由 / 登录回流 / SEO 静态测试、仓库卫生和 `git diff --check` 均通过。
+- `P3-12-D43` 完成 Public / Private 主路径代码侧复核：公开论坛详情工作区动作从纯按钮补为回答、轻回应、编辑、历史和评论真实 intent `href`，普通点击仍保留原交互，新标签页 / 复制链接保留浏览器默认行为。
+- 本批确认商城订单 / 背包、我的内容 / 历史 / 附件已有正式 Web 路由、数据态、分页 / 筛选 URL 状态和真实公开链接契约；未新增后端 API、权限、路由接口或商城来源回退模型，未执行 Gateway PC / mobile 真实页面复核。
+- `P3-12-D44` 完成 Console 深层管理动作代码侧复核：商品详情编辑与订单详情失败重试 footer 已继承列表权限态，角色权限保存、文档治理访问策略 / 回滚 / 导入导出、系统设置 favicon / 编辑抽屉 handler 已补同层权限复核。
+- 本批确认用户详情、内容治理队列 / 日志和手动治理动作未发现新的无条件写入入口；新增 Console 静态契约测试锁定深层 footer 权限态与写入 handler 复核，`radish.console` 构建通过。
+- `P3-12-D45` 完成 Gateway 移动 CSS 视口抽样：使用仓库种子管理员账号登录，覆盖 public / private / author / console 主路径，未发现挂载失败、误跳登录或页面级横向溢出。
+- 本批修复 Console 系统设置页移动视口下品牌卡片撑宽内容区的问题；`/console/system-config` 修复后内容区与品牌卡 `scrollWidth` 均回到自身 `clientWidth`，表格横向滚动继续保留在 `.ant-table-content` 内。
+- `P3-12-D46` 完成 Pencil UI 实现完成度复核与剩余实现清单：确认当前发布前范围未命中新的页面级 UI 实现缺口，公开聊天室、内部调度、内部 Jobs 和独立移动 Console 继续后置。
+- `P3-12-D47` 完成 UI 实现证据收口与候选前验证清单准备：整理 D36-D46 的设计源、代码实现、真实页面复核、真实数据态复核、工具限制、启动前自动化入口和启动后 Gateway 复核约束。
+- `P3-12-D48` 完成 UI 候选前启动前验证：`validate:ci -- --report`、`validate:baseline`、`validate:identity` 与 `validate:baseline:host -- --report` 均通过，当前具备进入真实 Gateway 页面复核的前置条件。
+- `P3-12-D49` 完成 UI 候选前 Gateway 真实页面复核：`check:host-runtime -- --details --report` 通过，Browser 覆盖 PC `1920x1080` 与 mobile `390x844 @ DPR 3` 的 public / private / author / console 代表路径；首次高频 Console 直达的权限降级页经间隔复测恢复，不作为 UI 实现阻断。
+- `P3-12-D50` 完成 D49 后口径纠偏和下一批 UI 实现排序：D49 只能说明当前已实现页面无阻断，不能说明整个 app 已按 Pencil 完成 UI 实现，也不能直接进入 `P3-12-E`。
+- `P3-12-D51` 完成 `radish.client` 私域 / 作者态移动任务流 UI 对齐首批：资产、订单 / 背包、通知、消息、圈子、宠物和 Docs 作者态移动摘要与任务列表密度已按 `P21-P30` 首批收紧；本批未新增业务 API、权限、路由或保存载荷。
+- `P3-12-D52` 完成 `radish.client` Public Web 移动公开任务流 UI 对齐：覆盖 `/discover`、`/forum`、论坛详情、`/docs`、Docs 详情、`/shop`、商品详情、`/leaderboard` 和公开主页，收紧移动摘要区、卡片 / 列表节奏、状态槽、筛选 / tab、底部空间和横向溢出风险。
+- 本批未新增业务 API、权限键、数据库结构、路由语义、登录回流或保存 / 提交载荷；`radish.client` build / type-check、changed repo hygiene 与 `git diff --check` 均通过。当前仍留在 `P3-12-D` 做后续收口判断，不直接创建 tag、不进入 M15 测试 / 生产部署流程。
+- `P3-12-D53` 完成 Public Web Pencil 首轮真实页面对齐收口：通过 Pencil MCP 读取 `public-web-unified-experience.pen`，并在 Gateway mobile `390x844` 覆盖 `/discover`、`/forum`、论坛详情、`/docs`、Docs 详情、`/shop`、商品详情、`/leaderboard` 和有效公开主页。
+- 本批修正公开说明卡前置、论坛详情说明插队和商品详情移动首屏信息后移问题：公开论坛、Docs、商城、榜单和公开主页的说明区退到真实列表 / 目录 / 商品 / 内容之后，商品详情移动端优先展示商品名、价格和购买状态。
+- 本批未新增业务 API、权限键、数据库结构、路由语义、登录回流或保存 / 提交载荷；当前仍留在 `P3-12-D` 做 public / private / console 成组退出条件判断，不直接创建 tag、不进入 `P3-12-E`、M15 测试或生产部署流程。
+
+### 今日提交回顾
+
+- 2026-07-02 共完成 11 个 `dev` 提交，范围从 Docs 作者态动作、Public / Private 主路径链接契约、Console 深层权限态和系统设置移动抽样，推进到 D47-D50 纠偏与验证口径、D51 私域 / 作者态移动任务流、D52 Public Web 移动任务流和 D53 Public Web Pencil 真实页面对齐。
+- 代码侧实际改动集中在 `radish.client` 作者 / 公开路径、`radish.console` 深层管理动作与系统设置移动响应式；相关文档已同步到 planning、records、changelog、public / private 设计说明和 records 索引。
+
+### 明天事项（2026-07-03）
+
+- 建议推进 `P3-12-D54 Private / Author Pencil 首轮真实页面对齐复核`：先用 Pencil MCP 读取 `private-web-workflows.pen`，再对照 `/workbench`、`/me` 系列、资产 / 订单 / 背包、通知、消息、圈子、宠物、论坛作者态和 Docs 作者态真实页面。
+- D54 重点判断 D51 后是否仍存在移动首屏密度、任务摘要顺序、状态槽、tab / 筛选、底部空间或横向溢出缺口；不新增业务 API、权限键、数据库结构、路由语义或保存 / 提交载荷。
+- 若需要真实 Gateway smoke，仍需当日先确认前后端已启动；当前不进入 `P3-12-E`、不创建 tag、不进入 M15 测试或生产部署流程。

@@ -1,0 +1,158 @@
+.slot {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
+  border-radius: var(--rx-radius-card);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.compact {
+  padding: 18px;
+  gap: 12px;
+}
+
+.slot[data-tone='loading'] {
+  border-color: color-mix(in srgb, var(--rx-brand-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--rx-brand-soft) 44%, white 56%);
+}
+
+.slot[data-tone='empty'],
+.slot[data-tone='info'] {
+  background: color-mix(in srgb, var(--rx-bg-muted) 80%, var(--rx-bg-surface) 20%);
+}
+
+.slot[data-tone='error'],
+.slot[data-tone='notFound'] {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+}
+
+.slot[data-tone='permission'],
+.slot[data-tone='auth'] {
+  border-color: color-mix(in srgb, var(--rx-accent-ink) 18%, transparent);
+  background: color-mix(in srgb, var(--rx-accent-ink) 8%, white 92%);
+}
+
+.iconWrap {
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rx-radius-card);
+  background: color-mix(in srgb, var(--rx-bg-surface) 58%, white 42%);
+  color: var(--rx-brand-primary);
+}
+
+.compact .iconWrap {
+  width: 36px;
+  height: 36px;
+}
+
+.body {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  color: var(--rx-text-primary);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.description {
+  margin: 0;
+  color: var(--rx-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: grid;
+  gap: 8px;
+  color: var(--rx-text-secondary);
+  font-size: 13px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rx-radius-pill);
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.primaryAction {
+  border: 1px solid color-mix(in srgb, var(--rx-brand-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--rx-brand-soft) 76%, white 24%);
+  color: var(--rx-brand-primary);
+}
+
+.secondaryAction {
+  border: 1px solid var(--rx-border-strong);
+  background: var(--rx-bg-surface);
+  color: var(--rx-text-primary);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-1px);
+}
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 720px) {
+  .slot {
+    padding: 18px;
+    gap: 12px;
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .description {
+    font-size: 13px;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .primaryAction,
+  .secondaryAction {
+    flex: 1 1 132px;
+  }
+}

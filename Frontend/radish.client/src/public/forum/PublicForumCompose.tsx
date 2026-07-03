@@ -195,6 +195,30 @@ export function PublicForumCompose({
         </div>
       </header>
 
+      <div className={styles.composeSummaryGrid} aria-label={t('forum.public.composeSummaryLabel')}>
+        <div className={styles.composeSummaryCard}>
+          <span className={styles.composeSummaryIcon}>
+            <Icon icon={isAuthenticated ? 'mdi:account-check-outline' : 'mdi:account-clock-outline'} size={20} />
+          </span>
+          <strong>{t(isAuthenticated ? 'forum.public.composeMetricAuthReady' : 'forum.public.composeMetricAuthPending')}</strong>
+          <span>{t('forum.public.composeMetricAuth')}</span>
+        </div>
+        <div className={styles.composeSummaryCard}>
+          <span className={styles.composeSummaryIcon}>
+            <Icon icon={categoriesError ? 'mdi:alert-circle-outline' : categoriesLoading ? 'mdi:progress-clock' : 'mdi:shape-outline'} size={20} />
+          </span>
+          <strong>{categoriesError ? t('forum.public.composeMetricCategoriesError') : categories.length}</strong>
+          <span>{t('forum.public.composeMetricCategories')}</span>
+        </div>
+        <div className={styles.composeSummaryCard}>
+          <span className={styles.composeSummaryIcon}>
+            <Icon icon="mdi:fingerprint" size={20} />
+          </span>
+          <strong>{t('forum.public.composeMetricSubmissionReady')}</strong>
+          <span>{t('forum.public.composeMetricSubmission')}</span>
+        </div>
+      </div>
+
       <div className={styles.composePanel}>
         <a
           className={styles.backButton}

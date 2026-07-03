@@ -8,21 +8,28 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-width: 0;
+}
+
+.sticker-batch-table-region {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 .sticker-batch-summary {
-  color: #666;
+  color: var(--console-text-secondary);
   font-size: 13px;
 }
 
 .sticker-batch-row-conflict td {
-  background: #fff7e6 !important;
+  background: var(--console-warning-bg) !important;
 }
 
 .sticker-batch-issue-text {
-  color: #d46b08;
+  color: var(--console-warning-text);
 }
 
 .sticker-batch-error-text {
-  color: #cf1322;
+  color: var(--console-danger);
 }

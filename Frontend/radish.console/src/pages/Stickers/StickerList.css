@@ -17,8 +17,6 @@
   object-fit: cover;
 }
 
-@media (max-width: 768px) {
-  .sticker-item-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
+.sticker-item-sort-input {
+  width: 100%;
 }

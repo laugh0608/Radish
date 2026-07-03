@@ -586,12 +586,12 @@ export const CoinAdminPage = () => {
             </div>
 
             <Table<CoinTransactionVo>
+              className="coin-admin-transaction-table"
               rowKey="voId"
               columns={transactionColumns}
               dataSource={transactions}
               loading={transactionLoading}
               scroll={{ x: 1340 }}
-              style={{ marginTop: 20 }}
               pagination={{
                 current: transactionPageIndex,
                 pageSize: transactionPageSize,

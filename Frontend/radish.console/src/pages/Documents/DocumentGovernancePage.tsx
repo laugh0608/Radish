@@ -44,10 +44,18 @@ import {
   type WikiDocumentRevisionItemVo,
   type WikiDocumentVo,
 } from '@/api/wikiGovernanceApi';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import '../adminForm.css';
 import '../adminFeature.css';
 
 const DOCUMENT_STATUS = {
@@ -271,6 +279,11 @@ export const DocumentGovernancePage = () => {
   };
 
   const openAccessPolicy = (record: WikiDocumentVo) => {
+    if (!canUpdatePermissions || record.voIsDeleted || isBuiltInDocument(record)) {
+      message.error('当前文档不可调整访问策略');
+      return;
+    }
+
     setAccessDocument(record);
     setAccessVisibility(String(record.voVisibility || DOCUMENT_VISIBILITY.authenticated));
     setAccessRolesText((record.voAllowedRoles || []).join('\n'));
@@ -279,6 +292,11 @@ export const DocumentGovernancePage = () => {
 
   const saveAccessPolicy = async () => {
     if (!accessDocument) {
+      return;
+    }
+
+    if (!canUpdatePermissions || accessDocument.voIsDeleted || isBuiltInDocument(accessDocument)) {
+      message.error('当前文档不可调整访问策略');
       return;
     }
 
@@ -341,6 +359,11 @@ export const DocumentGovernancePage = () => {
   };
 
   const handleRollback = async (revisionId: LongId) => {
+    if (!canRollback || !revisionDocument || revisionDocument.voIsDeleted || isBuiltInDocument(revisionDocument)) {
+      message.error('当前版本不可回滚');
+      return;
+    }
+
     await runDocumentAction(
       async () => {
         await rollbackWikiRevision(revisionId);
@@ -358,6 +381,11 @@ export const DocumentGovernancePage = () => {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) {
+      return;
+    }
+
+    if (!canImport) {
+      message.error('无文档导入权限');
       return;
     }
 
@@ -380,6 +408,11 @@ export const DocumentGovernancePage = () => {
   };
 
   const handleExport = async (record: WikiDocumentVo) => {
+    if (!canExport) {
+      message.error('无文档导出权限');
+      return;
+    }
+
     try {
       const result = await exportWikiMarkdown(record.voId);
       triggerDownload(result.blob, result.fileName);
@@ -555,105 +588,138 @@ export const DocumentGovernancePage = () => {
     },
   ];
 
+  const documentHeaderActions = (
+    <>
+      <input
+        ref={importInputRef}
+        type="file"
+        accept=".md,.markdown,.txt,text/markdown,text/plain"
+        className="admin-form-hidden-input"
+        onChange={(event) => {
+          void handleImportFile(event);
+        }}
+      />
+      {canImport ? (
+        <Button
+          variant="primary"
+          icon={<FileTextOutlined />}
+          disabled={importing}
+          onClick={() => importInputRef.current?.click()}
+        >
+          {importing ? '导入中...' : '导入 Markdown'}
+        </Button>
+      ) : null}
+      <Button
+        variant="ghost"
+        icon={<ReloadOutlined />}
+        onClick={() => {
+          void loadDocuments();
+        }}
+      >
+        刷新
+      </Button>
+    </>
+  );
+
   return (
-    <div className="admin-feature-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <FileTextOutlined /> 文档治理
-            </h2>
-            <p className="admin-feature-subtle">治理文档发布状态、访问策略、版本回滚、导入导出与回收站。</p>
-          </div>
-          <Space wrap>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".md,.markdown,.txt,text/markdown,text/plain"
-              style={{ display: 'none' }}
-              onChange={(event) => {
-                void handleImportFile(event);
+    <div className="admin-feature-page document-governance-page">
+      <ConsolePageHeader
+        eyebrow="DOCUMENT GOVERNANCE"
+        title="文档治理"
+        description="治理文档发布状态、访问策略、版本回滚、导入导出与回收站。"
+        icon={<FileTextOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canView ? 'success' : 'danger'}>
+            {canView ? '可查看' : '无权限'}
+          </ConsoleStatusChip>
+        )}
+        actions={documentHeaderActions}
+      />
+
+      <ConsoleMetricGrid label="文档治理指标">
+        <ConsoleMetricCard label="当前页文档" value={documents.length} description="当前页可见文档" tone="info" />
+        <ConsoleMetricCard label="当前页已发布" value={publishedCount} description="已发布且未删除" tone="success" />
+        <ConsoleMetricCard label="当前页受限" value={restrictedCount} description="受限访问策略文档" tone="warning" />
+        <ConsoleMetricCard label="当前页内置" value={builtInCount} description="内置文档不可直接写入" />
+      </ConsoleMetricGrid>
+
+      <div className="admin-table-layout">
+        <main className="admin-table-main">
+          <ConsoleToolbar
+            title="筛选文档"
+            description="按标题、slug、状态、可见性、来源和回收站范围定位治理对象。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
+            <div className="admin-table-toolbar__filters">
+              <Input
+                allowClear
+                prefix={<SearchOutlined />}
+                placeholder="标题、slug、摘要、来源路径"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+              <Select value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
+              <Select value={visibilityFilter} options={visibilityOptions} onChange={setVisibilityFilter} />
+              <Select value={sourceTypeFilter} options={sourceTypeOptions} onChange={setSourceTypeFilter} />
+              <Select value={deletedFilter} options={deletedOptions} onChange={setDeletedFilter} />
+            </div>
+          </ConsoleToolbar>
+
+          <section className="admin-table-panel">
+            <Table
+              rowKey="voId"
+              loading={loading}
+              columns={columns}
+              dataSource={documents}
+              scroll={{ x: 1500 }}
+              pagination={{
+                current: pageIndex,
+                pageSize,
+                total,
+                showSizeChanger: true,
+                onChange: (nextPage, nextPageSize) => {
+                  void loadDocuments(nextPage, nextPageSize);
+                },
               }}
             />
-            {canImport ? (
-              <Button
-                variant="primary"
-                icon={<FileTextOutlined />}
-                disabled={importing}
-                onClick={() => importInputRef.current?.click()}
-              >
-                {importing ? '导入中...' : '导入 Markdown'}
-              </Button>
-            ) : null}
-            <Button
-              variant="ghost"
-              icon={<ReloadOutlined />}
-              onClick={() => {
-                void loadDocuments();
-              }}
-            >
-              刷新
-            </Button>
-          </Space>
-        </div>
-      </section>
+          </section>
+        </main>
 
-      <section className="admin-feature-metrics">
-        <div className="admin-feature-metric">
-          当前页文档
-          <strong>{documents.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前页已发布
-          <strong>{publishedCount}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前页受限
-          <strong>{restrictedCount}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          当前页内置
-          <strong>{builtInCount}</strong>
-        </div>
-      </section>
-
-      <section className="admin-table-toolbar">
-        <div className="admin-table-toolbar__title">
-          <span>筛选条件{activeFilterCount > 0 ? `（${activeFilterCount}）` : ''}</span>
-        </div>
-        <div className="admin-table-toolbar__filters">
-          <Input
-            allowClear
-            prefix={<SearchOutlined />}
-            placeholder="标题、slug、摘要、来源路径"
-            value={keyword}
-            onChange={(event) => setKeyword(event.target.value)}
-          />
-          <Select value={statusFilter} options={statusOptions} onChange={setStatusFilter} />
-          <Select value={visibilityFilter} options={visibilityOptions} onChange={setVisibilityFilter} />
-          <Select value={sourceTypeFilter} options={sourceTypeOptions} onChange={setSourceTypeFilter} />
-          <Select value={deletedFilter} options={deletedOptions} onChange={setDeletedFilter} />
-        </div>
-      </section>
-
-      <section className="admin-table-panel">
-        <Table
-          rowKey="voId"
-          loading={loading}
-          columns={columns}
-          dataSource={documents}
-          scroll={{ x: 1500 }}
-          pagination={{
-            current: pageIndex,
-            pageSize,
-            total,
-            showSizeChanger: true,
-            onChange: (nextPage, nextPageSize) => {
-              void loadDocuments(nextPage, nextPageSize);
-            },
-          }}
-        />
-      </section>
+        <aside className="admin-table-aside">
+          <h3>治理区块</h3>
+          <p className="admin-feature-subtle">文档治理按列表定位、详情证据、访问策略和版本回滚分区承载。</p>
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__value">
+                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '未筛选'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">发布治理</span>
+              <span className="admin-table-summary__value">
+                {canPublish || canArchive ? '可处理发布 / 归档' : '仅查看发布状态'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">访问策略</span>
+              <span className="admin-table-summary__value">
+                {canUpdatePermissions ? '可调整可见性' : '无访问策略权限'}
+              </span>
+            </div>
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">版本治理</span>
+              <span className="admin-table-summary__value">
+                {canRollback ? '可回滚非当前版本' : '仅查看版本'}
+              </span>
+            </div>
+          </div>
+        </aside>
+      </div>
 
       <Modal
         title="文档详情"
@@ -668,7 +734,7 @@ export const DocumentGovernancePage = () => {
         {detailLoading ? (
           <p className="admin-feature-subtle">正在加载文档详情...</p>
         ) : detailDocument ? (
-          <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+          <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
             <Space wrap>
               {getStatusTag(detailDocument.voStatus)}
               {getVisibilityTag(detailDocument.voVisibility)}
@@ -712,12 +778,12 @@ export const DocumentGovernancePage = () => {
         }}
         onCancel={() => setAccessDocument(null)}
       >
-        <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+        <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
           <p className="admin-feature-subtle">
             访问策略只影响文档可见性和受限访问列表，不修改正文、发布状态或版本内容。
           </p>
           <Select
-            style={{ width: '100%' }}
+            className="admin-feature-control-full"
             value={accessVisibility}
             options={visibilityOptions.filter((option) => option.value !== 'all')}
             onChange={setAccessVisibility}
@@ -750,74 +816,76 @@ export const DocumentGovernancePage = () => {
       >
         <div className="admin-table-layout">
           <div className="admin-table-main">
-            <Table
-              rowKey="voId"
-              size="small"
-              loading={revisionLoading}
-              dataSource={revisionItems}
-              pagination={false}
-              columns={[
-                {
-                  title: '版本',
-                  dataIndex: 'voVersion',
-                  key: 'voVersion',
-                  width: 80,
-                  render: (version, record) => record.voIsCurrent ? <Tag color="success">v{version}</Tag> : `v${version}`,
-                },
-                {
-                  title: '说明',
-                  dataIndex: 'voChangeSummary',
-                  key: 'voChangeSummary',
-                  render: (summary) => summary || '-',
-                },
-                {
-                  title: '时间',
-                  key: 'voCreateTime',
-                  width: 170,
-                  render: (_, record) => formatDateTime(record.voCreateTime),
-                },
-                {
-                  title: '操作',
-                  key: 'actions',
-                  width: 170,
-                  render: (_, record) => (
-                    <Space size="small">
-                      <Button
-                        variant="ghost"
-                        size="small"
-                        onClick={() => {
-                          void loadRevisionDetail(record.voId);
-                        }}
-                      >
-                        查看
-                      </Button>
-                      {canRollback && revisionDocument && !isBuiltInDocument(revisionDocument) && !revisionDocument.voIsDeleted && !record.voIsCurrent ? (
-                        <Popconfirm
-                          title="回滚版本"
-                          description={`确定要回滚到 v${record.voVersion} 吗？`}
-                          okText="确认"
-                          cancelText="取消"
-                          onConfirm={() => {
-                            void handleRollback(record.voId);
+            <div className="admin-table-scroll-region">
+              <Table
+                rowKey="voId"
+                size="small"
+                loading={revisionLoading}
+                dataSource={revisionItems}
+                pagination={false}
+                columns={[
+                  {
+                    title: '版本',
+                    dataIndex: 'voVersion',
+                    key: 'voVersion',
+                    width: 80,
+                    render: (version, record) => record.voIsCurrent ? <Tag color="success">v{version}</Tag> : `v${version}`,
+                  },
+                  {
+                    title: '说明',
+                    dataIndex: 'voChangeSummary',
+                    key: 'voChangeSummary',
+                    render: (summary) => summary || '-',
+                  },
+                  {
+                    title: '时间',
+                    key: 'voCreateTime',
+                    width: 170,
+                    render: (_, record) => formatDateTime(record.voCreateTime),
+                  },
+                  {
+                    title: '操作',
+                    key: 'actions',
+                    width: 170,
+                    render: (_, record) => (
+                      <Space size="small" wrap>
+                        <Button
+                          variant="ghost"
+                          size="small"
+                          onClick={() => {
+                            void loadRevisionDetail(record.voId);
                           }}
                         >
-                          <Button variant="ghost" size="small">
-                            回滚
-                          </Button>
-                        </Popconfirm>
-                      ) : null}
-                    </Space>
-                  ),
-                },
-              ]}
-            />
+                          查看
+                        </Button>
+                        {canRollback && revisionDocument && !isBuiltInDocument(revisionDocument) && !revisionDocument.voIsDeleted && !record.voIsCurrent ? (
+                          <Popconfirm
+                            title="回滚版本"
+                            description={`确定要回滚到 v${record.voVersion} 吗？`}
+                            okText="确认"
+                            cancelText="取消"
+                            onConfirm={() => {
+                              void handleRollback(record.voId);
+                            }}
+                          >
+                            <Button variant="ghost" size="small">
+                              回滚
+                            </Button>
+                          </Popconfirm>
+                        ) : null}
+                      </Space>
+                    ),
+                  },
+                ]}
+              />
+            </div>
           </div>
           <aside className="admin-table-aside">
             <h3>版本内容</h3>
             {revisionDetailLoading ? (
               <p className="admin-feature-subtle">正在加载版本详情...</p>
             ) : revisionDetail ? (
-              <Space orientation="vertical" size="middle" style={{ width: '100%' }}>
+              <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
                 <Tag color={revisionDetail.voIsCurrent ? 'success' : 'default'}>v{revisionDetail.voVersion}</Tag>
                 <p className="admin-feature-subtle">{revisionDetail.voChangeSummary || '无变更说明'}</p>
                 <Input.TextArea value={revisionDetail.voMarkdownContent} readOnly rows={12} />

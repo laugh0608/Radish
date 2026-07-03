@@ -1,0 +1,931 @@
+{
+  "dynamic": {
+    "post": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4",
+    "doc": "/docs/index",
+    "product": "/shop/product/100061",
+    "leaderboardType": "/leaderboard/balance",
+    "user": "/u/usr_019ef99117377efb85389bfe6d9d55a5"
+  },
+  "summary": {
+    "batch": "console",
+    "total": 28,
+    "detectedCounts": {},
+    "problemPages": []
+  },
+  "results": [
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "总览",
+      "path": "/console/",
+      "info": {
+        "bodyLength": 521,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n仪表盘\n\n汇总 Console 当前可处理的运营入口、订单回看和治理调度状态。\n\n4 个调度入口\n总用户数\n3\n总订单数\n1\n商品数量\n19\n总收入\n50 胡萝卜\n快速操作\n\n按当前账号权限展示常用处理入口。\n\n4 项可用\n新建商品\n查看订单\n用",
+        "buttonCount": 10,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "仪表盘"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "仪表盘 - Radish Console",
+        "url": "https://localhost:5000/console/"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "订单管理",
+      "path": "/console/orders",
+      "info": {
+        "bodyLength": 631,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n订单管理\nCOMMERCE OPERATIONS\n订单管理\n可备注\n\n查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。\n\n当前结果\n1\n当前筛选后的订单数量\n本页订单\n1\n当前页可见订单\n本页完成\n0\n本页已完成订单\n发放",
+        "buttonCount": 7,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "订单管理",
+          "筛选订单"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "订单管理 - Radish Console",
+        "url": "https://localhost:5000/console/orders"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "商品管理",
+      "path": "/console/products",
+      "info": {
+        "bodyLength": 1827,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n商品管理\nCOMMERCE CATALOG\n商品管理\n可新建\n\n维护商城商品、上架状态、库存与关联订单入口。\n\n新建商品\n当前结果\n19\n当前筛选后的商品数量\n本页商品\n19\n当前页可见商品\n本页上架\n2\n当前页已上架商品\n本页启用\n1",
+        "buttonCount": 100,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "商品管理",
+          "筛选商品"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 2998,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "商品管理 - Radish Console",
+        "url": "https://localhost:5000/console/products"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "胡萝卜管理",
+      "path": "/console/coins",
+      "info": {
+        "bodyLength": 556,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n 胡萝卜管理\n\n支持按用户查询余额、回看交易流水，并执行正负向调账。\n\n刷新当前用户\n可用余额\n--\n冻结余额\n--\n累计获得\n--\n累计消费\n--\n用户余额查询\n未查询\n\n输入用户 ID 查询当前胡萝卜余额、冻结额、累计收支和最近交易流水。\n\n",
+        "buttonCount": 5,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "胡萝卜管理"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 1384,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "胡萝卜管理 - Radish Console",
+        "url": "https://localhost:5000/console/coins"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "用户管理",
+      "path": "/console/users",
+      "info": {
+        "bodyLength": 630,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n用户管理\nUSER OPERATIONS\n用户管理\n可查看\n\n查看账号状态、定位用户详情，并为后续治理动作提供入口。\n\n当前结果\n3\n当前筛选后的账号数量\n本页账号\n3\n当前页可见账号\n本页启用\n3\n当前页启用账号\n筛选用户\n\n按展示名",
+        "buttonCount": 8,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "用户管理",
+          "筛选用户"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1081,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "用户管理 - Radish Console",
+        "url": "https://localhost:5000/console/users"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "角色管理",
+      "path": "/console/roles",
+      "info": {
+        "bodyLength": 799,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n角色管理\nRBAC PERMISSIONS\n角色管理\n可查看\n\n维护后台角色、权限范围和权限配置入口。\n\n刷新\n新增角色\n全部角色\n3\n当前已加载角色数量\n启用角色\n3\n可参与授权的角色\n禁用角色\n0\n当前不可用角色\n自定义权限\n0\n自",
+        "buttonCount": 20,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "角色管理",
+          "角色列表"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "角色管理 - Radish Console",
+        "url": "https://localhost:5000/console/roles"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "文档治理",
+      "path": "/console/documents",
+      "info": {
+        "bodyLength": 2711,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\nDOCUMENT GOVERNANCE\n文档治理\n可查看\n\n治理文档发布状态、访问策略、版本回滚、导入导出与回收站。\n\n导入 Markdown\n刷新\n当前页文档\n20\n当前页可见文档\n当前页已发布\n20\n已发布且未删除\n当前页受限\n0\n受限访问策",
+        "buttonCount": 65,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "文档治理",
+          "筛选文档"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 2473,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "文档治理 - Radish Console",
+        "url": "https://localhost:5000/console/documents"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "内容治理",
+      "path": "/console/moderation",
+      "info": {
+        "bodyLength": 913,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\nCONTENT MODERATION\n内容治理\n可审核处置\n\n举报队列、手动治理动作与治理日志统一在 Console 收口。\n\n刷新\n举报队列\n0\n当前筛选后的举报单\n本页举报\n0\n当前页可见举报单\n治理日志\n0\n当前筛选后的动作记录\n筛选条件\n",
+        "buttonCount": 10,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "内容治理"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 1429,
+        "scrollWidth": 1920,
+        "tableCount": 4,
+        "title": "内容治理 - Radish Console",
+        "url": "https://localhost:5000/console/moderation"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "经验等级",
+      "path": "/console/experience",
+      "info": {
+        "bodyLength": 1153,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\nEXPERIENCE LEDGER\n经验等级\n可复核冻结\n\n支持按用户查看经验等级、调经验、冻结复核，并回看当前等级配置。\n\n刷新\n当前用户\n未查询\n等待输入用户 ID\n总经验\n--\n未加载用户\n异常命中\n--\n7 天观察窗口\n治理留痕\n0\n最近",
+        "buttonCount": 9,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "经验等级"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 2506,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "经验等级 - Radish Console",
+        "url": "https://localhost:5000/console/experience"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "分类管理",
+      "path": "/console/categories",
+      "info": {
+        "bodyLength": 643,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\nCONTENT TAXONOMY\n分类管理\n可新增\n\n维护社区内容分类、层级关系和排序权重。\n\n刷新\n新增分类\n当前结果\n3\n当前筛选后的分类数量\n本页分类\n3\n当前页可见分类\n本页启用\n3\n当前页启用分类\n顶级分类\n3\n当前页顶级分类\n筛选分类",
+        "buttonCount": 22,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "分类管理",
+          "筛选分类"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "分类管理 - Radish Console",
+        "url": "https://localhost:5000/console/categories"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "标签管理",
+      "path": "/console/tags",
+      "info": {
+        "bodyLength": 738,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n标签管理\nCONTENT TAXONOMY\n标签管理\n可新增\n\n维护社区内容标签、固定标签和排序权重。\n\n刷新\n新增标签\n当前结果\n5\n当前筛选后的标签数量\n本页标签\n5\n当前页可见标签\n本页启用\n5\n当前页启用标签\n固定标签\n5\n固定",
+        "buttonCount": 25,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "标签管理",
+          "筛选标签"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1125,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "标签管理 - Radish Console",
+        "url": "https://localhost:5000/console/tags"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "表情包管理",
+      "path": "/console/stickers",
+      "info": {
+        "bodyLength": 561,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n表情包管理\nSTICKER ASSETS\n表情包管理\n可新增\n\n维护表情包分组、启停状态和进入分组表情管理的操作入口。\n\n刷新\n新建分组\n全部分组\n1\n当前可见分组总数\n当前结果\n1\n当前筛选后的分组\n启用分组\n1\n当前启用分组数量\n表",
+        "buttonCount": 13,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "表情包管理",
+          "筛选分组"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "表情包管理 - Radish Console",
+        "url": "https://localhost:5000/console/stickers"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "系统设置",
+      "path": "/console/system-config",
+      "info": {
+        "bodyLength": 1840,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\nSYSTEM POLICY\n系统设置\n可编辑低风险设置\n\n按注册定义查看默认值、当前覆盖值、风险等级和生效方式。\n\n刷新\n注册设置\n22\n代码注册的设置定义\n当前结果\n22\n当前筛选后的设置数量\n已覆盖\n0\n存在运行时覆盖值\n可编辑\n22\n允许在",
+        "buttonCount": 31,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "系统设置",
+          "筛选设置"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 1642,
+        "scrollWidth": 1920,
+        "tableCount": 2,
+        "title": "系统设置 - Radish Console",
+        "url": "https://localhost:5000/console/system-config"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "console",
+      "name": "定时任务",
+      "path": "/console/hangfire",
+      "info": {
+        "bodyLength": 402,
+        "bodySample": "R\nRadish Console\nCase Desk\n总览\n仪表盘\n商业与资产\n商品管理\n订单管理\n胡萝卜管理\n内容与文档\n分类管理\n标签管理\n文档治理\n表情包管理\n治理与权限\n用户管理\n角色管理\n内容治理\n经验等级\n系统工具\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n定时任务\nOPERATIONS JOBS\n定时任务\n外部 Dashboard\n\n通过受保护的 Console 入口查看 Hangfire Dashboard，当前仍保留外部运维面板承载。\n\n打开新窗口\n入口类型\niframe\n复用 Ga",
+        "buttonCount": 0,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "定时任务"
+        ],
+        "iframeCount": 1,
+        "linkCount": 2,
+        "scrollHeight": 1190,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "Radish Console - 服务控制台",
+        "url": "https://localhost:5000/console/hangfire"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "总览",
+      "path": "/console/",
+      "info": {
+        "bodyLength": 470,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n仪表盘\n\n汇总 Console 当前可处理的运营入口、订单回看和治理调度状态。\n\n4 个调度入口\n总用户数\n3\n总订单数\n1\n商品数量\n19\n总收入\n50 胡萝卜\n快速操作\n\n按当前账号权限展示常用处理入口。\n\n4 项可用\n新建商品\n查看订单\n用户管理\n应用管理\n最近订单\n\n用于快速回看最近交易状态和用户反馈入口。\n\n查看全部\n订单号\t用户\t商品",
+        "buttonCount": 10,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "仪表盘"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 1967,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "仪表盘 - Radish Console",
+        "url": "https://localhost:5000/console/"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "订单管理",
+      "path": "/console/orders",
+      "info": {
+        "bodyLength": 573,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n订单管理\nCOMMERCE OPERATIONS\n订单管理\n可备注\n\n查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。\n\n当前结果\n1\n当前筛选后的订单数量\n本页订单\n1\n当前页可见订单\n本页完成\n0\n本页已完成订单\n发放失败\n0\n本页需关注的失败订单\n筛选订单\n\n按用户、订单状态、商品或订单号定位交易记录。\n\n未筛选\n订",
+        "buttonCount": 7,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "订单管理",
+          "筛选订单"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1980,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "订单管理 - Radish Console",
+        "url": "https://localhost:5000/console/orders"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "商品管理",
+      "path": "/console/products",
+      "info": {
+        "bodyLength": 1769,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n商品管理\nCOMMERCE CATALOG\n商品管理\n可新建\n\n维护商城商品、上架状态、库存与关联订单入口。\n\n新建商品\n当前结果\n19\n当前筛选后的商品数量\n本页商品\n19\n当前页可见商品\n本页上架\n2\n当前页已上架商品\n本页启用\n19\n当前页启用商品\n筛选商品\n\n按分类、商品类型、上架状态或商品名称定位商城条目。\n\n未筛选\n选择分类",
+        "buttonCount": 100,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "商品管理",
+          "筛选商品"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 4142,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "商品管理 - Radish Console",
+        "url": "https://localhost:5000/console/products"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "胡萝卜管理",
+      "path": "/console/coins",
+      "info": {
+        "bodyLength": 505,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n 胡萝卜管理\n\n支持按用户查询余额、回看交易流水，并执行正负向调账。\n\n刷新当前用户\n可用余额\n--\n冻结余额\n--\n累计获得\n--\n累计消费\n--\n用户余额查询\n未查询\n\n输入用户 ID 查询当前胡萝卜余额、冻结额、累计收支和最近交易流水。\n\n查询\n管理员调账\n\n正数表示发放胡萝卜，负数表示扣减胡萝卜。\n\n可调账\n用户 ID\n变动金额（胡萝卜）",
+        "buttonCount": 5,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "胡萝卜管理"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 2592,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "胡萝卜管理 - Radish Console",
+        "url": "https://localhost:5000/console/coins"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "用户管理",
+      "path": "/console/users",
+      "info": {
+        "bodyLength": 572,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n用户管理\nUSER OPERATIONS\n用户管理\n可查看\n\n查看账号状态、定位用户详情，并为后续治理动作提供入口。\n\n当前结果\n3\n当前筛选后的账号数量\n本页账号\n3\n当前页可见账号\n本页启用\n3\n当前页启用账号\n筛选用户\n\n按展示名、公开句柄、邮箱、状态或角色定位账号。\n\n未筛选\n用户状态\n用户角色\n搜索\n重置\n用户\t状态\t创建时间",
+        "buttonCount": 8,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "用户管理",
+          "筛选用户"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1975,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "用户管理 - Radish Console",
+        "url": "https://localhost:5000/console/users"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "角色管理",
+      "path": "/console/roles",
+      "info": {
+        "bodyLength": 741,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n角色管理\nRBAC PERMISSIONS\n角色管理\n可查看\n\n维护后台角色、权限范围和权限配置入口。\n\n刷新\n新增角色\n全部角色\n3\n当前已加载角色数量\n启用角色\n3\n可参与授权的角色\n禁用角色\n0\n当前不可用角色\n自定义权限\n0\n自定义权限范围角色\n角色列表\n\n角色权限配置会跳转到独立权限页，当前列表仅承载角色基础信息和启停状态。\n",
+        "buttonCount": 20,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "角色管理",
+          "角色列表"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1892,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "角色管理 - Radish Console",
+        "url": "https://localhost:5000/console/roles"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "文档治理",
+      "path": "/console/documents",
+      "info": {
+        "bodyLength": 2651,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\nDOCUMENT GOVERNANCE\n文档治理\n可查看\n\n治理文档发布状态、访问策略、版本回滚、导入导出与回收站。\n\n导入 Markdown\n刷新\n当前页文档\n20\n当前页可见文档\n当前页已发布\n20\n已发布且未删除\n当前页受限\n0\n受限访问策略文档\n当前页内置\n20\n内置文档不可直接写入\n筛选文档\n\n按标题、slug、状态、可见性、来源和回收",
+        "buttonCount": 65,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "文档治理",
+          "筛选文档"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 3622,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "文档治理 - Radish Console",
+        "url": "https://localhost:5000/console/documents"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "内容治理",
+      "path": "/console/moderation",
+      "info": {
+        "bodyLength": 862,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\nCONTENT MODERATION\n内容治理\n可审核处置\n\n举报队列、手动治理动作与治理日志统一在 Console 收口。\n\n刷新\n举报队列\n0\n当前筛选后的举报单\n本页举报\n0\n当前页可见举报单\n治理日志\n0\n当前筛选后的动作记录\n筛选条件\n0\n队列与日志合计筛选\n当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可联动禁言 ",
+        "buttonCount": 10,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "内容治理"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 3053,
+        "scrollWidth": 390,
+        "tableCount": 4,
+        "title": "内容治理 - Radish Console",
+        "url": "https://localhost:5000/console/moderation"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "经验等级",
+      "path": "/console/experience",
+      "info": {
+        "bodyLength": 1102,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\nEXPERIENCE LEDGER\n经验等级\n可复核冻结\n\n支持按用户查看经验等级、调经验、冻结复核，并回看当前等级配置。\n\n刷新\n当前用户\n未查询\n等待输入用户 ID\n总经验\n--\n未加载用户\n异常命中\n--\n7 天观察窗口\n治理留痕\n0\n最近治理动作记录\n用户经验查询\n\n输入用户 ID 查看当前等级、总经验、下一级与冻结状态。\n\n查询\n当前未",
+        "buttonCount": 9,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "经验等级"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 4533,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "经验等级 - Radish Console",
+        "url": "https://localhost:5000/console/experience"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "分类管理",
+      "path": "/console/categories",
+      "info": {
+        "bodyLength": 585,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\nCONTENT TAXONOMY\n分类管理\n可新增\n\n维护社区内容分类、层级关系和排序权重。\n\n刷新\n新增分类\n当前结果\n3\n当前筛选后的分类数量\n本页分类\n3\n当前页可见分类\n本页启用\n3\n当前页启用分类\n顶级分类\n3\n当前页顶级分类\n筛选分类\n\n按分类名称、描述、Slug、启用状态和软删除范围定位分类。\n\n未筛选\n全部状态\n隐藏已删除\nID\t",
+        "buttonCount": 22,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "分类管理",
+          "筛选分类"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 2006,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "分类管理 - Radish Console",
+        "url": "https://localhost:5000/console/categories"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "标签管理",
+      "path": "/console/tags",
+      "info": {
+        "bodyLength": 680,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n标签管理\nCONTENT TAXONOMY\n标签管理\n可新增\n\n维护社区内容标签、固定标签和排序权重。\n\n刷新\n新增标签\n当前结果\n5\n当前筛选后的标签数量\n本页标签\n5\n当前页可见标签\n本页启用\n5\n当前页启用标签\n固定标签\n5\n固定标签数量\n筛选标签\n\n按标签名称、描述、类型、启用状态和软删除范围定位标签。\n\n未筛选\n全部类型\n全部",
+        "buttonCount": 25,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "标签管理",
+          "筛选标签"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 2225,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "标签管理 - Radish Console",
+        "url": "https://localhost:5000/console/tags"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "表情包管理",
+      "path": "/console/stickers",
+      "info": {
+        "bodyLength": 510,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n表情包管理\nSTICKER ASSETS\n表情包管理\n可新增\n\n维护表情包分组、启停状态和进入分组表情管理的操作入口。\n\n刷新\n新建分组\n全部分组\n1\n当前可见分组总数\n当前结果\n1\n当前筛选后的分组\n启用分组\n1\n当前启用分组数量\n表情总数\n1\n所有分组表情合计\n筛选分组\n\n按分组名称、Code 和描述定位表情包分组。\n\n未筛选\n封面",
+        "buttonCount": 13,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "表情包管理",
+          "筛选分组"
+        ],
+        "iframeCount": 0,
+        "linkCount": 1,
+        "scrollHeight": 1747,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "表情包管理 - Radish Console",
+        "url": "https://localhost:5000/console/stickers"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "系统设置",
+      "path": "/console/system-config",
+      "info": {
+        "bodyLength": 1075,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\nSYSTEM POLICY\n系统设置\n可编辑低风险设置\n\n按注册定义查看默认值、当前覆盖值、风险等级和生效方式。\n\n刷新\n注册设置\n22\n代码注册的设置定义\n当前结果\n22\n当前筛选后的设置数量\n已覆盖\n0\n存在运行时覆盖值\n可编辑\n22\n允许在 Console 调整\n网站标签页图标\n使用默认\nLow\n\n当前浏览器标签页左侧显示的站点图标。默认文",
+        "buttonCount": 31,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "系统设置",
+          "筛选设置"
+        ],
+        "iframeCount": 0,
+        "linkCount": 0,
+        "scrollHeight": 3640,
+        "scrollWidth": 390,
+        "tableCount": 2,
+        "title": "系统设置 - Radish Console",
+        "url": "https://localhost:5000/console/system-config"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "console",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "console",
+      "name": "定时任务",
+      "path": "/console/hangfire",
+      "info": {
+        "bodyLength": 351,
+        "bodySample": "R\n仪表盘\n商品管理\n订单管理\n胡萝卜管理\n分类管理\n标签管理\n文档治理\n表情包管理\n用户管理\n角色管理\n内容治理\n经验等级\n系统设置\n应用管理\n定时任务\nAdmin#2\n首页\n/\n定时任务\nOPERATIONS JOBS\n定时任务\n外部 Dashboard\n\n通过受保护的 Console 入口查看 Hangfire Dashboard，当前仍保留外部运维面板承载。\n\n打开新窗口\n入口类型\niframe\n复用 Gateway 暴露的 Hangfire Dashboard\n权限守卫\n已接入\n沿用 console.ha",
+        "buttonCount": 0,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "定时任务"
+        ],
+        "iframeCount": 1,
+        "linkCount": 2,
+        "scrollHeight": 1326,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "Radish Console - 服务控制台",
+        "url": "https://localhost:5000/console/hangfire"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    }
+  ]
+}

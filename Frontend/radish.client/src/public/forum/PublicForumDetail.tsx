@@ -1417,13 +1417,6 @@ export const PublicForumDetail = ({
               onLotteryClick={onOpenLottery}
             />
 
-            <PublicReadingGuide
-              label={readingGuide.label}
-              title={readingGuide.title}
-              description={readingGuide.description}
-              items={readingGuide.items}
-            />
-
             {(commentReturnPath || quickReplyReturnPath || answerReturnPath || (isAuthenticated && isCurrentUserAuthor && (editReturnPath || historyReturnPath))) && (
               <section className={styles.workspaceActionPanel}>
                 <div className={styles.workspaceActionCopy}>
@@ -1434,10 +1427,10 @@ export const PublicForumDetail = ({
                 </div>
                 <div className={styles.workspaceActionButtons}>
                   {answerReturnPath && post?.voIsQuestion && (
-                    <button
-                      type="button"
+                    <a
+                      href={answerReturnPath}
                       className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary}`}
-                      onClick={handleAnswerAction}
+                      onClick={(event) => handlePublicForumLinkClick(event, handleAnswerAction)}
                     >
                       <Icon icon="mdi:comment-question-outline" size={18} />
                       <span>
@@ -1445,14 +1438,14 @@ export const PublicForumDetail = ({
                           ? t('forum.public.workspaceAnswerAction')
                           : t('forum.public.workspaceAnswerLoginAction')}
                       </span>
-                    </button>
+                    </a>
                   )}
                   {quickReplyReturnPath && (
-                    <button
-                      type="button"
+                    <a
+                      href={quickReplyReturnPath}
                       className={styles.workspaceActionButton}
                       aria-controls={QUICK_REPLY_SECTION_ID}
-                      onClick={handleQuickReplyAction}
+                      onClick={(event) => handlePublicForumLinkClick(event, handleQuickReplyAction)}
                     >
                       <Icon icon="mdi:message-flash-outline" size={18} />
                       <span>
@@ -1460,35 +1453,42 @@ export const PublicForumDetail = ({
                           ? t('forum.public.workspaceQuickReplyAction')
                           : t('forum.public.workspaceQuickReplyLoginAction')}
                       </span>
-                    </button>
+                    </a>
                   )}
                   {editReturnPath && isAuthenticated && isCurrentUserAuthor && (
-                    <button
-                      type="button"
+                    <a
+                      href={editReturnPath}
                       className={styles.workspaceActionButton}
-                      onClick={() => void handleEditPostAction()}
-                      disabled={categoriesLoading}
+                      aria-disabled={categoriesLoading}
+                      onClick={(event) => {
+                        if (categoriesLoading) {
+                          event.preventDefault();
+                          return;
+                        }
+
+                        handlePublicForumLinkClick(event, () => void handleEditPostAction());
+                      }}
                     >
                       <Icon icon={categoriesLoading ? 'mdi:progress-clock' : 'mdi:pencil-outline'} size={18} />
                       <span>{categoriesLoading ? t('forum.public.authorCategoriesLoading') : t('forum.public.workspaceEditAction')}</span>
-                    </button>
+                    </a>
                   )}
                   {historyReturnPath && isAuthenticated && isCurrentUserAuthor && (
-                    <button
-                      type="button"
+                    <a
+                      href={historyReturnPath}
                       className={styles.workspaceActionButton}
-                      onClick={() => void handleViewPostHistory()}
+                      onClick={(event) => handlePublicForumLinkClick(event, () => void handleViewPostHistory())}
                     >
                       <Icon icon="mdi:history" size={18} />
                       <span>{t('forum.public.workspaceHistoryAction')}</span>
-                    </button>
+                    </a>
                   )}
                   {commentReturnPath && (
-                    <button
-                      type="button"
+                    <a
+                      href={commentReturnPath}
                       className={styles.workspaceActionButton}
                       aria-controls={COMMENT_SECTION_ID}
-                      onClick={handleCommentAction}
+                      onClick={(event) => handlePublicForumLinkClick(event, handleCommentAction)}
                     >
                       <Icon icon="mdi:comment-text-outline" size={18} />
                       <span>
@@ -1496,7 +1496,7 @@ export const PublicForumDetail = ({
                           ? t('forum.public.workspaceCommentAction')
                           : t('forum.public.workspaceCommentLoginAction')}
                       </span>
-                    </button>
+                    </a>
                   )}
                 </div>
               </section>
@@ -1660,6 +1660,13 @@ export const PublicForumDetail = ({
                 </>
               )}
             </section>
+
+            <PublicReadingGuide
+              label={readingGuide.label}
+              title={readingGuide.title}
+              description={readingGuide.description}
+              items={readingGuide.items}
+            />
 
             {isEditModalOpen && (
               <Suspense fallback={null}>

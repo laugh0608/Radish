@@ -14,7 +14,7 @@
 
 .main {
   flex: 1 0 auto;
-  width: min(1080px, calc(100vw - 24px));
+  width: min(var(--rx-content-reading-width), calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 40px;
   display: flex;
@@ -618,6 +618,8 @@
 @media (max-width: 720px) {
   .main {
     width: calc(100vw - 20px);
+    padding-top: 14px;
+    padding-bottom: var(--rx-mobile-shell-offset);
   }
 
   .sectionHeader,
@@ -627,8 +629,21 @@
   }
 
   .sectionHeader {
-    padding-top: 22px;
-    padding-bottom: 16px;
+    padding-top: 18px;
+    padding-bottom: 14px;
+    gap: 10px;
+  }
+
+  .sectionActions {
+    gap: 8px;
+  }
+
+  .sectionActions .primaryButton,
+  .sectionActions .secondaryButton {
+    flex: 1 1 148px;
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 12px;
   }
 
   .pageTitle,
@@ -644,9 +659,15 @@
   }
 
   .statusCard {
-    padding: 18px;
+    padding: 14px;
     gap: 12px;
     border-radius: 20px;
+  }
+
+  .statusIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 13px;
   }
 
   .statusTitle,
@@ -665,19 +686,74 @@
     width: 100%;
   }
 
+  .contentWrap {
+    gap: 12px;
+    padding-top: 14px;
+    padding-bottom: 16px;
+  }
+
+  .searchPanel {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
   .searchInputWrap {
     flex-basis: 100%;
+    min-height: 42px;
   }
 
   .searchResultsHeader {
     padding-left: 14px;
     padding-right: 14px;
+    padding-top: 14px;
+    padding-bottom: 10px;
+  }
+
+  .searchResultList,
+  .cardList {
+    gap: 10px;
+    padding: 10px;
   }
 
   .panelHeader,
   .articleHeader {
     padding-left: 14px;
     padding-right: 14px;
+    padding-top: 14px;
+    padding-bottom: 12px;
+  }
+
+  .directoryList {
+    padding: 8px;
+  }
+
+  .directoryItem {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: 14px;
+  }
+
+  .directoryMeta {
+    flex: 1 0 100%;
+    padding-left: 22px;
+  }
+
+  .docCard {
+    gap: 10px;
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .docCardSummary {
+    line-height: 1.55;
+  }
+
+  .docCardFooter {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .articleMetaGrid,
@@ -689,16 +765,44 @@
 
   .detailTopbarActions {
     width: 100%;
+    gap: 8px;
   }
 
   .detailTopbarActions .secondaryButton {
     flex: 1 1 148px;
     min-width: 0;
+    min-height: 38px;
+    padding: 8px 12px;
   }
 
   .detailTopbarActions .secondaryButton span {
     min-width: 0;
     overflow-wrap: anywhere;
+  }
+
+  .articleHeaderMain {
+    gap: 8px;
+  }
+
+  .articleMetaGrid {
+    gap: 8px;
+    padding-bottom: 14px;
+  }
+
+  .articleMetaGroup {
+    gap: 6px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .articleBody {
+    padding-top: 4px;
+    padding-bottom: 20px;
+  }
+
+  .markdownContent {
+    font-size: 14px;
+    line-height: 1.75;
   }
 
   .panel,

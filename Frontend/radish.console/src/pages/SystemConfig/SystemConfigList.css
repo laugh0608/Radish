@@ -10,11 +10,20 @@
 }
 
 .branding-card {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
   border-radius: var(--console-radius-panel);
   box-shadow: var(--console-shadow-card);
+}
+
+.system-config-list-page .admin-table-main > * {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .branding-card__main {
@@ -180,6 +189,10 @@
   margin-top: 16px;
 }
 
+.system-config-form-control-full {
+  width: 100%;
+}
+
 .system-config-risk-note {
   margin-top: 12px;
   padding: 10px 12px;
@@ -216,13 +229,31 @@
 }
 
 @media (max-width: 768px) {
-  .system-config-list-page .admin-feature-header {
-    align-items: flex-start;
+  .branding-card {
+    padding: 16px;
   }
 
   .branding-card__main {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .branding-card__preview {
+    align-self: flex-start;
+  }
+
+  .branding-card__content,
+  .branding-card__title-row,
+  .branding-card__description,
+  .branding-card__actions {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .branding-card__description {
+    overflow-wrap: anywhere;
   }
 
   .system-config-list-page .admin-table-panel {

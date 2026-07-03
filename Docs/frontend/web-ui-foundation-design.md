@@ -2,7 +2,17 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 状态：共享基座设计源 `F01` 已创建；当前作为跨设计源同步口径，不进入视觉代码实现
+> 更新：2026-06-28（Asia/Shanghai）：`F01 / F02` 的移动底栏已统一为 5 项以内浮动胶囊样式；Public 使用 `发现 / 论坛 / 文档 / 工作台 / 我的`，Private 使用 `工作台 / 资产 / 创作 / 消息 / 我的`，Console 业务源同步使用 `总览 / 治理 / 资产 / 权限 / 运维`。`/workbench` 固定作为正式 Web 功能地图，承接导航无法展示的功能入口。
+>
+> 更新：2026-06-28（Asia/Shanghai）：`P3-12-D8` 已完成 `radish.client` 首批代码对齐，新增共享 `WebShellHeader` / `WebStateSlot`，并把公开状态槽、公开内容宽度 token 和移动底部留白接入代码。
+>
+> 更新：2026-06-29（Asia/Shanghai）：`P3-12-D9-D13` 已完成 `radish.client` 私域 / 作者态第二批视觉实现与成组验收；`P3-12-D14-D19` 已开始将 Console 侧栏分组、页面语义组件和表格代表页迁入代码。
+>
+> 更新：2026-06-30（Asia/Shanghai）：`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核和表格交互代码侧治理；D36+ 将复核 `F01-F02` 与 public / private / console 代码实现的共享结构漂移。
+>
+> 更新：2026-07-01（Asia/Shanghai）：D38 未新增共享组件变体；`/workbench` 继续承接 public / private 低频入口，移动 Console 仍按响应式 Console 验收，不拆独立移动应用壳层。
+>
+> 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` 与 Console 均完成首轮代码对齐，尚需 D36+ 差距矩阵确认跨源一致性
 
 ## 设计源
 
@@ -15,6 +25,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 | 画板 | 职责 |
 | --- | --- |
 | `F01 - Web UI Foundation` | 共享 token、public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab 和同步规则 |
+| `F02 - Client Shell Common Components` | client 公共壳层组件契约，覆盖 PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource 和 public / private 真实路由族 |
 
 ## 目标
 
@@ -33,9 +44,11 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 - Public header 合法变体。
 - Private header 合法变体。
-- 主按钮、次按钮、激活 pill、普通 pill 和状态 pill。
-- 内容卡片、右侧 rail、状态槽。
-- 移动 Web shell 与底部 tab 样板。
+- 84 高 PC 纸感横匾 header、横排图标 nav rail、激活态 pill 和身份 action rail。
+- PC 横排图标按钮、主按钮、次按钮、激活 pill、普通 pill 和状态 pill。
+- 内容卡片、右侧 rail、加载 / 空态 / 错误 / 权限状态槽。
+- 移动 Web shell 与图标上 / 文字下的底部 tab 样板；底栏为左右 inset、64px 高、真胶囊端点和柔和品牌色激活态。
+- Client 公共壳层组件契约：PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource、PC header 解剖、移动端底部 tab 和 public / private / commerce / author 路由族覆盖。
 - 跨设计源同步规则。
 
 ### 业务设计源
@@ -57,17 +70,21 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 ## 必须一致
 
 - `rx-*` 变量名称和取值。
-- Header 高度、品牌区、Radish 标识、字体层级和 nav pill 形态。
-- 主按钮 / 次按钮 / 激活态 / 普通筛选 pill 的样式规则。
-- 卡片圆角、弱边框、纸色底、低饱和状态色。
-- 状态槽的加载、空态、错误和权限限制表达方式。
-- 移动端底部 tab 的高度、胶囊形态、图标 / 文案层级。
+- Header 高度、品牌区、Radish 标识、字体层级、nav 图标和 nav rail / pill 形态。
+- PC nav 使用图标左、文字右的横排结构；移动端 tab 使用图标上、文字下的纵排结构。
+- 主按钮 / 次按钮 / 激活态 / 普通筛选 pill 的图标、尺寸、主次层级和低饱和状态色。
+- 卡片圆角、弱边框、纸色底、内容元信息、rail 信息密度和动作入口。
+- 状态槽的加载、空态、错误和权限限制表达方式，包括原因说明、重试或登录恢复入口。
+- 移动端底部 tab 的高度、胶囊形态、图标 / 文案层级、激活态和左右 inset。
+- Web 功能入口规则：`/workbench` 是正式 Web 功能地图，PC header 和移动底栏只放高频入口；公开、私域或后台的低频功能不继续挤进一级导航。
+- Client 公共壳层的职责边界：公开页负责阅读 / 浏览 / 登录参与，私域页负责身份 / 复访 / 作者任务，移动端负责单列任务流和底部 tab，不回退为 WebOS Dock 或窗口系统。
 
 ## 允许差异
 
 - Public header 的导航项、登录动作和 `/workbench` 入口。
 - Private header 的登录态身份、设置动作、消息 / 资产 / 创作入口。
 - Console 的表格密度、治理工具条、权限 / 审计状态表达。
+- Public / Private / Console 的移动底栏导航项和激活语义可以不同，但必须沿用同一浮动胶囊样式。
 - 不同端点的 dominant region：公开阅读、私域复访、作者创作和 Console 治理可以有不同信息密度。
 
 ## 同步规则
@@ -77,6 +94,93 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 3. 再更新对应设计说明和记录。
 4. 不允许只在某个业务 `.pen` 临时修改 header、按钮、卡片或状态槽样式。
 5. 如果业务端点确实需要新变体，先把它加入共享基座并说明适用范围。
+
+## 代码对齐状态
+
+`P3-12-D8` 已完成首批 `radish.client` 对齐：
+
+- 新增 `Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx` 与 `WebStateSlot.tsx`。
+- 私域复访页、作者态页和公开 forum 状态入口已开始复用共享壳层 / 状态槽节奏。
+- `discover / docs / leaderboard / shop / profile` 公开状态卡已统一到 `WebStateSlot`。
+- 公开页面宽度已抽象为 `--rx-content-max-width`、`--rx-content-reading-width` 和 `--rx-content-narrow-width`。
+- 公开移动单列页面已补底部导航安全留白。
+
+`P3-12-D9-D13` 已继续完成 `radish.client` 私域 / 作者态首轮落地：
+
+- 资产、订单、背包、通知、消息、圈子、宠物、论坛作者态和 Docs 作者态已按本说明接入状态槽、摘要节奏和移动单列任务流。
+- D13 已收口重复卡片和摘要卡圆角分叉，并完成 Gateway PC / mobile 成组验收。
+
+`P3-12-D14-D35` 已完成 Console 侧首轮代码落地与阶段治理：
+
+- `radish.console` 侧栏已按总览 / 商业与资产 / 内容与文档 / 治理与权限 / 系统工具分组。
+- 新增 `ConsolePageHeader`、`ConsoleStatusChip`、`ConsoleMetricGrid`、`ConsoleMetricCard`、`ConsoleToolbar`，用于承接 Console 页头、指标和筛选工具条。
+- 系统设置、订单、用户、商品、文档治理首屏、标签 / 分类、贴纸类、角色权限、内容 / 经验治理、系统工具、深层表单、详情 / 抽屉和表格交互已完成首轮迁移或代码侧治理；迁移不改变 API、权限、表单字段或业务动作。
+
+后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。D36+ 需要补齐设计源与代码实现的差距矩阵后，再判断是否进入成组实现或运行态验收。
+
+## radish.client 组件使用口径
+
+### `WebShellHeader`
+
+位置：
+
+```text
+Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx
+```
+
+职责：
+
+- 承接 public / private PC header。
+- 承接 public / private 移动底栏。
+- 保留真实 `href`，普通左键点击可由页面注入的 `onClick` 拦截为应用内导航；辅助点击、新开标签和复制链接仍依赖真实 URL。
+- 自动为页面添加 `radishWebShellWithMobileNav` body class，用于移动底栏全局留白。
+
+默认导航：
+
+| variant | PC 导航 | 移动底栏 |
+| --- | --- | --- |
+| `public` | `发现 / 论坛 / 文档 / 榜单 / 商城` | `发现 / 论坛 / 文档 / 工作台 / 我的` |
+| `private` | `工作台 / 我的状态 / 资产 / 创作 / 消息` | `工作台 / 资产 / 创作 / 消息 / 我的` |
+
+使用规则：
+
+- 页面可传 `navItems`、`actionItems`、`mobileNavItems` 调整当前业务动作，但不能另写平行 header。
+- `activeKey` 可显式传入；不传时由当前 pathname 推导。
+- Public / private 的低频入口统一由 `/workbench` 承接，不继续把移动底栏挤到 5 项以上。
+
+### `WebStateSlot`
+
+位置：
+
+```text
+Frontend/radish.client/src/components/web-shell/WebStateSlot.tsx
+```
+
+职责：
+
+- 承接加载、空态、错误、未找到、权限限制、登录恢复和普通信息状态。
+- 状态动作支持 `href` 和 `onClick`；会导航的动作优先提供真实 `href`。
+- `compact` 用于列表内或 rail 内的轻量状态，不替代完整页面状态。
+- `meta` 用于补来源、目标、边界说明等少量结构化信息，不承载长篇实现说明。
+
+允许 tone：
+
+```text
+loading / empty / error / notFound / permission / auth / info
+```
+
+### 相关 token
+
+当前公开内容宽度与移动底栏留白使用：
+
+```css
+--rx-content-max-width
+--rx-content-reading-width
+--rx-content-narrow-width
+--rx-mobile-shell-offset
+```
+
+页面级 CSS 应优先使用这些语义 token。确实需要新增宽度或壳层 token 时，先补本说明，再进入代码。
 
 ## Pencil 工作流限制
 
@@ -90,5 +194,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 - 不把所有页面合并进一个巨型 `.pen`。
 - 不创建跨文件实时组件库。
-- 不进入视觉代码实现。
+- 不把 D8 首批实现扩大为 Console 或全量页面重写。
+- 不把 Console 语义组件反向套到公开 / 私域 Web；Console 仍按治理和表格密度独立承接。
 - 不借共享基座重做 public / private / console 全量画板。
+- 不把 `F02` 当作业务页面；public / private 仍需在各自业务设计源补齐具体页面族和移动任务流。

@@ -1,10 +1,12 @@
 import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import type { Order } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { getOrderStatusColor, OrderStatus } from '@/api/shop';
+import { WebStateSlot } from '@/components/web-shell';
 import styles from './OrderDetail.module.css';
 
 interface OrderDetailProps {
@@ -53,10 +55,11 @@ export const OrderDetail = ({
   if (loading) {
     return (
       <div className={styles.container}>
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-          <p>{t('shop.loading')}</p>
-        </div>
+        <WebStateSlot
+          tone="loading"
+          title={t('shop.loading')}
+          description={t('shop.orderDetail.title')}
+        />
       </div>
     );
   }
@@ -64,23 +67,23 @@ export const OrderDetail = ({
   if (!order) {
     return (
       <div className={styles.container}>
-        <div className={styles.error}>
-          <h2>{t('shop.notFound.orderTitle')}</h2>
-          <p>{t('shop.notFound.orderDescription')}</p>
-          {backHref ? (
-            <a
-              className={styles.backButton}
-              href={backHref}
-              onClick={(event) => handleOrderDetailLinkClick(event, onBack)}
-            >
-              {t('shop.backToOrders')}
-            </a>
-          ) : (
-            <button type="button" className={styles.backButton} onClick={onBack}>
-              {t('shop.backToOrders')}
-            </button>
-          )}
-        </div>
+        <WebStateSlot
+          tone="notFound"
+          title={t('shop.notFound.orderTitle')}
+          description={t('shop.notFound.orderDescription')}
+          actions={[
+            backHref
+              ? {
+                  label: t('shop.backToOrders'),
+                  href: backHref,
+                  onClick: (event) => handleOrderDetailLinkClick(event as MouseEvent<HTMLAnchorElement>, onBack),
+                }
+              : {
+                  label: t('shop.backToOrders'),
+                  onClick: onBack,
+                },
+          ]}
+        />
       </div>
     );
   }
@@ -135,14 +138,20 @@ export const OrderDetail = ({
             href={backHref}
             onClick={(event) => handleOrderDetailLinkClick(event, onBack)}
           >
-            ← {t('shop.back')}
+            <Icon icon="mdi:arrow-left" size={17} />
+            <span>{t('shop.back')}</span>
           </a>
         ) : (
           <button type="button" className={styles.backButton} onClick={onBack}>
-            ← {t('shop.back')}
+            <Icon icon="mdi:arrow-left" size={17} />
+            <span>{t('shop.back')}</span>
           </button>
         )}
-        <h1 className={styles.title}>{t('shop.orderDetail.title')}</h1>
+        <div className={styles.headerCopy}>
+          <p className={styles.kicker}>{t('shop.title')}</p>
+          <h1 className={styles.title}>{t('shop.orderDetail.title')}</h1>
+          <p className={styles.description}>{t('shop.orders.orderNo', { orderNo: order.voOrderNo })}</p>
+        </div>
       </div>
 
       <div className={styles.content}>
@@ -184,7 +193,9 @@ export const OrderDetail = ({
               {productIconUrl ? (
                 <img src={productIconUrl} alt={order.voProductName} />
               ) : (
-                <div className={styles.defaultImage}>🎁</div>
+                <div className={styles.defaultImage}>
+                  <Icon icon="mdi:gift-outline" size={32} />
+                </div>
               )}
             </div>
             <div className={styles.productDetails}>

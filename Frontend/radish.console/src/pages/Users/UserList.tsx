@@ -26,6 +26,13 @@ import {
 } from '../../api/userManagement';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import type { UserListItem } from '../../types/user';
 import { getAvatarUrl } from '@/config/env';
 import { log } from '../../utils/logger';
@@ -153,7 +160,7 @@ export const UserList = () => {
       key: 'actions',
       width: 160,
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {canViewUsers ? (
             <Button
               variant="ghost"
@@ -179,40 +186,35 @@ export const UserList = () => {
   }, [canViewUsers]);
   return (
     <div className="admin-feature-page user-list">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <TeamOutlined /> 用户管理
-            </h2>
-            <p className="admin-feature-subtle">查看账号状态、定位用户详情，并为后续治理动作提供入口。</p>
-          </div>
-          <Tag>{canViewUsers ? '可查看' : '无权限'}</Tag>
-        </div>
-      </section>
+      <ConsolePageHeader
+        eyebrow="USER OPERATIONS"
+        title="用户管理"
+        description="查看账号状态、定位用户详情，并为后续治理动作提供入口。"
+        icon={<TeamOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canViewUsers ? 'success' : 'danger'}>
+            {canViewUsers ? '可查看' : '无权限'}
+          </ConsoleStatusChip>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="用户列表指标">
-        <div className="admin-feature-metric">
-          当前结果
-          <strong>{total}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页账号
-          <strong>{users.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          本页启用
-          <strong>{enabledUsers}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="用户列表指标">
+        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的账号数量" tone="info" />
+        <ConsoleMetricCard label="本页账号" value={users.length} description="当前页可见账号" />
+        <ConsoleMetricCard label="本页启用" value={enabledUsers} description="当前页启用账号" tone="success" />
+      </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="用户筛选">
-            <div className="admin-table-toolbar__title">
-              <span>筛选用户</span>
-              <Tag>{activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}</Tag>
-            </div>
+          <ConsoleToolbar
+            title="筛选用户"
+            description="按展示名、公开句柄、邮箱、状态或角色定位账号。"
+            meta={(
+              <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
+                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+              </ConsoleStatusChip>
+            )}
+          >
             <div className="admin-table-toolbar__filters">
               <Input
                 className="user-list-filter-input"
@@ -262,7 +264,7 @@ export const UserList = () => {
                 重置
               </Button>
             </div>
-          </section>
+          </ConsoleToolbar>
 
           <section className="admin-table-panel">
             <Table

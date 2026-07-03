@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
@@ -42,6 +42,7 @@ import type {
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
+import { WebStateSlot, type WebStateSlotTone } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicDocsPath } from '@/public/docsRouteState';
@@ -264,9 +265,14 @@ export function DocsAuthorApp() {
   const [collectionState, setCollectionState] = useState<CollectionState>(initialCollectionState);
   const [editorState, setEditorState] = useState<EditorState>(initialEditorState);
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
+  const treeRef = useRef<WikiDocumentTreeNodeVo[]>([]);
 
   const mineHref = buildDocsAuthorPath({ kind: 'mine' });
   const composeHref = buildDocsAuthorPath({ kind: 'compose' });
+
+  useEffect(() => {
+    treeRef.current = collectionState.tree;
+  }, [collectionState.tree]);
 
   const navigateToRoute = useCallback((nextRoute: DocsAuthorRoute, options?: { replace?: boolean }) => {
     const nextPath = buildDocsAuthorPath(nextRoute);
@@ -311,8 +317,10 @@ export function DocsAuthorApp() {
   }, []);
 
   const loadEditor = useCallback(async (nextRoute: DocsAuthorRoute) => {
+    const currentTree = treeRef.current;
+
     if (nextRoute.kind === 'compose') {
-      const draft = createDraftForCompose(collectionState.tree);
+      const draft = createDraftForCompose(currentTree);
       setEditorState({
         ...initialEditorState,
         draft,
@@ -340,7 +348,7 @@ export function DocsAuthorApp() {
         loading: false,
         submitting: false,
         error: null,
-        sortSuggestion: String(getSuggestedSortValue(collectionState.tree, document.voParentId, document.voId)),
+        sortSuggestion: String(getSuggestedSortValue(currentTree, document.voParentId, document.voId)),
       });
     } catch (error) {
       log.error('DocsAuthorApp', '加载文档编辑详情失败:', error);
@@ -352,7 +360,7 @@ export function DocsAuthorApp() {
         error: getErrorMessage(error, '加载文档详情失败'),
       }));
     }
-  }, [collectionState.tree]);
+  }, []);
 
   const loadRevisionDetail = useCallback(async (revisionId: LongId) => {
     setRevisionState((current) => ({
@@ -641,6 +649,7 @@ export function DocsAuthorApp() {
           tree={collectionState.tree}
           state={editorState}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
+          onNavigate={handleRouteLinkClick}
           onParentChange={handleParentChange}
           onSetDraft={setDraft}
           onSave={handleSave}
@@ -675,6 +684,8 @@ export function DocsAuthorApp() {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey="author"
         brandMark="文"
         brandName="文档作者台"
         brandSubline="正式 Web 文档写作入口"
@@ -687,6 +698,39 @@ export function DocsAuthorApp() {
       />
 
       <main className={styles.main}>
+        <section className={styles.authorHero} aria-label="文档作者任务摘要">
+          <div className={styles.authorHeroCopy}>
+            <p className={styles.kicker}>Author Workspace</p>
+            <h1 className={styles.authorHeroTitle}>文档作者台</h1>
+            <p className={styles.authorHeroDescription}>
+              维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。
+            </p>
+          </div>
+          <div className={styles.authorSummaryGrid}>
+            <div className={styles.authorSummaryCard}>
+              <span className={styles.authorSummaryIcon}>
+                <Icon icon="mdi:file-tree-outline" size={20} />
+              </span>
+              <strong>{collectionState.tree.length}</strong>
+              <span>目录节点</span>
+            </div>
+            <div className={styles.authorSummaryCard}>
+              <span className={styles.authorSummaryIcon}>
+                <Icon icon="mdi:file-document-multiple-outline" size={20} />
+              </span>
+              <strong>{collectionState.totalDocuments}</strong>
+              <span>文档总数</span>
+            </div>
+            <div className={styles.authorSummaryCard}>
+              <span className={styles.authorSummaryIcon}>
+                <Icon icon={canUseAuthorTools ? 'mdi:shield-check-outline' : 'mdi:shield-alert-outline'} size={20} />
+              </span>
+              <strong>{canUseAuthorTools ? '可写' : '受限'}</strong>
+              <span>{route.kind === 'mine' ? '当前列表' : route.kind === 'compose' ? '新建草稿' : route.kind === 'edit' ? '编辑文档' : '修订查看'}</span>
+            </div>
+          </div>
+        </section>
+
         <div className={styles.navBar}>
           <a
             className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
@@ -725,20 +769,27 @@ interface StatusPanelProps {
 }
 
 function StatusPanel({ icon, title, description, actionHref, actionLabel }: StatusPanelProps) {
+  const tone: WebStateSlotTone = icon === 'mdi:progress-clock'
+    ? 'loading'
+    : icon === 'mdi:shield-alert-outline'
+      ? 'permission'
+      : icon === 'mdi:alert-circle-outline'
+        ? 'error'
+        : icon === 'mdi:file-document-outline' || icon === 'mdi:history'
+          ? 'empty'
+          : icon === 'mdi:lock-outline'
+            ? 'auth'
+            : 'info';
+
   return (
     <section className={styles.statusPanel}>
-      <span className={styles.statusIcon}>
-        <Icon icon={icon} size={24} />
-      </span>
-      <div className={styles.statusBody}>
-        <h1 className={styles.statusTitle}>{title}</h1>
-        <p className={styles.statusDescription}>{description}</p>
-        {actionHref && actionLabel ? (
-          <a className={styles.secondaryButton} href={actionHref}>
-            {actionLabel}
-          </a>
-        ) : null}
-      </div>
+      <WebStateSlot
+        tone={tone}
+        icon={icon}
+        title={title}
+        description={description}
+        actions={actionHref && actionLabel ? [{ label: actionLabel, href: actionHref }] : undefined}
+      />
     </section>
   );
 }
@@ -833,6 +884,18 @@ function SummaryTile({ label, value }: SummaryTileProps) {
   );
 }
 
+function getDocumentEditBlockedReason(document: WikiDocumentVo): string | null {
+  if (document.voIsDeleted) {
+    return '已删除只读';
+  }
+
+  if (isBuiltInWikiDocument(document)) {
+    return '内置只读';
+  }
+
+  return null;
+}
+
 interface DocumentRowProps {
   document: WikiDocumentVo;
   language?: string;
@@ -843,7 +906,8 @@ function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
   const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voId };
   const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voId };
   const publicHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
-  const canEdit = !isBuiltInWikiDocument(document) && !document.voIsDeleted;
+  const editBlockedReason = getDocumentEditBlockedReason(document);
+  const canEdit = !editBlockedReason;
 
   return (
     <article className={styles.documentRow}>
@@ -872,7 +936,11 @@ function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
           >
             编辑
           </a>
-        ) : null}
+        ) : (
+          <span className={styles.readOnlyButton} title={editBlockedReason ?? undefined}>
+            {editBlockedReason ?? '只读'}
+          </span>
+        )}
         <a
           className={styles.secondaryButton}
           href={buildDocsAuthorPath(revisionsRoute)}
@@ -893,6 +961,7 @@ interface DocsEditorPageProps {
   tree: WikiDocumentTreeNodeVo[];
   state: EditorState;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
+  onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
   onParentChange: (parentId: string) => void;
   onSetDraft: (updater: (current: EditorDraft) => EditorDraft) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
@@ -905,6 +974,7 @@ function DocsEditorPage({
   tree,
   state,
   onBack,
+  onNavigate,
   onParentChange,
   onSetDraft,
   onSave,
@@ -920,6 +990,9 @@ function DocsEditorPage({
   const pageIntro = route.kind === 'compose'
     ? '默认创建登录可见草稿，发布、归档和权限治理留在 Console。'
     : '编辑正文、摘要和目录位置；当前入口不处理发布状态切换。';
+  const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
+    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
+    : null;
 
   if (state.loading) {
     return (
@@ -962,9 +1035,16 @@ function DocsEditorPage({
             <a
               className={styles.secondaryButton}
               href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
+              onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
             >
               <Icon icon="mdi:history" size={18} />
               <span>修订记录</span>
+            </a>
+          ) : null}
+          {publicReadHref ? (
+            <a className={styles.secondaryButton} href={publicReadHref}>
+              <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+              <span>公开阅读</span>
             </a>
           ) : null}
         </div>
@@ -1094,6 +1174,10 @@ interface DocsRevisionsPageProps {
 }
 
 function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }: DocsRevisionsPageProps) {
+  const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
+    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
+    : null;
+
   return (
     <section className={styles.panel}>
       <div className={styles.panelHeader}>
@@ -1115,6 +1199,12 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
             >
               <Icon icon="mdi:pencil-outline" size={18} />
               <span>编辑文档</span>
+            </a>
+          ) : null}
+          {publicReadHref ? (
+            <a className={styles.secondaryButton} href={publicReadHref}>
+              <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+              <span>公开阅读</span>
             </a>
           ) : null}
         </div>

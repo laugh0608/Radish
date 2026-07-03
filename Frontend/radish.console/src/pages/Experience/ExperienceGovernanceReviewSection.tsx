@@ -51,16 +51,16 @@ export const ExperienceGovernanceReviewSection = ({
 
       {loadedUserId ? (
         <>
-          <div style={{ marginTop: 16, color: '#8c8c8c' }}>
+          <div className="experience-review-target experience-section-gap-sm">
             当前目标：{experience?.voUserName || '未命名用户'}（ID: {loadedUserId}）
           </div>
 
-          <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+          <div className="admin-feature-banner experience-section-gap-sm">
             {reviewContextDraft ? (
               <>
                 <div>{reviewContextDraft.hint}</div>
                 {reviewContextDraft.recommendationReason && (
-                  <div style={{ marginTop: 8, color: '#8c8c8c' }}>
+                  <div className="experience-review-draft-reason">
                     建议原因快照：{reviewContextDraft.recommendationReason}
                   </div>
                 )}
@@ -68,7 +68,7 @@ export const ExperienceGovernanceReviewSection = ({
             ) : '可从上方治理建议、规则摘要或每日异常一键带入复核草稿，也可直接手动填写结论。'}
           </div>
 
-          <Form form={reviewForm} layout="vertical" className="admin-feature-form" style={{ marginTop: 20 }}>
+          <Form form={reviewForm} layout="vertical" className="admin-feature-form experience-form-spaced">
             <Form.Item
               name="reviewResult"
               label="复核结论"
@@ -102,7 +102,7 @@ export const ExperienceGovernanceReviewSection = ({
               />
             </Form.Item>
 
-            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <div className="experience-inline-actions">
               <Button
                 variant="primary"
                 disabled={!canFreeze || reviewing}
@@ -118,7 +118,7 @@ export const ExperienceGovernanceReviewSection = ({
             </div>
           </Form>
 
-          <div style={{ marginTop: 24, fontWeight: 600 }}>最近治理留痕</div>
+          <div className="experience-section-title experience-section-gap-lg">最近治理留痕</div>
           <Table<UserExperienceGovernanceActionVo>
             rowKey="voActionId"
             columns={governanceActionColumns}
@@ -126,14 +126,14 @@ export const ExperienceGovernanceReviewSection = ({
             loading={loadingGovernanceActions}
             pagination={false}
             scroll={{ x: 1280 }}
-            style={{ marginTop: 16 }}
+            className="experience-section-gap-sm"
             locale={{
               emptyText: loadingGovernanceActions ? '治理留痕加载中...' : '该用户暂无治理留痕',
             }}
           />
         </>
       ) : (
-        <div style={{ marginTop: 20, color: '#8c8c8c' }}>
+        <div className="experience-empty-hint">
           请先查询用户经验，再记录复核结论或查看治理留痕。
         </div>
       )}

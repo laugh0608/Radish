@@ -11,7 +11,7 @@ import {
   Table,
   message,
 } from '@radish/ui';
-import { ReloadOutlined } from '@radish/ui';
+import { ReloadOutlined, SafetyOutlined } from '@radish/ui';
 import {
   applyUserModerationAction,
   getActionLogs,
@@ -21,6 +21,12 @@ import {
   type UserModerationActionVo,
 } from '@/api/moderationApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+} from '@/components/ConsolePage';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
@@ -610,15 +616,34 @@ export const ModerationPage = () => {
     onApplyQueuePreset: applyQueuePreset,
     onApplyManualActionPreset: applyManualActionPreset,
   });
+  const activeQueueFilterCount = [
+    statusFilter !== -1 ? 'status' : undefined,
+    queueTargetTypeFilter,
+    queueReasonTypeFilter,
+    queueNavigationStatusFilter,
+    queueKeyword,
+  ].filter(Boolean).length;
+  const activeLogFilterCount = [
+    logTargetUserId,
+    logSourceReportId,
+    logActionTypeFilter,
+    logIsActiveFilter,
+    logKeyword,
+  ].filter(Boolean).length;
 
   return (
     <div className="admin-feature-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>内容治理</h2>
-            <p className="admin-feature-subtle">举报队列、手动治理动作与治理日志统一在 Console 收口。</p>
-          </div>
+      <ConsolePageHeader
+        eyebrow="CONTENT MODERATION"
+        title="内容治理"
+        description="举报队列、手动治理动作与治理日志统一在 Console 收口。"
+        icon={<SafetyOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canReview ? 'success' : 'neutral'}>
+            {canReview ? '可审核处置' : '只读查看'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
           <Space wrap>
             {returnTo ? (
               <Button onClick={() => navigate(returnTo)}>
@@ -631,8 +656,20 @@ export const ModerationPage = () => {
               刷新
             </Button>
           </Space>
-        </div>
-      </section>
+        )}
+      />
+
+      <ConsoleMetricGrid label="内容治理工作台指标">
+        <ConsoleMetricCard label="举报队列" value={queueTotal} description="当前筛选后的举报单" tone="info" />
+        <ConsoleMetricCard label="本页举报" value={queueItems.length} description="当前页可见举报单" />
+        <ConsoleMetricCard label="治理日志" value={logTotal} description="当前筛选后的动作记录" tone="success" />
+        <ConsoleMetricCard
+          label="筛选条件"
+          value={activeQueueFilterCount + activeLogFilterCount}
+          description="队列与日志合计筛选"
+          tone={activeQueueFilterCount + activeLogFilterCount > 0 ? 'warning' : 'neutral'}
+        />
+      </ConsoleMetricGrid>
 
       <div className="admin-feature-banner">
         当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可联动禁言 / 封禁；历史动作也支持继续处置或直接解除。
@@ -649,7 +686,7 @@ export const ModerationPage = () => {
               <Space wrap>
                 <Select
                   value={statusFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={REVIEW_STATUS_OPTIONS}
                   onChange={(value) => {
                     setQueueContextHint(null);
@@ -658,7 +695,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={queueTargetTypeFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={TARGET_TYPE_OPTIONS}
                   allowClear
                   placeholder="目标类型"
@@ -669,7 +706,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={queueReasonTypeFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={REASON_TYPE_OPTIONS}
                   allowClear
                   placeholder="举报原因"
@@ -680,7 +717,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={queueNavigationStatusFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={TARGET_NAVIGATION_STATUS_OPTIONS}
                   allowClear
                   placeholder="回看状态"
@@ -698,7 +735,7 @@ export const ModerationPage = () => {
                     setQueueKeywordInput(event.target.value);
                   }}
                   onPressEnter={applyQueueKeywordSearch}
-                  style={{ width: 320 }}
+                  className="moderation-filter-control moderation-filter-control--xl"
                 />
                 <Button
                   variant="primary"
@@ -713,7 +750,7 @@ export const ModerationPage = () => {
             </div>
 
             {queueContextHint ? (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+              <div className="admin-feature-banner moderation-section-banner">
                 {queueContextHint}
               </div>
             ) : null}
@@ -775,7 +812,7 @@ export const ModerationPage = () => {
                     setLogContextHint(null);
                     setLogTargetUserIdInput(event.target.value);
                   }}
-                  style={{ width: 200 }}
+                  className="moderation-filter-control moderation-filter-control--md"
                 />
                 <Input
                   placeholder="关联举报单 ID"
@@ -784,11 +821,11 @@ export const ModerationPage = () => {
                     setLogContextHint(null);
                     setLogSourceReportIdInput(event.target.value);
                   }}
-                  style={{ width: 200 }}
+                  className="moderation-filter-control moderation-filter-control--md"
                 />
                 <Select
                   value={logActionTypeFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={ACTION_LOG_ACTION_TYPE_OPTIONS}
                   allowClear
                   placeholder="治理动作"
@@ -799,7 +836,7 @@ export const ModerationPage = () => {
                 />
                 <Select
                   value={logIsActiveFilter}
-                  style={{ width: 160 }}
+                  className="moderation-filter-control moderation-filter-control--sm"
                   options={ACTION_LOG_STATUS_OPTIONS}
                   allowClear
                   placeholder="动作状态"
@@ -817,7 +854,7 @@ export const ModerationPage = () => {
                     setLogKeywordInput(event.target.value);
                   }}
                   onPressEnter={applyLogFilters}
-                  style={{ width: 280 }}
+                  className="moderation-filter-control moderation-filter-control--lg"
                 />
                 <Button
                   variant="primary"
@@ -832,7 +869,7 @@ export const ModerationPage = () => {
             </div>
 
             {logContextHint ? (
-              <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+              <div className="admin-feature-banner moderation-section-banner">
                 {logContextHint}
               </div>
             ) : null}
@@ -903,7 +940,7 @@ export const ModerationPage = () => {
                   ? [{ required: true, message: '请输入动作时长' }]
                   : []}
               >
-                <InputNumber min={1} max={720} style={{ width: '100%' }} disabled={getFieldValue('actionType') === 0} />
+                <InputNumber min={1} max={720} className="moderation-full-width-control" disabled={getFieldValue('actionType') === 0} />
               </Form.Item>
             )}
           </Form.Item>

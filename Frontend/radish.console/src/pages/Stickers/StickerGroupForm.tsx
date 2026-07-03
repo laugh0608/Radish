@@ -23,6 +23,7 @@ import {
 } from '@/api/stickerApi';
 import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
+import '../adminForm.css';
 
 interface StickerGroupFormProps {
   visible: boolean;
@@ -252,29 +253,15 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
             noStyle
             rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
           >
-            <Input style={{ display: 'none' }} />
+            <Input className="admin-form-hidden-input" />
           </Form.Item>
-          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
-            <div
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 10,
-                border: '1px solid #f0f0f0',
-                background: '#fafafa',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#999',
-                fontSize: 12,
-              }}
-            >
+          <Space orientation="vertical" className="admin-form-field-stack" size={10}>
+            <div className="admin-form-upload-preview">
               {coverPreviewUrl ? (
                 <img
                   src={coverPreviewUrl}
                   alt="分组封面预览"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="admin-form-upload-preview__image"
                 />
               ) : (
                 <span>暂无封面</span>
@@ -332,7 +319,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
             { type: 'number', min: 0, message: '排序值不能为负数' },
           ]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+          <InputNumber min={0} className="admin-form-control-full" />
         </Form.Item>
 
         <Form.Item name="isEnabled" label="启用状态" valuePropName="checked">

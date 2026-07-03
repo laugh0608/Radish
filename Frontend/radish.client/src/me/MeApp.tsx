@@ -13,6 +13,7 @@ import {
   type UserBrowseHistoryItem,
 } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
+import { WebStateSlot } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicForumPath } from '@/public/forumRouteState';
 import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
@@ -508,13 +509,7 @@ export const MeApp = () => {
   }, []);
 
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:account-circle-outline') => (
-    <section className={styles.statusPanel}>
-      <Icon icon={icon} size={24} />
-      <div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-    </section>
+    <WebStateSlot tone={icon === 'mdi:progress-clock' ? 'loading' : 'auth'} title={title} description={description} icon={icon} />
   );
 
   const renderSubPageShell = (
@@ -1045,6 +1040,8 @@ export const MeApp = () => {
   return (
     <div className={styles.page}>
       <PublicShellHeader
+        variant="private"
+        activeKey={route.kind === 'assets' || route.kind === 'assets-transactions' ? 'assets' : 'me'}
         brandMark="我"
         brandName={t('me.title')}
         brandSubline={t('me.shellSubline')}

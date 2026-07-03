@@ -412,12 +412,12 @@
 
 @media (max-width: 720px) {
   .container {
-    gap: 22px;
+    gap: 18px;
   }
 
   .banner {
-    padding: 22px 18px;
-    border-radius: 22px;
+    padding: 18px 14px;
+    border-radius: 18px;
   }
 
   .bannerTitle {
@@ -430,15 +430,16 @@
   }
 
   .section {
-    gap: 14px;
+    gap: 12px;
   }
 
   .sectionHeader {
     align-items: flex-start;
+    gap: 10px;
   }
 
   .sectionTitle {
-    font-size: 20px;
+    font-size: 18px;
   }
 
   .categoriesGrid,
@@ -449,10 +450,56 @@
 
   .categoryCard {
     grid-template-columns: auto minmax(0, 1fr);
-    padding: 16px;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .categoryIcon {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+  }
+
+  .categoryName,
+  .productName {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  .categoryDescription,
+  .productMeta,
+  .guideCard p {
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .productCard {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    border-radius: 18px;
   }
 
   .productImage {
-    height: 156px;
+    width: 92px;
+    height: 100%;
+    min-height: 116px;
+  }
+
+  .defaultProductImage {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    font-size: 26px;
+  }
+
+  .productInfo {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .guideCard {
+    padding: 14px;
+    border-radius: 18px;
   }
 }

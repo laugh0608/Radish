@@ -1,12 +1,12 @@
-import { type MouseEvent } from 'react';
-import { Icon } from '@radish/ui/icon';
-import styles from './PublicShellHeader.module.css';
+import { WebShellHeader, type WebShellNavItem, type WebShellVariant } from '@/components/web-shell';
 
 interface PublicShellHeaderProps {
   brandMark: string;
   brandName: string;
   brandSubline: string;
   onBrandClick: () => void;
+  variant?: WebShellVariant;
+  activeKey?: string;
   onNavigateToDiscover?: () => void;
   discoverHref?: string;
   discoverLabel?: string;
@@ -17,11 +17,69 @@ interface PublicShellHeaderProps {
   desktopLabel?: string;
 }
 
+function buildPublicNavItems(discoverHref: string, discoverLabel: string, onNavigateToDiscover?: () => void): WebShellNavItem[] {
+  return [
+    { key: 'discover', label: discoverLabel, href: discoverHref, icon: 'mdi:compass-outline', onClick: onNavigateToDiscover },
+    { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
+    { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
+    { key: 'leaderboard', label: '榜单', href: '/leaderboard', icon: 'mdi:trophy-outline' },
+    { key: 'shop', label: '商城', href: '/shop', icon: 'mdi:shopping-outline' },
+  ];
+}
+
+function buildActionItems({
+  variant,
+  discoverHref,
+  discoverLabel,
+  onNavigateToDiscover,
+  circleHref,
+  circleLabel,
+  showCircleAction,
+  desktopHref,
+  desktopLabel,
+}: Required<Pick<PublicShellHeaderProps, 'variant' | 'discoverHref' | 'discoverLabel' | 'circleHref' | 'circleLabel' | 'showCircleAction' | 'desktopHref' | 'desktopLabel'>> & {
+  onNavigateToDiscover?: () => void;
+}): WebShellNavItem[] {
+  const actionItems: WebShellNavItem[] = [];
+
+  if (variant === 'private' && discoverHref.trim()) {
+    actionItems.push({
+      key: 'discover-action',
+      label: discoverLabel,
+      href: discoverHref,
+      icon: 'mdi:compass-outline',
+      onClick: onNavigateToDiscover,
+    });
+  }
+
+  if (showCircleAction && circleHref.trim()) {
+    actionItems.push({
+      key: 'circle-action',
+      label: circleLabel,
+      href: circleHref,
+      icon: 'mdi:account-group-outline',
+    });
+  }
+
+  if (variant === 'public' && desktopHref.trim()) {
+    actionItems.push({
+      key: 'workbench-action',
+      label: desktopLabel,
+      href: desktopHref,
+      icon: 'mdi:view-dashboard-outline',
+    });
+  }
+
+  return actionItems;
+}
+
 export const PublicShellHeader = ({
   brandMark,
   brandName,
   brandSubline,
   onBrandClick,
+  variant = 'public',
+  activeKey,
   onNavigateToDiscover,
   discoverHref = '/discover',
   discoverLabel = '发现',
@@ -29,68 +87,33 @@ export const PublicShellHeader = ({
   circleLabel = '圈子',
   showCircleAction = true,
   desktopHref = '/workbench',
-  desktopLabel = '工作台'
+  desktopLabel = '工作台',
 }: PublicShellHeaderProps) => {
-  const normalizedDiscoverHref = discoverHref.trim();
-  const shouldShowDiscoverAction = !!onNavigateToDiscover && normalizedDiscoverHref.length > 0;
-  const shouldShowCircleAction = showCircleAction && circleHref.trim().length > 0;
+  const navItems = variant === 'public'
+    ? buildPublicNavItems(discoverHref, discoverLabel, onNavigateToDiscover)
+    : undefined;
+  const actionItems = buildActionItems({
+    variant,
+    discoverHref,
+    discoverLabel,
+    onNavigateToDiscover,
+    circleHref,
+    circleLabel,
+    showCircleAction,
+    desktopHref,
+    desktopLabel,
+  });
 
   return (
-    <header className={styles.hero}>
-      <div className={styles.heroInner}>
-        <button type="button" className={styles.brand} onClick={onBrandClick}>
-          <span className={styles.brandMark}>{brandMark}</span>
-          <span className={styles.brandText}>
-            <span className={styles.brandName}>{brandName}</span>
-            <span className={styles.brandSubline}>{brandSubline}</span>
-          </span>
-        </button>
-        <div className={styles.heroActions}>
-          {shouldShowDiscoverAction ? (
-            <a
-              className={`${styles.actionButton} ${styles.primaryAction}`}
-              href={normalizedDiscoverHref}
-              aria-label={discoverLabel}
-              title={discoverLabel}
-              onClick={(event) => {
-                if (!shouldHandlePublicShellLinkClick(event)) {
-                  return;
-                }
-
-                event.preventDefault();
-                onNavigateToDiscover?.();
-              }}
-            >
-              <Icon icon="mdi:compass-outline" size={18} />
-              <span className={styles.actionLabel}>{discoverLabel}</span>
-            </a>
-          ) : null}
-          {shouldShowCircleAction ? (
-            <a
-              className={`${styles.actionButton} ${shouldShowDiscoverAction ? styles.secondaryAction : styles.primaryAction}`}
-              href={circleHref}
-              aria-label={circleLabel}
-              title={circleLabel}
-            >
-              <Icon icon="mdi:account-group-outline" size={18} />
-              <span className={styles.actionLabel}>{circleLabel}</span>
-            </a>
-          ) : null}
-          <a className={styles.desktopLink} href={desktopHref} aria-label={desktopLabel} title={desktopLabel}>
-            <Icon icon="mdi:view-dashboard-outline" size={18} />
-            <span className={styles.actionLabel}>{desktopLabel}</span>
-          </a>
-        </div>
-      </div>
-    </header>
+    <WebShellHeader
+      variant={variant}
+      brandMark={brandMark}
+      brandName={brandName}
+      brandSubline={brandSubline}
+      activeKey={activeKey}
+      navItems={navItems}
+      actionItems={actionItems}
+      onBrandClick={onBrandClick}
+    />
   );
 };
-
-function shouldHandlePublicShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
-  return !event.defaultPrevented
-    && event.button === 0
-    && !event.metaKey
-    && !event.ctrlKey
-    && !event.shiftKey
-    && !event.altKey;
-}

@@ -1,5 +1,9 @@
 .moderation-inline-meta {
-  color: #8c8c8c;
+  color: var(--console-text-secondary);
+}
+
+.moderation-table-muted {
+  color: var(--console-text-secondary);
 }
 
 .moderation-target {
@@ -9,7 +13,7 @@
 }
 
 .moderation-target__identity {
-  color: #262626;
+  color: var(--console-text-primary);
   font-weight: 600;
 }
 
@@ -18,7 +22,7 @@
 .moderation-target__state-message,
 .moderation-target__user,
 .moderation-target__empty {
-  color: #8c8c8c;
+  color: var(--console-text-secondary);
   line-height: 1.5;
 }
 
@@ -29,13 +33,13 @@
 }
 
 .moderation-target__section-label {
-  color: #595959;
+  color: var(--console-text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
 
 .moderation-target__snapshot-title {
-  color: #262626;
+  color: var(--console-text-primary);
 }
 
 .moderation-target__state {
@@ -46,24 +50,52 @@
 
 .moderation-review-preview {
   margin-bottom: 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--console-border-subtle);
   border-radius: 10px;
-  background: #fafafa;
+  background: var(--console-bg-muted);
   padding: 12px 14px;
 }
 
 .moderation-review-preview__label {
   margin-bottom: 8px;
-  color: #595959;
+  color: var(--console-text-secondary);
   font-size: 12px;
   font-weight: 600;
 }
 
+.moderation-section-banner {
+  margin-top: 16px;
+}
+
+.moderation-filter-control {
+  max-width: 100%;
+}
+
+.moderation-filter-control--sm {
+  width: 160px;
+}
+
+.moderation-filter-control--md {
+  width: 200px;
+}
+
+.moderation-filter-control--lg {
+  width: 280px;
+}
+
+.moderation-filter-control--xl {
+  width: 320px;
+}
+
+.moderation-full-width-control {
+  width: 100%;
+}
+
 .moderation-manual-status {
   margin-top: 16px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--console-border-subtle);
   border-radius: 12px;
-  background: #fafafa;
+  background: var(--console-bg-muted);
   padding: 14px 16px;
 }
 
@@ -75,7 +107,7 @@
 }
 
 .moderation-manual-status__title {
-  color: #262626;
+  color: var(--console-text-primary);
   font-weight: 600;
 }
 
@@ -84,7 +116,7 @@
 .moderation-manual-status__error,
 .moderation-manual-status-card__meta,
 .moderation-manual-status-card__reason {
-  color: #8c8c8c;
+  color: var(--console-text-secondary);
   line-height: 1.6;
 }
 
@@ -94,7 +126,7 @@
 }
 
 .moderation-manual-status__error {
-  color: #cf1322;
+  color: var(--console-danger);
 }
 
 .moderation-manual-status__grid {
@@ -109,9 +141,9 @@
   flex-direction: column;
   gap: 8px;
   min-height: 168px;
-  border: 1px solid #f0f0f0;
+  border: 1px solid var(--console-border-subtle);
   border-radius: 10px;
-  background: #fff;
+  background: var(--console-bg-surface);
   padding: 14px;
 }
 
@@ -123,12 +155,12 @@
 }
 
 .moderation-manual-status-card__title {
-  color: #262626;
+  color: var(--console-text-primary);
   font-weight: 600;
 }
 
 .moderation-manual-status-card__empty {
-  color: #8c8c8c;
+  color: var(--console-text-secondary);
   line-height: 1.6;
   flex: 1;
 }
@@ -148,6 +180,6 @@
 }
 
 .moderation-manual-action-form__footnote {
-  color: #8c8c8c;
+  color: var(--console-text-secondary);
   line-height: 1.6;
 }

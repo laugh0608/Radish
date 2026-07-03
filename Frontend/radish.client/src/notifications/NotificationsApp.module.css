@@ -6,14 +6,109 @@
 }
 
 .main {
-  width: min(1040px, calc(100vw - 24px));
+  width: min(1120px, calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 40px;
 }
 
+.contentGrid {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  min-height: calc(100vh - 128px);
+}
+
+.summaryPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px;
+  align-items: stretch;
+  padding: 20px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.summaryHeader {
+  min-width: 0;
+}
+
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, var(--theme-border-soft) 72%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, var(--theme-bg-surface) 54%);
+  color: var(--theme-accent-earth);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.summaryHeader h1 {
+  margin: 12px 0 8px;
+  font-size: 24px;
+  line-height: 1.2;
+  color: var(--theme-text-primary);
+}
+
+.summaryHeader p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--theme-text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.summaryCards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(118px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+}
+
+.summaryCard {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-shadow-soft) 46%, transparent 54%);
+}
+
+.summaryIcon {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-accent-ink);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+}
+
+.summaryCard strong {
+  display: block;
+  color: var(--theme-text-primary);
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.summaryCard span:last-child {
+  display: block;
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .centerShell {
-  height: min(760px, calc(100vh - 128px));
-  min-height: 560px;
+  height: min(650px, calc(100vh - 360px));
+  min-height: 520px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   overflow: hidden;
@@ -21,29 +116,8 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
-.statusPanel {
-  min-height: 260px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 32px;
-  border: 1px solid var(--theme-border-soft);
-  border-radius: 8px;
-  background: var(--theme-bg-surface);
-  color: var(--theme-text-secondary);
-  box-shadow: var(--theme-shadow-soft);
-}
-
-.statusPanel h1 {
-  margin: 0 0 6px;
-  font-size: 18px;
-  color: var(--theme-text-primary);
-}
-
-.statusPanel p {
-  margin: 0;
-  font-size: 14px;
+.stateShell {
+  overflow: hidden;
 }
 
 @media (max-width: 720px) {
@@ -52,14 +126,56 @@
     padding: 14px 0 28px;
   }
 
-  .centerShell {
-    min-height: calc(100vh - 94px);
-    height: calc(100vh - 94px);
+  .contentGrid {
+    min-height: auto;
+    gap: 12px;
   }
 
-  .statusPanel {
-    min-height: 220px;
-    align-items: flex-start;
-    justify-content: flex-start;
+  .summaryPanel {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .summaryHeader h1 {
+    font-size: 20px;
+  }
+
+  .summaryCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summaryCard {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    column-gap: 12px;
+    align-items: center;
+    min-height: 68px;
+    padding: 10px;
+  }
+
+  .summaryCard:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .summaryCard strong {
+    font-size: 18px;
+    overflow-wrap: anywhere;
+  }
+
+  .summaryCard span:last-child {
+    margin-top: 0;
+  }
+
+  .summaryIcon {
+    width: 32px;
+    height: 32px;
+    grid-row: span 2;
+    margin-bottom: 0;
+  }
+
+  .centerShell {
+    min-height: 500px;
+    height: clamp(500px, calc(100dvh - 278px), 620px);
   }
 }

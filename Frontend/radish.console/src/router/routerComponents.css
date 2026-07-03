@@ -1,0 +1,25 @@
+.console-route-state {
+  color: var(--console-text-primary);
+}
+
+.console-route-state--loading {
+  padding: 24px;
+  color: var(--console-text-secondary);
+}
+
+.console-route-state--permission {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.console-route-state--permission h2 {
+  margin: 0 0 12px;
+  color: var(--console-text-primary);
+}
+
+.console-route-state--permission p {
+  margin: 0;
+  color: var(--console-text-secondary);
+  line-height: 1.6;
+}

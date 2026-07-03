@@ -527,7 +527,9 @@
 
 @media (max-width: 860px) {
   .cardPublicCompact {
-    padding: 14px;
+    padding: 12px;
+    border-radius: 16px;
+    margin-bottom: 8px;
   }
 
   .publicMetaTopRow {
@@ -567,6 +569,39 @@
     gap: 6px;
   }
 
+  .mainPublicCompact {
+    gap: 8px;
+  }
+
+  .mainPublicCompact .publicMetaBottom {
+    gap: 8px;
+  }
+
+  .cardPublicCompact .title {
+    font-size: 15px;
+    line-height: 1.38;
+  }
+
+  .cardPublicCompact .categoryChip,
+  .cardPublicCompact .statusChip,
+  .cardPublicCompact .tagChip {
+    padding: 2px 7px;
+    font-size: 10px;
+  }
+
+  .godCommentCompact {
+    padding: 4px 7px;
+  }
+
+  .godCommentText {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .statItem {
+    padding: 3px 6px;
+  }
+
   .time {
     white-space: normal;
   }
@@ -580,5 +615,20 @@
   .mainPublicCompact {
     display: flex;
     flex-direction: column;
+  }
+
+  .publicMetaTopRow {
+    gap: 6px;
+  }
+
+  .metaRow,
+  .statsRow,
+  .statsRowCompact,
+  .interactionRowCompact {
+    gap: 5px;
+  }
+
+  .publicMetaBottom {
+    gap: 7px;
   }
 }

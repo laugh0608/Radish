@@ -43,3 +43,23 @@
 - Pencil 工作流约束已明确：写入必须以当前活动窗口为准，切换 `.pen` 前必须手动保存；MCP `filePath` 可用于读取 / 检查 / 截图，但不作为非活动窗口写入保证。
 - 相关设计 / 说明书已同步：设计源目录、公开 Web 说明、私域 / 作者态说明、共享基座说明、D2 / D3 / D4 记录、当前规划、记录索引和本开发日志均已对齐。
 - 今日提交回顾见 [2026-06-25 收工回顾与明日事项](/records/daily-handoff-2026-06-25)。明日第一顺位是按用户意见继续优化 `web-ui-foundation.pen`，确认 Pencil 活动文件并手动保存后再做布局检查和截图目检。
+
+## 2026-06-27
+
+- `P3-12-D4` Web UI 共享基座继续优化：`web-ui-foundation.pen` 已补齐 `F02` client 公共壳层组件契约，统一 public / private 导航、按钮、卡片、状态槽和移动 tab 参考。
+- `P3-12-D5` Console 治理工作台设计源完成重构：`console-governance-workbench.pen` 已扩展至 `P00-P18`，覆盖公共 Console 壳层、浅色图标侧栏、内容审核、经验台账、治理调度、表格 CRUD、设置策略、商业运营、文档治理、权限矩阵、运维任务和移动端 Console 任务流。
+- `P3-12-D6` Console 视觉代码实现前盘点完成：确认 `radish.console` 首批应先做公共壳层、route meta、Console 语义组件和低风险代表页，不改变 API、权限、业务动作或数据模型。
+- `P3-12-D2` 公开 Web 设计源从早期代表稿重构并强化为 `P01-P16` 公开社区 App 页面族：补齐论坛列表、帖子详情、评论树、神评 / 沙发、轻回应、公开聊天室、文档、商城、榜单、公开主页和移动任务流。
+- 公开 Web 互动语义已按用户反馈修正：reaction 只在帖子详情和聊天室展示；神评属于父评论，沙发属于子回复 / 楼中楼语境；聊天室采用自己右侧、他人左侧的 IM 气泡方向。
+- 公开 Web 信息密度已继续收口：P03 论坛列表、P04 帖子详情评论区、P07 商城、P15 聊天室和 P10-P16 移动任务流均减少大字、大卡片和长留白，保留可扫读的真实内容结构。
+- 相关设计 / 说明书已同步：当前规划、P3-12 主线、设计源目录、公开 Web 说明、D2 / D5 / D6 记录、记录索引和本开发日志均已对齐。
+- 今日提交回顾见 [2026-06-27 收工回顾与明日事项](/records/daily-handoff-2026-06-27)。明日第一顺位是补齐 `private-web-workflows.pen` 的 private 页面族和移动任务流，之后再进入 `radish.client` 视觉实现；Console 代码实现后移承接。
+
+## 2026-06-28
+
+- `P3-12-D7` 移动导航设计源统一完成：public / private / console / foundation 四个设计源的移动底栏统一为 5 项以内浮动胶囊样式，并按复审修正公开移动工作台、Private 移动页密度和 Console 纸色运维页。
+- `P3-12-D8` `radish.client` 视觉实现首批完成：新增共享 `WebShellHeader` / `WebStateSlot`，首批接入私域复访页、作者态页、公开 forum 状态入口和 discover / docs / leaderboard / shop / profile 公开状态槽。
+- 公开页面容器宽度已抽象为 `--rx-content-max-width`、`--rx-content-reading-width`、`--rx-content-narrow-width`，公开移动单列页面补齐底部导航留白。
+- 相关设计 / 说明书已同步：当前规划、P3-12 主线、Web UI 共享基座说明、公开 Web 说明、私域 / 作者态说明、D8 记录、记录索引和本开发日志均已对齐。
+- 今日验证：`npm run build --workspace=radish.client`、`npm run check:repo-hygiene:changed`、`git diff --check` 均通过；真实 Gateway PC / mobile smoke 未执行，因为本轮未收到前后端已启动的明确确认。
+- 今日提交回顾见 [2026-06-28 收工回顾与明日事项](/records/daily-handoff-2026-06-28)。明日第一顺位是继续 `radish.client` 第二批视觉实现，优先私域 / 作者态真实数据面、任务流和移动单列节奏；Console、Flutter、P3-10 维护线和发布流程不作为默认主线。

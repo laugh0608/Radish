@@ -235,7 +235,7 @@ export const Applications = () => {
       key: 'action',
       width: 220,
       render: (_, record) => (
-        <Space size="small">
+        <Space size="small" wrap>
           {canEditApplication ? (
             <Button
               variant="ghost"

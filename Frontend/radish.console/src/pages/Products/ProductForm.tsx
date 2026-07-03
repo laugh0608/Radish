@@ -27,6 +27,7 @@ import { uploadAttachmentImage } from '../../api/attachmentApi';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import dayjs, { type Dayjs } from 'dayjs';
+import '../adminForm.css';
 
 interface ProductFormProps {
   visible: boolean;
@@ -545,7 +546,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       closeOnOverlayClick={false}
       closeOnEscape={false}
       footer={
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+        <div className="admin-form-modal-actions">
           <Button onClick={handleRequestClose}>取消</Button>
           <Button variant="primary" onClick={handleSubmit} disabled={loading || iconUploading || coverUploading}>
             {loading || iconUploading || coverUploading ? '保存中...' : '保存'}
@@ -595,7 +596,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           </Select>
         </Form.Item>
         {recommendedCategoryName && (
-          <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+          <div className="admin-form-help-text">
             当前商品会归入「{recommendedCategoryName}」分类，保存时将自动保持一致。
           </div>
         )}
@@ -629,7 +630,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 <Select.Option value={7} disabled>点赞特效（暂未开放）</Select.Option>
               </Select>
             </Form.Item>
-            <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+            <div className="admin-form-help-text">
               当前权益效果尚未接入真实消费链路，不能上架销售。
             </div>
           </>
@@ -652,7 +653,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 <Select.Option value={99} disabled>抽奖券（暂未开放）</Select.Option>
               </Select>
             </Form.Item>
-            <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+            <div className="admin-form-help-text">
               帖子置顶卡、帖子高亮卡、双倍经验卡、抽奖券当前未开放，不能上架销售。
             </div>
           </>
@@ -669,7 +670,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           </Form.Item>
         )}
         {benefitValueFieldMeta?.help && (
-          <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+          <div className="admin-form-help-text">
             {benefitValueFieldMeta.help}
           </div>
         )}
@@ -682,29 +683,15 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
             noStyle
             rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
           >
-            <Input style={{ display: 'none' }} />
+            <Input className="admin-form-hidden-input" />
           </Form.Item>
-          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
-            <div
-              style={{
-                width: 96,
-                height: 96,
-                borderRadius: 10,
-                border: '1px solid #f0f0f0',
-                background: '#fafafa',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#999',
-                fontSize: 12,
-              }}
-            >
+          <Space orientation="vertical" className="admin-form-field-stack" size={10}>
+            <div className="admin-form-upload-preview">
               {iconPreviewUrl ? (
                 <img
                   src={iconPreviewUrl}
                   alt="商品图标预览"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="admin-form-upload-preview__image"
                 />
               ) : (
                 <span>暂无图标</span>
@@ -750,29 +737,15 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
             noStyle
             rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
           >
-            <Input style={{ display: 'none' }} />
+            <Input className="admin-form-hidden-input" />
           </Form.Item>
-          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
-            <div
-              style={{
-                width: 160,
-                height: 96,
-                borderRadius: 10,
-                border: '1px solid #f0f0f0',
-                background: '#fafafa',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#999',
-                fontSize: 12,
-              }}
-            >
+          <Space orientation="vertical" className="admin-form-field-stack" size={10}>
+            <div className="admin-form-upload-preview admin-form-upload-preview--wide">
               {coverPreviewUrl ? (
                 <img
                   src={coverPreviewUrl}
                   alt="商品封面预览"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  className="admin-form-upload-preview__image"
                 />
               ) : (
                 <span>暂无封面</span>
@@ -820,7 +793,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               <InputNumber
                 placeholder="售价"
                 min={0}
-                style={{ width: '50%' }}
+                className="admin-form-control-half"
                 addonAfter="胡萝卜"
               />
             </Form.Item>
@@ -831,7 +804,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               <InputNumber
                 placeholder="原价（可选）"
                 min={0}
-                style={{ width: '50%' }}
+                className="admin-form-control-half"
                 addonAfter="胡萝卜"
               />
             </Form.Item>
@@ -855,7 +828,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
             name="stock"
             rules={[{ required: true, message: '请输入库存数量' }]}
           >
-            <InputNumber placeholder="请输入库存数量" min={0} style={{ width: '100%' }} />
+            <InputNumber placeholder="请输入库存数量" min={0} className="admin-form-control-full" />
           </Form.Item>
         )}
 
@@ -864,7 +837,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           name="limitPerUser"
           tooltip="0表示不限购"
         >
-          <InputNumber placeholder="每人限购数量" min={0} style={{ width: '100%' }} />
+          <InputNumber placeholder="每人限购数量" min={0} className="admin-form-control-full" />
         </Form.Item>
 
         <Form.Item
@@ -885,7 +858,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
             name="durationDays"
             rules={[{ required: true, message: '请输入有效期天数' }]}
           >
-            <InputNumber placeholder="请输入有效期天数" min={1} style={{ width: '100%' }} />
+            <InputNumber placeholder="请输入有效期天数" min={1} className="admin-form-control-full" />
           </Form.Item>
         )}
 
@@ -898,7 +871,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
             <DatePicker
               showTime
               format="YYYY-MM-DD HH:mm:ss"
-              style={{ width: '100%' }}
+              className="admin-form-control-full"
             />
           </Form.Item>
         )}
@@ -908,7 +881,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           name="sortOrder"
           tooltip="数值越大越靠前"
         >
-          <InputNumber placeholder="排序权重" style={{ width: '100%' }} />
+          <InputNumber placeholder="排序权重" className="admin-form-control-full" />
         </Form.Item>
 
         <Form.Item
@@ -920,7 +893,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         </Form.Item>
 
         {unsupportedSaleSelection && (
-          <div style={{ marginTop: -12, marginBottom: 16, color: 'var(--theme-text-placeholder)', fontSize: 12 }}>
+          <div className="admin-form-help-text">
             当前商品类型未开放，保存时将保持下架状态。
           </div>
         )}

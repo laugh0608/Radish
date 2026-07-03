@@ -378,13 +378,6 @@ export const PublicForumTag = ({
           </div>
         </div>
 
-        <PublicReadingGuide
-          className={styles.readingGuide}
-          label={readingGuide.label}
-          title={readingGuide.title}
-          description={readingGuide.description}
-          items={readingGuide.items}
-        />
       </div>
 
       {tagState.kind === 'error' && selectedTag && (
@@ -491,6 +484,14 @@ export const PublicForumTag = ({
           onPageChange={setCurrentPage}
         />
       )}
+
+      <PublicReadingGuide
+        className={styles.readingGuide}
+        label={readingGuide.label}
+        title={readingGuide.title}
+        description={readingGuide.description}
+        items={readingGuide.items}
+      />
     </section>
   );
 };

@@ -1,0 +1,1351 @@
+{
+  "dynamic": {
+    "post": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4",
+    "doc": "/docs/index",
+    "product": "/shop/product/100061",
+    "leaderboardType": "/leaderboard/balance",
+    "user": "/u/usr_019ef99117377efb85389bfe6d9d55a5"
+  },
+  "summary": {
+    "batch": "public",
+    "total": 34,
+    "detectedCounts": {},
+    "problemPages": []
+  },
+  "results": [
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "默认入口",
+      "path": "/",
+      "info": {
+        "bodyLength": 3438,
+        "bodySample": "览\n社区发现\n公开社区分发页\n发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\nP3-10\n\n公开只读\n社区发现\n\n从同一条 Web-first 内容流浏览 Radish 的公开帖子、可读文档、商品推荐、热门标签与榜单入口。\n\n进入 forum\n搜索 docs\n浏览商城\n复制链接\nforum 推荐\n可继续进入\n1\n\n当前有 1 条公开帖子可作为第一跳阅读入口。\n\n下一步会进入\n/forum 最新阅读链路\n先看本页区块\n直接进入公开页\ndocs 推荐\n可继续进入\n5\n\n当前有 5 篇可读文档已进入首屏摘要分发。\n\n下",
+        "buttonCount": 8,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "社区发现",
+          "最新公开内容流",
+          "先判断哪条阅读路径更值",
+          "继续保留来源返回",
+          "全程停留在公开只读",
+          "公开入口导航"
+        ],
+        "iframeCount": 0,
+        "linkCount": 54,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "社区发现 - Radish",
+        "url": "https://localhost:5000/discover"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "发现",
+      "path": "/discover",
+      "info": {
+        "bodyLength": 3438,
+        "bodySample": "览\n社区发现\n公开社区分发页\n发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\nP3-10\n\n公开只读\n社区发现\n\n从同一条 Web-first 内容流浏览 Radish 的公开帖子、可读文档、商品推荐、热门标签与榜单入口。\n\n进入 forum\n搜索 docs\n浏览商城\n复制链接\nforum 推荐\n可继续进入\n1\n\n当前有 1 条公开帖子可作为第一跳阅读入口。\n\n下一步会进入\n/forum 最新阅读链路\n先看本页区块\n直接进入公开页\ndocs 推荐\n可继续进入\n5\n\n当前有 5 篇可读文档已进入首屏摘要分发。\n\n下",
+        "buttonCount": 8,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "社区发现",
+          "最新公开内容流",
+          "先判断哪条阅读路径更值",
+          "继续保留来源返回",
+          "全程停留在公开只读",
+          "公开入口导航"
+        ],
+        "iframeCount": 0,
+        "linkCount": 54,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "社区发现 - Radish",
+        "url": "https://localhost:5000/discover"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "论坛列表",
+      "path": "/forum",
+      "info": {
+        "bodyLength": 375,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n全部帖子\n\n公开内容壳层承载 forum 阅读入口，覆盖列表浏览与帖子详情阅读，不引入桌面窗口交互。\n\n搜索\n全部帖子\n最新\n最热\n公开阅读\n公开 forum 列表阅读提示\n\n这条公开路由会先把阅读节奏收口在帖子标题、标签、作者和近期互动线索上，再继续进入帖子详情与其他公开阅读路径，不会重新打开桌面工作台交互。\n\n先看内容\n公开帖子里的标题、分类、标签、作者线索和最近互动摘要\n继续进入\n帖子详情、公开个人页、公开标签页，以及带来源",
+        "buttonCount": 4,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "全部帖子",
+          "公开 forum 列表阅读提示"
+        ],
+        "iframeCount": 0,
+        "linkCount": 20,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "论坛 · 全部帖子",
+        "url": "https://localhost:5000/forum"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "论坛搜索",
+      "path": "/forum/search",
+      "info": {
+        "bodyLength": 391,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n返回列表\n公开浏览\n公开搜索\n\n公开搜索会把关键词检索、排序、时间范围过滤、分页与帖子详情阅读留在 forum 公开壳层里。\n\n关键词：全部公开帖子\n排序：最新\n时间：全部\n公开阅读\n公开 forum 搜索阅读提示\n\n公开搜索会把阅读节奏收口在关键词检索、结果比较、时间过滤，以及打开帖子后稳定回到同一份搜索结果上。\n\n先看内容\n关键词、时间范围、排序方式、结果数量，以及当前可见的公开帖子线索\n继续进入\n帖子详情、公开个人页、公开标",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开搜索",
+          "公开 forum 搜索阅读提示",
+          "先输入关键词或切换时间范围"
+        ],
+        "iframeCount": 0,
+        "linkCount": 21,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "公开讨论 - 论坛搜索 - Radish",
+        "url": "https://localhost:5000/forum/search"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "问答流",
+      "path": "/forum/question",
+      "info": {
+        "bodyLength": 319,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n返回列表\n公开浏览\n公开问答\n\n这个公开路由会聚合只读问答帖，便于继续浏览提问、回答和详情返回链路，不把桌面交互带入公开壳层。\n\n搜索\n全部帖子\n最新\n待解决\n答\n公开阅读\n公开问答阅读提示\n\n问答公开页会把浏览重点收口在问题主题、回答进度和详情继续阅读上，不会从公开壳层重新带出回答提交等桌面交互。\n\n先看内容\n问题标题、待解决或已回答状态、回答数，以及最近公开活跃线索\n继续进入\n问答详情、作者公开主页、相关标签，以及稳定返回同一",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开问答",
+          "公开问答阅读提示",
+          "暂时还没有公开问答"
+        ],
+        "iframeCount": 0,
+        "linkCount": 18,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "问答 - Radish 论坛",
+        "url": "https://localhost:5000/forum/question"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "投票流",
+      "path": "/forum/poll",
+      "info": {
+        "bodyLength": 324,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n返回列表\n公开浏览\n公开投票\n\n这个公开路由会聚合只读投票帖，便于继续浏览投票主题和详情返回链路，不把桌面交互带入公开壳层。\n\n搜索\n全部帖子\n最新\n最热\n票\n即将截止\n公开阅读\n公开投票阅读提示\n\n投票公开页会把浏览重点收口在投票主题、当前票数信号和截止时间线索上，不会从公开壳层重新带出投票提交或投票治理流程。\n\n先看内容\n投票主题、票数、截止时间提示，以及当前公开热度线索\n继续进入\n投票详情、作者公开主页、相关标签，以及稳定返",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开投票",
+          "公开投票阅读提示",
+          "暂时还没有公开投票"
+        ],
+        "iframeCount": 0,
+        "linkCount": 19,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "投票 - Radish 论坛",
+        "url": "https://localhost:5000/forum/poll"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "抽奖流",
+      "path": "/forum/lottery",
+      "info": {
+        "bodyLength": 318,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n返回列表\n公开浏览\n公开抽奖\n\n这个公开路由会聚合只读抽奖帖，便于继续浏览奖品主题和详情返回链路，不把桌面交互带入公开壳层。\n\n搜索\n全部帖子\n最新\n最热\n公开阅读\n公开抽奖阅读提示\n\n抽奖公开页会把浏览重点收口在奖品主题、当前公开热度和详情继续阅读上，不会从公开壳层重新带出参与抽奖或结果领取等桌面动作。\n\n先看内容\n抽奖主题、当前公开热度，以及可见的奖品阅读线索\n继续进入\n抽奖详情、作者公开主页、相关标签，以及稳定返回同一抽奖列",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开抽奖",
+          "公开抽奖阅读提示",
+          "暂时还没有公开抽奖"
+        ],
+        "iframeCount": 0,
+        "linkCount": 17,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "抽奖 - Radish 论坛",
+        "url": "https://localhost:5000/forum/lottery"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "论坛详情",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4",
+      "info": {
+        "bodyLength": 782,
+        "bodySample": "论\n论坛\n公开论坛\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n返回论坛\n复制链接\n公开浏览\n浏览 19\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 19\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨",
+        "buttonCount": 16,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "文档列表",
+      "path": "/docs",
+      "info": {
+        "bodyLength": 10604,
+        "bodySample": "文\n文档\nPUBLIC DOCS\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n公开阅读\n\n文档阅读会留在 docs 公开壳层里。这个入口只保留层级浏览和 Markdown 阅读，不承载桌面工作台里的治理操作。\n\n文档作者台\n搜索\n公开阅读\n公开 docs 目录阅读提示\n\n这条公开路由会把阅读节奏收口在目录层级、可阅读文档卡片，以及继续进入搜索或详情上，不会从公开壳层重新带出桌面治理流程。\n\n先看目录\n目录层级、可阅读卡片、摘要，以及当前公开阅读范围\n继续进入\n公开搜索、只读文档详情，以及稳定返",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开阅读",
+          "公开 docs 目录阅读提示",
+          "目录",
+          "可阅读文档"
+        ],
+        "iframeCount": 0,
+        "linkCount": 429,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "文档 - Radish",
+        "url": "https://localhost:5000/docs"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "文档详情",
+      "path": "/docs/index",
+      "info": {
+        "bodyLength": 2616,
+        "bodySample": "文\n文档\nPUBLIC DOCS\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n返回目录\n复制链接\n\n公开阅读\n\n文档\n\nlayout: home\n\n公开可看\n已发布\n访问边界\n公开可看\n已发布\n文档定位\nSlug：index\n来源：固定文档\n时间线\n更新：2026-07-01 20:57:35\n创建：2026-06-24 20:19:47\n\n这个详情页保持只读。编辑、发布、版本和其他私域工作台动作不会从公开路由打开。\n\nlayout: home title: Radish 文档 titleTemplate:",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "文档",
+          "快速入口",
+          "当前协作",
+          "常用专题",
+          "完整入口",
+          "公开文档详情阅读提示"
+        ],
+        "iframeCount": 0,
+        "linkCount": 70,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "文档 · 文档",
+        "url": "https://localhost:5000/docs/index"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "商城首页",
+      "path": "/shop",
+      "info": {
+        "bodyLength": 556,
+        "bodySample": "商\n萝卜商城\n公开商城\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开浏览\n\n公开浏览\n公开商城\n\n公开商城承载首页、商品列表和商品详情浏览；商品详情可继续登录购买，订单、背包以及所有“我的”能力进入正式 Web 私域路由。\n\n浏览商品\n公开浏览\n公开商城浏览提示\n\n这个公开壳层会把阅读节奏收口在分类浏览、公开商品比较和商品详情继续阅读上；购买从商品详情登录后发起，账号流程进入正式 Web 私域路由。\n\n先看内容\n商品分类、推荐商品、公开价格、时效和当前可见展示信息\n继续进入\n公开商品列表筛选与带登录购",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开商城",
+          "公开商城浏览提示",
+          "🛒 欢迎来到萝卜商城",
+          "商品分类",
+          "推荐商品",
+          "购物指南"
+        ],
+        "iframeCount": 0,
+        "linkCount": 18,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "商城 - Radish",
+        "url": "https://localhost:5000/shop"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "商品列表",
+      "path": "/shop/products",
+      "info": {
+        "bodyLength": 365,
+        "bodySample": "商\n萝卜商城\n公开商城\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开浏览\n\n公开浏览\n公开商品\n\n公开商城承载首页、商品列表和商品详情浏览；商品详情可继续登录购买，订单、背包以及所有“我的”能力进入正式 Web 私域路由。\n\n浏览商品\n公开浏览\n公开商城浏览提示\n\n这个公开壳层会把阅读节奏收口在分类浏览、公开商品比较和商品详情继续阅读上；购买从商品详情登录后发起，账号流程进入正式 Web 私域路由。\n\n先看内容\n商品分类、推荐商品、公开价格、时效和当前可见展示信息\n继续进入\n公开商品列表筛选与带登录购",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "公开商品",
+          "公开商城浏览提示",
+          "全部商品"
+        ],
+        "iframeCount": 0,
+        "linkCount": 18,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "商品 - Radish 商城",
+        "url": "https://localhost:5000/shop/products"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "商品详情",
+      "path": "/shop/product/100061",
+      "info": {
+        "bodyLength": 643,
+        "bodySample": "商\n萝卜商城\n公开商城\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开浏览\n\n公开浏览\n商品详情\n\n公开商城承载首页、商品列表和商品详情浏览；商品详情可继续登录购买，订单、背包以及所有“我的”能力进入正式 Web 私域路由。\n\n浏览商品\n公开浏览\n公开商品详情阅读提示\n\n商品详情页用于确认商品展示、价格、库存、时效和说明；登录后可继续购买，购买成功后回到正式 Web 订单详情页。\n\n详情重点\n商品展示、价格、库存、时效、权益说明与详情备注\n继续去向\n从当前商品登录购买，或优先回到当前公开来源\n工作台边界",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "商品详情",
+          "公开商品详情阅读提示",
+          "改名卡",
+          "从当前商品购买",
+          "商品详情",
+          "购买须知"
+        ],
+        "iframeCount": 0,
+        "linkCount": 15,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "商城商品 - Radish 商城",
+        "url": "https://localhost:5000/shop/product/100061"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "榜单",
+      "path": "/leaderboard",
+      "info": {
+        "bodyLength": 815,
+        "bodySample": "榜\n排行榜\nPUBLIC LEADERBOARD\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n公开只读\n等级排行\n\n公开榜单会把排行阅读、分页和个人主页跳转留在公开壳层里，不把桌面工作台里的交互搬进公开路由。\n\n我的排名：#1\n总经验值\n复制链接\n等级排行\n萝卜余额榜\n萝卜花销榜\n购买达人榜\n热门商品榜\n发帖达人榜\n评论达人榜\n人气排行榜\n\n按用户总经验值排序\n\n公开阅读\n\n经验体系公开展示\n\n在阅读经验排行之前，这里先解释公开榜单里的经验含义。当前只保留排行依据、等级提示和公开边界说明，不开",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "等级排行",
+          "经验体系公开展示"
+        ],
+        "iframeCount": 0,
+        "linkCount": 22,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "等级排行 · 排行榜",
+        "url": "https://localhost:5000/leaderboard"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "榜单类型",
+      "path": "/leaderboard/balance",
+      "info": {
+        "bodyLength": 425,
+        "bodySample": "榜\n排行榜\nPUBLIC LEADERBOARD\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n\n公开阅读\n\n公开只读\n萝卜余额榜\n\n公开榜单会把排行阅读、分页和个人主页跳转留在公开壳层里，不把桌面工作台里的交互搬进公开路由。\n\n我的排名：#1\n萝卜余额\n复制链接\n等级排行\n萝卜余额榜\n萝卜花销榜\n购买达人榜\n热门商品榜\n发帖达人榜\n评论达人榜\n人气排行榜\n\n按用户当前萝卜币余额排序\n\n公开阅读\n公开用户榜单阅读提示\n\n这些榜单会把阅读节奏收口在公开比较和作者上下文上。你可以先比较公开可见的活跃信号，再继续进",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "萝卜余额榜",
+          "公开用户榜单阅读提示"
+        ],
+        "iframeCount": 0,
+        "linkCount": 22,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "萝卜余额榜 · 排行榜",
+        "url": "https://localhost:5000/leaderboard/balance"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "公开主页",
+      "path": "/u/usr_019ef99117377efb85389bfe6d9d55a5",
+      "info": {
+        "bodyLength": 740,
+        "bodySample": "人\n公开主页\nPUBLIC PROFILE\n社区发现\n论坛\n文档\n榜单\n商城\n我的圈子\n工作台\n公开只读\n复制链接\n返回社区发现\n\n公开内容壳层当前只承载基础资料、帖子与评论阅读。\n\nAdmin\n\nAdmin#2\n\n加入时间：2026-06-25 04:18:15\n\n当前查看的是用户主页，只提供公开内容浏览。\n\n帖子\n1\n评论\n0\n获赞\n0\n阅读重点\n先看公开资料，再继续阅读公开帖子\n\n这个路由会把公开主页的阅读节奏收口在基础身份、公开帖子和公开评论上。它的作用是先帮助访客理解作者上下文，再决定是否继续进入公开帖子",
+        "buttonCount": 2,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "Admin",
+          "先看公开资料，再继续阅读公开帖子",
+          "这些能力仍然不在公开主页里",
+          "公开内容"
+        ],
+        "iframeCount": 0,
+        "linkCount": 16,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "Admin#2 · 公开主页",
+        "url": "https://localhost:5000/u/usr_019ef99117377efb85389bfe6d9d55a5"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "pc",
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "group": "public",
+      "name": "工作台",
+      "path": "/workbench",
+      "info": {
+        "bodyLength": 605,
+        "bodySample": "台\n工作台\n功能总入口\n工作台\n我的状态\n资产\n创作\n消息\n社区发现\n我的圈子\n\nP3-12 Web 完全化\n\n正式 Web 功能总入口\n\n集中进入公开阅读、登录态私域、治理后台和保留的 WebOS 桌面版入口。\n\n我的状态\n消息\n公开阅读\n\n不进入桌面壳层，直接承接公开浏览与继续阅读。\n\n社区发现\n公开可用\n从 Web 默认入口浏览帖子、文档、榜单和商城推荐。\n打开\n论坛\n公开可用\n阅读公开帖子，也可进入登录态作者流程。\n阅读\n创作\n文档\n公开可用\n阅读公开文档，并进入个人文档作者区。\n阅读\n我的\n创作\n排行榜\n",
+        "buttonCount": 1,
+        "clientHeight": 1080,
+        "clientWidth": 1920,
+        "hasRootChildren": true,
+        "headings": [
+          "正式 Web 功能总入口",
+          "公开阅读",
+          "登录态私域",
+          "治理与兼容"
+        ],
+        "iframeCount": 0,
+        "linkCount": 47,
+        "scrollHeight": 1080,
+        "scrollWidth": 1920,
+        "tableCount": 0,
+        "title": "工作台 · Radish",
+        "url": "https://localhost:5000/workbench"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "默认入口",
+      "path": "/",
+      "info": {
+        "bodyLength": 3422,
+        "bodySample": "览\n社区发现\n发现\n论坛\n文档\n工作台\n我的\n\nP3-10\n\n公开只读\n社区发现\n\n从同一条 Web-first 内容流浏览 Radish 的公开帖子、可读文档、商品推荐、热门标签与榜单入口。\n\n进入 forum\n搜索 docs\n浏览商城\n复制链接\nforum 推荐\n可继续进入\n1\n\n当前有 1 条公开帖子可作为第一跳阅读入口。\n\n下一步会进入\n/forum 最新阅读链路\n先看本页区块\n直接进入公开页\ndocs 推荐\n可继续进入\n5\n\n当前有 5 篇可读文档已进入首屏摘要分发。\n\n下一步会进入\n/docs 目录阅读",
+        "buttonCount": 8,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "社区发现",
+          "最新公开内容流",
+          "先判断哪条阅读路径更值",
+          "继续保留来源返回",
+          "全程停留在公开只读",
+          "公开入口导航"
+        ],
+        "iframeCount": 0,
+        "linkCount": 54,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "社区发现 - Radish",
+        "url": "https://localhost:5000/discover"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "发现",
+      "path": "/discover",
+      "info": {
+        "bodyLength": 3422,
+        "bodySample": "览\n社区发现\n发现\n论坛\n文档\n工作台\n我的\n\nP3-10\n\n公开只读\n社区发现\n\n从同一条 Web-first 内容流浏览 Radish 的公开帖子、可读文档、商品推荐、热门标签与榜单入口。\n\n进入 forum\n搜索 docs\n浏览商城\n复制链接\nforum 推荐\n可继续进入\n1\n\n当前有 1 条公开帖子可作为第一跳阅读入口。\n\n下一步会进入\n/forum 最新阅读链路\n先看本页区块\n直接进入公开页\ndocs 推荐\n可继续进入\n5\n\n当前有 5 篇可读文档已进入首屏摘要分发。\n\n下一步会进入\n/docs 目录阅读",
+        "buttonCount": 8,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "社区发现",
+          "最新公开内容流",
+          "先判断哪条阅读路径更值",
+          "继续保留来源返回",
+          "全程停留在公开只读",
+          "公开入口导航"
+        ],
+        "iframeCount": 0,
+        "linkCount": 54,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "社区发现 - Radish",
+        "url": "https://localhost:5000/discover"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "论坛列表",
+      "path": "/forum",
+      "info": {
+        "bodyLength": 360,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n全部帖子\n\n公开内容壳层承载 forum 阅读入口，覆盖列表浏览与帖子详情阅读，不引入桌面窗口交互。\n\n搜索\n全部帖子\n最新\n最热\n公开阅读\n公开 forum 列表阅读提示\n\n这条公开路由会先把阅读节奏收口在帖子标题、标签、作者和近期互动线索上，再继续进入帖子详情与其他公开阅读路径，不会重新打开桌面工作台交互。\n\n先看内容\n公开帖子里的标题、分类、标签、作者线索和最近互动摘要\n继续进入\n帖子详情、公开个人页、公开标签页，以及带来源回记的结构化列表\n不在这里\n发",
+        "buttonCount": 4,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "全部帖子",
+          "公开 forum 列表阅读提示"
+        ],
+        "iframeCount": 0,
+        "linkCount": 20,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "论坛 · 全部帖子",
+        "url": "https://localhost:5000/forum"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "论坛搜索",
+      "path": "/forum/search",
+      "info": {
+        "bodyLength": 376,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n返回列表\n公开浏览\n公开搜索\n\n公开搜索会把关键词检索、排序、时间范围过滤、分页与帖子详情阅读留在 forum 公开壳层里。\n\n关键词：全部公开帖子\n排序：最新\n时间：全部\n公开阅读\n公开 forum 搜索阅读提示\n\n公开搜索会把阅读节奏收口在关键词检索、结果比较、时间过滤，以及打开帖子后稳定回到同一份搜索结果上。\n\n先看内容\n关键词、时间范围、排序方式、结果数量，以及当前可见的公开帖子线索\n继续进入\n帖子详情、公开个人页、公开标签，以及稳定返回同一搜索上下文",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开搜索",
+          "公开 forum 搜索阅读提示",
+          "先输入关键词或切换时间范围"
+        ],
+        "iframeCount": 0,
+        "linkCount": 21,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "公开讨论 - 论坛搜索 - Radish",
+        "url": "https://localhost:5000/forum/search"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "问答流",
+      "path": "/forum/question",
+      "info": {
+        "bodyLength": 304,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n返回列表\n公开浏览\n公开问答\n\n这个公开路由会聚合只读问答帖，便于继续浏览提问、回答和详情返回链路，不把桌面交互带入公开壳层。\n\n搜索\n全部帖子\n最新\n待解决\n答\n公开阅读\n公开问答阅读提示\n\n问答公开页会把浏览重点收口在问题主题、回答进度和详情继续阅读上，不会从公开壳层重新带出回答提交等桌面交互。\n\n先看内容\n问题标题、待解决或已回答状态、回答数，以及最近公开活跃线索\n继续进入\n问答详情、作者公开主页、相关标签，以及稳定返回同一问答列表\n不在这里\n提问、回答",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开问答",
+          "公开问答阅读提示",
+          "暂时还没有公开问答"
+        ],
+        "iframeCount": 0,
+        "linkCount": 18,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "问答 - Radish 论坛",
+        "url": "https://localhost:5000/forum/question"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "投票流",
+      "path": "/forum/poll",
+      "info": {
+        "bodyLength": 309,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n返回列表\n公开浏览\n公开投票\n\n这个公开路由会聚合只读投票帖，便于继续浏览投票主题和详情返回链路，不把桌面交互带入公开壳层。\n\n搜索\n全部帖子\n最新\n最热\n票\n即将截止\n公开阅读\n公开投票阅读提示\n\n投票公开页会把浏览重点收口在投票主题、当前票数信号和截止时间线索上，不会从公开壳层重新带出投票提交或投票治理流程。\n\n先看内容\n投票主题、票数、截止时间提示，以及当前公开热度线索\n继续进入\n投票详情、作者公开主页、相关标签，以及稳定返回同一投票列表\n不在这里\n发起",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开投票",
+          "公开投票阅读提示",
+          "暂时还没有公开投票"
+        ],
+        "iframeCount": 0,
+        "linkCount": 19,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "投票 - Radish 论坛",
+        "url": "https://localhost:5000/forum/poll"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "抽奖流",
+      "path": "/forum/lottery",
+      "info": {
+        "bodyLength": 303,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n返回列表\n公开浏览\n公开抽奖\n\n这个公开路由会聚合只读抽奖帖，便于继续浏览奖品主题和详情返回链路，不把桌面交互带入公开壳层。\n\n搜索\n全部帖子\n最新\n最热\n公开阅读\n公开抽奖阅读提示\n\n抽奖公开页会把浏览重点收口在奖品主题、当前公开热度和详情继续阅读上，不会从公开壳层重新带出参与抽奖或结果领取等桌面动作。\n\n先看内容\n抽奖主题、当前公开热度，以及可见的奖品阅读线索\n继续进入\n抽奖详情、作者公开主页、相关标签，以及稳定返回同一抽奖列表\n不在这里\n发起抽奖、参与抽",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开抽奖",
+          "公开抽奖阅读提示",
+          "暂时还没有公开抽奖"
+        ],
+        "iframeCount": 0,
+        "linkCount": 17,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "抽奖 - Radish 论坛",
+        "url": "https://localhost:5000/forum/lottery"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "论坛详情",
+      "path": "/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4",
+      "info": {
+        "bodyLength": 763,
+        "bodySample": "论\n论坛\n发现\n论坛\n文档\n工作台\n我的\n返回论坛\n复制链接\n公开浏览\n浏览 21\n0 条轻回应\n0 条讨论\n测试帖子\n作者：Admin\n· 2026-06-27 20:22:07\n· 浏览 21\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n\n\n\n测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子测试帖子\n\n碎碎念\n❤️ 0\n💬 0 条讨论\n编辑\n历史\n公开阅读\n公开",
+        "buttonCount": 16,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "测试帖子",
+          "公开帖子详情阅读提示",
+          "轻互动入口",
+          "轻回应",
+          "讨论区"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "测试帖子 - Radish 论坛",
+        "url": "https://localhost:5000/forum/post/pst_019f0907b1c37ef5a7a8fbbafd65afb4"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "文档列表",
+      "path": "/docs",
+      "info": {
+        "bodyLength": 301,
+        "bodySample": "文\n文档\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n公开阅读\n\n文档阅读会留在 docs 公开壳层里。这个入口只保留层级浏览和 Markdown 阅读，不承载桌面工作台里的治理操作。\n\n文档作者台\n搜索\n公开阅读\n公开 docs 目录阅读提示\n\n这条公开路由会把阅读节奏收口在目录层级、可阅读文档卡片，以及继续进入搜索或详情上，不会从公开壳层重新带出桌面治理流程。\n\n先看目录\n目录层级、可阅读卡片、摘要，以及当前公开阅读范围\n继续进入\n公开搜索、只读文档详情，以及稳定返回同一份目录浏览上下文\n不在这里\n编辑、发布",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开阅读",
+          "公开 docs 目录阅读提示",
+          "公开文档暂时无法加载"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "文档 - Radish",
+        "url": "https://localhost:5000/docs"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "文档详情",
+      "path": "/docs/index",
+      "info": {
+        "bodyLength": 60,
+        "bodySample": "文\n文档\n发现\n论坛\n文档\n工作台\n我的\n返回目录\n复制链接\n暂时无法打开这篇文档\n\nHTTP 429\n\n重试\n返回目录",
+        "buttonCount": 3,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "暂时无法打开这篇文档"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "index - Radish 文档",
+        "url": "https://localhost:5000/docs/index"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": []
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "商城首页",
+      "path": "/shop",
+      "info": {
+        "bodyLength": 311,
+        "bodySample": "商\n萝卜商城\n发现\n论坛\n文档\n工作台\n我的\n\n公开浏览\n\n公开浏览\n公开商城\n\n公开商城承载首页、商品列表和商品详情浏览；商品详情可继续登录购买，订单、背包以及所有“我的”能力进入正式 Web 私域路由。\n\n浏览商品\n公开浏览\n公开商城浏览提示\n\n这个公开壳层会把阅读节奏收口在分类浏览、公开商品比较和商品详情继续阅读上；购买从商品详情登录后发起，账号流程进入正式 Web 私域路由。\n\n先看内容\n商品分类、推荐商品、公开价格、时效和当前可见展示信息\n继续进入\n公开商品列表筛选与带登录购买入口的商品详情\n不在这里\n订",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开商城",
+          "公开商城浏览提示",
+          "公开商城暂时无法加载"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "商城 - Radish",
+        "url": "https://localhost:5000/shop"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:11:59] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:11:59.715Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "商品列表",
+      "path": "/shop/products",
+      "info": {
+        "bodyLength": 308,
+        "bodySample": "商\n萝卜商城\n发现\n论坛\n文档\n工作台\n我的\n\n公开浏览\n\n公开浏览\n公开商品\n\n公开商城承载首页、商品列表和商品详情浏览；商品详情可继续登录购买，订单、背包以及所有“我的”能力进入正式 Web 私域路由。\n\n浏览商品\n公开浏览\n公开商城浏览提示\n\n这个公开壳层会把阅读节奏收口在分类浏览、公开商品比较和商品详情继续阅读上；购买从商品详情登录后发起，账号流程进入正式 Web 私域路由。\n\n先看内容\n商品分类、推荐商品、公开价格、时效和当前可见展示信息\n继续进入\n公开商品列表筛选与带登录购买入口的商品详情\n不在这里\n订",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开商品",
+          "公开商城浏览提示",
+          "公开商城暂时无法加载"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "商品 - Radish 商城",
+        "url": "https://localhost:5000/shop/products"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:11:59] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:11:59.715Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "商品详情",
+      "path": "/shop/product/100061",
+      "info": {
+        "bodyLength": 307,
+        "bodySample": "商\n萝卜商城\n发现\n论坛\n文档\n工作台\n我的\n\n公开浏览\n\n公开浏览\n商品详情\n\n公开商城承载首页、商品列表和商品详情浏览；商品详情可继续登录购买，订单、背包以及所有“我的”能力进入正式 Web 私域路由。\n\n浏览商品\n公开浏览\n公开商品详情阅读提示\n\n商品详情页用于确认商品展示、价格、库存、时效和说明；登录后可继续购买，购买成功后回到正式 Web 订单详情页。\n\n详情重点\n商品展示、价格、库存、时效、权益说明与详情备注\n继续去向\n从当前商品登录购买，或优先回到当前公开来源\n工作台边界\n订单、背包使用和账号专属动作",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "商品详情",
+          "公开商品详情阅读提示",
+          "公开商城暂时无法加载"
+        ],
+        "iframeCount": 0,
+        "linkCount": 14,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "商城商品 - Radish 商城",
+        "url": "https://localhost:5000/shop/product/100061"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:11:59] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:11:59.715Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "榜单",
+      "path": "/leaderboard",
+      "info": {
+        "bodyLength": 744,
+        "bodySample": "榜\n排行榜\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n公开只读\n经验排行\n\n公开榜单会把排行阅读、分页和个人主页跳转留在公开壳层里，不把桌面工作台里的交互搬进公开路由。\n\n经验值\n复制链接\n经验排行\n胡萝卜余额\n累计消费\n购买次数\n热门商品\n发帖达人\n评论达人\n人气排行\n\n查看当前等级与累计经验的公开排行榜。\n\n公开阅读\n\n经验体系公开展示\n\n在阅读经验排行之前，这里先解释公开榜单里的经验含义。当前只保留排行依据、等级提示和公开边界说明，不开放个人经验明细。\n\n阅读重点\n先读公开排行，再看清只读边界\n\n默认经验",
+        "buttonCount": 3,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "经验排行",
+          "经验体系公开展示",
+          "公开榜单暂时无法加载"
+        ],
+        "iframeCount": 0,
+        "linkCount": 20,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "experience 榜单 - Radish",
+        "url": "https://localhost:5000/leaderboard"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:11:59] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:11:59.715Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "榜单类型",
+      "path": "/leaderboard/balance",
+      "info": {
+        "bodyLength": 347,
+        "bodySample": "榜\n排行榜\n发现\n论坛\n文档\n工作台\n我的\n\n公开阅读\n\n公开只读\n胡萝卜余额\n\n公开榜单会把排行阅读、分页和个人主页跳转留在公开壳层里，不把桌面工作台里的交互搬进公开路由。\n\n余额\n复制链接\n经验排行\n胡萝卜余额\n累计消费\n购买次数\n热门商品\n发帖达人\n评论达人\n人气排行\n\n查看当前胡萝卜余额最高的用户排行。\n\n公开阅读\n公开用户榜单阅读提示\n\n这些榜单会把阅读节奏收口在公开比较和作者上下文上。你可以先比较公开可见的活跃信号，再继续进入公开个人页，但不会从这里重新打开账号明细页。\n\n先看比较\n公开可见的排行信号与",
+        "buttonCount": 3,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "胡萝卜余额",
+          "公开用户榜单阅读提示",
+          "公开榜单暂时无法加载"
+        ],
+        "iframeCount": 0,
+        "linkCount": 20,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "balance 榜单 - Radish",
+        "url": "https://localhost:5000/leaderboard/balance"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:11:59] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:11:59.715Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "公开主页",
+      "path": "/u/usr_019ef99117377efb85389bfe6d9d55a5",
+      "info": {
+        "bodyLength": 52,
+        "bodySample": "人\n公开主页\n发现\n论坛\n文档\n工作台\n我的\n公开主页加载失败\n\nHTTP 429\n\n重试\n返回社区发现",
+        "buttonCount": 2,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "公开主页加载失败"
+        ],
+        "iframeCount": 0,
+        "linkCount": 13,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "公开主页",
+        "url": "https://localhost:5000/u/usr_019ef99117377efb85389bfe6d9d55a5"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    },
+    {
+      "batch": "public",
+      "view": "mobile",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "group": "public",
+      "name": "工作台",
+      "path": "/workbench",
+      "info": {
+        "bodyLength": 587,
+        "bodySample": "台\n工作台\n工作台\n资产\n创作\n消息\n我的\n\nP3-12 Web 完全化\n\n正式 Web 功能总入口\n\n集中进入公开阅读、登录态私域、治理后台和保留的 WebOS 桌面版入口。\n\n我的状态\n消息\n公开阅读\n\n不进入桌面壳层，直接承接公开浏览与继续阅读。\n\n社区发现\n公开可用\n从 Web 默认入口浏览帖子、文档、榜单和商城推荐。\n打开\n论坛\n公开可用\n阅读公开帖子，也可进入登录态作者流程。\n阅读\n创作\n文档\n公开可用\n阅读公开文档，并进入个人文档作者区。\n阅读\n我的\n创作\n排行榜\n公开可用\n查看经验、发帖和商品等公开",
+        "buttonCount": 1,
+        "clientHeight": 844,
+        "clientWidth": 390,
+        "hasRootChildren": true,
+        "headings": [
+          "正式 Web 功能总入口",
+          "公开阅读",
+          "登录态私域",
+          "治理与兼容"
+        ],
+        "iframeCount": 0,
+        "linkCount": 47,
+        "scrollHeight": 844,
+        "scrollWidth": 390,
+        "tableCount": 0,
+        "title": "工作台 · Radish",
+        "url": "https://localhost:5000/workbench"
+      },
+      "error": null,
+      "detected": [],
+      "recentLogs": [
+        {
+          "level": "warn",
+          "message": "[21:12:01] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:01.717Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:03] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:03.184Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:05] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:05.108Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:06] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:06.249Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        },
+        {
+          "level": "warn",
+          "message": "[21:12:07] [WARN][AuthBootstrap] 用户信息初始化失败，保留现有登录态: HTTP 429 ",
+          "timestamp": "2026-07-01T13:12:07.683Z",
+          "url": "https://localhost:5000/src/utils/logger.ts"
+        }
+      ]
+    }
+  ]
+}

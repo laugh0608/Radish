@@ -488,14 +488,16 @@ export const UserDetail = () => {
                   label: '萝卜币流水',
                   children: (
                     canViewCoins ? (
-                      <Table
-                        columns={coinColumns}
-                        dataSource={coinTransactions}
-                        rowKey="voId"
-                        loading={coinLoading}
-                        pagination={{ pageSize: 10 }}
-                        scroll={{ x: 760 }}
-                      />
+                      <div className="admin-table-scroll-region">
+                        <Table
+                          columns={coinColumns}
+                          dataSource={coinTransactions}
+                          rowKey="voId"
+                          loading={coinLoading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 760 }}
+                        />
+                      </div>
                     ) : (
                       <Empty description="没有查看萝卜币流水的权限" />
                     )
@@ -506,14 +508,16 @@ export const UserDetail = () => {
                   label: '购买记录',
                   children: (
                     canViewOrders ? (
-                      <Table
-                        columns={orderColumns}
-                        dataSource={orders}
-                        rowKey="voId"
-                        loading={orderLoading}
-                        pagination={{ pageSize: 10 }}
-                        scroll={{ x: 900 }}
-                      />
+                      <div className="admin-table-scroll-region">
+                        <Table
+                          columns={orderColumns}
+                          dataSource={orders}
+                          rowKey="voId"
+                          loading={orderLoading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 900 }}
+                        />
+                      </div>
                     ) : (
                       <Empty description="没有查看购买记录的权限" />
                     )

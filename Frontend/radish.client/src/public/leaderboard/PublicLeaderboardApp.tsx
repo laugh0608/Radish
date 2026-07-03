@@ -26,6 +26,7 @@ import { buildPublicProfilePath } from '../profileRouteState';
 import { buildPublicShopPath } from '../shopRouteState';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import styles from './PublicLeaderboardApp.module.css';
 
 interface PublicLeaderboardAppProps {
@@ -193,29 +194,27 @@ const productLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
 ];
 
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
-  const icon = tone === 'loading'
+  const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
     : tone === 'empty'
       ? 'mdi:trophy-outline'
       : 'mdi:alert-circle-outline';
+  const actions: WebStateSlotAction[] = primaryAction
+    ? [{
+      label: primaryAction.label,
+      kind: 'primary',
+      onClick: () => primaryAction.onClick(),
+    }]
+    : [];
 
   return (
-    <div className={styles.statusCard} data-tone={tone}>
-      <div className={styles.statusIcon}>
-        <Icon icon={icon} size={22} />
-      </div>
-      <div className={styles.statusBody}>
-        <h2 className={styles.statusTitle}>{title}</h2>
-        <p className={styles.statusDescription}>{description}</p>
-        {primaryAction && (
-          <div className={styles.statusActions}>
-            <button type="button" className={styles.primaryButton} onClick={primaryAction.onClick}>
-              {primaryAction.label}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+    <WebStateSlot
+      tone={tone}
+      title={title}
+      description={description}
+      icon={resolvedIcon}
+      actions={actions}
+    />
   );
 }
 
@@ -575,90 +574,6 @@ export const PublicLeaderboardApp = ({
             <p className={styles.toolbarHint}>{activeTypeConfig.voDescription}</p>
           </div>
 
-          {showExperienceGuide && (
-            <section className={styles.experienceGuideSection} aria-label={t('leaderboard.public.experienceGuide.title')}>
-              <div className={styles.experienceGuideHeader}>
-                <div className={styles.experienceGuideHeading}>
-                  <p className={styles.experienceGuideKicker}>{t('leaderboard.public.experienceGuide.kicker')}</p>
-                  <h2 className={styles.experienceGuideTitle}>{t('leaderboard.public.experienceGuide.title')}</h2>
-                </div>
-                <p className={styles.experienceGuideIntro}>{t('leaderboard.public.experienceGuide.intro')}</p>
-              </div>
-
-              <div className={styles.experienceGuideSummary}>
-                <div className={styles.experienceGuideSummaryCard}>
-                  <div className={styles.experienceGuideSummaryHeading}>
-                    <span className={styles.experienceGuideSummaryLabel}>
-                      {t('leaderboard.public.experienceGuide.summaryLabel')}
-                    </span>
-                    <h3 className={styles.experienceGuideSummaryTitle}>
-                      {t('leaderboard.public.experienceGuide.summaryTitle')}
-                    </h3>
-                  </div>
-                  <p className={styles.experienceGuideSummaryDescription}>
-                    {t('leaderboard.public.experienceGuide.summaryDescription')}
-                  </p>
-
-                  <div className={styles.experienceGuideFocusRow}>
-                    {experienceGuideFocusItems.map((item) => (
-                      <article key={item.labelKey} className={styles.experienceGuideFocusChip}>
-                        <span className={styles.experienceGuideFocusLabel}>{t(item.labelKey)}</span>
-                        <span className={styles.experienceGuideFocusValue}>{t(item.valueKey)}</span>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <aside className={styles.experienceGuideBoundaryPanel}>
-                  <span className={styles.experienceGuideBoundaryLabel}>
-                    {t('leaderboard.public.experienceGuide.boundaryPanelLabel')}
-                  </span>
-                  <h3 className={styles.experienceGuideBoundaryTitle}>
-                    {t('leaderboard.public.experienceGuide.boundaryPanelTitle')}
-                  </h3>
-                  <p className={styles.experienceGuideBoundaryDescription}>
-                    {t('leaderboard.public.experienceGuide.boundaryPanelDescription')}
-                  </p>
-                  <ul className={styles.experienceGuideBoundaryList}>
-                    {experienceGuideBoundaryItems.map((itemKey) => (
-                      <li key={itemKey} className={styles.experienceGuideBoundaryItem}>
-                        {t(itemKey)}
-                      </li>
-                    ))}
-                  </ul>
-                </aside>
-              </div>
-
-              <div className={styles.experienceGuideGrid}>
-                {experienceGuideItems.map((item) => (
-                  <article key={item.titleKey} className={styles.experienceGuideCard}>
-                    <span className={styles.experienceGuideIcon} aria-hidden="true">
-                      <Icon icon={item.icon} size={18} />
-                    </span>
-                    <div className={styles.experienceGuideBody}>
-                      <h3 className={styles.experienceGuideCardTitle}>{t(item.titleKey)}</h3>
-                      <p className={styles.experienceGuideCardDescription}>{t(item.descriptionKey)}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {lightweightGuide && (
-            <div className={styles.lightweightGuideSection}>
-              <PublicReadingGuide
-                label={t('leaderboard.public.lightweightGuide.label')}
-                title={t(lightweightGuide.titleKey)}
-                description={t(lightweightGuide.descriptionKey)}
-                items={lightweightGuide.focusItems.map((item) => ({
-                  label: t(item.labelKey),
-                  value: t(item.valueKey),
-                }))}
-              />
-            </div>
-          )}
-
           {typesError && (
             <div className={styles.inlineNotice}>
               <span className={styles.inlineNoticeText}>{t('leaderboard.public.typesFallback')}</span>
@@ -891,6 +806,90 @@ export const PublicLeaderboardApp = ({
                   {t('common.nextPage')}
                 </a>
               )}
+            </div>
+          )}
+
+          {showExperienceGuide && (
+            <section className={styles.experienceGuideSection} aria-label={t('leaderboard.public.experienceGuide.title')}>
+              <div className={styles.experienceGuideHeader}>
+                <div className={styles.experienceGuideHeading}>
+                  <p className={styles.experienceGuideKicker}>{t('leaderboard.public.experienceGuide.kicker')}</p>
+                  <h2 className={styles.experienceGuideTitle}>{t('leaderboard.public.experienceGuide.title')}</h2>
+                </div>
+                <p className={styles.experienceGuideIntro}>{t('leaderboard.public.experienceGuide.intro')}</p>
+              </div>
+
+              <div className={styles.experienceGuideSummary}>
+                <div className={styles.experienceGuideSummaryCard}>
+                  <div className={styles.experienceGuideSummaryHeading}>
+                    <span className={styles.experienceGuideSummaryLabel}>
+                      {t('leaderboard.public.experienceGuide.summaryLabel')}
+                    </span>
+                    <h3 className={styles.experienceGuideSummaryTitle}>
+                      {t('leaderboard.public.experienceGuide.summaryTitle')}
+                    </h3>
+                  </div>
+                  <p className={styles.experienceGuideSummaryDescription}>
+                    {t('leaderboard.public.experienceGuide.summaryDescription')}
+                  </p>
+
+                  <div className={styles.experienceGuideFocusRow}>
+                    {experienceGuideFocusItems.map((item) => (
+                      <article key={item.labelKey} className={styles.experienceGuideFocusChip}>
+                        <span className={styles.experienceGuideFocusLabel}>{t(item.labelKey)}</span>
+                        <span className={styles.experienceGuideFocusValue}>{t(item.valueKey)}</span>
+                      </article>
+                    ))}
+                  </div>
+                </div>
+
+                <aside className={styles.experienceGuideBoundaryPanel}>
+                  <span className={styles.experienceGuideBoundaryLabel}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelLabel')}
+                  </span>
+                  <h3 className={styles.experienceGuideBoundaryTitle}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelTitle')}
+                  </h3>
+                  <p className={styles.experienceGuideBoundaryDescription}>
+                    {t('leaderboard.public.experienceGuide.boundaryPanelDescription')}
+                  </p>
+                  <ul className={styles.experienceGuideBoundaryList}>
+                    {experienceGuideBoundaryItems.map((itemKey) => (
+                      <li key={itemKey} className={styles.experienceGuideBoundaryItem}>
+                        {t(itemKey)}
+                      </li>
+                    ))}
+                  </ul>
+                </aside>
+              </div>
+
+              <div className={styles.experienceGuideGrid}>
+                {experienceGuideItems.map((item) => (
+                  <article key={item.titleKey} className={styles.experienceGuideCard}>
+                    <span className={styles.experienceGuideIcon} aria-hidden="true">
+                      <Icon icon={item.icon} size={18} />
+                    </span>
+                    <div className={styles.experienceGuideBody}>
+                      <h3 className={styles.experienceGuideCardTitle}>{t(item.titleKey)}</h3>
+                      <p className={styles.experienceGuideCardDescription}>{t(item.descriptionKey)}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {lightweightGuide && (
+            <div className={styles.lightweightGuideSection}>
+              <PublicReadingGuide
+                label={t('leaderboard.public.lightweightGuide.label')}
+                title={t(lightweightGuide.titleKey)}
+                description={t(lightweightGuide.descriptionKey)}
+                items={lightweightGuide.focusItems.map((item) => ({
+                  label: t(item.labelKey),
+                  value: t(item.valueKey),
+                }))}
+              />
             </div>
           )}
         </section>

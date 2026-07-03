@@ -1,0 +1,24 @@
+{
+  "orderDetail": {
+    "path": "/console/orders?orderId=931200000001&openDetail=1",
+    "visible": true,
+    "overflow": false
+  },
+  "systemHistory": {
+    "path": "/console/system-config",
+    "visible": true,
+    "overflow": false
+  },
+  "userDetail": {
+    "path": "/console/users/20001",
+    "visible": true,
+    "tableCount": 3,
+    "overflow": false
+  },
+  "rolePermissions": {
+    "path": "/console/roles/10001/permissions",
+    "visible": true,
+    "tableCount": 1,
+    "overflow": false
+  }
+}

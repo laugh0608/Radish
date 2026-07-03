@@ -14,7 +14,7 @@
 
 .main {
   flex: 1 0 auto;
-  width: min(1040px, calc(100vw - 24px));
+  width: min(var(--rx-content-narrow-width), calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 40px;
   display: flex;
@@ -929,7 +929,8 @@
 @media (max-width: 760px) {
   .experienceGuideSection {
     margin: 16px 16px 0;
-    padding: 16px;
+    padding: 14px;
+    gap: 12px;
   }
 
   .lightweightGuideSection {
@@ -937,9 +938,29 @@
   }
 
   .experienceGuideSummary,
-  .experienceGuideFocusRow,
   .experienceGuideGrid {
     grid-template-columns: 1fr;
+  }
+
+  .experienceGuideFocusRow {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .experienceGuideSummaryCard,
+  .experienceGuideBoundaryPanel,
+  .experienceGuideCard,
+  .experienceGuideFocusChip {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .experienceGuideCardDescription,
+  .experienceGuideIntro,
+  .experienceGuideSummaryDescription,
+  .experienceGuideBoundaryDescription,
+  .experienceGuideBoundaryItem {
+    line-height: 1.55;
   }
 
   .listItem {
@@ -996,7 +1017,14 @@
 }
 
 @media (max-width: 480px) {
-  .listItem {
+  .productListItem {
+    grid-template-columns: 44px minmax(0, 1fr);
+    align-items: start;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .listItem:not(.productListItem) {
     grid-template-columns: 52px 48px minmax(0, 1fr);
     align-items: start;
   }
@@ -1006,8 +1034,21 @@
     padding: 14px 16px;
   }
 
+  .productListItem .productMedia {
+    display: none;
+  }
+
+  .productListItem .itemBody {
+    grid-column: 2;
+  }
+
   .productListItem .itemMetric {
-    grid-column: 3;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
   }
 
   .userHeaderRow {
@@ -1071,10 +1112,27 @@
 @media (max-width: 720px) {
   .main {
     width: calc(100vw - 20px);
+    padding-top: 14px;
+    padding-bottom: var(--rx-mobile-shell-offset);
   }
 
   .sectionHeader {
-    padding: 22px 18px 16px;
+    padding: 18px 14px 14px;
+    gap: 10px;
+  }
+
+  .sectionStats {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .statChip,
+  .shareButton,
+  .shareFeedback {
+    min-height: 30px;
+    padding: 5px 10px;
+    font-size: 11px;
   }
 
   .toolbar,
@@ -1089,12 +1147,20 @@
     margin-right: 14px;
     flex-direction: column;
     align-items: flex-start;
+    padding: 10px 12px;
+    border-radius: 14px;
   }
 
   .statusCard {
-    padding: 18px;
+    padding: 14px;
     gap: 12px;
     border-radius: 20px;
+  }
+
+  .statusIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 13px;
   }
 
   .statusTitle {
@@ -1110,7 +1176,49 @@
     line-height: 1.7;
   }
 
+  .toolbar {
+    gap: 10px;
+    padding-top: 14px;
+  }
+
+  .tabRail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .tabButton {
+    justify-content: center;
+    min-width: 0;
+    min-height: 38px;
+    padding: 8px 10px;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .contentWrap {
+    padding-top: 16px;
+    padding-bottom: 18px;
+  }
+
+  .list {
+    gap: 10px;
+  }
+
   .pagination {
     justify-content: flex-start;
+    gap: 8px;
+    padding-bottom: 18px;
+  }
+
+  .paginationButton,
+  .pageNumberButton {
+    min-height: 38px;
+    padding: 8px 12px;
+  }
+
+  .pageNumbers {
+    gap: 6px;
   }
 }

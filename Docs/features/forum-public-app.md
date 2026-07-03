@@ -2,7 +2,7 @@
 
 > Radish 公开内容壳层中的 forum 阅读入口说明。
 >
-> **最后更新**: 2026.06.21
+> **最后更新**: 2026.07.02
 
 ## 定位
 
@@ -52,12 +52,15 @@ Frontend/radish.client/src/public/forum/
 - 公开详情的轻回应输入复用帖子轻回应独立模型；根评论输入复用评论发布接口但只提交 `parentId = null`。作者态发帖、回答和编辑继续复用论坛写入可靠性治理中的 `clientSubmissionId`，不能新增临时 fetch / axios 调用或绕开 `@radish/http`。
 - 公开详情登录回流只接受 `commentId` 与 `intent` 两类查询参数，且 `intent` 必须是 `comment`、`quickReply`、`answer`、`edit` 或 `history`；`commentId` 只允许配合 `comment` / `quickReply`。普通公开来源、专题返回和分享复制继续使用 `history.state` 或 canonical 路径承载。
 - 公开 forum 的列表、搜索、标签、类型流、详情返回和状态卡动作都必须输出真实公开 `href`。普通点击可以保持 SPA 导航和来源返回；新开标签、复制链接、canonical、OpenGraph、JSON-LD 与 sitemap 不读取当前标签页来源状态。
+- 公开详情工作区的“回答 / 轻回应 / 编辑 / 历史 / 评论”入口必须以真实 `href` 表达对应 intent，不再用纯按钮承担跳转语义；当前标签页普通点击可以拦截为原地展开、加载作者态或聚焦输入区，辅助点击和复制链接仍保留完整回流路径。
+- 移动公开详情首屏顺序固定为正文、帖子级轻回应、评论入口和评论区优先；阅读说明、边界提示和登录引导作为辅助区放在真实阅读与互动任务之后。
 
 ## 验证要点
 
 - 匿名打开 `/forum/post/:publicId` 可阅读正文、轻回应墙和评论树。
 - 匿名触发轻回应或根评论会进入 OIDC 登录，并在回调后回到同一公开详情的对应输入区。
 - 登录后可在公开详情直接发布轻回应和根评论；问题帖可通过受控 `answer` intent 进入回答现场，作者可通过 `edit` / `history` intent 编辑自己的帖子或查看帖子编辑历史。
+- 工作区 intent 链接支持新标签打开和复制链接；普通点击仍应保留当前页来源返回、轻回应 / 评论区聚焦和作者态现场恢复。
 - 评论回复直达 URL、点赞、投票、删除、举报治理和通知中心入口不出现在公开详情主流程。
 - 公开详情复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带 `intent`、`commentId`、来源状态或桌面窗口参数。
 - `/forum/compose` 发帖成功后回到正式 Web 帖子详情；未登录登录回流后仍留在发帖现场。

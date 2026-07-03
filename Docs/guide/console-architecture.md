@@ -57,7 +57,7 @@ Console 当前页面结构按“页面类型”选择布局基座，而不是所
 | 页面类型 | 推荐结构 | 当前典型页面 |
 | --- | --- | --- |
 | 调度总览 | 顶部指标 + 快捷操作 + 最近事项 + 右侧调度入口 | `Dashboard` |
-| 表格 CRUD | 指标条 + 筛选 / 工具条 + 表格 + 右侧摘要栏 | `UserList`、`TagList`、`CategoryList`、`RoleList`、`Applications`、`Stickers`、`Products`、`Orders` |
+| 表格 CRUD | 指标条 + 筛选 / 工具条 + 表格 + 右侧摘要栏 | `UserList`、`TagList`、`CategoryList`、`RoleList`、`Applications`、`StickerGroupList`、`StickerList`、`Products`、`Orders` |
 | 设置 / 配置 | 分组导航 + 设置列 + 影响范围摘要 | `Settings`、`UserProfile` |
 | 权限配置 | 页面标题 + 授权指标 + 主配置树 + 权限预览 | `RolePermissionPage` |
 | 详情页 | 标题卡 + 指标 + 详情分区 + 右侧摘要 | `UserDetail` |
@@ -68,10 +68,22 @@ Console 当前页面结构按“页面类型”选择布局基座，而不是所
 
 - `index.css`：Console 根级 `--console-*` token、全局 box model 和基础背景。
 - `AdminLayout.css`：后台壳层、侧栏、顶栏、内容区和响应式承载。
-- `adminFeature.css`：功能页通用结构，例如页面容器、卡片、标题区、指标、工具条、设置布局、详情布局和摘要栏。
+- `adminFeature.css`：功能页通用结构，例如页面容器、卡片、标题区、指标、工具条、表格布局、表格滚动区、分页换行、设置布局、详情布局和摘要栏。
+- `adminForm.css`：商品、分类、贴纸和贴纸分组等深层表单的上传预览、隐藏输入、全宽 / 半宽控件、弱提示和弹窗 footer 动作区。
+- `routerComponents.css`：路由认证中、无 Console 权限和懒加载状态。
 - 页面 CSS：仅放该页面不可复用的业务布局或特殊状态。
 
 新增或明显改动页面时，应先判断页面类型，再复用 `AdminLayout`、`Breadcrumb`、`adminFeature.css` 与 `--console-*` token；只有业务信息结构确实不同，才在页面 CSS 中补局部样式。页面结构调整不得改变 API、权限、表单字段、数据契约或业务语义。
+
+#### 4.1.6 表格与弹层布局约束
+
+Console 表格基于 Ant Table / `@radish/ui` 能力承载，但页面层必须负责容器和响应式边界：
+
+- 主表格页放入 `admin-table-panel`，需要右侧摘要时使用 `admin-table-layout` / `admin-table-aside`。
+- Dashboard、详情页、弹窗、抽屉或批量上传流程中的内嵌表格放入 `admin-table-scroll-region` 或页面等价滚动容器，避免撑破父级。
+- 固定右侧操作列必须给稳定宽度，操作按钮组使用可换行布局；中宽 PC 和移动窄屏下不允许按钮互相遮挡。
+- 分页器允许换行；筛选工具条和分页在窄屏下可以上下排列，但不能覆盖表格内容。
+- 表格列里的状态色、金额正负、弱文本和预格式化备注通过 CSS class 与 `--console-*` token 表达，不在 render 函数内写 inline 色值。
 
 ### 4.2 API 客户端与特殊上传场景
 
@@ -135,6 +147,7 @@ CurrentUserVo.VoPermissions
 - 资源映射：`/hangfire(/.*)?`
 - 权限键：`console.hangfire.view`
 - 校验方式：`HangfireAuthorizationFilter` 显式消费当前用户权限快照
+- React 侧通过 `SystemTools/HangfirePage` 承载外层页头、指标和 iframe 容器；该页面只负责受保护 Dashboard 外壳，不扩展为项目内任务队列、失败重试或运行审计平台
 
 这类入口后续继续沿用“显式校验权限快照”的策略。
 

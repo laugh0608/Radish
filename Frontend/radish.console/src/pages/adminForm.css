@@ -1,0 +1,61 @@
+.admin-form-hidden-input {
+  display: none;
+}
+
+.admin-form-field-stack {
+  width: 100%;
+}
+
+.admin-form-upload-preview {
+  display: flex;
+  width: 96px;
+  height: 96px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--console-text-muted);
+  background: var(--console-bg-muted);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.admin-form-upload-preview--wide {
+  width: 160px;
+}
+
+.admin-form-upload-preview--sticker {
+  width: 120px;
+  height: 120px;
+}
+
+.admin-form-upload-preview__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.admin-form-upload-preview__image--contain {
+  object-fit: contain;
+  background: var(--console-bg-surface);
+}
+
+.admin-form-control-full {
+  width: 100%;
+}
+
+.admin-form-control-half {
+  width: 50%;
+}
+
+.admin-form-help-text {
+  margin: -12px 0 16px;
+  color: var(--console-text-muted);
+  font-size: 12px;
+}
+
+.admin-form-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

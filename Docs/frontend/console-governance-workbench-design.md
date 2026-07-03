@@ -1,19 +1,62 @@
 # Console 治理工作台设计端点
 
-> 状态：`P3-8-C2` 设计实现对齐试点已覆盖首批高频历史页面，下一步进入阶段复盘与剩余页面筛查
+> 状态：`P3-12-D5` 已完成 Console 治理设计源 `P00-P18` 设计收口；`P3-12-D14-D35` 已完成 `radish.console` 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D38` 已裁决完整内部调度 / 运维 Jobs 平台后置，移动 Console 画板作为响应式验收参考；D44-D45 已补深层动作权限态与系统设置移动溢出收口
 >
-> 日期：2026-05-24（Asia/Shanghai）
+> 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 适用范围：`radish.console` 内容治理、经验治理与后续 Console 页面视觉基座。当前已完成首批治理页面结构承载，后续按设计稿编号逐步对齐，不直接重写 Console 全站。
+> 最近更新：2026-07-02（Asia/Shanghai）
+>
+> 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
+>
+> `2026-06-28` 更新：移动端 Console 底栏已对齐共享基座的浮动胶囊样式，固定为 `总览 / 治理 / 资产 / 权限 / 运维`；内容审核、经验复核、商业、文档、权限和运维任务流只改变激活分组，不再分叉为直贴底部的白色横条。复审后 `P13` 已重建为纸色背景的系统配置与任务调度页，避免退化为白底空壳或与其他 Console 页面背景不一致。
+>
+> `2026-06-29` 更新：D14-D19 已将公共侧栏分组、Console 页面语义组件和多类表格 / 治理代表页落到代码。后续迁移应优先复用 `ConsolePageHeader / ConsoleMetricGrid / ConsoleMetricCard / ConsoleStatusChip / ConsoleToolbar`，不再新增平行页头、指标条或筛选工具条样式。
+>
+> `2026-06-30` 更新：D20 已完成贴纸分组 / 分组表情列表边界判断和外层迁移；本批确认贴纸页按普通 CRUD 页迁入语义页头、指标和筛选工具条，不拆媒体资产工作台，上传预览、批量上传、批量排序和分组详情跳转保持既有契约。
+>
+> `2026-06-30` 更新：D21 已完成 D14-D20 表格视觉成组静态收口，修正系统设置旧页头移动样式残留和贴纸分组封面硬编码颜色。后续进入角色权限、内容治理、经验治理和运维任务页的页面类型边界评估。
+>
+> `2026-06-30` 更新：D22 已确认角色管理 / 权限配置归入 `P12` 权限矩阵首批候选，内容治理归入 `P02` 治理工作台，经验治理归入 `P03` 经验台账工作台；`/hangfire` 当前仅为外部 iframe 运维入口，不在本批扩展为项目内任务平台。
+>
+> `2026-06-30` 更新：D23 已完成 `P12` 角色权限外层语义迁移，`RoleList` 与 `RolePermissionPage` 迁入 D14 页头、指标和上下文工具区；角色 API、授权资源树、勾选继承、保存载荷、权限键 / 接口映射预览和路由守卫保持不变。
+>
+> `2026-06-30` 更新：D24 已完成 `P02 / P03` 治理工作台外层语义收口，`ModerationPage` 与 `ExperienceAdminPage` 接入 D14 页头、状态 chip 和工作台指标；举报审核、手动治理、治理日志、经验复核、调经验、冻结 / 解冻和等级配置 API 保持不变。下一步继续收口治理工作台内部区块样式。
+>
+> `2026-06-30` 更新：D25 已完成治理工作台点名内部区块样式收口首批，`ExperienceObservationSummary`、`ExperienceTransactionSection`、`ExperienceGovernanceReviewSection` 和内容治理内部提示 / 筛选区已迁出目标 inline 样式与硬编码色；下一步进入 D23-D25 成组静态检查。
+>
+> `2026-06-30` 更新：D26 已完成角色权限、内容治理和经验治理页面成组静态收口，表格列弱文本 / 分组 / 正负状态、治理表单控件、角色权限树缩进和移动端缩进规则已迁入 CSS；目标目录不再命中 `style=`、硬编码十六进制色或 `rgba(...)`。
+>
+> `2026-06-30` 更新：D27 已完成系统工具 / 运维外壳收口，`/hangfire` 已从路由临时组件迁入 `SystemTools/HangfirePage`，外层接入 Console 语义页头、指标和状态组件；`/hangfire` 仍仅承载受保护的外部 Hangfire Dashboard，不扩展为项目内任务队列、失败重试或运行审计平台。
+>
+> `2026-06-30` 更新：D28 已完成 D14-D27 阶段静态收口，路由认证中、无 Console 权限和懒加载状态的旧 inline 样式已迁入 CSS；剩余静态风险集中在商品 / 分类 / 贴纸表单、订单 / 商品详情、文档治理抽屉和贴纸批量上传弹窗，后续应按深层表单 / 详情专题治理。
+>
+> `2026-06-30` 更新：D29 已完成商品、分类、贴纸和贴纸分组深层表单静态收口首批，上传预览、隐藏输入、控件宽度、弱提示文本和弹窗 footer 样式迁入 `adminForm.css`；上传 API、附件字段、校验和保存载荷保持不变。下一步优先处理订单 / 商品详情与文档治理抽屉的剩余样式残留，或进入阶段真实验收。
+>
+> `2026-06-30` 更新：D30 已完成订单 / 商品详情和文档治理抽屉静态收口，危险色、图片展示、隐藏输入、全宽抽屉布局和贴纸批量上传提示色已迁入 CSS 与 Console token；订单、商品、文档治理和贴纸批量上传业务契约保持不变。
+>
+> `2026-06-30` 更新：D31 已完成 Console 阶段运行态复核，Gateway 下覆盖 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态和表情分组空态的 PC `1920x1080` 与 mobile `390x844` CSS 视图；当前本地数据没有订单和表情包分组，订单详情与贴纸批量上传弹窗需后续按安全测试数据补验。
+>
+> `2026-06-30` 更新：D32 已用可定位本地安全数据补齐订单详情、分组表情列表和贴纸批量上传弹窗的 Gateway PC / mobile CSS 视图复核；贴纸批量上传弹窗 AntD `Alert.message` 运行态告警已改为 `title`，Auth 缺少 `wwwroot` 的启动告警已用目录占位收口。
+>
+> `2026-06-30` 更新：D33-D35 已完成表格可读性与交互代码侧收口，覆盖操作列按钮换行、运维 / 治理静态残留、Dashboard 最近订单、用户详情内嵌表格、系统设置历史、文档版本弹窗和贴纸批量上传表格的滚动 / 分页布局；真实 Gateway 中宽 PC / 移动 CSS 视口复核继续并入成组验收。
+>
+> `2026-06-30` 更新：D36 起不进入发布候选，先整理 `P00-P18` 到现有 Console 路由 / 页面族 / 弹窗抽屉 / 移动任务流的差距矩阵；已迁移页面若只是首轮落地，需要标注剩余 Pencil 对齐、代码治理和运行态观察项。
+>
+> `2026-07-01` 更新：D38 已确认 `P04` 内部调度中心、`P13 / P18` 内部任务队列 / 失败重试 / 运行审计平台不进入当前发布前范围；`/console/` Dashboard、`/console/system-config` 和 `/console/hangfire` 作为现有总览 / 系统工具代表页进入阶段验收。移动 Console `P07 / P08 / P14-P17` 作为响应式管理后台验收参考，不拆独立移动 Console 应用。
+>
+> `2026-07-02` 更新：D44 已确认详情 footer、抽屉、文件导入导出、访问策略、版本回滚、角色权限保存和系统设置 favicon / 编辑抽屉等深层动作必须继承页面内按钮级权限，并在 handler 内再次复核；D45 已确认系统设置品牌卡等设置页移动卡片必须可收缩，不允许撑宽主内容区。
 
 ## 目标
 
-把 Console 里的高风险人工治理页面收束为同一套工作台结构：
+把 Console 从零散后台页面收束为一套可复用的高密度管理产品结构：
 
-- 内容治理：举报队列、目标快照、回看状态、审核动作、手动禁言 / 封禁、治理日志。
+- 公共壳层：浅色图标侧栏、84 高顶栏、状态 chip、主操作、页面工具条。
+- 治理工作台：举报队列、目标快照、回看状态、审核动作、手动禁言 / 封禁、治理日志。
 - 经验治理：用户经验概览、异常观察、经验流水、复核结论、冻结 / 解冻、管理员调整、等级配置。
+- 后台功能页：总览调度、表格 CRUD、设置策略、商业订单、文档治理、权限矩阵和运维任务。
+- 移动端 Console：不压缩 PC 三栏和表格，改为路由 Hub、任务卡、详情动作和底部 tab。
 
-目标不是统一视觉表皮，而是降低治理人员在“筛选目标 → 查看证据 → 执行动作 → 留痕复核”之间来回滚动和跳转的成本。
+目标不是统一视觉表皮，而是降低管理员在“定位路由 → 筛选对象 → 查看证据 / 详情 → 执行动作 → 留痕复核”之间来回滚动和跳转的成本。
 
 ## 设计源文件
 
@@ -32,14 +75,106 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 
 | 编号 | 画板 | 用途 |
 | --- | --- | --- |
-| `P01` | `Console Shell Foundation - Layout System` | Console 侧栏、顶栏、页面密度和结构基座 |
-| `P02` | `Console Content Moderation - Review Desk` | 内容审核 / 证据复核工作台 |
-| `P03` | `Console Experience Governance - Ledger Desk` | 经验等级 / 台账治理工作台 |
-| `P04` | `Console Governance Overview - Dispatch Center` | 跨模块治理负载 / 调度总览页 |
-| `P05` | `Console Table CRUD - User Management` | 普通表格 CRUD 页面 |
-| `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面 |
-| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核流程参考 |
-| `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验治理流程参考 |
+| `P00` | `Console Shell Common Components` | 公共 Console 壳层规范：`ConsoleShell`、`ConsoleSidebar`、`ConsoleTopbar`、`PageToolbar`、`MobileShell` |
+| `P01` | `Console Shell Foundation - Layout System` | Console 专用纸感壳层、侧栏、84 高命令栏、指标、表格样板、动作层级和状态槽 |
+| `P02` | `Console Content Moderation - Review Desk` | 内容审核队列、目标证据、治理动作和最近留痕三栏工作台 |
+| `P03` | `Console Experience Governance - Ledger Desk` | 经验观察候选、用户摘要、趋势证据、流水定位和复核动作 |
+| `P04` | `Console Governance Overview - Dispatch Center` | 文档、内容、经验等跨模块治理负载和今日分派中心；完整内部调度中心后置 |
+| `P05` | `Console Table CRUD - User Management` | 高频对象管理页，保留工具条、表格和选中对象摘要侧栏 |
+| `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面，采用分组导航、设置列和影响范围侧栏 |
+| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核单列流程、纸感状态槽和底部 tab |
+| `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验复核单列流程、趋势 / 流水和底部 tab |
+| `P09` | `Console Full Navigation & Permission IA` | 真实 Console 路由分组、功能覆盖矩阵和权限信息架构 |
+| `P10` | `Console Commerce Operations - Products & Orders` | 商品、订单、胡萝卜等交易 / 资产运营代表页 |
+| `P11` | `Console Document Governance - Publishing & Access` | 文档治理、发布、访问策略和版本回滚代表页 |
+| `P12` | `Console RBAC Permission Matrix` | 角色列表、权限矩阵、高危授权和审计上下文 |
+| `P13` | `Console Operations Tools - System Config & Jobs` | 系统配置与外部 Hangfire 外壳为当前发布前代表页；内部 Jobs 平台后置 |
+| `P14` | `Mobile Console Hub - Routes & Alerts` | 移动端 Console 路由 Hub、告警和待办队列 |
+| `P15` | `Mobile Commerce Operations - Order Flow` | 移动端订单 / 商品任务卡和履约动作 |
+| `P16` | `Mobile Document Governance - Publish Flow` | 移动端文档发布、访问策略和回滚动作 |
+| `P17` | `Mobile RBAC Permission - Approval Flow` | 移动端角色权限审批，矩阵转为权限分组确认 |
+| `P18` | `Mobile Operations Jobs - Retry Flow` | 移动端运维参考流；内部任务失败重试、配置覆盖和审计流后置 |
+
+## P3-12-D5 重构口径
+
+本轮重构不是继续沿用旧 `Case Desk` 模板换色，而是把 Console 业务源对齐 Web UI 共享基座后重新确定页面类型：
+
+- `P00` 固定公共壳层组件边界：`ConsoleShell`、`ConsoleSidebar`、`ConsoleTopbar`、`PageToolbar` 和 `MobileShell` 必须作为后续实现输入。
+- `P01` 先固定 Console 专用 shell：左侧治理导航、顶部命令栏、搜索、登录态、主动作、指标、表格、动作按钮和状态槽。
+- `P04` 调度总览突出跨模块治理负载和今日行动，不再作为普通表格页；当前发布前不扩展完整内部调度平台。
+- `P05` 表格 CRUD 保持对象管理密度，主区域是表格，侧栏是选中对象摘要和权限 / 审计线索。
+- `P06` 设置页采用“分组导航 + 设置项 + 影响范围”，避免继续使用表格 CRUD 结构。
+- `P02 / P03` 只在治理工作台场景使用队列、证据、动作和留痕结构。
+- `P07 / P08 / P14-P18` 移动端保持单列任务流，图标和文字上下排列的底部 tab 与共享基座一致；底栏统一为 64px 高浮动胶囊，左右 inset，不贴边。
+- `P09-P13` 覆盖真实 Console 的主要后台页面类型，不只停留在内容 / 经验治理。
+- `P09-P13` 侧栏必须使用浅色图标导航，不能分叉为黑色运维侧栏。
+- `P13` 作为运维工具代表页，必须沿用 Console 纸色 shell、浅色图标侧栏和 84 高命令栏；当前发布前只承接系统设置和受保护 Hangfire iframe 外壳，完整任务队列、配置覆盖、失败重试和运行审计后置到独立专题。
+
+Console 允许比公开 Web 和私域 Web 更高信息密度，但不得自行分叉以下共享规则：
+
+- `rx-*` 语义 token、纸色底、弱边框和低饱和状态色。
+- 图标化导航、主次按钮、危险动作、状态 pill 和恢复入口。
+- 加载、空态、错误、权限限制等状态槽必须说明原因。
+- PC 端横向利用宽度，移动端纵向组织流程，不把 PC 三栏直接压进手机。
+
+## 公共壳层规范
+
+`P00` 是后续 `radish.console` 视觉实现的公共输入，不是普通业务页：
+
+- `ConsoleShell`：PC 固定为 `300px` 浅色侧栏 + `84px` 顶栏 + 主内容容器；页面 padding 和背景由壳层统一提供。
+- `ConsoleSidebar`：承载真实路由分组、图标、badge、active、搜索入口；PC 页面必须保留图标。
+- `ConsoleTopbar`：承载面包屑、页面标题、状态 chip、主操作和二级工具区；避免营销式大标题。
+- `PageToolbar`：承载筛选、批处理、导出、刷新等业务动作；属于页面内容，但高度、按钮和状态样式沿用公共规则。
+- `MobileShell`：不复刻 PC 侧栏；使用顶部状态区、单列内容、底部 tab、路由 sheet 和任务详情动作。移动底栏固定为 `总览 / 治理 / 资产 / 权限 / 运维`，具体任务页只切换激活分组。
+
+首批代码实现应先对齐公共壳层，再推进业务页面。否则表格页、治理页和设置页会继续各自复制侧栏、顶栏、按钮和状态样式。
+
+代码落地状态：
+
+- `AdminLayout` 已按真实路由分组渲染侧栏，分组为总览、商业与资产、内容与文档、治理与权限、系统工具。
+- 路由元数据已承载图标、排序、分组和权限入口，侧栏与全局搜索继续消费同一批路由信息。
+- `SystemConfigList`、`OrderList`、`UserList`、`ProductList`、`DocumentGovernancePage`、`TagList`、`CategoryList`、`StickerGroupList`、`StickerList`、`RoleList`、`RolePermissionPage`、`ModerationPage`、`ExperienceAdminPage` 和 `HangfirePage` 已迁移到 D14 语义页头、指标和工具条 / 状态组件。
+
+## 页面类型覆盖
+
+PC 页面按类型分组，不按路由逐页复制设计稿：
+
+| 类型 | 对应画板 | 代码落地重点 |
+| --- | --- | --- |
+| 公共壳层 / 导航 | `P00 / P01 / P09` | `AdminLayout`、侧栏路由组、顶栏、状态 chip、页面容器 |
+| 治理工作台 | `P02 / P03` | 内容治理、经验治理的队列 / 证据 / 动作 / 留痕结构 |
+| 调度总览 | `P04` | Dashboard 总览与代表性状态；完整治理负载、任务分派和跨模块状态后置 |
+| 表格 CRUD | `P05 / P10 / P11` | 用户、商品、订单、文档等表格 + 右侧对象上下文 |
+| 设置 / 权限 | `P06 / P12` | 设置分组、影响范围、权限矩阵、高危确认 |
+| 运维工具 | `P13` | 系统配置、受保护 Hangfire iframe 外壳；内部定时任务、失败重试和运行审计后置 |
+
+### 代码语义组件
+
+D14 后 `radish.console` 页面级视觉结构优先复用以下组件：
+
+| 组件 | 位置 | 使用场景 |
+| --- | --- | --- |
+| `ConsolePageHeader` | `Frontend/radish.console/src/components/ConsolePage` | 页面标题、领域 eyebrow、图标、权限 / 状态 chip、刷新和主操作 |
+| `ConsoleStatusChip` | 同上 | 权限状态、筛选条件数、风险 / 可用状态，不替代业务 Tag |
+| `ConsoleMetricGrid` | 同上 | 页面指标区容器，必须提供可读 `aria-label` |
+| `ConsoleMetricCard` | 同上 | 当前结果、本页数量、启用数、固定 / 顶级 / 风险类指标 |
+| `ConsoleToolbar` | 同上 | 筛选工具条、批量动作和工具条摘要 |
+
+使用原则：
+
+- 迁移页头、指标、筛选容器时，不改变 API、权限键、表单字段、URL 查询参数、分页、表格列或后端契约。
+- 高频表格页优先保持“语义页头 + 指标网格 + 工具条 + 表格 + 摘要侧栏”的扫描顺序。
+- 治理页若承载发布、访问策略、版本回滚、导入导出等深层动作，应先固定工作台区块，再迁移外层语义组件。
+- 业务状态、风险和权限反馈可使用 `ConsoleStatusChip`，但表格内已有 Ant `Tag` 或业务标签不强制替换。
+- 详情 footer、抽屉、弹窗、上传入口和文件导入导出等深层动作不能只依赖按钮隐藏或禁用；回调传入前应按按钮级权限裁剪，handler 内还要复核权限、对象状态和只读原因，避免直接调用触发写入。
+
+移动端页面按任务流分组：
+
+| 类型 | 对应画板 | 代码落地重点 |
+| --- | --- | --- |
+| 移动 Console Hub | `P14` | 响应式壳层、路由分组和移动侧栏观察 |
+| 移动治理 | `P07 / P08` | 内容 / 经验页面在移动 CSS 视口下的单列可读性 |
+| 移动商业 / 文档 / 权限 / 运维 | `P15-P18` | PC 表格、矩阵、弹窗和 iframe 外壳在移动 CSS 视口下的可用性观察 |
 
 ## 当前页面盘点
 
@@ -67,6 +202,34 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 - `P05` 表格 CRUD 已落到 `UserList / TagList / CategoryList / SystemConfigList / RoleList / Applications / StickerGroupList / StickerList / ProductList / OrderList`。
 - `P06` 设置 / 配置型页面已落到 `Settings / UserProfile`，并扩展到 `CoinAdminPage` 工具型、`RolePermissionPage` 权限配置型和 `UserDetail` 详情型页面试点。
 - 上述迁移均保持 API、权限、表单字段、数据契约和业务语义不变，不把所有页面硬套为同一布局。
+
+`P3-12-D14-D35` 已完成第二轮 Console 语义迁移、成组静态收口、复杂页面类型边界评估、阶段运行态复核、数据补验、表格可读性首批、运维 / 治理表格静态收口和表格交互代码侧收口：
+
+- 公共壳层：侧栏分组、路由 icon、排序元数据和 Console 页面语义组件。
+- 设置 / 运维代表页：`SystemConfigList`。
+- 高频表格代表页：`OrderList`、`UserList`、`ProductList`。
+- 文档治理首屏：`DocumentGovernancePage` 页头、指标、筛选区和首屏治理区块摘要。
+- 普通分类法列表：`TagList`、`CategoryList`。
+- 媒体素材普通列表：`StickerGroupList`、`StickerList` 的页头、指标和筛选工具条；批量上传、图片预览、分组详情跳转和排序保存保持既有结构。
+- 成组静态收口：目标页面保持语义页头、指标网格、工具条、表格和摘要侧栏扫描顺序；旧页头样式残留和贴纸封面硬编码颜色已收敛。
+- 复杂页面边界：角色管理和角色权限配置归入 `P12` 权限矩阵首批候选；内容治理归入 `P02` 治理工作台；经验治理归入 `P03` 经验台账工作台；系统设置与 `/hangfire` 外壳归入 `P13`。
+- 角色权限首批：`RoleList` 与 `RolePermissionPage` 已迁入语义页头、指标和上下文工具区，资源树、权限预览、保存载荷和路由守卫保持不变。
+- 治理工作台成组收口：`ModerationPage` 与 `ExperienceAdminPage` 已迁入语义页头、状态 chip 和工作台指标，内容治理局部硬编码颜色已转为 Console token；`ExperienceObservationSummary`、`ExperienceTransactionSection`、`ExperienceGovernanceReviewSection`、治理表单、表格列渲染和内容治理内部提示 / 筛选区已完成目标 inline 样式与硬编码色收口，举报审核、手动治理、治理日志、经验复核、调经验、冻结 / 解冻和等级配置 API 保持不变。
+- 权限矩阵成组收口：`RoleList`、`RolePermissionPage` 与 `RoleForm` 已完成外层语义迁移和目标 inline 样式收口，资源树缩进改由结构 CSS 和移动端缩进规则承载。
+- 系统工具 / 运维外壳：`SystemConfigList` 继续作为内部系统设置代表页，`HangfirePage` 已从路由临时组件迁入独立页面并接入 Console 语义页头、指标和状态组件；iframe 宿主地址、权限守卫和侧栏元数据保持不变。
+- 阶段静态收口：`routerComponents` 的认证中、无 Console 权限和懒加载状态已迁出 inline 样式；商品、分类、贴纸和贴纸分组表单的上传预览、隐藏输入、宽度规则、弱提示文本和弹窗 footer 样式已迁入 `adminForm.css`；订单 / 商品详情、文档治理抽屉和贴纸批量上传提示色已迁入 CSS 与 Console token。
+- 阶段运行态复核：Gateway 下 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态和表情分组空态已覆盖 PC `1920x1080` 与 mobile `390x844` CSS 视图；D32 已用本地安全测试数据补齐 `OrderDetail`、分组表情列表和批量上传弹窗，并收口贴纸弹窗 AntD `Alert.message` 告警。
+- 表格可读性首批：分类、标签、贴纸分组、分组表情、角色和文档版本治理表格的操作列按钮组已补 `wrap`；贴纸排序输入宽度样式已迁入页面 CSS。Gateway 中宽 PC / 移动 CSS 视口真实扫描待宿主恢复后补验。
+- 运维与治理表格静态收口：应用管理操作列补 `wrap`；萝卜币正负金额颜色迁入 Console token，交易表格外边距迁入 CSS；系统设置数字输入宽度迁入 CSS。目标目录 `Applications`、`SystemConfig`、`Coins`、`Experience`、`Moderation` 的 inline 样式、硬编码色和未换行小按钮组扫描已清零。
+- 表格交互代码侧收口：新增通用表格滚动区域和移动端分页换行约束；Dashboard 最近订单、用户详情内嵌表格、系统设置历史、文档版本弹窗和贴纸批量上传表格已补滚动隔离，不改变业务列、权限、路由或提交载荷。
+- 深层动作权限态：商品详情编辑、订单详情失败重试、角色权限保存、文档治理访问策略 / 回滚 / 导入导出、系统设置 favicon / 编辑抽屉已补同层权限复核；缺少权限时不传写入回调或在 handler 入口返回错误提示。
+- 系统设置移动承载：品牌卡、设置列表面板和表格外层必须设置可收缩边界，移动视口下长描述可换行，横向滚动只保留在表格局部区域内。
+
+后续评估：
+
+- 下一步按 `P3-12-D38` 裁决进入阶段验收准备；完整内部调度 / 运维 Jobs 平台后置到独立专题。
+- `P3-12-E` 发布候选准备后置到 UI 专题退出条件确认后，再刷新验证矩阵、PR 范围、剩余风险和回滚口径。
+- `P13` 运维任务当前仅有系统设置代表页与 `/hangfire` iframe 外壳；完整任务队列、失败重试和运行审计若要进入项目内页面，需要另行确认数据来源、API 边界、权限动作和留痕策略。
 
 ## 工作台信息架构
 
@@ -172,11 +335,17 @@ Console 治理工作台按四段组织：
 2. 优先沉淀 `AdminLayout`、`adminFeature.css` 和 `--console-*` token 的可复用视觉基座。
 3. 选择一个低风险列表 / 设置 / 总览页面做试点，不一次性改完整个 Console，不把所有页面硬套成 `P02` 或 `P03` 的工作台结构。
 
-下一批建议：
+当前下一批建议：
 
-1. 复核 Console 路由表和历史页面 CSS，确认剩余页面是否仍存在未对齐的高频入口。
-2. 回看 `P02 / P03` 内容治理与经验治理页面在实际使用中的首屏密度、右侧动作区和留痕摘要是否需要细节修正。
-3. 继续保持小步迁移：一次只处理一个页面或一个已迁移页面的明确一致性问题。
+1. 已完成公共壳层首批和多类代表页迁移后，后续新增或迁移页面优先复用 `ConsolePage` 组件族。
+2. D24 已完成 `P02 / P03` 内容治理与经验治理工作台外层语义收口。
+3. D25 已完成点名治理工作台内部区块样式和 token 收口，不把普通表格迁移口径直接套用到治理工作台。
+4. D26 已完成角色权限、内容治理和经验治理页面的成组静态检查与命中收口。
+5. D27 已完成系统工具 / 运维外壳收口，`/hangfire` 外层迁入独立页面并接入 Console 语义组件。
+6. D28 已完成 D14-D27 阶段静态收口和路由状态旧 inline 样式收口。
+7. D29 已完成深层表单静态收口首批，D30 已完成详情 / 抽屉静态收口和批量上传提示色低风险扫尾。
+8. D38 后优先准备 `P00-P18` 对应真实页面族、弹窗抽屉、权限树和 iframe 外壳的阶段真实验收；真实验收必须先等待用户确认前后端已启动。
+9. 移动端实现不把 PC 表格硬缩；当前阶段优先观察既有响应式页面、弹窗 / 抽屉和权限树在移动 CSS 视口下的可用性，独立移动任务卡重排后置。
 
 验证入口：
 
@@ -190,6 +359,8 @@ git diff --check
 
 - 治理人员能在首屏判断：当前队列、当前目标、可执行动作、最近留痕。
 - 内容治理和经验治理共享同一套页面结构语言，但不强行共享业务组件。
+- Console PC 页面共享同一套浅色图标侧栏和顶栏，`P13` 运维页不得使用独立黑色侧栏。
+- 移动端覆盖路由 Hub、治理、商业、文档、权限和运维代表页面的响应式可用性，不拆独立移动 Console 应用。
 - 不改变 API、权限、治理动作语义、经验规则或冻结语义。
 - 页面新增样式优先使用 `--console-*` token 和 `adminFeature.css` 既有结构。
-- 每次只改一个治理页面进入实现，避免 Console 大面积重写。
+- 按公共壳层、页面类型和移动任务流分批进入实现，避免把所有页面硬套为同一工作台结构。

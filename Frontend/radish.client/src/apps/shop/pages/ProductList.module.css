@@ -450,31 +450,87 @@
 @media (max-width: 720px) {
   .header {
     gap: 12px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .title {
-    font-size: 22px;
+    font-size: 20px;
   }
 
   .filterBar {
-    padding: 14px;
-    border-radius: 20px;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 12px;
+    border-radius: 18px;
   }
 
   .searchBox {
     max-width: none;
   }
 
+  .searchInput,
+  .searchButton,
+  .clearButton {
+    min-height: 40px;
+  }
+
+  .categoryTabs {
+    gap: 6px;
+  }
+
+  .categoryTab {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
   .productsGrid {
     grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .productCard {
+    display: grid;
+    grid-template-columns: 92px minmax(0, 1fr);
+    border-radius: 18px;
   }
 
   .productImage {
-    height: 156px;
+    width: 92px;
+    height: 100%;
+    min-height: 116px;
+  }
+
+  .defaultProductImage {
+    width: 52px;
+    height: 52px;
+    border-radius: 18px;
+    font-size: 26px;
+  }
+
+  .productInfo {
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .productName {
+    font-size: 15px;
+    line-height: 1.35;
+  }
+
+  .productMeta {
+    gap: 6px;
   }
 
   .pagination {
     justify-content: flex-start;
+    gap: 6px;
+  }
+
+  .pageButton,
+  .pageNumber {
+    min-height: 38px;
+    padding: 0 12px;
   }
 }

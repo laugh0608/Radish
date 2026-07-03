@@ -166,7 +166,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
           <InputNumber
             placeholder="请输入排序值"
             min={0}
-            style={{ width: '100%' }}
+            className="role-form-full-width"
           />
         </Form.Item>
 

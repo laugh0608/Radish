@@ -569,3 +569,81 @@
   color: var(--theme-state-danger);
   line-height: 1.4;
 }
+
+@media (max-width: 720px) {
+  .container {
+    margin-bottom: 6px;
+    padding: 8px 10px;
+    border-radius: 12px;
+  }
+
+  .header {
+    gap: 6px;
+    margin-bottom: 3px;
+  }
+
+  .authorAvatar {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .contentWrapper {
+    gap: 6px;
+  }
+
+  .content {
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .replyQuoteButton {
+    max-width: 100%;
+    padding: 6px 8px;
+    border-radius: 10px;
+  }
+
+  .actions {
+    gap: 8px;
+    margin-top: 6px;
+  }
+
+  .actionButton,
+  .historyButton,
+  .deleteButton,
+  .editButton {
+    padding: 3px 6px;
+    font-size: 12px;
+  }
+
+  .imageGrid {
+    gap: 6px;
+  }
+
+  .imageButton {
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
+  }
+
+  .childrenSection,
+  .expandSection {
+    margin-top: 8px;
+  }
+
+  .childSortButtons {
+    gap: 6px;
+    margin-bottom: 8px;
+    padding: 6px 0;
+  }
+
+  .expandSection {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .collapseButton {
+    margin-left: 0;
+  }
+}

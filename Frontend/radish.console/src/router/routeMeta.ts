@@ -6,6 +6,11 @@ export interface ConsoleRouteMeta {
   key: string;
   path: string;
   title: string;
+  group?: ConsoleRouteGroup;
+  iconKey?: ConsoleRouteIconKey;
+  sidebarOrder?: number;
+  badgeTone?: ConsoleRouteBadgeTone;
+  badgeText?: string;
   requiredPermission?: ConsolePermission;
   authOnly?: boolean;
   sidebarVisible?: boolean;
@@ -13,11 +18,50 @@ export interface ConsoleRouteMeta {
   defaultEntry?: boolean;
 }
 
+export type ConsoleRouteGroup = 'overview' | 'commerce' | 'content' | 'governance' | 'system';
+
+export type ConsoleRouteIconKey =
+  | 'dashboard'
+  | 'application'
+  | 'product'
+  | 'order'
+  | 'user'
+  | 'role'
+  | 'taxonomy'
+  | 'document'
+  | 'sticker'
+  | 'moderation'
+  | 'coin'
+  | 'experience'
+  | 'setting'
+  | 'task';
+
+export type ConsoleRouteBadgeTone = 'neutral' | 'info' | 'success' | 'warning' | 'danger';
+
+export interface ConsoleSidebarRouteGroup {
+  key: ConsoleRouteGroup;
+  label: string;
+  routes: ConsoleRouteMeta[];
+}
+
+export const consoleRouteGroupLabels: Record<ConsoleRouteGroup, string> = {
+  overview: '总览',
+  commerce: '商业与资产',
+  content: '内容与文档',
+  governance: '治理与权限',
+  system: '系统工具',
+};
+
+const consoleRouteGroupOrder: ConsoleRouteGroup[] = ['overview', 'commerce', 'content', 'governance', 'system'];
+
 export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
   {
     key: 'dashboard',
     path: '/',
     title: '仪表盘',
+    group: 'overview',
+    iconKey: 'dashboard',
+    sidebarOrder: 10,
     requiredPermission: CONSOLE_PERMISSIONS.dashboardView,
     sidebarVisible: true,
     searchVisible: true,
@@ -26,6 +70,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'applications',
     path: '/applications',
     title: '应用管理',
+    group: 'system',
+    iconKey: 'application',
+    sidebarOrder: 20,
     requiredPermission: CONSOLE_PERMISSIONS.applicationsView,
     sidebarVisible: true,
     searchVisible: true,
@@ -34,6 +81,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'products',
     path: '/products',
     title: '商品管理',
+    group: 'commerce',
+    iconKey: 'product',
+    sidebarOrder: 10,
     requiredPermission: CONSOLE_PERMISSIONS.productsView,
     sidebarVisible: true,
     searchVisible: true,
@@ -42,6 +92,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'orders',
     path: '/orders',
     title: '订单管理',
+    group: 'commerce',
+    iconKey: 'order',
+    sidebarOrder: 20,
     requiredPermission: CONSOLE_PERMISSIONS.ordersView,
     sidebarVisible: true,
     searchVisible: true,
@@ -50,6 +103,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'users',
     path: '/users',
     title: '用户管理',
+    group: 'governance',
+    iconKey: 'user',
+    sidebarOrder: 10,
     requiredPermission: CONSOLE_PERMISSIONS.usersView,
     sidebarVisible: true,
     searchVisible: true,
@@ -66,6 +122,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'roles',
     path: '/roles',
     title: '角色管理',
+    group: 'governance',
+    iconKey: 'role',
+    sidebarOrder: 20,
     requiredPermission: CONSOLE_PERMISSIONS.rolesView,
     sidebarVisible: true,
     searchVisible: true,
@@ -82,6 +141,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'categories',
     path: '/categories',
     title: '分类管理',
+    group: 'content',
+    iconKey: 'taxonomy',
+    sidebarOrder: 10,
     requiredPermission: CONSOLE_PERMISSIONS.categoriesView,
     sidebarVisible: true,
     searchVisible: true,
@@ -90,6 +152,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'tags',
     path: '/tags',
     title: '标签管理',
+    group: 'content',
+    iconKey: 'taxonomy',
+    sidebarOrder: 20,
     requiredPermission: CONSOLE_PERMISSIONS.tagsView,
     sidebarVisible: true,
     searchVisible: true,
@@ -98,6 +163,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'documents',
     path: '/documents',
     title: '文档治理',
+    group: 'content',
+    iconKey: 'document',
+    sidebarOrder: 30,
     requiredPermission: CONSOLE_PERMISSIONS.docsView,
     sidebarVisible: true,
     searchVisible: true,
@@ -106,6 +174,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'stickers',
     path: '/stickers',
     title: '表情包管理',
+    group: 'content',
+    iconKey: 'sticker',
+    sidebarOrder: 40,
     requiredPermission: CONSOLE_PERMISSIONS.stickersView,
     sidebarVisible: true,
     searchVisible: true,
@@ -114,6 +185,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'moderation',
     path: '/moderation',
     title: '内容治理',
+    group: 'governance',
+    iconKey: 'moderation',
+    sidebarOrder: 30,
     requiredPermission: CONSOLE_PERMISSIONS.moderationView,
     sidebarVisible: true,
     searchVisible: true,
@@ -122,6 +196,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'coins',
     path: '/coins',
     title: '胡萝卜管理',
+    group: 'commerce',
+    iconKey: 'coin',
+    sidebarOrder: 30,
     requiredPermission: CONSOLE_PERMISSIONS.coinsView,
     sidebarVisible: true,
     searchVisible: true,
@@ -130,6 +207,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'experience',
     path: '/experience',
     title: '经验等级',
+    group: 'governance',
+    iconKey: 'experience',
+    sidebarOrder: 40,
     requiredPermission: CONSOLE_PERMISSIONS.experienceView,
     sidebarVisible: true,
     searchVisible: true,
@@ -146,6 +226,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'system-config',
     path: '/system-config',
     title: '系统设置',
+    group: 'system',
+    iconKey: 'setting',
+    sidebarOrder: 10,
     requiredPermission: CONSOLE_PERMISSIONS.systemConfigView,
     sidebarVisible: true,
     searchVisible: true,
@@ -168,6 +251,9 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'hangfire',
     path: '/hangfire',
     title: '定时任务',
+    group: 'system',
+    iconKey: 'task',
+    sidebarOrder: 30,
     requiredPermission: CONSOLE_PERMISSIONS.hangfireView,
     sidebarVisible: true,
     searchVisible: true,
@@ -223,7 +309,35 @@ export function canEnterConsole(user: UserInfo | null | undefined): boolean {
 }
 
 export function getSidebarRoutes(user: UserInfo | null | undefined): ConsoleRouteMeta[] {
-  return consoleRouteMeta.filter((route) => route.sidebarVisible && canAccessConsoleRoute(route, user));
+  return consoleRouteMeta
+    .filter((route) => route.sidebarVisible && canAccessConsoleRoute(route, user))
+    .sort((left, right) => {
+      const leftGroup = left.group ?? 'system';
+      const rightGroup = right.group ?? 'system';
+      const groupDelta = consoleRouteGroupOrder.indexOf(leftGroup) - consoleRouteGroupOrder.indexOf(rightGroup);
+      if (groupDelta !== 0) {
+        return groupDelta;
+      }
+
+      return (left.sidebarOrder ?? 1000) - (right.sidebarOrder ?? 1000);
+    });
+}
+
+export function getSidebarRouteGroups(user: UserInfo | null | undefined): ConsoleSidebarRouteGroup[] {
+  const groupedRoutes = new Map<ConsoleRouteGroup, ConsoleRouteMeta[]>();
+
+  for (const route of getSidebarRoutes(user)) {
+    const group = route.group ?? 'system';
+    groupedRoutes.set(group, [...(groupedRoutes.get(group) ?? []), route]);
+  }
+
+  return consoleRouteGroupOrder
+    .map((group) => ({
+      key: group,
+      label: consoleRouteGroupLabels[group],
+      routes: groupedRoutes.get(group) ?? [],
+    }))
+    .filter((group) => group.routes.length > 0);
 }
 
 export function getSearchableRoutes(user: UserInfo | null | undefined): ConsoleRouteMeta[] {

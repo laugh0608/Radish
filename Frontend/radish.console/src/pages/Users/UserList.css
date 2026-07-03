@@ -62,10 +62,3 @@
   padding: 0 4px;
   height: auto;
 }
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .user-list .admin-feature-header {
-    align-items: flex-start;
-  }
-}

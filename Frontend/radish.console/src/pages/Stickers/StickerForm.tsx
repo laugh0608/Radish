@@ -23,6 +23,7 @@ import {
 import { uploadAttachmentImage } from '@/api/attachmentApi';
 import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
+import '../adminForm.css';
 
 interface StickerFormProps {
   visible: boolean;
@@ -268,27 +269,13 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         </Form.Item>
 
         <Form.Item label="图片资源">
-          <Space orientation="vertical" style={{ width: '100%' }} size={10}>
-            <div
-              style={{
-                width: 120,
-                height: 120,
-                borderRadius: 10,
-                border: '1px solid #f0f0f0',
-                background: '#fafafa',
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#999',
-                fontSize: 12,
-              }}
-            >
+          <Space orientation="vertical" className="admin-form-field-stack" size={10}>
+            <div className="admin-form-upload-preview admin-form-upload-preview--sticker">
               {previewUrl ? (
                 <img
                   src={previewUrl}
                   alt="表情预览"
-                  style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }}
+                  className="admin-form-upload-preview__image admin-form-upload-preview__image--contain"
                 />
               ) : (
                 <span>暂无图片</span>
@@ -338,7 +325,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
             { type: 'number', min: 0, message: '排序值不能为负数' },
           ]}
         >
-          <InputNumber min={0} style={{ width: '100%' }} />
+          <InputNumber min={0} className="admin-form-control-full" />
         </Form.Item>
 
         <Form.Item name="allowInline" label="允许内嵌正文" valuePropName="checked">

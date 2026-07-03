@@ -13,6 +13,13 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
+import {
   getResourceTree,
   getRoleAuthorization,
   getRolePermissionPreview,
@@ -59,10 +66,7 @@ function ResourceNode({
 
   return (
     <div className="role-permission-node">
-      <div
-        className="role-permission-node__row"
-        style={{ paddingLeft: `${level * 24}px` }}
-      >
+      <div className="role-permission-node__row">
         <Checkbox
           checked={state.checked}
           indeterminate={state.indeterminate}
@@ -83,10 +87,7 @@ function ResourceNode({
       </div>
 
       {node.voApiBindings.length > 0 ? (
-        <div
-          className="role-permission-node__apis"
-          style={{ paddingLeft: `${level * 24 + 28}px` }}
-        >
+        <div className="role-permission-node__apis">
           {node.voApiBindings.map((binding) => (
             <code key={`${binding.voResourceId}:${binding.voApiModuleId}`}>
               {binding.voLinkUrl}
@@ -213,6 +214,10 @@ export const RolePermissionPage = () => {
   };
 
   const handleSave = async () => {
+    if (saveDisabled) {
+      return;
+    }
+
     if (!snapshot) {
       return;
     }
@@ -240,21 +245,21 @@ export const RolePermissionPage = () => {
 
   return (
     <div className="admin-feature-page role-permission-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div className="role-permission-page__heading">
+      <ConsolePageHeader
+        eyebrow="RBAC MATRIX"
+        title="角色权限配置"
+        description="维护 Console 菜单、按钮与接口的第一阶段授权资源。"
+        icon={<SafetyOutlined />}
+        status={(
+          <ConsoleStatusChip tone={isDirty ? 'warning' : 'success'}>
+            {isDirty ? '待保存' : '已同步'}
+          </ConsoleStatusChip>
+        )}
+        actions={(
+          <div className="role-permission-page__actions">
             <Button icon={<LeftOutlined />} onClick={() => navigate('/roles')}>
               返回角色列表
             </Button>
-            <div>
-              <h2>
-                <SafetyOutlined /> 角色权限配置
-              </h2>
-              <p className="admin-feature-subtle">维护 Console 菜单、按钮与接口的第一阶段授权资源。</p>
-            </div>
-          </div>
-
-          <div className="role-permission-page__actions">
             <Button
               icon={<ReloadOutlined />}
               disabled={loading || saving}
@@ -275,29 +280,30 @@ export const RolePermissionPage = () => {
               {saving ? '保存中...' : '保存权限'}
             </Button>
           </div>
-        </div>
-      </section>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label="角色权限指标">
-        <div className="admin-feature-metric">
-          已选资源
-          <strong>{selectedResourceIds.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          权限键
-          <strong>{permissionKeys.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          接口映射
-          <strong>{livePreview.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          保存状态
-          <strong>{isDirty ? '待保存' : '已同步'}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label="角色权限指标">
+        <ConsoleMetricCard label="已选资源" value={selectedResourceIds.length} description="当前勾选授权资源" tone="info" />
+        <ConsoleMetricCard label="权限键" value={permissionKeys.length} description="实时汇总权限键" />
+        <ConsoleMetricCard label="接口映射" value={livePreview.length} description="当前勾选关联接口" tone="success" />
+        <ConsoleMetricCard
+          label="保存状态"
+          value={isDirty ? '待保存' : '已同步'}
+          description={canEditRole ? '具备保存权限' : '仅可查看授权'}
+          tone={isDirty ? 'warning' : 'success'}
+        />
+      </ConsoleMetricGrid>
 
-      <section className="admin-feature-card">
+      <ConsoleToolbar
+        title="角色上下文"
+        description="确认当前角色状态、描述和最近授权时间，再调整资源树。"
+        meta={(
+          <ConsoleStatusChip tone={snapshot?.voRoleIsEnabled ? 'success' : 'neutral'}>
+            {snapshot ? (snapshot.voRoleIsEnabled ? '角色启用' : '角色禁用') : '未加载角色'}
+          </ConsoleStatusChip>
+        )}
+      >
         <div className="role-permission-page__role-card">
           <Descriptions
             title="角色信息"
@@ -332,7 +338,7 @@ export const RolePermissionPage = () => {
             ]}
           />
         </div>
-      </section>
+      </ConsoleToolbar>
 
       <div className="role-permission-page__content">
         <section className="role-permission-panel">

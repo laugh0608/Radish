@@ -71,7 +71,7 @@ export const ExperienceObservationSummary = ({
           <h3>经验统计观察</h3>
           <p className="admin-feature-subtle">查看最近 7 / 30 天经验来源与异常判定，仅服务人工复核和冻结建议，不自动处罚。</p>
         </div>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+        <div className="experience-inline-actions">
           <Button
             variant={statsWindowDays === 7 ? 'primary' : 'secondary'}
             disabled={!loadedUserId || loadingDailyStats}
@@ -91,7 +91,7 @@ export const ExperienceObservationSummary = ({
 
       {loadedUserId ? (
         <>
-          <div className="admin-feature-metrics" style={{ marginTop: 20 }}>
+          <div className="admin-feature-metrics experience-section-gap-md">
             <div className="admin-feature-metric">
               <span>窗口总经验</span>
               <strong>{dailyStatsSummary ? dailyStatsSummary.voTotalExp : '--'}</strong>
@@ -103,7 +103,7 @@ export const ExperienceObservationSummary = ({
             <div className="admin-feature-metric">
               <span>峰值单日</span>
               <strong>{dailyStatsSummary ? dailyStatsSummary.voPeakDayExp : '--'}</strong>
-              <div style={{ marginTop: 6, color: '#8c8c8c' }}>
+              <div className="experience-metric-note">
                 {dailyStatsSummary?.voPeakStatDate
                   ? formatFullStatDate(dailyStatsSummary.voPeakStatDate)
                   : '--'}
@@ -120,14 +120,14 @@ export const ExperienceObservationSummary = ({
           </div>
 
           {dailyLimits && (
-            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="admin-feature-banner experience-section-gap-sm">
+              <div className="experience-inline-actions experience-inline-actions--center">
                 <strong>当前经验阈值</strong>
                 <Tag color={dailyLimits.voDailyLimitEnabled ? 'success' : 'default'}>
                   {dailyLimits.voDailyLimitEnabled ? '每日上限启用中' : '每日上限已停用'}
                 </Tag>
               </div>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
+              <div className="experience-banner-list">
                 <span>总经验 {dailyLimits.voMaxDailyExp}</span>
                 <span>发帖 {dailyLimits.voMaxExpFromPost}</span>
                 <span>评论 {dailyLimits.voMaxExpFromComment}</span>
@@ -139,18 +139,18 @@ export const ExperienceObservationSummary = ({
           )}
 
           {governanceRecommendation && (
-            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
-              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="admin-feature-banner experience-section-gap-sm">
+              <div className="experience-inline-actions experience-inline-actions--center">
                 <strong>当前治理建议</strong>
                 <Tag color={getRecommendationTagColor(governanceRecommendation.voLevel)}>
                   {governanceRecommendation.voTitle}
                 </Tag>
               </div>
-              <div style={{ marginTop: 12 }}>{governanceRecommendation.voReason}</div>
-              <div style={{ marginTop: 8, color: '#8c8c8c' }}>
+              <div className="experience-section-gap-xs">{governanceRecommendation.voReason}</div>
+              <div className="experience-review-draft-reason">
                 建议动作：{governanceRecommendation.voSuggestedAction}
               </div>
-              <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <div className="experience-inline-actions experience-inline-actions--compact experience-section-gap-xs">
                 <Button
                   variant="secondary"
                   disabled={!canFreeze}
@@ -172,39 +172,30 @@ export const ExperienceObservationSummary = ({
           )}
 
           {anomalyRuleSummaries.length > 0 && (
-            <div style={{ marginTop: 16 }}>
-              <div style={{ marginBottom: 12, fontWeight: 600 }}>异常规则摘要</div>
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: 12,
-              }}>
+            <div className="experience-rule-summary">
+              <div className="experience-rule-summary__title">异常规则摘要</div>
+              <div className="experience-rule-grid">
                 {anomalyRuleSummaries.map((rule) => (
                   <div
                     key={rule.voRuleCode}
-                    style={{
-                      border: '1px solid rgba(5, 5, 5, 0.08)',
-                      borderRadius: 12,
-                      padding: 16,
-                      background: '#fff',
-                    }}
+                    className="experience-rule-card"
                   >
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="experience-rule-card__head">
                       <strong>{rule.voRuleLabel}</strong>
                       <Tag color={getRuleSeverityTagColor(rule.voSeverity)}>
                         {getRuleSeverityLabel(rule.voSeverity)}
                       </Tag>
                     </div>
-                    <div style={{ marginTop: 10, color: '#595959' }}>{rule.voThresholdDescription}</div>
-                    <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+                    <div className="experience-rule-card__description">{rule.voThresholdDescription}</div>
+                    <div className="experience-rule-card__facts">
                       <span>窗口命中：{rule.voHitDays} 天</span>
                       <span>最强信号：{rule.voStrongestSignal}</span>
                       <span>最近命中：{rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate) : '-'}</span>
                     </div>
-                    <div style={{ marginTop: 10, color: '#8c8c8c' }}>
+                    <div className="experience-rule-card__recommendation">
                       建议动作：{rule.voSuggestedAction}
                     </div>
-                    <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <div className="experience-inline-actions experience-inline-actions--compact experience-section-gap-xs">
                       <Button onClick={() => onRuleReview(rule)}>
                         查看流水
                       </Button>
@@ -230,7 +221,7 @@ export const ExperienceObservationSummary = ({
           )}
 
           {dailyStatsSummary && (
-            <div className="admin-feature-banner" style={{ marginTop: 16 }}>
+            <div className="admin-feature-banner experience-section-gap-sm">
               {dailyStatsSummary.voNotices.map((notice) => (
                 <div key={notice}>{notice}</div>
               ))}
@@ -244,7 +235,7 @@ export const ExperienceObservationSummary = ({
             loading={loadingDailyStats}
             pagination={false}
             scroll={{ x: 1520 }}
-            style={{ marginTop: 20 }}
+            className="experience-table-spaced"
             locale={{
               emptyText: loadingDailyStats
                 ? '统计加载中...'
@@ -253,7 +244,7 @@ export const ExperienceObservationSummary = ({
           />
         </>
       ) : (
-        <div style={{ marginTop: 20, color: '#8c8c8c' }}>
+        <div className="experience-empty-hint">
           请先查询用户经验，再查看最近 {statsWindowDays} 天的统计观察。
         </div>
       )}

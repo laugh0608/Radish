@@ -3,9 +3,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import {
   AuthenticatedLayout,
   GuardedRoute,
-  HangfirePage,
   SuspenseRoute,
 } from './routerComponents';
+import { HangfirePage } from '../pages/SystemTools/HangfirePage';
 
 const applicationsPage = lazy(() => import('../pages/Applications').then(module => ({ default: module.Applications })));
 const categoryListPage = lazy(() => import('../pages/Categories').then(module => ({ default: module.CategoryList })));

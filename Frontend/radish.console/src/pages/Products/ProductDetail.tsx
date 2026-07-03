@@ -153,7 +153,7 @@ export const ProductDetail = ({
                 alt={currentProduct.voName}
                 width={96}
                 height={96}
-                style={{ objectFit: 'cover', borderRadius: '12px' }}
+                className="product-detail-image"
                 fallback="/placeholder.png"
               />
             </div>
@@ -164,7 +164,7 @@ export const ProductDetail = ({
                 alt={`${currentProduct.voName} 封面`}
                 width={180}
                 height={108}
-                style={{ objectFit: 'cover', borderRadius: '12px' }}
+                className="product-detail-image"
                 fallback="/placeholder.png"
               />
             </div>
@@ -198,7 +198,7 @@ export const ProductDetail = ({
             </Descriptions.Item>
 
             <Descriptions.Item label="售价">
-              <span style={{ color: '#ff4d4f', fontWeight: 700 }}>
+              <span className="product-detail-price">
                 {currentProduct.voPrice} 胡萝卜
               </span>
             </Descriptions.Item>

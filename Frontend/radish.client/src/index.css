@@ -71,3 +71,9 @@ svg {
   color: var(--theme-text-secondary);
   background: var(--theme-shell-background);
 }
+
+@media (max-width: 720px) {
+  body.radishWebShellWithMobileNav #root > * {
+    padding-bottom: var(--rx-mobile-shell-offset);
+  }
+}

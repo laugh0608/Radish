@@ -46,8 +46,6 @@ interface ModerationLogColumnActions {
   onApplyManualActionPreset: (preset: ManualActionPreset) => void;
 }
 
-const mutedTextStyle = { color: '#8c8c8c' };
-
 export function createModerationQueueColumns(
   actions: ModerationQueueColumnActions
 ): TableColumnsType<ContentReportQueueItemVo> {
@@ -83,7 +81,7 @@ export function createModerationQueueColumns(
       render: (_, record) => (
         <div>
           <div>{getReasonTypeLabel(record.voReasonType)}</div>
-          {record.voReasonDetail ? <div style={mutedTextStyle}>{record.voReasonDetail}</div> : null}
+          {record.voReasonDetail ? <div className="moderation-table-muted">{record.voReasonDetail}</div> : null}
         </div>
       ),
     },
@@ -122,7 +120,7 @@ export function createModerationQueueColumns(
                 {openTarget.label}
               </Button>
             ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
-              <span style={mutedTextStyle}>
+              <span className="moderation-table-muted">
                 {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
               </span>
             ) : null}
@@ -181,7 +179,7 @@ export function createModerationQueueColumns(
                 审核
               </Button>
             ) : (
-              <span style={mutedTextStyle}>{record.voReviewedByName || '已处理'}</span>
+              <span className="moderation-table-muted">{record.voReviewedByName || '已处理'}</span>
             )}
           </Space>
         );
@@ -218,7 +216,7 @@ export function createModerationLogColumns(
       width: 360,
       render: (_, record) => {
         if (!record.voSourceReportId) {
-          return <span style={mutedTextStyle}>-</span>;
+          return <span className="moderation-table-muted">-</span>;
         }
 
         return (
@@ -229,7 +227,7 @@ export function createModerationLogColumns(
                 <ModerationTargetDisplay input={buildActionSourceTargetDisplayInput(record)} />
               </div>
             )
-            : <div style={mutedTextStyle}>未保留目标快照</div>
+            : <div className="moderation-table-muted">未保留目标快照</div>
         );
       },
     },
@@ -268,7 +266,7 @@ export function createModerationLogColumns(
                 {openTarget.label}
               </Button>
             ) : (
-              <span style={mutedTextStyle}>
+              <span className="moderation-table-muted">
                 {record.voSourceReportTargetNavigationStatus === 'Unsupported'
                   ? '暂不支持回看'
                   : record.voSourceReportTargetNavigationStatus === 'Unavailable'

@@ -24,6 +24,10 @@ import {
   type UserExperienceVo,
 } from '@/api/experienceAdminApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+} from '@/components/ConsolePage';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
@@ -50,6 +54,7 @@ import { ExperienceObservationSummary } from './ExperienceObservationSummary';
 import { ExperienceTransactionSection } from './ExperienceTransactionSection';
 import { ExperienceUserQuerySummary } from './ExperienceUserQuerySummary';
 import '../adminFeature.css';
+import './ExperienceAdminPage.css';
 
 export const ExperienceAdminPage = () => {
   useDocumentTitle('经验等级');
@@ -580,6 +585,8 @@ export const ExperienceAdminPage = () => {
   return (
     <div className="admin-feature-page">
       <ExperienceAdminHeader
+        canAdjust={canAdjust}
+        canFreeze={canFreeze}
         onRefresh={() => {
           void Promise.all([
             loadExperience(undefined, { showInvalidMessage: false }),
@@ -587,6 +594,32 @@ export const ExperienceAdminPage = () => {
           ]);
         }}
       />
+
+      <ConsoleMetricGrid label="经验治理工作台指标">
+        <ConsoleMetricCard
+          label="当前用户"
+          value={loadedUserId ?? '未查询'}
+          description={experience?.voUserName || '等待输入用户 ID'}
+          tone={loadedUserId ? 'info' : 'neutral'}
+        />
+        <ConsoleMetricCard
+          label="总经验"
+          value={experience ? experience.voTotalExp : '--'}
+          description={experience ? `等级 ${experience.voCurrentLevel}` : '未加载用户'}
+          tone="success"
+        />
+        <ConsoleMetricCard
+          label="异常命中"
+          value={dailyStatsSummary ? dailyStatsSummary.voReviewDays : '--'}
+          description={`${statsWindowDays} 天观察窗口`}
+          tone={dailyStatsSummary && dailyStatsSummary.voReviewDays > 0 ? 'warning' : 'neutral'}
+        />
+        <ConsoleMetricCard
+          label="治理留痕"
+          value={governanceActions.length}
+          description="最近治理动作记录"
+        />
+      </ConsoleMetricGrid>
 
       <div className="governance-workbench governance-workbench--experience">
         <div className="governance-workbench__queue">

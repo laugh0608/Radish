@@ -2,12 +2,6 @@
   min-width: 0;
 }
 
-.tag-list-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .tag-list-filter-input {
   width: 240px;
 }
@@ -18,10 +12,4 @@
 
 .tag-list-filter-select--deleted {
   width: 160px;
-}
-
-@media (max-width: 768px) {
-  .tag-list-page .admin-feature-header {
-    align-items: flex-start;
-  }
 }
