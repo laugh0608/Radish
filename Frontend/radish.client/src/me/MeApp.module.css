@@ -502,6 +502,10 @@
     align-items: stretch;
   }
 
+  .identityActions {
+    min-width: 0;
+  }
+
   .toolbar,
   .subPageHeader {
     flex-direction: column;
@@ -521,13 +525,52 @@
     flex-direction: column;
   }
 
+  .secondaryActionGroup {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .secondaryActionGroup .secondaryButton {
+    width: auto;
+    min-width: 0;
+    padding: 0 10px;
+  }
+
+  .secondaryActionGroup .secondaryButton span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .summaryGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .summaryCard {
+    min-height: 0;
+    padding: 14px;
+  }
+
+  .summaryCard:first-child {
+    grid-column: 1 / -1;
+  }
+
   .subPagePanel {
     padding: 16px;
   }
 
   .segmentedTabs {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  .segmentedTab,
+  .segmentedTabActive {
+    min-width: 0;
+    padding: 0 8px;
   }
 
   .browseItem {

@@ -25,7 +25,7 @@ interface WebShellHeaderProps {
 }
 
 const publicNavItems: WebShellNavItem[] = [
-  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
+  { key: 'discover', label: '社区发现', href: '/discover', icon: 'mdi:compass-outline' },
   { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
   { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
   { key: 'leaderboard', label: '榜单', href: '/leaderboard', icon: 'mdi:trophy-outline' },

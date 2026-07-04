@@ -82,7 +82,7 @@ export const PublicShellHeader = ({
   activeKey,
   onNavigateToDiscover,
   discoverHref = '/discover',
-  discoverLabel = '发现',
+  discoverLabel = '社区发现',
   circleHref = '/circle',
   circleLabel = '圈子',
   showCircleAction = true,
