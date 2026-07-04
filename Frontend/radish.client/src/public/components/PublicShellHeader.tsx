@@ -18,6 +18,7 @@ interface PublicShellHeaderProps {
   showCircleAction?: boolean;
   desktopHref?: string;
   desktopLabel?: string;
+  mobileNavItems?: WebShellNavItem[];
   loginLabel?: string;
   myStatusLabel?: string;
 }
@@ -107,6 +108,7 @@ export const PublicShellHeader = ({
   showCircleAction = true,
   desktopHref = '/workbench',
   desktopLabel = '工作台',
+  mobileNavItems,
   loginLabel = '登录',
   myStatusLabel = '我的状态',
 }: PublicShellHeaderProps) => {
@@ -154,6 +156,7 @@ export const PublicShellHeader = ({
       brandSubline={brandSubline}
       activeKey={activeKey}
       navItems={navItems}
+      mobileNavItems={mobileNavItems}
       actionItems={actionItems}
       onBrandClick={onBrandClick}
     />

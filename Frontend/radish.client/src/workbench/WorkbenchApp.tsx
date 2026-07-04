@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import type { WebShellNavItem } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import styles from './WorkbenchApp.module.css';
 
@@ -62,6 +63,17 @@ const workbenchGroups: WorkbenchGroup[] = [
           { labelKey: 'workbench.link.read', href: '/docs' },
           { labelKey: 'workbench.link.mine', href: '/docs/mine' },
           { labelKey: 'workbench.link.compose', href: '/docs/compose' },
+        ],
+      },
+      {
+        titleKey: 'workbench.item.publicShop.title',
+        descriptionKey: 'workbench.item.publicShop.description',
+        icon: 'mdi:storefront-outline',
+        access: 'public',
+        href: '/shop',
+        links: [
+          { labelKey: 'workbench.link.browse', href: '/shop' },
+          { labelKey: 'workbench.link.leaderboard', href: '/leaderboard' },
         ],
       },
       {
@@ -175,6 +187,14 @@ const accessClassNameMap: Record<WorkbenchAccess, string> = {
   legacy: styles.accessLegacy,
 };
 
+const publicWorkbenchMobileNavItems: WebShellNavItem[] = [
+  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
+  { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
+  { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
+  { key: 'workbench', label: '工作台', href: '/workbench', icon: 'mdi:view-dashboard-outline' },
+  { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
+];
+
 export const WorkbenchApp = () => {
   const { t } = useTranslation();
 
@@ -193,6 +213,7 @@ export const WorkbenchApp = () => {
         discoverLabel={t('public.shell.discoverAction')}
         circleLabel={t('public.shell.circleAction')}
         desktopLabel={t('public.shell.desktopAction')}
+        mobileNavItems={publicWorkbenchMobileNavItems}
         onBrandClick={() => {
           window.location.href = '/workbench';
         }}

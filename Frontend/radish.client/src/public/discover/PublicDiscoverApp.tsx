@@ -556,15 +556,29 @@ export const PublicDiscoverApp = ({
     action();
   }, []);
 
+  const discoverHomeRoute = useMemo<PublicDiscoverRoute>(() => ({ kind: 'home' }), []);
   const forumListRoute = useMemo<PublicForumRoute>(() => (
     { kind: 'list', categoryId: null, sortBy: 'newest', page: 1 }
+  ), []);
+  const forumHotRoute = useMemo<PublicForumRoute>(() => (
+    { kind: 'list', categoryId: null, sortBy: 'hottest', page: 1 }
+  ), []);
+  const forumQuestionRoute = useMemo<PublicForumRoute>(() => (
+    { kind: 'question', sortBy: 'newest', page: 1 }
+  ), []);
+  const forumSearchRoute = useMemo<PublicForumRoute>(() => (
+    { kind: 'search', keyword: '', sortBy: 'newest', timeRange: 'all', page: 1 }
   ), []);
   const docsListRoute = useMemo<PublicDocsRoute>(() => ({ kind: 'list' }), []);
   const docsSearchRoute = useMemo<PublicDocsRoute>(() => ({ kind: 'search', keyword: '', page: 1 }), []);
   const leaderboardDefaultRoute = useMemo<PublicLeaderboardRoute>(() => createDefaultPublicLeaderboardRoute(), []);
   const shopHomeRoute = useMemo<PublicShopRoute>(() => ({ kind: 'home' }), []);
   const shopProductsRoute = useMemo<PublicShopRoute>(() => createDefaultPublicShopProductsRoute(), []);
+  const discoverHomeHref = buildPublicDiscoverPath(discoverHomeRoute);
   const forumListHref = buildPublicForumPath(forumListRoute);
+  const forumHotHref = buildPublicForumPath(forumHotRoute);
+  const forumQuestionHref = buildPublicForumPath(forumQuestionRoute);
+  const forumSearchHref = buildPublicForumPath(forumSearchRoute);
   const docsListHref = buildPublicDocsPath(docsListRoute);
   const docsSearchHref = buildPublicDocsPath(docsSearchRoute);
   const leaderboardDefaultHref = buildPublicLeaderboardPath(leaderboardDefaultRoute);
@@ -759,6 +773,63 @@ export const PublicDiscoverApp = ({
       />
 
       <main className={styles.main}>
+        <section className={styles.mobileTaskPanel} aria-label={t('discover.public.mobileTaskLabel')}>
+          <a
+            className={styles.mobileSearchLink}
+            href={forumSearchHref}
+            onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumSearchRoute)))}
+          >
+            <Icon icon="mdi:magnify" size={18} />
+            <span>{t('discover.public.mobileSearchPlaceholder')}</span>
+            <Icon icon="mdi:chevron-right" size={18} />
+          </a>
+          <div className={styles.mobileFilterRow} aria-label={t('discover.public.mobileFilterLabel')}>
+            <a
+              className={`${styles.mobileFilterChip} ${styles.mobileFilterChipActive}`}
+              href={discoverHomeHref}
+              aria-current="page"
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigate(discoverHomeRoute, { replace: true }))}
+            >
+              {t('discover.public.discussionAll')}
+            </a>
+            <a
+              className={styles.mobileFilterChip}
+              href={forumListHref}
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumListRoute)))}
+            >
+              {t('discover.public.routeForumTitle')}
+            </a>
+            <a
+              className={styles.mobileFilterChip}
+              href={forumQuestionHref}
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumQuestionRoute)))}
+            >
+              {t('discover.public.mobileFilterQuestion')}
+            </a>
+            <a
+              className={styles.mobileFilterChip}
+              href={forumHotHref}
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumHotRoute)))}
+            >
+              {t('discover.public.mobileFilterHot')}
+            </a>
+            <a
+              className={styles.mobileFilterChip}
+              href={docsSearchHref}
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('docs', () => onNavigateToDocs(docsSearchRoute)))}
+            >
+              {t('discover.public.routeDocsTitle')}
+            </a>
+            <a
+              className={styles.mobileFilterChip}
+              href={shopProductsHref}
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('shop', () => onNavigateToShop(shopProductsRoute)))}
+            >
+              {t('discover.public.routeShopTitle')}
+            </a>
+          </div>
+        </section>
+
         <section className={styles.pulseHome}>
           <div className={styles.pulseIntroCard}>
             <div className={styles.heroTitleRow}>

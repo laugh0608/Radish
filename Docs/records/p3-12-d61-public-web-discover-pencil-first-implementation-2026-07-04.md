@@ -112,6 +112,27 @@
 - `Frontend/radish.client/src/i18n.ts`
   - 补齐 P08/P09 榜单 rail、打开目标、关注入口、关注者统计、来源返回和复制主页中英文文案。
 
+## P10-P14 移动公开任务流追加实现
+
+- Pencil `public-web-unified-experience.pen` 通过 Pencil MCP 读取编辑器状态并导出 `P10-P14` 页面 HTML 作为对齐依据；未直接读写 `.pen` 文件，未修改设计稿结构。
+- `Frontend/radish.client/src/public/discover/PublicDiscoverApp.tsx`
+  - 新增仅移动端展示的搜索 / 筛选快捷面板，首屏在真实内容区前提供搜索、全部、论坛、问答、热门、文档和商城入口。
+  - 搜索和筛选仅复用既有 `/forum/search`、`/forum`、`/forum/question`、`/forum?sort=hottest`、`/docs/search`、`/shop/products` 路由构建器，不新增统一搜索 API 或新路由语义。
+- `Frontend/radish.client/src/public/discover/PublicDiscoverApp.module.css`
+  - 为 `390px` 移动视口补移动搜索行与横向筛选 chip，避免首屏先被桌面式指标区完全占用。
+  - 保持 PC 版 `P01-P09` 已实现结构不变。
+- `Frontend/radish.client/src/public/components/PublicShellHeader.tsx`
+  - 透传既有 `WebShellHeader.mobileNavItems`，允许特殊页面覆盖移动底栏。
+- `Frontend/radish.client/src/workbench/WorkbenchApp.tsx`
+  - `/workbench` 桌面仍保持私域工作台外观；移动端底栏覆盖为公开任务流：发现、论坛、文档、工作台、我的。
+  - 公开任务组补充“公开商城”入口，承接 `/shop` 与 `/leaderboard`，不进入私域订单 / 背包路线。
+- `Frontend/radish.client/src/workbench/WorkbenchApp.module.css`
+  - 移动端主内容底部改用 `--rx-mobile-shell-offset`，避免工作台入口被固定底栏遮挡。
+- `Frontend/radish.client/src/i18n.ts`
+  - 补齐移动发现快捷入口、筛选 chip、公开商城和工作台榜单快捷入口中英文文案。
+- `P11` 帖子详情、`P12` 文档阅读和 `P14` 公开主页继续承接前序 P03-P06/P09 的详情来源返回、登录后参与入口、评论树 / 相关内容 / 公开主页 rail 与共享移动底栏能力；本轮未新增详情页 API、提交载荷或路由语义。
+- `P13` 公开工作台仅承接当前已有公开路由；Pencil 中的公开聊天室入口仍按 D60 作为产品 / API 后置缺口，不在本轮硬造路由。
+
 ## 保持不变
 
 - 不新增或修改业务 API。
@@ -128,7 +149,8 @@
 2. `P05-P06` 文档列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
 3. `P07` 商城 / 商品已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
 4. `P08-P09` 榜单 / 公开主页已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-5. 继续对齐 `P10-P14` 移动公开任务流：首屏真实内容、底栏前信息量、筛选 / tab 展开方式和低频入口 `/workbench` 承接。
+5. `P10-P14` 移动公开任务流已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway mobile 真实 smoke。
+6. `P15-P16` 公开聊天室 / 移动聊天回复流继续按 D60 作为产品与 API 后置缺口，不在 D61 前端硬造。
 
 ## 验证
 
@@ -138,12 +160,15 @@
 - `npm run build --workspace=radish.client`（P05-P06 文档列表 / 详情追加实现后复跑）：通过。
 - `npm run build --workspace=radish.client`（P07 商城 / 商品追加实现后复跑）：通过。
 - `npm run build --workspace=radish.client`（P08-P09 榜单 / 公开主页追加实现后复跑）：通过。
+- `npm run build --workspace=radish.client`（P10-P14 移动公开任务流追加实现后复跑）：通过。
 - `git diff --check`（P05-P06 文档列表 / 详情追加实现后复跑）：通过。
 - `node Scripts/check-repo-hygiene.mjs ...`（P05-P06 本批 6 个文件显式检查）：通过，未发现文本卫生问题。
 - `git diff --check`（P07 商城 / 商品追加实现后复跑）：通过。
 - `node Scripts/check-repo-hygiene.mjs ...`（P07 本批 5 个文件显式检查）：通过，未发现文本卫生问题。
 - `git diff --check`（P08-P09 榜单 / 公开主页追加实现后复跑）：通过。
 - `node Scripts/check-repo-hygiene.mjs ...`（P08-P09 本批 6 个文件显式检查）：通过，未发现文本卫生问题。
+- `git diff --check`（P10-P14 移动公开任务流追加实现后复跑）：通过。
+- `node Scripts/check-repo-hygiene.mjs ...`（P10-P14 本批 7 个文件显式检查）：通过，未发现文本卫生问题。
 - Pencil `P01 - Public App Home`：`snapshot_layout(problemsOnly=true)` 返回 `No layout problems`，截图确认品牌副标题、hero 文案与登录后参与说明已同步。
 - Gateway `/discover` PC `1920x1080`：标题为 `发现 - Radish`；右侧存在 `登录 + 工作台`；全局横向溢出 `0`；未出现 `社区发现`、`公开 Web`、`公开社区`、`公开只读`、`Web-first`、`Forum / Docs` 英文来源标签或裸路由路径。
 - Gateway `/discover` mobile `390x844`：标题为 `发现 - Radish`；横向溢出 `0`；未发现越界元素；未出现上述旧文案与裸路由路径。
@@ -155,3 +180,4 @@
 - `P05-P06` 文档列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
 - `P07` 商城 / 商品追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
 - `P08-P09` 榜单 / 公开主页追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
+- `P10-P14` 移动公开任务流追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。

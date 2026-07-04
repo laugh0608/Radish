@@ -264,7 +264,7 @@
 @media (max-width: 520px) {
   .main {
     width: calc(100vw - 20px);
-    padding: 16px 0 30px;
+    padding: 16px 0 var(--rx-mobile-shell-offset);
   }
 
   .summary {

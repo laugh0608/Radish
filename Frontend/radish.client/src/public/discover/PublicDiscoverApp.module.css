@@ -20,6 +20,10 @@
   box-sizing: border-box;
 }
 
+.mobileTaskPanel {
+  display: none;
+}
+
 .pulseHome {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(460px, 1.65fr);
@@ -1439,6 +1443,74 @@
 
   .main {
     width: calc(100% - 20px);
+  }
+
+  .mobileTaskPanel {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .mobileSearchLink {
+    min-width: 0;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+    color: var(--theme-text-secondary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: var(--theme-shadow-soft);
+  }
+
+  .mobileSearchLink span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileFilterRow {
+    min-width: 0;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .mobileFilterRow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileFilterChip {
+    flex: 0 0 auto;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+    color: var(--theme-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .mobileFilterChipActive {
+    border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+    color: var(--theme-brand-primary);
   }
 
   .pulseHome,
