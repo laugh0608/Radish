@@ -78,6 +78,21 @@
 - `Frontend/radish.client/src/i18n.ts`
   - 补齐 P05/P06 列表 rail、搜索 rail、详情来源返回、阅读元信息、作者入口和相关文档中英文文案。
 
+## P07 商城 / 商品追加实现
+
+- `Frontend/radish.client/src/public/shop/PublicShopApp.tsx`
+  - 将公开商城从直接复用 WebOS 内部 `ShopHome` / `ProductList` 组件，调整为公开页专用 P07 视图承接。
+  - 保留既有分类、商品列表、商品详情、购买校验、登录回流、购买确认弹窗和来源返回逻辑；不新增 API、路由语义、权限键或购买载荷。
+- `Frontend/radish.client/src/public/shop/PublicShopViews.tsx`
+  - 新增公开商城首页、商品列表和商品详情视图：PC 下使用主栏 + 右侧 rail，列表行展示商品图、分类 / 类型 / 状态 / 有效期、价格、售出和登录购买入口。
+  - 商品详情首屏展示来源返回、分享、商品图、分类 / 类型 / 售卖状态、价格、库存、限购、售出、有效期和登录后购买入口。
+  - 右侧 rail 承载公开浏览提示、购买状态、库存 / 状态、私域订单 / 背包边界和只读须知。
+- `Frontend/radish.client/src/public/shop/PublicShopApp.module.css`
+  - 主体宽度扩展到 `1376px` 设计宽度；PC 下商城首页 / 列表 / 详情为 `960px` 主栏 + `402px` rail。
+  - `1120px` 以下回落单栏并将 rail 改为双列卡片区，`720px` 以下按 `390px` mobile 纵向堆叠。
+- `Frontend/radish.client/src/i18n.ts`
+  - 补齐 P07 公开商城列表、详情 rail、商品状态、购买状态、私域边界和登录购买入口中英文文案。
+
 ## 保持不变
 
 - 不新增或修改业务 API。
@@ -92,7 +107,7 @@
 
 1. `P03-P04` 论坛列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
 2. `P05-P06` 文档列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-3. 继续对齐 `P07` 商城 / 商品：公开浏览密度、商品详情首屏购买信息、库存 / 售出 / 状态提示和登录购买回流。
+3. `P07` 商城 / 商品已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
 4. 继续对齐 `P08-P09` 榜单 / 公开主页：榜单切换、公开内容 tab、关注登录回流和来源返回。
 5. 继续对齐 `P10-P14` 移动公开任务流：首屏真实内容、底栏前信息量、筛选 / tab 展开方式和低频入口 `/workbench` 承接。
 
@@ -102,8 +117,11 @@
 - `npm run build --workspace=radish.client`（追加收口后复跑）：通过。
 - `npm run build --workspace=radish.client`（P03-P04 论坛列表 / 详情追加实现后复跑）：通过。
 - `npm run build --workspace=radish.client`（P05-P06 文档列表 / 详情追加实现后复跑）：通过。
+- `npm run build --workspace=radish.client`（P07 商城 / 商品追加实现后复跑）：通过。
 - `git diff --check`（P05-P06 文档列表 / 详情追加实现后复跑）：通过。
 - `node Scripts/check-repo-hygiene.mjs ...`（P05-P06 本批 6 个文件显式检查）：通过，未发现文本卫生问题。
+- `git diff --check`（P07 商城 / 商品追加实现后复跑）：通过。
+- `node Scripts/check-repo-hygiene.mjs ...`（P07 本批 5 个文件显式检查）：通过，未发现文本卫生问题。
 - Pencil `P01 - Public App Home`：`snapshot_layout(problemsOnly=true)` 返回 `No layout problems`，截图确认品牌副标题、hero 文案与登录后参与说明已同步。
 - Gateway `/discover` PC `1920x1080`：标题为 `发现 - Radish`；右侧存在 `登录 + 工作台`；全局横向溢出 `0`；未出现 `社区发现`、`公开 Web`、`公开社区`、`公开只读`、`Web-first`、`Forum / Docs` 英文来源标签或裸路由路径。
 - Gateway `/discover` mobile `390x844`：标题为 `发现 - Radish`；横向溢出 `0`；未发现越界元素；未出现上述旧文案与裸路由路径。
@@ -113,3 +131,4 @@
 - 本记录首批提交时未执行真实 Gateway smoke；追加收口轮用户已确认前后端启动，并已补 `/discover` PC / mobile 真实页面复核。
 - `P03-P04` 论坛列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
 - `P05-P06` 文档列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
+- `P07` 商城 / 商品追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
