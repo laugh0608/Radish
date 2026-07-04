@@ -161,6 +161,18 @@ function toProductStatusText(t: PublicShopTranslate, product: Product): string {
   return t('shop.public.statusOnSale');
 }
 
+function toProductListStatusText(t: PublicShopTranslate, product: ProductListItem): string {
+  return product.voInStock === false
+    ? t('shop.public.statusOutOfStock')
+    : t('shop.public.statusOnSale');
+}
+
+function toProductListStockSignalText(t: PublicShopTranslate, product: ProductListItem): string {
+  return product.voInStock === false
+    ? t('shop.public.rowStockSignalUnavailable')
+    : t('shop.public.rowStockSignalAvailable');
+}
+
 function toCategoryNameById(categories: ProductCategory[]): Map<string, string> {
   return new Map(
     categories
@@ -192,7 +204,8 @@ function ProductTagRow({ product, categoryName }: { product: ProductListItem; ca
   const tags = [
     toProductTypeText(product),
     categoryName?.trim() || null,
-    product.voInStock === false ? t('shop.public.statusOutOfStock') : t('shop.public.statusOnSale'),
+    `${t('shop.public.rowStatusLabel')}${toProductListStatusText(t, product)}`,
+    `${t('shop.public.rowStockSignalLabel')}${toProductListStockSignalText(t, product)}`,
     product.voDurationDisplay || t('shop.public.durationFallback'),
   ].filter((tag): tag is string => Boolean(tag));
 
@@ -475,7 +488,12 @@ export function PublicShopHomeView({
                   {featuredCategoryName ? (
                     <span className={styles.metaChip}>{featuredCategoryName}</span>
                   ) : null}
-                  <span className={styles.metaChip}>{featuredProduct.voInStock === false ? t('shop.outOfStock') : t('shop.public.statusOnSale')}</span>
+                  <span className={styles.metaChip}>
+                    {t('shop.public.rowStatusLabel')}{toProductListStatusText(t, featuredProduct)}
+                  </span>
+                  <span className={styles.metaChip}>
+                    {t('shop.public.rowStockSignalLabel')}{toProductListStockSignalText(t, featuredProduct)}
+                  </span>
                 </div>
                 <h3 className={styles.featuredProductTitle}>{featuredProduct.voName}</h3>
                 <p className={styles.featuredProductCopy}>{t('shop.public.featuredProductDescription')}</p>

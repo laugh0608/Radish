@@ -133,6 +133,14 @@
 - `P11` 帖子详情、`P12` 文档阅读和 `P14` 公开主页继续承接前序 P03-P06/P09 的详情来源返回、登录后参与入口、评论树 / 相关内容 / 公开主页 rail 与共享移动底栏能力；本轮未新增详情页 API、提交载荷或路由语义。
 - `P13` 公开工作台仅承接当前已有公开路由；Pencil 中的公开聊天室入口仍按 D60 作为产品 / API 后置缺口，不在本轮硬造路由。
 
+## Gateway 真实 Smoke 追加与修复
+
+- 本轮用户已明确说明前后端已经启动；未启动任何服务，直接通过 Gateway `https://localhost:5000` 执行真实页面 smoke。
+- PC `1920x1080` 与 mobile `390x844` CSS 视口覆盖 `/discover`、`/forum`、论坛详情、`/docs`、`/docs/search`、Docs 详情、`/shop`、`/shop/products`、商品详情、`/leaderboard`、商品榜单、`/u/:id` 公开主页和 `/workbench`。
+- 首轮 smoke 命中 `/shop/products` 商品列表只展示“售卖中”，缺少明确“状态 / 库存”标签；已在公开商城列表行和首页推荐商品标签中补 `状态：售卖中 / 库存：可购买`，仅使用既有 `voInStock` 列表字段，不伪造库存数量，不修改详情页真实库存字段。
+- 来源返回与回流补验已覆盖：`/forum -> 帖子详情` 返回论坛、`/docs -> 文档详情` 返回目录、`/shop/products -> 商品详情` 返回商品列表、`/leaderboard -> /u/:id` 返回榜单，以及商品详情 `登录后继续购买` 进入统一登录授权页。
+- 本轮 Playwright CLI 只能稳定设置 CSS viewport，移动视口实际 `devicePixelRatio = 1`；未写成 `390x844 @ DPR 3` 的高分屏物理像素结论。
+
 ## 保持不变
 
 - 不新增或修改业务 API。
@@ -145,12 +153,8 @@
 
 ## 后续 D61 待办
 
-1. `P03-P04` 论坛列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-2. `P05-P06` 文档列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-3. `P07` 商城 / 商品已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-4. `P08-P09` 榜单 / 公开主页已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-5. `P10-P14` 移动公开任务流已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway mobile 真实 smoke。
-6. `P15-P16` 公开聊天室 / 移动聊天回复流继续按 D60 作为产品与 API 后置缺口，不在 D61 前端硬造。
+1. `P01-P14` 公开页面族首轮前端对齐与 Gateway PC / mobile CSS 视口真实 smoke 已完成；后续只在新缺口、回归失败或明确验收要求命中时回拉。
+2. `P15-P16` 公开聊天室 / 移动聊天回复流继续按 D60 作为产品与 API 后置缺口，不在 D61 前端硬造。
 
 ## 验证
 
@@ -172,12 +176,14 @@
 - Pencil `P01 - Public App Home`：`snapshot_layout(problemsOnly=true)` 返回 `No layout problems`，截图确认品牌副标题、hero 文案与登录后参与说明已同步。
 - Gateway `/discover` PC `1920x1080`：标题为 `发现 - Radish`；右侧存在 `登录 + 工作台`；全局横向溢出 `0`；未出现 `社区发现`、`公开 Web`、`公开社区`、`公开只读`、`Web-first`、`Forum / Docs` 英文来源标签或裸路由路径。
 - Gateway `/discover` mobile `390x844`：标题为 `发现 - Radish`；横向溢出 `0`；未发现越界元素；未出现上述旧文案与裸路由路径。
+- Gateway Public Web 矩阵 PC `1920x1080`：`/discover`、`/forum`、论坛详情、`/docs`、`/docs/search`、Docs 详情、`/shop`、`/shop/products`、商品详情、`/leaderboard`、商品榜单、公开主页和 `/workbench` 均完成首屏结构、关键文案与全局横向溢出检查；未发现新的页面阻断。
+- Gateway Public Web 矩阵 mobile `390x844` CSS 视口：上述页面均完成同口径复核；`/shop/products` 修复后已确认存在 `状态`、`库存`、`登录购买`，横向溢出 `0`。
+- Gateway 交互补验：论坛列表进入详情后保留 `返回论坛` 与登录后轻回应 / 讨论入口；Docs 列表进入详情后保留 `返回目录`、作者入口、相关文档和阅读元信息；商品列表进入详情后保留来源返回、库存 / 状态、私域边界和登录购买入口；榜单用户行进入公开主页后保留来源返回、关注入口、复制主页和内容 tab；商品详情 `登录后继续购买` 可进入统一登录授权页。
+- `npm run build --workspace=radish.client`（Gateway smoke 修复后复跑）：通过。
+- `git diff --check`（Gateway smoke 修复后复跑）：通过。
+- `node Scripts/check-repo-hygiene.mjs Docs/records/p3-12-d61-public-web-discover-pencil-first-implementation-2026-07-04.md Frontend/radish.client/src/i18n.ts Frontend/radish.client/src/public/shop/PublicShopViews.tsx`：通过，未发现文本卫生问题。
 
 ## 未执行
 
-- 本记录首批提交时未执行真实 Gateway smoke；追加收口轮用户已确认前后端启动，并已补 `/discover` PC / mobile 真实页面复核。
-- `P03-P04` 论坛列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
-- `P05-P06` 文档列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
-- `P07` 商城 / 商品追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
-- `P08-P09` 榜单 / 公开主页追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
-- `P10-P14` 移动公开任务流追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
+- 本轮未覆盖 `390x844 @ DPR 3` 高分屏物理像素口径；Playwright CLI 本轮只能设置 `390x844` CSS viewport，实际 DPR 为 `1`。
+- `P15-P16` 公开聊天室 / 移动聊天回复流仍按 D60 作为 Public 小专题内产品与 API 后置缺口，本轮不新增路由、API 或提交载荷。
