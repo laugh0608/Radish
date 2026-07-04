@@ -259,7 +259,7 @@
 
 ## 明天事项（2026-07-05）
 - 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 与 [P3-12-D60 Pencil 逐页 UI 与功能缺口复盘](/records/p3-12-d60-pencil-page-ui-and-function-gap-review-2026-07-04)，确认下一步仍在 `P3-12-D` UI 收束内。
-- 继续推进 `P3-12-D62 Private / Author Pencil 逐页 UI 与功能缺口实现`：`/workbench` 已完成首批对齐，下一步继续按 `private-web-workflows.pen` 的 `P02-P30` 页面族补 UI 设计差距和现有 API 内可承接的前端功能状态；完整钱包、退款 / 售后、支付口令、资产风控、完整聊天平台和复杂资料 / 安全设置继续作为 D62 内后置产品 / API 缺口记录。
+- 继续推进 `P3-12-D62 Private / Author Pencil 逐页 UI 与功能缺口实现`：`/workbench` 已完成首批对齐，下一步建议进入 `/me` 内容历史复访组，对照 `private-web-workflows.pen` 的 `P03-P06 / P23`，覆盖 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的 PC 与 mobile 任务流、tab / 筛选、选中内容预览、公开详情来源返回、附件归属、经验进度和流水可读性；完成后再进入资产 / 订单 / 背包 `P07-P11 / P24-P25`，随后处理通知 / 消息、圈子 / 宠物、论坛作者态和 Docs 作者态；只使用现有 API、现有路由语义和现有前端状态，完整钱包、退款 / 售后、支付口令、资产风控、完整聊天平台和复杂资料 / 安全设置继续作为 D62 内后置产品 / API 缺口记录。
 - 若需要新增真实 Gateway smoke，仍必须先由用户当日明确说明前后端已启动；普通开发优先使用 `radish.client` 类型检查 / 构建、repo hygiene 和 `git diff --check`。
 - 不新增业务 API、权限键、数据库结构、路由语义或保存 / 提交载荷；不直接进入 `P3-12-E`，不创建 tag，不进入 M15 测试或生产部署流程。
 

@@ -20,7 +20,9 @@
 >
 > 更新：2026-07-04（Asia/Shanghai）：D54 已通过 Pencil MCP 读取 `private-web-workflows.pen` 并抽查 `P22 / P23`，收紧 `/me` 移动个人状态入口、摘要卡和内容 tab 密度；随后使用 Gateway 补齐 PC `1920x1080` 与移动 `390x844` CSS 视口真实页面复核，未命中新的私域 / 作者态阻断。
 >
-> 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批和 D54 Pencil / Gateway 真实页面对齐已完成，后续按 D36+ 差距矩阵和阶段验收结果定向回拉
+> 更新：2026-07-04（Asia/Shanghai）：D62 已通过 Pencil MCP 抽查 `P01 / P21`，首批将 `/workbench` 从 summary + 功能卡片推进为继续处理队列、私域状态 rail 和正式 private 移动底栏承接；未新增 API、权限、数据库结构、路由语义或提交载荷。
+>
+> 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批、D54 Pencil / Gateway 真实页面对齐和 D62 `/workbench` 首批实现已完成，后续继续按 D62 页面族推进
 
 ## 设计源
 
@@ -85,6 +87,11 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - 快速入口覆盖 `/me`、资产流水、订单 / 背包、通知、消息、圈子、宠物、我的内容、附件、历史和作者入口。
 - 右侧身份操作组必须贴合真实按钮内容，不能用固定宽度外框撑出无意义空白；业务 rail 只在页面主体承接状态理解、决策或动作。
 - 状态槽必须覆盖待处理、新通知、宠物状态、加载、空态、错误和权限限制。
+
+代码对齐状态：
+
+- `P3-12-D62` 已将 `/workbench` 补齐继续处理队列、私域状态 rail 和 mobile private 底栏承接；队列仅指向现有正式 Web 路由 `/notifications`、`/shop/orders`、`/docs/mine`、`/pet`，不新增业务 API 或路由语义。
+- D62 后续优先进入 `/me` 内容历史复访组，对照 `P03-P06 / P23` 处理内容、历史、附件和经验页面的任务状态与移动单列节奏。
 
 ### 资产 / 订单 / 背包
 
