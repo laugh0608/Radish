@@ -57,6 +57,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import '../adminForm.css';
 import '../adminFeature.css';
+import './DocumentGovernancePage.css';
 
 const DOCUMENT_STATUS = {
   draft: 0,
