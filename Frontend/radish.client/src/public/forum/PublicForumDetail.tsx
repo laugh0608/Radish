@@ -8,6 +8,7 @@ import {
   answerQuestion,
   createComment,
   createPostQuickReply,
+  getReactionSummary,
   getPostEditHistory,
   getCommentNavigation,
   getChildComments,
@@ -21,6 +22,7 @@ import {
   type PostEditHistory,
   type PostDetail,
   type PostQuickReply,
+  type ReactionSummaryVo,
 } from '@/api/forum';
 import type { LongId } from '@/api/user';
 import { buildPublicForumPostReturnPath } from '@/services/authReturnPath';
@@ -84,6 +86,9 @@ const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
 const QUICK_REPLY_SECTION_ID = 'public-forum-quick-replies';
 const COMMENT_SECTION_ID = 'public-forum-comments';
 
+const normalizeReactionItems = (items: ReactionSummaryVo[]): ReactionSummaryVo[] =>
+  (items || []).filter((item) => (item.voCount ?? 0) > 0);
+
 const EditPostModal = lazy(() =>
   import('@/apps/forum/components/EditPostModal').then((module) => ({ default: module.EditPostModal }))
 );
@@ -142,11 +147,13 @@ export const PublicForumDetail = ({
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [quickReplies, setQuickReplies] = useState<PostQuickReply[]>([]);
+  const [postReactionItems, setPostReactionItems] = useState<ReactionSummaryVo[]>([]);
   const [quickReplyTotal, setQuickReplyTotal] = useState(0);
   const [commentTotal, setCommentTotal] = useState(0);
   const [loadedCommentPages, setLoadedCommentPages] = useState(0);
   const [commentSortBy, setCommentSortBy] = useState<RootCommentSort>(null);
   const [loadingPost, setLoadingPost] = useState(false);
+  const [loadingPostReactions, setLoadingPostReactions] = useState(false);
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingQuickReplies, setLoadingQuickReplies] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
@@ -626,6 +633,39 @@ export const PublicForumDetail = ({
 
     return removePublicStructuredData;
   }, [commentId, post]);
+
+  useEffect(() => {
+    const targetPostId = post?.voId;
+    if (!targetPostId) {
+      setPostReactionItems([]);
+      setLoadingPostReactions(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingPostReactions(true);
+    getReactionSummary('Post', targetPostId)
+      .then((items) => {
+        if (!cancelled) {
+          setPostReactionItems(normalizeReactionItems(items));
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          log.warn('公开论坛帖子回应汇总加载失败，已降级为空状态:', error);
+          setPostReactionItems([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingPostReactions(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post?.voId]);
 
   const buildForumShareUrl = useCallback(() => {
     const sharePostId = post ? getForumPostRouteIdentifier(post) : postId;
@@ -1322,7 +1362,8 @@ export const PublicForumDetail = ({
   );
 
   return (
-    <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
+    <div className={styles.forumGrid}>
+      <section className={`${styles.sectionCard} ${styles.detailSectionCard}`}>
       <div className={styles.detailTopbar}>
         <div className={styles.detailTopbarActions}>
           <a
@@ -1399,6 +1440,7 @@ export const PublicForumDetail = ({
               post={post}
               loading={false}
               displayTimeZone={displayTimeZone}
+              density="compact"
               mode="interactive"
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId || '0'}
@@ -1416,6 +1458,63 @@ export const PublicForumDetail = ({
               onPollClick={onOpenPoll}
               onLotteryClick={onOpenLottery}
             />
+
+            <section className={styles.reactionStrip} aria-label={t('forum.public.postReactionsTitle')}>
+              <div className={styles.reactionStripHeader}>
+                <div>
+                  <p className={styles.sidePanelKicker}>{t('forum.public.postReactionsTitle')}</p>
+                  <p className={styles.sidePanelText}>{t('forum.public.postReactionsDescription')}</p>
+                </div>
+                {commentReturnPath && (
+                  <a
+                    href={commentReturnPath}
+                    className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary}`}
+                    aria-controls={COMMENT_SECTION_ID}
+                    onClick={(event) => handlePublicForumLinkClick(event, handleCommentAction)}
+                  >
+                    <Icon icon="mdi:comment-text-outline" size={18} />
+                    <span>
+                      {isAuthenticated
+                        ? t('forum.public.workspaceCommentAction')
+                        : t('forum.public.workspaceCommentLoginAction')}
+                    </span>
+                  </a>
+                )}
+              </div>
+              <div className={styles.reactionChipList}>
+                {loadingPostReactions ? (
+                  <span className={styles.reactionChip}>{t('forum.public.postReactionsLoading')}</span>
+                ) : postReactionItems.length === 0 ? (
+                  <span className={styles.reactionChipMuted}>{t('forum.public.postReactionsEmpty')}</span>
+                ) : (
+                  postReactionItems.map((reaction) => {
+                    const stickerThumbnailUrl = resolveMediaUrl(reaction.voThumbnailUrl);
+                    return (
+                      <span
+                        key={`${reaction.voEmojiType}-${reaction.voEmojiValue}`}
+                        className={styles.reactionChip}
+                      >
+                        {reaction.voEmojiType === 'sticker' ? (
+                          stickerThumbnailUrl ? (
+                            <img
+                              src={stickerThumbnailUrl}
+                              alt={t('forum.public.reactionSticker')}
+                              className={styles.reactionSticker}
+                              loading="lazy"
+                            />
+                          ) : (
+                            <Icon icon="mdi:sticker-emoji" size={16} />
+                          )
+                        ) : (
+                          <span className={styles.reactionEmoji}>{reaction.voEmojiValue}</span>
+                        )}
+                        <span>{reaction.voCount}</span>
+                      </span>
+                    );
+                  })
+                )}
+              </div>
+            </section>
 
             {(commentReturnPath || quickReplyReturnPath || answerReturnPath || (isAuthenticated && isCurrentUserAuthor && (editReturnPath || historyReturnPath))) && (
               <section className={styles.workspaceActionPanel}>
@@ -1537,6 +1636,7 @@ export const PublicForumDetail = ({
                   replies={quickReplies}
                   total={quickReplyTotal}
                   loading={loadingQuickReplies}
+                  density="compact"
                   isAuthenticated={isAuthenticated}
                   currentUserId={currentUserId || '0'}
                   titleHeadingLevel={2}
@@ -1650,6 +1750,7 @@ export const PublicForumDetail = ({
                     onLoadMoreRootComments={handleLoadMoreComments}
                     isAuthenticated={isAuthenticated}
                     showTitle={false}
+                    density="compact"
                     onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
                     resolveAuthorProfileId={resolvePublicProfileUserId}
                     onNavigateToComment={(targetCommentId) => void navigateToComment(
@@ -1660,13 +1761,6 @@ export const PublicForumDetail = ({
                 </>
               )}
             </section>
-
-            <PublicReadingGuide
-              label={readingGuide.label}
-              title={readingGuide.title}
-              description={readingGuide.description}
-              items={readingGuide.items}
-            />
 
             {isEditModalOpen && (
               <Suspense fallback={null}>
@@ -1709,6 +1803,93 @@ export const PublicForumDetail = ({
           </>
         )}
       </div>
-    </section>
+      </section>
+
+      <aside className={styles.forumSideRail} aria-label={t('forum.public.detailRailLabel')}>
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.detailRailSourceTitle')}</p>
+          <p className={styles.sidePanelText}>{t('forum.public.detailRailSourceDescription')}</p>
+          <a
+            className={`${styles.backButton} ${styles.sidePanelAction}`}
+            href={backHref}
+            onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+          >
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{backLabel}</span>
+          </a>
+        </section>
+
+        <PublicReadingGuide
+          className={`${styles.readingGuide} ${styles.sideReadingGuide}`}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
+
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.detailRailSemanticsTitle')}</p>
+          <ul className={styles.sideRuleList}>
+            <li>{t('forum.public.detailRailGodParent')}</li>
+            <li>{t('forum.public.detailRailSofaChild')}</li>
+            <li>{t('forum.public.detailRailQuickReply')}</li>
+            <li>{t('forum.public.detailRailListSummary')}</li>
+          </ul>
+        </section>
+
+        {(quickReplyReturnPath || commentReturnPath || (answerReturnPath && post?.voIsQuestion)) && (
+          <section className={styles.sidePanel}>
+            <p className={styles.sidePanelKicker}>{t('forum.public.detailRailParticipationTitle')}</p>
+            <p className={styles.sidePanelText}>{t('forum.public.detailRailParticipationDescription')}</p>
+            <div className={styles.railActionList}>
+              {quickReplyReturnPath && (
+                <a
+                  href={quickReplyReturnPath}
+                  className={styles.railActionLink}
+                  aria-controls={QUICK_REPLY_SECTION_ID}
+                  onClick={(event) => handlePublicForumLinkClick(event, handleQuickReplyAction)}
+                >
+                  <Icon icon="mdi:message-flash-outline" size={18} />
+                  <span>
+                    {isAuthenticated
+                      ? t('forum.public.workspaceQuickReplyAction')
+                      : t('forum.public.workspaceQuickReplyLoginAction')}
+                  </span>
+                </a>
+              )}
+              {commentReturnPath && (
+                <a
+                  href={commentReturnPath}
+                  className={styles.railActionLink}
+                  aria-controls={COMMENT_SECTION_ID}
+                  onClick={(event) => handlePublicForumLinkClick(event, handleCommentAction)}
+                >
+                  <Icon icon="mdi:comment-text-outline" size={18} />
+                  <span>
+                    {isAuthenticated
+                      ? t('forum.public.workspaceCommentAction')
+                      : t('forum.public.workspaceCommentLoginAction')}
+                  </span>
+                </a>
+              )}
+              {answerReturnPath && post?.voIsQuestion && (
+                <a
+                  href={answerReturnPath}
+                  className={styles.railActionLink}
+                  onClick={(event) => handlePublicForumLinkClick(event, handleAnswerAction)}
+                >
+                  <Icon icon="mdi:comment-question-outline" size={18} />
+                  <span>
+                    {isAuthenticated
+                      ? t('forum.public.workspaceAnswerAction')
+                      : t('forum.public.workspaceAnswerLoginAction')}
+                  </span>
+                </a>
+              )}
+            </div>
+          </section>
+        )}
+      </aside>
+    </div>
   );
 };

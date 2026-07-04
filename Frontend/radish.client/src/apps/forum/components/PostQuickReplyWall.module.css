@@ -11,6 +11,13 @@
   box-shadow: 0 16px 30px color-mix(in srgb, var(--theme-accent-ink) 8%, transparent);
 }
 
+.sectionCompact {
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  box-shadow: none;
+}
+
 .header {
   display: flex;
   align-items: flex-start;
@@ -67,6 +74,12 @@
   background: color-mix(in srgb, var(--theme-bg-app) 72%, var(--theme-bg-surface) 28%);
 }
 
+.sectionCompact .composer {
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+}
+
 .composerShell {
   display: flex;
   align-items: center;
@@ -89,6 +102,11 @@
   overflow-y: auto;
   outline: none;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.sectionCompact .textarea {
+  min-height: 42px;
+  padding: 10px 14px;
 }
 
 .textarea:focus {
@@ -115,6 +133,13 @@
   font-size: 14px;
   font-weight: 700;
   transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.sectionCompact .submitButton,
+.sectionCompact .loginButton {
+  min-width: 104px;
+  min-height: 42px;
+  padding: 0 14px;
 }
 
 .submitButton {
@@ -168,6 +193,11 @@
   gap: 12px;
 }
 
+.sectionCompact .wall,
+.sectionCompact .lanes {
+  gap: 9px;
+}
+
 .lane {
   position: relative;
   overflow: hidden;
@@ -214,6 +244,11 @@
   box-shadow:
     0 8px 18px color-mix(in srgb, var(--theme-accent-ink) 7%, transparent),
     inset 0 1px 0 color-mix(in srgb, white 42%, transparent);
+}
+
+.sectionCompact .pill {
+  min-height: 38px;
+  padding: 6px 10px 6px 6px;
 }
 
 .avatar {

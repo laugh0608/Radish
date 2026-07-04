@@ -9,6 +9,14 @@
   min-width: 0;
 }
 
+.containerCompact {
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  border-left-width: 2px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
 .containerHighlighted {
   border-color: rgba(215, 145, 72, 0.52);
   background: linear-gradient(180deg, rgba(255, 247, 230, 0.96) 0%, rgba(255, 252, 246, 0.98) 100%);
@@ -43,6 +51,11 @@
   margin-bottom: 4px;
 }
 
+.containerCompact .header {
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
 .author {
   color: var(--theme-brand-primary);
   font-weight: 500;
@@ -74,6 +87,12 @@
   flex-shrink: 0;
   font-size: 12px;
   font-weight: 700;
+}
+
+.containerCompact .authorAvatar {
+  width: 24px;
+  height: 24px;
+  font-size: 11px;
 }
 
 .authorAvatarImage {
@@ -173,11 +192,20 @@
   overflow-wrap: anywhere;
 }
 
+.containerCompact .content {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .contentWrapper {
   display: flex;
   flex-direction: column;
   gap: 8px;
   min-width: 0;
+}
+
+.containerCompact .contentWrapper {
+  gap: 6px;
 }
 
 .replyMeta {
@@ -301,6 +329,11 @@
   margin-top: 8px;
 }
 
+.containerCompact .actions {
+  gap: 8px;
+  margin-top: 6px;
+}
+
 .actionButton {
   padding: 4px 8px;
   background: transparent;
@@ -364,6 +397,10 @@
 
 .childrenSection {
   margin-top: 12px;
+}
+
+.containerCompact .childrenSection {
+  margin-top: 8px;
 }
 
 .childSortButtons {

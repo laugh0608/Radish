@@ -54,6 +54,7 @@ interface PublicForumListProps {
   onOpenQuestion?: () => void;
   onOpenPoll?: () => void;
   onOpenLottery?: () => void;
+  onOpenCompose?: (categoryId: string | null) => void;
 }
 
 export const PublicForumList = ({
@@ -69,7 +70,8 @@ export const PublicForumList = ({
   onOpenTag,
   onOpenQuestion,
   onOpenPoll,
-  onOpenLottery
+  onOpenLottery,
+  onOpenCompose
 }: PublicForumListProps) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -353,8 +355,14 @@ export const PublicForumList = ({
   });
   const allPostsRoute = buildListRoute(1, null);
 
+  const composeRoute = {
+    kind: 'compose' as const,
+    categoryId: selectedCategoryId
+  };
+
   return (
-    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
+    <div className={styles.forumGrid}>
+      <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
           <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
@@ -579,13 +587,84 @@ export const PublicForumList = ({
         />
       )}
 
-      <PublicReadingGuide
-        className={styles.readingGuide}
-        label={readingGuide.label}
-        title={readingGuide.title}
-        description={readingGuide.description}
-        items={readingGuide.items}
-      />
-    </section>
+      </section>
+
+      <aside className={styles.forumSideRail} aria-label={t('forum.public.listRailLabel')}>
+        <PublicReadingGuide
+          className={`${styles.readingGuide} ${styles.sideReadingGuide}`}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
+
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.listRailRulesTitle')}</p>
+          <ul className={styles.sideRuleList}>
+            <li>{t('forum.public.listRailRuleGodSummary')}</li>
+            <li>{t('forum.public.listRailRuleNoListReaction')}</li>
+            <li>{t('forum.public.listRailRuleStats')}</li>
+            <li>{t('forum.public.listRailRuleCommentEntry')}</li>
+          </ul>
+        </section>
+
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.listRailFeedsTitle')}</p>
+          <p className={styles.sidePanelText}>{t('forum.public.listRailFeedsDescription')}</p>
+          <div className={styles.railChipList}>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={allPostsRoute}
+              onNavigate={() => {
+                setSelectedCategoryId(null);
+                setCurrentPage(1);
+              }}
+            >
+              {t('forum.allPosts')}
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={buildListRoute(1, selectedCategoryId, 'newest')}
+              onNavigate={() => {
+                setSortBy('newest');
+                setCurrentPage(1);
+              }}
+            >
+              {t('forum.sort.newest')}
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={buildListRoute(1, selectedCategoryId, 'hottest')}
+              onNavigate={() => {
+                setSortBy('hottest');
+                setCurrentPage(1);
+              }}
+            >
+              {t('forum.sort.hottest')}
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={createDefaultSearchRoute()}
+              onNavigate={onOpenSearch ? () => onOpenSearch() : undefined}
+            >
+              {t('forum.public.searchAction')}
+            </PublicForumRouteLink>
+          </div>
+        </section>
+
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.listRailComposeTitle')}</p>
+          <p className={styles.sidePanelText}>{t('forum.public.listRailComposeDescription')}</p>
+          <PublicForumRouteLink
+            className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary} ${styles.sidePanelAction}`}
+            route={composeRoute}
+            onNavigate={() => onOpenCompose?.(selectedCategoryId)}
+          >
+            <Icon icon="mdi:pencil-plus-outline" size={18} />
+            <span>{t('forum.public.listRailComposeAction')}</span>
+          </PublicForumRouteLink>
+        </section>
+      </aside>
+    </div>
   );
 };

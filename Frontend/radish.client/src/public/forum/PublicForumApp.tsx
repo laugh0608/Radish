@@ -232,6 +232,7 @@ export const PublicForumApp = ({
             onOpenQuestion={onNavigateToQuestion}
             onOpenPoll={onNavigateToPoll}
             onOpenLottery={onNavigateToLottery}
+            onOpenCompose={(categoryId) => onNavigate({ kind: 'compose', categoryId })}
           />
         ) : null}
       </main>

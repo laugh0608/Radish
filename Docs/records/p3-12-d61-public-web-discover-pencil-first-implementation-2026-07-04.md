@@ -38,6 +38,29 @@
 - 已同步 `public-web-unified-experience.pen` 的 `P01 - Public App Home` 编辑器内容：品牌副标题、hero 徽标、hero 说明、示例帖子说明和登录后参与说明与代码口径一致。
 - Pencil `P01` 布局检查结果：`No layout problems`。
 
+## P03-P04 论坛列表 / 详情追加实现
+
+- `Frontend/radish.client/src/public/forum/PublicForumList.tsx`
+  - 将公开论坛列表从单栏卡片页调整为主列表 + 右侧 rail：主栏继续承载分类、标签、作者、赞评阅、最近互动和神评摘要；右栏承载列表语义、公开路由入口和登录后发帖入口。
+  - 发帖入口复用既有 `/forum/compose` 路由与已有公开发帖页，不新增路由语义、API、权限或提交载荷。
+- `Frontend/radish.client/src/public/forum/PublicForumDetail.tsx`
+  - 将公开帖子详情调整为主详情 + 右侧 rail：主栏承载正文、只读 reaction 汇总、轻回应和评论树；右栏承载来源返回、阅读提示、神评 / 沙发 / 轻回应语义和登录后参与入口。
+  - reaction 仅通过现有 `getReactionSummary('Post', postId)` 读取汇总并展示，不接入新增切换或提交能力；列表页不展开 reaction。
+  - 来源返回继续使用传入的 `backHref / backLabel / onBack`，保留列表、搜索、标签和结构化 feed 的返回上下文。
+- `Frontend/radish.client/src/apps/forum/components/PostDetail.tsx`
+  - 新增可选 `density="compact"`，仅由公开帖子详情使用，用于收紧标题、正文、meta 和标签密度；默认 `normal` 不影响 WebOS 内部论坛。
+- `Frontend/radish.client/src/apps/forum/components/PostQuickReplyWall.tsx`
+  - 新增可选 `density="compact"`，公开详情页下收紧轻回应墙、输入区和 pill 密度；提交载荷保持既有 `createPostQuickReply`。
+- `Frontend/radish.client/src/apps/forum/components/CommentTree.tsx`、`CommentNode.tsx`
+  - 新增可选 `density="compact"`，公开详情页下收紧评论树间距、头像、内容行高和子回复缩进。
+  - 神评、沙发、二级评论结构、子回复展开和排序继续复用既有后端标记与组件行为。
+- `Frontend/radish.client/src/apps/forum/components/PostCard.tsx`
+  - 公开紧凑卡片的互动标签改为“最近互动”，继续复用已有 `voLatestInteractors`、评论数和神评摘要数据。
+- `Frontend/radish.client/src/public/forum/PublicForumApp.module.css`
+  - 将公开论坛 P03/P04 主体宽度扩展为 PC 主栏 + 右栏布局，`1120px` 以下回落单栏 / 双列 rail，`720px` 以下适配 390px mobile 纵向堆叠。
+- `Frontend/radish.client/src/i18n.ts`
+  - 补齐 P03/P04 列表 rail、详情 rail、reaction 汇总、来源返回和“最近互动”中英文文案。
+
 ## 保持不变
 
 - 不新增或修改业务 API。
@@ -50,7 +73,7 @@
 
 ## 后续 D61 待办
 
-1. 继续对齐 `P03-P04` 论坛列表 / 详情：列表密度、分类 / 标签、最近互动、reaction 展示、神评 / 沙发、轻回应和评论树层级。
+1. `P03-P04` 论坛列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
 2. 继续对齐 `P05-P06` 文档列表 / 详情：目录 / 搜索节奏、相关文档、作者入口、正文首屏和详情页辅助信息位置。
 3. 继续对齐 `P07` 商城 / 商品：公开浏览密度、商品详情首屏购买信息、库存 / 售出 / 状态提示和登录购买回流。
 4. 继续对齐 `P08-P09` 榜单 / 公开主页：榜单切换、公开内容 tab、关注登录回流和来源返回。
@@ -60,6 +83,7 @@
 
 - `npm run build --workspace=radish.client`：通过。
 - `npm run build --workspace=radish.client`（追加收口后复跑）：通过。
+- `npm run build --workspace=radish.client`（P03-P04 论坛列表 / 详情追加实现后复跑）：通过。
 - Pencil `P01 - Public App Home`：`snapshot_layout(problemsOnly=true)` 返回 `No layout problems`，截图确认品牌副标题、hero 文案与登录后参与说明已同步。
 - Gateway `/discover` PC `1920x1080`：标题为 `发现 - Radish`；右侧存在 `登录 + 工作台`；全局横向溢出 `0`；未出现 `社区发现`、`公开 Web`、`公开社区`、`公开只读`、`Web-first`、`Forum / Docs` 英文来源标签或裸路由路径。
 - Gateway `/discover` mobile `390x844`：标题为 `发现 - Radish`；横向溢出 `0`；未发现越界元素；未出现上述旧文案与裸路由路径。
@@ -67,3 +91,4 @@
 ## 未执行
 
 - 本记录首批提交时未执行真实 Gateway smoke；追加收口轮用户已确认前后端启动，并已补 `/discover` PC / mobile 真实页面复核。
+- `P03-P04` 论坛列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。

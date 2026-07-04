@@ -18,6 +18,7 @@ interface CommentNodeProps {
   node: CommentNodeType;
   level: number;
   displayTimeZone: string;
+  density?: 'normal' | 'compact';
   currentUserId?: LongId;
   highlightedCommentId?: LongId | null;
   expandedRootCommentId?: LongId;
@@ -249,6 +250,7 @@ export const CommentNode = ({
   node,
   level,
   displayTimeZone,
+  density = 'normal',
   currentUserId = '0',
   highlightedCommentId = null,
   expandedRootCommentId,
@@ -588,8 +590,8 @@ export const CommentNode = ({
   return (
     <div
       ref={(element) => registerCommentAnchor?.(node.voId, element)}
-      className={`${styles.container} ${isSameLongId(highlightedCommentId, node.voId) ? styles.containerHighlighted : ''}`}
-      style={{ marginLeft: level * 16 }}
+      className={`${styles.container} ${density === 'compact' ? styles.containerCompact : ''} ${isSameLongId(highlightedCommentId, node.voId) ? styles.containerHighlighted : ''}`}
+      style={{ marginLeft: level * (density === 'compact' ? 12 : 16) }}
     >
       <div className={styles.header}>
         <button
@@ -869,6 +871,7 @@ export const CommentNode = ({
                   onReport={onReport}
                   registerCommentAnchor={registerCommentAnchor}
                   onNavigateToComment={onNavigateToComment}
+                  density={density}
                 />
               ))}
             </div>

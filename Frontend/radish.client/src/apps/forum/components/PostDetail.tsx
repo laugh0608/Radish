@@ -28,6 +28,7 @@ interface PostDetailProps {
   loading?: boolean;
   displayTimeZone: string;
   mode?: 'interactive' | 'readOnly';
+  density?: 'normal' | 'compact';
   showSectionTitle?: boolean;
   postTitleHeadingLevel?: PostTitleHeadingLevel;
   isLiked?: boolean;
@@ -96,6 +97,7 @@ export const PostDetail = ({
   loading = false,
   displayTimeZone,
   mode = 'interactive',
+  density = 'normal',
   showSectionTitle = true,
   postTitleHeadingLevel = 4,
   isLiked = false,
@@ -136,6 +138,7 @@ export const PostDetail = ({
 }: PostDetailProps) => {
   const { t } = useTranslation();
   const isReadOnly = mode === 'readOnly';
+  const containerClassName = `${styles.container} ${density === 'compact' ? styles.containerCompact : ''}`;
   const resolveProfileUserId = (userId: LongId, publicId?: string | null): LongId =>
     resolveAuthorProfileId?.(userId, publicId) ?? userId;
   const anonymousUserLabel = t('forum.postCard.anonymousUser');
@@ -282,7 +285,7 @@ export const PostDetail = ({
 
   if (loading) {
     return (
-      <div className={styles.container}>
+      <div className={containerClassName}>
         {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
         <p className={styles.loadingText}>{t('forum.postDetail.loading')}</p>
       </div>
@@ -291,7 +294,7 @@ export const PostDetail = ({
 
   if (!post) {
     return (
-      <div className={styles.container}>
+      <div className={containerClassName}>
         {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
         <p className={styles.emptyText}>{t('forum.postDetail.empty')}</p>
       </div>
@@ -420,7 +423,7 @@ export const PostDetail = ({
   };
 
   return (
-    <div className={styles.container}>
+    <div className={containerClassName}>
       {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
         {renderPostTitle(post.voTitle, postTitleHeadingLevel)}

@@ -14,6 +14,7 @@ interface CommentTreeProps {
   loadingMoreRootComments?: boolean;
   hasPost?: boolean;
   showTitle?: boolean;
+  density?: 'normal' | 'compact';
   displayTimeZone: string;
   currentUserId?: LongId;
   highlightedCommentId?: LongId | null;
@@ -53,6 +54,7 @@ export const CommentTree = ({
   loadingMoreRootComments = false,
   hasPost = false,
   showTitle = true,
+  density = 'normal',
   displayTimeZone,
   currentUserId = '0',
   highlightedCommentId = null,
@@ -125,7 +127,7 @@ export const CommentTree = ({
   const hasMoreRootComments = hasPost && loadedRootCommentCount < rootCommentTotal;
 
   return (
-    <div className={styles.container}>
+    <div className={`${styles.container} ${density === 'compact' ? styles.containerCompact : ''}`}>
       {(showTitle || (hasPost && comments.length > 0)) && (
         <div className={`${styles.header} ${!showTitle ? styles.headerTitleHidden : ''}`}>
           {showTitle && <h4 className={styles.title}>{t('forum.commentTree.title')}</h4>}
@@ -188,6 +190,7 @@ export const CommentTree = ({
             onReport={onReportComment}
             registerCommentAnchor={registerCommentAnchor}
             onNavigateToComment={onNavigateToComment}
+            density={density}
           />
         ))}
       </div>

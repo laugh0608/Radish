@@ -26,6 +26,7 @@ interface PostQuickReplyWallProps {
   currentUserId: LongId;
   titleHeadingLevel?: QuickReplyTitleHeadingLevel;
   mode?: 'interactive' | 'readOnly';
+  density?: 'normal' | 'compact';
   onCreate?: (content: string) => Promise<void>;
   onDelete?: (quickReplyId: LongId) => Promise<void>;
   onReport?: (quickReplyId: LongId) => void;
@@ -107,6 +108,7 @@ export const PostQuickReplyWall = ({
   currentUserId,
   titleHeadingLevel = 3,
   mode = 'interactive',
+  density = 'normal',
   onCreate,
   onDelete,
   onReport,
@@ -323,7 +325,11 @@ export const PostQuickReplyWall = ({
   };
 
   return (
-    <section id={sectionId} className={styles.section} aria-labelledby={titleId}>
+    <section
+      id={sectionId}
+      className={`${styles.section} ${density === 'compact' ? styles.sectionCompact : ''}`}
+      aria-labelledby={titleId}
+    >
       <div className={styles.header}>
         <div className={styles.headerMain}>
           <div className={styles.titleRow}>
