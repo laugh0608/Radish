@@ -14,7 +14,7 @@
 
 .main {
   flex: 1 0 auto;
-  width: min(var(--rx-content-reading-width), calc(100vw - 24px));
+  width: min(1376px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 24px 0 40px;
   display: flex;
@@ -28,6 +28,7 @@
   border-radius: 28px;
   box-shadow: var(--theme-shadow-soft);
   overflow: hidden;
+  min-width: 0;
 }
 
 .sectionHeader {
@@ -274,6 +275,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 38px;
   padding: 9px 16px;
   border-radius: 999px;
@@ -291,7 +293,6 @@
 }
 
 .secondaryButton {
-  gap: 8px;
   border: 1px solid var(--theme-border-strong);
   background: var(--theme-bg-surface);
   color: var(--theme-text-primary);
@@ -345,6 +346,41 @@
   gap: 16px;
 }
 
+.docsIndexGrid,
+.docsSearchGrid,
+.docsArticleGrid {
+  display: grid;
+  align-items: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.docsIndexGrid {
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(280px, 324px);
+}
+
+.docsSearchGrid {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 324px);
+}
+
+.docsArticleGrid {
+  grid-template-columns: minmax(0, 920px) minmax(320px, 1fr);
+}
+
+.searchMainColumn,
+.articleMainColumn,
+.sideRail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.sideRail {
+  position: sticky;
+  top: 104px;
+}
+
 .panel,
 .articleCard {
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
@@ -389,6 +425,124 @@
   color: var(--theme-text-secondary);
   font-size: 12px;
   font-weight: 600;
+}
+
+.railPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
+}
+
+.railPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.railIcon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 60%, white 40%);
+  color: var(--theme-brand-primary);
+}
+
+.railTitle {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.railText {
+  margin: 6px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.railAction {
+  width: 100%;
+}
+
+.railStatGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.railStat {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-muted) 56%, var(--theme-bg-surface) 44%);
+}
+
+.railStatValue {
+  color: var(--theme-text-primary);
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.railStatLabel,
+.relatedDocMeta {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.railChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.relatedDocList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.relatedDocLink {
+  display: grid;
+  gap: 5px;
+  padding: 11px 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  color: inherit;
+  text-decoration: none;
+  min-width: 0;
+  transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), border-color var(--theme-transition-standard);
+}
+
+.relatedDocLink:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--theme-brand-primary) 9%, transparent);
+}
+
+.relatedDocTitle {
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .directoryList {
@@ -605,6 +759,28 @@
   min-width: 0;
 }
 
+@media (max-width: 1120px) {
+  .main {
+    width: min(960px, calc(100vw - 28px));
+  }
+
+  .docsIndexGrid,
+  .docsSearchGrid,
+  .docsArticleGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sideRail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sideRail > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
 @media (max-width: 840px) {
   .listLayout {
     grid-template-columns: 1fr;
@@ -620,6 +796,23 @@
     width: calc(100vw - 20px);
     padding-top: 14px;
     padding-bottom: var(--rx-mobile-shell-offset);
+  }
+
+  .sectionCard {
+    border-radius: 20px;
+  }
+
+  .docsIndexGrid,
+  .docsSearchGrid,
+  .docsArticleGrid,
+  .searchMainColumn,
+  .articleMainColumn,
+  .sideRail {
+    gap: 12px;
+  }
+
+  .sideRail {
+    display: flex;
   }
 
   .sectionHeader,
@@ -807,6 +1000,7 @@
 
   .panel,
   .articleCard,
+  .railPanel,
   .searchPanel,
   .searchResultsSection {
     border-radius: 20px;

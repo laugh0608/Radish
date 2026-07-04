@@ -61,6 +61,23 @@
 - `Frontend/radish.client/src/i18n.ts`
   - 补齐 P03/P04 列表 rail、详情 rail、reaction 汇总、来源返回和“最近互动”中英文文案。
 
+## P05-P06 文档列表 / 详情追加实现
+
+- `Frontend/radish.client/src/public/docs/PublicDocsApp.tsx`
+  - 将公开文档列表从单卡片内两列调整为 `P05` 对应的目录 / 文档索引 / 右侧 rail 三栏结构。
+  - 搜索页保留既有关键词检索、分页和详情跳转语义，补右侧搜索上下文、目录返回和阅读提示 rail。
+  - 详情页保留顶部来源返回、复制链接和登录后编辑入口；正文区域调整为主阅读栏 + 右侧来源返回 / 阅读元信息 / 作者入口 / 相关文档 rail。
+  - 相关文档仅从父级已加载的公开文档列表派生，不新增 API 请求、业务路由或保存载荷。
+- `Frontend/radish.client/src/public/docs/PublicDocsRails.tsx`
+  - 新增公开文档列表、搜索和详情复用 rail 组件，承载阅读提示、搜索入口、来源返回、作者入口和相关文档推荐。
+- `Frontend/radish.client/src/public/docs/publicDocsFormat.ts`
+  - 将公开文档可见性、状态和来源显示格式化抽出复用，避免主页面继续膨胀。
+- `Frontend/radish.client/src/public/docs/PublicDocsApp.module.css`
+  - 主体宽度扩展到 `1376px` 设计宽度；PC 下列表为三栏、搜索和详情为主栏 + 右栏。
+  - `1120px` 以下回落单栏并将 rail 改为双列卡片区，`720px` 以下按 `390px` mobile 纵向堆叠。
+- `Frontend/radish.client/src/i18n.ts`
+  - 补齐 P05/P06 列表 rail、搜索 rail、详情来源返回、阅读元信息、作者入口和相关文档中英文文案。
+
 ## 保持不变
 
 - 不新增或修改业务 API。
@@ -74,7 +91,7 @@
 ## 后续 D61 待办
 
 1. `P03-P04` 论坛列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
-2. 继续对齐 `P05-P06` 文档列表 / 详情：目录 / 搜索节奏、相关文档、作者入口、正文首屏和详情页辅助信息位置。
+2. `P05-P06` 文档列表 / 详情已完成首轮前端对齐；后续若用户当轮确认前后端已启动，再补 Gateway PC / mobile 真实 smoke。
 3. 继续对齐 `P07` 商城 / 商品：公开浏览密度、商品详情首屏购买信息、库存 / 售出 / 状态提示和登录购买回流。
 4. 继续对齐 `P08-P09` 榜单 / 公开主页：榜单切换、公开内容 tab、关注登录回流和来源返回。
 5. 继续对齐 `P10-P14` 移动公开任务流：首屏真实内容、底栏前信息量、筛选 / tab 展开方式和低频入口 `/workbench` 承接。
@@ -84,6 +101,9 @@
 - `npm run build --workspace=radish.client`：通过。
 - `npm run build --workspace=radish.client`（追加收口后复跑）：通过。
 - `npm run build --workspace=radish.client`（P03-P04 论坛列表 / 详情追加实现后复跑）：通过。
+- `npm run build --workspace=radish.client`（P05-P06 文档列表 / 详情追加实现后复跑）：通过。
+- `git diff --check`（P05-P06 文档列表 / 详情追加实现后复跑）：通过。
+- `node Scripts/check-repo-hygiene.mjs ...`（P05-P06 本批 6 个文件显式检查）：通过，未发现文本卫生问题。
 - Pencil `P01 - Public App Home`：`snapshot_layout(problemsOnly=true)` 返回 `No layout problems`，截图确认品牌副标题、hero 文案与登录后参与说明已同步。
 - Gateway `/discover` PC `1920x1080`：标题为 `发现 - Radish`；右侧存在 `登录 + 工作台`；全局横向溢出 `0`；未出现 `社区发现`、`公开 Web`、`公开社区`、`公开只读`、`Web-first`、`Forum / Docs` 英文来源标签或裸路由路径。
 - Gateway `/discover` mobile `390x844`：标题为 `发现 - Radish`；横向溢出 `0`；未发现越界元素；未出现上述旧文案与裸路由路径。
@@ -92,3 +112,4 @@
 
 - 本记录首批提交时未执行真实 Gateway smoke；追加收口轮用户已确认前后端启动，并已补 `/discover` PC / mobile 真实页面复核。
 - `P03-P04` 论坛列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
+- `P05-P06` 文档列表 / 详情追加实现本轮未执行真实 Gateway smoke；本轮用户未明确说明前后端已经启动，按协作规则仅执行静态构建与 diff 检查。
