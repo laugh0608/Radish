@@ -13,11 +13,275 @@
 }
 
 .main {
-  width: min(var(--rx-content-max-width), calc(100% - 24px));
+  width: min(1680px, calc(100% - 48px));
   max-width: 100%;
   margin: 0 auto;
-  padding: 24px 0 40px;
+  padding: 22px 0 40px;
   box-sizing: border-box;
+}
+
+.pulseHome {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(460px, 1.65fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.pulseIntroCard,
+.discussionPanel,
+.railCard {
+  min-width: 0;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  box-shadow: var(--theme-shadow-soft);
+  box-sizing: border-box;
+}
+
+.pulseIntroCard {
+  padding: 22px;
+}
+
+.pulseMetricGrid {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pulseMetricCard {
+  min-width: 0;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  overflow: hidden;
+}
+
+.pulseMetricCard[data-state='error'] {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 28%, transparent);
+}
+
+.pulseMetricCard[data-state='loading'] {
+  border-color: color-mix(in srgb, var(--theme-accent-jade) 28%, transparent);
+}
+
+.pulseMetricButton {
+  width: 100%;
+  height: 100%;
+  min-height: 122px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 16px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  transition: background-color 0.16s ease, transform 0.16s ease;
+}
+
+.pulseMetricButton:hover {
+  background: color-mix(in srgb, var(--theme-brand-soft) 16%, transparent);
+}
+
+.pulseMetricLabel {
+  color: var(--theme-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.pulseMetricValue {
+  color: var(--theme-text-primary);
+  font-size: 1.9rem;
+  line-height: 1;
+}
+
+.pulseMetricStatus {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
+  color: var(--theme-text-secondary);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.pulseMetricStatus[data-state='ready'] {
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  color: var(--theme-brand-primary);
+}
+
+.pulseMetricStatus[data-state='loading'] {
+  background: color-mix(in srgb, var(--theme-accent-jade) 18%, white 82%);
+  color: color-mix(in srgb, var(--theme-accent-jade) 64%, black 36%);
+}
+
+.pulseMetricStatus[data-state='error'] {
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
+  color: color-mix(in srgb, var(--theme-state-danger) 68%, black 32%);
+}
+
+.pulseMetricStatus[data-state='empty'] {
+  background: color-mix(in srgb, var(--theme-border-soft) 36%, white 64%);
+  color: var(--theme-text-tertiary);
+}
+
+.communityBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(330px, 0.9fr);
+  gap: 16px;
+  align-items: start;
+  margin-top: 18px;
+}
+
+.discussionPanel {
+  padding: 18px;
+}
+
+.discussionHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.discussionTabRow {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.discussionTab,
+.discussionTabActive {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.discussionTab {
+  color: var(--theme-text-secondary);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+}
+
+.discussionTabActive {
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 66%, white 34%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+}
+
+.discussionList {
+  display: grid;
+  gap: 10px;
+}
+
+.discussionList > article {
+  margin-bottom: 0;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.publicRail {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.railCard {
+  padding: 18px;
+}
+
+.railCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.railTitle {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.railDescription {
+  margin: 8px 0 14px;
+  color: var(--theme-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.railList {
+  display: grid;
+  gap: 10px;
+}
+
+.railItem {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 54%, transparent);
+}
+
+.railItem:last-child {
+  border-bottom: 0;
+}
+
+.railBadge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  color: var(--theme-brand-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.railText {
+  min-width: 0;
+  color: var(--theme-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participationCard {
+  background: color-mix(in srgb, var(--theme-brand-soft) 26%, var(--theme-bg-surface) 74%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
+}
+
+.participationCard .primaryButton {
+  width: 100%;
+  justify-content: center;
 }
 
 .heroCard {
@@ -29,17 +293,6 @@
     linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
-}
-
-.heroCard::after {
-  content: '';
-  position: absolute;
-  inset: auto -8% -30% auto;
-  width: 220px;
-  height: 220px;
-  border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--theme-brand-primary) 20%, transparent) 0%, transparent 72%);
-  pointer-events: none;
 }
 
 .heroTitleRow {
@@ -74,12 +327,12 @@
 
 .pageTitle {
   margin: 0;
-  font-size: clamp(2rem, 3.4vw, 3rem);
-  line-height: 1.08;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  line-height: 1.12;
 }
 
 .pageIntro {
-  max-width: 680px;
+  max-width: 720px;
   margin: 10px 0 0;
   color: var(--theme-text-secondary);
   font-size: 1rem;
@@ -1149,6 +1402,15 @@
 }
 
 @media (max-width: 960px) {
+  .pulseHome,
+  .communityBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .pulseMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .heroGuideGrid,
   .summaryGrid,
   .routeGrid {
@@ -1179,6 +1441,18 @@
     width: calc(100% - 20px);
   }
 
+  .pulseHome,
+  .communityBoard {
+    gap: 12px;
+  }
+
+  .communityBoard {
+    margin-top: 12px;
+  }
+
+  .pulseIntroCard,
+  .discussionPanel,
+  .railCard,
   .heroCard,
   .sectionCard {
     padding: 14px;
@@ -1206,6 +1480,48 @@
     margin-top: 8px;
     font-size: 0.92rem;
     line-height: 1.55;
+  }
+
+  .pulseMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pulseMetricButton {
+    min-height: 104px;
+    padding: 12px;
+  }
+
+  .pulseMetricValue {
+    font-size: 1.55rem;
+  }
+
+  .discussionHeader {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 10px;
+  }
+
+  .discussionTabRow {
+    justify-content: flex-start;
+  }
+
+  .discussionTab,
+  .discussionTabActive {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  .railItem {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 6px;
+  }
+
+  .railText {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .heroGuideGrid,
@@ -1401,6 +1717,7 @@
 }
 
 @media (max-width: 420px) {
+  .pulseMetricGrid,
   .heroGuideGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

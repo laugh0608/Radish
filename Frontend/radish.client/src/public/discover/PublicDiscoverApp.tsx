@@ -736,13 +736,17 @@ export const PublicDiscoverApp = ({
     leaderboard: routeGuideCards.find((item) => item.key === 'leaderboard') ?? routeGuideCards[0],
     shop: routeGuideCards.find((item) => item.key === 'shop') ?? routeGuideCards[0]
   }), [routeGuideCards]);
+  const spotlightPosts = useMemo(() => forumPosts.slice(0, 3), [forumPosts]);
+  const spotlightTags = useMemo(() => hotTags.slice(0, 4), [hotTags]);
+  const firstDocument = docs[0] ?? null;
+  const firstProduct = products[0] ?? null;
 
   return (
     <div className={styles.page}>
       <PublicShellHeader
-        brandMark="览"
-        brandName={t('discover.public.pageTitle')}
-        brandSubline={t('discover.public.shellLabel')}
+        brandMark="R"
+        brandName={t('discover.public.homeBrandName')}
+        brandSubline={t('discover.public.homeBrandSubline')}
         onBrandClick={() => {
           onNavigate({ kind: 'home' }, { replace: true });
           window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -752,94 +756,221 @@ export const PublicDiscoverApp = ({
       />
 
       <main className={styles.main}>
-        <section className={styles.heroCard}>
-          <div className={styles.heroTitleRow}>
-            <p className={styles.kicker}>P3-10</p>
-            <span className={styles.readOnlyBadge}>{t('discover.public.readOnlyBadge')}</span>
-          </div>
-          <h1 className={styles.pageTitle}>{t('discover.public.pageTitle')}</h1>
-          <p className={styles.pageIntro}>{t('discover.public.pageIntro')}</p>
+        <section className={styles.pulseHome}>
+          <div className={styles.pulseIntroCard}>
+            <div className={styles.heroTitleRow}>
+              <p className={styles.kicker}>{t('discover.public.pulseKicker')}</p>
+              <span className={styles.readOnlyBadge}>{t('discover.public.readOnlyBadge')}</span>
+            </div>
+            <h1 className={styles.pageTitle}>{t('discover.public.pulseTitle')}</h1>
+            <p className={styles.pageIntro}>{t('discover.public.pulseIntro')}</p>
 
-          <div className={styles.heroActions}>
-            <a
-              className={styles.primaryButton}
-              href={forumListHref}
-              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumListRoute)))}
-            >
-              <Icon icon="mdi:forum-outline" size={18} />
-              <span>{t('discover.public.openForum')}</span>
-            </a>
-            <a
-              className={styles.secondaryButton}
-              href={docsSearchHref}
-              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('docs', () => onNavigateToDocs(docsSearchRoute)))}
-            >
-              <Icon icon="mdi:file-search-outline" size={18} />
-              <span>{t('discover.public.searchDocs')}</span>
-            </a>
-            <a
-              className={styles.secondaryButton}
-              href={shopProductsHref}
-              onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('shop', () => onNavigateToShop(shopProductsRoute)))}
-            >
-              <Icon icon="mdi:store-search-outline" size={18} />
-              <span>{t('discover.public.browseShop')}</span>
-            </a>
-            <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
-              <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
-              <span>{shareBusy ? t('discover.public.shareSubmitting') : t('discover.public.shareAction')}</span>
-            </button>
-          </div>
-          {shareState !== 'idle' && (
-            <p className={styles.shareFeedback} data-state={shareState}>
-              {shareState === 'success' ? t('discover.public.shareSuccess') : t('discover.public.shareFailed')}
-            </p>
-          )}
-
-          <div className={styles.summaryGrid}>
-            {summaryCards.map((item) => (
-              <article
-                key={item.key}
-                className={`${styles.summaryCard} ${styles.summaryButton}`}
-                data-state={item.state}
+            <div className={styles.heroActions}>
+              <a
+                className={styles.primaryButton}
+                href={forumListHref}
+                onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumListRoute)))}
               >
-                <button type="button" className={styles.summaryPreviewButton} onClick={item.onPreview}>
-                  <div className={styles.summaryTop}>
-                    <span className={styles.summaryIcon}>
-                      <Icon icon={item.icon} size={18} />
-                    </span>
-                    <div className={styles.summaryHeading}>
-                      <span className={styles.summaryLabel}>{item.label}</span>
-                      <span className={styles.summaryStatus} data-state={item.state}>{item.statusLabel}</span>
-                    </div>
-                  </div>
-                  <span className={styles.summaryValue}>{item.value}</span>
-                  <p className={styles.summaryMeaning}>{item.meaning}</p>
-                  <span className={styles.summaryDestination}>
-                    <span className={styles.summaryDestinationLabel}>{t('discover.public.summaryDestinationLabel')}</span>
-                    <span className={styles.summaryDestinationText}>
-                      {item.destination}
-                      <Icon icon="mdi:arrow-down" size={14} />
-                    </span>
-                  </span>
+                <Icon icon="mdi:forum-outline" size={18} />
+                <span>{t('discover.public.openForum')}</span>
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href={docsSearchHref}
+                onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('docs', () => onNavigateToDocs(docsSearchRoute)))}
+              >
+                <Icon icon="mdi:file-search-outline" size={18} />
+                <span>{t('discover.public.searchDocs')}</span>
+              </a>
+              <a
+                className={styles.secondaryButton}
+                href={shopProductsHref}
+                onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('shop', () => onNavigateToShop(shopProductsRoute)))}
+              >
+                <Icon icon="mdi:store-search-outline" size={18} />
+                <span>{t('discover.public.browseShop')}</span>
+              </a>
+              <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+                <span>{shareBusy ? t('discover.public.shareSubmitting') : t('discover.public.shareAction')}</span>
+              </button>
+            </div>
+            {shareState !== 'idle' && (
+              <p className={styles.shareFeedback} data-state={shareState}>
+                {shareState === 'success' ? t('discover.public.shareSuccess') : t('discover.public.shareFailed')}
+              </p>
+            )}
+          </div>
+
+          <div className={styles.pulseMetricGrid}>
+            {summaryCards.map((item) => (
+              <article key={item.key} className={styles.pulseMetricCard} data-state={item.state}>
+                <button type="button" className={styles.pulseMetricButton} onClick={item.onPreview}>
+                  <span className={styles.pulseMetricLabel}>{item.label}</span>
+                  <strong className={styles.pulseMetricValue}>{item.value}</strong>
+                  <span className={styles.pulseMetricStatus} data-state={item.state}>{item.statusLabel}</span>
                 </button>
-                <div className={styles.summaryActionRow}>
-                  <span className={styles.summaryActionHint}>
-                    <Icon icon="mdi:arrow-down-circle-outline" size={16} />
-                    <span>{t('discover.public.summaryPreviewAction')}</span>
-                  </span>
-                  <a
-                    className={styles.summaryActionButton}
-                    href={item.href}
-                    onClick={(event) => handlePublicDiscoverLinkClick(event, item.onOpen)}
-                  >
-                    <Icon icon="mdi:arrow-right-circle-outline" size={16} />
-                    <span>{t('discover.public.summaryOpenAction')}</span>
-                  </a>
-                </div>
               </article>
             ))}
           </div>
+        </section>
+
+        <section className={styles.communityBoard}>
+          <div className={styles.discussionPanel}>
+            <div className={styles.discussionHeader}>
+              <div className={styles.sectionHeading}>
+                <p className={styles.streamKicker}>{t('discover.public.discussionKicker')}</p>
+                <h2 className={styles.sectionTitle}>{t('discover.public.discussionTitle')}</h2>
+                <p className={styles.sectionDescription}>{t('discover.public.discussionDescription')}</p>
+              </div>
+              <div className={styles.discussionTabRow} aria-label={t('discover.public.discussionTabsLabel')}>
+                <span className={styles.discussionTabActive}>{t('discover.public.discussionAll')}</span>
+                <a
+                  className={styles.discussionTab}
+                  href={forumListHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumListRoute)))}
+                >
+                  {t('discover.public.routeForumTitle')}
+                </a>
+                <a
+                  className={styles.discussionTab}
+                  href={docsListHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('docs', () => onNavigateToDocs(docsListRoute)))}
+                >
+                  {t('discover.public.routeDocsTitle')}
+                </a>
+                <a
+                  className={styles.discussionTab}
+                  href={shopProductsHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('shop', () => onNavigateToShop(shopProductsRoute)))}
+                >
+                  {t('discover.public.routeShopTitle')}
+                </a>
+              </div>
+            </div>
+
+            {loadingForum ? (
+              <SectionStatusCard
+                tone="loading"
+                title={t('discover.public.forumLoadingTitle')}
+                description={t('discover.public.forumLoadingDescription')}
+              />
+            ) : forumError ? (
+              <SectionStatusCard
+                tone="error"
+                title={t('discover.public.forumLoadFailedTitle')}
+                description={forumError}
+                secondaryAction={{
+                  label: t('common.retry'),
+                  onClick: () => setReloadToken((current) => current + 1)
+                }}
+              />
+            ) : spotlightPosts.length === 0 ? (
+              <SectionStatusCard
+                tone="empty"
+                title={t('discover.public.forumEmptyTitle')}
+                description={t('discover.public.forumEmptyDescription')}
+                primaryAction={{
+                  label: t('discover.public.viewAllForum'),
+                  href: forumListHref,
+                  onClick: () => runFromSection('forum', () => onNavigateToForum(forumListRoute))
+                }}
+              />
+            ) : (
+              <>
+                <div className={styles.discussionList}>
+                  {spotlightPosts.map((post) => (
+                    <PostCard
+                      key={post.voId}
+                      post={post}
+                      displayTimeZone={displayTimeZone}
+                      onClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) }))}
+                      href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
+                      variant="publicCompact"
+                      resolveAuthorProfileId={resolvePublicProfileUserId}
+                      onTagClick={(_, tagSlug) => runFromSection('forum', () => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 }))}
+                      onQuestionClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'question', sortBy: 'newest', page: 1 }))}
+                      onPollClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 }))}
+                      onLotteryClick={() => runFromSection('forum', () => onNavigateToForum({ kind: 'lottery', sortBy: 'newest', page: 1 }))}
+                    />
+                  ))}
+                </div>
+                {spotlightTags.length > 0 && (
+                  <div className={styles.tagRail}>
+                    {spotlightTags.map((tag) => {
+                      const tagRoute: PublicForumRoute = { kind: 'tag', tagSlug: tag.voSlug, sortBy: 'newest', page: 1 };
+
+                      return (
+                        <a
+                          key={tag.voId}
+                          className={styles.tagChip}
+                          href={buildPublicForumPath(tagRoute)}
+                          onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(tagRoute)))}
+                        >
+                          #{tag.voName}
+                        </a>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <aside className={styles.publicRail}>
+            <section className={styles.railCard}>
+              <div className={styles.railCardHeader}>
+                <h2 className={styles.railTitle}>{t('discover.public.railHighlightsTitle')}</h2>
+              </div>
+              <div className={styles.railList}>
+                <a
+                  className={styles.railItem}
+                  href={firstDocument ? buildPublicDocsPath({ kind: 'detail', slug: firstDocument.voSlug }) : docsListHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('docs', () => (
+                    firstDocument
+                      ? onNavigateToDocs({ kind: 'detail', slug: firstDocument.voSlug })
+                      : onNavigateToDocs(docsListRoute)
+                  )))}
+                >
+                  <span className={styles.railBadge}>{t('discover.public.railDocLabel')}</span>
+                  <span className={styles.railText}>{firstDocument?.voTitle ?? t('discover.public.railDocFallback')}</span>
+                </a>
+                <a
+                  className={styles.railItem}
+                  href={firstProduct ? buildPublicShopPath({ kind: 'detail', productId: String(firstProduct.voId) }) : shopProductsHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('shop', () => (
+                    firstProduct
+                      ? onNavigateToShop({ kind: 'detail', productId: String(firstProduct.voId) })
+                      : onNavigateToShop(shopProductsRoute)
+                  )))}
+                >
+                  <span className={styles.railBadge}>{t('discover.public.railShopLabel')}</span>
+                  <span className={styles.railText}>{firstProduct?.voName ?? t('discover.public.railShopFallback')}</span>
+                </a>
+                <a
+                  className={styles.railItem}
+                  href={leaderboardDefaultHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('leaderboard', () => onNavigateToLeaderboard(leaderboardDefaultRoute)))}
+                >
+                  <span className={styles.railBadge}>{t('discover.public.railLeaderboardLabel')}</span>
+                  <span className={styles.railText}>{t('discover.public.railLeaderboardText')}</span>
+                </a>
+              </div>
+            </section>
+
+            <section className={`${styles.railCard} ${styles.participationCard}`}>
+              <h2 className={styles.railTitle}>{t('discover.public.participationTitle')}</h2>
+              <p className={styles.railDescription}>{t('discover.public.participationDescription')}</p>
+              <a
+                className={styles.primaryButton}
+                href={forumListHref}
+                onClick={(event) => handlePublicDiscoverLinkClick(event, () => runFromSection('forum', () => onNavigateToForum(forumListRoute)))}
+              >
+                <Icon icon="mdi:comment-text-outline" size={18} />
+                <span>{t('discover.public.participationAction')}</span>
+              </a>
+            </section>
+          </aside>
         </section>
 
         <PublicDiscoverFeed
