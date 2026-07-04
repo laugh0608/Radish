@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
-import type { WebShellNavItem } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import styles from './WorkbenchApp.module.css';
 
@@ -26,6 +25,56 @@ interface WorkbenchGroup {
   descriptionKey: string;
   items: WorkbenchItem[];
 }
+
+interface WorkbenchQueueItem {
+  titleKey: string;
+  descriptionKey: string;
+  href: string;
+  icon: string;
+  metaKey: string;
+}
+
+interface WorkbenchRailItem {
+  labelKey: string;
+  valueKey: string;
+}
+
+const continueItems: WorkbenchQueueItem[] = [
+  {
+    titleKey: 'workbench.continue.notifications.title',
+    descriptionKey: 'workbench.continue.notifications.description',
+    href: '/notifications',
+    icon: 'mdi:bell-outline',
+    metaKey: 'workbench.continue.notifications.meta',
+  },
+  {
+    titleKey: 'workbench.continue.orders.title',
+    descriptionKey: 'workbench.continue.orders.description',
+    href: '/shop/orders',
+    icon: 'mdi:receipt-text-outline',
+    metaKey: 'workbench.continue.orders.meta',
+  },
+  {
+    titleKey: 'workbench.continue.author.title',
+    descriptionKey: 'workbench.continue.author.description',
+    href: '/docs/mine',
+    icon: 'mdi:file-document-edit-outline',
+    metaKey: 'workbench.continue.author.meta',
+  },
+  {
+    titleKey: 'workbench.continue.pet.title',
+    descriptionKey: 'workbench.continue.pet.description',
+    href: '/pet',
+    icon: 'mdi:sprout-outline',
+    metaKey: 'workbench.continue.pet.meta',
+  },
+];
+
+const railItems: WorkbenchRailItem[] = [
+  { labelKey: 'workbench.rail.private.label', valueKey: 'workbench.rail.private.value' },
+  { labelKey: 'workbench.rail.public.label', valueKey: 'workbench.rail.public.value' },
+  { labelKey: 'workbench.rail.author.label', valueKey: 'workbench.rail.author.value' },
+];
 
 const workbenchGroups: WorkbenchGroup[] = [
   {
@@ -187,14 +236,6 @@ const accessClassNameMap: Record<WorkbenchAccess, string> = {
   legacy: styles.accessLegacy,
 };
 
-const publicWorkbenchMobileNavItems: WebShellNavItem[] = [
-  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
-  { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
-  { key: 'workbench', label: '工作台', href: '/workbench', icon: 'mdi:view-dashboard-outline' },
-  { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
-];
-
 export const WorkbenchApp = () => {
   const { t } = useTranslation();
 
@@ -213,7 +254,6 @@ export const WorkbenchApp = () => {
         discoverLabel={t('public.shell.discoverAction')}
         circleLabel={t('public.shell.circleAction')}
         desktopLabel={t('public.shell.desktopAction')}
-        mobileNavItems={publicWorkbenchMobileNavItems}
         onBrandClick={() => {
           window.location.href = '/workbench';
         }}
@@ -239,6 +279,60 @@ export const WorkbenchApp = () => {
               <span>{t('workbench.quick.messages')}</span>
             </a>
           </div>
+        </section>
+
+        <section className={styles.focusArea} aria-labelledby="workbench-focus-title">
+          <div className={styles.queuePanel}>
+            <div className={styles.panelHeader}>
+              <p className={styles.panelKicker}>{t('workbench.continue.kicker')}</p>
+              <h2 id="workbench-focus-title">{t('workbench.continue.title')}</h2>
+              <p>{t('workbench.continue.description')}</p>
+            </div>
+            <div className={styles.queueList}>
+              {continueItems.map((item) => (
+                <a className={styles.queueItem} href={item.href} key={item.titleKey}>
+                  <span className={styles.queueIcon}>
+                    <Icon icon={item.icon} size={20} />
+                  </span>
+                  <span className={styles.queueCopy}>
+                    <span className={styles.queueTitle}>{t(item.titleKey)}</span>
+                    <span className={styles.queueDescription}>{t(item.descriptionKey)}</span>
+                  </span>
+                  <span className={styles.queueMeta}>{t(item.metaKey)}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <aside className={styles.railPanel} aria-label={t('workbench.rail.label')}>
+            <div className={styles.railHeader}>
+              <span className={styles.railIcon}>
+                <Icon icon="mdi:map-marker-path" size={20} />
+              </span>
+              <div>
+                <p className={styles.panelKicker}>{t('workbench.rail.kicker')}</p>
+                <h2>{t('workbench.rail.title')}</h2>
+              </div>
+            </div>
+            <div className={styles.railRows}>
+              {railItems.map((item) => (
+                <div className={styles.railRow} key={item.labelKey}>
+                  <span>{t(item.labelKey)}</span>
+                  <strong>{t(item.valueKey)}</strong>
+                </div>
+              ))}
+            </div>
+            <div className={styles.railActions}>
+              <a className={styles.railAction} href="/me/assets">
+                <Icon icon="mdi:wallet-outline" size={18} />
+                <span>{t('workbench.rail.assets')}</span>
+              </a>
+              <a className={styles.railAction} href="/docs/mine">
+                <Icon icon="mdi:file-document-edit-outline" size={18} />
+                <span>{t('workbench.rail.author')}</span>
+              </a>
+            </div>
+          </aside>
         </section>
 
         <div className={styles.groups}>
