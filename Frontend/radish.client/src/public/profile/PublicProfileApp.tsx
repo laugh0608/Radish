@@ -11,9 +11,18 @@ import {
   type PublicUserProfile,
   type PublicUserStats,
 } from '@/api/user';
+import {
+  followUser,
+  getFollowStatus,
+  unfollowUser,
+  type UserFollowStatus,
+} from '@/api/userFollow';
+import { redirectToLogin } from '@/services/auth';
+import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
+import { buildPublicLeaderboardPath, createDefaultPublicLeaderboardRoute } from '../leaderboardRouteState';
 import { buildPublicProfilePath, type PublicProfileRoute, type PublicProfileTab } from '../profileRouteState';
 import { buildPublicForumPath } from '../forumRouteState';
 import {
@@ -219,6 +228,8 @@ export const PublicProfileApp = ({
   const pageRef = useRef<HTMLDivElement>(null);
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
+  const authenticatedUserId = useUserStore((state) => state.userId);
+  const isLoggedIn = authenticatedUserId !== '';
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [stats, setStats] = useState<PublicUserStats | null>(null);
@@ -229,6 +240,9 @@ export const PublicProfileApp = ({
   const [loadingContent, setLoadingContent] = useState(true);
   const [contentError, setContentError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
+  const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState<string | null>(null);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
   const [contentReloadToken, setContentReloadToken] = useState(0);
 
@@ -280,6 +294,7 @@ export const PublicProfileApp = ({
     () => resolvePublicProfileRouteIdentifier(profile, route.userId),
     [profile, route.userId]
   );
+  const isOwnProfile = !!profile && String(profile.voUserId) === authenticatedUserId;
 
   useEffect(() => {
     if (!profile || profileRouteIdentifier === route.userId) {
@@ -373,6 +388,43 @@ export const PublicProfileApp = ({
   }, [contentReloadToken, onNavigate, profile, profileRouteIdentifier, route.page, route.tab]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadFollowStatus = async () => {
+      setFollowError(null);
+
+      if (!isLoggedIn || !profile || isOwnProfile) {
+        setFollowStatus(null);
+        setFollowLoading(false);
+        return;
+      }
+
+      setFollowLoading(true);
+      setFollowStatus(null);
+      try {
+        const nextStatus = await getFollowStatus(profile.voUserId);
+        if (!cancelled) {
+          setFollowStatus(nextStatus);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setFollowStatus(null);
+          setFollowError(error instanceof Error ? error.message : String(error));
+        }
+      } finally {
+        if (!cancelled) {
+          setFollowLoading(false);
+        }
+      }
+    };
+
+    void loadFollowStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, isOwnProfile, profile]);
+
+  useEffect(() => {
     if (loadingProfile) {
       return;
     }
@@ -440,6 +492,50 @@ export const PublicProfileApp = ({
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildProfileShareUrl,
   });
+  const profileReturnPath = buildPublicProfilePath({
+    kind: 'detail',
+    userId: profileRouteIdentifier,
+    tab: route.tab,
+    page: route.page,
+  });
+  const leaderboardHref = buildPublicLeaderboardPath(createDefaultPublicLeaderboardRoute());
+  const followActionLabel = !isLoggedIn
+    ? t('profile.public.followLoginAction')
+    : isOwnProfile
+      ? t('profile.public.ownProfileAction')
+      : followLoading
+        ? t('profile.public.followLoading')
+        : followStatus?.voIsFollowing
+          ? t('profile.public.followingAction')
+          : t('profile.public.followAction');
+
+  const handleFollowAction = async () => {
+    if (!profile || followLoading) {
+      return;
+    }
+
+    if (!isLoggedIn) {
+      redirectToLogin({ returnPath: profileReturnPath });
+      return;
+    }
+
+    if (isOwnProfile) {
+      return;
+    }
+
+    setFollowError(null);
+    setFollowLoading(true);
+    try {
+      const nextStatus = followStatus?.voIsFollowing
+        ? await unfollowUser(profile.voUserId)
+        : await followUser(profile.voUserId);
+      setFollowStatus(nextStatus);
+    } catch (error) {
+      setFollowError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setFollowLoading(false);
+    }
+  };
 
   const handleTabChange = (tab: PublicProfileTab) => {
     if (tab === route.tab && route.page === 1) {
@@ -528,113 +624,128 @@ export const PublicProfileApp = ({
             }}
           />
         ) : (
-          <>
-            <section className={styles.summaryCard}>
-              <div className={styles.summaryHeader}>
-                <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
-                <button type="button" className={`${styles.secondaryButton} ${styles.shareButton}`} onClick={() => void copyShareLink()} disabled={shareBusy}>
-                  <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
-                  <span>{shareBusy ? t('profile.public.shareSubmitting') : t('profile.public.shareAction')}</span>
-                </button>
-              </div>
-              {shareState !== 'idle' && (
-                <p className={styles.shareFeedback} data-state={shareState}>
-                  {shareState === 'success' ? t('profile.public.shareSuccess') : t('profile.public.shareFailed')}
-                </p>
-              )}
-              <a className={styles.summaryBackLink} href={backHref} onClick={handleBackLinkClick}>
-                <Icon icon="mdi:arrow-left" size={16} />
-                <span>{backLabel}</span>
-              </a>
-              <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
-
-              <div className={styles.identityRow}>
-                <div
-                  className={styles.avatar}
-                  style={avatarUrl ? undefined : buildAvatarStyle(displayName)}
-                  aria-hidden="true"
-                >
-                  {avatarUrl ? (
-                    <img className={styles.avatarImage} src={avatarUrl} alt={displayName} loading="lazy" />
-                  ) : (
-                    buildAvatarText(displayName)
-                  )}
+          <div className={styles.profileLayout}>
+            <div className={styles.profileMain}>
+              <section className={styles.summaryCard}>
+                <div className={styles.summaryHeader}>
+                  <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
+                  <div className={styles.summaryActions}>
+                    <button
+                      type="button"
+                      className={`${styles.primaryButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
+                      onClick={() => void handleFollowAction()}
+                      disabled={followLoading || isOwnProfile}
+                    >
+                      <Icon icon={followStatus?.voIsFollowing ? 'mdi:account-check-outline' : 'mdi:account-plus-outline'} size={16} />
+                      <span>{followActionLabel}</span>
+                    </button>
+                    <button type="button" className={`${styles.secondaryButton} ${styles.shareButton}`} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                      <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
+                      <span>{shareBusy ? t('profile.public.shareSubmitting') : t('profile.public.shareAction')}</span>
+                    </button>
+                  </div>
                 </div>
+                {shareState !== 'idle' && (
+                  <p className={styles.shareFeedback} data-state={shareState}>
+                    {shareState === 'success' ? t('profile.public.shareSuccess') : t('profile.public.shareFailed')}
+                  </p>
+                )}
+                {followError && (
+                  <p className={styles.followFeedback} data-state="error">{followError}</p>
+                )}
+                <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 
-                <div className={styles.identityBody}>
-                  <div className={styles.identityText}>
-                    <h1 className={styles.userName}>{displayName}</h1>
-                    {displayHandle && (
-                      <p className={styles.displayName}>{displayHandle}</p>
+                <div className={styles.identityRow}>
+                  <div
+                    className={styles.avatar}
+                    style={avatarUrl ? undefined : buildAvatarStyle(displayName)}
+                    aria-hidden="true"
+                  >
+                    {avatarUrl ? (
+                      <img className={styles.avatarImage} src={avatarUrl} alt={displayName} loading="lazy" />
+                    ) : (
+                      buildAvatarText(displayName)
                     )}
-                    <p className={styles.joinedAt}>
-                      {t('profile.publicSince', {
-                        time: formatDateTimeByTimeZone(profile?.voCreateTime ?? '', displayTimeZone)
-                      })}
-                    </p>
-                    <p className={styles.viewHint}>{t('profile.publicViewHint')}</p>
                   </div>
 
+                  <div className={styles.identityBody}>
+                    <div className={styles.identityText}>
+                      <h1 className={styles.userName}>{displayName}</h1>
+                      {displayHandle && (
+                        <p className={styles.displayName}>{displayHandle}</p>
+                      )}
+                      <p className={styles.joinedAt}>
+                        {t('profile.publicSince', {
+                          time: formatDateTimeByTimeZone(profile?.voCreateTime ?? '', displayTimeZone)
+                        })}
+                      </p>
+                      <p className={styles.viewHint}>{t('profile.publicViewHint')}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className={styles.statsGrid}>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>{t('profile.stats.postsLabel')}</span>
-                  <span className={styles.statValue}>{stats?.voPostCount ?? 0}</span>
+                <div className={styles.statsGrid}>
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>{t('profile.stats.postsLabel')}</span>
+                    <span className={styles.statValue}>{stats?.voPostCount ?? 0}</span>
+                  </div>
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>{t('profile.stats.commentsLabel')}</span>
+                    <span className={styles.statValue}>{stats?.voCommentCount ?? 0}</span>
+                  </div>
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>{t('profile.stats.likesLabel')}</span>
+                    <span className={styles.statValue}>{stats?.voTotalLikeCount ?? 0}</span>
+                  </div>
+                  {followStatus && (
+                    <div className={styles.statCard}>
+                      <span className={styles.statLabel}>{t('profile.public.followersLabel')}</span>
+                      <span className={styles.statValue}>{followStatus.voFollowerCount}</span>
+                    </div>
+                  )}
                 </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>{t('profile.stats.commentsLabel')}</span>
-                  <span className={styles.statValue}>{stats?.voCommentCount ?? 0}</span>
-                </div>
-                <div className={styles.statCard}>
-                  <span className={styles.statLabel}>{t('profile.stats.likesLabel')}</span>
-                  <span className={styles.statValue}>{stats?.voTotalLikeCount ?? 0}</span>
-                </div>
-              </div>
+              </section>
 
-            </section>
+              <section className={styles.contentCard}>
+                <div className={styles.contentHeader}>
+                  <div className={styles.contentHeaderText}>
+                    <p className={styles.kicker}>{t('profile.public.contentKicker')}</p>
+                    <h2 className={styles.sectionTitle}>{t('profile.public.contentTitle')}</h2>
+                    <p className={styles.contentDescription}>{t('profile.public.contentDescription')}</p>
+                  </div>
+                  <div className={styles.tabs}>
+                    <a
+                      className={`${styles.tabButton} ${route.tab === 'posts' ? styles.tabButtonActive : ''}`}
+                      href={buildPublicProfilePath({ kind: 'detail', userId: profileRouteIdentifier, tab: 'posts', page: 1 })}
+                      aria-current={route.tab === 'posts' ? 'page' : undefined}
+                      onClick={(event) => {
+                        if (!shouldHandleProfileLinkInternally(event)) {
+                          return;
+                        }
 
-            <section className={styles.contentCard}>
-              <div className={styles.contentHeader}>
-                <div className={styles.contentHeaderText}>
-                  <p className={styles.kicker}>{t('profile.public.contentKicker')}</p>
-                  <h2 className={styles.sectionTitle}>{t('profile.public.contentTitle')}</h2>
-                  <p className={styles.contentDescription}>{t('profile.public.contentDescription')}</p>
+                        event.preventDefault();
+                        handleTabChange('posts');
+                      }}
+                    >
+                      {t('profile.tab.userPosts')}
+                    </a>
+                    <a
+                      className={`${styles.tabButton} ${route.tab === 'comments' ? styles.tabButtonActive : ''}`}
+                      href={buildPublicProfilePath({ kind: 'detail', userId: profileRouteIdentifier, tab: 'comments', page: 1 })}
+                      aria-current={route.tab === 'comments' ? 'page' : undefined}
+                      onClick={(event) => {
+                        if (!shouldHandleProfileLinkInternally(event)) {
+                          return;
+                        }
+
+                        event.preventDefault();
+                        handleTabChange('comments');
+                      }}
+                    >
+                      {t('profile.tab.userComments')}
+                    </a>
+                  </div>
                 </div>
-                <div className={styles.tabs}>
-                  <a
-                    className={`${styles.tabButton} ${route.tab === 'posts' ? styles.tabButtonActive : ''}`}
-                    href={buildPublicProfilePath({ kind: 'detail', userId: profileRouteIdentifier, tab: 'posts', page: 1 })}
-                    aria-current={route.tab === 'posts' ? 'page' : undefined}
-                    onClick={(event) => {
-                      if (!shouldHandleProfileLinkInternally(event)) {
-                        return;
-                      }
-
-                      event.preventDefault();
-                      handleTabChange('posts');
-                    }}
-                  >
-                    {t('profile.tab.userPosts')}
-                  </a>
-                  <a
-                    className={`${styles.tabButton} ${route.tab === 'comments' ? styles.tabButtonActive : ''}`}
-                    href={buildPublicProfilePath({ kind: 'detail', userId: profileRouteIdentifier, tab: 'comments', page: 1 })}
-                    aria-current={route.tab === 'comments' ? 'page' : undefined}
-                    onClick={(event) => {
-                      if (!shouldHandleProfileLinkInternally(event)) {
-                        return;
-                      }
-
-                      event.preventDefault();
-                      handleTabChange('comments');
-                    }}
-                  >
-                    {t('profile.tab.userComments')}
-                  </a>
-                </div>
-              </div>
 
               {loadingContent ? (
                 <PublicStatusCard
@@ -796,53 +907,54 @@ export const PublicProfileApp = ({
                   )}
                 </div>
               )}
-            </section>
+              </section>
+            </div>
 
-            <section className={styles.readingGuideSection} aria-label={t('profile.public.readingGuide.title')}>
-              <div className={styles.readingGuideSummary}>
-                <div className={styles.readingGuideSummaryCard}>
-                  <div className={styles.readingGuideSummaryHeading}>
-                    <span className={styles.readingGuideSummaryLabel}>
-                      {t('profile.public.readingGuide.summaryLabel')}
-                    </span>
-                    <h2 className={styles.readingGuideSummaryTitle}>
-                      {t('profile.public.readingGuide.summaryTitle')}
-                    </h2>
-                  </div>
-                  <p className={styles.readingGuideSummaryDescription}>
-                    {t('profile.public.readingGuide.summaryDescription')}
-                  </p>
-                  <div className={styles.readingGuideFocusRow}>
-                    {profileGuideFocusItems.map((item) => (
-                      <article key={item.labelKey} className={styles.readingGuideFocusChip}>
-                        <span className={styles.readingGuideFocusLabel}>{t(item.labelKey)}</span>
-                        <span className={styles.readingGuideFocusValue}>{t(item.valueKey)}</span>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <aside className={styles.readingGuideBoundaryPanel}>
-                  <span className={styles.readingGuideBoundaryLabel}>
-                    {t('profile.public.readingGuide.boundaryLabel')}
+            <aside className={styles.profileRail} aria-label={t('profile.public.railLabel')}>
+              <section className={styles.railPanel}>
+                <h2 className={styles.railTitle}>{t('profile.public.sourceRailTitle')}</h2>
+                <a className={styles.railRow} href={backHref} onClick={handleBackLinkClick}>
+                  <Icon icon="mdi:arrow-left" size={16} />
+                  <span className={styles.railRowBody}>
+                    <span className={styles.railRowTitle}>{backLabel}</span>
+                    <span className={styles.railRowMeta}>{t('profile.public.sourceRailBackMeta')}</span>
                   </span>
-                  <h2 className={styles.readingGuideBoundaryTitle}>
-                    {t('profile.public.readingGuide.boundaryTitle')}
-                  </h2>
-                  <p className={styles.readingGuideBoundaryDescription}>
-                    {t('profile.public.readingGuide.boundaryDescription')}
-                  </p>
-                  <ul className={styles.readingGuideBoundaryList}>
-                    {profileGuideBoundaryItems.map((itemKey) => (
-                      <li key={itemKey} className={styles.readingGuideBoundaryItem}>
-                        {t(itemKey)}
-                      </li>
-                    ))}
-                  </ul>
-                </aside>
-              </div>
-            </section>
-          </>
+                </a>
+                <a className={styles.railRow} href={leaderboardHref}>
+                  <Icon icon="mdi:trophy-outline" size={16} />
+                  <span className={styles.railRowBody}>
+                    <span className={styles.railRowTitle}>{t('profile.public.sourceRailLeaderboardTitle')}</span>
+                    <span className={styles.railRowMeta}>{t('profile.public.sourceRailLeaderboardMeta')}</span>
+                  </span>
+                </a>
+                <button type="button" className={styles.railRowButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                  <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
+                  <span className={styles.railRowBody}>
+                    <span className={styles.railRowTitle}>{t('profile.public.sourceRailShareTitle')}</span>
+                    <span className={styles.railRowMeta}>{t('profile.public.sourceRailShareMeta')}</span>
+                  </span>
+                </button>
+              </section>
+
+              <section className={styles.railPanel}>
+                <h2 className={styles.railTitle}>{t('profile.public.readingGuide.boundaryTitle')}</h2>
+                <p className={styles.railText}>{t('profile.public.readingGuide.boundaryDescription')}</p>
+                <div className={styles.railFocusList}>
+                  {profileGuideFocusItems.map((item) => (
+                    <article key={item.labelKey} className={styles.railFocusItem}>
+                      <span className={styles.railFocusLabel}>{t(item.labelKey)}</span>
+                      <span className={styles.railFocusValue}>{t(item.valueKey)}</span>
+                    </article>
+                  ))}
+                </div>
+                <ul className={styles.railBoundaryList}>
+                  {profileGuideBoundaryItems.map((itemKey) => (
+                    <li key={itemKey}>{t(itemKey)}</li>
+                  ))}
+                </ul>
+              </section>
+            </aside>
+          </div>
         )}
       </main>
     </div>

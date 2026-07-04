@@ -56,12 +56,6 @@ interface PublicLeaderboardFallbackTypeDefinition {
   primaryLabelKey: string;
 }
 
-interface ExperienceGuideItemDefinition {
-  icon: string;
-  titleKey: string;
-  descriptionKey: string;
-}
-
 interface ExperienceGuideFocusDefinition {
   labelKey: string;
   valueKey: string;
@@ -71,6 +65,16 @@ interface LightweightGuideDefinition {
   titleKey: string;
   descriptionKey: string;
   focusItems: ExperienceGuideFocusDefinition[];
+}
+
+interface PublicLeaderboardRailProps {
+  types: LeaderboardTypeData[];
+  activeTypeSlug: PublicLeaderboardTypeSlug;
+  activeTypeConfig: LeaderboardTypeData;
+  isLoggedIn: boolean;
+  myRank: number | null;
+  guide: LightweightGuideDefinition;
+  onTypeChange: (typeSlug: PublicLeaderboardTypeSlug) => void;
 }
 
 const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLeaderboardFallbackTypeDefinition> = {
@@ -124,24 +128,6 @@ const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLe
   },
 };
 
-const experienceGuideItems: ExperienceGuideItemDefinition[] = [
-  {
-    icon: 'mdi:trophy-outline',
-    titleKey: 'leaderboard.public.experienceGuide.rankingTitle',
-    descriptionKey: 'leaderboard.public.experienceGuide.rankingDescription',
-  },
-  {
-    icon: 'mdi:star-circle-outline',
-    titleKey: 'leaderboard.public.experienceGuide.levelTitle',
-    descriptionKey: 'leaderboard.public.experienceGuide.levelDescription',
-  },
-  {
-    icon: 'mdi:shield-half-full',
-    titleKey: 'leaderboard.public.experienceGuide.boundaryTitle',
-    descriptionKey: 'leaderboard.public.experienceGuide.boundaryDescription',
-  },
-];
-
 const experienceGuideFocusItems: ExperienceGuideFocusDefinition[] = [
   {
     labelKey: 'leaderboard.public.experienceGuide.focusRankingLabel',
@@ -156,12 +142,6 @@ const experienceGuideFocusItems: ExperienceGuideFocusDefinition[] = [
     valueKey: 'leaderboard.public.experienceGuide.focusBoundaryValue',
   },
 ];
-
-const experienceGuideBoundaryItems = [
-  'leaderboard.public.experienceGuide.boundaryItemDetail',
-  'leaderboard.public.experienceGuide.boundaryItemHistory',
-  'leaderboard.public.experienceGuide.boundaryItemWorkspace',
-] as const;
 
 const userLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
   {
@@ -192,6 +172,12 @@ const productLeaderboardGuideFocusItems: ExperienceGuideFocusDefinition[] = [
     valueKey: 'leaderboard.public.productGuide.focusBoundaryValue',
   },
 ];
+
+const experienceLeaderboardGuide: LightweightGuideDefinition = {
+  titleKey: 'leaderboard.public.experienceGuide.title',
+  descriptionKey: 'leaderboard.public.experienceGuide.summaryDescription',
+  focusItems: experienceGuideFocusItems,
+};
 
 function PublicStatusCard({ tone, title, description, primaryAction }: PublicStatusCardProps) {
   const resolvedIcon = tone === 'loading'
@@ -282,6 +268,107 @@ function handlePublicLeaderboardLinkClick(event: MouseEvent<HTMLAnchorElement>, 
 
   event.preventDefault();
   action();
+}
+
+function PublicLeaderboardRail({
+  types,
+  activeTypeSlug,
+  activeTypeConfig,
+  isLoggedIn,
+  myRank,
+  guide,
+  onTypeChange,
+}: PublicLeaderboardRailProps) {
+  const { t } = useTranslation();
+  const activeRouteDefinition = getPublicLeaderboardRouteDefinitionByType(activeTypeConfig.voType);
+
+  return (
+    <aside className={styles.leaderboardRail} aria-label={t('leaderboard.public.railLabel')}>
+      <section className={styles.railPanel}>
+        <h2 className={styles.railTitle}>{t('leaderboard.public.railJumpTitle')}</h2>
+        <div className={styles.railLinkList}>
+          {types.map((type) => {
+            const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
+            const route = {
+              ...createDefaultPublicLeaderboardRoute(),
+              typeSlug,
+            };
+
+            return (
+              <a
+                key={type.voType}
+                className={`${styles.railLinkRow} ${typeSlug === activeTypeSlug ? styles.railLinkRowActive : ''}`}
+                href={buildPublicLeaderboardPath(route)}
+                aria-current={typeSlug === activeTypeSlug ? 'page' : undefined}
+                onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onTypeChange(typeSlug))}
+              >
+                <Icon icon={type.voIcon} size={16} />
+                <span className={styles.railLinkBody}>
+                  <span className={styles.railLinkTitle}>{type.voName}</span>
+                  <span className={styles.railLinkMeta}>{type.voPrimaryLabel}</span>
+                </span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className={styles.railPanel}>
+        <h2 className={styles.railTitle}>{t('leaderboard.public.railRouteTitle')}</h2>
+        <div className={styles.railInfoList}>
+          <div className={styles.railInfoRow}>
+            <Icon icon="mdi:account-circle-outline" size={16} />
+            <span className={styles.railLinkBody}>
+              <span className={styles.railLinkTitle}>{t('leaderboard.public.railUserJumpTitle')}</span>
+              <span className={styles.railLinkMeta}>{t('leaderboard.public.railUserJumpMeta')}</span>
+            </span>
+          </div>
+          <div className={styles.railInfoRow}>
+            <Icon icon="mdi:gift-outline" size={16} />
+            <span className={styles.railLinkBody}>
+              <span className={styles.railLinkTitle}>{t('leaderboard.public.railProductJumpTitle')}</span>
+              <span className={styles.railLinkMeta}>{t('leaderboard.public.railProductJumpMeta')}</span>
+            </span>
+          </div>
+          <div className={styles.railInfoRow}>
+            <Icon icon="mdi:arrow-u-left-top" size={16} />
+            <span className={styles.railLinkBody}>
+              <span className={styles.railLinkTitle}>{t('leaderboard.public.railSourceTitle')}</span>
+              <span className={styles.railLinkMeta}>{t('leaderboard.public.railSourceMeta')}</span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className={styles.railPanel}>
+        <h2 className={styles.railTitle}>{t('leaderboard.public.railStateTitle')}</h2>
+        <div className={styles.railStatGrid}>
+          <span className={styles.railStat}>
+            <strong>{activeTypeConfig.voName}</strong>
+            <span>{activeTypeConfig.voPrimaryLabel}</span>
+          </span>
+          <span className={styles.railStat}>
+            <strong>{activeRouteDefinition.category === LeaderboardCategory.User ? t('leaderboard.public.railUserType') : t('leaderboard.public.railProductType')}</strong>
+            <span>{t('leaderboard.public.railTypeLabel')}</span>
+          </span>
+          <span className={styles.railStat}>
+            <strong>{isLoggedIn && myRank !== null ? `#${myRank}` : t('leaderboard.public.railGuestRank')}</strong>
+            <span>{t('leaderboard.public.railMyRankLabel')}</span>
+          </span>
+        </div>
+      </section>
+
+      <PublicReadingGuide
+        label={t('leaderboard.public.lightweightGuide.label')}
+        title={t(guide.titleKey)}
+        description={t(guide.descriptionKey)}
+        items={guide.focusItems.map((item) => ({
+          label: t(item.labelKey),
+          value: t(item.valueKey),
+        }))}
+      />
+    </aside>
+  );
 }
 
 export const PublicLeaderboardApp = ({
@@ -457,10 +544,9 @@ export const PublicLeaderboardApp = ({
     () => buildVisiblePages(route.page, totalPages, isCompactViewport ? 5 : 7),
     [isCompactViewport, route.page, totalPages]
   );
-  const showExperienceGuide = route.typeSlug === 'experience';
   const lightweightGuide = useMemo<LightweightGuideDefinition | null>(() => {
-    if (showExperienceGuide) {
-      return null;
+    if (route.typeSlug === 'experience') {
+      return experienceLeaderboardGuide;
     }
 
     if (activeTypeConfig.voCategory === LeaderboardCategory.User) {
@@ -480,7 +566,7 @@ export const PublicLeaderboardApp = ({
     }
 
     return null;
-  }, [activeTypeConfig.voCategory, showExperienceGuide]);
+  }, [activeTypeConfig.voCategory, route.typeSlug]);
 
   const handleTypeChange = (typeSlug: PublicLeaderboardTypeSlug) => {
     onNavigate({
@@ -523,94 +609,96 @@ export const PublicLeaderboardApp = ({
       />
 
       <main className={styles.main}>
-        <section className={styles.sectionCard}>
-          <div className={styles.sectionHeader}>
-            <div className={styles.sectionHeading}>
-              <div className={styles.sectionTitleRow}>
-                <p className={styles.kicker}>{t('leaderboard.public.lightweightGuide.label')}</p>
-                <span className={styles.readOnlyBadge}>{t('leaderboard.public.readOnlyBadge')}</span>
+        <div className={styles.leaderboardLayout}>
+          <section className={styles.sectionCard}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.sectionHeading}>
+                <div className={styles.sectionTitleRow}>
+                  <p className={styles.kicker}>{t('leaderboard.public.lightweightGuide.label')}</p>
+                  <span className={styles.readOnlyBadge}>{t('leaderboard.public.readOnlyBadge')}</span>
+                </div>
+                <h1 className={styles.pageTitle}>{t('leaderboard.public.title')}</h1>
+                <p className={styles.pageIntro}>{t('leaderboard.public.pageIntro')}</p>
               </div>
-              <h1 className={styles.pageTitle}>{activeTypeConfig.voName}</h1>
-              <p className={styles.pageIntro}>{t('leaderboard.public.pageIntro')}</p>
+
+              <div className={styles.sectionStats}>
+                {isLoggedIn && myRank !== null && activeTypeConfig.voCategory === LeaderboardCategory.User && (
+                  <span className={styles.statChip}>{t('leaderboard.public.myRank', { rank: myRank })}</span>
+                )}
+                <span className={styles.statChip}>{activeTypeConfig.voName}</span>
+                <span className={styles.statChip}>{activeTypeConfig.voPrimaryLabel}</span>
+                <button type="button" className={styles.shareButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
+                  <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
+                  <span>{shareBusy ? t('leaderboard.public.shareSubmitting') : t('leaderboard.public.shareAction')}</span>
+                </button>
+                {shareState !== 'idle' && (
+                  <span className={styles.shareFeedback} data-state={shareState}>
+                    {shareState === 'success' ? t('leaderboard.public.shareSuccess') : t('leaderboard.public.shareFailed')}
+                  </span>
+                )}
+              </div>
             </div>
 
-            <div className={styles.sectionStats}>
-              {isLoggedIn && myRank !== null && activeTypeConfig.voCategory === LeaderboardCategory.User && (
-                <span className={styles.statChip}>{t('leaderboard.public.myRank', { rank: myRank })}</span>
-              )}
-              <span className={styles.statChip}>{activeTypeConfig.voPrimaryLabel}</span>
-              <button type="button" className={styles.shareButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
-                <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
-                <span>{shareBusy ? t('leaderboard.public.shareSubmitting') : t('leaderboard.public.shareAction')}</span>
-              </button>
-              {shareState !== 'idle' && (
-                <span className={styles.shareFeedback} data-state={shareState}>
-                  {shareState === 'success' ? t('leaderboard.public.shareSuccess') : t('leaderboard.public.shareFailed')}
-                </span>
-              )}
+            <div className={styles.toolbar}>
+              <div className={styles.tabRail}>
+                {types.map((type) => {
+                  const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
+                  const typeRoute = {
+                    ...createDefaultPublicLeaderboardRoute(),
+                    typeSlug,
+                  };
+                  return (
+                    <a
+                      key={type.voType}
+                      className={`${styles.tabButton} ${route.typeSlug === typeSlug ? styles.tabButtonActive : ''}`}
+                      href={buildPublicLeaderboardPath(typeRoute)}
+                      aria-current={route.typeSlug === typeSlug ? 'page' : undefined}
+                      onClick={(event) => handlePublicLeaderboardLinkClick(event, () => handleTypeChange(typeSlug))}
+                    >
+                      <Icon icon={type.voIcon} size={18} />
+                      <span>{type.voName}</span>
+                    </a>
+                  );
+                })}
+              </div>
+              <p className={styles.toolbarHint}>{activeTypeConfig.voDescription}</p>
             </div>
-          </div>
 
-          <div className={styles.toolbar}>
-            <div className={styles.tabRail}>
-              {types.map((type) => {
-                const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
-                const typeRoute = {
-                  ...createDefaultPublicLeaderboardRoute(),
-                  typeSlug,
-                };
-                return (
-                  <a
-                    key={type.voType}
-                    className={`${styles.tabButton} ${route.typeSlug === typeSlug ? styles.tabButtonActive : ''}`}
-                    href={buildPublicLeaderboardPath(typeRoute)}
-                    aria-current={route.typeSlug === typeSlug ? 'page' : undefined}
-                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => handleTypeChange(typeSlug))}
-                  >
-                    <Icon icon={type.voIcon} size={18} />
-                    <span>{type.voName}</span>
-                  </a>
-                );
-              })}
-            </div>
-            <p className={styles.toolbarHint}>{activeTypeConfig.voDescription}</p>
-          </div>
+            {typesError && (
+              <div className={styles.inlineNotice}>
+                <span className={styles.inlineNoticeText}>{t('leaderboard.public.typesFallback')}</span>
+                <button type="button" className={styles.inlineTextButton} onClick={() => setReloadToken((current) => current + 1)}>
+                  {t('common.retry')}
+                </button>
+              </div>
+            )}
 
-          {typesError && (
-            <div className={styles.inlineNotice}>
-              <span className={styles.inlineNoticeText}>{t('leaderboard.public.typesFallback')}</span>
-              <button type="button" className={styles.inlineTextButton} onClick={() => setReloadToken((current) => current + 1)}>
-                {t('common.retry')}
-              </button>
-            </div>
-          )}
-
-          <div className={styles.contentWrap}>
-            {(loading || loadingTypes) && items.length === 0 ? (
-              <PublicStatusCard
-                tone="loading"
-                title={t('leaderboard.public.loadingTitle')}
-                description={t('leaderboard.public.loadingDescription')}
-              />
-            ) : error ? (
-              <PublicStatusCard
-                tone="error"
-                title={t('leaderboard.public.loadFailedTitle')}
-                description={error}
-                primaryAction={{
-                  label: t('common.retry'),
-                  onClick: () => setReloadToken((current) => current + 1),
-                }}
-              />
-            ) : items.length === 0 ? (
-              <PublicStatusCard
-                tone="empty"
-                title={t('leaderboard.public.emptyTitle')}
-                description={t('leaderboard.public.emptyDescription')}
-              />
-            ) : (
-              <div className={styles.list}>
-                {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
+            <div className={styles.contentWrap}>
+              {(loading || loadingTypes) && items.length === 0 ? (
+                <PublicStatusCard
+                  tone="loading"
+                  title={t('leaderboard.public.loadingTitle')}
+                  description={t('leaderboard.public.loadingDescription')}
+                />
+              ) : error ? (
+                <PublicStatusCard
+                  tone="error"
+                  title={t('leaderboard.public.loadFailedTitle')}
+                  description={error}
+                  primaryAction={{
+                    label: t('common.retry'),
+                    onClick: () => setReloadToken((current) => current + 1),
+                  }}
+                />
+              ) : items.length === 0 ? (
+                <PublicStatusCard
+                  tone="empty"
+                  title={t('leaderboard.public.emptyTitle')}
+                  description={t('leaderboard.public.emptyDescription')}
+                />
+              ) : (
+                <div className={styles.list}>
+                  {items.map((item) => item.voCategory === LeaderboardCategory.User ? (
                   (() => {
                     const profileIdentifier = resolveLeaderboardUserProfileIdentifier(item);
                     const userName = resolveVisibleUserDisplayName({
@@ -671,6 +759,7 @@ export const PublicLeaderboardApp = ({
                           <span className={`${styles.userStatChip} ${styles.userMetricChip}`}>
                             {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
                           </span>
+                          <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                         </div>
                       </>
                     );
@@ -695,7 +784,7 @@ export const PublicLeaderboardApp = ({
                       </button>
                     );
                   })()
-                ) : (() => {
+                  ) : (() => {
                   const productIconUrl = resolveMediaUrl(item.voProductIcon);
                   const productId = item.voProductId ? String(item.voProductId) : '';
                   const productHref = productId ? buildPublicShopPath({ kind: 'detail', productId }) : null;
@@ -739,6 +828,7 @@ export const PublicLeaderboardApp = ({
                       <div className={styles.itemMetric}>
                         <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
+                        <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                       </div>
                     </>
                   );
@@ -762,139 +852,68 @@ export const PublicLeaderboardApp = ({
                       {productItemContent}
                     </button>
                   );
-                })())}
+                  })())}
+                </div>
+              )}
+            </div>
+
+            {totalPages > 1 && !loading && !error && (
+              <div className={styles.pagination}>
+                {route.page === 1 ? (
+                  <button type="button" className={styles.paginationButton} disabled>
+                    {t('common.previousPage')}
+                  </button>
+                ) : (
+                  <a
+                    className={styles.paginationButton}
+                    href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 })}
+                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 }))}
+                  >
+                    {t('common.previousPage')}
+                  </a>
+                )}
+                <div className={styles.pageNumbers}>
+                  {visiblePages.map((page) => (
+                    <a
+                      key={page}
+                      className={`${styles.pageNumberButton} ${page === route.page ? styles.pageNumberButtonActive : ''}`}
+                      href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page })}
+                      aria-current={page === route.page ? 'page' : undefined}
+                      onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page }))}
+                    >
+                      {page}
+                    </a>
+                  ))}
+                </div>
+                {route.page >= totalPages ? (
+                  <button type="button" className={styles.paginationButton} disabled>
+                    {t('common.nextPage')}
+                  </button>
+                ) : (
+                  <a
+                    className={styles.paginationButton}
+                    href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 })}
+                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 }))}
+                  >
+                    {t('common.nextPage')}
+                  </a>
+                )}
               </div>
             )}
-          </div>
-
-          {totalPages > 1 && !loading && !error && (
-            <div className={styles.pagination}>
-              {route.page === 1 ? (
-                <button type="button" className={styles.paginationButton} disabled>
-                  {t('common.previousPage')}
-                </button>
-              ) : (
-                <a
-                  className={styles.paginationButton}
-                  href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 })}
-                  onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page - 1 }))}
-                >
-                  {t('common.previousPage')}
-                </a>
-              )}
-              <div className={styles.pageNumbers}>
-                {visiblePages.map((page) => (
-                  <a
-                    key={page}
-                    className={`${styles.pageNumberButton} ${page === route.page ? styles.pageNumberButtonActive : ''}`}
-                    href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page })}
-                    aria-current={page === route.page ? 'page' : undefined}
-                    onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page }))}
-                  >
-                    {page}
-                  </a>
-                ))}
-              </div>
-              {route.page >= totalPages ? (
-                <button type="button" className={styles.paginationButton} disabled>
-                  {t('common.nextPage')}
-                </button>
-              ) : (
-                <a
-                  className={styles.paginationButton}
-                  href={buildPublicLeaderboardPath({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 })}
-                  onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onNavigate({ kind: 'list', typeSlug: route.typeSlug, page: route.page + 1 }))}
-                >
-                  {t('common.nextPage')}
-                </a>
-              )}
-            </div>
-          )}
-
-          {showExperienceGuide && (
-            <section className={styles.experienceGuideSection} aria-label={t('leaderboard.public.experienceGuide.title')}>
-              <div className={styles.experienceGuideHeader}>
-                <div className={styles.experienceGuideHeading}>
-                  <p className={styles.experienceGuideKicker}>{t('leaderboard.public.experienceGuide.kicker')}</p>
-                  <h2 className={styles.experienceGuideTitle}>{t('leaderboard.public.experienceGuide.title')}</h2>
-                </div>
-                <p className={styles.experienceGuideIntro}>{t('leaderboard.public.experienceGuide.intro')}</p>
-              </div>
-
-              <div className={styles.experienceGuideSummary}>
-                <div className={styles.experienceGuideSummaryCard}>
-                  <div className={styles.experienceGuideSummaryHeading}>
-                    <span className={styles.experienceGuideSummaryLabel}>
-                      {t('leaderboard.public.experienceGuide.summaryLabel')}
-                    </span>
-                    <h3 className={styles.experienceGuideSummaryTitle}>
-                      {t('leaderboard.public.experienceGuide.summaryTitle')}
-                    </h3>
-                  </div>
-                  <p className={styles.experienceGuideSummaryDescription}>
-                    {t('leaderboard.public.experienceGuide.summaryDescription')}
-                  </p>
-
-                  <div className={styles.experienceGuideFocusRow}>
-                    {experienceGuideFocusItems.map((item) => (
-                      <article key={item.labelKey} className={styles.experienceGuideFocusChip}>
-                        <span className={styles.experienceGuideFocusLabel}>{t(item.labelKey)}</span>
-                        <span className={styles.experienceGuideFocusValue}>{t(item.valueKey)}</span>
-                      </article>
-                    ))}
-                  </div>
-                </div>
-
-                <aside className={styles.experienceGuideBoundaryPanel}>
-                  <span className={styles.experienceGuideBoundaryLabel}>
-                    {t('leaderboard.public.experienceGuide.boundaryPanelLabel')}
-                  </span>
-                  <h3 className={styles.experienceGuideBoundaryTitle}>
-                    {t('leaderboard.public.experienceGuide.boundaryPanelTitle')}
-                  </h3>
-                  <p className={styles.experienceGuideBoundaryDescription}>
-                    {t('leaderboard.public.experienceGuide.boundaryPanelDescription')}
-                  </p>
-                  <ul className={styles.experienceGuideBoundaryList}>
-                    {experienceGuideBoundaryItems.map((itemKey) => (
-                      <li key={itemKey} className={styles.experienceGuideBoundaryItem}>
-                        {t(itemKey)}
-                      </li>
-                    ))}
-                  </ul>
-                </aside>
-              </div>
-
-              <div className={styles.experienceGuideGrid}>
-                {experienceGuideItems.map((item) => (
-                  <article key={item.titleKey} className={styles.experienceGuideCard}>
-                    <span className={styles.experienceGuideIcon} aria-hidden="true">
-                      <Icon icon={item.icon} size={18} />
-                    </span>
-                    <div className={styles.experienceGuideBody}>
-                      <h3 className={styles.experienceGuideCardTitle}>{t(item.titleKey)}</h3>
-                      <p className={styles.experienceGuideCardDescription}>{t(item.descriptionKey)}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            </section>
-          )}
+          </section>
 
           {lightweightGuide && (
-            <div className={styles.lightweightGuideSection}>
-              <PublicReadingGuide
-                label={t('leaderboard.public.lightweightGuide.label')}
-                title={t(lightweightGuide.titleKey)}
-                description={t(lightweightGuide.descriptionKey)}
-                items={lightweightGuide.focusItems.map((item) => ({
-                  label: t(item.labelKey),
-                  value: t(item.valueKey),
-                }))}
-              />
-            </div>
+            <PublicLeaderboardRail
+              types={types}
+              activeTypeSlug={route.typeSlug}
+              activeTypeConfig={activeTypeConfig}
+              isLoggedIn={isLoggedIn}
+              myRank={myRank}
+              guide={lightweightGuide}
+              onTypeChange={handleTypeChange}
+            />
           )}
-        </section>
+        </div>
       </main>
     </div>
   );

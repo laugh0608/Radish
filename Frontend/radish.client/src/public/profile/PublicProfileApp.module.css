@@ -14,18 +14,32 @@
 
 .main {
   flex: 1 0 auto;
-  width: min(var(--rx-content-narrow-width), calc(100vw - 24px));
+  width: min(1376px, calc(100vw - 32px));
   margin: 0 auto;
   padding: 22px 0 40px;
+  min-width: 0;
+}
+
+.profileLayout {
   display: grid;
-  gap: 1rem;
+  grid-template-columns: minmax(0, 920px) minmax(320px, 440px);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+}
+
+.profileMain {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
 }
 
 .summaryCard,
 .contentCard,
 .statusCard {
   border: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 82%, white 18%);
-  border-radius: 1.75rem;
+  border-radius: 18px;
   background: color-mix(in srgb, var(--color-surface-raised, #fffaf2) 92%, white 8%);
   box-shadow: 0 20px 50px rgb(79 52 22 / 0.08);
   min-width: 0;
@@ -63,113 +77,20 @@
   line-height: 1.7;
 }
 
-.readingGuideSection {
-  margin-top: 1.15rem;
-  padding-top: 1rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 64%, white 36%);
-}
-
-.readingGuideSummary {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.95fr);
-  gap: 0.9rem;
-}
-
-.readingGuideSummaryCard,
-.readingGuideBoundaryPanel {
-  display: grid;
-  gap: 0.7rem;
-  padding: 1rem 1.05rem;
-  border-radius: 1.3rem;
-  border: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 74%, white 26%);
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.86), rgb(248 242 231 / 0.94));
-  min-width: 0;
-}
-
-.readingGuideSummaryHeading,
-.readingGuideBoundaryPanel {
-  align-content: start;
-}
-
-.readingGuideSummaryLabel,
-.readingGuideBoundaryLabel,
-.readingGuideFocusLabel {
-  color: color-mix(in srgb, var(--color-primary, #b7791f) 70%, black 30%);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.readingGuideSummaryTitle,
-.readingGuideBoundaryTitle {
-  margin: 0;
-  font-size: 1.05rem;
-  line-height: 1.35;
-}
-
-.readingGuideSummaryDescription,
-.readingGuideBoundaryDescription,
-.readingGuideFocusValue {
-  margin: 0;
-  color: var(--color-text-secondary, #766554);
-  line-height: 1.65;
-}
-
-.readingGuideFocusRow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.65rem;
-}
-
-.readingGuideFocusChip {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.85rem 0.9rem;
-  border-radius: 1rem;
-  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
-  min-width: 0;
-}
-
-.readingGuideFocusValue {
-  font-size: 0.92rem;
-}
-
-.readingGuideBoundaryList {
-  margin: 0;
-  padding-left: 1.1rem;
-  display: grid;
-  gap: 0.5rem;
-  color: var(--color-text-secondary, #766554);
-}
-
-.readingGuideBoundaryItem {
-  line-height: 1.6;
-}
-
-.summaryBackLink {
-  display: inline-flex;
+.summaryActions {
+  display: flex;
   align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  min-height: 48px;
+  justify-content: flex-end;
   gap: 8px;
-  margin-bottom: 0.9rem;
-  border: 1px solid color-mix(in srgb, var(--theme-border-strong) 86%, transparent);
-  border-radius: 999px;
-  padding: 0 1rem;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
-  color: var(--theme-text-primary);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: transform var(--theme-transition-standard), box-shadow var(--theme-transition-standard), background var(--theme-transition-standard);
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
-.summaryBackLink:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 18px color-mix(in srgb, var(--theme-border-strong) 18%, transparent);
+.followFeedback {
+  margin: -0.2rem 0 0.8rem;
+  color: var(--theme-state-danger, #bb5b54);
+  font-size: 0.86rem;
+  line-height: 1.5;
 }
 
 .identityRow {
@@ -251,23 +172,6 @@
   color: color-mix(in srgb, var(--color-text-secondary, #766554) 88%, white 12%);
 }
 
-.followPanel {
-  display: grid;
-  gap: 0.55rem;
-  justify-items: end;
-  min-width: 0;
-}
-
-.followStats {
-  color: var(--color-text-secondary, #766554);
-  font-size: 0.9rem;
-  text-align: right;
-}
-
-.followActionButton {
-  min-width: 112px;
-}
-
 .primaryButton,
 .secondaryButton,
 .tabButton,
@@ -290,9 +194,12 @@
 
 .primaryButton {
   border: 0;
+  gap: 0.45rem;
+  min-height: 38px;
   padding: 0.7rem 1.1rem;
   background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary, #b7791f) 88%, white 12%), #8b5a2b);
   color: #fffdf8;
+  font-weight: 700;
 }
 
 .followingButton {
@@ -518,6 +425,135 @@
   color: color-mix(in srgb, var(--color-primary, #b7791f) 76%, black 24%);
 }
 
+.profileRail {
+  position: sticky;
+  top: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.railPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 80%, white 20%);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--color-surface-raised, #fffaf2) 94%, white 6%);
+  box-shadow: 0 18px 42px rgb(79 52 22 / 0.07);
+  min-width: 0;
+}
+
+.railTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  font-weight: 800;
+}
+
+.railRow,
+.railRowButton {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  border-radius: 12px;
+  padding: 9px;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  transition: background var(--theme-transition-standard), color var(--theme-transition-standard);
+}
+
+.railRowButton {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.railRow:hover,
+.railRowButton:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary, #b7791f) 10%, white 90%);
+  color: color-mix(in srgb, var(--color-primary, #b7791f) 72%, black 28%);
+}
+
+.railRowButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.railRowBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.railRowTitle {
+  color: var(--color-text-primary, #31261a);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  font-weight: 800;
+}
+
+.railRowMeta,
+.railText,
+.railFocusValue,
+.railBoundaryList {
+  color: var(--color-text-secondary, #766554);
+}
+
+.railRowMeta {
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.railText {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.railFocusList {
+  display: grid;
+  gap: 8px;
+}
+
+.railFocusItem {
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 70%, white 30%);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  min-width: 0;
+}
+
+.railFocusLabel {
+  color: color-mix(in srgb, var(--color-primary, #b7791f) 72%, black 28%);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.railFocusValue {
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.railBoundaryList {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.45rem;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
 .pagination {
   margin-top: 1rem;
 }
@@ -552,20 +588,13 @@
 }
 
 .summaryIntro,
-.readingGuideSummaryTitle,
-.readingGuideSummaryDescription,
-.readingGuideBoundaryTitle,
-.readingGuideBoundaryDescription,
-.readingGuideBoundaryItem,
-.readingGuideFocusValue,
-.summaryBackLink span,
 .userName,
 .contentDescription,
 .contentHeaderText,
 .displayName,
 .joinedAt,
 .viewHint,
-.followStats,
+.followFeedback,
 .statLabel,
 .statValue,
 .sectionTitle,
@@ -580,8 +609,30 @@
 .pageInfo,
 .statusTitle,
 .statusDescription,
-.shareFeedback {
+.shareFeedback,
+.railTitle,
+.railText,
+.railRowTitle,
+.railRowMeta,
+.railFocusValue,
+.railBoundaryList {
   overflow-wrap: anywhere;
+}
+
+@media (max-width: 1120px) {
+  .main {
+    width: min(960px, calc(100vw - 28px));
+  }
+
+  .profileLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .profileRail {
+    position: static;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 780px) {
@@ -589,20 +640,13 @@
   .summaryHeader,
   .itemTopRow,
   .pagination,
-  .statusActions,
-  .readingGuideSummary {
+  .statusActions {
     flex-direction: column;
     align-items: stretch;
   }
 
   .itemFooter {
     align-items: flex-start;
-  }
-
-  .readingGuideSummary {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
   }
 
   .identityRow {
@@ -635,22 +679,14 @@
     grid-column: 1 / -1;
   }
 
-  .followPanel {
+  .summaryActions {
     width: 100%;
-    justify-items: stretch;
-    gap: 0.65rem;
-    padding: 0.9rem 0.95rem;
-    border-radius: 1.1rem;
-    border: 1px solid color-mix(in srgb, var(--color-border-default, #d9ccb8) 74%, white 26%);
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.82), rgb(248 242 231 / 0.94));
+    justify-content: stretch;
   }
 
-  .followStats {
-    text-align: left;
-  }
-
-  .followActionButton {
-    width: 100%;
+  .summaryActions .primaryButton,
+  .summaryActions .secondaryButton {
+    flex: 1 1 160px;
     min-height: 44px;
   }
 
@@ -685,7 +721,6 @@
     width: calc(100vw - 20px);
     padding-top: 14px;
     padding-bottom: var(--rx-mobile-shell-offset);
-    gap: 0.75rem;
   }
 
   .summaryCard,
@@ -699,45 +734,24 @@
     margin-bottom: 0.5rem;
   }
 
-  .summaryBackLink {
-    min-height: 42px;
-    margin-bottom: 0.7rem;
-    padding: 0 0.85rem;
-  }
-
   .summaryIntro {
     font-size: 0.86rem;
     line-height: 1.55;
   }
 
-  .readingGuideSection {
-    margin-top: 1rem;
-    padding-top: 0.9rem;
+  .profileRail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
   }
 
-  .readingGuideFocusRow {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.55rem;
+  .railPanel {
+    padding: 0.9rem;
+    border-radius: 1.1rem;
   }
 
-  .readingGuideSummaryCard,
-  .readingGuideBoundaryPanel,
-  .readingGuideFocusChip {
-    padding: 0.8rem;
-    border-radius: 1rem;
-  }
-
-  .readingGuideSummaryTitle,
-  .readingGuideBoundaryTitle {
-    font-size: 0.98rem;
-  }
-
-  .readingGuideSummaryDescription,
-  .readingGuideBoundaryDescription,
-  .readingGuideBoundaryItem,
-  .readingGuideFocusValue {
-    font-size: 0.84rem;
-    line-height: 1.5;
+  .railFocusList {
+    grid-template-columns: 1fr;
   }
 
   .statCard {
@@ -810,9 +824,5 @@
     width: 4rem;
     height: 4rem;
     border-radius: 1.2rem;
-  }
-
-  .readingGuideFocusRow {
-    grid-template-columns: 1fr;
   }
 }
