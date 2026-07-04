@@ -1,4 +1,7 @@
 import { WebShellHeader, type WebShellNavItem, type WebShellVariant } from '@/components/web-shell';
+import { redirectToLogin } from '@/services/auth';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
 
 interface PublicShellHeaderProps {
   brandMark: string;
@@ -15,6 +18,8 @@ interface PublicShellHeaderProps {
   showCircleAction?: boolean;
   desktopHref?: string;
   desktopLabel?: string;
+  loginLabel?: string;
+  myStatusLabel?: string;
 }
 
 function buildPublicNavItems(discoverHref: string, discoverLabel: string, onNavigateToDiscover?: () => void): WebShellNavItem[] {
@@ -37,8 +42,10 @@ function buildActionItems({
   showCircleAction,
   desktopHref,
   desktopLabel,
+  authAction,
 }: Required<Pick<PublicShellHeaderProps, 'variant' | 'discoverHref' | 'discoverLabel' | 'circleHref' | 'circleLabel' | 'showCircleAction' | 'desktopHref' | 'desktopLabel'>> & {
   onNavigateToDiscover?: () => void;
+  authAction?: WebShellNavItem;
 }): WebShellNavItem[] {
   const actionItems: WebShellNavItem[] = [];
 
@@ -50,6 +57,10 @@ function buildActionItems({
       icon: 'mdi:compass-outline',
       onClick: onNavigateToDiscover,
     });
+  }
+
+  if (variant === 'public' && authAction) {
+    actionItems.push(authAction);
   }
 
   if (showCircleAction && circleHref.trim()) {
@@ -73,6 +84,14 @@ function buildActionItems({
   return actionItems;
 }
 
+function buildCurrentReturnPath(): string {
+  if (typeof window === 'undefined') {
+    return '/discover';
+  }
+
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
 export const PublicShellHeader = ({
   brandMark,
   brandName,
@@ -82,13 +101,35 @@ export const PublicShellHeader = ({
   activeKey,
   onNavigateToDiscover,
   discoverHref = '/discover',
-  discoverLabel = '社区发现',
+  discoverLabel = '发现',
   circleHref = '/circle',
   circleLabel = '圈子',
   showCircleAction = true,
   desktopHref = '/workbench',
   desktopLabel = '工作台',
+  loginLabel = '登录',
+  myStatusLabel = '我的状态',
 }: PublicShellHeaderProps) => {
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const userId = useUserStore(state => state.userId);
+  const loggedIn = isAuthenticated && userId.trim().length > 0;
+  const shouldShowCircleAction = variant === 'public'
+    ? showCircleAction && loggedIn
+    : showCircleAction;
+  const authAction: WebShellNavItem = loggedIn
+    ? {
+        key: 'me-action',
+        label: myStatusLabel,
+        href: '/me',
+        icon: 'mdi:account-circle-outline',
+      }
+    : {
+        key: 'login-action',
+        label: loginLabel,
+        href: '/me',
+        icon: 'mdi:account-circle-outline',
+        onClick: () => redirectToLogin({ returnPath: buildCurrentReturnPath() }),
+      };
   const navItems = variant === 'public'
     ? buildPublicNavItems(discoverHref, discoverLabel, onNavigateToDiscover)
     : undefined;
@@ -99,9 +140,10 @@ export const PublicShellHeader = ({
     onNavigateToDiscover,
     circleHref,
     circleLabel,
-    showCircleAction,
+    showCircleAction: shouldShowCircleAction,
     desktopHref,
     desktopLabel,
+    authAction,
   });
 
   return (

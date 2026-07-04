@@ -1095,6 +1095,8 @@ export const PublicShopApp = ({
         onBrandClick={() => onNavigate(createDefaultPublicShopRoute())}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel={t('public.shell.discoverAction')}
+        loginLabel={t('public.shell.loginAction')}
+        myStatusLabel={t('public.shell.myStatusAction')}
         circleLabel={t('public.shell.circleAction')}
         desktopLabel={t('public.shell.desktopAction')}
       />

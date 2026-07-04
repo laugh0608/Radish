@@ -6,7 +6,7 @@
 - 主线：`P3-12 Web 完全化与 WebOS 收束`
 - 阶段：`P3-12-D` UI 专题
 - 性质：Public Web Pencil 逐页 UI 与功能缺口实现首批
-- 范围：`/discover` 承接 `P01-P02` 公开 App Home / 发现流的首屏结构、真实内容密度和公开参与信息
+- 范围：`/discover` 承接 `P01-P02` 公开 App Home / 发现流的首屏结构、真实内容密度、公开参与信息和正式文案收口
 
 ## 本批结论
 
@@ -17,7 +17,7 @@
 ## 代码范围
 
 - `Frontend/radish.client/src/public/discover/PublicDiscoverApp.tsx`
-  - 将 `/discover` 壳层品牌从页面级“社区发现 / 公开社区分发页”调整为 Pencil 公开首页口径的 `Radish / 公开 Web`。
+  - 将 `/discover` 壳层品牌从页面级“社区发现 / 公开社区分发页”调整为 Pencil 公开首页口径的 `Radish / 公开入口`。
   - 用 `pulseHome` 替换首屏大型 hero：左侧保留公开介绍、forum / docs / shop / 分享动作；右侧改为紧凑指标卡。
   - 在首屏第二层新增真实公开讨论区：复用现有 `forumPosts` 数据与 `PostCard publicCompact`，展示 3 条真实帖子、互动数字、标签、作者和最近互动信息。
   - 新增右侧公共亮点：从现有 docs / shop / leaderboard 数据生成可点击的文档、商品和榜单入口。
@@ -29,6 +29,14 @@
 - `Frontend/radish.client/src/i18n.ts`
   - 补齐公开首页品牌、脉搏区、讨论区、右侧亮点和登录后参与提示的中英文文案。
 
+## 追加收口
+
+- 已将 `/discover` 与公共页头中的“社区发现”统一为“发现”。
+- 已将首屏 `公开 Web`、`公开社区脉搏`、`公开只读`、`Web-first`、`forum / docs` 等临时或实现说明式文案替换为正式产品文案。
+- 已补 Public 右侧登录 / 登录状态入口：未登录态显示 `登录 + 工作台`，登录态显示 `我的状态 + 我的圈子 + 工作台`。
+- 已同步 `public-web-unified-experience.pen` 的 `P01 - Public App Home` 编辑器内容：品牌副标题、hero 徽标、hero 说明、示例帖子说明和登录后参与说明与代码口径一致。
+- Pencil `P01` 布局检查结果：`No layout problems`。
+
 ## 保持不变
 
 - 不新增或修改业务 API。
@@ -36,7 +44,7 @@
 - 不修改数据库结构。
 - 不修改 public 路由语义。
 - 不修改保存 / 提交载荷。
-- 不修改 `.pen` 设计源。
+- 不新增或重排 `.pen` 页面结构；仅同步 `P01` 文案口径。
 - 不进入 `P3-12-E`。
 
 ## 后续 D61 待办
@@ -50,7 +58,11 @@
 ## 验证
 
 - `npm run build --workspace=radish.client`：通过。
+- `npm run build --workspace=radish.client`（追加收口后复跑）：通过。
+- Pencil `P01 - Public App Home`：`snapshot_layout(problemsOnly=true)` 返回 `No layout problems`，截图确认品牌副标题、hero 文案与登录后参与说明已同步。
+- Gateway `/discover` PC `1920x1080`：标题为 `发现 - Radish`；右侧存在 `登录 + 工作台`；全局横向溢出 `0`；未出现 `社区发现`、`公开 Web`、`公开社区`、`公开只读`、`Web-first`、`Forum / Docs` 英文来源标签或裸路由路径。
+- Gateway `/discover` mobile `390x844`：标题为 `发现 - Radish`；横向溢出 `0`；未发现越界元素；未出现上述旧文案与裸路由路径。
 
 ## 未执行
 
-- 未执行真实 Gateway smoke。原因：本轮用户给出 public 截图并要求开始 D61 实现，但本轮未重新明确说明当日前后端已启动；按协作规则，真实 smoke 需要用户当轮确认前后端已启动后再执行。
+- 本记录首批提交时未执行真实 Gateway smoke；追加收口轮用户已确认前后端启动，并已补 `/discover` PC / mobile 真实页面复核。

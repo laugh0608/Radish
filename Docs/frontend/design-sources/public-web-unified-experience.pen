@@ -84,14 +84,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "yl6Yn",
-                      "name": "Brand Sub",
-                      "fill": "$rx-text-secondary",
-                      "content": "公开 Web",
-                      "lineHeight": 1.35,
-                      "fontFamily": "$rx-font-body",
+                      "id": "z9tr8g",
+                      "content": "公开入口",
+                      "fontFamily": "Inter",
                       "fontSize": 14,
-                      "fontWeight": "500"
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -488,14 +485,11 @@
                       "children": [
                         {
                           "type": "text",
-                          "id": "m8bnEs",
-                          "name": "Public Badge Label",
-                          "fill": "$rx-brand-primary",
-                          "content": "公开社区脉搏",
-                          "lineHeight": 1.35,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
-                          "fontWeight": "700"
+                          "id": "hlJ5J",
+                          "content": "正在热议",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -514,16 +508,11 @@
                     },
                     {
                       "type": "text",
-                      "id": "xFpaA",
-                      "name": "Home Copy",
-                      "fill": "$rx-text-secondary",
-                      "textGrowth": "fixed-width",
-                      "width": 480,
-                      "content": "热帖、神评、轻回应和聊天室被放在同一条公开浏览路径里，未登录也能阅读，登录后继续参与。",
-                      "lineHeight": 1.35,
-                      "fontFamily": "$rx-font-body",
+                      "id": "amokB",
+                      "content": "从最新讨论开始，顺手查看文档、榜单和商品推荐。",
+                      "fontFamily": "Inter",
                       "fontSize": 14,
-                      "fontWeight": "500"
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -1621,16 +1610,11 @@
                             },
                             {
                               "type": "text",
-                              "id": "fWQxn",
-                              "name": "Thread Summary",
-                              "fill": "$rx-text-secondary",
-                              "textGrowth": "fixed-width",
-                              "width": 520,
-                              "content": "父评论显示神评，子回复显示沙发；输入框保留轻回应和登录回流，不压缩成纯文本列表。",
-                              "lineHeight": 1.35,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
-                              "fontWeight": "500"
+                              "id": "GJSdS",
+                              "content": "父评论展示精选互动，子回复保持层级；输入框保留轻量参与和登录后继续。",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
@@ -2660,16 +2644,11 @@
                         },
                         {
                           "type": "text",
-                          "id": "xIy5Z",
-                          "name": "Participation Copy",
-                          "fill": "$rx-text-secondary",
-                          "textGrowth": "fixed-width",
-                          "width": 464,
-                          "content": "发帖、回复、轻回应、进入聊天室、关注作者和购买商品都保留公开来源返回。",
-                          "lineHeight": 1.35,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
-                          "fontWeight": "500"
+                          "id": "xHAKv",
+                          "content": "发帖、回复、轻回应、关注作者和商品购买会从详情页继续进入账号流程。",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
                         }
                       ]
                     }

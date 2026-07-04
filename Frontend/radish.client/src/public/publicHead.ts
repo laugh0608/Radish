@@ -98,7 +98,7 @@ export function buildPublicShareUrl(publicPath: string, origin?: string): string
 
 function buildDiscoverHead(route: PublicContentRouteDescriptor & { app: 'discover' }): PublicHeadDescriptor {
   return {
-    title: `社区发现 - ${publicSiteName}`,
+    title: `发现 - ${publicSiteName}`,
     description: '浏览 Radish 的公开内容、社区动态、文档入口、榜单与商城推荐。',
     canonicalPath: buildPublicDiscoverPath(route.route),
   };
