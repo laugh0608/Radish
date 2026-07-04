@@ -2,7 +2,7 @@
 
 > 状态：执行中
 >
-> 最后更新：2026-06-28（Asia/Shanghai）
+> 最后更新：2026-07-04（Asia/Shanghai）
 >
 > 本文说明纯 Web 登录态私域复访入口的当前设计边界。阶段进度、验证流水和日结记录不写入本文。
 
@@ -10,10 +10,11 @@
 
 纯 Web 私域复访入口用于让登录用户在普通浏览器中直达高价值私域场景，不需要先进入 WebOS `/desktop` 工作台。
 
-当前已落地六组入口：
+当前已落地七组入口：
 
 | 路由 | 主要任务 | 数据边界 | 不承担 |
 | --- | --- | --- | --- |
+| `/workbench` | 正式 Web 功能地图、继续处理队列、公开 / 私域 / 作者态入口承接 | 现有正式 Web 路由、静态任务入口、私域状态 rail | 推荐系统、全局待办 API、WebOS Dock、窗口系统 |
 | `/notifications` | 查看站内通知、标记已读、删除、从通知进入目标内容 | 通知列表、未读数、通知目标分流 | 完整通知偏好、通知聚合策略、系统通知栏推送 |
 | `/circle` | 查看关注动态、我的关注、我的粉丝，并从关系链进入公开帖子或公开个人页 | `UserFollow` 汇总、关注动态、关注 / 粉丝列表、`Post.PublicId`、`User.PublicId` | 推荐算法、短动态、转发 / 引用、私信、联邦协议 |
 | `/me` | 查看我的状态、公开主页入口、资产入口，并在 P3-12-B2 承接完整个人中心子路径 | 公开资料、经验摘要、经验明细、胡萝卜余额、近期流水、我的内容、浏览历史、附件、经验详情 | 完整资料编辑、转账、支付密码、安全设置、资产风控、论坛作者态 |
@@ -31,6 +32,7 @@
 - `WebStateSlot` 负责加载、空态、错误、权限限制、登录恢复和普通信息状态，不再让 `/me`、`/messages`、`/notifications`、`/circle`、`/pet` 等页面分别维护不同视觉的状态卡。
 - 私域页面进入公开帖子、公开个人页或商品详情时，仍按来源转交规则保留“返回我的状态 / 消息 / 通知中心 / 我的圈子 / 电子宠物”等语义；共享壳层不改变公开 URL、canonical、分享链接或 sitemap。
 - 移动端内容区需要保留 `--rx-mobile-shell-offset` 对应的底部空间，避免 floating tab 遮挡状态槽、列表末尾或关键动作。
+- D62 后 `/workbench` 恢复 private 移动底栏，不再沿用 Public `发现 / 论坛 / 文档 / 工作台 / 我的` 覆盖；公开商城、榜单等低频入口继续放在工作台内容区，而不是挤入私域底栏。
 
 如果后续某个私域页确实需要新的 header 或状态变体，先回到 [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 确认适用范围，再进入代码。
 
@@ -38,6 +40,7 @@
 
 | 入口 | 允许的 URL | 登录恢复 |
 | --- | --- | --- |
+| `/workbench` | 只允许无 query / hash 的 `/workbench` | 当前作为功能地图可公开访问；进入私域子任务时由目标路由自行处理登录恢复 |
 | `/notifications` | 只允许无 query / hash 的 `/notifications` | 匿名访问时保存 `/notifications`，登录后回到通知列表 |
 | `/circle` | `/circle` 或 `/circle?tab=feed|following|followers&page={n}` | 匿名访问时保留合法 tab / page，登录后恢复到原圈子分页 |
 | `/me` | `/me`、`/me/assets`、`/me/assets/transactions`；P3-12-B2 扩展 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的合法 query | 匿名访问时保存合法 `/me` 子路径，登录后回到对应私域页面 |
@@ -86,6 +89,7 @@
 WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、商城和工作台级编辑能力。纯 Web 私域入口只迁移浏览器里最常用的复访能力：
 
 - 通知：列表、已读、删除和目标分流。
+- 工作台：正式 Web 功能地图、继续处理队列和私域 / 作者态入口分流，不迁移 WebOS Dock 或窗口几何。
 - 圈子：关注动态、我的关注、我的粉丝和进入公开帖子 / 公开个人页的来源返回。
 - 我的：个人状态、公开主页、资产入口、我的内容、完整浏览历史、附件管理和经验详情；关注关系权威入口仍是 `/circle`。
 - 商城：公开商品详情登录后继续购买、订单列表、订单详情和背包；WebOS 商城窗口继续保留历史深链。
@@ -100,6 +104,7 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 
 - `Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx`
 - `Frontend/radish.client/src/components/web-shell/WebStateSlot.tsx`
+- `Frontend/radish.client/src/workbench/WorkbenchApp.tsx`
 - `Frontend/radish.client/src/notifications/NotificationsApp.tsx`
 - `Frontend/radish.client/src/circle/CircleApp.tsx`
 - `Frontend/radish.client/src/circle/circleRouteState.ts`

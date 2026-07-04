@@ -12,7 +12,9 @@
 >
 > 更新：2026-07-01（Asia/Shanghai）：D38 未新增共享组件变体；`/workbench` 继续承接 public / private 低频入口，移动 Console 仍按响应式 Console 验收，不拆独立移动应用壳层。
 >
-> 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` 与 Console 均完成首轮代码对齐，尚需 D36+ 差距矩阵确认跨源一致性
+> 更新：2026-07-04（Asia/Shanghai）：D61 / D62 后 `WebShellHeader` 已同时承接 Public 当前发布前页面族和 Private `/workbench` 首批工作台；页面可通过 `mobileNavItems` 覆盖移动底栏，但只能用于明确页面族承接，不能让公开底栏长期覆盖私域工作台。
+>
+> 状态：共享基座设计源 `F01-F02` 已创建；`radish.client` Public `P01-P14`、Private `/workbench` 和 Console 首轮代表页均已完成当前阶段代码对齐，后续继续按 D62 / D63 页面族治理跨源一致性
 
 ## 设计源
 
@@ -117,6 +119,13 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - 系统设置、订单、用户、商品、文档治理首屏、标签 / 分类、贴纸类、角色权限、内容 / 经验治理、系统工具、深层表单、详情 / 抽屉和表格交互已完成首轮迁移或代码侧治理；迁移不改变 API、权限、表单字段或业务动作。
 
 后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。D36+ 需要补齐设计源与代码实现的差距矩阵后，再判断是否进入成组实现或运行态验收。
+
+`P3-12-D61-D62` 已继续收紧 client 共享壳层使用边界：
+
+- Public Web `P01-P14` 当前发布前页面族已复用共享 public header 与移动底栏；`/discover`、forum、docs、shop、leaderboard、profile 和 public workbench 承接均保留真实 `href`。
+- `PublicShellHeader` 可以透传 `mobileNavItems`，用于公开移动任务流覆盖底栏；覆盖必须和当前页面族一致，不能作为长期绕过 private 默认底栏的手段。
+- `/workbench` 在 D62 回到 `variant="private"` 的默认移动底栏：`工作台 / 资产 / 创作 / 消息 / 我的`。公开商城、榜单和其他低频公开入口由工作台内容区承接。
+- 新增工作台继续处理队列和状态 rail 属于页面内容层，不新增共享 header 或状态槽变体。
 
 ## radish.client 组件使用口径
 
