@@ -698,7 +698,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               )}
             </div>
 
-            <Space>
+            <Space wrap>
               <Upload
                 accept="image/*"
                 showUploadList={false}
@@ -752,7 +752,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               )}
             </div>
 
-            <Space>
+            <Space wrap>
               <Upload
                 accept="image/*"
                 showUploadList={false}

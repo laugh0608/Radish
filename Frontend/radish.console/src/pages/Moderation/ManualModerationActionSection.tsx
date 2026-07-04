@@ -134,7 +134,7 @@ export function ManualModerationActionSection({
           <h3>手动治理动作</h3>
           <p className="admin-feature-subtle">从举报队列或治理日志一键带入目标用户、来源举报单和解除建议，补齐人工禁言 / 封禁 / 解除动作闭环。</p>
         </div>
-        <Space>
+        <Space wrap>
           <Button onClick={onResetForm}>
             清空表单
           </Button>

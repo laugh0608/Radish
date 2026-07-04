@@ -119,7 +119,7 @@ export const ProductDetail = ({
       onClose={onClose}
       size="large"
       footer={
-        <Space>
+        <Space wrap>
           {currentProduct && onReturnToSource ? (
             <Button onClick={onReturnToSource}>
               返回订单
