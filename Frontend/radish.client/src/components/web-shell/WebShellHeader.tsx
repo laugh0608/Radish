@@ -179,6 +179,7 @@ export function WebShellHeader({
   const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems(variant);
   const resolvedActionItems = actionItems ?? [];
   const headerClassName = `${styles.header} ${variant === 'private' ? styles.privateHeader : styles.publicHeader}`;
+  const actionRailClassName = `${styles.actionRail} ${variant === 'public' ? styles.publicActionRail : ''}`;
 
   useEffect(() => {
     document.body.classList.add('radishWebShellWithMobileNav');
@@ -211,12 +212,12 @@ export function WebShellHeader({
             ))}
           </nav>
 
-          <div className={styles.actionRail} aria-label="页面动作">
+          <div className={actionRailClassName} aria-label="页面动作">
             {resolvedActionItems.map((item) => (
               <WebShellLink
                 key={item.key}
                 item={item}
-                className={styles.actionItem}
+                className={`${styles.actionItem} ${variant === 'public' ? styles.publicActionItem : ''} ${item.key === 'workbench-action' ? styles.publicActionPrimary : ''}`}
                 activeClassName={styles.actionItemActive}
                 isActive={item.key === resolvedActiveKey}
               />
