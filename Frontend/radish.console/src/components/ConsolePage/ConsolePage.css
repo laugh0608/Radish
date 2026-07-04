@@ -3,6 +3,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
+  min-width: 0;
+  max-width: 100%;
   padding: 22px;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
@@ -34,6 +36,7 @@
   display: grid;
   gap: 6px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .console-page-header__eyebrow {
@@ -48,6 +51,8 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .console-page-header h1,
@@ -59,6 +64,7 @@
 .console-page-header h1 {
   font-size: 24px;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .console-page-header p,
@@ -66,6 +72,7 @@
   margin: 0;
   color: var(--console-text-secondary);
   line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 
 .console-page-header__actions {
@@ -74,6 +81,8 @@
   justify-content: flex-end;
   gap: 10px;
   flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .console-status-chip {
@@ -117,7 +126,8 @@
 .console-metric-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  min-width: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
 }
 
 .console-metric-card {
@@ -162,6 +172,8 @@
 .console-toolbar {
   display: grid;
   gap: 14px;
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
@@ -174,6 +186,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .console-toolbar h2 {
@@ -184,6 +198,7 @@
   display: grid;
   gap: 5px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .console-toolbar__meta {
@@ -192,12 +207,16 @@
   justify-content: flex-end;
   gap: 10px;
   flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .console-toolbar__body {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 @media (max-width: 768px) {
@@ -210,10 +229,23 @@
     padding: 18px;
   }
 
+  .console-page-header__main,
   .console-page-header__actions,
+  .console-toolbar__header,
   .console-toolbar__meta,
   .console-toolbar__body {
     width: 100%;
+  }
+
+  .console-page-header__actions,
+  .console-toolbar__meta,
+  .console-toolbar__body {
     justify-content: flex-start;
+  }
+
+  .console-page-header__actions > *,
+  .console-toolbar__meta > *,
+  .console-toolbar__body > * {
+    max-width: 100%;
   }
 }

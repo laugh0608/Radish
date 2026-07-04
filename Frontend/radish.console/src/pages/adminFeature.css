@@ -3,9 +3,13 @@
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-feature-card {
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
@@ -153,6 +157,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .admin-table-toolbar__filters .ant-input,
@@ -574,8 +580,33 @@
   }
 
   .admin-feature-header > .ant-space .ant-input,
+  .admin-feature-header > .ant-space .ant-input-affix-wrapper,
+  .admin-feature-header > .ant-space .ant-input-number,
+  .admin-feature-header > .ant-space .ant-picker,
   .admin-feature-header > .ant-space .ant-select {
-    width: min(100%, 220px) !important;
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .admin-table-toolbar__filters {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-table-toolbar__filters > *,
+  .admin-table-toolbar__filters .ant-space,
+  .admin-table-toolbar__filters .ant-space-item {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .admin-table-toolbar__filters .ant-input,
+  .admin-table-toolbar__filters .ant-input-affix-wrapper,
+  .admin-table-toolbar__filters .ant-input-number,
+  .admin-table-toolbar__filters .ant-picker,
+  .admin-table-toolbar__filters .ant-select,
+  .admin-table-toolbar__filters .ant-btn {
+    width: 100% !important;
     max-width: 100%;
   }
 
@@ -589,6 +620,12 @@
   .governance-workbench--experience,
   .governance-workbench--experience .governance-workbench__actions {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .governance-workbench .ant-space,
+  .governance-workbench .ant-space-item {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .moderation-manual-status__grid,

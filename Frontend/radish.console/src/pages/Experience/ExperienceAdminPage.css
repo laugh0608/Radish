@@ -178,3 +178,26 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+@media (max-width: 768px) {
+  .experience-query-control,
+  .experience-filter-control {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .experience-inline-actions,
+  .experience-banner-list {
+    align-items: stretch;
+  }
+
+  .experience-inline-actions > *,
+  .experience-banner-list > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .experience-rule-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -20,6 +20,8 @@
 }
 
 .role-permission-panel {
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
@@ -89,9 +91,12 @@
 
 .role-permission-node__apis code {
   display: inline-flex;
+  max-width: 100%;
   padding: 4px 8px;
   color: var(--console-warning-text);
   font-size: 12px;
+  overflow-wrap: anywhere;
+  white-space: normal;
   background: var(--console-warning-bg);
   border: 1px solid var(--console-warning-border);
   border-radius: var(--console-radius-control);
@@ -180,9 +185,18 @@
 
 @media (max-width: 768px) {
   .role-permission-node__row,
+  .role-permission-panel__header,
   .role-permission-preview__api-item div {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .role-permission-panel {
+    padding: 16px;
+  }
+
+  .role-permission-page__actions > * {
+    max-width: 100%;
   }
 
   .role-permission-node__apis {

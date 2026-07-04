@@ -183,3 +183,20 @@
   color: var(--console-text-secondary);
   line-height: 1.6;
 }
+
+@media (max-width: 768px) {
+  .moderation-filter-control,
+  .moderation-filter-control--sm,
+  .moderation-filter-control--md,
+  .moderation-filter-control--lg,
+  .moderation-filter-control--xl {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  .moderation-manual-status__header,
+  .moderation-manual-status-card__head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
