@@ -176,6 +176,7 @@
 - [p3-12-d63-console-gateway-grouped-smoke-2026-07-05](/records/p3-12-d63-console-gateway-grouped-smoke-2026-07-05)
 - [p3-12-d64-ui-candidate-acceptance-prep-2026-07-05](/records/p3-12-d64-ui-candidate-acceptance-prep-2026-07-05)
 - [p3-12-d65-ui-candidate-validation-execution-2026-07-05](/records/p3-12-d65-ui-candidate-validation-execution-2026-07-05)
+- [p3-12-d66-ui-candidate-runtime-validation-2026-07-05](/records/p3-12-d66-ui-candidate-runtime-validation-2026-07-05)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
