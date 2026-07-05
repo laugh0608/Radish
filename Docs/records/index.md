@@ -169,6 +169,7 @@
 - [p3-12-d62-forum-docs-author-first-implementation-2026-07-05](/records/p3-12-d62-forum-docs-author-first-implementation-2026-07-05)
 - [p3-12-d63-console-governance-workbench-first-implementation-2026-07-05](/records/p3-12-d63-console-governance-workbench-first-implementation-2026-07-05)
 - [p3-12-d63-console-commerce-ops-first-implementation-2026-07-05](/records/p3-12-d63-console-commerce-ops-first-implementation-2026-07-05)
+- [p3-12-d63-console-document-governance-first-implementation-2026-07-05](/records/p3-12-d63-console-document-governance-first-implementation-2026-07-05)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
