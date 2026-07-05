@@ -196,9 +196,9 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D36-D67` 已完成 Public Web、Private / Author、Console 当前发布前页面族首批实现、必要复核、候选前集中验收准备、启动无关候选前验证、运行态补验和正式产品成熟度专题立项，下一步进入 `P3-12-E 正式产品成熟度与质量硬化`。
+  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D36-D67` 已完成 Public Web、Private / Author、Console 当前发布前页面族首批实现、必要复核、候选前集中验收准备、启动无关候选前验证、运行态补验和正式产品成熟度专题立项；`P3-12-E1` 已完成正式产品成熟度矩阵与差距审计，下一步按矩阵进入 `P3-12-E2-E6`。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
-  - `P3-12-D` 已完成当前 UI 实现、补验和 D67 立项修正；D67 明确不能把“无阻断”当作正式产品完成证明，新增 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)。下一步进入 E1 成熟度矩阵与 Console 移动视图审计，原发布候选顺延为 `P3-12-F`，不直接创建 tag。
+  - `P3-12-D` 已完成当前 UI 实现、补验和 D67 立项修正；D67 明确不能把“无阻断”当作正式产品完成证明，新增 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)。`P3-12-E1` 已完成成熟度矩阵与差距审计，记录见 [P3-12-E1 正式产品成熟度矩阵与差距审计](/records/p3-12-e1-product-maturity-gap-audit-2026-07-05)；下一步优先进入 `P3-12-E2` Console 移动治理和 `P3-12-E3` 公开 / 私域真实任务链路补强，原发布候选顺延为 `P3-12-F`，不直接创建 tag。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
   - `P3-11-A / B / D` 已完成；当前不恢复 PR、不发布、不创建 tag，`P3-11-C` 未触发。
   - 若后续真实验收命中明确阻断，再回拉定向修复；否则不继续围绕 P3-11 决策停留。
@@ -260,9 +260,9 @@
 
 ## 后续事项（2026-07-05 之后）
 - 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 与 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)，确认下一步已从 `P3-12-D` UI 收束转入 E 期成熟度硬化。
-- 继续推进 `P3-12-E 正式产品成熟度与质量硬化`：先做 `E1` 功能完整度、安全、产品力、UI / 人机交互、可靠性和发布就绪矩阵，重点审计 Console 移动 Web 是否具备正式治理视图；原发布候选顺延为 `P3-12-F`。
+- 继续推进 `P3-12-E 正式产品成熟度与质量硬化`：`E1` 审计矩阵已完成，后续按 [E1 记录](/records/p3-12-e1-product-maturity-gap-audit-2026-07-05) 进入 `E2` Console 移动治理、`E3` 真实任务链路产品力、`E4` 安全 / 权限 / 写入可靠性、`E5` 稳定性 / 异常恢复和 `E6` 发布候选进入判断；原发布候选顺延为 `P3-12-F`。
 - 若需要新增真实 Gateway smoke，仍必须先由用户当日明确说明前后端已启动；普通开发优先使用相关前端 workspace 类型检查 / 构建、repo hygiene 和 `git diff --check`。
-- E1 先做审计矩阵，不直接新增业务 API、权限键、数据库结构、路由语义或保存 / 提交载荷；不直接进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署流程。
+- E1 审计已确认：进入 `P3-12-F` 前必须修复正式用户承诺 / 法务口径、帮助反馈与错误恢复里的可见假动作和诊断缺口；后置专题必须保留替代路径、首发边界和不阻断理由。
 
 ## 并行维护项
 
