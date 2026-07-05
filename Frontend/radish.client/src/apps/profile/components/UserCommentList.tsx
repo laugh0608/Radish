@@ -19,6 +19,7 @@ interface UserCommentListProps {
     commentId: LongId,
     postPublicId?: string | null
   ) => void;
+  onItemsLoaded?: (items: UserComment[]) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -29,6 +30,7 @@ export const UserCommentList = ({
   onCommentClick,
   getCommentHref,
   onCommentLinkClick,
+  onItemsLoaded,
   page: controlledPage,
   onPageChange
 }: UserCommentListProps) => {
@@ -48,10 +50,13 @@ export const UserCommentList = ({
     setLoading(true);
     try {
       const result = await getUserComments(userId, page, 10);
-      setComments(result.data || []);
+      const loadedComments = result.data || [];
+      setComments(loadedComments);
+      onItemsLoaded?.(loadedComments);
       setTotalPages(result.pageCount || 1);
     } catch (error) {
       log.error('加载评论失败:', error);
+      onItemsLoaded?.([]);
     } finally {
       setLoading(false);
     }

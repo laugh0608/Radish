@@ -18,6 +18,7 @@ interface UserPostListProps {
     postId: LongId,
     postPublicId?: string | null
   ) => void;
+  onItemsLoaded?: (items: UserPost[]) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -28,6 +29,7 @@ export const UserPostList = ({
   onPostClick,
   getPostHref,
   onPostLinkClick,
+  onItemsLoaded,
   page: controlledPage,
   onPageChange
 }: UserPostListProps) => {
@@ -47,10 +49,13 @@ export const UserPostList = ({
     setLoading(true);
     try {
       const result = await getUserPosts(userId, page, 10);
-      setPosts(result.data || []);
+      const loadedPosts = result.data || [];
+      setPosts(loadedPosts);
+      onItemsLoaded?.(loadedPosts);
       setTotalPages(result.pageCount || 1);
     } catch (error) {
       log.error('加载帖子失败:', error);
+      onItemsLoaded?.([]);
     } finally {
       setLoading(false);
     }

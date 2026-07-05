@@ -16,6 +16,7 @@ interface UserAttachmentListProps {
   initialPage?: number;
   initialBusinessType?: BusinessTypeFilter;
   initialKeyword?: string;
+  onItemsLoaded?: (items: MyAttachmentItem[]) => void;
   onStateChange?: (state: UserAttachmentListState) => void;
 }
 
@@ -43,6 +44,7 @@ export const UserAttachmentList = ({
   initialPage = 1,
   initialBusinessType = 'All',
   initialKeyword = '',
+  onItemsLoaded,
   onStateChange
 }: UserAttachmentListProps) => {
   const { t } = useTranslation();
@@ -89,11 +91,14 @@ export const UserAttachmentList = ({
         businessType,
         keyword
       });
-      setAttachments(result.data || []);
+      const loadedAttachments = result.data || [];
+      setAttachments(loadedAttachments);
+      onItemsLoaded?.(loadedAttachments);
       setTotalPages(result.pageCount || 1);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setAttachments([]);
+      onItemsLoaded?.([]);
       setTotalPages(1);
     } finally {
       setLoading(false);
