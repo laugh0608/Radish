@@ -38,5 +38,5 @@
 
 ## 后续
 
-- 继续 `P3-12-D63 Console`，下一批建议进入 `P12 - Console RBAC Permission Matrix`。
-- 权限矩阵批次应继续使用现有角色 / 权限 API、现有权限键和现有路由语义，重点处理授权快照、权限预览、保存反馈、继承边界和权限证据 rail。
+- `P12 - Console RBAC Permission Matrix` 已由 [P3-12-D63 Console 权限矩阵页面族首批实现记录](/records/p3-12-d63-console-rbac-permission-matrix-first-implementation-2026-07-05) 承接。
+- 下一步建议进入 D63 成组静态收口与后置缺口整理，仍不直接进入 `P3-12-E`。
