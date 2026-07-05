@@ -71,7 +71,7 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -96,6 +96,38 @@
   color: var(--rx-brand-primary);
   font-size: 26px;
   line-height: 1;
+}
+
+.inventoryWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  align-items: start;
+  gap: 16px;
+}
+
+.inventoryMain {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.scopeChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.scopeChips span {
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
+  border-radius: var(--rx-radius-pill);
+  background: color-mix(in srgb, var(--rx-bg-muted) 66%, white 34%);
+  color: var(--rx-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 10px;
 }
 
 .tabs {
@@ -132,6 +164,70 @@
 
 .content {
   min-height: 400px;
+}
+
+.inventoryRail {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+  border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
+  border-radius: var(--rx-radius-card);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  box-shadow: var(--theme-shadow-soft);
+  padding: 18px;
+}
+
+.railCard {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
+  border-radius: var(--rx-radius-card);
+  background: color-mix(in srgb, var(--rx-bg-muted) 58%, white 42%);
+  padding: 14px;
+}
+
+.railCard span {
+  color: var(--rx-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.railCard strong {
+  color: var(--rx-text-primary);
+  font-size: 24px;
+  line-height: 1.1;
+}
+
+.railHint {
+  margin: 0;
+  color: var(--rx-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.shopReturnButton {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--rx-border-strong);
+  border-radius: var(--rx-radius-pill);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  color: var(--rx-text-secondary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 14px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.shopReturnButton:hover {
+  border-color: var(--rx-brand-primary);
+  color: var(--rx-brand-primary);
+  transform: translateY(-1px);
 }
 
 .empty {
@@ -605,6 +701,10 @@
     gap: 10px;
   }
 
+  .inventoryWorkspace {
+    grid-template-columns: 1fr;
+  }
+
   .summaryCard {
     padding: 12px;
   }
@@ -639,7 +739,8 @@
   .sourceButton,
   .activateButton,
   .deactivateButton,
-  .useButton {
+  .useButton,
+  .shopReturnButton {
     width: 100%;
   }
 

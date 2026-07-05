@@ -167,6 +167,10 @@ export const Inventory = ({
   const [showUseModal, setShowUseModal] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
+  const activeBenefits = benefits.filter((benefit) => benefit.voIsActive && !benefit.voIsExpired).length;
+  const availableBenefits = benefits.filter((benefit) => !benefit.voIsExpired).length;
+  const sourceOrderBenefits = benefits.filter((benefit) => isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)).length;
+  const consumableQuantity = inventory.reduce((total, item) => total + Math.max(0, item.voQuantity), 0);
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
@@ -244,7 +248,7 @@ export const Inventory = ({
         <div className={styles.headerCopy}>
           <p className={styles.kicker}>{t('shop.title')}</p>
           <h1 className={styles.title}>{t('shop.inventory.title')}</h1>
-          <p className={styles.description}>{t('shop.inventory.emptyBenefitsHint')}</p>
+          <p className={styles.description}>{t('shop.inventory.description')}</p>
         </div>
       </div>
 
@@ -255,28 +259,45 @@ export const Inventory = ({
         </article>
         <article className={styles.summaryCard}>
           <span>{t('shop.inventory.tabItems', { count: inventory.length })}</span>
-          <strong>{inventory.length}</strong>
+          <strong>{consumableQuantity}</strong>
+        </article>
+        <article className={styles.summaryCard}>
+          <span>{t('shop.inventory.availableBenefits')}</span>
+          <strong>{availableBenefits}</strong>
+        </article>
+        <article className={styles.summaryCard}>
+          <span>{t('shop.inventory.activeBenefits')}</span>
+          <strong>{activeBenefits}</strong>
         </article>
       </div>
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'benefits' ? styles.active : ''}`}
-          onClick={() => setActiveTab('benefits')}
-        >
-          {t('shop.inventory.tabBenefits', { count: benefits.length })}
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'consumables' ? styles.active : ''}`}
-          onClick={() => setActiveTab('consumables')}
-        >
-          {t('shop.inventory.tabItems', { count: inventory.length })}
-        </button>
-      </div>
+      <div className={styles.inventoryWorkspace}>
+        <main className={styles.inventoryMain}>
+          <div className={styles.scopeChips}>
+            <span>{t('shop.inventory.scopeAll')}</span>
+            <span>{t('shop.inventory.scopeAvailable', { count: availableBenefits })}</span>
+            <span>{t('shop.inventory.scopeActive', { count: activeBenefits })}</span>
+            <span>{t('shop.inventory.scopeSourceOrder', { count: sourceOrderBenefits })}</span>
+          </div>
 
-      <div className={styles.content}>
-        {activeTab === 'benefits' ? (
-          <div className={styles.benefitList}>
+          <div className={styles.tabs}>
+            <button
+              className={`${styles.tab} ${activeTab === 'benefits' ? styles.active : ''}`}
+              onClick={() => setActiveTab('benefits')}
+            >
+              {t('shop.inventory.tabBenefits', { count: benefits.length })}
+            </button>
+            <button
+              className={`${styles.tab} ${activeTab === 'consumables' ? styles.active : ''}`}
+              onClick={() => setActiveTab('consumables')}
+            >
+              {t('shop.inventory.tabItems', { count: inventory.length })}
+            </button>
+          </div>
+
+          <div className={styles.content}>
+            {activeTab === 'benefits' ? (
+              <div className={styles.benefitList}>
             {benefits.length === 0 ? (
               <WebStateSlot
                 tone="empty"
@@ -404,9 +425,9 @@ export const Inventory = ({
                 );
               })
             )}
-          </div>
-        ) : (
-          <div className={styles.consumableList}>
+              </div>
+            ) : (
+              <div className={styles.consumableList}>
             {inventory.length === 0 ? (
               <WebStateSlot
                 tone="empty"
@@ -476,8 +497,36 @@ export const Inventory = ({
                 );
               })
             )}
+              </div>
+            )}
           </div>
-        )}
+        </main>
+
+        <aside className={styles.inventoryRail}>
+          <section className={styles.railCard}>
+            <span>{t('shop.inventory.availableBenefits')}</span>
+            <strong>{availableBenefits}</strong>
+          </section>
+          <section className={styles.railCard}>
+            <span>{t('shop.inventory.activeBenefits')}</span>
+            <strong>{activeBenefits}</strong>
+          </section>
+          <section className={styles.railCard}>
+            <span>{t('shop.inventory.sourceOrders')}</span>
+            <strong>{sourceOrderBenefits}</strong>
+          </section>
+          <p className={styles.railHint}>{t('shop.inventory.railScopeHint')}</p>
+          {backHref && (
+            <a
+              className={styles.shopReturnButton}
+              href={backHref}
+              onClick={(event) => handleInventoryLinkClick(event, onBack)}
+            >
+              <Icon icon="mdi:storefront-outline" size={17} />
+              <span>{t('shop.inventory.returnToShop')}</span>
+            </a>
+          )}
+        </aside>
       </div>
 
       {showUseModal && selectedItem && (

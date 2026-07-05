@@ -99,7 +99,7 @@ export interface OrderListItem {
   voProductIcon?: string | null;
   voQuantity: number;
   voTotalPrice: number;
-  voStatus: string;
+  voStatus: string | number;
   voStatusDisplay?: string;
   voCreateTime?: string;
 }
@@ -122,7 +122,7 @@ export interface Order {
   voQuantity: number;
   voUnitPrice: number;
   voTotalPrice: number;
-  voStatus: string;
+  voStatus: string | number;
   voStatusDisplay?: string;
   voBenefitExpiresAt?: string | null;
   voDurationDisplay?: string | null;

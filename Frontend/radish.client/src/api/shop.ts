@@ -329,8 +329,35 @@ export function getProductTypeDisplay(type: string | number | null | undefined):
 /**
  * 获取订单状态显示名称
  */
-export function getOrderStatusDisplay(status: string): string {
-  switch (status) {
+export function normalizeOrderStatus(status: string | number | null | undefined): OrderStatusValue | string {
+  const normalizedStatus = String(status ?? '');
+
+  switch (normalizedStatus) {
+    case OrderStatus.Pending:
+    case '0':
+      return OrderStatus.Pending;
+    case OrderStatus.Paid:
+    case '1':
+      return OrderStatus.Paid;
+    case OrderStatus.Completed:
+    case '2':
+      return OrderStatus.Completed;
+    case OrderStatus.Cancelled:
+    case '3':
+      return OrderStatus.Cancelled;
+    case OrderStatus.Refunded:
+    case '4':
+      return OrderStatus.Refunded;
+    case OrderStatus.Failed:
+    case '5':
+      return OrderStatus.Failed;
+    default:
+      return normalizedStatus;
+  }
+}
+
+export function getOrderStatusDisplay(status: string | number | null | undefined): string {
+  switch (normalizeOrderStatus(status)) {
     case OrderStatus.Pending:
       return '待支付';
     case OrderStatus.Paid:
@@ -344,15 +371,15 @@ export function getOrderStatusDisplay(status: string): string {
     case OrderStatus.Failed:
       return '发放失败';
     default:
-      return status || '未知';
+      return String(status ?? '') || '未知';
   }
 }
 
 /**
  * 获取订单状态颜色
  */
-export function getOrderStatusColor(status: string): string {
-  switch (status) {
+export function getOrderStatusColor(status: string | number | null | undefined): string {
+  switch (normalizeOrderStatus(status)) {
     case OrderStatus.Pending:
       return 'var(--theme-state-warning)'; // 橙色
     case OrderStatus.Paid:

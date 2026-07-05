@@ -262,10 +262,12 @@ export function ShopWebApp() {
           order={dataState.selectedOrder}
           loading={dataState.loadingOrderDetail}
           backHref={backHref}
+          inventoryHref={inventoryHref}
           productHref={dataState.selectedOrder
             ? buildPublicShopPath({ kind: 'detail', productId: String(dataState.selectedOrder.voProductId) })
             : undefined}
           onBack={navigate.back}
+          onInventoryClick={navigate.toInventory}
           onProductClick={navigate.toProductDetail}
           onCancelOrder={actionsState.handleCancelOrder}
         />

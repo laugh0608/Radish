@@ -5,7 +5,7 @@ import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import type { Order } from '@/types/shop';
 import type { LongId } from '@/api/user';
-import { getOrderStatusColor, OrderStatus } from '@/api/shop';
+import { getOrderStatusColor, normalizeOrderStatus, OrderStatus } from '@/api/shop';
 import { WebStateSlot } from '@/components/web-shell';
 import styles from './OrderDetail.module.css';
 
@@ -14,8 +14,10 @@ interface OrderDetailProps {
   order: Order | null;
   loading: boolean;
   backHref?: string;
+  inventoryHref?: string;
   productHref?: string;
   onBack: () => void;
+  onInventoryClick?: () => void;
   onProductClick: (productId: LongId) => void;
   onCancelOrder: (orderId: LongId, reason?: string) => void;
 }
@@ -42,8 +44,10 @@ export const OrderDetail = ({
   order,
   loading,
   backHref,
+  inventoryHref,
   productHref,
   onBack,
+  onInventoryClick,
   onProductClick,
   onCancelOrder
 }: OrderDetailProps) => {
@@ -111,9 +115,10 @@ export const OrderDetail = ({
   };
 
   const productIconUrl = resolveMediaUrl(order.voProductIcon);
+  const normalizedStatus = normalizeOrderStatus(order.voStatus);
 
   // 判断是否可以取消订单
-  const canCancel = order.voStatus === OrderStatus.Pending || order.voStatus === OrderStatus.Paid;
+  const canCancel = normalizedStatus === OrderStatus.Pending || normalizedStatus === OrderStatus.Paid;
 
   // 格式化时间
   const formatTime = (timeStr?: string | null) => {
@@ -127,6 +132,51 @@ export const OrderDetail = ({
       second: '2-digit'
     });
   };
+  const timelineItems = [
+    {
+      key: 'create',
+      title: t('shop.orderDetail.create'),
+      time: formatTime(order.voCreateTime),
+      description: t('shop.orderDetail.timelineCreateDescription'),
+      tone: 'normal' as const,
+    },
+    ...(order.voPaidTime ? [{
+      key: 'paid',
+      title: t('shop.orderDetail.paid'),
+      time: formatTime(order.voPaidTime),
+      description: t('shop.orderDetail.timelinePaidDescription'),
+      tone: 'normal' as const,
+    }] : []),
+    ...(order.voCompletedTime ? [{
+      key: 'completed',
+      title: t('shop.orderDetail.completed'),
+      time: formatTime(order.voCompletedTime),
+      description: t('shop.orderDetail.timelineCompletedDescription'),
+      tone: 'success' as const,
+    }] : []),
+    ...(order.voCancelledTime ? [{
+      key: 'cancelled',
+      title: t('shop.orderDetail.cancelled'),
+      time: formatTime(order.voCancelledTime),
+      description: order.voCancelReason
+        ? t('shop.orderDetail.cancelReason', { reason: order.voCancelReason })
+        : t('shop.orderDetail.timelineCancelledDescription'),
+      tone: 'cancelled' as const,
+    }] : []),
+    ...(normalizedStatus === OrderStatus.Failed && order.voFailReason ? [{
+      key: 'failed',
+      title: t('shop.orderDetail.failed'),
+      time: '-',
+      description: t('shop.orderDetail.failReason', { reason: order.voFailReason }),
+      tone: 'failed' as const,
+    }] : []),
+  ];
+  const canOpenInventory = Boolean(onInventoryClick || inventoryHref);
+  const inventoryStatus = normalizedStatus === OrderStatus.Completed
+    ? t('shop.orderDetail.inventoryReady')
+    : normalizedStatus === OrderStatus.Paid
+      ? t('shop.orderDetail.inventoryPending')
+      : t('shop.orderDetail.inventoryUnavailable');
 
   return (
     <div className={styles.container}>
@@ -154,7 +204,8 @@ export const OrderDetail = ({
         </div>
       </div>
 
-      <div className={styles.content}>
+      <div className={styles.contentGrid}>
+        <div className={styles.mainColumn}>
         {/* 订单状态 */}
         <div className={styles.statusSection}>
           <div
@@ -235,60 +286,18 @@ export const OrderDetail = ({
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>{t('shop.orderDetail.statusTrack')}</h2>
           <div className={styles.timeline}>
-            <div className={styles.timelineItem}>
-              <div className={styles.timelineDot}></div>
-              <div className={styles.timelineContent}>
-                <div className={styles.timelineTitle}>{t('shop.orderDetail.create')}</div>
-                <div className={styles.timelineTime}>{formatTime(order.voCreateTime)}</div>
-              </div>
-            </div>
-
-            {order.voPaidTime && (
-              <div className={styles.timelineItem}>
-              <div className={styles.timelineDot}></div>
-              <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>{t('shop.orderDetail.paid')}</div>
-                  <div className={styles.timelineTime}>{formatTime(order.voPaidTime)}</div>
+            {timelineItems.map((item) => (
+              <div key={item.key} className={styles.timelineItem}>
+                <div
+                  className={`${styles.timelineDot} ${item.tone === 'cancelled' ? styles.cancelled : ''} ${item.tone === 'failed' ? styles.failed : ''}`}
+                ></div>
+                <div className={styles.timelineContent}>
+                  <div className={styles.timelineTitle}>{item.title}</div>
+                  <div className={styles.timelineTime}>{item.time}</div>
+                  <div className={styles.timelineReason}>{item.description}</div>
                 </div>
               </div>
-            )}
-
-            {order.voCompletedTime && (
-              <div className={styles.timelineItem}>
-              <div className={styles.timelineDot}></div>
-              <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>{t('shop.orderDetail.completed')}</div>
-                  <div className={styles.timelineTime}>{formatTime(order.voCompletedTime)}</div>
-                </div>
-              </div>
-            )}
-
-            {order.voCancelledTime && (
-              <div className={styles.timelineItem}>
-              <div className={`${styles.timelineDot} ${styles.cancelled}`}></div>
-              <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>{t('shop.orderDetail.cancelled')}</div>
-                  <div className={styles.timelineTime}>{formatTime(order.voCancelledTime)}</div>
-                  {order.voCancelReason && (
-                    <div className={styles.timelineReason}>
-                      {t('shop.orderDetail.cancelReason', { reason: order.voCancelReason })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {order.voStatus === OrderStatus.Failed && order.voFailReason && (
-              <div className={styles.timelineItem}>
-              <div className={`${styles.timelineDot} ${styles.failed}`}></div>
-              <div className={styles.timelineContent}>
-                  <div className={styles.timelineTitle}>{t('shop.orderDetail.failed')}</div>
-                  <div className={styles.timelineReason}>
-                    {t('shop.orderDetail.failReason', { reason: order.voFailReason })}
-                  </div>
-                </div>
-              </div>
-            )}
+            ))}
           </div>
         </div>
 
@@ -316,6 +325,66 @@ export const OrderDetail = ({
             </button>
           </div>
         )}
+        </div>
+
+        <aside className={styles.detailRail}>
+          <section className={styles.railCard}>
+            <span>{t('shop.orderDetail.railStatus')}</span>
+            <strong style={{ color: getOrderStatusColor(order.voStatus) }}>{order.voStatusDisplay ?? ''}</strong>
+          </section>
+          <section className={styles.railCard}>
+            <span>{t('shop.orderDetail.railPayment')}</span>
+            <strong>{order.voTotalPrice.toLocaleString()}</strong>
+            <p>{t('shop.currency.carrot')}</p>
+          </section>
+          <section className={styles.railCard}>
+            <span>{t('shop.orderDetail.railInventory')}</span>
+            <strong>{inventoryStatus}</strong>
+            {order.voBenefitExpiresAt && (
+              <p>{t('shop.orderDetail.expireAt')} {formatTime(order.voBenefitExpiresAt)}</p>
+            )}
+          </section>
+          <div className={styles.railActions}>
+            {canOpenInventory && (
+              inventoryHref ? (
+                <a
+                  className={styles.inventoryButton}
+                  href={inventoryHref}
+                  onClick={(event) => {
+                    if (!onInventoryClick) {
+                      return;
+                    }
+                    handleOrderDetailLinkClick(event, onInventoryClick);
+                  }}
+                >
+                  <Icon icon="mdi:package-variant-closed" size={17} />
+                  <span>{t('shop.orderDetail.openInventory')}</span>
+                </a>
+              ) : (
+                <button type="button" className={styles.inventoryButton} onClick={onInventoryClick}>
+                  <Icon icon="mdi:package-variant-closed" size={17} />
+                  <span>{t('shop.orderDetail.openInventory')}</span>
+                </button>
+              )
+            )}
+            {backHref ? (
+              <a
+                className={styles.railBackButton}
+                href={backHref}
+                onClick={(event) => handleOrderDetailLinkClick(event, onBack)}
+              >
+                <Icon icon="mdi:arrow-left" size={17} />
+                <span>{t('shop.backToOrders')}</span>
+              </a>
+            ) : (
+              <button type="button" className={styles.railBackButton} onClick={onBack}>
+                <Icon icon="mdi:arrow-left" size={17} />
+                <span>{t('shop.backToOrders')}</span>
+              </button>
+            )}
+          </div>
+          <p className={styles.railHint}>{t('shop.orderDetail.railScopeHint')}</p>
+        </aside>
       </div>
 
       {/* 取消订单对话框 */}

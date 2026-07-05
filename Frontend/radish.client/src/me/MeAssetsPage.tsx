@@ -62,6 +62,19 @@ function getTransactionTone(transaction: CoinTransaction): 'positive' | 'negativ
   return transaction.voAmount >= 0 ? 'positive' : 'negative';
 }
 
+function sumTransactions(
+  transactions: CoinTransaction[],
+  predicate: (transaction: CoinTransaction) => boolean
+): number {
+  return transactions.reduce((total, transaction) => {
+    if (!predicate(transaction)) {
+      return total;
+    }
+
+    return total + transaction.voAmount;
+  }, 0);
+}
+
 export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
   const { t } = useTranslation();
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
@@ -121,6 +134,10 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
   };
 
   const balance = pageData.balance;
+  const transactionIncome = sumTransactions(pageData.transactions, (transaction) => transaction.voAmount > 0);
+  const transactionSpending = Math.abs(sumTransactions(pageData.transactions, (transaction) => transaction.voAmount < 0));
+  const abnormalTransactions = pageData.transactions.filter((transaction) => transaction.voStatus !== TransactionStatus.SUCCESS);
+  const latestTransaction = pageData.transactions[0] ?? null;
 
   return (
     <>
@@ -129,6 +146,11 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
           <p className={styles.kicker}>{t('me.assets.kicker')}</p>
           <h1>{t(isTransactionsMode ? 'me.assets.transactionsTitle' : 'me.assets.overviewTitle')}</h1>
           <p>{t(isTransactionsMode ? 'me.assets.transactionsDescription' : 'me.assets.overviewDescription')}</p>
+          {!isTransactionsMode && (
+            <strong className={styles.heroBalance}>
+              {balance?.voBalanceDisplay || `${formatNumber(balance?.voBalance)} ${t('me.carrotUnit')}`}
+            </strong>
+          )}
         </div>
         <div className={styles.heroActions}>
           <a
@@ -165,148 +187,184 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
         </article>
       </section>
 
-      <section className={styles.transactionPanel}>
-        <div className={styles.panelHeader}>
-          <div>
-            <h2>{t(isTransactionsMode ? 'me.assets.allTransactions' : 'me.recentAssets')}</h2>
-            <p>{t(isTransactionsMode ? 'me.assets.transactionCount' : 'me.assets.recentDescription', { count: pageData.totalCount })}</p>
+      <div className={styles.assetWorkspace}>
+        <section className={styles.transactionPanel}>
+          <div className={styles.panelHeader}>
+            <div>
+              <h2>{t(isTransactionsMode ? 'me.assets.allTransactions' : 'me.recentAssets')}</h2>
+              <p>{t(isTransactionsMode ? 'me.assets.transactionCount' : 'me.assets.recentDescription', { count: pageData.totalCount })}</p>
+            </div>
+            {isTransactionsMode ? (
+              <a
+                className={styles.secondaryButton}
+                href={assetsHref}
+                onClick={(event) => handleInternalLink(event, { kind: 'assets' })}
+              >
+                {t('me.assets.backToAssets')}
+              </a>
+            ) : (
+              <a
+                className={styles.secondaryButton}
+                href={transactionsHref}
+                onClick={(event) => handleInternalLink(event, { kind: 'assets-transactions' })}
+              >
+                {t('me.assets.fullHistory')}
+              </a>
+            )}
           </div>
-          {isTransactionsMode ? (
-            <a
-              className={styles.secondaryButton}
-              href={assetsHref}
-              onClick={(event) => handleInternalLink(event, { kind: 'assets' })}
-            >
-              {t('me.assets.backToAssets')}
-            </a>
-          ) : (
-            <a
-              className={styles.secondaryButton}
-              href={transactionsHref}
-              onClick={(event) => handleInternalLink(event, { kind: 'assets-transactions' })}
-            >
-              {t('me.assets.fullHistory')}
-            </a>
+
+          {isTransactionsMode && (
+            <div className={styles.filters}>
+              <label>
+                <span>{t('me.assets.filterType')}</span>
+                <select
+                  value={transactionType}
+                  onChange={(event) => {
+                    setTransactionType(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">{t('me.assets.allTypes')}</option>
+                  {transactionTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {t(`me.assets.type.${type}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>{t('me.assets.filterStatus')}</span>
+                <select
+                  value={transactionStatus}
+                  onChange={(event) => {
+                    setTransactionStatus(event.target.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  <option value="">{t('me.assets.allStatuses')}</option>
+                  {transactionStatuses.map((status) => (
+                    <option key={status} value={status}>
+                      {t(`me.assets.status.${status}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
           )}
-        </div>
 
-        {isTransactionsMode && (
-          <div className={styles.filters}>
-            <label>
-              <span>{t('me.assets.filterType')}</span>
-              <select
-                value={transactionType}
-                onChange={(event) => {
-                  setTransactionType(event.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">{t('me.assets.allTypes')}</option>
-                {transactionTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {t(`me.assets.type.${type}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>{t('me.assets.filterStatus')}</span>
-              <select
-                value={transactionStatus}
-                onChange={(event) => {
-                  setTransactionStatus(event.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">{t('me.assets.allStatuses')}</option>
-                {transactionStatuses.map((status) => (
-                  <option key={status} value={status}>
-                    {t(`me.assets.status.${status}`)}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        )}
-
-        {error ? (
-          <WebStateSlot
-            tone="error"
-            compact
-            title={t('me.assets.loadFailed')}
-            description={error}
-            actions={[
-              {
-                label: t('me.refresh'),
-                onClick: () => void loadAssetsData(),
-              },
-            ]}
-          />
-        ) : loading && pageData.transactions.length === 0 ? (
-          <WebStateSlot
-            tone="loading"
-            compact
-            title={t('me.assets.loading')}
-            description={t('me.assets.loadingDescription')}
-          />
-        ) : pageData.transactions.length > 0 ? (
-          <div className={styles.transactionList}>
-            {pageData.transactions.map((transaction) => (
-              <article key={transaction.voId} className={styles.transactionItem}>
-                <div className={styles.transactionIcon} data-tone={getTransactionTone(transaction)}>
-                  <Icon icon={transaction.voAmount >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
-                </div>
-                <div className={styles.transactionBody}>
-                  <strong>{transaction.voTransactionTypeDisplay || transaction.voTransactionType}</strong>
-                  <span>
-                    {formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}
-                    {' · '}
-                    {transaction.voStatusDisplay || transaction.voStatus}
-                  </span>
-                  {(transaction.voBusinessType || transaction.voBusinessId || transaction.voRemark) && (
+          {error ? (
+            <WebStateSlot
+              tone="error"
+              compact
+              title={t('me.assets.loadFailed')}
+              description={error}
+              actions={[
+                {
+                  label: t('me.refresh'),
+                  onClick: () => void loadAssetsData(),
+                },
+              ]}
+            />
+          ) : loading && pageData.transactions.length === 0 ? (
+            <WebStateSlot
+              tone="loading"
+              compact
+              title={t('me.assets.loading')}
+              description={t('me.assets.loadingDescription')}
+            />
+          ) : pageData.transactions.length > 0 ? (
+            <div className={styles.transactionList}>
+              {pageData.transactions.map((transaction) => (
+                <article key={transaction.voId} className={styles.transactionItem}>
+                  <div className={styles.transactionIcon} data-tone={getTransactionTone(transaction)}>
+                    <Icon icon={transaction.voAmount >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
+                  </div>
+                  <div className={styles.transactionBody}>
+                    <strong>{transaction.voTransactionTypeDisplay || transaction.voTransactionType}</strong>
                     <span>
-                      {[transaction.voBusinessType, transaction.voBusinessId, transaction.voRemark].filter(Boolean).join(' · ')}
+                      {formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}
+                      {' · '}
+                      {transaction.voStatusDisplay || transaction.voStatus}
                     </span>
-                  )}
-                </div>
-                <div className={styles.transactionAmount} data-tone={getTransactionTone(transaction)}>
-                  {formatAmount(transaction)}
-                </div>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <WebStateSlot
-            tone="empty"
-            compact
-            icon="mdi:receipt-text-outline"
-            title={t('me.assets.empty')}
-            description={t('me.assets.emptyDescription')}
-          />
-        )}
+                    {(transaction.voBusinessType || transaction.voBusinessId || transaction.voRemark) && (
+                      <span>
+                        {[transaction.voBusinessType, transaction.voBusinessId, transaction.voRemark].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.transactionAmount} data-tone={getTransactionTone(transaction)}>
+                    {formatAmount(transaction)}
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <WebStateSlot
+              tone="empty"
+              compact
+              icon="mdi:receipt-text-outline"
+              title={t('me.assets.empty')}
+              description={t('me.assets.emptyDescription')}
+            />
+          )}
 
-        {isTransactionsMode && pageData.totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              type="button"
-              className={styles.pageButton}
-              disabled={currentPage <= 1 || loading}
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-            >
-              {t('me.assets.prevPage')}
-            </button>
-            <span>{t('me.assets.pageInfo', { current: currentPage, total: pageData.totalPages })}</span>
-            <button
-              type="button"
-              className={styles.pageButton}
-              disabled={currentPage >= pageData.totalPages || loading}
-              onClick={() => setCurrentPage((page) => Math.min(pageData.totalPages, page + 1))}
-            >
-              {t('me.assets.nextPage')}
-            </button>
+          {isTransactionsMode && pageData.totalPages > 1 && (
+            <div className={styles.pagination}>
+              <button
+                type="button"
+                className={styles.pageButton}
+                disabled={currentPage <= 1 || loading}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              >
+                {t('me.assets.prevPage')}
+              </button>
+              <span>{t('me.assets.pageInfo', { current: currentPage, total: pageData.totalPages })}</span>
+              <button
+                type="button"
+                className={styles.pageButton}
+                disabled={currentPage >= pageData.totalPages || loading}
+                onClick={() => setCurrentPage((page) => Math.min(pageData.totalPages, page + 1))}
+              >
+                {t('me.assets.nextPage')}
+              </button>
+            </div>
+          )}
+        </section>
+
+        <aside className={styles.assetRail}>
+          <div>
+            <p className={styles.kicker}>{t(isTransactionsMode ? 'me.assets.rail.transactionsKicker' : 'me.assets.rail.overviewKicker')}</p>
+            <h2>{t(isTransactionsMode ? 'me.assets.rail.transactionsTitle' : 'me.assets.rail.overviewTitle')}</h2>
+            <p>{t(isTransactionsMode ? 'me.assets.rail.transactionsDescription' : 'me.assets.rail.overviewDescription')}</p>
           </div>
-        )}
-      </section>
+          <div className={styles.railMetricList}>
+            <article>
+              <span>{t('me.assets.rail.income')}</span>
+              <strong>+{formatNumber(transactionIncome)}</strong>
+            </article>
+            <article>
+              <span>{t('me.assets.rail.spending')}</span>
+              <strong>{formatNumber(transactionSpending)}</strong>
+            </article>
+            <article>
+              <span>{t('me.assets.rail.abnormal')}</span>
+              <strong>{formatNumber(abnormalTransactions.length)}</strong>
+            </article>
+          </div>
+          {latestTransaction && (
+            <div className={styles.railPreview}>
+              <span>{t('me.assets.rail.latest')}</span>
+              <strong>{latestTransaction.voTransactionTypeDisplay || latestTransaction.voTransactionType}</strong>
+              <p>
+                {formatAmount(latestTransaction)}
+                {' · '}
+                {latestTransaction.voStatusDisplay || latestTransaction.voStatus}
+              </p>
+            </div>
+          )}
+          <p className={styles.railHint}>{t('me.assets.rail.scopeHint')}</p>
+        </aside>
+      </div>
     </>
   );
 }

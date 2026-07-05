@@ -36,6 +36,16 @@
   line-height: 1.7;
 }
 
+.heroBalance {
+  display: block;
+  margin-top: 16px;
+  color: var(--theme-brand-primary);
+  font-family: var(--theme-font-serif);
+  font-size: clamp(34px, 5vw, 54px);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
 .heroActions {
   display: flex;
   flex-wrap: wrap;
@@ -101,10 +111,17 @@
   overflow-wrap: anywhere;
 }
 
+.assetWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  align-items: start;
+  gap: 16px;
+  margin-top: 14px;
+}
+
 .transactionPanel {
   display: grid;
   gap: 14px;
-  margin-top: 14px;
   padding: 18px;
 }
 
@@ -240,6 +257,72 @@
   font-size: 13px;
 }
 
+.assetRail {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  box-shadow: var(--theme-shadow-soft);
+  padding: 18px;
+}
+
+.assetRail h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.assetRail p {
+  margin: 8px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.railMetricList {
+  display: grid;
+  gap: 10px;
+}
+
+.railMetricList article,
+.railPreview {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 62%, white 38%);
+  padding: 12px;
+}
+
+.railMetricList span,
+.railPreview span {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.railMetricList strong,
+.railPreview strong {
+  color: var(--theme-text-primary);
+  font-size: 22px;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.railMetricList article:first-child strong {
+  color: var(--theme-brand-primary);
+}
+
+.railPreview p,
+.railHint {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
 .spin {
   animation: spin 0.9s linear infinite;
 }
@@ -253,6 +336,10 @@
 @media (max-width: 900px) {
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .assetWorkspace {
+    grid-template-columns: 1fr;
   }
 
   .heroPanel,
