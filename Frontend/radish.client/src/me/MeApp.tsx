@@ -28,6 +28,7 @@ import {
   type PublicRouteDescriptor,
   type PublicRouteSourceState,
 } from '@/public/publicRouteNavigation';
+import { PrivacySafetyBoundaryPanel } from '@/privacy/PrivacySafetyBoundaryPanel';
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import {
@@ -1385,6 +1386,8 @@ export const MeApp = () => {
             </div>
           </div>
         </section>
+
+        <PrivacySafetyBoundaryPanel className={styles.privacySafetyPanel} variant="compact" />
 
         <div className={styles.toolbar}>
           <div>

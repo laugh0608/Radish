@@ -1,4 +1,5 @@
 import { PublicShellHeader } from '../components/PublicShellHeader';
+import { PrivacySafetyBoundaryPanel } from '../../privacy/PrivacySafetyBoundaryPanel';
 import styles from './PublicCommitmentsApp.module.css';
 
 interface CommitmentSection {
@@ -139,6 +140,8 @@ export function PublicCommitmentsApp({ onNavigateToDiscover }: PublicCommitments
             <p>虚拟商品、胡萝卜、经验和背包权益不提供现金价值承诺。</p>
           </div>
         </section>
+
+        <PrivacySafetyBoundaryPanel />
 
         <div className={styles.sectionList}>
           {commitmentSections.map((section) => (
