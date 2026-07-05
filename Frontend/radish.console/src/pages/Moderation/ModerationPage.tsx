@@ -42,7 +42,10 @@ import {
   buildManualModerationStatusSnapshot,
   buildQueueTargetDisplayInput,
   getActionTypeText,
+  getReasonTypeLabel,
+  getTargetTypeLabel,
   hasPositiveLongId,
+  resolveNavigationStatusLabel,
   resolveMissingTargetMessage,
   resolveOpenTarget,
   toOptionalString,
@@ -238,10 +241,14 @@ export const ModerationPage = () => {
 
   useEffect(() => {
     void loadQueue(1, queuePageSize);
+    // Queue loader reads current filters and pagination defaults; keeping this effect state-scoped avoids pagination changes replaying a filter reset.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusFilter, queueTargetTypeFilter, queueReasonTypeFilter, queueNavigationStatusFilter, queueKeyword, queuePageSize]);
 
   useEffect(() => {
     void loadLogs(1, logPageSize);
+    // Initial log load should not replay whenever the non-memoized loader captures table state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const applyQueueKeywordSearch = () => {
@@ -630,6 +637,15 @@ export const ModerationPage = () => {
     logIsActiveFilter,
     logKeyword,
   ].filter(Boolean).length;
+  const primaryQueueItem = queueItems[0] ?? null;
+  const latestActionLog = logItems[0] ?? null;
+  const activeActionLogCount = logItems.filter((item) => item.voIsActive).length;
+  const primaryQueueTargetInput = primaryQueueItem
+    ? buildQueueTargetDisplayInput(primaryQueueItem)
+    : null;
+  const primaryQueueNavigationLabel = primaryQueueItem
+    ? resolveNavigationStatusLabel(primaryQueueItem.voTargetNavigationStatus)
+    : { label: '未选择' };
 
   return (
     <div className="admin-feature-page">
@@ -674,6 +690,29 @@ export const ModerationPage = () => {
       <div className="admin-feature-banner">
         当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可联动禁言 / 封禁；历史动作也支持继续处置或直接解除。
       </div>
+
+      <section className="governance-task-flow" aria-label="内容治理工作台任务流">
+        <div className="governance-task-flow__item">
+          <span>1</span>
+          <strong>举报队列</strong>
+          <p>{queueTotal} 条当前筛选举报，{queueItems.length} 条在本页等待核对。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>2</span>
+          <strong>目标证据</strong>
+          <p>{primaryQueueItem ? `${getTargetTypeLabel(primaryQueueItem.voTargetType)} · ${getReasonTypeLabel(primaryQueueItem.voReasonType)}` : '等待选择可回看的举报目标。'}</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>3</span>
+          <strong>处理动作</strong>
+          <p>{canReview ? '审核联动或手动治理均需写入理由与范围。' : '当前账号只读，不能执行治理动作。'}</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>4</span>
+          <strong>最近留痕</strong>
+          <p>{logTotal} 条动作记录，当前页 {activeActionLogCount} 条仍在生效。</p>
+        </div>
+      </section>
 
       <div className={canReview ? 'governance-workbench' : 'governance-workbench governance-workbench--without-actions'}>
         <div className="governance-workbench__queue">
@@ -777,6 +816,62 @@ export const ModerationPage = () => {
 
         {canReview ? (
           <div className="governance-workbench__actions">
+            <section className="admin-feature-rail" aria-label="内容治理证据卷宗">
+              <div className="admin-feature-rail__header">
+                <div>
+                  <span className="admin-feature-rail__eyebrow">Evidence Dossier</span>
+                  <h3>目标证据卷宗</h3>
+                </div>
+                <ConsoleStatusChip tone={primaryQueueItem ? 'info' : 'neutral'}>
+                  {primaryQueueNavigationLabel.label}
+                </ConsoleStatusChip>
+              </div>
+
+              {primaryQueueItem && primaryQueueTargetInput ? (
+                <>
+                  <ModerationTargetDisplay
+                    input={{
+                      ...primaryQueueTargetInput,
+                      showTargetUser: true,
+                    }}
+                  />
+                  <div className="admin-feature-rail__list">
+                    <div className="admin-feature-rail__item">
+                      <span>举报单</span>
+                      <strong>#{primaryQueueItem.voReportId}</strong>
+                    </div>
+                    <div className="admin-feature-rail__item">
+                      <span>举报人</span>
+                      <strong>{primaryQueueItem.voReporterUserName || `#${primaryQueueItem.voReporterUserId}`}</strong>
+                    </div>
+                    <div className="admin-feature-rail__item">
+                      <span>原因</span>
+                      <strong>{getReasonTypeLabel(primaryQueueItem.voReasonType)}</strong>
+                    </div>
+                  </div>
+                  <div className="admin-feature-rail__actions">
+                    <Button size="small" onClick={() => handleOpenTarget(primaryQueueTargetInput)}>
+                      打开目标
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => applyActionLogPreset({
+                        targetUserId: hasPositiveLongId(primaryQueueItem.voTargetUserId) ? String(primaryQueueItem.voTargetUserId) : undefined,
+                        sourceReportId: String(primaryQueueItem.voReportId),
+                        hint: `已带入举报单 #${primaryQueueItem.voReportId} 的治理留痕，便于核对处置结果。`,
+                      })}
+                    >
+                      查看留痕
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <p className="admin-feature-rail__empty">
+                  当前筛选下没有可见举报单；调整状态、目标类型或关键词后可重新形成证据卷宗。
+                </p>
+              )}
+            </section>
+
             <ManualModerationActionSection
               sectionRef={manualActionSectionRef}
               form={manualActionForm}
@@ -871,6 +966,15 @@ export const ModerationPage = () => {
             {logContextHint ? (
               <div className="admin-feature-banner moderation-section-banner">
                 {logContextHint}
+              </div>
+            ) : null}
+
+            {latestActionLog ? (
+              <div className="admin-feature-inline-context">
+                <span>最近动作 #{latestActionLog.voActionId}</span>
+                <strong>{getActionTypeText(latestActionLog.voActionType)}</strong>
+                <span>{latestActionLog.voIsActive ? '生效中' : '已结束'}</span>
+                <span>{latestActionLog.voOperatorUserName}</span>
               </div>
             ) : null}
 
