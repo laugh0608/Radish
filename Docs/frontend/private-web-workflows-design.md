@@ -22,7 +22,9 @@
 >
 > 更新：2026-07-04（Asia/Shanghai）：D62 已通过 Pencil MCP 抽查 `P01 / P21`，首批将 `/workbench` 从 summary + 功能卡片推进为继续处理队列、私域状态 rail 和正式 private 移动底栏承接；未新增 API、权限、数据库结构、路由语义或提交载荷。
 >
-> 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批、D54 Pencil / Gateway 真实页面对齐和 D62 `/workbench` 首批实现已完成，后续继续按 D62 页面族推进
+> 更新：2026-07-05（Asia/Shanghai）：D62 已继续完成 `/me` 内容历史复访组、资产 / 订单 / 背包、通知 / 消息、圈子 / 宠物、论坛 / Docs 作者页面族首批实现；E3-B/E3-C 已把 `/workbench` 和 `/notifications` 推进为社区活动中心与通知行动队列；E4-A 已在 `/legal` 与 `/me` 复用隐私与安全边界提示。
+>
+> 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批、D54 Pencil / Gateway 真实页面对齐、D62 页面族首批实现和 E3/E4 首批产品硬化已完成，后续继续按成熟度矩阵处理错误恢复、可见边界和旅程级验证
 
 ## 设计源
 
@@ -90,8 +92,9 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 代码对齐状态：
 
-- `P3-12-D62` 已将 `/workbench` 补齐继续处理队列、私域状态 rail 和 mobile private 底栏承接；队列仅指向现有正式 Web 路由 `/notifications`、`/shop/orders`、`/docs/mine`、`/pet`，不新增业务 API 或路由语义。
-- D62 后续优先进入 `/me` 内容历史复访组，对照 `P03-P06 / P23` 处理内容、历史、附件和经验页面的任务状态与移动单列节奏。
+- `/workbench` 已补齐继续处理队列、私域状态 rail 和 mobile private 底栏承接；队列仅指向现有正式 Web 路由，不新增业务 API 或路由语义。
+- E3-B 后 `/workbench` 不再只是功能地图：会汇总通知行动、聊天未读 / 提及 / 本地草稿、论坛发帖草稿、订单 / Docs / 宠物等继续处理项，并展示同步状态、草稿数、活动数和加载 / 错误提示。
+- `/me` 首页已在个人状态与业务入口前加入隐私与安全边界提示；`/me/content`、`/me/history`、`/me/attachments` 和 `/me/experience` 已按 `P03-P06 / P23` 补任务状态、筛选上下文和移动单列节奏。
 
 ### 资产 / 订单 / 背包
 
@@ -105,6 +108,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 - `P3-12-D9` 已将资产、订单和背包入口接入共享状态槽、私域数据卡片和移动单列任务流。
 - 订单列表、订单详情和背包仍保留既有购买回流、订单详情、权益发放和来源返回契约；视觉实现不新增售后 / 退款 / 完整钱包能力。
+- D62 后 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId` 和 `/shop/inventory` 已补任务流说明、对象上下文 rail 和移动单列承载；订单 / 商品 / 资产流水仍服务社区购买、权益回看和复访，不扩成完整售后或资产风控平台。
 
 ### 消息 / 通知 / 宠物 / 圈子
 
@@ -117,6 +121,8 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 - `P3-12-D10` 已将通知 / 消息入口接入私域任务摘要、入口级状态槽容器、Web 宽高约束和移动单列布局。
 - `P3-12-D11` 已将圈子 / 宠物入口接入私域摘要、状态指标和移动单列任务流；关注关系、公开来源返回、宠物动作幂等和后端契约保持不变。
+- E3-C 后 `/notifications` 增加行动队列分组：评论、回答、消息、关注、治理、订单、Docs、帖子、宠物、经验、点赞和系统通知按目标可达性分组展示；缺少可跳目标的通知必须给出人工回看提示。
+- D62 后 `/messages`、`/circle` 和 `/pet` 已补会话 / 关系 / 照护任务提示和 mobile rail，继续服务社区复访、互动关系和状态反馈。
 
 ### 作者入口
 
@@ -133,6 +139,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - `P3-12-D13` 已移除通知 / 消息 / 圈子 / 宠物状态槽外层重复卡片，并统一论坛发帖和 Docs 作者摘要卡圆角；D9-D13 已完成 Gateway PC / mobile 成组验收。
 - `P3-12-D41` 已将 Docs 作者库不可编辑文档的入口状态显式化：内置文档和已删除文档展示只读原因，权限、保存、上传、路由和版本回看契约保持不变。
 - `P3-12-D42` 已补 Docs 编辑 / 修订页的公开阅读回跳，修订记录入口改为作者态内部导航，并用当前文档树快照避免目录异步加载覆盖编辑器草稿。
+- D62 后论坛发帖、公开详情作者态、Docs 作者库、文档编辑和修订回看都已补任务流说明；作者态仍只处理创作、保存、发布、编辑历史和版本回看，不混入 Console 审核、访问策略治理或高风险回收站动作。
 
 ### 编辑器 / 版本
 

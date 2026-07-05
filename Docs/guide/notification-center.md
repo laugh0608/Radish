@@ -1,7 +1,7 @@
 # 通知中心使用说明
 
-> **文档版本**：v1.4
-> **最后更新**：2026-06-21
+> **文档版本**：v1.5
+> **最后更新**：2026-07-05
 
 ## 架构定位
 
@@ -41,6 +41,7 @@
 - **头部**: 使用公共壳层头部，保留“社区发现 / 我的圈子 / 工作台”动作
 - **登录恢复**: 匿名访问保存 `/notifications` 作为返回路径
 - **目标分流**: 点击通知后优先进入纯 Web 目标；只有历史 WebOS 载荷或尚未迁移能力才回到 `/desktop` 深链
+- **行动队列**: 以社区复访为主轴，把通知按可处理目标分组展示，帮助用户优先回到帖子、评论、回答、聊天、关注、治理、订单和文档上下文
 
 ## Flutter 移动端轻量承接
 
@@ -95,9 +96,34 @@ Flutter 登录态壳层会读取当前用户最近站内通知，展示标题、
 | forum 帖子 / 评论，`extData` 带 `postPublicId/postId/commentId` | `/forum/post/:id`，并记录“返回通知中心”来源 |
 | 用户关注或用户目标 | `/u/:id`，并记录“返回通知中心”来源 |
 | 订单目标 | `/shop/order/:orderId`；缺少合法订单 ID 时回 `/shop/orders` |
+| 文档目标 | `/docs/:slug`、`/docs/mine` 或当前可解析的 Docs 正式 Web 目标 |
+| 治理 / 审核目标 | 可定位时进入对应公开 / 私域上下文；不可定位时保留人工回看提示 |
 | 暂无可定位详情的互动通知 | `/forum` |
 
 跳转来源状态保存在当前标签页的一次性来源转交中，不写入公开 URL、canonical、分享链接或 sitemap。完整规则见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)。
+
+## 通知行动队列
+
+纯 Web `/notifications` 会在列表上方生成行动队列，而不是只展示时间倒序列表。队列来源为当前通知列表映射后的 `NotificationPreview`，每条预览都会附带可跳转目标或目标缺失原因。
+
+队列分组顺序：
+
+1. 评论
+2. 回答 / 问答
+3. 消息 / 聊天
+4. 关注 / 关系
+5. 治理 / 举报 / 审核
+6. 订单 / 背包 / 权益
+7. Docs / 文档
+8. 帖子 / 主题
+9. 宠物
+10. 经验 / 等级
+11. 点赞 / 轻互动
+12. 系统
+
+每个分组展示总数、未读数、可跳转数和需要人工回看的数量；单组默认只展示前 3 条，避免行动区挤压通知列表。缺少可跳目标时，不伪造链接，显示“需要人工回看 / 回通知列表处理”的提示。
+
+`/workbench` 复用同一批通知预览和分组逻辑，只展示继续处理队列摘要；真正处理仍回到 `/notifications` 或对应正式 Web 路由。
 
 ## 实时更新
 - 当有新通知时，未读数量会自动增加
@@ -122,6 +148,7 @@ Flutter 登录态壳层会读取当前用户最近站内通知，展示标题、
 
 ### 组件位置
 - **纯 Web 页面**: `Frontend/radish.client/src/notifications/NotificationsApp.tsx`
+- **行动队列分组**: `Frontend/radish.client/src/notifications/notificationActionQueue.ts`
 - **WebOS 应用组件**: `Frontend/radish.client/src/apps/notification/NotificationApp.tsx`
 - **共享通知列表组件**: `Frontend/radish.client/src/apps/notification/NotificationCenter.tsx`
 - **通知目标分流**: `Frontend/radish.client/src/utils/notificationNavigation.ts`
