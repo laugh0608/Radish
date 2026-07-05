@@ -11,6 +11,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [第三开发阶段：真实使用增长与长期契约治理](./planning/phase-three-real-usage-contract-governance.md)
 - [P3-11 发布候选整备与轻量复访补齐](./planning/p3-11-release-candidate-light-revisit.md)
 - [P3-12 Web 完全化与 WebOS 收束](./planning/p3-12-web-completion-webos-retirement.md)
+- [P3-12-E 正式产品成熟度与质量硬化](./planning/p3-12-product-maturity-quality-hardening.md)
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
 - [当前进行中](./planning/current.md)

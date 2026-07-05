@@ -50,6 +50,7 @@ features:
 - [开发路线图总览](/development-plan) - 当前主线、下一顺位与维护线
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) - 当前阶段边界与 P3-12 主线口径
 - [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) - PC / mobile Web 正式版主路径、WebOS 收束与 Pencil 先行 UI 约束
+- [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening) - 发布候选前的功能、安全、产品力、交互、可靠性和 Console 移动视图硬化
 - [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit) - P3-10 收束后的验收矩阵、轻量复访范围与暂缓 PR 收束记录
 - [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 已归档阶段总目标、拆分与优先级
 - [前端多壳层策略](/frontend/shell-strategy) - 公开内容、桌面工作台与 Flutter 客户端的职责分工
