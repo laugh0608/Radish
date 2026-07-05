@@ -1360,6 +1360,25 @@ export const PublicForumDetail = ({
     () => createForumReadingGuide(t, detailGuideDefinition),
     [t]
   );
+  const authorModeLabel = intent === 'answer'
+    ? t('forum.public.detailRailAuthorModeAnswer')
+    : intent === 'edit'
+      ? t('forum.public.detailRailAuthorModeEdit')
+      : intent === 'history'
+        ? t('forum.public.detailRailAuthorModeHistory')
+        : t('forum.public.detailRailAuthorModeRead');
+  const authorIdentityLabel = !isAuthenticated
+    ? t('forum.public.detailRailAuthorIdentityGuest')
+    : isCurrentUserAuthor
+      ? t('forum.public.detailRailAuthorIdentityOwn')
+      : t('forum.public.detailRailAuthorIdentityReader');
+  const authorPostTypeLabel = post?.voIsQuestion
+    ? t('forum.public.detailRailAuthorTypeQuestion')
+    : post?.voHasPoll
+      ? t('forum.public.detailRailAuthorTypePoll')
+      : post?.voHasLottery
+        ? t('forum.public.detailRailAuthorTypeLottery')
+        : t('forum.public.detailRailAuthorTypePost');
 
   return (
     <div className={styles.forumGrid}>
@@ -1837,7 +1856,66 @@ export const PublicForumDetail = ({
           </ul>
         </section>
 
-        {(quickReplyReturnPath || commentReturnPath || (answerReturnPath && post?.voIsQuestion)) && (
+        {post && (answerReturnPath || editReturnPath || historyReturnPath) && (
+          <section className={styles.sidePanel}>
+            <p className={styles.sidePanelKicker}>{t('forum.public.detailRailAuthorTitle')}</p>
+            <p className={styles.sidePanelText}>{t('forum.public.detailRailAuthorDescription')}</p>
+            <div className={styles.railChipList}>
+              <span className={styles.railChip}>{t('forum.public.detailRailAuthorMode', { mode: authorModeLabel })}</span>
+              <span className={styles.railChip}>{authorIdentityLabel}</span>
+              <span className={styles.railChip}>{authorPostTypeLabel}</span>
+              {post.voCategoryName ? <span className={styles.railChip}>{post.voCategoryName}</span> : null}
+            </div>
+            {((answerReturnPath && post.voIsQuestion) || (isAuthenticated && isCurrentUserAuthor && (editReturnPath || historyReturnPath))) && (
+              <div className={styles.railActionList}>
+                {answerReturnPath && post.voIsQuestion && (
+                  <a
+                    href={answerReturnPath}
+                    className={styles.railActionLink}
+                    onClick={(event) => handlePublicForumLinkClick(event, handleAnswerAction)}
+                  >
+                    <Icon icon="mdi:comment-question-outline" size={18} />
+                    <span>
+                      {isAuthenticated
+                        ? t('forum.public.workspaceAnswerAction')
+                        : t('forum.public.workspaceAnswerLoginAction')}
+                    </span>
+                  </a>
+                )}
+                {editReturnPath && isAuthenticated && isCurrentUserAuthor && (
+                  <a
+                    href={editReturnPath}
+                    className={styles.railActionLink}
+                    aria-disabled={categoriesLoading}
+                    onClick={(event) => {
+                      if (categoriesLoading) {
+                        event.preventDefault();
+                        return;
+                      }
+
+                      handlePublicForumLinkClick(event, () => void handleEditPostAction());
+                    }}
+                  >
+                    <Icon icon={categoriesLoading ? 'mdi:progress-clock' : 'mdi:pencil-outline'} size={18} />
+                    <span>{categoriesLoading ? t('forum.public.authorCategoriesLoading') : t('forum.public.workspaceEditAction')}</span>
+                  </a>
+                )}
+                {historyReturnPath && isAuthenticated && isCurrentUserAuthor && (
+                  <a
+                    href={historyReturnPath}
+                    className={styles.railActionLink}
+                    onClick={(event) => handlePublicForumLinkClick(event, () => void handleViewPostHistory())}
+                  >
+                    <Icon icon="mdi:history" size={18} />
+                    <span>{t('forum.public.workspaceHistoryAction')}</span>
+                  </a>
+                )}
+              </div>
+            )}
+          </section>
+        )}
+
+        {(quickReplyReturnPath || commentReturnPath) && (
           <section className={styles.sidePanel}>
             <p className={styles.sidePanelKicker}>{t('forum.public.detailRailParticipationTitle')}</p>
             <p className={styles.sidePanelText}>{t('forum.public.detailRailParticipationDescription')}</p>
@@ -1869,20 +1947,6 @@ export const PublicForumDetail = ({
                     {isAuthenticated
                       ? t('forum.public.workspaceCommentAction')
                       : t('forum.public.workspaceCommentLoginAction')}
-                  </span>
-                </a>
-              )}
-              {answerReturnPath && post?.voIsQuestion && (
-                <a
-                  href={answerReturnPath}
-                  className={styles.railActionLink}
-                  onClick={(event) => handlePublicForumLinkClick(event, handleAnswerAction)}
-                >
-                  <Icon icon="mdi:comment-question-outline" size={18} />
-                  <span>
-                    {isAuthenticated
-                      ? t('forum.public.workspaceAnswerAction')
-                      : t('forum.public.workspaceAnswerLoginAction')}
                   </span>
                 </a>
               )}

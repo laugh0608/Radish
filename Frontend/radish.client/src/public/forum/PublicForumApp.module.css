@@ -190,6 +190,11 @@
   border-radius: 14px;
 }
 
+.railActionLink[aria-disabled='true'] {
+  cursor: wait;
+  opacity: 0.62;
+}
+
 .sidePanelAction {
   width: 100%;
 }
@@ -480,12 +485,28 @@
   padding: 0;
 }
 
-.composePanel {
+.composeWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
+  align-items: start;
+  gap: 16px;
+  padding: 22px 28px 28px;
+}
+
+.composePanel,
+.composeRail {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
   gap: 18px;
-  padding: 22px 28px 28px;
+  min-width: 0;
+}
+
+.composePanel {
+  align-items: flex-start;
+}
+
+.composeRail {
+  gap: 14px;
 }
 
 .composeSummaryGrid {
@@ -970,6 +991,16 @@
   .sideReadingGuide {
     grid-column: 1 / -1;
   }
+
+  .composeWorkspace {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .composeRail {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1126,8 +1157,13 @@
     margin-bottom: 0;
   }
 
-  .composePanel {
+  .composeWorkspace {
     padding: 18px 14px 22px;
+  }
+
+  .composeRail {
+    display: flex;
+    flex-direction: column;
   }
 
   .errorText {
