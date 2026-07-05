@@ -30,12 +30,14 @@ const publicNavItems: WebShellNavItem[] = [
   { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
   { key: 'leaderboard', label: '榜单', href: '/leaderboard', icon: 'mdi:trophy-outline' },
   { key: 'shop', label: '商城', href: '/shop', icon: 'mdi:shopping-outline' },
+  { key: 'legal', label: '规则', href: '/legal', icon: 'mdi:shield-check-outline' },
 ];
 
 const publicMobileNavItems: WebShellNavItem[] = [
   { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
   { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
   { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
+  { key: 'legal', label: '规则', href: '/legal', icon: 'mdi:shield-check-outline' },
   { key: 'workbench', label: '工作台', href: '/workbench', icon: 'mdi:view-dashboard-outline' },
   { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
 ];
@@ -99,6 +101,10 @@ function resolveActiveKey(variant: WebShellVariant): string {
 
   if (pathname === '/leaderboard' || pathname.startsWith('/leaderboard/')) {
     return 'leaderboard';
+  }
+
+  if (pathname === '/legal' || pathname.startsWith('/legal/')) {
+    return 'legal';
   }
 
   if (

@@ -7,6 +7,7 @@ import { isPetPathname } from '../pet/petRouteState.ts';
 import { isShopPathname } from '../shop/shopRouteState.ts';
 import { isPublicDiscoverPathname } from '../public/discoverRouteState.ts';
 import { isPublicShopPathname } from '../public/shopRouteState.ts';
+import { isPublicLegalPathname } from '../public/legalRouteState.ts';
 import { isDocsAuthorPathname } from '../docs/docsAuthorRouteState.ts';
 import { isWorkbenchPathname } from '../workbench/workbenchRouteState.ts';
 
@@ -46,6 +47,7 @@ export function isPublicContentPathname(pathname: string): boolean {
     || pathname.startsWith('/leaderboard/')
     || pathname === '/docs'
     || (pathname.startsWith('/docs/') && !isDocsAuthorPathname(pathname))
+    || isPublicLegalPathname(pathname)
     || /^\/u\/(?:[1-9]\d*|usr_[0-9a-f]{32})\/?$/i.test(pathname)
     || pathname === '/__documents__'
     || pathname.startsWith('/__documents__/')

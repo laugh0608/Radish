@@ -33,7 +33,7 @@ export const TARGET_NAVIGATION_STATUS_OPTIONS = [
   { label: '可回看', value: 'Ready' },
   { label: '已降级', value: 'Fallback' },
   { label: '已失效', value: 'Unavailable' },
-  { label: '暂不支持', value: 'Unsupported' },
+  { label: '未接入回看', value: 'Unsupported' },
 ];
 
 export const ACTION_OPTIONS = [
@@ -248,7 +248,7 @@ export function resolveNavigationStatusLabel(status: string | null | undefined):
     case 'Unavailable':
       return { color: 'default', label: '已失效' };
     case 'Unsupported':
-      return { color: 'default', label: '暂不支持' };
+      return { color: 'default', label: '未接入回看' };
     default:
       return { color: 'success', label: '可回看' };
   }
@@ -424,6 +424,6 @@ export function resolveMissingTargetMessage(targetType: string | null | undefine
     case 'Product':
       return '当前举报项缺少商品定位信息';
     default:
-      return '当前举报项暂不支持直接回看';
+      return '当前目标类型未接入直接回看，请结合创建时快照、举报原因和用户治理记录复核。';
   }
 }

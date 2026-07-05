@@ -267,6 +267,21 @@ test('公开入口应为所有公开路由应用通用 JSON-LD', () => {
   assert.match(source, /return removePublicStructuredData/);
 });
 
+test('公开用户承诺页应进入公共壳层并提供导航入口', () => {
+  const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
+  const publicEntrySource = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
+  const publicShellSource = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
+  const webShellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
+  const headSource = readFileSync(resolve(clientRoot, 'src/public/publicHead.ts'), 'utf8');
+
+  assert.match(entryRouteSource, /isPublicLegalPathname\(pathname\)/);
+  assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname\)/);
+  assert.match(publicEntrySource, /<PublicCommitmentsApp/);
+  assert.match(publicShellSource, /href: '\/legal'/);
+  assert.match(webShellSource, /pathname === '\/legal'/);
+  assert.match(headSource, /用户承诺与社区边界/);
+});
+
 test('公开论坛详情加载后应刷新详情 head 并复用同一个 canonical', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
 

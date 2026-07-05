@@ -121,7 +121,7 @@ export function createModerationQueueColumns(
               </Button>
             ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
               <span className="moderation-table-muted">
-                {record.voTargetNavigationStatus === 'Unsupported' ? '暂不支持回看' : '目标已失效'}
+                {record.voTargetNavigationStatus === 'Unsupported' ? '未接入回看' : '目标已失效'}
               </span>
             ) : null}
             {hasPositiveLongId(record.voTargetUserId) ? (
@@ -268,7 +268,7 @@ export function createModerationLogColumns(
             ) : (
               <span className="moderation-table-muted">
                 {record.voSourceReportTargetNavigationStatus === 'Unsupported'
-                  ? '暂不支持回看'
+                  ? '未接入回看'
                   : record.voSourceReportTargetNavigationStatus === 'Unavailable'
                     ? '目标已失效'
                     : '-'}

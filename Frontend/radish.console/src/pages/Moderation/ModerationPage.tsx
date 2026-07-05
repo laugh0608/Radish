@@ -714,6 +714,29 @@ export const ModerationPage = () => {
         </div>
       </section>
 
+      <section className="moderation-mobile-operations" aria-label="移动治理操作边界">
+        <div>
+          <span className="moderation-mobile-operations__eyebrow">Mobile Governance</span>
+          <h3>移动视图处理顺序</h3>
+          <p>
+            手机视图优先完成低风险核对：先筛选举报队列，打开目标或快照确认上下文，再执行审核或带入手动治理；高风险批量策略和复杂权限调整仍保持桌面优先。
+          </p>
+        </div>
+        <Space wrap>
+          <Button size="small" onClick={focusQueueSection}>
+            查看队列
+          </Button>
+          {canReview ? (
+            <Button size="small" onClick={focusManualActionSection}>
+              手动处置
+            </Button>
+          ) : null}
+          <Button size="small" onClick={focusLogSection}>
+            查看日志
+          </Button>
+        </Space>
+      </section>
+
       <div className={canReview ? 'governance-workbench' : 'governance-workbench governance-workbench--without-actions'}>
         <div className="governance-workbench__queue">
           <section className="admin-feature-card" ref={queueSectionRef}>

@@ -2,6 +2,7 @@ import type { PublicDiscoverRoute } from './discoverRouteState';
 import type { PublicDocsBrowseRoute, PublicDocsRoute } from './docsRouteState';
 import type { PublicForumBrowseRoute, PublicForumRoute } from './forumRouteState';
 import type { PublicLeaderboardRoute } from './leaderboardRouteState';
+import type { PublicLegalRoute } from './legalRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
 import type { PublicShopRoute } from './shopRouteState';
 import type { CircleRoute } from '../circle/circleRouteState';
@@ -15,6 +16,7 @@ export type PublicRouteDescriptor =
   | { app: 'docs'; route: PublicDocsRoute }
   | { app: 'profile'; route: PublicProfileRoute }
   | { app: 'leaderboard'; route: PublicLeaderboardRoute }
+  | { app: 'legal'; route: PublicLegalRoute }
   | { app: 'shop'; route: PublicShopRoute }
   | { app: 'circle'; route: CircleRoute }
   | { app: 'me'; route: { kind: 'index' } }
@@ -91,6 +93,10 @@ function resolveBackMode(route: PublicRouteDescriptor | null): PublicDetailBackM
 
   if (route.app === 'shop') {
     return route.route.kind === 'products' ? 'shopProducts' : 'shop';
+  }
+
+  if (route.app === 'legal') {
+    return 'source';
   }
 
   return route.app;

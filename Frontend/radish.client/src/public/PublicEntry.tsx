@@ -8,6 +8,7 @@ import { PublicForumApp } from './forum/PublicForumApp';
 import { PublicDocsApp } from './docs/PublicDocsApp';
 import { PublicProfileApp } from './profile/PublicProfileApp';
 import { PublicLeaderboardApp } from './leaderboard/PublicLeaderboardApp';
+import { PublicCommitmentsApp } from './legal/PublicCommitmentsApp';
 import { PublicShopApp } from './shop/PublicShopApp';
 import {
   buildPublicDiscoverPath,
@@ -34,6 +35,10 @@ import {
   buildPublicLeaderboardPath,
   parsePublicLeaderboardRoute,
 } from './leaderboardRouteState';
+import {
+  buildPublicLegalPath,
+  parsePublicLegalRoute,
+} from './legalRouteState';
 import {
   buildPublicShopPath,
   createDefaultPublicShopProductsRoute,
@@ -148,6 +153,14 @@ function parsePublicRoute(): PublicContentRouteDescriptor {
     };
   }
 
+  const legalRoute = parsePublicLegalRoute(window.location.pathname);
+  if (legalRoute) {
+    return {
+      app: 'legal',
+      route: legalRoute
+    };
+  }
+
   if (window.location.pathname === '/shop' || window.location.pathname.startsWith('/shop/')) {
     return {
       app: 'shop',
@@ -200,6 +213,10 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
 
   if (nextRoute.app === 'leaderboard') {
     return buildPublicLeaderboardPath(nextRoute.route);
+  }
+
+  if (nextRoute.app === 'legal') {
+    return buildPublicLegalPath(nextRoute.route);
   }
 
   if (nextRoute.app === 'shop') {
@@ -465,6 +482,10 @@ export const PublicEntry = () => {
       onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
       onNavigateToShopProduct={(productId) => navigateToShopRoute({ kind: 'detail', productId })}
+    />
+  ) : route.app === 'legal' ? (
+    <PublicCommitmentsApp
+      onNavigateToDiscover={() => navigateToDiscoverRoute()}
     />
   ) : route.app === 'shop' ? (
     <PublicShopApp
