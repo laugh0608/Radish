@@ -11,14 +11,6 @@ import {
   type PublicUserProfile,
   type PublicUserStats,
 } from '@/api/user';
-import {
-  followUser,
-  getFollowStatus,
-  unfollowUser,
-  type UserFollowStatus,
-} from '@/api/userFollow';
-import { redirectToLogin } from '@/services/auth';
-import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
@@ -228,8 +220,6 @@ export const PublicProfileApp = ({
   const pageRef = useRef<HTMLDivElement>(null);
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
-  const authenticatedUserId = useUserStore((state) => state.userId);
-  const isLoggedIn = authenticatedUserId !== '';
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [stats, setStats] = useState<PublicUserStats | null>(null);
@@ -240,9 +230,6 @@ export const PublicProfileApp = ({
   const [loadingContent, setLoadingContent] = useState(true);
   const [contentError, setContentError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
-  const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
-  const [followLoading, setFollowLoading] = useState(false);
-  const [followError, setFollowError] = useState<string | null>(null);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
   const [contentReloadToken, setContentReloadToken] = useState(0);
 
@@ -294,7 +281,6 @@ export const PublicProfileApp = ({
     () => resolvePublicProfileRouteIdentifier(profile, route.userId),
     [profile, route.userId]
   );
-  const isOwnProfile = !!profile && String(profile.voUserId) === authenticatedUserId;
 
   useEffect(() => {
     if (!profile || profileRouteIdentifier === route.userId) {
@@ -388,43 +374,6 @@ export const PublicProfileApp = ({
   }, [contentReloadToken, onNavigate, profile, profileRouteIdentifier, route.page, route.tab]);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadFollowStatus = async () => {
-      setFollowError(null);
-
-      if (!isLoggedIn || !profile || isOwnProfile) {
-        setFollowStatus(null);
-        setFollowLoading(false);
-        return;
-      }
-
-      setFollowLoading(true);
-      setFollowStatus(null);
-      try {
-        const nextStatus = await getFollowStatus(profile.voUserId);
-        if (!cancelled) {
-          setFollowStatus(nextStatus);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setFollowStatus(null);
-          setFollowError(error instanceof Error ? error.message : String(error));
-        }
-      } finally {
-        if (!cancelled) {
-          setFollowLoading(false);
-        }
-      }
-    };
-
-    void loadFollowStatus();
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoggedIn, isOwnProfile, profile]);
-
-  useEffect(() => {
     if (loadingProfile) {
       return;
     }
@@ -492,50 +441,7 @@ export const PublicProfileApp = ({
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildProfileShareUrl,
   });
-  const profileReturnPath = buildPublicProfilePath({
-    kind: 'detail',
-    userId: profileRouteIdentifier,
-    tab: route.tab,
-    page: route.page,
-  });
   const leaderboardHref = buildPublicLeaderboardPath(createDefaultPublicLeaderboardRoute());
-  const followActionLabel = !isLoggedIn
-    ? t('profile.public.followLoginAction')
-    : isOwnProfile
-      ? t('profile.public.ownProfileAction')
-      : followLoading
-        ? t('profile.public.followLoading')
-        : followStatus?.voIsFollowing
-          ? t('profile.public.followingAction')
-          : t('profile.public.followAction');
-
-  const handleFollowAction = async () => {
-    if (!profile || followLoading) {
-      return;
-    }
-
-    if (!isLoggedIn) {
-      redirectToLogin({ returnPath: profileReturnPath });
-      return;
-    }
-
-    if (isOwnProfile) {
-      return;
-    }
-
-    setFollowError(null);
-    setFollowLoading(true);
-    try {
-      const nextStatus = followStatus?.voIsFollowing
-        ? await unfollowUser(profile.voUserId)
-        : await followUser(profile.voUserId);
-      setFollowStatus(nextStatus);
-    } catch (error) {
-      setFollowError(error instanceof Error ? error.message : String(error));
-    } finally {
-      setFollowLoading(false);
-    }
-  };
 
   const handleTabChange = (tab: PublicProfileTab) => {
     if (tab === route.tab && route.page === 1) {
@@ -630,15 +536,6 @@ export const PublicProfileApp = ({
                 <div className={styles.summaryHeader}>
                   <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
                   <div className={styles.summaryActions}>
-                    <button
-                      type="button"
-                      className={`${styles.primaryButton} ${followStatus?.voIsFollowing ? styles.followingButton : ''}`}
-                      onClick={() => void handleFollowAction()}
-                      disabled={followLoading || isOwnProfile}
-                    >
-                      <Icon icon={followStatus?.voIsFollowing ? 'mdi:account-check-outline' : 'mdi:account-plus-outline'} size={16} />
-                      <span>{followActionLabel}</span>
-                    </button>
                     <button type="button" className={`${styles.secondaryButton} ${styles.shareButton}`} onClick={() => void copyShareLink()} disabled={shareBusy}>
                       <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
                       <span>{shareBusy ? t('profile.public.shareSubmitting') : t('profile.public.shareAction')}</span>
@@ -649,9 +546,6 @@ export const PublicProfileApp = ({
                   <p className={styles.shareFeedback} data-state={shareState}>
                     {shareState === 'success' ? t('profile.public.shareSuccess') : t('profile.public.shareFailed')}
                   </p>
-                )}
-                {followError && (
-                  <p className={styles.followFeedback} data-state="error">{followError}</p>
                 )}
                 <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 
@@ -697,12 +591,6 @@ export const PublicProfileApp = ({
                     <span className={styles.statLabel}>{t('profile.stats.likesLabel')}</span>
                     <span className={styles.statValue}>{stats?.voTotalLikeCount ?? 0}</span>
                   </div>
-                  {followStatus && (
-                    <div className={styles.statCard}>
-                      <span className={styles.statLabel}>{t('profile.public.followersLabel')}</span>
-                      <span className={styles.statValue}>{followStatus.voFollowerCount}</span>
-                    </div>
-                  )}
                 </div>
               </section>
 
@@ -913,7 +801,7 @@ export const PublicProfileApp = ({
             <aside className={styles.profileRail} aria-label={t('profile.public.railLabel')}>
               <section className={styles.railPanel}>
                 <h2 className={styles.railTitle}>{t('profile.public.sourceRailTitle')}</h2>
-                <a className={styles.railRow} href={backHref} onClick={handleBackLinkClick}>
+                <a className={`${styles.railRow} ${styles.summaryBackLink}`} href={backHref} onClick={handleBackLinkClick}>
                   <Icon icon="mdi:arrow-left" size={16} />
                   <span className={styles.railRowBody}>
                     <span className={styles.railRowTitle}>{backLabel}</span>

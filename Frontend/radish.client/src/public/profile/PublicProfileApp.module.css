@@ -86,11 +86,8 @@
   min-width: 0;
 }
 
-.followFeedback {
-  margin: -0.2rem 0 0.8rem;
-  color: var(--theme-state-danger, #bb5b54);
-  font-size: 0.86rem;
-  line-height: 1.5;
+.summaryBackLink {
+  text-decoration: none;
 }
 
 .identityRow {
@@ -200,11 +197,6 @@
   background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary, #b7791f) 88%, white 12%), #8b5a2b);
   color: #fffdf8;
   font-weight: 700;
-}
-
-.followingButton {
-  background: color-mix(in srgb, var(--color-primary, #b7791f) 14%, white 86%);
-  color: color-mix(in srgb, var(--color-primary, #b7791f) 70%, black 30%);
 }
 
 .secondaryButton,
@@ -594,7 +586,6 @@
 .displayName,
 .joinedAt,
 .viewHint,
-.followFeedback,
 .statLabel,
 .statValue,
 .sectionTitle,
