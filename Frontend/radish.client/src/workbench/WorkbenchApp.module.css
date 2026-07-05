@@ -165,6 +165,11 @@
   border-color: color-mix(in srgb, var(--theme-brand-primary) 36%, var(--theme-border-soft) 64%);
 }
 
+.queueItemAttention {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 34%, var(--theme-border-soft) 66%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 32%, var(--theme-bg-app) 68%);
+}
+
 .queueIcon,
 .railIcon {
   width: 42px;
@@ -209,6 +214,11 @@
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
+}
+
+.queueMetaAttention {
+  background: var(--theme-brand-primary);
+  color: var(--theme-bg-surface);
 }
 
 .railPanel {

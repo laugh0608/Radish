@@ -1,7 +1,25 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { getChannelList } from '@/api/chat';
+import { notificationApi } from '@/api/notification';
+import { readDraftMap, type ChannelDraft } from '@/apps/chat/chatApp.helpers';
+import { getApiBaseUrl } from '@/config/env';
+import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
+import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '@/stores/chatStore';
+import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import { useUserStore } from '@/stores/userStore';
+import type { ChannelVo } from '@/types/chat';
+import { normalizeEntityId } from '@/types/chat';
+import { log } from '@/utils/logger';
+import {
+  getNotificationActionScope,
+  resolveNotificationPreview,
+  toNotificationStoreItem,
+} from '@/notifications/notificationActionQueue';
 import styles from './WorkbenchApp.module.css';
 
 type WorkbenchAccess = 'public' | 'private' | 'admin' | 'legacy';
@@ -27,54 +45,31 @@ interface WorkbenchGroup {
 }
 
 interface WorkbenchQueueItem {
-  titleKey: string;
-  descriptionKey: string;
+  id: string;
+  title: string;
+  description: string;
   href: string;
   icon: string;
-  metaKey: string;
+  meta: string;
+  tone?: 'attention' | 'neutral';
 }
 
 interface WorkbenchRailItem {
-  labelKey: string;
-  valueKey: string;
+  label: string;
+  value: string;
 }
 
-const continueItems: WorkbenchQueueItem[] = [
-  {
-    titleKey: 'workbench.continue.notifications.title',
-    descriptionKey: 'workbench.continue.notifications.description',
-    href: '/notifications',
-    icon: 'mdi:bell-outline',
-    metaKey: 'workbench.continue.notifications.meta',
-  },
-  {
-    titleKey: 'workbench.continue.orders.title',
-    descriptionKey: 'workbench.continue.orders.description',
-    href: '/shop/orders',
-    icon: 'mdi:receipt-text-outline',
-    metaKey: 'workbench.continue.orders.meta',
-  },
-  {
-    titleKey: 'workbench.continue.author.title',
-    descriptionKey: 'workbench.continue.author.description',
-    href: '/docs/mine',
-    icon: 'mdi:file-document-edit-outline',
-    metaKey: 'workbench.continue.author.meta',
-  },
-  {
-    titleKey: 'workbench.continue.pet.title',
-    descriptionKey: 'workbench.continue.pet.description',
-    href: '/pet',
-    icon: 'mdi:sprout-outline',
-    metaKey: 'workbench.continue.pet.meta',
-  },
-];
+interface WorkbenchActivityState {
+  loading: boolean;
+  notificationError: boolean;
+  messageError: boolean;
+  chatDraftCount: number;
+  hasForumDraft: boolean;
+}
 
-const railItems: WorkbenchRailItem[] = [
-  { labelKey: 'workbench.rail.private.label', valueKey: 'workbench.rail.private.value' },
-  { labelKey: 'workbench.rail.public.label', valueKey: 'workbench.rail.public.value' },
-  { labelKey: 'workbench.rail.author.label', valueKey: 'workbench.rail.author.value' },
-];
+type Translate = (key: string, options?: Record<string, unknown>) => string;
+
+const FORUM_POST_DRAFT_STORAGE_KEY = 'forum_post_draft';
 
 const workbenchGroups: WorkbenchGroup[] = [
   {
@@ -229,6 +224,41 @@ const workbenchGroups: WorkbenchGroup[] = [
   },
 ];
 
+const fallbackQueueTemplates = [
+  {
+    id: 'notifications',
+    titleKey: 'workbench.continue.notifications.title',
+    descriptionKey: 'workbench.continue.notifications.description',
+    href: '/notifications',
+    icon: 'mdi:bell-outline',
+    metaKey: 'workbench.continue.notifications.meta',
+  },
+  {
+    id: 'orders',
+    titleKey: 'workbench.continue.orders.title',
+    descriptionKey: 'workbench.continue.orders.description',
+    href: '/shop/orders',
+    icon: 'mdi:receipt-text-outline',
+    metaKey: 'workbench.continue.orders.meta',
+  },
+  {
+    id: 'author',
+    titleKey: 'workbench.continue.author.title',
+    descriptionKey: 'workbench.continue.author.description',
+    href: '/docs/mine',
+    icon: 'mdi:file-document-edit-outline',
+    metaKey: 'workbench.continue.author.meta',
+  },
+  {
+    id: 'pet',
+    titleKey: 'workbench.continue.pet.title',
+    descriptionKey: 'workbench.continue.pet.description',
+    href: '/pet',
+    icon: 'mdi:sprout-outline',
+    metaKey: 'workbench.continue.pet.meta',
+  },
+] as const;
+
 const accessClassNameMap: Record<WorkbenchAccess, string> = {
   public: styles.accessPublic,
   private: styles.accessPrivate,
@@ -236,12 +266,424 @@ const accessClassNameMap: Record<WorkbenchAccess, string> = {
   legacy: styles.accessLegacy,
 };
 
+function hasMeaningfulChatDraft(draft: ChannelDraft | null | undefined): boolean {
+  if (!draft) {
+    return false;
+  }
+
+  return draft.content.trim().length > 0 || Boolean(draft.replyTarget || draft.pendingImage);
+}
+
+function countChatDrafts(userId: string): number {
+  if (!userId.trim()) {
+    return 0;
+  }
+
+  const prefix = `${userId.trim()}:`;
+  return Object.entries(readDraftMap()).filter(([key, draft]) => (
+    key.startsWith(prefix) && hasMeaningfulChatDraft(draft)
+  )).length;
+}
+
+function hasMeaningfulForumDraft(): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const raw = window.localStorage.getItem(FORUM_POST_DRAFT_STORAGE_KEY);
+  if (!raw || raw.trim() === '{}') {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') {
+      return raw.trim().length > 0;
+    }
+
+    return Object.values(parsed).some((value) => {
+      if (typeof value === 'string') {
+        return value.trim().length > 0;
+      }
+
+      return Array.isArray(value) && value.length > 0;
+    });
+  } catch {
+    return raw.trim().length > 0;
+  }
+}
+
+function buildFallbackQueue(t: Translate): WorkbenchQueueItem[] {
+  return fallbackQueueTemplates.map((item) => ({
+    id: item.id,
+    title: t(item.titleKey),
+    description: t(item.descriptionKey),
+    href: item.href,
+    icon: item.icon,
+    meta: t(item.metaKey),
+    tone: 'neutral',
+  }));
+}
+
+function firstReadableChannelHref(channels: ChannelVo[]): string {
+  const targetChannel = channels.find((channel) => channel.voHasMention)
+    ?? channels.find((channel) => channel.voUnreadCount > 0)
+    ?? channels[0];
+
+  const channelId = normalizeEntityId(targetChannel?.voId);
+  return channelId ? buildMessagesPath({ channelId }) : '/messages';
+}
+
+function appendUniqueQueueItem(items: WorkbenchQueueItem[], item: WorkbenchQueueItem): void {
+  if (items.some((existing) => existing.id === item.id)) {
+    return;
+  }
+
+  items.push(item);
+}
+
 export const WorkbenchApp = () => {
   const { t } = useTranslation();
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
+  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const userId = useUserStore(state => state.userId);
+  const unreadCount = useNotificationStore(state => state.unreadCount);
+  const recentNotifications = useNotificationStore(state => state.recentNotifications);
+  const channels = useChatStore(state => state.channels);
+  const loggedIn = isAuthenticated && userId.trim().length > 0;
+  const [authReady, setAuthReady] = useState(false);
+  const [activityState, setActivityState] = useState<WorkbenchActivityState>({
+    loading: false,
+    notificationError: false,
+    messageError: false,
+    chatDraftCount: 0,
+    hasForumDraft: false,
+  });
+  const notificationPreviews = useMemo(() => (
+    recentNotifications.map(resolveNotificationPreview)
+  ), [recentNotifications]);
+  const unreadNotificationCount = Math.max(
+    unreadCount,
+    notificationPreviews.filter((item) => !item.isRead).length,
+  );
+  const notificationScopeCounts = useMemo(() => (
+    notificationPreviews.reduce<Record<string, number>>((counts, item) => {
+      const scope = getNotificationActionScope(item, item.target);
+      counts[scope] = (counts[scope] ?? 0) + 1;
+      return counts;
+    }, {})
+  ), [notificationPreviews]);
+  const messageUnreadTotal = useMemo(() => (
+    channels.reduce((total, channel) => total + Math.max(0, channel.voUnreadCount), 0)
+  ), [channels]);
+  const mentionChannelCount = useMemo(() => (
+    channels.filter((channel) => channel.voHasMention).length
+  ), [channels]);
+  const queueItems = useMemo(() => {
+    const items: WorkbenchQueueItem[] = [];
+    const fallbackItems = buildFallbackQueue(t);
+    const latestRoutedNotification = notificationPreviews.find((item) => item.target !== null);
+    const orderCount = notificationScopeCounts.orders ?? 0;
+    const petCount = notificationScopeCounts.pet ?? 0;
+    const experienceCount = notificationScopeCounts.experience ?? 0;
+    const followCount = notificationScopeCounts.follow ?? 0;
+    const governanceCount = notificationScopeCounts.governance ?? 0;
+
+    if (!authReady) {
+      appendUniqueQueueItem(items, {
+        id: 'activity-loading',
+        title: t('workbench.continue.loading.title'),
+        description: t('workbench.continue.loading.description'),
+        href: '/notifications',
+        icon: 'mdi:progress-clock',
+        meta: t('workbench.continue.loading.meta'),
+        tone: 'neutral',
+      });
+    }
+
+    if (loggedIn && unreadNotificationCount > 0) {
+      appendUniqueQueueItem(items, {
+        id: 'notifications',
+        title: t('workbench.continue.notifications.title'),
+        description: t('workbench.continue.notifications.descriptionActive'),
+        href: latestRoutedNotification?.target?.href ?? '/notifications',
+        icon: 'mdi:bell-badge-outline',
+        meta: t('workbench.continue.notifications.metaUnread', { count: unreadNotificationCount }),
+        tone: 'attention',
+      });
+    }
+
+    if (loggedIn && (messageUnreadTotal > 0 || mentionChannelCount > 0 || activityState.chatDraftCount > 0)) {
+      appendUniqueQueueItem(items, {
+        id: 'messages',
+        title: t('workbench.continue.messages.title'),
+        description: mentionChannelCount > 0
+          ? t('workbench.continue.messages.descriptionMention')
+          : t('workbench.continue.messages.description'),
+        href: firstReadableChannelHref(channels),
+        icon: 'mdi:message-text-outline',
+        meta: mentionChannelCount > 0
+          ? t('workbench.continue.messages.metaMention', { count: mentionChannelCount })
+          : t('workbench.continue.messages.metaUnread', { count: messageUnreadTotal + activityState.chatDraftCount }),
+        tone: 'attention',
+      });
+    }
+
+    if (activityState.hasForumDraft) {
+      appendUniqueQueueItem(items, {
+        id: 'forum-draft',
+        title: t('workbench.continue.draft.title'),
+        description: t('workbench.continue.draft.description'),
+        href: '/forum/compose',
+        icon: 'mdi:pencil-outline',
+        meta: t('workbench.continue.draft.meta'),
+        tone: 'attention',
+      });
+    }
+
+    if (loggedIn && orderCount > 0) {
+      appendUniqueQueueItem(items, {
+        id: 'orders',
+        title: t('workbench.continue.orders.title'),
+        description: t('workbench.continue.orders.descriptionActive'),
+        href: '/shop/orders',
+        icon: 'mdi:receipt-text-outline',
+        meta: t('workbench.continue.orders.metaCount', { count: orderCount }),
+        tone: 'attention',
+      });
+    }
+
+    if (loggedIn && followCount > 0) {
+      appendUniqueQueueItem(items, {
+        id: 'circle',
+        title: t('workbench.continue.circle.title'),
+        description: t('workbench.continue.circle.description'),
+        href: '/circle',
+        icon: 'mdi:account-group-outline',
+        meta: t('workbench.continue.circle.meta', { count: followCount }),
+        tone: 'attention',
+      });
+    }
+
+    if (loggedIn && petCount > 0) {
+      appendUniqueQueueItem(items, {
+        id: 'pet',
+        title: t('workbench.continue.pet.title'),
+        description: t('workbench.continue.pet.descriptionActive'),
+        href: '/pet',
+        icon: 'mdi:sprout-outline',
+        meta: t('workbench.continue.pet.metaCount', { count: petCount }),
+        tone: 'attention',
+      });
+    }
+
+    if (loggedIn && experienceCount > 0) {
+      appendUniqueQueueItem(items, {
+        id: 'experience',
+        title: t('workbench.continue.experience.title'),
+        description: t('workbench.continue.experience.description'),
+        href: '/me/experience',
+        icon: 'mdi:chart-timeline-variant-shimmer',
+        meta: t('workbench.continue.experience.meta', { count: experienceCount }),
+        tone: 'attention',
+      });
+    }
+
+    if (loggedIn && governanceCount > 0) {
+      appendUniqueQueueItem(items, {
+        id: 'governance',
+        title: t('workbench.continue.governance.title'),
+        description: t('workbench.continue.governance.description'),
+        href: '/notifications',
+        icon: 'mdi:shield-check-outline',
+        meta: t('workbench.continue.governance.meta', { count: governanceCount }),
+        tone: 'attention',
+      });
+    }
+
+    for (const item of fallbackItems) {
+      appendUniqueQueueItem(items, item);
+      if (items.length >= 6) {
+        break;
+      }
+    }
+
+    return items.slice(0, 6);
+  }, [
+    activityState.chatDraftCount,
+    activityState.hasForumDraft,
+    authReady,
+    channels,
+    loggedIn,
+    mentionChannelCount,
+    messageUnreadTotal,
+    notificationPreviews,
+    notificationScopeCounts,
+    t,
+    unreadNotificationCount,
+  ]);
+  const railItems = useMemo<WorkbenchRailItem[]>(() => {
+    const syncState = activityState.loading
+      ? t('workbench.rail.sync.loading')
+      : activityState.notificationError || activityState.messageError
+        ? t('workbench.rail.sync.partial')
+        : t(loggedIn ? 'workbench.rail.sync.ready' : 'workbench.rail.sync.public');
+
+    return [
+      {
+        label: t('workbench.rail.activity.label'),
+        value: loggedIn
+          ? t('workbench.rail.activity.value', { count: unreadNotificationCount })
+          : t('workbench.rail.activity.publicValue'),
+      },
+      {
+        label: t('workbench.rail.messages.label'),
+        value: loggedIn
+          ? t('workbench.rail.messages.value', { unread: messageUnreadTotal, mentions: mentionChannelCount })
+          : t('workbench.rail.messages.publicValue'),
+      },
+      {
+        label: t('workbench.rail.drafts.label'),
+        value: t('workbench.rail.drafts.value', {
+          count: activityState.chatDraftCount + (activityState.hasForumDraft ? 1 : 0),
+        }),
+      },
+      {
+        label: t('workbench.rail.sync.label'),
+        value: syncState,
+      },
+    ];
+  }, [
+    activityState.chatDraftCount,
+    activityState.hasForumDraft,
+    activityState.loading,
+    activityState.messageError,
+    activityState.notificationError,
+    loggedIn,
+    mentionChannelCount,
+    messageUnreadTotal,
+    t,
+    unreadNotificationCount,
+  ]);
+
+  useEffect(() => {
+    const cleanup = bootstrapAuth({ apiBaseUrl });
+    let cancelled = false;
+
+    hydrateAuthUser({ apiBaseUrl })
+      .catch((error) => {
+        log.warn('WorkbenchApp', '工作台登录态初始化失败', error);
+        return null;
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setAuthReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+      cleanup();
+    };
+  }, [apiBaseUrl]);
 
   useEffect(() => {
     document.title = `${t('workbench.title')} · Radish`;
   }, [t]);
+
+  useEffect(() => {
+    const refreshLocalDrafts = () => {
+      setActivityState((state) => ({
+        ...state,
+        chatDraftCount: countChatDrafts(userId),
+        hasForumDraft: hasMeaningfulForumDraft(),
+      }));
+    };
+
+    refreshLocalDrafts();
+    window.addEventListener('focus', refreshLocalDrafts);
+    window.addEventListener('storage', refreshLocalDrafts);
+    return () => {
+      window.removeEventListener('focus', refreshLocalDrafts);
+      window.removeEventListener('storage', refreshLocalDrafts);
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!authReady || !loggedIn) {
+      setActivityState((state) => ({
+        ...state,
+        loading: false,
+        notificationError: false,
+        messageError: false,
+      }));
+      return;
+    }
+
+    let cancelled = false;
+    setActivityState((state) => ({
+      ...state,
+      loading: true,
+      notificationError: false,
+      messageError: false,
+      chatDraftCount: countChatDrafts(userId),
+      hasForumDraft: hasMeaningfulForumDraft(),
+    }));
+
+    Promise.allSettled([
+      notificationApi.getUnreadCount(),
+      notificationApi.getMyNotifications({ pageIndex: 1, pageSize: 12 }),
+      getChannelList(),
+    ]).then((results) => {
+      if (cancelled) {
+        return;
+      }
+
+      const [unreadResult, notificationResult, channelResult] = results;
+      const nextState: Partial<WorkbenchActivityState> = {
+        loading: false,
+        notificationError: false,
+        messageError: false,
+        chatDraftCount: countChatDrafts(userId),
+        hasForumDraft: hasMeaningfulForumDraft(),
+      };
+
+      if (unreadResult.status === 'fulfilled') {
+        useNotificationStore.getState().setUnreadCount(unreadResult.value);
+      } else {
+        nextState.notificationError = true;
+        log.warn('WorkbenchApp', '加载工作台未读通知数量失败', unreadResult.reason);
+      }
+
+      if (notificationResult.status === 'fulfilled' && notificationResult.value) {
+        const notifications = notificationResult.value.data
+          .map(toNotificationStoreItem)
+          .filter((item): item is NotificationItem => item !== null);
+        useNotificationStore.getState().setRecentNotifications(notifications);
+      } else {
+        nextState.notificationError = true;
+        if (notificationResult.status === 'rejected') {
+          log.warn('WorkbenchApp', '加载工作台近期通知失败', notificationResult.reason);
+        }
+      }
+
+      if (channelResult.status === 'fulfilled') {
+        useChatStore.getState().setChannels(channelResult.value);
+      } else {
+        nextState.messageError = true;
+        log.warn('WorkbenchApp', '加载工作台频道列表失败', channelResult.reason);
+      }
+
+      setActivityState((state) => ({
+        ...state,
+        ...nextState,
+      }));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authReady, loggedIn, userId]);
 
   return (
     <div className={styles.page}>
@@ -289,16 +731,22 @@ export const WorkbenchApp = () => {
               <p>{t('workbench.continue.description')}</p>
             </div>
             <div className={styles.queueList}>
-              {continueItems.map((item) => (
-                <a className={styles.queueItem} href={item.href} key={item.titleKey}>
+              {queueItems.map((item) => (
+                <a
+                  className={`${styles.queueItem} ${item.tone === 'attention' ? styles.queueItemAttention : ''}`}
+                  href={item.href}
+                  key={item.id}
+                >
                   <span className={styles.queueIcon}>
                     <Icon icon={item.icon} size={20} />
                   </span>
                   <span className={styles.queueCopy}>
-                    <span className={styles.queueTitle}>{t(item.titleKey)}</span>
-                    <span className={styles.queueDescription}>{t(item.descriptionKey)}</span>
+                    <span className={styles.queueTitle}>{item.title}</span>
+                    <span className={styles.queueDescription}>{item.description}</span>
                   </span>
-                  <span className={styles.queueMeta}>{t(item.metaKey)}</span>
+                  <span className={`${styles.queueMeta} ${item.tone === 'attention' ? styles.queueMetaAttention : ''}`}>
+                    {item.meta}
+                  </span>
                 </a>
               ))}
             </div>
@@ -316,9 +764,9 @@ export const WorkbenchApp = () => {
             </div>
             <div className={styles.railRows}>
               {railItems.map((item) => (
-                <div className={styles.railRow} key={item.labelKey}>
-                  <span>{t(item.labelKey)}</span>
-                  <strong>{t(item.valueKey)}</strong>
+                <div className={styles.railRow} key={item.label}>
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
                 </div>
               ))}
             </div>

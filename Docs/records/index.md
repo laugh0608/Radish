@@ -180,6 +180,7 @@
 - [p3-12-d67-product-maturity-topic-scope-2026-07-05](/records/p3-12-d67-product-maturity-topic-scope-2026-07-05)
 - [p3-12-e1-product-maturity-gap-audit-2026-07-05](/records/p3-12-e1-product-maturity-gap-audit-2026-07-05)
 - [p3-12-e2-e3-a-trust-governance-public-commitments-2026-07-05](/records/p3-12-e2-e3-a-trust-governance-public-commitments-2026-07-05)
+- [p3-12-e3-b-workbench-community-activity-queue-2026-07-05](/records/p3-12-e3-b-workbench-community-activity-queue-2026-07-05)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
 - [wog-3-inventory-benefit-reliability-plan-2026-06-20](/records/wog-3-inventory-benefit-reliability-plan-2026-06-20)
