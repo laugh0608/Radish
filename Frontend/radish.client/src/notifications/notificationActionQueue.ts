@@ -6,11 +6,13 @@ import {
   type NotificationWebNavigationTarget,
 } from '../utils/notificationNavigation.ts';
 
-export const NOTIFICATION_PREVIEW_LIMIT = 4;
+export const NOTIFICATION_QUEUE_GROUP_ITEM_LIMIT = 3;
 
 export type NotificationActionScope =
   | 'all'
+  | 'posts'
   | 'comments'
+  | 'answers'
   | 'messages'
   | 'orders'
   | 'docs'
@@ -31,16 +33,41 @@ export interface NotificationScopeDefinition {
   icon: string;
 }
 
+export interface NotificationActionGroup {
+  scope: NotificationActionScope;
+  definition: NotificationScopeDefinition;
+  items: NotificationPreview[];
+  totalCount: number;
+  unreadCount: number;
+  routedCount: number;
+  manualCount: number;
+}
+
+export interface BuildNotificationActionGroupsOptions {
+  itemLimitPerGroup?: number;
+  scopeOrder?: NotificationActionScope[];
+}
+
 const scopeDefinitions: Record<NotificationActionScope, NotificationScopeDefinition> = {
   all: {
     key: 'all',
     labelKey: 'notification.web.scope.all',
     icon: 'mdi:bell-outline',
   },
+  posts: {
+    key: 'posts',
+    labelKey: 'notification.web.scope.posts',
+    icon: 'mdi:post-outline',
+  },
   comments: {
     key: 'comments',
     labelKey: 'notification.web.scope.comments',
     icon: 'mdi:comment-text-outline',
+  },
+  answers: {
+    key: 'answers',
+    labelKey: 'notification.web.scope.answers',
+    icon: 'mdi:comment-question-outline',
   },
   messages: {
     key: 'messages',
@@ -89,7 +116,24 @@ const scopeDefinitions: Record<NotificationActionScope, NotificationScopeDefinit
   },
 };
 
+const defaultQueueScopeOrder: NotificationActionScope[] = [
+  'comments',
+  'answers',
+  'messages',
+  'follow',
+  'governance',
+  'orders',
+  'docs',
+  'posts',
+  'pet',
+  'experience',
+  'likes',
+  'system',
+];
+
 const keywordMap: Record<Exclude<NotificationActionScope, 'all' | 'comments' | 'likes' | 'system'>, string[]> = {
+  posts: ['post', 'thread', 'forum', '帖子', '发帖', '主题'],
+  answers: ['answer', 'question', 'accepted', '问答', '回答', '采纳', '最佳答案'],
   messages: ['message', 'chat', 'channel', '私信', '消息', '聊天', '频道', '会话'],
   orders: ['order', 'purchase', 'inventory', 'benefit', '订单', '交易', '购买', '背包', '权益'],
   docs: ['doc', 'wiki', 'document', '文档', '知识库', '修订'],
@@ -134,6 +178,10 @@ function notificationHasKeyword(notification: NotificationItemData, keywords: st
 
 function targetStartsWith(target: NotificationWebNavigationTarget | null, prefix: string): boolean {
   return target?.href.startsWith(prefix) === true;
+}
+
+function normalizedBusinessType(notification: NotificationItemData): string {
+  return normalizeText(notification.businessType);
 }
 
 export function toNotificationItemData(notification: NotificationItem): NotificationItemData {
@@ -209,6 +257,39 @@ export function matchesMessageNotification(
     || notificationHasKeyword(notification, keywordMap.messages);
 }
 
+export function matchesAnswerNotification(
+  notification: NotificationItemData,
+  target: NotificationWebNavigationTarget | null,
+): boolean {
+  const businessType = normalizedBusinessType(notification);
+
+  return businessType.includes('answer')
+    || businessType.includes('question')
+    || (targetStartsWith(target, '/forum') && notificationHasKeyword(notification, keywordMap.answers))
+    || notificationHasKeyword(notification, keywordMap.answers);
+}
+
+export function matchesPostNotification(
+  notification: NotificationItemData,
+  target: NotificationWebNavigationTarget | null,
+): boolean {
+  const businessType = normalizedBusinessType(notification);
+
+  return businessType === 'post'
+    || businessType.includes('forum')
+    || targetStartsWith(target, '/forum/post')
+    || notificationHasKeyword(notification, keywordMap.posts);
+}
+
+export function matchesCommentNotification(notification: NotificationItemData): boolean {
+  const businessType = normalizedBusinessType(notification);
+
+  return notification.type === 'reply'
+    || notification.type === 'mention'
+    || businessType === 'comment'
+    || businessType.includes('comment');
+}
+
 export function matchesFollowNotification(
   notification: NotificationItemData,
   target: NotificationWebNavigationTarget | null = null,
@@ -266,7 +347,11 @@ export function getNotificationActionScope(
     return 'governance';
   }
 
-  if (notification.type === 'reply' || notification.type === 'mention') {
+  if (matchesAnswerNotification(notification, target)) {
+    return 'answers';
+  }
+
+  if (matchesCommentNotification(notification)) {
     return 'comments';
   }
 
@@ -276,6 +361,10 @@ export function getNotificationActionScope(
 
   if (notification.type === 'like') {
     return 'likes';
+  }
+
+  if (matchesPostNotification(notification, target)) {
+    return 'posts';
   }
 
   return 'system';
@@ -301,4 +390,64 @@ export function getNotificationKindIcon(
 
 export function getTargetLabel(target: NotificationWebNavigationTarget | null): string {
   return target?.href ?? '';
+}
+
+export function getNotificationTargetHintKey(
+  notification: NotificationItemData,
+  target: NotificationWebNavigationTarget | null,
+): string {
+  if (target) {
+    return 'notification.web.openTarget';
+  }
+
+  const scope = getNotificationActionScope(notification, target);
+  if (scope === 'governance') {
+    return 'notification.web.targetMissing.governance';
+  }
+
+  if (scope === 'system') {
+    return 'notification.web.targetMissing.system';
+  }
+
+  const businessId = normalizeText(notification.businessId);
+  if (businessId === '0' || businessId === '') {
+    return 'notification.web.targetMissing.invalid';
+  }
+
+  return 'notification.web.targetMissing.default';
+}
+
+export function buildNotificationActionGroups(
+  notifications: NotificationPreview[],
+  options: BuildNotificationActionGroupsOptions = {},
+): NotificationActionGroup[] {
+  const itemLimitPerGroup = options.itemLimitPerGroup ?? NOTIFICATION_QUEUE_GROUP_ITEM_LIMIT;
+  const scopeOrder = options.scopeOrder ?? defaultQueueScopeOrder;
+  const groups = new Map<NotificationActionScope, NotificationPreview[]>();
+
+  for (const notification of notifications) {
+    const scope = getNotificationActionScope(notification, notification.target);
+    const currentGroup = groups.get(scope) ?? [];
+    currentGroup.push(notification);
+    groups.set(scope, currentGroup);
+  }
+
+  return scopeOrder
+    .map((scope) => {
+      const items = groups.get(scope) ?? [];
+      if (items.length === 0) {
+        return null;
+      }
+
+      return {
+        scope,
+        definition: getNotificationScopeDefinition(scope),
+        items: items.slice(0, itemLimitPerGroup),
+        totalCount: items.length,
+        unreadCount: items.filter((item) => !item.isRead).length,
+        routedCount: items.filter((item) => item.target).length,
+        manualCount: items.filter((item) => !item.target).length,
+      };
+    })
+    .filter((group): group is NotificationActionGroup => group !== null);
 }

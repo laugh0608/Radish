@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { resolveWebNotificationNavigation } from '../src/utils/notificationNavigation.ts';
 import {
+  buildNotificationActionGroups,
   getNotificationActionScope,
+  getNotificationTargetHintKey,
   resolveNotificationPreview,
   toNotificationStoreItem,
 } from '../src/notifications/notificationActionQueue.ts';
@@ -185,6 +187,115 @@ test('notificationActionQueue 应按社区复访场景归类通知', () => {
     }, null),
     'governance',
   );
+});
+
+test('notificationActionQueue 应区分帖子动态和问答通知', () => {
+  const postTarget = resolveWebNotificationNavigation({
+    businessType: 'Post',
+    businessId: postId,
+  });
+
+  assert.equal(
+    getNotificationActionScope({
+      id: '4',
+      type: 'system',
+      title: '帖子有新动态',
+      content: '你的主题已发布到社区',
+      businessType: 'Post',
+      businessId: postId,
+      extData: null,
+      isRead: false,
+      createdAt: '2026-07-05T12:00:00Z',
+    }, postTarget),
+    'posts',
+  );
+
+  assert.equal(
+    getNotificationActionScope({
+      id: '5',
+      type: 'system',
+      title: '回答被采纳',
+      content: '你的问答回复已被采纳',
+      businessType: 'PostAnswer',
+      businessId: commentId,
+      extData: null,
+      isRead: false,
+      createdAt: '2026-07-05T12:00:00Z',
+    }, null),
+    'answers',
+  );
+});
+
+test('notificationActionQueue 应按动作域生成可处理队列分组', () => {
+  const previews = [
+    resolveNotificationPreview({
+      id: '10',
+      type: 'reply',
+      title: '有人回复了你',
+      content: '新的社区评论',
+      businessType: 'Comment',
+      businessId: commentId,
+      extData: null,
+      isRead: false,
+      createdAt: '2026-07-05T12:00:00Z',
+    }),
+    resolveNotificationPreview({
+      id: '11',
+      type: 'system',
+      title: '新的频道消息',
+      content: '你收到一条聊天消息',
+      businessType: 'ChannelMessage',
+      businessId: '2042219067430928391',
+      extData: JSON.stringify({
+        app: 'chat',
+        channelId: '2042219067430928390',
+        messageId: '2042219067430928391',
+      }),
+      isRead: false,
+      createdAt: '2026-07-05T12:00:00Z',
+    }),
+    resolveNotificationPreview({
+      id: '12',
+      type: 'system',
+      title: '举报审核结果',
+      content: '你的举报已完成治理审核',
+      businessType: 'ModerationReport',
+      businessId: '0',
+      extData: null,
+      isRead: false,
+      createdAt: '2026-07-05T12:00:00Z',
+    }),
+    resolveNotificationPreview({
+      id: '13',
+      type: 'system',
+      title: '订单完成',
+      content: '订单已完成',
+      businessType: 'Order',
+      businessId: orderId,
+      extData: null,
+      isRead: true,
+      createdAt: '2026-07-05T12:00:00Z',
+    }),
+  ];
+
+  const groups = buildNotificationActionGroups(previews);
+  assert.deepEqual(groups.map((group) => group.scope), ['comments', 'messages', 'governance', 'orders']);
+
+  const governanceGroup = groups.find((group) => group.scope === 'governance');
+  assert.ok(governanceGroup);
+  assert.equal(governanceGroup.totalCount, 1);
+  assert.equal(governanceGroup.manualCount, 1);
+  assert.equal(governanceGroup.routedCount, 0);
+  const governanceItem = governanceGroup.items[0];
+  assert.ok(governanceItem);
+  assert.equal(
+    getNotificationTargetHintKey(governanceItem, governanceItem.target),
+    'notification.web.targetMissing.governance',
+  );
+
+  const orderGroup = groups.find((group) => group.scope === 'orders');
+  assert.ok(orderGroup);
+  assert.equal(orderGroup.routedCount, 1);
 });
 
 test('notificationActionQueue 应把后端通知 VO 映射为可回跳预览', () => {

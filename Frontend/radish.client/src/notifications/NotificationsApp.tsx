@@ -18,22 +18,34 @@ import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { resolveWebNotificationNavigation } from '@/utils/notificationNavigation';
 import {
+  buildNotificationActionGroups,
   getNotificationActionScope,
   getNotificationKindIcon,
   getNotificationKindLabelKey,
+  getNotificationScopeDefinition,
+  getNotificationTargetHintKey,
   getTargetLabel,
-  matchesDocsNotification,
-  matchesExperienceNotification,
-  matchesFollowNotification,
-  matchesGovernanceNotification,
-  matchesMessageNotification,
-  matchesOrderNotification,
-  matchesPetNotification,
-  NOTIFICATION_PREVIEW_LIMIT,
   resolveNotificationPreview,
+  type NotificationActionScope,
   type NotificationPreview,
 } from './notificationActionQueue';
 import styles from './NotificationsApp.module.css';
+
+const notificationScopeChipOrder: NotificationActionScope[] = [
+  'all',
+  'posts',
+  'comments',
+  'answers',
+  'messages',
+  'follow',
+  'governance',
+  'orders',
+  'docs',
+  'pet',
+  'experience',
+  'likes',
+  'system',
+];
 
 export const NotificationsApp = () => {
   const { t } = useTranslation();
@@ -57,33 +69,31 @@ export const NotificationsApp = () => {
   const unreadPreviewCount = useMemo(() => (
     notificationPreviews.filter((item) => !item.isRead).length
   ), [notificationPreviews]);
-  const queuePreviews = useMemo(() => {
+  const queueSourcePreviews = useMemo(() => {
     const unreadItems = notificationPreviews.filter((item) => !item.isRead);
-    const sourceItems = unreadItems.length > 0 ? unreadItems : notificationPreviews;
-    return sourceItems.slice(0, NOTIFICATION_PREVIEW_LIMIT);
+    return unreadItems.length > 0 ? unreadItems : notificationPreviews;
   }, [notificationPreviews]);
+  const queueGroups = useMemo(() => (
+    buildNotificationActionGroups(queueSourcePreviews)
+  ), [queueSourcePreviews]);
   const scopeChips = useMemo(() => {
-    const comments = notificationPreviews.filter((item) => item.type === 'reply' || item.type === 'mention').length;
-    const messages = notificationPreviews.filter((item) => matchesMessageNotification(item, item.target)).length;
-    const orders = notificationPreviews.filter((item) => matchesOrderNotification(item, item.target)).length;
-    const docs = notificationPreviews.filter((item) => matchesDocsNotification(item, item.target)).length;
-    const follow = notificationPreviews.filter((item) => matchesFollowNotification(item, item.target)).length;
-    const pet = notificationPreviews.filter((item) => matchesPetNotification(item, item.target)).length;
-    const experience = notificationPreviews.filter((item) => matchesExperienceNotification(item, item.target)).length;
-    const governance = notificationPreviews.filter((item) => matchesGovernanceNotification(item)).length;
-    const systems = notificationPreviews.filter((item) => getNotificationActionScope(item, item.target) === 'system').length;
-    return [
-      { key: 'all', label: t('notification.web.scope.all'), count: notificationPreviews.length },
-      { key: 'comments', label: t('notification.web.scope.comments'), count: comments },
-      { key: 'messages', label: t('notification.web.scope.messages'), count: messages },
-      { key: 'orders', label: t('notification.web.scope.orders'), count: orders },
-      { key: 'docs', label: t('notification.web.scope.docs'), count: docs },
-      { key: 'follow', label: t('notification.web.scope.follow'), count: follow },
-      { key: 'pet', label: t('notification.web.scope.pet'), count: pet },
-      { key: 'experience', label: t('notification.web.scope.experience'), count: experience },
-      { key: 'governance', label: t('notification.web.scope.governance'), count: governance },
-      { key: 'system', label: t('notification.web.scope.system'), count: systems }
-    ];
+    const scopeCounts = new Map<NotificationActionScope, number>([
+      ['all', notificationPreviews.length],
+    ]);
+
+    for (const item of notificationPreviews) {
+      const scope = getNotificationActionScope(item, item.target);
+      scopeCounts.set(scope, (scopeCounts.get(scope) ?? 0) + 1);
+    }
+
+    return notificationScopeChipOrder.map((scope) => {
+      const definition = getNotificationScopeDefinition(scope);
+      return {
+        key: scope,
+        label: t(definition.labelKey),
+        count: scopeCounts.get(scope) ?? 0,
+      };
+    });
   }, [notificationPreviews, t]);
   const connectionLabel = connectionState === 'connected'
     ? t('notification.web.connected')
@@ -172,6 +182,10 @@ export const NotificationsApp = () => {
     event: MouseEvent<HTMLAnchorElement>,
     notification: NotificationPreview
   ) => {
+    if (!notification.target) {
+      return;
+    }
+
     event.preventDefault();
     handleNavigateNotification(notification);
   }, [handleNavigateNotification]);
@@ -231,7 +245,7 @@ export const NotificationsApp = () => {
           </div>
         </section>
         <div className={styles.notificationWorkspace}>
-          <section className={styles.centerShell}>
+          <section className={styles.centerShell} id="notification-center">
             <NotificationCenter onNavigateNotification={handleNavigateNotification} />
           </section>
           <aside className={styles.notificationRail} aria-label={t('notification.web.railLabel')}>
@@ -254,30 +268,59 @@ export const NotificationsApp = () => {
             <section className={styles.railCard}>
               <div className={styles.railTitleRow}>
                 <span>{t('notification.web.queueTitle')}</span>
-                <strong>{queuePreviews.length}</strong>
+                <strong>{queueSourcePreviews.length}</strong>
               </div>
               <div className={styles.notificationQueue}>
-                {queuePreviews.length > 0 ? queuePreviews.map((item) => {
-                  const targetLabel = getTargetLabel(item.target);
-                  return (
-                    <a
-                      className={styles.queueItem}
-                      href={item.target?.href ?? '/notifications'}
-                      key={item.id}
-                      onClick={(event) => handlePreviewTargetClick(event, item)}
-                    >
-                      <span className={styles.queueIcon}>
-                        <Icon icon={getNotificationKindIcon(item, item.target)} size={18} />
+                {queueGroups.length > 0 ? queueGroups.map((group) => (
+                  <div className={styles.queueGroup} key={group.scope}>
+                    <div className={styles.queueGroupHeader}>
+                      <span className={styles.queueGroupTitle}>
+                        <Icon icon={group.definition.icon} size={17} />
+                        {t(group.definition.labelKey)}
                       </span>
-                      <span className={styles.queueBody}>
-                        <strong>{item.title || t(getNotificationKindLabelKey(item, item.target))}</strong>
-                        <span>{item.content || t('notification.web.emptyContent')}</span>
-                        <em>{targetLabel ? t('notification.web.openTarget', { target: targetLabel }) : t('notification.web.noTarget')}</em>
+                      <span className={styles.queueGroupMeta}>
+                        {t('notification.web.queueGroupMeta', {
+                          total: group.totalCount,
+                          unread: group.unreadCount,
+                          routed: group.routedCount,
+                          manual: group.manualCount,
+                        })}
                       </span>
-                      {!item.isRead && <span className={styles.queueUnread} aria-label={t('notification.web.unreadDot')} />}
-                    </a>
-                  );
-                }) : (
+                    </div>
+                    <div className={styles.queueGroupList}>
+                      {group.items.map((item) => {
+                        const targetLabel = getTargetLabel(item.target);
+                        const hasTarget = item.target !== null;
+                        const targetHintKey = getNotificationTargetHintKey(item, item.target);
+                        const targetText = hasTarget
+                          ? t(targetHintKey, { target: targetLabel })
+                          : t(targetHintKey);
+
+                        return (
+                          <a
+                            className={`${styles.queueItem} ${hasTarget ? '' : styles.queueItemManual}`}
+                            href={item.target?.href ?? '#notification-center'}
+                            key={item.id}
+                            onClick={(event) => handlePreviewTargetClick(event, item)}
+                          >
+                            <span className={styles.queueIcon}>
+                              <Icon icon={getNotificationKindIcon(item, item.target)} size={18} />
+                            </span>
+                            <span className={styles.queueBody}>
+                              <strong>{item.title || t(getNotificationKindLabelKey(item, item.target))}</strong>
+                              <span>{item.content || t('notification.web.emptyContent')}</span>
+                              <em>{targetText}</em>
+                            </span>
+                            <span className={styles.queueAction}>
+                              {t(hasTarget ? 'notification.web.queueActionOpen' : 'notification.web.queueActionReview')}
+                            </span>
+                            {!item.isRead && <span className={styles.queueUnread} aria-label={t('notification.web.unreadDot')} />}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )) : (
                   <div className={styles.railEmpty}>
                     <Icon icon="mdi:check-circle-outline" size={20} />
                     <span>{t('notification.web.queueEmpty')}</span>
@@ -291,9 +334,11 @@ export const NotificationsApp = () => {
               </div>
               <div className={styles.targetRules}>
                 <span>{t('notification.web.targetForum')}</span>
+                <span>{t('notification.web.targetMessages')}</span>
+                <span>{t('notification.web.targetFollow')}</span>
+                <span>{t('notification.web.targetGovernance')}</span>
                 <span>{t('notification.web.targetOrder')}</span>
                 <span>{t('notification.web.targetDocs')}</span>
-                <span>{t('notification.web.targetMessages')}</span>
               </div>
             </section>
           </aside>
