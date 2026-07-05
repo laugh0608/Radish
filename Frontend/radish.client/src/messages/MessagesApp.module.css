@@ -106,8 +106,16 @@
   line-height: 1.5;
 }
 
+.messagesWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 318px;
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+
 .chatShell {
-  height: min(650px, calc(100vh - 360px));
+  height: min(690px, calc(100vh - 360px));
   min-height: 540px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
@@ -116,8 +124,258 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
+.messageRail {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.railCard {
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  box-shadow: var(--theme-shadow-soft);
+  padding: 14px;
+}
+
+.railTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.railTitleRow strong {
+  color: var(--theme-accent-earth);
+  font-size: 13px;
+  text-align: right;
+}
+
+.activeChannelCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: var(--theme-bg-muted);
+}
+
+.activeChannelIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-accent-ink);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+}
+
+.activeChannelCard div {
+  min-width: 0;
+}
+
+.activeChannelCard strong,
+.activeChannelCard span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activeChannelCard strong {
+  color: var(--theme-text-primary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.activeChannelCard span {
+  margin-top: 3px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.railMetrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.railMetrics div,
+.contextRows div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: var(--theme-bg-muted);
+}
+
+.railMetrics strong,
+.contextRows strong {
+  display: block;
+  color: var(--theme-text-primary);
+  font-size: 20px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.railMetrics span,
+.contextRows span {
+  display: block;
+  margin-top: 4px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.contextRows {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.channelQueue {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.channelQueueItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+}
+
+.channelQueueItem:hover {
+  transform: translateY(-1px);
+  border-color: var(--theme-border-strong);
+  background: color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%);
+}
+
+.channelBadge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-accent-earth);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.channelQueueBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.channelQueueBody strong,
+.channelQueueBody span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channelQueueBody strong {
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.channelQueueBody span {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.channelQueueItem em {
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--theme-state-danger);
+  color: white;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.railEmpty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 46px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.railActions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.railActions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 32%, var(--theme-border-soft) 68%);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-bg-surface) 58%);
+  color: var(--theme-accent-earth);
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.railActions a:hover {
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-text-primary);
+}
+
 .stateShell {
   overflow: hidden;
+}
+
+@media (max-width: 1180px) {
+  .messagesWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .messageRail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
@@ -174,8 +432,33 @@
     margin-bottom: 0;
   }
 
+  .messagesWorkspace {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .messageRail {
+    order: 1;
+    display: flex;
+  }
+
   .chatShell {
+    order: 2;
     min-height: 520px;
     height: clamp(520px, calc(100dvh - 278px), 660px);
+  }
+
+  .contextRows,
+  .railMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contextRows div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .channelQueueItem {
+    padding: 9px;
   }
 }
