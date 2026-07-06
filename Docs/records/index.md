@@ -190,6 +190,7 @@
 - [p3-12-e5-a-journey-validation-first-pass-2026-07-06](/records/p3-12-e5-a-journey-validation-first-pass-2026-07-06)
 - [p3-12-e5-b-controlled-write-journey-validation-2026-07-06](/records/p3-12-e5-b-controlled-write-journey-validation-2026-07-06)
 - [p3-12-e6-release-candidate-entry-decision-2026-07-06](/records/p3-12-e6-release-candidate-entry-decision-2026-07-06)
+- [p3-12-e7-ui-copy-maturity-gap-audit-2026-07-06](/records/p3-12-e7-ui-copy-maturity-gap-audit-2026-07-06)
 - [p3-12-day-end-doc-review-2026-07-05](/records/p3-12-day-end-doc-review-2026-07-05)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)
 - [wog-2-content-interaction-consistency-plan-2026-06-20](/records/wog-2-content-interaction-consistency-plan-2026-06-20)
