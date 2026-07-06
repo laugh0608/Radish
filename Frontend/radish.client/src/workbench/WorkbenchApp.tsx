@@ -366,6 +366,8 @@ export const WorkbenchApp = () => {
     unreadCount,
     notificationPreviews.filter((item) => !item.isRead).length,
   );
+  const hasActivitySyncIssue = activityState.notificationError || activityState.messageError;
+  const activitySyncIssueHref = activityState.notificationError ? '/notifications' : '/messages';
   const notificationScopeCounts = useMemo(() => (
     notificationPreviews.reduce<Record<string, number>>((counts, item) => {
       const scope = getNotificationActionScope(item, item.target);
@@ -398,6 +400,18 @@ export const WorkbenchApp = () => {
         icon: 'mdi:progress-clock',
         meta: t('workbench.continue.loading.meta'),
         tone: 'neutral',
+      });
+    }
+
+    if (loggedIn && hasActivitySyncIssue) {
+      appendUniqueQueueItem(items, {
+        id: 'activity-sync-issue',
+        title: t('workbench.continue.syncIssue.title'),
+        description: t('workbench.continue.syncIssue.description'),
+        href: activitySyncIssueHref,
+        icon: 'mdi:cloud-alert-outline',
+        meta: t('workbench.continue.syncIssue.meta'),
+        tone: 'attention',
       });
     }
 
@@ -512,8 +526,10 @@ export const WorkbenchApp = () => {
   }, [
     activityState.chatDraftCount,
     activityState.hasForumDraft,
+    activitySyncIssueHref,
     authReady,
     channels,
+    hasActivitySyncIssue,
     loggedIn,
     mentionChannelCount,
     messageUnreadTotal,

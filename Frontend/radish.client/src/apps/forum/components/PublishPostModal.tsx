@@ -96,6 +96,30 @@ const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+
+  return fallback;
+}
+
+function appendRecoveryHint(message: string, hint: string): string {
+  const trimmedMessage = message.trim();
+  const trimmedHint = hint.trim();
+
+  if (/[。.!！?？]$/.test(trimmedMessage)) {
+    return `${trimmedMessage} ${trimmedHint}`;
+  }
+
+  const separator = /^[\u4e00-\u9fff]/.test(trimmedHint) ? '。' : '. ';
+  return `${trimmedMessage}${separator}${trimmedHint}`;
+}
+
 const findCategorySnapshot = (
   categories: Category[],
   targetCategoryId: LongId | null | undefined
@@ -161,6 +185,7 @@ export const PublishPostModal = ({
   const [lotteryDrawTime, setLotteryDrawTime] = useState('');
   const [lotteryWinnerCount, setLotteryWinnerCount] = useState('1');
   const [lotteryError, setLotteryError] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
 
   const roles = useUserStore((state) => state.roles || []);
   const isAdmin = roles.some((role) => {
@@ -196,6 +221,7 @@ export const PublishPostModal = ({
       setShowBlockingIssues(false);
       setTagError(null);
       setCategoryError(null);
+      setPublishError(null);
       return;
     }
 
@@ -658,6 +684,7 @@ export const PublishPostModal = ({
     }
 
     setIsSubmitting(true);
+    setPublishError(null);
     try {
       await onPublish(title.trim(), content.trim(), categoryId!, resolvedSelectedTags, isQuestionPost, pollRequest, lotteryRequest);
       setTitle('');
@@ -684,6 +711,12 @@ export const PublishPostModal = ({
       localStorage.removeItem(DRAFT_STORAGE_KEY);
       onClose();
     } catch (error) {
+      const errorMessage = appendRecoveryHint(
+        getErrorMessage(error, '发布失败，请稍后重试'),
+        '草稿仍保存在本地，请检查网络或稍后重试。'
+      );
+      setPublishError(errorMessage);
+      toast.error('发布失败，草稿仍保存在本地');
       log.error('发布失败:', error);
     } finally {
       setIsSubmitting(false);
@@ -974,6 +1007,12 @@ export const PublishPostModal = ({
                 <li key={`${issue.code}-${issue.label}`}>{issue.message}</li>
               ))}
             </ul>
+          </div>
+        )}
+        {publishError && (
+          <div className={`${styles.validationBanner} ${styles.recoverableErrorBanner}`} role="alert">
+            <strong className={styles.validationTitle}>发布失败，草稿已保留</strong>
+            <p className={styles.recoverableErrorText}>{publishError}</p>
           </div>
         )}
 

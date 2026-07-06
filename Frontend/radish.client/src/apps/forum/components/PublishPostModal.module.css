@@ -285,6 +285,17 @@
   line-height: 1.5;
 }
 
+.recoverableErrorBanner {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 28%, transparent);
+}
+
+.recoverableErrorText {
+  margin: 6px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
 .editorFrame {
   flex: 1;
   height: 100%;
