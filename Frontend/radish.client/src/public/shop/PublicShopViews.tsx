@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
-import { getProductTypeDisplay, StockType } from '@/api/shop';
+import { getProductTypeDisplay, isUnlimitedStockType } from '@/api/shop';
 import type { LongId } from '@/api/user';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
@@ -138,7 +138,7 @@ function toProductTypeText(product: Product | ProductListItem): string {
 }
 
 function toStockText(t: PublicShopTranslate, product: Product): string {
-  return product.voStockType === StockType.Unlimited
+  return isUnlimitedStockType(product.voStockType)
     ? t('shop.stock.unlimited')
     : t('shop.productCount', { count: product.voStock ?? 0 });
 }

@@ -83,6 +83,14 @@ export const StockType = {
 
 export type StockTypeValue = typeof StockType[keyof typeof StockType];
 
+export function isUnlimitedStockType(value: unknown): boolean {
+  const normalized = String(value ?? '').trim();
+
+  return normalized === '0'
+    || normalized === StockType.Unlimited
+    || normalized.toLowerCase() === StockType.Unlimited.toLowerCase();
+}
+
 interface RawProductBuyCheckResult {
   voCanBuy?: boolean;
   voReason?: string | null;
