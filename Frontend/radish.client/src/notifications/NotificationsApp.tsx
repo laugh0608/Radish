@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { ToastContainer } from '@radish/ui/toast';
+import { ToastContainer, toast } from '@radish/ui/toast';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { Icon } from '@radish/ui/icon';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,7 @@ import { notificationHub } from '@/services/notificationHub';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from '@/stores/userStore';
+import { copyToClipboard } from '@/utils/clipboard';
 import { log } from '@/utils/logger';
 import { resolveWebNotificationNavigation } from '@/utils/notificationNavigation';
 import {
@@ -190,6 +191,32 @@ export const NotificationsApp = () => {
     handleNavigateNotification(notification);
   }, [handleNavigateNotification]);
 
+  const handleCopyNotificationDiagnostics = useCallback(async (
+    notification: NotificationPreview,
+    targetText: string
+  ) => {
+    const diagnosticLines = [
+      'Radish notification support context',
+      `id: ${notification.id || 'unknown'}`,
+      `type: ${notification.type || 'unknown'}`,
+      `businessType: ${notification.businessType || 'unknown'}`,
+      `businessId: ${notification.businessId || 'unknown'}`,
+      `createdAt: ${notification.createdAt || 'unknown'}`,
+      `isRead: ${notification.isRead ? 'yes' : 'no'}`,
+      `target: ${notification.target?.href ?? 'missing'}`,
+      `targetHint: ${targetText}`,
+      `path: ${window.location.pathname}${window.location.search}${window.location.hash}`,
+    ];
+
+    try {
+      await copyToClipboard(diagnosticLines.join('\n'));
+      toast.success(t('notification.web.diagnosticsCopied'));
+    } catch (error) {
+      log.warn('NotificationsApp', '复制通知诊断上下文失败', error);
+      toast.error(t('notification.web.diagnosticsCopyFailed'));
+    }
+  }, [t]);
+
   const renderContent = () => {
     if (!authReady || !loggedIn) {
       return (
@@ -295,14 +322,8 @@ export const NotificationsApp = () => {
                         const targetText = hasTarget
                           ? t(targetHintKey, { target: targetLabel })
                           : t(targetHintKey);
-
-                        return (
-                          <a
-                            className={`${styles.queueItem} ${hasTarget ? '' : styles.queueItemManual}`}
-                            href={item.target?.href ?? '#notification-center'}
-                            key={item.id}
-                            onClick={(event) => handlePreviewTargetClick(event, item)}
-                          >
+                        const queueItemContent = (
+                          <>
                             <span className={styles.queueIcon}>
                               <Icon icon={getNotificationKindIcon(item, item.target)} size={18} />
                             </span>
@@ -311,11 +332,35 @@ export const NotificationsApp = () => {
                               <span>{item.content || t('notification.web.emptyContent')}</span>
                               <em>{targetText}</em>
                             </span>
-                            <span className={styles.queueAction}>
-                              {t(hasTarget ? 'notification.web.queueActionOpen' : 'notification.web.queueActionReview')}
-                            </span>
                             {!item.isRead && <span className={styles.queueUnread} aria-label={t('notification.web.unreadDot')} />}
+                          </>
+                        );
+
+                        return hasTarget ? (
+                          <a
+                            className={styles.queueItem}
+                            href={item.target?.href ?? '#notification-center'}
+                            key={item.id}
+                            onClick={(event) => handlePreviewTargetClick(event, item)}
+                          >
+                            {queueItemContent}
+                            <span className={styles.queueAction}>
+                              {t('notification.web.queueActionOpen')}
+                            </span>
                           </a>
+                        ) : (
+                          <div className={`${styles.queueItem} ${styles.queueItemManual}`} key={item.id}>
+                            {queueItemContent}
+                            <button
+                              type="button"
+                              className={`${styles.queueAction} ${styles.queueActionButton}`}
+                              onClick={() => {
+                                void handleCopyNotificationDiagnostics(item, targetText);
+                              }}
+                            >
+                              {t('notification.web.queueActionCopyDiagnostics')}
+                            </button>
+                          </div>
                         );
                       })}
                     </div>

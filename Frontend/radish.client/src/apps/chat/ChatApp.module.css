@@ -492,6 +492,10 @@
   color: var(--chat-danger);
 }
 
+.deliveryRecoveryHint {
+  color: var(--theme-text-secondary);
+}
+
 .deliveryActionButton {
   border: 0;
   background: transparent;

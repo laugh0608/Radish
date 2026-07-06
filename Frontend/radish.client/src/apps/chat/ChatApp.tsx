@@ -19,6 +19,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { parseChatWindowParams } from '@/utils/chatNavigation';
+import { copyToClipboard } from '@/utils/clipboard';
 import { log } from '@/utils/logger';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { ContentReportModal } from '@/components/ContentReportModal';
@@ -923,6 +924,30 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
     removeMessage(channelId, messageId);
   }, [removeMessage, replyTarget]);
 
+  const handleCopyFailedMessageDiagnostics = useCallback(async (message: ChannelMessageVo) => {
+    const diagnosticLines = [
+      'Radish chat delivery diagnostic',
+      `channelId: ${getEntityKey(message.voChannelId) || 'unknown'}`,
+      `messageId: ${getEntityKey(message.voId) || 'unknown'}`,
+      `clientRequestId: ${message.voClientRequestId || 'none'}`,
+      `status: ${message.voLocalStatus ?? 'sent'}`,
+      `type: ${message.voType}`,
+      `createdAt: ${message.voCreateTime || 'unknown'}`,
+      `error: ${message.voLocalError || t('chat.sendFailed')}`,
+      `hasContent: ${message.voContent?.trim() ? 'yes' : 'no'}`,
+      `hasAttachment: ${isPersistedEntityId(message.voAttachmentId) ? 'yes' : 'no'}`,
+      `path: ${window.location.pathname}${window.location.search}${window.location.hash}`,
+    ];
+
+    try {
+      await copyToClipboard(diagnosticLines.join('\n'));
+      toast.success(t('chat.diagnosticsCopied'));
+    } catch (error) {
+      log.warn('ChatApp', '复制聊天发送失败诊断失败', error);
+      toast.error(t('chat.diagnosticsCopyFailed'));
+    }
+  }, [t]);
+
   const handleRecall = useCallback(async (messageId: EntityIdValue) => {
     if (!isPersistedEntityId(messageId)) {
       return;
@@ -1309,6 +1334,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
               onRecall={(messageId) => { void handleRecall(messageId); }}
               onOpenReport={handleOpenReport}
               onRetryMessage={handleRetryMessage}
+              onCopyFailedMessageDiagnostics={handleCopyFailedMessageDiagnostics}
               onDismissFailedMessage={handleDismissFailedMessage}
               onLoadNewerHistory={() => { void loadNewerHistory({ scrollToBottomWhenDone: true }); }}
             />
