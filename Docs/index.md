@@ -41,6 +41,7 @@ features:
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
+- [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics) - 页面级错误恢复、复制诊断和隐私边界
 - [Web 功能地图](/workbench) - 正式 Web 功能总入口，串联公开、私域、治理与历史桌面入口
 - [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages`、`/pet` 的登录恢复、来源返回与私域边界
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff) - 移动原生来源返回、登录回流与公开链接口径
