@@ -101,6 +101,11 @@ export const NotificationsApp = () => {
     : t(connectionState === 'connecting' || connectionState === 'reconnecting'
       ? 'notification.web.connecting'
       : 'notification.web.disconnected');
+  const connectionHint = connectionState === 'connected'
+    ? t('notification.web.connectionSyncedHint')
+    : t(connectionState === 'connecting' || connectionState === 'reconnecting'
+      ? 'notification.web.connectionRecoveringHint'
+      : 'notification.web.connectionOfflineHint');
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -291,6 +296,7 @@ export const NotificationsApp = () => {
                   <span>{t('notification.web.unsupportedMetric')}</span>
                 </div>
               </div>
+              <p className={styles.connectionHint}>{connectionHint}</p>
             </section>
             <section className={styles.railCard}>
               <div className={styles.railTitleRow}>

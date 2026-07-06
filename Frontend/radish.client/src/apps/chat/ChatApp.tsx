@@ -1309,7 +1309,10 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
           </div>
 
           {activeChannelId !== null && connectionHint && (
-            <div className={styles.connectionBanner}>{connectionHint}</div>
+            <div className={styles.connectionBanner}>
+              <strong>{connectionHint}</strong>
+              <span>{t('chat.connection.recoveryHint')}</span>
+            </div>
           )}
         </header>
 

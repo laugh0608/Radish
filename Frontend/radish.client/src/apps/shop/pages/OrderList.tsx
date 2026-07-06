@@ -4,8 +4,9 @@ import type { LongId } from '@/api/user';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getOrderStatusColor, normalizeOrderStatus, OrderStatus } from '@/api/shop';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
+import type { ShopLoadError } from '../hooks/useShopData';
 import styles from './OrderList.module.css';
 
 interface OrderListProps {
@@ -13,11 +14,15 @@ interface OrderListProps {
   currentPage: number;
   totalPages: number;
   loading: boolean;
+  loadError?: ShopLoadError | null;
   backHref?: string;
   getOrderHref?: (orderId: LongId) => string;
   onOrderClick: (orderId: LongId) => void;
   onPageChange: (page: number) => void;
   onBack: () => void;
+  onRetry?: () => void;
+  diagnosticActionLabel?: string;
+  onCopyDiagnostics?: (error: ShopLoadError) => void;
 }
 
 function shouldHandleOrderListLink(event: MouseEvent<HTMLAnchorElement>): boolean {
@@ -56,13 +61,32 @@ export const OrderList = ({
   currentPage,
   totalPages,
   loading,
+  loadError,
   backHref,
   getOrderHref,
   onOrderClick,
   onPageChange,
-  onBack
+  onBack,
+  onRetry,
+  diagnosticActionLabel,
+  onCopyDiagnostics
 }: OrderListProps) => {
   const { t } = useTranslation();
+  const loadErrorActions: WebStateSlotAction[] = loadError?.scope === 'orders'
+    ? [
+        {
+          label: t('common.retry'),
+          onClick: onRetry,
+        },
+        {
+          label: diagnosticActionLabel || t('common.copyDiagnostics'),
+          kind: 'secondary' as const,
+          onClick: () => {
+            onCopyDiagnostics?.(loadError);
+          },
+        },
+      ].filter((action) => Boolean(action.onClick))
+    : [];
   const groupedOrders = useMemo(() => {
     const groups: Record<'pending' | 'completed' | 'attention', OrderListItem[]> = {
       pending: [],
@@ -130,6 +154,14 @@ export const OrderList = ({
           tone="loading"
           title={t('shop.loading')}
           description={t('shop.orders.title')}
+        />
+      ) : loadError?.scope === 'orders' ? (
+        <WebStateSlot
+          tone="error"
+          icon="mdi:receipt-text-remove-outline"
+          title={t('shop.orders.loadFailedTitle')}
+          description={loadError.message}
+          actions={loadErrorActions}
         />
       ) : orders.length > 0 ? (
         <>

@@ -34,6 +34,7 @@ import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { copyRecoveryDiagnostics } from '@/utils/recoveryDiagnostics';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import { PublicDocsDetailRail, PublicDocsListRail, PublicDocsSearchRail } from './PublicDocsRails';
 import { toSourceText, toStatusText, toVisibilityText } from './publicDocsFormat';
@@ -85,6 +86,8 @@ interface PublicStatusCardAction {
   onClick: () => void;
 }
 
+type PublicDocsDiagnosticCopyHandler = (stage: string, error: string | null | undefined) => Promise<void>;
+
 interface PublicStatusCardProps {
   tone: 'loading' | 'empty' | 'error' | 'notFound';
   title: string;
@@ -92,6 +95,7 @@ interface PublicStatusCardProps {
   compact?: boolean;
   primaryAction?: PublicStatusCardAction;
   secondaryAction?: PublicStatusCardAction;
+  diagnosticAction?: PublicStatusCardAction;
 }
 
 function flattenPublicDocsTree(nodes: WikiDocumentTreeNodeVo[], depth: number = 0): PublicDocsTreeRow[] {
@@ -116,6 +120,28 @@ function isPublicDocumentNotFound(message: string | null | undefined): boolean {
   }
 
   return /文档不存在|无权访问|not\s+found|404/i.test(message);
+}
+
+function buildPublicDocsDiagnosticTarget(route: PublicDocsRoute): Record<string, string | number | boolean | undefined> {
+  if (route.kind === 'detail') {
+    return {
+      routeKind: route.kind,
+      slug: route.slug,
+      hasAnchor: Boolean(route.anchor),
+    };
+  }
+
+  if (route.kind === 'search') {
+    return {
+      routeKind: route.kind,
+      page: route.page,
+      hasKeyword: Boolean(route.keyword.trim()),
+    };
+  }
+
+  return {
+    routeKind: route.kind,
+  };
 }
 
 function normalizeMarkdownHeadingText(value: string): string {
@@ -274,7 +300,8 @@ function PublicStatusCard({
   description,
   compact = false,
   primaryAction,
-  secondaryAction
+  secondaryAction,
+  diagnosticAction
 }: PublicStatusCardProps) {
   const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
@@ -307,6 +334,17 @@ function PublicStatusCard({
     });
   }
 
+  if (diagnosticAction) {
+    actions.push({
+      label: diagnosticAction.label,
+      href: diagnosticAction.href,
+      kind: 'secondary',
+      onClick: diagnosticAction.href
+        ? (event) => handlePublicDocsLinkClick(event as MouseEvent<HTMLAnchorElement>, diagnosticAction.onClick)
+        : () => diagnosticAction.onClick(),
+    });
+  }
+
   return (
     <WebStateSlot
       tone={tone}
@@ -334,6 +372,7 @@ export const PublicDocsApp = ({
   const previousRouteRef = useRef<PublicDocsRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
+  const [diagnosticCopyState, setDiagnosticCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [collectionReloadToken, setCollectionReloadToken] = useState(0);
   const [collectionState, setCollectionState] = useState<PublicDocsCollectionState>({
     tree: [],
@@ -362,6 +401,26 @@ export const PublicDocsApp = ({
 
     document.title = nextTitle;
   }, [route, t]);
+
+  const getDiagnosticActionLabel = () => t(diagnosticCopyState === 'copied'
+    ? 'common.diagnosticsCopied'
+    : diagnosticCopyState === 'failed'
+      ? 'common.diagnosticsCopyFailed'
+      : 'common.copyDiagnostics');
+
+  const handleCopyDiagnostics = useCallback(async (stage: string, error: string | null | undefined) => {
+    try {
+      await copyRecoveryDiagnostics({
+        module: 'public.docs',
+        stage,
+        error: error || 'unknown',
+        target: buildPublicDocsDiagnosticTarget(route),
+      });
+      setDiagnosticCopyState('copied');
+    } catch {
+      setDiagnosticCopyState('failed');
+    }
+  }, [route]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -394,6 +453,7 @@ export const PublicDocsApp = ({
     }
 
     previousRouteRef.current = route;
+    setDiagnosticCopyState('idle');
   }, [route]);
 
   useEffect(() => {
@@ -482,6 +542,8 @@ export const PublicDocsApp = ({
             backHref={detailBackHref}
             canUseDocsAuthorTools={showAuthorTools}
             relatedDocuments={collectionState.documents}
+            getDiagnosticActionLabel={getDiagnosticActionLabel}
+            onCopyDiagnostics={handleCopyDiagnostics}
             onBack={handleDocsDetailBack}
             onNavigate={onNavigate}
             onOpenDocument={(slug) => onNavigate({ kind: 'detail', slug })}
@@ -492,6 +554,8 @@ export const PublicDocsApp = ({
             displayTimeZone={displayTimeZone}
             scrollContainerRef={pageRef}
             restoreScrollTop={pendingRestoreScrollTop}
+            getDiagnosticActionLabel={getDiagnosticActionLabel}
+            onCopyDiagnostics={handleCopyDiagnostics}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onNavigate={onNavigate}
             onBrowseDirectory={() => onNavigate(createDefaultDocsListRoute())}
@@ -507,6 +571,8 @@ export const PublicDocsApp = ({
             scrollContainerRef={pageRef}
             restoreScrollTop={pendingRestoreScrollTop}
             canUseDocsAuthorTools={showAuthorTools}
+            getDiagnosticActionLabel={getDiagnosticActionLabel}
+            onCopyDiagnostics={handleCopyDiagnostics}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onReload={() => setCollectionReloadToken((current) => current + 1)}
             onOpenSearch={() => onNavigate(createDefaultDocsSearchRoute())}
@@ -527,6 +593,8 @@ interface PublicDocsListProps {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
   canUseDocsAuthorTools: boolean;
+  getDiagnosticActionLabel: () => string;
+  onCopyDiagnostics: PublicDocsDiagnosticCopyHandler;
   onScrollRestored: () => void;
   onReload: () => void;
   onOpenSearch: () => void;
@@ -539,6 +607,8 @@ const PublicDocsList = ({
   scrollContainerRef,
   restoreScrollTop,
   canUseDocsAuthorTools,
+  getDiagnosticActionLabel,
+  onCopyDiagnostics,
   onScrollRestored,
   onReload,
   onOpenSearch,
@@ -612,6 +682,12 @@ const PublicDocsList = ({
             primaryAction={{
               label: t('common.retry'),
               onClick: onReload
+            }}
+            diagnosticAction={{
+              label: getDiagnosticActionLabel(),
+              onClick: () => {
+                void onCopyDiagnostics('list-load', treeError || listError);
+              }
             }}
           />
         ) : isEmpty ? (
@@ -748,6 +824,8 @@ interface PublicDocsSearchProps {
   displayTimeZone: string;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
+  getDiagnosticActionLabel: () => string;
+  onCopyDiagnostics: PublicDocsDiagnosticCopyHandler;
   onScrollRestored: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onBrowseDirectory: () => void;
@@ -759,6 +837,8 @@ const PublicDocsSearch = ({
   displayTimeZone,
   scrollContainerRef,
   restoreScrollTop,
+  getDiagnosticActionLabel,
+  onCopyDiagnostics,
   onScrollRestored,
   onNavigate,
   onBrowseDirectory,
@@ -985,6 +1065,12 @@ const PublicDocsSearch = ({
                   href: browseDirectoryHref,
                   onClick: onBrowseDirectory
                 }}
+                diagnosticAction={{
+                  label: getDiagnosticActionLabel(),
+                  onClick: () => {
+                    void onCopyDiagnostics('search-load', searchState.error);
+                  }
+                }}
               />
             ) : isEmpty ? (
               <PublicStatusCard
@@ -1093,6 +1179,8 @@ interface PublicDocsDetailProps {
   backHref: string;
   canUseDocsAuthorTools: boolean;
   relatedDocuments: WikiDocumentVo[];
+  getDiagnosticActionLabel: () => string;
+  onCopyDiagnostics: PublicDocsDiagnosticCopyHandler;
   onBack: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onOpenDocument: (slug: string) => void;
@@ -1105,6 +1193,8 @@ const PublicDocsDetail = ({
   backHref,
   canUseDocsAuthorTools,
   relatedDocuments,
+  getDiagnosticActionLabel,
+  onCopyDiagnostics,
   onBack,
   onNavigate,
   onOpenDocument
@@ -1343,6 +1433,12 @@ const PublicDocsDetail = ({
               label: backLabel,
               href: backHref,
               onClick: onBack
+            }}
+            diagnosticAction={{
+              label: getDiagnosticActionLabel(),
+              onClick: () => {
+                void onCopyDiagnostics('detail-load', error);
+              }
             }}
           />
         )}

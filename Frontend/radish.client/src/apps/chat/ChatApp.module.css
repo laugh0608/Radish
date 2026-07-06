@@ -135,13 +135,23 @@
 }
 
 .connectionBanner {
+  display: grid;
+  gap: 4px;
   margin-top: 10px;
   padding: 8px 10px;
   border-radius: 10px;
   background: color-mix(in srgb, var(--theme-brand-soft) 35%, var(--theme-bg-surface) 65%);
   border: 1px solid var(--theme-border-strong);
-  color: var(--theme-accent-earth);
   font-size: 12px;
+}
+
+.connectionBanner strong {
+  color: var(--theme-accent-earth);
+}
+
+.connectionBanner span {
+  color: var(--theme-text-secondary);
+  line-height: 1.5;
 }
 
 .contentArea {

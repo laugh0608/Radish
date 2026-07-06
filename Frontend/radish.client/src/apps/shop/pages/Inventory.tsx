@@ -3,14 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
+import type { ShopLoadError } from '../hooks/useShopData';
 import styles from './Inventory.module.css';
 
 interface InventoryProps {
   benefits: UserBenefit[];
   inventory: UserInventoryItem[];
   loading: boolean;
+  loadError?: ShopLoadError | null;
   onActivateBenefit: (benefitId: LongId) => void;
   onDeactivateBenefit: (benefitId: LongId) => void;
   onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
@@ -21,6 +23,9 @@ interface InventoryProps {
   onSourceOrderClick: (orderId: LongId) => void;
   onSourceProductClick: (productId: LongId) => void;
   onBack: () => void;
+  onRetry?: () => void;
+  diagnosticActionLabel?: string;
+  onCopyDiagnostics?: (error: ShopLoadError) => void;
 }
 
 type TabType = 'benefits' | 'consumables';
@@ -149,6 +154,7 @@ export const Inventory = ({
   benefits,
   inventory,
   loading,
+  loadError,
   onActivateBenefit,
   onDeactivateBenefit,
   onUseItem,
@@ -158,7 +164,10 @@ export const Inventory = ({
   getSourceProductHref,
   onSourceOrderClick,
   onSourceProductClick,
-  onBack
+  onBack,
+  onRetry,
+  diagnosticActionLabel,
+  onCopyDiagnostics
 }: InventoryProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('benefits');
@@ -222,6 +231,46 @@ export const Inventory = ({
           tone="loading"
           title={t('shop.loading')}
           description={t('shop.inventory.title')}
+        />
+      </div>
+    );
+  }
+
+  if (loadError?.scope === 'inventory') {
+    const errorActions: WebStateSlotAction[] = [
+      {
+        label: t('common.retry'),
+        onClick: onRetry,
+      },
+      {
+        label: diagnosticActionLabel || t('common.copyDiagnostics'),
+        kind: 'secondary' as const,
+        onClick: () => {
+          onCopyDiagnostics?.(loadError);
+        },
+      },
+      backHref
+        ? {
+            label: t('shop.back'),
+            href: backHref,
+            kind: 'secondary' as const,
+            onClick: (event: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => handleInventoryLinkClick(event as MouseEvent<HTMLAnchorElement>, onBack),
+          }
+        : {
+            label: t('shop.back'),
+            kind: 'secondary' as const,
+            onClick: onBack,
+          },
+    ].filter((action) => Boolean(action.onClick || action.href));
+
+    return (
+      <div className={styles.container}>
+        <WebStateSlot
+          tone="error"
+          icon="mdi:package-variant-remove"
+          title={t('shop.inventory.loadFailedTitle')}
+          description={loadError.message}
+          actions={errorActions}
         />
       </div>
     );

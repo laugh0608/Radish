@@ -11,6 +11,7 @@ import {
 import { WebStateSlot } from '@/components/web-shell';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
+import { copyRecoveryDiagnostics } from '@/utils/recoveryDiagnostics';
 import { buildMePath, type MeRoute } from './meRouteState';
 import styles from './MeAssetsPage.module.css';
 
@@ -81,6 +82,7 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
   const [pageData, setPageData] = useState<AssetsPageData>(initialData);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [diagnosticCopyState, setDiagnosticCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [currentPage, setCurrentPage] = useState(1);
   const [transactionType, setTransactionType] = useState('');
   const [transactionStatus, setTransactionStatus] = useState('');
@@ -93,6 +95,7 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
   const loadAssetsData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setDiagnosticCopyState('idle');
 
     try {
       const [balance, transactions] = await Promise.all([
@@ -119,6 +122,35 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
       setLoading(false);
     }
   }, [currentPage, isTransactionsMode, pageSize, t, transactionStatus, transactionType]);
+
+  const handleCopyDiagnostics = useCallback(async () => {
+    if (!error) {
+      return;
+    }
+
+    try {
+      await copyRecoveryDiagnostics({
+        module: 'me.assets',
+        stage: isTransactionsMode ? 'transactions-load' : 'overview-load',
+        error,
+        target: {
+          mode,
+          page: currentPage,
+          transactionType: transactionType || 'all',
+          transactionStatus: transactionStatus || 'all',
+        },
+        context: {
+          totalCount: pageData.totalCount,
+          totalPages: pageData.totalPages,
+          hasBalance: Boolean(pageData.balance),
+        },
+      });
+      setDiagnosticCopyState('copied');
+    } catch (copyError) {
+      log.warn('MeAssetsPage', '复制资产页诊断失败', copyError);
+      setDiagnosticCopyState('failed');
+    }
+  }, [currentPage, error, isTransactionsMode, mode, pageData.balance, pageData.totalCount, pageData.totalPages, transactionStatus, transactionType]);
 
   useEffect(() => {
     void loadAssetsData();
@@ -262,6 +294,15 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
                 {
                   label: t('me.refresh'),
                   onClick: () => void loadAssetsData(),
+                },
+                {
+                  label: t(diagnosticCopyState === 'copied'
+                    ? 'common.diagnosticsCopied'
+                    : diagnosticCopyState === 'failed'
+                      ? 'common.diagnosticsCopyFailed'
+                      : 'common.copyDiagnostics'),
+                  kind: 'secondary',
+                  onClick: () => void handleCopyDiagnostics(),
                 },
               ]}
             />

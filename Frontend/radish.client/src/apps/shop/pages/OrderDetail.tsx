@@ -6,13 +6,15 @@ import { resolveMediaUrl } from '@/utils/media';
 import type { Order } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { getOrderStatusColor, normalizeOrderStatus, OrderStatus } from '@/api/shop';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import type { ShopLoadError } from '../hooks/useShopData';
 import styles from './OrderDetail.module.css';
 
 interface OrderDetailProps {
   orderId: LongId;
   order: Order | null;
   loading: boolean;
+  loadError?: ShopLoadError | null;
   backHref?: string;
   inventoryHref?: string;
   productHref?: string;
@@ -20,6 +22,9 @@ interface OrderDetailProps {
   onInventoryClick?: () => void;
   onProductClick: (productId: LongId) => void;
   onCancelOrder: (orderId: LongId, reason?: string) => void;
+  onRetry?: () => void;
+  diagnosticActionLabel?: string;
+  onCopyDiagnostics?: (error: ShopLoadError) => void;
 }
 
 function shouldHandleOrderDetailLink(event: MouseEvent<HTMLAnchorElement>): boolean {
@@ -43,13 +48,17 @@ function handleOrderDetailLinkClick(event: MouseEvent<HTMLAnchorElement>, action
 export const OrderDetail = ({
   order,
   loading,
+  loadError,
   backHref,
   inventoryHref,
   productHref,
   onBack,
   onInventoryClick,
   onProductClick,
-  onCancelOrder
+  onCancelOrder,
+  onRetry,
+  diagnosticActionLabel,
+  onCopyDiagnostics
 }: OrderDetailProps) => {
   const { t } = useTranslation();
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -69,6 +78,45 @@ export const OrderDetail = ({
   }
 
   if (!order) {
+    if (loadError?.scope === 'order-detail') {
+      const errorActions: WebStateSlotAction[] = [
+        {
+          label: t('common.retry'),
+          onClick: onRetry,
+        },
+        {
+          label: diagnosticActionLabel || t('common.copyDiagnostics'),
+          kind: 'secondary' as const,
+          onClick: () => {
+            onCopyDiagnostics?.(loadError);
+          },
+        },
+        backHref
+          ? {
+              label: t('shop.backToOrders'),
+              href: backHref,
+              kind: 'secondary' as const,
+              onClick: (event: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => handleOrderDetailLinkClick(event as MouseEvent<HTMLAnchorElement>, onBack),
+            }
+          : {
+              label: t('shop.backToOrders'),
+              kind: 'secondary' as const,
+              onClick: onBack,
+            },
+      ].filter((action) => Boolean(action.onClick || action.href));
+
+      return (
+        <div className={styles.container}>
+          <WebStateSlot
+            tone="error"
+            title={t('shop.orderDetail.loadFailedTitle')}
+            description={loadError.message}
+            actions={errorActions}
+          />
+        </div>
+      );
+    }
+
     return (
       <div className={styles.container}>
         <WebStateSlot

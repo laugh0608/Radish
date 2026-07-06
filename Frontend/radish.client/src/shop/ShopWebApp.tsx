@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { LongId } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { useShopActions } from '@/apps/shop/hooks/useShopActions';
-import { useShopData } from '@/apps/shop/hooks/useShopData';
+import { useShopData, type ShopLoadError } from '@/apps/shop/hooks/useShopData';
 import type { ShopAppState } from '@/apps/shop/ShopApp';
 import { buildPublicShopPath } from '@/public/shopRouteState';
 import { redirectToLogin } from '@/services/auth';
@@ -16,6 +16,7 @@ import {
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import { copyRecoveryDiagnostics } from '@/utils/recoveryDiagnostics';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildShopPath, createDefaultShopRoute, parseShopRoute, type ShopRoute } from './shopRouteState';
 import styles from '@/apps/shop/ShopApp.module.css';
@@ -89,6 +90,7 @@ export function ShopWebApp() {
   const [route, setRoute] = useState<ShopRoute>(() => resolveInitialShopRoute());
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [diagnosticCopyState, setDiagnosticCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const dataState = useShopData(t);
   const {
     setError,
@@ -105,6 +107,11 @@ export function ShopWebApp() {
   const publicShopHref = buildPublicShopPath({ kind: 'home' });
   const ordersHref = buildShopPath({ kind: 'orders' });
   const inventoryHref = buildShopPath({ kind: 'inventory' });
+  const diagnosticActionLabel = t(diagnosticCopyState === 'copied'
+    ? 'common.diagnosticsCopied'
+    : diagnosticCopyState === 'failed'
+      ? 'common.diagnosticsCopyFailed'
+      : 'common.copyDiagnostics');
 
   const navigateToRoute = useCallback((nextRoute: ShopRoute) => {
     const nextPath = buildShopPath(nextRoute);
@@ -223,6 +230,10 @@ export function ShopWebApp() {
     void loadInventory();
   }, [authReady, loadInventory, loadOrderDetail, loadOrders, loggedIn, route]);
 
+  useEffect(() => {
+    setDiagnosticCopyState('idle');
+  }, [route.kind, dataState.loadError?.scope, dataState.loadError?.message]);
+
   const handleOrdersLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!shouldHandleShopWebLinkClick(event)) {
       return;
@@ -240,6 +251,24 @@ export function ShopWebApp() {
     event.preventDefault();
     navigate.toInventory();
   };
+
+  const handleCopyShopDiagnostics = useCallback(async (error: ShopLoadError) => {
+    try {
+      await copyRecoveryDiagnostics({
+        module: 'shop.private',
+        stage: error.scope,
+        error: error.message,
+        target: {
+          routeKind: route.kind,
+          ...error.target,
+        },
+      });
+      setDiagnosticCopyState('copied');
+    } catch (copyError) {
+      log.warn('ShopWebApp', '复制商城恢复诊断失败', copyError);
+      setDiagnosticCopyState('failed');
+    }
+  }, [route.kind]);
 
   const renderContent = () => {
     if (!authReady || !loggedIn) {
@@ -261,6 +290,7 @@ export function ShopWebApp() {
           orderId={route.orderId}
           order={dataState.selectedOrder}
           loading={dataState.loadingOrderDetail}
+          loadError={dataState.loadError}
           backHref={backHref}
           inventoryHref={inventoryHref}
           productHref={dataState.selectedOrder
@@ -270,6 +300,11 @@ export function ShopWebApp() {
           onInventoryClick={navigate.toInventory}
           onProductClick={navigate.toProductDetail}
           onCancelOrder={actionsState.handleCancelOrder}
+          onRetry={() => {
+            void loadOrderDetail(route.orderId);
+          }}
+          diagnosticActionLabel={diagnosticActionLabel}
+          onCopyDiagnostics={handleCopyShopDiagnostics}
         />
       );
     }
@@ -280,6 +315,7 @@ export function ShopWebApp() {
           benefits={dataState.userBenefits}
           inventory={dataState.userInventory}
           loading={dataState.loadingInventory}
+          loadError={dataState.loadError}
           backHref={publicShopHref}
           getSourceOrderHref={(orderId) => buildShopPath({ kind: 'order-detail', orderId })}
           getSourceProductHref={(productId) => buildPublicShopPath({ kind: 'detail', productId: String(productId) })}
@@ -290,6 +326,11 @@ export function ShopWebApp() {
           onSourceOrderClick={navigate.toOrderDetail}
           onSourceProductClick={navigate.toProductDetail}
           onBack={navigate.back}
+          onRetry={() => {
+            void loadInventory();
+          }}
+          diagnosticActionLabel={diagnosticActionLabel}
+          onCopyDiagnostics={handleCopyShopDiagnostics}
         />
       );
     }
@@ -300,11 +341,17 @@ export function ShopWebApp() {
         currentPage={dataState.currentPage}
         totalPages={dataState.totalPages}
         loading={dataState.loadingOrders}
+        loadError={dataState.loadError}
         backHref={publicShopHref}
         getOrderHref={(orderId) => buildShopPath({ kind: 'order-detail', orderId })}
         onOrderClick={navigate.toOrderDetail}
         onPageChange={actionsState.handlePageChange}
         onBack={navigate.back}
+        onRetry={() => {
+          void loadOrders();
+        }}
+        diagnosticActionLabel={diagnosticActionLabel}
+        onCopyDiagnostics={handleCopyShopDiagnostics}
       />
     );
   };
