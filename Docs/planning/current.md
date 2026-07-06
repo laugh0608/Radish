@@ -190,17 +190,14 @@
    - 本地验证继续按风险分层；完整 baseline 默认放在准备合并到 `master` 前或发布部署节点。
    - 真实页面 smoke 不再按每个本地提交或每个低 / 中风险设置批次执行；默认在较大阶段推进完成、准备合并到 `master`、发布候选整备或用户可见页面明显变化时集中覆盖。
 
-## 下一步事项（2026-07-06）
-- `P3-12-E5-A` 用户可恢复错误与反馈硬化首批已推进：发帖失败补草稿保留与重试说明，评论附件上传失败补草稿未丢与重试提示，Workbench 活动同步部分失败补今日队列可恢复项；记录见 [P3-12-E5-A 用户可恢复错误与反馈硬化首批记录](/records/p3-12-e5-a-recoverable-error-feedback-hardening-2026-07-06)。
-- `P3-12-E5-A` 第二批已推进：聊天失败消息补本地保留提示与可复制诊断，通知目标缺失项补可复制上下文且不再伪跳转；记录见 [P3-12-E5-A 用户可恢复错误与反馈硬化第二批记录](/records/p3-12-e5-a-recoverable-error-feedback-second-batch-2026-07-06)。
-- `P3-12-E5-A` 第三批已推进：资产、公开 Docs、商城订单 / 背包页面级加载失败态补重试与可复制诊断，通知和聊天 Hub 状态补恢复说明；记录见 [P3-12-E5-A 用户可恢复错误与反馈硬化第三批记录](/records/p3-12-e5-a-recoverable-error-feedback-third-batch-2026-07-06)。
-- `P3-12-E5-A` 旅程级验证首轮已推进：Gateway Chrome PC / mobile 无业务写入复核覆盖公开冷启动、登录后复访、发帖 / 评论入口、聊天 / 通知回流、商城订单 / 背包 / 资产回流、Docs 作者入口和 Console 治理读路径；记录见 [P3-12-E5-A 旅程级验证首轮记录](/records/p3-12-e5-a-journey-validation-first-pass-2026-07-06)。
-- `P3-12-E5-B` 受控写入旅程验证已推进：论坛发帖 / 评论、Docs 作者保存 / 阅读回流、商城购买确认边界和 Console 订单备注均通过真实页面路径复核；商城无限库存详情文案已修正；记录见 [P3-12-E5-B 受控写入旅程验证记录](/records/p3-12-e5-b-controlled-write-journey-validation-2026-07-06)。
-- `P3-12-E6` 发布候选进入判断已纠偏：用户人工抽查命中 debug / 内部术语、低密度大卡片、移动 Console 效率不足和正式 UI 成熟度缺口，原“进入 F”判断不成立；记录见 [P3-12-E6 发布候选进入判断记录](/records/p3-12-e6-release-candidate-entry-decision-2026-07-06)。
-- 下一步进入 `P3-12-E7 正式 UI 与文案成熟度专项审计`：先按 Public / Docs / Forum / Shop / Auth / Console 建立页面族矩阵和阻断级缺口清单，记录见 [P3-12-E7 正式 UI 与文案成熟度专项审计记录](/records/p3-12-e7-ui-copy-maturity-gap-audit-2026-07-06)。
-- 暂停进入 `P3-12-F`；只有 E7 形成阻断清单并完成必要成组修复 / 验证后，才重新做发布候选进入判断。
-- 如果 E7 命中接口、错误模型、后端日志、权限、审计或运行时契约缺口，先补小方案并确认边界；仅文档记录、规划口径、低风险文案或状态说明可直接推进。
-- 验证按风险分层执行：文档轮次使用 repo hygiene 与 `git diff --check`；代码轮次补对应 workspace build / type-check 或后端测试；真实 Gateway smoke 只在用户当日确认服务已启动后执行。
+## 明天事项（2026-07-07）
+- 继续 `P3-12-E7 正式 UI 与文案成熟度专项审计`；当前不能进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
+- 第一顺位是 Console PC / mobile 与 Pencil 设计源的真实差距审计：读取 [Console 治理工作台设计说明](/frontend/console-governance-workbench-design) 与 `Docs/frontend/design-sources/console-governance-workbench.pen`，对照当前 `/console/` PC 与移动视图，确认桌面布局、移动治理任务、信息密度、导航、表格 / 详情 / 抽屉和高风险动作是否偏离设计稿。
+- 同步审计 Public / Docs / Forum / Shop / Auth 的正式产品表现：清理 debug 内容、内部术语、实现说明、低密度大卡片、重复解释、移动首屏遮挡和高频任务断点。
+- 明天先产出页面族矩阵和阻断级缺口清单，再决定成组修复顺序；若只命中低风险文案、状态或规划口径，可直接修正文档或前端文案。
+- 若 E7 命中接口、错误模型、后端日志、权限、审计或运行时契约缺口，先补小方案并等待确认后再改代码。
+- 如需真实 Gateway smoke，必须由用户在当轮明确说明前后端已启动；复核口径按 [浏览器 Smoke 指南](/guide/browser-smoke) 同时覆盖 PC 与移动视图。
+- 验证按风险分层执行：文档轮次使用 repo hygiene 与 `git diff --check`；前端代码轮次补对应 workspace build / type-check；后端或权限写入改动再补相关 `dotnet test` / baseline。
 
 ## 下一顺位
 
@@ -270,10 +267,10 @@
   - 将 `/discover` 从公开导航聚合页调整为可持续浏览的内容流方案。
   - 继续保留公开 head、分享、移动 / PC 布局、LongId 兼容读取和 PublicId 分享路由回归。
 
-## 后续事项（2026-07-05 之后）
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 与 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)，确认 `P3-12-E6` 已被人工抽查纠偏，下一步进入 `P3-12-E7 正式 UI 与文案成熟度专项审计`。
-- 继续推进 `P3-12-E7`：先按 [E7 记录](/records/p3-12-e7-ui-copy-maturity-gap-audit-2026-07-06) 建立页面族矩阵，清理 debug / 内部术语、低信息密度、大卡片滥用、移动效率和高频任务断点。
-- 若需要新增真实 Gateway smoke，仍必须先由用户当日明确说明前后端已启动；普通开发优先使用相关前端 workspace 类型检查 / 构建、repo hygiene 和 `git diff --check`。
+## 后续事项（2026-07-07 起）
+- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 与 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)，确认 `P3-12-E6` 已被人工抽查纠偏，当前第一顺位是 `P3-12-E7`。
+- `P3-12-E7` 先审计并记录，不直接宣布专题完成；Console 必须同时覆盖 PC 设计稿偏差和移动治理视图缺口。
+- 若需要新增真实 Gateway smoke，必须由用户当轮明确说明前后端已启动；普通开发优先使用相关前端 workspace 类型检查 / 构建、repo hygiene 和 `git diff --check`。
 - E6 判断已纠偏：当前不能进入 `P3-12-F`；后置专题仍必须保留替代路径、首发边界和不阻断理由。
 
 ## 并行维护项
