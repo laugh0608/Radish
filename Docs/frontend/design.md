@@ -63,6 +63,7 @@
 - `P3-12-D3` 已将私域与作者态 Web 工作流设计源 `Docs/frontend/design-sources/private-web-workflows.pen` 扩展为 `P01-P30` 真实路由驱动页面族，覆盖 `/workbench`、`/me` 系列、资产流水、订单、背包、通知、消息、圈子、宠物、论坛作者态、Docs 作者态和移动端 10 个单任务页面；实现口径见 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
 - `P3-12-D4 / D7` 已将 Web UI 共享基座设计源 `Docs/frontend/design-sources/web-ui-foundation.pen` 扩展为 `F01-F02`，统一 public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab、client 公共壳层组件契约和 5 项以内浮动胶囊移动底栏；跨业务设计源的视觉样式先在 [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 确认，再同步到具体 `.pen`
 - `P3-12-D8` 已将共享 Web shell 首批落入 `radish.client` 代码：`Frontend/radish.client/src/components/web-shell/` 提供 `WebShellHeader`、`WebStateSlot` 和对应类型，公开 / 私域页面优先复用该目录，不再各自维护分叉 header、状态卡、移动 tab 或内容宽度硬编码
+- 正式 Web 可恢复错误反馈遵循 [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics)：页面级加载失败、上传失败、聊天发送失败和通知目标缺失必须提供可继续行动的恢复路径与有限诊断上下文
 - 进入跨页面视觉代码实现前，必须先确认对应设计源、设计说明和共享基座是否一致；不得绕过 Pencil 设计稿直接把 public、private 或 Console 的 header、按钮、卡片样式各自写成分叉版本
 - Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；内容治理、经验治理、订单 / 商品、文档治理、用户管理和权限矩阵已补任务流提示和证据 rail，移动端内容治理优先按“筛选队列 -> 目标证据 -> 处理动作 -> 留痕回看”顺序承载；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
