@@ -38,12 +38,17 @@
 - 不新增服务端诊断编号、错误上报 API、Console 工单、后端日志关联或审计查询入口。
 - 不改变聊天发送失败的接口载荷、重试请求、幂等键或本地消息状态机。
 - 不改变通知目标解析规则；目标缺失仍由现有 `notificationActionQueue` 和 `resolveWebNotificationNavigation` 判断。
-- 不执行真实弱网、断网、服务端异常注入或 Gateway smoke；本轮只做前端代码侧验证。
+- 不执行真实弱网、断网、服务端异常注入或聊天发送副作用；本轮在用户确认前后端持续运行后补做 Gateway 页面真实复核。
 
 ## 验证
 
 - `npm run test --workspace=radish.client`：通过，303 项测试通过。
 - `npm run build --workspace=radish.client`：通过。
+- Gateway 浏览器补验：通过。
+  - 使用本地开发种子账号 `admin@radishx.com / admin123456` 登录 Chrome 会话。
+  - `https://localhost:5000/messages`：PC `1920x1080` 与移动端 `390x844` 均正常渲染“消息”工作区，无登录阻断、无横向溢出，控制台 `warn/error` 为空。
+  - `https://localhost:5000/notifications`：PC `1920x1080` 与移动端 `390x844` 均正常渲染“通知中心”，无登录阻断、无横向溢出，控制台 `warn/error` 为空。
+  - 本地种子数据当前没有失败聊天消息或缺失目标通知样本，因此未点击“复制诊断 / 复制上下文”；同时未发送聊天消息、未覆盖剪贴板。复制内容边界通过代码实现和构建验证确认。
 
 ## 后续
 
