@@ -16,6 +16,7 @@
 
 - 用户已打开 `Docs/frontend/design-sources/web-ui-foundation.pen`。
 - 已新增画板：`E7-D - Auth Consent Information Hierarchy`。
+- 用户反馈授权页观感过大后，画板已二次收紧为紧凑授权卡参考：桌面与移动共用同一条纵向确认路径，保留应用 / 账号 / 权限 / 风险 / 技术信息的理解顺序，不照搬参考图配色或品牌。
 - 画板固定桌面与移动两种授权确认结构：
   - 首屏优先展示授权目标、开发方、返回目标和当前账号。
   - 权限区展示用户可理解的权限含义，原始 `scope` 降为次级技术标签。
@@ -27,7 +28,7 @@
 
 | 文件 | 处理 |
 | --- | --- |
-| `Radish.Auth/Views/Authorization/Consent.cshtml` | 重排授权确认页：左侧为授权目标与技术详情，右侧为当前账号、权限、风险提示和确认动作；移动端压缩目标区和权限列表，并让动作区保持高可见。 |
+| `Radish.Auth/Views/Authorization/Consent.cshtml` | 二次收紧授权确认页：从大尺寸左右分栏改为居中紧凑授权卡，首屏按应用、返回目标、当前账号、权限、风险提示、确认 / 取消动作纵向推进；技术信息默认折叠，移动端沿用同构单列确认路径。 |
 | `Radish.Auth/Resources/Errors.resx` / `Errors.zh.resx` / `Errors.en.resx` | 更新授权标题、说明和按钮文案，改为“确认是否允许访问”“允许继续 / 取消授权”等用户动作语言。 |
 | `Docs/frontend/design-sources/web-ui-foundation.pen` | 新增 E7-D Auth 授权页信息层级参考画板。 |
 | `Docs/frontend/design-sources/README.md`、`Docs/frontend/web-ui-foundation-design.md` | 记录 web-ui foundation 中新增的 Auth 授权确认参考画板。 |
@@ -51,6 +52,6 @@
 
 ## 后续判断
 
-- `E7-D` 代码侧收口后，下一步不直接进入 `P3-12-F`。
+- `E7-D` 已按用户截图反馈完成紧凑授权卡二次收口，下一步不直接进入 `P3-12-F`。
 - 先根据 E7-A 至 E7-D 的结果做 `P3-12-E7` 收束判断。
 - 若真实页面复核、用户截图或自动化检查继续命中 Public / Console / Auth 的 UI 或文案阻断，再回拉对应页面族；若命中接口、错误模型、后端日志、权限、审计或运行时契约缺口，先补小方案并等待确认。

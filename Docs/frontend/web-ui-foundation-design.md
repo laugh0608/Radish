@@ -14,7 +14,7 @@
 >
 > 更新：2026-07-04（Asia/Shanghai）：D61 / D62 后 `WebShellHeader` 已同时承接 Public 当前发布前页面族和 Private `/workbench` 首批工作台；页面可通过 `mobileNavItems` 覆盖移动底栏，但只能用于明确页面族承接，不能让公开底栏长期覆盖私域工作台。
 >
-> 更新：2026-07-07（Asia/Shanghai）：`P3-12-E7-D` 已在 `web-ui-foundation.pen` 新增 `E7-D - Auth Consent Information Hierarchy` 画板，固定 Auth 授权确认页的授权目标、账号状态、权限含义、风险提示、技术信息下沉和移动端确认动作层级。
+> 更新：2026-07-07（Asia/Shanghai）：`P3-12-E7-D` 已在 `web-ui-foundation.pen` 新增并二次收紧 `E7-D - Auth Consent Information Hierarchy` 画板，固定 Auth 授权确认页紧凑授权卡的授权目标、账号状态、权限含义、风险提示、技术信息下沉和移动端确认动作层级。
 >
 > 状态：共享基座设计源 `F01-F03` 与 `E7-D` Auth 授权确认参考画板已创建；`radish.client` Public `P01-P14`、Private `/workbench`、Console 首轮代表页和 Auth 授权页均已完成当前阶段代码对齐或参考画板收口，后续继续按 D62 / D63 / E7 页面族治理跨源一致性
 
@@ -31,7 +31,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 | `F01 - Web UI Foundation` | 共享 token、public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab 和同步规则 |
 | `F02 - Client Shell Common Components` | client 公共壳层组件契约，覆盖 PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource 和 public / private 真实路由族 |
 | `F03 - Radish WebOS Liquid Glass Navigation Concept` | WebOS 历史导航概念留档，不作为 P3-12 正式 Web 默认体验入口 |
-| `E7-D - Auth Consent Information Hierarchy` | Auth 授权确认页信息层级参考，覆盖授权目标、当前账号、权限含义、风险提示、技术信息下沉和移动端确认动作 |
+| `E7-D - Auth Consent Information Hierarchy` | Auth 授权确认页紧凑授权卡参考，覆盖授权目标、当前账号、权限含义、风险提示、技术信息下沉和移动端确认动作 |
 
 ## 目标
 

@@ -9,9 +9,8 @@
 
     var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
     var displayClientName = string.IsNullOrWhiteSpace(Model.ClientName) ? Model.ClientId : Model.ClientName;
-    var applicationDescription = string.IsNullOrWhiteSpace(Model.ClientDescription)
-        ? (isZh ? "该应用将使用你的 Radish 账号继续当前受保护操作。" : "This app will use your Radish account to continue the protected action.")
-        : Model.ClientDescription;
+    var hasClientDescription = !string.IsNullOrWhiteSpace(Model.ClientDescription);
+    var applicationDescription = hasClientDescription ? Model.ClientDescription : string.Empty;
     var developerName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
     var redirectTarget = string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost;
     var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? (isZh ? "当前登录账号" : "Current account") : User!.Identity!.Name!;
@@ -21,25 +20,23 @@
         ? $"{Model.Scopes.Count} 项权限"
         : $"{Model.Scopes.Count} permission{(Model.Scopes.Count == 1 ? string.Empty : "s")}";
 
-    var targetEyebrow = isZh ? "Radish 安全授权" : "Radish secure authorization";
-    var targetTitle = isZh ? "授权目标" : "Authorization target";
-    var targetHint = isZh ? "确认应用、开发方和返回位置都符合预期。" : "Confirm the app, developer, and return destination before continuing.";
+    var pageEyebrow = isZh ? "Radish 安全授权" : "Radish secure authorization";
+    var targetLabel = isZh ? "授权给" : "Authorize";
     var appLabel = isZh ? "应用" : "Application";
     var developerLabel = isZh ? "开发方" : "Developer";
     var redirectLabel = isZh ? "返回到" : "Return to";
     var accountTitle = isZh ? "当前账号" : "Current account";
     var accountHint = isZh
-        ? "你将使用这个账号完成本次授权。若不是你的账号，请取消授权并切换账号。"
-        : "This account will be used for this authorization. If it is not yours, cancel and switch accounts.";
-    var permissionTitle = isZh ? "将允许的访问" : "Access you will allow";
+        ? "将以该账号完成授权。不是你的账号时，请取消授权后切换。"
+        : "This account will be used. If it is not yours, cancel and switch accounts.";
+    var permissionTitle = isZh ? "将获取以下权限" : "Access requested";
     var permissionHint = isZh
-        ? "这些权限来自当前应用请求。确认后只授予本次请求包含的范围。"
-        : "These permissions come from the current app request. Confirming grants only the scopes included in this request.";
-    var riskTitle = isZh ? "确认前检查" : "Check before continuing";
-    var riskPoint1 = isZh ? "应用名称、开发方和返回位置应与你当前打开的页面一致。" : "The app name, developer, and return destination should match the page you opened.";
-    var riskPoint2 = isZh ? "如果你不认识这个应用，或者账号不正确，请取消授权。" : "If you do not recognize this app or the account is wrong, cancel authorization.";
-    var riskPoint3 = isZh ? "取消不会退出 Radish，也不会修改你的账号状态。" : "Cancelling will not sign you out of Radish or change your account state.";
-    var decisionHint = isZh ? "允许后将返回应用继续操作；取消会返回应用并提示授权未完成。" : "Allowing returns you to the app to continue; cancelling returns with authorization incomplete.";
+        ? "只授予本次请求包含的范围。"
+        : "Only the scopes included in this request will be granted.";
+    var riskTitle = isZh ? "确认前检查" : "Before you continue";
+    var riskPoint1 = isZh ? "应用名称、开发方和返回位置应与你刚才打开的页面一致。" : "The app, developer, and return destination should match the page you opened.";
+    var riskPoint2 = isZh ? "如果你不认识这个应用，或当前账号不正确，请取消授权。" : "If you do not recognize this app or the account is wrong, cancel authorization.";
+    var decisionHint = isZh ? "允许后将返回应用继续操作；取消不会退出 Radish，也不会修改账号状态。" : "Allowing returns you to the app; cancelling will not sign you out or change your account.";
     var technicalTitle = isZh ? "技术信息" : "Technical details";
     var technicalHint = isZh ? "用于排障和安全核对，普通确认时无需优先阅读。" : "For troubleshooting and security review. You do not need these details for normal confirmation.";
     var scopeCodeLabel = isZh ? "技术范围" : "Scope";
@@ -52,20 +49,20 @@
         return scope switch
         {
             "openid" => isZh
-                ? ("确认你的登录身份", "用于确认当前登录用户，并建立安全的登录会话。")
-                : ("Confirm your signed-in identity", "Used to identify the current user and establish a secure sign-in session."),
+                ? ("确认你的登录身份", "建立安全登录会话。")
+                : ("Confirm your signed-in identity", "Establishes a secure sign-in session."),
             "profile" => isZh
-                ? ("读取你的基础资料", "用于显示昵称、头像等基础资料，让应用知道当前是谁在操作。")
-                : ("Read your basic profile", "Used to display profile basics such as display name and avatar."),
+                ? ("读取你的基础资料", "显示昵称、头像等基础资料。")
+                : ("Read your basic profile", "Shows profile basics such as display name and avatar."),
             "offline_access" => isZh
-                ? ("保持登录状态", "用于在短时间内续签登录状态，减少重复登录。")
-                : ("Maintain your session", "Used to renew your session later and reduce repeated sign-ins."),
+                ? ("保持登录状态", "减少短时间内重复登录。")
+                : ("Maintain your session", "Reduces repeated sign-ins for a short period."),
             "radish-api" => isZh
-                ? ("访问 Radish 服务", "用于调用 Radish 官方接口，继续当前应用中的受保护任务。")
-                : ("Access Radish services", "Used to call Radish APIs required by this application."),
+                ? ("访问 Radish 服务", "继续当前应用中的受保护任务。")
+                : ("Access Radish services", "Continues protected tasks in this application."),
             _ => isZh
-                ? ("附加访问权限", "这是该应用声明的额外访问范围，请确认它符合你的预期。")
-                : ("Additional access", "This is an extra scope declared by the app. Review it before continuing.")
+                ? ("附加访问权限", "该应用声明的额外访问范围。")
+                : ("Additional access", "An extra scope declared by this app.")
         };
     }
 }
@@ -79,20 +76,19 @@
     <style>
         :root {
             color-scheme: light;
-            --paper-base: #f4efe6;
-            --paper-surface: #fbf7f0;
-            --paper-panel: #fffdf8;
-            --paper-muted: #efe7db;
+            --paper-base: #f5efe6;
+            --paper-surface: #fffdf8;
+            --paper-muted: #f0e7db;
             --line-soft: #d9cbb9;
-            --line-faint: rgba(217, 203, 185, 0.58);
+            --line-faint: rgba(217, 203, 185, 0.62);
             --ink-strong: #2f2a25;
-            --ink-base: #6a5c4f;
-            --ink-muted: #8d7b6c;
+            --ink-base: #67594d;
+            --ink-muted: #8b7a6b;
             --brand: #b24057;
             --brand-deep: #8f3144;
-            --brand-soft: #ecd3db;
-            --jade: #4f9c83;
+            --brand-soft: #f3dce3;
             --blue: #435c74;
+            --success: #4f9c83;
         }
 
         * {
@@ -102,10 +98,11 @@
         body {
             margin: 0;
             min-height: 100vh;
+            min-height: 100svh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(14px, 3vw, 30px);
+            padding: 28px 16px;
             background: linear-gradient(180deg, #f7f1e8 0%, #fbfaf6 54%, #f8fafc 100%);
             color: var(--ink-strong);
             font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
@@ -116,48 +113,135 @@
             letter-spacing: 0;
         }
 
-        .auth-shell {
-            width: min(100%, 1120px);
-            border: 1px solid rgba(217, 203, 185, 0.82);
-            border-radius: 18px;
-            background: rgba(251, 247, 240, 0.96);
-            box-shadow: 0 24px 60px rgba(47, 42, 37, 0.13);
+        .consent-shell {
+            width: min(100%, 640px);
+        }
+
+        .consent-card {
+            border: 1px solid rgba(217, 203, 185, 0.86);
+            border-radius: 8px;
+            background: rgba(255, 253, 248, 0.97);
+            box-shadow: 0 22px 54px rgba(47, 42, 37, 0.12);
             overflow: hidden;
         }
 
-        .auth-layout {
-            display: grid;
-            grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
-            min-height: 720px;
+        .card-accent {
+            height: 6px;
+            background: linear-gradient(90deg, var(--brand) 0%, #c78b74 58%, var(--success) 100%);
         }
 
-        .target-panel {
+        .card-body {
+            display: grid;
+            gap: 16px;
+            padding: 22px;
+        }
+
+        .topbar {
             display: flex;
-            flex-direction: column;
-            gap: 22px;
-            padding: 30px;
-            background: #efe7db;
-            border-right: 1px solid var(--line-soft);
-        }
-
-        .target-header {
-            display: grid;
+            align-items: center;
+            justify-content: space-between;
             gap: 14px;
         }
 
-        .app-badge {
-            width: 58px;
-            height: 58px;
+        .brand-mark {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .brand-icon {
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 14px;
+            flex: 0 0 auto;
+            border-radius: 8px;
+            background: var(--brand);
+            color: #ffffff;
+            font-weight: 900;
+        }
+
+        .brand-copy {
+            display: grid;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .eyebrow {
+            margin: 0;
+            color: var(--brand);
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0;
+            text-transform: uppercase;
+        }
+
+        .brand-name {
+            margin: 0;
+            color: var(--ink-muted);
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .lang-switcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 3px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 1px solid var(--line-soft);
+        }
+
+        .lang-button {
+            min-height: 28px;
+            padding: 5px 10px;
+            background: transparent;
+            color: var(--ink-base);
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            transition: background 0.18s ease, color 0.18s ease;
+        }
+
+        .lang-button:hover,
+        .lang-button.active {
+            background: var(--ink-strong);
+            color: #ffffff;
+        }
+
+        .hero {
+            display: grid;
+            gap: 10px;
+            padding-top: 2px;
+        }
+
+        .target-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .app-badge {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            border-radius: 8px;
             overflow: hidden;
             background: var(--brand);
             color: #ffffff;
-            font-size: 1.35rem;
-            font-weight: 800;
-            box-shadow: 0 14px 30px rgba(178, 64, 87, 0.22);
+            font-size: 1.2rem;
+            font-weight: 900;
+            box-shadow: 0 10px 22px rgba(178, 64, 87, 0.2);
         }
 
         .app-badge img {
@@ -166,65 +250,237 @@
             object-fit: cover;
         }
 
-        .eyebrow {
-            margin: 0;
-            color: var(--brand);
-            font-size: 0.76rem;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+        .target-copy {
+            display: grid;
+            gap: 4px;
+            min-width: 0;
         }
 
-        .target-title {
+        .target-label {
+            color: var(--ink-muted);
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
+        h1 {
             margin: 0;
             color: var(--ink-strong);
-            font-size: 1.8rem;
-            line-height: 1.14;
+            font-size: 1.86rem;
+            line-height: 1.16;
         }
 
         .target-description {
             margin: 0;
             color: var(--ink-base);
-            line-height: 1.7;
-            font-size: 0.96rem;
+            font-size: 0.94rem;
+            line-height: 1.62;
         }
 
-        .trust-list {
-            display: grid;
-            gap: 10px;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-
-        .trust-item {
-            display: grid;
-            gap: 5px;
-            padding: 11px 12px;
+        .summary-card,
+        .account-card,
+        .permission-card,
+        .risk-card,
+        .technical-details {
+            border: 1px solid var(--line-faint);
             border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.74);
-            background: rgba(251, 247, 240, 0.72);
+            background: #ffffff;
         }
 
-        .trust-label {
+        .summary-card {
+            display: grid;
+            gap: 1px;
+            overflow: hidden;
+            background: var(--line-faint);
+        }
+
+        .summary-row {
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr);
+            gap: 12px;
+            align-items: center;
+            min-height: 40px;
+            padding: 8px 12px;
+            background: #ffffff;
+        }
+
+        .summary-label {
             color: var(--ink-muted);
-            font-size: 0.74rem;
-            font-weight: 700;
+            font-size: 0.76rem;
+            font-weight: 800;
         }
 
-        .trust-value {
+        .summary-value {
             color: var(--ink-strong);
-            font-size: 0.95rem;
-            font-weight: 700;
-            line-height: 1.42;
+            font-size: 0.9rem;
+            font-weight: 800;
+            line-height: 1.38;
             word-break: break-word;
         }
 
-        .technical-details {
-            margin-top: auto;
-            border-top: 1px solid rgba(217, 203, 185, 0.9);
-            padding-top: 16px;
+        .account-card {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            padding: 12px;
+            background: var(--paper-muted);
+        }
+
+        .account-avatar {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 auto;
+            border-radius: 8px;
+            color: #ffffff;
+            background: var(--blue);
+            font-weight: 900;
+        }
+
+        .account-copy {
+            display: grid;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .section-title {
+            display: block;
+            margin: 0;
+            color: var(--ink-strong);
+            font-size: 0.95rem;
+            font-weight: 900;
+            line-height: 1.35;
+        }
+
+        .account-name {
+            margin: 0;
+            color: var(--ink-strong);
+            font-weight: 800;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .section-copy {
+            margin: 0;
             color: var(--ink-base);
+            font-size: 0.84rem;
+            line-height: 1.52;
+        }
+
+        .permission-card {
+            padding: 14px;
+        }
+
+        .permission-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .count-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 26px;
+            padding: 4px 9px;
+            flex: 0 0 auto;
+            border-radius: 999px;
+            background: var(--brand-soft);
+            color: var(--brand);
+            border: 1px solid #e4c0ca;
+            font-size: 0.76rem;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .scope-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: grid;
+            gap: 8px;
+        }
+
+        .scope-item {
+            display: grid;
+            grid-template-columns: 26px minmax(0, 1fr);
+            gap: 10px;
+            align-items: start;
+            min-height: 48px;
+            padding: 9px 0;
+            border-top: 1px solid rgba(217, 203, 185, 0.54);
+        }
+
+        .scope-item:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .scope-mark {
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #f8edf1;
+            color: var(--brand);
+            font-size: 0.9rem;
+            font-weight: 900;
+        }
+
+        .scope-body {
+            min-width: 0;
+        }
+
+        .scope-title {
+            margin: 0 0 2px;
+            color: var(--ink-strong);
+            font-size: 0.92rem;
+            line-height: 1.36;
+        }
+
+        .scope-description {
+            margin: 0;
+            color: var(--ink-base);
+            line-height: 1.45;
+            font-size: 0.82rem;
+        }
+
+        .scope-code {
+            display: inline-flex;
+            max-width: 100%;
+            margin-top: 5px;
+            color: var(--ink-muted);
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.68rem;
+            line-height: 1.35;
+            word-break: break-all;
+        }
+
+        .risk-card {
+            padding: 12px 14px;
+            background: #fffaf5;
+        }
+
+        .risk-list {
+            margin: 8px 0 0;
+            padding-left: 18px;
+            color: var(--ink-base);
+            font-size: 0.83rem;
+            line-height: 1.52;
+        }
+
+        .risk-list li + li {
+            margin-top: 4px;
+        }
+
+        .technical-details {
+            color: var(--ink-base);
+            overflow: hidden;
         }
 
         .technical-details summary {
@@ -232,9 +488,11 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
+            min-height: 42px;
+            padding: 10px 14px;
             cursor: pointer;
             color: var(--ink-strong);
-            font-weight: 800;
+            font-weight: 900;
             list-style: none;
         }
 
@@ -249,8 +507,9 @@
             height: 24px;
             align-items: center;
             justify-content: center;
+            flex: 0 0 auto;
             border-radius: 999px;
-            background: #ffffff;
+            background: var(--paper-muted);
             color: var(--brand);
             border: 1px solid var(--line-soft);
         }
@@ -259,313 +518,72 @@
             content: '-';
         }
 
+        .technical-content {
+            display: grid;
+            gap: 9px;
+            padding: 0 14px 14px;
+        }
+
         .technical-hint {
-            margin: 8px 0 12px;
+            margin: 0;
             color: var(--ink-muted);
-            font-size: 0.82rem;
-            line-height: 1.55;
+            font-size: 0.8rem;
+            line-height: 1.5;
         }
 
         .technical-grid {
             display: grid;
-            gap: 8px;
+            gap: 7px;
         }
 
         .technical-row {
             display: grid;
             gap: 4px;
-            padding: 9px 10px;
+            padding: 8px 10px;
             border-radius: 8px;
-            background: #fbf7f0;
+            background: var(--paper-muted);
             border: 1px solid rgba(217, 203, 185, 0.68);
         }
 
         .technical-label {
             color: var(--ink-muted);
             font-size: 0.72rem;
-            font-weight: 700;
+            font-weight: 800;
         }
 
         .technical-value {
             color: var(--ink-base);
             font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-            font-size: 0.75rem;
-            line-height: 1.42;
+            font-size: 0.73rem;
+            line-height: 1.4;
             word-break: break-all;
         }
 
-        .content-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            padding: 28px 30px 24px;
-            background: linear-gradient(180deg, #fffdf8 0%, #fffaf5 100%);
-        }
-
-        .content-head {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 18px;
-        }
-
-        .heading-block {
+        .decision-form {
             display: grid;
-            gap: 8px;
-            min-width: 0;
-        }
-
-        .heading-block h1 {
-            margin: 0;
-            color: var(--ink-strong);
-            font-size: 1.72rem;
-            line-height: 1.18;
-        }
-
-        .heading-block p {
-            margin: 0;
-            color: var(--ink-base);
-            line-height: 1.65;
-            max-width: 50ch;
-        }
-
-        .count-chip {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: fit-content;
-            min-height: 30px;
-            padding: 5px 11px;
-            border-radius: 999px;
-            background: var(--brand-soft);
-            color: var(--brand);
-            border: 1px solid #e4c0ca;
-            font-size: 0.8rem;
-            font-weight: 800;
-            white-space: nowrap;
-        }
-
-        .lang-switcher {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 4px;
-            border-radius: 999px;
-            background: #ffffff;
-            border: 1px solid var(--line-soft);
-            flex-shrink: 0;
-        }
-
-        .lang-button {
-            min-height: 32px;
-            padding: 6px 11px;
-            background: transparent;
-            color: var(--ink-base);
-            border: none;
-            border-radius: 999px;
-            cursor: pointer;
-            font-size: 12px;
-            font-weight: 700;
-            transition: background 0.18s ease, color 0.18s ease;
-        }
-
-        .lang-button:hover,
-        .lang-button.active {
-            background: var(--ink-strong);
-            color: #ffffff;
-        }
-
-        .context-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-            gap: 12px;
-        }
-
-        .account-card,
-        .risk-card,
-        .permission-card,
-        .decision-bar {
-            border: 1px solid var(--line-faint);
-            border-radius: 8px;
-            background: #ffffff;
-        }
-
-        .account-card,
-        .risk-card {
-            padding: 15px;
-        }
-
-        .account-card {
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-        }
-
-        .account-avatar {
-            width: 42px;
-            height: 42px;
-            flex: 0 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 10px;
-            color: #ffffff;
-            background: var(--blue);
-            font-weight: 800;
-        }
-
-        .account-copy,
-        .risk-card {
-            min-width: 0;
-        }
-
-        .section-title {
-            display: block;
-            margin: 0 0 5px;
-            color: var(--ink-strong);
-            font-size: 0.98rem;
-            font-weight: 800;
-            line-height: 1.35;
-        }
-
-        .account-name {
-            margin: 0 0 4px;
-            color: var(--ink-strong);
-            font-weight: 800;
-            line-height: 1.35;
-            word-break: break-word;
-        }
-
-        .section-copy {
-            margin: 0;
-            color: var(--ink-base);
-            font-size: 0.88rem;
-            line-height: 1.58;
-        }
-
-        .risk-list {
-            margin: 8px 0 0;
-            padding-left: 18px;
-            color: var(--ink-base);
-            font-size: 0.84rem;
-            line-height: 1.55;
-        }
-
-        .risk-list li + li {
-            margin-top: 4px;
-        }
-
-        .permission-card {
-            padding: 16px;
-        }
-
-        .permission-head {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 12px;
-        }
-
-        .scope-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 10px;
-        }
-
-        .scope-item {
-            display: flex;
-            gap: 11px;
-            align-items: flex-start;
-            min-height: 112px;
-            padding: 12px;
-            border-radius: 8px;
-            background: var(--paper-muted);
-            border: 1px solid rgba(217, 203, 185, 0.62);
-        }
-
-        .scope-mark {
-            width: 7px;
-            min-height: 34px;
-            border-radius: 999px;
-            background: var(--brand);
-            flex: 0 0 auto;
-        }
-
-        .scope-body {
-            min-width: 0;
-        }
-
-        .scope-title {
-            margin: 0 0 5px;
-            color: var(--ink-strong);
-            font-size: 0.94rem;
-            line-height: 1.42;
-        }
-
-        .scope-description {
-            margin: 0;
-            color: var(--ink-base);
-            line-height: 1.55;
-            font-size: 0.84rem;
-        }
-
-        .scope-code {
-            margin-top: 8px;
-            display: inline-flex;
-            max-width: 100%;
-            padding: 3px 8px;
-            border-radius: 999px;
-            color: var(--ink-muted);
-            background: #fffaf5;
-            border: 1px solid var(--line-faint);
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-            font-size: 0.7rem;
-            line-height: 1.3;
-            word-break: break-all;
-        }
-
-        .decision-bar {
-            position: sticky;
-            bottom: 12px;
-            z-index: 2;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-            margin-top: auto;
-            padding: 13px 15px;
-            background: rgba(255, 253, 248, 0.94);
-            backdrop-filter: blur(14px);
-            box-shadow: 0 12px 30px rgba(47, 42, 37, 0.08);
         }
 
         .decision-copy {
             margin: 0;
             color: var(--ink-base);
-            font-size: 0.84rem;
+            font-size: 0.82rem;
             line-height: 1.5;
-            max-width: 42ch;
+            text-align: center;
         }
 
         .button-group {
             display: grid;
-            grid-template-columns: minmax(132px, 1fr) minmax(118px, 0.82fr);
-            gap: 10px;
-            width: min(100%, 320px);
-            flex: 0 0 auto;
+            gap: 9px;
         }
 
         .action-button {
-            min-height: 46px;
+            min-height: 48px;
             width: 100%;
             padding: 11px 15px;
             border-radius: 999px;
             font-size: 14px;
-            font-weight: 800;
+            font-weight: 900;
             cursor: pointer;
             transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
@@ -574,7 +592,7 @@
             border: none;
             background: var(--brand);
             color: #ffffff;
-            box-shadow: 0 12px 22px rgba(178, 64, 87, 0.2);
+            box-shadow: 0 12px 24px rgba(178, 64, 87, 0.2);
         }
 
         .action-button.primary:hover {
@@ -593,265 +611,151 @@
             background: #f8f4ed;
         }
 
-        @@media (max-width: 920px) {
-            body {
-                align-items: flex-start;
+        @@media (min-width: 720px) {
+            .button-group {
+                grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
             }
 
-            .auth-shell {
-                border-radius: 14px;
-            }
-
-            .auth-layout {
-                grid-template-columns: 1fr;
-                min-height: 0;
-            }
-
-            .target-panel {
-                border-right: none;
-                border-bottom: 1px solid var(--line-soft);
-                padding: 22px;
-                gap: 16px;
-            }
-
-            .technical-details {
-                margin-top: 0;
-            }
-
-            .content-panel {
-                padding: 22px;
+            .action-button.secondary {
+                order: 2;
             }
         }
 
-        @@media (max-width: 720px) {
+        @@media (max-width: 640px) {
             body {
-                padding: 0;
+                align-items: flex-start;
+                padding: 12px;
                 background: var(--paper-base);
             }
 
-            .auth-shell {
-                width: 100%;
-                min-height: 100vh;
-                border: none;
-                border-radius: 0;
-                box-shadow: none;
+            .card-body {
+                gap: 14px;
+                padding: 16px;
             }
 
-            .target-panel {
-                padding: 18px 18px 16px;
+            .topbar {
+                align-items: flex-start;
+                gap: 10px;
             }
 
-            .target-header {
-                grid-template-columns: 48px minmax(0, 1fr);
-                column-gap: 12px;
-                align-items: center;
-            }
-
-            .app-badge {
-                width: 48px;
-                height: 48px;
-                border-radius: 12px;
-                grid-row: span 3;
-            }
-
-            .target-title {
-                font-size: 1.42rem;
-            }
-
-            .target-description,
-            .target-hint {
+            .brand-name {
                 display: none;
             }
 
-            .trust-list {
-                grid-template-columns: 1fr;
-                gap: 8px;
+            .lang-button {
+                min-height: 26px;
+                padding: 4px 8px;
             }
 
-            .trust-item {
-                grid-template-columns: 82px minmax(0, 1fr);
-                align-items: center;
-                padding: 9px 10px;
+            .target-row {
+                align-items: flex-start;
             }
 
-            .trust-label {
-                font-size: 0.72rem;
+            .app-badge {
+                width: 44px;
+                height: 44px;
             }
 
-            .trust-value {
-                font-size: 0.88rem;
+            .target-description {
+                font-size: 0.9rem;
             }
 
-            .technical-details {
-                padding-top: 12px;
-            }
-
-            .content-panel {
-                gap: 14px;
-                padding: 18px 18px 22px;
-            }
-
-            .content-head {
-                flex-direction: column-reverse;
-                gap: 12px;
-            }
-
-            .heading-block h1 {
+            h1 {
                 font-size: 1.5rem;
             }
 
-            .heading-block p {
-                font-size: 0.92rem;
+            .summary-row {
+                grid-template-columns: 82px minmax(0, 1fr);
+                gap: 8px;
+                padding: 8px 10px;
             }
 
-            .lang-switcher {
-                align-self: flex-start;
-            }
-
-            .context-grid,
-            .scope-list {
-                grid-template-columns: 1fr;
-            }
-
-            .account-card,
-            .risk-card,
-            .permission-card {
-                padding: 13px;
-            }
-
-            .risk-list {
-                font-size: 0.82rem;
+            .permission-card,
+            .risk-card {
+                padding: 12px;
             }
 
             .permission-head {
                 align-items: center;
             }
 
-            .scope-item {
-                min-height: 0;
-                padding: 10px;
-            }
-
-            .scope-code {
-                margin-top: 6px;
-            }
-
-            .decision-bar {
-                bottom: 0;
-                margin: 2px -6px -8px;
-                padding: 12px;
-                border-radius: 12px;
-                flex-direction: column;
-                align-items: stretch;
-            }
-
             .decision-copy {
-                max-width: none;
-                font-size: 0.82rem;
-            }
-
-            .button-group {
-                width: 100%;
-                grid-template-columns: 1fr;
-            }
-
-            .action-button {
-                min-height: 48px;
+                text-align: left;
             }
         }
     </style>
 </head>
 <body>
-    <div class="auth-shell">
-        <div class="auth-layout">
-            <aside class="target-panel" aria-label="@targetTitle">
-                <div class="target-header">
-                    <div class="app-badge">
-                        @if (!string.IsNullOrWhiteSpace(Model.ClientLogo))
-                        {
-                            <img src="@Model.ClientLogo" alt="@displayClientName" />
-                        }
-                        else
-                        {
-                            <span>@clientInitial</span>
-                        }
-                    </div>
-
-                    <p class="eyebrow">@targetEyebrow</p>
-                    <h2 class="target-title display-serif">@displayClientName</h2>
-                    <p class="target-description">@applicationDescription</p>
-                    <p class="target-description target-hint">@targetHint</p>
-                </div>
-
-                <ul class="trust-list">
-                    <li class="trust-item">
-                        <span class="trust-label">@appLabel</span>
-                        <span class="trust-value">@displayClientName</span>
-                    </li>
-                    <li class="trust-item">
-                        <span class="trust-label">@developerLabel</span>
-                        <span class="trust-value">@developerName</span>
-                    </li>
-                    <li class="trust-item">
-                        <span class="trust-label">@redirectLabel</span>
-                        <span class="trust-value">@(string.IsNullOrWhiteSpace(redirectTarget) ? "-" : redirectTarget)</span>
-                    </li>
-                </ul>
-
-                <details class="technical-details">
-                    <summary>@technicalTitle</summary>
-                    <p class="technical-hint">@technicalHint</p>
-                    <div class="technical-grid">
-                        <div class="technical-row">
-                            <span class="technical-label">@clientIdLabel</span>
-                            <span class="technical-value">@Model.ClientId</span>
-                        </div>
-                        <div class="technical-row">
-                            <span class="technical-label">@redirectUriLabel</span>
-                            <span class="technical-value">@Model.RedirectUri</span>
-                        </div>
-                        <div class="technical-row">
-                            <span class="technical-label">@rawScopeLabel</span>
-                            <span class="technical-value">@Model.Scope</span>
+    <main class="consent-shell" aria-label="@pageEyebrow">
+        <section class="consent-card">
+            <div class="card-accent" aria-hidden="true"></div>
+            <div class="card-body">
+                <header class="topbar">
+                    <div class="brand-mark">
+                        <div class="brand-icon">R</div>
+                        <div class="brand-copy">
+                            <p class="eyebrow">@pageEyebrow</p>
+                            <p class="brand-name">Radish Auth</p>
                         </div>
                     </div>
-                </details>
-            </aside>
 
-            <main class="content-panel">
-                <div class="content-head">
-                    <div class="heading-block">
-                        <h1 class="display-serif">@Localizer["auth.consent.heading"]</h1>
-                        <p>@string.Format(Localizer["auth.consent.description"], displayClientName)</p>
-                    </div>
-
-                    <div class="lang-switcher">
+                    <div class="lang-switcher" aria-label="Language">
                         <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
                         <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
                     </div>
-                </div>
+                </header>
 
-                <div class="context-grid">
-                    <section class="account-card">
-                        <div class="account-avatar">@accountInitial</div>
-                        <div class="account-copy">
-                            <strong class="section-title">@accountTitle</strong>
-                            <p class="account-name">@loginIdentity</p>
-                            <p class="section-copy">@accountHint</p>
+                <section class="hero" aria-label="@targetLabel">
+                    <div class="target-row">
+                        <div class="app-badge">
+                            @if (!string.IsNullOrWhiteSpace(Model.ClientLogo))
+                            {
+                                <img src="@Model.ClientLogo" alt="@displayClientName" />
+                            }
+                            else
+                            {
+                                <span>@clientInitial</span>
+                            }
                         </div>
-                    </section>
 
-                    <section class="risk-card">
-                        <strong class="section-title">@riskTitle</strong>
-                        <ul class="risk-list">
-                            <li>@riskPoint1</li>
-                            <li>@riskPoint2</li>
-                            <li>@riskPoint3</li>
-                        </ul>
-                    </section>
-                </div>
+                        <div class="target-copy">
+                            <span class="target-label">@targetLabel</span>
+                            <h1 class="display-serif">@Localizer["auth.consent.heading"]</h1>
+                        </div>
+                    </div>
 
-                <section class="permission-card">
+                    <p class="target-description">@string.Format(Localizer["auth.consent.description"], displayClientName)</p>
+                    @if (hasClientDescription)
+                    {
+                        <p class="target-description">@applicationDescription</p>
+                    }
+                </section>
+
+                <section class="summary-card" aria-label="@appLabel">
+                    <div class="summary-row">
+                        <span class="summary-label">@appLabel</span>
+                        <span class="summary-value">@displayClientName</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">@developerLabel</span>
+                        <span class="summary-value">@developerName</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">@redirectLabel</span>
+                        <span class="summary-value">@(string.IsNullOrWhiteSpace(redirectTarget) ? "-" : redirectTarget)</span>
+                    </div>
+                </section>
+
+                <section class="account-card" aria-label="@accountTitle">
+                    <div class="account-avatar">@accountInitial</div>
+                    <div class="account-copy">
+                        <strong class="section-title">@accountTitle</strong>
+                        <p class="account-name">@loginIdentity</p>
+                        <p class="section-copy">@accountHint</p>
+                    </div>
+                </section>
+
+                <section class="permission-card" aria-label="@permissionTitle">
                     <div class="permission-head">
                         <div>
                             <strong class="section-title">@permissionTitle</strong>
@@ -866,9 +770,9 @@
                             var scopeInfo = DescribeScope(scope);
 
                             <li class="scope-item">
-                                <span class="scope-mark" aria-hidden="true"></span>
+                                <span class="scope-mark" aria-hidden="true">✓</span>
                                 <div class="scope-body">
-                                    <h3 class="scope-title">@scopeInfo.Title</h3>
+                                    <h2 class="scope-title">@scopeInfo.Title</h2>
                                     <p class="scope-description">@scopeInfo.Description</p>
                                     <span class="scope-code">@scopeCodeLabel: @scope</span>
                                 </div>
@@ -877,25 +781,52 @@
                     </ul>
                 </section>
 
-                <form method="post">
+                <section class="risk-card" aria-label="@riskTitle">
+                    <strong class="section-title">@riskTitle</strong>
+                    <ul class="risk-list">
+                        <li>@riskPoint1</li>
+                        <li>@riskPoint2</li>
+                    </ul>
+                </section>
+
+                <details class="technical-details">
+                    <summary>@technicalTitle</summary>
+                    <div class="technical-content">
+                        <p class="technical-hint">@technicalHint</p>
+                        <div class="technical-grid">
+                            <div class="technical-row">
+                                <span class="technical-label">@clientIdLabel</span>
+                                <span class="technical-value">@Model.ClientId</span>
+                            </div>
+                            <div class="technical-row">
+                                <span class="technical-label">@redirectUriLabel</span>
+                                <span class="technical-value">@Model.RedirectUri</span>
+                            </div>
+                            <div class="technical-row">
+                                <span class="technical-label">@rawScopeLabel</span>
+                                <span class="technical-value">@Model.Scope</span>
+                            </div>
+                        </div>
+                    </div>
+                </details>
+
+                <form class="decision-form" method="post">
                     <input type="hidden" name="client_id" value="@Model.ClientId" />
                     <input type="hidden" name="redirect_uri" value="@Model.RedirectUri" />
                     <input type="hidden" name="response_type" value="@Model.ResponseType" />
                     <input type="hidden" name="scope" value="@Model.Scope" />
                     <input type="hidden" name="state" value="@Model.State" />
 
-                    <div class="decision-bar">
-                        <p class="decision-copy">@decisionHint</p>
+                    <p class="decision-copy">@decisionHint</p>
 
-                        <div class="button-group">
-                            <button class="action-button primary" type="submit" name="decision" value="accept">@Localizer["auth.consent.allow"]</button>
-                            <button class="action-button secondary" type="submit" name="decision" value="deny">@Localizer["auth.consent.deny"]</button>
-                        </div>
+                    <div class="button-group">
+                        <button class="action-button primary" type="submit" name="decision" value="accept">@Localizer["auth.consent.allow"]</button>
+                        <button class="action-button secondary" type="submit" name="decision" value="deny">@Localizer["auth.consent.deny"]</button>
                     </div>
                 </form>
-            </main>
-        </div>
-    </div>
+            </div>
+        </section>
+    </main>
 
     <script>
         function switchLanguage(culture) {
