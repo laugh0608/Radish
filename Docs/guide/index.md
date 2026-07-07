@@ -35,6 +35,7 @@
 - [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - [鉴权与授权指南](/guide/authentication)
 - [认证服务实现说明](/guide/authentication-service)
+- [Auth 授权确认页信息层级说明](/guide/auth-consent-page)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
 - [Gateway 服务网关](/guide/gateway)
 - [数据库总览](/guide/database-overview)

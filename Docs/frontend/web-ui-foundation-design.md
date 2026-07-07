@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-28（Asia/Shanghai）：`F01 / F02` 的移动底栏已统一为 5 项以内浮动胶囊样式；Public 使用 `发现 / 论坛 / 文档 / 工作台 / 我的`，Private 使用 `工作台 / 资产 / 创作 / 消息 / 我的`，Console 业务源同步使用 `总览 / 治理 / 资产 / 权限 / 运维`。`/workbench` 固定作为正式 Web 功能地图，承接导航无法展示的功能入口。
+> 更新：2026-06-28（Asia/Shanghai）：`F01 / F02` 的移动底栏已统一为 5 项以内浮动胶囊样式；Public 使用 `发现 / 论坛 / 文档 / 工作台 / 我的`，Private 使用 `工作台 / 资产 / 创作 / 消息 / 我的`，Console 在 E7-A 后使用 `总览 / 治理 / 交易 / 权限 / 更多`。`/workbench` 固定作为正式 Web 功能地图，承接导航无法展示的功能入口。
 >
 > 更新：2026-06-28（Asia/Shanghai）：`P3-12-D8` 已完成 `radish.client` 首批代码对齐，新增共享 `WebShellHeader` / `WebStateSlot`，并把公开状态槽、公开内容宽度 token 和移动底部留白接入代码。
 >
@@ -92,6 +92,22 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - Console 的表格密度、治理工具条、权限 / 审计状态表达。
 - Public / Private / Console 的移动底栏导航项和激活语义可以不同，但必须沿用同一浮动胶囊样式。
 - 不同端点的 dominant region：公开阅读、私域复访、作者创作和 Console 治理可以有不同信息密度。
+
+## Auth 授权确认页
+
+`E7-D - Auth Consent Information Hierarchy` 是共享基座中的独立决策卡参考，不属于 public / private / console 业务页面族。
+
+实现侧的信息层级和不变协议契约见 [Auth 授权确认页信息层级说明](/guide/auth-consent-page)。
+
+授权确认页必须遵循这些结构：
+
+- 使用居中紧凑卡片，避免大面积说明面板占据首屏。
+- 首屏按请求应用、当前账号、返回位置、权限用途和敏感边界组织。
+- `Client ID`、完整回调地址和原始 scope 下沉到“技术信息”详情区域。
+- 确认 / 取消动作放在独立动作区，底部保留安全距离，移动端不与卡片边框重叠。
+- 页面文案使用“允许继续 / 取消授权”这类动作语言，不把协议字段作为主说明。
+
+该画板只约束 UI、文案和信息结构，不改变 OIDC 授权协议、登录回流、scope、隐藏字段、权限或后端运行时行为。
 
 ## 同步规则
 
