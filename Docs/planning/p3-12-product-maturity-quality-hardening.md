@@ -1,6 +1,6 @@
 # P3-12-E 正式产品成熟度与质量硬化
 
-> 状态：`P3-12-E6 原进入判断已被人工抽查推翻；P3-12-E 继续，下一步进入 P3-12-E7 正式 UI 与文案成熟度专项审计`
+> 状态：`P3-12-E6 原进入判断已被人工抽查推翻；P3-12-E7-A 至 E7-D 已完成首批成组治理，下一步做 E7 收束判断`
 >
 > 启动日期：2026-07-05（Asia/Shanghai）
 >
@@ -214,13 +214,15 @@ E 期结束前必须形成：
    - `E7-B Public 术语清理` 已完成代码实现与静态验证，记录见 [P3-12-E7-B Public 术语清理记录](/records/p3-12-e7-b-public-terminology-cleanup-2026-07-07)：公开页、Workbench、通知 / 消息、Docs 作者入口和公开 head 中的用户可见内部术语已替换为页面、个人页面、兼容入口、公开文档和表情回应等产品表达；本批未改路由契约、API、权限或后端行为。
    - `E7-C Public 信息密度首批` 已完成 Docs / Shop 代码实现、Pencil 对照画板和 Gateway PC / mobile 复核，记录见 [P3-12-E7-C Public 信息密度首批收口记录](/records/p3-12-e7-c-public-information-density-first-closure-2026-07-07)：公开 Docs 默认先展示可阅读文档并把完整目录降为可展开定位工具，公开 Shop 移除重复说明与浏览指南，优先展示商品、分类、价格、库存和购买入口；本批未改路由契约、API、权限、登录回流、购买提交或后端行为。
    - `E7-C Public 信息密度第二批` 已完成 Discover / Forum detail 代码实现和 Pencil 对照画板，记录见 [P3-12-E7-C Public 发现与论坛详情信息密度第二批收口记录](/records/p3-12-e7-c-public-discover-forum-density-closure-2026-07-07)：Discover 首屏提高社区内容流密度，Forum detail 将参与入口前移并降低阅读提示优先级；本批未改路由契约、API、权限、登录回流、评论 / 轻回应提交或后端行为。
+   - `E7-D Auth 授权页信息层级` 已完成 Pencil 参考画板、Razor 页面和文案层级治理，记录见 [P3-12-E7-D Auth 授权页信息层级收口记录](/records/p3-12-e7-d-auth-consent-information-hierarchy-2026-07-07)：授权页首屏优先展示授权目标、当前账号、权限含义、风险提示和确认 / 取消动作，`Client ID`、完整回调和原始 scope 下沉为次级技术信息；本批未改授权协议、登录回流、权限、接口、后端运行时行为或安全契约。
    - 以用户截图和后续真实页面复核为输入，建立 Public / Docs / Forum / Shop / Auth / Console 的 debug 内容、内部术语、信息密度、大卡片、移动排版和高频任务效率矩阵。
    - Console 作为 E7 第一顺位：必须读取 `Docs/frontend/design-sources/console-governance-workbench.pen` 和 [Console 治理工作台设计说明](/frontend/console-governance-workbench-design)，分别审计 PC 设计稿偏差与移动治理视图缺口。
    - E7 先给出阻断级缺口和成组修复顺位；后续代码治理必须按页面族推进，不再零散修单点文案。
 
 ## 下一批建议
 
-- 下一步进入 `E7-D` Auth 授权页信息层级：处理授权目标、账号状态、风险提示、确认动作和移动端确认效率。
+- 下一步进入 `E7` 收束判断：复核 E7-A 至 E7-D 是否仍有阻断级 UI / 文案 / 信息密度缺口；不能直接进入 `P3-12-F`。
+- 若 E7 收束判断命中新增缺口，再按页面族回拉 Public / Console / Auth；跨页面视觉或移动壳层行为改动先补小方案并等待确认。
 - Console E7-A 已闭合；后续仅在真实使用、新截图或自动化复核命中新增缺口时回拉。
 - E7 不新增接口、后端行为、权限、审计或运行时契约；只处理阶段口径、审计记录、低风险文案 / 状态修正和后续成组修复顺位。
 - 后续若 E7 命中必须改动接口、权限、错误模型、审计或运行时契约的缺口，先补小方案并确认边界。

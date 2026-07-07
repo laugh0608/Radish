@@ -9,43 +9,63 @@
 
     var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
     var displayClientName = string.IsNullOrWhiteSpace(Model.ClientName) ? Model.ClientId : Model.ClientName;
-    var accountTitle = isZh ? "当前授权身份" : "Signed in as";
-    var accountHint = isZh ? "你将使用这个账号完成本次授权确认。" : "This account will be used for the current authorization request.";
-    var permissionTitle = isZh ? "本次将授予以下权限" : "Permissions requested";
-    var permissionHint = isZh ? "仅授予当前请求所需的最小权限，你也可以现在取消。" : "Only the minimum permissions required for this request will be granted, and you can still cancel now.";
-    var developerLabel = isZh ? "开发方" : "Developer";
-    var redirectLabel = isZh ? "回调来源" : "Redirect host";
-    var defaultDescription = isZh ? "该应用将使用你的 Radish 账号完成受保护操作。" : "This app will use your Radish account to complete protected actions.";
-    var trustTitle = isZh ? "本次授权说明" : "What happens next";
-    var trustPoint1 = isZh ? "仅开放当前请求所需的最小权限。" : "Only the minimum requested permissions will be granted.";
-    var trustPoint2 = isZh ? "确认后会立即返回应用继续当前操作。" : "After confirming, you will return to the application to continue.";
-    var trustPoint3 = isZh ? "如果任何信息不符合预期，可以直接拒绝。" : "If anything looks unexpected, you can deny the request.";
-    var decisionHint = isZh ? "确认后将返回应用继续操作。" : "You will be returned to the application after confirming.";
-    var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? (isZh ? "当前登录账户" : "Current account") : User!.Identity!.Name!;
+    var applicationDescription = string.IsNullOrWhiteSpace(Model.ClientDescription)
+        ? (isZh ? "该应用将使用你的 Radish 账号继续当前受保护操作。" : "This app will use your Radish account to continue the protected action.")
+        : Model.ClientDescription;
+    var developerName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
+    var redirectTarget = string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost;
+    var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? (isZh ? "当前登录账号" : "Current account") : User!.Identity!.Name!;
     var clientInitial = string.IsNullOrWhiteSpace(displayClientName) ? "R" : displayClientName.Trim()[..1].ToUpperInvariant();
+    var accountInitial = string.IsNullOrWhiteSpace(loginIdentity) ? "R" : loginIdentity.Trim()[..1].ToUpperInvariant();
     var permissionCountLabel = isZh
         ? $"{Model.Scopes.Count} 项权限"
         : $"{Model.Scopes.Count} permission{(Model.Scopes.Count == 1 ? string.Empty : "s")}";
+
+    var targetEyebrow = isZh ? "Radish 安全授权" : "Radish secure authorization";
+    var targetTitle = isZh ? "授权目标" : "Authorization target";
+    var targetHint = isZh ? "确认应用、开发方和返回位置都符合预期。" : "Confirm the app, developer, and return destination before continuing.";
+    var appLabel = isZh ? "应用" : "Application";
+    var developerLabel = isZh ? "开发方" : "Developer";
+    var redirectLabel = isZh ? "返回到" : "Return to";
+    var accountTitle = isZh ? "当前账号" : "Current account";
+    var accountHint = isZh
+        ? "你将使用这个账号完成本次授权。若不是你的账号，请取消授权并切换账号。"
+        : "This account will be used for this authorization. If it is not yours, cancel and switch accounts.";
+    var permissionTitle = isZh ? "将允许的访问" : "Access you will allow";
+    var permissionHint = isZh
+        ? "这些权限来自当前应用请求。确认后只授予本次请求包含的范围。"
+        : "These permissions come from the current app request. Confirming grants only the scopes included in this request.";
+    var riskTitle = isZh ? "确认前检查" : "Check before continuing";
+    var riskPoint1 = isZh ? "应用名称、开发方和返回位置应与你当前打开的页面一致。" : "The app name, developer, and return destination should match the page you opened.";
+    var riskPoint2 = isZh ? "如果你不认识这个应用，或者账号不正确，请取消授权。" : "If you do not recognize this app or the account is wrong, cancel authorization.";
+    var riskPoint3 = isZh ? "取消不会退出 Radish，也不会修改你的账号状态。" : "Cancelling will not sign you out of Radish or change your account state.";
+    var decisionHint = isZh ? "允许后将返回应用继续操作；取消会返回应用并提示授权未完成。" : "Allowing returns you to the app to continue; cancelling returns with authorization incomplete.";
+    var technicalTitle = isZh ? "技术信息" : "Technical details";
+    var technicalHint = isZh ? "用于排障和安全核对，普通确认时无需优先阅读。" : "For troubleshooting and security review. You do not need these details for normal confirmation.";
+    var scopeCodeLabel = isZh ? "技术范围" : "Scope";
+    var clientIdLabel = isZh ? "Client ID" : "Client ID";
+    var redirectUriLabel = isZh ? "完整回调地址" : "Full redirect URI";
+    var rawScopeLabel = isZh ? "原始 scope" : "Raw scope";
 
     (string Title, string Description) DescribeScope(string scope)
     {
         return scope switch
         {
             "openid" => isZh
-                ? ("访问你的基础身份标识", "用于确认当前登录用户身份，并建立安全的登录会话。")
-                : ("Access your identity", "Used to confirm who you are and establish a secure sign-in session."),
+                ? ("确认你的登录身份", "用于确认当前登录用户，并建立安全的登录会话。")
+                : ("Confirm your signed-in identity", "Used to identify the current user and establish a secure sign-in session."),
             "profile" => isZh
-                ? ("读取你的基础资料", "用于获取昵称、头像等公开资料，完善应用内的身份展示。")
-                : ("Read your basic profile", "Used to read your public profile information such as display name and avatar."),
+                ? ("读取你的基础资料", "用于显示昵称、头像等基础资料，让应用知道当前是谁在操作。")
+                : ("Read your basic profile", "Used to display profile basics such as display name and avatar."),
             "offline_access" => isZh
-                ? ("保持持续登录", "用于在你离开页面后续签登录状态，减少重复登录。")
-                : ("Maintain your session", "Used to renew your session later without requiring a new sign-in every time."),
+                ? ("保持登录状态", "用于在短时间内续签登录状态，减少重复登录。")
+                : ("Maintain your session", "Used to renew your session later and reduce repeated sign-ins."),
             "radish-api" => isZh
-                ? ("访问 Radish API", "用于调用 Radish 官方接口，完成当前应用的业务请求。")
-                : ("Access Radish API", "Used to call Radish APIs required by this application."),
+                ? ("访问 Radish 服务", "用于调用 Radish 官方接口，继续当前应用中的受保护任务。")
+                : ("Access Radish services", "Used to call Radish APIs required by this application."),
             _ => isZh
-                ? ($"请求额外权限：{scope}", "这是该应用声明的附加访问范围，请在确认前检查是否符合预期。")
-                : ($"Additional scope: {scope}", "This is an extra scope declared by the application. Review it before continuing.")
+                ? ("附加访问权限", "这是该应用声明的额外访问范围，请确认它符合你的预期。")
+                : ("Additional access", "This is an extra scope declared by the app. Review it before continuing.")
         };
     }
 }
@@ -59,16 +79,20 @@
     <style>
         :root {
             color-scheme: light;
-            --paper-base: #fbfaf6;
-            --paper-panel: rgba(255, 253, 249, 0.95);
-            --paper-soft: #f7f2eb;
-            --line-soft: rgba(148, 163, 184, 0.2);
-            --line-strong: rgba(148, 163, 184, 0.32);
-            --ink-strong: #172033;
-            --ink-base: #475569;
-            --accent-primary: #9b5255;
-            --accent-secondary: #bd785d;
-            --accent-soft: #fff4ee;
+            --paper-base: #f4efe6;
+            --paper-surface: #fbf7f0;
+            --paper-panel: #fffdf8;
+            --paper-muted: #efe7db;
+            --line-soft: #d9cbb9;
+            --line-faint: rgba(217, 203, 185, 0.58);
+            --ink-strong: #2f2a25;
+            --ink-base: #6a5c4f;
+            --ink-muted: #8d7b6c;
+            --brand: #b24057;
+            --brand-deep: #8f3144;
+            --brand-soft: #ecd3db;
+            --jade: #4f9c83;
+            --blue: #435c74;
         }
 
         * {
@@ -76,156 +100,206 @@
         }
 
         body {
-            font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
             margin: 0;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: clamp(16px, 3vw, 32px);
-            background:
-                radial-gradient(circle at top, rgba(196, 120, 120, 0.14), transparent 32%),
-                linear-gradient(180deg, #fbf7f2 0%, #f8fafc 44%, #fcfcfb 100%);
+            padding: clamp(14px, 3vw, 30px);
+            background: linear-gradient(180deg, #f7f1e8 0%, #fbfaf6 54%, #f8fafc 100%);
             color: var(--ink-strong);
+            font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
         }
 
         .display-serif {
             font-family: Georgia, 'Times New Roman', 'Songti SC', 'STSong', serif;
-            letter-spacing: 0.02em;
+            letter-spacing: 0;
         }
 
         .auth-shell {
-            width: 100%;
-            max-width: 1160px;
-            background: var(--paper-panel);
-            border-radius: 24px;
-            border: 1px solid rgba(226, 232, 240, 0.72);
-            box-shadow: 0 28px 64px rgba(15, 23, 42, 0.12);
+            width: min(100%, 1120px);
+            border: 1px solid rgba(217, 203, 185, 0.82);
+            border-radius: 18px;
+            background: rgba(251, 247, 240, 0.96);
+            box-shadow: 0 24px 60px rgba(47, 42, 37, 0.13);
             overflow: hidden;
-            backdrop-filter: blur(10px);
         }
 
         .auth-layout {
             display: grid;
-            grid-template-columns: minmax(290px, 0.9fr) minmax(520px, 1.1fr);
+            grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+            min-height: 720px;
         }
 
-        .hero-panel {
-            position: relative;
-            padding: 34px 30px;
+        .target-panel {
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
             gap: 22px;
-            color: #fffaf7;
-            background:
-                linear-gradient(160deg, #c68886 0%, #b46b6b 46%, #9d5958 100%);
+            padding: 30px;
+            background: #efe7db;
+            border-right: 1px solid var(--line-soft);
         }
 
-        .hero-panel::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background:
-                radial-gradient(circle at 18% 18%, rgba(255,255,255,0.2), transparent 28%),
-                linear-gradient(180deg, rgba(255,255,255,0.08), transparent 40%);
-            pointer-events: none;
+        .target-header {
+            display: grid;
+            gap: 14px;
         }
 
-        .hero-header,
-        .hero-meta-grid {
-            position: relative;
-            z-index: 1;
-        }
-
-        .hero-badge {
-            width: 64px;
-            height: 64px;
-            border-radius: 18px;
-            background: rgba(255,255,255,0.18);
-            border: 1px solid rgba(255,255,255,0.22);
+        .app-badge {
+            width: 58px;
+            height: 58px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border-radius: 14px;
             overflow: hidden;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.18);
-            margin-bottom: 18px;
+            background: var(--brand);
+            color: #ffffff;
+            font-size: 1.35rem;
+            font-weight: 800;
+            box-shadow: 0 14px 30px rgba(178, 64, 87, 0.22);
         }
 
-        .hero-badge img {
+        .app-badge img {
             width: 100%;
             height: 100%;
             object-fit: cover;
         }
 
-        .hero-badge span {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: rgba(255,255,255,0.94);
-        }
-
-        .hero-eyebrow {
-            display: inline-flex;
-            align-items: center;
-            width: fit-content;
-            padding: 6px 12px;
-            border-radius: 999px;
-            margin: 0 0 14px;
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.18);
-            color: rgba(255,255,255,0.88);
+        .eyebrow {
+            margin: 0;
+            color: var(--brand);
             font-size: 0.76rem;
+            font-weight: 800;
             letter-spacing: 0.08em;
             text-transform: uppercase;
         }
 
-        .hero-title {
-            margin: 0 0 10px;
-            font-size: 1.96rem;
-            line-height: 1.14;
-            color: #ffffff;
-        }
-
-        .hero-description {
+        .target-title {
             margin: 0;
-            color: rgba(255,255,255,0.86);
-            font-size: 0.96rem;
-            line-height: 1.8;
+            color: var(--ink-strong);
+            font-size: 1.8rem;
+            line-height: 1.14;
         }
 
-        .hero-meta-grid {
+        .target-description {
+            margin: 0;
+            color: var(--ink-base);
+            line-height: 1.7;
+            font-size: 0.96rem;
+        }
+
+        .trust-list {
             display: grid;
             gap: 10px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
 
-        .hero-meta-item {
-            padding: 12px 14px;
-            border-radius: 14px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.14);
+        .trust-item {
+            display: grid;
+            gap: 5px;
+            padding: 11px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.74);
+            background: rgba(251, 247, 240, 0.72);
         }
 
-        .hero-meta-label {
-            display: block;
-            color: rgba(255,255,255,0.72);
-            font-size: 0.72rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
+        .trust-label {
+            color: var(--ink-muted);
+            font-size: 0.74rem;
+            font-weight: 700;
         }
 
-        .hero-meta-value {
-            margin-top: 4px;
-            color: #ffffff;
+        .trust-value {
+            color: var(--ink-strong);
             font-size: 0.95rem;
-            line-height: 1.55;
+            font-weight: 700;
+            line-height: 1.42;
             word-break: break-word;
         }
 
+        .technical-details {
+            margin-top: auto;
+            border-top: 1px solid rgba(217, 203, 185, 0.9);
+            padding-top: 16px;
+            color: var(--ink-base);
+        }
+
+        .technical-details summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            cursor: pointer;
+            color: var(--ink-strong);
+            font-weight: 800;
+            list-style: none;
+        }
+
+        .technical-details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .technical-details summary::after {
+            content: '+';
+            display: inline-flex;
+            width: 24px;
+            height: 24px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            background: #ffffff;
+            color: var(--brand);
+            border: 1px solid var(--line-soft);
+        }
+
+        .technical-details[open] summary::after {
+            content: '-';
+        }
+
+        .technical-hint {
+            margin: 8px 0 12px;
+            color: var(--ink-muted);
+            font-size: 0.82rem;
+            line-height: 1.55;
+        }
+
+        .technical-grid {
+            display: grid;
+            gap: 8px;
+        }
+
+        .technical-row {
+            display: grid;
+            gap: 4px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            background: #fbf7f0;
+            border: 1px solid rgba(217, 203, 185, 0.68);
+        }
+
+        .technical-label {
+            color: var(--ink-muted);
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .technical-value {
+            color: var(--ink-base);
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.75rem;
+            line-height: 1.42;
+            word-break: break-all;
+        }
+
         .content-panel {
-            padding: 30px 32px 24px;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(180deg, #fffefe 0%, #fffdf9 100%);
+            gap: 16px;
+            padding: 28px 30px 24px;
+            background: linear-gradient(180deg, #fffdf8 0%, #fffaf5 100%);
         }
 
         .content-head {
@@ -233,151 +307,163 @@
             align-items: flex-start;
             justify-content: space-between;
             gap: 18px;
-            margin-bottom: 16px;
+        }
+
+        .heading-block {
+            display: grid;
+            gap: 8px;
+            min-width: 0;
         }
 
         .heading-block h1 {
-            margin: 0 0 8px;
-            font-size: 1.78rem;
-            line-height: 1.12;
+            margin: 0;
             color: var(--ink-strong);
+            font-size: 1.72rem;
+            line-height: 1.18;
         }
 
         .heading-block p {
             margin: 0;
             color: var(--ink-base);
-            line-height: 1.7;
-            max-width: 42ch;
-        }
-
-        .lang-switcher {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px;
-            border-radius: 999px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            flex-shrink: 0;
-        }
-
-        .lang-button {
-            padding: 7px 12px;
-            background: transparent;
-            color: #475569;
-            border: none;
-            border-radius: 999px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s ease;
-        }
-
-        .lang-button:hover,
-        .lang-button.active {
-            background: #172033;
-            color: #fff;
-        }
-
-        .context-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-
-        .summary-card,
-        .trust-card,
-        .permission-card,
-        .decision-bar {
-            border-radius: 18px;
-            border: 1px solid #ebe4dc;
-            background: linear-gradient(180deg, #ffffff 0%, #fffaf5 100%);
-            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
-        }
-
-        .summary-card {
-            display: flex;
-            align-items: flex-start;
-            gap: 14px;
-            padding: 16px 18px;
-        }
-
-        .summary-avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.06rem;
-            font-weight: 700;
-            flex-shrink: 0;
-        }
-
-        .summary-copy strong,
-        .trust-card strong,
-        .permission-card strong {
-            display: block;
-            color: var(--ink-strong);
-            font-size: 0.98rem;
-        }
-
-        .summary-copy p,
-        .trust-card p,
-        .permission-card p {
-            margin: 4px 0 0;
-            color: var(--ink-base);
             line-height: 1.65;
-        }
-
-        .summary-copy small {
-            display: block;
-            margin-top: 6px;
-            color: #64748b;
-            font-size: 0.8rem;
-            line-height: 1.55;
-        }
-
-        .trust-card {
-            padding: 16px 18px;
-        }
-
-        .trust-card-head {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            margin-bottom: 10px;
+            max-width: 50ch;
         }
 
         .count-chip {
             display: inline-flex;
             align-items: center;
-            padding: 5px 10px;
+            justify-content: center;
+            width: fit-content;
+            min-height: 30px;
+            padding: 5px 11px;
             border-radius: 999px;
-            background: var(--accent-soft);
-            color: var(--accent-primary);
-            border: 1px solid #f0dfd3;
-            font-size: 0.78rem;
+            background: var(--brand-soft);
+            color: var(--brand);
+            border: 1px solid #e4c0ca;
+            font-size: 0.8rem;
+            font-weight: 800;
             white-space: nowrap;
         }
 
-        .trust-list {
+        .lang-switcher {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            border-radius: 999px;
+            background: #ffffff;
+            border: 1px solid var(--line-soft);
+            flex-shrink: 0;
+        }
+
+        .lang-button {
+            min-height: 32px;
+            padding: 6px 11px;
+            background: transparent;
+            color: var(--ink-base);
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            transition: background 0.18s ease, color 0.18s ease;
+        }
+
+        .lang-button:hover,
+        .lang-button.active {
+            background: var(--ink-strong);
+            color: #ffffff;
+        }
+
+        .context-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        .account-card,
+        .risk-card,
+        .permission-card,
+        .decision-bar {
+            border: 1px solid var(--line-faint);
+            border-radius: 8px;
+            background: #ffffff;
+        }
+
+        .account-card,
+        .risk-card {
+            padding: 15px;
+        }
+
+        .account-card {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .account-avatar {
+            width: 42px;
+            height: 42px;
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            color: #ffffff;
+            background: var(--blue);
+            font-weight: 800;
+        }
+
+        .account-copy,
+        .risk-card {
+            min-width: 0;
+        }
+
+        .section-title {
+            display: block;
+            margin: 0 0 5px;
+            color: var(--ink-strong);
+            font-size: 0.98rem;
+            font-weight: 800;
+            line-height: 1.35;
+        }
+
+        .account-name {
+            margin: 0 0 4px;
+            color: var(--ink-strong);
+            font-weight: 800;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .section-copy {
             margin: 0;
+            color: var(--ink-base);
+            font-size: 0.88rem;
+            line-height: 1.58;
+        }
+
+        .risk-list {
+            margin: 8px 0 0;
             padding-left: 18px;
             color: var(--ink-base);
-            display: grid;
-            gap: 6px;
+            font-size: 0.84rem;
             line-height: 1.55;
         }
 
-        .permission-card {
-            padding: 16px 18px;
+        .risk-list li + li {
+            margin-top: 4px;
         }
 
-        .section-head {
+        .permission-card {
+            padding: 16px;
+        }
+
+        .permission-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
             margin-bottom: 12px;
         }
 
@@ -392,27 +478,21 @@
 
         .scope-item {
             display: flex;
-            gap: 12px;
+            gap: 11px;
             align-items: flex-start;
-            min-height: 100%;
-            padding: 14px;
-            border-radius: 16px;
-            background: #ffffff;
-            border: 1px solid #ece4da;
+            min-height: 112px;
+            padding: 12px;
+            border-radius: 8px;
+            background: var(--paper-muted);
+            border: 1px solid rgba(217, 203, 185, 0.62);
         }
 
-        .scope-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 12px;
-            background: var(--accent-soft);
-            color: var(--accent-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.92rem;
-            font-weight: 700;
-            flex-shrink: 0;
+        .scope-mark {
+            width: 7px;
+            min-height: 34px;
+            border-radius: 999px;
+            background: var(--brand);
+            flex: 0 0 auto;
         }
 
         .scope-body {
@@ -420,110 +500,208 @@
         }
 
         .scope-title {
-            margin: 0 0 4px;
+            margin: 0 0 5px;
             color: var(--ink-strong);
             font-size: 0.94rem;
-            line-height: 1.45;
+            line-height: 1.42;
         }
 
         .scope-description {
             margin: 0;
             color: var(--ink-base);
-            line-height: 1.6;
-            font-size: 0.88rem;
+            line-height: 1.55;
+            font-size: 0.84rem;
         }
 
         .scope-code {
             margin-top: 8px;
             display: inline-flex;
-            align-items: center;
-            padding: 4px 9px;
+            max-width: 100%;
+            padding: 3px 8px;
             border-radius: 999px;
-            background: var(--paper-soft);
-            color: #5b6575;
-            font-size: 0.76rem;
-            border: 1px solid #ece4da;
+            color: var(--ink-muted);
+            background: #fffaf5;
+            border: 1px solid var(--line-faint);
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+            font-size: 0.7rem;
+            line-height: 1.3;
             word-break: break-all;
         }
 
         .decision-bar {
             position: sticky;
             bottom: 12px;
-            margin-top: 18px;
-            padding: 14px 16px;
+            z-index: 2;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 14px;
-            background: rgba(255, 252, 248, 0.92);
-            backdrop-filter: blur(12px);
+            gap: 16px;
+            margin-top: auto;
+            padding: 13px 15px;
+            background: rgba(255, 253, 248, 0.94);
+            backdrop-filter: blur(14px);
+            box-shadow: 0 12px 30px rgba(47, 42, 37, 0.08);
         }
 
         .decision-copy {
             margin: 0;
-            color: #64748b;
+            color: var(--ink-base);
             font-size: 0.84rem;
-            line-height: 1.55;
-            max-width: 30ch;
+            line-height: 1.5;
+            max-width: 42ch;
         }
 
         .button-group {
-            width: 100%;
-            max-width: 360px;
-            margin-left: auto;
             display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns: minmax(132px, 1fr) minmax(118px, 0.82fr);
             gap: 10px;
+            width: min(100%, 320px);
+            flex: 0 0 auto;
         }
 
         .action-button {
-            width: 100%;
             min-height: 46px;
-            padding: 12px 16px;
-            border-radius: 14px;
+            width: 100%;
+            padding: 11px 15px;
+            border-radius: 999px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 800;
             cursor: pointer;
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
         }
 
         .action-button.primary {
             border: none;
-            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            background: var(--brand);
             color: #ffffff;
-            box-shadow: 0 14px 24px rgba(155, 82, 85, 0.18);
+            box-shadow: 0 12px 22px rgba(178, 64, 87, 0.2);
         }
 
         .action-button.primary:hover {
             transform: translateY(-1px);
-            box-shadow: 0 18px 28px rgba(155, 82, 85, 0.22);
+            background: var(--brand-deep);
+            box-shadow: 0 16px 26px rgba(178, 64, 87, 0.25);
         }
 
         .action-button.secondary {
-            border: 1px solid #d6dde7;
+            border: 1px solid var(--line-soft);
             background: #ffffff;
             color: var(--ink-strong);
         }
 
         .action-button.secondary:hover {
-            background: #f8fafc;
+            background: #f8f4ed;
         }
 
-        @@media (max-width: 980px) {
+        @@media (max-width: 920px) {
+            body {
+                align-items: flex-start;
+            }
+
+            .auth-shell {
+                border-radius: 14px;
+            }
+
             .auth-layout {
                 grid-template-columns: 1fr;
+                min-height: 0;
             }
 
-            .hero-panel,
+            .target-panel {
+                border-right: none;
+                border-bottom: 1px solid var(--line-soft);
+                padding: 22px;
+                gap: 16px;
+            }
+
+            .technical-details {
+                margin-top: 0;
+            }
+
             .content-panel {
-                padding: 28px 24px;
+                padding: 22px;
             }
         }
 
-        @@media (max-width: 760px) {
+        @@media (max-width: 720px) {
+            body {
+                padding: 0;
+                background: var(--paper-base);
+            }
+
+            .auth-shell {
+                width: 100%;
+                min-height: 100vh;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .target-panel {
+                padding: 18px 18px 16px;
+            }
+
+            .target-header {
+                grid-template-columns: 48px minmax(0, 1fr);
+                column-gap: 12px;
+                align-items: center;
+            }
+
+            .app-badge {
+                width: 48px;
+                height: 48px;
+                border-radius: 12px;
+                grid-row: span 3;
+            }
+
+            .target-title {
+                font-size: 1.42rem;
+            }
+
+            .target-description,
+            .target-hint {
+                display: none;
+            }
+
+            .trust-list {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .trust-item {
+                grid-template-columns: 82px minmax(0, 1fr);
+                align-items: center;
+                padding: 9px 10px;
+            }
+
+            .trust-label {
+                font-size: 0.72rem;
+            }
+
+            .trust-value {
+                font-size: 0.88rem;
+            }
+
+            .technical-details {
+                padding-top: 12px;
+            }
+
+            .content-panel {
+                gap: 14px;
+                padding: 18px 18px 22px;
+            }
+
             .content-head {
                 flex-direction: column-reverse;
-                align-items: stretch;
+                gap: 12px;
+            }
+
+            .heading-block h1 {
+                font-size: 1.5rem;
+            }
+
+            .heading-block p {
+                font-size: 0.92rem;
             }
 
             .lang-switcher {
@@ -531,35 +709,54 @@
             }
 
             .context-grid,
-            .scope-list,
-            .button-group {
+            .scope-list {
                 grid-template-columns: 1fr;
             }
 
+            .account-card,
+            .risk-card,
+            .permission-card {
+                padding: 13px;
+            }
+
+            .risk-list {
+                font-size: 0.82rem;
+            }
+
+            .permission-head {
+                align-items: center;
+            }
+
+            .scope-item {
+                min-height: 0;
+                padding: 10px;
+            }
+
+            .scope-code {
+                margin-top: 6px;
+            }
+
             .decision-bar {
-                position: static;
-                align-items: stretch;
+                bottom: 0;
+                margin: 2px -6px -8px;
+                padding: 12px;
+                border-radius: 12px;
                 flex-direction: column;
+                align-items: stretch;
             }
 
             .decision-copy {
                 max-width: none;
+                font-size: 0.82rem;
             }
 
             .button-group {
-                max-width: none;
-                margin-left: 0;
-            }
-        }
-
-        @@media (max-width: 640px) {
-            body {
-                align-items: flex-start;
+                width: 100%;
+                grid-template-columns: 1fr;
             }
 
-            .hero-title,
-            .heading-block h1 {
-                font-size: 1.58rem;
+            .action-button {
+                min-height: 48px;
             }
         }
     </style>
@@ -567,9 +764,9 @@
 <body>
     <div class="auth-shell">
         <div class="auth-layout">
-            <aside class="hero-panel">
-                <div class="hero-header">
-                    <div class="hero-badge">
+            <aside class="target-panel" aria-label="@targetTitle">
+                <div class="target-header">
+                    <div class="app-badge">
                         @if (!string.IsNullOrWhiteSpace(Model.ClientLogo))
                         {
                             <img src="@Model.ClientLogo" alt="@displayClientName" />
@@ -580,27 +777,45 @@
                         }
                     </div>
 
-                    <p class="hero-eyebrow">Radish Auth</p>
-                    <h2 class="hero-title display-serif">@displayClientName</h2>
-                    <p class="hero-description">@(string.IsNullOrWhiteSpace(Model.ClientDescription) ? defaultDescription : Model.ClientDescription)</p>
+                    <p class="eyebrow">@targetEyebrow</p>
+                    <h2 class="target-title display-serif">@displayClientName</h2>
+                    <p class="target-description">@applicationDescription</p>
+                    <p class="target-description target-hint">@targetHint</p>
                 </div>
 
-                <div class="hero-meta-grid">
-                    <div class="hero-meta-item">
-                        <span class="hero-meta-label">Client ID</span>
-                        <div class="hero-meta-value">@Model.ClientId</div>
-                    </div>
+                <ul class="trust-list">
+                    <li class="trust-item">
+                        <span class="trust-label">@appLabel</span>
+                        <span class="trust-value">@displayClientName</span>
+                    </li>
+                    <li class="trust-item">
+                        <span class="trust-label">@developerLabel</span>
+                        <span class="trust-value">@developerName</span>
+                    </li>
+                    <li class="trust-item">
+                        <span class="trust-label">@redirectLabel</span>
+                        <span class="trust-value">@(string.IsNullOrWhiteSpace(redirectTarget) ? "-" : redirectTarget)</span>
+                    </li>
+                </ul>
 
-                    <div class="hero-meta-item">
-                        <span class="hero-meta-label">@developerLabel</span>
-                        <div class="hero-meta-value">@(string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName)</div>
+                <details class="technical-details">
+                    <summary>@technicalTitle</summary>
+                    <p class="technical-hint">@technicalHint</p>
+                    <div class="technical-grid">
+                        <div class="technical-row">
+                            <span class="technical-label">@clientIdLabel</span>
+                            <span class="technical-value">@Model.ClientId</span>
+                        </div>
+                        <div class="technical-row">
+                            <span class="technical-label">@redirectUriLabel</span>
+                            <span class="technical-value">@Model.RedirectUri</span>
+                        </div>
+                        <div class="technical-row">
+                            <span class="technical-label">@rawScopeLabel</span>
+                            <span class="technical-value">@Model.Scope</span>
+                        </div>
                     </div>
-
-                    <div class="hero-meta-item">
-                        <span class="hero-meta-label">@redirectLabel</span>
-                        <div class="hero-meta-value">@(string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost)</div>
-                    </div>
-                </div>
+                </details>
             </aside>
 
             <main class="content-panel">
@@ -617,46 +832,45 @@
                 </div>
 
                 <div class="context-grid">
-                    <section class="summary-card">
-                        <div class="summary-avatar">@loginIdentity.Trim()[..1].ToUpperInvariant()</div>
-                        <div class="summary-copy">
-                            <strong>@accountTitle</strong>
-                            <p>@loginIdentity</p>
-                            <small>@accountHint</small>
+                    <section class="account-card">
+                        <div class="account-avatar">@accountInitial</div>
+                        <div class="account-copy">
+                            <strong class="section-title">@accountTitle</strong>
+                            <p class="account-name">@loginIdentity</p>
+                            <p class="section-copy">@accountHint</p>
                         </div>
                     </section>
 
-                    <section class="trust-card">
-                        <div class="trust-card-head">
-                            <strong>@trustTitle</strong>
-                            <span class="count-chip">@permissionCountLabel</span>
-                        </div>
-                        <ul class="trust-list">
-                            <li>@trustPoint1</li>
-                            <li>@trustPoint2</li>
-                            <li>@trustPoint3</li>
+                    <section class="risk-card">
+                        <strong class="section-title">@riskTitle</strong>
+                        <ul class="risk-list">
+                            <li>@riskPoint1</li>
+                            <li>@riskPoint2</li>
+                            <li>@riskPoint3</li>
                         </ul>
                     </section>
                 </div>
 
                 <section class="permission-card">
-                    <div class="section-head">
-                        <strong>@permissionTitle</strong>
-                        <p>@permissionHint</p>
+                    <div class="permission-head">
+                        <div>
+                            <strong class="section-title">@permissionTitle</strong>
+                            <p class="section-copy">@permissionHint</p>
+                        </div>
+                        <span class="count-chip">@permissionCountLabel</span>
                     </div>
 
                     <ul class="scope-list">
                         @foreach (var scope in Model.Scopes)
                         {
                             var scopeInfo = DescribeScope(scope);
-                            var scopeInitial = scopeInfo.Title.Trim()[..1].ToUpperInvariant();
 
                             <li class="scope-item">
-                                <div class="scope-icon">@scopeInitial</div>
+                                <span class="scope-mark" aria-hidden="true"></span>
                                 <div class="scope-body">
                                     <h3 class="scope-title">@scopeInfo.Title</h3>
                                     <p class="scope-description">@scopeInfo.Description</p>
-                                    <span class="scope-code">@scope</span>
+                                    <span class="scope-code">@scopeCodeLabel: @scope</span>
                                 </div>
                             </li>
                         }

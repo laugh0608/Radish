@@ -49,10 +49,10 @@
     <value>Authorization consent</value>
   </data>
   <data name="auth.consent.heading" xml:space="preserve">
-    <value>Authorize this application to access your Radish account</value>
+    <value>Confirm access to your Radish account</value>
   </data>
   <data name="auth.consent.description" xml:space="preserve">
-    <value>The application {0} is requesting the following permissions:</value>
+    <value>{0} wants to continue with your current account. Review the account, access, and return destination.</value>
   </data>
   <data name="auth.consent.client" xml:space="preserve">
     <value>Application:</value>
@@ -61,9 +61,9 @@
     <value>Requested permissions:</value>
   </data>
   <data name="auth.consent.allow" xml:space="preserve">
-    <value>Allow</value>
+    <value>Allow and continue</value>
   </data>
   <data name="auth.consent.deny" xml:space="preserve">
-    <value>Deny</value>
+    <value>Cancel authorization</value>
   </data>
 </root>

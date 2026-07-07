@@ -70,10 +70,10 @@
     <value>授权确认</value>
   </data>
   <data name="auth.consent.heading" xml:space="preserve">
-    <value>授权第三方访问你的 Radish 账号</value>
+    <value>确认是否允许访问你的 Radish 账号</value>
   </data>
   <data name="auth.consent.description" xml:space="preserve">
-    <value>应用 {0} 请求访问以下权限：</value>
+    <value>{0} 正在请求使用当前账号继续操作，请确认账号、权限和返回位置。</value>
   </data>
   <data name="auth.consent.client" xml:space="preserve">
     <value>应用：</value>
@@ -82,9 +82,9 @@
     <value>将被授予的权限：</value>
   </data>
   <data name="auth.consent.allow" xml:space="preserve">
-    <value>同意</value>
+    <value>允许继续</value>
   </data>
   <data name="auth.consent.deny" xml:space="preserve">
-    <value>拒绝</value>
+    <value>取消授权</value>
   </data>
 </root>
