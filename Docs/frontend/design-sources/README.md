@@ -13,7 +13,7 @@
 
 当前源文件：
 
-- `web-ui-foundation.pen`：Web UI 共享基座设计端点，当前包含 `F01-F03` 共享样板画板和 `E7-D - Auth Consent Information Hierarchy` 授权确认具体决策卡参考画板，覆盖 public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab、client 公共壳层组件契约、Auth 授权页信息层级和跨设计源同步规则；移动底栏统一为 5 项浮动胶囊样式。
+- `web-ui-foundation.pen`：Web UI 共享基座设计端点，当前包含 `F01-F03` 共享样板画板和 `E7-D - Auth Consent Information Hierarchy` 授权确认具体决策卡参考画板，覆盖 public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab、client 公共壳层组件契约、Auth 授权页信息层级、动作区安全距离和跨设计源同步规则；移动底栏统一为 5 项浮动胶囊样式。
 - `public-web-unified-experience.pen`：公开 Web 统一体验设计端点，当前包含 `P01-P16` 编号画板，已从路由矩阵重构并二次强化为真实公开社区 App 页面族，覆盖公开首页、发现流、论坛列表 / 详情、评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页与移动公开任务流；移动底栏固定为 `发现 / 论坛 / 文档 / 工作台 / 我的`，更多公开能力由 `/workbench` 功能地图承接。
 - `private-web-workflows.pen`：私域与作者态 Web 工作流设计端点，当前包含 `P01-P30` 编号画板，覆盖 `/workbench`、`/me` 系列、资产流水、订单、背包、通知、消息、圈子、宠物、论坛作者态、Docs 作者态和移动端 10 个单任务页面。
 - `console-governance-workbench.pen`：Console 治理工作台与后台视觉基座设计端点，当前包含 `P00-P18` 编号画板，已按 `web-ui-foundation.pen` 共享基座重构并扩展，覆盖公共 Console 壳层、浅色图标侧栏、内容审核、经验台账、治理调度、表格 CRUD、设置策略、商业运营、文档治理、权限矩阵、运维任务和移动端 Console 任务流参考；移动底栏固定为 `总览 / 治理 / 资产 / 权限 / 运维`。
