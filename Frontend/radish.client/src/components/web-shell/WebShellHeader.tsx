@@ -206,7 +206,7 @@ export function WebShellHeader({
             </span>
           </button>
 
-          <nav className={styles.navRail} aria-label={variant === 'private' ? '私域导航' : '公开导航'}>
+          <nav className={styles.navRail} aria-label={variant === 'private' ? '个人导航' : '公开导航'}>
             {resolvedNavItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -232,7 +232,7 @@ export function WebShellHeader({
         </div>
       </header>
 
-      <nav className={styles.mobileTabBar} aria-label={variant === 'private' ? '私域移动导航' : '公开移动导航'} data-web-mobile-nav="true">
+      <nav className={styles.mobileTabBar} aria-label={variant === 'private' ? '个人移动导航' : '公开移动导航'} data-web-mobile-nav="true">
         {resolvedMobileNavItems.map((item) => (
           <WebShellLink
             key={item.key}

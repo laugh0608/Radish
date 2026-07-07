@@ -12,7 +12,7 @@ import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 
 export const publicSiteName = 'Radish';
 export const publicDefaultOrigin = 'https://radishx.com';
-export const publicDefaultDescription = 'Radish 是面向公开阅读、社区互动与桌面工作台的现代社区平台。';
+export const publicDefaultDescription = 'Radish 是面向公开阅读、社区互动与个人工作台的现代社区平台。';
 
 export type PublicOpenGraphType = 'website' | 'article' | 'profile' | 'product';
 

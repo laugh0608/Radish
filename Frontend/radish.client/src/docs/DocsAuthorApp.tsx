@@ -713,7 +713,7 @@ export function DocsAuthorApp() {
         activeKey="author"
         brandMark="文"
         brandName="文档作者台"
-        brandSubline="正式 Web 文档写作入口"
+        brandSubline="文档写作入口"
         onBrandClick={() => navigateToRoute(createDefaultDocsAuthorRoute())}
         onNavigateToDiscover={() => { window.location.href = buildPublicDocsPath({ kind: 'list' }); }}
         discoverHref={buildPublicDocsPath({ kind: 'list' })}
@@ -954,7 +954,7 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
           <p className={styles.railKicker}>任务边界</p>
           <ul className={styles.railRuleList}>
             <li>文档树、文档表格和右侧版本证据在作者页内完成。</li>
-            <li>公开阅读继续使用正式 Docs 路由。</li>
+            <li>公开阅读继续使用公开文档页面。</li>
             <li>发布状态、撤回和治理动作不在作者入口扩展。</li>
           </ul>
         </section>
