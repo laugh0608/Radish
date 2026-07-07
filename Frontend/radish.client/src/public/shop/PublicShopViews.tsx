@@ -10,21 +10,6 @@ import styles from './PublicShopApp.module.css';
 
 type PublicShopTranslate = (key: string, options?: Record<string, unknown>) => string;
 
-const publicBrowseGuideItems = [
-  {
-    labelKey: 'shop.public.guideBrowseLabel',
-    valueKey: 'shop.public.guideBrowseValue',
-  },
-  {
-    labelKey: 'shop.public.guideNextLabel',
-    valueKey: 'shop.public.guideNextValue',
-  },
-  {
-    labelKey: 'shop.public.guideBoundaryLabel',
-    valueKey: 'shop.public.guideBoundaryValue',
-  },
-] as const;
-
 const publicDetailGuideItems = [
   {
     labelKey: 'shop.public.detailGuideFocusLabel',
@@ -356,13 +341,6 @@ function PublicShopBrowseRail({
 
   return (
     <aside className={styles.shopRail} aria-label={t('shop.public.railLabel')}>
-      <PublicReadingGuide
-        label={t('shop.public.guideKicker')}
-        title={t('shop.public.guideTitle')}
-        description={t('shop.public.guideDescription')}
-        items={toGuideItems(t, publicBrowseGuideItems)}
-      />
-
       <section className={styles.railPanel}>
         <div className={styles.railPanelHeader}>
           <span className={styles.railIcon}>
@@ -449,7 +427,6 @@ export function PublicShopHomeView({
       <div className={styles.shopMain}>
         <section className={styles.shopToolbar}>
           <div>
-            <p className={styles.kicker}>{t('shop.public.guideKicker')}</p>
             <h2 className={styles.shopToolbarTitle}>{t('shop.public.homeToolbarTitle')}</h2>
             <p className={styles.shopToolbarDescription}>{t('shop.public.homeToolbarDescription')}</p>
           </div>
@@ -571,7 +548,6 @@ export function PublicShopProductsView({
       <div className={styles.shopMain}>
         <section className={styles.shopToolbar}>
           <div>
-            <p className={styles.kicker}>{t('shop.public.guideKicker')}</p>
             <h2 className={styles.shopToolbarTitle}>{t('shop.public.productsToolbarTitle')}</h2>
             <p className={styles.shopToolbarDescription}>{t('shop.public.productsToolbarDescription')}</p>
           </div>

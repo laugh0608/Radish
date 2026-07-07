@@ -180,6 +180,7 @@
   - `P3-12-E7` 首批 Console / Public 静态差距审计已完成：通过 Pencil MCP 读取 `console-governance-workbench.pen` 并对照 `radish.console` / `radish.client` / Auth 源码，确认 `/console/` Dashboard 未对齐 `P04`、Console 移动壳层未落到 `P14-P18`、Public 术语簇和 Auth 授权页技术信息层级仍阻断进入 `P3-12-F`；记录见 [P3-12-E7 Console / Public UI 与文案成熟度首批差距审计](/records/p3-12-e7-console-public-ui-copy-gap-audit-2026-07-07)。
   - `P3-12-E7-A` Console 正式后台密度与移动任务流已完成代码实现与 Gateway PC / mobile 复核，记录见 [P3-12-E7-A Console 正式后台密度与移动任务流方案](/records/p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07)；移动端采用 `总览 / 治理 / 交易 / 权限 / 更多` 高频底栏，并由 `总览` 功能面板与 `更多` 全量入口承接完整 Console 分类；`radish.console` 构建、repo hygiene、`git diff --check`、Gateway `1440x900` 与 `390x844` 视图均已通过。
   - `P3-12-E7-B` Public 术语清理已完成代码实现与静态验证，记录见 [P3-12-E7-B Public 术语清理记录](/records/p3-12-e7-b-public-terminology-cleanup-2026-07-07)；公开页、Workbench、通知 / 消息、Docs 作者入口和公开 head 中的 `公开壳层 / 正式 Web 私域路由 / 私域路由 / 桌面工作台 / 公开 docs / reaction` 等用户可见内部术语已替换为页面、个人页面、兼容入口、公开文档和表情回应等产品表达；`radish.client` 构建、repo hygiene、`git diff --check` 与目标术语扫描均已通过。
+  - `P3-12-E7-C` Public 信息密度首批已完成 Docs / Shop 代码实现、Pencil 对照画板和 Gateway PC / mobile 复核，记录见 [P3-12-E7-C Public 信息密度首批收口记录](/records/p3-12-e7-c-public-information-density-first-closure-2026-07-07)；公开 Docs 默认先展示可阅读文档并把完整目录降为可展开定位工具，公开 Shop 移除重复说明与浏览指南，优先展示商品、分类、价格、库存和购买入口；本批未改 API、权限、登录回流、购买提交或后端行为。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -195,8 +196,7 @@
 
 ## 下一步事项（2026-07-08 起）
 - 继续 `P3-12-E7 正式 UI 与文案成熟度专项审计`；当前不能进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
-- 第一顺位进入 `E7-C Public / Docs / Forum / Shop 信息密度`：集中处理大卡片、重复说明、首屏信息弱和移动端高频任务效率问题。
-- Console E7-A 已闭合；后续仅在真实使用、新截图或自动化复核命中新增缺口时回拉。
+- 第一顺位继续 `E7-C` 第二批：处理 Forum detail / Discover 的信息密度、讨论区层级、重复说明和移动端高频任务效率问题。
 - 后续再进入 `E7-D` Auth 授权页信息层级；跨页面视觉或移动壳层行为改动先补小方案并等待确认。
 - 若 E7 命中接口、错误模型、后端日志、权限、审计或运行时契约缺口，先补小方案并等待确认后再改代码。
 - 如需真实 Gateway smoke，必须由用户在当轮明确说明前后端已启动；复核口径按 [浏览器 Smoke 指南](/guide/browser-smoke) 同时覆盖 PC 与移动视图。

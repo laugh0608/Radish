@@ -62,6 +62,8 @@ interface PublicDocsTreeRow {
   childCount: number;
 }
 
+const PUBLIC_DOCS_DIRECTORY_PREVIEW_LIMIT = 36;
+
 interface PublicDocsCollectionState {
   tree: WikiDocumentTreeNodeVo[];
   documents: WikiDocumentVo[];
@@ -615,6 +617,7 @@ const PublicDocsList = ({
   onOpenDocument
 }: PublicDocsListProps) => {
   const { t } = useTranslation();
+  const [directoryExpanded, setDirectoryExpanded] = useState(false);
   const {
     tree,
     documents,
@@ -633,6 +636,8 @@ const PublicDocsList = ({
   });
 
   const treeRows = useMemo(() => flattenPublicDocsTree(tree), [tree]);
+  const visibleTreeRows = directoryExpanded ? treeRows : treeRows.slice(0, PUBLIC_DOCS_DIRECTORY_PREVIEW_LIMIT);
+  const isDirectoryTruncated = treeRows.length > visibleTreeRows.length;
   const listCards = useMemo(() => documents.slice(0, 12), [documents]);
   const searchHref = buildPublicDocsPath(createDefaultDocsSearchRoute());
   const authorHref = buildDocsAuthorPath({ kind: 'mine' });
@@ -717,48 +722,6 @@ const PublicDocsList = ({
               <section className={styles.panel}>
                 <div className={styles.panelHeader}>
                   <div>
-                    <h2 className={styles.panelTitle}>{t('wiki.public.directoryTitle')}</h2>
-                    <p className={styles.panelHint}>{t('wiki.public.directoryHint')}</p>
-                  </div>
-                  <span className={styles.panelStat}>{t('wiki.public.directoryCount', { count: treeRows.length })}</span>
-                </div>
-
-                {treeRows.length === 0 ? (
-                  <PublicStatusCard
-                    tone="empty"
-                    compact={true}
-                    title={t('wiki.public.directoryEmptyTitle')}
-                    description={t('wiki.public.directoryEmptyDescription')}
-                  />
-                ) : (
-                  <div className={styles.directoryList}>
-                    {treeRows.map((row) => {
-                      const href = buildPublicDocsPath({ kind: 'detail', slug: row.slug });
-
-                      return (
-                        <a
-                          key={row.id}
-                          className={styles.directoryItem}
-                          href={href}
-                          onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(row.slug))}
-                        >
-                          <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
-                            {row.depth > 0 ? '└' : '•'}
-                          </span>
-                          <span className={styles.directoryTitle}>{row.title}</span>
-                          {row.childCount > 0 && (
-                            <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
-                          )}
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
-              <section className={styles.panel}>
-                <div className={styles.panelHeader}>
-                  <div>
                     <h2 className={styles.panelTitle}>{t('wiki.public.latestTitle')}</h2>
                     <p className={styles.panelHint}>{t('wiki.public.latestHint')}</p>
                   </div>
@@ -800,6 +763,68 @@ const PublicDocsList = ({
                       );
                     })}
                   </div>
+                )}
+              </section>
+
+              <section className={`${styles.panel} ${styles.directoryPanel}`}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <h2 className={styles.panelTitle}>{t('wiki.public.directoryTitle')}</h2>
+                    <p className={styles.panelHint}>{t('wiki.public.directoryHint')}</p>
+                  </div>
+                  <span className={styles.panelStat}>
+                    {directoryExpanded
+                      ? t('wiki.public.directoryCount', { count: treeRows.length })
+                      : t('wiki.public.directoryPreviewCount', { visible: visibleTreeRows.length, total: treeRows.length })}
+                  </span>
+                </div>
+
+                {treeRows.length === 0 ? (
+                  <PublicStatusCard
+                    tone="empty"
+                    compact={true}
+                    title={t('wiki.public.directoryEmptyTitle')}
+                    description={t('wiki.public.directoryEmptyDescription')}
+                  />
+                ) : (
+                  <>
+                    <div className={styles.directoryList}>
+                      {visibleTreeRows.map((row) => {
+                        const href = buildPublicDocsPath({ kind: 'detail', slug: row.slug });
+
+                        return (
+                          <a
+                            key={row.id}
+                            className={styles.directoryItem}
+                            href={href}
+                            onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(row.slug))}
+                          >
+                            <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
+                              {row.depth > 0 ? '└' : '•'}
+                            </span>
+                            <span className={styles.directoryTitle}>{row.title}</span>
+                            {row.childCount > 0 && (
+                              <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
+                            )}
+                          </a>
+                        );
+                      })}
+                    </div>
+                    {(isDirectoryTruncated || directoryExpanded) ? (
+                      <div className={styles.directoryFooter}>
+                        <button
+                          type="button"
+                          className={styles.inlineTextButton}
+                          onClick={() => setDirectoryExpanded((current) => !current)}
+                        >
+                          {directoryExpanded
+                            ? t('wiki.public.directoryCollapse')
+                            : t('wiki.public.directoryExpand', { hidden: treeRows.length - visibleTreeRows.length })}
+                        </button>
+                        <span className={styles.directoryFooterHint}>{t('wiki.public.directorySearchHint')}</span>
+                      </div>
+                    ) : null}
+                  </>
                 )}
               </section>
 

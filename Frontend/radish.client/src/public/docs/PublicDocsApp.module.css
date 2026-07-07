@@ -356,7 +356,7 @@
 }
 
 .docsIndexGrid {
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(280px, 324px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px) minmax(260px, 300px);
 }
 
 .docsSearchGrid {
@@ -549,6 +549,26 @@
   display: flex;
   flex-direction: column;
   padding: 10px;
+}
+
+.directoryPanel .directoryList {
+  padding-bottom: 6px;
+}
+
+.directoryFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 14px 14px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.directoryFooterHint {
+  text-align: right;
+  overflow-wrap: anywhere;
 }
 
 .directoryItem {
@@ -919,6 +939,17 @@
 
   .directoryList {
     padding: 8px;
+  }
+
+  .directoryFooter {
+    align-items: flex-start;
+    flex-direction: column;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .directoryFooterHint {
+    text-align: left;
   }
 
   .directoryItem {

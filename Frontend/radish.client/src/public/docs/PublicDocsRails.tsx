@@ -24,21 +24,6 @@ const searchGuideItems = [
   },
 ] as const;
 
-const listGuideItems = [
-  {
-    labelKey: 'wiki.public.listGuideFocusLabel',
-    valueKey: 'wiki.public.listGuideFocusValue',
-  },
-  {
-    labelKey: 'wiki.public.listGuideNextLabel',
-    valueKey: 'wiki.public.listGuideNextValue',
-  },
-  {
-    labelKey: 'wiki.public.listGuideBoundaryLabel',
-    valueKey: 'wiki.public.listGuideBoundaryValue',
-  },
-] as const;
-
 const detailGuideItems = [
   {
     labelKey: 'wiki.public.detailGuideFocusLabel',
@@ -124,13 +109,6 @@ export function PublicDocsListRail({
 
   return (
     <aside className={styles.sideRail} aria-label={t('wiki.public.indexRailLabel')}>
-      <PublicReadingGuide
-        label={t('wiki.public.listGuideKicker')}
-        title={t('wiki.public.listGuideTitle')}
-        description={t('wiki.public.listGuideDescription')}
-        items={toGuideItems(t, listGuideItems)}
-      />
-
       <section className={styles.railPanel}>
         <div className={styles.railPanelHeader}>
           <span className={styles.railIcon}>
