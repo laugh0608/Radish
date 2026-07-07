@@ -181,7 +181,7 @@
   - `P3-12-E7-A` Console 正式后台密度与移动任务流已完成代码实现与 Gateway PC / mobile 复核，记录见 [P3-12-E7-A Console 正式后台密度与移动任务流方案](/records/p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07)；移动端采用 `总览 / 治理 / 交易 / 权限 / 更多` 高频底栏，并由 `总览` 功能面板与 `更多` 全量入口承接完整 Console 分类；`radish.console` 构建、repo hygiene、`git diff --check`、Gateway `1440x900` 与 `390x844` 视图均已通过。
   - `P3-12-E7-B` Public 术语清理已完成代码实现与静态验证，记录见 [P3-12-E7-B Public 术语清理记录](/records/p3-12-e7-b-public-terminology-cleanup-2026-07-07)；公开页、Workbench、通知 / 消息、Docs 作者入口和公开 head 中的 `公开壳层 / 正式 Web 私域路由 / 私域路由 / 桌面工作台 / 公开 docs / reaction` 等用户可见内部术语已替换为页面、个人页面、兼容入口、公开文档和表情回应等产品表达；`radish.client` 构建、repo hygiene、`git diff --check` 与目标术语扫描均已通过。
   - `P3-12-E7-C` Public 信息密度首批与第二批已完成：Docs / Shop 首屏内容优先、Discover 社区内容流优先、Forum detail 参与入口和讨论区层级前移，记录见 [首批收口记录](/records/p3-12-e7-c-public-information-density-first-closure-2026-07-07) 与 [第二批收口记录](/records/p3-12-e7-c-public-discover-forum-density-closure-2026-07-07)；本批未改 API、权限、登录回流、购买提交或后端行为。
-  - `P3-12-E7-D` Auth 授权页信息层级已完成：通过 `web-ui-foundation.pen` 新增并二次收紧 `E7-D - Auth Consent Information Hierarchy` 紧凑授权卡参考画板，并将 Auth 授权确认页重排为授权目标、当前账号、权限含义、风险提示、确认 / 取消动作和次级技术信息；记录见 [P3-12-E7-D Auth 授权页信息层级收口记录](/records/p3-12-e7-d-auth-consent-information-hierarchy-2026-07-07)。本批未改授权协议、登录回流、权限、接口、后端运行时行为、审计、错误模型或安全契约。
+  - `P3-12-E7-D` Auth 授权页信息层级已完成：通过 `web-ui-foundation.pen` 新增并三次收紧 `E7-D - Auth Consent Information Hierarchy` 具体授权决策参考画板，并将 Auth 授权确认页重排为请求应用、当前账号、返回位置、权限用途、敏感边界、确认 / 取消动作和次级技术信息；记录见 [P3-12-E7-D Auth 授权页信息层级收口记录](/records/p3-12-e7-d-auth-consent-information-hierarchy-2026-07-07)。本批未改授权协议、登录回流、权限、接口、后端运行时行为、审计、错误模型或安全契约。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -197,7 +197,7 @@
 
 ## 下一步事项（2026-07-08 起）
 - 继续 `P3-12-E7 正式 UI 与文案成熟度专项审计`；当前不能进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
-- `E7-D` 紧凑授权卡二次收口完成后，第一顺位调整为 `E7` 收束判断：复核 E7-A 至 E7-D 是否仍有阻断级 UI / 文案 / 信息密度缺口；不能直接进入 `P3-12-F`。
+- `E7-D` 具体授权决策三次收口完成后，第一顺位调整为 `E7` 收束判断：复核 E7-A 至 E7-D 是否仍有阻断级 UI / 文案 / 信息密度缺口；不能直接进入 `P3-12-F`。
 - 后续根据 E7 收束判断决定是否回拉 Public / Console / Auth 新缺口；跨页面视觉或移动壳层行为改动先补小方案并等待确认。
 - 若 E7 命中接口、错误模型、后端日志、权限、审计或运行时契约缺口，先补小方案并等待确认后再改代码。
 - 如需真实 Gateway smoke，必须由用户在当轮明确说明前后端已启动；复核口径按 [浏览器 Smoke 指南](/guide/browser-smoke) 同时覆盖 PC 与移动视图。

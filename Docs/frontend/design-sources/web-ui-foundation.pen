@@ -8331,164 +8331,794 @@
     },
     {
       "type": "frame",
-      "id": "tGzb3",
+      "id": "p5FiX",
       "x": 3536,
       "y": 1216,
       "name": "E7-D - Auth Consent Information Hierarchy",
       "clip": true,
       "width": 1600,
       "height": 980,
-      "fill": "$rx-bg-app",
-      "layout": "vertical",
-      "gap": 24,
-      "padding": [
-        34,
-        48
-      ],
+      "fill": "#F4EFE6",
+      "layout": "none",
       "children": [
         {
           "type": "frame",
-          "id": "tX6bv",
-          "name": "Compact Board Header",
-          "width": "fill_container",
-          "height": 118,
-          "gap": 24,
-          "justifyContent": "space_between",
+          "id": "JIlIc",
+          "x": 56,
+          "y": 48,
+          "name": "Board Header",
+          "width": 980,
+          "height": 112,
+          "layout": "vertical",
+          "gap": 8,
+          "children": [
+            {
+              "type": "text",
+              "id": "J40j8g",
+              "name": "Batch Label",
+              "fill": "#B24057",
+              "content": "P3-12-E7-D / concrete consent page",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "800"
+            },
+            {
+              "type": "text",
+              "id": "dOGcD",
+              "name": "Board Title",
+              "fill": "#2F2A25",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "把授权页改成一次具体确认，而不是概念说明",
+              "lineHeight": 1.16,
+              "fontFamily": "Noto Serif SC",
+              "fontSize": 34,
+              "fontWeight": "800"
+            },
+            {
+              "type": "text",
+              "id": "wdkgI",
+              "name": "Board Note",
+              "fill": "#6A5C4F",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "首屏只回答：谁在请求、你用哪个账号、允许哪些访问、确认后回哪里。技术字段保留在折叠详情里。",
+              "lineHeight": 1.55,
+              "fontFamily": "Inter",
+              "fontSize": 15,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "aRzfk",
+          "x": 1120,
+          "y": 68,
+          "name": "Concrete Rules",
+          "width": 392,
+          "height": 48,
+          "gap": 10,
           "children": [
             {
               "type": "frame",
-              "id": "TFgPx",
-              "name": "Compact Header Copy",
-              "width": 930,
-              "layout": "vertical",
-              "gap": 8,
+              "id": "ind8r",
+              "name": "Rule Who",
+              "fill": "#FFFDF8",
+              "cornerRadius": 999,
+              "stroke": "#D9CBB9",
+              "strokeWidth": 1,
+              "padding": [
+                8,
+                14
+              ],
               "children": [
                 {
                   "type": "text",
-                  "id": "VaGuG",
-                  "name": "Compact Eyebrow",
-                  "fill": "$rx-brand-primary",
-                  "textGrowth": "fixed-width",
-                  "width": 560,
-                  "content": "P3-12-E7-D / compact consent card",
-                  "lineHeight": 1.2,
-                  "fontFamily": "$rx-font-mono",
-                  "fontSize": 12,
+                  "id": "u88MPa",
+                  "name": "Rule Who Text",
+                  "fill": "#2F2A25",
+                  "content": "实体明确",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
                   "fontWeight": "800"
-                },
-                {
-                  "type": "text",
-                  "id": "LNgkR",
-                  "name": "Compact Title",
-                  "fill": "$rx-text-primary",
-                  "textGrowth": "fixed-width",
-                  "width": 900,
-                  "content": "授权页改为紧凑居中卡片，避免大面积说明面板",
-                  "lineHeight": 1.16,
-                  "fontFamily": "$rx-font-heading",
-                  "fontSize": 32,
-                  "fontWeight": "800"
-                },
-                {
-                  "type": "text",
-                  "id": "JQtCr",
-                  "name": "Compact Summary",
-                  "fill": "$rx-text-secondary",
-                  "textGrowth": "fixed-width",
-                  "width": 900,
-                  "content": "参考登录页的克制卡片比例和 OAuth 授权页的确认效率：应用、账号、权限、风险、动作都在一个可扫描的授权卡内完成。",
-                  "lineHeight": 1.5,
-                  "fontFamily": "$rx-font-body",
-                  "fontSize": 14,
-                  "fontWeight": "500"
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "e5TFk",
-              "name": "Compact Principles",
-              "width": 420,
-              "gap": 8,
+              "id": "K7SYk9",
+              "name": "Rule Outcome",
+              "fill": "#EEF3EE",
+              "cornerRadius": 999,
+              "stroke": "#C9D8CF",
+              "strokeWidth": 1,
+              "padding": [
+                8,
+                14
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "KpMIx",
+                  "name": "Rule Outcome Text",
+                  "fill": "#435C50",
+                  "content": "后果可见",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jFT31",
+              "name": "Rule Tech",
+              "fill": "#F3DCE3",
+              "cornerRadius": 999,
+              "stroke": "#E4C0CA",
+              "strokeWidth": 1,
+              "padding": [
+                8,
+                14
+              ],
+              "children": [
+                {
+                  "type": "text",
+                  "id": "J6c46",
+                  "name": "Rule Tech Text",
+                  "fill": "#B24057",
+                  "content": "技术折叠",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "800"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "k1nnuS",
+          "x": 70,
+          "y": 196,
+          "name": "Desktop Preview Surface",
+          "width": 930,
+          "height": 710,
+          "fill": "#FCFAF5",
+          "cornerRadius": 20,
+          "stroke": "#D9CBB9",
+          "strokeWidth": 1,
+          "layout": "none",
+          "children": [
+            {
+              "type": "frame",
+              "id": "KuMHt",
+              "x": 180,
+              "y": 22,
+              "name": "Desktop Consent Card",
+              "width": 570,
+              "height": 666,
+              "fill": "#FFFDF8",
+              "cornerRadius": 14,
+              "stroke": "#D9CBB9",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#2F2A251F",
+                "offset": {
+                  "x": 0,
+                  "y": 18
+                },
+                "blur": 42
+              },
+              "layout": "vertical",
+              "gap": 14,
+              "padding": 24,
               "children": [
                 {
                   "type": "frame",
-                  "id": "Z1XvJQ",
-                  "name": "Principle Chip",
-                  "fill": "#ffffffc8",
-                  "cornerRadius": 999,
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
-                  "gap": 6,
-                  "padding": [
-                    6,
-                    10
-                  ],
+                  "id": "MQei7",
+                  "name": "Desktop Topbar",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "text",
-                      "id": "gmxd8",
-                      "name": "Principle Chip Text",
-                      "fill": "$rx-text-primary",
-                      "content": "单卡优先",
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 11,
-                      "fontWeight": "800"
+                      "type": "frame",
+                      "id": "KITCf",
+                      "name": "Desktop Brand",
+                      "gap": 10,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "zW7oA",
+                          "name": "Desktop Logo",
+                          "width": 44,
+                          "height": 44,
+                          "fill": "#B24057",
+                          "cornerRadius": 10,
+                          "layout": "vertical",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "V4btZC",
+                              "name": "Desktop Logo R",
+                              "fill": "#FFFFFF",
+                              "content": "R",
+                              "fontFamily": "Inter",
+                              "fontSize": 22,
+                              "fontWeight": "900"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WiKzX",
+                          "name": "Desktop Brand Copy",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qJrmw",
+                              "name": "Desktop Brand Label",
+                              "fill": "#B24057",
+                              "content": "Radish 安全授权",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "900"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ROVLG",
+                              "name": "Desktop App Name",
+                              "fill": "#2F2A25",
+                              "content": "Radish Console",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ivp1T",
+                      "name": "Desktop Language",
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 999,
+                      "stroke": "#D9CBB9",
+                      "strokeWidth": 1,
+                      "gap": 4,
+                      "padding": 4,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "LOsZa",
+                          "name": "Desktop Zh Active",
+                          "fill": "#2F2A25",
+                          "cornerRadius": 999,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "h8JNb8",
+                              "name": "Desktop Zh",
+                              "fill": "#FFFFFF",
+                              "content": "中文",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "aobYB",
+                          "name": "Desktop En",
+                          "fill": "#FFFDF8",
+                          "cornerRadius": 999,
+                          "padding": [
+                            6,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nlpdb",
+                              "name": "Desktop En Text",
+                              "fill": "#6A5C4F",
+                              "content": "English",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "eawI9",
-                  "name": "Principle Chip",
-                  "fill": "$rx-bg-muted",
-                  "cornerRadius": 999,
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
-                  "gap": 6,
-                  "padding": [
-                    6,
-                    10
-                  ],
-                  "alignItems": "center",
+                  "id": "IeOVx",
+                  "name": "Desktop Hero",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
                   "children": [
                     {
                       "type": "text",
-                      "id": "h0kg2",
-                      "name": "Principle Chip Text",
-                      "fill": "$rx-accent-ink",
-                      "content": "权限紧凑",
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 11,
+                      "id": "vvSR9",
+                      "name": "Desktop H1",
+                      "fill": "#2F2A25",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "允许 Radish Console 访问你的账号？",
+                      "lineHeight": 1.18,
+                      "fontFamily": "Noto Serif SC",
+                      "fontSize": 30,
                       "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "L7eumX",
+                      "name": "Desktop Hero Copy",
+                      "fill": "#6A5C4F",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "你正在以 大萝卜 @luobo 授权，确认后会回到 console.radishx.com 继续刚才的 Console 操作。",
+                      "lineHeight": 1.55,
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
                     }
                   ]
                 },
                 {
                   "type": "frame",
-                  "id": "jhKel",
-                  "name": "Principle Chip",
-                  "fill": "$rx-brand-soft",
-                  "cornerRadius": 999,
-                  "stroke": "$rx-border-soft",
+                  "id": "ffBIv",
+                  "name": "Desktop Identity Panel",
+                  "clip": true,
+                  "width": "fill_container",
+                  "fill": "#D9CBB9",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ZgqgJ",
+                      "name": "Desktop Account Row",
+                      "width": "fill_container",
+                      "fill": "#F0E7DB",
+                      "gap": 14,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ix3hd",
+                          "name": "Desktop Account Label",
+                          "fill": "#8B7A6B",
+                          "content": "当前账号",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "yQXL4",
+                          "name": "Desktop Account Value",
+                          "fill": "#2F2A25",
+                          "content": "大萝卜 @luobo",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vw0fa",
+                      "name": "Desktop App Row",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "gap": 14,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "FUzif",
+                          "name": "Desktop App Label",
+                          "fill": "#8B7A6B",
+                          "content": "请求应用",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "b3flus",
+                          "name": "Desktop App Value",
+                          "fill": "#2F2A25",
+                          "textGrowth": "fixed-width",
+                          "width": 360,
+                          "content": "Radish Console · Radish 官方",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ApoVf",
+                      "name": "Desktop Return Row",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "gap": 14,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mqjbR",
+                          "name": "Desktop Return Label",
+                          "fill": "#8B7A6B",
+                          "content": "返回位置",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "L5xvKl",
+                          "name": "Desktop Return Value",
+                          "fill": "#2F2A25",
+                          "content": "console.radishx.com",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cZFuD",
+                  "name": "Desktop Permission Panel",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": "#D9CBB9",
                   "strokeWidth": 1,
-                  "gap": 6,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 14,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Ghu9k",
+                      "name": "Desktop Permission Head",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MTEPj",
+                          "name": "Desktop Permission Title",
+                          "fill": "#2F2A25",
+                          "content": "允许后它可以",
+                          "fontFamily": "Inter",
+                          "fontSize": 16,
+                          "fontWeight": "900"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "SiXeJ",
+                          "name": "Desktop Permission Chip",
+                          "fill": "#F3DCE3",
+                          "cornerRadius": 999,
+                          "padding": [
+                            5,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "jFjWJ",
+                              "name": "Desktop Permission Count",
+                              "fill": "#B24057",
+                              "content": "4 项访问",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "900"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fYCD4",
+                      "name": "Desktop Permission 1",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "tcG4b",
+                          "name": "Desktop Permission Icon 1",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "UserCheck",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OYWyH",
+                          "name": "Desktop Permission Text 1",
+                          "fill": "#2F2A25",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "确认登录身份：知道当前账号是谁，用于建立安全会话。",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "g6PfJ",
+                      "name": "Desktop Permission 2",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "G9XcsF",
+                          "name": "Desktop Permission Icon 2",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "IdCard",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
+                          "type": "text",
+                          "id": "VYZIz",
+                          "name": "Desktop Permission Text 2",
+                          "fill": "#2F2A25",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "读取基础资料：显示昵称、头像和公开资料。",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eSG8L",
+                      "name": "Desktop Permission 3",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "I44IP9",
+                          "name": "Desktop Permission Icon 3",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "ServerCog",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
+                          "type": "text",
+                          "id": "PfHFO",
+                          "name": "Desktop Permission Text 3",
+                          "fill": "#2F2A25",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "访问 Radish 服务：完成你刚才打开的 Console 操作。",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nxguD",
+                      "name": "Desktop Permission 4",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "ZGx9r",
+                          "name": "Desktop Permission Icon 4",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "RefreshCw",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
+                          "type": "text",
+                          "id": "FWMqM",
+                          "name": "Desktop Permission Text 4",
+                          "fill": "#2F2A25",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "保持本次登录：减少短时间内重复授权。",
+                          "lineHeight": 1.45,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VmaT5",
+                  "name": "Desktop Safety Note",
+                  "width": "fill_container",
+                  "fill": "#FFF8EF",
+                  "cornerRadius": 8,
+                  "gap": 10,
                   "padding": [
-                    6,
-                    10
+                    10,
+                    12
                   ],
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "SyxvA",
+                      "name": "Desktop Safety Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "ShieldCheck",
+                      "library": "lucide",
+                      "fill": "#4F9C83"
+                    },
+                    {
+                      "type": "text",
+                      "id": "h3X07h",
+                      "name": "Desktop Safety Text",
+                      "fill": "#67594D",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "不会获取密码、支付口令，也不会自动修改账号设置。信息不一致时请选择取消。",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jYZ8N",
+                  "name": "Desktop Details Row",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": "#D9CBB9",
+                  "strokeWidth": 1,
+                  "padding": [
+                    9,
+                    12
+                  ],
+                  "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "FMXsV",
-                      "name": "Principle Chip Text",
-                      "fill": "$rx-brand-primary",
-                      "content": "动作醒目",
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 11,
+                      "id": "mYovM",
+                      "name": "Desktop Details Text",
+                      "fill": "#6A5C4F",
+                      "content": "查看技术信息：Client ID / redirect_uri / scope",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
                       "fontWeight": "800"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "wQo3N",
+                      "name": "Desktop Details Icon",
+                      "width": 18,
+                      "height": 18,
+                      "icon": "ChevronDown",
+                      "library": "lucide",
+                      "fill": "#8B7A6B"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "MkIGO",
+                  "name": "Desktop Action Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "OqTAT",
+                      "name": "Desktop Allow Button",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "#B24057",
+                      "cornerRadius": 999,
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "f3ZJr",
+                          "name": "Desktop Allow Label",
+                          "fill": "#FFFFFF",
+                          "content": "允许继续",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ULJLb",
+                      "name": "Desktop Deny Button",
+                      "width": 170,
+                      "height": 48,
+                      "fill": "#FFFFFF",
+                      "cornerRadius": 999,
+                      "stroke": "#D9CBB9",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "eHpf8",
+                          "name": "Desktop Deny Label",
+                          "fill": "#2F2A25",
+                          "content": "取消授权",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "900"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -8498,988 +9128,449 @@
         },
         {
           "type": "frame",
-          "id": "L3GmTC",
-          "name": "Compact Auth References",
-          "width": "fill_container",
-          "height": 770,
-          "gap": 26,
-          "alignItems": "center",
+          "id": "VZmW9",
+          "x": 1030,
+          "y": 196,
+          "name": "Mobile Preview Surface",
+          "width": 450,
+          "height": 710,
+          "fill": "#FCFAF5",
+          "cornerRadius": 20,
+          "stroke": "#D9CBB9",
+          "strokeWidth": 1,
+          "layout": "none",
           "children": [
             {
               "type": "frame",
-              "id": "HrzGM",
-              "name": "Desktop Compact Consent",
-              "width": 940,
-              "height": 770,
-              "fill": "#fbfaf6",
-              "cornerRadius": 18,
-              "stroke": "$rx-border-soft",
+              "id": "f9oL8",
+              "x": 48,
+              "y": 16,
+              "name": "Mobile Consent Card",
+              "width": 354,
+              "height": 680,
+              "fill": "#FFFDF8",
+              "cornerRadius": 14,
+              "stroke": "#D9CBB9",
               "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#2F2A251A",
+                "offset": {
+                  "x": 0,
+                  "y": 16
+                },
+                "blur": 36
+              },
               "layout": "vertical",
-              "padding": 32,
-              "justifyContent": "center",
-              "alignItems": "center",
+              "gap": 13,
+              "padding": 20,
               "children": [
                 {
                   "type": "frame",
-                  "id": "w9N1w7",
-                  "name": "Desktop Consent Card",
-                  "width": 620,
-                  "height": 666,
-                  "fill": "#ffffff",
-                  "cornerRadius": 18,
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
-                  "effect": {
-                    "type": "shadow",
-                    "shadowType": "outer",
-                    "color": "#3b29211f",
-                    "offset": {
-                      "x": 0,
-                      "y": 24
-                    },
-                    "blur": 52
-                  },
+                  "id": "fUHfA",
+                  "name": "Mobile Logo",
+                  "width": 46,
+                  "height": 46,
+                  "fill": "#B24057",
+                  "cornerRadius": 10,
                   "layout": "vertical",
-                  "gap": 16,
-                  "padding": [
-                    26,
-                    30
-                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "DZmqX",
-                      "name": "Consent Top Row",
+                      "type": "text",
+                      "id": "gkp1A",
+                      "name": "Mobile Logo R",
+                      "fill": "#FFFFFF",
+                      "content": "R",
+                      "fontFamily": "Inter",
+                      "fontSize": 23,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "MDhCF",
+                  "name": "Mobile H1",
+                  "fill": "#2F2A25",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "允许 Console 访问你的账号？",
+                  "lineHeight": 1.18,
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 26,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "sKWsv",
+                  "name": "Mobile Intro",
+                  "fill": "#6A5C4F",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "以 大萝卜 @luobo 授权，确认后返回 console.radishx.com。",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "650"
+                },
+                {
+                  "type": "frame",
+                  "id": "lJ8ur",
+                  "name": "Mobile Who Card",
+                  "width": "fill_container",
+                  "fill": "#F0E7DB",
+                  "cornerRadius": 8,
+                  "stroke": "#D9CBB9",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Kl2LZ",
+                      "name": "Mobile Who Label",
+                      "fill": "#8B7A6B",
+                      "content": "账号与应用",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "900"
+                    },
+                    {
+                      "type": "text",
+                      "id": "EC8Q3",
+                      "name": "Mobile Who Value",
+                      "fill": "#2F2A25",
+                      "textGrowth": "fixed-width",
                       "width": "fill_container",
-                      "height": 54,
-                      "justifyContent": "space_between",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "i44cBV",
-                          "name": "Consent Brand",
-                          "gap": 12,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "mlqN5",
-                              "name": "Consent App Seal",
-                              "width": 46,
-                              "height": 46,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 12,
-                              "layout": "vertical",
-                              "justifyContent": "center",
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "QlZ7V",
-                                  "name": "Seal Initial",
-                                  "fill": "#ffffff",
-                                  "textGrowth": "fixed-width",
-                                  "width": 20,
-                                  "content": "R",
-                                  "lineHeight": 1,
-                                  "fontFamily": "$rx-font-body",
-                                  "fontSize": 22,
-                                  "fontWeight": "800"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "aNS0F",
-                              "name": "Consent Brand Copy",
-                              "width": 260,
-                              "layout": "vertical",
-                              "gap": 2,
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "Sa40X",
-                                  "name": "Consent Brand Label",
-                                  "fill": "$rx-brand-primary",
-                                  "textGrowth": "fixed-width",
-                                  "width": 220,
-                                  "content": "Radish 安全授权",
-                                  "lineHeight": 1.2,
-                                  "fontFamily": "$rx-font-mono",
-                                  "fontSize": 12,
-                                  "fontWeight": "800"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "Fb2oK",
-                                  "name": "Consent App Name",
-                                  "fill": "$rx-text-primary",
-                                  "textGrowth": "fixed-width",
-                                  "width": 250,
-                                  "content": "Radish Console",
-                                  "lineHeight": 1.2,
-                                  "fontFamily": "$rx-font-heading",
-                                  "fontSize": 18,
-                                  "fontWeight": "800"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "CCMmP",
-                          "name": "Language Switch Compact",
-                          "fill": "#f8fafc",
-                          "cornerRadius": 999,
-                          "stroke": "$rx-border-soft",
-                          "strokeWidth": 1,
-                          "gap": 4,
-                          "padding": 4,
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "ftKlB",
-                              "name": "Language Active",
-                              "fill": "$rx-bg-ink",
-                              "cornerRadius": 999,
-                              "stroke": "$rx-border-soft",
-                              "strokeWidth": 1,
-                              "gap": 6,
-                              "padding": [
-                                6,
-                                10
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "c0CX5",
-                                  "name": "Language Active Text",
-                                  "fill": "#ffffff",
-                                  "content": "中文",
-                                  "fontFamily": "$rx-font-body",
-                                  "fontSize": 11,
-                                  "fontWeight": "800"
-                                }
-                              ]
-                            },
-                            {
-                              "type": "frame",
-                              "id": "lUTbf",
-                              "name": "Language Idle",
-                              "fill": "#ffffff",
-                              "cornerRadius": 999,
-                              "stroke": "$rx-border-soft",
-                              "strokeWidth": 1,
-                              "gap": 6,
-                              "padding": [
-                                6,
-                                10
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "e8fyb",
-                                  "name": "Language Idle Text",
-                                  "fill": "$rx-text-secondary",
-                                  "content": "English",
-                                  "fontFamily": "$rx-font-body",
-                                  "fontSize": 11,
-                                  "fontWeight": "800"
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "kYG5O",
-                      "name": "Consent Question",
-                      "fill": "$rx-text-primary",
-                      "textGrowth": "fixed-width",
-                      "width": 560,
-                      "content": "允许 Radish Console 访问你的 Radish 账号？",
-                      "lineHeight": 1.18,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 27,
-                      "fontWeight": "800"
-                    },
-                    {
-                      "type": "text",
-                      "id": "z1UPM8",
-                      "name": "Consent Description",
-                      "fill": "$rx-text-secondary",
-                      "textGrowth": "fixed-width",
-                      "width": 540,
-                      "content": "确认账号、返回位置和权限范围。允许后会回到 Console 继续当前操作。",
-                      "lineHeight": 1.5,
-                      "fontFamily": "$rx-font-body",
+                      "content": "大萝卜 @luobo · Radish Console · Radish 官方",
+                      "lineHeight": 1.35,
+                      "fontFamily": "Inter",
                       "fontSize": 14,
-                      "fontWeight": "500"
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "NomOU",
+                  "name": "Mobile Permission Card",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": "#D9CBB9",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 9,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "l26X7",
+                      "name": "Mobile Permission Title",
+                      "fill": "#2F2A25",
+                      "content": "将允许 4 项访问",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "900"
                     },
                     {
                       "type": "frame",
-                      "id": "jer5d",
-                      "name": "Identity Summary Card",
-                      "width": 560,
-                      "height": 88,
-                      "fill": "$rx-bg-muted",
-                      "cornerRadius": 10,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "gap": 12,
-                      "padding": 18,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "DhMot",
-                          "name": "Identity Title",
-                          "fill": "$rx-text-muted",
-                          "textGrowth": "fixed-width",
-                          "width": 500,
-                          "content": "当前账号",
-                          "lineHeight": 1.2,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
-                          "fontWeight": "800"
-                        },
-                        {
-                          "type": "text",
-                          "id": "oTZJv",
-                          "name": "Identity Value",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
-                          "width": 500,
-                          "content": "Admin#2 · 已登录",
-                          "lineHeight": 1.25,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 18,
-                          "fontWeight": "800"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Wxgjb",
-                      "name": "App Info Compact",
-                      "width": 560,
-                      "height": 114,
-                      "fill": "#fffaf5",
-                      "cornerRadius": 10,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "gap": 12,
-                      "padding": 18,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "T8zr2",
-                          "name": "App Info Title",
-                          "fill": "$rx-text-muted",
-                          "textGrowth": "fixed-width",
-                          "width": 500,
-                          "content": "应用信息",
-                          "lineHeight": 1.2,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 13,
-                          "fontWeight": "800"
-                        },
-                        {
-                          "type": "text",
-                          "id": "g6sb2W",
-                          "name": "App Info Body",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
-                          "width": 500,
-                          "content": "开发方 Radish 官方 · 返回 console.radishx.com",
-                          "lineHeight": 1.35,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 15,
-                          "fontWeight": "700"
-                        },
-                        {
-                          "type": "text",
-                          "id": "a47MJK",
-                          "name": "App Info Hint",
-                          "fill": "$rx-text-secondary",
-                          "textGrowth": "fixed-width",
-                          "width": 500,
-                          "content": "Client ID 和完整回调地址放入技术信息，不占主确认区。",
-                          "lineHeight": 1.35,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "FTixs",
-                      "name": "Permissions Compact",
-                      "width": 560,
-                      "height": 168,
-                      "fill": "#ffffff",
-                      "cornerRadius": 10,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "gap": 12,
-                      "padding": 18,
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "uwc1o",
-                          "name": "Permission Compact Header",
-                          "width": "fill_container",
-                          "justifyContent": "space_between",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "uImno",
-                              "name": "Permission Compact Title",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 280,
-                              "content": "将允许的访问",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-heading",
-                              "fontSize": 15,
-                              "fontWeight": "800"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "mtzUK",
-                              "name": "Permission Count Compact",
-                              "fill": "$rx-brand-soft",
-                              "cornerRadius": 999,
-                              "stroke": "$rx-border-soft",
-                              "strokeWidth": 1,
-                              "gap": 6,
-                              "padding": [
-                                6,
-                                10
-                              ],
-                              "alignItems": "center",
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "ZqlVE",
-                                  "name": "Permission Count Compact Text",
-                                  "fill": "$rx-brand-primary",
-                                  "content": "4 项权限",
-                                  "fontFamily": "$rx-font-body",
-                                  "fontSize": 11,
-                                  "fontWeight": "800"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "xoH6q",
-                          "name": "Permission Compact Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "wNy1J",
-                              "name": "Permission Compact Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "M5g83c",
-                              "name": "Permission Compact Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 460,
-                              "content": "确认登录身份",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "o2i8B",
-                          "name": "Permission Compact Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "kMROW",
-                              "name": "Permission Compact Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "DyEn7",
-                              "name": "Permission Compact Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 460,
-                              "content": "读取基础资料",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "UFNra",
-                          "name": "Permission Compact Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "ZQM52",
-                              "name": "Permission Compact Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "FbBP3",
-                              "name": "Permission Compact Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 460,
-                              "content": "访问 Radish 服务",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "xpwkP",
-                          "name": "Permission Compact Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "uFqfz",
-                              "name": "Permission Compact Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "kTAgN",
-                              "name": "Permission Compact Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 460,
-                              "content": "保持登录状态",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 13,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "fb0OJ",
-                      "name": "Inline Risk Note",
-                      "width": "fill_container",
-                      "height": 42,
-                      "fill": "#f8f4ed",
-                      "cornerRadius": 8,
+                      "id": "J1vSIy",
+                      "name": "Mobile Perm 1",
                       "gap": 8,
-                      "padding": [
-                        8,
-                        10
-                      ],
                       "alignItems": "center",
                       "children": [
                         {
+                          "type": "icon",
+                          "id": "iJ1fz",
+                          "name": "Mobile Perm Icon 1",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "UserCheck",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
                           "type": "text",
-                          "id": "XX0wG",
-                          "name": "Risk Note",
-                          "fill": "$rx-text-secondary",
-                          "textGrowth": "fixed-width",
-                          "width": 520,
-                          "content": "不认识应用、账号不正确或返回位置异常时，请取消授权。",
-                          "lineHeight": 1.25,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "600"
+                          "id": "ANqn4",
+                          "name": "Mobile Perm Text 1",
+                          "fill": "#2F2A25",
+                          "content": "确认登录身份",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
                         }
                       ]
                     },
                     {
                       "type": "frame",
-                      "id": "dORrE",
-                      "name": "Compact Action Stack",
-                      "width": "fill_container",
-                      "layout": "vertical",
-                      "gap": 10,
+                      "id": "QuM8v",
+                      "name": "Mobile Perm 2",
+                      "gap": 8,
+                      "alignItems": "center",
                       "children": [
                         {
-                          "type": "frame",
-                          "id": "RqZzt",
-                          "name": "Allow Continue Button",
-                          "width": "fill_container",
-                          "height": 48,
-                          "fill": "$rx-brand-primary",
-                          "cornerRadius": 999,
-                          "layout": "vertical",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "YKPQc",
-                              "name": "Allow Continue Label",
-                              "fill": "#ffffff",
-                              "textGrowth": "fixed-width",
-                              "width": 120,
-                              "content": "允许继续",
-                              "lineHeight": 1.1,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 15,
-                              "fontWeight": "800"
-                            }
-                          ]
+                          "type": "icon",
+                          "id": "liMat",
+                          "name": "Mobile Perm Icon 2",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "IdCard",
+                          "library": "lucide",
+                          "fill": "#B24057"
                         },
                         {
-                          "type": "frame",
-                          "id": "WBax8",
-                          "name": "Cancel Authorization Button",
-                          "width": "fill_container",
-                          "height": 44,
-                          "fill": "#ffffff",
-                          "cornerRadius": 999,
-                          "stroke": "$rx-border-soft",
-                          "strokeWidth": 1,
-                          "layout": "vertical",
-                          "justifyContent": "center",
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "text",
-                              "id": "IWAhC",
-                              "name": "Cancel Authorization Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 120,
-                              "content": "取消授权",
-                              "lineHeight": 1.1,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 14,
-                              "fontWeight": "800"
-                            }
-                          ]
+                          "type": "text",
+                          "id": "M9eMO",
+                          "name": "Mobile Perm Text 2",
+                          "fill": "#2F2A25",
+                          "content": "读取昵称与头像",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "J1juqb",
+                      "name": "Mobile Perm 3",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "KPa9D",
+                          "name": "Mobile Perm Icon 3",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "ServerCog",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
+                          "type": "text",
+                          "id": "JA3Tb",
+                          "name": "Mobile Perm Text 3",
+                          "fill": "#2F2A25",
+                          "content": "继续 Console 操作",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qljzA",
+                      "name": "Mobile Perm 4",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Hhmnf",
+                          "name": "Mobile Perm Icon 4",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "RefreshCw",
+                          "library": "lucide",
+                          "fill": "#B24057"
+                        },
+                        {
+                          "type": "text",
+                          "id": "nSd5P",
+                          "name": "Mobile Perm Text 4",
+                          "fill": "#2F2A25",
+                          "content": "保持本次登录",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "800"
                         }
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Q1I9o",
+                  "name": "Mobile Safety",
+                  "width": "fill_container",
+                  "fill": "#FFF8EF",
+                  "cornerRadius": 8,
+                  "gap": 8,
+                  "padding": 10,
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "xglMS",
+                      "name": "Mobile Safety Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "ShieldCheck",
+                      "library": "lucide",
+                      "fill": "#4F9C83"
+                    },
+                    {
+                      "type": "text",
+                      "id": "I73mH",
+                      "name": "Mobile Safety Text",
+                      "fill": "#67594D",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "不会获取密码或支付口令。应用不认识时请取消。",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "GS0Yg",
+                  "name": "Mobile Details",
+                  "width": "fill_container",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 8,
+                  "stroke": "#D9CBB9",
+                  "strokeWidth": 1,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EMxyS",
+                      "name": "Mobile Details Text",
+                      "fill": "#6A5C4F",
+                      "content": "技术信息",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "Z0ccA",
+                      "name": "Mobile Details Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "ChevronDown",
+                      "library": "lucide",
+                      "fill": "#8B7A6B"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nF4KD",
+                  "name": "Mobile Allow Button",
+                  "width": "fill_container",
+                  "height": 46,
+                  "fill": "#B24057",
+                  "cornerRadius": 999,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dn1RG",
+                      "name": "Mobile Allow Label",
+                      "fill": "#FFFFFF",
+                      "content": "允许继续",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "900"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "go1sl",
+                  "name": "Mobile Deny Button",
+                  "width": "fill_container",
+                  "height": 44,
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 999,
+                  "stroke": "#D9CBB9",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "R4k2M",
+                      "name": "Mobile Deny Label",
+                      "fill": "#2F2A25",
+                      "content": "取消授权",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "900"
+                    }
+                  ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "lzUyg",
+          "x": 70,
+          "y": 918,
+          "name": "Concrete Checklist",
+          "width": 930,
+          "height": 34,
+          "gap": 18,
+          "children": [
+            {
+              "type": "text",
+              "id": "c7a4b",
+              "name": "Checklist 1",
+              "fill": "#4F9C83",
+              "content": "✓ 账号可识别",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "800"
             },
             {
-              "type": "frame",
-              "id": "umYRr",
-              "name": "Mobile Compact Consent",
-              "width": 390,
-              "height": 770,
-              "fill": "#fbfaf6",
-              "cornerRadius": 28,
-              "stroke": "$rx-border-soft",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 12,
-              "padding": [
-                18,
-                16
-              ],
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "DlpBt",
-                  "name": "Mobile Consent Card",
-                  "width": "fill_container",
-                  "height": 724,
-                  "fill": "#ffffff",
-                  "cornerRadius": 18,
-                  "stroke": "$rx-border-soft",
-                  "strokeWidth": 1,
-                  "layout": "vertical",
-                  "gap": 13,
-                  "padding": [
-                    22,
-                    20
-                  ],
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "LhrGr",
-                      "name": "Mobile Seal",
-                      "width": 52,
-                      "height": 52,
-                      "fill": "$rx-brand-primary",
-                      "cornerRadius": 14,
-                      "layout": "vertical",
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "HvsC7",
-                          "name": "Mobile Seal Initial",
-                          "fill": "#ffffff",
-                          "textGrowth": "fixed-width",
-                          "width": 22,
-                          "content": "R",
-                          "lineHeight": 1,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 24,
-                          "fontWeight": "800"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "DHsUu",
-                      "name": "Mobile Consent Title",
-                      "fill": "$rx-text-primary",
-                      "textGrowth": "fixed-width",
-                      "width": 320,
-                      "content": "允许 Radish Console 继续？",
-                      "lineHeight": 1.15,
-                      "fontFamily": "$rx-font-heading",
-                      "fontSize": 25,
-                      "fontWeight": "800"
-                    },
-                    {
-                      "type": "text",
-                      "id": "V0pqR",
-                      "name": "Mobile Consent Copy",
-                      "fill": "$rx-text-secondary",
-                      "textGrowth": "fixed-width",
-                      "width": 320,
-                      "content": "以 Admin#2 授权，确认后返回 Console。",
-                      "lineHeight": 1.45,
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 13,
-                      "fontWeight": "500"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "A9kPPt",
-                      "name": "Mobile Account App Summary",
-                      "width": 320,
-                      "height": 112,
-                      "fill": "$rx-bg-muted",
-                      "cornerRadius": 10,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "gap": 12,
-                      "padding": 18,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "LOigs",
-                          "name": "Mobile Summary Label",
-                          "fill": "$rx-text-muted",
-                          "textGrowth": "fixed-width",
-                          "width": 270,
-                          "content": "账号与应用",
-                          "lineHeight": 1.2,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "800"
-                        },
-                        {
-                          "type": "text",
-                          "id": "GhUOz",
-                          "name": "Mobile Summary Value",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
-                          "width": 280,
-                          "content": "Admin#2 · Radish 官方 · console.radishx.com",
-                          "lineHeight": 1.35,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 14,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "Pa8sb",
-                      "name": "Mobile Permission Summary",
-                      "width": 320,
-                      "height": 192,
-                      "fill": "#ffffff",
-                      "cornerRadius": 10,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "gap": 12,
-                      "padding": 18,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "T0cKwQ",
-                          "name": "Mobile Permission Head",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
-                          "width": 280,
-                          "content": "将允许 4 项权限",
-                          "lineHeight": 1.2,
-                          "fontFamily": "$rx-font-heading",
-                          "fontSize": 15,
-                          "fontWeight": "800"
-                        },
-                        {
-                          "type": "frame",
-                          "id": "G0jgHn",
-                          "name": "Mobile Permission Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "Niak8",
-                              "name": "Mobile Permission Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "J0d2V",
-                              "name": "Mobile Permission Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 240,
-                              "content": "确认登录身份",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "dhlsM",
-                          "name": "Mobile Permission Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "C3qP5a",
-                              "name": "Mobile Permission Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "D7elmF",
-                              "name": "Mobile Permission Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 240,
-                              "content": "读取基础资料",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "r918L4",
-                          "name": "Mobile Permission Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "zfexZ",
-                              "name": "Mobile Permission Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "r4unK",
-                              "name": "Mobile Permission Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 240,
-                              "content": "访问服务",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "frame",
-                          "id": "oB920",
-                          "name": "Mobile Permission Row",
-                          "width": "fill_container",
-                          "height": 28,
-                          "gap": 8,
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "frame",
-                              "id": "cVdZN",
-                              "name": "Mobile Permission Mark",
-                              "width": 6,
-                              "height": 18,
-                              "fill": "$rx-brand-primary",
-                              "cornerRadius": 999
-                            },
-                            {
-                              "type": "text",
-                              "id": "PqdL8",
-                              "name": "Mobile Permission Label",
-                              "fill": "$rx-text-primary",
-                              "textGrowth": "fixed-width",
-                              "width": 240,
-                              "content": "保持登录",
-                              "lineHeight": 1.2,
-                              "fontFamily": "$rx-font-body",
-                              "fontSize": 12,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "type": "text",
-                      "id": "Cyo0n",
-                      "name": "Mobile Risk Copy",
-                      "fill": "$rx-text-secondary",
-                      "textGrowth": "fixed-width",
-                      "width": 320,
-                      "content": "信息不符合预期时取消授权，不会退出当前账号。",
-                      "lineHeight": 1.35,
-                      "fontFamily": "$rx-font-body",
-                      "fontSize": 12,
-                      "fontWeight": "600"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "v4skdy",
-                      "name": "Mobile Allow Button",
-                      "width": "fill_container",
-                      "height": 48,
-                      "fill": "$rx-brand-primary",
-                      "cornerRadius": 999,
-                      "layout": "vertical",
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "sqFri",
-                          "name": "Mobile Allow Button Label",
-                          "fill": "#ffffff",
-                          "textGrowth": "fixed-width",
-                          "width": 120,
-                          "content": "允许继续",
-                          "lineHeight": 1.1,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 15,
-                          "fontWeight": "800"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ApkUg",
-                      "name": "Mobile Cancel Button",
-                      "width": "fill_container",
-                      "height": 44,
-                      "fill": "#ffffff",
-                      "cornerRadius": 999,
-                      "stroke": "$rx-border-soft",
-                      "strokeWidth": 1,
-                      "layout": "vertical",
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "TUk6f",
-                          "name": "Mobile Cancel Label",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
-                          "width": 120,
-                          "content": "取消授权",
-                          "lineHeight": 1.1,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 14,
-                          "fontWeight": "800"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+              "type": "text",
+              "id": "N1NFK",
+              "name": "Checklist 2",
+              "fill": "#4F9C83",
+              "content": "✓ 应用与域名可核对",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "800"
+            },
+            {
+              "type": "text",
+              "id": "vfZUB",
+              "name": "Checklist 3",
+              "fill": "#4F9C83",
+              "content": "✓ 权限有后果说明",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "800"
+            },
+            {
+              "type": "text",
+              "id": "S4wjxt",
+              "name": "Checklist 4",
+              "fill": "#4F9C83",
+              "content": "✓ 取消结果明确",
+              "fontFamily": "Inter",
+              "fontSize": 13,
+              "fontWeight": "800"
             }
           ]
         }

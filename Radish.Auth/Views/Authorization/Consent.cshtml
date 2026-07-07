@@ -13,33 +13,44 @@
     var applicationDescription = hasClientDescription ? Model.ClientDescription : string.Empty;
     var developerName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
     var redirectTarget = string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost;
+    var redirectDisplay = string.IsNullOrWhiteSpace(redirectTarget)
+        ? (isZh ? "请求应用" : "the requesting app")
+        : redirectTarget;
     var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? (isZh ? "当前登录账号" : "Current account") : User!.Identity!.Name!;
     var clientInitial = string.IsNullOrWhiteSpace(displayClientName) ? "R" : displayClientName.Trim()[..1].ToUpperInvariant();
-    var accountInitial = string.IsNullOrWhiteSpace(loginIdentity) ? "R" : loginIdentity.Trim()[..1].ToUpperInvariant();
     var permissionCountLabel = isZh
         ? $"{Model.Scopes.Count} 项权限"
         : $"{Model.Scopes.Count} permission{(Model.Scopes.Count == 1 ? string.Empty : "s")}";
 
     var pageEyebrow = isZh ? "Radish 安全授权" : "Radish secure authorization";
-    var targetLabel = isZh ? "授权给" : "Authorize";
+    var targetLabel = isZh ? "授权请求" : "Authorization request";
+    var headingText = isZh
+        ? $"允许 {displayClientName} 访问你的 Radish 账号？"
+        : $"Allow {displayClientName} to access your Radish account?";
+    var heroCopy = isZh
+        ? $"你正在以 {loginIdentity} 授权，确认后会回到 {redirectDisplay} 继续刚才的操作。"
+        : $"You are authorizing as {loginIdentity}. After approval, you will return to {redirectDisplay} to continue.";
+    var identityTitle = isZh ? "账号与应用" : "Account and app";
+    var identityHint = isZh
+        ? "请核对账号、应用和返回位置，三项都符合预期时再允许。"
+        : "Check the account, app, and return destination before allowing access.";
+    var accountLabel = isZh ? "当前账号" : "Signed in as";
     var appLabel = isZh ? "应用" : "Application";
     var developerLabel = isZh ? "开发方" : "Developer";
     var redirectLabel = isZh ? "返回到" : "Return to";
-    var accountTitle = isZh ? "当前账号" : "Current account";
-    var accountHint = isZh
-        ? "将以该账号完成授权。不是你的账号时，请取消授权后切换。"
-        : "This account will be used. If it is not yours, cancel and switch accounts.";
-    var permissionTitle = isZh ? "将获取以下权限" : "Access requested";
+    var permissionTitle = isZh ? "允许后它可以" : "After approval it can";
     var permissionHint = isZh
-        ? "只授予本次请求包含的范围。"
-        : "Only the scopes included in this request will be granted.";
-    var riskTitle = isZh ? "确认前检查" : "Before you continue";
-    var riskPoint1 = isZh ? "应用名称、开发方和返回位置应与你刚才打开的页面一致。" : "The app, developer, and return destination should match the page you opened.";
-    var riskPoint2 = isZh ? "如果你不认识这个应用，或当前账号不正确，请取消授权。" : "If you do not recognize this app or the account is wrong, cancel authorization.";
-    var decisionHint = isZh ? "允许后将返回应用继续操作；取消不会退出 Radish，也不会修改账号状态。" : "Allowing returns you to the app; cancelling will not sign you out or change your account.";
-    var technicalTitle = isZh ? "技术信息" : "Technical details";
+        ? "只授予本次请求包含的访问范围，原始 scope 可在技术信息里核对。"
+        : "Only the scopes included in this request will be granted. You can review raw scopes in technical details.";
+    var safetyTitle = isZh ? "它不会获得" : "It will not get";
+    var safetyPoint1 = isZh ? "你的密码、支付口令、验证码或浏览器保存的登录凭据。" : "Your password, payment passcode, one-time codes, or saved browser credentials.";
+    var safetyPoint2 = isZh ? "自动修改账号资料、资产或授予新的管理权限。" : "The ability to automatically change your profile, assets, or grant new admin permissions.";
+    var riskHint = isZh
+        ? "不认识应用、账号不对或返回位置异常时，请取消授权。取消不会退出 Radish。"
+        : "If the app, account, or destination looks wrong, cancel authorization. Cancelling will not sign you out of Radish.";
+    var decisionHint = isZh ? "请只在应用、账号和返回位置都符合预期时允许。" : "Allow only when the app, account, and destination all look right.";
+    var technicalTitle = isZh ? "查看技术信息" : "View technical details";
     var technicalHint = isZh ? "用于排障和安全核对，普通确认时无需优先阅读。" : "For troubleshooting and security review. You do not need these details for normal confirmation.";
-    var scopeCodeLabel = isZh ? "技术范围" : "Scope";
     var clientIdLabel = isZh ? "Client ID" : "Client ID";
     var redirectUriLabel = isZh ? "完整回调地址" : "Full redirect URI";
     var rawScopeLabel = isZh ? "原始 scope" : "Raw scope";
@@ -49,20 +60,20 @@
         return scope switch
         {
             "openid" => isZh
-                ? ("确认你的登录身份", "建立安全登录会话。")
-                : ("Confirm your signed-in identity", "Establishes a secure sign-in session."),
+                ? ("确认登录身份", "让应用知道当前是哪个 Radish 账号在操作。")
+                : ("Confirm signed-in identity", "Lets the app know which Radish account is acting."),
             "profile" => isZh
-                ? ("读取你的基础资料", "显示昵称、头像等基础资料。")
-                : ("Read your basic profile", "Shows profile basics such as display name and avatar."),
+                ? ("读取昵称与头像", "用于在应用里显示你的基础资料。")
+                : ("Read display name and avatar", "Shows your basic profile inside the app."),
             "offline_access" => isZh
-                ? ("保持登录状态", "减少短时间内重复登录。")
-                : ("Maintain your session", "Reduces repeated sign-ins for a short period."),
+                ? ("保持本次登录", "减少短时间内重复登录或重复授权。")
+                : ("Keep this session", "Reduces repeated sign-ins or repeated approvals for a short period."),
             "radish-api" => isZh
-                ? ("访问 Radish 服务", "继续当前应用中的受保护任务。")
-                : ("Access Radish services", "Continues protected tasks in this application."),
+                ? ("继续当前服务操作", "用于完成你刚才在请求应用里打开的受保护任务。")
+                : ("Continue the current service action", "Completes the protected task you opened in the requesting app."),
             _ => isZh
-                ? ("附加访问权限", "该应用声明的额外访问范围。")
-                : ("Additional access", "An extra scope declared by this app.")
+                ? ("附加访问权限", "这是请求应用声明的额外访问范围，请确认符合预期。")
+                : ("Additional access", "An extra scope declared by the requesting app. Review it before continuing.")
         };
     }
 }
@@ -87,7 +98,6 @@
             --brand: #b24057;
             --brand-deep: #8f3144;
             --brand-soft: #f3dce3;
-            --blue: #435c74;
             --success: #4f9c83;
         }
 
@@ -277,7 +287,6 @@
         }
 
         .summary-card,
-        .account-card,
         .permission-card,
         .risk-card,
         .technical-details {
@@ -293,9 +302,16 @@
             background: var(--line-faint);
         }
 
+        .summary-heading {
+            display: grid;
+            gap: 4px;
+            padding: 12px;
+            background: var(--paper-muted);
+        }
+
         .summary-row {
             display: grid;
-            grid-template-columns: 96px minmax(0, 1fr);
+            grid-template-columns: 112px minmax(0, 1fr);
             gap: 12px;
             align-items: center;
             min-height: 40px;
@@ -317,33 +333,6 @@
             word-break: break-word;
         }
 
-        .account-card {
-            display: flex;
-            align-items: center;
-            gap: 11px;
-            padding: 12px;
-            background: var(--paper-muted);
-        }
-
-        .account-avatar {
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex: 0 0 auto;
-            border-radius: 8px;
-            color: #ffffff;
-            background: var(--blue);
-            font-weight: 900;
-        }
-
-        .account-copy {
-            display: grid;
-            gap: 2px;
-            min-width: 0;
-        }
-
         .section-title {
             display: block;
             margin: 0;
@@ -351,14 +340,6 @@
             font-size: 0.95rem;
             font-weight: 900;
             line-height: 1.35;
-        }
-
-        .account-name {
-            margin: 0;
-            color: var(--ink-strong);
-            font-weight: 800;
-            line-height: 1.35;
-            word-break: break-word;
         }
 
         .section-copy {
@@ -450,17 +431,6 @@
             font-size: 0.82rem;
         }
 
-        .scope-code {
-            display: inline-flex;
-            max-width: 100%;
-            margin-top: 5px;
-            color: var(--ink-muted);
-            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
-            font-size: 0.68rem;
-            line-height: 1.35;
-            word-break: break-all;
-        }
-
         .risk-card {
             padding: 12px 14px;
             background: #fffaf5;
@@ -476,6 +446,10 @@
 
         .risk-list li + li {
             margin-top: 4px;
+        }
+
+        .risk-copy {
+            margin-top: 9px;
         }
 
         .technical-details {
@@ -665,7 +639,7 @@
             }
 
             .summary-row {
-                grid-template-columns: 82px minmax(0, 1fr);
+                grid-template-columns: 96px minmax(0, 1fr);
                 gap: 8px;
                 padding: 8px 10px;
             }
@@ -720,18 +694,26 @@
 
                         <div class="target-copy">
                             <span class="target-label">@targetLabel</span>
-                            <h1 class="display-serif">@Localizer["auth.consent.heading"]</h1>
+                            <h1 class="display-serif">@headingText</h1>
                         </div>
                     </div>
 
-                    <p class="target-description">@string.Format(Localizer["auth.consent.description"], displayClientName)</p>
+                    <p class="target-description">@heroCopy</p>
                     @if (hasClientDescription)
                     {
                         <p class="target-description">@applicationDescription</p>
                     }
                 </section>
 
-                <section class="summary-card" aria-label="@appLabel">
+                <section class="summary-card" aria-label="@identityTitle">
+                    <div class="summary-heading">
+                        <strong class="section-title">@identityTitle</strong>
+                        <p class="section-copy">@identityHint</p>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">@accountLabel</span>
+                        <span class="summary-value">@loginIdentity</span>
+                    </div>
                     <div class="summary-row">
                         <span class="summary-label">@appLabel</span>
                         <span class="summary-value">@displayClientName</span>
@@ -743,15 +725,6 @@
                     <div class="summary-row">
                         <span class="summary-label">@redirectLabel</span>
                         <span class="summary-value">@(string.IsNullOrWhiteSpace(redirectTarget) ? "-" : redirectTarget)</span>
-                    </div>
-                </section>
-
-                <section class="account-card" aria-label="@accountTitle">
-                    <div class="account-avatar">@accountInitial</div>
-                    <div class="account-copy">
-                        <strong class="section-title">@accountTitle</strong>
-                        <p class="account-name">@loginIdentity</p>
-                        <p class="section-copy">@accountHint</p>
                     </div>
                 </section>
 
@@ -774,19 +747,19 @@
                                 <div class="scope-body">
                                     <h2 class="scope-title">@scopeInfo.Title</h2>
                                     <p class="scope-description">@scopeInfo.Description</p>
-                                    <span class="scope-code">@scopeCodeLabel: @scope</span>
                                 </div>
                             </li>
                         }
                     </ul>
                 </section>
 
-                <section class="risk-card" aria-label="@riskTitle">
-                    <strong class="section-title">@riskTitle</strong>
+                <section class="risk-card" aria-label="@safetyTitle">
+                    <strong class="section-title">@safetyTitle</strong>
                     <ul class="risk-list">
-                        <li>@riskPoint1</li>
-                        <li>@riskPoint2</li>
+                        <li>@safetyPoint1</li>
+                        <li>@safetyPoint2</li>
                     </ul>
+                    <p class="section-copy risk-copy">@riskHint</p>
                 </section>
 
                 <details class="technical-details">
