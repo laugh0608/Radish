@@ -16,7 +16,7 @@
 
 ## 设计留痕
 
-已通过 Pencil MCP 在 `Docs/frontend/design-sources/public-web-unified-experience.pen` 新增 `E7-C - Public Information Density - Discover and Forum Detail` 画板，节点 id：`x68Nii`。
+已通过 Pencil MCP 在 `Docs/frontend/design-sources/public-web-unified-experience.pen` 新增 `E7-C - Public Information Density - Discover and Forum Detail` 画板，节点 id：`MmUU7`。
 
 本次设计留痕覆盖：
 
@@ -24,10 +24,11 @@
 - Forum detail：正文、回应汇总、轻回应、评论和参与 CTA 位于主路径；来源返回、讨论语义、作者模式和阅读提示进入侧栏辅助层。
 - 移动端：保持单列高频任务优先，搜索、筛选、轻回应和讨论输入不被说明块前置。
 
-限制说明：
+纠偏说明：
 
-- 当前 `.pen` 变更未出现在 Git diff 中，设计留痕以 Pencil MCP 当前编辑状态为准。
-- `x68Nii` 的 `snapshot_layout` 未发现布局问题。
+- 本批初次创建时因 Pencil 活动编辑器绑定错误，曾误写入 `console-governance-workbench.pen`。
+- 已从 Console 设计源移除误入画板，并在 `public-web-unified-experience.pen` 重新创建为 `MmUU7`。
+- `MmUU7` 的 `snapshot_layout` 未发现布局问题。
 
 ## 实施范围
 

@@ -18,7 +18,7 @@
 
 ## 设计留痕
 
-已通过 Pencil MCP 在 `Docs/frontend/design-sources/public-web-unified-experience.pen` 新增 `E7-C - Public Information Density - Docs and Shop` 画板，节点 id：`TQX1h`。
+已通过 Pencil MCP 在 `Docs/frontend/design-sources/public-web-unified-experience.pen` 新增 `E7-C - Public Information Density - Docs and Shop` 画板，节点 id：`sxpBL`。
 
 本次设计留痕只作为 E7-C 首批对照画板：
 
@@ -26,11 +26,11 @@
 - Shop：推荐商品 / 商品列表作为主区，分类、购买入口和个人页面边界进入辅助 rail。
 - 移动端：保持单列任务优先，不让说明块排在内容前。
 
-限制说明：
+纠偏说明：
 
-- 当前 Pencil 活动编辑器是 `console-governance-workbench.pen`。
-- 显式读取 `public-web-unified-experience.pen` 时，现有顶层节点仍以 Console 画板为主；因此本批新增 E7-C 对照画板，不直接改旧 P01-P14 Public 画板。
-- `TQX1h` 的 `snapshot_layout` 未发现布局问题；本轮 `.pen` 未出现在 Git diff 中，设计留痕以 Pencil MCP 当前编辑状态为准。
+- 本批初次创建时因 Pencil 活动编辑器绑定错误，曾误写入 `console-governance-workbench.pen`。
+- 已从 Console 设计源移除误入画板，并在 `public-web-unified-experience.pen` 重新创建为 `sxpBL`。
+- `sxpBL` 的 `snapshot_layout` 未发现布局问题。
 
 ## 实施范围
 

@@ -28040,6 +28040,1928 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "sxpBL",
+      "x": 6080,
+      "y": 0,
+      "name": "E7-C - Public Information Density - Docs and Shop",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": "$rx-bg-app",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": [
+        34,
+        44
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "hX58e",
+          "name": "E7-C - Public Information Density - Docs and Shop Header",
+          "width": "fill_container",
+          "height": 126,
+          "gap": 24,
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "gHXU8",
+              "name": "Header Copy",
+              "width": 1180,
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "cxiZj",
+                  "name": "Batch Badge",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FkWx8",
+                      "name": "Batch Badge Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "E7-C FIRST BATCH",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "QQ9LP",
+                  "name": "Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Docs and Shop content-first public surfaces",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 42,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "vpE2E",
+                  "name": "Summary",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Public Docs and Shop keep explanation as support. The first screen prioritizes readable documents, product cards, price, stock, and purchase continuation.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "YfRjd",
+              "name": "Header Signals",
+              "width": 420,
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "TT2Wt",
+                  "name": "Scope",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HGJfw",
+                      "name": "Scope Label",
+                      "fill": "$rx-accent-ink",
+                      "content": "Public design source",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jjJyL",
+                  "name": "Guardrail",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "bVP0n",
+                      "name": "Guardrail Label",
+                      "fill": "$rx-accent-earth",
+                      "content": "No API or permission change",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "KbH8F",
+          "name": "Docs and Shop Comparison",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "dq1nr",
+              "name": "Docs Content First",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": 14,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "iEOGy",
+                  "name": "Docs Badge",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GSVGr",
+                      "name": "Docs Badge Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "Docs",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "DmCpL",
+                  "name": "Docs Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Readable documents before directory",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 28,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "XFIAG",
+                  "name": "Docs Copy",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The public docs page starts with current readable articles. The full directory becomes a compact locating tool instead of the dominant first-screen object.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "nlyEQ",
+                  "name": "Docs Metrics",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "z82HTY",
+                      "name": "Primary",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Vxe57",
+                          "name": "Primary Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Primary",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "a9Hir",
+                          "name": "Primary Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Articles",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "M0397w",
+                          "name": "Primary Accent",
+                          "fill": "$rx-brand-primary",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pTIQq",
+                      "name": "Support",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fuE9a",
+                          "name": "Support Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Support",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "pbCxz",
+                          "name": "Support Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Directory",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "IDIpG",
+                          "name": "Support Accent",
+                          "fill": "$rx-accent-jade",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XEvlv",
+                      "name": "Action",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u5ck1L",
+                          "name": "Action Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Action",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HGtGC",
+                          "name": "Action Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Search",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "SL8HI",
+                          "name": "Action Accent",
+                          "fill": "$rx-accent-earth",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "P0omcV",
+                  "name": "Docs Task Stack",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "f8nuH",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "D0Co7",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-brand-primary",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "Xqso7",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Latest readable docs sit above the complete tree.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S3Xyj",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "j1lJC",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-jade",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "oy5Zf",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Directory preview is expandable, not the first visual anchor.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ijKCM",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "LzsBq",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-earth",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "gobvj",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Author entry and search stay in the auxiliary rail.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "CT5gi",
+              "name": "Shop Product First",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": 14,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "w8Zmp",
+                  "name": "Shop Badge",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "CIavi",
+                      "name": "Shop Badge Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "Shop",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "h5Kya",
+                  "name": "Shop Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Products, price, stock, and purchase path first",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 28,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "J6oGBO",
+                  "name": "Shop Copy",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The public shop page removes repeated browsing guides and lets product comparison, category context, price, stock, and login purchase entry carry the first screen.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "dD9Wc",
+                  "name": "Shop Metrics",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "dKZJB",
+                      "name": "Primary",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "s0pSle",
+                          "name": "Primary Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Primary",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "u59pE",
+                          "name": "Primary Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Products",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "p9amc",
+                          "name": "Primary Accent",
+                          "fill": "$rx-brand-primary",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hOaat",
+                      "name": "Signal",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "y3lXyb",
+                          "name": "Signal Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Signal",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "XCQe2",
+                          "name": "Signal Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Price",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "RaGNB",
+                          "name": "Signal Accent",
+                          "fill": "$rx-accent-jade",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "CTJup",
+                      "name": "Action",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "h0MAUV",
+                          "name": "Action Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Action",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "E7Ncl4",
+                          "name": "Action Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Buy",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "bfFSH",
+                          "name": "Action Accent",
+                          "fill": "$rx-accent-earth",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CpBNg",
+                  "name": "Shop Task Stack",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "P0jn2",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "oBpbm",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-brand-primary",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "lAxod",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Recommended products and product list become the main content area.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oSb33",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "sOKsP",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-jade",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "bu0Pc",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Category, count, and personal-page boundary stay secondary.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GHnMl",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "LkRng",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-earth",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "YROSa",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Orders, inventory, and account workflows remain after sign-in.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Bt06K",
+              "name": "Batch Stop Line",
+              "width": 410,
+              "fill": "$rx-bg-muted",
+              "cornerRadius": 14,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ESfj4",
+                  "name": "Stop Badge",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "OYD7S",
+                      "name": "Stop Badge Label",
+                      "fill": "$rx-accent-earth",
+                      "content": "Stop line",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "r5kndx",
+                  "name": "Stop Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Keep public behavior unchanged",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "o8yYe",
+                  "name": "Bullet Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "W7v1H",
+                      "name": "Bullet Dot",
+                      "fill": "$rx-accent-earth",
+                      "width": 7,
+                      "height": 7
+                    },
+                    {
+                      "type": "text",
+                      "id": "o3q3Uy",
+                      "name": "Bullet Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "No docs API, slug, markdown, permission, or author workflow change.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "eB0fA",
+                  "name": "Bullet Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "f3AdlV",
+                      "name": "Bullet Dot",
+                      "fill": "$rx-accent-earth",
+                      "width": 7,
+                      "height": 7
+                    },
+                    {
+                      "type": "text",
+                      "id": "jd85K",
+                      "name": "Bullet Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "No shop API, order, inventory, asset, payment, or purchase-submit change.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "SxrZB",
+                  "name": "Bullet Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "pMI1g",
+                      "name": "Bullet Dot",
+                      "fill": "$rx-accent-earth",
+                      "width": 7,
+                      "height": 7
+                    },
+                    {
+                      "type": "text",
+                      "id": "rxZgD",
+                      "name": "Bullet Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Visual and copy hierarchy only; implementation stays in radish.client.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "MmUU7",
+      "x": 8080,
+      "y": 0,
+      "name": "E7-C - Public Information Density - Discover and Forum Detail",
+      "clip": true,
+      "width": 1920,
+      "height": 1080,
+      "fill": "$rx-bg-app",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": [
+        34,
+        44
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "fINkr",
+          "name": "E7-C - Public Information Density - Discover and Forum Detail Header",
+          "width": "fill_container",
+          "height": 154,
+          "gap": 24,
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "POzjp",
+              "name": "Header Copy",
+              "width": 1180,
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "VTna2",
+                  "name": "Batch Badge",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "piJrA",
+                      "name": "Batch Badge Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "E7-C SECOND BATCH",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "sb3xs",
+                  "name": "Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Discover stream and Forum detail discussion hierarchy",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 42,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "JGRxk",
+                  "name": "Summary",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Discover starts from community activity. Forum detail puts body, quick replies, discussion, and join actions in the primary path while source return and reading guidance stay auxiliary.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "F9rOnc",
+              "name": "Header Signals",
+              "width": 420,
+              "layout": "vertical",
+              "gap": 10,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "VZp5m",
+                  "name": "Scope",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UFWD9",
+                      "name": "Scope Label",
+                      "fill": "$rx-accent-ink",
+                      "content": "Public design source",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hxhrb",
+                  "name": "Guardrail",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "jEgd9",
+                      "name": "Guardrail Label",
+                      "fill": "$rx-accent-earth",
+                      "content": "No API or permission change",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Hxrmj",
+          "name": "Discover and Detail Comparison",
+          "width": "fill_container",
+          "height": "fill_container",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "w3XcuA",
+              "name": "Discover Community Stream",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": 14,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "e3XZKf",
+                  "name": "Discover Badge",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vK3Bx",
+                      "name": "Discover Badge Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "Discover",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "K3bwJ3",
+                  "name": "Discover Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Community stream before route explanation",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 28,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "EIEki",
+                  "name": "Discover Copy",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The first screen gives more space to current posts and fresh mixed content. Route cards remain available, but they no longer read as the main purpose of the page.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "ZEpZQ",
+                  "name": "Discover Metrics",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "F9w17",
+                      "name": "Posts",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oyksZ",
+                          "name": "Posts Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Posts",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Mo0Qg",
+                          "name": "Posts Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "5 shown",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "cU6DF",
+                          "name": "Posts Accent",
+                          "fill": "$rx-brand-primary",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BySHi",
+                      "name": "Stream",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "g3Qi4D",
+                          "name": "Stream Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Stream",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Jzn3Z",
+                          "name": "Stream Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Fresh",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "fBnjp",
+                          "name": "Stream Accent",
+                          "fill": "$rx-accent-jade",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Pxnmr",
+                      "name": "Related",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "V2RMlu",
+                          "name": "Related Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Related",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "whgUw",
+                          "name": "Related Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Rail",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "bgoEc",
+                          "name": "Related Accent",
+                          "fill": "$rx-accent-earth",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ITw4N",
+                  "name": "Discover Stream Sketch",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "D3WYJl",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "pdR6b",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-brand-primary",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "wnjUA",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Five current posts establish the community pulse on the first screen.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "quIi9",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "b22Kb",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-jade",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "PwjkQ",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Docs, products, and rankings sit beside the reading path as related context.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vMM6a",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "Ylf5H",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-earth",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "LZYAZ",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Navigation wording becomes continue browsing, not entry navigation.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qixJb",
+              "name": "Forum Detail Discussion First",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": 14,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Ej2Qd",
+                  "name": "Forum Badge",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "VVzhp",
+                      "name": "Forum Badge Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "Forum detail",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "hXpdN",
+                  "name": "Forum Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Participation rail moves above reading guide",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 28,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "LsDlx",
+                  "name": "Forum Copy",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "The detail page keeps source return visible, then presents quick reply and discussion actions before semantics, author mode, and reading guidance.",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "sYA95",
+                  "name": "Forum Metrics",
+                  "width": "fill_container",
+                  "gap": 14,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "jsVy4",
+                      "name": "Body",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CE04d",
+                          "name": "Body Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Body",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LxJNY",
+                          "name": "Body Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Read",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "VGnDR",
+                          "name": "Body Accent",
+                          "fill": "$rx-brand-primary",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "uMrYi",
+                      "name": "Reply",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "G6UONk",
+                          "name": "Reply Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Reply",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "OdcqT",
+                          "name": "Reply Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Quick",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "BV61Z",
+                          "name": "Reply Accent",
+                          "fill": "$rx-accent-jade",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VniLg",
+                      "name": "Discuss",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 12,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 6,
+                      "padding": 14,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "v5Qq5",
+                          "name": "Discuss Label",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Discuss",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wIJ25",
+                          "name": "Discuss Value",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Root",
+                          "lineHeight": 1.12,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 24,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 999,
+                          "id": "O4USRN",
+                          "name": "Discuss Accent",
+                          "fill": "$rx-accent-earth",
+                          "width": "fill_container",
+                          "height": 3
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "nz5aK",
+                  "name": "Forum Detail Stack",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "y2Zyc",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "zWoXU",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-brand-primary",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZD30l",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Main path: post body, responses, quick replies, comments.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "w3ycEE",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "MpTpn",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-jade",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "brrPU",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Side rail: source return, join discussion, comment semantics, author modes.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "t4tDPb",
+                      "name": "Bullet Row",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "g4Khl",
+                          "name": "Bullet Dot",
+                          "fill": "$rx-accent-earth",
+                          "width": 7,
+                          "height": 7
+                        },
+                        {
+                          "type": "text",
+                          "id": "YWNjv",
+                          "name": "Bullet Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "Reading guide moves to the bottom as supporting guidance.",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "IyjS6",
+              "name": "Mobile Priority Rail",
+              "width": 410,
+              "fill": "$rx-bg-muted",
+              "cornerRadius": 14,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Y0w38P",
+                  "name": "Mobile Badge",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "gap": 6,
+                  "padding": [
+                    7,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "LV07h",
+                      "name": "Mobile Badge Label",
+                      "fill": "$rx-accent-ink",
+                      "content": "Mobile",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "M1TAe",
+                  "name": "Mobile Title",
+                  "fill": "$rx-text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Single-column task priority",
+                  "lineHeight": 1.12,
+                  "fontFamily": "$rx-font-heading",
+                  "fontSize": 24,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "o3qkC",
+                  "name": "Bullet Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "piQwG",
+                      "name": "Bullet Dot",
+                      "fill": "$rx-accent-ink",
+                      "width": 7,
+                      "height": 7
+                    },
+                    {
+                      "type": "text",
+                      "id": "zEaSF",
+                      "name": "Bullet Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Search, filters, quick reply, and discussion input stay reachable before long explanations.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DAtPL",
+                  "name": "Bullet Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "vovRD",
+                      "name": "Bullet Dot",
+                      "fill": "$rx-accent-ink",
+                      "width": 7,
+                      "height": 7
+                    },
+                    {
+                      "type": "text",
+                      "id": "rbUBt",
+                      "name": "Bullet Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Cards and rails compress without changing public routes or auth return paths.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tnuOx",
+                  "name": "Bullet Row",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "YAwGa",
+                      "name": "Bullet Dot",
+                      "fill": "$rx-accent-ink",
+                      "width": 7,
+                      "height": 7
+                    },
+                    {
+                      "type": "text",
+                      "id": "eFTQ3",
+                      "name": "Bullet Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "No API, permission, login return, comment, or quick-reply behavior change.",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
