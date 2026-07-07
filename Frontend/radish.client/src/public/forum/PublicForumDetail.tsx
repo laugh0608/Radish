@@ -1838,13 +1838,44 @@ export const PublicForumDetail = ({
           </a>
         </section>
 
-        <PublicReadingGuide
-          className={`${styles.readingGuide} ${styles.sideReadingGuide}`}
-          label={readingGuide.label}
-          title={readingGuide.title}
-          description={readingGuide.description}
-          items={readingGuide.items}
-        />
+        {(quickReplyReturnPath || commentReturnPath) && (
+          <section className={styles.sidePanel}>
+            <p className={styles.sidePanelKicker}>{t('forum.public.detailRailParticipationTitle')}</p>
+            <p className={styles.sidePanelText}>{t('forum.public.detailRailParticipationDescription')}</p>
+            <div className={styles.railActionList}>
+              {quickReplyReturnPath && (
+                <a
+                  href={quickReplyReturnPath}
+                  className={styles.railActionLink}
+                  aria-controls={QUICK_REPLY_SECTION_ID}
+                  onClick={(event) => handlePublicForumLinkClick(event, handleQuickReplyAction)}
+                >
+                  <Icon icon="mdi:message-flash-outline" size={18} />
+                  <span>
+                    {isAuthenticated
+                      ? t('forum.public.workspaceQuickReplyAction')
+                      : t('forum.public.workspaceQuickReplyLoginAction')}
+                  </span>
+                </a>
+              )}
+              {commentReturnPath && (
+                <a
+                  href={commentReturnPath}
+                  className={styles.railActionLink}
+                  aria-controls={COMMENT_SECTION_ID}
+                  onClick={(event) => handlePublicForumLinkClick(event, handleCommentAction)}
+                >
+                  <Icon icon="mdi:comment-text-outline" size={18} />
+                  <span>
+                    {isAuthenticated
+                      ? t('forum.public.workspaceCommentAction')
+                      : t('forum.public.workspaceCommentLoginAction')}
+                  </span>
+                </a>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className={styles.sidePanel}>
           <p className={styles.sidePanelKicker}>{t('forum.public.detailRailSemanticsTitle')}</p>
@@ -1915,44 +1946,13 @@ export const PublicForumDetail = ({
           </section>
         )}
 
-        {(quickReplyReturnPath || commentReturnPath) && (
-          <section className={styles.sidePanel}>
-            <p className={styles.sidePanelKicker}>{t('forum.public.detailRailParticipationTitle')}</p>
-            <p className={styles.sidePanelText}>{t('forum.public.detailRailParticipationDescription')}</p>
-            <div className={styles.railActionList}>
-              {quickReplyReturnPath && (
-                <a
-                  href={quickReplyReturnPath}
-                  className={styles.railActionLink}
-                  aria-controls={QUICK_REPLY_SECTION_ID}
-                  onClick={(event) => handlePublicForumLinkClick(event, handleQuickReplyAction)}
-                >
-                  <Icon icon="mdi:message-flash-outline" size={18} />
-                  <span>
-                    {isAuthenticated
-                      ? t('forum.public.workspaceQuickReplyAction')
-                      : t('forum.public.workspaceQuickReplyLoginAction')}
-                  </span>
-                </a>
-              )}
-              {commentReturnPath && (
-                <a
-                  href={commentReturnPath}
-                  className={styles.railActionLink}
-                  aria-controls={COMMENT_SECTION_ID}
-                  onClick={(event) => handlePublicForumLinkClick(event, handleCommentAction)}
-                >
-                  <Icon icon="mdi:comment-text-outline" size={18} />
-                  <span>
-                    {isAuthenticated
-                      ? t('forum.public.workspaceCommentAction')
-                      : t('forum.public.workspaceCommentLoginAction')}
-                  </span>
-                </a>
-              )}
-            </div>
-          </section>
-        )}
+        <PublicReadingGuide
+          className={`${styles.readingGuide} ${styles.sideReadingGuide}`}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
       </aside>
     </div>
   );

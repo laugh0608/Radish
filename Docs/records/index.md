@@ -195,6 +195,7 @@
 - [p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07](/records/p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07)
 - [p3-12-e7-b-public-terminology-cleanup-2026-07-07](/records/p3-12-e7-b-public-terminology-cleanup-2026-07-07)
 - [p3-12-e7-c-public-information-density-first-closure-2026-07-07](/records/p3-12-e7-c-public-information-density-first-closure-2026-07-07)
+- [p3-12-e7-c-public-discover-forum-density-closure-2026-07-07](/records/p3-12-e7-c-public-discover-forum-density-closure-2026-07-07)
 - [p3-12-day-end-doc-review-2026-07-06](/records/p3-12-day-end-doc-review-2026-07-06)
 - [p3-12-day-end-doc-review-2026-07-05](/records/p3-12-day-end-doc-review-2026-07-05)
 - [wog-1-write-operation-inventory-2026-06-20](/records/wog-1-write-operation-inventory-2026-06-20)

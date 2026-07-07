@@ -26,8 +26,8 @@
 
 .pulseHome {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(460px, 1.65fr);
-  gap: 16px;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.68fr);
+  gap: 14px;
   align-items: stretch;
 }
 
@@ -43,14 +43,14 @@
 }
 
 .pulseIntroCard {
-  padding: 22px;
+  padding: 18px;
 }
 
 .pulseMetricGrid {
   min-width: 0;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .pulseMetricCard {
@@ -72,11 +72,11 @@
 .pulseMetricButton {
   width: 100%;
   height: 100%;
-  min-height: 122px;
+  min-height: 104px;
   border: 0;
   background: transparent;
   color: inherit;
-  padding: 16px;
+  padding: 14px;
   text-align: left;
   cursor: pointer;
   display: grid;
@@ -98,7 +98,7 @@
 
 .pulseMetricValue {
   color: var(--theme-text-primary);
-  font-size: 1.9rem;
+  font-size: 1.72rem;
   line-height: 1;
 }
 
@@ -137,14 +137,14 @@
 
 .communityBoard {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(330px, 0.9fr);
-  gap: 16px;
+  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.72fr);
+  gap: 14px;
   align-items: start;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .discussionPanel {
-  padding: 18px;
+  padding: 16px;
 }
 
 .discussionHeader {
@@ -205,11 +205,11 @@
 .publicRail {
   min-width: 0;
   display: grid;
-  gap: 14px;
+  gap: 12px;
 }
 
 .railCard {
-  padding: 18px;
+  padding: 16px;
 }
 
 .railCardHeader {
@@ -228,10 +228,10 @@
 }
 
 .railDescription {
-  margin: 8px 0 14px;
+  margin: 6px 0 12px;
   color: var(--theme-text-secondary);
   font-size: 0.92rem;
-  line-height: 1.65;
+  line-height: 1.55;
 }
 
 .railList {
@@ -670,7 +670,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
   gap: 16px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .sectionGrid + .sectionCard {
@@ -747,11 +747,22 @@
 }
 
 .guideSection {
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .guideSection .heroGuideGrid {
+  gap: 10px;
   margin-top: 0;
+}
+
+.guideSection .heroGuideCard {
+  padding: 12px;
+  border-radius: 16px;
+}
+
+.guideSection .heroGuideDescription {
+  margin-top: 6px;
+  line-height: 1.5;
 }
 
 .streamHeader {

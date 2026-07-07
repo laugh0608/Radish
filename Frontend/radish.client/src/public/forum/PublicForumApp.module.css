@@ -35,7 +35,7 @@
   top: 104px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -119,8 +119,8 @@
 .sidePanel {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
+  gap: 10px;
+  padding: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
   border-radius: 16px;
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
@@ -139,19 +139,19 @@
 .sidePanelText {
   margin: 0;
   color: var(--theme-text-secondary);
-  font-size: 13px;
-  line-height: 1.65;
+  font-size: 12.5px;
+  line-height: 1.55;
 }
 
 .sideRuleList {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   padding-left: 18px;
   color: var(--theme-text-secondary);
-  font-size: 13px;
-  line-height: 1.6;
+  font-size: 12.5px;
+  line-height: 1.5;
 }
 
 .railChipList,
@@ -618,11 +618,11 @@
 
 .workspaceActionPanel {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 18px 20px;
-  border-radius: 24px;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%) 0%, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 100%);
@@ -632,13 +632,13 @@
 .workspaceActionCopy {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
 }
 
 .workspaceActionTitle {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--theme-text-primary);
 }
@@ -647,7 +647,7 @@
   margin: 0;
   color: var(--theme-text-secondary);
   font-size: 13px;
-  line-height: 1.65;
+  line-height: 1.55;
   overflow-wrap: anywhere;
 }
 
@@ -665,8 +665,8 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
-  padding: 9px 16px;
+  min-height: 36px;
+  padding: 8px 13px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
@@ -828,16 +828,16 @@
 .detailStack {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px 18px 20px;
+  gap: 14px;
+  padding: 14px 16px 18px;
   min-width: 0;
 }
 
 .reactionStrip {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 14px 16px;
+  gap: 10px;
+  padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
@@ -846,7 +846,7 @@
 
 .reactionStripHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
   min-width: 0;
@@ -893,9 +893,9 @@
 .sectionShell {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px 20px 20px;
-  border-radius: 24px;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
   min-width: 0;
@@ -917,9 +917,9 @@
 
 .commentSection {
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  border-radius: 24px;
+  border-radius: 20px;
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
-  padding: 20px;
+  padding: 16px;
   min-width: 0;
 }
 

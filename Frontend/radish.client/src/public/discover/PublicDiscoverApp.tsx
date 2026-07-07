@@ -750,7 +750,7 @@ export const PublicDiscoverApp = ({
     leaderboard: routeGuideCards.find((item) => item.key === 'leaderboard') ?? routeGuideCards[0],
     shop: routeGuideCards.find((item) => item.key === 'shop') ?? routeGuideCards[0]
   }), [routeGuideCards]);
-  const spotlightPosts = useMemo(() => forumPosts.slice(0, 3), [forumPosts]);
+  const spotlightPosts = useMemo(() => forumPosts.slice(0, 5), [forumPosts]);
   const spotlightTags = useMemo(() => hotTags.slice(0, 4), [hotTags]);
   const firstDocument = docs[0] ?? null;
   const firstProduct = products[0] ?? null;

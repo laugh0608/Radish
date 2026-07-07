@@ -213,13 +213,14 @@ E 期结束前必须形成：
    - `E7-A Console 正式后台密度与移动任务流` 已完成代码实现与 Gateway PC / mobile 复核，记录见 [P3-12-E7-A Console 正式后台密度与移动任务流方案](/records/p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07)：移动端采用 `总览 / 治理 / 交易 / 权限 / 更多` 高频底栏，并由 `总览` 功能面板与 `更多` 全量入口承接完整 Console 分类；`radish.console` 构建、repo hygiene、`git diff --check`、Gateway `1440x900` 与 `390x844` 视图均已通过。
    - `E7-B Public 术语清理` 已完成代码实现与静态验证，记录见 [P3-12-E7-B Public 术语清理记录](/records/p3-12-e7-b-public-terminology-cleanup-2026-07-07)：公开页、Workbench、通知 / 消息、Docs 作者入口和公开 head 中的用户可见内部术语已替换为页面、个人页面、兼容入口、公开文档和表情回应等产品表达；本批未改路由契约、API、权限或后端行为。
    - `E7-C Public 信息密度首批` 已完成 Docs / Shop 代码实现、Pencil 对照画板和 Gateway PC / mobile 复核，记录见 [P3-12-E7-C Public 信息密度首批收口记录](/records/p3-12-e7-c-public-information-density-first-closure-2026-07-07)：公开 Docs 默认先展示可阅读文档并把完整目录降为可展开定位工具，公开 Shop 移除重复说明与浏览指南，优先展示商品、分类、价格、库存和购买入口；本批未改路由契约、API、权限、登录回流、购买提交或后端行为。
+   - `E7-C Public 信息密度第二批` 已完成 Discover / Forum detail 代码实现和 Pencil 对照画板，记录见 [P3-12-E7-C Public 发现与论坛详情信息密度第二批收口记录](/records/p3-12-e7-c-public-discover-forum-density-closure-2026-07-07)：Discover 首屏提高社区内容流密度，Forum detail 将参与入口前移并降低阅读提示优先级；本批未改路由契约、API、权限、登录回流、评论 / 轻回应提交或后端行为。
    - 以用户截图和后续真实页面复核为输入，建立 Public / Docs / Forum / Shop / Auth / Console 的 debug 内容、内部术语、信息密度、大卡片、移动排版和高频任务效率矩阵。
    - Console 作为 E7 第一顺位：必须读取 `Docs/frontend/design-sources/console-governance-workbench.pen` 和 [Console 治理工作台设计说明](/frontend/console-governance-workbench-design)，分别审计 PC 设计稿偏差与移动治理视图缺口。
    - E7 先给出阻断级缺口和成组修复顺位；后续代码治理必须按页面族推进，不再零散修单点文案。
 
 ## 下一批建议
 
-- 下一步继续 `E7-C` 第二批：处理 Forum detail / Discover 的信息密度、讨论区层级、重复说明和移动端高频任务效率问题。
+- 下一步进入 `E7-D` Auth 授权页信息层级：处理授权目标、账号状态、风险提示、确认动作和移动端确认效率。
 - Console E7-A 已闭合；后续仅在真实使用、新截图或自动化复核命中新增缺口时回拉。
 - E7 不新增接口、后端行为、权限、审计或运行时契约；只处理阶段口径、审计记录、低风险文案 / 状态修正和后续成组修复顺位。
 - 后续若 E7 命中必须改动接口、权限、错误模型、审计或运行时契约的缺口，先补小方案并确认边界。
