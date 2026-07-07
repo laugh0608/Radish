@@ -177,6 +177,8 @@
   - `P3-12-D36-D61` 已完成 UI 专题差距口径、四类设计源差距矩阵、边界裁决、阶段验收清单、Gateway PC / mobile 阶段验收、纠偏、页面缺口核对、Docs 作者态动作补漏、Public / Private 主路径代码侧复核、Console 深层管理动作复核、移动响应式抽样、Pencil UI 实现完成度复核、UI 实现证据收口、候选前启动前验证、Gateway 真实页面复核、D49 后口径纠偏、`radish.client` 私域 / 作者态移动任务流 UI 对齐首批、Public Web 移动公开任务流 UI 对齐、Public Web Pencil 首轮真实页面对齐收口、Private / Author Pencil 页面对齐收口、Console 响应式后台 UI 差距回拉、Console Gateway 成组真实页面复核、Console 深层交互 / 真实数据态复核、UI 专题候选前集中验收准备、UI 专题候选前验证执行、Pencil 逐页 UI 与功能缺口复盘和 Public Web `P01-P14` 首轮实现；`P15-P16` 公开聊天室 / 移动聊天回复流继续作为 Public 小专题内产品与 API 后置缺口。
   - `P3-12-D62` Private / Author 已完成 `/workbench`、`/me` 内容历史复访组、资产 / 订单 / 背包页面族、通知 / 消息页面族、圈子 / 宠物页面族以及论坛 / Docs 作者页面族首批实现：通过 Pencil MCP 读取 `private-web-workflows.pen` 的 `P01 / P21`、`P03-P06 / P23`、`P07-P11 / P24-P25`、`P12-P13 / P26-P27`、`P14-P15 / P28-P29` 与 `P16-P20 / P30`，补私域工作台队列、`/me` 子页任务面、资产 / 订单 / 背包状态 rail、通知 / 消息上下文 rail、圈子关系上下文 rail、宠物照护优先级 rail、论坛作者模式 rail 和 Docs 作者任务 rail；记录见 [P3-12-D62 Private / Author Workbench 首批实现记录](/records/p3-12-d62-private-author-workbench-first-implementation-2026-07-04)、[P3-12-D62 `/me` 内容历史复访组首批实现记录](/records/p3-12-d62-me-content-history-first-implementation-2026-07-05)、[P3-12-D62 资产 / 订单 / 背包页面族首批实现记录](/records/p3-12-d62-assets-orders-inventory-first-implementation-2026-07-05)、[P3-12-D62 通知 / 消息页面族首批实现记录](/records/p3-12-d62-notifications-messages-first-implementation-2026-07-05)、[P3-12-D62 圈子 / 宠物页面族首批实现记录](/records/p3-12-d62-circle-pet-first-implementation-2026-07-05) 与 [P3-12-D62 论坛 / Docs 作者页面族首批实现记录](/records/p3-12-d62-forum-docs-author-first-implementation-2026-07-05)。不新增 API、权限、数据库、路由语义或提交载荷。
   - `P3-12-D63` Console 已完成内容治理 / 经验治理、商业运营、文档治理、用户管理和权限矩阵页面族首批实现、成组静态收口和 Gateway 成组真实页面复核；`P3-12-D64-D66` 已完成 UI 候选前集中验收准备、启动无关候选前验证和运行态补验；随后 `P3-12-E1-E5` 已完成首批成熟度审计、信任治理、隐私安全、错误恢复和旅程验证。`P3-12-E6` 原进入 F 判断已被 2026-07-06 人工抽查推翻，下一步回拉 `P3-12-E7 正式 UI 与文案成熟度专项审计`。
+  - `P3-12-E7` 首批 Console / Public 静态差距审计已完成：通过 Pencil MCP 读取 `console-governance-workbench.pen` 并对照 `radish.console` / `radish.client` / Auth 源码，确认 `/console/` Dashboard 未对齐 `P04`、Console 移动壳层未落到 `P14-P18`、Public 术语簇和 Auth 授权页技术信息层级仍阻断进入 `P3-12-F`；记录见 [P3-12-E7 Console / Public UI 与文案成熟度首批差距审计](/records/p3-12-e7-console-public-ui-copy-gap-audit-2026-07-07)。
+  - `P3-12-E7-A` Console 正式后台密度与移动任务流已完成代码实现与 Gateway PC / mobile 复核，记录见 [P3-12-E7-A Console 正式后台密度与移动任务流方案](/records/p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07)；移动端采用 `总览 / 治理 / 交易 / 权限 / 更多` 高频底栏，并由 `总览` 功能面板与 `更多` 全量入口承接完整 Console 分类；`radish.console` 构建、repo hygiene、`git diff --check`、Gateway `1440x900` 与 `390x844` 视图均已通过。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -190,11 +192,11 @@
    - 本地验证继续按风险分层；完整 baseline 默认放在准备合并到 `master` 前或发布部署节点。
    - 真实页面 smoke 不再按每个本地提交或每个低 / 中风险设置批次执行；默认在较大阶段推进完成、准备合并到 `master`、发布候选整备或用户可见页面明显变化时集中覆盖。
 
-## 明天事项（2026-07-07）
+## 下一步事项（2026-07-08 起）
 - 继续 `P3-12-E7 正式 UI 与文案成熟度专项审计`；当前不能进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
-- 第一顺位是 Console PC / mobile 与 Pencil 设计源的真实差距审计：读取 [Console 治理工作台设计说明](/frontend/console-governance-workbench-design) 与 `Docs/frontend/design-sources/console-governance-workbench.pen`，对照当前 `/console/` PC 与移动视图，确认桌面布局、移动治理任务、信息密度、导航、表格 / 详情 / 抽屉和高风险动作是否偏离设计稿。
-- 同步审计 Public / Docs / Forum / Shop / Auth 的正式产品表现：清理 debug 内容、内部术语、实现说明、低密度大卡片、重复解释、移动首屏遮挡和高频任务断点。
-- 明天先产出页面族矩阵和阻断级缺口清单，再决定成组修复顺序；若只命中低风险文案、状态或规划口径，可直接修正文档或前端文案。
+- 第一顺位进入 `E7-B Public 术语清理`：集中替换 `公开壳层 / 正式 Web 私域路由 / 私域路由 / 桌面工作台 / 公开 docs / reaction` 等用户可见内部术语。
+- Console E7-A 已闭合；后续仅在真实使用、新截图或自动化复核命中新增缺口时回拉。
+- 后续再进入 `E7-C` Public / Docs / Forum / Shop 信息密度和 `E7-D` Auth 授权页信息层级；跨页面视觉或移动壳层行为改动先补小方案并等待确认。
 - 若 E7 命中接口、错误模型、后端日志、权限、审计或运行时契约缺口，先补小方案并等待确认后再改代码。
 - 如需真实 Gateway smoke，必须由用户在当轮明确说明前后端已启动；复核口径按 [浏览器 Smoke 指南](/guide/browser-smoke) 同时覆盖 PC 与移动视图。
 - 验证按风险分层执行：文档轮次使用 repo hygiene 与 `git diff --check`；前端代码轮次补对应 workspace build / type-check；后端或权限写入改动再补相关 `dotnet test` / baseline。

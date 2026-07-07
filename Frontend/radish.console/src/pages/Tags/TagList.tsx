@@ -318,7 +318,7 @@ export const TagList = () => {
   return (
     <div className="admin-feature-page tag-list-page">
       <ConsolePageHeader
-        eyebrow="CONTENT TAXONOMY"
+        eyebrow="内容标签"
         title="标签管理"
         description="维护社区内容标签、固定标签和排序权重。"
         icon={<TagsOutlined />}

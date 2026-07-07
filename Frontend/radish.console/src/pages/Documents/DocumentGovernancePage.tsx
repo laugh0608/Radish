@@ -687,7 +687,7 @@ export const DocumentGovernancePage = () => {
   return (
     <div className="admin-feature-page document-governance-page">
       <ConsolePageHeader
-        eyebrow="DOCUMENT GOVERNANCE"
+        eyebrow="文档治理"
         title="文档治理"
         description="治理文档发布状态、访问策略、版本回滚、导入导出与回收站。"
         icon={<FileTextOutlined />}
@@ -778,7 +778,7 @@ export const DocumentGovernancePage = () => {
         <aside className="admin-table-aside" aria-label="文档治理详情上下文">
           <div className="admin-feature-rail__header">
             <div>
-              <span className="admin-feature-rail__eyebrow">Document Dossier</span>
+              <span className="admin-feature-rail__eyebrow">文档档案</span>
               <h3>文档治理详情</h3>
             </div>
             <ConsoleStatusChip tone={canView ? 'success' : 'danger'}>

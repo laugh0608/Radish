@@ -325,7 +325,7 @@ export const CategoryList = () => {
   return (
     <div className="admin-feature-page category-list-page">
       <ConsolePageHeader
-        eyebrow="CONTENT TAXONOMY"
+        eyebrow="内容分类"
         title="分类管理"
         description="维护社区内容分类、层级关系和排序权重。"
         icon={<AppstoreOutlined />}

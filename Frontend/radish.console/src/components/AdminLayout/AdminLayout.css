@@ -263,30 +263,20 @@
   color: var(--console-text-secondary);
 }
 
+.admin-mobile-nav,
+.admin-mobile-functions {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .admin-sider {
-    padding: 0 8px;
-  }
-
-  .admin-sider.ant-layout-sider-collapsed .admin-logo {
-    height: 70px;
-    padding: 0;
-  }
-
-  .admin-sider.ant-layout-sider-collapsed .admin-logo-mark {
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
-  }
-
-  .admin-sider.ant-layout-sider-collapsed .ant-menu-item {
-    width: 48px;
+    display: none;
   }
 
   .admin-layout > .ant-layout,
   .admin-layout > .ant-layout.collapsed {
-    margin-left: 64px;
-    width: calc(100% - 64px);
+    margin-left: 0;
+    width: 100%;
     min-width: 0;
   }
 
@@ -318,11 +308,240 @@
   }
 
   .admin-content {
-    padding: 18px 14px 22px;
+    padding: 18px 14px 112px;
     min-width: 0;
   }
 
   .admin-breadcrumb {
     margin-bottom: 18px;
+  }
+
+  .admin-mobile-nav {
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
+    padding: 6px;
+    background: var(--console-bg-surface);
+    border: 1px solid var(--console-border-subtle);
+    border-radius: var(--console-radius-panel);
+    box-shadow: var(--console-shadow-card);
+  }
+
+  .admin-mobile-nav__item {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    height: 56px;
+    place-items: center;
+    padding: 5px 2px;
+    color: var(--console-text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--console-radius-control);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .admin-mobile-nav__item:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+  }
+
+  .admin-mobile-nav__item--active {
+    color: var(--console-brand-primary);
+    background: var(--console-bg-muted);
+    border-color: var(--console-border-muted);
+  }
+
+  .admin-mobile-nav__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .admin-mobile-nav__label {
+    max-width: 100%;
+    overflow: hidden;
+    font-size: 11px;
+    font-weight: 760;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-mobile-functions {
+    position: fixed;
+    inset: 0;
+    z-index: 29;
+    display: block;
+    pointer-events: none;
+  }
+
+  .admin-mobile-functions--open {
+    pointer-events: auto;
+  }
+
+  .admin-mobile-functions__backdrop {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    background: rgba(33, 27, 24, 0);
+    border: 0;
+    opacity: 0;
+    transition: opacity 0.18s, background-color 0.18s;
+  }
+
+  .admin-mobile-functions--open .admin-mobile-functions__backdrop {
+    background: rgba(33, 27, 24, 0.34);
+    opacity: 1;
+  }
+
+  .admin-mobile-functions__panel {
+    position: absolute;
+    right: 12px;
+    bottom: 88px;
+    left: 12px;
+    display: grid;
+    gap: 14px;
+    max-height: min(72vh, 640px);
+    min-width: 0;
+    padding: 16px;
+    overflow: auto;
+    background: var(--console-bg-surface);
+    border: 1px solid var(--console-border-subtle);
+    border-radius: var(--console-radius-panel);
+    box-shadow: var(--console-shadow-card);
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.18s, transform 0.18s;
+  }
+
+  .admin-mobile-functions--open .admin-mobile-functions__panel {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .admin-mobile-functions__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .admin-mobile-functions__header h2,
+  .admin-mobile-functions__group h3 {
+    margin: 0;
+    color: var(--console-text-primary);
+  }
+
+  .admin-mobile-functions__header h2 {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .admin-mobile-functions__header p {
+    margin: 4px 0 0;
+    color: var(--console-text-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .admin-mobile-functions__close {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    color: var(--console-text-secondary);
+    background: var(--console-bg-muted);
+    border: 1px solid var(--console-border-subtle);
+    border-radius: var(--console-radius-control);
+  }
+
+  .admin-mobile-functions__groups {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .admin-mobile-functions__group {
+    display: grid;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .admin-mobile-functions__group h3 {
+    font-size: 13px;
+  }
+
+  .admin-mobile-functions__routes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .admin-mobile-functions__route {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 9px 10px;
+    color: var(--console-text-primary);
+    text-align: left;
+    background: var(--console-bg-muted);
+    border: 1px solid var(--console-border-subtle);
+    border-radius: var(--console-radius-control);
+    font: inherit;
+  }
+
+  .admin-mobile-functions__route--active {
+    color: var(--console-brand-primary);
+    background: var(--console-bg-surface);
+    border-color: var(--console-border-muted);
+  }
+
+  .admin-mobile-functions__route-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    font-size: 16px;
+  }
+
+  .admin-mobile-functions__route-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .admin-mobile-functions__route-copy span,
+  .admin-mobile-functions__route-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-mobile-functions__route-copy span {
+    font-size: 13px;
+    font-weight: 760;
+  }
+
+  .admin-mobile-functions__route-copy small {
+    color: var(--console-text-secondary);
+    font-size: 11px;
   }
 }

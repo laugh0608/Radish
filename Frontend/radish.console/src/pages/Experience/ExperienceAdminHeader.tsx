@@ -13,7 +13,7 @@ type ExperienceAdminHeaderProps = {
 export const ExperienceAdminHeader = ({ onRefresh, canAdjust, canFreeze }: ExperienceAdminHeaderProps) => {
   return (
     <ConsolePageHeader
-      eyebrow="EXPERIENCE LEDGER"
+      eyebrow="经验台账"
       title="经验等级"
       description="支持按用户查看经验等级、调经验、冻结复核，并回看当前等级配置。"
       icon={<TrophyOutlined />}

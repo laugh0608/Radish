@@ -494,7 +494,7 @@ export const OrderList = () => {
   return (
     <div className="admin-feature-page order-list-page">
       <ConsolePageHeader
-        eyebrow="COMMERCE OPERATIONS"
+        eyebrow="交易运营"
         title="订单管理"
         description="查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。"
         icon={<FileTextOutlined />}

@@ -503,7 +503,7 @@ export const ProductList = () => {
   return (
     <div className="admin-feature-page product-list-page">
       <ConsolePageHeader
-        eyebrow="COMMERCE CATALOG"
+        eyebrow="商品运营"
         title="商品管理"
         description="维护商城商品、上架状态、库存与关联订单入口。"
         icon={<ShoppingOutlined />}

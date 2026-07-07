@@ -46,7 +46,7 @@ export interface ConsoleSidebarRouteGroup {
 
 export const consoleRouteGroupLabels: Record<ConsoleRouteGroup, string> = {
   overview: '总览',
-  commerce: '商业与资产',
+  commerce: '交易与资产',
   content: '内容与文档',
   governance: '治理与权限',
   system: '系统工具',

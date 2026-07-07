@@ -237,7 +237,7 @@ export const UserList = () => {
   return (
     <div className="admin-feature-page user-list">
       <ConsolePageHeader
-        eyebrow="USER OPERATIONS"
+        eyebrow="用户运营"
         title="用户管理"
         description="查看账号状态、定位用户详情，并为后续治理动作提供入口。"
         icon={<TeamOutlined />}
@@ -369,7 +369,7 @@ export const UserList = () => {
         <aside className="admin-table-aside" aria-label="用户对象摘要">
           <div className="admin-feature-rail__header">
             <div>
-              <span className="admin-feature-rail__eyebrow">Selected Object</span>
+              <span className="admin-feature-rail__eyebrow">当前对象</span>
               <h3>用户对象摘要</h3>
             </div>
             <ConsoleStatusChip tone={canViewUsers ? 'success' : 'danger'}>

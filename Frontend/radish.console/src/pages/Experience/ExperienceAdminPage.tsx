@@ -753,7 +753,7 @@ export const ExperienceAdminPage = () => {
           <section className="admin-feature-rail" aria-label="经验治理证据与动作上下文">
             <div className="admin-feature-rail__header">
               <div>
-                <span className="admin-feature-rail__eyebrow">Ledger Context</span>
+                <span className="admin-feature-rail__eyebrow">台账上下文</span>
                 <h3>台账证据与动作</h3>
               </div>
               <ConsoleStatusChip tone={experience?.voExpFrozen ? 'warning' : (loadedUserId ? 'info' : 'neutral')}>

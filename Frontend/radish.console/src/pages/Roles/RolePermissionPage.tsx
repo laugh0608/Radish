@@ -320,7 +320,7 @@ export const RolePermissionPage = () => {
   return (
     <div className="admin-feature-page role-permission-page">
       <ConsolePageHeader
-        eyebrow="RBAC MATRIX"
+        eyebrow="权限矩阵"
         title="角色权限配置"
         description="维护 Console 菜单、按钮与接口的第一阶段授权资源。"
         icon={<SafetyOutlined />}
@@ -535,7 +535,7 @@ export const RolePermissionPage = () => {
         <aside className="admin-feature-rail role-permission-rail" aria-label="角色授权证据">
           <div className="admin-feature-rail__header">
             <div>
-              <span className="admin-feature-rail__eyebrow">Authorization Snapshot</span>
+              <span className="admin-feature-rail__eyebrow">授权快照</span>
               <h3>授权证据</h3>
             </div>
             <ConsoleStatusChip tone={isDirty ? 'warning' : 'success'}>

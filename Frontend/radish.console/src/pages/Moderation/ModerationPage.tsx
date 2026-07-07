@@ -650,7 +650,7 @@ export const ModerationPage = () => {
   return (
     <div className="admin-feature-page">
       <ConsolePageHeader
-        eyebrow="CONTENT MODERATION"
+        eyebrow="内容治理"
         title="内容治理"
         description="举报队列、手动治理动作与治理日志统一在 Console 收口。"
         icon={<SafetyOutlined />}
@@ -716,7 +716,7 @@ export const ModerationPage = () => {
 
       <section className="moderation-mobile-operations" aria-label="移动治理操作边界">
         <div>
-          <span className="moderation-mobile-operations__eyebrow">Mobile Governance</span>
+          <span className="moderation-mobile-operations__eyebrow">移动治理</span>
           <h3>移动视图处理顺序</h3>
           <p>
             手机视图优先完成低风险核对：先筛选举报队列，打开目标或快照确认上下文，再执行审核或带入手动治理；高风险批量策略和复杂权限调整仍保持桌面优先。
@@ -842,7 +842,7 @@ export const ModerationPage = () => {
             <section className="admin-feature-rail" aria-label="内容治理证据卷宗">
               <div className="admin-feature-rail__header">
                 <div>
-                  <span className="admin-feature-rail__eyebrow">Evidence Dossier</span>
+                  <span className="admin-feature-rail__eyebrow">证据档案</span>
                   <h3>目标证据卷宗</h3>
                 </div>
                 <ConsoleStatusChip tone={primaryQueueItem ? 'info' : 'neutral'}>

@@ -772,9 +772,22 @@
   }
 
   .admin-feature-grid,
-  .admin-feature-metrics,
-  .governance-task-flow {
+  .admin-feature-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .governance-task-flow {
+    display: flex;
+    gap: 8px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .governance-task-flow__item {
+    min-width: 220px;
+    padding: 12px;
+    scroll-snap-align: start;
   }
 
   .governance-workbench,

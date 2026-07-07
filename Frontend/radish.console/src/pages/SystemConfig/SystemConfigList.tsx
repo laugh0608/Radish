@@ -570,7 +570,7 @@ export const SystemConfigList = () => {
   return (
     <div className="admin-feature-page system-config-list-page">
       <ConsolePageHeader
-        eyebrow="SYSTEM POLICY"
+        eyebrow="系统策略"
         title="系统设置"
         description="按注册定义查看默认值、当前覆盖值、风险等级和生效方式。"
         icon={<SettingOutlined />}
