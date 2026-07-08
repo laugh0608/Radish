@@ -299,36 +299,6 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
-.heroTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.kicker {
-  margin: 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--theme-brand-primary);
-  font-weight: 700;
-}
-
-.readOnlyBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
-  color: var(--theme-brand-primary);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
 .pageTitle {
   margin: 0;
   font-size: clamp(2rem, 3vw, 2.75rem);
@@ -341,51 +311,6 @@
   color: var(--theme-text-secondary);
   font-size: 1rem;
   line-height: 1.65;
-}
-
-.heroGuideGrid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 22px;
-}
-
-.heroGuideCard {
-  border-radius: 20px;
-  padding: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.heroGuideIcon {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  background: color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
-  color: var(--theme-brand-primary);
-}
-
-.heroGuideBody {
-  min-width: 0;
-}
-
-.heroGuideTitle {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.heroGuideDescription {
-  margin: 8px 0 0;
-  color: var(--theme-text-secondary);
-  line-height: 1.65;
-  font-size: 0.88rem;
 }
 
 .heroActions {
@@ -746,40 +671,12 @@
   margin-top: 14px;
 }
 
-.guideSection {
-  margin-top: 14px;
-}
-
-.guideSection .heroGuideGrid {
-  gap: 10px;
-  margin-top: 0;
-}
-
-.guideSection .heroGuideCard {
-  padding: 12px;
-  border-radius: 16px;
-}
-
-.guideSection .heroGuideDescription {
-  margin-top: 6px;
-  line-height: 1.5;
-}
-
 .streamHeader {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   gap: 16px;
   align-items: flex-start;
   margin-bottom: 16px;
-}
-
-.streamKicker {
-  margin: 0 0 8px;
-  color: var(--theme-brand-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .streamStatusPanel {
@@ -990,49 +887,13 @@
 }
 
 .streamFooter {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  justify-content: flex-end;
   gap: 14px;
   align-items: center;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid color-mix(in srgb, var(--theme-border-soft) 62%, transparent);
-}
-
-.streamBoundaryPanel {
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.streamBoundaryIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  background: color-mix(in srgb, var(--theme-brand-soft) 64%, var(--theme-bg-surface) 36%);
-  color: var(--theme-brand-primary);
-}
-
-.streamBoundaryCopy {
-  min-width: 0;
-}
-
-.streamBoundaryTitle {
-  margin: 0;
-  color: var(--theme-text-primary);
-  font-size: 0.98rem;
-}
-
-.streamBoundaryDescription {
-  margin: 5px 0 0;
-  color: var(--theme-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.55;
 }
 
 .streamActionRow {
@@ -1426,7 +1287,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .heroGuideGrid,
   .summaryGrid,
   .routeGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1436,8 +1296,7 @@
     grid-template-columns: 1fr;
   }
 
-  .streamHeader,
-  .streamFooter {
+  .streamHeader {
     grid-template-columns: 1fr;
   }
 
@@ -1542,10 +1401,6 @@
     border-radius: 18px;
   }
 
-  .heroTitleRow {
-    margin-bottom: 8px;
-  }
-
   .heroActions {
     gap: 8px;
     margin-top: 14px;
@@ -1607,7 +1462,6 @@
     overflow-wrap: anywhere;
   }
 
-  .heroGuideGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -1653,7 +1507,6 @@
   }
 
   .streamSection,
-  .guideSection,
   .sectionGrid,
   .sectionGrid + .sectionCard {
     margin-top: 14px;
@@ -1691,8 +1544,7 @@
   .docsSummary,
   .productSummary,
   .leaderboardSummary,
-  .statusDescription,
-  .streamBoundaryDescription {
+  .statusDescription {
     font-size: 0.86rem;
     line-height: 1.5;
   }
@@ -1703,7 +1555,6 @@
     padding-top: 12px;
   }
 
-  .streamBoundaryIcon,
   .leaderboardIcon,
   .statusIcon {
     width: 34px;
@@ -1801,21 +1652,14 @@
 
 @media (max-width: 420px) {
   .pulseMetricGrid,
-  .heroGuideGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .heroGuideCard,
   .routeMetaRow {
     padding: 10px;
   }
 
-  .heroGuideCard {
-    gap: 10px;
-  }
-
-  .heroGuideIcon,
   .routeIcon {
     width: 32px;
     height: 32px;

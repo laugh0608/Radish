@@ -372,7 +372,6 @@ export function PublicDiscoverFeed({
     <section className={`${styles.sectionCard} ${styles.streamSection}`}>
       <div className={styles.streamHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.streamKicker}>{t('discover.public.streamKicker')}</p>
           <h2 className={styles.sectionTitle}>{t('discover.public.streamTitle')}</h2>
           <p className={styles.sectionDescription}>{t('discover.public.streamDescription')}</p>
         </div>
@@ -413,15 +412,6 @@ export function PublicDiscoverFeed({
           </div>
 
           <div className={styles.streamFooter}>
-            <div className={styles.streamBoundaryPanel}>
-              <span className={styles.streamBoundaryIcon}>
-                <Icon icon="mdi:message-heart-outline" size={20} />
-              </span>
-              <div className={styles.streamBoundaryCopy}>
-                <h3 className={styles.streamBoundaryTitle}>{t('discover.public.streamInteractionTitle')}</h3>
-                <p className={styles.streamBoundaryDescription}>{t('discover.public.streamInteractionDescription')}</p>
-              </div>
-            </div>
             <div className={styles.streamActionRow}>
               <a
                 className={styles.secondaryButton}

@@ -68,12 +68,6 @@ interface SectionStatusCardProps {
   secondaryAction?: SectionStatusAction;
 }
 
-interface DiscoverGuideItemDefinition {
-  icon: string;
-  titleKey: string;
-  descriptionKey: string;
-}
-
 interface DiscoverRouteGuideDefinition {
   key: DiscoverRouteKey;
   icon: string;
@@ -163,24 +157,6 @@ const featuredLeaderboardConfigs: DiscoverLeaderboardCardDefinition[] = [
     focusTextKey: 'discover.public.leaderboardItemProductFocus',
     boundaryLabelKey: 'discover.public.leaderboardItemBoundaryLabel',
     boundaryTextKey: 'discover.public.leaderboardItemProductBoundary',
-  },
-] as const;
-
-const discoverGuideItems: DiscoverGuideItemDefinition[] = [
-  {
-    icon: 'mdi:compass-outline',
-    titleKey: 'discover.public.heroGuideValueTitle',
-    descriptionKey: 'discover.public.heroGuideValueDescription',
-  },
-  {
-    icon: 'mdi:source-branch',
-    titleKey: 'discover.public.heroGuideReturnTitle',
-    descriptionKey: 'discover.public.heroGuideReturnDescription',
-  },
-  {
-    icon: 'mdi:shield-half-full',
-    titleKey: 'discover.public.heroGuideBoundaryTitle',
-    descriptionKey: 'discover.public.heroGuideBoundaryDescription',
   },
 ] as const;
 
@@ -832,10 +808,6 @@ export const PublicDiscoverApp = ({
 
         <section className={styles.pulseHome}>
           <div className={styles.pulseIntroCard}>
-            <div className={styles.heroTitleRow}>
-              <p className={styles.kicker}>{t('discover.public.pulseKicker')}</p>
-              <span className={styles.readOnlyBadge}>{t('discover.public.readOnlyBadge')}</span>
-            </div>
             <h1 className={styles.pageTitle}>{t('discover.public.pulseTitle')}</h1>
             <p className={styles.pageIntro}>{t('discover.public.pulseIntro')}</p>
 
@@ -893,7 +865,6 @@ export const PublicDiscoverApp = ({
           <div className={styles.discussionPanel}>
             <div className={styles.discussionHeader}>
               <div className={styles.sectionHeading}>
-                <p className={styles.streamKicker}>{t('discover.public.discussionKicker')}</p>
                 <h2 className={styles.sectionTitle}>{t('discover.public.discussionTitle')}</h2>
                 <p className={styles.sectionDescription}>{t('discover.public.discussionDescription')}</p>
               </div>
@@ -1071,22 +1042,6 @@ export const PublicDiscoverApp = ({
           onOpenDocs={() => runFromSection('docs', () => onNavigateToDocs(docsListRoute))}
           onOpenShop={() => runFromSection('shop', () => onNavigateToShop(shopProductsRoute))}
         />
-
-        <section className={`${styles.sectionCard} ${styles.guideSection}`}>
-          <div className={styles.heroGuideGrid}>
-            {discoverGuideItems.map((item) => (
-              <article key={item.titleKey} className={styles.heroGuideCard}>
-                <span className={styles.heroGuideIcon} aria-hidden="true">
-                  <Icon icon={item.icon} size={18} />
-                </span>
-                <div className={styles.heroGuideBody}>
-                  <h2 className={styles.heroGuideTitle}>{t(item.titleKey)}</h2>
-                  <p className={styles.heroGuideDescription}>{t(item.descriptionKey)}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
 
         <div className={styles.sectionGrid}>
           <section className={styles.sectionCard}>

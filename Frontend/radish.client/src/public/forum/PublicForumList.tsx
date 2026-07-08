@@ -19,18 +19,14 @@ import type {
 } from '../forumRouteState';
 import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
-import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
   buildActiveSectionTitle,
   buildCategoryIntro,
   buildListRouteKey,
   buildVisiblePages,
-  categoryGuideDefinition,
-  createForumReadingGuide,
   formatCategoryPostCount,
   getForumPostRouteIdentifier,
-  listGuideDefinition,
   resolvePublicProfileUserId,
 } from './publicForumUtils';
 import {
@@ -333,10 +329,6 @@ export const PublicForumList = ({
     () => formatCategoryPostCount(activeCategory, t),
     [activeCategory, t]
   );
-  const readingGuide = useMemo(
-    () => createForumReadingGuide(t, selectedCategoryId ? categoryGuideDefinition : listGuideDefinition),
-    [selectedCategoryId, t]
-  );
 
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
@@ -365,7 +357,6 @@ export const PublicForumList = ({
       <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <h1 className={styles.pageTitle}>{activeTitle}</h1>
           <p className={styles.pageIntro}>{activeIntro}</p>
           {activeCategory && (
@@ -590,24 +581,6 @@ export const PublicForumList = ({
       </section>
 
       <aside className={styles.forumSideRail} aria-label={t('forum.public.listRailLabel')}>
-        <PublicReadingGuide
-          className={`${styles.readingGuide} ${styles.sideReadingGuide}`}
-          label={readingGuide.label}
-          title={readingGuide.title}
-          description={readingGuide.description}
-          items={readingGuide.items}
-        />
-
-        <section className={styles.sidePanel}>
-          <p className={styles.sidePanelKicker}>{t('forum.public.listRailRulesTitle')}</p>
-          <ul className={styles.sideRuleList}>
-            <li>{t('forum.public.listRailRuleGodSummary')}</li>
-            <li>{t('forum.public.listRailRuleNoListReaction')}</li>
-            <li>{t('forum.public.listRailRuleStats')}</li>
-            <li>{t('forum.public.listRailRuleCommentEntry')}</li>
-          </ul>
-        </section>
-
         <section className={styles.sidePanel}>
           <p className={styles.sidePanelKicker}>{t('forum.public.listRailFeedsTitle')}</p>
           <p className={styles.sidePanelText}>{t('forum.public.listRailFeedsDescription')}</p>
