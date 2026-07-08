@@ -116,10 +116,6 @@
   gap: 10px;
 }
 
-.privacySafetyPanel {
-  margin-top: 16px;
-}
-
 .primaryActionSlot,
 .secondaryActionGroup {
   display: flex;

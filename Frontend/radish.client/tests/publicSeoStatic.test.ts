@@ -234,6 +234,17 @@ test('登录态正式 Web 页面应使用应用内滚动容器', () => {
   }
 });
 
+test('我的状态首页不应承载规则说明型隐私边界大卡片', () => {
+  const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');
+  const meStylesSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.module.css'), 'utf8');
+  const legalSource = readFileSync(resolve(clientRoot, 'src/public/legal/PublicCommitmentsApp.tsx'), 'utf8');
+
+  assert.doesNotMatch(meSource, /PrivacySafetyBoundaryPanel/);
+  assert.doesNotMatch(meSource, /privacySafety/);
+  assert.doesNotMatch(meStylesSource, /privacySafetyPanel/);
+  assert.match(legalSource, /<PrivacySafetyBoundaryPanel \/>/);
+});
+
 test('公开规则页应使用应用内滚动容器而不是依赖 body 滚动', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/legal/PublicCommitmentsApp.tsx'), 'utf8');
   const stylesSource = readFileSync(resolve(clientRoot, 'src/public/legal/PublicCommitmentsApp.module.css'), 'utf8');
