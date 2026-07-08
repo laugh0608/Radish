@@ -2,7 +2,7 @@
 
 > 日期：2026-06-25（Asia/Shanghai）
 >
-> 更新：2026-06-28（Asia/Shanghai）：`F01 / F02` 的移动底栏已统一为 5 项以内浮动胶囊样式；Public 使用 `发现 / 论坛 / 文档 / 工作台 / 我的`，Private 使用 `工作台 / 资产 / 创作 / 消息 / 我的`，Console 在 E7-A 后使用 `总览 / 治理 / 交易 / 权限 / 更多`。`/workbench` 固定作为正式 Web 功能地图，承接导航无法展示的功能入口。
+> 更新：2026-06-28（Asia/Shanghai）：`F01 / F02` 的移动底栏已统一为 5 项以内浮动胶囊样式；当时 Public / Private 分别保留独立导航项，Console 在 E7-A 后使用 `总览 / 治理 / 交易 / 权限 / 更多`。E8 后 `radish.client` 正式 Web public / private 已统一到产品级主导航。
 >
 > 更新：2026-06-28（Asia/Shanghai）：`P3-12-D8` 已完成 `radish.client` 首批代码对齐，新增共享 `WebShellHeader` / `WebStateSlot`，并把公开状态槽、公开内容宽度 token 和移动底部留白接入代码。
 >
@@ -12,11 +12,13 @@
 >
 > 更新：2026-07-01（Asia/Shanghai）：D38 未新增共享组件变体；`/workbench` 继续承接 public / private 低频入口，移动 Console 仍按响应式 Console 验收，不拆独立移动应用壳层。
 >
-> 更新：2026-07-04（Asia/Shanghai）：D61 / D62 后 `WebShellHeader` 已同时承接 Public 当前发布前页面族和 Private `/workbench` 首批工作台；页面可通过 `mobileNavItems` 覆盖移动底栏，但只能用于明确页面族承接，不能让公开底栏长期覆盖私域工作台。
+> 更新：2026-07-04（Asia/Shanghai）：D61 / D62 后 `WebShellHeader` 已同时承接 Public 当前发布前页面族和 Private `/workbench` 首批工作台；页面可通过 `mobileNavItems` 覆盖移动底栏，但只能用于明确页面族承接，不能长期分叉出另一套全局底栏。
 >
 > 更新：2026-07-07（Asia/Shanghai）：`P3-12-E7-D` 已在 `web-ui-foundation.pen` 新增并四次收紧 `E7-D - Auth Consent Information Hierarchy` 画板，固定 Auth 授权确认页具体决策卡的请求应用、账号状态、返回位置、权限用途、敏感边界、技术信息下沉、动作区安全距离和移动端确认动作层级。
 >
-> 状态：共享基座设计源 `F01-F03` 与 `E7-D` Auth 授权确认参考画板已创建；`radish.client` Public `P01-P14`、Private `/workbench`、Console 首轮代表页和 Auth 授权页均已完成当前阶段代码对齐或参考画板收口，后续继续按 D62 / D63 / E7 页面族治理跨源一致性
+> 更新：2026-07-08（Asia/Shanghai）：E8 首日已将 `radish.client` Public / Private 主导航收敛为 PC `发现 / 论坛 / 聊天 / 更多` + 右侧 `通知 / 账号`，移动底栏为 `发现 / 论坛 / 聊天 / 更多 / 我的`；`/workbench` 是“更多”功能地图，`/desktop` 只保留历史入口。
+>
+> 状态：共享基座设计源 `F01-F03` 与 `E7-D` Auth 授权确认参考画板已创建；`radish.client` Public `P01-P14`、Private `/workbench`、Console 首轮代表页和 Auth 授权页均已完成当前阶段代码对齐或参考画板收口，E8 后 public / private 默认共用产品级主导航，后续继续按 E8 页面族治理跨源一致性
 
 ## 设计源
 
@@ -48,8 +50,7 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 当前包含：
 
-- Public header 合法变体。
-- Private header 合法变体。
+- Public / Private header 合法变体；E8 后默认共用产品级主导航。
 - 84 高 PC 纸感横匾 header、横排图标 nav rail、激活态 pill 和身份 action rail。
 - PC 横排图标按钮、主按钮、次按钮、激活 pill、普通 pill 和状态 pill。
 - 内容卡片、右侧 rail、加载 / 空态 / 错误 / 权限状态槽。
@@ -87,10 +88,9 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 ## 允许差异
 
-- Public header 的导航项、登录动作和 `/workbench` 入口。
-- Private header 的登录态身份、设置动作、消息 / 资产 / 创作入口。
+- Public / Private 页面可以有不同的页面内容和账号动作状态，但默认不再分叉全局主导航。
 - Console 的表格密度、治理工具条、权限 / 审计状态表达。
-- Public / Private / Console 的移动底栏导航项和激活语义可以不同，但必须沿用同一浮动胶囊样式。
+- Client 与 Console 的移动底栏导航项和激活语义可以不同；`radish.client` public / private 共用 `发现 / 论坛 / 聊天 / 更多 / 我的`，Console 继续使用后台专用底栏，但都必须沿用同一浮动胶囊样式。
 - 不同端点的 dominant region：公开阅读、私域复访、作者创作和 Console 治理可以有不同信息密度。
 
 ## Auth 授权确认页
@@ -140,11 +140,11 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 后续代码实现继续优先复用这些结构；如发现新共享变体，先回到本说明和设计源确认边界。D36+ 需要补齐设计源与代码实现的差距矩阵后，再判断是否进入成组实现或运行态验收。
 
-`P3-12-D61-D62` 已继续收紧 client 共享壳层使用边界：
+`P3-12-D61-D62` 已继续收紧 client 共享壳层使用边界，`P3-12-E8` 后进一步统一 public / private 产品级主导航：
 
-- Public Web `P01-P14` 当前发布前页面族已复用共享 public header 与移动底栏；`/discover`、forum、docs、shop、leaderboard、profile 和 public workbench 承接均保留真实 `href`。
-- `PublicShellHeader` 可以透传 `mobileNavItems`，用于公开移动任务流覆盖底栏；覆盖必须和当前页面族一致，不能作为长期绕过 private 默认底栏的手段。
-- `/workbench` 在 D62 回到 `variant="private"` 的默认移动底栏：`工作台 / 资产 / 创作 / 消息 / 我的`。公开商城、榜单和其他低频公开入口由工作台内容区承接。
+- Public Web `P01-P14` 当前发布前页面族已复用共享 header 与移动底栏；`/discover`、forum、docs、shop、leaderboard、profile 和 workbench 承接均保留真实 `href`。
+- `PublicShellHeader` 继续作为 public 页面适配层，但默认主导航跟 private 一致，不能再用 `mobileNavItems` 长期分叉出一套 public 底栏。
+- `/workbench` 在 E8 后归属“更多”，用于承接公开商城、榜单、Docs、规则、Console、作者态、订单 / 背包和 `/desktop` 兼容入口；移动底栏不再按 public / private 分叉。
 - 新增工作台继续处理队列和状态 rail 属于页面内容层，不新增共享 header 或状态槽变体。
 
 ## radish.client 组件使用口径
@@ -159,23 +159,23 @@ Frontend/radish.client/src/components/web-shell/WebShellHeader.tsx
 
 职责：
 
-- 承接 public / private PC header。
-- 承接 public / private 移动底栏。
+- 承接 `radish.client` public / private PC header。
+- 承接 `radish.client` public / private 移动底栏。
 - 保留真实 `href`，普通左键点击可由页面注入的 `onClick` 拦截为应用内导航；辅助点击、新开标签和复制链接仍依赖真实 URL。
 - 自动为页面添加 `radishWebShellWithMobileNav` body class，用于移动底栏全局留白。
 
 默认导航：
 
-| variant | PC 导航 | 移动底栏 |
+| 范围 | PC 导航 | 移动底栏 |
 | --- | --- | --- |
-| `public` | `发现 / 论坛 / 文档 / 榜单 / 商城` | `发现 / 论坛 / 文档 / 工作台 / 我的` |
-| `private` | `工作台 / 我的状态 / 资产 / 创作 / 消息` | `工作台 / 资产 / 创作 / 消息 / 我的` |
+| `radish.client` public / private | `发现 / 论坛 / 聊天 / 更多`，右侧 `通知 / 登录注册或头像用户名` | `发现 / 论坛 / 聊天 / 更多 / 我的` |
+| `radish.console` | Console 专用后台导航 | `总览 / 治理 / 交易 / 权限 / 更多` |
 
 使用规则：
 
 - 页面可传 `navItems`、`actionItems`、`mobileNavItems` 调整当前业务动作，但不能另写平行 header。
 - `activeKey` 可显式传入；不传时由当前 pathname 推导。
-- Public / private 的低频入口统一由 `/workbench` 承接，不继续把移动底栏挤到 5 项以上。
+- Public / private 的低频入口统一由 `/workbench` 的“更多”承接，不继续把移动底栏挤到 5 项以上，也不恢复 public / private 两套主底栏。
 
 ### `WebStateSlot`
 
