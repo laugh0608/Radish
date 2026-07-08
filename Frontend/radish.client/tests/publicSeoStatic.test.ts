@@ -171,18 +171,38 @@ test('公开社区发现页应为跨入口导航提供公开链接并保留壳�
   assert.match(feedSource, /handleFeedLinkClick\(event, onOpenForum\)/);
 });
 
-test('公开壳层头部发现动作应提供真实链接并保留普通点击处理', () => {
+test('公开壳层头部导航应提供真实链接并保留内部切换处理', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
   const shellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
 
+  assert.match(source, /function navigateToPublicPath/);
+  assert.match(source, /window\.history\.pushState\(\{\}, '', nextPath\);/);
+  assert.match(source, /window\.dispatchEvent\(new PopStateEvent\('popstate'/);
   assert.match(source, /discoverHref = '\/discover'/);
   assert.match(source, /href: discoverHref/);
-  assert.match(source, /onClick: onNavigateToDiscover/);
+  assert.match(source, /onClick: createPublicNavAction\(discoverHref, onNavigateToDiscover\)/);
+  assert.match(source, /href: '\/forum'[\s\S]*onClick: createPublicNavAction\('\/forum'\)/);
+  assert.match(source, /href: '\/docs'[\s\S]*onClick: createPublicNavAction\('\/docs'\)/);
+  assert.match(source, /href: '\/leaderboard'[\s\S]*onClick: createPublicNavAction\('\/leaderboard'\)/);
+  assert.match(source, /href: '\/shop'[\s\S]*onClick: createPublicNavAction\('\/shop'\)/);
+  assert.match(source, /href: '\/legal'[\s\S]*onClick: createPublicNavAction\('\/legal'\)/);
   assert.match(shellSource, /function shouldHandleShellLinkClick/);
   assert.match(shellSource, /href=\{item\.href\}/);
   assert.match(shellSource, /event\.preventDefault\(\);/);
   assert.match(shellSource, /item\.onClick\(\);/);
   assert.doesNotMatch(source, /<button[\s\S]*onClick=\{onNavigateToDiscover\}/);
+});
+
+test('公开规则页应使用应用内滚动容器而不是依赖 body 滚动', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/legal/PublicCommitmentsApp.tsx'), 'utf8');
+  const stylesSource = readFileSync(resolve(clientRoot, 'src/public/legal/PublicCommitmentsApp.module.css'), 'utf8');
+
+  assert.match(source, /const pageRef = useRef<HTMLDivElement \| null>\(null\);/);
+  assert.match(source, /<div className=\{styles\.page\} ref=\{pageRef\}>/);
+  assert.match(source, /pageRef\.current\?\.scrollTo\(\{ top: 0, behavior: 'smooth' \}\)/);
+  assert.match(stylesSource, /\.page[\s\S]*height: 100dvh;/);
+  assert.match(stylesSource, /\.page[\s\S]*overflow-y: auto;/);
+  assert.match(stylesSource, /\.main[\s\S]*flex: 1 0 auto;/);
 });
 
 test('公开文档浏览和详情返回应提供公开链接并保留壳层导航拦截', () => {

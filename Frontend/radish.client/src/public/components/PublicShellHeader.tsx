@@ -23,14 +23,50 @@ interface PublicShellHeaderProps {
   myStatusLabel?: string;
 }
 
+function navigateToPublicPath(href: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const nextUrl = new URL(href, window.location.origin);
+  if (nextUrl.origin !== window.location.origin) {
+    window.location.href = href;
+    return;
+  }
+
+  const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextPath === currentPath) {
+    return;
+  }
+
+  window.history.pushState({}, '', nextPath);
+  window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+}
+
+function createPublicNavAction(href: string, navigate?: () => void): () => void {
+  return navigate ?? (() => navigateToPublicPath(href));
+}
+
 function buildPublicNavItems(discoverHref: string, discoverLabel: string, onNavigateToDiscover?: () => void): WebShellNavItem[] {
   return [
-    { key: 'discover', label: discoverLabel, href: discoverHref, icon: 'mdi:compass-outline', onClick: onNavigateToDiscover },
-    { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-    { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
-    { key: 'leaderboard', label: '榜单', href: '/leaderboard', icon: 'mdi:trophy-outline' },
-    { key: 'shop', label: '商城', href: '/shop', icon: 'mdi:shopping-outline' },
-    { key: 'legal', label: '规则', href: '/legal', icon: 'mdi:shield-check-outline' },
+    { key: 'discover', label: discoverLabel, href: discoverHref, icon: 'mdi:compass-outline', onClick: createPublicNavAction(discoverHref, onNavigateToDiscover) },
+    { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline', onClick: createPublicNavAction('/forum') },
+    { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline', onClick: createPublicNavAction('/docs') },
+    { key: 'leaderboard', label: '榜单', href: '/leaderboard', icon: 'mdi:trophy-outline', onClick: createPublicNavAction('/leaderboard') },
+    { key: 'shop', label: '商城', href: '/shop', icon: 'mdi:shopping-outline', onClick: createPublicNavAction('/shop') },
+    { key: 'legal', label: '规则', href: '/legal', icon: 'mdi:shield-check-outline', onClick: createPublicNavAction('/legal') },
+  ];
+}
+
+function buildPublicMobileNavItems(discoverHref: string, discoverLabel: string, onNavigateToDiscover: (() => void) | undefined, desktopLabel: string): WebShellNavItem[] {
+  return [
+    { key: 'discover', label: discoverLabel, href: discoverHref, icon: 'mdi:compass-outline', onClick: createPublicNavAction(discoverHref, onNavigateToDiscover) },
+    { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline', onClick: createPublicNavAction('/forum') },
+    { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline', onClick: createPublicNavAction('/docs') },
+    { key: 'legal', label: '规则', href: '/legal', icon: 'mdi:shield-check-outline', onClick: createPublicNavAction('/legal') },
+    { key: 'workbench', label: desktopLabel, href: '/workbench', icon: 'mdi:view-dashboard-outline' },
+    { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
   ];
 }
 
@@ -136,6 +172,9 @@ export const PublicShellHeader = ({
   const navItems = variant === 'public'
     ? buildPublicNavItems(discoverHref, discoverLabel, onNavigateToDiscover)
     : undefined;
+  const resolvedMobileNavItems = variant === 'public' && !mobileNavItems
+    ? buildPublicMobileNavItems(discoverHref, discoverLabel, onNavigateToDiscover, desktopLabel)
+    : mobileNavItems;
   const actionItems = buildActionItems({
     variant,
     discoverHref,
@@ -157,7 +196,7 @@ export const PublicShellHeader = ({
       brandSubline={brandSubline}
       activeKey={activeKey}
       navItems={navItems}
-      mobileNavItems={mobileNavItems}
+      mobileNavItems={resolvedMobileNavItems}
       actionItems={actionItems}
       onBrandClick={onBrandClick}
     />

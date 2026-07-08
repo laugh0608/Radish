@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { PrivacySafetyBoundaryPanel } from '../../privacy/PrivacySafetyBoundaryPanel';
 import styles from './PublicCommitmentsApp.module.css';
@@ -90,14 +91,16 @@ const commitmentSections: CommitmentSection[] = [
 ];
 
 export function PublicCommitmentsApp({ onNavigateToDiscover }: PublicCommitmentsAppProps) {
+  const pageRef = useRef<HTMLDivElement | null>(null);
+
   return (
-    <div className={styles.page}>
+    <div className={styles.page} ref={pageRef}>
       <PublicShellHeader
         brandMark="规"
         brandName="Radish 承诺"
         brandSubline="Community Trust"
         activeKey="legal"
-        onBrandClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onBrandClick={() => pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
         onNavigateToDiscover={onNavigateToDiscover}
         discoverLabel="发现"
         loginLabel="登录"
