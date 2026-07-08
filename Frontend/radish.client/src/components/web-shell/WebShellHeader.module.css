@@ -247,6 +247,10 @@
     gap: 12px;
   }
 
+  .brand {
+    flex: 1 1 auto;
+  }
+
   .brandMark {
     width: 38px;
     height: 38px;
@@ -261,8 +265,27 @@
     display: none;
   }
 
-  .navRail,
+  .navRail {
+    display: none;
+  }
+
   .actionRail {
+    flex: 0 0 auto;
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    border-radius: var(--rx-radius-pill);
+    background: color-mix(in srgb, var(--rx-bg-surface) 86%, white 14%);
+  }
+
+  .actionItem {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    gap: 0;
+  }
+
+  .actionItem span:last-child {
     display: none;
   }
 

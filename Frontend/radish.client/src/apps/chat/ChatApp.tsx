@@ -1,5 +1,6 @@
 import { type ChangeEvent, type ClipboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
@@ -1298,6 +1299,12 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
       <section className={styles.main}>
         <header className={styles.mainHeader}>
           <div className={styles.headerMain}>
+            {hasRoutedChannel && (
+              <a className={styles.mobileBackLink} href="/messages">
+                <Icon icon="mdi:chevron-left" size={18} />
+                <span>{t('chat.backToConversations')}</span>
+              </a>
+            )}
             <div>
               <div className={styles.channelTitle}>
                 {activeChannel ? `${activeChannel.voIconEmoji || '#'} ${activeChannel.voName}` : t('chat.selectChannel')}

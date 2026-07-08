@@ -214,6 +214,10 @@
   gap: 12px;
 }
 
+.mobileBackLink {
+  display: none;
+}
+
 .channelTitle {
   font-size: 17px;
   font-weight: 800;
@@ -1191,5 +1195,20 @@
   .headerMain {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .mobileBackLink {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border: 1px solid var(--theme-border-soft);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+    color: var(--theme-text-secondary);
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: none;
   }
 }
