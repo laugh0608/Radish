@@ -15,6 +15,19 @@ export const BROWSER_PUBLIC_ENTRY_PATH = '/discover';
 export const CAPACITOR_PUBLIC_ENTRY_PATH = '/docs';
 export const OIDC_CALLBACK_PATH = '/oidc/callback';
 
+export type BrowserEntryKind =
+  | 'oidc'
+  | 'messages'
+  | 'notifications'
+  | 'pet'
+  | 'me'
+  | 'circle'
+  | 'shop'
+  | 'docs-author'
+  | 'workbench'
+  | 'public'
+  | 'root';
+
 interface ResolveInitialEntryPathOptions {
   isCapacitorNativePlatform: boolean;
   isTauriRuntime: boolean;
@@ -52,6 +65,50 @@ export function isPublicContentPathname(pathname: string): boolean {
     || pathname === '/__documents__'
     || pathname.startsWith('/__documents__/')
   );
+}
+
+export function resolveBrowserEntryKind(pathname: string): BrowserEntryKind {
+  if (pathname === OIDC_CALLBACK_PATH) {
+    return 'oidc';
+  }
+
+  if (isMessagesPathname(pathname)) {
+    return 'messages';
+  }
+
+  if (isNotificationsPathname(pathname)) {
+    return 'notifications';
+  }
+
+  if (isPetPathname(pathname)) {
+    return 'pet';
+  }
+
+  if (isMePathname(pathname)) {
+    return 'me';
+  }
+
+  if (isCirclePathname(pathname)) {
+    return 'circle';
+  }
+
+  if (isShopPathname(pathname)) {
+    return 'shop';
+  }
+
+  if (isDocsAuthorPathname(pathname)) {
+    return 'docs-author';
+  }
+
+  if (isWorkbenchPathname(pathname)) {
+    return 'workbench';
+  }
+
+  if (isPublicContentPathname(pathname)) {
+    return 'public';
+  }
+
+  return 'root';
 }
 
 export { isCirclePathname, isMessagesPathname, isNotificationsPathname };

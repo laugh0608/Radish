@@ -67,6 +67,27 @@ function shouldHandleShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boole
     && !event.altKey;
 }
 
+function navigateToShellPath(href: string): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const nextUrl = new URL(href, window.location.origin);
+  if (nextUrl.origin !== window.location.origin) {
+    return false;
+  }
+
+  const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextPath === currentPath) {
+    return true;
+  }
+
+  window.history.pushState({}, '', nextPath);
+  window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+  return true;
+}
+
 function getCurrentPathname(): string {
   return typeof window === 'undefined' ? '' : window.location.pathname;
 }
@@ -155,12 +176,19 @@ function WebShellLink({ item, className, activeClassName, isActive }: WebShellLi
       aria-current={isActive ? 'page' : undefined}
       title={item.label}
       onClick={(event) => {
-        if (!item.onClick || !shouldHandleShellLinkClick(event)) {
+        if (!shouldHandleShellLinkClick(event)) {
           return;
         }
 
-        event.preventDefault();
-        item.onClick();
+        if (item.onClick) {
+          event.preventDefault();
+          item.onClick();
+          return;
+        }
+
+        if (navigateToShellPath(item.href)) {
+          event.preventDefault();
+        }
       }}
     >
       <Icon icon={item.icon} size={18} />

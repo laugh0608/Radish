@@ -23,7 +23,7 @@ interface PublicShellHeaderProps {
   myStatusLabel?: string;
 }
 
-function navigateToPublicPath(href: string): void {
+function navigateToShellPath(href: string): void {
   if (typeof window === 'undefined') {
     return;
   }
@@ -45,7 +45,7 @@ function navigateToPublicPath(href: string): void {
 }
 
 function createPublicNavAction(href: string, navigate?: () => void): () => void {
-  return navigate ?? (() => navigateToPublicPath(href));
+  return navigate ?? (() => navigateToShellPath(href));
 }
 
 function buildPublicNavItems(discoverHref: string, discoverLabel: string, onNavigateToDiscover?: () => void): WebShellNavItem[] {
@@ -74,7 +74,6 @@ function buildActionItems({
   variant,
   discoverHref,
   discoverLabel,
-  onNavigateToDiscover,
   circleHref,
   circleLabel,
   showCircleAction,
@@ -82,7 +81,6 @@ function buildActionItems({
   desktopLabel,
   authAction,
 }: Required<Pick<PublicShellHeaderProps, 'variant' | 'discoverHref' | 'discoverLabel' | 'circleHref' | 'circleLabel' | 'showCircleAction' | 'desktopHref' | 'desktopLabel'>> & {
-  onNavigateToDiscover?: () => void;
   authAction?: WebShellNavItem;
 }): WebShellNavItem[] {
   const actionItems: WebShellNavItem[] = [];
@@ -93,7 +91,7 @@ function buildActionItems({
       label: discoverLabel,
       href: discoverHref,
       icon: 'mdi:compass-outline',
-      onClick: onNavigateToDiscover,
+      onClick: () => navigateToShellPath(discoverHref),
     });
   }
 
@@ -179,7 +177,6 @@ export const PublicShellHeader = ({
     variant,
     discoverHref,
     discoverLabel,
-    onNavigateToDiscover,
     circleHref,
     circleLabel,
     showCircleAction: shouldShowCircleAction,

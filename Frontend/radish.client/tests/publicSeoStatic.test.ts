@@ -175,7 +175,7 @@ test('公开壳层头部导航应提供真实链接并保留内部切换处理',
   const source = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
   const shellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
 
-  assert.match(source, /function navigateToPublicPath/);
+  assert.match(source, /function navigateToShellPath/);
   assert.match(source, /window\.history\.pushState\(\{\}, '', nextPath\);/);
   assert.match(source, /window\.dispatchEvent\(new PopStateEvent\('popstate'/);
   assert.match(source, /discoverHref = '\/discover'/);
@@ -187,10 +187,51 @@ test('公开壳层头部导航应提供真实链接并保留内部切换处理',
   assert.match(source, /href: '\/shop'[\s\S]*onClick: createPublicNavAction\('\/shop'\)/);
   assert.match(source, /href: '\/legal'[\s\S]*onClick: createPublicNavAction\('\/legal'\)/);
   assert.match(shellSource, /function shouldHandleShellLinkClick/);
+  assert.match(shellSource, /function navigateToShellPath/);
   assert.match(shellSource, /href=\{item\.href\}/);
   assert.match(shellSource, /event\.preventDefault\(\);/);
   assert.match(shellSource, /item\.onClick\(\);/);
+  assert.match(shellSource, /if \(navigateToShellPath\(item\.href\)\) \{/);
   assert.doesNotMatch(source, /<button[\s\S]*onClick=\{onNavigateToDiscover\}/);
+});
+
+test('正式 Web 壳层切换应复用当前 React 入口而不是整页重载', () => {
+  const mainSource = readFileSync(resolve(clientRoot, 'src/main.tsx'), 'utf8');
+  const browserRouterSource = readFileSync(resolve(clientRoot, 'src/bootstrap/BrowserAppRouter.tsx'), 'utf8');
+  const shellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
+  const publicShellSource = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
+
+  assert.match(browserRouterSource, /export function BrowserAppRouter\(\)/);
+  assert.match(browserRouterSource, /const \[entryKind, setEntryKind\] = useState<BrowserEntryKind>/);
+  assert.match(browserRouterSource, /window\.addEventListener\('popstate', handlePopState\);/);
+  assert.match(browserRouterSource, /startTransition\(\(\) => \{/);
+  assert.match(browserRouterSource, /resolveEntryComponent\(entryKind\)/);
+  assert.match(mainSource, /<BrowserAppRouter \/>/);
+  assert.match(shellSource, /window\.history\.pushState\(\{\}, '', nextPath\);/);
+  assert.match(shellSource, /window\.dispatchEvent\(new PopStateEvent\('popstate'/);
+  assert.match(publicShellSource, /onClick: \(\) => navigateToShellPath\(discoverHref\)/);
+});
+
+test('登录态正式 Web 页面应使用应用内滚动容器', () => {
+  const stylePaths = [
+    'src/me/MeApp.module.css',
+    'src/messages/MessagesApp.module.css',
+    'src/notifications/NotificationsApp.module.css',
+    'src/pet/PetApp.module.css',
+    'src/workbench/WorkbenchApp.module.css',
+    'src/docs/DocsAuthorApp.module.css',
+    'src/circle/CircleApp.module.css',
+  ];
+
+  for (const stylePath of stylePaths) {
+    const source = readFileSync(resolve(clientRoot, stylePath), 'utf8');
+    assert.match(source, /\.page[\s\S]*height: 100dvh;/, stylePath);
+  }
+
+  for (const stylePath of stylePaths.slice(0, 6)) {
+    const source = readFileSync(resolve(clientRoot, stylePath), 'utf8');
+    assert.match(source, /\.page[\s\S]*overflow-y: auto;/, stylePath);
+  }
 });
 
 test('公开规则页应使用应用内滚动容器而不是依赖 body 滚动', () => {
@@ -229,11 +270,14 @@ test('公开文档浏览和详情返回应提供公开链接并保留壳层导�
 
 test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治理动作', () => {
   const mainSource = readFileSync(resolve(clientRoot, 'src/main.tsx'), 'utf8');
+  const browserRouterSource = readFileSync(resolve(clientRoot, 'src/bootstrap/BrowserAppRouter.tsx'), 'utf8');
   const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
   const docsAuthorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorApp.tsx'), 'utf8');
 
-  assert.match(mainSource, /const DocsAuthorEntry = lazy/);
-  assert.match(mainSource, /: isDocsAuthorRoute[\s\S]*\? DocsAuthorEntry[\s\S]*: isPublicContentRoute/);
+  assert.match(mainSource, /import \{ BrowserAppRouter \} from '@\/bootstrap\/BrowserAppRouter';/);
+  assert.match(browserRouterSource, /const DocsAuthorEntry = lazy/);
+  assert.match(browserRouterSource, /case 'docs-author':\s*return DocsAuthorEntry;[\s\S]*case 'public':\s*return PublicEntry;/);
+  assert.match(entryRouteSource, /if \(isDocsAuthorPathname\(pathname\)\) \{\s*return 'docs-author';\s*\}[\s\S]*if \(isPublicContentPathname\(pathname\)\) \{\s*return 'public';/);
   assert.match(entryRouteSource, /pathname\.startsWith\('\/docs\/'\) && !isDocsAuthorPathname\(pathname\)/);
   assert.match(docsAuthorSource, /buildDocsAuthorMineReturnPath/);
   assert.match(docsAuthorSource, /createWikiDocument/);

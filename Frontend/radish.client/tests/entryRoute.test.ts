@@ -13,6 +13,7 @@ import {
   isPublicContentPathname,
   isShopPathname,
   isWorkbenchPathname,
+  resolveBrowserEntryKind,
   resolveInitialEntryPath,
 } from '../src/bootstrap/entryRoute.ts';
 import { TAURI_DESKTOP_ENTRY_PATH } from '../src/platform/tauriBridge.ts';
@@ -79,6 +80,22 @@ test('isPublicContentPathname 应识别公开内容路由', () => {
   assert.equal(isPublicContentPathname('/workbench'), false);
   assert.equal(isPublicContentPathname('/desktop'), false);
   assert.equal(isPublicContentPathname(OIDC_CALLBACK_PATH), false);
+});
+
+test('resolveBrowserEntryKind 应为运行时 Web 壳层选择入口', () => {
+  assert.equal(resolveBrowserEntryKind(OIDC_CALLBACK_PATH), 'oidc');
+  assert.equal(resolveBrowserEntryKind('/messages'), 'messages');
+  assert.equal(resolveBrowserEntryKind('/notifications'), 'notifications');
+  assert.equal(resolveBrowserEntryKind('/pet'), 'pet');
+  assert.equal(resolveBrowserEntryKind('/me/assets'), 'me');
+  assert.equal(resolveBrowserEntryKind('/circle'), 'circle');
+  assert.equal(resolveBrowserEntryKind('/shop/orders'), 'shop');
+  assert.equal(resolveBrowserEntryKind('/docs/mine'), 'docs-author');
+  assert.equal(resolveBrowserEntryKind('/workbench'), 'workbench');
+  assert.equal(resolveBrowserEntryKind('/discover'), 'public');
+  assert.equal(resolveBrowserEntryKind('/forum'), 'public');
+  assert.equal(resolveBrowserEntryKind('/docs/Guide'), 'public');
+  assert.equal(resolveBrowserEntryKind('/unknown'), 'root');
 });
 
 test('isWorkbenchPathname 应单独识别正式 Web 功能总入口', () => {

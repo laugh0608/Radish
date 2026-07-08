@@ -1,4 +1,4 @@
-import { StrictMode, Suspense, lazy } from 'react';
+import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { configureApiClient } from '@radish/http';
 import { tokenService } from '@/services/tokenService';
@@ -6,40 +6,17 @@ import { getApiBaseUrl } from '@/config/env';
 import { applySiteBranding } from '@/services/siteBranding';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { initializeTheme } from '@/theme/theme';
+import { BrowserAppRouter } from '@/bootstrap/BrowserAppRouter';
 import {
   initializeTauriBridge,
   isTauriRuntime,
   rewriteDesktopOidcReturnToBrowserPath,
 } from '@/platform/tauriBridge';
-import {
-  OIDC_CALLBACK_PATH,
-  isCirclePathname,
-  isDocsAuthorPathname,
-  isMePathname,
-  isMessagesPathname,
-  isNotificationsPathname,
-  isPetPathname,
-  isPublicContentPathname,
-  isShopPathname,
-  isWorkbenchPathname,
-  resolveInitialEntryPath,
-} from '@/bootstrap/entryRoute';
+import { resolveInitialEntryPath } from '@/bootstrap/entryRoute';
 import './theme/theme-tokens.css';
 import './index.css';
 import './i18n';
 import 'highlight.js/styles/github-dark.css';
-
-const OidcCallbackPage = lazy(() => import('./auth/OidcCallbackPage.tsx').then((module) => ({ default: module.OidcCallbackPage })));
-const CircleEntry = lazy(() => import('./circle/CircleEntry.tsx').then((module) => ({ default: module.CircleEntry })));
-const MeEntry = lazy(() => import('./me/MeEntry.tsx').then((module) => ({ default: module.MeEntry })));
-const MessagesEntry = lazy(() => import('./messages/MessagesEntry.tsx').then((module) => ({ default: module.MessagesEntry })));
-const NotificationsEntry = lazy(() => import('./notifications/NotificationsEntry.tsx').then((module) => ({ default: module.NotificationsEntry })));
-const PetEntry = lazy(() => import('./pet/PetEntry.tsx').then((module) => ({ default: module.PetEntry })));
-const ShopEntry = lazy(() => import('./shop/ShopEntry.tsx').then((module) => ({ default: module.ShopEntry })));
-const DocsAuthorEntry = lazy(() => import('./docs/DocsAuthorEntry.tsx').then((module) => ({ default: module.DocsAuthorEntry })));
-const WorkbenchEntry = lazy(() => import('./workbench/WorkbenchEntry.tsx').then((module) => ({ default: module.WorkbenchEntry })));
-const RootEntry = lazy(() => import('./desktop/RootEntry.tsx').then((module) => ({ default: module.RootEntry })));
-const PublicEntry = lazy(() => import('./public/PublicEntry.tsx').then((module) => ({ default: module.PublicEntry })));
 
 const isBrowser = typeof window !== 'undefined';
 
@@ -78,39 +55,6 @@ if (initialEntryPath) {
   window.history.replaceState({}, '', initialEntryPath);
 }
 
-const isOidcCallback = isBrowser && window.location.pathname === OIDC_CALLBACK_PATH;
-const isCircleRoute = isBrowser && isCirclePathname(window.location.pathname);
-const isMeRoute = isBrowser && isMePathname(window.location.pathname);
-const isMessagesRoute = isBrowser && isMessagesPathname(window.location.pathname);
-const isNotificationsRoute = isBrowser && isNotificationsPathname(window.location.pathname);
-const isPetRoute = isBrowser && isPetPathname(window.location.pathname);
-const isShopRoute = isBrowser && isShopPathname(window.location.pathname);
-const isDocsAuthorRoute = isBrowser && isDocsAuthorPathname(window.location.pathname);
-const isWorkbenchRoute = isBrowser && isWorkbenchPathname(window.location.pathname);
-const isPublicContentRoute = isBrowser && isPublicContentPathname(window.location.pathname);
-
-const Page = isOidcCallback
-  ? OidcCallbackPage
-  : isMessagesRoute
-    ? MessagesEntry
-    : isNotificationsRoute
-      ? NotificationsEntry
-      : isPetRoute
-        ? PetEntry
-        : isMeRoute
-          ? MeEntry
-          : isCircleRoute
-            ? CircleEntry
-            : isShopRoute
-              ? ShopEntry
-              : isDocsAuthorRoute
-                ? DocsAuthorEntry
-                : isWorkbenchRoute
-                  ? WorkbenchEntry
-                  : isPublicContentRoute
-                    ? PublicEntry
-                    : RootEntry;
-
 initializeTheme();
 void applySiteBranding(getApiBaseUrl());
 
@@ -122,7 +66,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
       <Suspense fallback={<div className="appLoading">应用加载中...</div>}>
-        <Page />
+        <BrowserAppRouter />
       </Suspense>
     </ThemeProvider>
   </StrictMode>

@@ -1,11 +1,17 @@
 .page {
-  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-muted) 100%);
   color: var(--theme-text-primary);
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .main {
+  flex: 1 0 auto;
   width: min(1220px, calc(100vw - 24px));
   margin: 0 auto;
   padding: 24px 0 40px;
@@ -15,7 +21,7 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 16px;
-  min-height: calc(100vh - 128px);
+  min-height: calc(100dvh - 128px);
 }
 
 .summaryPanel {
@@ -115,7 +121,7 @@
 }
 
 .chatShell {
-  height: min(690px, calc(100vh - 360px));
+  height: min(690px, calc(100dvh - 360px));
   min-height: 540px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
