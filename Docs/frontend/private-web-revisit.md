@@ -80,7 +80,7 @@
 | `/notifications` | `/forum/post/:id`、`/u/:identifier` | 返回通知中心 |
 | `/circle` | `/forum/post/:id`、`/u/:identifier` | 返回我的圈子 |
 | `/me` | `/u/:identifier`、最近复访中的公开详情 | 返回我的状态 |
-| `/messages` | `/u/:identifier` | 返回消息 |
+| `/messages` | `/u/:identifier` | 返回聊天 |
 | `/pet` | 后续公开宠物名片或公开个人页 | 返回电子宠物 |
 
 普通点击使用来源转交；新开标签、复制链接和分享链接只保留公开 URL。
