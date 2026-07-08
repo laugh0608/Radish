@@ -709,14 +709,8 @@ export const WorkbenchApp = () => {
         brandMark="台"
         brandName={t('workbench.title')}
         brandSubline={t('workbench.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
           window.location.href = '/workbench';
-        }}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
         }}
       />
 

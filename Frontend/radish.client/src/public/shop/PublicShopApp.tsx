@@ -51,7 +51,6 @@ interface PublicShopAppProps {
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
-  onNavigateToDiscover?: () => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
@@ -151,8 +150,7 @@ export const PublicShopApp = ({
   route,
   fallbackProductsRoute,
   detailBackAction,
-  onNavigate,
-  onNavigateToDiscover
+  onNavigate
 }: PublicShopAppProps) => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -902,12 +900,7 @@ export const PublicShopApp = ({
         brandName={t('desktop.apps.shop.name')}
         brandSubline={t('shop.public.shellLabel')}
         onBrandClick={() => onNavigate(createDefaultPublicShopRoute())}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
         loginLabel={t('public.shell.loginAction')}
-        myStatusLabel={t('public.shell.myStatusAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

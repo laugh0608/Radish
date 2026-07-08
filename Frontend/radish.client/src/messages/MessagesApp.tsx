@@ -379,14 +379,8 @@ export const MessagesApp = () => {
         brandMark="聊"
         brandName={t('messages.title')}
         brandSubline={t('messages.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
           window.location.href = buildMessagesPath();
-        }}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
         }}
       />
 

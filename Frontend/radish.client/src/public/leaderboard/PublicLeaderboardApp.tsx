@@ -32,7 +32,6 @@ import styles from './PublicLeaderboardApp.module.css';
 interface PublicLeaderboardAppProps {
   route: PublicLeaderboardRoute;
   onNavigate: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
-  onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToShopProduct?: (productId: string) => void;
 }
@@ -374,7 +373,6 @@ function PublicLeaderboardRail({
 export const PublicLeaderboardApp = ({
   route,
   onNavigate,
-  onNavigateToDiscover,
   onNavigateToProfile,
   onNavigateToShopProduct,
 }: PublicLeaderboardAppProps) => {
@@ -600,12 +598,7 @@ export const PublicLeaderboardApp = ({
         brandName={t('desktop.apps.leaderboard.name')}
         brandSubline={t('leaderboard.public.shellLabel')}
         onBrandClick={() => onNavigate(createDefaultPublicLeaderboardRoute())}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
         loginLabel={t('public.shell.loginAction')}
-        myStatusLabel={t('public.shell.myStatusAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

@@ -51,7 +51,6 @@ interface PublicDocsAppProps {
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
-  onNavigateToDiscover?: () => void;
 }
 
 interface PublicDocsTreeRow {
@@ -363,8 +362,7 @@ export const PublicDocsApp = ({
   route,
   fallbackBrowseRoute,
   detailBackAction,
-  onNavigate,
-  onNavigateToDiscover
+  onNavigate
 }: PublicDocsAppProps) => {
   const { t } = useTranslation();
   const roles = useUserStore((state) => state.roles || []);
@@ -526,12 +524,7 @@ export const PublicDocsApp = ({
         brandName={t('desktop.apps.document.name')}
         brandSubline={t('wiki.public.shellLabel')}
         onBrandClick={() => onNavigate(createDefaultDocsListRoute())}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
         loginLabel={t('public.shell.loginAction')}
-        myStatusLabel={t('public.shell.myStatusAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

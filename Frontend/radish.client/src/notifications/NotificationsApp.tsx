@@ -406,14 +406,8 @@ export const NotificationsApp = () => {
         brandMark="萝"
         brandName={t('notification.title')}
         brandSubline={t('notification.web.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
           window.location.href = '/notifications';
-        }}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
         }}
       />
 

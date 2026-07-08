@@ -1623,18 +1623,12 @@ export const MeApp = () => {
     <div className={styles.page}>
       <PublicShellHeader
         variant="private"
-        activeKey={route.kind === 'assets' || route.kind === 'assets-transactions' ? 'assets' : 'me'}
+        activeKey="me"
         brandMark="我"
         brandName={t('me.title')}
         brandSubline={t('me.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
           navigateToMeRoute({ kind: 'dashboard' });
-        }}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
         }}
       />
 

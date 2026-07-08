@@ -497,12 +497,7 @@ export const PublicProfileApp = ({
         brandName={t('profile.public.title')}
         brandSubline={t('profile.public.shellLabel')}
         onBrandClick={() => pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
         loginLabel={t('public.shell.loginAction')}
-        myStatusLabel={t('public.shell.myStatusAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
       />
 
       <main className={styles.main}>

@@ -710,16 +710,11 @@ export function DocsAuthorApp() {
     <div className={styles.page}>
       <PublicShellHeader
         variant="private"
-        activeKey="author"
+        activeKey="workbench"
         brandMark="文"
         brandName="文档作者台"
         brandSubline="文档写作入口"
         onBrandClick={() => navigateToRoute(createDefaultDocsAuthorRoute())}
-        onNavigateToDiscover={() => { window.location.href = buildPublicDocsPath({ kind: 'list' }); }}
-        discoverHref={buildPublicDocsPath({ kind: 'list' })}
-        discoverLabel="公开文档"
-        showCircleAction={false}
-        desktopLabel="工作台"
       />
 
       <main className={styles.main}>

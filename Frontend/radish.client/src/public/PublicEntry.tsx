@@ -479,21 +479,17 @@ export const PublicEntry = () => {
     <PublicLeaderboardApp
       route={route.route}
       onNavigate={navigateToLeaderboardRoute}
-      onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
       onNavigateToShopProduct={(productId) => navigateToShopRoute({ kind: 'detail', productId })}
     />
   ) : route.app === 'legal' ? (
-    <PublicCommitmentsApp
-      onNavigateToDiscover={() => navigateToDiscoverRoute()}
-    />
+    <PublicCommitmentsApp />
   ) : route.app === 'shop' ? (
     <PublicShopApp
       route={route.route}
       fallbackProductsRoute={lastShopProductsRoute}
       detailBackAction={shopDetailBackAction}
       onNavigate={navigateToShopRoute}
-      onNavigateToDiscover={navigateToDiscoverRoute}
     />
   ) : route.app === 'docs' ? (
     <PublicDocsApp
@@ -501,7 +497,6 @@ export const PublicEntry = () => {
       fallbackBrowseRoute={lastDocsBrowseRoute}
       detailBackAction={docsDetailBackAction}
       onNavigate={navigateToDocsRoute}
-      onNavigateToDiscover={navigateToDiscoverRoute}
     />
   ) : route.app === 'profile' ? (
     <PublicProfileApp
@@ -519,7 +514,6 @@ export const PublicEntry = () => {
       routeSourceState={routeSourceState}
       detailBackAction={forumDetailBackAction}
       onNavigate={navigateToForumRoute}
-      onNavigateToDiscover={navigateToDiscoverRoute}
       onNavigateToProfile={navigateToProfileFromForum}
       onNavigateToSearch={navigateToPublicForumSearch}
       onNavigateToTag={navigateToForumTag}

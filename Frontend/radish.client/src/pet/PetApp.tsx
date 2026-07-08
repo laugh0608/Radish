@@ -763,14 +763,8 @@ export const PetApp = () => {
         brandMark="萝"
         brandName={t('pet.title')}
         brandSubline={t('pet.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
           window.location.href = buildPetPath();
-        }}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
         }}
       />
 

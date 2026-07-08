@@ -571,13 +571,7 @@ export const CircleApp = () => {
         brandMark="萝"
         brandName={t('circle.title')}
         brandSubline={t('circle.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        desktopLabel={t('public.shell.desktopAction')}
-        showCircleAction={false}
         onBrandClick={() => switchTab('feed')}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
-        }}
       />
 
       <main className={styles.main}>

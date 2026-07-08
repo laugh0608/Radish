@@ -11,10 +11,6 @@ interface CommitmentSection {
   items: string[];
 }
 
-interface PublicCommitmentsAppProps {
-  onNavigateToDiscover?: () => void;
-}
-
 const commitmentSections: CommitmentSection[] = [
   {
     id: 'community',
@@ -90,7 +86,7 @@ const commitmentSections: CommitmentSection[] = [
   },
 ];
 
-export function PublicCommitmentsApp({ onNavigateToDiscover }: PublicCommitmentsAppProps) {
+export function PublicCommitmentsApp() {
   const pageRef = useRef<HTMLDivElement | null>(null);
 
   return (
@@ -101,12 +97,7 @@ export function PublicCommitmentsApp({ onNavigateToDiscover }: PublicCommitments
         brandSubline="Community Trust"
         activeKey="legal"
         onBrandClick={() => pageRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel="发现"
         loginLabel="登录"
-        myStatusLabel="我的状态"
-        circleLabel="圈子"
-        desktopLabel="工作台"
       />
 
       <main className={styles.main}>
