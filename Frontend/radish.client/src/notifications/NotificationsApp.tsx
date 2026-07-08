@@ -402,7 +402,7 @@ export const NotificationsApp = () => {
     <div className={styles.page}>
       <PublicShellHeader
         variant="private"
-        activeKey="messages"
+        activeKey="notifications"
         brandMark="萝"
         brandName={t('notification.title')}
         brandSubline={t('notification.web.shellSubline')}

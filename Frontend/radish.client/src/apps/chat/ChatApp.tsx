@@ -97,6 +97,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const currentUserName = useUserStore((state) => state.userName);
   const currentUserAvatarUrl = useUserStore((state) => state.avatarUrl);
   const windowParams = useMemo(() => parseChatWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
+  const hasRoutedChannel = !!windowParams.channelId;
 
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -114,7 +115,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const [mentionLoading, setMentionLoading] = useState(false);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
-  const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(false);
+  const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(true);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
   const [messageNavigationTarget, setMessageNavigationTarget] = useState<MessageNavigationTarget | null>(null);
   const [messageFocusTarget, setMessageFocusTarget] = useState<MessageFocusTarget | null>(null);
@@ -1286,7 +1287,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const hasComposerContent = !!messageInput.trim() || hasPendingImage;
 
   return (
-    <div className={styles.chatApp}>
+    <div className={`${styles.chatApp} ${hasRoutedChannel ? styles.chatAppFocused : ''}`}>
       <ChatChannelSidebar
         channels={channels}
         activeChannelId={activeChannelId}

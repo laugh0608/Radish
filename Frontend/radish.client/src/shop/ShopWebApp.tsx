@@ -360,7 +360,7 @@ export function ShopWebApp() {
     <div className={styles.container}>
       <PublicShellHeader
         variant="private"
-        activeKey="workbench"
+        activeKey="more"
         brandMark="商"
         brandName={t('shop.title')}
         brandSubline={t('shop.privateShellSubline', { defaultValue: '订单、背包与购买回流' })}

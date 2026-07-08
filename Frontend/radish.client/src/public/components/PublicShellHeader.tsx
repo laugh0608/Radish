@@ -2,6 +2,7 @@ import { WebShellHeader, type WebShellNavItem, type WebShellVariant } from '@/co
 import { redirectToLogin } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
+import { resolveMediaUrl } from '@/utils/media';
 
 interface PublicShellHeaderProps {
   brandMark: string;
@@ -11,6 +12,7 @@ interface PublicShellHeaderProps {
   variant?: WebShellVariant;
   activeKey?: string;
   mobileNavItems?: WebShellNavItem[];
+  hideMobileNav?: boolean;
   loginLabel?: string;
 }
 
@@ -22,13 +24,18 @@ function buildCurrentReturnPath(): string {
   return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
-function buildAccountActionItems(authAction: WebShellNavItem): WebShellNavItem[] {
+function buildAvatarText(displayName: string): string {
+  const normalized = displayName.trim();
+  return normalized.length > 0 ? normalized.slice(0, 1).toUpperCase() : '我';
+}
+
+function buildShellActionItems(authAction: WebShellNavItem): WebShellNavItem[] {
   return [
     {
-      key: 'messages',
-      label: '消息',
-      href: '/messages',
-      icon: 'mdi:message-text-outline',
+      key: 'notifications',
+      label: '通知',
+      href: '/notifications',
+      icon: 'mdi:bell-outline',
     },
     authAction,
   ];
@@ -42,17 +49,24 @@ export const PublicShellHeader = ({
   variant = 'public',
   activeKey,
   mobileNavItems,
-  loginLabel = '登录',
+  hideMobileNav,
+  loginLabel = '登录 / 注册',
 }: PublicShellHeaderProps) => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
+  const displayName = useUserStore(state => state.displayName);
+  const userName = useUserStore(state => state.userName);
+  const avatarUrl = useUserStore(state => state.avatarThumbnailUrl || state.avatarUrl || null);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
+  const userLabel = userName?.trim() || displayName?.trim() || '我的';
   const authAction: WebShellNavItem = loggedIn
     ? {
         key: 'me',
-        label: '我的',
+        label: userLabel,
         href: '/me',
         icon: 'mdi:account-circle-outline',
+        avatarUrl: resolveMediaUrl(avatarUrl),
+        avatarText: buildAvatarText(userLabel),
       }
     : {
         key: 'me',
@@ -61,7 +75,7 @@ export const PublicShellHeader = ({
         icon: 'mdi:account-circle-outline',
         onClick: () => redirectToLogin({ returnPath: buildCurrentReturnPath() }),
       };
-  const actionItems = buildAccountActionItems(authAction);
+  const actionItems = buildShellActionItems(authAction);
 
   return (
     <WebShellHeader
@@ -71,6 +85,7 @@ export const PublicShellHeader = ({
       brandSubline={brandSubline}
       activeKey={activeKey}
       mobileNavItems={mobileNavItems}
+      hideMobileNav={hideMobileNav}
       actionItems={actionItems}
       onBrandClick={onBrandClick}
     />

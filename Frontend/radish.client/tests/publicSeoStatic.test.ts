@@ -180,19 +180,22 @@ test('纯 Web 壳层应使用统一产品级导航而不是 public / private 两
   assert.match(shellSource, /function shouldHandleShellLinkClick/);
   assert.match(shellSource, /function navigateToShellPath/);
   assert.match(shellSource, /const productNavItems: WebShellNavItem\[\] = \[/);
-  assert.match(shellSource, /key: 'discover'[\s\S]*key: 'forum'[\s\S]*key: 'docs'[\s\S]*key: 'shop'[\s\S]*key: 'workbench'/);
+  assert.match(shellSource, /key: 'discover'[\s\S]*key: 'forum'[\s\S]*key: 'chat'[\s\S]*key: 'more'/);
   assert.match(shellSource, /const productMobileNavItems: WebShellNavItem\[\] = \[/);
-  assert.match(shellSource, /key: 'discover'[\s\S]*key: 'forum'[\s\S]*key: 'workbench'[\s\S]*key: 'messages'[\s\S]*key: 'me'/);
+  assert.match(shellSource, /key: 'discover'[\s\S]*key: 'forum'[\s\S]*key: 'chat'[\s\S]*key: 'more'[\s\S]*key: 'me'/);
   assert.match(shellSource, /aria-label="产品导航"/);
   assert.match(shellSource, /aria-label="产品移动导航"/);
+  assert.match(shellSource, /hideMobileNav/);
   assert.match(shellSource, /href=\{item\.href\}/);
   assert.match(shellSource, /event\.preventDefault\(\);/);
   assert.match(shellSource, /item\.onClick\(\);/);
   assert.match(shellSource, /if \(navigateToShellPath\(item\.href\)\) \{/);
-  assert.match(source, /function buildAccountActionItems\(authAction: WebShellNavItem\): WebShellNavItem\[\]/);
-  assert.match(source, /key: 'messages'[\s\S]*href: '\/messages'/);
+  assert.match(source, /function buildShellActionItems\(authAction: WebShellNavItem\): WebShellNavItem\[\]/);
+  assert.match(source, /key: 'notifications'[\s\S]*href: '\/notifications'/);
   assert.match(source, /key: 'me'[\s\S]*href: '\/me'/);
+  assert.match(source, /avatarUrl: resolveMediaUrl\(avatarUrl\)/);
   assert.doesNotMatch(shellSource, /publicNavItems|privateNavItems|publicMobileNavItems|privateMobileNavItems/);
+  assert.doesNotMatch(shellSource, /key: 'docs'[\s\S]*productNavItems|key: 'shop'[\s\S]*productNavItems|label: '工作台'|label: '消息'/);
   assert.doesNotMatch(source, /discover-action|circle-action|workbench-action|me-action|login-action/);
   assert.doesNotMatch(source, /discoverHref|discoverLabel|circleHref|circleLabel|showCircleAction|desktopHref|desktopLabel|myStatusLabel/);
   assert.doesNotMatch(source, /buildPublicNavItems|buildPublicMobileNavItems|buildActionItems/);
@@ -214,7 +217,7 @@ test('正式 Web 壳层切换应复用当前 React 入口而不是整页重载',
   assert.match(mainSource, /<BrowserAppRouter \/>/);
   assert.match(shellSource, /window\.history\.pushState\(\{\}, '', nextPath\);/);
   assert.match(shellSource, /window\.dispatchEvent\(new PopStateEvent\('popstate'/);
-  assert.match(publicShellSource, /buildAccountActionItems\(authAction\)/);
+  assert.match(publicShellSource, /buildShellActionItems\(authAction\)/);
   assert.doesNotMatch(publicShellSource, /window\.location\.href = href/);
 });
 
@@ -234,10 +237,55 @@ test('登录态正式 Web 页面应使用应用内滚动容器', () => {
     assert.match(source, /\.page[\s\S]*height: 100dvh;/, stylePath);
   }
 
-  for (const stylePath of stylePaths.slice(0, 6)) {
+  const bodyScrollStylePaths = [
+    'src/me/MeApp.module.css',
+    'src/notifications/NotificationsApp.module.css',
+    'src/pet/PetApp.module.css',
+    'src/workbench/WorkbenchApp.module.css',
+    'src/docs/DocsAuthorApp.module.css',
+  ];
+
+  for (const stylePath of bodyScrollStylePaths) {
     const source = readFileSync(resolve(clientRoot, stylePath), 'utf8');
     assert.match(source, /\.page[\s\S]*overflow-y: auto;/, stylePath);
   }
+
+  const messagesSource = readFileSync(resolve(clientRoot, 'src/messages/MessagesApp.module.css'), 'utf8');
+  const chatSource = readFileSync(resolve(clientRoot, 'src/apps/chat/ChatApp.module.css'), 'utf8');
+  assert.match(messagesSource, /\.page[\s\S]*overflow: hidden;/);
+  assert.match(chatSource, /\.messageViewport[\s\S]*overflow-y: auto;/);
+});
+
+test('聊天正式 Web 页面应把聊天窗口作为主体而不是仪表盘卡片', () => {
+  const messagesSource = readFileSync(resolve(clientRoot, 'src/messages/MessagesApp.tsx'), 'utf8');
+  const messagesStylesSource = readFileSync(resolve(clientRoot, 'src/messages/MessagesApp.module.css'), 'utf8');
+  const chatSource = readFileSync(resolve(clientRoot, 'src/apps/chat/ChatApp.tsx'), 'utf8');
+  const chatSidebarSource = readFileSync(resolve(clientRoot, 'src/apps/chat/ChatChannelSidebar.tsx'), 'utf8');
+  const chatTypesSource = readFileSync(resolve(clientRoot, 'src/types/chat.ts'), 'utf8');
+
+  assert.match(messagesSource, /activeKey="chat"/);
+  assert.match(messagesSource, /hideMobileNav=\{route\.channelId !== undefined\}/);
+  assert.match(messagesSource, /messages\.web\.chatWorkspaceLabel/);
+  assert.doesNotMatch(messagesSource, /summaryPanel|messageRail|summaryCards|channelQueue/);
+  assert.match(messagesStylesSource, /width: min\(1560px, calc\(100vw - 32px\)\)/);
+  assert.match(messagesStylesSource, /height: calc\(100dvh - var\(--rx-shell-header-height\) - 40px\)/);
+  assert.match(chatSource, /useState\(true\)/);
+  assert.match(chatSource, /chatAppFocused/);
+  assert.match(chatSidebarSource, /key: 'mutual'[\s\S]*key: 'stranger'[\s\S]*key: 'group'[\s\S]*key: 'public'/);
+  assert.match(chatSidebarSource, /voConversationKind/);
+  assert.match(chatTypesSource, /voConversationKind\?: 'public' \| 'mutual' \| 'stranger' \| 'group' \| null;/);
+});
+
+test('正式 Web 页头登录态账号应展示用户名而不是公开句柄', () => {
+  const publicShellSource = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
+  const userStoreSource = readFileSync(resolve(clientRoot, 'src/stores/userStore.ts'), 'utf8');
+  const authBootstrapSource = readFileSync(resolve(clientRoot, 'src/services/authBootstrap.ts'), 'utf8');
+
+  assert.match(publicShellSource, /const userLabel = userName\?\.trim\(\) \|\| displayName\?\.trim\(\) \|\| '我的';/);
+  assert.doesNotMatch(publicShellSource, /const userLabel = displayHandle/);
+  assert.match(userStoreSource, /const userName = user\.userName\?\.trim\(\) \|\| displayName;/);
+  assert.match(authBootstrapSource, /const userName = user\.voUserName\.trim\(\);/);
+  assert.match(authBootstrapSource, /userName: userName \|\| displayName/);
 });
 
 test('我的状态首页不应承载规则说明型隐私边界大卡片', () => {
@@ -376,7 +424,7 @@ test('公开用户承诺页应进入公共壳层并归属工作台入口', () =>
   assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname\)/);
   assert.match(publicEntrySource, /<PublicCommitmentsApp/);
   assert.doesNotMatch(publicShellSource, /href: '\/legal'/);
-  assert.match(webShellSource, /pathname === '\/legal'[\s\S]*return 'workbench';/);
+  assert.match(webShellSource, /pathname === '\/legal'[\s\S]*return 'more';/);
   assert.match(headSource, /用户承诺与社区边界/);
 });
 

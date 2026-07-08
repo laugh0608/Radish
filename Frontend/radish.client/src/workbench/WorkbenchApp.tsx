@@ -705,8 +705,8 @@ export const WorkbenchApp = () => {
     <div className={styles.page}>
       <PublicShellHeader
         variant="private"
-        activeKey="workbench"
-        brandMark="台"
+        activeKey="more"
+        brandMark="多"
         brandName={t('workbench.title')}
         brandSubline={t('workbench.shellSubline')}
         onBrandClick={() => {
