@@ -17,6 +17,7 @@ import styles from './NotificationCenter.module.css';
 
 interface NotificationCenterProps {
   onNavigateNotification?: (notification: NotificationItemData) => boolean;
+  headingLevel?: 'h1' | 'h2';
 }
 
 /**
@@ -24,7 +25,7 @@ interface NotificationCenterProps {
  *
  * SignalR 连接由外层入口统一管理，此组件只负责读取状态和调用方法。
  */
-export const NotificationCenter = ({ onNavigateNotification }: NotificationCenterProps) => {
+export const NotificationCenter = ({ onNavigateNotification, headingLevel = 'h1' }: NotificationCenterProps) => {
   const { t, i18n } = useTranslation();
   const { unreadCount, recentNotifications } = useNotificationStore();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -364,6 +365,7 @@ export const NotificationCenter = ({ onNavigateNotification }: NotificationCente
         return notifications;
     }
   }, [activeFilter, notifications]);
+  const HeadingTag = headingLevel;
 
   // 标记已读
   const handleMarkAsRead = useCallback(async (
@@ -470,7 +472,7 @@ export const NotificationCenter = ({ onNavigateNotification }: NotificationCente
     <div className={styles.notificationApp}>
       <div className={styles.header}>
         <div className={styles.headerTop}>
-          <h1 className={styles.title}>{t('notification.title')}</h1>
+          <HeadingTag className={styles.title}>{t('notification.title')}</HeadingTag>
           <div className={styles.actions}>
             <span className={styles.count}>
               {unreadCount > 0 ? t('notification.unreadCount', { count: unreadCount }) : t('notification.allRead')}

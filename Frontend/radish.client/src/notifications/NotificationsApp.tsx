@@ -278,7 +278,7 @@ export const NotificationsApp = () => {
         </section>
         <div className={styles.notificationWorkspace}>
           <section className={styles.centerShell} id="notification-center">
-            <NotificationCenter onNavigateNotification={handleNavigateNotification} />
+            <NotificationCenter headingLevel="h2" onNavigateNotification={handleNavigateNotification} />
           </section>
           <aside className={styles.notificationRail} aria-label={t('notification.web.railLabel')}>
             <section className={styles.railCard}>

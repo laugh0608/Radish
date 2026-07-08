@@ -62,6 +62,10 @@ const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 
+function isCompactChatViewport(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth <= 720;
+}
+
 export interface ChatAppProfileNavigationTarget {
   userId: EntityIdValue;
   userName?: string | null;
@@ -121,6 +125,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const [messageNavigationTarget, setMessageNavigationTarget] = useState<MessageNavigationTarget | null>(null);
   const [messageFocusTarget, setMessageFocusTarget] = useState<MessageFocusTarget | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactChatViewport());
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -180,6 +185,21 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const connectionHint = useMemo(() => getConnectionHint(connectionState, t), [connectionState, t]);
 
   const isMentionOpen = mentionContext !== null;
+  const composerPlaceholder = activeChannelId
+    ? t(isCompactViewport ? 'chat.inputPlaceholderMobile' : 'chat.inputPlaceholder')
+    : t('chat.inputSelectChannel');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsCompactViewport(isCompactChatViewport());
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     const scrollEl = messageScrollRef.current;
@@ -1431,7 +1451,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
                         void handleSendMessage();
                       }
                     }}
-                    placeholder={activeChannelId ? t('chat.inputPlaceholder') : t('chat.inputSelectChannel')}
+                    placeholder={composerPlaceholder}
                     disabled={!activeChannelId}
                   />
 
