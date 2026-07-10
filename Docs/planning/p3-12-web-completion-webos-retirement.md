@@ -1,6 +1,6 @@
 # P3-12 Web 完全化与 WebOS 收束
 
-> 状态：`P3-12-B1 代码侧主路径已完成；P3-12-C1 首轮 B1 直接残留清理已完成；P3-12-B2 完整个人中心 Web 化首批代码和正式链接语义补口已完成；P3-12-B3 论坛作者态 Web 化首批代码与小阶段验收已完成；P3-12-B4-1 正式 Web 文档作者入口首批代码已完成；P3-12-B4-2 Console 文档治理首批代码已完成；B4 / D1 阶段运行态 smoke 已完成；P3-12-B5 Web 功能总入口首批代码与 Gateway smoke 已完成；P3-12-B6 身份语义二次收口代码侧与启动前验证已完成；P3-12-D1-D13 已完成设计准备、client 视觉实现首轮与私域 / 作者态成组验收；P3-12-D14-D35 已完成 radish.console 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；P3-12-D36-D67 已完成差距口径、设计源差距矩阵、边界裁决、阶段验收清单、Gateway PC / mobile 阶段验收、纠偏、页面开发缺口源码核对、Docs 作者态真实动作收口、Public / Private 主路径代码侧复核、Console 深层管理动作复核、移动响应式抽样、Pencil UI 实现完成度复核、UI 实现证据收口、候选前启动前验证、Gateway 真实页面复核、D49 后口径纠偏、Public Web 当前发布前范围首轮实现、D62 Private / Author 当前发布前页面族首批实现、D63 Console 治理 / 商业 / 文档 / 用户 / 权限矩阵首批实现、成组静态收口及 Gateway 成组复核、D64 候选前集中验收准备、D65 启动无关候选前验证、D66 运行态补验和 D67 正式产品成熟度专题立项；下一步进入 P3-12-E 正式产品成熟度与质量硬化，发布候选顺延`
+> 状态：`P3-12-A-D 已完成当前 Web 化、WebOS 收束和 UI 页面族首批实现；P3-12-E1-E7 与 E8 首日产品形态回拉已完成；当前 E8-Q0 为立即第一顺位，E8-B 为产品线下一顺位，完成产品与发布工程双线收口后才能进入 P3-12-F`
 >
 > 启动日期：2026-06-21（Asia/Shanghai）
 >
@@ -247,7 +247,8 @@ P3-12-E 完成并确认正式产品成熟度达标后，再进入发布候选。
 62. `P3-12-D65`：UI 专题候选前验证执行已完成，记录见 [P3-12-D65 UI 专题候选前验证执行](/records/p3-12-d65-ui-candidate-validation-execution-2026-07-05)；本批执行启动无关验证，修复公开个人页只读边界与公开页静态契约回归，`validate:ci -- --report`、`validate:baseline`、`validate:identity`、`radish.client` build 和 `validate:baseline:host -- --report` 均通过。
 63. `P3-12-D66`：UI 专题候选前运行态验证补验已完成，记录见 [P3-12-D66 UI 专题候选前运行态验证补验](/records/p3-12-d66-ui-candidate-runtime-validation-2026-07-05)；本批通过 `check:host-runtime -- --details --report`，并使用 Chrome 插件覆盖 Gateway public / private / console PC `1920x1080` 与 mobile `390x844 @ DPR 3` 成组页面复核，未发现新的阻断级真实页面问题。
 64. `P3-12-D67`：正式产品成熟度专题立项已完成，记录见 [P3-12-D67 正式产品成熟度专题立项记录](/records/p3-12-d67-product-maturity-topic-scope-2026-07-05)；本批确认不直接进入发布候选，新增 `P3-12-E 正式产品成熟度与质量硬化`，并将 Console 移动治理视图纳入 E1 高优先审计。
-65. `P3-12-F`：后置到 P3-12-E 正式产品成熟度与质量硬化完成之后，不提前创建发布 tag。
+65. `P3-12-E8-Q`：正式发布工程成熟度与安全收口已立项，范围、顺序和退出条件见 [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)；`Q0` 为立即优先项，`E8-B` 保持产品线下一顺位。
+66. `P3-12-F`：后置到 E8 产品形态与发布工程双线达到退出条件之后，不提前创建发布 tag。
 
 ## 当前不做
 

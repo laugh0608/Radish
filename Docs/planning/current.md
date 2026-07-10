@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前主线**：`P3-12 Web 完全化与 WebOS 收束`
-- **复核日期**：`2026-07-08`
+- **复核日期**：`2026-07-10`
 - **最近结论**：
   - `P3-1` 至 `P3-5` 已完成公开内容增长、PublicId 试点、留存回流、动态 sitemap 与详情 head snapshot 首批建设。
   - `P3-6` 公开增长部署观察已收口，本地 Gateway 与生产公开域名 `https://radishx.com` 的 public head smoke 均通过，转入维护线。
@@ -176,16 +176,10 @@
   - `P3-12-D31-D35` 已完成 `radish.console` 阶段运行态复核、数据补验和表格交互代码侧收口：Gateway 下已覆盖 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态、表情分组空态，以及补安全测试数据后的 `OrderDetail`、分组表情列表和 `StickerBatchUploadModal` PC / mobile CSS 视口；D33-D35 已完成操作列换行、运维 / 治理静态残留、Dashboard 最近订单、用户详情内嵌表格、系统设置历史、文档版本弹窗和贴纸批量上传表格滚动 / 分页布局收口；贴纸弹窗 AntD `Alert.message` 告警与 Auth `wwwroot` 缺失启动告警已收口。D35 只是 Console 表格交互代码侧收口，不代表 `P3-12-D` UI 专题完成，记录见 [P3-12-D31 运行态复核](/records/p3-12-d31-radish-console-stage-smoke-2026-06-30)、[P3-12-D32 数据补验](/records/p3-12-d32-radish-console-data-smoke-and-auth-webroot-2026-06-30)、[P3-12-D33 表格可读性首批](/records/p3-12-d33-radish-console-table-readability-first-closure-2026-06-30)、[P3-12-D34 运维与治理表格静态收口](/records/p3-12-d34-radish-console-ops-table-static-closure-2026-06-30) 与 [P3-12-D35 表格交互代码侧收口](/records/p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30)。
   - `P3-12-D36-D61` 已完成 UI 专题差距口径、四类设计源差距矩阵、边界裁决、阶段验收清单、Gateway PC / mobile 阶段验收、纠偏、页面缺口核对、Docs 作者态动作补漏、Public / Private 主路径代码侧复核、Console 深层管理动作复核、移动响应式抽样、Pencil UI 实现完成度复核、UI 实现证据收口、候选前启动前验证、Gateway 真实页面复核、D49 后口径纠偏、`radish.client` 私域 / 作者态移动任务流 UI 对齐首批、Public Web 移动公开任务流 UI 对齐、Public Web Pencil 首轮真实页面对齐收口、Private / Author Pencil 页面对齐收口、Console 响应式后台 UI 差距回拉、Console Gateway 成组真实页面复核、Console 深层交互 / 真实数据态复核、UI 专题候选前集中验收准备、UI 专题候选前验证执行、Pencil 逐页 UI 与功能缺口复盘和 Public Web `P01-P14` 首轮实现；`P15-P16` 公开聊天室 / 移动聊天回复流继续作为 Public 小专题内产品与 API 后置缺口。
   - `P3-12-D62` Private / Author 已完成 `/workbench`、`/me` 内容历史复访组、资产 / 订单 / 背包页面族、通知 / 消息页面族、圈子 / 宠物页面族以及论坛 / Docs 作者页面族首批实现：通过 Pencil MCP 读取 `private-web-workflows.pen` 的 `P01 / P21`、`P03-P06 / P23`、`P07-P11 / P24-P25`、`P12-P13 / P26-P27`、`P14-P15 / P28-P29` 与 `P16-P20 / P30`，补私域工作台队列、`/me` 子页任务面、资产 / 订单 / 背包状态 rail、通知 / 消息上下文 rail、圈子关系上下文 rail、宠物照护优先级 rail、论坛作者模式 rail 和 Docs 作者任务 rail；记录见 [P3-12-D62 Private / Author Workbench 首批实现记录](/records/p3-12-d62-private-author-workbench-first-implementation-2026-07-04)、[P3-12-D62 `/me` 内容历史复访组首批实现记录](/records/p3-12-d62-me-content-history-first-implementation-2026-07-05)、[P3-12-D62 资产 / 订单 / 背包页面族首批实现记录](/records/p3-12-d62-assets-orders-inventory-first-implementation-2026-07-05)、[P3-12-D62 通知 / 消息页面族首批实现记录](/records/p3-12-d62-notifications-messages-first-implementation-2026-07-05)、[P3-12-D62 圈子 / 宠物页面族首批实现记录](/records/p3-12-d62-circle-pet-first-implementation-2026-07-05) 与 [P3-12-D62 论坛 / Docs 作者页面族首批实现记录](/records/p3-12-d62-forum-docs-author-first-implementation-2026-07-05)。不新增 API、权限、数据库、路由语义或提交载荷。
-  - `P3-12-D63` Console 已完成内容治理 / 经验治理、商业运营、文档治理、用户管理和权限矩阵页面族首批实现、成组静态收口和 Gateway 成组真实页面复核；`P3-12-D64-D66` 已完成 UI 候选前集中验收准备、启动无关候选前验证和运行态补验；随后 `P3-12-E1-E5` 已完成首批成熟度审计、信任治理、隐私安全、错误恢复和旅程验证。`P3-12-E6` 原进入 F 判断已被 2026-07-06 人工抽查推翻，下一步回拉 `P3-12-E7 正式 UI 与文案成熟度专项审计`。
-  - `P3-12-E7` 首批 Console / Public 静态差距审计已完成：通过 Pencil MCP 读取 `console-governance-workbench.pen` 并对照 `radish.console` / `radish.client` / Auth 源码，确认 `/console/` Dashboard 未对齐 `P04`、Console 移动壳层未落到 `P14-P18`、Public 术语簇和 Auth 授权页技术信息层级仍阻断进入 `P3-12-F`；记录见 [P3-12-E7 Console / Public UI 与文案成熟度首批差距审计](/records/p3-12-e7-console-public-ui-copy-gap-audit-2026-07-07)。
-  - `P3-12-E7-A` Console 正式后台密度与移动任务流已完成代码实现与 Gateway PC / mobile 复核，记录见 [P3-12-E7-A Console 正式后台密度与移动任务流方案](/records/p3-12-e7-a-console-density-mobile-task-flow-plan-2026-07-07)；移动端采用 `总览 / 治理 / 交易 / 权限 / 更多` 高频底栏，并由 `总览` 功能面板与 `更多` 全量入口承接完整 Console 分类；`radish.console` 构建、repo hygiene、`git diff --check`、Gateway `1440x900` 与 `390x844` 视图均已通过。
-  - `P3-12-E7-B` Public 术语清理已完成代码实现与静态验证，记录见 [P3-12-E7-B Public 术语清理记录](/records/p3-12-e7-b-public-terminology-cleanup-2026-07-07)；公开页、Workbench、通知 / 消息、Docs 作者入口和公开 head 中的 `公开壳层 / 正式 Web 私域路由 / 私域路由 / 桌面工作台 / 公开 docs / reaction` 等用户可见内部术语已替换为页面、个人页面、兼容入口、公开文档和表情回应等产品表达；`radish.client` 构建、repo hygiene、`git diff --check` 与目标术语扫描均已通过。
-  - `P3-12-E7-C` Public 信息密度首批与第二批已完成：Docs / Shop 首屏内容优先、Discover 社区内容流优先、Forum detail 参与入口和讨论区层级前移，记录见 [首批收口记录](/records/p3-12-e7-c-public-information-density-first-closure-2026-07-07) 与 [第二批收口记录](/records/p3-12-e7-c-public-discover-forum-density-closure-2026-07-07)；本批未改 API、权限、登录回流、购买提交或后端行为。
-  - `P3-12-E7-D` Auth 授权页信息层级已完成：通过 `web-ui-foundation.pen` 新增并四次收紧 `E7-D - Auth Consent Information Hierarchy` 具体授权决策参考画板，并将 Auth 授权确认页重排为请求应用、当前账号、返回位置、权限用途、敏感边界、确认 / 取消动作安全区和次级技术信息；记录见 [P3-12-E7-D Auth 授权页信息层级收口记录](/records/p3-12-e7-d-auth-consent-information-hierarchy-2026-07-07)。本批未改授权协议、登录回流、权限、接口、后端运行时行为、审计、错误模型或安全契约。
-  - `P3-12-E7-E` UI 与文案成熟度收束判断已完成：E7-A 至 E7-D 首批已知阻断在静态复核中未复现，Console / Public / Auth 当前无需要立即回拉代码的新阻断；E7 转入维护回拉线。记录见 [P3-12-E7-E UI 与文案成熟度收束判断记录](/records/p3-12-e7-e-ui-copy-maturity-closure-decision-2026-07-08)。本轮未执行 Gateway 真实页面 smoke，不能替代发布候选进入判断。
-  - `P3-12-E7` 后发布候选进入前复核已完成：`validate:ci -- --report`、`validate:baseline:host -- --report`、`check:host-runtime -- --details --report` 通过；Chrome Gateway PC `1920x1080` 与移动 `390x844 @ DPR 3` 覆盖 Public / Private / Author / Auth 回流代表页，未发现阻断级横向溢出、控制台错误或 E7 内部术语残留。记录见 [P3-12-E7 后发布候选进入前复核记录](/records/p3-12-e7-post-closure-release-preflight-2026-07-08)。
-  - 产品负责人 2026-07-08 判断：工程门禁通过不能替代产品形态满意度，当前仍不能进入 `P3-12-F 正式版发布候选整备`。下一顺位回拉 `P3-12-E8 产品形态差距回拉`，记录见 [P3-12-E8 产品形态差距回拉决策记录](/records/p3-12-e8-product-shape-gap-decision-2026-07-08)。
-  - `P3-12-E8` 首日正式 Web 产品形态回拉已完成并提交：收敛 PC / 移动主导航，修复正式页滚动与导航切换，降低公开页说明式界面，`/messages` 改为聊天工作区并按会话关系分区，移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`，公开 Docs 入口只展示公开已发布内容，通知 / 圈子 / 榜单 / Workbench 可见文案继续去内部术语，并修复通知标题层级和榜单入口裁切；Chrome Gateway PC / mobile 真实复核、`radish.client` build、repo hygiene 和 diff check 均通过。
+  - `P3-12-D63-D67` 与 `P3-12-E1-E7` 已完成当前 Console / Public / Private / Author / Auth 页面族首批实现、产品成熟度硬化和工程复核；`P3-12-E6` 原进入 F 判断已被人工抽查推翻，E7 后工程门禁通过仍不能替代产品形态判断，详细过程统一见 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)。
+  - `P3-12-E8` 首日正式 Web 产品形态回拉已完成：收敛 PC / 移动主导航、正式页滚动与导航、公开页说明式界面、聊天工作区、公开 Docs 可见范围和用户可见内部术语；Chrome Gateway PC / mobile 真实复核及对应静态验证通过。
+  - 2026-07-10 全仓审计确认功能与产品进度领先于发布工程成熟度，新增 [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)，覆盖依赖安全、生产暴露面、身份日志、可靠业务写、错误契约、时间 / 数据库演进、质量门禁和维护性治理。
+  - 当前按双线推进：`E8-B` 继续负责正式 Web 深层链路与公开文档契约，`E8-Q0` 为立即优先的发布阻断批次；Q0 完成前不能进入 `P3-12-F`，也不扩大生产调试或高消耗暴露面。
 2. **保持 P3-10 可恢复合并状态**
    - `P3-10-D` 已完成公开页整理、四批入口语义治理、合并前验证和 PR 合并判断；不再默认追加第五批链接扫尾。
    - 前端敏感日志脱敏、支付口令升级、支付 / 转账幂等、`WOG-1` 至 `WOG-6`、论坛内容发布可靠性和 Flutter 作者编辑承接已纳入完整批次范围。
@@ -199,10 +193,12 @@
    - 本地验证继续按风险分层；完整 baseline 默认放在准备合并到 `master` 前或发布部署节点。
    - 真实页面 smoke 不再按每个本地提交或每个低 / 中风险设置批次执行；默认在较大阶段推进完成、准备合并到 `master`、发布候选整备或用户可见页面明显变化时集中覆盖。
 
-## 明天事项（2026-07-09）
-- 继续留在 `P3-12-E8 产品形态差距回拉`，不进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
-- 建议推进 `P3-12-E8-B 正式 Web 深层链路与公开文档契约治理`：复核 `/me/*`、订单 / 背包、Docs 作者态、通知目标、聊天会话、圈子 / 宠物进入公开页后的返回路径，以及移动端从深层页面回到主页面是否顺手。
-- 公开 Docs 需要单独判断接口契约：当前前端公开入口已过滤为公开已发布内容；若要让分页、总数和详情权限从后端契约层保证，应先补 API / 权限方案并确认。继续采用“成组复核、同类问题一起修”的节奏；涉及架构、接口、权限、运行时契约或大范围导航语义变更时先说明方案并等待确认；验证按风险分层执行，真实 Gateway smoke 仍需用户当轮明确说明前后端已启动。
+## 当前事项（2026-07-10）
+
+- 继续留在 `P3-12-E8`，不进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
+- 第一顺位执行 `P3-12-E8-Q0 安全与暴露面阻断`：恢复依赖审计、清理 High / Critical、移除生产性能 / 演示端点、收紧 JWT / Claims / transport security，并统一 Markdown 危险链接协议防护。
+- `P3-12-E8-B` 保持产品线下一顺位：复核 `/me/*`、订单 / 背包、Docs 作者态、通知目标、聊天会话、圈子 / 宠物进入公开页后的返回路径，以及移动端从深层页面回到主页面是否顺手。
+- 公开 Docs 若需要由后端保证 `Published + Public` 分页、总数和详情权限，必须先补 API / 权限方案并确认；Q1 / Q2 涉及事务、错误、时间或数据库契约时同样先确认子方案。真实 Gateway smoke 仍需用户当轮明确说明前后端已启动。
 
 ## 下一顺位
 
@@ -210,9 +206,9 @@
   - 新增 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，承接 P3-11 暂缓 PR 后的正式开发主线。
   - `P3-12-A` 已完成只读盘点，结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)。
   - `P3-12-B1` 方案、路由 / 登录回流契约、商城私域正式 Web 入口、资产正式入口、公开购买动作和交易回流替换见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)；`P3-12-C1` 首轮残留清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，真实 Gateway PC / mobile 复核后置到小阶段验收。
-  - `P3-12-B2` 首批代码已补 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的路由、登录回流和正式 Web 导航语义，方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)；`P3-12-B3` 首批代码与小阶段验收已完成，见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)；`P3-12-B4` 归属裁决、`B4-1` 正式 Web 作者入口、`B4-2` Console 文档治理和阶段运行态 smoke 已完成，见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)、[P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22) 与 [P3-12-B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)。`P3-12-B5` `/workbench` 首批代码与 Gateway PC / mobile smoke 已完成；`P3-12-B6` 代码侧与启动前验证已完成；`P3-12-D2-D8` 已完成公开 Web、私域 / 作者态、共享 UI 基座、Console 治理设计源、Console 实现前盘点、移动导航统一和 `radish.client` 首批共享壳层代码对齐；`P3-12-D9-D13` 已完成私域 / 作者态第二批视觉实现、静态收口和 Gateway PC / mobile 成组验收；`P3-12-D14-D35` 已完成 Console 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D36-D67` 已完成 Public Web、Private / Author、Console 当前发布前页面族首批实现、必要复核、候选前集中验收准备、启动无关候选前验证、运行态补验和正式产品成熟度专题立项；`P3-12-E6` 已纠偏为不进入 F，`P3-12-E7` 已完成首批阻断治理与收束判断。
+  - `P3-12-B2-B6` 已完成个人中心、论坛 / Docs 作者态和 Workbench 首批 Web 化；`P3-12-D2-D67` 已完成 Public、Private / Author、Console 当前页面族首批 UI 实现与必要补验；`P3-12-E1-E7` 已完成首批产品成熟度硬化并确认不能仅凭工程门禁进入 F。历史批次和验证证据统一查看对应专题与 records，不在本页继续展开。
   - 功能迁移只迁移正式版产品能力，不迁移 WebOS Dock、窗口系统、桌面背景、窗口几何记忆或桌面 app 外壳；B1 替代路径可用后，只清理与默认产品路径直接冲突的 `/desktop` 回跳。
-  - `P3-12-D` 已完成当前 UI 实现、补验和 D67 立项修正；D67 明确不能把“无阻断”当作正式产品完成证明，新增 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)。`P3-12-E1-E5` 已完成首批硬化，`P3-12-E6` 被人工抽查推翻后已回拉 `P3-12-E7`；当前 E7 后工程复核通过但产品形态判断不通过，下一顺位进入 `P3-12-E8`，不直接创建 tag。
+  - `P3-12-E8` 当前采用产品与工程双线：`E8-Q0` 为立即第一顺位，`E8-B` 为产品线下一顺位；范围、顺序和进入 F 条件见 [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)。
 - `P3-11 发布候选整备与轻量复访补齐维护线`
   - `P3-11-A / B / D` 已完成；当前不恢复 PR、不发布、不创建 tag，`P3-11-C` 未触发。
   - 若后续真实验收命中明确阻断，再回拉定向修复；否则不继续围绕 P3-11 决策停留。
@@ -272,9 +268,10 @@
   - 将 `/discover` 从公开导航聚合页调整为可持续浏览的内容流方案。
   - 继续保留公开 head、分享、移动 / PC 布局、LongId 兼容读取和 PublicId 分享路由回归。
 
-## 后续事项（2026-07-09 起）
-- 先读取本页、[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 与 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)，确认 `P3-12-E6` 已被人工抽查纠偏，且 `P3-12-E7` 后工程复核不能替代产品形态判断。
-- 当前第一顺位仍是 `P3-12-E8 产品形态差距回拉`；明天优先复核正式 Web 深层链路、公开文档契约和移动端返回体验。如回拉 Console，必须同时覆盖 PC 设计稿偏差和移动治理视图缺口。
+## 后续事项（2026-07-10 起）
+
+- 先读取本页、[P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening) 与 [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)，确认产品形态判断和发布工程判断均未达到进入 F 的条件。
+- 当前第一顺位是 `P3-12-E8-Q0`；Q0 收口后按已确认子方案推进 Q1 / Q2，同时恢复 `E8-B` 深层链路、公开文档契约和移动返回体验治理。
 - 若需要新增真实 Gateway smoke，必须由用户当轮明确说明前后端已启动；普通开发优先使用相关前端 workspace 类型检查 / 构建、repo hygiene 和 `git diff --check`。
 
 ## 并行维护项
@@ -297,4 +294,4 @@
 - 本页必须保持简短，面向新会话快速读取。
 - 没有主线切换、优先级变化或新的关键事实，不改本页。
 - 功能开发细节、命令级验证记录、批次流水和历史背景不写入本页。
-- `P3-10` 细节统一写入 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)；`P3-11` 收束事实统一写入 [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)；`P3-12` 范围统一写入 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)。
+- `P3-10` 细节统一写入 [P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)；`P3-11` 收束事实统一写入 [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit)；`P3-12` 总范围写入 [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement)，发布工程整改写入 [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)。
