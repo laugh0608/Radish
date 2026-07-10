@@ -132,6 +132,8 @@ E8-B + E8-Q 达到退出条件
 
 ### Q0 安全与暴露面阻断
 
+实施方案见 [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)。当前状态为方案待确认，确认后按 `Q0-A → Q0-B → Q0-C → Q0-D` 分四个独立批次实施。
+
 #### Q0-A 依赖安全与审计恢复
 
 - 恢复 NuGet 审计，不再在默认命令层全局追加 `NuGetAudit=false`。
@@ -144,13 +146,13 @@ E8-B + E8-Q 达到退出条件
 退出条件：
 
 - `npm audit --omit=dev` 无 High / Critical。
-- `dotnet list Radish.slnx package --vulnerable --include-transitive` 无 High / Critical。
+- `dotnet package list --project Radish.slnx --vulnerable --include-transitive --format json --no-restore` 无 High / Critical。
 - 默认 baseline 不再主动关闭 NuGetAudit。
 - OpenAPI、Console 路由和 SignalR 定向回归通过。
 
 #### Q0-B 生产调试与高消耗端点退出
 
-- 将 `RustTestController` 从生产编译或生产路由中移除，性能比较迁入测试 / BenchmarkDotNet 工程。
+- 将 `RustTestController` 从生产编译或生产路由中移除；既有本地 Rust benchmark 保留，后续如需 C# / Rust 对比再单独迁入测试 / benchmark 工程。
 - 将 `WeatherForecastController` 及其 DI、缓存、审计写入演示动作移出生产 API。
 - 扫描 OpenAPI 中的测试、演示、性能、调试标签，确认没有普通用户可调用的资源消耗端点。
 - 若确有开发期保留需求，必须同时具备环境开关、管理权限、参数硬上限、取消令牌和专用限流。

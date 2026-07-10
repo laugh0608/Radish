@@ -196,7 +196,7 @@
 ## 当前事项（2026-07-10）
 
 - 继续留在 `P3-12-E8`，不进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
-- 第一顺位执行 `P3-12-E8-Q0 安全与暴露面阻断`：恢复依赖审计、清理 High / Critical、移除生产性能 / 演示端点、收紧 JWT / Claims / transport security，并统一 Markdown 危险链接协议防护。
+- 第一顺位执行 `P3-12-E8-Q0 安全与暴露面阻断`，实施方案见 [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)：恢复依赖审计、清理 High / Critical、移除生产性能 / 演示端点、收紧 JWT / Claims / transport security，并统一 Markdown 危险链接协议防护；当前等待方案确认，尚未进入代码。
 - `P3-12-E8-B` 保持产品线下一顺位：复核 `/me/*`、订单 / 背包、Docs 作者态、通知目标、聊天会话、圈子 / 宠物进入公开页后的返回路径，以及移动端从深层页面回到主页面是否顺手。
 - 公开 Docs 若需要由后端保证 `Published + Public` 分页、总数和详情权限，必须先补 API / 权限方案并确认；Q1 / Q2 涉及事务、错误、时间或数据库契约时同样先确认子方案。真实 Gateway smoke 仍需用户当轮明确说明前后端已启动。
 
