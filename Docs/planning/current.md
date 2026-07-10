@@ -193,12 +193,13 @@
    - 本地验证继续按风险分层；完整 baseline 默认放在准备合并到 `master` 前或发布部署节点。
    - 真实页面 smoke 不再按每个本地提交或每个低 / 中风险设置批次执行；默认在较大阶段推进完成、准备合并到 `master`、发布候选整备或用户可见页面明显变化时集中覆盖。
 
-## 当前事项（2026-07-10）
+## 明天事项（2026-07-11）
 
 - 继续留在 `P3-12-E8`，不进入 `P3-12-F`，不创建 tag，不进入 M15 测试或生产部署。
-- 第一顺位执行 `P3-12-E8-Q0 安全与暴露面阻断`，实施方案见 [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)：恢复依赖审计、清理 High / Critical、移除生产性能 / 演示端点、收紧 JWT / Claims / transport security，并统一 Markdown 危险链接协议防护；当前等待方案确认，尚未进入代码。
-- `P3-12-E8-B` 保持产品线下一顺位：复核 `/me/*`、订单 / 背包、Docs 作者态、通知目标、聊天会话、圈子 / 宠物进入公开页后的返回路径，以及移动端从深层页面回到主页面是否顺手。
-- 公开 Docs 若需要由后端保证 `Published + Public` 分页、总数和详情权限，必须先补 API / 权限方案并确认；Q1 / Q2 涉及事务、错误、时间或数据库契约时同样先确认子方案。真实 Gateway smoke 仍需用户当轮明确说明前后端已启动。
+- 第一顺位先读取并确认 [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)，确认后只进入 `Q0-A 依赖安全与审计恢复`，不把 Q0-B 至 Q0-D 混入同一提交。
+- `Q0-A` 先由 AI 修改 OpenAPI / React Router 目标版本、`dotnet-command`、依赖安全脚本与 Repo Quality 门禁；随后由用户执行方案中的 `npm install react-router-dom@^7.18.1 --workspace=radish.console` 与 `npm update ws` 更新 lock。
+- lock 更新后由 AI 复核 npm / NuGet 无 High / Critical，完成 Console、client、后端构建与测试，并独立提交 Q0-A；任一退出条件未满足时继续留在 Q0-A，不提前进入 Q0-B。
+- Q0-A 收口后下一工程顺位为 Q0-B 生产性能 / 演示端点退出，`E8-B` 继续作为产品线下一顺位；真实 Gateway smoke 仍需用户当轮明确说明前后端已启动。
 
 ## 下一顺位
 
