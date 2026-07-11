@@ -7,13 +7,14 @@ namespace Radish.Model.Models;
 /// 临时授权访问令牌
 /// </summary>
 [SugarTable("FileAccessToken")]
+[SugarIndex("idx_file_access_token_attachment_active", nameof(AttachmentId), OrderByType.Asc, nameof(IsRevoked), OrderByType.Asc, nameof(ExpiresAt), OrderByType.Asc)]
 public class FileAccessToken : RootEntityTKey<long>
 {
     /// <summary>
-    /// 令牌（GUID）
+    /// 令牌 SHA-256 Base64Url hash。数据库沿用历史 Token 列名，但不再保存可用原文。
     /// </summary>
-    [SugarColumn(Length = 50, IsNullable = false, UniqueGroupNameList = new[] { "UK_Token" })]
-    public string Token { get; set; } = string.Empty;
+    [SugarColumn(ColumnName = "Token", Length = 50, IsNullable = false, UniqueGroupNameList = new[] { "UK_Token" })]
+    public string TokenHash { get; set; } = string.Empty;
 
     /// <summary>
     /// 附件ID
@@ -23,6 +24,7 @@ public class FileAccessToken : RootEntityTKey<long>
     /// <summary>
     /// 授权用户ID（可选，为空表示任何人可访问）
     /// </summary>
+    [SugarColumn(IsNullable = true)]
     public long? AuthorizedUserId { get; set; }
 
     /// <summary>
@@ -59,11 +61,13 @@ public class FileAccessToken : RootEntityTKey<long>
     /// <summary>
     /// 撤销时间
     /// </summary>
+    [SugarColumn(IsNullable = true)]
     public DateTime? RevokedAt { get; set; }
 
     /// <summary>
     /// 最后访问时间
     /// </summary>
+    [SugarColumn(IsNullable = true)]
     public DateTime? LastAccessedAt { get; set; }
 
     /// <summary>

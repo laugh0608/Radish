@@ -22,8 +22,11 @@ internal static class DbMigrateRunner
                 break;
 
             case "doctor":
+                DbMigrateDoctor.Run(services, configuration, environment, strict: false);
+                break;
+
             case "verify":
-                DbMigrateDoctor.Run(services, configuration, environment);
+                DbMigrateDoctor.Run(services, configuration, environment, strict: true);
                 break;
 
             case "init":
@@ -144,6 +147,7 @@ internal static class DbMigrateRunner
         EnsureInventoryBenefitReliabilitySchema(mainDb);
         EnsureRewardBusinessKeySchema(mainDb);
         EnsureContentSubmissionSchema(mainDb);
+        EnsureFileAccessTokenSecuritySchema(mainDb);
     }
 
     private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
@@ -475,6 +479,34 @@ internal static class DbMigrateRunner
             tableName,
             "idx_content_submission_result",
             [nameof(ContentSubmissionRecord.ResultType), nameof(ContentSubmissionRecord.ResultId)]);
+    }
+
+    private static void EnsureFileAccessTokenSecuritySchema(ISqlSugarClient db)
+    {
+        var tableName = db.EntityMaintenance.GetEntityInfo<FileAccessToken>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        db.CodeFirst.InitTables<FileAccessToken>();
+        var updatedCount = FileAccessTokenSecurityMigration.Apply(db);
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已将 {updatedCount} 条历史文件访问 token 原位转换为 hash。");
+        }
+
+        EnsureIndex(
+            db,
+            tableName,
+            "idx_file_access_token_attachment_active",
+            [nameof(FileAccessToken.AttachmentId), nameof(FileAccessToken.IsRevoked), nameof(FileAccessToken.ExpiresAt)]);
+
+        var issues = FileAccessTokenSecurityMigration.Verify(db);
+        if (issues.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(Environment.NewLine, issues));
+        }
     }
 
     private static void BackfillCoinRewardBusinessKeys(ISqlSugarClient db)
@@ -990,6 +1022,8 @@ internal static class DbMigrateRunner
         Console.WriteLine("      推荐入口。自动检查数据库、按需 init，并执行 seed。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor");
         Console.WriteLine("      只读检查当前配置、连接定义与主库业务表状态。");
+        Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify");
+        Console.WriteLine("      严格只读检查；存在 Warning / Error 时返回失败。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init");
         Console.WriteLine("      高级命令。仅初始化数据库并基于实体结构创建/更新表结构。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed");

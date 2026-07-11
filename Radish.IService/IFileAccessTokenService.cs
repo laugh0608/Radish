@@ -12,9 +12,14 @@ public interface IFileAccessTokenService
     /// </summary>
     /// <param name="dto">创建请求</param>
     /// <param name="userId">创建用户ID</param>
-    /// <param name="baseUrl">基础URL（用于生成访问链接）</param>
+    /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
+    /// <param name="publicBaseUrl">公开基址（用于生成访问链接）</param>
     /// <returns>访问令牌信息</returns>
-    Task<FileAccessTokenVo> CreateTokenAsync(CreateFileAccessTokenDto dto, long userId, string baseUrl);
+    Task<FileAccessTokenCreatedVo> CreateTokenAsync(
+        CreateFileAccessTokenDto dto,
+        long userId,
+        bool canManageAll,
+        string publicBaseUrl);
 
     /// <summary>
     /// 验证并使用令牌
@@ -28,25 +33,31 @@ public interface IFileAccessTokenService
     /// <summary>
     /// 撤销令牌
     /// </summary>
-    /// <param name="token">令牌</param>
+    /// <param name="tokenId">令牌记录 ID</param>
     /// <param name="userId">用户ID</param>
-    Task RevokeTokenAsync(string token, long userId);
+    /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
+    Task RevokeTokenAsync(long tokenId, long userId, bool canManageAll);
+
+    /// <summary>按原始 token 撤销，供旧调用兼容一个发布周期。</summary>
+    Task RevokeTokenAsync(string rawToken, long userId, bool canManageAll);
 
     /// <summary>
     /// 获取令牌信息
     /// </summary>
-    /// <param name="token">令牌</param>
+    /// <param name="rawToken">原始令牌</param>
     /// <param name="userId">用户ID</param>
+    /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
     /// <returns>令牌信息</returns>
-    Task<FileAccessTokenVo?> GetTokenInfoAsync(string token, long userId);
+    Task<FileAccessTokenSummaryVo?> GetTokenInfoAsync(string rawToken, long userId, bool canManageAll);
 
     /// <summary>
     /// 获取附件的所有有效令牌
     /// </summary>
     /// <param name="attachmentId">附件ID</param>
     /// <param name="userId">用户ID</param>
+    /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
     /// <returns>令牌列表</returns>
-    Task<List<FileAccessTokenVo>> GetAttachmentTokensAsync(long attachmentId, long userId);
+    Task<List<FileAccessTokenSummaryVo>> GetAttachmentTokensAsync(long attachmentId, long userId, bool canManageAll);
 
     /// <summary>
     /// 清理过期令牌（定时任务调用）

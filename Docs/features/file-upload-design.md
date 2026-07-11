@@ -126,9 +126,9 @@
 - `POST /api/v1/Attachment/CreateAccessToken`
   - `application/json`
   - body：`CreateFileAccessTokenDto`
-  - 返回：令牌信息与 `accessUrl`
+  - 返回：原始 token 与 `accessUrl` 只在创建响应出现一次；数据库仅保存 SHA-256 Base64Url hash
   - 创建参数边界：
-    - `AttachmentId` 必须大于 `0`，且调用者必须拥有该附件
+    - `AttachmentId` 必须大于 `0`，且调用者必须拥有该附件或具有 `System / Admin` 身份
     - `ValidHours` 必须在 `1-168` 小时之间
     - `MaxAccessCount` 必须大于等于 `0`，`0` 表示不限制次数
     - `AuthorizedUserId` 如传入，必须大于 `0`
@@ -138,19 +138,25 @@
   - `AllowAnonymous`
   - 验证项：过期 / 撤销 / 次数上限 / 限定用户 / 限定 IP
 
-- `POST /api/v1/Attachment/RevokeAccessToken`
+- `POST /api/v1/Attachment/RevokeAccessTokenById`
   - `application/json`
-  - body：JSON 字符串（示例：`"{token}"`）
+  - body：`{ "tokenId": 123 }`
+
+- `POST /api/v1/Attachment/RevokeAccessToken`
+  - 旧调用兼容入口，按原始 token 撤销；只保留一个发布周期
 
 - `GET /api/v1/Attachment/GetAttachmentTokens?attachmentId=...`
+  - 只返回记录 ID、脱敏摘要、约束和使用状态，不返回原始 token、hash 或可用 URL
 
 安全约束：
 
 - 访问令牌属于敏感凭据，日志和“不存在”类异常不得输出完整 token，只允许输出脱敏摘要。
+- 数据库历史 `Token` 列只保存 hash；旧 32 字符 token 由 DbMigrate 原位 hash，旧链接仍可继续使用。
+- 访问次数、过期、撤销、用户与 IP 条件由同一条数据库更新原子判定，并发请求不能突破上限。
 - 空 token 不应继续查询数据库；不存在、撤销、过期、次数耗尽、用户不匹配与 IP 不匹配都应安全失败。
 - `AuthorizedIp` 是令牌自身的访问限制，不是附件业务真值；为空表示不限 IP。
 
-> `accessUrl` 会基于当前请求的 `scheme + host` 生成，因此在切换域名后，历史分发出去的访问链接如果写死旧域名，应重新生成或让调用方基于新公开入口重建链接；这不影响数据库中的附件真值。
+> `accessUrl` 优先使用 `GatewayService:PublicUrl / RADISH_PUBLIC_URL` 生成；未配置时才回退到当前请求入口。IP 解析只信任直连地址、loopback 或 `FileAccessToken:TrustedProxyAddresses` 显式登记代理提供的首个转发地址，不直接信任公网请求伪造的 `X-Forwarded-For`；未登记代理会按其连接地址校验并安全失败。
 
 ---
 
@@ -220,9 +226,9 @@
 
 - `Attachment`：附件实体，存储路径与业务关联信息
 - `UploadSession`：分片上传会话
-- `FileAccessToken`：临时访问令牌
+- `FileAccessToken`：临时访问令牌约束与 SHA-256 Base64Url hash，不保存可直接使用的 token
 
-表创建：本地启动 API 后，SqlSugar 会根据实体自动创建缺失表（以当前项目配置为准）。
+表结构与历史 token 数据补丁统一由 `Radish.DbMigrate apply` 维护；`verify` 会报告仍为旧格式或异常格式的 token。
 
 ---
 

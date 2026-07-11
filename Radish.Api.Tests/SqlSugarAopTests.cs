@@ -31,6 +31,25 @@ public class SqlSugarAopTests
         formatted.ShouldNotContain("这里是正文内容");
     }
 
+    [Fact(DisplayName = "Token 与 TokenHash 参数应强制省略凭据预览")]
+    public void FormatParameters_ShouldOmitTokenCredentials()
+    {
+        const string rawToken = "abcdef0123456789abcdef0123456789";
+        const string tokenHash = "zD2f1sKnJZJuWjm49Xv3vnGvD0fEBcK1POsLfdDkQHY";
+        var parameters = new[]
+        {
+            new SugarParameter("@Token0", rawToken),
+            new SugarParameter("@TokenHash1", tokenHash)
+        };
+
+        var formatted = InvokePrivate<string>("FormatParameters", new object[] { parameters, new SqlAopLogOptions() });
+
+        formatted.ShouldContain("@Token0=<text len=32 omitted>");
+        formatted.ShouldContain("@TokenHash1=<text len=43 omitted>");
+        formatted.ShouldNotContain(rawToken);
+        formatted.ShouldNotContain(tokenHash);
+    }
+
     [Fact(DisplayName = "SQL 模板中的 MarkdownContent 正文应被省略")]
     public void SanitizeSqlText_ShouldOmitInlineMarkdownContent()
     {

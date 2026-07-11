@@ -1,3 +1,6 @@
+using System.Net;
+using Radish.Common.Exceptions;
+using Radish.Common.Security;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -5,279 +8,237 @@ using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Serilog;
-using System.Net;
 
 namespace Radish.Service;
 
 /// <summary>
-/// 文件访问令牌服务实现
+/// 文件访问令牌服务实现。原始 token 只在创建响应出现，持久化层仅保存 hash。
 /// </summary>
 public class FileAccessTokenService : IFileAccessTokenService
 {
     private const int MaxValidHours = 168;
-    private readonly IBaseRepository<FileAccessToken> _tokenRepository;
+    private readonly IFileAccessTokenRepository _tokenRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
+    private readonly TimeProvider _timeProvider;
 
     public FileAccessTokenService(
-        IBaseRepository<FileAccessToken> tokenRepository,
-        IBaseRepository<Attachment> attachmentRepository)
+        IFileAccessTokenRepository tokenRepository,
+        IBaseRepository<Attachment> attachmentRepository,
+        TimeProvider timeProvider)
     {
         _tokenRepository = tokenRepository;
         _attachmentRepository = attachmentRepository;
+        _timeProvider = timeProvider;
     }
 
-    /// <summary>
-    /// 创建文件访问令牌
-    /// </summary>
-    public async Task<FileAccessTokenVo> CreateTokenAsync(CreateFileAccessTokenDto dto, long userId, string baseUrl)
+    public async Task<FileAccessTokenCreatedVo> CreateTokenAsync(
+        CreateFileAccessTokenDto dto,
+        long userId,
+        bool canManageAll,
+        string publicBaseUrl)
     {
         ValidateCreateTokenRequest(dto);
+        await EnsureCanManageAttachmentAsync(dto.AttachmentId, userId, canManageAll);
 
-        // 验证附件是否存在且用户有权限
-        var attachment = await _attachmentRepository.QueryByIdAsync(dto.AttachmentId);
-        if (attachment == null)
-        {
-            throw new Exception($"附件不存在: {dto.AttachmentId}");
-        }
-
-        // 检查用户是否有权限创建令牌（附件所有者或管理员）
-        if (attachment.UploaderId != userId)
-        {
-            // TODO: 检查是否是管理员
-            throw new Exception("无权为此附件创建访问令牌");
-        }
-
-        // 生成令牌
-        var token = Guid.NewGuid().ToString("N");
-
-        // 创建令牌记录
-        var authorizedIp = NormalizeAuthorizedIp(dto.AuthorizedIp);
+        var rawToken = FileAccessTokenHashing.GenerateRawToken();
+        var now = _timeProvider.GetLocalNow().DateTime;
         var tokenEntity = new FileAccessToken
         {
-            Token = token,
+            TokenHash = FileAccessTokenHashing.HashToken(rawToken),
             AttachmentId = dto.AttachmentId,
             AuthorizedUserId = dto.AuthorizedUserId,
-            AuthorizedIp = authorizedIp,
+            AuthorizedIp = NormalizeAuthorizedIp(dto.AuthorizedIp),
             MaxAccessCount = dto.MaxAccessCount,
             AccessCount = 0,
-            ExpiresAt = DateTime.Now.AddHours(dto.ValidHours),
+            ExpiresAt = now.AddHours(dto.ValidHours),
             CreatedBy = userId,
             IsRevoked = false,
-            CreateTime = DateTime.Now,
-            ModifyTime = DateTime.Now
+            CreateTime = now,
+            ModifyTime = now
         };
 
-        await _tokenRepository.AddAsync(tokenEntity);
+        tokenEntity.Id = await _tokenRepository.AddAsync(tokenEntity);
+        Log.Information(
+            "[FileAccessToken] 创建令牌记录 {TokenId}, 附件: {AttachmentId}, 有效期: {Hours}小时",
+            tokenEntity.Id,
+            dto.AttachmentId,
+            dto.ValidHours);
 
-        Log.Information("[FileAccessToken] 创建令牌: {TokenPreview}, 附件: {AttachmentId}, 有效期: {Hours}小时",
-            MaskToken(token), dto.AttachmentId, dto.ValidHours);
-
-        return MapToVo(tokenEntity, baseUrl);
+        return MapCreatedVo(tokenEntity, rawToken, publicBaseUrl, now);
     }
 
-    /// <summary>
-    /// 验证并使用令牌
-    /// </summary>
-    public async Task<long?> ValidateAndUseTokenAsync(string token, long? userId, string ipAddress)
+    public async Task<long?> ValidateAndUseTokenAsync(string rawToken, long? userId, string ipAddress)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(rawToken))
         {
             Log.Warning("[FileAccessToken] 令牌为空");
             return null;
         }
 
-        var tokenPreview = MaskToken(token);
-        var tokenEntity = await _tokenRepository.QueryFirstAsync(t => t.Token == token);
-        if (tokenEntity == null)
+        var normalizedIp = NormalizeAuthorizedIp(ipAddress);
+        var tokenHash = FileAccessTokenHashing.HashToken(rawToken);
+        var now = _timeProvider.GetLocalNow().DateTime;
+        var consumedToken = await _tokenRepository.TryConsumeAsync(tokenHash, userId, normalizedIp, now);
+        if (consumedToken == null)
         {
-            Log.Warning("[FileAccessToken] 令牌不存在: {TokenPreview}", tokenPreview);
+            Log.Warning("[FileAccessToken] 令牌消费失败: {TokenHashPreview}", MaskHash(tokenHash));
             return null;
         }
 
-        // 检查是否已撤销
-        if (tokenEntity.IsRevoked)
-        {
-            Log.Warning("[FileAccessToken] 令牌已撤销: {TokenPreview}", tokenPreview);
-            return null;
-        }
-
-        // 检查是否过期
-        if (DateTime.Now > tokenEntity.ExpiresAt)
-        {
-            Log.Warning("[FileAccessToken] 令牌已过期: {TokenPreview}", tokenPreview);
-            return null;
-        }
-
-        // 检查访问次数
-        if (tokenEntity.MaxAccessCount > 0 && tokenEntity.AccessCount >= tokenEntity.MaxAccessCount)
-        {
-            Log.Warning("[FileAccessToken] 令牌访问次数已达上限: {TokenPreview}, {Count}/{Max}",
-                tokenPreview, tokenEntity.AccessCount, tokenEntity.MaxAccessCount);
-            return null;
-        }
-
-        // 检查授权用户
-        if (tokenEntity.AuthorizedUserId.HasValue && tokenEntity.AuthorizedUserId != userId)
-        {
-            Log.Warning("[FileAccessToken] 令牌用户不匹配: {TokenPreview}, 授权用户: {AuthUserId}, 访问用户: {UserId}",
-                tokenPreview, tokenEntity.AuthorizedUserId, userId);
-            return null;
-        }
-
-        // 检查授权IP（如果设置了）
-        if (!string.IsNullOrEmpty(tokenEntity.AuthorizedIp) && tokenEntity.AuthorizedIp != ipAddress)
-        {
-            Log.Warning("[FileAccessToken] 令牌IP不匹配: {TokenPreview}, 授权IP: {AuthIp}, 访问IP: {Ip}",
-                tokenPreview, tokenEntity.AuthorizedIp, ipAddress);
-            return null;
-        }
-
-        // 更新访问记录
-        tokenEntity.AccessCount++;
-        tokenEntity.LastAccessedAt = DateTime.Now;
-        tokenEntity.ModifyTime = DateTime.Now;
-        await _tokenRepository.UpdateAsync(tokenEntity);
-
-        Log.Information("[FileAccessToken] 令牌验证成功: {TokenPreview}, 附件: {AttachmentId}, 访问次数: {Count}",
-            tokenPreview, tokenEntity.AttachmentId, tokenEntity.AccessCount);
-
-        return tokenEntity.AttachmentId;
+        Log.Information(
+            "[FileAccessToken] 令牌记录 {TokenId} 消费成功, 附件: {AttachmentId}, 访问次数: {Count}",
+            consumedToken.Id,
+            consumedToken.AttachmentId,
+            consumedToken.AccessCount);
+        return consumedToken.AttachmentId;
     }
 
-    /// <summary>
-    /// 撤销令牌
-    /// </summary>
-    public async Task RevokeTokenAsync(string token, long userId)
+    public async Task RevokeTokenAsync(long tokenId, long userId, bool canManageAll)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        if (tokenId <= 0)
         {
-            throw new Exception("令牌不能为空");
+            throw ValidationError("令牌记录 ID 无效", "FileToken.InvalidId");
         }
 
-        var tokenEntity = await _tokenRepository.QueryFirstAsync(t => t.Token == token);
-        if (tokenEntity == null)
+        var tokenEntity = await _tokenRepository.QueryByIdAsync(tokenId)
+            ?? throw NotFoundError();
+        await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
+
+        var revoked = await _tokenRepository.TryRevokeByIdAsync(tokenId, _timeProvider.GetLocalNow().DateTime);
+        if (!revoked)
         {
-            throw new Exception("令牌不存在");
+            throw new BusinessException("令牌已撤销", 409, "FileToken.AlreadyRevoked", "error.file_token.already_revoked");
         }
 
-        // 检查权限（只有创建者可以撤销）
-        if (tokenEntity.CreatedBy != userId)
-        {
-            // TODO: 检查是否是管理员
-            throw new Exception("无权撤销此令牌");
-        }
-
-        tokenEntity.IsRevoked = true;
-        tokenEntity.RevokedAt = DateTime.Now;
-        tokenEntity.ModifyTime = DateTime.Now;
-        await _tokenRepository.UpdateAsync(tokenEntity);
-
-        Log.Information("[FileAccessToken] 撤销令牌: {TokenPreview}", MaskToken(token));
+        Log.Information("[FileAccessToken] 撤销令牌记录 {TokenId}", tokenId);
     }
 
-    /// <summary>
-    /// 获取令牌信息
-    /// </summary>
-    public async Task<FileAccessTokenVo?> GetTokenInfoAsync(string token, long userId)
+    public async Task RevokeTokenAsync(string rawToken, long userId, bool canManageAll)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        if (string.IsNullOrWhiteSpace(rawToken))
+        {
+            throw ValidationError("令牌不能为空", "FileToken.Required");
+        }
+
+        var tokenHash = FileAccessTokenHashing.HashToken(rawToken);
+        var tokenEntity = await _tokenRepository.GetByHashAsync(tokenHash)
+            ?? throw NotFoundError();
+        await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
+
+        var revoked = await _tokenRepository.TryRevokeByHashAsync(tokenHash, _timeProvider.GetLocalNow().DateTime);
+        if (!revoked)
+        {
+            throw new BusinessException("令牌已撤销", 409, "FileToken.AlreadyRevoked", "error.file_token.already_revoked");
+        }
+
+        Log.Information("[FileAccessToken] 通过兼容入口撤销令牌记录 {TokenId}", tokenEntity.Id);
+    }
+
+    public async Task<FileAccessTokenSummaryVo?> GetTokenInfoAsync(
+        string rawToken,
+        long userId,
+        bool canManageAll)
+    {
+        if (string.IsNullOrWhiteSpace(rawToken))
         {
             return null;
         }
 
-        var tokenEntity = await _tokenRepository.QueryFirstAsync(t => t.Token == token);
+        var tokenEntity = await _tokenRepository.GetByHashAsync(FileAccessTokenHashing.HashToken(rawToken));
         if (tokenEntity == null)
         {
             return null;
         }
 
-        // 检查权限（只有创建者可以查看）
-        if (tokenEntity.CreatedBy != userId)
-        {
-            // TODO: 检查是否是管理员
-            throw new Exception("无权查看此令牌");
-        }
-
-        return MapToVo(tokenEntity, string.Empty);
+        await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
+        return MapSummaryVo(tokenEntity, _timeProvider.GetLocalNow().DateTime);
     }
 
-    /// <summary>
-    /// 获取附件的所有有效令牌
-    /// </summary>
-    public async Task<List<FileAccessTokenVo>> GetAttachmentTokensAsync(long attachmentId, long userId)
+    public async Task<List<FileAccessTokenSummaryVo>> GetAttachmentTokensAsync(
+        long attachmentId,
+        long userId,
+        bool canManageAll)
     {
-        // 验证附件是否存在且用户有权限
-        var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
-        if (attachment == null)
-        {
-            throw new Exception($"附件不存在: {attachmentId}");
-        }
-
-        if (attachment.UploaderId != userId)
-        {
-            // TODO: 检查是否是管理员
-            throw new Exception("无权查看此附件的令牌");
-        }
-
-        // 获取所有令牌
-        var tokens = await _tokenRepository.QueryAsync(t =>
-            t.AttachmentId == attachmentId &&
-            !t.IsRevoked &&
-            t.ExpiresAt > DateTime.Now);
-
-        return tokens.Select(t => MapToVo(t, string.Empty)).ToList();
+        await EnsureCanManageAttachmentAsync(attachmentId, userId, canManageAll);
+        var now = _timeProvider.GetLocalNow().DateTime;
+        var tokens = await _tokenRepository.QueryAsync(token =>
+            token.AttachmentId == attachmentId &&
+            !token.IsRevoked &&
+            token.ExpiresAt > now);
+        return tokens.Select(token => MapSummaryVo(token, now)).ToList();
     }
 
-    /// <summary>
-    /// 清理过期令牌
-    /// </summary>
     public async Task CleanupExpiredTokensAsync()
     {
-        var expiredTokens = await _tokenRepository.QueryAsync(t =>
-            t.ExpiresAt < DateTime.Now &&
-            !t.IsRevoked);
+        var now = _timeProvider.GetLocalNow().DateTime;
+        var expiredTokens = await _tokenRepository.QueryAsync(token =>
+            token.ExpiresAt <= now &&
+            !token.IsRevoked);
 
         foreach (var token in expiredTokens)
         {
-            token.IsRevoked = true;
-            token.RevokedAt = DateTime.Now;
-            token.ModifyTime = DateTime.Now;
-            await _tokenRepository.UpdateAsync(token);
+            await _tokenRepository.TryRevokeByIdAsync(token.Id, now);
         }
 
-        if (expiredTokens.Any())
+        if (expiredTokens.Count > 0)
         {
-            Log.Information("[FileAccessToken] 清理过期令牌: {Count} 个", expiredTokens.Count());
+            Log.Information("[FileAccessToken] 清理过期令牌: {Count} 个", expiredTokens.Count);
         }
     }
 
-    #region 私有方法
+    private async Task EnsureCanManageTokenAsync(FileAccessToken token, long userId, bool canManageAll)
+    {
+        if (canManageAll || token.CreatedBy == userId)
+        {
+            return;
+        }
+
+        var attachment = await _attachmentRepository.QueryByIdAsync(token.AttachmentId);
+        if (attachment?.UploaderId != userId)
+        {
+            throw ForbiddenError();
+        }
+    }
+
+    private async Task EnsureCanManageAttachmentAsync(long attachmentId, long userId, bool canManageAll)
+    {
+        var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
+        if (attachment == null)
+        {
+            throw new BusinessException("附件不存在", 404, "Attachment.NotFound", "error.attachment.not_found");
+        }
+
+        if (!canManageAll && attachment.UploaderId != userId)
+        {
+            throw ForbiddenError();
+        }
+    }
 
     private static void ValidateCreateTokenRequest(CreateFileAccessTokenDto dto)
     {
         if (dto.AttachmentId <= 0)
         {
-            throw new Exception("附件 ID 无效");
+            throw ValidationError("附件 ID 无效", "FileToken.InvalidAttachmentId");
         }
 
         if (dto.MaxAccessCount < 0)
         {
-            throw new Exception("最大访问次数不能小于 0");
+            throw ValidationError("最大访问次数不能小于 0", "FileToken.InvalidMaxAccessCount");
         }
 
         if (dto.ValidHours <= 0 || dto.ValidHours > MaxValidHours)
         {
-            throw new Exception($"有效期必须在 1 到 {MaxValidHours} 小时之间");
+            throw ValidationError($"有效期必须在 1 到 {MaxValidHours} 小时之间", "FileToken.InvalidValidity");
         }
 
         if (dto.AuthorizedUserId is <= 0)
         {
-            throw new Exception("授权用户 ID 无效");
+            throw ValidationError("授权用户 ID 无效", "FileToken.InvalidAuthorizedUser");
         }
 
         if (!string.IsNullOrWhiteSpace(dto.AuthorizedIp) && NormalizeAuthorizedIp(dto.AuthorizedIp) == null)
         {
-            throw new Exception("授权 IP 地址无效");
+            throw ValidationError("授权 IP 地址无效", "FileToken.InvalidAuthorizedIp");
         }
     }
 
@@ -289,47 +250,71 @@ public class FileAccessTokenService : IFileAccessTokenService
         }
 
         var trimmedIp = authorizedIp.Trim();
-        if (trimmedIp.Length > 50 || !IPAddress.TryParse(trimmedIp, out var parsedIp))
-        {
-            return null;
-        }
-
-        return parsedIp.ToString();
+        return trimmedIp.Length <= 50 && IPAddress.TryParse(trimmedIp, out var parsedIp)
+            ? parsedIp.ToString()
+            : null;
     }
 
-    private static string MaskToken(string token)
+    private static FileAccessTokenSummaryVo MapSummaryVo(FileAccessToken token, DateTime now)
     {
-        if (string.IsNullOrWhiteSpace(token))
+        return new FileAccessTokenSummaryVo
         {
-            return "<empty>";
-        }
-
-        return token.Length <= 10
-            ? $"{token[..Math.Min(3, token.Length)]}***"
-            : $"{token[..6]}***{token[^4..]}";
-    }
-
-    /// <summary>
-    /// 映射到 ViewModel
-    /// </summary>
-    private FileAccessTokenVo MapToVo(FileAccessToken token, string baseUrl)
-    {
-        var accessUrl = string.IsNullOrEmpty(baseUrl)
-            ? string.Empty
-            : $"{baseUrl}/api/v1/Attachment/DownloadByToken?token={token.Token}";
-
-        return new FileAccessTokenVo
-        {
-            VoToken = token.Token,
+            VoId = token.Id,
+            VoTokenPreview = $"token-{token.Id}",
             VoAttachmentId = token.AttachmentId,
-            VoAccessUrl = accessUrl,
+            VoCreatedBy = token.CreatedBy,
             VoMaxAccessCount = token.MaxAccessCount,
             VoAccessCount = token.AccessCount,
             VoExpiresAt = token.ExpiresAt,
+            VoIsExpired = now >= token.ExpiresAt,
             VoIsRevoked = token.IsRevoked,
             VoCreateTime = token.CreateTime
         };
     }
 
-    #endregion
+    private static FileAccessTokenCreatedVo MapCreatedVo(
+        FileAccessToken token,
+        string rawToken,
+        string publicBaseUrl,
+        DateTime now)
+    {
+        var baseUrl = publicBaseUrl.Trim().TrimEnd('/');
+        return new FileAccessTokenCreatedVo
+        {
+            VoId = token.Id,
+            VoTokenPreview = $"token-{token.Id}",
+            VoAttachmentId = token.AttachmentId,
+            VoCreatedBy = token.CreatedBy,
+            VoMaxAccessCount = token.MaxAccessCount,
+            VoAccessCount = token.AccessCount,
+            VoExpiresAt = token.ExpiresAt,
+            VoIsExpired = now >= token.ExpiresAt,
+            VoIsRevoked = token.IsRevoked,
+            VoCreateTime = token.CreateTime,
+            VoToken = rawToken,
+            VoAccessUrl = $"{baseUrl}/api/v1/Attachment/DownloadByToken?token={Uri.EscapeDataString(rawToken)}"
+        };
+    }
+
+    private static string MaskHash(string tokenHash)
+    {
+        return tokenHash.Length <= 10
+            ? "<invalid-hash>"
+            : $"{tokenHash[..6]}***{tokenHash[^4..]}";
+    }
+
+    private static BusinessException ValidationError(string message, string code)
+    {
+        return new BusinessException(message, 400, code, "error.file_token.validation_failed");
+    }
+
+    private static BusinessException ForbiddenError()
+    {
+        return new BusinessException("无权管理此文件访问令牌", 403, "FileToken.Forbidden", "error.file_token.forbidden");
+    }
+
+    private static BusinessException NotFoundError()
+    {
+        return new BusinessException("令牌不存在", 404, "FileToken.NotFound", "error.file_token.not_found");
+    }
 }

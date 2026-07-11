@@ -26,7 +26,10 @@ public class SqlSugarAop
         "ResponseBody",
         "OldContent",
         "NewContent",
-        "ContentSnapshot"
+        "ContentSnapshot",
+        "Token",
+        "TokenHash",
+        "AccessToken"
     ];
 
     private static readonly Regex InlineAssignmentRegex = new(

@@ -22,7 +22,7 @@ public class ServiceAop : IInterceptor
             RequestTime = startTime.ToString("yyyy-MM-dd hh:mm:ss fff"),
             OpUserName = "",
             RequestMethodName = invocation.Method.Name,
-            RequestParamsName = string.Join(", ", invocation.Arguments.Select(a => (a ?? "").ToString()).ToArray()),
+            RequestParamsName = DescribeParameters(invocation.Method),
             RequestParamsData = BuildPayloadSnapshot(invocation.Arguments)
         };
 
@@ -162,6 +162,11 @@ public class ServiceAop : IInterceptor
                 ex.Message
             });
         }
+    }
+
+    private static string DescribeParameters(MethodInfo method)
+    {
+        return string.Join(", ", method.GetParameters().Select(parameter => parameter.Name));
     }
 }
 

@@ -3,6 +3,7 @@
 
 @PrivateAttachmentId = <私有附件的ID>
 @AccessToken = <从创建令牌响应中复制 token>
+@TokenRecordId = <从创建令牌响应中复制 id>
 @TokenToRevoke = <要撤销的 token>
 @TargetUserId = 20001
 
@@ -61,14 +62,23 @@ Content-Type: application/json
   "authorizedIp": "192.168.1.100"
 }
 
-### 撤销访问令牌
+### 按记录 ID 撤销访问令牌（正式入口）
+POST {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessTokenById
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "tokenId": {{TokenRecordId}}
+}
+
+### 按原 token 撤销访问令牌（旧调用兼容一个发布周期）
 POST {{Api_HostAddress}}/api/v1/Attachment/RevokeAccessToken
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
 
 "{{TokenToRevoke}}"
 
-### 获取附件的所有令牌
+### 获取附件的所有令牌摘要（不会返回原 token 或可用 URL）
 GET {{Api_HostAddress}}/api/v1/Attachment/GetAttachmentTokens?attachmentId={{PrivateAttachmentId}}
 Authorization: Bearer {{Access_Token}}
 
@@ -79,13 +89,13 @@ Content-Type: application/json
 
 {
   "attachmentId": {{PrivateAttachmentId}},
-  "validHours": 0.0003,
+  "validHours": 1,
   "maxAccessCount": 0,
   "authorizedUserId": null,
   "authorizedIp": null
 }
 
-### 访问过期令牌（预期 403）
+### 访问过期令牌（等待过期或准备过期测试数据后，预期 403）
 GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token=<过期的token>
 
 ### 测试访问次数限制：第 1 次

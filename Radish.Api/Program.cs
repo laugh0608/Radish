@@ -67,6 +67,7 @@ using Radish.Service.Base;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton(TimeProvider.System);
 // -------------- 容器构建阶段 ---------------
 
 static string ResolveSharedConfigPath(string basePath, string contentRootPath)

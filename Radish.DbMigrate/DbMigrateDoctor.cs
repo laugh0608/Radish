@@ -15,7 +15,11 @@ internal static class DbMigrateDoctor
         SqlSugarConst.ChatConfigId,
     };
 
-    public static void Run(IServiceProvider services, IConfiguration configuration, string environment)
+    public static void Run(
+        IServiceProvider services,
+        IConfiguration configuration,
+        string environment,
+        bool strict)
     {
         Console.WriteLine($"[Radish.DbMigrate] [Doctor] Environment: {environment}");
 
@@ -80,12 +84,20 @@ internal static class DbMigrateDoctor
         if (errors.Count > 0)
         {
             Console.WriteLine("[Radish.DbMigrate] [Doctor] 结论：当前环境不建议直接执行 seed，请先修复上述问题。");
+            if (strict)
+            {
+                throw new InvalidOperationException("DbMigrate verify 失败，请处理上方 Error 后重试。");
+            }
             return;
         }
 
         if (warnings.Count > 0)
         {
             Console.WriteLine("[Radish.DbMigrate] [Doctor] 结论：配置可用，但建议先执行 init 或补齐缺失表后再执行 seed。");
+            if (strict)
+            {
+                throw new InvalidOperationException("DbMigrate verify 失败，请处理上方 Warning 后重试。");
+            }
             return;
         }
 
@@ -108,7 +120,6 @@ internal static class DbMigrateDoctor
             if (inspectionResult.MissingTables.Count == 0 && inspectionResult.MissingColumns.Count == 0)
             {
                 Console.WriteLine("[Radish.DbMigrate] [Doctor] 主库业务表检查：已齐全。");
-                return;
             }
 
             if (inspectionResult.MissingTables.Count > 0)
@@ -119,6 +130,15 @@ internal static class DbMigrateDoctor
             if (inspectionResult.MissingColumns.Count > 0)
             {
                 warnings.Add($"主库业务表缺列：{string.Join(", ", inspectionResult.MissingColumns)}");
+            }
+
+            var db = services.GetRequiredService<ISqlSugarClient>();
+            if (db is SqlSugarScope dbScope)
+            {
+                var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+                    .ToLowerInvariant();
+                var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
+                errors.AddRange(FileAccessTokenSecurityMigration.Verify(mainDb));
             }
         }
         catch (Exception exception)
