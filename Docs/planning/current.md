@@ -29,7 +29,7 @@
   - 2026-07-11 Q1-A 已完成实现收口：14 处裸 `_ = Task.Run` 已按不可丢失业务写、可重算派生数据和 best-effort 实时推送完成迁移；Main / Chat 源库 Outbox、Hangfire 领取与租约恢复、目标写幂等、Message 通知事务、DeadLetter 与受权人工重放 API 已落地。订单权益 / 背包核心写仍保持同步事务，未扩入 Q1-B、Q2、Q3 或页面工作。
   - 2026-07-11 Q1-A 候选级验证已通过：PostgreSQL 源事务回滚、双 Worker 原子领取、租约恢复、通知两表事务与业务键幂等均由环境驱动集成测试覆盖；DbMigrate 首次建库、重入与 verify 通过，真实 API + PostgreSQL Hangfire 已恢复 `Pending` 和过期 `Processing` 重复任务且只生成一份持久通知。验证中发现的 Chat 种子 PostgreSQL 重入阻断与 ReliableOutbox 权限契约缺口已修复。
   - 2026-07-11 Q1-B 已完成：保留 `MessageModel` 并接入全局异常安全边界、稳定错误码、`TraceId / X-Correlation-ID`、模型校验、认证权限与限流统一响应；关键发布 Controller 已同步真实 HTTP 状态，问答、投票、抽奖、轻回应、治理和 Wiki 的异常文案状态分类已清零，HTTP / client / console 与 588 项后端测试通过。
-  - Q1-B 已提交为 `873c5ea5`；工作区随后保持干净，`dev` 未合并或 rebase `master`。
+  - Q1 已形成独立提交：Q1-A `33e4690f / 86466308`、Q1-B `873c5ea5`、Q1-C `ef370884`；`dev` 未合并或 rebase `master`。
   - 2026-07-11 Q1-C 运行时实施已完成：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、创建者 / 上传者 / System / Admin 权限、可信代理与日志凭据脱敏均已落地。解决方案构建 `0` warning / `0` error，后端测试通过 `597`、跳过 `2`；当前仍需备份后执行目标库 `DbMigrate apply / verify`，并在可用 PostgreSQL 环境补跑双 Worker 并发用例。
 
 ## V1 产品与发布范围
@@ -81,7 +81,7 @@ Radish V1 的产品定位固定为：
 
 1. 备份当前 Main 数据库，执行 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply`。
 2. 执行 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify`，并在 PostgreSQL 环境补跑 Q1-C 双 Worker 并发用例。
-3. Q1-C 达到 Release Go 退出条件后，进入 Q2 的生产相似 PostgreSQL / OpenIddict 升级与版本治理必要子集。
+3. Q1-C 达到 Release Go 退出条件后，先进入 Q2-A 时间语义审计与迁移方案，随后推进 Q2-B PostgreSQL / OpenIddict 升级和 Q2-C 版本单一真值。
 
 ## 并行维护线
 

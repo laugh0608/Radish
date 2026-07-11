@@ -16,12 +16,12 @@
 
 ## 一、现状与发布判断
 
-### 1. 已暴露能力
+### 1. 审计时已暴露能力
 
 - `POST /api/v1/Attachment/CreateAccessToken`：登录用户创建 token，并返回完整 token 和访问 URL。
 - `GET /api/v1/Attachment/DownloadByToken`：匿名入口，token 放在查询字符串。
 - `POST /api/v1/Attachment/RevokeAccessToken`：以完整 token 撤销。
-- `GET /api/v1/Attachment/GetAttachmentTokens`：返回附件全部有效 token，当前会再次返回完整 token。
+- `GET /api/v1/Attachment/GetAttachmentTokens`：返回附件全部有效 token，审计时会再次返回完整 token。
 - API 启动时注册过期 token 清理任务；`Docs/features/file-upload-design.md` 将上述接口列为正式文件能力。
 
 前端源码没有调用这些接口，因此当前没有页面兼容成本；但这不等于未暴露。匿名下载端点和 OpenAPI 契约已经构成正式攻击面。
