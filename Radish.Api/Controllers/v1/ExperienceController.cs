@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -17,6 +18,7 @@ namespace Radish.Api.Controllers.v1;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
+[ApiErrorContract]
 [Authorize(Policy = AuthorizationPolicies.Client)]
 public class ExperienceController : ControllerBase
 {
@@ -379,7 +381,12 @@ public class ExperienceController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<LevelConfigVo>>.Message(false, $"重新计算失败: {ex.Message}", default!);
+            throw new BusinessException(
+                "重新计算等级配置失败，请稍后重试",
+                ex,
+                StatusCodes.Status500InternalServerError,
+                "System.UnexpectedError",
+                "error.system.unexpected_error");
         }
     }
 

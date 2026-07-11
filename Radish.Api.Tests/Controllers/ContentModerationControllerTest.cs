@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
@@ -121,7 +122,7 @@ public class ContentModerationControllerTest
                 10001,
                 "Tester",
                 0))
-            .ThrowsAsync(new InvalidOperationException("举报单不存在"));
+            .ThrowsAsync(new BusinessException("举报单不存在", 404, "Moderation.ReportNotFound"));
 
         var controller = CreateController(serviceMock.Object);
         var result = await controller.Review(new ReviewContentReportDto

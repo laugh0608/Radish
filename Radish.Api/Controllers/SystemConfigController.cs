@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -14,6 +15,7 @@ namespace Radish.Api.Controllers;
 
 /// <summary>系统配置控制器</summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -44,7 +46,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<SystemConfigVo>>.Failed($"获取系统配置失败：{ex.Message}");
+            throw BuildUnexpectedError("获取系统配置失败，请稍后重试", ex);
         }
     }
 
@@ -61,7 +63,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<string>>.Failed($"获取配置分类失败：{ex.Message}");
+            throw BuildUnexpectedError("获取配置分类失败，请稍后重试", ex);
         }
     }
 
@@ -83,7 +85,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<SystemConfigVo>.Failed($"获取配置详情失败：{ex.Message}");
+            throw BuildUnexpectedError("获取配置详情失败，请稍后重试", ex);
         }
     }
 
@@ -110,7 +112,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<SystemConfigVo>.Failed($"更新配置失败：{ex.Message}");
+            throw BuildUnexpectedError("更新配置失败，请稍后重试", ex);
         }
     }
 
@@ -132,7 +134,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<SystemConfigVo>.Failed($"恢复默认失败：{ex.Message}");
+            throw BuildUnexpectedError("恢复默认失败，请稍后重试", ex);
         }
     }
 
@@ -154,7 +156,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<SystemConfigChangeLogVo>>.Failed($"获取变更历史失败：{ex.Message}");
+            throw BuildUnexpectedError("获取变更历史失败，请稍后重试", ex);
         }
     }
 
@@ -176,7 +178,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<SystemConfigVo>.Failed($"创建配置失败：{ex.Message}");
+            throw BuildUnexpectedError("创建配置失败，请稍后重试", ex);
         }
     }
 
@@ -193,7 +195,7 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel.Failed($"恢复默认失败：{ex.Message}");
+            throw BuildUnexpectedError("删除配置失败，请稍后重试", ex);
         }
     }
 
@@ -210,8 +212,18 @@ public class SystemConfigController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<PublicSiteSettingsVo>.Failed($"获取公开站点设置失败：{ex.Message}");
+            throw BuildUnexpectedError("获取公开站点设置失败，请稍后重试", ex);
         }
+    }
+
+    private static BusinessException BuildUnexpectedError(string message, Exception exception)
+    {
+        return new BusinessException(
+            message,
+            exception,
+            StatusCodes.Status500InternalServerError,
+            "System.UnexpectedError",
+            "error.system.unexpected_error");
     }
 
     private SystemConfigChangeContext BuildChangeContext()

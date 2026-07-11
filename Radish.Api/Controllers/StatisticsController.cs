@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -12,6 +13,7 @@ namespace Radish.Api.Controllers;
 
 /// <summary>统计报表控制器</summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -39,7 +41,7 @@ public class StatisticsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<DashboardStatsVo>.Failed($"获取统计数据失败：{ex.Message}");
+            throw new BusinessException("获取统计数据失败，请稍后重试", ex, 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
     }
 
@@ -58,7 +60,7 @@ public class StatisticsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<OrderTrendItemVo>>.Failed($"获取订单趋势失败：{ex.Message}");
+            throw new BusinessException("获取订单趋势失败，请稍后重试", ex, 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
     }
 
@@ -77,7 +79,7 @@ public class StatisticsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<ProductSalesRankingVo>>.Failed($"获取商品销售排行失败：{ex.Message}");
+            throw new BusinessException("获取商品销售排行失败，请稍后重试", ex, 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
     }
 
@@ -95,7 +97,7 @@ public class StatisticsController : ControllerBase
         }
         catch (Exception ex)
         {
-            return MessageModel<List<UserLevelDistributionVo>>.Failed($"获取用户等级分布失败：{ex.Message}");
+            throw new BusinessException("获取用户等级分布失败，请稍后重试", ex, 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
     }
 }

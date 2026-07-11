@@ -1,5 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -16,6 +18,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛问答管理")]
 public class QuestionController : ControllerBase
 {
@@ -107,7 +110,7 @@ public class QuestionController : ControllerBase
         {
             return BuildAnswerErrorResponse(ex);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return BuildAnswerErrorResponse(ex);
         }
@@ -169,7 +172,7 @@ public class QuestionController : ControllerBase
         {
             return BuildAcceptErrorResponse(ex);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return BuildAcceptErrorResponse(ex);
         }
@@ -178,7 +181,7 @@ public class QuestionController : ControllerBase
     private static bool TryBuildAnswerErrorResponse(AggregateException exception, out MessageModel response)
     {
         var knownException = UnwrapKnownException(exception);
-        if (knownException is ArgumentException or InvalidOperationException)
+        if (knownException is ArgumentException or BusinessException)
         {
             response = BuildAnswerErrorResponse(knownException);
             return true;
@@ -191,7 +194,7 @@ public class QuestionController : ControllerBase
     private static bool TryBuildAcceptErrorResponse(AggregateException exception, out MessageModel response)
     {
         var knownException = UnwrapKnownException(exception);
-        if (knownException is ArgumentException or InvalidOperationException)
+        if (knownException is ArgumentException or BusinessException)
         {
             response = BuildAcceptErrorResponse(knownException);
             return true;
@@ -214,9 +217,7 @@ public class QuestionController : ControllerBase
         var statusCode = exception switch
         {
             ArgumentException => HttpStatusCodeEnum.BadRequest,
-            InvalidOperationException invalidOperationException when invalidOperationException.Message.Contains("不存在") =>
-                HttpStatusCodeEnum.NotFound,
-            InvalidOperationException => HttpStatusCodeEnum.BadRequest,
+            BusinessException businessException => (HttpStatusCodeEnum)businessException.StatusCode,
             _ => HttpStatusCodeEnum.BadRequest
         };
 
@@ -228,11 +229,7 @@ public class QuestionController : ControllerBase
         var statusCode = exception switch
         {
             ArgumentException => HttpStatusCodeEnum.BadRequest,
-            InvalidOperationException invalidOperationException when invalidOperationException.Message.Contains("只有提问者") =>
-                HttpStatusCodeEnum.Forbidden,
-            InvalidOperationException invalidOperationException when invalidOperationException.Message.Contains("不存在") =>
-                HttpStatusCodeEnum.NotFound,
-            InvalidOperationException => HttpStatusCodeEnum.BadRequest,
+            BusinessException businessException => (HttpStatusCodeEnum)businessException.StatusCode,
             _ => HttpStatusCodeEnum.BadRequest
         };
 

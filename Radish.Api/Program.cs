@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
@@ -55,7 +56,9 @@ using Radish.Api.HealthChecks;
 using Radish.Api.Hubs;
 using Radish.Api.Services;
 using Radish.Api.Security;
+using Radish.Api.ErrorHandling;
 using Radish.Model;
+using Radish.Shared.Constants;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Radish.IRepository.Base;
 using Radish.IService.Base;
@@ -220,6 +223,30 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
     });
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var fieldErrors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value!.Errors
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? "输入值格式不正确"
+                        : error.ErrorMessage)
+                    .ToArray());
+
+        return ApiErrorResultFactory.Create(
+            context.HttpContext,
+            StatusCodes.Status400BadRequest,
+            "请求参数验证失败",
+            ApiErrorCodes.ValidationFailed,
+            "error.common.validation_failed",
+            fieldErrors);
+    };
+});
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 // 注册健康检查
 var apiHealthCheckTags = ApiHostHealthChecks.Tags;
 builder.Services.AddApiHostHealthChecks();
@@ -407,7 +434,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     path,
                     context.Error,
                     context.HttpContext.TraceIdentifier);
-                return Task.CompletedTask;
+
+                if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
+                {
+                    return Task.CompletedTask;
+                }
+
+                context.HandleResponse();
+                return ApiErrorResultFactory.WriteAsync(
+                    context.HttpContext,
+                    StatusCodes.Status401Unauthorized,
+                    "请先登录后再继续操作",
+                    ApiErrorCodes.Unauthorized,
+                    "error.auth.unauthorized",
+                    cancellationToken: context.HttpContext.RequestAborted);
+            },
+            OnForbidden = context =>
+            {
+                if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
+                {
+                    return Task.CompletedTask;
+                }
+
+                return ApiErrorResultFactory.WriteAsync(
+                    context.HttpContext,
+                    StatusCodes.Status403Forbidden,
+                    "当前账号无权执行此操作",
+                    ApiErrorCodes.Forbidden,
+                    "error.auth.forbidden",
+                    cancellationToken: context.HttpContext.RequestAborted);
             }
         };
 
@@ -547,6 +602,9 @@ app.UseCors(corsPolicyName);
 // 配置请求本地化（根据 Accept-Language 设置 Culture）
 var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(localizationOptions.Value);
+
+// 只处理正式 API JSON 请求；协议端点、文件流、Hub 和宿主页面保持各自响应契约。
+app.UseExceptionHandler();
 
 // 配置 Hangfire Dashboard
 var dashboardEnabled = builder.Configuration.GetValue<bool>("Hangfire:Dashboard:Enable", true);

@@ -24,6 +24,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Authorize(Policy = AuthorizationPolicies.Client)]
 [Tags("萝卜币系统")]
 public class CoinController : ControllerBase

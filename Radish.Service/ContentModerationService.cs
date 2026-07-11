@@ -1,4 +1,5 @@
 using AutoMapper;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -73,7 +74,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         var targetSnapshot = await ResolveReportTargetSnapshotAsync(targetType, dto.TargetContentId);
         if (targetSnapshot.TargetUserId < 0)
         {
-            throw new InvalidOperationException("举报目标用户不存在");
+            throw new BusinessException("举报目标用户不存在", 404, "Moderation.TargetUserNotFound", "error.moderation.target_user_not_found");
         }
 
         if (targetSnapshot.TargetUserId > 0 && targetSnapshot.TargetUserId == reporterUserId)
@@ -89,7 +90,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             !r.IsDeleted);
         if (pendingExists)
         {
-            throw new InvalidOperationException("该内容已存在待处理举报，请勿重复提交");
+            throw new BusinessException("该内容已存在待处理举报，请勿重复提交", 409, "Moderation.ReportAlreadyPending", "error.moderation.report_already_pending");
         }
 
         var normalizedReporterName = string.IsNullOrWhiteSpace(reporterUserName) ? $"User-{reporterUserId}" : reporterUserName.Trim();
@@ -257,19 +258,19 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         var report = await _contentReportRepository.QueryFirstAsync(r => r.Id == dto.ReportId && !r.IsDeleted);
         if (report == null)
         {
-            throw new InvalidOperationException("举报单不存在");
+            throw new BusinessException("举报单不存在", 404, "Moderation.ReportNotFound", "error.moderation.report_not_found");
         }
 
         if (report.Status != (int)ContentReportStatusEnum.Pending)
         {
-            throw new InvalidOperationException("该举报单已处理，请勿重复审核");
+            throw new BusinessException("该举报单已处理，请勿重复审核", 409, "Moderation.ReportAlreadyReviewed", "error.moderation.report_already_reviewed");
         }
 
         if (dto.IsApproved &&
             actionType is ModerationActionTypeEnum.Mute or ModerationActionTypeEnum.Ban &&
             report.TargetUserId <= 0)
         {
-            throw new InvalidOperationException("当前目标不支持联动用户治理动作");
+            throw new BusinessException("当前目标不支持联动用户治理动作", 400, "Moderation.TargetActionUnsupported", "error.moderation.target_action_unsupported");
         }
 
         var normalizedReviewerName = string.IsNullOrWhiteSpace(reviewerUserName) ? $"User-{reviewerUserId}" : reviewerUserName.Trim();
@@ -308,7 +309,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
                     !r.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("举报单已被处理，请刷新审核队列");
+                throw new BusinessException("举报单已被处理，请刷新审核队列", 409, "Moderation.ConcurrentReviewConflict", "error.moderation.concurrent_review_conflict");
             }
 
             if (dto.IsApproved && actionType is ModerationActionTypeEnum.Mute or ModerationActionTypeEnum.Ban)
@@ -364,7 +365,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         var targetUser = await _userRepository.QueryFirstAsync(u => u.Id == dto.TargetUserId && !u.IsDeleted);
         if (targetUser == null)
         {
-            throw new InvalidOperationException("目标用户不存在");
+            throw new BusinessException("目标用户不存在", 404, "Moderation.TargetUserNotFound", "error.moderation.target_user_not_found");
         }
 
         var targetUserName = string.IsNullOrWhiteSpace(targetUser.UserName) ? $"User-{targetUser.Id}" : targetUser.UserName.Trim();

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -52,7 +53,7 @@ public class PollControllerTest
 
         postPollServiceMock
             .Setup(service => service.CloseAsync(9527, 10001, "Tester"))
-            .ThrowsAsync(new InvalidOperationException("只有发帖者可以结束投票"));
+            .ThrowsAsync(new BusinessException("只有发帖者可以结束投票", 403, "Poll.CloseForbidden"));
 
         var controller = CreateController(postPollServiceMock.Object);
 
@@ -73,7 +74,7 @@ public class PollControllerTest
 
         postPollServiceMock
             .Setup(service => service.CloseAsync(9527, 10001, "Tester"))
-            .ThrowsAsync(new InvalidOperationException("帖子不存在"));
+            .ThrowsAsync(new BusinessException("帖子不存在", 404, "Forum.PostNotFound"));
 
         var controller = CreateController(postPollServiceMock.Object);
 

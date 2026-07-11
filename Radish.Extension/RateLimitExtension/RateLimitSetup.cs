@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
+using Radish.Model;
+using Radish.Shared.Constants;
 using Serilog;
 
 namespace Radish.Extension.RateLimitExtension;
@@ -197,11 +199,15 @@ public static class RateLimitSetup
         if (options.Blacklist.Enable && IsInBlacklist(ipAddress, options.Blacklist))
         {
             context.HttpContext.Response.StatusCode = StatusCodes.Status403Forbidden;
-            await context.HttpContext.Response.WriteAsJsonAsync(new
+            var blockedTraceId = ApplyTraceId(context.HttpContext);
+            await context.HttpContext.Response.WriteAsJsonAsync(new MessageModel
             {
-                status = 403,
-                message = "您的 IP 地址已被封禁",
-                success = false
+                StatusCode = StatusCodes.Status403Forbidden,
+                IsSuccess = false,
+                MessageInfo = "您的 IP 地址已被封禁",
+                Code = ApiErrorCodes.IpBlocked,
+                MessageKey = "error.rate_limit.ip_blocked",
+                TraceId = blockedTraceId
             }, cancellationToken: cancellationToken);
             return;
         }
@@ -215,13 +221,24 @@ public static class RateLimitSetup
             context.HttpContext.Response.Headers.RetryAfter = retryAfter.TotalSeconds.ToString("F0");
         }
 
-        await context.HttpContext.Response.WriteAsJsonAsync(new
+        var traceId = ApplyTraceId(context.HttpContext);
+        await context.HttpContext.Response.WriteAsJsonAsync(new MessageModel
         {
-            status = 429,
-            message = "请求过于频繁，请稍后再试",
-            success = false,
-            retryAfter = retryAfter.TotalSeconds
+            StatusCode = StatusCodes.Status429TooManyRequests,
+            IsSuccess = false,
+            MessageInfo = "请求过于频繁，请稍后再试",
+            Code = ApiErrorCodes.RateLimitExceeded,
+            MessageKey = "error.rate_limit.exceeded",
+            TraceId = traceId,
+            ResponseData = new { retryAfter = retryAfter.TotalSeconds }
         }, cancellationToken: cancellationToken);
+    }
+
+    private static string ApplyTraceId(HttpContext httpContext)
+    {
+        var traceId = httpContext.TraceIdentifier;
+        httpContext.Response.Headers["X-Correlation-ID"] = traceId;
+        return traceId;
     }
 
     /// <summary>获取客户端 IP 地址</summary>

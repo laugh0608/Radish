@@ -20,6 +20,7 @@ namespace Radish.Api.Controllers;
 [ApiController]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [ApiVersion(1)]
+[ApiErrorContract]
 public class ShopController : ControllerBase
 {
     private readonly IProductService _productService;

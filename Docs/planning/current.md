@@ -28,6 +28,7 @@
   - `P3-12-F` 不再被定义为“所有候选工作全部完成后的奖励阶段”：Q0 与有限产品矩阵负责进入 F，Q1 / Q2 / Q3 的发布必要子集在 F 内完成并作为 Release Go 门禁，Q4 转为持续维护。
   - 2026-07-11 Q1-A 已完成实现收口：14 处裸 `_ = Task.Run` 已按不可丢失业务写、可重算派生数据和 best-effort 实时推送完成迁移；Main / Chat 源库 Outbox、Hangfire 领取与租约恢复、目标写幂等、Message 通知事务、DeadLetter 与受权人工重放 API 已落地。订单权益 / 背包核心写仍保持同步事务，未扩入 Q1-B、Q2、Q3 或页面工作。
   - 2026-07-11 Q1-A 候选级验证已通过：PostgreSQL 源事务回滚、双 Worker 原子领取、租约恢复、通知两表事务与业务键幂等均由环境驱动集成测试覆盖；DbMigrate 首次建库、重入与 verify 通过，真实 API + PostgreSQL Hangfire 已恢复 `Pending` 和过期 `Processing` 重复任务且只生成一份持久通知。验证中发现的 Chat 种子 PostgreSQL 重入阻断与 ReliableOutbox 权限契约缺口已修复。
+  - 2026-07-11 Q1-B 已完成：保留 `MessageModel` 并接入全局异常安全边界、稳定错误码、`TraceId / X-Correlation-ID`、模型校验、认证权限与限流统一响应；关键发布 Controller 已同步真实 HTTP 状态，问答、投票、抽奖、轻回应、治理和 Wiki 的异常文案状态分类已清零，HTTP / client / console 与 588 项后端测试通过。
 
 ## V1 产品与发布范围
 
@@ -53,6 +54,7 @@ Radish V1 的产品定位固定为：
 - [P3-12-E8 dev -> master 集成审阅记录](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
 - [P3-12-F Q1-A 事务后可靠任务审计与实施方案](/records/p3-12-f-q1-a-reliable-post-transaction-task-plan-2026-07-11)
 - [P3-12-F Q1-A 候选级可靠性验证记录](/records/p3-12-f-q1-a-candidate-validation-2026-07-11)
+- [P3-12-F Q1-B API 错误契约审计与实施方案](/records/p3-12-f-q1-b-api-error-contract-audit-plan-2026-07-11)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
@@ -60,11 +62,11 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 开展 Q1-B API 错误契约审计与兼容方案
+### 1. 收口 Q1-B API 错误契约
 
-- 全仓盘点 Controller、Filter、Middleware 与 Service 中的 `ex.Message`、重复 catch、HTTP 200 错误响应和通用 `Exception`。
-- 先确定错误响应结构、错误码命名、correlation ID、HTTP 状态映射与 `MessageModel` 兼容停止点，再修改运行时。
-- 首批实现只覆盖本次正式发布矩阵的未知异常泄露、参数、权限、未找到、冲突和限流契约，不一次性机械替换全部领域异常。
+- 全仓盘点与三批实施已完成；继续保留 `MessageModel`，`TraceId` 与同值 `X-Correlation-ID` 已关联服务端日志，错误码沿用 Pascal dotted、消息键沿用 `error.* / info.*`。
+- 未知异常安全、关键 Controller 真实状态、领域异常映射和客户端兼容测试已经成立；历史细粒度领域码在后续触达相应业务时持续迁移，不作为本批无限扩张项。
+- OIDC 标准响应、文件 / 流、SignalR、健康检查、Hangfire、Scalar 和 Gateway 代理响应不做统一 JSON 包裹。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
@@ -74,9 +76,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 审阅并提交 Q1-A 候选验证补强批次，保持 `dev -> master` 单向集成。
-2. 只读开展 Q1-B 全仓错误契约审计，形成错误响应结构、错误码、HTTP 状态和兼容迁移方案。
-3. Q1-B 方案确认后再修改运行时；随后按 Release Go 顺位评估 Q1-C 或 Q2 的发布必要子集。
+1. 审阅并提交 Q1-B 错误契约实施批次，保持 `dev -> master` 单向集成。
+2. 按正式发布暴露面决定 Q1-C 文件访问令牌是完成并发 / hash 治理还是退出正式暴露面。
+3. 随后进入 Q2 的生产相似 PostgreSQL / OpenIddict 升级与版本治理必要子集。
 
 ## 并行维护线
 

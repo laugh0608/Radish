@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -227,7 +228,7 @@ public class PostLotteryServiceTest
             logger.Object,
             Mock.Of<IReliableOutboxService>());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DrawAsync(1001, 9527, "Author"));
 
         Assert.Equal("发帖满 1 小时后才可提前开奖", exception.Message);
         winnerRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostLotteryWinner>>()), Times.Never);
@@ -277,7 +278,7 @@ public class PostLotteryServiceTest
             logger.Object,
             Mock.Of<IReliableOutboxService>());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DrawAsync(1001, 9527, "Author"));
 
         Assert.Equal("已到自动开奖时间，请等待系统开奖", exception.Message);
         winnerRepository.Verify(repository => repository.AddRangeAsync(It.IsAny<List<PostLotteryWinner>>()), Times.Never);

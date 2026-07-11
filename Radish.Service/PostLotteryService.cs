@@ -1,4 +1,5 @@
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -51,12 +52,12 @@ public class PostLotteryService : IPostLotteryService
         var post = await _postService.GetPostDetailAsync(postId, viewerUserId);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         if (!post.VoHasLottery || post.VoLottery == null)
         {
-            throw new InvalidOperationException("当前帖子未配置抽奖");
+            throw new BusinessException("当前帖子未配置抽奖", 404, "Lottery.NotFound", "error.lottery.not_found");
         }
 
         return new LotteryResultVo
@@ -72,7 +73,7 @@ public class PostLotteryService : IPostLotteryService
     {
         if (userId <= 0)
         {
-            throw new InvalidOperationException("请先登录后再开奖");
+            throw new BusinessException("请先登录后再开奖", 401, "Auth.Unauthorized", "error.auth.unauthorized");
         }
 
         if (postId <= 0)
@@ -83,7 +84,7 @@ public class PostLotteryService : IPostLotteryService
         var post = await GetPostOrThrowAsync(postId);
         if (post.AuthorId != userId)
         {
-            throw new InvalidOperationException("只有发帖者可以开奖");
+            throw new BusinessException("只有发帖者可以开奖", 403, "Lottery.DrawForbidden", "error.lottery.draw_forbidden");
         }
 
         var lottery = await GetLotteryOrThrowAsync(postId);
@@ -199,7 +200,7 @@ public class PostLotteryService : IPostLotteryService
         var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted && p.IsPublished);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         return post;
@@ -210,17 +211,17 @@ public class PostLotteryService : IPostLotteryService
         var lottery = await _postLotteryRepository.QueryFirstAsync(l => l.PostId == postId && !l.IsDeleted);
         if (lottery == null)
         {
-            throw new InvalidOperationException("当前帖子未配置抽奖");
+            throw new BusinessException("当前帖子未配置抽奖", 404, "Lottery.NotFound", "error.lottery.not_found");
         }
 
         if (lottery.IsDrawn)
         {
-            throw new InvalidOperationException("该抽奖已经开过奖");
+            throw new BusinessException("该抽奖已经开过奖", 409, "Lottery.AlreadyDrawn", "error.lottery.already_drawn");
         }
 
         if (!lottery.DrawTime.HasValue)
         {
-            throw new InvalidOperationException("当前抽奖未配置截止时间");
+            throw new BusinessException("当前抽奖未配置截止时间", 409, "Lottery.DeadlineMissing", "error.lottery.deadline_missing");
         }
 
         return lottery;
@@ -232,12 +233,12 @@ public class PostLotteryService : IPostLotteryService
         var manualDrawAvailableAt = publishTimeUtc.Add(MinManualDrawLeadTime);
         if (DateTime.UtcNow < manualDrawAvailableAt)
         {
-            throw new InvalidOperationException("发帖满 1 小时后才可提前开奖");
+            throw new BusinessException("发帖满 1 小时后才可提前开奖", 409, "Lottery.DrawTooEarly", "error.lottery.draw_too_early");
         }
 
         if (DateTime.UtcNow >= lottery.DrawTime!.Value)
         {
-            throw new InvalidOperationException("已到自动开奖时间，请等待系统开奖");
+            throw new BusinessException("已到自动开奖时间，请等待系统开奖", 409, "Lottery.AutomaticDrawPending", "error.lottery.automatic_draw_pending");
         }
     }
 
@@ -245,7 +246,7 @@ public class PostLotteryService : IPostLotteryService
     {
         if (DateTime.UtcNow < lottery.DrawTime!.Value)
         {
-            throw new InvalidOperationException("未到自动开奖时间");
+            throw new BusinessException("未到自动开奖时间", 409, "Lottery.DrawTooEarly", "error.lottery.draw_too_early");
         }
     }
 
@@ -268,7 +269,7 @@ public class PostLotteryService : IPostLotteryService
 
         if (candidates.Count == 0 && !allowEmptyParticipants)
         {
-            throw new InvalidOperationException("当前还没有符合条件的参与者");
+            throw new BusinessException("当前还没有符合条件的参与者", 409, "Lottery.NoEligibleParticipant", "error.lottery.no_eligible_participant");
         }
 
         var actualWinnerCount = candidates.Count == 0
@@ -318,7 +319,7 @@ public class PostLotteryService : IPostLotteryService
         var result = await GetByPostIdAsync(post.Id, operatorUserId > 0 ? operatorUserId : null);
         if (result.VoLottery == null)
         {
-            throw new InvalidOperationException("抽奖结果刷新失败");
+            throw new BusinessException("抽奖结果刷新失败，请稍后重试", 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
 
         return result.VoLottery;

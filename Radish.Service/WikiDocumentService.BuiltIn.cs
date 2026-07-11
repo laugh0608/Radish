@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Radish.Common.CoreTool;
 using Radish.Common.DocumentTool;
+using Radish.Common.Exceptions;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
 
@@ -208,7 +209,7 @@ public partial class WikiDocumentService
     {
         if (IsBuiltInSourceType(document.SourceType))
         {
-            throw new InvalidOperationException("固定文档为只读内容，请修改 Docs 目录中的源文件");
+            throw new BusinessException("固定文档为只读内容，请修改 Docs 目录中的源文件", 403, "Wiki.BuiltInReadOnly", "error.wiki.built_in_read_only");
         }
     }
 

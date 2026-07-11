@@ -27,6 +27,7 @@ namespace Radish.Api.Controllers;
 /// 所有接口需要通过 JWT 认证和 RadishAuthPolicy 授权策略。
 /// </remarks>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]

@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Radish.Api.Filters;
 using Radish.Api.Hubs;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -16,6 +17,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("聊天室")]
 [Authorize]
 public class ChannelMessageController : ControllerBase

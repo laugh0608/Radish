@@ -23,6 +23,7 @@ export {
   apiFetch,
   parseApiResponse,
   parseApiResponseWithI18n,
+  parseHttpResponse,
   apiGet,
   apiPost,
   apiPut,

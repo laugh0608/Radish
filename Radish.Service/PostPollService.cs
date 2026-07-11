@@ -1,4 +1,5 @@
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -43,12 +44,12 @@ public class PostPollService : IPostPollService
         var post = await _postService.GetPostDetailAsync(postId, viewerUserId);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         if (!post.VoHasPoll || post.VoPoll == null)
         {
-            throw new InvalidOperationException("当前帖子未配置投票");
+            throw new BusinessException("当前帖子未配置投票", 404, "Poll.NotFound", "error.poll.not_found");
         }
 
         return new PollVoteResultVo
@@ -66,7 +67,7 @@ public class PostPollService : IPostPollService
     {
         if (userId <= 0)
         {
-            throw new InvalidOperationException("请先登录后再投票");
+            throw new BusinessException("请先登录后再投票", 401, "Auth.Unauthorized", "error.auth.unauthorized");
         }
 
         if (request.PostId <= 0)
@@ -82,18 +83,18 @@ public class PostPollService : IPostPollService
         var post = await _postRepository.QueryFirstAsync(p => p.Id == request.PostId && !p.IsDeleted);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         var poll = await _postPollRepository.QueryFirstAsync(p => p.PostId == request.PostId && !p.IsDeleted);
         if (poll == null)
         {
-            throw new InvalidOperationException("当前帖子未配置投票");
+            throw new BusinessException("当前帖子未配置投票", 404, "Poll.NotFound", "error.poll.not_found");
         }
 
         if (IsPollClosed(poll))
         {
-            throw new InvalidOperationException("投票已截止");
+            throw new BusinessException("投票已截止", 409, "Poll.Closed", "error.poll.closed");
         }
 
         var option = await _postPollOptionRepository.QueryFirstAsync(o =>
@@ -102,13 +103,13 @@ public class PostPollService : IPostPollService
             !o.IsDeleted);
         if (option == null)
         {
-            throw new InvalidOperationException("投票选项不存在");
+            throw new BusinessException("投票选项不存在", 404, "Poll.OptionNotFound", "error.poll.option_not_found");
         }
 
         var hasVoted = await _postPollVoteRepository.QueryExistsAsync(v => v.PollId == poll.Id && v.UserId == userId);
         if (hasVoted)
         {
-            throw new InvalidOperationException("你已经投过票");
+            throw new BusinessException("你已经投过票", 409, "Poll.AlreadyVoted", "error.poll.already_voted");
         }
 
         var operatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
@@ -142,7 +143,7 @@ public class PostPollService : IPostPollService
         var result = await GetByPostIdAsync(request.PostId, userId);
         if (result.VoPoll == null)
         {
-            throw new InvalidOperationException("投票结果刷新失败");
+            throw new BusinessException("投票结果刷新失败，请稍后重试", 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
 
         return result.VoPoll;
@@ -156,7 +157,7 @@ public class PostPollService : IPostPollService
     {
         if (userId <= 0)
         {
-            throw new InvalidOperationException("请先登录后再结束投票");
+            throw new BusinessException("请先登录后再结束投票", 401, "Auth.Unauthorized", "error.auth.unauthorized");
         }
 
         if (postId <= 0)
@@ -167,23 +168,23 @@ public class PostPollService : IPostPollService
         var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         var poll = await _postPollRepository.QueryFirstAsync(p => p.PostId == postId && !p.IsDeleted);
         if (poll == null)
         {
-            throw new InvalidOperationException("当前帖子未配置投票");
+            throw new BusinessException("当前帖子未配置投票", 404, "Poll.NotFound", "error.poll.not_found");
         }
 
         if (post.AuthorId != userId)
         {
-            throw new InvalidOperationException("只有发帖者可以结束投票");
+            throw new BusinessException("只有发帖者可以结束投票", 403, "Poll.CloseForbidden", "error.poll.close_forbidden");
         }
 
         if (IsPollClosed(poll))
         {
-            throw new InvalidOperationException("投票已截止");
+            throw new BusinessException("投票已截止", 409, "Poll.Closed", "error.poll.closed");
         }
 
         var operatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
@@ -198,7 +199,7 @@ public class PostPollService : IPostPollService
         var result = await GetByPostIdAsync(postId, userId);
         if (result.VoPoll == null)
         {
-            throw new InvalidOperationException("投票结果刷新失败");
+            throw new BusinessException("投票结果刷新失败，请稍后重试", 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
 
         return result.VoPoll;

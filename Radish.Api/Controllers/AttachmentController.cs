@@ -2,6 +2,8 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Common.PermissionTool;
@@ -22,6 +24,7 @@ namespace Radish.Api.Controllers;
 /// 提供文件上传、下载、删除等接口
 /// </remarks>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -670,12 +673,7 @@ public class AttachmentController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("创建访问令牌失败，请稍后重试", ex);
         }
     }
 
@@ -737,12 +735,7 @@ public class AttachmentController : ControllerBase
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = 500,
-                MessageInfo = ex.Message
-            });
+            throw BuildUnexpectedError("下载文件失败，请稍后重试", ex);
         }
     }
 
@@ -771,12 +764,7 @@ public class AttachmentController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("撤销访问令牌失败，请稍后重试", ex);
         }
     }
 
@@ -806,13 +794,18 @@ public class AttachmentController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("获取访问令牌失败，请稍后重试", ex);
         }
+    }
+
+    private static BusinessException BuildUnexpectedError(string message, Exception exception)
+    {
+        return new BusinessException(
+            message,
+            exception,
+            StatusCodes.Status500InternalServerError,
+            "System.UnexpectedError",
+            "error.system.unexpected_error");
     }
 
     #endregion

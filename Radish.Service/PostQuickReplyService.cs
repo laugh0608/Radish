@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -158,7 +159,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
         if (userId <= 0)
         {
-            throw new InvalidOperationException("请先登录后再发布轻回应");
+            throw new BusinessException("请先登录后再发布轻回应", 401, "Auth.Unauthorized", "error.auth.unauthorized");
         }
 
         if (request.PostId <= 0)
@@ -181,7 +182,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         var post = await EnsurePostExistsAsync(request.PostId);
         if (post.IsLocked)
         {
-            throw new InvalidOperationException("当前帖子已锁定，无法发送轻回应");
+            throw new BusinessException("当前帖子已锁定，无法发送轻回应", 409, "Forum.PostLocked", "error.forum.post_locked");
         }
 
         var rateLimitSettings = await GetRateLimitSettingsAsync();
@@ -234,18 +235,18 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
         if (operatorId <= 0)
         {
-            throw new InvalidOperationException("请先登录后再删除轻回应");
+            throw new BusinessException("请先登录后再删除轻回应", 401, "Auth.Unauthorized", "error.auth.unauthorized");
         }
 
         var quickReply = await _postQuickReplyRepository.QueryFirstAsync(reply => reply.Id == quickReplyId && !reply.IsDeleted);
         if (quickReply == null)
         {
-            throw new InvalidOperationException("轻回应不存在");
+            throw new BusinessException("轻回应不存在", 404, "QuickReply.NotFound", "error.quick_reply.not_found");
         }
 
         if (quickReply.AuthorId != operatorId && !isAdmin)
         {
-            throw new InvalidOperationException("无权删除此轻回应");
+            throw new BusinessException("无权删除此轻回应", 403, "QuickReply.DeleteForbidden", "error.quick_reply.delete_forbidden");
         }
 
         var safeOperatorName = string.IsNullOrWhiteSpace(operatorName) ? $"User-{operatorId}" : operatorName.Trim();
@@ -268,7 +269,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
         if (post == null || post.IsDeleted)
         {
-            throw new InvalidOperationException("帖子不存在或不可访问");
+            throw new BusinessException("帖子不存在或不可访问", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         return post;
@@ -283,13 +284,17 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         var cooldownCacheKey = BuildCooldownCacheKey(userId, postId);
         if (await _caching.ExistsAsync(cooldownCacheKey))
         {
-            throw new InvalidOperationException($"发送过于频繁，请{rateLimitSettings.PerPostCooldownSeconds}秒后再试");
+            throw new BusinessException(
+                $"发送过于频繁，请{rateLimitSettings.PerPostCooldownSeconds}秒后再试",
+                429,
+                "QuickReply.RateLimitExceeded",
+                "error.quick_reply.rate_limit_exceeded");
         }
 
         var duplicateCacheKey = BuildDuplicateCacheKey(userId, postId, normalizedContent);
         if (await _caching.ExistsAsync(duplicateCacheKey))
         {
-            throw new InvalidOperationException("相同内容短时间内请勿重复发送");
+            throw new BusinessException("相同内容短时间内请勿重复发送", 409, "QuickReply.DuplicateContent", "error.quick_reply.duplicate_content");
         }
     }
 
@@ -297,7 +302,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     {
         if (!_options.Enable)
         {
-            throw new InvalidOperationException("轻回应功能当前未启用");
+            throw new BusinessException("轻回应功能当前未启用", 503, "QuickReply.Disabled", "error.quick_reply.disabled");
         }
     }
 

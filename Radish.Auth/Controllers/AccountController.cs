@@ -301,8 +301,12 @@ public class AccountController : Controller
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "用户注册失败: {DisplayName}, 错误: {ErrorMessage}", model.DisplayName, ex.Message);
-            TempData["RegisterError"] = $"注册失败：{ex.Message}";
+            Log.Error(
+                ex,
+                "用户注册失败: {DisplayName}, TraceId: {TraceId}",
+                model.DisplayName,
+                HttpContext.TraceIdentifier);
+            TempData["RegisterError"] = $"注册失败，请稍后重试（诊断标识：{HttpContext.TraceIdentifier}）";
             return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
         }
     }

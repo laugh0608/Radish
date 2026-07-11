@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -1487,7 +1488,7 @@ public class PostServiceTest
             Options.Create(new ForumEditHistoryOptions()),
             CreateDefaultSystemSettingProvider());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.AcceptAnswerAsync(1008, 4005, 9527, "Owner"));
 
         Assert.Equal("当前问题已采纳答案", exception.Message);
