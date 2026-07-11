@@ -10,6 +10,9 @@ export function parsePublicLegalRoute(pathname: string): PublicLegalRoute | null
   return isPublicLegalPathname(pathname) ? { kind: 'index' } : null;
 }
 
-export function buildPublicLegalPath(_route: PublicLegalRoute = { kind: 'index' }): string {
-  return '/legal';
+export function buildPublicLegalPath(route: PublicLegalRoute = { kind: 'index' }): string {
+  switch (route.kind) {
+    case 'index':
+      return '/legal';
+  }
 }
