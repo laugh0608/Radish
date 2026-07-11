@@ -466,12 +466,12 @@ git push origin v26.1.1.3003
 
 ## 跨语言扩展（Rust 原生库）
 
-- 目的：为 CPU 密集或高并发任务提供 Rust 实现，并通过 `RustTestController`（v2）验证性能差异；统一扩展库位于 `Lib/radish.lib/`，并以 `[DllImport("radish_lib")]` 进行加载。
+- 目的：为图片处理、文件哈希等 CPU 或 IO 密集任务提供 Rust 实现；统一扩展库位于 `Lib/radish.lib/`，并以 `[DllImport("radish_lib")]` 进行加载。生产 API 只承载真实业务能力，性能基准保留在 Rust 本地模块与测试入口，不通过 HTTP Controller 暴露。
 - 构建流程：
   1. 安装 Rust 工具链（rustup + stable 均可）。
   2. 在仓库根目录执行：`cd Lib/radish.lib && cargo build --release`（或使用 `build.sh` / `build.ps1`）。
   3. 构建产物位于 `target/release/`：`radish_lib.dll`（Windows）、`libradish_lib.so`（Linux）、`libradish_lib.dylib`（macOS）。需要拷贝到 `Radish.Api/bin/<Configuration>/net10.0/` 或发布目录以便运行期自动加载（脚本已自动复制到 Debug 输出目录）。
-  4. `RustTestController` 提供 `/api/v2/RustTest/TestSum1~4` 端点，演示累加、类斐波那契、埃拉托斯特尼筛与并行质数计数；可使用 `?iterations=1_000_000` 等参数在本地验证返回结果与耗时。
+  4. 在 `Lib/radish.lib/` 执行 `cargo test` 验证 `src/benchmark/` 等本地模块；若需新增 C# / Rust 对比，应建立独立测试或 benchmark 工程，不得重新暴露生产 HTTP 端点。
 - 目录规划：Rust 扩展库已迁移到根目录 `Lib/radish.lib/`，与其他前端项目保持一致的目录结构，便于管理和维护。
 - 提交规范：Rust `target/` 目录与生成的 `.dll/.so/.dylib` 依旧忽略；若需要在 CI 中编译 Rust，请在构建脚本中加入 `cargo build --release` 与共享库复制步骤。
 
@@ -1148,7 +1148,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
     - Auth：优先顺序为 Query String → Cookie → `Accept-Language`，方便登录页切换语言。
 - API 响应统一使用 `MessageModel<T>`/`MessageModel` 三件套结构：
   - 对外字段固定为：`StatusCode` + `IsSuccess` + `MessageInfo` + `Code?` + `MessageKey?` + `ResponseData?`。
-  - `Code`：业务错误码，面向日志与前端精细化判断，采用大驼峰命名（如 `Auth.InvalidCredentials`、`User.NotFound`、`Weather.LoadFailed`）。
+  - `Code`：业务错误码，面向日志与前端精细化判断，采用大驼峰命名（如 `Auth.InvalidCredentials`、`User.NotFound`）。
   - `MessageKey`：与 `.resx` 和前端 i18n 映射的 key，沿用 `error.*` / `info.*` 命名规范（如 `error.auth.invalid_credentials`）。
   - `MessageInfo`：按当前文化翻译后的完整提示句子，由后端本地化组件生成，作为前端兜底展示内容。
 - 前端发起 HTTP 请求时必须携带 `Accept-Language` 头：
@@ -1183,7 +1183,7 @@ public class UserBalance : RootEntityTKey<long>, IDeleteFilter
 1. API 方法全部位于 Server 层 Controller 命名空间，统一使用 `[Route("api/[controller]/[action]")]` 作为路由前缀。
 2. 需鉴权的 API 必须在 Controller 或 Action 上添加 `[Authorize(Permissions.Name)]`；无需鉴权的显式标注 `[AllowAnonymous]`，避免默认放行。
 3. Controller Action 默认遵循 `[Produces("application/json")]` 与 RESTful 设计原则，除非业务场景要求其他内容类型或风格。
-4. WeatherForecastController 中的 `GetById` 演示了 `[HttpGet("{id}")]` 路径参数写法，访问 `api/WeatherForecast/GetById/1` 可直接验证模型绑定；后续新增路由参数时沿用该示例的命名、注释和返回格式，便于单测覆盖。
+4. `UserController.GetUserById` 使用 `[HttpGet("{id:long}")]` 声明路径参数，访问 `/api/v1/User/GetUserById/1` 可验证模型绑定；对应 `ApiModule.LinkUrl` 必须使用 `/api/v1/User/GetUserById/\d+`，后续路由参数沿用显式约束与权限正则配套的写法。
 5. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTKey<TKey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
 6. 实体与视图模型的映射集中在 Extension 层 `AutoMapper` 命名空间，每组实体定义独立 `CustomProfile`，避免在 Controller 或仓储中手动映射。
 7. 新增对外接口遵循以下流程：
@@ -1237,16 +1237,16 @@ public class MyController : ControllerBase
 - 示例：LoginController、UserController
 
 **v2 及更高版本（预览/实验版本）：**
-- 新功能接口：系统管理、性能测试等
+- 仍在演进的新功能接口
 - 实验性功能或重大重构
 - 可包含破坏性变更
-- 示例：AppSettingController (v2)、RustTestController (v2)
+- 当前没有生产 v2 Controller；只有在真实产品或迁移契约成立时才创建新版本，不以演示接口占位
 
 ### OpenAPI 文档配置
 
 **自动文档生成：**
 - 系统通过 `IApiVersionDescriptionProvider` 自动发现所有 API 版本
-- 为每个版本动态生成独立的 OpenAPI 文档（`/openapi/v1.json`, `/openapi/v2.json`）
+- 只为实际存在的 Controller 版本动态生成 OpenAPI 文档；当前为 `/openapi/v1.json`
 - Scalar UI 自动展示版本选择下拉菜单，切换版本时文档内容自动过滤
 
 **文档配置位置：**
@@ -1255,12 +1255,7 @@ public class MyController : ControllerBase
 - 支持版本弃用标记（在 `Info.Description` 中添加警告）
 
 **Scalar UI 版本切换：**
-```csharp
-// 在 ScalarSetup.cs 中自动配置
-options
-    .AddDocument("v1", "V1", "/openapi/v1.json", isDefault: true)
-    .AddDocument("v2", "V2", "/openapi/v2.json");
-```
+`ScalarSetup` 遍历 `IApiVersionDescriptionProvider.ApiVersionDescriptions` 注册文档，不维护固定的 v1 / v2 清单。新增真实版本后，OpenAPI 与 Scalar 会随 Controller 版本自动出现。
 
 ### XML 注释规范
 
@@ -1301,7 +1296,7 @@ public async Task<MessageModel<T>> MyAction(string paramName)
 1. 创建新的 Controller 或复制现有 Controller
 2. 修改 `[ApiVersion]` 特性为新版本号（如 "2.0"）
 3. 更新 XML 注释说明版本差异
-4. 在 `ScalarSetup.cs` 中为新版本添加专属描述
+4. 确认 API Explorer 自动生成对应文档；只有存在独立产品说明需求时才在 `ScalarSetup.cs` 增加专属描述
 
 **弃用旧版本：**
 
@@ -1356,18 +1351,14 @@ GET /api/v1/User/GetUserList
 GET /api/v1/User/GetUserById/123456789
 ```
 
-**v2 接口：**
-```
-GET /api/v2/AppSetting/GetRedisConfig
-GET /api/v2/RustTest/TestSum1?iterations=1000000
-```
+当前没有生产 v2 接口，因此不维护空版本 URL 示例；新增 v2 时必须同时补齐产品边界、兼容策略与对应 OpenAPI 契约。
 
 ### 版本响应头
 
 启用 `ReportApiVersions` 后，响应头会包含版本信息：
 
 ```
-api-supported-versions: 1.0, 2.0
+api-supported-versions: 1.0
 api-deprecated-versions: (空或已弃用的版本)
 ```
 
@@ -1376,7 +1367,6 @@ api-deprecated-versions: (空或已弃用的版本)
 - **Scalar UI**: `https://localhost:5000/scalar`（本机直连：`http://localhost:5100/scalar`）
 - **OpenAPI JSON**:
   - v1: `http://localhost:5100/openapi/v1.json`（或经 Gateway：`https://localhost:5000/openapi/v1.json`）
-  - v2: `http://localhost:5100/openapi/v2.json`（或经 Gateway：`https://localhost:5000/openapi/v2.json`）
 
 ### 常见问题
 

@@ -43,7 +43,6 @@ public class UserController : ControllerBase
     private readonly ICommentService _commentService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
-    private readonly INotificationPushService _notificationPushService;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -54,7 +53,6 @@ public class UserController : ControllerBase
         IUserBrowseHistoryService userBrowseHistoryService,
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
-        INotificationPushService notificationPushService,
         IOptions<TimeOptions> timeOptions)
     {
         _userService = userService;
@@ -63,7 +61,6 @@ public class UserController : ControllerBase
         _commentService = commentService;
         _userBrowseHistoryService = userBrowseHistoryService;
         _userTimePreferenceService = userTimePreferenceService;
-        _notificationPushService = notificationPushService;
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
     }
@@ -1056,29 +1053,6 @@ public class UserController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = result
-        };
-    }
-
-    /// <summary>
-    /// 【P0 测试接口】手动触发未读数推送（仅用于验证 SignalR 推送机制）
-    /// </summary>
-    /// <param name="count">要推送的未读数量，默认为随机数</param>
-    [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.Client)]
-    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> TestPushUnreadCount([FromQuery] int? count = null)
-    {
-        var userId = Current.UserId;
-        var unreadCount = count ?? new Random().Next(1, 100);
-
-        await _notificationPushService.PushUnreadCountAsync(userId, unreadCount);
-
-        return new MessageModel
-        {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = $"已推送未读数 {unreadCount} 到用户 {userId}",
-            ResponseData = new TestPushResultVo { VoUserId = userId, VoUnreadCount = unreadCount }
         };
     }
 

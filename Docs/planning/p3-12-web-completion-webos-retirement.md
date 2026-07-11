@@ -1,16 +1,16 @@
 # P3-12 Web 完全化与 WebOS 收束
 
-> 状态：`P3-12-A-D 已完成当前 Web 化、WebOS 收束和 UI 页面族首批实现；P3-12-E1-E7 与 E8 首日产品形态回拉已完成；当前 E8-Q0 为立即第一顺位，E8-B 为产品线下一顺位，完成产品与发布工程双线收口后才能进入 P3-12-F`
+> 状态：`P3-12-E8 Pre-RC 硬化；Q0 与 E8-B 有限矩阵负责进入 F，Q1 / Q2 / Q3 在 F 内负责 Release Go，Q4 为持续维护`
 >
 > 启动日期：2026-06-21（Asia/Shanghai）
 >
-> 本页承接 `P3-11` 暂缓 PR 后的下一条正式开发主线。快速入口仍以 [当前进行中](/planning/current) 为准；P3-11 收束决策见 [P3-11 阶段收束决策记录](/records/p3-11-stage-closure-decision-record-2026-06-21)，P3-12-A 盘点结论见 [P3-12-A WebOS 与 Web 功能资产盘点记录](/records/p3-12-a-webos-web-function-asset-inventory-2026-06-21)，B1 方案见 [P3-12-B1 账户资产与商城交易 Web 化方案](/records/p3-12-b1-account-shop-web-plan-2026-06-21)，C1 首轮清理见 [P3-12-C1 WebOS 残留入口清理记录](/records/p3-12-c1-webos-residual-cleanup-2026-06-21)，B2 方案见 [P3-12-B2 完整个人中心 Web 化方案](/records/p3-12-b2-personal-center-web-plan-2026-06-21)，B3 方案见 [P3-12-B3 论坛作者态 Web 化方案](/records/p3-12-b3-forum-author-web-plan-2026-06-21)，B4 方案见 [P3-12-B4 文档作者态归属裁决](/records/p3-12-b4-doc-author-ownership-plan-2026-06-22)，B4-2 设计见 [P3-12-B4-2 Console 文档治理设计](/records/p3-12-b4-2-console-doc-governance-design-2026-06-22)，阶段 smoke 见 [P3-12 B4 / D1 阶段运行态 Smoke 记录](/records/p3-12-b4-d1-stage-smoke-record-2026-06-22)，B5 设计见 [P3-12-B5 Web 功能总入口设计](/records/p3-12-b5-web-workbench-entry-design-2026-06-22)，B6 设计见 [P3-12-B6 身份语义二次收口设计](/records/p3-12-b6-identity-contract-convergence-design-2026-06-22)，D1 准备见 [P3-12-D1 统一 UI 设计准备记录](/records/p3-12-d1-unified-ui-design-prep-2026-06-22)，D2 设计源记录见 [P3-12-D2 公开 Web 统一体验设计源记录](/records/p3-12-d2-public-web-unified-design-source-2026-06-24)，D3 设计源记录见 [P3-12-D3 私域与作者态 Web 工作流设计源记录](/records/p3-12-d3-private-web-workflows-design-source-2026-06-25)，D4 共享基座记录见 [P3-12-D4 Web UI 共享基座设计源记录](/records/p3-12-d4-web-ui-foundation-design-source-2026-06-25)，D5 Console 设计源记录见 [P3-12-D5 Console 治理工作台设计源重构记录](/records/p3-12-d5-console-governance-workbench-redesign-2026-06-27)，D6 Console 实现前盘点见 [P3-12-D6 Console 视觉代码实现前盘点](/records/p3-12-d6-console-visual-code-prep-2026-06-27)，D7 移动导航统一见 [P3-12-D7 移动导航设计源统一记录](/records/p3-12-d7-mobile-navigation-design-source-alignment-2026-06-28)，D8 client 首批实现见 [P3-12-D8 radish.client 视觉实现首批记录](/records/p3-12-d8-radish-client-visual-first-implementation-2026-06-28)，D14-D41 Console 与 UI 专题记录见 [P3-12-D14 radish.console 视觉代码实现首批记录](/records/p3-12-d14-radish-console-visual-first-implementation-2026-06-29)、[P3-12-D21 表格视觉成组静态收口记录](/records/p3-12-d21-radish-console-table-visual-static-closure-2026-06-30)、[P3-12-D31 阶段运行态复核记录](/records/p3-12-d31-radish-console-stage-smoke-2026-06-30)、[P3-12-D35 表格交互代码侧收口记录](/records/p3-12-d35-radish-console-table-interaction-code-closure-2026-06-30)、[P3-12-D37 UI 设计源差距矩阵记录](/records/p3-12-d37-ui-design-source-gap-matrix-2026-07-01)、[P3-12-D38 UI 边界裁决与阶段验收清单](/records/p3-12-d38-ui-boundary-and-stage-acceptance-plan-2026-07-01)、[P3-12-D39 Gateway PC / Mobile 阶段验收记录](/records/p3-12-d39-gateway-pc-mobile-stage-acceptance-2026-07-01)、[P3-12-D40 UI 专题退出判断修正](/records/p3-12-d40-ui-topic-exit-decision-2026-07-01) 与 [P3-12-D41 页面开发缺口源码核对记录](/records/p3-12-d41-page-development-gap-source-audit-2026-07-01)。
+> 本页承接 P3-11 后的正式 Web 产品化主线。当前执行看 [当前进行中](/planning/current)，产品收口看 [P3-12-E](/planning/p3-12-product-maturity-quality-hardening)，发布工程整改看 [P3-12-E8-Q](/planning/p3-12-e8-release-engineering-maturity-security-closure)；历史实现与验证查看 [记录索引](/records/)。
 
 ## 背景判断
 
-`P3-10` 已把根路径和默认浏览器体验切向纯 Web，并完成公开入口、登录恢复、来源返回、系统设置、写操作可靠性和论坛内容写入可靠性等基础治理。`P3-11` 已完成发布候选整备矩阵与轻量复访审计，未发现必须立即回修的阻断；用户明确暂缓 PR 和发布。
+P3-10 已把根路径和默认浏览器体验切向纯 Web，并完成公开入口、登录恢复、来源返回、身份语义和写操作可靠性等基础治理；P3-11 完成候选矩阵与轻量复访审计。后续阶段 PR #55 至 #57 已继续集成相关成果，因此“P3-10 可恢复 PR / P3-11 暂缓 PR”只保留为历史决策，不再是当前执行状态。
 
-下一阶段不应继续停留在合并材料上，也不应把 Flutter 或 WebOS 作为第一顺位。当前更重要的是让纯 Web 在 PC / mobile 视图中具备正式版完整用户路径，再经过正式产品成熟度与质量硬化，最后进入正式版发布候选。
+P3-12 的目标不是复制 WebOS，而是在 PC / mobile 浏览器中完成正式社区产品，并把发布候选、生产 Release Go 和稳定运营分成不同阶段。当前处于 `P3-12-E8 Pre-RC`：Q0 负责安全与暴露面，E8-B 用有限矩阵结束产品形态回拉；两者收口后进入 P3-12-F。
 
 ## 阶段目标
 
@@ -22,9 +22,13 @@
    - `/desktop` 保留为历史兼容入口和既有能力维护线。
    - 新功能默认不进入 WebOS。
    - 迁移产品能力，不迁移窗口系统、Dock、桌面装饰、窗口几何记忆等 WebOS 形态能力。
-3. **正式版发布准备**
-   - P3-12 功能迁移、WebOS 残留清扫、UI 专题退出条件和正式产品成熟度硬化完成后，再进入正式版发布候选。
-   - 正式发布前再恢复 `dev -> master` PR、tag、发布记录、部署 smoke 和必要回滚材料。
+3. **Pre-RC 与候选边界**
+   - Q0 与 E8-B 有限产品矩阵完成后进入 P3-12-F。
+   - Q1 / Q2 / Q3 的发布必要子集在 F 内完成，作为 tag / 生产发布前的 Release Go 门禁。
+   - Q4 大文件、strict、共享边界和历史仓库卫生按触达范围持续治理，不作为进入 F 的全量前置。
+4. **受控使用与稳定运营边界**
+   - 合并到 `master`、创建 tag、生产发布与进入 Phase 4 是四个独立判断。
+   - P3-12-F 必须包含小规模受控试用和真实反馈记录；不再用页面可达或内部 smoke 代替增长证据。
 
 ## 子专题
 
@@ -156,30 +160,32 @@ P3-12-A 已于 2026-06-21 完成只读盘点。结论：
 
 ### `P3-12-E` 正式产品成熟度与质量硬化专题
 
-承接 D61-D67 的实现和验证证据，系统检查正式产品是否达到可交付水平。专题入口见 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)。
+承接 D61-D67 的实现和验证证据，当前收敛为 E8-B 有限产品矩阵。专题入口见 [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)。
 
-重点：
+E8-B 只判断：
 
-- 功能完整度：公开、私域、作者、交易、Docs、Console 的真实任务是否能闭合。
-- 安全与权限：公开只读边界、Console 权限、写入可靠性、高风险动作、敏感日志和资产 / 订单风险。
-- 产品力：入口发现、任务连续性、成功 / 失败 / 空态反馈、登录恢复和来源返回。
-- UI / 人机交互：PC / mobile 信息层级、按钮、表单、抽屉、弹窗、表格、触控密度和可读性。
-- Console 移动视图：区分已有响应式基础、正式移动治理视图不足和独立移动 Console 后置三种结论。
-- 可靠性与性能：慢接口、大列表、刷新恢复、Hub 恢复、上传、Markdown、文档版本和错误态。
+- `/discover` 是否成为内容优先社区首页，不再重复摘要、混合 Feed、路线说明和四个分域完整列表。
+- 内容参与、关系复访、登录态聊天和举报治理四条核心旅程是否连续。
+- 公开 Docs 是否由服务端保证 `Published + Public`。
+- Console 是否明确为桌面优先、移动低风险治理，而不是要求完整移动后台。
+- 每项只能归类为 `通过 / 阻断 / 接受后置`；矩阵收口后不再启动 E9 式全站 UI 扫尾。
+
+E8-Q0 与 E8-B 并列构成 Pre-RC：产品体验不能替代安全，安全门禁也不要求先完成 Q1-Q4 才允许进入候选。
 
 ### `P3-12-F` 正式版发布候选专题
 
-P3-12-E 完成并确认正式产品成熟度达标后，再进入发布候选。
+Q0 与 E8-B 达到进入条件后即进入 F，不再等待所有工程债务清零。
 
-验收入口：
+F 内负责：
 
-- `validate:baseline`
-- `validate:identity`
-- `validate:baseline:host`
-- PC / mobile Gateway 真实页面复核
-- 必要 Flutter 回归
-- 若已经存在正式数据库，则补数据库发布 SQL 审核；上线前本地 SQLite 阶段不维护历史发布脚本
-- `dev -> master` PR 范围、验证结论、剩余风险和回滚说明
+- Q1：本次发布范围内不可丢失业务写、未知异常安全边界和文件令牌发布裁决。
+- Q2：PostgreSQL / OpenIddict 最小生产升级闭环、版本单一真值和高风险时间语义。
+- Q3：候选基线、依赖审计、迁移 / 并发 / 身份高风险测试。
+- 候选运行态：Gateway PC / mobile、Public / Private / Author / Console / Auth 主路径。
+- 交付材料：升级、验证、备份、回滚 / 前滚和版本记录。
+- 小规模受控试用：记录激活、首次参与、回应回流、核心失败和用户反馈。
+
+只有 F 内 Release Go 通过后，才允许创建正式 tag 或进入生产发布；稳定运营仍需单独判断。
 
 ## 首批顺序
 
@@ -247,13 +253,15 @@ P3-12-E 完成并确认正式产品成熟度达标后，再进入发布候选。
 62. `P3-12-D65`：UI 专题候选前验证执行已完成，记录见 [P3-12-D65 UI 专题候选前验证执行](/records/p3-12-d65-ui-candidate-validation-execution-2026-07-05)；本批执行启动无关验证，修复公开个人页只读边界与公开页静态契约回归，`validate:ci -- --report`、`validate:baseline`、`validate:identity`、`radish.client` build 和 `validate:baseline:host -- --report` 均通过。
 63. `P3-12-D66`：UI 专题候选前运行态验证补验已完成，记录见 [P3-12-D66 UI 专题候选前运行态验证补验](/records/p3-12-d66-ui-candidate-runtime-validation-2026-07-05)；本批通过 `check:host-runtime -- --details --report`，并使用 Chrome 插件覆盖 Gateway public / private / console PC `1920x1080` 与 mobile `390x844 @ DPR 3` 成组页面复核，未发现新的阻断级真实页面问题。
 64. `P3-12-D67`：正式产品成熟度专题立项已完成，记录见 [P3-12-D67 正式产品成熟度专题立项记录](/records/p3-12-d67-product-maturity-topic-scope-2026-07-05)；本批确认不直接进入发布候选，新增 `P3-12-E 正式产品成熟度与质量硬化`，并将 Console 移动治理视图纳入 E1 高优先审计。
-65. `P3-12-E8-Q`：正式发布工程成熟度与安全收口已立项，范围、顺序和退出条件见 [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)；`Q0` 为立即优先项，`E8-B` 保持产品线下一顺位。
-66. `P3-12-F`：后置到 E8 产品形态与发布工程双线达到退出条件之后，不提前创建发布 tag。
+65. `P3-12-E8 Pre-RC`：Q0 为工程第一顺位，E8-B 有限产品矩阵为产品下一顺位；两者共同决定进入 F，不再追加 E9 式全站 UI 扫尾。
+66. `P3-12-F`：Q0 与 E8-B 收口后进入，承接 Q1 / Q2 / Q3 发布必要子集、候选 smoke、交付材料与受控试用；Release Go 前不创建正式 tag。
 
 ## 当前不做
 
-- 不恢复 `P3-11` PR 决策作为当前主线。
-- 不把 P3-12 做成 WebOS 全量复制。
-- 不启动 Flutter 完整能力套件。
-- 不启动电子宠物经济扩展、推荐算法、ActivityPub / WebFinger、完整 PWA、完整 E2E 平台或完整可观测性平台。
-- 不在没有 Pencil 设计稿和说明文档的情况下推进页面级 UI 美化专题。
+- 不恢复 P3-10 / P3-11 的暂缓 PR 决策为当前主线；Q0 与 E8-B 后优先恢复集成。
+- 不把 P3-12 做成 WebOS 全量复制，不启动 Flutter 完整能力套件、Tauri 分发或独立移动 Console。
+- 不新增 E9 式全站逐页 UI / 文案扫尾。
+- 不要求 Q1 / Q2 / Q3 和 Q4 全部完成后才允许进入 P3-12-F。
+- 不启动电子宠物经济扩展、推荐算法、ActivityPub / WebFinger、完整 PWA、完整 E2E 或完整可观测性平台。
+- 新页面族、全局导航、跨页面视觉体系和重大交互仍先更新 Pencil；既有页面的小范围密度、文案、状态和布局修正可代码先行并用截图复核。
+- 不把合并到 `master`、创建 tag、生产发布和进入 Phase 4 混成同一个决策。

@@ -25,21 +25,6 @@ function resolvePowerShellCommand(cwd) {
 function appendDotNetLocalArgs(dotnetArgs) {
   const nextArgs = [...dotnetArgs];
   const primaryCommand = String(dotnetArgs[0] ?? '').toLowerCase();
-  const supportsAuditToggle = ['restore', 'build', 'test'].includes(primaryCommand);
-
-  const hasAuditOverride = dotnetArgs.some((arg) =>
-    /^(-p:|\/p:|--property:)NuGetAudit=/.test(arg)
-  );
-  if (supportsAuditToggle && !hasAuditOverride) {
-    nextArgs.push('-p:NuGetAudit=false');
-  }
-
-  const hasNoWarnOverride = dotnetArgs.some((arg) =>
-    /^(-p:|\/p:|--property:)NoWarn=/.test(arg)
-  );
-  if (supportsAuditToggle && !hasNoWarnOverride) {
-    nextArgs.push('-p:NoWarn=NU1903');
-  }
 
   const hasMaxCpuCountOverride = dotnetArgs.some((arg) =>
     /^(--maxcpucount|-m(?::.*)?|\/m(?::.*)?)$/.test(arg)

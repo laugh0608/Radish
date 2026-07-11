@@ -1,11 +1,11 @@
 ---
 layout: home
 title: Radish 文档
-titleTemplate: 现代社区与多端平台
+titleTemplate: 兴趣社区与知识沉淀
 hero:
   name: Radish
-  text: 现代社区平台与多端文档
-  tagline: 基于 .NET 10 + SQLSugar + PostgreSQL + React 19 的纯 Web、Flutter 与工作台体验
+  text: 面向真实互动与持续复访的现代社区
+  tagline: 以帖子、评论和问答为内容核心，以聊天、关注、通知与 Docs 形成复访和知识沉淀
   actions:
     - theme: brand
       text: 开发快速上手
@@ -17,18 +17,18 @@ hero:
       text: 完整目录
       link: /README
 features:
-  - icon: ⚙️
-    title: 一体化技术栈
-    details: ASP.NET Core 10 + SQLSugar + PostgreSQL/SQLite + React 19 + Vite + TypeScript。
+  - icon: 💬
+    title: 社区内容主轴
+    details: 帖子、评论和问答承载内容生产与讨论，不以功能目录或激励系统替代社区价值。
+  - icon: 🔁
+    title: 参与与复访闭环
+    details: 聊天、关注和通知连接发现、参与、关系与再次访问，Docs 负责沉淀长期可读知识。
+  - icon: 🌐
+    title: Web-first 正式产品
+    details: PC 与 mobile 浏览器共享正式主路径；Flutter 维持移动原生承接，WebOS 只保留历史兼容。
   - icon: 🧱
-    title: 清晰的分层架构
-    details: Common / Shared / Model / Repository / Service / Api 分层明确，便于协作与维护。
-  - icon: 🖥️
-    title: 纯 Web 与工作台入口
-    details: 普通浏览器默认进入纯 Web 公开入口，/workbench 承担正式 Web 功能地图，/desktop 保留 WebOS 历史工作台能力。
-  - icon: 🗂️
-    title: 低噪音入口
-    details: 首页只保留高频入口；详细目录、规划和日志拆分到独立页面，减少查找与上下文噪音。
+    title: 可持续工程治理
+    details: 分层架构、统一契约、风险分级验证和有限阶段门禁共同支撑长期维护。
 ---
 
 ## 快速入口
@@ -42,7 +42,7 @@ features:
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 - [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics) - 页面级错误恢复、复制诊断和隐私边界
-- [Web 功能地图](/workbench) - 正式 Web 功能总入口，串联公开、私域、治理与历史桌面入口
+- [Web 功能地图](/workbench) - 正式 Web 低频能力与历史兼容入口，不承担 Discover 首页主叙事
 - [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages`、`/pet` 的登录恢复、来源返回与私域边界
 - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff) - 移动原生来源返回、登录回流与公开链接口径
 
@@ -51,15 +51,11 @@ features:
 - [开发路线图总览](/development-plan) - 当前主线、下一顺位与维护线
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) - 当前阶段边界与 P3-12 主线口径
 - [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) - PC / mobile Web 正式版主路径、WebOS 收束与 Pencil 先行 UI 约束
-- [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening) - 发布候选前的功能、安全、产品力、交互、可靠性和 Console 移动视图硬化
-- [P3-11 发布候选整备与轻量复访补齐](/planning/p3-11-release-candidate-light-revisit) - P3-10 收束后的验收矩阵、轻量复访范围与暂缓 PR 收束记录
-- [第二开发阶段：社区深化与多端化](/planning/phase-two-community-multiplatform) - 已归档阶段总目标、拆分与优先级
-- [前端多壳层策略](/frontend/shell-strategy) - 公开内容、桌面工作台与 Flutter 客户端的职责分工
+- [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening) - E8-B 有限产品矩阵、客观退出条件与接受后置边界
+- [P3-12-E8 发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure) - Q0 工程硬门禁、F 内 Release Go 与 Q4 持续维护的分层口径
 - [当前进行中](/planning/current) - 现在真正要做的正式主线
 - [未来规划](/planning/backlog) - 当前明确后置的事项
-- [已完成摘要](/planning/archive) - 第一开发阶段与历史里程碑结论
-- [首版 dev 边界](/planning/dev-first-scope) - 第一开发阶段归档参考
-- [首版 dev 功能矩阵状态表](/planning/dev-first-status-matrix) - 第一开发阶段归档参考
+- [已完成摘要](/planning/archive) - 历史阶段与里程碑结论
 - [开发日志总索引](/changelog/) - 年度 / 月度 / 周志入口
 
 ## 常用专题

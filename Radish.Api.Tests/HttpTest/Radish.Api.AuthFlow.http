@@ -202,7 +202,7 @@ Content-Type: application/json
 
 @serviceAccessToken = 可选：在这里粘贴后台服务模式的 access_token
 
-### C.2 使用后台服务的 Access Token 调用某个 API（示例）
+### C.2 使用后台服务的 Access Token 调用 API
 
-# GET {{apiBase}}/api/v1/WeatherForecast/Get
-# Authorization: Bearer {{serviceAccessToken}}
+### 仅调用明确允许 Client Credentials 且业务上允许机器身份访问的 API。
+### 不再使用生产演示端点验证服务令牌；具体调用入口随对应后台任务专题维护。

@@ -40,7 +40,6 @@ public class TenantIsolationRegressionTests
         var roleRepository = new Mock<IBaseRepository<Role>>();
         var userRoleRepository = new Mock<IBaseRepository<UserRole>>();
         var displayNameChangeRecordRepository = new Mock<IBaseRepository<UserDisplayNameChangeRecord>>();
-        var departmentService = new Mock<IDepartmentService>();
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         var systemSettingProvider = new Mock<ISystemSettingProvider>();
 
@@ -94,7 +93,6 @@ public class TenantIsolationRegressionTests
             }).ToList());
 
         var service = new UserService(
-            departmentService.Object,
             mapper.Object,
             baseRepository.Object,
             userRepository.Object,

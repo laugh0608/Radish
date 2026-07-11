@@ -24,12 +24,6 @@
   <data name="error.common.internal_error" xml:space="preserve">
     <value>服务器内部错误，请稍后重试。</value>
   </data>
-  <data name="info.weather.load_success" xml:space="preserve">
-    <value>获取天气预报成功。</value>
-  </data>
-  <data name="error.weather.load_failed" xml:space="preserve">
-    <value>天气数据加载失败。</value>
-  </data>
   <data name="info.user.get_by_id_success" xml:space="preserve">
     <value>获取用户信息成功。</value>
   </data>

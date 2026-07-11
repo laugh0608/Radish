@@ -54,6 +54,9 @@
             "context": "Baseline Quick"
           },
           {
+            "context": "Dependency Security"
+          },
+          {
             "context": "Backend Guard"
           },
           {

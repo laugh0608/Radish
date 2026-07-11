@@ -24,12 +24,6 @@
   <data name="error.common.internal_error" xml:space="preserve">
     <value>Internal server error. Please try again later.</value>
   </data>
-  <data name="info.weather.load_success" xml:space="preserve">
-    <value>Weather forecast loaded successfully.</value>
-  </data>
-  <data name="error.weather.load_failed" xml:space="preserve">
-    <value>Failed to load weather data.</value>
-  </data>
   <data name="info.user.get_by_id_success" xml:space="preserve">
     <value>User fetched successfully.</value>
   </data>

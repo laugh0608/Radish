@@ -21,6 +21,7 @@
 - [ ] 已执行与本次改动匹配的最小验证
 - [ ] 若目标分支为 `master`，本轮已按 [`PR -> master` 最小执行清单](Docs/records/master-pr-minimal-checklist.md) 收口，而不是沿用开发中间态口径
 - [ ] 如需在本地复现当前 `Repo Quality` 最小门禁，已按需执行 `npm run validate:ci`
+- [ ] 如目标分支为 `master`，已确认 `Dependency Security` 必需检查通过，或已先执行 `npm run check:dependency-security`
 - [ ] 如触达后端宿主 / API / 服务 / 模型 / DbMigrate / 后端测试，已补 `npm run validate:backend` 或说明 `Backend Guard` 结果
 - [ ] 如触达身份语义 / Claim / Auth 协议输出 / Token 解析，已补 `npm run validate:identity`，并按需记录 `Radish.Api.AuthFlow.http` 与官方顺序回归结果
 - [ ] 如修改了架构、规则、接口、流程、视觉口径或协作规范，已同步更新 `Docs/` 与相关协作文件
@@ -37,6 +38,7 @@ npm run validate:baseline:quick
 npm run validate:baseline
 npm run validate:baseline:host
 npm run validate:ci
+npm run check:dependency-security
 npm run validate:backend
 npm run validate:identity
 dotnet build Radish.slnx -c Debug

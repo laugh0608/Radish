@@ -23,18 +23,16 @@ public class UserService : BaseService<User, UserVo>, IUserService
     private readonly IBaseRepository<Role> _roleRepository;
     private readonly IBaseRepository<UserRole> _userRoleRepository;
     private readonly IBaseRepository<UserDisplayNameChangeRecord> _displayNameChangeRecordRepository;
-    private readonly IDepartmentService _departmentService;
     private readonly IConsoleAuthorizationService _consoleAuthorizationService;
     private readonly ISystemSettingProvider _systemSettingProvider;
 
-    public UserService(IDepartmentService departmentService, IMapper mapper,
+    public UserService(IMapper mapper,
         IBaseRepository<User> baseRepository, IUserRepository userRepository, IBaseRepository<Role> roleRepository,
         IBaseRepository<UserRole> userRoleRepository,
         IBaseRepository<UserDisplayNameChangeRecord> displayNameChangeRecordRepository,
         IConsoleAuthorizationService consoleAuthorizationService,
         ISystemSettingProvider systemSettingProvider) : base(mapper, baseRepository)
     {
-        _departmentService = departmentService;
         _userBaseRepository = baseRepository;
         _userRepository = userRepository;
         _roleRepository = roleRepository;
@@ -524,35 +522,6 @@ public class UserService : BaseService<User, UserVo>, IUserService
         {
             throw new ArgumentException("密码必须包含大小写字母和数字", nameof(newPassword));
         }
-    }
-
-    /// <summary>测试使用同事务</summary>
-    /// <remarks>仅为示例，无任何作用</remarks>
-    /// <returns></returns>
-    [UseTran(Propagation = Propagation.Required)]
-    public async Task<bool> TestTranPropagationUser()
-    {
-        var sysUserInfos = await base.QueryAsync();
-
-        TimeSpan timeSpan = DateTime.Now.ToUniversalTime() - new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var id = timeSpan.TotalSeconds.ObjToLong();
-        var insertSysUserInfo = await base.AddAsync(new User()
-        {
-            Id = id,
-            UserName = $"UserName {id}",
-            StatusCode = 0,
-            CreateTime = DateTime.Now,
-            UpdateTime = DateTime.Now,
-            CriticalModifyTime = DateTime.Now,
-            LastErrorTime = DateTime.Now,
-            ErrorCount = 0,
-            IsEnable = true,
-            TenantId = 0,
-        });
-
-        await _departmentService.TestTranPropagationDepartment();
-
-        return true;
     }
 
     /// <summary>
