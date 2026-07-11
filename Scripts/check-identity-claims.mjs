@@ -55,6 +55,74 @@ const rules = [
 
 const protocolOutputGuards = [
   {
+    file: 'Radish.Api/Security/ApiJwtValidationPolicy.cs',
+    guards: [
+      {
+        type: 'required',
+        id: 'jwt-audience-enabled',
+        description: 'JWT policy 必须启用 audience 校验',
+        test: /ValidateAudience\s*=\s*true/,
+      },
+      {
+        type: 'required',
+        id: 'jwt-radish-api-audience',
+        description: 'JWT policy 必须以 UserScopes.RadishApi 为唯一 audience',
+        test: /ValidAudience\s*=\s*UserScopes\.RadishApi/,
+      },
+    ],
+  },
+  {
+    file: 'Radish.Api/Program.cs',
+    guards: [
+      {
+        type: 'required',
+        id: 'jwt-audience-policy',
+        description: 'API JWT 必须通过统一 policy 启用 radish-api audience 校验',
+        test: /ApiJwtValidationPolicy\.Create\s*\(/,
+      },
+      {
+        type: 'forbidden',
+        id: 'jwt-audience-disabled',
+        description: 'API JWT 不得关闭 audience 校验',
+        test: /ValidateAudience\s*=\s*false/,
+      },
+      {
+        type: 'forbidden',
+        id: 'sensitive-auth-log',
+        description: '不得输出完整 Claims、scope 集合或成功鉴权高频日志',
+        test: /所有 Claims|\{Claims\}|\{Scopes\}|OnTokenValidated|提取 token 成功|授权成功/,
+      },
+    ],
+  },
+  {
+    file: 'Radish.Api/Hubs/NotificationHub.cs',
+    guards: [
+      {
+        type: 'forbidden',
+        id: 'notification-hub-sensitive-claims-log',
+        description: 'NotificationHub 不得枚举或输出完整 Claims',
+        test: /Context\.User\.Claims|所有 Claims|Claims:\s*\{Claims\}|\{Claims\}/,
+      },
+    ],
+  },
+  {
+    file: 'Radish.Auth/Program.cs',
+    guards: [
+      {
+        type: 'required',
+        id: 'environment-bound-transport-security',
+        description: 'OpenIddict transport security 必须由环境策略约束',
+        test: /OpenIddictTransportSecurityPolicy\.ShouldDisableTransportSecurityRequirement\s*\(/,
+      },
+      {
+        type: 'required',
+        id: 'auth-forwarded-headers-policy',
+        description: 'Auth 必须通过统一 policy 限制 Forwarded Headers',
+        test: /AuthForwardedHeadersPolicy\.Configure\s*\(/,
+      },
+    ],
+  },
+  {
     file: 'Radish.Auth/Controllers/AccountController.cs',
     guards: [
       {
@@ -97,6 +165,12 @@ const protocolOutputGuards = [
         id: 'legacy-destination-break',
         description: 'Phase 4 后 AuthorizationController 必须继续阻止历史 Claim 写入 Token destinations',
         test: /if\s*\(\s*claim\.Type\s*==\s*UserClaimTypes\.LegacyNameIdentifier[\s\S]*?claim\.Type\s*==\s*UserClaimTypes\.LegacyJti[\s\S]*?\)\s*\{\s*yield break;\s*\}/,
+      },
+      {
+        type: 'required',
+        id: 'radish-api-resource-constant',
+        description: 'AuthorizationController 必须使用 UserScopes.RadishApi 设置 token resource',
+        test: /SetResources\s*\(\s*UserScopes\.RadishApi\s*\)/,
       },
     ],
   },

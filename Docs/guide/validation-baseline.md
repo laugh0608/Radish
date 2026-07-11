@@ -133,7 +133,7 @@ npm run validate:ci
 - `validate:identity`
   - 身份语义专题聚合入口，不替代默认 baseline
   - 分别执行运行时散点 Claim 读取、协议输出回退风险与外部 LongId 字符串安全扫描；外部 LongId 字符串安全扫描已作为固定子项接入，覆盖 Console / Web / Flutter 高信号外部 ID、ID 集合类型与数值化转换口径，并按 Windows 与 macOS / Linux 分流脚本入口
-  - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`
+  - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`，以及 API JWT audience、Auth transport security、Gateway Forwarded Proto 和 compose 暴露面契约
 - `validate:backend`
   - 后端 / API 专题聚合入口，不替代默认 baseline
   - 运行 `dotnet build Radish.slnx -c Debug` 与 `dotnet test Radish.Api.Tests`

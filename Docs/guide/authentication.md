@@ -341,37 +341,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         options.Authority = "http://localhost:5200";
         options.RequireHttpsMetadata = false;
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.Zero,
-            RoleClaimType = "role"
-        };
+        options.TokenValidationParameters = ApiJwtValidationPolicy.Create(
+            jwtIssuer,
+            jwtSigningKey);
     });
 
 builder.Services.AddAuthorizationBuilder()
-    // Client 策略：基于 scope 包含 radish-api 控制访问资源服务器
-    // 注意：OIDC/OpenIddict 通常会把多个 scope 用空格拼成一个字符串（例如："openid profile radish-api"），所以需要拆分判断
+    // Client 策略在 audience 验证通过后，继续要求 scope 包含 radish-api。
     .AddPolicy("Client", policy => policy.RequireAssertion(ctx =>
-    {
-        foreach (var claim in ctx.User.FindAll("scope"))
-        {
-            if (string.IsNullOrWhiteSpace(claim.Value))
-                continue;
-
-            var scopes = claim.Value.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-            foreach (var s in scopes)
-            {
-                if (string.Equals(s, "radish-api", StringComparison.Ordinal))
-                    return true;
-            }
-        }
-
-        return false;
-    }).Build())
+        UserClaimReader.HasScope(ctx.User, UserScopes.RadishApi)).Build())
 
     .AddPolicy("System", policy => policy.RequireRole("System").Build())
     .AddPolicy("SystemOrAdmin", policy => policy.RequireRole("System", "Admin").Build())
@@ -385,6 +363,7 @@ builder.Services.AddAuthorizationBuilder()
 - **开发运行**：`Radish.Api` 继续通过 `Authority = http://localhost:5200` 回拉 OIDC metadata / JWKS。
 - **测试部署 / 生产部署**：`Radish.Api` 不再依赖容器内 `localhost:5200`、`127.0.0.1` 或外部域名回拉 metadata / JWKS，而是直接复用 `Radish.Auth` 的 signing `.pfx` 做本地 JWT 验签。
 - **部署态 Issuer**：由 `RADISH_PUBLIC_URL` 或 `OpenIddict:Server:Issuer` 推导，`ValidIssuers` 会同时接受带 `/` 与不带 `/` 的形式。
+- **Audience 与 Scope**：access token 必须同时满足 `aud=radish-api` 和 Client Policy 的 `scope=radish-api`；两者分别约束令牌目标资源与客户端授权范围，不互相替代。
 - **部署态挂载要求**：`Radish.Api` 必须只读挂载同一份 Auth signing 证书，并通过 `OpenIddict__Encryption__SigningCertificatePath / SigningCertificatePassword` 获取它；若未来扩为多实例 `Auth`，这份证书必须改为共享挂载目录、共享卷或外部密钥服务。
 
 ## 6. 前端集成
@@ -942,6 +921,8 @@ var hasPermission = PermissionItems
 - 全程 HTTPS
 - 启用 HSTS
 - Cookie 设置 `Secure`、`HttpOnly`、`SameSite=Strict`
+- `OpenIddict:Server:AllowInsecureHttp=true` 仅允许在 `Development` 环境显式使用；`Production` / `Staging` 配置为 `true` 时 Auth 将拒绝启动。
+- 正式代理链中 TLS 由 Gateway 或外层反代终止，Gateway 必须向 Auth 写入 `X-Forwarded-Proto=https`；Auth 只处理最近一跳 Forwarded Headers，并必须保持不对宿主机直接暴露。
 
 ### 11.4 OIDC 证书管理
 

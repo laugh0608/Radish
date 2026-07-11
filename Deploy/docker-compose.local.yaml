@@ -59,7 +59,7 @@ services:
       ASPNETCORE_URLS: http://+:5200
       RADISH_PUBLIC_URL: https://localhost:5000
       OpenIddict__Server__Issuer: https://localhost:5000
-      OpenIddict__Server__AllowInsecureHttp: "true"
+      OpenIddict__Server__AllowInsecureHttp: "false"
       OpenIddict__Encryption__SigningCertificatePath: /app/certs/dev-auth-cert.pfx
       OpenIddict__Encryption__SigningCertificatePassword: RadishDevCert123!
       OpenIddict__Encryption__EncryptionCertificatePath: /app/certs/dev-auth-cert.pfx

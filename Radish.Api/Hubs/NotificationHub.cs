@@ -116,38 +116,24 @@ public class NotificationHub : Hub
     /// </summary>
     private long GetUserId()
     {
-        try
+        if (Context.User == null)
         {
-            // 【调试】检查 Context.User 是否为 null
-            if (Context.User == null)
-            {
-                _logger.LogError("[NotificationHub] Context.User 为 null");
-                throw new HubException("用户未认证");
-            }
-
-            var allClaims = Context.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
-            _logger.LogInformation("[NotificationHub.GetUserId] 所有 Claims: {Claims}", string.Join(", ", allClaims));
-
-            var userId = GetCurrentUser().UserId;
-
-            _logger.LogInformation("[NotificationHub.GetUserId] 提取到的 userId: {UserId}", userId);
-
-            if (userId > 0)
-            {
-                return userId;
-            }
-
-            // 如果无法获取用户 ID，抛出异常（Hub 要求已认证）
-            _logger.LogError("[NotificationHub] 无法获取用户 ID，Claims: {Claims}",
-                string.Join(", ", allClaims));
-
-            throw new HubException("无法获取用户 ID");
+            _logger.LogWarning(
+                "[NotificationHub] 连接缺少认证用户 - ConnectionId: {ConnectionId}",
+                Context.ConnectionId);
+            throw new HubException("用户未认证");
         }
-        catch (Exception ex)
+
+        var userId = GetCurrentUser().UserId;
+        if (userId > 0)
         {
-            _logger.LogError(ex, "[NotificationHub] GetUserId 发生异常");
-            throw;
+            return userId;
         }
+
+        _logger.LogWarning(
+            "[NotificationHub] 连接无法解析用户标识 - ConnectionId: {ConnectionId}",
+            Context.ConnectionId);
+        throw new HubException("无法获取用户 ID");
     }
 
     private CurrentUser GetCurrentUser()

@@ -10,6 +10,9 @@ const identityTestFilter = [
   'FullyQualifiedName~Radish.Api.Tests.Controllers.AccountControllerTest',
   'FullyQualifiedName~Radish.Api.Tests.Controllers.AuthorizationControllerTest',
   'FullyQualifiedName~Radish.Api.Tests.Controllers.UserInfoControllerTest',
+  'FullyQualifiedName~Radish.Api.Tests.Security.ApiJwtValidationPolicyTests',
+  'FullyQualifiedName~Radish.Api.Tests.Security.OpenIddictTransportSecurityPolicyTests',
+  'FullyQualifiedName~Radish.Api.Tests.Security.AuthProxyTransportContractTests',
 ].join('|');
 
 function resolveNpmCommand() {

@@ -1,6 +1,6 @@
 # P3-12-E8-Q0 安全与暴露面阻断实施方案
 
-> 状态：`Q0-A、Q0-B 已于 2026-07-11 完成；Q0-C 为工程下一顺位，身份验证与 Markdown 运行时行为尚未修改`
+> 状态：`Q0-A、Q0-B、Q0-C 已于 2026-07-11 完成；Q0-D 为工程下一顺位，Markdown 运行时行为尚未修改`
 >
 > 日期：`2026-07-10`（Asia/Shanghai）
 >
@@ -485,3 +485,26 @@ Q0-B 原定两个 Controller 的退出条件已经成立；补充表面扫描发
 - `git diff --check`：通过。
 
 本批未启动 API / Gateway，也未执行 Scalar 运行态 smoke。源码版本表面、编译产物反射契约与完整后端测试已覆盖 Q0-B 退出条件；Q0 成组验收时再运行 `/scalar`，确认只展示实际 v1 文档且不存在已退出标签。工程下一顺位推进到 Q0-C。
+
+## 十二、Q0-C 最终实施结论（2026-07-11）
+
+Q0-C 已按身份与传输安全边界独立完成：
+
+| 范围 | 最终结果 |
+| --- | --- |
+| JWT audience | API 的 Authority 与部署态证书验签统一使用 `ApiJwtValidationPolicy`，必须满足 `aud=radish-api`；Auth token resource 改用 `UserScopes.RadishApi` |
+| 鉴权日志 | 删除 JWT、Client Policy 和 NotificationHub 的完整 Claims、scope 集合及成功鉴权高频日志；失败诊断只保留 path、错误类型、TraceId 或 ConnectionId |
+| Auth transport | `AllowInsecureHttp=true` 仅允许 Development 显式启用；Production / Staging 配置为 `true` 时启动策略直接拒绝 |
+| 代理链 | Auth 在 OpenIddict 之前处理 Forwarded Headers 并限制 `ForwardLimit=1`；Gateway `/Account` / `/connect` 传递 `X-Forwarded-Proto`，local / production compose 均保持 transport security 且 Auth 无宿主端口暴露 |
+| 防回归契约 | Identity 扫描固定 audience、敏感日志和环境 transport policy；新增 JWT、transport、Forwarded Proto、launch profile、Gateway 与 compose 定向测试 |
+
+最终验证：
+
+- Q0-C 定向测试：`14 / 14` 通过。
+- `npm run check:identity-claims`：通过，协议输出守卫扩展到 7 个文件。
+- `npm run validate:identity`：通过，身份语义定向测试 `29 / 29`。
+- `dotnet build Radish.slnx -c Debug`：`0 warning / 0 error`。
+- `dotnet test Radish.Api.Tests`：`567 / 567` 通过。
+- `npm run check:repo-hygiene:changed` 与 `git diff --check`：通过。
+
+本批未启动服务，未执行登录、回调、refresh、Hub 或 Scalar 运行态 smoke。这些检查与 Q0-B Scalar 补验一同留到 Q0 成组验收；静态契约、策略单测、构建和完整 API 测试已覆盖 Q0-C 本批退出条件。工程下一顺位推进到 Q0-D。
