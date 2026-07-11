@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
 import {
   getPublicProfile,
   getPublicUserComments,
@@ -12,6 +13,11 @@ import {
   type PublicUserStats,
 } from '@/api/user';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { redirectToLogin } from '@/services/auth';
+import { buildPublicProfileFollowReturnPath } from '@/services/authReturnPath';
+import { useAuthStore } from '@/stores/authStore';
+import { useUserStore } from '@/stores/userStore';
+import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { buildPublicLeaderboardPath, createDefaultPublicLeaderboardRoute } from '../leaderboardRouteState';
@@ -221,6 +227,9 @@ export const PublicProfileApp = ({
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const currentUserId = useUserStore((state) => state.userId);
+  const loggedIn = authAuthenticated && currentUserId.trim().length > 0;
   const [profile, setProfile] = useState<PublicUserProfile | null>(null);
   const [stats, setStats] = useState<PublicUserStats | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -232,6 +241,9 @@ export const PublicProfileApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
   const [contentReloadToken, setContentReloadToken] = useState(0);
+  const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState<string | null>(null);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -292,8 +304,48 @@ export const PublicProfileApp = ({
       userId: profileRouteIdentifier,
       tab: route.tab,
       page: route.page,
+      intent: route.intent,
     }, { replace: true, preserveSourceState: true });
-  }, [onNavigate, profile, profileRouteIdentifier, route.page, route.tab, route.userId]);
+  }, [onNavigate, profile, profileRouteIdentifier, route.intent, route.page, route.tab, route.userId]);
+
+  const isOwnProfile = Boolean(profile && loggedIn && String(profile.voUserId) === currentUserId);
+
+  useEffect(() => {
+    let cancelled = false;
+    setFollowStatus(null);
+    setFollowError(null);
+
+    if (!profile || !loggedIn || isOwnProfile) {
+      setFollowLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setFollowLoading(true);
+    getFollowStatus(profile.voUserId)
+      .then((status) => {
+        if (!cancelled) {
+          setFollowStatus(status);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          const message = error instanceof Error ? error.message : String(error);
+          setFollowError(message);
+          log.warn('PublicProfileApp', '加载公开主页关注状态失败', message);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setFollowLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOwnProfile, loggedIn, profile]);
 
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
@@ -468,6 +520,41 @@ export const PublicProfileApp = ({
     onNavigate(nextRoute, { replace: true });
   };
 
+  const handleToggleFollow = async () => {
+    if (!profile || followLoading || isOwnProfile) {
+      return;
+    }
+
+    if (!loggedIn) {
+      redirectToLogin({ returnPath: buildPublicProfileFollowReturnPath(profileRouteIdentifier) });
+      return;
+    }
+
+    setFollowLoading(true);
+    setFollowError(null);
+    try {
+      const nextStatus = followStatus?.voIsFollowing
+        ? await unfollowUser(profile.voUserId)
+        : await followUser(profile.voUserId);
+      setFollowStatus(nextStatus);
+
+      if (route.intent === 'follow') {
+        onNavigate({
+          kind: 'detail',
+          userId: profileRouteIdentifier,
+          tab: route.tab,
+          page: route.page,
+        }, { replace: true, preserveSourceState: true });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setFollowError(message);
+      log.warn('PublicProfileApp', '更新公开主页关注状态失败', message);
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
   const handleBackLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (!shouldHandleProfileLinkInternally(event)) {
       return;
@@ -531,6 +618,29 @@ export const PublicProfileApp = ({
                 <div className={styles.summaryHeader}>
                   <span className={styles.readOnlyBadge}>{t('profile.public.readOnlyBadge')}</span>
                   <div className={styles.summaryActions}>
+                    {!isOwnProfile && (
+                      <button
+                        type="button"
+                        className={styles.primaryButton}
+                        onClick={() => void handleToggleFollow()}
+                        disabled={followLoading}
+                        aria-pressed={loggedIn ? followStatus?.voIsFollowing === true : undefined}
+                        title={followStatus?.voIsFollowing
+                          ? t('profile.public.unfollowAction')
+                          : t('profile.public.followAction')}
+                      >
+                        <Icon icon={followStatus?.voIsFollowing ? 'mdi:account-check-outline' : 'mdi:account-plus-outline'} size={16} />
+                        <span>
+                          {followLoading
+                            ? t('profile.public.followLoading')
+                            : !loggedIn
+                              ? t('profile.public.followLoginAction')
+                              : followStatus?.voIsFollowing
+                                ? t('profile.public.unfollowAction')
+                                : t('profile.public.followAction')}
+                        </span>
+                      </button>
+                    )}
                     <button type="button" className={`${styles.secondaryButton} ${styles.shareButton}`} onClick={() => void copyShareLink()} disabled={shareBusy}>
                       <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
                       <span>{shareBusy ? t('profile.public.shareSubmitting') : t('profile.public.shareAction')}</span>
@@ -541,6 +651,9 @@ export const PublicProfileApp = ({
                   <p className={styles.shareFeedback} data-state={shareState}>
                     {shareState === 'success' ? t('profile.public.shareSuccess') : t('profile.public.shareFailed')}
                   </p>
+                )}
+                {followError && (
+                  <p className={styles.followFeedback} role="status">{followError}</p>
                 )}
                 <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 
@@ -585,6 +698,10 @@ export const PublicProfileApp = ({
                   <div className={styles.statCard}>
                     <span className={styles.statLabel}>{t('profile.stats.likesLabel')}</span>
                     <span className={styles.statValue}>{stats?.voTotalLikeCount ?? 0}</span>
+                  </div>
+                  <div className={styles.statCard}>
+                    <span className={styles.statLabel}>{t('profile.public.followersLabel')}</span>
+                    <span className={styles.statValue}>{followStatus?.voFollowerCount ?? '—'}</span>
                   </div>
                 </div>
               </section>

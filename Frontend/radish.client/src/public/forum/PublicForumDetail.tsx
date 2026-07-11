@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
+import type { ContentReportTargetType } from '@/api/contentModeration';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import {
   acceptQuestionAnswer,
@@ -97,6 +98,10 @@ const EditHistoryModal = lazy(() =>
   import('@/apps/forum/components/EditHistoryModal').then((module) => ({ default: module.EditHistoryModal }))
 );
 
+const ContentReportModal = lazy(() =>
+  import('@/components/ContentReportModal').then((module) => ({ default: module.ContentReportModal }))
+);
+
 const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
   new Set(rootComments.map((comment) => String(comment.voId)))
 );
@@ -179,6 +184,10 @@ export const PublicForumDetail = ({
   const [postHistoryPageIndex, setPostHistoryPageIndex] = useState(1);
   const [postHistoryLoading, setPostHistoryLoading] = useState(false);
   const [postHistoryError, setPostHistoryError] = useState<string | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    targetType: ContentReportTargetType;
+    targetId: LongId;
+  } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const requestIdRef = useRef(0);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
@@ -197,6 +206,19 @@ export const PublicForumDetail = ({
   const postHistoryPageSize = 10;
   const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
   const isCurrentUserAuthor = !!post && !!currentUserId && isSameLongId(post.voAuthorId, currentUserId);
+
+  const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: LongId) => {
+    if (!isAuthenticated) {
+      toast.error(t('report.loginRequired'));
+      return;
+    }
+
+    if (!targetId) {
+      return;
+    }
+
+    setReportTarget({ targetType, targetId });
+  }, [isAuthenticated, t]);
 
   const normalizeTagNames = useCallback((tagNames: string[]): string[] => {
     const normalized: string[] = [];
@@ -1476,6 +1498,7 @@ export const PublicForumDetail = ({
               onQuestionClick={onOpenQuestion}
               onPollClick={onOpenPoll}
               onLotteryClick={onOpenLottery}
+              onReport={(targetId) => handleOpenReport('Post', targetId)}
             />
 
             <section className={styles.reactionStrip} aria-label={t('forum.public.postReactionsTitle')}>
@@ -1665,6 +1688,7 @@ export const PublicForumDetail = ({
                   loginReturnPath={quickReplyReturnPath}
                   onLoginRequired={redirectToDetailLogin}
                   autoFocusComposerKey={quickReplyAutoFocusKey}
+                  onReport={(targetId) => handleOpenReport('PostQuickReply', targetId)}
                 />
               </>
             )}
@@ -1776,6 +1800,7 @@ export const PublicForumDetail = ({
                       targetCommentId,
                       `inline:${postId}:${targetCommentId}:${Date.now()}`
                     )}
+                    onReportComment={(targetId) => handleOpenReport('Comment', targetId)}
                   />
                 </>
               )}
@@ -1816,6 +1841,17 @@ export const PublicForumDetail = ({
                     beforeTitle: 'voOldTitle' in item ? item.voOldTitle : undefined,
                     afterTitle: 'voNewTitle' in item ? item.voNewTitle : undefined
                   })}
+                />
+              </Suspense>
+            )}
+
+            {reportTarget && (
+              <Suspense fallback={null}>
+                <ContentReportModal
+                  isOpen={true}
+                  targetType={reportTarget.targetType}
+                  targetId={reportTarget.targetId}
+                  onClose={() => setReportTarget(null)}
                 />
               </Suspense>
             )}

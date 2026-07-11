@@ -8,6 +8,16 @@ namespace Radish.IService;
 /// <summary>Wiki 文档服务接口</summary>
 public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentVo>
 {
+    Task<PageModel<WikiDocumentVo>> GetPublicListAsync(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? keyword = null,
+        long? parentId = null);
+
+    Task<List<WikiDocumentTreeNodeVo>> GetPublicTreeAsync();
+
+    Task<WikiDocumentDetailVo?> GetPublicBySlugAsync(string slug);
+
     Task<PageModel<WikiDocumentVo>> GetListAsync(
         int pageIndex = 1,
         int pageSize = 20,

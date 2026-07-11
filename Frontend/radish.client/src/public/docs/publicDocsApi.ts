@@ -1,7 +1,5 @@
 import { apiGet, configureApiClient } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
-import { tokenService } from '@/services/tokenService';
-import { buildWikiListUrl } from '@/apps/wiki/wikiApp.helpers';
 import type {
   WikiDocumentDetailVo,
   WikiDocumentTreeNodeVo,
@@ -9,7 +7,6 @@ import type {
   WikiListQuery,
   WikiPageModel,
 } from '@/apps/wiki/types/wiki';
-import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 
 configureApiClient({
   baseUrl: getApiBaseUrl(),
@@ -24,73 +21,39 @@ async function ensureOk<T>(request: Promise<{ ok: boolean; data?: T; message?: s
   return response.data;
 }
 
-function resolveReadWithAuth() {
-  return Boolean(tokenService.getAccessToken());
-}
+function buildPublicWikiListUrl(query: WikiListQuery): string {
+  const params = new URLSearchParams();
+  params.set('pageIndex', String(query.pageIndex ?? 1));
+  params.set('pageSize', String(query.pageSize ?? 100));
 
-function isPublicReadableDocument(document: {
-  voStatus?: number;
-  voVisibility?: number;
-  voIsDeleted?: boolean;
-}): boolean {
-  return document.voStatus === WikiDocumentStatus.Published
-    && document.voVisibility === WikiDocumentVisibility.Public
-    && document.voIsDeleted !== true;
-}
+  if (query.keyword?.trim()) {
+    params.set('keyword', query.keyword.trim());
+  }
 
-function filterPublicReadableTree(nodes: WikiDocumentTreeNodeVo[]): WikiDocumentTreeNodeVo[] {
-  return nodes.flatMap((node) => {
-    const children = filterPublicReadableTree(node.voChildren || []);
-    if (!isPublicReadableDocument(node)) {
-      return children;
-    }
+  if (query.parentId != null) {
+    params.set('parentId', String(query.parentId));
+  }
 
-    return [{
-      ...node,
-      voChildren: children,
-    }];
-  });
-}
-
-function normalizePublicWikiPage(page: WikiPageModel<WikiDocumentVo>): WikiPageModel<WikiDocumentVo> {
-  const documents = (page.data || []).filter(isPublicReadableDocument);
-  return {
-    ...page,
-    data: documents,
-    dataCount: documents.length,
-  };
+  return `/api/v1/Wiki/PublicGetList?${params.toString()}`;
 }
 
 export async function getPublicWikiTree(): Promise<WikiDocumentTreeNodeVo[]> {
-  const tree = await ensureOk(
-    apiGet<WikiDocumentTreeNodeVo[]>('/api/v1/Wiki/GetTree', { withAuth: resolveReadWithAuth() }),
+  return await ensureOk(
+    apiGet<WikiDocumentTreeNodeVo[]>('/api/v1/Wiki/PublicGetTree', { withAuth: false }),
     '加载公开文档目录失败'
   );
-
-  return filterPublicReadableTree(tree);
 }
 
 export async function getPublicWikiList(query: WikiListQuery = {}): Promise<WikiPageModel<WikiDocumentVo>> {
-  const page = await ensureOk(
-    apiGet<WikiPageModel<WikiDocumentVo>>(buildWikiListUrl({
-      ...query,
-      status: WikiDocumentStatus.Published,
-    }), { withAuth: resolveReadWithAuth() }),
+  return await ensureOk(
+    apiGet<WikiPageModel<WikiDocumentVo>>(buildPublicWikiListUrl(query), { withAuth: false }),
     '加载公开文档列表失败'
   );
-
-  return normalizePublicWikiPage(page);
 }
 
 export async function getPublicWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {
-  const document = await ensureOk(
-    apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: resolveReadWithAuth() }),
+  return await ensureOk(
+    apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/PublicGetBySlug/${encodeURIComponent(slug)}`, { withAuth: false }),
     '加载公开文档详情失败'
   );
-
-  if (!isPublicReadableDocument(document)) {
-    throw new Error('公开文档不存在或暂不可读');
-  }
-
-  return document;
 }

@@ -69,6 +69,9 @@
 
 ## 七、专题清单与一次性观察
 
+- [p3-12-e8-pre-master-integration-review-2026-07-11](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
+- [p3-12-e8-b-limited-product-matrix-audit-2026-07-11](/records/p3-12-e8-b-limited-product-matrix-audit-2026-07-11)
+- [p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)
 - [p3-6-public-growth-observation-record-template](/records/p3-6-public-growth-observation-record-template)
 - [p3-6-public-growth-observation-record-2026-05-20](/records/p3-6-public-growth-observation-record-2026-05-20)
 - [p3-6-public-growth-observation-record-2026-05-18](/records/p3-6-public-growth-observation-record-2026-05-18)

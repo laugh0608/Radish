@@ -44,6 +44,98 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         _documentOptions = documentOptions.Value;
     }
 
+    public async Task<PageModel<WikiDocumentVo>> GetPublicListAsync(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? keyword = null,
+        long? parentId = null)
+    {
+        if (pageIndex < 1)
+        {
+            pageIndex = 1;
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            pageSize = 20;
+        }
+
+        var whereExpression = BuildPublicReadExpression();
+        if (!ShouldIncludeBuiltInDocuments())
+        {
+            whereExpression.And(document => document.SourceType != BuiltInSourceType);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            var keywordValue = keyword.Trim();
+            whereExpression.And(document =>
+                document.Title.Contains(keywordValue) ||
+                document.Slug.Contains(keywordValue) ||
+                (document.Summary != null && document.Summary.Contains(keywordValue)));
+        }
+
+        if (parentId.HasValue)
+        {
+            var parentIdValue = parentId.Value;
+            whereExpression.And(document => document.ParentId == parentIdValue);
+        }
+
+        var (data, totalCount) = await QueryPageAsync(
+            whereExpression.ToExpression(),
+            pageIndex,
+            pageSize,
+            document => document.Sort,
+            OrderByType.Asc,
+            document => document.Id,
+            OrderByType.Desc);
+
+        return new PageModel<WikiDocumentVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Data = data
+        };
+    }
+
+    public async Task<List<WikiDocumentTreeNodeVo>> GetPublicTreeAsync()
+    {
+        var whereExpression = BuildPublicReadExpression();
+        if (!ShouldIncludeBuiltInDocuments())
+        {
+            whereExpression.And(document => document.SourceType != BuiltInSourceType);
+        }
+
+        var documents = await QueryWithOrderAsync(
+            whereExpression.ToExpression(),
+            document => document.Sort,
+            OrderByType.Asc);
+        return BuildTree(documents);
+    }
+
+    public async Task<WikiDocumentDetailVo?> GetPublicBySlugAsync(string slug)
+    {
+        if (string.IsNullOrWhiteSpace(slug))
+        {
+            return null;
+        }
+
+        var normalizedSlug = slug.Trim().ToLowerInvariant();
+        var document = await _wikiDocumentRepository.QueryFirstAsync(document =>
+            document.Slug == normalizedSlug &&
+            !document.IsDeleted &&
+            document.Status == (int)WikiDocumentStatusEnum.Published &&
+            document.Visibility == (int)WikiDocumentVisibilityEnum.Public);
+        if (document == null || (!ShouldIncludeBuiltInDocuments() && IsBuiltInSourceType(document.SourceType)))
+        {
+            return null;
+        }
+
+        return _mapper.Map<WikiDocumentDetailVo>(document);
+    }
+
     public async Task<PageModel<WikiDocumentVo>> GetListAsync(
         int pageIndex = 1,
         int pageSize = 20,
@@ -165,6 +257,11 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         }
 
         var documents = await QueryWithOrderAsync(whereExpression.ToExpression(), d => d.Sort, OrderByType.Asc);
+        return BuildTree(documents);
+    }
+
+    private static List<WikiDocumentTreeNodeVo> BuildTree(IEnumerable<WikiDocumentVo> documents)
+    {
         var allNodes = documents
             .Select(document => new WikiDocumentTreeNodeVo
             {
@@ -1017,6 +1114,14 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         }
 
         return accessExpression.ToExpression();
+    }
+
+    private static Expressionable<WikiDocument> BuildPublicReadExpression()
+    {
+        return Expressionable.Create<WikiDocument>()
+            .And(document => !document.IsDeleted)
+            .And(document => document.Status == (int)WikiDocumentStatusEnum.Published)
+            .And(document => document.Visibility == (int)WikiDocumentVisibilityEnum.Public);
     }
 
     private static string ResolveOperatorName(string? operatorName)

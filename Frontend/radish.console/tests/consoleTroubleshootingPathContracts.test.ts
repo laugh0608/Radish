@@ -104,3 +104,20 @@ test('Console 用户详情应提供内容治理排障入口并复用治理 URL h
   assert.match(moderationSource, /parseModerationLongIdQuery/);
   assert.match(moderationSource, /返回来源/);
 });
+
+test('Console 移动边界应固定高频导航与低风险治理顺序', () => {
+  const layoutSource = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
+  const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
+
+  assert.match(layoutSource, /label: '总览'/);
+  assert.match(layoutSource, /label: '治理'/);
+  assert.match(layoutSource, /label: '交易'/);
+  assert.match(layoutSource, /label: '权限'/);
+  assert.match(layoutSource, /label: '更多'/);
+  assert.match(layoutSource, /aria-label="Console 移动高频导航"/);
+  assert.match(layoutSource, /按当前账号权限显示 Console 可访问页面/);
+  assert.match(moderationSource, /aria-label="移动治理操作边界"/);
+  assert.match(moderationSource, /手机视图优先完成低风险核对/);
+  assert.match(moderationSource, /高风险批量策略和复杂权限调整仍保持桌面优先/);
+  assert.match(moderationSource, /查看队列/);
+});

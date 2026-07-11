@@ -13,6 +13,8 @@
     "check:repo-hygiene:changed": "node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:staged": "node Scripts/run-with-changed-files.mjs --mode=staged -- node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-quality-contract": "node Scripts/check-repo-quality-contract.mjs",
+    "check:sensitive-literals": "node Scripts/check-sensitive-literals.mjs",
+    "check:sensitive-literals:self-test": "node --test Scripts/sensitive-literal-rules.test.mjs",
     "check:dependency-security": "node Scripts/check-dependency-security.mjs",
     "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",

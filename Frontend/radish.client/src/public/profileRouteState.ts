@@ -1,10 +1,12 @@
 export type PublicProfileTab = 'posts' | 'comments';
+export type PublicProfileIntent = 'follow';
 
 export interface PublicProfileRoute {
   kind: 'detail';
   userId: string;
   tab: PublicProfileTab;
   page: number;
+  intent?: PublicProfileIntent;
 }
 
 export function createDefaultPublicProfileRoute(userId: string): PublicProfileRoute {
@@ -55,6 +57,12 @@ function normalizeTab(value: string | null): PublicProfileTab {
   return value === 'comments' ? 'comments' : 'posts';
 }
 
+function normalizeIntent(params: URLSearchParams): PublicProfileIntent | undefined {
+  return params.getAll('intent').length === 1 && params.get('intent') === 'follow'
+    ? 'follow'
+    : undefined;
+}
+
 export function parsePublicProfileRoute(pathname: string, search: string): PublicProfileRoute | null {
   const matched = pathname.match(/^\/u\/([^/?#]+)\/?$/);
   const userId = normalizeProfileIdentifier(matched?.[1]);
@@ -63,11 +71,13 @@ export function parsePublicProfileRoute(pathname: string, search: string): Publi
   }
 
   const params = new URLSearchParams(search);
+  const intent = normalizeIntent(params);
   return {
     kind: 'detail',
     userId,
     tab: normalizeTab(params.get('tab')),
-    page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1
+    page: normalizePositiveInteger(params.get('page') ?? undefined) ?? 1,
+    ...(intent ? { intent } : {}),
   };
 }
 
@@ -78,6 +88,9 @@ export function buildPublicProfilePath(route: PublicProfileRoute): string {
   }
   if (route.page > 1) {
     search.set('page', String(route.page));
+  }
+  if (route.intent === 'follow') {
+    search.set('intent', route.intent);
   }
 
   const query = search.toString();

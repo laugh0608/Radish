@@ -144,6 +144,71 @@ public class ContentModerationServiceTest
     }
 
     [Fact]
+    public async Task GetReportQueueAsync_Should_Load_Post_Navigation_Without_Unused_User_Joins()
+    {
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var service = CreateService(
+            contentReportRepository: contentReportRepository,
+            postRepository: postRepository);
+
+        contentReportRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<ContentReport, bool>>?>(),
+                1,
+                20,
+                It.IsAny<Expression<Func<ContentReport, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((
+                new List<ContentReport>
+                {
+                    new()
+                    {
+                        Id = 70002,
+                        ReportTargetType = (int)ContentReportTargetTypeEnum.Post,
+                        TargetContentId = 50002,
+                        TargetUserId = 20002,
+                        TargetUserName = "post-author",
+                        ReporterUserId = 20003,
+                        ReporterUserName = "reporter",
+                        ReasonType = "Other",
+                        Status = (int)ContentReportStatusEnum.Pending,
+                        ReviewActionType = (int)ModerationActionTypeEnum.None,
+                        CreateTime = new DateTime(2026, 7, 11, 14, 0, 0)
+                    }
+                },
+                1));
+        postRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
+            .ReturnsAsync(new List<Post>
+            {
+                new()
+                {
+                    Id = 50002,
+                    AuthorId = 20002,
+                    Title = "运行态验收帖子",
+                    Summary = "用于验证举报队列导航",
+                    IsDeleted = false
+                }
+            });
+
+        var result = await service.GetReportQueueAsync(new ContentReportQueueQueryDto
+        {
+            PageIndex = 1,
+            PageSize = 20
+        });
+
+        result.VoItems.Count.ShouldBe(1);
+        var reportItem = result.VoItems[0];
+        reportItem.VoReportId.ShouldBe(70002);
+        reportItem.VoTargetType.ShouldBe("Post");
+        reportItem.VoTargetPostId.ShouldBe(50002);
+        reportItem.VoTargetNavigationStatus.ShouldBe("Ready");
+        reportItem.VoTargetSnapshotTitle.ShouldBe("运行态验收帖子");
+        reportItem.VoTargetSnapshotSummary.ShouldBe("用于验证举报队列导航");
+    }
+
+    [Fact]
     public async Task GetReportQueueAsync_Should_Prefer_Persisted_Chat_Snapshot_When_Current_Content_Changes()
     {
         var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);

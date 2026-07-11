@@ -6,10 +6,6 @@
 
 param(
     [string]$ApiUrl = "http://localhost:5100",
-    [string]$AuthUrl = "http://localhost:5200",
-    [string]$Username = "system",
-    [string]$Password = "System123!",
-    [switch]$SkipAuth,
     [switch]$SkipUpload,
     [switch]$SkipQuery,
     [switch]$SkipDelete,
@@ -31,7 +27,7 @@ $script:TestResults = @{
 }
 
 # 全局变量
-$script:AccessToken = $null
+$script:AccessToken = $env:RADISH_ACCESS_TOKEN
 $script:UploadedAttachments = @()
 $script:TestFilesDir = Join-Path $PSScriptRoot "test-files"
 
@@ -101,30 +97,6 @@ function Test-Endpoint {
             Error = $_.Exception.Message
             Content = $errorContent
         }
-    }
-}
-
-function Get-AccessToken {
-    Write-Info "获取 Access Token..."
-
-    $body = @{
-        grant_type = "password"
-        client_id = "radish-client"
-        client_secret = "radish-secret"
-        username = $Username
-        password = $Password
-        scope = "radish-api"
-    }
-
-    $result = Test-Endpoint -Url "$AuthUrl/connect/token" -Method POST -Body $body -ContentType "application/x-www-form-urlencoded"
-
-    if ($result.Success -and $result.Content.access_token) {
-        $script:AccessToken = $result.Content.access_token
-        Write-Success "成功获取 Access Token"
-        return $true
-    } else {
-        Write-Error "获取 Access Token 失败: $($result.Error)"
-        return $false
     }
 }
 
@@ -243,18 +215,14 @@ function Test-Authentication {
     Write-Info "`n=== 测试 1：用户认证 ==="
     $script:TestResults.TotalTests++
 
-    if ($SkipAuth) {
-        Write-Warning "跳过认证测试（使用已有 Token）"
-        $script:TestResults.Skipped++
-        return $true
-    }
-
-    if (Get-AccessToken) {
+    if (-not [string]::IsNullOrWhiteSpace($script:AccessToken)) {
+        Write-Success "已从 RADISH_ACCESS_TOKEN 读取临时 Access Token"
         Write-Success "认证测试通过"
         $script:TestResults.Passed++
         return $true
     } else {
-        Write-Error "认证测试失败"
+        Write-Error "未设置 RADISH_ACCESS_TOKEN"
+        Write-Error "请先按 Radish.Api.AuthFlow.http 完成授权码流程，再通过当前进程环境变量传入临时 Token"
         $script:TestResults.Failed++
         return $false
     }
@@ -665,8 +633,6 @@ function Main {
     Write-Host ""
 
     Write-Info "API 地址: $ApiUrl"
-    Write-Info "Auth 地址: $AuthUrl"
-    Write-Info "测试用户: $Username"
     Write-Info "测试文件目录: $script:TestFilesDir"
     Write-Host ""
 
@@ -676,11 +642,17 @@ function Main {
         Write-Success "创建测试文件目录: $script:TestFilesDir"
     }
 
+    # 认证输入必须先于任何运行态请求完成校验
+    Test-Authentication
+
+    if ([string]::IsNullOrWhiteSpace($script:AccessToken)) {
+        Write-Error "无法获取认证令牌，终止测试"
+        exit 1
+    }
+
     # 检查服务可用性
     Write-Info "检查服务可用性..."
     $apiHealth = Test-Endpoint -Url "$ApiUrl/health"
-    $authHealth = Test-Endpoint -Url "$AuthUrl/health"
-
     if (-not $apiHealth.Success) {
         Write-Error "API 服务不可用: $ApiUrl"
         Write-Warning "请先按仓库当前约定启动 Radish.Api，再重新执行本脚本。"
@@ -688,21 +660,7 @@ function Main {
     }
     Write-Success "API 服务可用"
 
-    if (-not $authHealth.Success) {
-        Write-Error "Auth 服务不可用: $AuthUrl"
-        Write-Warning "请先按仓库当前约定启动 Radish.Auth，再重新执行本脚本。"
-        exit 1
-    }
-    Write-Success "Auth 服务可用"
-
     # 运行测试
-    Test-Authentication
-
-    if ($null -eq $script:AccessToken) {
-        Write-Error "无法获取认证令牌，终止测试"
-        exit 1
-    }
-
     if (-not $SkipUpload) {
         Test-ImageUploadBasic
         Start-Sleep -Milliseconds 500

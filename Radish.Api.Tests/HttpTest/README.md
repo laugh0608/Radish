@@ -9,7 +9,8 @@
 ## 使用约定
 
 - 本目录不再维护服务启动命令，默认你已经按仓库根目录的当前约定启动了本地 `Radish.Api`、`Radish.Auth`、`Radish.Gateway`。
-- 需要认证的接口，统一先从 `Radish.Api.AuthFlow.http` 获取 `access_token`，再粘贴到对应文件顶部变量。
+- 需要认证的接口，统一先从 `Radish.Api.AuthFlow.http` 获取临时 `access_token`，再通过当前请求会话的私有变量或当前进程环境注入；仓库文件只保留占位符，不得粘贴并保存真实 Token。
+- `test-attachment-upload.sh` 与 `test-attachment-upload.ps1` 不保存账号、密码、client secret 或 Token，也不再使用 password grant；执行前必须通过当前进程的 `RADISH_ACCESS_TOKEN` 环境变量传入临时 Access Token。不得把真实 Token 写回脚本、`.http`、文档或命令示例。
 - 若本轮改动触达身份语义 / Claim / Auth 协议输出 / Token 解析，除了先跑 `validate:baseline` 外，优先再按 [身份语义防回归回归手册](/guide/identity-claim-regression-playbook) 补 `validate:identity`、`Radish.Api.AuthFlow.http` 与官方顺序回归记录。
 - 附件相关脚本依赖 `test-files/` 里的示例文件；如需更真实的图片/大文件/分片文件，可在该目录补充。
 - 构建与测试请继续使用仓库统一脚本：

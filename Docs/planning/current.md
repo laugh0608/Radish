@@ -8,8 +8,8 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-E8 Pre-RC 产品与发布工程硬化`
-- **工程第一顺位**：`P3-12-E8-B 有限产品矩阵验证与阻断修复`
-- **产品下一顺位**：`P3-12-E8-B 内容优先与核心旅程收口`
+- **工程第一顺位**：`推送 dev 并发起 dev -> master 集成 PR`
+- **产品下一顺位**：`P3-12-F 发布 Go 门禁与小规模受控试用`
 - **复核日期**：`2026-07-11`
 - **当前判断**：
   - 纯 Web 已成为 PC / mobile 浏览器默认产品形态，`/desktop` 仅保留 WebOS 历史兼容入口；Flutter 保持移动原生维护线，PC/Tauri 后置。
@@ -20,6 +20,10 @@
   - 2026-07-11 Q0-B 已完整关闭：生产性能基准、Weather、敏感配置、事务演示、测试租户写入与手动未读推送入口已删除，正常租户查询与正式通知能力保留，精确防回归契约已建立。
   - 2026-07-11 Q0-C 已完成：API JWT 启用 `radish-api` audience，完整 Claims 与成功鉴权高频日志已删除，Auth transport security 受 Development 显式配置和 Gateway 单跳 Forwarded Proto 契约约束。
   - 2026-07-11 Q0-D 已完成：Markdown 阅读态、富文本导入 / 建链 / 导出共用链接协议白名单，危险或未登记 scheme 统一退化为不可点击文本。
+  - 2026-07-11 Q0 成组运行态补验已完成：Scalar 只暴露实际 v1 文档，Gateway 授权码、受保护 API、UserInfo、refresh、audience 拒绝、宿主健康与真实 Markdown / Hub 旅程均通过。
+  - 2026-07-11 E8-B 已完成：关系复访、公开 Docs 服务端契约、Console 移动低风险边界、Pencil `P02` 与 Discover 内容优先结构均已收口；七项有限矩阵已通过 PC / mobile CSS 视口成组运行态验收，旅程中发现的公开帖子举报入口和举报队列帖子导航查询阻断已修复并补定向测试。当前无接受后置项和已知 `P0/P1` 阻断。
+  - `master...dev` 已完成远程刷新与集成审阅：主线独有 8 个对象均为历史 PR merge ancestry，树内容无额外差异且合并预演无冲突信号；批次级 CI、host baseline、运行态健康和依赖安全均通过。阶段性集成提交完成后只需推送 `dev` 并创建 PR；若 GitHub 实际要求分支最新，再同步 `master`。
+  - 集成安全复核发现并清除了附件测试脚本中的完整过期 JWT、默认账号密码、client secret 与 password grant；跨平台脚本统一改用进程级 `RADISH_ACCESS_TOKEN`，完整 JWT / Bearer 字面量 / 私钥头扫描已接入 `Baseline Quick / Repo Quality`。
   - 当前仍是 Pre-RC 硬化期，不把技术 smoke 或页面可达误写成真实使用增长；真正的增长验证从 P3-12-F 受控试用开始。
   - `P3-12-F` 不再被定义为“所有候选工作全部完成后的奖励阶段”：Q0 与有限产品矩阵负责进入 F，Q1 / Q2 / Q3 的发布必要子集在 F 内完成并作为 Release Go 门禁，Q4 转为持续维护。
 
@@ -43,6 +47,8 @@ Radish V1 的产品定位固定为：
 - [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening)
 - [P3-12-E8-Q 正式发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure)
 - [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)
+- [P3-12-E8-B 有限产品矩阵首轮审计记录](/records/p3-12-e8-b-limited-product-matrix-audit-2026-07-11)
+- [P3-12-E8 dev -> master 集成审阅记录](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
@@ -56,8 +62,7 @@ Radish V1 的产品定位固定为：
 - Q0-A 已完成：恢复 npm / NuGet 依赖审计、清除 High / Critical，并建立可阻断的 CI 安全门禁。
 - Q0-B 已完成：删除生产性能基准、Weather、敏感配置、事务演示和测试 Action，并清理专用模型与服务链。
 - Q0-C 已完成 audience、敏感 Claims 日志和 Auth transport security 收紧。
-- Q0-D 已完成 Markdown 编辑态与阅读态危险链接协议防护；Q0-A 至 Q0-D 代码与静态验证全部通过。
-- Q0 成组运行态补验留到服务获得当轮启动授权后执行，不阻塞进入 E8-B 有限产品矩阵。
+- Q0-D 已完成 Markdown 编辑态与阅读态危险链接协议防护；Q0-A 至 Q0-D 的代码、静态验证与成组运行态补验全部通过。
 
 ### 2. 用 E8-B 有限矩阵收口产品形态
 
@@ -99,8 +104,8 @@ F 内完成并作为 Release Go 门禁：
 ## 下一顺位
 
 1. Q0-A 至 Q0-D 已完成并形成验证记录。
-2. 执行 E8-B 有限产品矩阵，对七项逐一给出通过、阻断或接受后置结论；页面级结构调整仍先更新对应设计说明与 Pencil。
-3. Q0 与 E8-B 收口后，刷新 `master...dev` 并准备集成 PR；不创建 tag，不部署。
+2. E8-B 七项有限产品矩阵已全部通过，运行态发现的举报入口与举报队列查询阻断已修复；不再追加 E9 式逐页扫描。
+3. `master...dev` 范围、风险和批次级验证已形成集成审阅结论；阶段性集成提交完成后推送 `dev` 并创建 `dev -> master` PR；不创建 tag，不部署。
 4. 进入 `P3-12-F`，完成发布 Go 门禁与小规模受控试用，再根据真实使用证据判断是否结束第三阶段。
 
 ## 并行维护线

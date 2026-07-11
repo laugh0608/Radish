@@ -25,10 +25,7 @@
 }
 
 .pulseHome {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.68fr);
-  gap: 14px;
-  align-items: stretch;
+  display: block;
 }
 
 .pulseIntroCard,
@@ -44,95 +41,6 @@
 
 .pulseIntroCard {
   padding: 18px;
-}
-
-.pulseMetricGrid {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.pulseMetricCard {
-  min-width: 0;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
-  overflow: hidden;
-}
-
-.pulseMetricCard[data-state='error'] {
-  border-color: color-mix(in srgb, var(--theme-state-danger) 28%, transparent);
-}
-
-.pulseMetricCard[data-state='loading'] {
-  border-color: color-mix(in srgb, var(--theme-accent-jade) 28%, transparent);
-}
-
-.pulseMetricButton {
-  width: 100%;
-  height: 100%;
-  min-height: 104px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  padding: 14px;
-  text-align: left;
-  cursor: pointer;
-  display: grid;
-  align-content: start;
-  gap: 8px;
-  transition: background-color 0.16s ease, transform 0.16s ease;
-}
-
-.pulseMetricButton:hover {
-  background: color-mix(in srgb, var(--theme-brand-soft) 16%, transparent);
-}
-
-.pulseMetricLabel {
-  color: var(--theme-text-secondary);
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.45;
-}
-
-.pulseMetricValue {
-  color: var(--theme-text-primary);
-  font-size: 1.72rem;
-  line-height: 1;
-}
-
-.pulseMetricStatus {
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
-  color: var(--theme-text-secondary);
-  font-size: 0.74rem;
-  font-weight: 700;
-}
-
-.pulseMetricStatus[data-state='ready'] {
-  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
-  color: var(--theme-brand-primary);
-}
-
-.pulseMetricStatus[data-state='loading'] {
-  background: color-mix(in srgb, var(--theme-accent-jade) 18%, white 82%);
-  color: color-mix(in srgb, var(--theme-accent-jade) 64%, black 36%);
-}
-
-.pulseMetricStatus[data-state='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
-  color: color-mix(in srgb, var(--theme-state-danger) 68%, black 32%);
-}
-
-.pulseMetricStatus[data-state='empty'] {
-  background: color-mix(in srgb, var(--theme-border-soft) 36%, white 64%);
-  color: var(--theme-text-tertiary);
 }
 
 .communityBoard {

@@ -34,6 +34,7 @@ const ME_ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
   'Document',
 ]);
 const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
+const PUBLIC_USER_PUBLIC_ID_PATTERN = /^usr_[a-f0-9]{32}$/;
 const POSITIVE_LONG_ID_PATTERN = /^[1-9]\d*$/;
 
 interface AuthReturnLocation {
@@ -105,6 +106,10 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       return normalizePublicForumPostReturnPath(url, pathname);
     }
 
+    if (pathname.startsWith('/u/')) {
+      return normalizePublicProfileFollowReturnPath(url, pathname);
+    }
+
     if (pathname.startsWith('/shop/')) {
       return normalizeShopReturnPath(url, pathname);
     }
@@ -126,6 +131,45 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
   } catch {
     return null;
   }
+}
+
+function normalizePublicProfileIdentifier(value: string | null | undefined): string | null {
+  const normalized = value?.trim();
+  if (!normalized) {
+    return null;
+  }
+
+  const lowered = normalized.toLowerCase();
+  if (PUBLIC_USER_PUBLIC_ID_PATTERN.test(lowered)) {
+    return lowered;
+  }
+
+  return POSITIVE_LONG_ID_PATTERN.test(normalized) ? normalized : null;
+}
+
+function normalizePublicProfileFollowReturnPath(url: URL, normalizedPathname: string): string | null {
+  if (url.hash || !hasOnlySearchParams(url, new Set(['intent']))) {
+    return null;
+  }
+
+  if (url.searchParams.getAll('intent').length !== 1 || url.searchParams.get('intent') !== 'follow') {
+    return null;
+  }
+
+  const matched = normalizedPathname.match(/^\/u\/([^/]+)$/);
+  if (!matched) {
+    return null;
+  }
+
+  let rawUserIdentifier = '';
+  try {
+    rawUserIdentifier = decodeURIComponent(matched[1]);
+  } catch {
+    return null;
+  }
+
+  const userIdentifier = normalizePublicProfileIdentifier(rawUserIdentifier);
+  return userIdentifier ? `/u/${encodeURIComponent(userIdentifier)}?intent=follow` : null;
 }
 
 function normalizeForumPostIdentifier(value: string | null | undefined): string | null {
@@ -571,6 +615,10 @@ export function buildCircleReturnPath(options: { tab?: CircleReturnTab; page?: n
 
 export function buildNotificationsReturnPath(): string {
   return NOTIFICATIONS_RETURN_PATH;
+}
+
+export function buildPublicProfileFollowReturnPath(userIdentifier: string | number): string | null {
+  return normalizeAuthReturnPath(`/u/${encodeURIComponent(String(userIdentifier))}?intent=follow`);
 }
 
 export function buildMessagesReturnPath(route: MessagesRoute = {}): string | null {

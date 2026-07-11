@@ -23,6 +23,64 @@ namespace Radish.Api.Tests.Controllers;
 public class WikiControllerTest
 {
     [Fact]
+    public async Task PublicGetList_Should_Use_Dedicated_Public_Service_Contract()
+    {
+        var page = new PageModel<WikiDocumentVo>
+        {
+            Page = 2,
+            PageSize = 10,
+            DataCount = 1,
+            PageCount = 1,
+            Data = []
+        };
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(service => service.GetPublicListAsync(2, 10, "guide", 42))
+            .ReturnsAsync(page);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.PublicGetList(2, 10, "guide", 42);
+
+        Assert.True(result.IsSuccess);
+        Assert.Same(page, result.ResponseData);
+        serviceMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PublicGetTree_Should_Use_Dedicated_Public_Service_Contract()
+    {
+        List<WikiDocumentTreeNodeVo> tree =
+        [
+            new() { VoId = 1, VoTitle = "公开文档", VoSlug = "public-doc", VoChildren = [] }
+        ];
+        var serviceMock = CreateServiceMock();
+        serviceMock.Setup(service => service.GetPublicTreeAsync()).ReturnsAsync(tree);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.PublicGetTree();
+
+        Assert.True(result.IsSuccess);
+        Assert.Same(tree, result.ResponseData);
+        serviceMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task PublicGetBySlug_Should_Return_Failed_When_Public_Document_NotFound()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(service => service.GetPublicBySlugAsync("restricted-doc"))
+            .ReturnsAsync((WikiDocumentDetailVo?)null);
+
+        var controller = CreateController(serviceMock.Object, isAdmin: true);
+        var result = await controller.PublicGetBySlug("restricted-doc");
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal("公开文档不存在", result.MessageInfo);
+        serviceMock.VerifyAll();
+    }
+
+    [Fact]
     public async Task GetById_Should_Return_Failed_When_Document_NotFound()
     {
         var serviceMock = CreateServiceMock();

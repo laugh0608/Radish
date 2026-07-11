@@ -22,6 +22,7 @@ const workflowPath = path.join(repoRoot, '.github', 'workflows', 'repo-quality.y
 const rulesetPath = path.join(repoRoot, '.github', 'rulesets', 'master-protection.json');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const validateCiPath = path.join(repoRoot, 'Scripts', 'validate-ci.mjs');
+const validateBaselinePath = path.join(repoRoot, 'Scripts', 'validate-baseline.mjs');
 const dependencySecurityPath = path.join(repoRoot, 'Scripts', 'check-dependency-security.mjs');
 const dotnetCommandPath = path.join(repoRoot, 'Scripts', 'dotnet-command.mjs');
 const dotnetLocalPath = path.join(repoRoot, 'Scripts', 'dotnet-local.ps1');
@@ -234,6 +235,7 @@ const workflowContent = readUtf8(workflowPath);
 const rulesetContent = readUtf8(rulesetPath);
 const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
 const validateCiSource = readUtf8(validateCiPath);
+const validateBaselineSource = readUtf8(validateBaselinePath);
 const dependencySecuritySource = readUtf8(dependencySecurityPath);
 const dotnetCommandSource = readUtf8(dotnetCommandPath);
 const dotnetLocalSource = readUtf8(dotnetLocalPath);
@@ -310,6 +312,29 @@ assertPackageScript(
   CHECK_DEPENDENCY_SECURITY_PACKAGE_SCRIPT,
   failures
 );
+
+assertPackageScript(
+  packageScripts,
+  'check:sensitive-literals',
+  'node Scripts/check-sensitive-literals.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:sensitive-literals:self-test',
+  'node --test Scripts/sensitive-literal-rules.test.mjs',
+  failures
+);
+
+for (const requiredFragment of [
+  "args: ['run', 'check:sensitive-literals:self-test']",
+  "args: ['run', 'check:sensitive-literals']",
+]) {
+  if (!validateBaselineSource.includes(requiredFragment)) {
+    failures.push(`Scripts/validate-baseline.mjs 缺少敏感字面量门禁片段: ${requiredFragment}`);
+  }
+}
 
 assertPackageScript(
   packageScripts,

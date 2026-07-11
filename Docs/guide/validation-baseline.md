@@ -21,6 +21,7 @@ npm run check:repo-hygiene
 npm run check:repo-hygiene:changed
 npm run check:repo-quality-contract
 npm run check:dependency-security
+npm run check:sensitive-literals
 npm run lint:changed
 npm run lint:staged
 npm run collect:changed
@@ -61,6 +62,10 @@ npm run validate:ci
   - 联网执行 `npm audit --omit=dev --json` 与 NuGet 直接 / 传递依赖漏洞审计
   - npm 或 NuGet 存在 High / Critical 时失败；命令失败、审计源不可用或 JSON 无法解析时同样失败
   - 属于 `master` PR 的 CI-only 必需检查，暂不并入日常本地 `validate:ci`；准备合并或处理依赖时单独执行
+- `check:sensitive-literals`
+  - 扫描 Git 已跟踪文件和未忽略的工作区新文件，阻断完整 JWT、硬编码 Bearer Token 与私钥 PEM 头
+  - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判
+  - 规则自测与全仓扫描均已接入 `validate:baseline:quick`，因此同时进入本地 `validate:ci` 和远程 `Baseline Quick`
 - `lint:changed`
   - 只对当前变更中的前端脚本文件执行 `eslint`
   - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
@@ -98,6 +103,7 @@ npm run validate:ci
 - `validate:baseline`
   - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
+  - 运行高置信敏感字面量规则自测与全仓扫描
   - 运行 `Console` 权限链路扫描
   - 运行 Repo Quality contract 自校验
     - 确保 workflow job 名、ruleset required checks 与本地 `validate:ci` 没有再次分叉
