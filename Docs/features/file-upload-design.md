@@ -166,6 +166,7 @@
 - `attachment://{id}` 表示正文只持有附件标识，不持有运行时域名。
 - `display=thumbnail` 和 `scale=...` 属于渲染元数据，由前端编辑器写入、渲染器解析。
 - 运行时真实资源地址通过 `buildAttachmentAssetUrl()` / `parseAttachmentMarkdownUrl()` 再结合当前 `baseUrl` 解析。
+- 作为可点击文本链接时，只接受精确的 `attachment://<positive-id>`；追加路径、非正整数 ID 或伪造元数据均不得生成锚点。图片的 `#radish:` 元数据继续由图片解析链单独处理。
 
 ---
 

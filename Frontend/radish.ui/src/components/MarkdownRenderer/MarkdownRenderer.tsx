@@ -12,7 +12,12 @@ import ReactMarkdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import { ImageLightbox } from '../ImageLightbox/ImageLightbox';
-import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '../../utils';
+import {
+  buildAttachmentAssetUrl,
+  parseAttachmentMarkdownUrl,
+  resolveSanitizedMarkdownLinkHref,
+  resolveConfiguredMediaUrl,
+} from '../../utils';
 import styles from './MarkdownRenderer.module.css';
 
 export interface MarkdownStickerItem {
@@ -211,12 +216,24 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           components={{
             // 自定义链接行为：在新标签页打开外部链接
             a: (props) => {
-              const href = props.href || '';
-              const attachmentMeta = parseAttachmentMarkdownUrl(href);
-              const customResolvedHref = resolveLinkHref?.(href);
-              const resolvedHref = customResolvedHref ?? resolveDefaultLinkHref(href);
-              const externalCheckHref = customResolvedHref ?? href;
-              const isExternal = externalCheckHref.startsWith('http://') || externalCheckHref.startsWith('https://');
+              let safeSourceHref = '';
+              let customResolvedHref: string | null | undefined;
+              const resolvedHref = resolveSanitizedMarkdownLinkHref(props.href, (sourceHref) => {
+                safeSourceHref = sourceHref;
+                customResolvedHref = resolveLinkHref?.(sourceHref);
+                return customResolvedHref ?? resolveDefaultLinkHref(sourceHref);
+              });
+              if (!safeSourceHref) {
+                return <>{props.children}</>;
+              }
+
+              const attachmentMeta = parseAttachmentMarkdownUrl(safeSourceHref);
+              if (!resolvedHref) {
+                return <>{props.children}</>;
+              }
+
+              const externalCheckHref = customResolvedHref ?? safeSourceHref;
+              const isExternal = /^https?:\/\//i.test(externalCheckHref);
               const openInNewTab = isExternal || Boolean(attachmentMeta);
 
               if (openInNewTab) {

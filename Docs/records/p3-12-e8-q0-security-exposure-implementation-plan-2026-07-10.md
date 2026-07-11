@@ -1,6 +1,6 @@
 # P3-12-E8-Q0 安全与暴露面阻断实施方案
 
-> 状态：`Q0-A、Q0-B、Q0-C 已于 2026-07-11 完成；Q0-D 为工程下一顺位，Markdown 运行时行为尚未修改`
+> 状态：`Q0-A 至 Q0-D 已于 2026-07-11 完成代码与静态验证；运行态补验留到 Q0 成组验收`
 >
 > 日期：`2026-07-10`（Asia/Shanghai）
 >
@@ -508,3 +508,29 @@ Q0-C 已按身份与传输安全边界独立完成：
 - `npm run check:repo-hygiene:changed` 与 `git diff --check`：通过。
 
 本批未启动服务，未执行登录、回调、refresh、Hub 或 Scalar 运行态 smoke。这些检查与 Q0-B Scalar 补验一同留到 Q0 成组验收；静态契约、策略单测、构建和完整 API 测试已覆盖 Q0-C 本批退出条件。工程下一顺位推进到 Q0-D。
+
+## 十三、Q0-D 最终实施结论（2026-07-11）
+
+Q0-D 已统一 Markdown 阅读态与富文本编辑态的链接协议安全契约：
+
+| 范围 | 最终结果 |
+| --- | --- |
+| 共享契约 | `@radish/ui` 新增并导出 `sanitizeMarkdownLinkHref()`，只允许 `http:`、`https:`、站内绝对 / 相对地址、query、anchor 和精确的 `attachment://<positive-id>` |
+| 阅读态 | `MarkdownRenderer` 在输入链接与 `resolveLinkHref` 自定义重写后各执行一次校验；被拒绝的链接只保留子文本，不生成 `<a>` |
+| 编辑态 | `RichTextMarkdownEditor` 的 Markdown 导入、工具栏建链和 HTML 回写 Markdown 共用同一 sanitizer；危险 href 不生成锚点，也不会被写回存储内容 |
+| 转换边界 | Markdown ↔ 富文本转换从组件中拆至独立工具，链接转换核心可在无 DOM 环境定向测试；图片、sticker 和附件上传规则保持原边界 |
+| 协议口径 | `mailto:`、`tel:`、`javascript:`、`data:`、`vbscript:`、`file:`、协议相对地址、未登记 scheme 和伪造 attachment 均拒绝 |
+
+最终验证：
+
+- `npm run test --workspace=@radish/ui`：`3 / 3` 通过。
+- `npm run type-check --workspace=@radish/ui`：通过。
+- `npm run lint --workspace=@radish/ui`：通过，仅保留 3 条既有 Fast Refresh warning。
+- `npm run test --workspace=radish.client`：`314 / 314` 通过。
+- `npm run type-check --workspace=radish.client`：通过。
+- `npm run build --workspace=radish.client`：通过。
+- `npm run check:repo-hygiene:changed` 与 `git diff --check`：通过。
+
+额外执行的 client 全量 lint 仍被未触达的 `src/public/legalRouteState.ts` 既有未使用变量错误阻断，并报告 18 条历史 Hook warning；该存量问题不属于 Q0-D，本批未混入修改。
+
+本批未启动服务或执行真实页面 smoke。Q0-A 至 Q0-D 的代码与静态验证已全部完成；Q0-B Scalar、Q0-C 登录 / refresh / Hub 和 Q0-D 真实 Markdown 页面回放统一留到 Q0 成组验收。当前第一顺位转入 E8-B 有限产品矩阵。

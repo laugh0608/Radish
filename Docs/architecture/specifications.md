@@ -159,6 +159,7 @@ export async function uploadChunk(
 - Markdown / 富文本正文中的图片与文档引用，统一保存为 `attachment://{id}` 协议，而不是完整 URL。
 - 如需记录显示变体或缩放信息，统一附加在 `#radish:` 元数据中，由 `buildAttachmentMarkdownUrl()` 生成、`parseAttachmentMarkdownUrl()` 解析。
 - `MarkdownEditor`、`RichTextMarkdownEditor`、`MarkdownRenderer` 必须围绕该协议协同，禁止再次引入“编辑态存 URL、渲染态再猜测附件”的双口径。
+- Markdown 文本链接必须统一通过 `sanitizeMarkdownLinkHref()` 校验：只允许 `http:`、`https:`、站内绝对 / 相对地址、query、anchor 与精确的 `attachment://<positive-id>`；危险或未登记协议在编辑态和阅读态均退化为不可点击文本。
 
 ### 部署边界
 

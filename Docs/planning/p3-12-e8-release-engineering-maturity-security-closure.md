@@ -136,7 +136,7 @@ Q4 维护性与仓库治理
 
 ### Q0 安全与暴露面阻断
 
-实施方案见 [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)。Q0-A、Q0-B 已于 2026-07-11 完成；Q0-C 为下一工程批次，Q0-D 继续保持独立确认与验证。
+实施方案见 [P3-12-E8-Q0 安全与暴露面阻断实施方案](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)。Q0-A 至 Q0-D 已于 2026-07-11 完成代码与静态验证；真实宿主链路留到 Q0 成组运行态验收。
 
 #### Q0-A 依赖安全与审计恢复
 
