@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Radish.IRepository;
 using Radish.Model;
 using Radish.Repository.Base;
@@ -9,8 +10,13 @@ namespace Radish.Repository;
 /// <summary>帖子仓储</summary>
 public class PostRepository : BaseRepository<Post>, IPostRepository
 {
-    public PostRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
+    private readonly IReliableOutboxRepository? _reliableOutboxRepository;
+
+    public PostRepository(
+        IUnitOfWorkManage unitOfWorkManage,
+        IReliableOutboxRepository? reliableOutboxRepository = null) : base(unitOfWorkManage)
     {
+        _reliableOutboxRepository = reliableOutboxRepository;
     }
 
     public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId)
@@ -23,6 +29,10 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
                 try
                 {
                     var result = await TogglePostLikeCoreAsync(userId, postId);
+                    if (result.Delta > 0)
+                    {
+                        await AddLikeOutboxAsync(result, userId);
+                    }
                     DbProtectedClient.Ado.CommitTran();
                     return result;
                 }
@@ -170,12 +180,42 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
     {
         return new PostLikePersistenceResult(
             post.Id,
+            post.TenantId,
             post.AuthorId,
             post.Title,
             post.PublicId,
             isLiked,
             likeCount,
             delta);
+    }
+
+    private async Task AddLikeOutboxAsync(PostLikePersistenceResult result, long likerId)
+    {
+        var repository = _reliableOutboxRepository
+            ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
+        var now = DateTime.Now;
+        var notificationId = SnowFlakeSingle.Instance.NextId();
+        var notificationWindowKey = $"notification:post-like:{result.PostId}:receiver:{result.AuthorId}:window:{now.Ticks / (TimeSpan.TicksPerMinute * 5)}";
+        var payload = new LikeEffectsTaskPayload(
+            notificationId,
+            result.PostId,
+            result.PostId,
+            result.AuthorId,
+            likerId,
+            result.Title,
+            result.PublicId,
+            now.ToString("yyyyMMdd"),
+            notificationWindowKey);
+        await repository.AddAsync(new ReliableOutboxDraft(
+            ReliableOutboxSources.Main,
+            result.TenantId,
+            ReliableTaskTypes.PostLiked,
+            1,
+            $"task:post-like:{result.PostId}:liker:{likerId}:at:{now.Ticks}",
+            "Post",
+            result.PostId.ToString(),
+            JsonSerializer.Serialize(payload),
+            now.ToUniversalTime()));
     }
 
     public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(

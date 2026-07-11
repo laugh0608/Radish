@@ -30,7 +30,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IPaymentPasswordService _paymentPasswordService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IOperationIdempotencyService? _operationIdempotencyService;
-    private readonly INotificationService? _notificationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
 
     public OrderService(
         IMapper mapper,
@@ -43,7 +43,8 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IPaymentPasswordService paymentPasswordService,
         IAttachmentUrlResolver attachmentUrlResolver,
         IOperationIdempotencyService? operationIdempotencyService = null,
-        INotificationService? notificationService = null)
+        INotificationService? notificationService = null,
+        IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, orderRepository)
     {
         _orderRepository = orderRepository;
@@ -55,7 +56,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _paymentPasswordService = paymentPasswordService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _operationIdempotencyService = operationIdempotencyService;
-        _notificationService = notificationService;
+        _reliableOutboxService = reliableOutboxService;
     }
 
     #region 购买流程
@@ -266,24 +267,31 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var newBalance = await _coinService.GetBalanceAsync(userId);
 
             // 13. 发送通知
-            if (_notificationService != null && order.Status == OrderStatus.Completed)
+            if (order.Status == OrderStatus.Completed)
             {
-                try
+                var reliableOutboxService = _reliableOutboxService
+                    ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+                var notification = new CreateNotificationDto
                 {
-                    await _notificationService.CreateNotificationAsync(new CreateNotificationDto
-                    {
-                        Type = "PURCHASE_SUCCESS",
-                        Title = "购买成功",
-                        Content = $"您已成功购买 {product.Name}",
-                        BusinessType = "Order",
-                        BusinessId = orderId,
-                        ReceiverUserIds = [userId]
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "发送购买成功通知失败");
-                }
+                    NotificationId = SnowFlakeSingle.Instance.NextId(),
+                    BusinessKey = $"notification:purchase-success:order:{orderId}",
+                    Type = "PURCHASE_SUCCESS",
+                    Title = "购买成功",
+                    Content = $"您已成功购买 {product.Name}",
+                    BusinessType = "Order",
+                    BusinessId = orderId,
+                    ReceiverUserIds = [userId],
+                    TenantId = order.TenantId
+                };
+                await reliableOutboxService.AddAsync(
+                    ReliableOutboxSources.Main,
+                    order.TenantId,
+                    ReliableTaskTypes.NotificationRequested,
+                    $"task:notification:purchase-success:order:{orderId}",
+                    "Order",
+                    orderId.ToString(),
+                    new NotificationRequestedTaskPayload(notification),
+                    DateTime.UtcNow);
             }
 
             Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",

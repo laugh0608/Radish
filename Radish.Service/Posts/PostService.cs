@@ -33,15 +33,12 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly ICommentRepository? _commentCustomRepository;
     private readonly ITagService _tagService;
     private readonly IAttachmentService _attachmentService;
-    private readonly ICoinRewardService _coinRewardService;
-    private readonly INotificationService _notificationService;
-    private readonly INotificationDedupService _dedupService;
-    private readonly IExperienceService _experienceService;
     private readonly IBaseRepository<User>? _userRepository;
     private readonly IBaseRepository<PostEditHistory> _postEditHistoryRepository;
     private readonly ForumEditHistoryOptions _editHistoryOptions;
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
     private readonly ISystemSettingProvider _systemSettingProvider;
+    private readonly IReliableOutboxService? _reliableOutboxService;
 
     private sealed record PostContentSettings(
         int MinTitleLength,
@@ -78,7 +75,8 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<PostLotteryWinner>? postLotteryWinnerRepository = null,
         IBaseRepository<Comment>? commentRepository = null,
         IBaseRepository<CommentHighlight>? commentHighlightRepository = null,
-        IBaseRepository<User>? userRepository = null)
+        IBaseRepository<User>? userRepository = null,
+        IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -99,15 +97,12 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _commentCustomRepository = commentCustomRepository;
         _tagService = tagService;
         _attachmentService = attachmentService;
-        _coinRewardService = coinRewardService;
-        _notificationService = notificationService;
-        _dedupService = dedupService;
-        _experienceService = experienceService;
         _userRepository = userRepository;
         _postEditHistoryRepository = postEditHistoryRepository;
         _editHistoryOptions = editHistoryOptions.Value;
         _attachmentRepository = attachmentRepository;
         _systemSettingProvider = systemSettingProvider;
+        _reliableOutboxService = reliableOutboxService;
     }
 
     private async Task<PostContentSettings> ValidatePostContentSettingsAsync(string title, string content)

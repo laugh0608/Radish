@@ -64,7 +64,7 @@ public class CommentHighlightJob
         catch (Exception ex)
         {
             Log.Error(ex, "[CommentHighlight] 统计神评/沙发时发生异常");
-            return (0, 0);
+            throw;
         }
     }
 
@@ -204,8 +204,6 @@ public class CommentHighlightJob
                     // 🎁 发放点赞加成奖励（仅当点赞数有增长时）
                     if (likeIncrement > 0 && existingHighlight != null)
                     {
-                        _ = Task.Run(async () =>
-                        {
                             try
                             {
                                 // 发放萝卜币加成奖励
@@ -225,15 +223,13 @@ public class CommentHighlightJob
                             catch (Exception ex)
                             {
                                 Log.Error(ex, "发放神评点赞加成萝卜币奖励失败：CommentId={CommentId}", currentTopComment.Id);
+                                throw;
                             }
-                        });
                     }
 
                     // 🎁 发放神评经验值奖励（首次成为神评时）
                     if (existingHighlight == null || existingHighlight.CommentId != currentTopComment.Id)
                     {
-                        _ = Task.Run(async () =>
-                        {
                             try
                             {
                                 Log.Information("准备发放神评经验值：CommentId={CommentId}, AuthorId={AuthorId}",
@@ -269,8 +265,8 @@ public class CommentHighlightJob
                             {
                                 Log.Error(ex, "发放神评经验值奖励失败：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopComment.Id, currentTopComment.AuthorId);
+                                throw;
                             }
-                        });
                     }
                 }
             }
@@ -287,7 +283,7 @@ public class CommentHighlightJob
         catch (Exception ex)
         {
             Log.Error(ex, "[CommentHighlight] 统计神评时发生异常");
-            return 0;
+            throw;
         }
     }
 
@@ -434,8 +430,6 @@ public class CommentHighlightJob
                     // 🎁 发放点赞加成奖励（仅当点赞数有增长时）
                     if (likeIncrement > 0 && existingHighlight != null)
                     {
-                        _ = Task.Run(async () =>
-                        {
                             try
                             {
                                 // 发放萝卜币加成奖励
@@ -455,15 +449,13 @@ public class CommentHighlightJob
                             catch (Exception ex)
                             {
                                 Log.Error(ex, "发放沙发点赞加成萝卜币奖励失败：CommentId={CommentId}", currentTopChild.Id);
+                                throw;
                             }
-                        });
                     }
 
                     // 🎁 发放沙发经验值奖励（首次成为沙发时）
                     if (existingHighlight == null || existingHighlight.CommentId != currentTopChild.Id)
                     {
-                        _ = Task.Run(async () =>
-                        {
                             try
                             {
                                 Log.Information("准备发放沙发经验值：CommentId={CommentId}, AuthorId={AuthorId}",
@@ -499,8 +491,8 @@ public class CommentHighlightJob
                             {
                                 Log.Error(ex, "发放沙发经验值奖励失败：CommentId={CommentId}, AuthorId={AuthorId}",
                                     currentTopChild.Id, currentTopChild.AuthorId);
+                                throw;
                             }
-                        });
                     }
                 }
             }
@@ -517,7 +509,7 @@ public class CommentHighlightJob
         catch (Exception ex)
         {
             Log.Error(ex, "[CommentHighlight] 统计沙发时发生异常");
-            return 0;
+            throw;
         }
     }
 }

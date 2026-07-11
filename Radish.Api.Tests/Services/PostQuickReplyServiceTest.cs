@@ -124,7 +124,7 @@ public class PostQuickReplyServiceTest
         result.VoAuthorId.ShouldBe(3001);
         result.VoContent.ShouldBe("好耶🙂");
 
-        notificationService.VerifyAll();
+        notificationService.VerifyNoOtherCalls();
         quickReplyRepository.VerifyAll();
         postRepository.VerifyAll();
         caching.VerifyAll();
@@ -466,6 +466,7 @@ public class PostQuickReplyServiceTest
             }),
             attachmentService: null,
             notificationService: notificationService.Object,
-            logger: logger.Object);
+            logger: logger.Object,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
     }
 }

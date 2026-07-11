@@ -56,10 +56,13 @@ public sealed class LikeRelationConsistencyTest
             .Where(like => like.UserId == 3001 && like.PostId == 1001)
             .ToList();
         var post = harness.Db.Queryable<Post>().First(post => post.Id == 1001);
+        var outboxMessages = harness.Db.Queryable<ReliableOutboxMessage>().ToList();
 
         Assert.Single(relations);
         Assert.False(relations[0].IsDeleted);
         Assert.Equal(1, post.LikeCount);
+        Assert.Equal(2, outboxMessages.Count);
+        Assert.All(outboxMessages, message => Assert.Equal(ReliableTaskTypes.PostLiked, message.TaskType));
     }
 
     [Fact]
@@ -99,6 +102,33 @@ public sealed class LikeRelationConsistencyTest
     }
 
     [Fact]
+    public async Task TogglePostLikeAsync_ShouldRollbackRelationAndCount_WhenOutboxWriteFails()
+    {
+        var outboxRepository = new Mock<IReliableOutboxRepository>(MockBehavior.Strict);
+        outboxRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<ReliableOutboxDraft>()))
+            .ThrowsAsync(new InvalidOperationException("outbox unavailable"));
+        using var harness = LikeRepositoryHarness.Create(outboxRepository.Object);
+        harness.Db.Insertable(new Post("标题", "正文")
+        {
+            Id = 1002,
+            AuthorId = 2001,
+            IsPublished = true,
+            PublishTime = DateTime.UtcNow,
+            TenantId = 0,
+            LikeCount = 0
+        }).ExecuteCommand();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.PostRepository.TogglePostLikeAsync(3001, 1002));
+
+        Assert.False(harness.Db.Queryable<UserPostLike>()
+            .Where(like => like.UserId == 3001 && like.PostId == 1002)
+            .Any());
+        Assert.Equal(0, harness.Db.Queryable<Post>().First(post => post.Id == 1002).LikeCount);
+    }
+
+    [Fact]
     public async Task PostToggleLikeAsync_ShouldNotTriggerRewards_WhenRelationDidNotChange()
     {
         var customRepository = new Mock<IPostRepository>(MockBehavior.Strict);
@@ -117,6 +147,7 @@ public sealed class LikeRelationConsistencyTest
             .Setup(repository => repository.TogglePostLikeAsync(3001, 1001))
             .ReturnsAsync(new PostLikePersistenceResult(
                 1001,
+                0,
                 2001,
                 "标题",
                 "post_public",
@@ -156,6 +187,7 @@ public sealed class LikeRelationConsistencyTest
             .Setup(repository => repository.ToggleCommentLikeAsync(3001, 4001))
             .ReturnsAsync(new CommentLikePersistenceResult(
                 4001,
+                0,
                 1001,
                 null,
                 2001,
@@ -241,13 +273,17 @@ public sealed class LikeRelationConsistencyTest
         private static bool appServicesConfigured;
         private readonly string _dbPath;
 
-        private LikeRepositoryHarness(string dbPath, SqlSugarScope db)
+        private LikeRepositoryHarness(
+            string dbPath,
+            SqlSugarScope db,
+            IReliableOutboxRepository? outboxRepository = null)
         {
             _dbPath = dbPath;
             Db = db;
             var unitOfWork = new UnitOfWorkManage(db, NullLogger<UnitOfWorkManage>.Instance);
-            PostRepository = new PostRepository(unitOfWork);
-            CommentRepository = new CommentRepository(unitOfWork);
+            var effectiveOutboxRepository = outboxRepository ?? new ReliableOutboxRepository(db);
+            PostRepository = new PostRepository(unitOfWork, effectiveOutboxRepository);
+            CommentRepository = new CommentRepository(unitOfWork, effectiveOutboxRepository);
         }
 
         public SqlSugarScope Db { get; }
@@ -256,21 +292,21 @@ public sealed class LikeRelationConsistencyTest
 
         public CommentRepository CommentRepository { get; }
 
-        public static LikeRepositoryHarness Create()
+        public static LikeRepositoryHarness Create(IReliableOutboxRepository? outboxRepository = null)
         {
             EnsureAppServices();
             var dbPath = Path.Combine(Path.GetTempPath(), $"radish-like-{Guid.NewGuid():N}.db");
             var db = new SqlSugarScope(new ConnectionConfig
             {
-                ConfigId = "Main",
+                ConfigId = "main",
                 DbType = DbType.Sqlite,
                 ConnectionString = $"Data Source={dbPath}",
                 IsAutoCloseConnection = true,
                 InitKeyType = InitKeyType.Attribute
             });
 
-            db.CodeFirst.InitTables<Post, Comment, UserPostLike, UserCommentLike>();
-            return new LikeRepositoryHarness(dbPath, db);
+            db.CodeFirst.InitTables<Post, Comment, UserPostLike, UserCommentLike, ReliableOutboxMessage>();
+            return new LikeRepositoryHarness(dbPath, db, outboxRepository);
         }
 
         private static void EnsureAppServices()

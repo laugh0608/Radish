@@ -10,8 +10,41 @@ namespace Radish.Repository;
 /// <summary>聊天室消息仓储</summary>
 public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannelMessageRepository
 {
-    public ChannelMessageRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
+    private readonly IReliableOutboxRepository? _reliableOutboxRepository;
+
+    public ChannelMessageRepository(
+        IUnitOfWorkManage unitOfWorkManage,
+        IReliableOutboxRepository? reliableOutboxRepository = null) : base(unitOfWorkManage)
     {
+        _reliableOutboxRepository = reliableOutboxRepository;
+    }
+
+    public async Task<long> AddWithOutboxAsync(ChannelMessage message, ReliableOutboxDraft? outboxDraft)
+    {
+        if (message.Id <= 0)
+        {
+            throw new ArgumentException("聊天室消息必须预先分配 ID", nameof(message));
+        }
+
+        DbProtectedClient.Ado.BeginTran();
+        try
+        {
+            await DbProtectedClient.Insertable(message).ExecuteCommandAsync();
+            if (outboxDraft != null)
+            {
+                var outboxRepository = _reliableOutboxRepository
+                    ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
+                await outboxRepository.AddAsync(outboxDraft);
+            }
+
+            DbProtectedClient.Ado.CommitTran();
+            return message.Id;
+        }
+        catch
+        {
+            DbProtectedClient.Ado.RollbackTran();
+            throw;
+        }
     }
 
     public async Task<ChannelMessage?> QueryFirstIncludingDeletedAsync(Expression<Func<ChannelMessage, bool>> whereExpression)

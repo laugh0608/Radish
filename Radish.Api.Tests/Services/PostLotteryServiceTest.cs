@@ -168,7 +168,8 @@ public class PostLotteryServiceTest
             winnerRepository.Object,
             commentRepository.Object,
             notificationService.Object,
-            logger.Object);
+            logger.Object,
+            Mock.Of<IReliableOutboxService>());
 
         var result = await service.DrawAsync(1001, 9527, "Author");
 
@@ -179,7 +180,7 @@ public class PostLotteryServiceTest
         winnerRepository.VerifyAll();
         lotteryRepository.VerifyAll();
         postService.VerifyAll();
-        notificationService.VerifyAll();
+        notificationService.VerifyNoOtherCalls();
     }
 
     [Fact]
@@ -223,7 +224,8 @@ public class PostLotteryServiceTest
             winnerRepository.Object,
             commentRepository.Object,
             notificationService.Object,
-            logger.Object);
+            logger.Object,
+            Mock.Of<IReliableOutboxService>());
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
 
@@ -272,7 +274,8 @@ public class PostLotteryServiceTest
             winnerRepository.Object,
             commentRepository.Object,
             notificationService.Object,
-            logger.Object);
+            logger.Object,
+            Mock.Of<IReliableOutboxService>());
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DrawAsync(1001, 9527, "Author"));
 
@@ -357,7 +360,8 @@ public class PostLotteryServiceTest
             winnerRepository.Object,
             commentRepository.Object,
             notificationService.Object,
-            logger.Object);
+            logger.Object,
+            Mock.Of<IReliableOutboxService>());
 
         var result = await service.AutoDrawByPostIdAsync(2001);
 

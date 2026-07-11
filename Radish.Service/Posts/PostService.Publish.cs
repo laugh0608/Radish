@@ -75,79 +75,17 @@ public partial class PostService
             await CreatePostLotteryAsync(post, postId, lottery, operatorName);
         }
 
-        _ = Task.Run(async () =>
-        {
-            try
-            {
-                Serilog.Log.Information("准备发放发帖经验值：PostId={PostId}, UserId={UserId}", postId, post.AuthorId);
-
-                var grantResult = await _experienceService.GrantExperienceOnceAsync(
-                    userId: post.AuthorId,
-                    amount: 20,
-                    expType: "POST_CREATE",
-                    rewardBusinessKey: $"exp:post-create:author:{post.AuthorId}:post:{postId}",
-                    businessType: "Post",
-                    businessId: postId,
-                    remark: "发布帖子");
-
-                if (grantResult.Granted)
-                {
-                    Serilog.Log.Information("发帖经验值发放成功：PostId={PostId}, UserId={UserId}, Amount=20",
-                        postId, post.AuthorId);
-                }
-                else if (grantResult.AlreadyGranted)
-                {
-                    Serilog.Log.Debug("发帖经验值已发放过，跳过：PostId={PostId}, UserId={UserId}",
-                        postId, post.AuthorId);
-                }
-                else
-                {
-                    Serilog.Log.Warning("发帖经验值发放失败：PostId={PostId}, UserId={UserId}",
-                        postId, post.AuthorId);
-                }
-
-                var userPostCount = await _postRepository.QueryCountAsync(p =>
-                    p.AuthorId == post.AuthorId && !p.IsDeleted);
-
-                Serilog.Log.Information("用户帖子数量统计：UserId={UserId}, PostCount={PostCount}",
-                    post.AuthorId, userPostCount);
-
-                if (userPostCount == 1)
-                {
-                    Serilog.Log.Information("检测到首次发帖，准备发放额外奖励：UserId={UserId}", post.AuthorId);
-
-                    var firstPostResult = await _experienceService.GrantExperienceOnceAsync(
-                        userId: post.AuthorId,
-                        amount: 30,
-                        expType: "FIRST_POST",
-                        rewardBusinessKey: $"exp:first-post:user:{post.AuthorId}",
-                        businessType: "Post",
-                        businessId: postId,
-                        remark: "首次发帖奖励");
-
-                    if (firstPostResult.Granted)
-                    {
-                        Serilog.Log.Information("首次发帖经验值奖励发放成功：PostId={PostId}, UserId={UserId}, Amount=30",
-                            postId, post.AuthorId);
-                    }
-                    else if (firstPostResult.AlreadyGranted)
-                    {
-                        Serilog.Log.Debug("首次发帖经验值奖励已发放过，跳过：PostId={PostId}, UserId={UserId}",
-                            postId, post.AuthorId);
-                    }
-                    else
-                    {
-                        Serilog.Log.Warning("首次发帖经验值奖励发放失败：PostId={PostId}, UserId={UserId}",
-                            postId, post.AuthorId);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Serilog.Log.Error(ex, "发放发帖经验值失败：PostId={PostId}, UserId={UserId}, Message={Message}, StackTrace={StackTrace}",
-                    postId, post.AuthorId, ex.Message, ex.StackTrace);
-            }
-        });
+        var reliableOutboxService = _reliableOutboxService
+            ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+        await reliableOutboxService.AddAsync(
+            ReliableOutboxSources.Main,
+            post.TenantId,
+            ReliableTaskTypes.PostPublished,
+            $"task:post-published:{postId}",
+            "Post",
+            postId.ToString(),
+            new PostPublishedTaskPayload(postId, post.AuthorId),
+            DateTime.UtcNow);
 
         return postId;
     }

@@ -4,6 +4,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Microsoft.Extensions.Logging;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -17,7 +18,7 @@ public class PostLotteryService : IPostLotteryService
     private readonly IBaseRepository<PostLottery> _postLotteryRepository;
     private readonly IBaseRepository<PostLotteryWinner> _postLotteryWinnerRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
-    private readonly INotificationService _notificationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
     private readonly ILogger<PostLotteryService> _logger;
 
     public PostLotteryService(
@@ -27,14 +28,15 @@ public class PostLotteryService : IPostLotteryService
         IBaseRepository<PostLotteryWinner> postLotteryWinnerRepository,
         IBaseRepository<Comment> commentRepository,
         INotificationService notificationService,
-        ILogger<PostLotteryService> logger)
+        ILogger<PostLotteryService> logger,
+        IReliableOutboxService? reliableOutboxService = null)
     {
         _postService = postService;
         _postRepository = postRepository;
         _postLotteryRepository = postLotteryRepository;
         _postLotteryWinnerRepository = postLotteryWinnerRepository;
         _commentRepository = commentRepository;
-        _notificationService = notificationService;
+        _reliableOutboxService = reliableOutboxService;
         _logger = logger;
     }
 
@@ -156,8 +158,11 @@ public class PostLotteryService : IPostLotteryService
             ? "抽奖奖品"
             : lottery.PrizeName.Trim();
 
-        await _notificationService.CreateNotificationAsync(new Model.DtoModels.CreateNotificationDto
+        var notificationId = SnowFlakeSingle.Instance.NextId();
+        var notification = new Model.DtoModels.CreateNotificationDto
         {
+            NotificationId = notificationId,
+            BusinessKey = $"notification:lottery-won:lottery:{lottery.Id}",
             Type = NotificationType.LotteryWon,
             Title = "抽奖开奖结果",
             Content = $"你在帖子《{normalizedPostTitle}》的抽奖“{normalizedPrizeName}”中中奖啦。",
@@ -175,7 +180,18 @@ public class PostLotteryService : IPostLotteryService
                 normalizedPrizeName,
                 actualWinnerCount,
                 post.PublicId)
-        });
+        };
+        var reliableOutboxService = _reliableOutboxService
+            ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+        await reliableOutboxService.AddAsync(
+            ReliableOutboxSources.Main,
+            lottery.TenantId,
+            ReliableTaskTypes.NotificationRequested,
+            $"task:notification:lottery-won:lottery:{lottery.Id}",
+            "PostLottery",
+            lottery.Id.ToString(),
+            new NotificationRequestedTaskPayload(notification),
+            DateTime.UtcNow);
     }
 
     private async Task<Post> GetPostOrThrowAsync(long postId)
@@ -297,16 +313,7 @@ public class PostLotteryService : IPostLotteryService
         lottery.ModifyId = operatorUserId > 0 ? operatorUserId : null;
         await _postLotteryRepository.UpdateAsync(lottery);
 
-        try
-        {
-            await NotifyWinnersAsync(post, lottery, winners, operatorName, operatorUserId, actualWinnerCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "[PostLotteryService] 开奖成功，但发送中奖通知失败：PostId={PostId}, LotteryId={LotteryId}",
-                post.Id, lottery.Id);
-        }
+        await NotifyWinnersAsync(post, lottery, winners, operatorName, operatorUserId, actualWinnerCount);
 
         var result = await GetByPostIdAsync(post.Id, operatorUserId > 0 ? operatorUserId : null);
         if (result.VoLottery == null)

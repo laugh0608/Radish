@@ -141,18 +141,23 @@ public partial class ExperienceService
         if (newLevel > oldLevel)
         {
             Log.Information("管理员调整触发升级：用户 {UserId} 从 Lv.{OldLevel} 升级到 Lv.{NewLevel}", userId, oldLevel, newLevel);
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await HandleLevelUpAsync(userId, oldLevel, newLevel);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "处理管理员调整后的升级事件失败：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
-                        userId, oldLevel, newLevel);
-                }
-            });
+            var reliableOutboxService = _reliableOutboxService
+                ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+            await reliableOutboxService.AddAsync(
+                ReliableOutboxSources.Main,
+                transaction.TenantId,
+                ReliableTaskTypes.ExperienceLevelChanged,
+                $"task:level-change:exp-transaction:{transaction.Id}",
+                "ExpTransaction",
+                transaction.Id.ToString(),
+                new ExperienceLevelChangedTaskPayload(
+                    transaction.Id,
+                    userId,
+                    oldLevel,
+                    newLevel,
+                    newLevel * 100L,
+                    SnowFlakeSingle.Instance.NextId()),
+                DateTime.UtcNow);
         }
 
         return true;

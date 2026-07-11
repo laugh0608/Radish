@@ -14,6 +14,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -26,7 +27,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly IAttachmentService? _attachmentService;
     private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly ForumQuickReplyOptions _options;
-    private readonly INotificationService? _notificationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
     private readonly ILogger<PostQuickReplyService>? _logger;
     private readonly IBaseRepository<User>? _userRepository;
 
@@ -40,7 +41,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         IAttachmentService? attachmentService = null,
         INotificationService? notificationService = null,
         ILogger<PostQuickReplyService>? logger = null,
-        IBaseRepository<User>? userRepository = null)
+        IBaseRepository<User>? userRepository = null,
+        IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, baseRepository)
     {
         _postQuickReplyRepository = baseRepository;
@@ -49,7 +51,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _systemSettingProvider = systemSettingProvider;
         _options = options.Value;
         _attachmentService = attachmentService;
-        _notificationService = notificationService;
+        _reliableOutboxService = reliableOutboxService;
         _logger = logger;
         _userRepository = userRepository;
     }
@@ -376,15 +378,18 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
 
     private async Task TrySendPostQuickReplyNotificationAsync(Post post, PostQuickReply quickReply, string? triggerAvatar)
     {
-        if (_notificationService == null || post.AuthorId <= 0 || post.AuthorId == quickReply.AuthorId)
+        if (post.AuthorId <= 0 || post.AuthorId == quickReply.AuthorId)
         {
             return;
         }
 
         try
         {
-            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+            var notificationId = SnowFlakeSingle.Instance.NextId();
+            var notification = new CreateNotificationDto
             {
+                NotificationId = notificationId,
+                BusinessKey = $"notification:post-quick-reply:{quickReply.Id}:receiver:{post.AuthorId}",
                 Type = NotificationType.PostQuickReplied,
                 Title = "帖子收到轻回应",
                 Content = quickReply.Content,
@@ -397,7 +402,18 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 ReceiverUserIds = new List<long> { post.AuthorId },
                 ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(post.Id, postPublicId: post.PublicId),
                 TenantId = quickReply.TenantId
-            });
+            };
+            var reliableOutboxService = _reliableOutboxService
+                ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+            await reliableOutboxService.AddAsync(
+                ReliableOutboxSources.Main,
+                quickReply.TenantId,
+                ReliableTaskTypes.NotificationRequested,
+                $"task:notification:post-quick-reply:{quickReply.Id}",
+                "PostQuickReply",
+                quickReply.Id.ToString(),
+                new NotificationRequestedTaskPayload(notification),
+                DateTime.UtcNow);
         }
         catch (Exception ex)
         {
@@ -406,6 +422,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 post.Id,
                 quickReply.Id,
                 post.AuthorId);
+            throw;
         }
     }
 

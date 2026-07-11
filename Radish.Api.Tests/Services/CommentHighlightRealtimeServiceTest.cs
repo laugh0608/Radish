@@ -458,7 +458,8 @@ public class CommentHighlightRealtimeServiceTest
             Options.Create(new ForumEditHistoryOptions()),
             CreateDefaultSystemSettingProvider(
                 commentHighlightStabilityWindowMinutes,
-                commentHighlightReplacementMinLikeDelta));
+                commentHighlightReplacementMinLikeDelta),
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
     }
 
     private static ISystemSettingProvider CreateDefaultSystemSettingProvider(

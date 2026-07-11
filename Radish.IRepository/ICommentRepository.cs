@@ -27,6 +27,7 @@ public interface ICommentRepository
 /// <summary>评论点赞持久化结果。</summary>
 public sealed record CommentLikePersistenceResult(
     long CommentId,
+    long TenantId,
     long PostId,
     long? ParentId,
     long AuthorId,

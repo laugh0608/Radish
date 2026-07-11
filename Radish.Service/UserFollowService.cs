@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
+using Radish.Common.AttributeTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -19,7 +20,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
     private readonly IBaseRepository<User> _userRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IPostService _postService;
-    private readonly INotificationService _notificationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
     private readonly ILogger<UserFollowService> _logger;
     private readonly FeedDistributionOptions _feedDistributionOptions;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
@@ -33,19 +34,21 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         INotificationService notificationService,
         ILogger<UserFollowService> logger,
         IOptions<FeedDistributionOptions> feedDistributionOptions,
-        IAttachmentUrlResolver attachmentUrlResolver)
+        IAttachmentUrlResolver attachmentUrlResolver,
+        IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, baseRepository)
     {
         _userFollowRepository = baseRepository;
         _userRepository = userRepository;
         _attachmentRepository = attachmentRepository;
         _postService = postService;
-        _notificationService = notificationService;
+        _reliableOutboxService = reliableOutboxService;
         _logger = logger;
         _feedDistributionOptions = feedDistributionOptions.Value;
         _attachmentUrlResolver = attachmentUrlResolver;
     }
 
+    [UseTran]
     public async Task<bool> FollowAsync(long followerUserId, long targetUserId, long tenantId, string? operatorName)
     {
         if (followerUserId <= 0 || targetUserId <= 0)
@@ -423,8 +426,11 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             }
 
             var avatarMap = await LoadAvatarUrlMapAsync(new[] { followerUserId });
-            await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+            var notificationId = SnowFlakeSingle.Instance.NextId();
+            var notification = new CreateNotificationDto
             {
+                NotificationId = notificationId,
+                BusinessKey = $"notification:followed:follower:{followerUserId}:target:{targetUser.Id}:event:{notificationId}",
                 Type = NotificationType.Followed,
                 Title = "新增粉丝",
                 Content = $"{followerName} 关注了你",
@@ -436,7 +442,18 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 TriggerAvatar = avatarMap.GetValueOrDefault(followerUserId),
                 ReceiverUserIds = new List<long> { targetUser.Id },
                 TenantId = tenantId
-            });
+            };
+            var reliableOutboxService = _reliableOutboxService
+                ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+            await reliableOutboxService.AddAsync(
+                ReliableOutboxSources.Main,
+                tenantId,
+                ReliableTaskTypes.NotificationRequested,
+                $"task:notification:followed:{notificationId}",
+                "UserFollow",
+                $"{followerUserId}:{targetUser.Id}",
+                new NotificationRequestedTaskPayload(notification),
+                DateTime.UtcNow);
         }
         catch (Exception ex)
         {
@@ -444,6 +461,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 "[UserFollowService] 发送关注通知失败，FollowerUserId={FollowerUserId}, TargetUserId={TargetUserId}",
                 followerUserId,
                 targetUser.Id);
+            throw;
         }
     }
 

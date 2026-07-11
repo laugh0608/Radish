@@ -19,6 +19,7 @@ public interface ICoinRewardService
     /// <param name="likerId">点赞者 ID</param>
     /// <returns>是否成功发放（如已发放过则返回 false）</returns>
     Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId);
+    Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId, DateTime rewardDate);
 
     /// <summary>
     /// 发放评论点赞奖励（评论被点赞）
@@ -28,6 +29,7 @@ public interface ICoinRewardService
     /// <param name="likerId">点赞者 ID</param>
     /// <returns>是否成功发放</returns>
     Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId);
+    Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId, DateTime rewardDate);
 
     #endregion
 
@@ -53,6 +55,11 @@ public interface ICoinRewardService
         long parentCommentId,
         long parentAuthorId,
         long replyCommentId);
+    Task<CoinRewardResult> GrantCommentReplyRewardAsync(
+        long parentCommentId,
+        long parentAuthorId,
+        long replyCommentId,
+        DateTime rewardDate);
 
     #endregion
 
@@ -116,6 +123,7 @@ public interface ICoinRewardService
     /// <param name="userId">用户 ID</param>
     /// <returns>是否已达上限</returns>
     Task<bool> CheckDailyLikeRewardLimitAsync(long userId);
+    Task<bool> CheckDailyLikeRewardLimitAsync(long userId, DateTime rewardDate);
 
     /// <summary>
     /// 检查是否已发放过该奖励（防重复）

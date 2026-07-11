@@ -61,6 +61,7 @@ public interface IPostRepository
 /// <summary>帖子点赞持久化结果。</summary>
 public sealed record PostLikePersistenceResult(
     long PostId,
+    long TenantId,
     long AuthorId,
     string Title,
     string? PublicId,

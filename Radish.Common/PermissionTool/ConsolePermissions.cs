@@ -67,6 +67,7 @@ public static class ConsolePermissions
     public const string SystemConfigEdit = "console.system-config.edit";
     public const string SystemConfigDelete = "console.system-config.delete";
     public const string HangfireView = "console.hangfire.view";
+    public const string HangfireReplay = "console.hangfire.replay";
 
     private static readonly IReadOnlyDictionary<string, string[]> ApiPermissionMappings =
         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
@@ -171,6 +172,8 @@ public static class ConsolePermissions
             ["/api/v1/Statistics/GetProductSalesRanking"] = new[] { DashboardView },
             ["/api/v1/Statistics/GetUserLevelDistribution"] = new[] { DashboardView },
             ["/hangfire(/.*)?"] = new[] { HangfireView },
+            ["/api/v1/ReliableOutbox/Replay"] = new[] { HangfireReplay },
+            ["/api/v1/ReliableOutbox/GetDeadLetters"] = new[] { HangfireView },
         };
 
     private static readonly string[] AdminDefaultPermissions =
@@ -239,6 +242,7 @@ public static class ConsolePermissions
         SystemConfigEdit,
         SystemConfigDelete,
         HangfireView,
+        HangfireReplay,
     };
 
     public static IReadOnlyCollection<string> GetDefaultPermissions(IReadOnlyCollection<string> roleNames)

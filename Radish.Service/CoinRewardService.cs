@@ -41,14 +41,19 @@ public class CoinRewardService : ICoinRewardService
     /// <summary>
     /// 发放点赞奖励（帖子被点赞）
     /// </summary>
-    public async Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId)
+    public Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId)
+    {
+        return GrantLikeRewardAsync(postId, authorId, likerId, DateTime.Today);
+    }
+
+    public async Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId, DateTime rewardDate)
     {
         try
         {
-            var today = DateTime.Today;
+            var today = rewardDate.Date;
 
             // 2. 检查点赞者今日奖励是否已达上限
-            var likerLimitReached = await CheckDailyLikeRewardLimitAsync(likerId);
+            var likerLimitReached = await CheckDailyLikeRewardLimitAsync(likerId, today);
 
             // 3. 发放作者奖励 +2 胡萝卜
             var authorGrant = await _coinService.GrantCoinOnceAsync(
@@ -92,21 +97,26 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放点赞奖励失败：帖子={PostId}, 作者={AuthorId}, 点赞者={LikerId}",
                 postId, authorId, likerId);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
     /// <summary>
     /// 发放评论点赞奖励
     /// </summary>
-    public async Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId)
+    public Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId)
+    {
+        return GrantCommentLikeRewardAsync(commentId, authorId, likerId, DateTime.Today);
+    }
+
+    public async Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId, DateTime rewardDate)
     {
         try
         {
-            var today = DateTime.Today;
+            var today = rewardDate.Date;
 
             // 检查点赞者上限
-            var likerLimitReached = await CheckDailyLikeRewardLimitAsync(likerId);
+            var likerLimitReached = await CheckDailyLikeRewardLimitAsync(likerId, today);
 
             // 发放作者奖励
             var authorGrant = await _coinService.GrantCoinOnceAsync(
@@ -147,7 +157,7 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放评论点赞奖励失败：评论={CommentId}, 作者={AuthorId}",
                 commentId, authorId);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
@@ -187,21 +197,30 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放评论奖励失败：评论={CommentId}, 作者={AuthorId}",
                 commentId, authorId);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
     /// <summary>
     /// 发放评论被回复奖励
     /// </summary>
-    public async Task<CoinRewardResult> GrantCommentReplyRewardAsync(
+    public Task<CoinRewardResult> GrantCommentReplyRewardAsync(
         long parentCommentId,
         long parentAuthorId,
         long replyCommentId)
     {
+        return GrantCommentReplyRewardAsync(parentCommentId, parentAuthorId, replyCommentId, DateTime.Today);
+    }
+
+    public async Task<CoinRewardResult> GrantCommentReplyRewardAsync(
+        long parentCommentId,
+        long parentAuthorId,
+        long replyCommentId,
+        DateTime rewardDate)
+    {
         try
         {
-            var today = DateTime.Today;
+            var today = rewardDate.Date;
 
             // 发放奖励 +1 胡萝卜
             var grant = await _coinService.GrantCoinOnceAsync(
@@ -222,7 +241,7 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放评论被回复奖励失败：父评论={ParentCommentId}, 作者={ParentAuthorId}",
                 parentCommentId, parentAuthorId);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
@@ -264,7 +283,7 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放神评奖励失败：评论={CommentId}, 作者={AuthorId}",
                 commentId, authorId);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
@@ -302,7 +321,7 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放沙发奖励失败：评论={CommentId}, 作者={AuthorId}",
                 commentId, authorId);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
@@ -351,7 +370,7 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放点赞加成奖励失败：HighlightId={HighlightId}, 类型={HighlightType}",
                 highlightId, highlightType);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
@@ -404,7 +423,7 @@ public class CoinRewardService : ICoinRewardService
         {
             Log.Error(ex, "发放保留奖励失败：HighlightId={HighlightId}, 类型={HighlightType}, 周数={Week}",
                 highlightId, highlightType, week);
-            return CoinRewardResult.Failure($"发放失败: {ex.Message}");
+            throw;
         }
     }
 
@@ -415,11 +434,16 @@ public class CoinRewardService : ICoinRewardService
     /// <summary>
     /// 检查用户今日点赞奖励是否已达上限
     /// </summary>
-    public async Task<bool> CheckDailyLikeRewardLimitAsync(long userId)
+    public Task<bool> CheckDailyLikeRewardLimitAsync(long userId)
+    {
+        return CheckDailyLikeRewardLimitAsync(userId, DateTime.Today);
+    }
+
+    public async Task<bool> CheckDailyLikeRewardLimitAsync(long userId, DateTime rewardDate)
     {
         try
         {
-            var today = DateTime.Today;
+            var today = rewardDate.Date;
             var tomorrow = today.AddDays(1);
 
             // 统计今日点赞奖励总额（仅统计点赞者获得的奖励）
@@ -445,7 +469,7 @@ public class CoinRewardService : ICoinRewardService
         catch (Exception ex)
         {
             Log.Error(ex, "检查用户 {UserId} 今日点赞奖励上限失败", userId);
-            return true; // 出错时默认返回已达上限，避免刷币
+            throw;
         }
     }
 

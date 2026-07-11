@@ -485,6 +485,8 @@ builder.Services.AddScoped<FileCleanupJob>();
 builder.Services.AddScoped<CommentHighlightJob>();
 builder.Services.AddScoped<RetentionRewardJob>();
 builder.Services.AddScoped<ShopJob>();
+builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxDispatcherJob>();
+builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxExecutionJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -622,6 +624,17 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 // 注册 Hangfire 定时任务
+RecurringJob.AddOrUpdate<Radish.Api.Services.ReliableOutboxDispatcherJob>(
+    "reliable-outbox-dispatch",
+    job => job.DispatchAsync(50),
+    "*/1 * * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+Log.Information("[Hangfire] 已注册可靠 Outbox 分派任务: reliable-outbox-dispatch");
+
 var fileCleanupConfig = builder.Configuration.GetSection("Hangfire:FileCleanup");
 
 // 1. 软删除文件清理任务
