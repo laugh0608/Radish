@@ -1,6 +1,6 @@
 # P3-12-F Q1-A 事务后可靠任务审计与实施方案
 
-> 状态：`审计、方案与首批实现已完成；等待审阅`
+> 状态：`审计、实现与候选级验证已完成；具备独立集成条件`
 >
 > 日期：`2026-07-11`（Asia/Shanghai）
 >
@@ -252,6 +252,9 @@ Message 持久通知成功
 ## 十三、验证结果
 
 - `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter FullyQualifiedName~ReliableOutbox`：`9/9` 通过。
-- `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore`：`584/584` 通过。
+- 默认 `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore`：`584` 通过、`1` 项 PostgreSQL 环境测试明确跳过，总计 `585`。
+- 提供隔离 PostgreSQL 连接串后，PostgreSQL Outbox / Message 集成测试 `1/1` 通过。
 - `dotnet build Radish.slnx -c Debug --no-restore`：通过，`0` 警告、`0` 错误。
-- 未启动服务，未执行浏览器或 PostgreSQL 运行态故障注入；这部分保留为 Q1-A 合并准备 / Release Go 证据，不把 SQLite 与静态验证外推为运行态结论。
+- PostgreSQL `doctor → apply → apply → verify` 升级与重入演练通过；Main / Chat Outbox 与 Message 通知唯一索引已完成系统目录实物核对。
+- 临时启动 API 与 PostgreSQL Hangfire，`Pending` 和过期 `Processing` 两条重复通知任务均恢复为 `Succeeded`，目标通知及接收关系各只有一行。
+- 完整证据见 [Q1-A 候选级可靠性验证记录](/records/p3-12-f-q1-a-candidate-validation-2026-07-11)。

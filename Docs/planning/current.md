@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Q1-A 事务后可靠任务治理`
+- **工程第一顺位**：`P3-12-F / Q1-B API 错误契约审计与兼容方案`
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
 - **复核日期**：`2026-07-11`
 - **当前判断**：
@@ -27,6 +27,7 @@
   - `P3-12-F` 进入条件已经满足，阶段正式切换到正式版发布候选；当前仍不把技术 smoke 或页面可达误写成真实使用增长，真正的增长验证从受控试用开始。
   - `P3-12-F` 不再被定义为“所有候选工作全部完成后的奖励阶段”：Q0 与有限产品矩阵负责进入 F，Q1 / Q2 / Q3 的发布必要子集在 F 内完成并作为 Release Go 门禁，Q4 转为持续维护。
   - 2026-07-11 Q1-A 已完成实现收口：14 处裸 `_ = Task.Run` 已按不可丢失业务写、可重算派生数据和 best-effort 实时推送完成迁移；Main / Chat 源库 Outbox、Hangfire 领取与租约恢复、目标写幂等、Message 通知事务、DeadLetter 与受权人工重放 API 已落地。订单权益 / 背包核心写仍保持同步事务，未扩入 Q1-B、Q2、Q3 或页面工作。
+  - 2026-07-11 Q1-A 候选级验证已通过：PostgreSQL 源事务回滚、双 Worker 原子领取、租约恢复、通知两表事务与业务键幂等均由环境驱动集成测试覆盖；DbMigrate 首次建库、重入与 verify 通过，真实 API + PostgreSQL Hangfire 已恢复 `Pending` 和过期 `Processing` 重复任务且只生成一份持久通知。验证中发现的 Chat 种子 PostgreSQL 重入阻断与 ReliableOutbox 权限契约缺口已修复。
 
 ## V1 产品与发布范围
 
@@ -51,6 +52,7 @@ Radish V1 的产品定位固定为：
 - [P3-12-E8-B 有限产品矩阵首轮审计记录](/records/p3-12-e8-b-limited-product-matrix-audit-2026-07-11)
 - [P3-12-E8 dev -> master 集成审阅记录](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
 - [P3-12-F Q1-A 事务后可靠任务审计与实施方案](/records/p3-12-f-q1-a-reliable-post-transaction-task-plan-2026-07-11)
+- [P3-12-F Q1-A 候选级可靠性验证记录](/records/p3-12-f-q1-a-candidate-validation-2026-07-11)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
@@ -58,11 +60,11 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 复核 Q1-A 事务后可靠任务治理结果
+### 1. 开展 Q1-B API 错误契约审计与兼容方案
 
-- 源业务事务与可靠任务事实采用 Outbox 原子落库；Hangfire 只承担持久执行、调度和进程恢复，迟到重复 Job 不能越过 `Processing` 状态和退避窗口执行。
-- 奖励、资产、权益和通知持久化依赖稳定业务键与数据库唯一约束幂等；SignalR 在线推送保持 best-effort，未读缓存按 Message 数据库事实刷新。
-- SQLite 定向测试覆盖事务回滚、租约恢复、重复状态门禁、通知幂等、重试 / DeadLetter 与人工重放；后端全量 `584` 项测试通过，解决方案构建 `0` 警告 / `0` 错误。
+- 全仓盘点 Controller、Filter、Middleware 与 Service 中的 `ex.Message`、重复 catch、HTTP 200 错误响应和通用 `Exception`。
+- 先确定错误响应结构、错误码命名、correlation ID、HTTP 状态映射与 `MessageModel` 兼容停止点，再修改运行时。
+- 首批实现只覆盖本次正式发布矩阵的未知异常泄露、参数、权限、未找到、冲突和限流契约，不一次性机械替换全部领域异常。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
@@ -72,9 +74,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 审阅 Q1-A 实现差异与验证证据；确认后再进入独立交付批次。
-2. Q1-A 合并准备阶段补批次级基线与必要的 PostgreSQL / 运行态故障注入证据；服务未启动时不把静态测试写成运行态结论。
-3. Q1-A 独立收口后，再按 P3-12-F 顺位评估 Q1 的其余发布必要子集与小规模受控试用。
+1. 审阅并提交 Q1-A 候选验证补强批次，保持 `dev -> master` 单向集成。
+2. 只读开展 Q1-B 全仓错误契约审计，形成错误响应结构、错误码、HTTP 状态和兼容迁移方案。
+3. Q1-B 方案确认后再修改运行时；随后按 Release Go 顺位评估 Q1-C 或 Q2 的发布必要子集。
 
 ## 并行维护线
 
@@ -87,7 +89,7 @@ Radish V1 的产品定位固定为：
 ## 当前不做
 
 - 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- Q1-A 审阅期间不混入 Q1-B、Q2、Q3、页面调整或无关重构。
+- Q1-B 方案确认前不修改错误响应运行时；不混入 Q1-C、Q2、Q3、页面调整或无关重构。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不恢复 WebOS、Tauri 或完整 Flutter 套件为当前主线。
