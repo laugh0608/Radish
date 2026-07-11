@@ -33,6 +33,7 @@ interface ChatMessageListProps {
   onRecall: (messageId: EntityIdValue) => void;
   onOpenReport: (targetType: ContentReportTargetType, targetId: number) => void;
   onRetryMessage: (message: ChannelMessageVo) => void;
+  onCopyFailedMessageDiagnostics: (message: ChannelMessageVo) => void;
   onDismissFailedMessage: (message: ChannelMessageVo) => void;
   onLoadNewerHistory: () => void;
 }
@@ -56,6 +57,7 @@ export const ChatMessageList = ({
   onRecall,
   onOpenReport,
   onRetryMessage,
+  onCopyFailedMessageDiagnostics,
   onDismissFailedMessage,
   onLoadNewerHistory,
 }: ChatMessageListProps) => {
@@ -177,12 +179,20 @@ export const ChatMessageList = ({
                           </span>
                           {isFailedMessage && (
                             <>
+                              <span className={styles.deliveryRecoveryHint}>{t('chat.failedRecoverableHint')}</span>
                               <button
                                 type="button"
                                 className={styles.deliveryActionButton}
                                 onClick={() => onRetryMessage(message)}
                               >
                                 {t('chat.retry')}
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.deliveryActionButton}
+                                onClick={() => onCopyFailedMessageDiagnostics(message)}
+                              >
+                                {t('chat.copyDiagnostics')}
                               </button>
                               <button
                                 type="button"

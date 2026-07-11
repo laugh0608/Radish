@@ -2,8 +2,9 @@
 # Radish.Api - Wiki / Markdown API 测试
 ###############################################################################
 # 说明：
-# 1. 浏览接口需普通登录 Token（Policy: Client）
-# 2. 创建 / 更新 / 发布 / 导入 / 导出 建议使用 Admin / System Token
+# 1. PublicGet* 为匿名公开阅读契约，只返回 Published + Public + 未删除文档
+# 2. Get* 浏览接口可携带普通登录 Token，按登录态与访问策略返回
+# 3. 创建 / 更新 / 发布 / 导入 / 导出 建议使用 Admin / System Token
 ###############################################################################
 
 @Access_Token = 在这里粘贴普通 access_token
@@ -13,27 +14,39 @@
 @WikiDocumentSlug = wiki-sample
 @WikiRevisionId = 1
 
-### 1. 获取文档列表
+### 1. 获取公开文档列表（匿名，只返回 Published + Public）
+GET {{Gateway_HostAddress}}/api/v1/Wiki/PublicGetList?pageIndex=1&pageSize=20
+Accept: application/json
+
+### 2. 获取公开文档树（匿名，只返回 Published + Public）
+GET {{Gateway_HostAddress}}/api/v1/Wiki/PublicGetTree
+Accept: application/json
+
+### 3. 获取公开文档详情（匿名，只返回 Published + Public）
+GET {{Gateway_HostAddress}}/api/v1/Wiki/PublicGetBySlug/{{WikiDocumentSlug}}
+Accept: application/json
+
+### 4. 获取文档列表（登录态访问策略）
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetList?pageIndex=1&pageSize=20
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 2. 获取文档树
+### 5. 获取文档树（登录态访问策略）
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetTree
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 3. 获取文档详情（按 ID）
+### 6. 获取文档详情（按 ID）
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetById/{{WikiDocumentId}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 4. 获取文档详情（按 Slug）
+### 7. 获取文档详情（按 Slug）
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetBySlug/{{WikiDocumentSlug}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 5. 创建文档
+### 8. 创建文档
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Create
 Authorization: Bearer {{Admin_Access_Token}}
 Content-Type: application/json
@@ -46,7 +59,7 @@ Content-Type: application/json
   "sort": 0
 }
 
-### 6. 更新文档
+### 9. 更新文档
 PUT {{Gateway_HostAddress}}/api/v1/Wiki/Update/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Content-Type: application/json
@@ -60,22 +73,22 @@ Content-Type: application/json
   "changeSummary": "补充说明"
 }
 
-### 7. 发布文档
+### 10. 发布文档
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Publish/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 8. 转为草稿
+### 11. 转为草稿
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Unpublish/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 9. 归档文档
+### 12. 归档文档
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Archive/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 10. 导入 Markdown
+### 13. 导入 Markdown
 POST {{Gateway_HostAddress}}/api/v1/Wiki/ImportMarkdown
 Authorization: Bearer {{Admin_Access_Token}}
 Content-Type: multipart/form-data; boundary=RadishWikiBoundary
@@ -97,22 +110,22 @@ Content-Type: text/markdown
 这是通过 http 文件导入的 Markdown 文档。
 --RadishWikiBoundary--
 
-### 11. 导出 Markdown
+### 14. 导出 Markdown
 GET {{Gateway_HostAddress}}/api/v1/Wiki/ExportMarkdown/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: text/markdown
 
-### 12. 获取版本历史列表
+### 15. 获取版本历史列表
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetRevisionList/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 13. 获取版本详情
+### 16. 获取版本详情
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetRevisionDetail/{{WikiRevisionId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 14. 按版本回滚
+### 17. 按版本回滚
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Rollback/{{WikiRevisionId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json

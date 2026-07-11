@@ -3,6 +3,10 @@
   min-width: 0;
 }
 
+.containerCompact {
+  margin-bottom: 0;
+}
+
 .title {
   margin: 0 0 12px 0;
   font-size: 16px;
@@ -25,6 +29,12 @@
   min-width: 0;
 }
 
+.containerCompact .postContent {
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
 .postTitle {
   margin: 0 0 8px 0;
   font-size: 24px;
@@ -34,6 +44,12 @@
   color: var(--theme-text-primary);
   text-align: left;
   overflow-wrap: anywhere;
+}
+
+.containerCompact .postTitle {
+  margin-bottom: 6px;
+  font-size: 22px;
+  line-height: 1.32;
 }
 
 .statusRow {
@@ -95,6 +111,12 @@
   margin-bottom: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--theme-border-soft);
+}
+
+.containerCompact .postMeta {
+  margin-bottom: 10px;
+  padding-bottom: 10px;
+  gap: 6px;
 }
 
 .postMeta span {
@@ -161,6 +183,11 @@
   --code-border: var(--theme-border-soft);
 }
 
+.containerCompact .postBody {
+  margin-bottom: 10px;
+  line-height: 1.58;
+}
+
 .postBody :global(.markdownImage) {
   max-width: 100%;
   width: auto;
@@ -174,6 +201,11 @@
   padding-top: 12px;
   border-top: 1px solid var(--theme-border-soft);
   min-width: 0;
+}
+
+.containerCompact .postTags {
+  gap: 6px;
+  padding-top: 10px;
 }
 
 .tag {

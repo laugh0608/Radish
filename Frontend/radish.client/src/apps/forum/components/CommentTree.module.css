@@ -2,6 +2,10 @@
   margin-top: 20px;
 }
 
+.containerCompact {
+  margin-top: 10px;
+}
+
 .header {
   display: flex;
   justify-content: space-between;
@@ -61,6 +65,14 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.containerCompact .list {
+  gap: 6px;
+}
+
+.containerCompact .headerTitleHidden {
+  margin-bottom: 8px;
 }
 
 .loadMoreWrap {

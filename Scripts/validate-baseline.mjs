@@ -292,6 +292,18 @@ const steps = [
     args: ['run', 'check:console-permissions'],
   },
   {
+    title: '敏感字面量规则自测',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:sensitive-literals:self-test'],
+  },
+  {
+    title: '仓库高置信敏感字面量扫描',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:sensitive-literals'],
+  },
+  {
     title: 'Repo Quality contract 自校验',
     phase: 'baseline',
     command: npmCommand,

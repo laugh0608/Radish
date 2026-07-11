@@ -138,7 +138,7 @@ function shouldHandleAuthorLinkClick(event: MouseEvent<HTMLAnchorElement>): bool
 }
 
 function canEditDocument(document: WikiDocumentDetailVo | null): boolean {
-  return Boolean(document) && !isBuiltInWikiDocument(document) && document?.voIsDeleted !== true;
+  return Boolean(document) && canMaintainWikiDocument(document);
 }
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -205,6 +205,31 @@ function toSourceText(sourceType?: string | null): string {
     default:
       return sourceType?.trim() || '未知';
   }
+}
+
+function canMaintainWikiDocument(document: WikiDocumentVo | WikiDocumentDetailVo | null): boolean {
+  return Boolean(document) && !isBuiltInWikiDocument(document) && document?.voIsDeleted !== true;
+}
+
+function countMaintainableDocuments(documents: WikiDocumentVo[]): number {
+  return documents.filter((document) => canMaintainWikiDocument(document)).length;
+}
+
+function countBuiltInDocuments(documents: WikiDocumentVo[]): number {
+  return documents.filter((document) => isBuiltInWikiDocument(document)).length;
+}
+
+function pickPreviewDocument(documents: WikiDocumentVo[]): WikiDocumentVo | null {
+  return documents.find((document) => canMaintainWikiDocument(document)) ?? documents[0] ?? null;
+}
+
+function toDocumentSummaryPreview(summary?: string | null): string {
+  const normalized = summary?.trim();
+  if (!normalized) {
+    return '没有摘要';
+  }
+
+  return normalized.length > 96 ? `${normalized.slice(0, 96)}...` : normalized;
 }
 
 function buildRouteReturnPath(route: DocsAuthorRoute): string {
@@ -685,16 +710,11 @@ export function DocsAuthorApp() {
     <div className={styles.page}>
       <PublicShellHeader
         variant="private"
-        activeKey="author"
+        activeKey="more"
         brandMark="文"
         brandName="文档作者台"
-        brandSubline="正式 Web 文档写作入口"
+        brandSubline="文档写作入口"
         onBrandClick={() => navigateToRoute(createDefaultDocsAuthorRoute())}
-        onNavigateToDiscover={() => { window.location.href = buildPublicDocsPath({ kind: 'list' }); }}
-        discoverHref={buildPublicDocsPath({ kind: 'list' })}
-        discoverLabel="公开文档"
-        showCircleAction={false}
-        desktopLabel="工作台"
       />
 
       <main className={styles.main}>
@@ -803,70 +823,138 @@ interface DocsMinePageProps {
 
 function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePageProps) {
   const hasDocuments = state.documents.length > 0;
+  const previewDocument = pickPreviewDocument(state.documents);
+  const maintainableCount = countMaintainableDocuments(state.documents);
+  const builtInCount = countBuiltInDocuments(state.documents);
+  const deletedCount = state.documents.filter((document) => document.voIsDeleted).length;
 
   return (
-    <section className={styles.panel}>
-      <div className={styles.panelHeader}>
-        <div>
-          <p className={styles.kicker}>Author Workspace</p>
-          <h1 className={styles.pageTitle}>文档作者台</h1>
-          <p className={styles.pageIntro}>集中处理文档草稿、内容修订和公开阅读入口，不承载发布与治理动作。</p>
+    <div className={styles.authorWorkspace}>
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div>
+            <p className={styles.kicker}>Author Workspace</p>
+            <h1 className={styles.pageTitle}>文档作者台</h1>
+            <p className={styles.pageIntro}>集中处理文档草稿、内容修订和公开阅读入口，不承载发布与治理动作。</p>
+          </div>
+          <div className={styles.headerActions}>
+            <a
+              className={styles.primaryButton}
+              href={buildDocsAuthorPath({ kind: 'compose' })}
+              onClick={(event) => onNavigate(event, { kind: 'compose' })}
+            >
+              <Icon icon="mdi:plus" size={18} />
+              <span>新建文档</span>
+            </a>
+            <button type="button" className={styles.secondaryButton} onClick={onReload} disabled={state.loading}>
+              <Icon icon={state.loading ? 'mdi:progress-clock' : 'mdi:refresh'} size={18} />
+              <span>{state.loading ? '刷新中' : '刷新'}</span>
+            </button>
+          </div>
         </div>
-        <div className={styles.headerActions}>
-          <a
-            className={styles.primaryButton}
-            href={buildDocsAuthorPath({ kind: 'compose' })}
-            onClick={(event) => onNavigate(event, { kind: 'compose' })}
-          >
-            <Icon icon="mdi:plus" size={18} />
-            <span>新建文档</span>
-          </a>
-          <button type="button" className={styles.secondaryButton} onClick={onReload} disabled={state.loading}>
-            <Icon icon={state.loading ? 'mdi:progress-clock' : 'mdi:refresh'} size={18} />
-            <span>{state.loading ? '刷新中' : '刷新'}</span>
-          </button>
-        </div>
-      </div>
 
-      <div className={styles.summaryGrid}>
-        <SummaryTile label="目录节点" value={state.tree.length} />
-        <SummaryTile label="文档总数" value={state.totalDocuments} />
-        <SummaryTile label="本页加载" value={state.documents.length} />
-      </div>
-
-      {state.error ? (
-        <StatusPanel
-          icon="mdi:alert-circle-outline"
-          title="文档列表加载失败"
-          description={state.error}
-        />
-      ) : state.loading && !hasDocuments ? (
-        <StatusPanel
-          icon="mdi:progress-clock"
-          title="正在加载文档"
-          description="正在读取 Wiki 目录和文档列表。"
-        />
-      ) : !hasDocuments ? (
-        <StatusPanel
-          icon="mdi:file-document-outline"
-          title="暂无可维护文档"
-          description="可以先创建一篇登录可见文档，发布与权限治理留在 Console 管理批次处理。"
-          actionHref={buildDocsAuthorPath({ kind: 'compose' })}
-          actionLabel="新建文档"
-        />
-      ) : (
-        <div className={styles.documentList}>
-          {state.documents.map((document) => (
-            <DocumentRow
-              key={document.voId}
-              document={document}
-              language={language}
-              onNavigate={onNavigate}
-            />
-          ))}
+        <div className={styles.summaryGrid}>
+          <SummaryTile label="目录节点" value={state.tree.length} />
+          <SummaryTile label="文档总数" value={state.totalDocuments} />
+          <SummaryTile label="本页加载" value={state.documents.length} />
         </div>
-      )}
-    </section>
+
+        {state.error ? (
+          <StatusPanel
+            icon="mdi:alert-circle-outline"
+            title="文档列表加载失败"
+            description={state.error}
+          />
+        ) : state.loading && !hasDocuments ? (
+          <StatusPanel
+            icon="mdi:progress-clock"
+            title="正在加载文档"
+            description="正在读取 Wiki 目录和文档列表。"
+          />
+        ) : !hasDocuments ? (
+          <StatusPanel
+            icon="mdi:file-document-outline"
+            title="暂无可维护文档"
+            description="可以先创建一篇登录可见文档，发布与权限治理留在 Console 管理批次处理。"
+            actionHref={buildDocsAuthorPath({ kind: 'compose' })}
+            actionLabel="新建文档"
+          />
+        ) : (
+          <div className={styles.documentList}>
+            {state.documents.map((document) => (
+              <DocumentRow
+                key={document.voId}
+                document={document}
+                language={language}
+                onNavigate={onNavigate}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      <aside className={styles.authorRail} aria-label="文档作者任务上下文">
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>文档库</p>
+          <div className={styles.railMetricGrid}>
+            <RailMetric label="可编辑" value={maintainableCount} />
+            <RailMetric label="内置只读" value={builtInCount} />
+            <RailMetric label="已删除" value={deletedCount} />
+          </div>
+          <p className={styles.railText}>作者入口只处理个人可维护内容；发布、撤回、权限和治理仍进入 Console。</p>
+        </section>
+
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>当前预览</p>
+          {previewDocument ? (
+            <>
+              <h2 className={styles.railTitle}>{previewDocument.voTitle}</h2>
+              <p className={styles.railText}>{toDocumentSummaryPreview(previewDocument.voSummary)}</p>
+              <div className={styles.railChipList}>
+                <span className={styles.railChip}>{toStatusText(previewDocument.voStatus)}</span>
+                <span className={styles.railChip}>{toVisibilityText(previewDocument.voVisibility)}</span>
+                <span className={styles.railChip}>v{previewDocument.voVersion}</span>
+              </div>
+              <div className={styles.railActionList}>
+                {canMaintainWikiDocument(previewDocument) ? (
+                  <a
+                    className={styles.railLink}
+                    href={buildDocsAuthorPath({ kind: 'edit', documentId: previewDocument.voId })}
+                    onClick={(event) => onNavigate(event, { kind: 'edit', documentId: previewDocument.voId })}
+                  >
+                    <Icon icon="mdi:pencil-outline" size={18} />
+                    <span>编辑文档</span>
+                  </a>
+                ) : null}
+                <a
+                  className={styles.railLink}
+                  href={buildDocsAuthorPath({ kind: 'revisions', documentId: previewDocument.voId })}
+                  onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: previewDocument.voId })}
+                >
+                  <Icon icon="mdi:history" size={18} />
+                  <span>修订记录</span>
+                </a>
+                <a className={styles.railLink} href={buildPublicDocsPath({ kind: 'detail', slug: previewDocument.voSlug })}>
+                  <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+                  <span>公开阅读</span>
+                </a>
+              </div>
+            </>
+          ) : (
+            <p className={styles.railText}>暂无可预览文档。</p>
+          )}
+        </section>
+
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>任务边界</p>
+          <ul className={styles.railRuleList}>
+            <li>文档树、文档表格和右侧版本证据在作者页内完成。</li>
+            <li>公开阅读继续使用公开文档页面。</li>
+            <li>发布状态、撤回和治理动作不在作者入口扩展。</li>
+          </ul>
+        </section>
+      </aside>
+    </div>
   );
 }
 
@@ -880,6 +968,20 @@ function SummaryTile({ label, value }: SummaryTileProps) {
     <div className={styles.summaryTile}>
       <span className={styles.summaryLabel}>{label}</span>
       <strong className={styles.summaryValue}>{value.toLocaleString()}</strong>
+    </div>
+  );
+}
+
+interface RailMetricProps {
+  label: string;
+  value: number | string;
+}
+
+function RailMetric({ label, value }: RailMetricProps) {
+  return (
+    <div className={styles.railMetric}>
+      <span>{label}</span>
+      <strong>{typeof value === 'number' ? value.toLocaleString() : value}</strong>
     </div>
   );
 }
@@ -993,6 +1095,9 @@ function DocsEditorPage({
   const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
     ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
     : null;
+  const draftVisibilityText = toVisibilityText(
+    normalizeOptionalNumber(state.draft.visibility) ?? WikiDocumentVisibility.Authenticated
+  );
 
   if (state.loading) {
     return (
@@ -1015,7 +1120,8 @@ function DocsEditorPage({
   }
 
   return (
-    <section className={styles.panel}>
+    <div className={styles.authorWorkspace}>
+      <section className={styles.panel}>
       <div className={styles.panelHeader}>
         <div>
           <p className={styles.kicker}>Document Draft</p>
@@ -1153,7 +1259,7 @@ function DocsEditorPage({
 
         <div className={styles.editorActions}>
           <span className={styles.editorHint}>
-            当前可见性: {toVisibilityText(normalizeOptionalNumber(state.draft.visibility))}
+            当前可见性: {draftVisibilityText}
           </span>
           <button type="submit" className={styles.primaryButton} disabled={readOnly || state.submitting}>
             <Icon icon={state.submitting ? 'mdi:progress-clock' : 'mdi:content-save-outline'} size={18} />
@@ -1161,7 +1267,67 @@ function DocsEditorPage({
           </button>
         </div>
       </form>
-    </section>
+      </section>
+
+      <aside className={styles.authorRail} aria-label="文档编辑任务上下文">
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>编辑上下文</p>
+          <div className={styles.railMetricGrid}>
+            <RailMetric label="模式" value={route.kind === 'compose' ? '新建' : '编辑'} />
+            <RailMetric label="上级选项" value={parentOptions.length} />
+            <RailMetric label="建议排序" value={state.sortSuggestion} />
+          </div>
+          <div className={styles.railChipList}>
+            <span className={styles.railChip}>{draftVisibilityText}</span>
+            <span className={styles.railChip}>{readOnly ? '只读' : '可保存'}</span>
+          </div>
+        </section>
+
+        {state.document ? (
+          <section className={styles.railCard}>
+            <p className={styles.railKicker}>文档证据</p>
+            <h2 className={styles.railTitle}>{state.document.voTitle}</h2>
+            <p className={styles.railText}>{toDocumentSummaryPreview(state.document.voSummary)}</p>
+            <div className={styles.railChipList}>
+              <span className={styles.railChip}>{toStatusText(state.document.voStatus)}</span>
+              <span className={styles.railChip}>{toSourceText(state.document.voSourceType)}</span>
+              <span className={styles.railChip}>v{state.document.voVersion}</span>
+            </div>
+          </section>
+        ) : null}
+
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>流转动作</p>
+          <div className={styles.railActionList}>
+            <a
+              className={styles.railLink}
+              href={buildDocsAuthorPath({ kind: 'mine' })}
+              onClick={onBack}
+            >
+              <Icon icon="mdi:arrow-left" size={18} />
+              <span>返回列表</span>
+            </a>
+            {route.kind === 'edit' ? (
+              <a
+                className={styles.railLink}
+                href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
+                onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
+              >
+                <Icon icon="mdi:history" size={18} />
+                <span>修订记录</span>
+              </a>
+            ) : null}
+            {publicReadHref ? (
+              <a className={styles.railLink} href={publicReadHref}>
+                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+                <span>公开阅读</span>
+              </a>
+            ) : null}
+          </div>
+          <p className={styles.railText}>保存只维护正文、摘要、目录位置和访问字段；发布、归档和权限治理仍由 Console 处理。</p>
+        </section>
+      </aside>
+    </div>
   );
 }
 
@@ -1177,38 +1343,41 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
   const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
     ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
     : null;
+  const currentRevision = state.revisions.find((revision) => revision.voIsCurrent) ?? null;
+  const selectedVersion = state.selectedRevision?.voVersion ?? currentRevision?.voVersion ?? state.document?.voVersion ?? '-';
 
   return (
-    <section className={styles.panel}>
-      <div className={styles.panelHeader}>
-        <div>
-          <p className={styles.kicker}>Revision History</p>
-          <h1 className={styles.pageTitle}>{state.document?.voTitle || '修订记录'}</h1>
-          <p className={styles.pageIntro}>查看历史快照内容，不在作者入口执行回滚治理动作。</p>
-        </div>
-        <div className={styles.headerActions}>
-          <a className={styles.secondaryButton} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
-            <Icon icon="mdi:arrow-left" size={18} />
-            <span>返回列表</span>
-          </a>
-          {state.document && canEditDocument(state.document) ? (
-            <a
-              className={styles.primaryButton}
-              href={buildDocsAuthorPath({ kind: 'edit', documentId: state.document.voId })}
-              onClick={(event) => onEdit(event, state.document!.voId)}
-            >
-              <Icon icon="mdi:pencil-outline" size={18} />
-              <span>编辑文档</span>
+    <div className={styles.authorWorkspace}>
+      <section className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <div>
+            <p className={styles.kicker}>Revision History</p>
+            <h1 className={styles.pageTitle}>{state.document?.voTitle || '修订记录'}</h1>
+            <p className={styles.pageIntro}>查看历史快照内容，不在作者入口执行回滚治理动作。</p>
+          </div>
+          <div className={styles.headerActions}>
+            <a className={styles.secondaryButton} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
+              <Icon icon="mdi:arrow-left" size={18} />
+              <span>返回列表</span>
             </a>
-          ) : null}
-          {publicReadHref ? (
-            <a className={styles.secondaryButton} href={publicReadHref}>
-              <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-              <span>公开阅读</span>
-            </a>
-          ) : null}
+            {state.document && canEditDocument(state.document) ? (
+              <a
+                className={styles.primaryButton}
+                href={buildDocsAuthorPath({ kind: 'edit', documentId: state.document.voId })}
+                onClick={(event) => onEdit(event, state.document!.voId)}
+              >
+                <Icon icon="mdi:pencil-outline" size={18} />
+                <span>编辑文档</span>
+              </a>
+            ) : null}
+            {publicReadHref ? (
+              <a className={styles.secondaryButton} href={publicReadHref}>
+                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+                <span>公开阅读</span>
+              </a>
+            ) : null}
+          </div>
         </div>
-      </div>
 
       {state.loading ? (
         <StatusPanel
@@ -1278,7 +1447,59 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
             )}
           </article>
         </div>
-      )}
-    </section>
+        )}
+      </section>
+
+      <aside className={styles.authorRail} aria-label="文档修订任务上下文">
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>版本证据</p>
+          <div className={styles.railMetricGrid}>
+            <RailMetric label="版本数" value={state.revisions.length} />
+            <RailMetric label="当前版本" value={currentRevision ? `v${currentRevision.voVersion}` : '-'} />
+            <RailMetric label="选中版本" value={selectedVersion === '-' ? '-' : `v${selectedVersion}`} />
+          </div>
+          <p className={styles.railText}>修订页只负责查看快照内容和版本证据，不在这里处理回滚、发布或治理。</p>
+        </section>
+
+        {state.selectedRevision ? (
+          <section className={styles.railCard}>
+            <p className={styles.railKicker}>选中快照</p>
+            <h2 className={styles.railTitle}>{state.selectedRevision.voTitle}</h2>
+            <p className={styles.railText}>{state.selectedRevision.voChangeSummary || '无变更摘要'}</p>
+            <div className={styles.railChipList}>
+              <span className={styles.railChip}>{toSourceText(state.selectedRevision.voSourceType)}</span>
+              <span className={styles.railChip}>{formatWikiTime(state.selectedRevision.voCreateTime, language)}</span>
+              {state.selectedRevision.voIsCurrent ? <span className={styles.railChip}>当前</span> : null}
+            </div>
+          </section>
+        ) : null}
+
+        <section className={styles.railCard}>
+          <p className={styles.railKicker}>流转动作</p>
+          <div className={styles.railActionList}>
+            <a className={styles.railLink} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
+              <Icon icon="mdi:arrow-left" size={18} />
+              <span>返回列表</span>
+            </a>
+            {state.document && canEditDocument(state.document) ? (
+              <a
+                className={styles.railLink}
+                href={buildDocsAuthorPath({ kind: 'edit', documentId: state.document.voId })}
+                onClick={(event) => onEdit(event, state.document!.voId)}
+              >
+                <Icon icon="mdi:pencil-outline" size={18} />
+                <span>编辑文档</span>
+              </a>
+            ) : null}
+            {publicReadHref ? (
+              <a className={styles.railLink} href={publicReadHref}>
+                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+                <span>公开阅读</span>
+              </a>
+            ) : null}
+          </div>
+        </section>
+      </aside>
+    </div>
   );
 }

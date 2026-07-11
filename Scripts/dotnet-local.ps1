@@ -33,26 +33,6 @@ if (-not $DotNetArgs -or $DotNetArgs.Count -eq 0) {
 
 $forwardArgs = @($DotNetArgs)
 $primaryCommand = $DotNetArgs[0].ToLowerInvariant()
-$supportsAuditToggle = @('restore', 'build', 'test') -contains $primaryCommand
-$hasAuditOverride = $DotNetArgs | Where-Object {
-    $_ -like '-p:NuGetAudit=*' -or
-    $_ -like '/p:NuGetAudit=*' -or
-    $_ -like '--property:NuGetAudit=*'
-}
-
-if ($supportsAuditToggle -and -not $hasAuditOverride) {
-    $forwardArgs += '-p:NuGetAudit=false'
-}
-
-$hasNoWarnOverride = $DotNetArgs | Where-Object {
-    $_ -like '-p:NoWarn=*' -or
-    $_ -like '/p:NoWarn=*' -or
-    $_ -like '--property:NoWarn=*'
-}
-
-if ($supportsAuditToggle -and -not $hasNoWarnOverride) {
-    $forwardArgs += '-p:NoWarn=NU1903'
-}
 
 $hasMaxCpuCountOverride = $DotNetArgs | Where-Object {
     $_ -match '^(--maxcpucount|-m(?::.*)?|/m(?::.*)?)$'

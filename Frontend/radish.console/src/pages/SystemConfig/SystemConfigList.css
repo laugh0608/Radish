@@ -7,6 +7,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .branding-card {
@@ -229,6 +231,12 @@
 }
 
 @media (max-width: 768px) {
+  .system-config-filter-select,
+  .system-config-filter-input {
+    width: 100% !important;
+    max-width: 100%;
+  }
+
   .branding-card {
     padding: 16px;
   }

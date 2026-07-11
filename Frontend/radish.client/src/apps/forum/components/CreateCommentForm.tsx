@@ -39,6 +39,30 @@ const MENTION_PANEL_HEIGHT = 220;
 const MENTION_PANEL_GAP = 10;
 const VIEWPORT_PADDING = 12;
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message.trim();
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
+
+  return fallback;
+}
+
+function appendRecoveryHint(message: string, hint: string): string {
+  const trimmedMessage = message.trim();
+  const trimmedHint = hint.trim();
+
+  if (/[。.!！?？]$/.test(trimmedMessage)) {
+    return `${trimmedMessage} ${trimmedHint}`;
+  }
+
+  const separator = /^[\u4e00-\u9fff]/.test(trimmedHint) ? '。' : '. ';
+  return `${trimmedMessage}${separator}${trimmedHint}`;
+}
+
 const getTextareaCaretRelativePosition = (
   textarea: HTMLTextAreaElement,
   cursorPos: number
@@ -421,7 +445,10 @@ export const CreateCommentForm = ({
       const imageMarkdown = `![${file.name}](${markdownUrl})`;
       insertTextAtRange(imageMarkdown, selectionStart, selectionEnd);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : t('forum.comment.imageUploadFailed');
+      const errorMessage = appendRecoveryHint(
+        getErrorMessage(error, t('forum.comment.imageUploadFailed')),
+        t('forum.comment.uploadRecoverableHint')
+      );
       setUploadError(errorMessage);
       log.error(t('forum.comment.imageUploadFailed'), error);
     } finally {
@@ -466,7 +493,10 @@ export const CreateCommentForm = ({
       const linkMarkdown = `[${result.voOriginalName || file.name}](${documentMarkdownUrl})`;
       insertTextAtCursor(linkMarkdown);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : t('forum.comment.documentUploadFailed');
+      const errorMessage = appendRecoveryHint(
+        getErrorMessage(error, t('forum.comment.documentUploadFailed')),
+        t('forum.comment.uploadRecoverableHint')
+      );
       setUploadError(errorMessage);
       log.error(t('forum.comment.documentUploadFailed'), error);
     } finally {

@@ -4,8 +4,13 @@ export const REPO_QUALITY_REQUIRED_CHECKS = [
   'Repo Hygiene',
   'Frontend Lint',
   'Baseline Quick',
+  'Dependency Security',
   'Backend Guard',
   'Identity Guard',
+];
+
+export const REPO_QUALITY_CI_ONLY_CHECKS = [
+  'Dependency Security',
 ];
 
 export const REPO_QUALITY_WORKFLOW_JOBS = [
@@ -32,6 +37,15 @@ export const REPO_QUALITY_WORKFLOW_JOBS = [
     checkName: 'Baseline Quick',
     requiredFragments: [
       "run: npm run validate:baseline:quick",
+    ],
+  },
+  {
+    jobId: 'dependency-security',
+    checkName: 'Dependency Security',
+    requiredFragments: [
+      'run: npm ci',
+      'run: dotnet restore Radish.slnx --disable-parallel',
+      'run: npm run check:dependency-security',
     ],
   },
   {
@@ -86,3 +100,5 @@ export const BACKEND_GUARD_VALIDATE_ARGS = ['run', 'validate:backend'];
 export const VALIDATE_CI_PACKAGE_SCRIPT = 'node Scripts/validate-ci.mjs';
 export const CHECK_REPO_QUALITY_CONTRACT_PACKAGE_SCRIPT =
   'node Scripts/check-repo-quality-contract.mjs';
+export const CHECK_DEPENDENCY_SECURITY_PACKAGE_SCRIPT =
+  'node Scripts/check-dependency-security.mjs';

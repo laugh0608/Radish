@@ -32,10 +32,11 @@ export const useUserStore = create<UserStore>((set, get) => ({
   setUser: (user: UserInfo) => {
     const current = get();
     const displayName = user.displayName?.trim() || user.userName;
+    const userName = user.userName?.trim() || displayName;
     set({
       userId: user.userId,
       displayName,
-      userName: displayName,
+      userName,
       displayHandle: user.displayHandle ?? current.displayHandle,
       publicId: user.publicId ?? current.publicId,
       publicIndex: user.publicIndex ?? current.publicIndex,

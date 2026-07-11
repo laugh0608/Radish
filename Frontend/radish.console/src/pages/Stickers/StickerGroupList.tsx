@@ -275,7 +275,7 @@ export const StickerGroupList = () => {
   return (
     <div className="admin-feature-page sticker-group-list-page">
       <ConsolePageHeader
-        eyebrow="STICKER ASSETS"
+        eyebrow="表情资源"
         title="表情包管理"
         description="维护表情包分组、启停状态和进入分组表情管理的操作入口。"
         icon={<AppstoreOutlined />}

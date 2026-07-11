@@ -168,12 +168,7 @@ builder.Services.Configure<IdleSessionOptions>(builder.Configuration.GetSection(
 // 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                               ForwardedHeaders.XForwardedProto |
-                               ForwardedHeaders.XForwardedHost;
-    // 信任所有代理（仅开发环境）
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
+    AuthForwardedHeadersPolicy.Configure(options);
 });
 
 // 配置 Antiforgery，确保在 Gateway 代理场景下 Cookie 能正确设置
@@ -277,6 +272,11 @@ X509Certificate2 LoadOpenIddictCertificate(string certificateType)
 }
 
 // OpenIddict 配置
+var disableTransportSecurityRequirement =
+    OpenIddictTransportSecurityPolicy.ShouldDisableTransportSecurityRequirement(
+        builder.Configuration,
+        builder.Environment);
+
 builder.Services.AddOpenIddict()
     // 注册 OpenIddict Core 服务（使用 EF Core 存储）
     .AddCore(options =>
@@ -345,11 +345,15 @@ builder.Services.AddOpenIddict()
         options.DisableAccessTokenEncryption();
 
         // 注册 ASP.NET Core 宿主
-        options.UseAspNetCore()
-               .EnableAuthorizationEndpointPassthrough()
-               .EnableEndSessionEndpointPassthrough()
-               .EnableUserInfoEndpointPassthrough()
-               .DisableTransportSecurityRequirement(); // 允许 HTTP（仅开发环境）
+        var aspNetCoreOptions = options.UseAspNetCore()
+            .EnableAuthorizationEndpointPassthrough()
+            .EnableEndSessionEndpointPassthrough()
+            .EnableUserInfoEndpointPassthrough();
+
+        if (disableTransportSecurityRequirement)
+        {
+            aspNetCoreOptions.DisableTransportSecurityRequirement();
+        }
     });
 
 #endregion

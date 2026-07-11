@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  Button,
   Form,
   message,
 } from '@radish/ui';
@@ -27,6 +28,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import {
   ConsoleMetricCard,
   ConsoleMetricGrid,
+  ConsoleStatusChip,
 } from '@/components/ConsolePage';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
@@ -100,6 +102,11 @@ export const ExperienceAdminPage = () => {
   const anomalyRuleSummaries = dailyStatsWindow?.voRuleSummaries ?? [];
   const governanceRecommendation = dailyStatsWindow?.voRecommendation ?? null;
   const dailyLimits = dailyStatsWindow?.voLimits ?? null;
+  const primaryAnomalyRule = anomalyRuleSummaries[0] ?? null;
+  const primaryReviewDay = dailyStats.find((record) => (
+    record.voObservations ?? []
+  ).some((observation) => observation.voKind === 'anomaly')) ?? dailyStats[0] ?? null;
+  const latestGovernanceAction = governanceActions[0] ?? null;
 
   const loadLevels = async () => {
     try {
@@ -145,6 +152,8 @@ export const ExperienceAdminPage = () => {
     }
 
     void loadDailyStats(loadedUserId, statsWindowDays);
+    // Daily stats refresh is scoped to the selected user and window; memoizing the loader would pull unrelated form state into the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedUserId, statsWindowDays]);
 
   const loadGovernanceActions = async (userId: string, take: number = 20) => {
@@ -225,6 +234,8 @@ export const ExperienceAdminPage = () => {
     }
 
     void loadTransactions(loadedUserId, 1, transactionPageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
+    // Transaction refresh is driven by explicit ledger filters; the loader also serves pagination callbacks with current defaults.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedUserId, transactionTypeFilter, transactionStartDate, transactionEndDate]);
 
   const clearLoadedExperience = (userId: string) => {
@@ -621,6 +632,29 @@ export const ExperienceAdminPage = () => {
         />
       </ConsoleMetricGrid>
 
+      <section className="governance-task-flow" aria-label="经验治理台账任务流">
+        <div className="governance-task-flow__item">
+          <span>1</span>
+          <strong>用户定位</strong>
+          <p>{loadedUserId ? `已载入 #${loadedUserId}` : '先输入用户 ID，再生成经验台账。'}</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>2</span>
+          <strong>趋势证据</strong>
+          <p>{dailyStatsSummary ? `${statsWindowDays} 天内 ${dailyStatsSummary.voReviewDays} 天需复核。` : '等待统计窗口返回。'}</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>3</span>
+          <strong>流水核对</strong>
+          <p>{transactionTotal > 0 ? `${transactionTotal} 条流水可筛选回看。` : '按异常日期或类型定位流水。'}</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>4</span>
+          <strong>复核留痕</strong>
+          <p>{governanceActions.length > 0 ? `最近 ${governanceActions.length} 条治理动作。` : '复核、冻结和解冻都会进入台账。'}</p>
+        </div>
+      </section>
+
       <div className="governance-workbench governance-workbench--experience">
         <div className="governance-workbench__queue">
           <ExperienceUserQuerySummary
@@ -716,6 +750,94 @@ export const ExperienceAdminPage = () => {
         </div>
 
         <div className="governance-workbench__actions">
+          <section className="admin-feature-rail" aria-label="经验治理证据与动作上下文">
+            <div className="admin-feature-rail__header">
+              <div>
+                <span className="admin-feature-rail__eyebrow">台账上下文</span>
+                <h3>台账证据与动作</h3>
+              </div>
+              <ConsoleStatusChip tone={experience?.voExpFrozen ? 'warning' : (loadedUserId ? 'info' : 'neutral')}>
+                {experience?.voExpFrozen ? '冻结中' : (loadedUserId ? '观察中' : '未查询')}
+              </ConsoleStatusChip>
+            </div>
+
+            {loadedUserId && experience ? (
+              <>
+                <div className="admin-feature-rail__list">
+                  <div className="admin-feature-rail__item">
+                    <span>当前用户</span>
+                    <strong>{experience.voUserName || `#${loadedUserId}`}</strong>
+                  </div>
+                  <div className="admin-feature-rail__item">
+                    <span>等级 / 总经验</span>
+                    <strong>Lv.{experience.voCurrentLevel} · {experience.voTotalExp}</strong>
+                  </div>
+                  <div className="admin-feature-rail__item">
+                    <span>观察建议</span>
+                    <strong>{governanceRecommendation?.voTitle ?? '无系统建议'}</strong>
+                  </div>
+                </div>
+
+                {primaryAnomalyRule ? (
+                  <div className="admin-feature-rail__callout">
+                    <span>首要异常规则</span>
+                    <strong>{primaryAnomalyRule.voRuleLabel}</strong>
+                    <p>{primaryAnomalyRule.voStrongestSignal}</p>
+                    <div className="admin-feature-rail__actions">
+                      <Button size="small" onClick={() => handleRuleReview(primaryAnomalyRule)}>
+                        查看流水
+                      </Button>
+                      <Button
+                        size="small"
+                        disabled={!canFreeze}
+                        onClick={() => handleRuleGovernanceReview(primaryAnomalyRule)}
+                      >
+                        带入复核
+                      </Button>
+                    </div>
+                  </div>
+                ) : primaryReviewDay ? (
+                  <div className="admin-feature-rail__callout">
+                    <span>当前观察日</span>
+                    <strong>{formatFullStatDate(primaryReviewDay.voStatDate)}</strong>
+                    <p>当日新增 {primaryReviewDay.voExpEarned} 经验，可继续核对来源构成。</p>
+                    <div className="admin-feature-rail__actions">
+                      <Button size="small" onClick={() => handleDayReview(primaryReviewDay)}>
+                        定位流水
+                      </Button>
+                      <Button
+                        size="small"
+                        disabled={!canFreeze}
+                        onClick={() => handleDayGovernanceReview(primaryReviewDay)}
+                      >
+                        带入复核
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="admin-feature-rail__empty">
+                    当前窗口尚无可摘要的经验观察数据；切换 7 / 30 天窗口或重新查询用户后会刷新证据。
+                  </p>
+                )}
+
+                <div className="admin-feature-rail__list">
+                  <div className="admin-feature-rail__item">
+                    <span>最近留痕</span>
+                    <strong>{latestGovernanceAction ? latestGovernanceAction.voActionTypeDisplay : '暂无'}</strong>
+                  </div>
+                  <div className="admin-feature-rail__item">
+                    <span>冻结状态</span>
+                    <strong>{experience.voExpFrozen ? (experience.voFrozenUntil || '永久冻结') : '未冻结'}</strong>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="admin-feature-rail__empty">
+                先查询用户经验，右侧会汇总等级、趋势、异常规则和最近治理留痕。
+              </p>
+            )}
+          </section>
+
           <ExperienceGovernanceActionForms
             adjustForm={form}
             freezeForm={freezeForm}

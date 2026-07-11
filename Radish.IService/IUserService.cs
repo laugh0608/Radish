@@ -66,11 +66,6 @@ public interface IUserService : IBaseService<User, UserVo>
     /// <returns>展示名是否实际发生变化</returns>
     Task<bool> ChangeDisplayNameAsync(long userId, string displayName, UserDisplayNameChangeContext context);
 
-    /// <summary>测试使用同事务</summary>
-    /// <remarks>仅为示例，无任何作用</remarks>
-    /// <returns></returns>
-    Task<bool> TestTranPropagationUser();
-
     /// <summary>
     /// 搜索用户（用于@提及功能）
     /// </summary>

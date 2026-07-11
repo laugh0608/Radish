@@ -13,11 +13,187 @@
 }
 
 .main {
-  width: min(var(--rx-content-max-width), calc(100% - 24px));
+  width: min(1680px, calc(100% - 48px));
   max-width: 100%;
   margin: 0 auto;
-  padding: 24px 0 40px;
+  padding: 22px 0 40px;
   box-sizing: border-box;
+}
+
+.mobileTaskPanel {
+  display: none;
+}
+
+.pulseHome {
+  display: block;
+}
+
+.pulseIntroCard,
+.discussionPanel,
+.railCard {
+  min-width: 0;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  box-shadow: var(--theme-shadow-soft);
+  box-sizing: border-box;
+}
+
+.pulseIntroCard {
+  padding: 18px;
+}
+
+.communityBoard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.72fr);
+  gap: 14px;
+  align-items: start;
+  margin-top: 14px;
+}
+
+.discussionPanel {
+  padding: 16px;
+}
+
+.discussionHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.discussionTabRow {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.discussionTab,
+.discussionTabActive {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.discussionTab {
+  color: var(--theme-text-secondary);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+}
+
+.discussionTabActive {
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 66%, white 34%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
+}
+
+.discussionList {
+  display: grid;
+  gap: 10px;
+}
+
+.discussionList > article {
+  margin-bottom: 0;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.publicRail {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.railCard {
+  padding: 16px;
+}
+
+.railCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.railTitle {
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-size: 1.05rem;
+  line-height: 1.35;
+}
+
+.railDescription {
+  margin: 6px 0 12px;
+  color: var(--theme-text-secondary);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.railList {
+  display: grid;
+  gap: 10px;
+}
+
+.railItem {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 54%, transparent);
+}
+
+.railItem:last-child {
+  border-bottom: 0;
+}
+
+.railBadge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0 10px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  color: var(--theme-brand-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.railText {
+  min-width: 0;
+  color: var(--theme-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.participationCard {
+  background: color-mix(in srgb, var(--theme-brand-soft) 26%, var(--theme-bg-surface) 74%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
+}
+
+.participationCard .primaryButton {
+  width: 100%;
+  justify-content: center;
 }
 
 .heroCard {
@@ -31,104 +207,18 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
-.heroCard::after {
-  content: '';
-  position: absolute;
-  inset: auto -8% -30% auto;
-  width: 220px;
-  height: 220px;
-  border-radius: 999px;
-  background: radial-gradient(circle, color-mix(in srgb, var(--theme-brand-primary) 20%, transparent) 0%, transparent 72%);
-  pointer-events: none;
-}
-
-.heroTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.kicker {
-  margin: 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--theme-brand-primary);
-  font-weight: 700;
-}
-
-.readOnlyBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
-  color: var(--theme-brand-primary);
-  font-size: 0.82rem;
-  font-weight: 600;
-}
-
 .pageTitle {
   margin: 0;
-  font-size: clamp(2rem, 3.4vw, 3rem);
-  line-height: 1.08;
+  font-size: clamp(2rem, 3vw, 2.75rem);
+  line-height: 1.12;
 }
 
 .pageIntro {
-  max-width: 680px;
+  max-width: 720px;
   margin: 10px 0 0;
   color: var(--theme-text-secondary);
   font-size: 1rem;
   line-height: 1.65;
-}
-
-.heroGuideGrid {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 22px;
-}
-
-.heroGuideCard {
-  border-radius: 20px;
-  padding: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.heroGuideIcon {
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  background: color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
-  color: var(--theme-brand-primary);
-}
-
-.heroGuideBody {
-  min-width: 0;
-}
-
-.heroGuideTitle {
-  margin: 0;
-  font-size: 0.95rem;
-}
-
-.heroGuideDescription {
-  margin: 8px 0 0;
-  color: var(--theme-text-secondary);
-  line-height: 1.65;
-  font-size: 0.88rem;
 }
 
 .heroActions {
@@ -413,7 +503,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
   gap: 16px;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 .sectionGrid + .sectionCard {
@@ -489,29 +579,12 @@
   margin-top: 14px;
 }
 
-.guideSection {
-  margin-top: 18px;
-}
-
-.guideSection .heroGuideGrid {
-  margin-top: 0;
-}
-
 .streamHeader {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
   gap: 16px;
   align-items: flex-start;
   margin-bottom: 16px;
-}
-
-.streamKicker {
-  margin: 0 0 8px;
-  color: var(--theme-brand-primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .streamStatusPanel {
@@ -722,49 +795,13 @@
 }
 
 .streamFooter {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  justify-content: flex-end;
   gap: 14px;
   align-items: center;
   margin-top: 16px;
   padding-top: 16px;
   border-top: 1px solid color-mix(in srgb, var(--theme-border-soft) 62%, transparent);
-}
-
-.streamBoundaryPanel {
-  min-width: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-
-.streamBoundaryIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  background: color-mix(in srgb, var(--theme-brand-soft) 64%, var(--theme-bg-surface) 36%);
-  color: var(--theme-brand-primary);
-}
-
-.streamBoundaryCopy {
-  min-width: 0;
-}
-
-.streamBoundaryTitle {
-  margin: 0;
-  color: var(--theme-text-primary);
-  font-size: 0.98rem;
-}
-
-.streamBoundaryDescription {
-  margin: 5px 0 0;
-  color: var(--theme-text-secondary);
-  font-size: 0.88rem;
-  line-height: 1.55;
 }
 
 .streamActionRow {
@@ -1149,7 +1186,15 @@
 }
 
 @media (max-width: 960px) {
-  .heroGuideGrid,
+  .pulseHome,
+  .communityBoard {
+    grid-template-columns: 1fr;
+  }
+
+  .pulseMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .summaryGrid,
   .routeGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1159,8 +1204,7 @@
     grid-template-columns: 1fr;
   }
 
-  .streamHeader,
-  .streamFooter {
+  .streamHeader {
     grid-template-columns: 1fr;
   }
 
@@ -1179,14 +1223,90 @@
     width: calc(100% - 20px);
   }
 
+  .mobileTaskPanel {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .mobileSearchLink {
+    min-width: 0;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+    color: var(--theme-text-secondary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: var(--theme-shadow-soft);
+  }
+
+  .mobileSearchLink span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobileFilterRow {
+    min-width: 0;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .mobileFilterRow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobileFilterChip {
+    flex: 0 0 auto;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+    color: var(--theme-text-secondary);
+    font-size: 0.8rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .mobileFilterChipActive {
+    border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+    background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+    color: var(--theme-brand-primary);
+  }
+
+  .pulseHome,
+  .communityBoard {
+    gap: 12px;
+  }
+
+  .communityBoard {
+    margin-top: 12px;
+  }
+
+  .pulseIntroCard,
+  .discussionPanel,
+  .railCard,
   .heroCard,
   .sectionCard {
     padding: 14px;
     border-radius: 18px;
-  }
-
-  .heroTitleRow {
-    margin-bottom: 8px;
   }
 
   .heroActions {
@@ -1208,7 +1328,48 @@
     line-height: 1.55;
   }
 
-  .heroGuideGrid,
+  .pulseMetricGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .pulseMetricButton {
+    min-height: 104px;
+    padding: 12px;
+  }
+
+  .pulseMetricValue {
+    font-size: 1.55rem;
+  }
+
+  .discussionHeader {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 10px;
+  }
+
+  .discussionTabRow {
+    justify-content: flex-start;
+  }
+
+  .discussionTab,
+  .discussionTabActive {
+    min-height: 30px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  .railItem {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 6px;
+  }
+
+  .railText {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
@@ -1254,7 +1415,6 @@
   }
 
   .streamSection,
-  .guideSection,
   .sectionGrid,
   .sectionGrid + .sectionCard {
     margin-top: 14px;
@@ -1292,8 +1452,7 @@
   .docsSummary,
   .productSummary,
   .leaderboardSummary,
-  .statusDescription,
-  .streamBoundaryDescription {
+  .statusDescription {
     font-size: 0.86rem;
     line-height: 1.5;
   }
@@ -1304,7 +1463,6 @@
     padding-top: 12px;
   }
 
-  .streamBoundaryIcon,
   .leaderboardIcon,
   .statusIcon {
     width: 34px;
@@ -1401,21 +1559,15 @@
 }
 
 @media (max-width: 420px) {
-  .heroGuideGrid,
+  .pulseMetricGrid,
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .heroGuideCard,
   .routeMetaRow {
     padding: 10px;
   }
 
-  .heroGuideCard {
-    gap: 10px;
-  }
-
-  .heroGuideIcon,
   .routeIcon {
     width: 32px;
     height: 32px;

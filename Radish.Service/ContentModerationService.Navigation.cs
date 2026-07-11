@@ -348,20 +348,16 @@ public partial class ContentModerationService
             return new Dictionary<long, ForumPostNavigationRecord>();
         }
 
-        var items = await _postRepository.QueryMuchAsync<Post, User, User, ForumPostNavigationRecord>(
-            (post, primaryUser, secondaryUser) => new object[]
-            {
-                JoinType.Left, post.AuthorId == primaryUser.Id,
-                JoinType.Left, post.AuthorId == secondaryUser.Id
-            },
-            (post, _, _) => new ForumPostNavigationRecord
+        var posts = await _postRepository.QueryAsync(post => normalizedPostIds.Contains(post.Id));
+        var items = posts
+            .Select(post => new ForumPostNavigationRecord
             {
                 PostId = post.Id,
                 IsPostAvailable = !post.IsDeleted,
                 SnapshotTitle = string.IsNullOrWhiteSpace(post.Title) ? null : post.Title.Trim(),
                 SnapshotSummary = BuildTextSnapshot(string.IsNullOrWhiteSpace(post.Summary) ? post.Content : post.Summary)
-            },
-            (post, _, _) => normalizedPostIds.Contains(post.Id));
+            })
+            .ToList();
 
         return items
             .GroupBy(item => item.PostId)

@@ -33,7 +33,7 @@ npm run validate:baseline:quick
 ```
 
 3. 发起 `dev -> master` 的 PR
-4. 等待 `Repo Hygiene / Frontend Lint / Baseline Quick / Backend Guard / Identity Guard` 通过
+4. 等待 `Repo Hygiene / Frontend Lint / Baseline Quick / Dependency Security / Backend Guard / Identity Guard` 通过
 5. 合并到 `master`
 6. 创建规范 tag
 7. 等待 `Docker Images` 工作流产出对应镜像

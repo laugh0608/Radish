@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getMyQuickReplies, type UserPostQuickReply } from '@/api/forum';
@@ -17,6 +17,7 @@ interface UserQuickReplyListProps {
     postId: LongId,
     postPublicId?: string | null
   ) => void;
+  onItemsLoaded?: (items: UserPostQuickReply[]) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -26,6 +27,7 @@ export const UserQuickReplyList = ({
   onItemClick,
   getItemHref,
   onItemLinkClick,
+  onItemsLoaded,
   page: controlledPage,
   onPageChange
 }: UserQuickReplyListProps) => {
@@ -34,18 +36,26 @@ export const UserQuickReplyList = ({
   const [loading, setLoading] = useState(true);
   const [internalPage, setInternalPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const onItemsLoadedRef = useRef(onItemsLoaded);
   const page = controlledPage ?? internalPage;
+
+  useEffect(() => {
+    onItemsLoadedRef.current = onItemsLoaded;
+  }, [onItemsLoaded]);
 
   useEffect(() => {
     const loadQuickReplies = async () => {
       setLoading(true);
       try {
         const result = await getMyQuickReplies(page, 10);
-        setItems(result.voItems || []);
+        const loadedItems = result.voItems || [];
+        setItems(loadedItems);
+        onItemsLoadedRef.current?.(loadedItems);
         setTotalPages(Math.max(1, Math.ceil((result.voTotal || 0) / Math.max(result.voPageSize || 10, 1))));
       } catch (error) {
         log.error('UserQuickReplyList', '加载轻回应失败：', error);
         setItems([]);
+        onItemsLoadedRef.current?.([]);
         setTotalPages(1);
       } finally {
         setLoading(false);

@@ -1,13 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Radish.Common.TenantTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.Tenants;
 using Radish.Model.ViewModels;
-using SqlSugar;
 
 using Radish.Common.HttpContextTool;
 namespace Radish.Api.Controllers;
@@ -53,29 +51,6 @@ public class TenantController : ControllerBase
     {
         var res = await _tenantService.QueryWithCacheAsync();
         return MessageModel<List<TenantVo>>.Success("获取成功", res);
-    }
-
-    /// <summary>
-    /// 测试添加一个租户
-    /// </summary>
-    /// <returns></returns>
-    [HttpPost]
-    public async Task<MessageModel<TenantAddTestResultVo>> AddTest()
-    {
-        var tenant = new Tenant()
-        {
-            Id = SnowFlakeSingle.instance.getID(),
-            TenantName = "TestName",
-            TenantType = TenantTypeEnum.DataBases,
-            TenantConfigId = "TestConfig",
-            IsEnable = false
-        };
-        var res = await _tenantService.AddAsync(tenant);
-        return MessageModel<TenantAddTestResultVo>.Success("添加成功", new TenantAddTestResultVo
-        {
-            VoResult = res,
-            VoTenantId = tenant.Id
-        });
     }
 
     /// <summary>

@@ -99,6 +99,7 @@ export interface ChannelVo {
   voDescription?: string | null;
   voIconEmoji?: string | null;
   voType: 1 | 2 | 3;
+  voConversationKind?: 'public' | 'mutual' | 'stranger' | 'group' | null;
   voSort: number;
   voUnreadCount: number;
   voHasMention: boolean;

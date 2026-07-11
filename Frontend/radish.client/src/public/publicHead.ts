@@ -5,13 +5,14 @@ import {
   buildPublicLeaderboardPath,
   getPublicLeaderboardRouteDefinitionBySlug,
 } from './leaderboardRouteState.ts';
+import { buildPublicLegalPath } from './legalRouteState.ts';
 import { buildPublicProfilePath } from './profileRouteState.ts';
 import { buildPublicShopPath } from './shopRouteState.ts';
 import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 
 export const publicSiteName = 'Radish';
 export const publicDefaultOrigin = 'https://radishx.com';
-export const publicDefaultDescription = 'Radish 是面向公开阅读、社区互动与桌面工作台的现代社区平台。';
+export const publicDefaultDescription = 'Radish 是面向公开阅读、社区互动与个人工作台的现代社区平台。';
 
 export type PublicOpenGraphType = 'website' | 'article' | 'profile' | 'product';
 
@@ -98,7 +99,7 @@ export function buildPublicShareUrl(publicPath: string, origin?: string): string
 
 function buildDiscoverHead(route: PublicContentRouteDescriptor & { app: 'discover' }): PublicHeadDescriptor {
   return {
-    title: `社区发现 - ${publicSiteName}`,
+    title: `发现 - ${publicSiteName}`,
     description: '浏览 Radish 的公开内容、社区动态、文档入口、榜单与商城推荐。',
     canonicalPath: buildPublicDiscoverPath(route.route),
   };
@@ -254,6 +255,14 @@ function buildShopHead(route: PublicContentRouteDescriptor & { app: 'shop' }): P
   };
 }
 
+function buildLegalHead(route: PublicContentRouteDescriptor & { app: 'legal' }): PublicHeadDescriptor {
+  return {
+    title: `用户承诺与社区边界 - ${publicSiteName}`,
+    description: '查看 Radish 的社区公约、隐私边界、账号安全、虚拟商品与资产说明、敏感内容和反馈诊断口径。',
+    canonicalPath: buildPublicLegalPath(route.route),
+  };
+}
+
 export function buildPublicRouteHead(route: PublicContentRouteDescriptor): PublicHeadDescriptor {
   if (route.app === 'discover') {
     return buildDiscoverHead(route);
@@ -273,6 +282,10 @@ export function buildPublicRouteHead(route: PublicContentRouteDescriptor): Publi
 
   if (route.app === 'leaderboard') {
     return buildLeaderboardHead(route);
+  }
+
+  if (route.app === 'legal') {
+    return buildLegalHead(route);
   }
 
   return buildShopHead(route);

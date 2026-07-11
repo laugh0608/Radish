@@ -45,6 +45,51 @@ import { log } from '@/utils/logger';
 import '../adminFeature.css';
 import './RolePermissionPage.css';
 
+function formatAuthorizationTime(value?: string | null): string {
+  if (!value) {
+    return '暂无快照';
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString('zh-CN');
+}
+
+function countResourceNodes(nodes: ConsoleResourceTreeNodeVo[]): number {
+  return nodes.reduce((total, node) => total + 1 + countResourceNodes(node.voChildren), 0);
+}
+
+function countLeafResourceNodes(nodes: ConsoleResourceTreeNodeVo[]): number {
+  return nodes.reduce((total, node) => {
+    if (node.voChildren.length <= 0) {
+      return total + 1;
+    }
+
+    return total + countLeafResourceNodes(node.voChildren);
+  }, 0);
+}
+
+function collectChangedResourceTitles(
+  resourceIndex: Map<string, { node: ConsoleResourceTreeNodeVo }>,
+  resourceIds: string[]
+): string[] {
+  return resourceIds
+    .map((resourceId) => resourceIndex.get(resourceId)?.node.voTitle)
+    .filter((title): title is string => Boolean(title))
+    .slice(0, 6);
+}
+
+function collectSensitivePermissionKeys(permissionKeys: string[]): string[] {
+  const sensitiveKeywords = ['delete', 'adjust', 'rollback', 'permissions', 'hangfire', 'toggle'];
+
+  return permissionKeys
+    .filter((key) => sensitiveKeywords.some((keyword) => key.toLowerCase().includes(keyword)))
+    .slice(0, 8);
+}
+
 interface ResourceNodeProps {
   node: ConsoleResourceTreeNodeVo;
   level: number;
@@ -141,6 +186,35 @@ export const RolePermissionPage = () => {
     () => collectPreviewBindings(resourceTree, selectedResourceIdSet),
     [resourceTree, selectedResourceIdSet]
   );
+  const savedResourceIds = useMemo(
+    () => sortResourceIds(snapshot?.voGrantedResourceIds ?? []),
+    [snapshot]
+  );
+  const savedResourceIdSet = useMemo(() => new Set(savedResourceIds), [savedResourceIds]);
+  const addedResourceIds = useMemo(
+    () => selectedResourceIds.filter((resourceId) => !savedResourceIdSet.has(resourceId)),
+    [selectedResourceIds, savedResourceIdSet]
+  );
+  const removedResourceIds = useMemo(
+    () => savedResourceIds.filter((resourceId) => !selectedResourceIdSet.has(resourceId)),
+    [savedResourceIds, selectedResourceIdSet]
+  );
+  const changedResourceTitles = useMemo(
+    () => [
+      ...collectChangedResourceTitles(resourceIndex, addedResourceIds),
+      ...collectChangedResourceTitles(resourceIndex, removedResourceIds),
+    ].slice(0, 6),
+    [addedResourceIds, removedResourceIds, resourceIndex]
+  );
+  const sensitivePermissionKeys = useMemo(
+    () => collectSensitivePermissionKeys(permissionKeys),
+    [permissionKeys]
+  );
+  const resourceCount = useMemo(() => countResourceNodes(resourceTree), [resourceTree]);
+  const leafResourceCount = useMemo(() => countLeafResourceNodes(resourceTree), [resourceTree]);
+  const snapshotTimeText = formatAuthorizationTime(snapshot?.voLastModifyTime);
+  const changedResourceCount = addedResourceIds.length + removedResourceIds.length;
+  const liveApiDelta = livePreview.length - savedPreview.length;
 
   const isDirty = useMemo(() => {
     if (!snapshot) {
@@ -246,7 +320,7 @@ export const RolePermissionPage = () => {
   return (
     <div className="admin-feature-page role-permission-page">
       <ConsolePageHeader
-        eyebrow="RBAC MATRIX"
+        eyebrow="权限矩阵"
         title="角色权限配置"
         description="维护 Console 菜单、按钮与接口的第一阶段授权资源。"
         icon={<SafetyOutlined />}
@@ -288,12 +362,35 @@ export const RolePermissionPage = () => {
         <ConsoleMetricCard label="权限键" value={permissionKeys.length} description="实时汇总权限键" />
         <ConsoleMetricCard label="接口映射" value={livePreview.length} description="当前勾选关联接口" tone="success" />
         <ConsoleMetricCard
-          label="保存状态"
-          value={isDirty ? '待保存' : '已同步'}
-          description={canEditRole ? '具备保存权限' : '仅可查看授权'}
+          label="授权快照"
+          value={isDirty ? `${changedResourceCount} 项变更` : '已同步'}
+          description={snapshot ? `基于 ${snapshotTimeText}` : '等待加载角色授权'}
           tone={isDirty ? 'warning' : 'success'}
         />
       </ConsoleMetricGrid>
+
+      <section className="governance-task-flow" aria-label="角色权限矩阵任务流">
+        <div className="governance-task-flow__item">
+          <span>1</span>
+          <strong>角色快照</strong>
+          <p>{snapshot ? `${snapshot.voRoleName}，保存时携带 ${snapshotTimeText}。` : '加载角色后形成授权快照。'}</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>2</span>
+          <strong>资源矩阵</strong>
+          <p>{resourceTree.length} 个根资源、{leafResourceCount} 个叶子资源，当前勾选 {selectedResourceIds.length} 项。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>3</span>
+          <strong>授权预览</strong>
+          <p>{permissionKeys.length} 个权限键、{livePreview.length} 个接口映射会随勾选实时变化。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>4</span>
+          <strong>保存反馈</strong>
+          <p>{canEditRole ? (isDirty ? '存在未保存变更，提交后刷新最新快照。' : '当前授权与已生效快照一致。') : '当前账号仅可查看授权。'}</p>
+        </div>
+      </section>
 
       <ConsoleToolbar
         title="角色上下文"
@@ -340,87 +437,161 @@ export const RolePermissionPage = () => {
         </div>
       </ConsoleToolbar>
 
-      <div className="role-permission-page__content">
-        <section className="role-permission-panel">
-          <div className="role-permission-panel__header">
-            <div>
-              <h3>资源树</h3>
-              <p>勾选页面资源后，会自动继承菜单显示与后端接口映射。</p>
-            </div>
-            {loading ? <Tag color="processing">加载中</Tag> : null}
-          </div>
-
-          <div className="role-permission-panel__body">
-            {resourceTree.map((node) => (
-              <ResourceNode
-                key={node.voId}
-                node={node}
-                level={0}
-                selectedIds={selectedResourceIdSet}
-                onToggle={handleToggleNode}
-                visualStateCache={visualStateCache}
-                disabled={toggleDisabled}
-              />
-            ))}
-          </div>
-        </section>
-
-        <section className="role-permission-panel role-permission-panel--preview">
-          <div className="role-permission-panel__header">
-            <div>
-              <h3>权限预览</h3>
-              <p>当前勾选结果会实时汇总出页面按钮权限与接口授权范围。</p>
-            </div>
-            {isDirty ? <Tag color="warning">有未保存变更</Tag> : <Tag color="success">已同步</Tag>}
-          </div>
-
-          <div className="role-permission-preview">
-            <div className="role-permission-preview__section">
-              <h4>权限键</h4>
-              <div className="role-permission-preview__tags">
-                {permissionKeys.length > 0 ? permissionKeys.map((key) => (
-                  <Tag key={key}>{key}</Tag>
-                )) : <span className="role-permission-preview__empty">暂无权限键</span>}
+      <div className="role-permission-workspace">
+        <main className="role-permission-workspace__main">
+          <div className="role-permission-page__content">
+            <section className="role-permission-panel">
+              <div className="role-permission-panel__header">
+                <div>
+                  <h3>权限矩阵</h3>
+                  <p>勾选页面资源后，会自动继承菜单显示与后端接口映射。</p>
+                </div>
+                <Space size={[8, 8]} wrap>
+                  {loading ? <Tag color="processing">加载中</Tag> : null}
+                  <Tag color={isDirty ? 'warning' : 'success'}>{isDirty ? '旧快照待提交' : '快照同步'}</Tag>
+                </Space>
               </div>
-            </div>
 
-            <div className="role-permission-preview__section">
-              <h4>接口映射</h4>
-              <div className="role-permission-preview__apis">
-                {livePreview.length > 0 ? livePreview.map((binding) => (
-                  <div
-                    key={`${binding.voResourceId}:${binding.voApiModuleId}`}
-                    className="role-permission-preview__api-item"
-                  >
-                    <div>
-                      <strong>{binding.voApiModuleName}</strong>
-                      <span>{binding.voResourceKey}</span>
-                    </div>
-                    <code>{binding.voLinkUrl}</code>
+              <div className="role-permission-matrix-summary">
+                <span>{resourceCount} 个资源节点</span>
+                <span>{leafResourceCount} 个叶子资源</span>
+                <span>{selectedResourceIds.length} 项当前授权</span>
+              </div>
+
+              <div className="role-permission-panel__body">
+                {resourceTree.map((node) => (
+                  <ResourceNode
+                    key={node.voId}
+                    node={node}
+                    level={0}
+                    selectedIds={selectedResourceIdSet}
+                    onToggle={handleToggleNode}
+                    visualStateCache={visualStateCache}
+                    disabled={toggleDisabled}
+                  />
+                ))}
+              </div>
+            </section>
+
+            <section className="role-permission-panel role-permission-panel--preview">
+              <div className="role-permission-panel__header">
+                <div>
+                  <h3>权限预览</h3>
+                  <p>当前勾选结果会实时汇总出页面按钮权限与接口授权范围。</p>
+                </div>
+                {isDirty ? <Tag color="warning">有未保存变更</Tag> : <Tag color="success">已同步</Tag>}
+              </div>
+
+              <div className="role-permission-preview">
+                <div className="role-permission-preview__section">
+                  <h4>权限键</h4>
+                  <div className="role-permission-preview__tags">
+                    {permissionKeys.length > 0 ? permissionKeys.map((key) => (
+                      <Tag key={key}>{key}</Tag>
+                    )) : <span className="role-permission-preview__empty">暂无权限键</span>}
                   </div>
-                )) : <span className="role-permission-preview__empty">暂无接口映射</span>}
-              </div>
-            </div>
+                </div>
 
-            <div className="role-permission-preview__section">
-              <h4>已生效快照</h4>
-              <div className="role-permission-preview__apis">
-                {savedPreview.length > 0 ? savedPreview.map((binding) => (
-                  <div
-                    key={`saved:${binding.voResourceId}:${binding.voApiModuleId}`}
-                    className="role-permission-preview__api-item"
-                  >
-                    <div>
-                      <strong>{binding.voApiModuleName}</strong>
-                      <span>{binding.voResourceKey}</span>
-                    </div>
-                    <code>{binding.voLinkUrl}</code>
+                <div className="role-permission-preview__section">
+                  <h4>接口映射</h4>
+                  <div className="role-permission-preview__apis">
+                    {livePreview.length > 0 ? livePreview.map((binding) => (
+                      <div
+                        key={`${binding.voResourceId}:${binding.voApiModuleId}`}
+                        className="role-permission-preview__api-item"
+                      >
+                        <div>
+                          <strong>{binding.voApiModuleName}</strong>
+                          <span>{binding.voResourceKey}</span>
+                        </div>
+                        <code>{binding.voLinkUrl}</code>
+                      </div>
+                    )) : <span className="role-permission-preview__empty">暂无接口映射</span>}
                   </div>
-                )) : <span className="role-permission-preview__empty">当前角色尚未保存授权</span>}
+                </div>
+
+                <div className="role-permission-preview__section">
+                  <h4>已生效快照</h4>
+                  <div className="role-permission-preview__apis">
+                    {savedPreview.length > 0 ? savedPreview.map((binding) => (
+                      <div
+                        key={`saved:${binding.voResourceId}:${binding.voApiModuleId}`}
+                        className="role-permission-preview__api-item"
+                      >
+                        <div>
+                          <strong>{binding.voApiModuleName}</strong>
+                          <span>{binding.voResourceKey}</span>
+                        </div>
+                        <code>{binding.voLinkUrl}</code>
+                      </div>
+                    )) : <span className="role-permission-preview__empty">当前角色尚未保存授权</span>}
+                  </div>
+                </div>
               </div>
+            </section>
+          </div>
+        </main>
+
+        <aside className="admin-feature-rail role-permission-rail" aria-label="角色授权证据">
+          <div className="admin-feature-rail__header">
+            <div>
+              <span className="admin-feature-rail__eyebrow">授权快照</span>
+              <h3>授权证据</h3>
+            </div>
+            <ConsoleStatusChip tone={isDirty ? 'warning' : 'success'}>
+              {isDirty ? '待保存' : '已同步'}
+            </ConsoleStatusChip>
+          </div>
+          <p className="admin-feature-subtle">保存动作继续使用当前授权快照时间，服务端检测到旧快照时会拒绝写入并要求刷新。</p>
+
+          <div className="admin-feature-rail__list">
+            <div className="admin-feature-rail__item">
+              <span>角色</span>
+              <strong>{snapshot?.voRoleName ?? normalizedRoleId ?? '-'}</strong>
+            </div>
+            <div className="admin-feature-rail__item">
+              <span>快照时间</span>
+              <strong>{snapshotTimeText}</strong>
+            </div>
+            <div className="admin-feature-rail__item">
+              <span>变更资源</span>
+              <strong>{changedResourceCount > 0 ? `${changedResourceCount} 项` : '无变更'}</strong>
+            </div>
+            <div className="admin-feature-rail__item">
+              <span>接口变化</span>
+              <strong>{liveApiDelta === 0 ? '无净变化' : `${liveApiDelta > 0 ? '+' : ''}${liveApiDelta} 个映射`}</strong>
             </div>
           </div>
-        </section>
+
+          <div className="admin-feature-rail__callout">
+            <span>保存状态</span>
+            <strong>{canEditRole ? (saveDisabled ? '等待有效变更' : '可以保存授权') : '仅可查看'}</strong>
+            <p>{isDirty ? '保存后会重新读取资源树、角色快照和已生效接口映射。' : '当前页面展示的是已生效授权快照。'}</p>
+          </div>
+
+          <div className="role-permission-rail__section">
+            <h4>变更线索</h4>
+            <div className="role-permission-rail__tags">
+              {changedResourceTitles.length > 0 ? changedResourceTitles.map((title) => (
+                <Tag key={title} color="warning">{title}</Tag>
+              )) : <span>暂无资源变更</span>}
+            </div>
+          </div>
+
+          <div className="role-permission-rail__section">
+            <h4>敏感权限线索</h4>
+            <div className="role-permission-rail__tags">
+              {sensitivePermissionKeys.length > 0 ? sensitivePermissionKeys.map((key) => (
+                <Tag key={key} color="error">{key}</Tag>
+              )) : <span>当前勾选未命中敏感权限关键字</span>}
+            </div>
+          </div>
+
+          <div className="admin-feature-inline-context">
+            <strong>权限边界</strong>
+            <span>本页只维护角色与 Console 授权资源关系，不新增权限键、资源种子、接口映射或审批流。</span>
+          </div>
+        </aside>
       </div>
     </div>
   );

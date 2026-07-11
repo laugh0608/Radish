@@ -27,22 +27,6 @@ interface PublicGuideDefinition {
   boundaryValueKey: string;
 }
 
-export const listGuideDefinition: PublicGuideDefinition = {
-  titleKey: 'forum.public.listGuide.title',
-  descriptionKey: 'forum.public.listGuide.description',
-  readingValueKey: 'forum.public.listGuide.readingValue',
-  nextValueKey: 'forum.public.listGuide.nextValue',
-  boundaryValueKey: 'forum.public.listGuide.boundaryValue'
-};
-
-export const categoryGuideDefinition: PublicGuideDefinition = {
-  titleKey: 'forum.public.categoryGuide.title',
-  descriptionKey: 'forum.public.categoryGuide.description',
-  readingValueKey: 'forum.public.categoryGuide.readingValue',
-  nextValueKey: 'forum.public.categoryGuide.nextValue',
-  boundaryValueKey: 'forum.public.categoryGuide.boundaryValue'
-};
-
 export const tagGuideDefinition: PublicGuideDefinition = {
   titleKey: 'forum.public.tagGuide.title',
   descriptionKey: 'forum.public.tagGuide.description',

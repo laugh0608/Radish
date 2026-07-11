@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useCallback, useEffect, lazy, Suspense, useRef, useState } from 'react';
 import { log } from '@/utils/logger';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
@@ -13,14 +13,24 @@ const PieChart = lazy(() =>
   import('@radish/ui/pie-chart').then((module) => ({ default: module.PieChart }))
 );
 
+const EXPERIENCE_TRANSACTION_PAGE_SIZE = 20;
+
 interface ExperienceDetailAppProps {
   pageIndex?: number;
   onPageIndexChange?: (pageIndex: number) => void;
+  onDataLoaded?: (snapshot: ExperienceDetailSnapshot) => void;
+}
+
+interface ExperienceDetailSnapshot {
+  experience: ExperienceData | null;
+  transactions: ExpTransactionData[];
+  totalPages: number;
 }
 
 export const ExperienceDetailApp = ({
   pageIndex: controlledPageIndex,
-  onPageIndexChange
+  onPageIndexChange,
+  onDataLoaded
 }: ExperienceDetailAppProps = {}) => {
   const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [transactions, setTransactions] = useState<ExpTransactionData[]>([]);
@@ -29,14 +39,14 @@ export const ExperienceDetailApp = ({
   const [internalPageIndex, setInternalPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [days, setDays] = useState<7 | 30>(7);
-  const pageSize = 20;
   const pageIndex = controlledPageIndex ?? internalPageIndex;
+  const onDataLoadedRef = useRef(onDataLoaded);
 
   useEffect(() => {
-    void loadData();
-  }, [pageIndex]);
+    onDataLoadedRef.current = onDataLoaded;
+  }, [onDataLoaded]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -46,6 +56,7 @@ export const ExperienceDetailApp = ({
         setExperience(null);
         setTransactions([]);
         setTotalPages(1);
+        onDataLoadedRef.current?.({ experience: null, transactions: [], totalPages: 1 });
         setError('暂时无法获取等级数据，请稍后重试');
         return;
       }
@@ -53,26 +64,41 @@ export const ExperienceDetailApp = ({
       setExperience(expResult);
 
       try {
-        const transResult = await experienceApi.getTransactions({ pageIndex, pageSize });
+        const transResult = await experienceApi.getTransactions({
+          pageIndex,
+          pageSize: EXPERIENCE_TRANSACTION_PAGE_SIZE
+        });
         if (transResult) {
           setTransactions(transResult.data);
           setTotalPages(transResult.pageCount);
+          onDataLoadedRef.current?.({
+            experience: expResult,
+            transactions: transResult.data,
+            totalPages: transResult.pageCount
+          });
         } else {
           setTransactions([]);
           setTotalPages(1);
+          onDataLoadedRef.current?.({ experience: expResult, transactions: [], totalPages: 1 });
         }
       } catch (transErr) {
         log.warn('经验值交易记录 API 不可用:', transErr);
         setTransactions([]);
         setTotalPages(1);
+        onDataLoadedRef.current?.({ experience: expResult, transactions: [], totalPages: 1 });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载数据失败');
+      onDataLoadedRef.current?.({ experience: null, transactions: [], totalPages: 1 });
       log.error('加载经验值详情失败:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [pageIndex]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   // 从交易记录计算每日统计数据
   const getDailyStats = () => {

@@ -2,6 +2,7 @@
 export { formatDate, formatFileSize } from './format';
 export { isEmail, isPhone, isUrl, isIdCard, getPasswordStrength } from './validation';
 export { truncate, capitalize, camelToKebab, kebabToCamel, randomString } from './string';
+export { resolveSanitizedMarkdownLinkHref, sanitizeMarkdownLinkHref } from './markdownUrl';
 export {
   buildAttachmentAssetUrl,
   buildAttachmentMarkdownUrl,

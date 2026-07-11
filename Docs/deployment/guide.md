@@ -107,7 +107,7 @@
    ```
 
 3. 发起 `dev -> master` 的 PR
-4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 全部通过
+4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 全部通过
 5. 完成审批与会话收束后合并到 `master`
 6. 合并后创建版本标签，例如：
 
@@ -536,6 +536,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - `Deploy/nginx.prod.conf`：当前仓库随代码交付的生产反向代理样例，默认采用“宿主机 Nginx 终止 HTTPS，再回源 `127.0.0.1:5000`”的口径。
 - `Deploy/.env.example`：当前部署态组合的最小变量样例，至少覆盖 `RADISH_IMAGE_TRACK`、`RADISH_PUBLIC_URL`、PostgreSQL / Redis 密码，以及 Auth 证书密码；如需固定版本再启用 `RADISH_IMAGE_TAG`。
 - `Radish.Gateway/Program.cs`：当前已经显式启用 `X-Forwarded-For / X-Forwarded-Proto / X-Forwarded-Host` 识别，能够正确处理反代后的 Scheme、Host 与重定向。
+- `Radish.Auth`：OpenIddict transport security 在非 Development 环境不允许关闭；Gateway 的 `/Account` 与 `/connect` 路由会显式传递 `X-Forwarded-Proto`，Auth 仅处理最近一跳。部署编排必须继续只对 Auth 使用 `expose: 5200`，不得添加宿主 `ports`。
 
 #### Nginx 落地步骤
 
@@ -592,7 +593,7 @@ HTTP (5000/5100) → ASP.NET Core 应用
 
 ### 进入条件
 
-- 当前 `master` 最小门禁已收敛为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四项
+- 当前 `master` 最小门禁已收敛为 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六项
 - `npm run validate:baseline` 已通过
 - 如本轮触达宿主 / 配置 / `DbMigrate` / 部署链，`npm run validate:baseline:host` 已通过
   - 当前它也是 `M14` 的默认宿主验证入口，失败时优先回到 [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist) 按顺序分诊

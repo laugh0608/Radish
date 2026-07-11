@@ -246,7 +246,7 @@ export const RoleList = () => {
   return (
     <div className="admin-feature-page role-list-page">
       <ConsolePageHeader
-        eyebrow="RBAC PERMISSIONS"
+        eyebrow="角色权限"
         title="角色管理"
         description="维护后台角色、权限范围和权限配置入口。"
         icon={<SafetyOutlined />}

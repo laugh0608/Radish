@@ -40,11 +40,12 @@ npm run validate:ci
 
 这类失败优先怀疑“治理真相源漂移”，不要先去改业务代码。
 
-当前 contract 会校验三层事实：
+当前 contract 会校验四层事实：
 
 1. `.github/workflows/repo-quality.yml`
 2. `.github/rulesets/master-protection.json`
 3. 本地 `npm run validate:ci`
+4. `Dependency Security` 等显式 CI-only 门禁
 
 并且不仅校验 required check 名称，还会校验 `repo-quality.yml` 各 job 的关键命令片段。
 
@@ -52,6 +53,7 @@ npm run validate:ci
 
 - workflow job 名改了，但 ruleset required checks 还沿用旧名字
 - ruleset required checks 改了，但本地 `validate:ci` 仍在复现旧门禁
+- 新增联网 required check，却没有明确它应进入本地 `validate:ci` 还是保持 CI-only
 - workflow 名字没变，但关键命令片段变了
   - 例如 changed-only 入口不再走统一 collector
   - 或 `Backend Guard` 不再按 `check:backend-impact` 条件触发
@@ -65,10 +67,12 @@ npm run validate:ci
 - [repo-quality-contract.mjs](/D:/Code/Radish/Scripts/repo-quality-contract.mjs)
 - [check-repo-quality-contract.mjs](/D:/Code/Radish/Scripts/check-repo-quality-contract.mjs)
 - [validate-ci.mjs](/D:/Code/Radish/Scripts/validate-ci.mjs)
+- [check-dependency-security.mjs](/D:/Code/Radish/Scripts/check-dependency-security.mjs)
 
 ### 2.3 处理原则
 
 - 如果你改的是门禁定义，必须同时更新 contract 与文档，不要只改 workflow
+- CI-only 只能用于确实依赖联网或候选环境的检查，并必须在 contract 中显式登记；不能用它掩盖本地本可执行的回归
 - 如果你只是想让本地更快通过，不要绕开 contract；先解释为什么 required checks 或命令语义应该变化
 - 如果是 `Backend Guard` 或 `Identity Guard` 触发条件变化，优先回到统一 impact 规则源，而不是在 workflow 里单独补一份路径清单
 

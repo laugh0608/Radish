@@ -70,6 +70,17 @@ export function PublicForumCompose({
 
     return categories.find((category) => String(category.voId) === categoryId)?.voId ?? categoryId;
   }, [categories, categoryId]);
+  const selectedCategoryLabel = useMemo(() => {
+    if (!categoryId) {
+      return t('forum.public.composeRailCategoryAll');
+    }
+
+    const selectedCategory = categories.find((category) => String(category.voId) === categoryId);
+    return selectedCategory?.voName?.trim() || t('forum.public.composeRailCategoryPreset');
+  }, [categories, categoryId, t]);
+  const questionHref = buildPublicForumPath({ kind: 'question', sortBy: 'newest', page: 1 });
+  const pollHref = buildPublicForumPath({ kind: 'poll', sortBy: 'newest', page: 1 });
+  const lotteryHref = buildPublicForumPath({ kind: 'lottery', sortBy: 'newest', page: 1 });
 
   useEffect(() => {
     let cancelled = false;
@@ -219,60 +230,127 @@ export function PublicForumCompose({
         </div>
       </div>
 
-      <div className={styles.composePanel}>
-        <a
-          className={styles.backButton}
-          href={browseHref}
-          onClick={(event) => handlePublicForumLinkClick(event, onBack)}
-        >
-          <Icon icon="mdi:arrow-left" size={18} />
-          <span>{t('forum.public.composeBackToForum')}</span>
-        </a>
+      <div className={styles.composeWorkspace}>
+        <div className={styles.composePanel}>
+          <a
+            className={styles.backButton}
+            href={browseHref}
+            onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+          >
+            <Icon icon="mdi:arrow-left" size={18} />
+            <span>{t('forum.public.composeBackToForum')}</span>
+          </a>
 
-        {!authReady && (
-          <PublicStatusCard
-            tone="loading"
-            title={t('forum.public.composeLoadingTitle')}
-            description={t('forum.public.composeLoadingDescription')}
-            compact={true}
-          />
-        )}
+          {!authReady && (
+            <PublicStatusCard
+              tone="loading"
+              title={t('forum.public.composeLoadingTitle')}
+              description={t('forum.public.composeLoadingDescription')}
+              compact={true}
+            />
+          )}
 
-        {authReady && !isAuthenticated && (
-          <PublicStatusCard
-            tone="info"
-            title={t('forum.public.composeLoginTitle')}
-            description={t('forum.public.composeLoginDescription')}
-            compact={true}
-          />
-        )}
+          {authReady && !isAuthenticated && (
+            <PublicStatusCard
+              tone="info"
+              title={t('forum.public.composeLoginTitle')}
+              description={t('forum.public.composeLoginDescription')}
+              compact={true}
+            />
+          )}
 
-        {authReady && isAuthenticated && categoriesLoading && (
-          <PublicStatusCard
-            tone="loading"
-            title={t('forum.public.composeCategoriesLoadingTitle')}
-            description={t('forum.public.composeCategoriesLoadingDescription')}
-            compact={true}
-          />
-        )}
+          {authReady && isAuthenticated && categoriesLoading && (
+            <PublicStatusCard
+              tone="loading"
+              title={t('forum.public.composeCategoriesLoadingTitle')}
+              description={t('forum.public.composeCategoriesLoadingDescription')}
+              compact={true}
+            />
+          )}
 
-        {authReady && isAuthenticated && categoriesError && (
-          <PublicStatusCard
-            tone="error"
-            title={t('forum.public.composeCategoriesErrorTitle')}
-            description={categoriesError || t('forum.public.composeCategoriesErrorDescription')}
-            compact={true}
-            primaryAction={{
-              label: t('common.retry'),
-              onClick: () => void loadCategories()
-            }}
-            secondaryAction={{
-              label: t('forum.public.composeBackToForum'),
-              href: browseHref,
-              onClick: onBack
-            }}
-          />
-        )}
+          {authReady && isAuthenticated && categoriesError && (
+            <PublicStatusCard
+              tone="error"
+              title={t('forum.public.composeCategoriesErrorTitle')}
+              description={categoriesError || t('forum.public.composeCategoriesErrorDescription')}
+              compact={true}
+              primaryAction={{
+                label: t('common.retry'),
+                onClick: () => void loadCategories()
+              }}
+              secondaryAction={{
+                label: t('forum.public.composeBackToForum'),
+                href: browseHref,
+                onClick: onBack
+              }}
+            />
+          )}
+        </div>
+
+        <aside className={styles.composeRail} aria-label={t('forum.public.composeRailLabel')}>
+          <section className={styles.sidePanel}>
+            <p className={styles.sidePanelKicker}>{t('forum.public.composeRailContextTitle')}</p>
+            <p className={styles.sidePanelText}>{t('forum.public.composeRailContextDescription')}</p>
+            <div className={styles.railChipList}>
+              <span className={styles.railChip}>
+                <Icon icon="mdi:shape-outline" size={16} />
+                <span>{selectedCategoryLabel}</span>
+              </span>
+              <span className={styles.railChip}>
+                <Icon icon={canOpenComposer ? 'mdi:check-circle-outline' : 'mdi:progress-clock'} size={16} />
+                <span>{t(canOpenComposer ? 'forum.public.composeRailReady' : 'forum.public.composeRailWaiting')}</span>
+              </span>
+            </div>
+          </section>
+
+          <section className={styles.sidePanel}>
+            <p className={styles.sidePanelKicker}>{t('forum.public.composeRailBoundaryTitle')}</p>
+            <ul className={styles.sideRuleList}>
+              <li>{t('forum.public.composeRailBoundaryEditor')}</li>
+              <li>{t('forum.public.composeRailBoundaryCategory')}</li>
+              <li>{t('forum.public.composeRailBoundarySubmission')}</li>
+            </ul>
+          </section>
+
+          <section className={styles.sidePanel}>
+            <p className={styles.sidePanelKicker}>{t('forum.public.composeRailRoutesTitle')}</p>
+            <p className={styles.sidePanelText}>{t('forum.public.composeRailRoutesDescription')}</p>
+            <div className={styles.railActionList}>
+              <a
+                href={browseHref}
+                className={styles.railActionLink}
+                onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+              >
+                <Icon icon="mdi:format-list-bulleted" size={18} />
+                <span>{t('forum.public.composeRailForumHome')}</span>
+              </a>
+              <a
+                href={questionHref}
+                className={styles.railActionLink}
+                onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'question', sortBy: 'newest', page: 1 }))}
+              >
+                <Icon icon="mdi:comment-question-outline" size={18} />
+                <span>{t('forum.public.composeRailQuestionFeed')}</span>
+              </a>
+              <a
+                href={pollHref}
+                className={styles.railActionLink}
+                onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'poll', sortBy: 'newest', page: 1 }))}
+              >
+                <Icon icon="mdi:poll" size={18} />
+                <span>{t('forum.public.composeRailPollFeed')}</span>
+              </a>
+              <a
+                href={lotteryHref}
+                className={styles.railActionLink}
+                onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'lottery', sortBy: 'newest', page: 1 }))}
+              >
+                <Icon icon="mdi:gift-outline" size={18} />
+                <span>{t('forum.public.composeRailLotteryFeed')}</span>
+              </a>
+            </div>
+          </section>
+        </aside>
       </div>
 
       <PublishPostModal

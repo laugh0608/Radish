@@ -4,19 +4,21 @@
   <img src="./Docs/images/RadishAcg-256.png" alt="萝卜娘" width="256">
 </p>
 
-Radish 是一个自研分层架构的现代化内容社区：后端基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，前端使用 React 19（Vite + TypeScript），采用桌面化 UI 设计理念。
+Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以帖子、评论和问答承载内容生产与讨论，以聊天、关注和通知形成复访闭环，以 Docs 沉淀可长期阅读的知识；宠物、经验、资产和商城是可选激励层，不取代社区主轴。
+
+正式产品入口采用 Web-first：PC 与 mobile 浏览器共享公开浏览、登录参与和私域复访主路径；Flutter 维持移动原生承接，WebOS 只保留历史兼容，Tauri / Rust 属于后置实验线。技术实现基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，以及 React 19 + Vite + TypeScript。
 
 ## 当前状态
 
 - **当前阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-6 真实使用运营观察与反馈分流`
-- **复核日期**：`2026-05-19`
+- **当前主线**：`P3-12-E8 Pre-RC 产品与发布工程硬化`
+- **复核日期**：`2026-07-11`
 - **当前结论**：
-  - `Phase 2-2 移动 Web 形态` 已完成公开内容壳层首批收口，转入稳定维护
-  - `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论
-  - Tauri 桌面安装包个人开发阶段验证通过，当前定位为 `Tauri 壳 + WebOS 桌面工作台`
-  - `P3-1` 至 `P3-5` 已完成公开内容 SEO / 分享基线、PublicId 最小试点、公开热区拆分、留存回流和动态 sitemap / head snapshot 首批收口
-  - WebOS / PC 工作台、后端与 Console 治理转入稳定维护，只处理真实使用中新暴露的高信号问题
+  - 进入 `F` 前先完成 `Q0` 工程硬门禁与 `E8-B` 有限产品收口；Q0-A 依赖安全与审计恢复已完成，Q0-B 至 Q0-D 仍待独立实施
+  - `E8-B` 只收口内容优先 Discover、四条核心用户旅程、Public Docs 服务端公开契约，以及 Console 桌面优先 / 移动低风险边界
+  - `Q1 / Q2 / Q3` 调整为 `F` 内的 Release Go 任务，`Q4` 转持续维护；不再把全部成熟度治理前置成无限期冻结
+  - 合并 `master`、创建 tag 与部署是三个独立决策；当前不因文档收口自动触发任何一个动作
+  - Flutter 转维护线，WebOS 仅保留兼容入口，Tauri / Rust 继续后置，避免多端同时扩张稀释正式 Web 主线
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：
   - 快速基线：`npm run validate:baseline:quick`
@@ -138,7 +140,7 @@ Radish/
 ├── Docs/                            # 📚 固定项目文档（开发规范、架构设计、部署指南等）
 ├── Clients/radish.flutter/          # 📱 Flutter 移动原生客户端
 ├── Clients/radish-tauri/            # 🖥️ Tauri 桌面安装包壳层
-├── Frontend/radish.client/               # ⚛️ React 前端应用（WebOS 桌面环境）
+├── Frontend/radish.client/               # ⚛️ React 正式 Web 应用（含 WebOS 历史兼容入口）
 ├── Frontend/radish.console/              # 🎛️ 管理控制台前端
 ├── Frontend/radish.ui/                   # 🎨 UI 组件库（共享组件、Hooks、工具函数）
 ├── Radish.Gateway/              # 🚪 API 网关（YARP 反向代理）
@@ -166,7 +168,8 @@ Radish/
 - 📘 [**开发规范**](Docs/architecture/specifications.md) - 目录职责、分层依赖、代码约定
 - 📗 [**架构设计**](Docs/architecture/framework.md) - 技术选型、分层架构、数据持久化
 - 📙 [**开发路线图**](Docs/development-plan.md) - 当前阶段主线、下一顺位与维护线
-- 📒 [**第二开发阶段路线图**](Docs/planning/phase-two-community-multiplatform.md) - 社区深化与多端化拆分
+- 📒 [**第三开发阶段总纲**](Docs/planning/phase-three-real-usage-contract-governance.md) - 真实使用增长、契约治理与 P3-12 阶段边界
+- 📓 [**P3-12-E8 发布工程收口**](Docs/planning/p3-12-e8-release-engineering-maturity-security-closure.md) - Q0、F 内 Release Go 与持续维护的分层门禁
 - 📗 [**前端多壳层策略**](Docs/frontend/shell-strategy.md) - 公开内容、桌面工作台与 Flutter 客户端分工
 - 📓 [**当前进行中**](Docs/planning/current.md) - 当前正式主线与并行维护项
 - 📔 [**已完成摘要**](Docs/planning/archive.md) - 第一开发阶段与历史里程碑收口
@@ -175,7 +178,7 @@ Radish/
 
 ### 专项文档
 - 🔐 [**认证与权限**](Docs/guide/authentication.md) - OIDC 认证流程与权限体系
-- 🎨 [**前端设计**](Docs/frontend/design.md) - WebOS 桌面范式与应用集成方式
+- 🎨 [**前端设计**](Docs/frontend/design.md) - 正式 Web、Flutter 与历史兼容壳层的设计边界
 - 🚪 [**Gateway 服务网关**](Docs/guide/gateway.md) - 统一服务入口与路由转发
 - 🚀 [**部署指南**](Docs/deployment/guide.md) - 容器化、CI/CD、生产部署
 - 当前部署口径：开发运行使用 IDE / `dotnet run` / `npm run dev`；本地容器验证使用 `Deploy/docker-compose.local.yaml`；测试与生产共用 `Deploy/docker-compose.yaml`，默认通过 `RADISH_IMAGE_TRACK=test/release` 拉取 `test-latest` / `release-latest`，需要可复现部署时再启用固定 `RADISH_IMAGE_TAG`；所有容器编排都会先执行 `dbmigrate apply` 初始化共享业务库
@@ -204,15 +207,15 @@ Radish/
 - ✅ **API 网关**：YARP 反向代理，统一入口和路由
 
 ### 前端架构
-- ✅ **桌面化 UI**：React 19 + macOS 风格交互体验（WebOS）
-- ✅ **UI 组件库**：@radish/ui 共享组件库（4 个组件 + 4 个 Hooks + 12 个工具函数）
+- ✅ **Web-first 体验**：React 19 同时承接 PC / mobile 正式 Web，`/desktop` 保留 WebOS 历史兼容
+- ✅ **UI 组件库**：`@radish/ui` 共享组件、Hooks 与设计 token
 - ✅ **npm Workspaces**：monorepo 管理，组件热更新
 - ✅ **TypeScript**：完整的类型定义和类型安全
 - ✅ **Vite (Rolldown)**：极速构建和热模块替换
 
 ### 其他特性
 - ✅ **Rust 扩展**：预留高性能原生模块支持
-- ✅ **统一文档系统**：`Docs/` 固定文档 + WebOS 文档应用 + Markdown 导入/导出迁移链路
+- ✅ **统一文档系统**：`Docs/` 固定文档 + 正式 Web 公开阅读 / 作者态 + Markdown 导入导出链路
 
 ## 配置说明
 

@@ -54,6 +54,7 @@ using Radish.Api.Filters;
 using Radish.Api.HealthChecks;
 using Radish.Api.Hubs;
 using Radish.Api.Services;
+using Radish.Api.Security;
 using Radish.Model;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Radish.IRepository.Base;
@@ -94,12 +95,6 @@ static string ResolveSharedConfigPath(string basePath, string contentRootPath)
     }
 
     return Path.Combine(contentRootPath, "appsettings.Shared.json");
-}
-
-static string[] BuildValidIssuers(string issuer)
-{
-    var normalizedIssuer = issuer.Trim().TrimEnd('/');
-    return [normalizedIssuer, $"{normalizedIssuer}/"];
 }
 
 static X509Certificate2 LoadJwtSigningCertificate(
@@ -372,7 +367,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             // IDE 本地开发时回退到旧的 Authority 模式；部署态统一改为共享签名证书本地验签。
             options.Authority = "http://localhost:5200";
-            //options.Audience = "radish-api";
             options.RequireHttpsMetadata = false;
         }
 
@@ -385,59 +379,41 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 var accessToken = context.Request.Query["access_token"].ToString();
                 var path = context.HttpContext.Request.Path;
 
-                Log.Information("[JWT] OnMessageReceived - Path: {Path}, HasToken: {HasToken}",
-                    path, !string.IsNullOrWhiteSpace(accessToken));
-
                 if (!string.IsNullOrWhiteSpace(accessToken)
                     && (path.StartsWithSegments("/hub/notification") ||
                         path.StartsWithSegments("/hub/chat") ||
                         path.StartsWithSegments("/hub/comment")))
                 {
                     context.Token = accessToken;
-                    Log.Information("[JWT] 从 query string 提取 token 成功");
                 }
 
-                return Task.CompletedTask;
-            },
-            OnTokenValidated = context =>
-            {
-                var path = context.HttpContext.Request.Path;
-                var currentUser = context.HttpContext.RequestServices.GetRequiredService<IClaimsPrincipalNormalizer>()
-                    .Normalize(context.Principal);
-                Log.Information("[JWT] OnTokenValidated - Path: {Path}, UserId: {UserId}", path, currentUser.UserId);
                 return Task.CompletedTask;
             },
             OnAuthenticationFailed = context =>
             {
                 var path = context.HttpContext.Request.Path;
-                Log.Error(context.Exception, "[JWT] OnAuthenticationFailed - Path: {Path}, Error: {Error}",
-                    path, context.Exception.Message);
+                Log.Warning(
+                    "[JWT] AuthenticationFailed - Path: {Path}, ErrorType: {ErrorType}, TraceId: {TraceId}",
+                    path,
+                    context.Exception.GetType().Name,
+                    context.HttpContext.TraceIdentifier);
                 return Task.CompletedTask;
             },
             OnChallenge = context =>
             {
                 var path = context.HttpContext.Request.Path;
-                Log.Warning("[JWT] OnChallenge - Path: {Path}, Error: {Error}, ErrorDescription: {ErrorDescription}",
-                    path, context.Error, context.ErrorDescription);
+                Log.Warning(
+                    "[JWT] Challenge - Path: {Path}, Error: {Error}, TraceId: {TraceId}",
+                    path,
+                    context.Error,
+                    context.HttpContext.TraceIdentifier);
                 return Task.CompletedTask;
             }
         };
 
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            // 先关闭 Audience 校验，确认 token 其余部分没问题
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = System.TimeSpan.Zero,
-            // 指定 NameClaimType 为 OIDC 标准的 "sub"（用于用户标识）
-            NameClaimType = "sub",
-            // 指定 role claim 类型为 OIDC 标准的 "role"
-            RoleClaimType = "role",
-            ValidIssuers = !string.IsNullOrWhiteSpace(jwtIssuer) ? BuildValidIssuers(jwtIssuer) : null,
-            IssuerSigningKey = jwtSigningCertificate != null ? new X509SecurityKey(jwtSigningCertificate) : null
-        };
+        options.TokenValidationParameters = ApiJwtValidationPolicy.Create(
+            jwtIssuer,
+            jwtSigningCertificate != null ? new X509SecurityKey(jwtSigningCertificate) : null);
     });
 // 注册 JWT 授权方案，核心是通过解析请求头中的 JWT Token，然后匹配策略中的 key 和字段值
 builder.Services.AddAuthorizationBuilder()
@@ -445,21 +421,7 @@ builder.Services.AddAuthorizationBuilder()
            // OpenIddict 默认会把多个 scope 以空格拼成一个字符串（例如："openid profile radish-api"），因此这里需要按空格拆分判断
            .AddPolicy(AuthorizationPolicies.Client, policy => policy.RequireAssertion(ctx =>
            {
-               // 【调试】输出所有 claims，用于诊断授权失败问题
-               var allClaims = ctx.User.Claims.Select(c => $"{c.Type}={c.Value}").ToArray();
-               Log.Information("[Client Policy] 所有 Claims: {Claims}", string.Join(", ", allClaims));
-
-               var scopes = UserClaimReader.GetScopes(ctx.User);
-               Log.Information("[Client Policy] 归一化后 scopes: {Scopes}", string.Join(", ", scopes));
-
-               if (UserClaimReader.HasScope(ctx.User, UserScopes.RadishApi))
-               {
-                   Log.Information("[Client Policy] ✓ 找到 {Scope} scope，授权成功", UserScopes.RadishApi);
-                   return true;
-               }
-
-               Log.Warning("[Client Policy] ✗ 未找到 {Scope} scope，授权失败", UserScopes.RadishApi);
-               return false;
+               return UserClaimReader.HasScope(ctx.User, UserScopes.RadishApi);
            }).Build())
            // System 授权方案，RequireRole 方式
            .AddPolicy(AuthorizationPolicies.System, policy => policy.RequireRole(UserRoles.System).Build())

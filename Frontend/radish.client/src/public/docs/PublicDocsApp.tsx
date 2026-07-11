@@ -8,7 +8,6 @@ import type {
   WikiDocumentTreeNodeVo,
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
-import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 import { canUseDocsAuthorTools, isBuiltInWikiDocument } from '@/docs/docsAuthorAccess';
 import { buildDocsAuthorPath } from '@/docs/docsAuthorRouteState';
 import { useUserStore } from '@/stores/userStore';
@@ -32,59 +31,16 @@ import {
   removePublicStructuredData,
 } from '../publicStructuredData';
 import { buildPublicShareUrl } from '../publicHead';
-import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { copyRecoveryDiagnostics } from '@/utils/recoveryDiagnostics';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
+import { PublicDocsDetailRail, PublicDocsListRail, PublicDocsSearchRail } from './PublicDocsRails';
+import { toSourceText, toStatusText, toVisibilityText } from './publicDocsFormat';
 import styles from './PublicDocsApp.module.css';
 
 const PUBLIC_DOCS_SEARCH_PAGE_SIZE = 10;
-
-const searchGuideItems = [
-  {
-    labelKey: 'wiki.public.searchGuideFocusLabel',
-    valueKey: 'wiki.public.searchGuideFocusValue',
-  },
-  {
-    labelKey: 'wiki.public.searchGuideNextLabel',
-    valueKey: 'wiki.public.searchGuideNextValue',
-  },
-  {
-    labelKey: 'wiki.public.searchGuideBoundaryLabel',
-    valueKey: 'wiki.public.searchGuideBoundaryValue',
-  },
-] as const;
-
-const listGuideItems = [
-  {
-    labelKey: 'wiki.public.listGuideFocusLabel',
-    valueKey: 'wiki.public.listGuideFocusValue',
-  },
-  {
-    labelKey: 'wiki.public.listGuideNextLabel',
-    valueKey: 'wiki.public.listGuideNextValue',
-  },
-  {
-    labelKey: 'wiki.public.listGuideBoundaryLabel',
-    valueKey: 'wiki.public.listGuideBoundaryValue',
-  },
-] as const;
-
-const detailGuideItems = [
-  {
-    labelKey: 'wiki.public.detailGuideFocusLabel',
-    valueKey: 'wiki.public.detailGuideFocusValue',
-  },
-  {
-    labelKey: 'wiki.public.detailGuideNextLabel',
-    valueKey: 'wiki.public.detailGuideNextValue',
-  },
-  {
-    labelKey: 'wiki.public.detailGuideBoundaryLabel',
-    valueKey: 'wiki.public.detailGuideBoundaryValue',
-  },
-] as const;
 
 interface PublicDocsAppProps {
   route: PublicDocsRoute;
@@ -95,7 +51,6 @@ interface PublicDocsAppProps {
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
-  onNavigateToDiscover?: () => void;
 }
 
 interface PublicDocsTreeRow {
@@ -105,6 +60,8 @@ interface PublicDocsTreeRow {
   depth: number;
   childCount: number;
 }
+
+const PUBLIC_DOCS_DIRECTORY_PREVIEW_LIMIT = 36;
 
 interface PublicDocsCollectionState {
   tree: WikiDocumentTreeNodeVo[];
@@ -130,6 +87,8 @@ interface PublicStatusCardAction {
   onClick: () => void;
 }
 
+type PublicDocsDiagnosticCopyHandler = (stage: string, error: string | null | undefined) => Promise<void>;
+
 interface PublicStatusCardProps {
   tone: 'loading' | 'empty' | 'error' | 'notFound';
   title: string;
@@ -137,6 +96,7 @@ interface PublicStatusCardProps {
   compact?: boolean;
   primaryAction?: PublicStatusCardAction;
   secondaryAction?: PublicStatusCardAction;
+  diagnosticAction?: PublicStatusCardAction;
 }
 
 function flattenPublicDocsTree(nodes: WikiDocumentTreeNodeVo[], depth: number = 0): PublicDocsTreeRow[] {
@@ -163,43 +123,26 @@ function isPublicDocumentNotFound(message: string | null | undefined): boolean {
   return /文档不存在|无权访问|not\s+found|404/i.test(message);
 }
 
-function toVisibilityText(t: (key: string, options?: Record<string, unknown>) => string, visibility?: number): string {
-  switch (visibility) {
-    case WikiDocumentVisibility.Public:
-      return t('wiki.visibility.public');
-    case WikiDocumentVisibility.Restricted:
-      return t('wiki.visibility.restricted');
-    default:
-      return t('wiki.visibility.authenticated');
+function buildPublicDocsDiagnosticTarget(route: PublicDocsRoute): Record<string, string | number | boolean | undefined> {
+  if (route.kind === 'detail') {
+    return {
+      routeKind: route.kind,
+      slug: route.slug,
+      hasAnchor: Boolean(route.anchor),
+    };
   }
-}
 
-function toStatusText(t: (key: string, options?: Record<string, unknown>) => string, status?: number): string {
-  switch (status) {
-    case WikiDocumentStatus.Published:
-      return t('wiki.status.published');
-    case WikiDocumentStatus.Archived:
-      return t('wiki.status.archived');
-    default:
-      return t('wiki.status.draft');
+  if (route.kind === 'search') {
+    return {
+      routeKind: route.kind,
+      page: route.page,
+      hasKeyword: Boolean(route.keyword.trim()),
+    };
   }
-}
 
-function toSourceText(t: (key: string, options?: Record<string, unknown>) => string, sourceType?: string | null): string {
-  switch ((sourceType || '').trim().toLowerCase()) {
-    case 'manual':
-      return t('wiki.source.manual');
-    case 'imported':
-      return t('wiki.source.imported');
-    case 'custom':
-      return t('wiki.source.custom');
-    case 'builtin':
-      return t('wiki.source.builtin');
-    case 'rollback':
-      return t('wiki.source.rollback');
-    default:
-      return sourceType?.trim() || t('wiki.source.unknown');
-  }
+  return {
+    routeKind: route.kind,
+  };
 }
 
 function normalizeMarkdownHeadingText(value: string): string {
@@ -358,7 +301,8 @@ function PublicStatusCard({
   description,
   compact = false,
   primaryAction,
-  secondaryAction
+  secondaryAction,
+  diagnosticAction
 }: PublicStatusCardProps) {
   const resolvedIcon = tone === 'loading'
     ? 'mdi:progress-clock'
@@ -391,6 +335,17 @@ function PublicStatusCard({
     });
   }
 
+  if (diagnosticAction) {
+    actions.push({
+      label: diagnosticAction.label,
+      href: diagnosticAction.href,
+      kind: 'secondary',
+      onClick: diagnosticAction.href
+        ? (event) => handlePublicDocsLinkClick(event as MouseEvent<HTMLAnchorElement>, diagnosticAction.onClick)
+        : () => diagnosticAction.onClick(),
+    });
+  }
+
   return (
     <WebStateSlot
       tone={tone}
@@ -407,8 +362,7 @@ export const PublicDocsApp = ({
   route,
   fallbackBrowseRoute,
   detailBackAction,
-  onNavigate,
-  onNavigateToDiscover
+  onNavigate
 }: PublicDocsAppProps) => {
   const { t } = useTranslation();
   const roles = useUserStore((state) => state.roles || []);
@@ -418,6 +372,7 @@ export const PublicDocsApp = ({
   const previousRouteRef = useRef<PublicDocsRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);
   const [pendingRestoreScrollTop, setPendingRestoreScrollTop] = useState<number | null>(null);
+  const [diagnosticCopyState, setDiagnosticCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [collectionReloadToken, setCollectionReloadToken] = useState(0);
   const [collectionState, setCollectionState] = useState<PublicDocsCollectionState>({
     tree: [],
@@ -446,6 +401,26 @@ export const PublicDocsApp = ({
 
     document.title = nextTitle;
   }, [route, t]);
+
+  const getDiagnosticActionLabel = () => t(diagnosticCopyState === 'copied'
+    ? 'common.diagnosticsCopied'
+    : diagnosticCopyState === 'failed'
+      ? 'common.diagnosticsCopyFailed'
+      : 'common.copyDiagnostics');
+
+  const handleCopyDiagnostics = useCallback(async (stage: string, error: string | null | undefined) => {
+    try {
+      await copyRecoveryDiagnostics({
+        module: 'public.docs',
+        stage,
+        error: error || 'unknown',
+        target: buildPublicDocsDiagnosticTarget(route),
+      });
+      setDiagnosticCopyState('copied');
+    } catch {
+      setDiagnosticCopyState('failed');
+    }
+  }, [route]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -478,6 +453,7 @@ export const PublicDocsApp = ({
     }
 
     previousRouteRef.current = route;
+    setDiagnosticCopyState('idle');
   }, [route]);
 
   useEffect(() => {
@@ -548,10 +524,7 @@ export const PublicDocsApp = ({
         brandName={t('desktop.apps.document.name')}
         brandSubline={t('wiki.public.shellLabel')}
         onBrandClick={() => onNavigate(createDefaultDocsListRoute())}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
+        loginLabel={t('public.shell.loginAction')}
       />
 
       <main className={styles.main}>
@@ -563,8 +536,12 @@ export const PublicDocsApp = ({
             backLabel={backLabel}
             backHref={detailBackHref}
             canUseDocsAuthorTools={showAuthorTools}
+            relatedDocuments={collectionState.documents}
+            getDiagnosticActionLabel={getDiagnosticActionLabel}
+            onCopyDiagnostics={handleCopyDiagnostics}
             onBack={handleDocsDetailBack}
             onNavigate={onNavigate}
+            onOpenDocument={(slug) => onNavigate({ kind: 'detail', slug })}
           />
         ) : route.kind === 'search' ? (
           <PublicDocsSearch
@@ -572,6 +549,8 @@ export const PublicDocsApp = ({
             displayTimeZone={displayTimeZone}
             scrollContainerRef={pageRef}
             restoreScrollTop={pendingRestoreScrollTop}
+            getDiagnosticActionLabel={getDiagnosticActionLabel}
+            onCopyDiagnostics={handleCopyDiagnostics}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onNavigate={onNavigate}
             onBrowseDirectory={() => onNavigate(createDefaultDocsListRoute())}
@@ -587,6 +566,8 @@ export const PublicDocsApp = ({
             scrollContainerRef={pageRef}
             restoreScrollTop={pendingRestoreScrollTop}
             canUseDocsAuthorTools={showAuthorTools}
+            getDiagnosticActionLabel={getDiagnosticActionLabel}
+            onCopyDiagnostics={handleCopyDiagnostics}
             onScrollRestored={() => setPendingRestoreScrollTop(null)}
             onReload={() => setCollectionReloadToken((current) => current + 1)}
             onOpenSearch={() => onNavigate(createDefaultDocsSearchRoute())}
@@ -607,6 +588,8 @@ interface PublicDocsListProps {
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
   canUseDocsAuthorTools: boolean;
+  getDiagnosticActionLabel: () => string;
+  onCopyDiagnostics: PublicDocsDiagnosticCopyHandler;
   onScrollRestored: () => void;
   onReload: () => void;
   onOpenSearch: () => void;
@@ -619,12 +602,15 @@ const PublicDocsList = ({
   scrollContainerRef,
   restoreScrollTop,
   canUseDocsAuthorTools,
+  getDiagnosticActionLabel,
+  onCopyDiagnostics,
   onScrollRestored,
   onReload,
   onOpenSearch,
   onOpenDocument
 }: PublicDocsListProps) => {
   const { t } = useTranslation();
+  const [directoryExpanded, setDirectoryExpanded] = useState(false);
   const {
     tree,
     documents,
@@ -643,6 +629,8 @@ const PublicDocsList = ({
   });
 
   const treeRows = useMemo(() => flattenPublicDocsTree(tree), [tree]);
+  const visibleTreeRows = directoryExpanded ? treeRows : treeRows.slice(0, PUBLIC_DOCS_DIRECTORY_PREVIEW_LIMIT);
+  const isDirectoryTruncated = treeRows.length > visibleTreeRows.length;
   const listCards = useMemo(() => documents.slice(0, 12), [documents]);
   const searchHref = buildPublicDocsPath(createDefaultDocsSearchRoute());
   const authorHref = buildDocsAuthorPath({ kind: 'mine' });
@@ -693,6 +681,12 @@ const PublicDocsList = ({
               label: t('common.retry'),
               onClick: onReload
             }}
+            diagnosticAction={{
+              label: getDiagnosticActionLabel(),
+              onClick: () => {
+                void onCopyDiagnostics('list-load', treeError || listError);
+              }
+            }}
           />
         ) : isEmpty ? (
           <PublicStatusCard
@@ -717,49 +711,7 @@ const PublicDocsList = ({
               </div>
             )}
 
-            <div className={styles.listLayout}>
-              <section className={styles.panel}>
-                <div className={styles.panelHeader}>
-                  <div>
-                    <h2 className={styles.panelTitle}>{t('wiki.public.directoryTitle')}</h2>
-                    <p className={styles.panelHint}>{t('wiki.public.directoryHint')}</p>
-                  </div>
-                  <span className={styles.panelStat}>{t('wiki.public.directoryCount', { count: treeRows.length })}</span>
-                </div>
-
-                {treeRows.length === 0 ? (
-                  <PublicStatusCard
-                    tone="empty"
-                    compact={true}
-                    title={t('wiki.public.directoryEmptyTitle')}
-                    description={t('wiki.public.directoryEmptyDescription')}
-                  />
-                ) : (
-                  <div className={styles.directoryList}>
-                    {treeRows.map((row) => {
-                      const href = buildPublicDocsPath({ kind: 'detail', slug: row.slug });
-
-                      return (
-                        <a
-                          key={row.id}
-                          className={styles.directoryItem}
-                          href={href}
-                          onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(row.slug))}
-                        >
-                          <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
-                            {row.depth > 0 ? '└' : '•'}
-                          </span>
-                          <span className={styles.directoryTitle}>{row.title}</span>
-                          {row.childCount > 0 && (
-                            <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
-                          )}
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-
+            <div className={styles.docsIndexGrid}>
               <section className={styles.panel}>
                 <div className={styles.panelHeader}>
                   <div>
@@ -806,17 +758,78 @@ const PublicDocsList = ({
                   </div>
                 )}
               </section>
-            </div>
 
-            <PublicReadingGuide
-              label={t('wiki.public.listGuideKicker')}
-              title={t('wiki.public.listGuideTitle')}
-              description={t('wiki.public.listGuideDescription')}
-              items={listGuideItems.map((item) => ({
-                label: t(item.labelKey),
-                value: t(item.valueKey),
-              }))}
-            />
+              <section className={`${styles.panel} ${styles.directoryPanel}`}>
+                <div className={styles.panelHeader}>
+                  <div>
+                    <h2 className={styles.panelTitle}>{t('wiki.public.directoryTitle')}</h2>
+                    <p className={styles.panelHint}>{t('wiki.public.directoryHint')}</p>
+                  </div>
+                  <span className={styles.panelStat}>
+                    {directoryExpanded
+                      ? t('wiki.public.directoryCount', { count: treeRows.length })
+                      : t('wiki.public.directoryPreviewCount', { visible: visibleTreeRows.length, total: treeRows.length })}
+                  </span>
+                </div>
+
+                {treeRows.length === 0 ? (
+                  <PublicStatusCard
+                    tone="empty"
+                    compact={true}
+                    title={t('wiki.public.directoryEmptyTitle')}
+                    description={t('wiki.public.directoryEmptyDescription')}
+                  />
+                ) : (
+                  <>
+                    <div className={styles.directoryList}>
+                      {visibleTreeRows.map((row) => {
+                        const href = buildPublicDocsPath({ kind: 'detail', slug: row.slug });
+
+                        return (
+                          <a
+                            key={row.id}
+                            className={styles.directoryItem}
+                            href={href}
+                            onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(row.slug))}
+                          >
+                            <span className={styles.directoryPrefix} style={{ marginLeft: `${row.depth * 14}px` }}>
+                              {row.depth > 0 ? '└' : '•'}
+                            </span>
+                            <span className={styles.directoryTitle}>{row.title}</span>
+                            {row.childCount > 0 && (
+                              <span className={styles.directoryMeta}>{t('wiki.public.childCount', { count: row.childCount })}</span>
+                            )}
+                          </a>
+                        );
+                      })}
+                    </div>
+                    {(isDirectoryTruncated || directoryExpanded) ? (
+                      <div className={styles.directoryFooter}>
+                        <button
+                          type="button"
+                          className={styles.inlineTextButton}
+                          onClick={() => setDirectoryExpanded((current) => !current)}
+                        >
+                          {directoryExpanded
+                            ? t('wiki.public.directoryCollapse')
+                            : t('wiki.public.directoryExpand', { hidden: treeRows.length - visibleTreeRows.length })}
+                        </button>
+                        <span className={styles.directoryFooterHint}>{t('wiki.public.directorySearchHint')}</span>
+                      </div>
+                    ) : null}
+                  </>
+                )}
+              </section>
+
+              <PublicDocsListRail
+                directoryCount={treeRows.length}
+                totalDocuments={totalDocuments}
+                canUseDocsAuthorTools={canUseDocsAuthorTools}
+                authorHref={authorHref}
+                searchHref={searchHref}
+                onOpenSearch={onOpenSearch}
+              />
+            </div>
           </>
         )}
       </div>
@@ -829,6 +842,8 @@ interface PublicDocsSearchProps {
   displayTimeZone: string;
   scrollContainerRef: RefObject<HTMLDivElement | null>;
   restoreScrollTop: number | null;
+  getDiagnosticActionLabel: () => string;
+  onCopyDiagnostics: PublicDocsDiagnosticCopyHandler;
   onScrollRestored: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
   onBrowseDirectory: () => void;
@@ -840,6 +855,8 @@ const PublicDocsSearch = ({
   displayTimeZone,
   scrollContainerRef,
   restoreScrollTop,
+  getDiagnosticActionLabel,
+  onCopyDiagnostics,
   onScrollRestored,
   onNavigate,
   onBrowseDirectory,
@@ -996,169 +1013,178 @@ const PublicDocsSearch = ({
       </div>
 
       <div className={styles.contentWrap}>
-        <section className={styles.searchPanel}>
-          <form className={styles.searchForm} onSubmit={handleSubmit}>
-            <div className={styles.searchInputWrap}>
-              <Icon icon="mdi:magnify" size={18} />
-              <input
-                type="search"
-                value={draftKeyword}
-                onChange={(event) => setDraftKeyword(event.target.value)}
-                className={styles.searchInput}
-                placeholder={t('wiki.public.searchPlaceholder')}
-              />
-            </div>
-            <button type="submit" className={styles.primaryButton}>
-              {t('wiki.public.searchSubmit')}
-            </button>
-            <button type="button" className={styles.secondaryButton} onClick={handleReset}>
-              {t('wiki.public.searchReset')}
-            </button>
-          </form>
+        <div className={styles.docsSearchGrid}>
+          <div className={styles.searchMainColumn}>
+            <section className={styles.searchPanel}>
+              <form className={styles.searchForm} onSubmit={handleSubmit}>
+                <div className={styles.searchInputWrap}>
+                  <Icon icon="mdi:magnify" size={18} />
+                  <input
+                    type="search"
+                    value={draftKeyword}
+                    onChange={(event) => setDraftKeyword(event.target.value)}
+                    className={styles.searchInput}
+                    placeholder={t('wiki.public.searchPlaceholder')}
+                  />
+                </div>
+                <button type="submit" className={styles.primaryButton}>
+                  {t('wiki.public.searchSubmit')}
+                </button>
+                <button type="button" className={styles.secondaryButton} onClick={handleReset}>
+                  {t('wiki.public.searchReset')}
+                </button>
+              </form>
 
-          <div className={styles.searchSummaryRail}>
-            <span className={styles.metaChip}>
-              {hasKeyword
-                ? t('wiki.public.searchKeywordSummary', { keyword: appliedKeyword })
-                : t('wiki.public.searchIdleSummary')}
-            </span>
-            {hasKeyword && (
-              <span className={styles.metaChip}>{t('wiki.public.searchResultCount', { count: searchState.totalDocuments })}</span>
-            )}
-            {hasKeyword && searchState.totalPages > 1 && (
-              <span className={styles.metaChip}>
-                {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
-              </span>
+              <div className={styles.searchSummaryRail}>
+                <span className={styles.metaChip}>
+                  {hasKeyword
+                    ? t('wiki.public.searchKeywordSummary', { keyword: appliedKeyword })
+                    : t('wiki.public.searchIdleSummary')}
+                </span>
+                {hasKeyword && (
+                  <span className={styles.metaChip}>{t('wiki.public.searchResultCount', { count: searchState.totalDocuments })}</span>
+                )}
+                {hasKeyword && searchState.totalPages > 1 && (
+                  <span className={styles.metaChip}>
+                    {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
+                  </span>
+                )}
+              </div>
+            </section>
+
+            {!hasKeyword ? (
+              <PublicStatusCard
+                tone="empty"
+                title={t('wiki.public.searchIdleTitle')}
+                description={t('wiki.public.searchIdleDescription')}
+                secondaryAction={{
+                  label: t('wiki.public.backToList'),
+                  href: browseDirectoryHref,
+                  onClick: onBrowseDirectory
+                }}
+              />
+            ) : isLoading ? (
+              <PublicStatusCard
+                tone="loading"
+                title={t('wiki.public.searchLoadingTitle')}
+                description={t('wiki.public.searchLoadingDescription')}
+              />
+            ) : isError ? (
+              <PublicStatusCard
+                tone="error"
+                title={t('wiki.public.searchErrorTitle')}
+                description={searchState.error || t('wiki.public.searchLoadingDescription')}
+                primaryAction={{
+                  label: t('common.retry'),
+                  onClick: () => setReloadToken((current) => current + 1)
+                }}
+                secondaryAction={{
+                  label: t('wiki.public.backToList'),
+                  href: browseDirectoryHref,
+                  onClick: onBrowseDirectory
+                }}
+                diagnosticAction={{
+                  label: getDiagnosticActionLabel(),
+                  onClick: () => {
+                    void onCopyDiagnostics('search-load', searchState.error);
+                  }
+                }}
+              />
+            ) : isEmpty ? (
+              <PublicStatusCard
+                tone="empty"
+                title={t('wiki.public.searchEmptyTitle')}
+                description={t('wiki.public.searchEmptyDescription')}
+              />
+            ) : (
+              <section className={styles.searchResultsSection}>
+                <div className={styles.searchResultsHeader}>
+                  <div>
+                    <h2 className={styles.panelTitle}>{t('wiki.public.searchResultsTitle')}</h2>
+                    <p className={styles.panelHint}>{t('wiki.public.searchResultsHint')}</p>
+                  </div>
+                  <span className={styles.panelStat}>{t('wiki.public.searchResultCount', { count: searchState.totalDocuments })}</span>
+                </div>
+
+                <div className={styles.searchResultList}>
+                  {searchState.documents.map((document) => {
+                    const href = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
+
+                    return (
+                      <a
+                        key={document.voId}
+                        className={`${styles.docCard} ${styles.searchResultCard}`}
+                        href={href}
+                        onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(document.voSlug))}
+                      >
+                        <div className={styles.docCardMeta}>
+                          <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
+                          <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
+                          <span className={styles.metaChip}>{t('wiki.meta.slug', { value: document.voSlug })}</span>
+                        </div>
+                        <h2 className={styles.searchResultTitle}>{document.voTitle}</h2>
+                        <p className={styles.docCardSummary}>
+                          {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
+                        </p>
+                        <div className={styles.searchResultMeta}>
+                          <span>{t('wiki.meta.source', { value: toSourceText(t, document.voSourceType) })}</span>
+                          <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
+                        </div>
+                        <div className={styles.docCardFooter}>
+                          <span>{t('wiki.public.searchOpenHint')}</span>
+                          <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+
+                {searchState.totalPages > 1 && (
+                  <div className={styles.paginationBar}>
+                    {route.page <= 1 ? (
+                      <button type="button" className={styles.secondaryButton} disabled>
+                        {t('common.previousPage')}
+                      </button>
+                    ) : (
+                      <a
+                        className={styles.secondaryButton}
+                        href={buildPublicDocsPath({ ...route, page: route.page - 1 })}
+                        onClick={(event) => handlePublicDocsLinkClick(event, () => handleChangePage(route.page - 1))}
+                      >
+                        {t('common.previousPage')}
+                      </a>
+                    )}
+                    <span className={styles.paginationInfo}>
+                      {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
+                    </span>
+                    {route.page >= searchState.totalPages ? (
+                      <button type="button" className={styles.secondaryButton} disabled>
+                        {t('common.nextPage')}
+                      </button>
+                    ) : (
+                      <a
+                        className={styles.secondaryButton}
+                        href={buildPublicDocsPath({ ...route, page: route.page + 1 })}
+                        onClick={(event) => handlePublicDocsLinkClick(event, () => handleChangePage(route.page + 1))}
+                      >
+                        {t('common.nextPage')}
+                      </a>
+                    )}
+                  </div>
+                )}
+              </section>
             )}
           </div>
-        </section>
 
-        {!hasKeyword ? (
-          <PublicStatusCard
-            tone="empty"
-            title={t('wiki.public.searchIdleTitle')}
-            description={t('wiki.public.searchIdleDescription')}
-            secondaryAction={{
-              label: t('wiki.public.backToList'),
-              href: browseDirectoryHref,
-              onClick: onBrowseDirectory
-            }}
+          <PublicDocsSearchRail
+            browseDirectoryHref={browseDirectoryHref}
+            hasKeyword={hasKeyword}
+            resultCount={searchState.totalDocuments}
+            currentPage={route.page}
+            totalPages={searchState.totalPages}
+            onBrowseDirectory={onBrowseDirectory}
           />
-        ) : isLoading ? (
-          <PublicStatusCard
-            tone="loading"
-            title={t('wiki.public.searchLoadingTitle')}
-            description={t('wiki.public.searchLoadingDescription')}
-          />
-        ) : isError ? (
-          <PublicStatusCard
-            tone="error"
-            title={t('wiki.public.searchErrorTitle')}
-            description={searchState.error || t('wiki.public.searchLoadingDescription')}
-            primaryAction={{
-              label: t('common.retry'),
-              onClick: () => setReloadToken((current) => current + 1)
-            }}
-            secondaryAction={{
-              label: t('wiki.public.backToList'),
-              href: browseDirectoryHref,
-              onClick: onBrowseDirectory
-            }}
-          />
-        ) : isEmpty ? (
-          <PublicStatusCard
-            tone="empty"
-            title={t('wiki.public.searchEmptyTitle')}
-            description={t('wiki.public.searchEmptyDescription')}
-          />
-        ) : (
-          <section className={styles.searchResultsSection}>
-            <div className={styles.searchResultsHeader}>
-              <div>
-                <h2 className={styles.panelTitle}>{t('wiki.public.searchResultsTitle')}</h2>
-                <p className={styles.panelHint}>{t('wiki.public.searchResultsHint')}</p>
-              </div>
-              <span className={styles.panelStat}>{t('wiki.public.searchResultCount', { count: searchState.totalDocuments })}</span>
-            </div>
-
-            <div className={styles.searchResultList}>
-              {searchState.documents.map((document) => {
-                const href = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
-
-                return (
-                  <a
-                    key={document.voId}
-                    className={`${styles.docCard} ${styles.searchResultCard}`}
-                    href={href}
-                    onClick={(event) => handlePublicDocsLinkClick(event, () => onOpenDocument(document.voSlug))}
-                  >
-                    <div className={styles.docCardMeta}>
-                      <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
-                      <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
-                      <span className={styles.metaChip}>{t('wiki.meta.slug', { value: document.voSlug })}</span>
-                    </div>
-                    <h2 className={styles.searchResultTitle}>{document.voTitle}</h2>
-                    <p className={styles.docCardSummary}>
-                      {document.voSummary?.trim() || t('wiki.public.summaryFallback')}
-                    </p>
-                    <div className={styles.searchResultMeta}>
-                      <span>{t('wiki.meta.source', { value: toSourceText(t, document.voSourceType) })}</span>
-                      <span>{formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone)}</span>
-                    </div>
-                    <div className={styles.docCardFooter}>
-                      <span>{t('wiki.public.searchOpenHint')}</span>
-                      <span className={styles.docCardAction}>{t('wiki.public.openDocument')}</span>
-                    </div>
-                  </a>
-                );
-              })}
-            </div>
-
-            {searchState.totalPages > 1 && (
-              <div className={styles.paginationBar}>
-                {route.page <= 1 ? (
-                  <button type="button" className={styles.secondaryButton} disabled>
-                    {t('common.previousPage')}
-                  </button>
-                ) : (
-                  <a
-                    className={styles.secondaryButton}
-                    href={buildPublicDocsPath({ ...route, page: route.page - 1 })}
-                    onClick={(event) => handlePublicDocsLinkClick(event, () => handleChangePage(route.page - 1))}
-                  >
-                    {t('common.previousPage')}
-                  </a>
-                )}
-                <span className={styles.paginationInfo}>
-                  {t('common.pageInfo', { current: route.page, total: searchState.totalPages })}
-                </span>
-                {route.page >= searchState.totalPages ? (
-                  <button type="button" className={styles.secondaryButton} disabled>
-                    {t('common.nextPage')}
-                  </button>
-                ) : (
-                  <a
-                    className={styles.secondaryButton}
-                    href={buildPublicDocsPath({ ...route, page: route.page + 1 })}
-                    onClick={(event) => handlePublicDocsLinkClick(event, () => handleChangePage(route.page + 1))}
-                  >
-                    {t('common.nextPage')}
-                  </a>
-                )}
-              </div>
-            )}
-          </section>
-        )}
-
-        <PublicReadingGuide
-          label={t('wiki.public.searchGuideKicker')}
-          title={t('wiki.public.searchGuideTitle')}
-          description={t('wiki.public.searchGuideDescription')}
-          items={searchGuideItems.map((item) => ({
-            label: t(item.labelKey),
-            value: t(item.valueKey),
-          }))}
-        />
+        </div>
       </div>
     </section>
   );
@@ -1170,11 +1196,27 @@ interface PublicDocsDetailProps {
   backLabel: string;
   backHref: string;
   canUseDocsAuthorTools: boolean;
+  relatedDocuments: WikiDocumentVo[];
+  getDiagnosticActionLabel: () => string;
+  onCopyDiagnostics: PublicDocsDiagnosticCopyHandler;
   onBack: () => void;
   onNavigate: (route: PublicDocsRoute, options?: { replace?: boolean; preserveSourceState?: boolean }) => void;
+  onOpenDocument: (slug: string) => void;
 }
 
-const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, canUseDocsAuthorTools, onBack, onNavigate }: PublicDocsDetailProps) => {
+const PublicDocsDetail = ({
+  route,
+  displayTimeZone,
+  backLabel,
+  backHref,
+  canUseDocsAuthorTools,
+  relatedDocuments,
+  getDiagnosticActionLabel,
+  onCopyDiagnostics,
+  onBack,
+  onNavigate,
+  onOpenDocument
+}: PublicDocsDetailProps) => {
   const { t } = useTranslation();
   const [documentDetail, setDocumentDetail] = useState<WikiDocumentDetailVo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1410,74 +1452,84 @@ const PublicDocsDetail = ({ route, displayTimeZone, backLabel, backHref, canUseD
               href: backHref,
               onClick: onBack
             }}
+            diagnosticAction={{
+              label: getDiagnosticActionLabel(),
+              onClick: () => {
+                void onCopyDiagnostics('detail-load', error);
+              }
+            }}
           />
         )}
 
         {detailState === 'ready' && documentDetail && (
-          <>
-            <article className={styles.articleCard}>
-              <div className={styles.articleHeader}>
-                <div className={styles.articleHeaderMain}>
-                  <p className={styles.kicker}>{t('wiki.public.readingKicker')}</p>
-                  <h1 className={styles.articleTitle}>{documentDetail.voTitle}</h1>
-                  {documentDetail.voSummary?.trim() ? (
-                    <p className={styles.articleSummary}>{documentDetail.voSummary}</p>
-                  ) : null}
-                </div>
-                <div className={styles.articleMetaRail}>
-                  <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
-                  <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
-                </div>
-              </div>
-
-              <div className={styles.articleMetaGrid}>
-                <section className={styles.articleMetaGroup}>
-                  <span className={styles.articleMetaLabel}>{t('wiki.public.detailAccessLabel')}</span>
-                  <div className={styles.articleMetaValues}>
+          <div className={styles.docsArticleGrid}>
+            <div className={styles.articleMainColumn}>
+              <article className={styles.articleCard}>
+                <div className={styles.articleHeader}>
+                  <div className={styles.articleHeaderMain}>
+                    <p className={styles.kicker}>{t('wiki.public.readingKicker')}</p>
+                    <h1 className={styles.articleTitle}>{documentDetail.voTitle}</h1>
+                    {documentDetail.voSummary?.trim() ? (
+                      <p className={styles.articleSummary}>{documentDetail.voSummary}</p>
+                    ) : null}
+                  </div>
+                  <div className={styles.articleMetaRail}>
                     <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
                     <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
                   </div>
-                </section>
-                <section className={styles.articleMetaGroup}>
-                  <span className={styles.articleMetaLabel}>{t('wiki.public.detailDocumentLabel')}</span>
-                  <div className={styles.articleMetaValues}>
-                    <span className={styles.metaChip}>{t('wiki.meta.slug', { value: documentDetail.voSlug })}</span>
-                    <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, documentDetail.voSourceType) })}</span>
-                  </div>
-                </section>
-                <section className={styles.articleMetaGroup}>
-                  <span className={styles.articleMetaLabel}>{t('wiki.public.detailTimelineLabel')}</span>
-                  <div className={styles.articleMetaValues}>
-                    <span className={styles.metaChip}>
-                      {t('wiki.meta.updated', { value: formatDateTimeByTimeZone(documentDetail.voModifyTime || documentDetail.voCreateTime, displayTimeZone) })}
-                    </span>
-                    <span className={styles.metaChip}>
-                      {t('wiki.meta.created', { value: formatDateTimeByTimeZone(documentDetail.voCreateTime, displayTimeZone) })}
-                    </span>
-                  </div>
-                </section>
-                <p className={styles.articleBoundaryNote}>{t('wiki.public.detailBoundaryNote')}</p>
-              </div>
+                </div>
 
-              <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
-                <MarkdownRenderer
-                  content={articleMarkdownContent}
-                  className={styles.markdownContent}
-                  resolveLinkHref={resolveArticleLinkHref}
-                />
-              </div>
-            </article>
+                <div className={styles.articleMetaGrid}>
+                  <section className={styles.articleMetaGroup}>
+                    <span className={styles.articleMetaLabel}>{t('wiki.public.detailAccessLabel')}</span>
+                    <div className={styles.articleMetaValues}>
+                      <span className={styles.metaChip}>{toVisibilityText(t, documentDetail.voVisibility)}</span>
+                      <span className={styles.metaChip}>{toStatusText(t, documentDetail.voStatus)}</span>
+                    </div>
+                  </section>
+                  <section className={styles.articleMetaGroup}>
+                    <span className={styles.articleMetaLabel}>{t('wiki.public.detailDocumentLabel')}</span>
+                    <div className={styles.articleMetaValues}>
+                      <span className={styles.metaChip}>{t('wiki.meta.slug', { value: documentDetail.voSlug })}</span>
+                      <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, documentDetail.voSourceType) })}</span>
+                    </div>
+                  </section>
+                  <section className={styles.articleMetaGroup}>
+                    <span className={styles.articleMetaLabel}>{t('wiki.public.detailTimelineLabel')}</span>
+                    <div className={styles.articleMetaValues}>
+                      <span className={styles.metaChip}>
+                        {t('wiki.meta.updated', { value: formatDateTimeByTimeZone(documentDetail.voModifyTime || documentDetail.voCreateTime, displayTimeZone) })}
+                      </span>
+                      <span className={styles.metaChip}>
+                        {t('wiki.meta.created', { value: formatDateTimeByTimeZone(documentDetail.voCreateTime, displayTimeZone) })}
+                      </span>
+                    </div>
+                  </section>
+                  <p className={styles.articleBoundaryNote}>{t('wiki.public.detailBoundaryNote')}</p>
+                </div>
 
-            <PublicReadingGuide
-              label={t('wiki.public.detailGuideKicker')}
-              title={t('wiki.public.detailGuideTitle')}
-              description={t('wiki.public.detailGuideDescription')}
-              items={detailGuideItems.map((item) => ({
-                label: t(item.labelKey),
-                value: t(item.valueKey),
-              }))}
+                <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
+                  <MarkdownRenderer
+                    content={articleMarkdownContent}
+                    className={styles.markdownContent}
+                    resolveLinkHref={resolveArticleLinkHref}
+                  />
+                </div>
+              </article>
+            </div>
+
+            <PublicDocsDetailRail
+              document={documentDetail}
+              relatedDocuments={relatedDocuments}
+              displayTimeZone={displayTimeZone}
+              backLabel={backLabel}
+              backHref={backHref}
+              canEditDocument={canEditDocument}
+              editHref={editHref}
+              onBack={onBack}
+              onOpenDocument={onOpenDocument}
             />
-          </>
+          </div>
         )}
       </div>
     </section>

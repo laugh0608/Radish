@@ -135,6 +135,16 @@ test('P3-9 公开详情 head 与分享链接应保持发布候选预览契约', 
   }
 });
 
+test('P3-12-E 用户承诺入口应作为公开内容路由提供 head', () => {
+  assert.equal(isPublicContentPathname('/legal'), true);
+  const head = buildPublicRouteHead({ app: 'legal', route: { kind: 'index' } });
+
+  assert.equal(head.canonicalPath, '/legal');
+  assert.match(head.title, /用户承诺与社区边界/);
+  assert.equal(buildPublicCanonicalUrl(head.canonicalPath), `${publicDefaultOrigin}/legal`);
+  assert.equal(buildPublicShareUrl('/legal'), `${publicDefaultOrigin}/legal`);
+});
+
 test('P3-12 公开商品购买入口应进入正式 Web 购买回流路径', () => {
   const returnPath = buildShopProductPurchaseReturnPath(productId);
   assert.equal(returnPath, `/shop/product/${productId}?intent=purchase`);

@@ -152,7 +152,7 @@ public class AuthorizationController : Controller
         principal.SetScopes(scopes);
 
         // 对于资源服务器，只暴露 radish-api 这一项
-        principal.SetResources("radish-api");
+        principal.SetResources(UserScopes.RadishApi);
 
         // 根据 scope 和 claim 类型动态设置 destinations
         principal.SetDestinations(claim => GetClaimDestinations(claim, scopes));

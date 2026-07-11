@@ -45,6 +45,12 @@ import styles from './CircleApp.module.css';
 
 const PAGE_SIZE = 10;
 
+const tabIcons: Record<CircleTab, string> = {
+  feed: 'mdi:newspaper-variant-outline',
+  following: 'mdi:account-heart-outline',
+  followers: 'mdi:account-group-outline',
+};
+
 function resolveInitialCircleRoute(): CircleRoute {
   if (typeof window === 'undefined') {
     return createDefaultCircleRoute();
@@ -229,6 +235,11 @@ export const CircleApp = () => {
   }, [authReady, loadCircleData, loggedIn, route]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const mutualUserCount = userItems.filter(item => item.voIsMutualFollow).length;
+  const feedEngagementCount = feedItems.reduce(
+    (sum, item) => sum + (item.voCommentCount || 0) + (item.voLikeCount || 0),
+    0
+  );
 
   const switchTab = (tab: CircleTab) => {
     navigateToRoute({ tab, page: 1 });
@@ -434,6 +445,124 @@ export const CircleApp = () => {
     return route.tab === 'feed' ? renderFeed() : renderUsers();
   };
 
+  const renderCircleRail = () => {
+    const previewItems = route.tab === 'feed' ? feedItems.slice(0, 4) : userItems.slice(0, 4);
+    const secondaryMetricValue = route.tab === 'feed' ? feedEngagementCount : mutualUserCount;
+    const secondaryMetricKey = route.tab === 'feed' ? 'circle.rail.engagement' : 'circle.rail.mutual';
+
+    return (
+      <aside className={styles.circleRail} aria-label={t('circle.rail.label')}>
+        <section className={styles.railCard}>
+          <div className={styles.railTitleRow}>
+            <span className={styles.railIcon}>
+              <Icon icon={tabIcons[route.tab]} size={20} />
+            </span>
+            <div>
+              <p className={styles.railKicker}>{t('circle.rail.contextKicker')}</p>
+              <h2>{t('circle.rail.contextTitle')}</h2>
+            </div>
+          </div>
+          <div className={styles.railMetrics}>
+            <div>
+              <strong>{t(`circle.tab.${route.tab}`)}</strong>
+              <span>{t('circle.rail.scope')}</span>
+            </div>
+            <div>
+              <strong>{t('common.pageInfo', { current: route.page, total: totalPages })}</strong>
+              <span>{t('circle.rail.page')}</span>
+            </div>
+            <div>
+              <strong>{total}</strong>
+              <span>{t('circle.rail.total')}</span>
+            </div>
+            <div>
+              <strong>{secondaryMetricValue}</strong>
+              <span>{t(secondaryMetricKey)}</span>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.railCard}>
+          <div className={styles.railTitleRow}>
+            <span className={styles.railIcon}>
+              <Icon icon="mdi:playlist-star" size={20} />
+            </span>
+            <div>
+              <p className={styles.railKicker}>{t('circle.rail.previewKicker')}</p>
+              <h2>{t(`circle.rail.preview.${route.tab}`)}</h2>
+            </div>
+          </div>
+          {previewItems.length > 0 ? (
+            <div className={styles.railPreviewList}>
+              {route.tab === 'feed'
+                ? feedItems.slice(0, 4).map((item) => {
+                  const postRoute = buildPostRoute(item);
+                  const postPath = buildPublicForumPath(postRoute);
+                  return (
+                    <a
+                      className={styles.railPreviewItem}
+                      href={postPath}
+                      key={item.voId}
+                      onClick={(event) => rememberCircleSourceForPublicTarget(event, postPath, { app: 'forum', route: postRoute })}
+                    >
+                      <strong>{item.voTitle}</strong>
+                      <span>{item.voAuthorName || t('common.unknownUser')}</span>
+                    </a>
+                  );
+                })
+                : userItems.slice(0, 4).map((user) => {
+                  const displayName = resolveVisibleUserDisplayName(user, t('common.unknownUser'));
+                  const displayHandle = resolveVisibleUserHandle(user, displayName);
+                  const userRoute = buildUserRoute(user);
+                  const userPath = buildPublicProfilePath(userRoute);
+                  return (
+                    <a
+                      className={styles.railPreviewItem}
+                      href={userPath}
+                      key={user.voUserId}
+                      onClick={(event) => rememberCircleSourceForPublicTarget(event, userPath, { app: 'profile', route: userRoute })}
+                    >
+                      <strong>{displayName}</strong>
+                      <span>{displayHandle || t('circle.rail.publicProfile')}</span>
+                    </a>
+                  );
+                })}
+            </div>
+          ) : (
+            <p className={styles.railEmpty}>{t('circle.rail.emptyPreview')}</p>
+          )}
+        </section>
+
+        <section className={styles.railCard}>
+          <div className={styles.railTitleRow}>
+            <span className={styles.railIcon}>
+              <Icon icon="mdi:routes" size={20} />
+            </span>
+            <div>
+              <p className={styles.railKicker}>{t('circle.rail.routeKicker')}</p>
+              <h2>{t('circle.rail.routeTitle')}</h2>
+            </div>
+          </div>
+          <p className={styles.railHint}>{t('circle.rail.routeDescription')}</p>
+          <div className={styles.railActions}>
+            <a href="/forum">
+              <Icon icon="mdi:forum-outline" size={17} />
+              <span>{t('circle.forumAction')}</span>
+            </a>
+            <a href="/discover">
+              <Icon icon="mdi:compass-outline" size={17} />
+              <span>{t('circle.discoverAction')}</span>
+            </a>
+            <a href="/me">
+              <Icon icon="mdi:account-circle-outline" size={17} />
+              <span>{t('circle.meAction')}</span>
+            </a>
+          </div>
+        </section>
+      </aside>
+    );
+  };
+
   return (
     <div className={styles.page}>
       <PublicShellHeader
@@ -442,13 +571,7 @@ export const CircleApp = () => {
         brandMark="萝"
         brandName={t('circle.title')}
         brandSubline={t('circle.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        desktopLabel={t('public.shell.desktopAction')}
-        showCircleAction={false}
         onBrandClick={() => switchTab('feed')}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
-        }}
       />
 
       <main className={styles.main}>
@@ -474,7 +597,7 @@ export const CircleApp = () => {
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryIcon}>
-                  <Icon icon={route.tab === 'feed' ? 'mdi:newspaper-variant-outline' : 'mdi:card-account-details-outline'} size={20} />
+                  <Icon icon={tabIcons[route.tab]} size={20} />
                 </span>
                 <strong>{total}</strong>
                 <span>{t(`circle.summary.${route.tab}`)}</span>
@@ -518,18 +641,22 @@ export const CircleApp = () => {
           })}
         </nav>
 
-        <section className={styles.contentBlock} aria-labelledby="circle-section-title">
-          <div className={styles.sectionHeader}>
-            <div>
-              <h2 id="circle-section-title">{t(`circle.section.${route.tab}.title`)}</h2>
-              <p>{t(`circle.section.${route.tab}.description`)}</p>
+        <div className={`${styles.workspace} ${authReady && loggedIn && !loading && !errorMessage ? styles.withRail : ''}`}>
+          <section className={styles.contentBlock} aria-labelledby="circle-section-title">
+            <div className={styles.sectionHeader}>
+              <div>
+                <h2 id="circle-section-title">{t(`circle.section.${route.tab}.title`)}</h2>
+                <p>{t(`circle.section.${route.tab}.description`)}</p>
+              </div>
+              {authReady && loggedIn && !errorMessage ? (
+                <span className={styles.resultCount}>{t('circle.resultCount', { count: total })}</span>
+              ) : null}
             </div>
-            {authReady && loggedIn && !errorMessage ? (
-              <span className={styles.resultCount}>{t('circle.resultCount', { count: total })}</span>
-            ) : null}
-          </div>
-          <div className={styles.content}>{renderContent()}</div>
-        </section>
+            <div className={styles.content}>{renderContent()}</div>
+          </section>
+
+          {authReady && loggedIn && !loading && !errorMessage ? renderCircleRail() : null}
+        </div>
 
         {authReady && loggedIn && !loading && !errorMessage && totalPages > 1 ? (
           <div className={styles.pagination}>

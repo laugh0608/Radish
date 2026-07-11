@@ -1,6 +1,6 @@
 import type { Product, ProductBuyCheckResult } from '@/types/shop';
 import { useTranslation } from 'react-i18next';
-import { getProductTypeDisplay, StockType } from '@/api/shop';
+import { getProductTypeDisplay, isUnlimitedStockType } from '@/api/shop';
 import type { LongId } from '@/api/user';
 import { redirectToLogin } from '@/services/auth';
 import { buildDesktopShopProductReturnPath } from '@/services/authReturnPath';
@@ -156,7 +156,7 @@ export const ProductDetail = ({
               <div className={styles.metaItem}>
                 <span className={styles.metaLabel}>{t('shop.meta.stock')}</span>
                 <span className={styles.metaValue}>
-                  {product.voStockType === StockType.Unlimited ? t('shop.stock.unlimited') : t('shop.productCount', { count: product.voStock ?? 0 })}
+                  {isUnlimitedStockType(product.voStockType) ? t('shop.stock.unlimited') : t('shop.productCount', { count: product.voStock ?? 0 })}
                 </span>
               </div>
               <div className={styles.metaItem}>

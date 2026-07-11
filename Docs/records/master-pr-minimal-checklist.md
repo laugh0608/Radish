@@ -54,6 +54,14 @@ npm run validate:baseline
 npm run validate:ci
 ```
 
+`Dependency Security` 是 `master` PR 的独立联网必需检查，不包含在日常本地 `validate:ci` 中。准备合并时可先执行：
+
+```bash
+npm run check:dependency-security
+```
+
+若本地网络环境不适合审计，必须等待 PR 上的 `Dependency Security` 成功，不能把“未完成审计”当作通过。
+
 如果需要把这一层结果直接贴进 PR 或批次级回归记录，可直接使用：
 
 ```bash

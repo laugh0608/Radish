@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
@@ -18,6 +18,7 @@ interface UserBrowseHistoryListProps {
     href: string,
     item: UserBrowseHistoryItem
   ) => void;
+  onItemsLoaded?: (items: UserBrowseHistoryItem[]) => void;
   page?: number;
   onPageChange?: (page: number) => void;
 }
@@ -46,6 +47,7 @@ export const UserBrowseHistoryList = ({
   onItemClick,
   getItemHref,
   onItemLinkClick,
+  onItemsLoaded,
   page: controlledPage,
   onPageChange
 }: UserBrowseHistoryListProps) => {
@@ -54,18 +56,26 @@ export const UserBrowseHistoryList = ({
   const [loading, setLoading] = useState(true);
   const [internalPage, setInternalPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const onItemsLoadedRef = useRef(onItemsLoaded);
   const page = controlledPage ?? internalPage;
+
+  useEffect(() => {
+    onItemsLoadedRef.current = onItemsLoaded;
+  }, [onItemsLoaded]);
 
   useEffect(() => {
     const loadBrowseHistory = async () => {
       setLoading(true);
       try {
         const result = await getMyBrowseHistory(page, 10);
-        setItems(result.voItems || []);
+        const loadedItems = result.voItems || [];
+        setItems(loadedItems);
+        onItemsLoadedRef.current?.(loadedItems);
         setTotalPages(Math.max(1, Math.ceil((result.voTotal || 0) / Math.max(result.voPageSize || 10, 1))));
       } catch (error) {
         log.error('UserBrowseHistoryList', '加载浏览记录失败：', error);
         setItems([]);
+        onItemsLoadedRef.current?.([]);
         setTotalPages(1);
       } finally {
         setLoading(false);

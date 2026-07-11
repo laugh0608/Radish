@@ -7,7 +7,7 @@ import {
   ResponsiveContainer,
   type PieLabelRenderProps
 } from 'recharts';
-import { ChartContainer } from './ChartContainer';
+import { ChartContainer, getInitialChartDimension } from './ChartContainer';
 
 export interface PieChartDataPoint {
   name: string;
@@ -55,6 +55,8 @@ export const PieChart = ({
   showLabel = true,
   className
 }: PieChartProps) => {
+  const initialDimension = getInitialChartDimension(height);
+
   const renderLabel = (props: PieLabelRenderProps) => {
     const { name, value } = props;
     if (typeof value !== 'number' || !name) return '';
@@ -71,7 +73,7 @@ export const PieChart = ({
       height={height}
       className={className}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={initialDimension}>
         <RechartsPieChart>
           <Pie
             data={data}

@@ -1,7 +1,7 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-07-02
+> 最后更新：2026-07-07
 
 本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 的 `P00-P18` Console 治理工作台画板和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 为当前设计基准。
 
@@ -13,7 +13,7 @@
 - `@radish/ui` 已提供按钮、表格、表单、弹窗、确认框、骨架屏、图标、Toast 等基础能力；新增页面不应再创建重复的本地基础控件。
 - Console 局部样式先以 `index.css` 中的 `--console-*` CSS 变量承接主题 token，再由 `AdminLayout.css` 与 `adminFeature.css` 消费。
 - 新增 / 明显改动页面优先按 Console 治理工作台风格收敛；历史页面不要求一次性改写，但进入重做或大幅调整时应对齐该方向。
-- `AdminLayout` 在窄屏下保持独立后台形态：`<= 768px` 时侧栏默认收敛到 64px 宽，顶部栏和内容区按剩余宽度排布，不把侧栏覆盖到主内容上。
+- `AdminLayout` 在窄屏下保持独立后台形态：`<= 768px` 时使用底部高频导航 `总览 / 治理 / 交易 / 权限 / 更多`，内容区预留底部安全距离；`更多` 面板按当前账号权限展示完整 Console 页面组，不把 PC 侧栏覆盖到主内容上。
 - Console token 生命周期由 `services/tokenService.ts` 统一维护，页面和 API 层不应各自实现独立刷新计时；刷新前置窗口使用 `refresh_at` 和动态缓冲。
 - `radish.client` 后续重新设计时可以参考 Console 的低饱和配色、侧栏节奏、按钮层级和工作台信息组织，但不直接照搬 Console 的管理后台结构。
 
@@ -56,6 +56,12 @@ Console 治理工作台是当前推荐的后台风格，目标是从旧式深色
 - 页面组件：`ConsolePageHeader`、`ConsoleStatusChip`、`ConsoleMetricGrid`、`ConsoleMetricCard`、`ConsoleToolbar`。
 - 已迁移页面：系统设置、订单、用户、商品、文档治理首屏、标签 / 分类、贴纸类、角色权限、内容治理、经验治理、应用管理、萝卜币、系统工具和详情 / 抽屉代表页。
 - 迁移边界：只迁移页头、指标、筛选工具条、首屏区块承载、局部滚动和响应式布局，不改变 API、权限、业务动作、表格列、分页、表单字段或后端契约。
+
+E7-A 后的后台首页和移动入口口径：
+
+- Dashboard 是 Console 调度台，首屏优先展示社区治理、交易复核、权限边界、完整功能面板和最近订单，不再以大面积欢迎说明占据主体。
+- 移动端底栏只放高频任务，完整路由通过 `更多` 面板进入；新增页面如需成为移动一级入口，应先确认它属于高频治理、交易或权限任务。
+- “更多”面板只承载导航，不替代表格、详情、抽屉或治理动作本身；具体页面仍需按各自页面类型处理响应式布局。
 
 ## 2.1 页面类型实现口径
 

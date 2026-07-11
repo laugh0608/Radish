@@ -205,7 +205,9 @@ export const PostCard = ({
 
   const interactionContent = (
     <div className={`${styles.interactionRow} ${isPublicCompact ? styles.interactionRowCompact : ''}`}>
-      <span className={styles.interactionLabel}>{t('forum.postCard.interaction')}</span>
+      <span className={styles.interactionLabel}>
+        {isPublicCompact ? t('forum.postCard.recentInteraction') : t('forum.postCard.interaction')}
+      </span>
       <div className={styles.avatarGroup}>
         {fallbackInteractors.length > 0 ? (
           fallbackInteractors.map((item, index) => (

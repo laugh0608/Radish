@@ -61,6 +61,19 @@ import { log } from '../../utils/logger';
 import '../adminFeature.css';
 import './ProductList.css';
 
+function isUnlimitedStock(product: Product): boolean {
+  const stockType = String(product.voStockType ?? '');
+  return stockType === 'Unlimited' || stockType === '0';
+}
+
+function isStockWatchProduct(product: Product): boolean {
+  return !isUnlimitedStock(product) && product.voStock <= 0;
+}
+
+function getProductStockSummary(product: Product): string {
+  return isUnlimitedStock(product) ? '无限库存' : `${product.voStock} 件库存`;
+}
+
 export const ProductList = () => {
   useDocumentTitle('商品管理');
   const navigate = useNavigate();
@@ -116,6 +129,11 @@ export const ProductList = () => {
   const currentCategoryName = categories.find((item) => String(item.voId) === String(searchParams.categoryId))?.voName;
   const onSaleProducts = products.filter((product) => product.voIsOnSale).length;
   const enabledProducts = products.filter((product) => product.voIsEnabled).length;
+  const stockWatchProducts = products.filter(isStockWatchProduct).length;
+  const unsupportedSaleProducts = products.filter((product) => getUnsupportedSaleReason(product)).length;
+  const soldUnitsOnPage = products.reduce((sum, product) => sum + product.voSoldCount, 0);
+  const primaryProduct = selectedProductSnapshot ?? products[0] ?? null;
+  const primaryProductUnsupportedReason = primaryProduct ? getUnsupportedSaleReason(primaryProduct) : null;
 
   const syncDetailSearchParams = (
     productId?: string,
@@ -174,6 +192,8 @@ export const ProductList = () => {
     }
 
     void loadProducts();
+    // Product list loading is scoped to table state; memoizing loadProducts would pull transient detail state into the effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageIndex, pageSize, searchParams, canViewProducts]);
 
   useEffect(() => {
@@ -483,7 +503,7 @@ export const ProductList = () => {
   return (
     <div className="admin-feature-page product-list-page">
       <ConsolePageHeader
-        eyebrow="COMMERCE CATALOG"
+        eyebrow="商品运营"
         title="商品管理"
         description="维护商城商品、上架状态、库存与关联订单入口。"
         icon={<ShoppingOutlined />}
@@ -512,6 +532,29 @@ export const ProductList = () => {
         <ConsoleMetricCard label="本页上架" value={onSaleProducts} description="当前页已上架商品" tone="success" />
         <ConsoleMetricCard label="本页启用" value={enabledProducts} description="当前页启用商品" tone="success" />
       </ConsoleMetricGrid>
+
+      <section className="governance-task-flow" aria-label="商品运营任务流">
+        <div className="governance-task-flow__item">
+          <span>1</span>
+          <strong>商品池</strong>
+          <p>{total} 个筛选结果，当前页 {products.length} 个商品。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>2</span>
+          <strong>上架状态</strong>
+          <p>{onSaleProducts} 个已上架，{unsupportedSaleProducts} 个存在未开放类型提示。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>3</span>
+          <strong>库存售卖</strong>
+          <p>本页已售 {soldUnitsOnPage} 件，{stockWatchProducts} 个商品需要库存关注。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>4</span>
+          <strong>订单回流</strong>
+          <p>{primaryProduct ? `当前可回看 ${primaryProduct.voName} 的相关订单。` : '选择商品后可进入相关订单。'}</p>
+        </div>
+      </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
@@ -605,8 +648,8 @@ export const ProductList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>商品摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前筛选范围、分页规模和商品治理动作。</p>
+          <h3>商业运营摘要</h3>
+          <p className="admin-feature-subtle">核对商品上架、库存、版本动作和订单回流，不扩展新的资产风控能力。</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">查询范围</span>
@@ -619,8 +662,8 @@ export const ProductList = () => {
               <span className="admin-table-summary__value">{currentCategoryName || '全部分类'}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">分页规模</span>
-              <span className="admin-table-summary__value">{pageSize} 条 / 页</span>
+              <span className="admin-table-summary__label">库存关注</span>
+              <span className="admin-table-summary__value">{stockWatchProducts} 个商品</span>
             </div>
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">上架权限</span>
@@ -628,6 +671,63 @@ export const ProductList = () => {
                 {canToggleProductSale ? '可上架 / 下架' : '仅可查看上架状态'}
               </span>
             </div>
+          </div>
+
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">当前商品</span>
+              <span className="admin-table-summary__value">{primaryProduct?.voName ?? '未选择商品'}</span>
+            </div>
+            {primaryProduct ? (
+              <>
+                <div className="admin-table-summary__item">
+                  <span className="admin-table-summary__label">类型 / 库存</span>
+                  <span className="admin-table-summary__value">
+                    {getProductTypeDisplay(primaryProduct.voProductType)} · {getProductStockSummary(primaryProduct)}
+                  </span>
+                </div>
+                <div className="admin-table-summary__item">
+                  <span className="admin-table-summary__label">价格 / 已售</span>
+                  <span className="admin-table-summary__value">
+                    {primaryProduct.voPrice} 胡萝卜 · 已售 {primaryProduct.voSoldCount}
+                  </span>
+                </div>
+                {primaryProductUnsupportedReason ? (
+                  <div className="admin-feature-inline-context">
+                    <strong>上架限制</strong>
+                    <span>{primaryProductUnsupportedReason}</span>
+                  </div>
+                ) : null}
+                <div className="admin-feature-rail__actions">
+                  <Button size="small" onClick={() => handleOpenDetail(primaryProduct.voId, primaryProduct, true)}>
+                    查看详情
+                  </Button>
+                  {canViewOrders ? (
+                    <Button size="small" onClick={() => handleViewOrders(primaryProduct)}>
+                      相关订单
+                    </Button>
+                  ) : null}
+                  {canEditProduct ? (
+                    <Button size="small" onClick={() => handleEditProduct(primaryProduct)}>
+                      编辑
+                    </Button>
+                  ) : null}
+                  {canToggleProductSale ? (
+                    <Button
+                      size="small"
+                      disabled={!primaryProduct.voIsOnSale && !!primaryProductUnsupportedReason}
+                      onClick={() => {
+                        void handleToggleSale(primaryProduct);
+                      }}
+                    >
+                      {primaryProduct.voIsOnSale ? '下架' : '上架'}
+                    </Button>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <p className="admin-feature-rail__empty">当前页暂无商品，调整筛选条件后会形成运营摘要。</p>
+            )}
           </div>
         </aside>
       </div>

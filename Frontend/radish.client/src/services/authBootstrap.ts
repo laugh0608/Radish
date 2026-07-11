@@ -182,7 +182,8 @@ function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {
 
 function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   const { setUser } = useUserStore.getState();
-  const displayName = user.voDisplayName?.trim() || user.voUserName.trim();
+  const userName = user.voUserName.trim();
+  const displayName = user.voDisplayName?.trim() || userName;
   const displayHandle = user.voDisplayHandle?.trim() || undefined;
   const nickname = user.voNickname?.trim()
     || (displayName && displayHandle && displayName !== displayHandle ? displayName : undefined);
@@ -190,7 +191,7 @@ function setUserFromCurrentUser(user: CurrentUser, token?: string | null) {
   setUser({
     userId: normalizeIdentityId(user.voUserId) ?? '',
     displayName,
-    userName: displayName,
+    userName: userName || displayName,
     displayHandle,
     publicId: user.voPublicId?.trim() || undefined,
     publicIndex: typeof user.voPublicIndex === 'number' ? String(user.voPublicIndex) : user.voPublicIndex?.trim(),

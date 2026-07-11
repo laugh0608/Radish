@@ -452,6 +452,7 @@ export const ShopApp = () => {
             order={dataState.selectedOrder}
             loading={dataState.loadingOrderDetail}
             onBack={navigate.back}
+            onInventoryClick={navigate.toInventory}
             onProductClick={navigate.toProductDetail}
             onCancelOrder={actionsState.handleCancelOrder}
           />

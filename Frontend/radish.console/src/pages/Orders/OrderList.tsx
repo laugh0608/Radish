@@ -67,6 +67,29 @@ function normalizeOrderPrice(value: unknown): number {
   return 0;
 }
 
+function isOrderStatus(record: Order, statusName: string, statusValue: number, displayKeyword?: string): boolean {
+  const rawStatus = String(record.voStatus ?? '');
+  if (rawStatus === statusName || rawStatus === String(statusValue)) {
+    return true;
+  }
+
+  return displayKeyword ? record.voStatusDisplay?.includes(displayKeyword) === true : false;
+}
+
+function isFailedOrder(record: Order): boolean {
+  return isOrderStatus(record, 'Failed', 5, '失败');
+}
+
+function isCompletedOrder(record: Order): boolean {
+  return isOrderStatus(record, 'Completed', 2, '完成');
+}
+
+function isPendingOperationOrder(record: Order): boolean {
+  return isOrderStatus(record, 'Pending', 0, '待')
+    || isOrderStatus(record, 'Paid', 1, '已支付')
+    || isFailedOrder(record);
+}
+
 export const OrderList = () => {
   useDocumentTitle('订单管理');
   const navigate = useNavigate();
@@ -111,9 +134,11 @@ export const OrderList = () => {
     queryProductId,
     queryOrderNo,
   ].filter(Boolean).length;
-  const failedOrders = orders.filter((order) => order.voStatus === 'Failed').length;
-  const completedOrders = orders.filter((order) => order.voStatus === 'Completed').length;
+  const failedOrders = orders.filter(isFailedOrder).length;
+  const completedOrders = orders.filter(isCompletedOrder).length;
+  const pendingOperationOrders = orders.filter(isPendingOperationOrder).length;
   const pageTotalPrice = orders.reduce((sum, order) => sum + normalizeOrderPrice(order.voTotalPrice), 0);
+  const selectedOrderContext = selectedOrderPreview ?? orders.find(isFailedOrder) ?? orders[0] ?? null;
 
   const syncSearchParams = (params: {
     orderId?: string;
@@ -185,6 +210,8 @@ export const OrderList = () => {
     }
 
     void loadOrders();
+    // Order list loading is URL-state scoped; loadOrders also opens detail from the fetched page and should not replay for unrelated handler captures.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     queryUserId,
     queryOrderId,
@@ -445,7 +472,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {canRetryOrder && record.voStatus === 'Failed' ? (
+          {canRetryOrder && isFailedOrder(record) ? (
             <Button
               variant="ghost"
               size="small"
@@ -467,7 +494,7 @@ export const OrderList = () => {
   return (
     <div className="admin-feature-page order-list-page">
       <ConsolePageHeader
-        eyebrow="COMMERCE OPERATIONS"
+        eyebrow="交易运营"
         title="订单管理"
         description="查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。"
         icon={<FileTextOutlined />}
@@ -494,6 +521,29 @@ export const OrderList = () => {
           tone={failedOrders > 0 ? 'danger' : 'neutral'}
         />
       </ConsoleMetricGrid>
+
+      <section className="governance-task-flow" aria-label="订单运营任务流">
+        <div className="governance-task-flow__item">
+          <span>1</span>
+          <strong>订单范围</strong>
+          <p>{total} 条筛选结果，当前页 {orders.length} 条订单。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>2</span>
+          <strong>失败优先</strong>
+          <p>{failedOrders} 条发放失败，{pendingOperationOrders} 条处于待处理链路。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>3</span>
+          <strong>交易金额</strong>
+          <p>本页合计 {pageTotalPrice} 胡萝卜，用于核对订单摘要。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>4</span>
+          <strong>留痕回流</strong>
+          <p>{selectedOrderContext ? `当前聚焦 ${selectedOrderContext.voOrderNo}` : '选择订单后可回看用户、商品和资产流水。'}</p>
+        </div>
+      </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
@@ -589,8 +639,8 @@ export const OrderList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>订单摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前 URL 查询条件、分页规模和失败订单处理入口。</p>
+          <h3>订单运营摘要</h3>
+          <p className="admin-feature-subtle">核对当前筛选、失败重试、管理员备注和用户 / 商品 / 资产回流。</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">查询范围</span>
@@ -599,8 +649,8 @@ export const OrderList = () => {
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">分页规模</span>
-              <span className="admin-table-summary__value">{queryPageSize} 条 / 页</span>
+              <span className="admin-table-summary__label">待处理链路</span>
+              <span className="admin-table-summary__value">{pendingOperationOrders} 条订单</span>
             </div>
             <div className="admin-table-summary__item">
               <span className="admin-table-summary__label">本页成交额</span>
@@ -612,6 +662,62 @@ export const OrderList = () => {
                 {canRetryOrder ? '可重试发放失败订单' : '无重试权限'}
               </span>
             </div>
+          </div>
+
+          <div className="admin-table-summary">
+            <div className="admin-table-summary__item">
+              <span className="admin-table-summary__label">当前订单</span>
+              <span className="admin-table-summary__value">{selectedOrderContext?.voOrderNo ?? '未选择订单'}</span>
+            </div>
+            {selectedOrderContext ? (
+              <>
+                <div className="admin-table-summary__item">
+                  <span className="admin-table-summary__label">商品 / 用户</span>
+                  <span className="admin-table-summary__value">
+                    {selectedOrderContext.voProductName} · {selectedOrderContext.voUserName || `#${selectedOrderContext.voUserId}`}
+                  </span>
+                </div>
+                <div className="admin-table-summary__item">
+                  <span className="admin-table-summary__label">状态 / 金额</span>
+                  <span className="admin-table-summary__value">
+                    {selectedOrderContext.voStatusDisplay} · {normalizeOrderPrice(selectedOrderContext.voTotalPrice)} 胡萝卜
+                  </span>
+                </div>
+                {selectedOrderContext.voAdminRemark || selectedOrderContext.voFailReason ? (
+                  <div className="admin-feature-inline-context">
+                    <strong>{selectedOrderContext.voFailReason ? '失败原因' : '管理员备注'}</strong>
+                    <span>{selectedOrderContext.voFailReason || selectedOrderContext.voAdminRemark}</span>
+                  </div>
+                ) : null}
+                <div className="admin-feature-rail__actions">
+                  <Button size="small" onClick={() => handleViewDetail(selectedOrderContext)}>
+                    订单详情
+                  </Button>
+                  {canViewUsers ? (
+                    <Button size="small" onClick={() => handleViewUser(selectedOrderContext)}>
+                      查看用户
+                    </Button>
+                  ) : null}
+                  {canViewProducts ? (
+                    <Button size="small" onClick={() => handleViewProduct(selectedOrderContext)}>
+                      查看商品
+                    </Button>
+                  ) : null}
+                  {canViewCoins ? (
+                    <Button size="small" onClick={() => handleViewCoinTransaction(selectedOrderContext)}>
+                      资产流水
+                    </Button>
+                  ) : null}
+                  {canRetryOrder && isFailedOrder(selectedOrderContext) ? (
+                    <Button size="small" onClick={() => handleRetry(selectedOrderContext)}>
+                      重试发放
+                    </Button>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <p className="admin-feature-rail__empty">当前页暂无订单，调整筛选条件后会形成订单运营摘要。</p>
+            )}
           </div>
         </aside>
       </div>

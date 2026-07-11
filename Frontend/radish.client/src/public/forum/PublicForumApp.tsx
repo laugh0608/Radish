@@ -33,7 +33,6 @@ interface PublicForumAppProps {
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
-  onNavigateToDiscover?: () => void;
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToSearch?: (keyword?: string) => void;
   onNavigateToTag?: (tagSlug: string) => void;
@@ -48,7 +47,6 @@ export const PublicForumApp = ({
   routeSourceState,
   detailBackAction,
   onNavigate,
-  onNavigateToDiscover,
   onNavigateToProfile,
   onNavigateToSearch,
   onNavigateToTag,
@@ -129,10 +127,7 @@ export const PublicForumApp = ({
         brandName={t('desktop.apps.forum.name')}
         brandSubline={t('forum.public.shellLabel')}
         onBrandClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
+        loginLabel={t('public.shell.loginAction')}
       />
 
       <main className={styles.main}>
@@ -230,6 +225,7 @@ export const PublicForumApp = ({
             onOpenQuestion={onNavigateToQuestion}
             onOpenPoll={onNavigateToPoll}
             onOpenLottery={onNavigateToLottery}
+            onOpenCompose={(categoryId) => onNavigate({ kind: 'compose', categoryId })}
           />
         ) : null}
       </main>

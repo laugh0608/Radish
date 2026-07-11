@@ -8,7 +8,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { ChartContainer } from './ChartContainer';
+import { ChartContainer, getInitialChartDimension } from './ChartContainer';
 
 export interface AreaChartDataPoint {
   [key: string]: string | number;
@@ -51,6 +51,8 @@ export const AreaChart = ({
   stacked = false,
   className
 }: AreaChartProps) => {
+  const initialDimension = getInitialChartDimension(height);
+
   return (
     <ChartContainer
       title={title}
@@ -59,7 +61,7 @@ export const AreaChart = ({
       height={height}
       className={className}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0} initialDimension={initialDimension}>
         <RechartsAreaChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
           {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="var(--theme-border-soft, rgba(84, 108, 122, 0.16))" />}
           <XAxis

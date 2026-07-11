@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Icon } from '@radish/ui/icon';
-import { ShopHome } from '@/apps/shop/pages/ShopHome';
-import { ProductList } from '@/apps/shop/pages/ProductList';
 import { PurchaseModal } from '@/apps/shop/components/PurchaseModal';
 import {
   checkCanBuy,
   getCategories,
   getProduct,
   getProducts,
-  getProductTypeDisplay,
   purchaseProduct,
-  StockType,
 } from '@/api/shop';
 import type { LongId } from '@/api/user';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
@@ -40,11 +35,11 @@ import {
   buildShopProductStructuredData,
   removePublicStructuredData,
 } from '../publicStructuredData';
-import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { PublicShopDetailView, PublicShopHomeView, PublicShopProductsView } from './PublicShopViews';
 import styles from './PublicShopApp.module.css';
 
 interface PublicShopAppProps {
@@ -56,7 +51,6 @@ interface PublicShopAppProps {
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
-  onNavigateToDiscover?: () => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
@@ -73,17 +67,6 @@ interface PublicStatusCardProps {
   description: string;
   primaryAction?: PublicStatusCardAction;
   secondaryAction?: PublicStatusCardAction;
-}
-
-interface PublicGuideItemDefinition {
-  labelKey: string;
-  valueKey: string;
-}
-
-interface PublicGuideDefinition {
-  titleKey: string;
-  descriptionKey: string;
-  items: readonly PublicGuideItemDefinition[];
 }
 
 function shouldHandlePublicShopLink(event: MouseEvent<HTMLAnchorElement>): boolean {
@@ -155,10 +138,6 @@ function isProductNotFound(message: string | null): boolean {
   return /商品不存在|not\s+found|404/i.test(message);
 }
 
-function formatProductPrice(value: number): string {
-  return value.toLocaleString();
-}
-
 function buildProductsRouteKey(route: PublicShopProductsRoute): string {
   return buildPublicShopPath(route);
 }
@@ -167,42 +146,11 @@ function isProductAvailableForPurchase(product: Product): boolean {
   return product.voInStock === true && product.voIsOnSale === true;
 }
 
-const publicBrowseGuideItems: readonly PublicGuideItemDefinition[] = [
-  {
-    labelKey: 'shop.public.guideBrowseLabel',
-    valueKey: 'shop.public.guideBrowseValue',
-  },
-  {
-    labelKey: 'shop.public.guideNextLabel',
-    valueKey: 'shop.public.guideNextValue',
-  },
-  {
-    labelKey: 'shop.public.guideBoundaryLabel',
-    valueKey: 'shop.public.guideBoundaryValue',
-  },
-] as const;
-
-const publicDetailGuideItems: readonly PublicGuideItemDefinition[] = [
-  {
-    labelKey: 'shop.public.detailGuideFocusLabel',
-    valueKey: 'shop.public.detailGuideFocusValue',
-  },
-  {
-    labelKey: 'shop.public.detailGuideNextLabel',
-    valueKey: 'shop.public.detailGuideNextValue',
-  },
-  {
-    labelKey: 'shop.public.detailGuideBoundaryLabel',
-    valueKey: 'shop.public.detailGuideBoundaryValue',
-  },
-] as const;
-
 export const PublicShopApp = ({
   route,
   fallbackProductsRoute,
   detailBackAction,
-  onNavigate,
-  onNavigateToDiscover
+  onNavigate
 }: PublicShopAppProps) => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -242,19 +190,6 @@ export const PublicShopApp = ({
     : route.kind === 'products'
       ? t('shop.public.productsTitle')
       : t('shop.public.homeTitle');
-  const guideDefinition = useMemo<PublicGuideDefinition>(() => (
-    route.kind === 'detail'
-      ? {
-          titleKey: 'shop.public.detailGuideTitle',
-          descriptionKey: 'shop.public.detailGuideDescription',
-          items: publicDetailGuideItems,
-        }
-      : {
-          titleKey: 'shop.public.guideTitle',
-          descriptionKey: 'shop.public.guideDescription',
-          items: publicBrowseGuideItems,
-        }
-  ), [route.kind]);
 
   const listNotice = useMemo(() => {
     if (categoriesError && featuredError && route.kind === 'home') {
@@ -755,11 +690,11 @@ export const PublicShopApp = ({
           </div>
         )}
 
-        <ShopHome
+        <PublicShopHomeView
           categories={categories}
           featuredProducts={featuredProducts}
           loading={categoriesLoading || featuredLoading}
-          bannerTitleLevel="h2"
+          loggedIn={loggedIn}
           getCategoryHref={(categoryId) => buildPublicShopPath({ kind: 'products', categoryId, page: 1 })}
           getProductHref={(productId) => buildPublicShopPath({ kind: 'detail', productId: String(productId) })}
           viewAllProductsHref={buildPublicShopPath(createDefaultPublicShopProductsRoute())}
@@ -810,7 +745,7 @@ export const PublicShopApp = ({
           </div>
         )}
 
-        <ProductList
+        <PublicShopProductsView
           categories={visibleCategories}
           products={products}
           selectedCategoryId={validatedCategoryId}
@@ -818,7 +753,7 @@ export const PublicShopApp = ({
           totalPages={totalPages}
           searchKeyword={route.keyword}
           loading={productsLoading}
-          titleLevel="h2"
+          loggedIn={loggedIn}
           backHref={buildPublicShopPath(createDefaultPublicShopRoute())}
           getCategoryHref={(categoryId) => buildPublicShopPath({
             kind: 'products',
@@ -915,8 +850,6 @@ export const PublicShopApp = ({
       );
     }
 
-    const coverImageUrl = resolveMediaUrl(selectedProduct.voCoverImage);
-    const iconImageUrl = resolveMediaUrl(selectedProduct.voIcon);
     const purchaseReturnPath = buildShopProductPurchaseReturnPath(selectedProduct.voId);
     const purchaseBusy = checkingPurchaseProductId === selectedProduct.voId || purchasing;
     const productAvailableForPurchase = isProductAvailableForPurchase(selectedProduct);
@@ -936,153 +869,27 @@ export const PublicShopApp = ({
       : loggedIn
         ? 'mdi:cart-arrow-right'
         : 'mdi:login-variant';
-    const stockText = selectedProduct.voStockType === StockType.Unlimited
-      ? t('shop.stock.unlimited')
-      : t('shop.productCount', { count: selectedProduct.voStock ?? 0 });
-    const limitText = (selectedProduct.voLimitPerUser ?? 0) > 0
-      ? t('shop.limit.perUser', { count: selectedProduct.voLimitPerUser })
-      : t('shop.limit.unlimited');
 
     return (
-      <article className={styles.detailCard}>
-        <div className={styles.detailTopbar}>
-          <div className={styles.detailTopbarActions}>
-            <a
-              className={styles.secondaryButton}
-              href={detailBackHref}
-              onClick={(event) => handlePublicShopLinkClick(event, handleBackFromDetail)}
-            >
-              <Icon icon="mdi:arrow-left" size={18} />
-              <span>{detailBackLabel}</span>
-            </a>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => void copyShareLink()}
-              disabled={shareBusy}
-            >
-              <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
-              <span>{shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}</span>
-            </button>
-          </div>
-          <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
-        </div>
-        {shareState !== 'idle' && (
-          <p className={styles.shareFeedback} data-state={shareState}>
-            {shareState === 'success' ? t('shop.public.shareSuccess') : t('shop.public.shareFailed')}
-          </p>
-        )}
-        <p className={styles.detailBackHint}>{detailBackHint}</p>
-
-        <div className={styles.detailHero}>
-          <div className={styles.detailImagePanel}>
-            {coverImageUrl ? (
-              <img className={styles.detailImage} src={coverImageUrl} alt={selectedProduct.voName} />
-            ) : iconImageUrl ? (
-              <img className={styles.detailImage} src={iconImageUrl} alt={selectedProduct.voName} />
-            ) : (
-              <div className={styles.detailImageFallback}>
-                <Icon icon="mdi:gift-outline" size={36} />
-              </div>
-            )}
-          </div>
-
-          <div className={styles.detailBody}>
-            <div className={styles.detailTitleRow}>
-              <p className={styles.kicker}>{t('shop.public.guideKicker')}</p>
-              <span className={styles.metaChip}>{getProductTypeDisplay(selectedProduct.voProductType)}</span>
-              {selectedProduct.voCategoryName?.trim() && (
-                <span className={styles.metaChip}>{selectedProduct.voCategoryName}</span>
-              )}
-            </div>
-            <h2 className={styles.detailTitle}>{selectedProduct.voName}</h2>
-            <p className={styles.detailSummary}>{t('shop.public.detailIntro')}</p>
-
-            <div className={styles.priceBlock}>
-              <span className={styles.priceValue}>
-                {formatProductPrice(selectedProduct.voPrice)} {t('shop.currency.carrot')}
-              </span>
-              {selectedProduct.voOriginalPrice && selectedProduct.voOriginalPrice > selectedProduct.voPrice && (
-                <span className={styles.priceOriginal}>
-                  {t('shop.originalPrice', { price: selectedProduct.voOriginalPrice.toLocaleString() })}
-                </span>
-              )}
-            </div>
-
-            <div className={styles.metaGrid}>
-              <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>{t('shop.meta.sold')}</span>
-                <span className={styles.metaValue}>{t('shop.soldCount', { count: selectedProduct.voSoldCount ?? 0 })}</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>{t('shop.meta.stock')}</span>
-                <span className={styles.metaValue}>{stockText}</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>{t('shop.meta.limit')}</span>
-                <span className={styles.metaValue}>{limitText}</span>
-              </div>
-              <div className={styles.metaItem}>
-                <span className={styles.metaLabel}>{t('shop.meta.duration')}</span>
-                <span className={styles.metaValue}>{selectedProduct.voDurationDisplay || t('shop.public.durationFallback')}</span>
-              </div>
-            </div>
-
-            <div className={styles.readOnlyPanel}>
-              <h2 className={styles.readOnlyTitle}>{t('shop.public.purchaseTitle')}</h2>
-              <p className={styles.readOnlyDescription}>{t('shop.public.purchaseDescription')}</p>
-              {purchaseError && (
-                <p className={styles.purchaseFeedback} data-state="error">
-                  {purchaseError}
-                </p>
-              )}
-              {purchaseReturnPath && (
-                <a
-                  className={styles.primaryLink}
-                  href={purchaseReturnPath}
-                  aria-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
-                  data-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
-                  onClick={(event) => handlePurchaseLinkClick(event, selectedProduct)}
-                >
-                  <Icon icon={purchaseActionIcon} size={18} />
-                  <span>{purchaseActionLabel}</span>
-                </a>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <section className={styles.detailSection}>
-          <h2 className={styles.sectionTitle}>{t('shop.section.detail')}</h2>
-          {selectedProduct.voDescription ? (
-            <div className={styles.description}>
-              {selectedProduct.voDescription.split('\n').map((line, index) => (
-                <p key={index}>{line}</p>
-              ))}
-            </div>
-          ) : (
-            <p className={styles.placeholderText}>{t('shop.noDescription')}</p>
-          )}
-        </section>
-
-        {selectedProduct.voBenefitValue && (
-          <section className={styles.detailSection}>
-            <h2 className={styles.sectionTitle}>{t('shop.section.benefit')}</h2>
-            <div className={styles.benefitBox}>{selectedProduct.voBenefitValue}</div>
-          </section>
-        )}
-
-        <section className={styles.detailSection}>
-          <h2 className={styles.sectionTitle}>{t('shop.section.notice')}</h2>
-          <ul className={styles.noticeList}>
-            <li>{t('shop.public.noticeReadOnly')}</li>
-            <li>{t('shop.notice.balance')}</li>
-            <li>{t('shop.notice.benefit')}</li>
-            <li>{t('shop.notice.item')}</li>
-            <li>{t('shop.notice.expire')}</li>
-          </ul>
-        </section>
-      </article>
+      <PublicShopDetailView
+        product={selectedProduct}
+        loggedIn={loggedIn}
+        authReady={authReady}
+        detailBackLabel={detailBackLabel}
+        detailBackHref={detailBackHref}
+        detailBackHint={detailBackHint}
+        shareBusy={shareBusy}
+        shareState={shareState}
+        purchaseError={purchaseError}
+        purchaseReturnPath={purchaseReturnPath}
+        purchaseBusy={purchaseBusy}
+        productAvailableForPurchase={productAvailableForPurchase}
+        purchaseActionLabel={purchaseActionLabel}
+        purchaseActionIcon={purchaseActionIcon}
+        onBack={handleBackFromDetail}
+        onCopyShare={() => void copyShareLink()}
+        onPurchaseLinkClick={handlePurchaseLinkClick}
+      />
     );
   };
 
@@ -1093,10 +900,7 @@ export const PublicShopApp = ({
         brandName={t('desktop.apps.shop.name')}
         brandSubline={t('shop.public.shellLabel')}
         onBrandClick={() => onNavigate(createDefaultPublicShopRoute())}
-        onNavigateToDiscover={onNavigateToDiscover}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
+        loginLabel={t('public.shell.loginAction')}
       />
 
       <main className={styles.main}>
@@ -1123,18 +927,6 @@ export const PublicShopApp = ({
 
           <div className={styles.contentWrap}>
             {route.kind === 'home' ? renderHome() : route.kind === 'products' ? renderProducts() : renderDetail()}
-          </div>
-
-          <div className={styles.guideSection}>
-            <PublicReadingGuide
-              label={t('shop.public.guideKicker')}
-              title={t(guideDefinition.titleKey)}
-              description={t(guideDefinition.descriptionKey)}
-              items={guideDefinition.items.map((item) => ({
-                label: t(item.labelKey),
-                value: t(item.valueKey),
-              }))}
-            />
           </div>
         </section>
       </main>

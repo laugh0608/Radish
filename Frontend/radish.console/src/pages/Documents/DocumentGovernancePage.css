@@ -1,0 +1,25 @@
+@media (max-width: 768px) {
+  .document-governance-page .ant-table-cell-fix,
+  .document-governance-page .ant-table-cell-fix-start,
+  .document-governance-page .ant-table-cell-fix-end,
+  .document-governance-page .ant-table-cell-fix-left,
+  .document-governance-page .ant-table-cell-fix-right,
+  .document-governance-page .ant-table-cell-fix-left-first,
+  .document-governance-page .ant-table-cell-fix-left-last,
+  .document-governance-page .ant-table-cell-fix-right-first,
+  .document-governance-page .ant-table-cell-fix-right-last {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    z-index: auto !important;
+  }
+
+  .document-governance-page .ant-table-cell-fix::before,
+  .document-governance-page .ant-table-cell-fix::after,
+  .document-governance-page .ant-table-cell-fix-start::before,
+  .document-governance-page .ant-table-cell-fix-start::after,
+  .document-governance-page .ant-table-cell-fix-end::before,
+  .document-governance-page .ant-table-cell-fix-end::after {
+    display: none;
+  }
+}

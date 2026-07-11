@@ -1,5 +1,6 @@
 import { type ChangeEvent, type ClipboardEvent, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
@@ -19,6 +20,7 @@ import { useChatStore } from '@/stores/chatStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { parseChatWindowParams } from '@/utils/chatNavigation';
+import { copyToClipboard } from '@/utils/clipboard';
 import { log } from '@/utils/logger';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { ContentReportModal } from '@/components/ContentReportModal';
@@ -60,6 +62,10 @@ const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 
+function isCompactChatViewport(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth <= 720;
+}
+
 export interface ChatAppProfileNavigationTarget {
   userId: EntityIdValue;
   userName?: string | null;
@@ -96,6 +102,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const currentUserName = useUserStore((state) => state.userName);
   const currentUserAvatarUrl = useUserStore((state) => state.avatarUrl);
   const windowParams = useMemo(() => parseChatWindowParams(currentWindow?.appParams), [currentWindow?.appParams]);
+  const hasRoutedChannel = !!windowParams.channelId;
 
   const [loadingChannels, setLoadingChannels] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -113,11 +120,12 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const [mentionLoading, setMentionLoading] = useState(false);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
-  const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(false);
+  const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(true);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
   const [messageNavigationTarget, setMessageNavigationTarget] = useState<MessageNavigationTarget | null>(null);
   const [messageFocusTarget, setMessageFocusTarget] = useState<MessageFocusTarget | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactChatViewport());
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -177,6 +185,21 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const connectionHint = useMemo(() => getConnectionHint(connectionState, t), [connectionState, t]);
 
   const isMentionOpen = mentionContext !== null;
+  const composerPlaceholder = activeChannelId
+    ? t(isCompactViewport ? 'chat.inputPlaceholderMobile' : 'chat.inputPlaceholder')
+    : t('chat.inputSelectChannel');
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsCompactViewport(isCompactChatViewport());
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
 
   const scrollToBottom = useCallback(() => {
     const scrollEl = messageScrollRef.current;
@@ -923,6 +946,30 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
     removeMessage(channelId, messageId);
   }, [removeMessage, replyTarget]);
 
+  const handleCopyFailedMessageDiagnostics = useCallback(async (message: ChannelMessageVo) => {
+    const diagnosticLines = [
+      'Radish chat delivery diagnostic',
+      `channelId: ${getEntityKey(message.voChannelId) || 'unknown'}`,
+      `messageId: ${getEntityKey(message.voId) || 'unknown'}`,
+      `clientRequestId: ${message.voClientRequestId || 'none'}`,
+      `status: ${message.voLocalStatus ?? 'sent'}`,
+      `type: ${message.voType}`,
+      `createdAt: ${message.voCreateTime || 'unknown'}`,
+      `error: ${message.voLocalError || t('chat.sendFailed')}`,
+      `hasContent: ${message.voContent?.trim() ? 'yes' : 'no'}`,
+      `hasAttachment: ${isPersistedEntityId(message.voAttachmentId) ? 'yes' : 'no'}`,
+      `path: ${window.location.pathname}${window.location.search}${window.location.hash}`,
+    ];
+
+    try {
+      await copyToClipboard(diagnosticLines.join('\n'));
+      toast.success(t('chat.diagnosticsCopied'));
+    } catch (error) {
+      log.warn('ChatApp', '复制聊天发送失败诊断失败', error);
+      toast.error(t('chat.diagnosticsCopyFailed'));
+    }
+  }, [t]);
+
   const handleRecall = useCallback(async (messageId: EntityIdValue) => {
     if (!isPersistedEntityId(messageId)) {
       return;
@@ -1261,7 +1308,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
   const hasComposerContent = !!messageInput.trim() || hasPendingImage;
 
   return (
-    <div className={styles.chatApp}>
+    <div className={`${styles.chatApp} ${hasRoutedChannel ? styles.chatAppFocused : ''}`}>
       <ChatChannelSidebar
         channels={channels}
         activeChannelId={activeChannelId}
@@ -1272,6 +1319,12 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
       <section className={styles.main}>
         <header className={styles.mainHeader}>
           <div className={styles.headerMain}>
+            {hasRoutedChannel && (
+              <a className={styles.mobileBackLink} href="/messages">
+                <Icon icon="mdi:chevron-left" size={18} />
+                <span>{t('chat.backToConversations')}</span>
+              </a>
+            )}
             <div>
               <div className={styles.channelTitle}>
                 {activeChannel ? `${activeChannel.voIconEmoji || '#'} ${activeChannel.voName}` : t('chat.selectChannel')}
@@ -1284,7 +1337,10 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
           </div>
 
           {activeChannelId !== null && connectionHint && (
-            <div className={styles.connectionBanner}>{connectionHint}</div>
+            <div className={styles.connectionBanner}>
+              <strong>{connectionHint}</strong>
+              <span>{t('chat.connection.recoveryHint')}</span>
+            </div>
           )}
         </header>
 
@@ -1309,6 +1365,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
               onRecall={(messageId) => { void handleRecall(messageId); }}
               onOpenReport={handleOpenReport}
               onRetryMessage={handleRetryMessage}
+              onCopyFailedMessageDiagnostics={handleCopyFailedMessageDiagnostics}
               onDismissFailedMessage={handleDismissFailedMessage}
               onLoadNewerHistory={() => { void loadNewerHistory({ scrollToBottomWhenDone: true }); }}
             />
@@ -1394,7 +1451,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
                         void handleSendMessage();
                       }
                     }}
-                    placeholder={activeChannelId ? t('chat.inputPlaceholder') : t('chat.inputSelectChannel')}
+                    placeholder={composerPlaceholder}
                     disabled={!activeChannelId}
                   />
 

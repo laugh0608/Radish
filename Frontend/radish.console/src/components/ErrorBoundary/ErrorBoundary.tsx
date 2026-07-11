@@ -18,6 +18,32 @@ interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
+  diagnosticId: string | null;
+  diagnosticCopied: boolean;
+}
+
+function createDiagnosticId(): string {
+  return `CONSOLE-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+}
+
+function getCurrentRouteSnapshot(): string {
+  if (typeof window === 'undefined') {
+    return 'unknown';
+  }
+
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function buildDiagnosticText(error: Error, errorInfo: ErrorInfo, diagnosticId: string): string {
+  return [
+    `诊断编号：${diagnosticId}`,
+    `发生时间：${new Date().toISOString()}`,
+    `当前路径：${getCurrentRouteSnapshot()}`,
+    `错误名称：${error.name}`,
+    `错误信息：${error.message}`,
+    '组件堆栈：',
+    errorInfo.componentStack || '未提供组件堆栈',
+  ].join('\n');
 }
 
 /**
@@ -39,6 +65,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       hasError: false,
       error: null,
       errorInfo: null,
+      diagnosticId: null,
+      diagnosticCopied: false,
     };
   }
 
@@ -50,20 +78,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    // 记录错误信息
-    log.error('ErrorBoundary caught an error:', error, errorInfo);
-
-    // 更新状态
-    this.setState({
+    const diagnosticId = createDiagnosticId();
+    log.error('ErrorBoundary', 'Console 页面异常', {
+      diagnosticId,
+      route: getCurrentRouteSnapshot(),
       error,
       errorInfo,
     });
 
-    // 调用错误回调
-    this.props.onError?.(error, errorInfo);
+    this.setState({
+      error,
+      errorInfo,
+      diagnosticId,
+      diagnosticCopied: false,
+    });
 
-    // TODO: 可以在这里上报错误到监控系统
-    // reportErrorToService(error, errorInfo);
+    this.props.onError?.(error, errorInfo);
   }
 
   handleReset = (): void => {
@@ -71,11 +101,28 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       hasError: false,
       error: null,
       errorInfo: null,
+      diagnosticId: null,
+      diagnosticCopied: false,
     });
   };
 
+  handleCopyDiagnostic = async (): Promise<void> => {
+    const { error, errorInfo, diagnosticId } = this.state;
+    if (!error || !errorInfo || !diagnosticId) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(buildDiagnosticText(error, errorInfo, diagnosticId));
+      this.setState({ diagnosticCopied: true });
+    } catch (copyError) {
+      this.setState({ diagnosticCopied: false });
+      log.warn('ErrorBoundary', '复制 Console 异常诊断信息失败', copyError);
+    }
+  };
+
   render(): ReactNode {
-    const { hasError, error, errorInfo } = this.state;
+    const { hasError, error, errorInfo, diagnosticId, diagnosticCopied } = this.state;
     const { children, fallback } = this.props;
 
     if (hasError && error && errorInfo) {
@@ -90,9 +137,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           <Result
             status="error"
             title="页面出错了"
-            subTitle="抱歉，页面遇到了一些问题。您可以尝试刷新页面或返回首页。"
+            subTitle={diagnosticId
+              ? `页面遇到异常。请先尝试重试或刷新；如需反馈，请附上诊断编号 ${diagnosticId}。`
+              : '页面遇到异常。请先尝试重试或刷新；如需反馈，请附上当前路径与操作时间。'}
             extra={[
-              <AntButton type="primary" key="home" onClick={() => window.location.href = '/'}>
+              <AntButton type="primary" key="home" onClick={() => window.location.href = '/console/'}>
                 返回首页
               </AntButton>,
               <AntButton key="reload" onClick={() => window.location.reload()}>
@@ -100,6 +149,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               </AntButton>,
               <AntButton key="reset" onClick={this.handleReset}>
                 重试
+              </AntButton>,
+              <AntButton key="copy" onClick={() => void this.handleCopyDiagnostic()}>
+                {diagnosticCopied ? '诊断信息已复制' : '复制诊断信息'}
               </AntButton>,
             ]}
           />

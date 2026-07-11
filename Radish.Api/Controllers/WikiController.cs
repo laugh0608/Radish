@@ -40,6 +40,36 @@ public class WikiController : ControllerBase
 
     [HttpGet]
     [AllowAnonymous]
+    public async Task<MessageModel<PageModel<WikiDocumentVo>>> PublicGetList(
+        int pageIndex = 1,
+        int pageSize = 20,
+        string? keyword = null,
+        long? parentId = null)
+    {
+        var result = await _wikiDocumentService.GetPublicListAsync(pageIndex, pageSize, keyword, parentId);
+        return MessageModel<PageModel<WikiDocumentVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<MessageModel<List<WikiDocumentTreeNodeVo>>> PublicGetTree()
+    {
+        var result = await _wikiDocumentService.GetPublicTreeAsync();
+        return MessageModel<List<WikiDocumentTreeNodeVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet("{slug}")]
+    [AllowAnonymous]
+    public async Task<MessageModel<WikiDocumentDetailVo>> PublicGetBySlug(string slug)
+    {
+        var result = await _wikiDocumentService.GetPublicBySlugAsync(slug);
+        return result == null
+            ? MessageModel<WikiDocumentDetailVo>.Failed("公开文档不存在", default!)
+            : MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
     public async Task<MessageModel<PageModel<WikiDocumentVo>>> GetList(
         int pageIndex = 1,
         int pageSize = 20,

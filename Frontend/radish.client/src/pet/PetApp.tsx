@@ -28,6 +28,7 @@ import {
   resolvePetActionAvailability,
   resolvePetStatLevel,
   resolvePetStatusInsight,
+  type PetActionAvailabilityKind,
   type PetStatDelta,
   type PetStatKey,
 } from './petPresentation';
@@ -82,6 +83,19 @@ const actionPreviewKeys: Record<string, string> = {
   clean: 'pet.care.preview.clean',
   play: 'pet.care.preview.play',
   rest: 'pet.care.preview.rest',
+};
+
+const focusActionTypesByStat: Partial<Record<PetStatKey, PetCareActionType[]>> = {
+  voSatiety: ['feed'],
+  voCleanliness: ['clean'],
+  voEnergy: ['rest'],
+};
+
+const actionAvailabilityRank: Record<PetActionAvailabilityKind, number> = {
+  ready: 0,
+  cooldown: 1,
+  unavailable: 2,
+  usedUp: 3,
 };
 
 function getErrorMessage(error: unknown, fallback: string): string {
@@ -404,6 +418,24 @@ export const PetApp = () => {
     const loadedAtLabel = pageData.loadedAt
       ? formatDateTimeByTimeZone(pageData.loadedAt, displayTimeZone)
       : null;
+    const actionStates = pet.voCareActions.map(action => ({
+      action,
+      availability: resolvePetActionAvailability(action, nowTick),
+    }));
+    const readyActionCount = actionStates.filter(item => item.availability.kind === 'ready').length;
+    const cooldownActionCount = actionStates.filter(item => item.availability.kind === 'cooldown').length;
+    const usedUpActionCount = actionStates.filter(item => item.availability.kind === 'usedUp').length;
+    const focusedActionTypes = insight.focusStatKey ? focusActionTypesByStat[insight.focusStatKey] ?? [] : [];
+    const priorityActions = [...actionStates]
+      .sort((left, right) => {
+        const leftFocused = focusedActionTypes.includes(left.action.voActionType) ? 0 : 1;
+        const rightFocused = focusedActionTypes.includes(right.action.voActionType) ? 0 : 1;
+        return leftFocused - rightFocused
+          || actionAvailabilityRank[left.availability.kind] - actionAvailabilityRank[right.availability.kind]
+          || right.action.voRemainingToday - left.action.voRemainingToday;
+      })
+      .slice(0, 4);
+    const lastLog = pageData.logs[0] ?? null;
 
     return (
       <>
@@ -466,127 +498,236 @@ export const PetApp = () => {
           </div>
         </section>
 
-        <section className={styles.statGrid}>
-          {statKeys.map((stat) => {
-            const value = clampPercent(pet[stat.key]);
-            const level = resolvePetStatLevel(value);
-            return (
-              <article className={styles.statCard} data-level={level} key={stat.key}>
-                <div className={styles.statHeader}>
-                  <Icon icon={stat.icon} size={20} />
-                  <span>{t(stat.labelKey)}</span>
-                  <strong>{value}</strong>
-                </div>
-                <div className={styles.statTrack} aria-hidden="true">
-                  <span style={{ width: `${value}%` }} />
-                </div>
-                <p className={styles.statLevel}>{t(`pet.stat.level.${level}`)}</p>
-              </article>
-            );
-          })}
-        </section>
-
-        <section className={styles.actionPanel}>
-          <div className={styles.sectionHeader}>
-            <div>
-              <h2>{t('pet.care.title')}</h2>
-              <p>{t('pet.care.description')}</p>
-            </div>
-          </div>
-          <div className={styles.actionGrid}>
-            {pet.voCareActions.map((action) => {
-              const pending = activeAction === action.voActionType;
-              const availability = resolvePetActionAvailability(action, nowTick);
-              const cooldownLabel = availability.kind === 'cooldown'
-                ? formatCooldownLabel(availability.cooldownMs)
-                : null;
-              const nextLabel = action.voNextAvailableAt
-                ? formatDateTimeByTimeZone(action.voNextAvailableAt, displayTimeZone)
-                : null;
-              const availabilityKey = pending ? 'pending' : availability.kind;
-
-              return (
-                <button
-                  type="button"
-                  key={action.voActionType}
-                  className={styles.actionButton}
-                  data-availability={availabilityKey}
-                  disabled={availability.kind !== 'ready' || !!activeAction}
-                  onClick={() => void handleCare(action)}
-                >
-                  <Icon
-                    icon={pending ? 'mdi:loading' : actionIcons[action.voActionType] ?? 'mdi:hand-heart-outline'}
-                    size={22}
-                    className={pending ? styles.spin : undefined}
-                  />
-                  <strong>{action.voActionName}</strong>
-                  <span>
-                    {action.voRemainingToday > 0
-                      ? t('pet.care.remaining', { count: action.voRemainingToday })
-                      : t('pet.care.usedUp')}
-                  </span>
-                  <small className={styles.actionStatus}>{t(`pet.care.availability.${availabilityKey}`)}</small>
-                  {cooldownLabel ? <small>{cooldownLabel}</small> : null}
-                  {availability.kind === 'cooldown' && nextLabel ? <small>{t('pet.care.nextAt', { time: nextLabel })}</small> : null}
-                  <small className={styles.actionPreview}>{t(actionPreviewKeys[action.voActionType] ?? 'pet.care.preview.default')}</small>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className={styles.contentGrid}>
-          <article className={styles.profilePanel}>
-            <div className={styles.sectionHeader}>
-              <h2>{t('pet.profile.title')}</h2>
-            </div>
-            <form className={styles.profileForm} onSubmit={handleSaveProfile}>
-              <label>
-                <span>{t('pet.nameLabel')}</span>
-                <input
-                  value={profileName}
-                  maxLength={40}
-                  onChange={(event) => setProfileName(event.target.value)}
-                />
-              </label>
-              <label className={styles.switchRow}>
-                <input
-                  type="checkbox"
-                  checked={isPublic}
-                  onChange={(event) => setIsPublic(event.target.checked)}
-                />
-                <span>{t('pet.profile.public')}</span>
-              </label>
-              <button type="submit" className={styles.primaryButton} disabled={savingProfile}>
-                <Icon icon={savingProfile ? 'mdi:loading' : 'mdi:content-save-outline'} size={18} className={savingProfile ? styles.spin : undefined} />
-                <span>{savingProfile ? t('pet.profile.saving') : t('pet.profile.save')}</span>
-              </button>
-            </form>
-          </article>
-
-          <article className={styles.logPanel}>
-            <div className={styles.sectionHeader}>
-              <h2>{t('pet.logs.title')}</h2>
-            </div>
-            {pageData.logs.length > 0 ? (
-              <div className={styles.logList}>
-                {pageData.logs.map((item) => (
-                  <div className={styles.logItem} key={item.voId}>
-                    <div className={styles.logIcon}>
-                      <Icon icon={actionIcons[item.voActionType] ?? 'mdi:history'} size={18} />
+        <section className={styles.petWorkspace}>
+          <div className={styles.petMainColumn}>
+            <section className={styles.statGrid}>
+              {statKeys.map((stat) => {
+                const value = clampPercent(pet[stat.key]);
+                const level = resolvePetStatLevel(value);
+                return (
+                  <article className={styles.statCard} data-level={level} key={stat.key}>
+                    <div className={styles.statHeader}>
+                      <Icon icon={stat.icon} size={20} />
+                      <span>{t(stat.labelKey)}</span>
+                      <strong>{value}</strong>
                     </div>
-                    <div>
-                      <strong>{item.voMessage || item.voActionName}</strong>
-                      <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span>
+                    <div className={styles.statTrack} aria-hidden="true">
+                      <span style={{ width: `${value}%` }} />
                     </div>
-                    <em>{t('pet.logs.growthDelta', { value: item.voGrowthDelta })}</em>
-                  </div>
-                ))}
+                    <p className={styles.statLevel}>{t(`pet.stat.level.${level}`)}</p>
+                  </article>
+                );
+              })}
+            </section>
+
+            <section className={styles.actionPanel}>
+              <div className={styles.sectionHeader}>
+                <div>
+                  <h2>{t('pet.care.title')}</h2>
+                  <p>{t('pet.care.description')}</p>
+                </div>
               </div>
-            ) : (
-              <p className={styles.emptyText}>{t('pet.logs.empty')}</p>
-            )}
-          </article>
+              <div className={styles.actionGrid}>
+                {actionStates.map(({ action, availability }) => {
+                  const pending = activeAction === action.voActionType;
+                  const cooldownLabel = availability.kind === 'cooldown'
+                    ? formatCooldownLabel(availability.cooldownMs)
+                    : null;
+                  const nextLabel = action.voNextAvailableAt
+                    ? formatDateTimeByTimeZone(action.voNextAvailableAt, displayTimeZone)
+                    : null;
+                  const availabilityKey = pending ? 'pending' : availability.kind;
+
+                  return (
+                    <button
+                      type="button"
+                      key={action.voActionType}
+                      className={styles.actionButton}
+                      data-availability={availabilityKey}
+                      disabled={availability.kind !== 'ready' || !!activeAction}
+                      onClick={() => void handleCare(action)}
+                    >
+                      <Icon
+                        icon={pending ? 'mdi:loading' : actionIcons[action.voActionType] ?? 'mdi:hand-heart-outline'}
+                        size={22}
+                        className={pending ? styles.spin : undefined}
+                      />
+                      <strong>{action.voActionName}</strong>
+                      <span>
+                        {action.voRemainingToday > 0
+                          ? t('pet.care.remaining', { count: action.voRemainingToday })
+                          : t('pet.care.usedUp')}
+                      </span>
+                      <small className={styles.actionStatus}>{t(`pet.care.availability.${availabilityKey}`)}</small>
+                      {cooldownLabel ? <small>{cooldownLabel}</small> : null}
+                      {availability.kind === 'cooldown' && nextLabel ? <small>{t('pet.care.nextAt', { time: nextLabel })}</small> : null}
+                      <small className={styles.actionPreview}>{t(actionPreviewKeys[action.voActionType] ?? 'pet.care.preview.default')}</small>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={styles.contentGrid}>
+              <article className={styles.profilePanel}>
+                <div className={styles.sectionHeader}>
+                  <h2>{t('pet.profile.title')}</h2>
+                </div>
+                <form className={styles.profileForm} onSubmit={handleSaveProfile}>
+                  <label>
+                    <span>{t('pet.nameLabel')}</span>
+                    <input
+                      value={profileName}
+                      maxLength={40}
+                      onChange={(event) => setProfileName(event.target.value)}
+                    />
+                  </label>
+                  <label className={styles.switchRow}>
+                    <input
+                      type="checkbox"
+                      checked={isPublic}
+                      onChange={(event) => setIsPublic(event.target.checked)}
+                    />
+                    <span>{t('pet.profile.public')}</span>
+                  </label>
+                  <button type="submit" className={styles.primaryButton} disabled={savingProfile}>
+                    <Icon icon={savingProfile ? 'mdi:loading' : 'mdi:content-save-outline'} size={18} className={savingProfile ? styles.spin : undefined} />
+                    <span>{savingProfile ? t('pet.profile.saving') : t('pet.profile.save')}</span>
+                  </button>
+                </form>
+              </article>
+
+              <article className={styles.logPanel}>
+                <div className={styles.sectionHeader}>
+                  <h2>{t('pet.logs.title')}</h2>
+                </div>
+                {pageData.logs.length > 0 ? (
+                  <div className={styles.logList}>
+                    {pageData.logs.map((item) => (
+                      <div className={styles.logItem} key={item.voId}>
+                        <div className={styles.logIcon}>
+                          <Icon icon={actionIcons[item.voActionType] ?? 'mdi:history'} size={18} />
+                        </div>
+                        <div>
+                          <strong>{item.voMessage || item.voActionName}</strong>
+                          <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span>
+                        </div>
+                        <em>{t('pet.logs.growthDelta', { value: item.voGrowthDelta })}</em>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.emptyText}>{t('pet.logs.empty')}</p>
+                )}
+              </article>
+            </section>
+          </div>
+
+          <aside className={styles.petRail} aria-label={t('pet.rail.label')}>
+            <section className={styles.railCard}>
+              <div className={styles.railTitleRow}>
+                <span className={styles.railIcon}>
+                  <Icon icon={insight.icon} size={20} />
+                </span>
+                <div>
+                  <p className={styles.railKicker}>{t('pet.rail.statusKicker')}</p>
+                  <h2>{t('pet.rail.statusTitle')}</h2>
+                </div>
+              </div>
+              <div className={styles.railMetrics}>
+                <div>
+                  <strong>{readyActionCount}</strong>
+                  <span>{t('pet.rail.readyActions')}</span>
+                </div>
+                <div>
+                  <strong>{cooldownActionCount}</strong>
+                  <span>{t('pet.rail.cooldownActions')}</span>
+                </div>
+                <div>
+                  <strong>{usedUpActionCount}</strong>
+                  <span>{t('pet.rail.usedActions')}</span>
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.railCard}>
+              <div className={styles.railTitleRow}>
+                <span className={styles.railIcon}>
+                  <Icon icon="mdi:playlist-check" size={20} />
+                </span>
+                <div>
+                  <p className={styles.railKicker}>{t('pet.rail.priorityKicker')}</p>
+                  <h2>{t('pet.rail.priorityTitle')}</h2>
+                </div>
+              </div>
+              <div className={styles.railActionList}>
+                {priorityActions.map(({ action, availability }) => {
+                  const pending = activeAction === action.voActionType;
+                  const cooldownLabel = availability.kind === 'cooldown'
+                    ? formatCooldownLabel(availability.cooldownMs)
+                    : null;
+                  const availabilityKey = pending ? 'pending' : availability.kind;
+
+                  return (
+                    <button
+                      type="button"
+                      className={styles.railActionItem}
+                      data-availability={availabilityKey}
+                      disabled={availability.kind !== 'ready' || !!activeAction}
+                      key={action.voActionType}
+                      onClick={() => void handleCare(action)}
+                    >
+                      <Icon
+                        icon={pending ? 'mdi:loading' : actionIcons[action.voActionType] ?? 'mdi:hand-heart-outline'}
+                        size={18}
+                        className={pending ? styles.spin : undefined}
+                      />
+                      <span>
+                        <strong>{action.voActionName}</strong>
+                        <small>
+                          {cooldownLabel
+                            || (action.voRemainingToday > 0
+                              ? t('pet.care.remaining', { count: action.voRemainingToday })
+                              : t('pet.care.usedUp'))}
+                        </small>
+                      </span>
+                      <em>{t(`pet.care.availability.${availabilityKey}`)}</em>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={styles.railCard}>
+              <div className={styles.railTitleRow}>
+                <span className={styles.railIcon}>
+                  <Icon icon="mdi:card-account-details-outline" size={20} />
+                </span>
+                <div>
+                  <p className={styles.railKicker}>{t('pet.rail.contextKicker')}</p>
+                  <h2>{t('pet.rail.contextTitle')}</h2>
+                </div>
+              </div>
+              <div className={styles.railRows}>
+                <div>
+                  <span>{t('pet.metric.visibility')}</span>
+                  <strong>{t(pet.voIsPublic ? 'pet.metric.visibility.public' : 'pet.metric.visibility.private')}</strong>
+                </div>
+                <div>
+                  <span>{t('pet.rail.lastCare')}</span>
+                  <strong>
+                    {lastLog
+                      ? formatDateTimeByTimeZone(lastLog.voCreateTime, displayTimeZone)
+                      : t('pet.rail.noLastCare')}
+                  </strong>
+                </div>
+              </div>
+              <a className={styles.railLink} href="/me">
+                <Icon icon="mdi:account-heart-outline" size={17} />
+                <span>{t('pet.openMe')}</span>
+              </a>
+            </section>
+          </aside>
         </section>
       </>
     );
@@ -622,14 +763,8 @@ export const PetApp = () => {
         brandMark="萝"
         brandName={t('pet.title')}
         brandSubline={t('pet.shellSubline')}
-        discoverLabel={t('public.shell.discoverAction')}
-        circleLabel={t('public.shell.circleAction')}
-        desktopLabel={t('public.shell.desktopAction')}
         onBrandClick={() => {
           window.location.href = buildPetPath();
-        }}
-        onNavigateToDiscover={() => {
-          window.location.href = '/discover';
         }}
       />
 

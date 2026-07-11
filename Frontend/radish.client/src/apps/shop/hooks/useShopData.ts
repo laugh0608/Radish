@@ -48,6 +48,13 @@ export interface ShopDataState {
 
   // 错误状态
   error: string | null;
+  loadError: ShopLoadError | null;
+}
+
+export interface ShopLoadError {
+  scope: 'categories' | 'products' | 'featured-products' | 'product-detail' | 'orders' | 'order-detail' | 'inventory';
+  message: string;
+  target?: Record<string, string | number | boolean | null | undefined>;
 }
 
 export const useShopData = (t: TFunction) => {
@@ -71,7 +78,8 @@ export const useShopData = (t: TFunction) => {
     userBenefits: [],
     userInventory: [],
     loadingInventory: false,
-    error: null
+    error: null,
+    loadError: null
   });
 
   // 设置错误
@@ -87,21 +95,28 @@ export const useShopData = (t: TFunction) => {
 
   // 加载分类列表
   const loadCategories = useCallback(async () => {
-    setState(prev => ({ ...prev, loadingCategories: true }));
+    setState(prev => ({
+      ...prev,
+      loadingCategories: true,
+      loadError: prev.loadError?.scope === 'categories' ? null : prev.loadError
+    }));
     try {
       const result = await shopApi.getCategories(t);
       if (result.ok && result.data) {
         setState(prev => ({
           ...prev,
           categories: result.data || [],
-          loadingCategories: false
+          loadingCategories: false,
+          loadError: prev.loadError?.scope === 'categories' ? null : prev.loadError
         }));
       } else {
         throw new Error(result.message || '获取分类失败');
       }
     } catch (error) {
       log.error('加载分类失败:', error);
-      setError(error instanceof Error ? error.message : '加载分类失败');
+      const message = error instanceof Error ? error.message : '加载分类失败';
+      setError(message);
+      setState(prev => ({ ...prev, loadError: { scope: 'categories', message } }));
       setState(prev => ({ ...prev, loadingCategories: false }));
     }
   }, [t, setError]);
@@ -114,7 +129,11 @@ export const useShopData = (t: TFunction) => {
     pageIndex: number = 1,
     pageSize: number = 20
   ) => {
-    setState(prev => ({ ...prev, loadingProducts: true }));
+    setState(prev => ({
+      ...prev,
+      loadingProducts: true,
+      loadError: prev.loadError?.scope === 'products' ? null : prev.loadError
+    }));
     try {
       const result = await shopApi.getProducts(t, categoryId, productType, keyword, pageIndex, pageSize);
       if (result.ok && result.data) {
@@ -123,21 +142,41 @@ export const useShopData = (t: TFunction) => {
           products: result.data?.data || [],
           currentPage: result.data?.page || 1,
           totalPages: result.data?.pageCount || 1,
-          loadingProducts: false
+          loadingProducts: false,
+          loadError: prev.loadError?.scope === 'products' ? null : prev.loadError
         }));
       } else {
         throw new Error(result.message || '获取商品列表失败');
       }
     } catch (error) {
       log.error('加载商品列表失败:', error);
-      setError(error instanceof Error ? error.message : '加载商品列表失败');
+      const message = error instanceof Error ? error.message : '加载商品列表失败';
+      setError(message);
+      setState(prev => ({
+        ...prev,
+        loadError: {
+          scope: 'products',
+          message,
+          target: {
+            categoryId: categoryId || 'all',
+            productType: productType || 'all',
+            hasKeyword: Boolean(keyword?.trim()),
+            pageIndex,
+            pageSize,
+          },
+        },
+      }));
       setState(prev => ({ ...prev, loadingProducts: false }));
     }
   }, [t, setError]);
 
   // 加载推荐商品
   const loadFeaturedProducts = useCallback(async () => {
-    setState(prev => ({ ...prev, loadingFeatured: true }));
+    setState(prev => ({
+      ...prev,
+      loadingFeatured: true,
+      loadError: prev.loadError?.scope === 'featured-products' ? null : prev.loadError
+    }));
     try {
       // 获取前8个商品作为推荐商品
       const result = await shopApi.getProducts(t, undefined, undefined, undefined, 1, 8);
@@ -145,35 +184,53 @@ export const useShopData = (t: TFunction) => {
         setState(prev => ({
           ...prev,
           featuredProducts: result.data?.data || [],
-          loadingFeatured: false
+          loadingFeatured: false,
+          loadError: prev.loadError?.scope === 'featured-products' ? null : prev.loadError
         }));
       } else {
         throw new Error(result.message || '获取推荐商品失败');
       }
     } catch (error) {
       log.error('加载推荐商品失败:', error);
-      setError(error instanceof Error ? error.message : '加载推荐商品失败');
+      const message = error instanceof Error ? error.message : '加载推荐商品失败';
+      setError(message);
+      setState(prev => ({ ...prev, loadError: { scope: 'featured-products', message } }));
       setState(prev => ({ ...prev, loadingFeatured: false }));
     }
   }, [t, setError]);
 
   // 加载商品详情
   const loadProductDetail = useCallback(async (productId: LongId) => {
-    setState(prev => ({ ...prev, loadingProductDetail: true, selectedProduct: null }));
+    setState(prev => ({
+      ...prev,
+      loadingProductDetail: true,
+      selectedProduct: null,
+      loadError: prev.loadError?.scope === 'product-detail' ? null : prev.loadError
+    }));
     try {
       const result = await shopApi.getProduct(productId, t);
       if (result.ok && result.data) {
         setState(prev => ({
           ...prev,
           selectedProduct: result.data || null,
-          loadingProductDetail: false
+          loadingProductDetail: false,
+          loadError: prev.loadError?.scope === 'product-detail' ? null : prev.loadError
         }));
       } else {
         throw new Error(result.message || '获取商品详情失败');
       }
     } catch (error) {
       log.error('加载商品详情失败:', error);
-      setError(error instanceof Error ? error.message : '加载商品详情失败');
+      const message = error instanceof Error ? error.message : '加载商品详情失败';
+      setError(message);
+      setState(prev => ({
+        ...prev,
+        loadError: {
+          scope: 'product-detail',
+          message,
+          target: { productId },
+        },
+      }));
       setState(prev => ({ ...prev, loadingProductDetail: false }));
     }
   }, [t, setError]);
@@ -207,7 +264,11 @@ export const useShopData = (t: TFunction) => {
     pageIndex: number = 1,
     pageSize: number = 20
   ) => {
-    setState(prev => ({ ...prev, loadingOrders: true }));
+    setState(prev => ({
+      ...prev,
+      loadingOrders: true,
+      loadError: prev.loadError?.scope === 'orders' ? null : prev.loadError
+    }));
     try {
       const result = await shopApi.getMyOrders(t, status, pageIndex, pageSize);
       if (result.ok && result.data) {
@@ -216,42 +277,75 @@ export const useShopData = (t: TFunction) => {
           orders: result.data?.data || [],
           currentPage: result.data?.page || 1,
           totalPages: result.data?.pageCount || 1,
-          loadingOrders: false
+          loadingOrders: false,
+          loadError: prev.loadError?.scope === 'orders' ? null : prev.loadError
         }));
       } else {
         throw new Error(result.message || '获取订单列表失败');
       }
     } catch (error) {
       log.error('加载订单列表失败:', error);
-      setError(error instanceof Error ? error.message : '加载订单列表失败');
+      const message = error instanceof Error ? error.message : '加载订单列表失败';
+      setError(message);
+      setState(prev => ({
+        ...prev,
+        loadError: {
+          scope: 'orders',
+          message,
+          target: {
+            status: status || 'all',
+            pageIndex,
+            pageSize,
+          },
+        },
+      }));
       setState(prev => ({ ...prev, loadingOrders: false }));
     }
   }, [t, setError]);
 
   // 加载订单详情
   const loadOrderDetail = useCallback(async (orderId: LongId) => {
-    setState(prev => ({ ...prev, loadingOrderDetail: true, selectedOrder: null }));
+    setState(prev => ({
+      ...prev,
+      loadingOrderDetail: true,
+      selectedOrder: null,
+      loadError: prev.loadError?.scope === 'order-detail' ? null : prev.loadError
+    }));
     try {
       const result = await shopApi.getOrder(orderId, t);
       if (result.ok && result.data) {
         setState(prev => ({
           ...prev,
           selectedOrder: result.data || null,
-          loadingOrderDetail: false
+          loadingOrderDetail: false,
+          loadError: prev.loadError?.scope === 'order-detail' ? null : prev.loadError
         }));
       } else {
         throw new Error(result.message || '获取订单详情失败');
       }
     } catch (error) {
       log.error('加载订单详情失败:', error);
-      setError(error instanceof Error ? error.message : '加载订单详情失败');
+      const message = error instanceof Error ? error.message : '加载订单详情失败';
+      setError(message);
+      setState(prev => ({
+        ...prev,
+        loadError: {
+          scope: 'order-detail',
+          message,
+          target: { orderId },
+        },
+      }));
       setState(prev => ({ ...prev, loadingOrderDetail: false }));
     }
   }, [t, setError]);
 
   // 加载用户权益和背包
   const loadInventory = useCallback(async () => {
-    setState(prev => ({ ...prev, loadingInventory: true }));
+    setState(prev => ({
+      ...prev,
+      loadingInventory: true,
+      loadError: prev.loadError?.scope === 'inventory' ? null : prev.loadError
+    }));
     try {
       const [benefitsResult, inventoryResult] = await Promise.all([
         shopApi.getMyBenefits(false, t),
@@ -263,14 +357,17 @@ export const useShopData = (t: TFunction) => {
           ...prev,
           userBenefits: benefitsResult.data || [],
           userInventory: inventoryResult.data || [],
-          loadingInventory: false
+          loadingInventory: false,
+          loadError: prev.loadError?.scope === 'inventory' ? null : prev.loadError
         }));
       } else {
         throw new Error('获取背包数据失败');
       }
     } catch (error) {
       log.error('加载背包数据失败:', error);
-      setError(error instanceof Error ? error.message : '加载背包数据失败');
+      const message = error instanceof Error ? error.message : '加载背包数据失败';
+      setError(message);
+      setState(prev => ({ ...prev, loadError: { scope: 'inventory', message } }));
       setState(prev => ({ ...prev, loadingInventory: false }));
     }
   }, [t, setError]);

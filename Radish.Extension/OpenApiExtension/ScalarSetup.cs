@@ -44,10 +44,6 @@ public static class ScalarSetup
                     {
                         document.Info.Description = BuildV1Description(isDeprecated);
                     }
-                    else if (versionName == "v2")
-                    {
-                        document.Info.Description = BuildV2Description();
-                    }
                     else
                     {
                         document.Info.Description = $"Radish API 文档 - 版本 {version}";
@@ -234,37 +230,4 @@ Authorization: Bearer {{your_token}}
 ";
     }
 
-    /// <summary>
-    /// 构建 v2 版本的文档描述
-    /// </summary>
-    private static string BuildV2Description()
-    {
-        return @"
-## Radish 社区平台 API 文档 - V2
-
-**新功能预览版本**
-
-### 📋 包含的接口
-- **系统管理**: 应用配置查询、系统信息获取
-- **性能测试**: C# 与 Rust 原生库性能对比
-
-### 🆕 新特性
-- **应用配置管理**: 提供多种配置读取方式演示
-- **Rust 互操作**: 跨语言性能测试接口
-- **版本控制**: URL 路径版本控制示例
-
-### 🔐 认证方式
-与 v1 版本相同，使用 JWT Bearer Token 认证。
-
-### 🚀 URL 格式
-所有 v2 接口 URL 格式为：`/api/v2/{Controller}/{Action}`
-
-例如：
-- `/api/v2/AppSetting/GetRedisConfig`
-- `/api/v2/RustTest/TestSum1`
-
-### ⚙️ 版本迁移
-从 v1 迁移到 v2 只需修改 URL 路径中的版本号即可。
-";
-    }
 }

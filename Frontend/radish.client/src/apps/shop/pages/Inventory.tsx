@@ -3,14 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
 import type { UserBenefit, UserInventoryItem } from '@/types/shop';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
+import type { ShopLoadError } from '../hooks/useShopData';
 import styles from './Inventory.module.css';
 
 interface InventoryProps {
   benefits: UserBenefit[];
   inventory: UserInventoryItem[];
   loading: boolean;
+  loadError?: ShopLoadError | null;
   onActivateBenefit: (benefitId: LongId) => void;
   onDeactivateBenefit: (benefitId: LongId) => void;
   onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
@@ -21,6 +23,9 @@ interface InventoryProps {
   onSourceOrderClick: (orderId: LongId) => void;
   onSourceProductClick: (productId: LongId) => void;
   onBack: () => void;
+  onRetry?: () => void;
+  diagnosticActionLabel?: string;
+  onCopyDiagnostics?: (error: ShopLoadError) => void;
 }
 
 type TabType = 'benefits' | 'consumables';
@@ -149,6 +154,7 @@ export const Inventory = ({
   benefits,
   inventory,
   loading,
+  loadError,
   onActivateBenefit,
   onDeactivateBenefit,
   onUseItem,
@@ -158,7 +164,10 @@ export const Inventory = ({
   getSourceProductHref,
   onSourceOrderClick,
   onSourceProductClick,
-  onBack
+  onBack,
+  onRetry,
+  diagnosticActionLabel,
+  onCopyDiagnostics
 }: InventoryProps) => {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('benefits');
@@ -167,6 +176,10 @@ export const Inventory = ({
   const [showUseModal, setShowUseModal] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
+  const activeBenefits = benefits.filter((benefit) => benefit.voIsActive && !benefit.voIsExpired).length;
+  const availableBenefits = benefits.filter((benefit) => !benefit.voIsExpired).length;
+  const sourceOrderBenefits = benefits.filter((benefit) => isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)).length;
+  const consumableQuantity = inventory.reduce((total, item) => total + Math.max(0, item.voQuantity), 0);
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
@@ -223,6 +236,46 @@ export const Inventory = ({
     );
   }
 
+  if (loadError?.scope === 'inventory') {
+    const errorActions: WebStateSlotAction[] = [
+      {
+        label: t('common.retry'),
+        onClick: onRetry,
+      },
+      {
+        label: diagnosticActionLabel || t('common.copyDiagnostics'),
+        kind: 'secondary' as const,
+        onClick: () => {
+          onCopyDiagnostics?.(loadError);
+        },
+      },
+      backHref
+        ? {
+            label: t('shop.back'),
+            href: backHref,
+            kind: 'secondary' as const,
+            onClick: (event: MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => handleInventoryLinkClick(event as MouseEvent<HTMLAnchorElement>, onBack),
+          }
+        : {
+            label: t('shop.back'),
+            kind: 'secondary' as const,
+            onClick: onBack,
+          },
+    ].filter((action) => Boolean(action.onClick || action.href));
+
+    return (
+      <div className={styles.container}>
+        <WebStateSlot
+          tone="error"
+          icon="mdi:package-variant-remove"
+          title={t('shop.inventory.loadFailedTitle')}
+          description={loadError.message}
+          actions={errorActions}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -244,7 +297,7 @@ export const Inventory = ({
         <div className={styles.headerCopy}>
           <p className={styles.kicker}>{t('shop.title')}</p>
           <h1 className={styles.title}>{t('shop.inventory.title')}</h1>
-          <p className={styles.description}>{t('shop.inventory.emptyBenefitsHint')}</p>
+          <p className={styles.description}>{t('shop.inventory.description')}</p>
         </div>
       </div>
 
@@ -255,28 +308,45 @@ export const Inventory = ({
         </article>
         <article className={styles.summaryCard}>
           <span>{t('shop.inventory.tabItems', { count: inventory.length })}</span>
-          <strong>{inventory.length}</strong>
+          <strong>{consumableQuantity}</strong>
+        </article>
+        <article className={styles.summaryCard}>
+          <span>{t('shop.inventory.availableBenefits')}</span>
+          <strong>{availableBenefits}</strong>
+        </article>
+        <article className={styles.summaryCard}>
+          <span>{t('shop.inventory.activeBenefits')}</span>
+          <strong>{activeBenefits}</strong>
         </article>
       </div>
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tab} ${activeTab === 'benefits' ? styles.active : ''}`}
-          onClick={() => setActiveTab('benefits')}
-        >
-          {t('shop.inventory.tabBenefits', { count: benefits.length })}
-        </button>
-        <button
-          className={`${styles.tab} ${activeTab === 'consumables' ? styles.active : ''}`}
-          onClick={() => setActiveTab('consumables')}
-        >
-          {t('shop.inventory.tabItems', { count: inventory.length })}
-        </button>
-      </div>
+      <div className={styles.inventoryWorkspace}>
+        <main className={styles.inventoryMain}>
+          <div className={styles.scopeChips}>
+            <span>{t('shop.inventory.scopeAll')}</span>
+            <span>{t('shop.inventory.scopeAvailable', { count: availableBenefits })}</span>
+            <span>{t('shop.inventory.scopeActive', { count: activeBenefits })}</span>
+            <span>{t('shop.inventory.scopeSourceOrder', { count: sourceOrderBenefits })}</span>
+          </div>
 
-      <div className={styles.content}>
-        {activeTab === 'benefits' ? (
-          <div className={styles.benefitList}>
+          <div className={styles.tabs}>
+            <button
+              className={`${styles.tab} ${activeTab === 'benefits' ? styles.active : ''}`}
+              onClick={() => setActiveTab('benefits')}
+            >
+              {t('shop.inventory.tabBenefits', { count: benefits.length })}
+            </button>
+            <button
+              className={`${styles.tab} ${activeTab === 'consumables' ? styles.active : ''}`}
+              onClick={() => setActiveTab('consumables')}
+            >
+              {t('shop.inventory.tabItems', { count: inventory.length })}
+            </button>
+          </div>
+
+          <div className={styles.content}>
+            {activeTab === 'benefits' ? (
+              <div className={styles.benefitList}>
             {benefits.length === 0 ? (
               <WebStateSlot
                 tone="empty"
@@ -404,9 +474,9 @@ export const Inventory = ({
                 );
               })
             )}
-          </div>
-        ) : (
-          <div className={styles.consumableList}>
+              </div>
+            ) : (
+              <div className={styles.consumableList}>
             {inventory.length === 0 ? (
               <WebStateSlot
                 tone="empty"
@@ -476,8 +546,36 @@ export const Inventory = ({
                 );
               })
             )}
+              </div>
+            )}
           </div>
-        )}
+        </main>
+
+        <aside className={styles.inventoryRail}>
+          <section className={styles.railCard}>
+            <span>{t('shop.inventory.availableBenefits')}</span>
+            <strong>{availableBenefits}</strong>
+          </section>
+          <section className={styles.railCard}>
+            <span>{t('shop.inventory.activeBenefits')}</span>
+            <strong>{activeBenefits}</strong>
+          </section>
+          <section className={styles.railCard}>
+            <span>{t('shop.inventory.sourceOrders')}</span>
+            <strong>{sourceOrderBenefits}</strong>
+          </section>
+          <p className={styles.railHint}>{t('shop.inventory.railScopeHint')}</p>
+          {backHref && (
+            <a
+              className={styles.shopReturnButton}
+              href={backHref}
+              onClick={(event) => handleInventoryLinkClick(event, onBack)}
+            >
+              <Icon icon="mdi:storefront-outline" size={17} />
+              <span>{t('shop.inventory.returnToShop')}</span>
+            </a>
+          )}
+        </aside>
       </div>
 
       {showUseModal && selectedItem && (

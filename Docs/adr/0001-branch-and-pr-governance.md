@@ -72,7 +72,7 @@ Accepted
 1. 确保远端存在 `dev` 分支，并作为当前默认开发集成面
 2. 默认开发 PR 目标分支保持为 `dev`
 3. 对 `master` 启用 branch protection / ruleset
-4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个状态检查
+4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个状态检查
 5. 对 `master` 开启 “Require a pull request before merging”
 6. 仓库 Merge options 中启用 `Merge commits` 与 `Rebase merging`，关闭 `Squash merging`
 7. 管理员仅通过 Pull Request 方式绕过规则，不开放直接 push
@@ -90,7 +90,8 @@ Accepted
   - `.github/rulesets/README.md`
 - GitHub Actions PR 检查工作流
   - `.github/workflows/repo-quality.yml`
-  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Identity Guard` 四个 job
+  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个 job
+  - `Dependency Security` 固定联网审计 npm / NuGet High 与 Critical；`Backend Guard`、`Identity Guard` 按变更影响面决定是否执行专题验证，但 job 本身保持 required check
   - `Identity Guard` 会先按 impact 判定决定是否执行 `validate:identity`，但 job 本身保持独立可见并作为 required check
   - 当前在 `pull_request -> master/dev` 上触发，其中 `master` ruleset 使用的 required check 名称按 job 名配置
 - 统一验证基线说明

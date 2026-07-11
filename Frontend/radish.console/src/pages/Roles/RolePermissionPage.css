@@ -13,6 +13,19 @@
   width: 100%;
 }
 
+.role-permission-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  gap: 16px;
+  align-items: start;
+  min-width: 0;
+}
+
+.role-permission-workspace__main,
+.role-permission-rail {
+  min-width: 0;
+}
+
 .role-permission-page__content {
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
@@ -20,6 +33,8 @@
 }
 
 .role-permission-panel {
+  min-width: 0;
+  max-width: 100%;
   padding: 20px;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
@@ -52,6 +67,25 @@
   gap: 8px;
   padding-top: 16px;
   border-top: 1px solid var(--console-border-subtle);
+}
+
+.role-permission-matrix-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.role-permission-matrix-summary span {
+  display: inline-flex;
+  min-width: 0;
+  padding: 6px 10px;
+  color: var(--console-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--console-bg-muted);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
 }
 
 .role-permission-node {
@@ -89,9 +123,12 @@
 
 .role-permission-node__apis code {
   display: inline-flex;
+  max-width: 100%;
   padding: 4px 8px;
   color: var(--console-warning-text);
   font-size: 12px;
+  overflow-wrap: anywhere;
+  white-space: normal;
   background: var(--console-warning-bg);
   border: 1px solid var(--console-warning-border);
   border-radius: var(--console-radius-control);
@@ -172,17 +209,57 @@
   font-size: 13px;
 }
 
-@media (max-width: 1200px) {
+.role-permission-rail__section {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.role-permission-rail__section h4 {
+  margin: 0;
+  color: var(--console-text-primary);
+  font-size: 14px;
+}
+
+.role-permission-rail__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.role-permission-rail__tags span {
+  color: var(--console-text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 1500px) {
   .role-permission-page__content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .role-permission-workspace {
     grid-template-columns: 1fr;
   }
 }
 
 @media (max-width: 768px) {
   .role-permission-node__row,
+  .role-permission-panel__header,
   .role-permission-preview__api-item div {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .role-permission-panel {
+    padding: 16px;
+  }
+
+  .role-permission-page__actions > * {
+    max-width: 100%;
   }
 
   .role-permission-node__apis {

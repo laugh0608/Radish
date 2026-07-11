@@ -2,11 +2,6 @@
 @Gateway_HostAddress = https://localhost:5000
 @Api_HostAddress = http://localhost:5100
 
-### WeatherForecast
-GET {{Api_HostAddress}}/api/v2/WeatherForecast/Get
-Accept: application/json
-Authorization: Bearer {{Access_Token}}
-
 ### 获取全部用户
 GET {{Api_HostAddress}}/api/v1/User/GetUserList
 Accept: application/json

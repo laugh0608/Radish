@@ -6,9 +6,6 @@
 
 # 配置
 API_URL="${1:-http://localhost:5100}"
-AUTH_URL="${2:-http://localhost:5200}"
-USERNAME="${3:-system}"
-PASSWORD="${4:-System123!}"
 
 # 颜色输出
 GREEN='\033[0;32m'
@@ -29,33 +26,13 @@ TESTS_FAILED=0
 TESTS_SKIPPED=0
 
 # 全局变量
-ACCESS_TOKEN="eyJhbGciOiJSUzI1NiIsImtpZCI6IjgzMTVEQkQ1QTE1NkZDNUJGQUU4OEQ0QjA1RDAwM0VFNTAzQ0FGNTQiLCJ4NXQiOiJneFhiMWFGV19GdjY2STFMQmRBRDdsQThyMVEiLCJ0eXAiOiJhdCtqd3QifQ.eyJpc3MiOiJodHRwczovL2xvY2FsaG9zdDo1MDAwLyIsImV4cCI6MTc2NTU1MTE3MCwiaWF0IjoxNzY1NTQ3NTcwLCJhdWQiOiJyYWRpc2gtYXBpIiwic2NvcGUiOiJyYWRpc2gtYXBpIiwianRpIjoiY2QwNmZlYzAtZTdlNC00NWVkLWE1YjMtZTYyMDQ0YWFhNzE0IiwiaHR0cDovL3NjaGVtYXMueG1sc29hcC5vcmcvd3MvMjAwNS8wNS9pZGVudGl0eS9jbGFpbXMvbmFtZWlkZW50aWZpZXIiOiIyMDAwMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJzeXN0ZW0iLCJzdWIiOiIyMDAwMCIsIm5hbWUiOiJzeXN0ZW0iLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJzeXN0ZW0iLCJ0ZW5hbnRfaWQiOiIzMDAwMCIsImdpdmVuX25hbWUiOiJTeXN0ZW0gVXNlciIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IlN5c3RlbSIsInJvbGUiOiJTeXN0ZW0iLCJvaV9wcnN0IjoicmFkaXNoLWNsaWVudCIsIm9pX2F1X2lkIjoiOGNiYTBmNGMtNzBjOC00N2FlLWFjYjQtNjMzMzY3ZWJmMDZkIiwiY2xpZW50X2lkIjoicmFkaXNoLWNsaWVudCIsIm9pX3Rrbl9pZCI6ImVjYjAyYmFhLTgyM2QtNGM1NS05ZmM5LThhYzVkZjVjZjk4OSJ9.OB_xfuHLxR5ZLUp3VrL78GNz-67A9N9dDrC0NQWBngQlK_6jMNVQL3lNnk-uldY6Si_4V5ZZ34GYcrh88oGt5ZNQ4e0iIgu6FTPcRd1BEo2VdF-ebgPyNSAlXoWdvZLpNR3l2kwXjlUQR_CHe450KC0FPfRyyAHCUSrnQ9LUIaquOTFZSYlSD2ZHtxbG_lFfGi0sex_dKLc4Yn2J619o1zvPq3kC_GkXNvmkQTsWfPdh1VpyP3SrvT66r8I3w3OKciAqYXWu_58it0w-2nWL-UM9YhBqp4Hy7v8hMD-VIf4WPVnpEEEot5U4G0NzkijRzsrlZB59DFyBGCzB8qUB_A"
+ACCESS_TOKEN="${RADISH_ACCESS_TOKEN:-}"
 UPLOADED_IDS=()
 TEST_FILES_DIR="$(dirname "$0")/test-files"
 
 ###############################################################################
 # 辅助函数
 ###############################################################################
-
-# 获取 Access Token
-function get_access_token() {
-    print_info "获取 Access Token..."
-
-    local response=$(curl -s -X POST "$AUTH_URL/connect/token" \
-        -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "grant_type=password&client_id=radish-client&client_secret=radish-secret&username=$USERNAME&password=$PASSWORD&scope=radish-api")
-
-    ACCESS_TOKEN=$(echo "$response" | grep -o '"access_token":"[^"]*' | cut -d'"' -f4)
-
-    if [ -n "$ACCESS_TOKEN" ]; then
-        print_success "成功获取 Access Token (${#ACCESS_TOKEN} 字符)"
-        return 0
-    else
-        print_error "获取 Access Token 失败"
-        echo "Response: $response"
-        return 1
-    fi
-}
 
 # 创建测试图片
 function create_test_image() {
@@ -133,14 +110,14 @@ function test_authentication() {
     print_info "\n=== 测试 1：用户认证 ==="
     ((TESTS_TOTAL++))
 
-    # 使用预设的 Access Token，跳过密码认证流程
     if [ -n "$ACCESS_TOKEN" ]; then
-        print_success "使用预设的 Access Token"
+        print_success "已从 RADISH_ACCESS_TOKEN 读取临时 Access Token"
         print_success "认证测试通过"
         ((TESTS_PASSED++))
         return 0
     else
-        print_error "未找到预设的 Access Token"
+        print_error "未设置 RADISH_ACCESS_TOKEN"
+        print_error "请先按 Radish.Api.AuthFlow.http 完成授权码流程，再通过当前进程环境变量传入临时 Token"
         print_error "认证测试失败"
         ((TESTS_FAILED++))
         return 1
@@ -503,14 +480,15 @@ function main() {
     echo ""
 
     print_info "API 地址: $API_URL"
-    print_info "Auth 地址: $AUTH_URL"
-    print_info "测试用户: $USERNAME"
     print_info "测试文件目录: $TEST_FILES_DIR"
     echo ""
 
     # 确保测试文件目录存在
     mkdir -p "$TEST_FILES_DIR"
     print_success "测试文件目录: $TEST_FILES_DIR"
+
+    # 认证输入必须先于任何运行态请求完成校验
+    test_authentication || exit 1
 
     # 检查服务可用性
     print_info "检查服务可用性..."
@@ -521,16 +499,7 @@ function main() {
     fi
     print_success "API 服务可用"
 
-    if ! curl -s -f "$AUTH_URL/.well-known/openid-configuration" > /dev/null; then
-        print_error "Auth 服务不可用: $AUTH_URL"
-        print_warning "请确保 Radish.Auth 正在运行"
-        exit 1
-    fi
-    print_success "Auth 服务可用"
-
     # 运行测试
-    test_authentication || exit 1
-
     test_image_upload_basic
     sleep 0.5
 

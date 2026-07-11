@@ -19,18 +19,14 @@ import type {
 } from '../forumRouteState';
 import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
-import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
   buildActiveSectionTitle,
   buildCategoryIntro,
   buildListRouteKey,
   buildVisiblePages,
-  categoryGuideDefinition,
-  createForumReadingGuide,
   formatCategoryPostCount,
   getForumPostRouteIdentifier,
-  listGuideDefinition,
   resolvePublicProfileUserId,
 } from './publicForumUtils';
 import {
@@ -54,6 +50,7 @@ interface PublicForumListProps {
   onOpenQuestion?: () => void;
   onOpenPoll?: () => void;
   onOpenLottery?: () => void;
+  onOpenCompose?: (categoryId: string | null) => void;
 }
 
 export const PublicForumList = ({
@@ -69,7 +66,8 @@ export const PublicForumList = ({
   onOpenTag,
   onOpenQuestion,
   onOpenPoll,
-  onOpenLottery
+  onOpenLottery,
+  onOpenCompose
 }: PublicForumListProps) => {
   const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -331,10 +329,6 @@ export const PublicForumList = ({
     () => formatCategoryPostCount(activeCategory, t),
     [activeCategory, t]
   );
-  const readingGuide = useMemo(
-    () => createForumReadingGuide(t, selectedCategoryId ? categoryGuideDefinition : listGuideDefinition),
-    [selectedCategoryId, t]
-  );
 
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
@@ -353,11 +347,16 @@ export const PublicForumList = ({
   });
   const allPostsRoute = buildListRoute(1, null);
 
+  const composeRoute = {
+    kind: 'compose' as const,
+    categoryId: selectedCategoryId
+  };
+
   return (
-    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
+    <div className={styles.forumGrid}>
+      <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <h1 className={styles.pageTitle}>{activeTitle}</h1>
           <p className={styles.pageIntro}>{activeIntro}</p>
           {activeCategory && (
@@ -579,13 +578,66 @@ export const PublicForumList = ({
         />
       )}
 
-      <PublicReadingGuide
-        className={styles.readingGuide}
-        label={readingGuide.label}
-        title={readingGuide.title}
-        description={readingGuide.description}
-        items={readingGuide.items}
-      />
-    </section>
+      </section>
+
+      <aside className={styles.forumSideRail} aria-label={t('forum.public.listRailLabel')}>
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.listRailFeedsTitle')}</p>
+          <p className={styles.sidePanelText}>{t('forum.public.listRailFeedsDescription')}</p>
+          <div className={styles.railChipList}>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={allPostsRoute}
+              onNavigate={() => {
+                setSelectedCategoryId(null);
+                setCurrentPage(1);
+              }}
+            >
+              {t('forum.allPosts')}
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={buildListRoute(1, selectedCategoryId, 'newest')}
+              onNavigate={() => {
+                setSortBy('newest');
+                setCurrentPage(1);
+              }}
+            >
+              {t('forum.sort.newest')}
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={buildListRoute(1, selectedCategoryId, 'hottest')}
+              onNavigate={() => {
+                setSortBy('hottest');
+                setCurrentPage(1);
+              }}
+            >
+              {t('forum.sort.hottest')}
+            </PublicForumRouteLink>
+            <PublicForumRouteLink
+              className={styles.railChip}
+              route={createDefaultSearchRoute()}
+              onNavigate={onOpenSearch ? () => onOpenSearch() : undefined}
+            >
+              {t('forum.public.searchAction')}
+            </PublicForumRouteLink>
+          </div>
+        </section>
+
+        <section className={styles.sidePanel}>
+          <p className={styles.sidePanelKicker}>{t('forum.public.listRailComposeTitle')}</p>
+          <p className={styles.sidePanelText}>{t('forum.public.listRailComposeDescription')}</p>
+          <PublicForumRouteLink
+            className={`${styles.workspaceActionButton} ${styles.workspaceActionButtonPrimary} ${styles.sidePanelAction}`}
+            route={composeRoute}
+            onNavigate={() => onOpenCompose?.(selectedCategoryId)}
+          >
+            <Icon icon="mdi:pencil-plus-outline" size={18} />
+            <span>{t('forum.public.listRailComposeAction')}</span>
+          </PublicForumRouteLink>
+        </section>
+      </aside>
+    </div>
   );
 };

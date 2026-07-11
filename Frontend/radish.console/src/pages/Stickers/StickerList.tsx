@@ -276,7 +276,7 @@ export const StickerList = () => {
     return (
       <div className="admin-feature-page sticker-item-list-page">
         <ConsolePageHeader
-          eyebrow="STICKER ASSETS"
+          eyebrow="表情资源"
           title="分组表情管理"
           description="分组 ID 无效，无法加载表情列表。"
           icon={<AppstoreOutlined />}
@@ -298,7 +298,7 @@ export const StickerList = () => {
   return (
     <div className="admin-feature-page sticker-item-list-page">
       <ConsolePageHeader
-        eyebrow="STICKER ASSETS"
+        eyebrow="表情资源"
         title="分组表情管理"
         description={`当前分组：${normalizedGroupId}。维护表情图片、编码、内嵌能力和排序权重。`}
         icon={<AppstoreOutlined />}

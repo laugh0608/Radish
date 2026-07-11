@@ -145,6 +145,29 @@ test('buildPublicProfilePath 应稳定回写公开个人页参数', () => {
   assert.equal(path, '/u/2042219067430928384?tab=comments&page=4');
 });
 
+test('公开个人页应解析并稳定回写关注意图', () => {
+  assert.deepEqual(parsePublicProfileRoute('/u/USR_018F6B6F7C7D70008F8F8F8F8F8F8F8F', '?intent=follow'), {
+    kind: 'detail',
+    userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    tab: 'posts',
+    page: 1,
+    intent: 'follow',
+  });
+  assert.equal(buildPublicProfilePath({
+    kind: 'detail',
+    userId: 'usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    tab: 'posts',
+    page: 1,
+    intent: 'follow',
+  }), '/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=follow');
+  assert.deepEqual(parsePublicProfileRoute('/u/2042219067430928384', '?intent=follow&intent=follow'), {
+    kind: 'detail',
+    userId: '2042219067430928384',
+    tab: 'posts',
+    page: 1,
+  });
+});
+
 test('parsePublicShopRoute 应解析公开商城列表上下文', () => {
   const route = parsePublicShopRoute('/shop/products', '?category=digital&q=vip&page=5');
 

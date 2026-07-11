@@ -9,6 +9,8 @@ export interface WebShellNavItem {
   label: string;
   href: string;
   icon: string;
+  avatarUrl?: string | null;
+  avatarText?: string;
   onClick?: () => void;
 }
 
@@ -22,37 +24,21 @@ interface WebShellHeaderProps {
   navItems?: WebShellNavItem[];
   actionItems?: WebShellNavItem[];
   mobileNavItems?: WebShellNavItem[];
+  hideMobileNav?: boolean;
 }
 
-const publicNavItems: WebShellNavItem[] = [
+const productNavItems: WebShellNavItem[] = [
   { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
   { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
-  { key: 'leaderboard', label: '榜单', href: '/leaderboard', icon: 'mdi:trophy-outline' },
-  { key: 'shop', label: '商城', href: '/shop', icon: 'mdi:shopping-outline' },
+  { key: 'chat', label: '聊天', href: '/messages', icon: 'mdi:message-text-outline' },
+  { key: 'more', label: '更多', href: '/workbench', icon: 'mdi:dots-grid' },
 ];
 
-const publicMobileNavItems: WebShellNavItem[] = [
+const productMobileNavItems: WebShellNavItem[] = [
   { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
   { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'docs', label: '文档', href: '/docs', icon: 'mdi:file-document-outline' },
-  { key: 'workbench', label: '工作台', href: '/workbench', icon: 'mdi:view-dashboard-outline' },
-  { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
-];
-
-const privateNavItems: WebShellNavItem[] = [
-  { key: 'workbench', label: '工作台', href: '/workbench', icon: 'mdi:view-dashboard-outline' },
-  { key: 'me', label: '我的状态', href: '/me', icon: 'mdi:account-circle-outline' },
-  { key: 'assets', label: '资产', href: '/me/assets', icon: 'mdi:wallet-outline' },
-  { key: 'author', label: '创作', href: '/docs/mine', icon: 'mdi:file-document-edit-outline' },
-  { key: 'messages', label: '消息', href: '/messages', icon: 'mdi:message-text-outline' },
-];
-
-const privateMobileNavItems: WebShellNavItem[] = [
-  { key: 'workbench', label: '工作台', href: '/workbench', icon: 'mdi:view-dashboard-outline' },
-  { key: 'assets', label: '资产', href: '/me/assets', icon: 'mdi:wallet-outline' },
-  { key: 'author', label: '创作', href: '/docs/mine', icon: 'mdi:file-document-edit-outline' },
-  { key: 'messages', label: '消息', href: '/messages', icon: 'mdi:message-text-outline' },
+  { key: 'chat', label: '聊天', href: '/messages', icon: 'mdi:message-text-outline' },
+  { key: 'more', label: '更多', href: '/workbench', icon: 'mdi:dots-grid' },
   { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
 ];
 
@@ -65,15 +51,61 @@ function shouldHandleShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boole
     && !event.altKey;
 }
 
+function navigateToShellPath(href: string): boolean {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  const nextUrl = new URL(href, window.location.origin);
+  if (nextUrl.origin !== window.location.origin) {
+    return false;
+  }
+
+  const nextPath = `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
+  const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (nextPath === currentPath) {
+    return true;
+  }
+
+  window.history.pushState({}, '', nextPath);
+  window.dispatchEvent(new PopStateEvent('popstate', { state: window.history.state }));
+  return true;
+}
+
 function getCurrentPathname(): string {
   return typeof window === 'undefined' ? '' : window.location.pathname;
 }
 
+function normalizeActiveKey(activeKey: string): string {
+  if (activeKey === 'assets' || activeKey === 'circle' || activeKey === 'pet') {
+    return 'me';
+  }
+
+  if (activeKey === 'messages') {
+    return 'chat';
+  }
+
+  if (activeKey === 'workbench' || activeKey === 'author' || activeKey === 'leaderboard' || activeKey === 'legal') {
+    return 'more';
+  }
+
+  return activeKey;
+}
+
 function resolveActiveKey(variant: WebShellVariant): string {
   const pathname = getCurrentPathname();
+  const search = typeof window === 'undefined' ? '' : window.location.search;
 
   if (pathname === '/workbench' || pathname.startsWith('/workbench/')) {
-    return 'workbench';
+    return 'more';
+  }
+
+  if (pathname === '/desktop' || pathname.startsWith('/desktop') || pathname === '/console' || pathname.startsWith('/console/')) {
+    return 'more';
+  }
+
+  if (pathname === '/forum/compose' || search.includes('intent=answer') || search.includes('intent=edit') || search.includes('intent=history')) {
+    return 'more';
   }
 
   if (pathname === '/discover' || pathname.startsWith('/discover/')) {
@@ -81,7 +113,7 @@ function resolveActiveKey(variant: WebShellVariant): string {
   }
 
   if (pathname === '/forum' || pathname.startsWith('/forum/')) {
-    return variant === 'private' && pathname.includes('/compose') ? 'author' : 'forum';
+    return 'forum';
   }
 
   if (
@@ -90,15 +122,19 @@ function resolveActiveKey(variant: WebShellVariant): string {
     || pathname.startsWith('/docs/edit/')
     || pathname.startsWith('/docs/revisions/')
   ) {
-    return 'author';
+    return 'more';
   }
 
   if (pathname === '/docs' || pathname.startsWith('/docs/') || pathname.startsWith('/__documents__/')) {
-    return 'docs';
+    return 'more';
   }
 
   if (pathname === '/leaderboard' || pathname.startsWith('/leaderboard/')) {
-    return 'leaderboard';
+    return 'more';
+  }
+
+  if (pathname === '/legal' || pathname.startsWith('/legal/')) {
+    return 'more';
   }
 
   if (
@@ -108,30 +144,34 @@ function resolveActiveKey(variant: WebShellVariant): string {
     || pathname === '/shop/inventory'
     || pathname.startsWith('/shop/order/')
   ) {
-    return variant === 'private' ? 'assets' : 'shop';
+    return 'more';
   }
 
   if (pathname === '/shop' || pathname.startsWith('/shop/')) {
-    return 'shop';
+    return 'more';
   }
 
-  if (pathname === '/messages' || pathname.startsWith('/messages/') || pathname === '/notifications') {
-    return 'messages';
+  if (pathname === '/messages' || pathname.startsWith('/messages/')) {
+    return 'chat';
+  }
+
+  if (pathname === '/notifications') {
+    return 'notifications';
   }
 
   if (pathname === '/me' || pathname.startsWith('/me/') || pathname === '/circle' || pathname === '/pet') {
     return 'me';
   }
 
-  return variant === 'private' ? 'workbench' : 'discover';
+  return variant === 'private' ? 'more' : 'discover';
 }
 
-function getDefaultNavItems(variant: WebShellVariant): WebShellNavItem[] {
-  return variant === 'private' ? privateNavItems : publicNavItems;
+function getDefaultNavItems(): WebShellNavItem[] {
+  return productNavItems;
 }
 
-function getDefaultMobileNavItems(variant: WebShellVariant): WebShellNavItem[] {
-  return variant === 'private' ? privateMobileNavItems : publicMobileNavItems;
+function getDefaultMobileNavItems(): WebShellNavItem[] {
+  return productMobileNavItems;
 }
 
 interface WebShellLinkProps {
@@ -149,15 +189,28 @@ function WebShellLink({ item, className, activeClassName, isActive }: WebShellLi
       aria-current={isActive ? 'page' : undefined}
       title={item.label}
       onClick={(event) => {
-        if (!item.onClick || !shouldHandleShellLinkClick(event)) {
+        if (!shouldHandleShellLinkClick(event)) {
           return;
         }
 
-        event.preventDefault();
-        item.onClick();
+        if (item.onClick) {
+          event.preventDefault();
+          item.onClick();
+          return;
+        }
+
+        if (navigateToShellPath(item.href)) {
+          event.preventDefault();
+        }
       }}
     >
-      <Icon icon={item.icon} size={18} />
+      {item.avatarUrl ? (
+        <img src={item.avatarUrl} alt={item.label} className={styles.linkAvatar} loading="lazy" />
+      ) : item.avatarText ? (
+        <span className={styles.linkAvatarFallback} aria-hidden="true">{item.avatarText}</span>
+      ) : (
+        <Icon icon={item.icon} size={18} />
+      )}
       <span>{item.label}</span>
     </a>
   );
@@ -173,19 +226,26 @@ export function WebShellHeader({
   navItems,
   actionItems,
   mobileNavItems,
+  hideMobileNav = false,
 }: WebShellHeaderProps) {
-  const resolvedActiveKey = activeKey ?? resolveActiveKey(variant);
-  const resolvedNavItems = navItems ?? getDefaultNavItems(variant);
-  const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems(variant);
+  const resolvedActiveKey = normalizeActiveKey(activeKey ?? resolveActiveKey(variant));
+  const resolvedNavItems = navItems ?? getDefaultNavItems();
+  const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems();
   const resolvedActionItems = actionItems ?? [];
   const headerClassName = `${styles.header} ${variant === 'private' ? styles.privateHeader : styles.publicHeader}`;
+  const actionRailClassName = styles.actionRail;
 
   useEffect(() => {
+    if (hideMobileNav) {
+      document.body.classList.remove('radishWebShellWithMobileNav');
+      return;
+    }
+
     document.body.classList.add('radishWebShellWithMobileNav');
     return () => {
       document.body.classList.remove('radishWebShellWithMobileNav');
     };
-  }, []);
+  }, [hideMobileNav]);
 
   return (
     <>
@@ -199,7 +259,7 @@ export function WebShellHeader({
             </span>
           </button>
 
-          <nav className={styles.navRail} aria-label={variant === 'private' ? '私域导航' : '公开导航'}>
+          <nav className={styles.navRail} aria-label="产品导航">
             {resolvedNavItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -211,7 +271,7 @@ export function WebShellHeader({
             ))}
           </nav>
 
-          <div className={styles.actionRail} aria-label="页面动作">
+          <div className={actionRailClassName} aria-label="页面动作">
             {resolvedActionItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -225,17 +285,19 @@ export function WebShellHeader({
         </div>
       </header>
 
-      <nav className={styles.mobileTabBar} aria-label={variant === 'private' ? '私域移动导航' : '公开移动导航'} data-web-mobile-nav="true">
-        {resolvedMobileNavItems.map((item) => (
-          <WebShellLink
-            key={item.key}
-            item={item}
-            className={styles.mobileTab}
-            activeClassName={styles.mobileTabActive}
-            isActive={item.key === resolvedActiveKey}
-          />
-        ))}
-      </nav>
+      {!hideMobileNav && (
+        <nav className={styles.mobileTabBar} aria-label="产品移动导航" data-web-mobile-nav="true">
+          {resolvedMobileNavItems.map((item) => (
+            <WebShellLink
+              key={item.key}
+              item={item}
+              className={styles.mobileTab}
+              activeClassName={styles.mobileTabActive}
+              isActive={item.key === resolvedActiveKey}
+            />
+          ))}
+        </nav>
+      )}
     </>
   );
 }

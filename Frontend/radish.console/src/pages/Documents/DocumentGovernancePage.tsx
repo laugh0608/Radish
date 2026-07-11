@@ -57,6 +57,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import '../adminForm.css';
 import '../adminFeature.css';
+import './DocumentGovernancePage.css';
 
 const DOCUMENT_STATUS = {
   draft: 0,
@@ -168,6 +169,53 @@ function isBuiltInDocument(record: WikiDocumentVo | WikiDocumentDetailVo | null 
   return record?.voSourceType === 'BuiltIn';
 }
 
+function canMaintainDocument(record: WikiDocumentVo | WikiDocumentDetailVo | null | undefined) {
+  return Boolean(record) && !record?.voIsDeleted && !isBuiltInDocument(record);
+}
+
+function getStatusText(status: number) {
+  if (status === DOCUMENT_STATUS.published) {
+    return '已发布';
+  }
+
+  if (status === DOCUMENT_STATUS.archived) {
+    return '已归档';
+  }
+
+  return '草稿';
+}
+
+function getVisibilityText(visibility: number) {
+  if (visibility === DOCUMENT_VISIBILITY.public) {
+    return '公开';
+  }
+
+  if (visibility === DOCUMENT_VISIBILITY.restricted) {
+    return '受限';
+  }
+
+  return '登录可见';
+}
+
+function getDocumentSummary(record: WikiDocumentVo | WikiDocumentDetailVo) {
+  const summary = record.voSummary?.trim();
+  if (!summary) {
+    return '暂无摘要。';
+  }
+
+  return summary.length > 88 ? `${summary.slice(0, 88)}...` : summary;
+}
+
+function getAccessSummary(record: WikiDocumentVo | WikiDocumentDetailVo) {
+  if (record.voVisibility !== DOCUMENT_VISIBILITY.restricted) {
+    return getVisibilityText(record.voVisibility);
+  }
+
+  const roles = record.voAllowedRoles?.length ?? 0;
+  const permissions = record.voAllowedPermissions?.length ?? 0;
+  return `受限：${roles} 个角色 / ${permissions} 个权限`;
+}
+
 export const DocumentGovernancePage = () => {
   useDocumentTitle('文档治理');
 
@@ -216,8 +264,21 @@ export const DocumentGovernancePage = () => {
     deletedFilter !== 'active' ? 'deleted' : undefined,
   ].filter(Boolean).length;
   const publishedCount = documents.filter((document) => document.voStatus === DOCUMENT_STATUS.published && !document.voIsDeleted).length;
+  const draftCount = documents.filter((document) => document.voStatus === DOCUMENT_STATUS.draft && !document.voIsDeleted).length;
+  const archivedCount = documents.filter((document) => document.voStatus === DOCUMENT_STATUS.archived && !document.voIsDeleted).length;
+  const deletedCount = documents.filter((document) => document.voIsDeleted).length;
   const builtInCount = documents.filter((document) => isBuiltInDocument(document)).length;
   const restrictedCount = documents.filter((document) => document.voVisibility === DOCUMENT_VISIBILITY.restricted).length;
+  const governanceDocument = detailDocument
+    ?? accessDocument
+    ?? revisionDocument
+    ?? documents.find((document) => document.voVisibility === DOCUMENT_VISIBILITY.restricted && canMaintainDocument(document))
+    ?? documents.find((document) => document.voStatus !== DOCUMENT_STATUS.published && canMaintainDocument(document))
+    ?? documents[0]
+    ?? null;
+  const governanceDocumentRevisionCount = governanceDocument && revisionDocument && String(governanceDocument.voId) === String(revisionDocument.voId)
+    ? revisionItems.length
+    : 0;
 
   const loadDocuments = async (targetPageIndex = pageIndex, targetPageSize = pageSize) => {
     try {
@@ -251,6 +312,8 @@ export const DocumentGovernancePage = () => {
     }
 
     void loadDocuments(1, pageSize);
+    // Document governance reloads from filter state; loadDocuments also preserves current pagination entry points.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canView, keyword, statusFilter, visibilityFilter, sourceTypeFilter, deletedFilter, pageSize]);
 
   const handleViewDetail = async (record: WikiDocumentVo) => {
@@ -624,7 +687,7 @@ export const DocumentGovernancePage = () => {
   return (
     <div className="admin-feature-page document-governance-page">
       <ConsolePageHeader
-        eyebrow="DOCUMENT GOVERNANCE"
+        eyebrow="文档治理"
         title="文档治理"
         description="治理文档发布状态、访问策略、版本回滚、导入导出与回收站。"
         icon={<FileTextOutlined />}
@@ -642,6 +705,29 @@ export const DocumentGovernancePage = () => {
         <ConsoleMetricCard label="当前页受限" value={restrictedCount} description="受限访问策略文档" tone="warning" />
         <ConsoleMetricCard label="当前页内置" value={builtInCount} description="内置文档不可直接写入" />
       </ConsoleMetricGrid>
+
+      <section className="governance-task-flow" aria-label="文档治理任务流">
+        <div className="governance-task-flow__item">
+          <span>1</span>
+          <strong>列表定位</strong>
+          <p>{total} 个匹配文档，当前页 {documents.length} 个；筛选条件先限定治理范围。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>2</span>
+          <strong>发布状态</strong>
+          <p>当前页 {publishedCount} 个已发布、{draftCount} 个草稿、{archivedCount} 个归档，发布 / 下架继续走既有动作。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>3</span>
+          <strong>访问策略</strong>
+          <p>{restrictedCount} 个受限文档；角色和权限名单只通过现有访问策略弹窗维护。</p>
+        </div>
+        <div className="governance-task-flow__item">
+          <span>4</span>
+          <strong>版本回看</strong>
+          <p>{governanceDocument ? `${getStatusText(governanceDocument.voStatus)}，当前证据 v${governanceDocument.voVersion}` : '选择文档后回看版本证据'}，回滚仅对可维护文档开放。</p>
+        </div>
+      </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
@@ -689,35 +775,120 @@ export const DocumentGovernancePage = () => {
           </section>
         </main>
 
-        <aside className="admin-table-aside">
-          <h3>治理区块</h3>
-          <p className="admin-feature-subtle">文档治理按列表定位、详情证据、访问策略和版本回滚分区承载。</p>
-          <div className="admin-table-summary">
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
-              <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '未筛选'}
-              </span>
+        <aside className="admin-table-aside" aria-label="文档治理详情上下文">
+          <div className="admin-feature-rail__header">
+            <div>
+              <span className="admin-feature-rail__eyebrow">文档档案</span>
+              <h3>文档治理详情</h3>
             </div>
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">发布治理</span>
-              <span className="admin-table-summary__value">
-                {canPublish || canArchive ? '可处理发布 / 归档' : '仅查看发布状态'}
-              </span>
+            <ConsoleStatusChip tone={canView ? 'success' : 'danger'}>
+              {canView ? '可查看' : '无权限'}
+            </ConsoleStatusChip>
+          </div>
+          <p className="admin-feature-subtle">文档治理按列表定位、详情证据、访问策略和版本回滚分区承载，不替代作者态编辑器。</p>
+          <div className="admin-feature-rail__list">
+            <div className="admin-feature-rail__item">
+              <span>查询范围</span>
+              <strong>{activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '未筛选'}</strong>
             </div>
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">访问策略</span>
-              <span className="admin-table-summary__value">
-                {canUpdatePermissions ? '可调整可见性' : '无访问策略权限'}
-              </span>
+            <div className="admin-feature-rail__item">
+              <span>发布治理</span>
+              <strong>{canPublish || canArchive ? '可处理发布 / 归档' : '仅查看发布状态'}</strong>
             </div>
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">版本治理</span>
-              <span className="admin-table-summary__value">
-                {canRollback ? '可回滚非当前版本' : '仅查看版本'}
-              </span>
+            <div className="admin-feature-rail__item">
+              <span>访问策略</span>
+              <strong>{canUpdatePermissions ? '可调整可见性' : '无访问策略权限'}</strong>
+            </div>
+            <div className="admin-feature-rail__item">
+              <span>版本治理</span>
+              <strong>{canRollback ? '可回滚非当前版本' : '仅查看版本'}</strong>
+            </div>
+            <div className="admin-feature-rail__item">
+              <span>回收站</span>
+              <strong>{deletedCount > 0 ? `当前页 ${deletedCount} 个` : '当前页无回收站文档'}</strong>
             </div>
           </div>
+          {governanceDocument ? (
+            <>
+              <div className="admin-feature-rail__callout">
+                <span>当前文档</span>
+                <strong>{governanceDocument.voTitle}</strong>
+                <p>{getDocumentSummary(governanceDocument)}</p>
+                <Space wrap>
+                  {getStatusTag(governanceDocument.voStatus)}
+                  {getVisibilityTag(governanceDocument.voVisibility)}
+                  <Tag color={isBuiltInDocument(governanceDocument) ? 'purple' : 'default'}>{getSourceTypeText(governanceDocument.voSourceType)}</Tag>
+                  {governanceDocument.voIsDeleted ? <Tag color="default">回收站</Tag> : null}
+                </Space>
+              </div>
+              <div className="admin-feature-rail__list">
+                <div className="admin-feature-rail__item">
+                  <span>访问策略</span>
+                  <strong>{getAccessSummary(governanceDocument)}</strong>
+                </div>
+                <div className="admin-feature-rail__item">
+                  <span>版本证据</span>
+                  <strong>{governanceDocumentRevisionCount > 0 ? `${governanceDocumentRevisionCount} 个版本，当前 v${governanceDocument.voVersion}` : `当前 v${governanceDocument.voVersion}`}</strong>
+                </div>
+                <div className="admin-feature-rail__item">
+                  <span>来源路径</span>
+                  <strong>{governanceDocument.voSourcePath || governanceDocument.voSlug}</strong>
+                </div>
+              </div>
+              <div className="admin-feature-rail__actions">
+                <Button variant="ghost" size="small" icon={<EyeOutlined />} onClick={() => { void handleViewDetail(governanceDocument); }}>
+                  详情
+                </Button>
+                <Button variant="ghost" size="small" icon={<ClockCircleOutlined />} onClick={() => { void openRevisions(governanceDocument); }}>
+                  版本
+                </Button>
+                {canUpdatePermissions && canMaintainDocument(governanceDocument) ? (
+                  <Button variant="ghost" size="small" icon={<LockOutlined />} onClick={() => openAccessPolicy(governanceDocument)}>
+                    访问策略
+                  </Button>
+                ) : null}
+                {canExport ? (
+                  <Button variant="ghost" size="small" icon={<FileTextOutlined />} onClick={() => { void handleExport(governanceDocument); }}>
+                    导出
+                  </Button>
+                ) : null}
+                {canPublish && canMaintainDocument(governanceDocument) && governanceDocument.voStatus !== DOCUMENT_STATUS.published ? (
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    icon={<CheckOutlined />}
+                    onClick={() => {
+                      void runDocumentAction(
+                        () => publishWikiDocument(governanceDocument.voId),
+                        '文档已发布',
+                        '发布文档失败'
+                      );
+                    }}
+                  >
+                    发布
+                  </Button>
+                ) : null}
+                {canPublish && canMaintainDocument(governanceDocument) && governanceDocument.voStatus === DOCUMENT_STATUS.published ? (
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    icon={<CloseOutlined />}
+                    onClick={() => {
+                      void runDocumentAction(
+                        () => unpublishWikiDocument(governanceDocument.voId),
+                        '文档已下架',
+                        '下架文档失败'
+                      );
+                    }}
+                  >
+                    下架
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          ) : (
+            <p className="admin-feature-rail__empty">当前页暂无文档，调整筛选条件后会形成治理详情上下文。</p>
+          )}
         </aside>
       </div>
 
