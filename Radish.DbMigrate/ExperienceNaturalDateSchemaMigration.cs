@@ -64,7 +64,17 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
         var issues = new List<string>();
         foreach (var column in Columns)
         {
-            var dataType = GetColumnType(db, column.TableName, column.ColumnName);
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                column.TableName,
+                column.ColumnName);
+            if (physicalColumn == null)
+            {
+                issues.Add($"{column.TableName}.{column.ColumnName} 表或列不存在。");
+                continue;
+            }
+
+            var dataType = physicalColumn.DataType;
             if (!string.Equals(dataType, "date", StringComparison.OrdinalIgnoreCase))
             {
                 issues.Add($"{column.TableName}.{column.ColumnName} 类型仍为 {dataType}，期望 date。");
@@ -86,7 +96,17 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
         var issues = new List<string>();
         foreach (var column in Columns)
         {
-            var dataType = GetColumnType(db, column.TableName, column.ColumnName);
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                column.TableName,
+                column.ColumnName);
+            if (physicalColumn == null)
+            {
+                issues.Add($"{column.TableName}.{column.ColumnName} 表或列不存在。");
+                continue;
+            }
+
+            var dataType = physicalColumn.DataType;
             var usesDateStorage = string.Equals(dataType, "date", StringComparison.OrdinalIgnoreCase);
             if (requireDateStorage && !usesDateStorage)
             {
@@ -95,7 +115,12 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
 
             if (db.CurrentConnectionConfig.DbType == SqlSugar.DbType.PostgreSQL && !usesDateStorage)
             {
-                var invalidIds = ReadInvalidPostgreSqlIds(db, column, dataType, businessCalendar);
+                var invalidIds = ReadInvalidPostgreSqlIds(
+                    db,
+                    column,
+                    physicalColumn,
+                    dataType,
+                    businessCalendar);
                 if (invalidIds.Count > 0)
                 {
                     issues.Add(
@@ -108,7 +133,8 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
             }
 
             var rows = db.Ado.GetDataTable(
-                $"SELECT {QuoteIdentifier("Id")}, {QuoteIdentifier(column.ColumnName)} FROM {QuoteIdentifier(column.TableName)}");
+                $"SELECT {QuoteIdentifier(ResolveIdColumnName(db, physicalColumn.TableName))}, " +
+                $"{QuoteIdentifier(physicalColumn.ColumnName)} FROM {QuoteIdentifier(physicalColumn.TableName)}");
             var invalidSamples = new List<string>();
             foreach (DataRow row in rows.Rows)
             {
@@ -143,6 +169,7 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
     private static IReadOnlyList<long> ReadInvalidPostgreSqlIds(
         ISqlSugarClient db,
         NaturalDateColumn column,
+        DatabaseColumnReference physicalColumn,
         string dataType,
         BusinessCalendar businessCalendar)
     {
@@ -150,16 +177,17 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
             ? ResolvePostgreSqlTimeZoneId(businessCalendar.TimeZone)
             : "UTC";
         var localTimestampExpression = BuildPostgreSqlLocalTimestampExpression(
-            column,
+            physicalColumn.ColumnName,
             dataType,
             timeZoneId);
+        var idColumnName = ResolveIdColumnName(db, physicalColumn.TableName);
         var rows = db.Ado.GetDataTable(
             $"""
-            SELECT {QuoteIdentifier("Id")}
-            FROM {QuoteIdentifier(column.TableName)}
-            WHERE {QuoteIdentifier(column.ColumnName)} IS NOT NULL
+            SELECT {QuoteIdentifier(idColumnName)}
+            FROM {QuoteIdentifier(physicalColumn.TableName)}
+            WHERE {QuoteIdentifier(physicalColumn.ColumnName)} IS NOT NULL
               AND ({localTimestampExpression})::time <> TIME '00:00:00'
-            ORDER BY {QuoteIdentifier("Id")}
+            ORDER BY {QuoteIdentifier(idColumnName)}
             LIMIT 10
             """);
         return rows.Rows.Cast<DataRow>()
@@ -194,7 +222,13 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
     {
         foreach (var column in Columns)
         {
-            var dataType = GetColumnType(db, column.TableName, column.ColumnName);
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                column.TableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{column.TableName}.{column.ColumnName} 表或列不存在。");
+            var dataType = physicalColumn.DataType;
             if (string.Equals(dataType, "date", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
@@ -211,25 +245,25 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
                 ? ResolvePostgreSqlTimeZoneId(businessCalendar.TimeZone)
                 : "UTC";
             var localTimestampExpression = BuildPostgreSqlLocalTimestampExpression(
-                column,
+                physicalColumn.ColumnName,
                 dataType,
                 timeZoneId);
 
             db.Ado.ExecuteCommand(
                 $"""
-                ALTER TABLE {QuoteIdentifier(column.TableName)}
-                ALTER COLUMN {QuoteIdentifier(column.ColumnName)} TYPE date
+                ALTER TABLE {QuoteIdentifier(physicalColumn.TableName)}
+                ALTER COLUMN {QuoteIdentifier(physicalColumn.ColumnName)} TYPE date
                 USING ({localTimestampExpression})::date
                 """);
         }
     }
 
     private static string BuildPostgreSqlLocalTimestampExpression(
-        NaturalDateColumn column,
+        string physicalColumnName,
         string dataType,
         string timeZoneId)
     {
-        var columnIdentifier = QuoteIdentifier(column.ColumnName);
+        var columnIdentifier = QuoteIdentifier(physicalColumnName);
         return IsPostgreSqlTimestampWithoutTimeZone(dataType)
             ? $"timezone({QuoteLiteral(timeZoneId)}, {columnIdentifier} AT TIME ZONE 'UTC')"
             : $"timezone({QuoteLiteral(timeZoneId)}, {columnIdentifier})";
@@ -252,16 +286,21 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
     {
         foreach (var column in Columns)
         {
-            if (string.Equals(
-                    GetColumnType(db, column.TableName, column.ColumnName),
-                    "date",
-                    StringComparison.OrdinalIgnoreCase))
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                column.TableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{column.TableName}.{column.ColumnName} 表或列不存在。");
+            if (string.Equals(physicalColumn.DataType, "date", StringComparison.OrdinalIgnoreCase))
             {
                 continue;
             }
 
+            var idColumnName = ResolveIdColumnName(db, physicalColumn.TableName);
             var rows = db.Ado.GetDataTable(
-                $"SELECT {QuoteIdentifier("Id")}, {QuoteIdentifier(column.ColumnName)} FROM {QuoteIdentifier(column.TableName)}");
+                $"SELECT {QuoteIdentifier(idColumnName)}, {QuoteIdentifier(physicalColumn.ColumnName)} " +
+                $"FROM {QuoteIdentifier(physicalColumn.TableName)}");
             foreach (DataRow row in rows.Rows)
             {
                 if (column.IsNullable && row[1] == DBNull.Value)
@@ -281,8 +320,9 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
                     : DateOnly.FromDateTime(utcValue);
                 var normalized = businessDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
                 db.Ado.ExecuteCommand(
-                    $"UPDATE {QuoteIdentifier(column.TableName)} " +
-                    $"SET {QuoteIdentifier(column.ColumnName)} = @value WHERE {QuoteIdentifier("Id")} = @id",
+                    $"UPDATE {QuoteIdentifier(physicalColumn.TableName)} " +
+                    $"SET {QuoteIdentifier(physicalColumn.ColumnName)} = @value " +
+                    $"WHERE {QuoteIdentifier(idColumnName)} = @id",
                     new SugarParameter("@value", normalized),
                     new SugarParameter("@id", Convert.ToInt64(row[0], CultureInfo.InvariantCulture)));
             }
@@ -291,7 +331,13 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
 
     private static void RebuildSqliteTableWithDateColumn(ISqlSugarClient db, NaturalDateColumn column)
     {
-        var currentType = GetColumnType(db, column.TableName, column.ColumnName);
+        var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+            db,
+            column.TableName,
+            column.ColumnName)
+            ?? throw new InvalidOperationException(
+                $"{column.TableName}.{column.ColumnName} 表或列不存在。");
+        var currentType = physicalColumn.DataType;
         if (string.Equals(currentType, "date", StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -299,15 +345,15 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
 
         var createSql = db.Ado.GetString(
             "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = @tableName",
-            new SugarParameter("@tableName", column.TableName));
+            new SugarParameter("@tableName", physicalColumn.TableName));
         if (string.IsNullOrWhiteSpace(createSql))
         {
             throw new InvalidOperationException($"未读取到 SQLite 表 {column.TableName} 的 CREATE SQL。");
         }
 
-        var indexScripts = ReadSqliteSchemaScripts(db, column.TableName, "index");
-        var triggerScripts = ReadSqliteSchemaScripts(db, column.TableName, "trigger");
-        var tableInfo = db.Ado.GetDataTable($"PRAGMA table_info({QuoteIdentifier(column.TableName)})");
+        var indexScripts = ReadSqliteSchemaScripts(db, physicalColumn.TableName, "index");
+        var triggerScripts = ReadSqliteSchemaScripts(db, physicalColumn.TableName, "trigger");
+        var tableInfo = db.Ado.GetDataTable($"PRAGMA table_info({QuoteIdentifier(physicalColumn.TableName)})");
         var columnNames = tableInfo.Rows.Cast<DataRow>()
             .Select(row => Convert.ToString(row["name"], CultureInfo.InvariantCulture))
             .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -315,7 +361,7 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
             .ToList();
 
         var columnPattern =
-            $"(?<prefix>{Regex.Escape(QuoteIdentifier(column.ColumnName))}\\s+){Regex.Escape(currentType)}\\b";
+            $"(?<prefix>{Regex.Escape(QuoteIdentifier(physicalColumn.ColumnName))}\\s+){Regex.Escape(currentType)}\\b";
         var dateCreateSql = Regex.Replace(
             createSql,
             columnPattern,
@@ -328,8 +374,8 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
                 $"无法在 SQLite CREATE SQL 中定位 {column.TableName}.{column.ColumnName} 的 {currentType} 类型声明。");
         }
 
-        var temporaryTableName = $"__radish_{column.TableName}_{column.ColumnName}_date";
-        var tableToken = QuoteIdentifier(column.TableName);
+        var temporaryTableName = $"__radish_{physicalColumn.TableName}_{physicalColumn.ColumnName}_date";
+        var tableToken = QuoteIdentifier(physicalColumn.TableName);
         var tableTokenIndex = dateCreateSql.IndexOf(tableToken, StringComparison.OrdinalIgnoreCase);
         if (tableTokenIndex < 0)
         {
@@ -346,10 +392,11 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
         db.Ado.ExecuteCommand(temporaryCreateSql);
         db.Ado.ExecuteCommand(
             $"INSERT INTO {QuoteIdentifier(temporaryTableName)} ({quotedColumns}) " +
-            $"SELECT {quotedColumns} FROM {QuoteIdentifier(column.TableName)}");
-        db.Ado.ExecuteCommand($"DROP TABLE {QuoteIdentifier(column.TableName)}");
+            $"SELECT {quotedColumns} FROM {QuoteIdentifier(physicalColumn.TableName)}");
+        db.Ado.ExecuteCommand($"DROP TABLE {QuoteIdentifier(physicalColumn.TableName)}");
         db.Ado.ExecuteCommand(
-            $"ALTER TABLE {QuoteIdentifier(temporaryTableName)} RENAME TO {QuoteIdentifier(column.TableName)}");
+            $"ALTER TABLE {QuoteIdentifier(temporaryTableName)} " +
+            $"RENAME TO {QuoteIdentifier(physicalColumn.TableName)}");
 
         foreach (var script in indexScripts.Concat(triggerScripts))
         {
@@ -373,18 +420,10 @@ internal sealed class ExperienceNaturalDateSchemaMigration : ISchemaMigration
             .ToList();
     }
 
-    private static string GetColumnType(ISqlSugarClient db, string tableName, string columnName)
+    private static string ResolveIdColumnName(ISqlSugarClient db, string physicalTableName)
     {
-        if (!db.DbMaintenance.IsAnyTable(tableName, false))
-        {
-            return "missing-table";
-        }
-
-        var column = db.DbMaintenance.GetColumnInfosByTableName(tableName, false)
-            .FirstOrDefault(item => string.Equals(item.DbColumnName, columnName, StringComparison.OrdinalIgnoreCase));
-        return string.IsNullOrWhiteSpace(column?.DataType)
-            ? "missing-column"
-            : column.DataType.Trim().ToLowerInvariant();
+        return DatabaseIdentifierResolver.ResolveColumn(db, physicalTableName, "Id")?.ColumnName
+               ?? throw new InvalidOperationException($"{physicalTableName}.Id 列不存在。");
     }
 
     private static string ResolvePostgreSqlTimeZoneId(TimeZoneInfo timeZone)

@@ -65,12 +65,13 @@ public static class TimeSemanticsAudit
         where TEntity : class, new()
     {
         var tableName = db.EntityMaintenance.GetEntityInfo<TEntity>().DbTableName;
-        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(db, tableName, columnName);
+        if (physicalColumn == null)
         {
             return;
         }
 
-        var dataType = GetColumnDataType<TEntity>(db, columnName);
+        var dataType = physicalColumn.DataType;
         var usesDatabaseDate = IsDatabaseDateType(dataType);
         if (db.CurrentConnectionConfig.DbType == DbType.PostgreSQL &&
             IsPostgreSqlTimestampWithTimeZone(dataType))
@@ -78,8 +79,8 @@ public static class TimeSemanticsAudit
             InspectPostgreSqlTimestampColumn(
                 db,
                 businessCalendar,
-                tableName,
-                columnName,
+                physicalColumn.TableName,
+                physicalColumn.ColumnName,
                 usesBusinessTimeZone: true,
                 summaries,
                 warnings);
@@ -142,20 +143,21 @@ public static class TimeSemanticsAudit
         where TEntity : class, new()
     {
         var tableName = db.EntityMaintenance.GetEntityInfo<TEntity>().DbTableName;
-        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(db, tableName, columnName);
+        if (physicalColumn == null)
         {
             return;
         }
 
-        var dataType = GetColumnDataType<TEntity>(db, columnName);
+        var dataType = physicalColumn.DataType;
         if (db.CurrentConnectionConfig.DbType == DbType.PostgreSQL &&
             IsPostgreSqlTimestampWithTimeZone(dataType))
         {
             InspectPostgreSqlTimestampColumn(
                 db,
                 null,
-                tableName,
-                columnName,
+                physicalColumn.TableName,
+                physicalColumn.ColumnName,
                 usesBusinessTimeZone: false,
                 summaries,
                 warnings);
@@ -213,16 +215,6 @@ public static class TimeSemanticsAudit
         var businessDate = businessCalendar.GetDate(new DateTimeOffset(utcValue));
         var (startUtc, _) = businessCalendar.GetUtcRange(businessDate);
         return utcValue == startUtc;
-    }
-
-    private static string GetColumnDataType<TEntity>(ISqlSugarClient db, string columnName)
-        where TEntity : class, new()
-    {
-        var tableName = db.EntityMaintenance.GetEntityInfo<TEntity>().DbTableName;
-        var column = db.DbMaintenance
-            .GetColumnInfosByTableName(tableName, false)
-            .FirstOrDefault(item => string.Equals(item.DbColumnName, columnName, StringComparison.OrdinalIgnoreCase));
-        return string.IsNullOrWhiteSpace(column?.DataType) ? "unknown" : column.DataType.Trim().ToLowerInvariant();
     }
 
     private static bool IsDatabaseDateType(string dataType)
