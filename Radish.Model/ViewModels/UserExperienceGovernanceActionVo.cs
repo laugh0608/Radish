@@ -34,7 +34,7 @@ public class UserExperienceGovernanceActionVo
     public int? VoWindowDays { get; set; }
 
     /// <summary>关联命中日期</summary>
-    public DateTime? VoStatDate { get; set; }
+    public DateOnly? VoStatDate { get; set; }
 
     /// <summary>规则代码列表</summary>
     public List<string> VoRuleCodes { get; set; } = [];

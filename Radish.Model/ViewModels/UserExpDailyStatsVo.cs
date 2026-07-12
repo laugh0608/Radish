@@ -18,7 +18,7 @@ public class UserExpDailyStatsVo
     /// <summary>
     /// 统计日期
     /// </summary>
-    public DateTime VoStatDate { get; set; }
+    public DateOnly VoStatDate { get; set; }
 
     /// <summary>
     /// 当日获得经验值总计

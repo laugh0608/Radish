@@ -86,7 +86,8 @@ public partial class ExperienceService
         }
 
         var (newLevel, newCurrentExp) = CalculateLevel(newTotalExp, levelConfigs);
-        var now = DateTime.Now;
+        var now = GetUtcNow();
+        var businessDate = _businessCalendar.GetDate(new DateTimeOffset(now));
 
         var updatedRows = await _userExpRepository.UpdateColumnsAsync(
             e => new UserExperience
@@ -121,7 +122,7 @@ public partial class ExperienceService
             ExpAfter = newTotalExp,
             LevelBefore = oldLevel,
             LevelAfter = newLevel,
-            CreatedDate = DateTime.Today,
+            CreatedDate = GetBusinessDateStorageValue(businessDate),
             TenantId = userExp.TenantId,
             CreateTime = now,
             CreateBy = operatorName,
@@ -157,7 +158,7 @@ public partial class ExperienceService
                     newLevel,
                     newLevel * 100L,
                     SnowFlakeSingle.Instance.NextId()),
-                DateTime.UtcNow);
+                now);
         }
 
         return true;

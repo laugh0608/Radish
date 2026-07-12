@@ -3,6 +3,7 @@ using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
 using Radish.Common.Exceptions;
+using Radish.Common.TimeTool;
 using Radish.Infrastructure;
 using Radish.IRepository;
 using Radish.IService;
@@ -36,6 +37,8 @@ namespace Radish.Service;
     private readonly ICaching _caching;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
     private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly TimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
 
     private const string LevelConfigsCacheKey = "experience:level-configs:enabled";
 
@@ -102,6 +105,8 @@ namespace Radish.Service;
         IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService notificationService,
         ICaching caching,
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar,
         IUnitOfWorkManage? unitOfWorkManage = null,
         IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, userExpRepository)
@@ -116,6 +121,8 @@ namespace Radish.Service;
         _coinService = coinService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _caching = caching;
+        _timeProvider = timeProvider;
+        _businessCalendar = businessCalendar;
         _reliableOutboxService = reliableOutboxService;
         _unitOfWorkManage = unitOfWorkManage;
     }
@@ -359,14 +366,18 @@ namespace Radish.Service;
         userExp = await NormalizeFreezeStateAsync(userExp);
 
         // 2. 检查是否冻结
-        if (IsFreezeActive(userExp, DateTime.Now))
+        var nowUtc = GetUtcNow();
+        var businessDate = _businessCalendar.GetDate(new DateTimeOffset(nowUtc));
+        var businessDateStorageValue = GetBusinessDateStorageValue(businessDate);
+
+        if (IsFreezeActive(userExp, nowUtc))
         {
             Log.Warning("用户 {UserId} 经验值已冻结，无法获得经验值", userId);
             return false;
         }
 
         // 3. 检查每日上限（防刷机制）
-        var dailyStats = await GetOrCreateDailyStatsAsync(userId, DateTime.Today);
+        var dailyStats = await GetOrCreateDailyStatsAsync(userId, businessDate);
         if (!CheckDailyLimit(dailyStats, amount, expType))
         {
             Log.Warning("用户 {UserId} 经验值已达每日上限，expType={ExpType}, 当日已获得={ExpEarned}",
@@ -392,9 +403,9 @@ namespace Radish.Service;
                 CurrentLevel = newLevel,
                 CurrentExp = newCurrentExp,
                 TotalExp = newTotalExp,
-                LevelUpAt = newLevel > oldLevel ? DateTime.Now : e.LevelUpAt,
+                LevelUpAt = newLevel > oldLevel ? nowUtc : e.LevelUpAt,
                 Version = e.Version + 1,
-                ModifyTime = DateTime.Now
+                ModifyTime = nowUtc
             },
             e => e.UserId == userId && e.Version == userExp.Version
         );
@@ -422,9 +433,9 @@ namespace Radish.Service;
             ExpAfter = newTotalExp,
             LevelBefore = oldLevel,
             LevelAfter = newLevel,
-            CreatedDate = DateTime.Today,
+            CreatedDate = businessDateStorageValue,
             TenantId = tenantId ?? userExp.TenantId,
-            CreateTime = DateTime.Now
+            CreateTime = nowUtc
         };
 
         await _expTransactionRepository.AddAsync(transaction);
@@ -456,7 +467,7 @@ namespace Radish.Service;
                     newLevel,
                     newLevel * 100L,
                     SnowFlakeSingle.Instance.NextId()),
-                DateTime.UtcNow);
+                nowUtc);
         }
 
         return true;
@@ -540,7 +551,7 @@ namespace Radish.Service;
                 operatorName: operatorName,
                 reviewResult: reviewResult,
                 windowDays: NormalizeGovernanceWindowDays(request.WindowDays),
-                statDate: request.StatDate?.Date,
+                statDate: request.StatDate,
                 ruleCodes: request.RuleCodes,
                 ruleLabels: request.RuleLabels,
                 recommendationLevel: NormalizeRecommendationLevel(request.RecommendationLevel),
@@ -587,7 +598,7 @@ namespace Radish.Service;
                     // 更新已存在的配置
                     config.ExpRequired = expRequired;
                     config.ExpCumulative = expCumulative;
-                    config.ModifyTime = DateTime.Now;
+                    config.ModifyTime = GetUtcNow();
                     config.ModifyBy = operatorName;
                     config.ModifyId = operatorId;
 
@@ -653,7 +664,7 @@ namespace Radish.Service;
                 e => new UserExperience
                 {
                     IsDeleted = false,
-                    ModifyTime = DateTime.Now,
+                    ModifyTime = GetUtcNow(),
                     ModifyBy = "System",
                     ModifyId = 0
                 },
@@ -681,7 +692,7 @@ namespace Radish.Service;
             LevelUpAt = null,
             ExpFrozen = false,
             Version = 0,
-            CreateTime = DateTime.Now
+            CreateTime = GetUtcNow()
         };
 
         try
@@ -879,17 +890,18 @@ namespace Radish.Service;
     /// <summary>
     /// 获取或创建每日统计记录
     /// </summary>
-    private async Task<UserExpDailyStats> GetOrCreateDailyStatsAsync(long userId, DateTime statDate)
+    private async Task<UserExpDailyStats> GetOrCreateDailyStatsAsync(long userId, DateOnly statDate)
     {
+        var storageValue = GetBusinessDateStorageValue(statDate);
         var stats = await _dailyStatsRepository.QueryFirstAsync(
-            s => s.UserId == userId && s.StatDate == statDate.Date);
+            s => s.UserId == userId && s.StatDate == storageValue);
 
         if (stats == null)
         {
             stats = new UserExpDailyStats
             {
                 UserId = userId,
-                StatDate = statDate.Date,
+                StatDate = storageValue,
                 ExpEarned = 0,
                 ExpFromPost = 0,
                 ExpFromComment = 0,
@@ -900,7 +912,7 @@ namespace Radish.Service;
                 CommentCount = 0,
                 LikeGivenCount = 0,
                 LikeReceivedCount = 0,
-                CreateTime = DateTime.Now
+                CreateTime = GetUtcNow()
             };
 
             await _dailyStatsRepository.AddAsync(stats);
@@ -1072,8 +1084,29 @@ namespace Radish.Service;
                 break;
         }
 
-        dailyStats.ModifyTime = DateTime.Now;
+        dailyStats.ModifyTime = GetUtcNow();
         await _dailyStatsRepository.UpdateAsync(dailyStats);
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
+    }
+
+    private DateTime GetBusinessDateStorageValue(DateOnly businessDate)
+    {
+        return _businessCalendar.GetUtcRange(businessDate).StartUtc;
+    }
+
+    private DateOnly GetStoredBusinessDate(DateTime storageValue)
+    {
+        var utcValue = storageValue.Kind switch
+        {
+            DateTimeKind.Utc => storageValue,
+            DateTimeKind.Local => storageValue.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(storageValue, DateTimeKind.Utc)
+        };
+        return _businessCalendar.GetDate(new DateTimeOffset(utcValue));
     }
 
     private sealed class ExperienceDailyLimitSettings
@@ -1094,7 +1127,7 @@ namespace Radish.Service;
     }
 
     private sealed record ExperienceGovernanceTargetSnapshot(long TenantId, string UserName);
-    private sealed record AnomalyObservationHit(DateTime StatDate, UserExpDailyStatObservationVo Observation);
+    private sealed record AnomalyObservationHit(DateOnly StatDate, UserExpDailyStatObservationVo Observation);
 
     #endregion
 }

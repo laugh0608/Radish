@@ -43,6 +43,20 @@ public sealed class UtcDateTimeJsonConverterTest
         Assert.EndsWith("Z\"", json, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void DateOnlyContract_ShouldUseCalendarDateWithoutTimeZone()
+    {
+        var date = new DateOnly(2026, 7, 12);
+
+        var json = JsonSerializer.Serialize(date, Options);
+        var parsed = JsonSerializer.Deserialize<DateOnly>(json, Options);
+
+        Assert.Equal("\"2026-07-12\"", json);
+        Assert.Equal(date, parsed);
+        Assert.Throws<JsonException>(() =>
+            JsonSerializer.Deserialize<DateOnly>("\"2026-07-12T00:00:00Z\"", Options));
+    }
+
     private static JsonSerializerOptions CreateOptions()
     {
         var options = new JsonSerializerOptions();

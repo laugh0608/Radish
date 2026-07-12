@@ -215,7 +215,9 @@ public partial class ExperienceService
             VoRemark = action.Remark,
             VoEvidenceSummary = BuildGovernanceEvidenceSummary(action, ruleLabels),
             VoWindowDays = action.WindowDays,
-            VoStatDate = action.StatDate,
+            VoStatDate = action.StatDate.HasValue
+                ? DateOnly.FromDateTime(action.StatDate.Value)
+                : null,
             VoRuleCodes = ruleCodes,
             VoRuleLabels = ruleLabels,
             VoRecommendationLevel = action.RecommendationLevel,
@@ -265,14 +267,14 @@ public partial class ExperienceService
         string operatorName,
         ExperienceGovernanceReviewResultEnum? reviewResult = null,
         int? windowDays = null,
-        DateTime? statDate = null,
+        DateOnly? statDate = null,
         IEnumerable<string>? ruleCodes = null,
         IEnumerable<string>? ruleLabels = null,
         string? recommendationLevel = null,
         string? recommendationReason = null,
         DateTime? frozenUntil = null)
     {
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         var action = new UserExperienceGovernanceAction
         {
             TargetUserId = targetUserId,
@@ -284,7 +286,7 @@ public partial class ExperienceService
                 : null,
             Remark = NormalizeRequiredSnapshotText(remark, "经验治理动作"),
             WindowDays = NormalizeGovernanceWindowDays(windowDays),
-            StatDate = statDate?.Date,
+            StatDate = statDate?.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc),
             RuleCodes = SerializeSnapshotItems(ruleCodes),
             RuleLabels = SerializeSnapshotItems(ruleLabels),
             RecommendationLevel = NormalizeRecommendationLevel(recommendationLevel),

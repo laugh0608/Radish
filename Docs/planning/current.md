@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Q2-A 时间语义与历史数据迁移方案`
+- **工程第一顺位**：`P3-12-F / Q2-B PostgreSQL / OpenIddict 数据库演进方案`
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -31,6 +31,7 @@
   - 2026-07-11 Q1-B 已完成：保留 `MessageModel` 并接入全局异常安全边界、稳定错误码、`TraceId / X-Correlation-ID`、模型校验、认证权限与限流统一响应；关键发布 Controller 已同步真实 HTTP 状态，问答、投票、抽奖、轻回应、治理和 Wiki 的异常文案状态分类已清零，HTTP / client / console 与 588 项后端测试通过。
   - Q1 已形成独立提交：Q1-A `33e4690f / 86466308`、Q1-B `873c5ea5`、Q1-C `ef370884`；`dev` 未合并或 rebase `master`。
   - 2026-07-12 Q1-C 已完整关闭：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、权限、可信代理与日志凭据脱敏均已落地；本地 Main SQLite 已在备份后完成 `DbMigrate apply / verify`，迁移前后完整性检查通过，PostgreSQL 双 Worker 原子额度竞争用例通过 `1/1`。Q1 Release Go 必要子集至此完成，工程第一顺位进入 Q2-A。
+  - 2026-07-12 Q2-A Release Go 高风险子集已收口：统一 UTC `TimeProvider` 与系统业务日，迁移 token、幂等、支付、限流、投票 / 抽奖、订单 / 权益、清理、Hangfire 与经验 / 登录自然日；API 自然日改用 `DateOnly`，DbMigrate 能只读报告列类型与异常。SQLite verify、隔离 PostgreSQL 17 集成测试、609 项后端测试与 Baseline Quick 均通过；物理 `date` 改列按职责移交 Q2-B schema ledger。
 
 ## V1 产品与发布范围
 
@@ -66,23 +67,23 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 收口 Q2-A 后续业务自然日与 schema 批次
+### 1. 先形成 Q2-B PostgreSQL / OpenIddict 数据库演进方案
 
-- 2026-07-12 已完成 `BusinessCalendar`、Release Go 高风险 UTC 链路、首批业务自然日、DbMigrate 只读审计与增量门禁。
-- 当前继续收口经验 / 签到自然日与数据库 `date` 边界，并在生产相似 PostgreSQL 快照上确认列类型和历史分布。
-- 模糊 SQLite 历史绝对时刻继续只报告、不猜测；不做全仓 `DateTime.Now / Today` 机械替换。
+- 先确认 schema version ledger 格式、DbMigrate `doctor / apply / verify` 版本职责、OpenIddict 迁移归属和首个生产基线版本。
+- 把 Q2-A 已识别的经验自然日 `date` 改列作为首批候选数据补丁，要求备份、幂等、异常拒绝、前滚和跨 SQLite / PostgreSQL 验证。
+- 方案确认前不修改 OpenIddict 建库方式，不执行结构写迁移，不把隔离新库测试冒充生产相似快照升级。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
-- Q2-A 只收口时间语义、历史数据迁移边界和分批实施顺序；不提前混入 Q2-B、Q2-C、Q3、页面调整或无关重构。
+- Q2-B 只收口数据库版本账本、生产相似升级和 OpenIddict 显式迁移；不提前混入 Q2-C、Q3、页面调整或无关重构。
 - 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
 - 候选级运行态 smoke 仍只在用户当轮确认服务已启动后执行。
 
 ## 下一顺位
 
-1. 盘点并迁移 `UserExpDailyStats`、签到 / 连续登录等剩余自然日链路，明确 `DateOnly` 与数据库 `date` 契约。
-2. 在生产相似 PostgreSQL 快照执行时间列类型与历史分布只读审计，形成是否需要可写迁移的明确结论。
-3. Q2-A 剩余自然日与历史数据结论收口后，再进入 Q2-B PostgreSQL / OpenIddict 升级方案。
+1. 只读审计 DbMigrate 当前结构演进方式、OpenIddict `EnsureCreated` 归属、已有数据库基线和部署备份 / 回滚入口。
+2. 提交 Q2-B schema ledger 与生产相似升级方案，明确首个版本、自然日改列、OpenIddict 迁移和验证矩阵，确认后再进入代码。
+3. Q2-B 发布必要子集完成后，再进入 Q2-C 版本单一真值。
 
 ## 并行维护线
 
@@ -95,7 +96,7 @@ Radish V1 的产品定位固定为：
 ## 当前不做
 
 - 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- 不提前进入 Q2-B / Q2-C，不混入 Q3、页面调整或无关重构；不猜测平移模糊 SQLite 历史时刻。
+- Q2-B 方案确认前不执行结构写迁移；不提前进入 Q2-C，不混入 Q3、页面调整或无关重构；不猜测平移模糊 SQLite 历史时刻。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不恢复 WebOS、Tauri 或完整 Flutter 套件为当前主线。

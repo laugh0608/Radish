@@ -28,6 +28,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using Radish.Common.HttpContextTool;
+using Radish.Common.TimeTool;
 using Radish.Auth.Models;
 
 // -------------- 容器构建阶段 ---------------
@@ -106,6 +107,9 @@ builder.Host.AddSerilogSetup();
 #endregion
 
 #region 服务注册
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<BusinessCalendar>();
 
 // AutoMapper
 builder.Services.AddAutoMapperSetup(builder.Configuration);

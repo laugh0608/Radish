@@ -27,7 +27,7 @@ public sealed class TimeSemanticsAuditTest
 
         try
         {
-            db.CodeFirst.InitTables<ExpTransaction, UserExpDailyStats, CommentHighlight>();
+            db.CodeFirst.InitTables<ExpTransaction, UserExpDailyStats, CommentHighlight, UserExperienceGovernanceAction>();
             var businessDateStartUtc = new DateTime(2026, 7, 11, 16, 0, 0, DateTimeKind.Utc);
             db.Insertable(new ExpTransaction
             {
@@ -63,6 +63,15 @@ public sealed class TimeSemanticsAuditTest
                 AuthorName = "tester",
                 CreateTime = businessDateStartUtc
             }).ExecuteCommand();
+            db.Insertable(new UserExperienceGovernanceAction
+            {
+                Id = 5,
+                TargetUserId = 1,
+                ActionType = 1,
+                Remark = "review",
+                StatDate = new DateTime(2026, 7, 12, 0, 0, 0, DateTimeKind.Utc),
+                CreateTime = businessDateStartUtc
+            }).ExecuteCommand();
             var timeProvider = new FixedTimeProvider(new DateTimeOffset(businessDateStartUtc));
             var calendar = new BusinessCalendar(
                 timeProvider,
@@ -75,7 +84,11 @@ public sealed class TimeSemanticsAuditTest
             Assert.Contains("2", result.Warnings[0], StringComparison.Ordinal);
             Assert.Contains(result.Summaries, summary =>
                 summary.Contains("UserExpDailyStats.StatDate", StringComparison.Ordinal) &&
+                summary.Contains("类型 datetime", StringComparison.Ordinal) &&
                 summary.Contains("异常 0 行", StringComparison.Ordinal));
+            Assert.Contains(result.Summaries, summary =>
+                summary.Contains("UserExperienceGovernanceAction.StatDate", StringComparison.Ordinal) &&
+                summary.Contains("datetime 自然日兼容态", StringComparison.Ordinal));
         }
         finally
         {

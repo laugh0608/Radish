@@ -1,6 +1,6 @@
 # P3-12-F Q2-A 时间语义与历史数据迁移方案
 
-> 状态：`发布必要子集已实现并通过本地回归；Q2-A 后续自然日 / schema 批次待继续`
+> 状态：`Release Go 高风险时间语义已收口；物理 date 改列移交 Q2-B schema ledger`
 >
 > 日期：`2026-07-12`（Asia/Shanghai）
 >
@@ -19,21 +19,23 @@
 - 契约基础：新增 `BusinessCalendar`，API 与 DbMigrate 共用 `appsettings.Shared.json` 的 `Time.DefaultTimeZoneId`；覆盖上海业务午夜、纽约 DST 23 / 25 小时自然日和跳过午夜的时区边界。
 - 绝对时刻高风险链路：文件访问 token、操作幂等、支付口令、投票 / 抽奖、订单 / 权益、文件清理均改为注入 `TimeProvider` 获取 UTC，不再依赖进程本地时间。
 - 业务自然日高风险链路：上传日限额、每日萝卜币奖励、商城日统计、评论高亮目标日与回收站日期目录统一使用 `BusinessCalendar`。
+- 经验 / 登录自然日：`ExperienceService` 全部 partial 统一注入 UTC 时钟；每日登录 / 连续登录上限、经验流水日期、统计窗口和管理员调整按系统业务日计算，API 的统计日、峰值日、规则命中日与治理命中日改用 `DateOnly / yyyy-MM-dd`。
 - API 输入：Console 的绝对截止时间改发带 offset 的 ISO 8601；全局 converter 拒绝无 offset 的日期时间，同时暂时保留 `yyyy-MM-dd` 自然日兼容入口。
-- 历史审计：DbMigrate `doctor / verify` 分页只读检查 `ExpTransaction.CreatedDate`、`UserExpDailyStats.StatDate` 与 `CommentHighlight.StatDate`，异常只报告并阻断严格验证，不自动平移。
-- 增量门禁：`validate:baseline:quick` 已接入时间语义扫描；当前 baseline 为 `117` 个文件、`329` 处本地时间存量，禁止文件级计数继续增长。
+- 历史审计：DbMigrate `doctor / verify` 分页只读检查 `ExpTransaction.CreatedDate`、`UserExpDailyStats.StatDate`、`CommentHighlight.StatDate` 与治理 `StatDate`，同时输出实际列类型和 `datetime` 兼容态 / `date` 目标态；异常只报告并阻断严格验证，不自动平移。
+- 增量门禁：`validate:baseline:quick` 已接入时间语义扫描；baseline 已由 `117` 个文件、`329` 处下降到 `111` 个文件、`306` 处，禁止文件级计数继续增长。
 
 ### 本批验证
 
-- `dotnet test Radish.Api.Tests --no-restore --maxcpucount:1 --nodeReuse:false`：`608` 通过，`2` 个需外部 PostgreSQL 的集成测试按环境条件跳过。
+- `dotnet test Radish.Api.Tests --no-restore --maxcpucount:1 --nodeReuse:false`：`609` 通过，`3` 个需外部 PostgreSQL 的集成测试按默认环境条件跳过。
+- 隔离 PostgreSQL 17：新增时间语义集成测试 `1/1` 通过；确认两处经验自然日列当前生成 `timestamp without time zone`，`CommentHighlight.StatDate` 生成 `date`，审计无异常，测试 schema 与临时容器均已清理。
 - `npm run validate:baseline:quick`：通过，包含四个前端 workspace 类型检查、`319` 个 Client 测试及时间语义 / 权限 / 身份 / 敏感信息门禁。
-- `Radish.DbMigrate verify`：当前 SQLite 中 `ExpTransaction` 与 `UserExpDailyStats` 各 `5` 行、`CommentHighlight` `0` 行，时间语义异常均为 `0`。
+- `Radish.DbMigrate verify`：当前 SQLite 中两处经验自然日列为 `datetime` 且各 `5` 行，`CommentHighlight.StatDate` 为 `date`，治理日期为 `datetime`；时间语义异常均为 `0`。
 - `npm run check:repo-hygiene:changed` 与 `git diff --check`：通过；三份既有 guide 文档仍有篇幅提醒，本批未展开无关拆分。
 
-### 尚未完成
+### 移交 Q2-B / 持续治理
 
-- `UserExpDailyStats`、签到 / 连续登录及其余经验自然日链路仍需按 `DateOnly + BusinessCalendar` 继续收口。
-- 自然日数据库字段迁移为 `date`、绝对时刻列类型核对与 PostgreSQL 生产相似快照审计尚未执行。
+- `ExpTransaction.CreatedDate`、`UserExpDailyStats.StatDate` 与治理 `StatDate` 的物理 `date` 改列需要跨 SQLite / PostgreSQL 转换索引列，并要求备份、幂等、前滚和版本留痕；该写迁移作为 Q2-B 首批 schema ledger 候选，不在 Q2-A 绕过迁移框架执行。
+- 隔离 PostgreSQL 已确认新建 schema 类型；带历史数据的生产相似快照升级演练属于 Q2-B，届时复用本专题的对齐审计作为迁移前置与 verify 门禁。
 - 模糊 SQLite 历史绝对时刻仍保持“只报告、不猜测”；只有部署者提供 legacy 时区或明确 `assume-utc` 后才能设计可写迁移。
 
 ## 一、统一契约
@@ -100,7 +102,7 @@
 
 1. 每日萝卜币、经验、签到、日统计和 Hangfire 日任务改用 `BusinessCalendar`。
 2. 幂等业务 key 中的日期使用 `DateOnly` 的稳定 `yyyyMMdd` 表达。
-3. 将需要长期保留的自然日字段迁移为数据库 `date`；API 使用 `DateOnly` / `yyyy-MM-dd`。
+3. API 使用 `DateOnly` / `yyyy-MM-dd`；需要长期保留的自然日字段以数据库 `date` 为目标，物理改列通过 Q2-B schema ledger 执行。
 4. 用户展示时区不参与每日限额和奖励归属。
 
 ### Q2-A4 历史数据与门禁
@@ -134,5 +136,5 @@
 - Release Go 高风险链路不再直接读取进程本地时间，且可由固定时钟测试。
 - 每日奖励、经验统计和 Hangfire 业务日使用同一配置时区，不受容器 OS 时区影响。
 - 新增业务代码无法重新引入本地时间散点。
-- 历史数据迁移具有备份、识别、显式决策、重入和严格验证口径；模糊数据不会被猜测改写。
+- 历史数据具有只读识别、显式决策和严格验证口径；需要写入的结构 / 数据补丁进入 Q2-B schema ledger，模糊数据不会被猜测改写。
 - PostgreSQL 与 SQLite 定向测试通过，文档口径与实现保持一致。

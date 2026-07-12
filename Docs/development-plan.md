@@ -39,10 +39,10 @@ Radish V1 固定为：
 
 ## 当前开发精力
 
-- `40%`：Q1-C 目标库门禁与 Q2-A 高风险时间语义审计、迁移方案和实施。
-- `30%`：Q2-B PostgreSQL / OpenIddict 生产相似升级、schema ledger、备份与前滚说明。
-- `15%`：Q2-C 版本单一真值与 tag / 镜像 / 发布记录一致性校验。
-- `10%`：Q3 候选基线、Gateway smoke、交付与回滚材料。
+- `45%`：Q2-B PostgreSQL / OpenIddict 生产相似升级、schema ledger、备份与前滚说明。
+- `20%`：Q2-C 版本单一真值与 tag / 镜像 / 发布记录一致性校验。
+- `20%`：Q3 候选基线、Gateway smoke、交付与回滚材料。
+- `10%`：Q2-A / Q4 时间存量、strict、仓库卫生和触达范围治理。
 - `5%`：公开 head、WebOS 阻断级兼容和 Flutter 已落地主路径维护。
 
 ## 已确认的多端方向
@@ -93,12 +93,11 @@ Radish V1 固定为：
 
 ## 下一顺位
 
-1. Q1-A 与 Q1-B 已完成，Q1-C 运行时代码已提交。
-2. 备份 Main 数据库后完成 Q1-C `DbMigrate apply / verify`，并在 PostgreSQL 环境补跑双 Worker 并发用例。
-3. 进入 Q2-A，先形成时间语义、历史数据和高风险业务迁移方案，确认后成组实施。
-4. 推进 Q2-B 生产相似 PostgreSQL / OpenIddict 升级与 Q2-C 版本单一真值。
-5. 完成 Q3 候选基线、Gateway smoke、交付 / 回滚材料和小规模受控试用。
-6. 根据真实使用证据判断第三阶段是否收束，不用继续内部 UI 扫描替代用户反馈。
+1. Q1-A、Q1-B、Q1-C 与 Q2-A 高风险时间语义已完成。
+2. 先形成 Q2-B schema ledger、OpenIddict 显式迁移归属与首个生产基线方案，确认后执行生产相似升级演练。
+3. 推进 Q2-C 版本单一真值。
+4. 完成 Q3 候选基线、Gateway smoke、交付 / 回滚材料和小规模受控试用。
+5. 根据真实使用证据判断第三阶段是否收束，不用继续内部 UI 扫描替代用户反馈。
 
 ## P3-12-F 门禁分层
 

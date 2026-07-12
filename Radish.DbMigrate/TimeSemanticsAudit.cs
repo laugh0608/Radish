@@ -41,6 +41,14 @@ public static class TimeSemanticsAudit
             entity => entity.StatDate,
             summaries,
             warnings);
+        InspectDatabaseDateColumn<UserExperienceGovernanceAction>(
+            db,
+            nameof(UserExperienceGovernanceAction.StatDate),
+            entity => entity.Id,
+            entity => entity.Id,
+            entity => entity.StatDate,
+            summaries,
+            warnings);
 
         return new TimeSemanticsAuditResult(summaries, warnings);
     }
@@ -62,6 +70,8 @@ public static class TimeSemanticsAudit
             return;
         }
 
+        var dataType = GetColumnDataType<TEntity>(db, columnName);
+        var usesDatabaseDate = IsDatabaseDateType(dataType);
         var totalCount = db.Queryable<TEntity>().Count();
         var invalidCount = 0;
         var invalidIds = new List<long>(WarningSampleLimit);
@@ -72,7 +82,11 @@ public static class TimeSemanticsAudit
                 .ToPageList(pageIndex, AuditPageSize);
             foreach (var entity in entities)
             {
-                if (IsBusinessDateStart(valueSelector(entity), businessCalendar))
+                var value = valueSelector(entity);
+                var isValid = usesDatabaseDate
+                    ? value.TimeOfDay == TimeSpan.Zero
+                    : IsBusinessDateStart(value, businessCalendar);
+                if (isValid)
                 {
                     continue;
                 }
@@ -90,12 +104,16 @@ public static class TimeSemanticsAudit
             }
         }
 
-        summaries.Add($"{tableName}.{columnName}: {totalCount} 行，业务日 UTC 起点异常 {invalidCount} 行");
+        var storageContract = usesDatabaseDate ? "date 自然日" : "datetime 业务日 UTC 起点（待迁移 date）";
+        summaries.Add(
+            $"{tableName}.{columnName}: 类型 {dataType}，语义 {storageContract}，{totalCount} 行，异常 {invalidCount} 行");
 
         if (invalidCount > 0)
         {
             warnings.Add(
-                $"{tableName}.{columnName} 存在非业务日 UTC 起点值，记录 ID 样本: {string.Join(", ", invalidIds)}；禁止自动平移，请先确认 legacy 时区。");
+                usesDatabaseDate
+                    ? $"{tableName}.{columnName} 作为数据库 date 字段仍含时间分量，记录 ID 样本: {string.Join(", ", invalidIds)}。"
+                    : $"{tableName}.{columnName} 存在非业务日 UTC 起点值，记录 ID 样本: {string.Join(", ", invalidIds)}；禁止自动平移，请先确认 legacy 时区。");
         }
     }
 
@@ -104,7 +122,7 @@ public static class TimeSemanticsAudit
         string columnName,
         Expression<Func<TEntity, object>> orderById,
         Func<TEntity, long> idSelector,
-        Func<TEntity, DateTime> valueSelector,
+        Func<TEntity, DateTime?> valueSelector,
         List<string> summaries,
         List<string> warnings)
         where TEntity : class, new()
@@ -115,6 +133,7 @@ public static class TimeSemanticsAudit
             return;
         }
 
+        var dataType = GetColumnDataType<TEntity>(db, columnName);
         var totalCount = db.Queryable<TEntity>().Count();
         var invalidCount = 0;
         var invalidIds = new List<long>(WarningSampleLimit);
@@ -125,7 +144,8 @@ public static class TimeSemanticsAudit
                 .ToPageList(pageIndex, AuditPageSize);
             foreach (var entity in entities)
             {
-                if (valueSelector(entity).TimeOfDay == TimeSpan.Zero)
+                var value = valueSelector(entity);
+                if (!value.HasValue || value.Value.TimeOfDay == TimeSpan.Zero)
                 {
                     continue;
                 }
@@ -143,7 +163,9 @@ public static class TimeSemanticsAudit
             }
         }
 
-        summaries.Add($"{tableName}.{columnName}: {totalCount} 行，date 非午夜异常 {invalidCount} 行");
+        var storageContract = IsDatabaseDateType(dataType) ? "date 自然日" : "datetime 自然日兼容态（待迁移 date）";
+        summaries.Add(
+            $"{tableName}.{columnName}: 类型 {dataType}，语义 {storageContract}，{totalCount} 行，非午夜异常 {invalidCount} 行");
 
         if (invalidCount > 0)
         {
@@ -163,6 +185,21 @@ public static class TimeSemanticsAudit
         var businessDate = businessCalendar.GetDate(new DateTimeOffset(utcValue));
         var (startUtc, _) = businessCalendar.GetUtcRange(businessDate);
         return utcValue == startUtc;
+    }
+
+    private static string GetColumnDataType<TEntity>(ISqlSugarClient db, string columnName)
+        where TEntity : class, new()
+    {
+        var tableName = db.EntityMaintenance.GetEntityInfo<TEntity>().DbTableName;
+        var column = db.DbMaintenance
+            .GetColumnInfosByTableName(tableName, false)
+            .FirstOrDefault(item => string.Equals(item.DbColumnName, columnName, StringComparison.OrdinalIgnoreCase));
+        return string.IsNullOrWhiteSpace(column?.DataType) ? "unknown" : column.DataType.Trim().ToLowerInvariant();
+    }
+
+    private static bool IsDatabaseDateType(string dataType)
+    {
+        return string.Equals(dataType, "date", StringComparison.OrdinalIgnoreCase);
     }
 }
 

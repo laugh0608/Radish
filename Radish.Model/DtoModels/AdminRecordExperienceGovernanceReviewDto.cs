@@ -27,7 +27,7 @@ public class AdminRecordExperienceGovernanceReviewDto
     public int? WindowDays { get; set; }
 
     /// <summary>关联命中日期</summary>
-    public DateTime? StatDate { get; set; }
+    public DateOnly? StatDate { get; set; }
 
     /// <summary>关联规则代码</summary>
     public List<string>? RuleCodes { get; set; }
