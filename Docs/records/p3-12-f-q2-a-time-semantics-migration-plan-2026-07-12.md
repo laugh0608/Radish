@@ -1,6 +1,6 @@
 # P3-12-F Q2-A 时间语义与历史数据迁移方案
 
-> 状态：`Release Go 高风险时间语义已收口；物理 date 改列移交 Q2-B schema ledger`
+> 状态：`Release Go 高风险时间语义已收口；物理 date 改列已由 Q2-B 有序迁移完成`
 >
 > 日期：`2026-07-12`（Asia/Shanghai）
 >
@@ -34,7 +34,7 @@
 
 ### 移交 Q2-B / 持续治理
 
-- `ExpTransaction.CreatedDate`、`UserExpDailyStats.StatDate` 与治理 `StatDate` 的物理 `date` 改列需要跨 SQLite / PostgreSQL 转换索引列，并要求备份、幂等、前滚和版本留痕；该写迁移作为 Q2-B 首批 schema ledger 候选，不在 Q2-A 绕过迁移框架执行。
+- `ExpTransaction.CreatedDate`、`UserExpDailyStats.StatDate` 与治理 `StatDate` 的物理 `date` 改列已由 Q2-B `20260712_001_experience_natural_dates` 承接，具备 SQLite / PostgreSQL 前滚、异常拒绝、幂等和 ledger 留痕；备份 / 恢复演练仍归 Q2-B 收口。
 - 隔离 PostgreSQL 已确认新建 schema 类型；带历史数据的生产相似快照升级演练属于 Q2-B，届时复用本专题的对齐审计作为迁移前置与 verify 门禁。
 - 模糊 SQLite 历史绝对时刻仍保持“只报告、不猜测”；只有部署者提供 legacy 时区或明确 `assume-utc` 后才能设计可写迁移。
 

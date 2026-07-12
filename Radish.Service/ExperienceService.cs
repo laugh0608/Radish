@@ -1095,18 +1095,12 @@ namespace Radish.Service;
 
     private DateTime GetBusinessDateStorageValue(DateOnly businessDate)
     {
-        return _businessCalendar.GetUtcRange(businessDate).StartUtc;
+        return businessDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
     }
 
     private DateOnly GetStoredBusinessDate(DateTime storageValue)
     {
-        var utcValue = storageValue.Kind switch
-        {
-            DateTimeKind.Utc => storageValue,
-            DateTimeKind.Local => storageValue.ToUniversalTime(),
-            _ => DateTime.SpecifyKind(storageValue, DateTimeKind.Utc)
-        };
-        return _businessCalendar.GetDate(new DateTimeOffset(utcValue));
+        return DateOnly.FromDateTime(storageValue);
     }
 
     private sealed class ExperienceDailyLimitSettings

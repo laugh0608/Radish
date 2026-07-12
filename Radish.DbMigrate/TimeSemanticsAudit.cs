@@ -72,6 +72,20 @@ public static class TimeSemanticsAudit
 
         var dataType = GetColumnDataType<TEntity>(db, columnName);
         var usesDatabaseDate = IsDatabaseDateType(dataType);
+        if (db.CurrentConnectionConfig.DbType == DbType.PostgreSQL &&
+            IsPostgreSqlTimestampWithTimeZone(dataType))
+        {
+            InspectPostgreSqlTimestampColumn(
+                db,
+                businessCalendar,
+                tableName,
+                columnName,
+                usesBusinessTimeZone: true,
+                summaries,
+                warnings);
+            return;
+        }
+
         var totalCount = db.Queryable<TEntity>().Count();
         var invalidCount = 0;
         var invalidIds = new List<long>(WarningSampleLimit);
@@ -134,6 +148,20 @@ public static class TimeSemanticsAudit
         }
 
         var dataType = GetColumnDataType<TEntity>(db, columnName);
+        if (db.CurrentConnectionConfig.DbType == DbType.PostgreSQL &&
+            IsPostgreSqlTimestampWithTimeZone(dataType))
+        {
+            InspectPostgreSqlTimestampColumn(
+                db,
+                null,
+                tableName,
+                columnName,
+                usesBusinessTimeZone: false,
+                summaries,
+                warnings);
+            return;
+        }
+
         var totalCount = db.Queryable<TEntity>().Count();
         var invalidCount = 0;
         var invalidIds = new List<long>(WarningSampleLimit);
@@ -200,6 +228,80 @@ public static class TimeSemanticsAudit
     private static bool IsDatabaseDateType(string dataType)
     {
         return string.Equals(dataType, "date", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsPostgreSqlTimestampWithTimeZone(string dataType)
+    {
+        return string.Equals(dataType, "timestamp with time zone", StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(dataType, "timestamptz", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void InspectPostgreSqlTimestampColumn(
+        ISqlSugarClient db,
+        BusinessCalendar? businessCalendar,
+        string tableName,
+        string columnName,
+        bool usesBusinessTimeZone,
+        List<string> summaries,
+        List<string> warnings)
+    {
+        var timeZoneId = usesBusinessTimeZone
+            ? ResolvePostgreSqlTimeZoneId(businessCalendar!.TimeZone)
+            : "UTC";
+        var totalCount = Convert.ToInt32(db.Ado.GetScalar(
+            $"SELECT COUNT(*) FROM {QuoteIdentifier(tableName)}"));
+        var invalidPredicate =
+            $"{QuoteIdentifier(columnName)} IS NOT NULL AND " +
+            $"timezone({QuoteLiteral(timeZoneId)}, {QuoteIdentifier(columnName)})::time <> TIME '00:00:00'";
+        var invalidCount = Convert.ToInt32(db.Ado.GetScalar(
+            $"SELECT COUNT(*) FROM {QuoteIdentifier(tableName)} WHERE {invalidPredicate}"));
+        var invalidRows = db.Ado.GetDataTable(
+            $"""
+            SELECT {QuoteIdentifier("Id")}
+            FROM {QuoteIdentifier(tableName)}
+            WHERE {invalidPredicate}
+            ORDER BY {QuoteIdentifier("Id")}
+            LIMIT {WarningSampleLimit}
+            """);
+        var invalidIds = invalidRows.Rows.Cast<System.Data.DataRow>()
+            .Select(row => Convert.ToInt64(row[0]))
+            .ToList();
+
+        var semantic = usesBusinessTimeZone
+            ? "timestamp 业务日 UTC 起点（待迁移 date）"
+            : "timestamp 自然日 UTC 午夜（待迁移 date）";
+        summaries.Add(
+            $"{tableName}.{columnName}: 类型 timestamp with time zone，语义 {semantic}，" +
+            $"{totalCount} 行，异常 {invalidCount} 行");
+        if (invalidCount > 0)
+        {
+            warnings.Add(
+                $"{tableName}.{columnName} 存在不符合" +
+                $"{(usesBusinessTimeZone ? "业务时区午夜" : "UTC 自然日午夜")}" +
+                $"的记录，ID 样本: {string.Join(", ", invalidIds)}。");
+        }
+    }
+
+    private static string ResolvePostgreSqlTimeZoneId(TimeZoneInfo timeZone)
+    {
+        if (string.Equals(timeZone.Id, "UTC", StringComparison.OrdinalIgnoreCase))
+        {
+            return "UTC";
+        }
+
+        return TimeZoneInfo.TryConvertWindowsIdToIanaId(timeZone.Id, out var ianaId)
+            ? ianaId
+            : timeZone.Id;
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    private static string QuoteLiteral(string value)
+    {
+        return $"'{value.Replace("'", "''", StringComparison.Ordinal)}'";
     }
 }
 

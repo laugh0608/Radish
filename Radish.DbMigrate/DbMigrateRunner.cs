@@ -174,6 +174,7 @@ internal static class DbMigrateRunner
         SchemaMigrationLedger.EnsureBaseline(
             dbScope,
             services.GetRequiredService<TimeProvider>());
+        SchemaMigrationLedger.ApplyPending(dbScope, services);
     }
 
     private static async Task ApplyOpenIddictMigrationsAsync(

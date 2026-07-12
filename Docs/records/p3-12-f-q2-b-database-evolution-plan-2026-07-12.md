@@ -1,6 +1,6 @@
 # P3-12-F Q2-B 数据库演进与 schema ledger 方案
 
-> 状态：`方案已批准；ledger / OpenIddict 首批实现已完成定向验证`
+> 状态：`ledger / OpenIddict 与首个业务迁移已完成；待并发锁和生产相似演练`
 >
 > 日期：`2026-07-12`（Asia/Shanghai）
 >
@@ -20,7 +20,10 @@ Q2-B 建立两个互补真相源：SqlSugar 业务库使用 Radish 自有 schema
 - `apply` 已调整为“前置 doctor 错误门禁 → 业务 schema / ledger → OpenIddict migrations → seed → 严格 verify”；`doctor / verify` 会只读报告 OpenIddict applied / pending。
 - 新增 `Radish.Auth.Persistence`、`Radish.Auth.Migrations.Sqlite` 与 `Radish.Auth.Migrations.PostgreSql`，Auth 移除 `EnsureCreated()` 并在启动时只读 fail-fast。
 - SQLite / PostgreSQL 17 已覆盖空库迁移、provider 列类型、重入，以及旧 `EnsureCreated` 完整 schema adoption；缺索引 adoption 会被拒绝。
-- 待完成：EF Design 10.0.0 传递依赖的安全版本钉住、`20260712_001_experience_natural_dates`、并发 apply 锁与生产相似备份 / 恢复演练。
+- EF Design 10.0.0 的 `System.Security.Cryptography.Xml` 传递依赖已钉住安全版本 `10.0.6`，依赖审计 High / Critical 为 `0`。
+- `20260712_001_experience_natural_dates` 已实现：SQLite 通过受控重建保留索引，PostgreSQL 对 `timestamp with/without time zone` 分别按业务时区 / UTC 自然日转换；三列物理类型、异常拒绝、重入和 ledger 记账均有测试。
+- 全量后端 `615` 通过、`6` 个环境测试按约定跳过；隔离 PostgreSQL 17 的 date 新库契约、旧 timestamp 前滚与 timestamptz 数据库侧审计用例另行实跑 `3/3` 通过。
+- 待完成：并发 apply 锁与生产相似备份 / 恢复演练。
 
 ## 一、版本账本
 

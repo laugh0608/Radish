@@ -971,7 +971,7 @@ public class ExperienceServiceTest
         capturedTransaction.ExpAfter.ShouldBe(0);
         capturedTransaction.LevelBefore.ShouldBe(1);
         capturedTransaction.LevelAfter.ShouldBe(0);
-        capturedTransaction.CreatedDate.ShouldBe(new DateTime(2026, 5, 9, 16, 0, 0, DateTimeKind.Utc));
+        capturedTransaction.CreatedDate.ShouldBe(new DateTime(2026, 5, 10));
         capturedTransaction.CreateTime.ShouldBe(nowUtc.UtcDateTime);
         capturedTransaction.CreateBy.ShouldBe("Auditor");
         capturedTransaction.CreateId.ShouldBe(9001);
@@ -1149,7 +1149,7 @@ public class ExperienceServiceTest
 
     private static DateTime ToBusinessDateStorage(DateOnly date)
     {
-        return date.ToDateTime(new TimeOnly(16, 0), DateTimeKind.Utc).AddDays(-1);
+        return date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider

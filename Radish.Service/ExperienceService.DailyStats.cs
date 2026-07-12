@@ -22,7 +22,7 @@ public partial class ExperienceService
             var endDate = _businessCalendar.GetCurrentDate();
             var startDate = endDate.AddDays(-normalizedDays + 1);
             var startStorageValue = GetBusinessDateStorageValue(startDate);
-            var endStorageValueExclusive = _businessCalendar.GetUtcRange(endDate).EndUtc;
+            var endStorageValueExclusive = GetBusinessDateStorageValue(endDate.AddDays(1));
             var dailyLimits = GetDailyLimitOptions();
 
             var stats = await _dailyStatsRepository.QueryAsync(

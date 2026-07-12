@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.DependencyInjection;
 using Radish.Common.TimeTool;
 using SqlSugar;
 
@@ -46,7 +47,7 @@ internal static class SchemaMigrationLedger
     private const string BaselineChecksumSource =
         "20260712_000_baseline|Main,Log,Message,Chat|Q2-A-time-semantics-complete|schema-ledger-v1";
 
-    private static readonly string BaselineChecksum = ComputeChecksum(BaselineChecksumSource);
+    internal static readonly string BaselineChecksum = ComputeChecksum(BaselineChecksumSource);
 
     public static IReadOnlyList<SchemaMigrationStatus> Inspect(
         SqlSugarScope dbScope,
@@ -56,41 +57,48 @@ internal static class SchemaMigrationLedger
         foreach (var scope in ResolveScopes(scopes))
         {
             var db = dbScope.GetConnectionScope(scope);
+            var knownMigrations = GetKnownMigrations(scope);
             if (!db.DbMaintenance.IsAnyTable("RadishSchemaVersion", false))
             {
-                statuses.Add(new SchemaMigrationStatus(
+                statuses.AddRange(knownMigrations.Select(migration => new SchemaMigrationStatus(
                     scope,
-                    BaselineMigrationId,
+                    migration.MigrationId,
                     false,
                     false,
                     true,
-                    "缺少 schema ledger，需由 init/apply 受控接管"));
+                    migration.MigrationId == BaselineMigrationId
+                        ? "缺少 schema ledger，需由 init/apply 受控接管"
+                        : "pending")));
                 continue;
             }
 
-            var record = db.Queryable<SchemaMigrationRecord>()
-                .Where(item => item.MigrationId == BaselineMigrationId)
-                .First();
-            if (record == null)
+            var records = db.Queryable<SchemaMigrationRecord>()
+                .ToList()
+                .ToDictionary(record => record.MigrationId, StringComparer.Ordinal);
+            foreach (var migration in knownMigrations)
             {
+                records.TryGetValue(migration.MigrationId, out var record);
+                if (record == null)
+                {
+                    statuses.Add(new SchemaMigrationStatus(
+                        scope,
+                        migration.MigrationId,
+                        true,
+                        false,
+                        true,
+                        migration.MigrationId == BaselineMigrationId ? "baseline pending" : "pending"));
+                    continue;
+                }
+
+                var checksumMatches = string.Equals(record.Checksum, migration.Checksum, StringComparison.Ordinal);
                 statuses.Add(new SchemaMigrationStatus(
                     scope,
-                    BaselineMigrationId,
+                    migration.MigrationId,
                     true,
-                    false,
                     true,
-                    "baseline pending"));
-                continue;
+                    checksumMatches,
+                    checksumMatches ? "已应用" : "checksum drift"));
             }
-
-            var checksumMatches = string.Equals(record.Checksum, BaselineChecksum, StringComparison.Ordinal);
-            statuses.Add(new SchemaMigrationStatus(
-                scope,
-                BaselineMigrationId,
-                true,
-                true,
-                checksumMatches,
-                checksumMatches ? "已应用" : "checksum drift"));
         }
 
         return statuses;
@@ -135,6 +143,101 @@ internal static class SchemaMigrationLedger
         }
     }
 
+    public static void ApplyPending(
+        SqlSugarScope dbScope,
+        IServiceProvider services,
+        IReadOnlyCollection<string>? scopes = null)
+    {
+        var timeProvider = services.GetRequiredService<TimeProvider>();
+        foreach (var scope in ResolveScopes(scopes))
+        {
+            var db = dbScope.GetConnectionScope(scope);
+            if (!db.DbMaintenance.IsAnyTable("RadishSchemaVersion", false))
+            {
+                throw new InvalidOperationException($"{scope} 缺少 schema ledger，禁止应用后续 migration。");
+            }
+
+            EnsureRecordedChecksum(db, scope, BaselineMigrationId, BaselineChecksum);
+            foreach (var migration in SchemaMigrationRegistry.All
+                         .Where(item => string.Equals(item.Scope, scope, StringComparison.OrdinalIgnoreCase))
+                         .OrderBy(item => item.MigrationId, StringComparer.Ordinal))
+            {
+                var checksum = ComputeChecksum(migration.ChecksumSource);
+                var existing = db.Queryable<SchemaMigrationRecord>()
+                    .Where(record => record.MigrationId == migration.MigrationId)
+                    .First();
+                if (existing != null)
+                {
+                    if (!string.Equals(existing.Checksum, checksum, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"{scope}.{migration.MigrationId} checksum drift，禁止继续迁移。");
+                    }
+
+                    ThrowIfVerificationFailed(migration, db, services);
+                    continue;
+                }
+
+                var stopwatch = Stopwatch.StartNew();
+                db.Ado.BeginTran();
+                try
+                {
+                    migration.Apply(db, services);
+                    ThrowIfVerificationFailed(migration, db, services);
+                    db.Insertable(new SchemaMigrationRecord
+                    {
+                        MigrationId = migration.MigrationId,
+                        Scope = scope,
+                        Description = migration.Description,
+                        Checksum = checksum,
+                        AppliedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+                        DurationMs = stopwatch.ElapsedMilliseconds
+                    }).ExecuteCommand();
+                    db.Ado.CommitTran();
+                    Console.WriteLine($"[Radish.DbMigrate] Schema: {scope}.{migration.MigrationId} 已应用。");
+                }
+                catch
+                {
+                    db.Ado.RollbackTran();
+                    throw;
+                }
+            }
+        }
+    }
+
+    public static IReadOnlyList<string> VerifyApplied(
+        SqlSugarScope dbScope,
+        IServiceProvider services,
+        IReadOnlyCollection<string>? scopes = null)
+    {
+        var issues = new List<string>();
+        foreach (var scope in ResolveScopes(scopes))
+        {
+            var db = dbScope.GetConnectionScope(scope);
+            if (!db.DbMaintenance.IsAnyTable("RadishSchemaVersion", false))
+            {
+                continue;
+            }
+
+            foreach (var migration in SchemaMigrationRegistry.All
+                         .Where(item => string.Equals(item.Scope, scope, StringComparison.OrdinalIgnoreCase)))
+            {
+                var record = db.Queryable<SchemaMigrationRecord>()
+                    .Where(item => item.MigrationId == migration.MigrationId)
+                    .First();
+                if (record == null)
+                {
+                    continue;
+                }
+
+                issues.AddRange(migration.Verify(db, services)
+                    .Select(issue => $"{scope}.{migration.MigrationId}: {issue}"));
+            }
+        }
+
+        return issues;
+    }
+
     private static void EnsureCurrentSchemaCanBeAdopted(ISqlSugarClient db, string scope)
     {
         var missingObjects = new List<string>();
@@ -167,6 +270,51 @@ internal static class SchemaMigrationLedger
         }
     }
 
+    private static void EnsureRecordedChecksum(
+        ISqlSugarClient db,
+        string scope,
+        string migrationId,
+        string expectedChecksum)
+    {
+        var record = db.Queryable<SchemaMigrationRecord>()
+            .Where(item => item.MigrationId == migrationId)
+            .First();
+        if (record == null)
+        {
+            throw new InvalidOperationException($"{scope}.{migrationId} 尚未应用，禁止继续迁移。");
+        }
+
+        if (!string.Equals(record.Checksum, expectedChecksum, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"{scope}.{migrationId} checksum drift，禁止继续迁移。");
+        }
+    }
+
+    private static void ThrowIfVerificationFailed(
+        ISchemaMigration migration,
+        ISqlSugarClient db,
+        IServiceProvider services)
+    {
+        var issues = migration.Verify(db, services);
+        if (issues.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"{migration.MigrationId} 后置验证失败：{string.Join("；", issues)}");
+        }
+    }
+
+    private static IReadOnlyList<KnownMigration> GetKnownMigrations(string scope)
+    {
+        var migrations = new List<KnownMigration>
+        {
+            new(BaselineMigrationId, BaselineChecksum)
+        };
+        migrations.AddRange(SchemaMigrationRegistry.All
+            .Where(item => string.Equals(item.Scope, scope, StringComparison.OrdinalIgnoreCase))
+            .Select(item => new KnownMigration(item.MigrationId, ComputeChecksum(item.ChecksumSource))));
+        return migrations;
+    }
+
     private static string ComputeChecksum(string source)
     {
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source))).ToLowerInvariant();
@@ -186,4 +334,6 @@ internal static class SchemaMigrationLedger
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
+
+    private sealed record KnownMigration(string MigrationId, string Checksum);
 }

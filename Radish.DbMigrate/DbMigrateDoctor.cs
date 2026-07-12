@@ -199,6 +199,8 @@ internal static class DbMigrateDoctor
                         warnings.Add($"{status.Scope}.{status.MigrationId} pending；请执行 DbMigrate apply。");
                     }
                 }
+
+                errors.AddRange(SchemaMigrationLedger.VerifyApplied(dbScope, services));
             }
         }
         catch (Exception exception)

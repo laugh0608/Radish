@@ -7,6 +7,7 @@
 - SqlSugar 管辖的 Main / Log / Message / Chat 以“实体定义 + 有序 Radish migration + 每库 `RadishSchemaVersion` ledger”为结构真相源；已发布 migration ID 与 checksum 不得原地修改。
 - `init` 只面向空库创建当前结构并登记已包含版本；已有库统一通过 `apply` 前滚，不再把删除本地库作为默认治理办法。
 - `doctor` 与 `verify` 严格只读；前者报告配置、结构、ledger 与 pending，后者把 Warning / Error 作为非零退出门禁。`apply` 负责迁移、seed，并在末尾自动严格 verify。
+- 首个基线为 `20260712_000_baseline`；首个正式业务迁移为 `20260712_001_experience_natural_dates`，用于证明 SQLite / PostgreSQL 的结构与数据补丁可以共享同一 ledger 顺序。
 - OpenIddict 独立库由 `Radish.Auth.Persistence` 定义模型，SQLite / PostgreSQL 分别维护 provider-specific EF migrations；结构写入同样只由 `Radish.DbMigrate apply` 驱动。
 - Auth 启动不执行 `EnsureCreated()` 或 `Migrate()`；存在 pending migration 或数据库缺失时只读失败并提示先执行 DbMigrate。
 

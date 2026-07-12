@@ -13,7 +13,7 @@ namespace Radish.Api.Tests.Repositories;
 public sealed class TimeSemanticsAuditTest
 {
     [Fact]
-    public void Inspect_ShouldReportOnlyMisalignedLegacyBusinessDates()
+    public void Inspect_ShouldReportOnlyMisalignedNaturalDates()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-time-audit-{Guid.NewGuid():N}.db");
         var db = new SqlSugarScope(new ConnectionConfig
@@ -29,12 +29,13 @@ public sealed class TimeSemanticsAuditTest
         {
             db.CodeFirst.InitTables<ExpTransaction, UserExpDailyStats, CommentHighlight, UserExperienceGovernanceAction>();
             var businessDateStartUtc = new DateTime(2026, 7, 11, 16, 0, 0, DateTimeKind.Utc);
+            var naturalDate = new DateTime(2026, 7, 12);
             db.Insertable(new ExpTransaction
             {
                 Id = 1,
                 UserId = 1,
                 ExpType = "TEST",
-                CreatedDate = businessDateStartUtc,
+                CreatedDate = naturalDate,
                 CreateTime = businessDateStartUtc
             }).ExecuteCommand();
             db.Insertable(new ExpTransaction
@@ -42,14 +43,14 @@ public sealed class TimeSemanticsAuditTest
                 Id = 2,
                 UserId = 1,
                 ExpType = "TEST",
-                CreatedDate = businessDateStartUtc.AddHours(-1),
+                CreatedDate = naturalDate.AddHours(1),
                 CreateTime = businessDateStartUtc
             }).ExecuteCommand();
             db.Insertable(new UserExpDailyStats
             {
                 Id = 3,
                 UserId = 1,
-                StatDate = businessDateStartUtc,
+                StatDate = naturalDate,
                 CreateTime = businessDateStartUtc
             }).ExecuteCommand();
             db.Insertable(new CommentHighlight
@@ -84,11 +85,11 @@ public sealed class TimeSemanticsAuditTest
             Assert.Contains("2", result.Warnings[0], StringComparison.Ordinal);
             Assert.Contains(result.Summaries, summary =>
                 summary.Contains("UserExpDailyStats.StatDate", StringComparison.Ordinal) &&
-                summary.Contains("类型 datetime", StringComparison.Ordinal) &&
+                summary.Contains("类型 date", StringComparison.Ordinal) &&
                 summary.Contains("异常 0 行", StringComparison.Ordinal));
             Assert.Contains(result.Summaries, summary =>
                 summary.Contains("UserExperienceGovernanceAction.StatDate", StringComparison.Ordinal) &&
-                summary.Contains("datetime 自然日兼容态", StringComparison.Ordinal));
+                summary.Contains("date 自然日", StringComparison.Ordinal));
         }
         finally
         {
