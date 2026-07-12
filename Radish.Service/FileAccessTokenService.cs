@@ -41,7 +41,7 @@ public class FileAccessTokenService : IFileAccessTokenService
         await EnsureCanManageAttachmentAsync(dto.AttachmentId, userId, canManageAll);
 
         var rawToken = FileAccessTokenHashing.GenerateRawToken();
-        var now = _timeProvider.GetLocalNow().DateTime;
+        var now = GetUtcNow();
         var tokenEntity = new FileAccessToken
         {
             TokenHash = FileAccessTokenHashing.HashToken(rawToken),
@@ -77,7 +77,7 @@ public class FileAccessTokenService : IFileAccessTokenService
 
         var normalizedIp = NormalizeAuthorizedIp(ipAddress);
         var tokenHash = FileAccessTokenHashing.HashToken(rawToken);
-        var now = _timeProvider.GetLocalNow().DateTime;
+        var now = GetUtcNow();
         var consumedToken = await _tokenRepository.TryConsumeAsync(tokenHash, userId, normalizedIp, now);
         if (consumedToken == null)
         {
@@ -104,7 +104,7 @@ public class FileAccessTokenService : IFileAccessTokenService
             ?? throw NotFoundError();
         await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
 
-        var revoked = await _tokenRepository.TryRevokeByIdAsync(tokenId, _timeProvider.GetLocalNow().DateTime);
+        var revoked = await _tokenRepository.TryRevokeByIdAsync(tokenId, GetUtcNow());
         if (!revoked)
         {
             throw new BusinessException("令牌已撤销", 409, "FileToken.AlreadyRevoked", "error.file_token.already_revoked");
@@ -125,7 +125,7 @@ public class FileAccessTokenService : IFileAccessTokenService
             ?? throw NotFoundError();
         await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
 
-        var revoked = await _tokenRepository.TryRevokeByHashAsync(tokenHash, _timeProvider.GetLocalNow().DateTime);
+        var revoked = await _tokenRepository.TryRevokeByHashAsync(tokenHash, GetUtcNow());
         if (!revoked)
         {
             throw new BusinessException("令牌已撤销", 409, "FileToken.AlreadyRevoked", "error.file_token.already_revoked");
@@ -151,7 +151,7 @@ public class FileAccessTokenService : IFileAccessTokenService
         }
 
         await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
-        return MapSummaryVo(tokenEntity, _timeProvider.GetLocalNow().DateTime);
+        return MapSummaryVo(tokenEntity, GetUtcNow());
     }
 
     public async Task<List<FileAccessTokenSummaryVo>> GetAttachmentTokensAsync(
@@ -160,7 +160,7 @@ public class FileAccessTokenService : IFileAccessTokenService
         bool canManageAll)
     {
         await EnsureCanManageAttachmentAsync(attachmentId, userId, canManageAll);
-        var now = _timeProvider.GetLocalNow().DateTime;
+        var now = GetUtcNow();
         var tokens = await _tokenRepository.QueryAsync(token =>
             token.AttachmentId == attachmentId &&
             !token.IsRevoked &&
@@ -170,7 +170,7 @@ public class FileAccessTokenService : IFileAccessTokenService
 
     public async Task CleanupExpiredTokensAsync()
     {
-        var now = _timeProvider.GetLocalNow().DateTime;
+        var now = GetUtcNow();
         var expiredTokens = await _tokenRepository.QueryAsync(token =>
             token.ExpiresAt <= now &&
             !token.IsRevoked);
@@ -198,6 +198,11 @@ public class FileAccessTokenService : IFileAccessTokenService
         {
             throw ForbiddenError();
         }
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 
     private async Task EnsureCanManageAttachmentAsync(long attachmentId, long userId, bool canManageAll)

@@ -2,6 +2,7 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Common.TimeTool;
 using Serilog;
 
 namespace Radish.Service;
@@ -11,6 +12,7 @@ public class CoinRewardService : ICoinRewardService
 {
     private readonly ICoinService _coinService;
     private readonly IBaseRepository<CoinTransaction> _coinTransactionRepository;
+    private readonly BusinessCalendar _businessCalendar;
 
     // 奖励金额常量
     private const long LIKE_REWARD_AUTHOR = 2;      // 被点赞奖励 +2 胡萝卜
@@ -30,10 +32,12 @@ public class CoinRewardService : ICoinRewardService
 
     public CoinRewardService(
         ICoinService coinService,
-        IBaseRepository<CoinTransaction> coinTransactionRepository)
+        IBaseRepository<CoinTransaction> coinTransactionRepository,
+        BusinessCalendar businessCalendar)
     {
         _coinService = coinService;
         _coinTransactionRepository = coinTransactionRepository;
+        _businessCalendar = businessCalendar;
     }
 
     #region 点赞奖励
@@ -43,7 +47,7 @@ public class CoinRewardService : ICoinRewardService
     /// </summary>
     public Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId)
     {
-        return GrantLikeRewardAsync(postId, authorId, likerId, DateTime.Today);
+        return GrantLikeRewardAsync(postId, authorId, likerId, GetCurrentBusinessDate());
     }
 
     public async Task<CoinRewardResult> GrantLikeRewardAsync(long postId, long authorId, long likerId, DateTime rewardDate)
@@ -106,7 +110,7 @@ public class CoinRewardService : ICoinRewardService
     /// </summary>
     public Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId)
     {
-        return GrantCommentLikeRewardAsync(commentId, authorId, likerId, DateTime.Today);
+        return GrantCommentLikeRewardAsync(commentId, authorId, likerId, GetCurrentBusinessDate());
     }
 
     public async Task<CoinRewardResult> GrantCommentLikeRewardAsync(long commentId, long authorId, long likerId, DateTime rewardDate)
@@ -209,7 +213,7 @@ public class CoinRewardService : ICoinRewardService
         long parentAuthorId,
         long replyCommentId)
     {
-        return GrantCommentReplyRewardAsync(parentCommentId, parentAuthorId, replyCommentId, DateTime.Today);
+        return GrantCommentReplyRewardAsync(parentCommentId, parentAuthorId, replyCommentId, GetCurrentBusinessDate());
     }
 
     public async Task<CoinRewardResult> GrantCommentReplyRewardAsync(
@@ -436,15 +440,15 @@ public class CoinRewardService : ICoinRewardService
     /// </summary>
     public Task<bool> CheckDailyLikeRewardLimitAsync(long userId)
     {
-        return CheckDailyLikeRewardLimitAsync(userId, DateTime.Today);
+        return CheckDailyLikeRewardLimitAsync(userId, GetCurrentBusinessDate());
     }
 
     public async Task<bool> CheckDailyLikeRewardLimitAsync(long userId, DateTime rewardDate)
     {
         try
         {
-            var today = rewardDate.Date;
-            var tomorrow = today.AddDays(1);
+            var businessDate = DateOnly.FromDateTime(rewardDate);
+            var (startUtc, endUtc) = _businessCalendar.GetUtcRange(businessDate);
 
             // 统计今日点赞奖励总额（仅统计点赞者获得的奖励）
             var todayRewards = await _coinTransactionRepository.QuerySumAsync(
@@ -453,8 +457,8 @@ public class CoinRewardService : ICoinRewardService
                     && t.TransactionType == "LIKE_REWARD"
                     && (t.BusinessType == "POST_LIKE_ACTION" || t.BusinessType == "COMMENT_LIKE_ACTION")
                     && t.Status == "SUCCESS"
-                    && t.CreateTime >= today
-                    && t.CreateTime < tomorrow);
+                    && t.CreateTime >= startUtc
+                    && t.CreateTime < endUtc);
 
             var limitReached = todayRewards >= DAILY_LIKE_LIMIT;
 
@@ -537,5 +541,10 @@ public class CoinRewardService : ICoinRewardService
         return string.Equals(highlightType, "GodComment", StringComparison.OrdinalIgnoreCase)
             ? "god-comment"
             : "sofa";
+    }
+
+    private DateTime GetCurrentBusinessDate()
+    {
+        return _businessCalendar.GetCurrentDate().ToDateTime(TimeOnly.MinValue);
     }
 }

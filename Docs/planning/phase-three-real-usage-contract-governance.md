@@ -28,7 +28,7 @@
 
 `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`。`P3-7-C` 已完成近期开发任务重评估与首批热区治理：`WikiApp`、`ChatApp`、`ContentModerationService` 与 `ExperienceService` 均已完成首批行为等价拆分。继续硬拆 `ExperienceService` 经验发放主流程的收益下降、风险上升，因此 `P3-7-C3` 作为当前主线阶段收口。
 
-`P3-8` 至 `P3-11` 已完成多端补全、Web-first 信息架构、公开与私域主路径、管理员治理路径以及阶段性回归；当时的“暂缓 PR / 跳过发布”属于对应批次的历史约束，不再作为当前冻结门禁。[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 的 `Q0 + E8-B` 已完成并进入 `F`；Q1-A 与 Q1-B 已收口，Q1-C 待环境迁移门禁。随后按 `Q2-A 时间语义 → Q2-B 数据库演进 → Q2-C 版本真值 → Q3 候选验证` 推进，`Q4` 继续作为持续维护。
+`P3-8` 至 `P3-11` 已完成多端补全、Web-first 信息架构、公开与私域主路径、管理员治理路径以及阶段性回归；当时的“暂缓 PR / 跳过发布”属于对应批次的历史约束，不再作为当前冻结门禁。[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 的 `Q0 + E8-B` 已完成并进入 `F`；Q1-A、Q1-B 与 Q1-C 均已收口，当前进入 Q2-A 时间语义与历史数据迁移分批实施。随后按 `Q2-B 数据库演进 → Q2-C 版本真值 → Q3 候选验证` 推进，`Q4` 继续作为持续维护。
 
 ## `P3-0` 定义与工程整备
 

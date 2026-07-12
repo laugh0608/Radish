@@ -578,8 +578,8 @@ Authorization: Bearer {{Access_Token}}
 {
   "userId": 20000,
   "operationType": "Create",
-  "startTime": "2025-12-20T00:00:00",
-  "endTime": "2025-12-20T23:59:59",
+  "startTime": "2025-12-20T00:00:00Z",
+  "endTime": "2025-12-20T23:59:59Z",
   "pageIndex": 1,
   "pageSize": 20
 }

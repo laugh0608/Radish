@@ -20,17 +20,20 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     private readonly IBaseRepository<UserBenefit> _userBenefitRepository;
     private readonly IUserInventoryRepository _userInventoryRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly TimeProvider _timeProvider;
 
     public UserBenefitService(
         IMapper mapper,
         IBaseRepository<UserBenefit> userBenefitRepository,
         IUserInventoryRepository userInventoryRepository,
-        IAttachmentUrlResolver attachmentUrlResolver)
+        IAttachmentUrlResolver attachmentUrlResolver,
+        TimeProvider? timeProvider = null)
         : base(mapper, userBenefitRepository)
     {
         _userBenefitRepository = userBenefitRepository;
         _userInventoryRepository = userInventoryRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     #region 权益查询
@@ -188,10 +191,10 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             SourceProductId = product.Id,
             SourceType = "Purchase",
             DurationType = product.DurationType,
-            EffectiveAt = DateTime.Now,
+            EffectiveAt = GetUtcNow(),
             IsExpired = false,
             IsActive = false,
-            CreateTime = DateTime.Now,
+            CreateTime = GetUtcNow(),
             CreateBy = "System",
             CreateId = userId
         };
@@ -199,7 +202,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         // 计算到期时间
         if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
         {
-            benefit.ExpiresAt = DateTime.Now.AddDays(product.DurationDays.Value);
+            benefit.ExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
         }
         else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
         {
@@ -276,17 +279,17 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 BenefitIconAttachmentId = benefitIconAttachmentId,
                 SourceType = "System",
                 DurationType = durationType,
-                EffectiveAt = DateTime.Now,
+                EffectiveAt = GetUtcNow(),
                 IsExpired = false,
                 IsActive = false,
-                CreateTime = DateTime.Now,
+                CreateTime = GetUtcNow(),
                 CreateBy = "System",
                 CreateId = 0
             };
 
             if (durationType == DurationType.Days && durationDays.HasValue)
             {
-                benefit.ExpiresAt = DateTime.Now.AddDays(durationDays.Value);
+                benefit.ExpiresAt = GetUtcNow().AddDays(durationDays.Value);
             }
 
             var benefitId = await _userBenefitRepository.AddAsync(benefit);
@@ -341,14 +344,14 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             foreach (var activeBenefit in activeBenefits)
             {
                 activeBenefit.IsActive = false;
-                activeBenefit.ModifyTime = DateTime.Now;
+                activeBenefit.ModifyTime = GetUtcNow();
                 await _userBenefitRepository.UpdateAsync(activeBenefit);
             }
 
             // 激活当前权益
             benefit.IsActive = true;
-            benefit.ActivatedAt = DateTime.Now;
-            benefit.ModifyTime = DateTime.Now;
+            benefit.ActivatedAt = GetUtcNow();
+            benefit.ModifyTime = GetUtcNow();
 
             var result = await _userBenefitRepository.UpdateAsync(benefit);
 
@@ -375,7 +378,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 b => new UserBenefit
                 {
                     IsActive = false,
-                    ModifyTime = DateTime.Now
+                    ModifyTime = GetUtcNow()
                 },
                 b => b.Id == benefitId && b.UserId == userId);
 
@@ -402,7 +405,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
-            var now = DateTime.Now;
+            var now = GetUtcNow();
 
             // 查找已过期但未标记的权益
             var expiredBenefits = await _userBenefitRepository.QueryAsync(
@@ -468,5 +471,10 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         }
 
         return false;
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

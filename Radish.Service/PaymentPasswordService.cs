@@ -24,6 +24,7 @@ public class PaymentPasswordService : IPaymentPasswordService
     private readonly IAuditLogService _auditLogService;
     private readonly IMapper _mapper;
     private readonly ILogger<PaymentPasswordService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     // 安全配置常量
     private const int MaxFailedAttempts = 5;
@@ -33,12 +34,14 @@ public class PaymentPasswordService : IPaymentPasswordService
         IPaymentPasswordRepository paymentPasswordRepository,
         IAuditLogService auditLogService,
         IMapper mapper,
-        ILogger<PaymentPasswordService> logger)
+        ILogger<PaymentPasswordService> logger,
+        TimeProvider timeProvider)
     {
         _paymentPasswordRepository = paymentPasswordRepository;
         _auditLogService = auditLogService;
         _mapper = mapper;
         _logger = logger;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -117,6 +120,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             // 当前版本使用 Argon2id 自带盐值编码，旧 Salt 字段保留为空字符串兼容表结构。
             var passwordHash = HashCurrentPassword(request.NewPassword);
             var strengthLevel = CheckPasswordStrength(request.NewPassword);
+            var nowUtc = GetUtcNow();
 
             if (existingPassword != null)
             {
@@ -128,8 +132,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                 existingPassword.IsEnabled = true;
                 existingPassword.FailedAttempts = 0;
                 existingPassword.LockedUntil = null;
-                existingPassword.LastModifiedTime = DateTime.Now;
-                existingPassword.ModifyTime = DateTime.Now;
+                existingPassword.LastModifiedTime = nowUtc;
+                existingPassword.ModifyTime = nowUtc;
                 existingPassword.ModifyBy = "System";
                 existingPassword.ModifyId = 0;
 
@@ -148,10 +152,10 @@ public class PaymentPasswordService : IPaymentPasswordService
                     PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion,
                     IsEnabled = true,
                     FailedAttempts = 0,
-                    CreateTime = DateTime.Now,
+                    CreateTime = nowUtc,
                     CreateBy = "System",
                     CreateId = 0,
-                    LastModifiedTime = DateTime.Now
+                    LastModifiedTime = nowUtc
                 };
 
                 await _paymentPasswordRepository.AddAsync(newPaymentPassword);
@@ -213,6 +217,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             // 当前版本使用 Argon2id 自带盐值编码，旧 Salt 字段保留为空字符串兼容表结构。
             var passwordHash = HashCurrentPassword(request.NewPassword);
             var strengthLevel = CheckPasswordStrength(request.NewPassword);
+            var nowUtc = GetUtcNow();
 
             // 更新密码
             paymentPassword.PasswordHash = passwordHash;
@@ -221,8 +226,8 @@ public class PaymentPasswordService : IPaymentPasswordService
             paymentPassword.PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion;
             paymentPassword.FailedAttempts = 0;
             paymentPassword.LockedUntil = null;
-            paymentPassword.LastModifiedTime = DateTime.Now;
-            paymentPassword.ModifyTime = DateTime.Now;
+            paymentPassword.LastModifiedTime = nowUtc;
+            paymentPassword.ModifyTime = nowUtc;
             paymentPassword.ModifyBy = "System";
             paymentPassword.ModifyId = 0;
 
@@ -275,10 +280,12 @@ public class PaymentPasswordService : IPaymentPasswordService
                 return CreateUpgradeRequiredResult();
             }
 
+            var nowUtc = GetUtcNow();
+
             // 检查是否被锁定
-            if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > DateTime.Now)
+            if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > nowUtc)
             {
-                var remainingMinutes = (int)(paymentPassword.LockedUntil.Value - DateTime.Now).TotalMinutes;
+                var remainingMinutes = (int)(paymentPassword.LockedUntil.Value - nowUtc).TotalMinutes;
                 return new PaymentPasswordVerifyResult
                 {
                     IsSuccess = false,
@@ -300,8 +307,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                 }
 
                 // 密码正确，重置失败次数并更新最后使用时间
-                await _paymentPasswordRepository.ResetFailedAttemptsAsync(userId);
-                await _paymentPasswordRepository.UpdateLastUsedTimeAsync(userId);
+                await _paymentPasswordRepository.ResetFailedAttemptsAsync(userId, nowUtc);
+                await _paymentPasswordRepository.UpdateLastUsedTimeAsync(userId, nowUtc);
 
                 _logger.LogInformation("支付口令验证成功，用户ID: {UserId}, 业务类型: {BusinessType}",
                     userId, request.BusinessType ?? "UNKNOWN");
@@ -320,10 +327,10 @@ public class PaymentPasswordService : IPaymentPasswordService
 
                 if (newFailedAttempts >= MaxFailedAttempts)
                 {
-                    lockedUntil = DateTime.Now.AddMinutes(LockoutMinutes);
+                    lockedUntil = nowUtc.AddMinutes(LockoutMinutes);
                 }
 
-                await _paymentPasswordRepository.UpdateFailedAttemptsAsync(userId, newFailedAttempts, lockedUntil);
+                await _paymentPasswordRepository.UpdateFailedAttemptsAsync(userId, newFailedAttempts, lockedUntil, nowUtc);
 
                 var remainingAttempts = Math.Max(0, MaxFailedAttempts - newFailedAttempts);
                 var errorMessage = lockedUntil.HasValue
@@ -368,6 +375,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                 throw new InvalidOperationException("目标用户未设置支付口令");
             }
 
+            var nowUtc = GetUtcNow();
+
             // 重置密码（清空密码哈希，用户需要重新设置）
             paymentPassword.PasswordHash = string.Empty;
             paymentPassword.Salt = string.Empty;
@@ -376,8 +385,8 @@ public class PaymentPasswordService : IPaymentPasswordService
             paymentPassword.StrengthLevel = 0;
             paymentPassword.PasscodeVersion = null;
             paymentPassword.IsEnabled = false;
-            paymentPassword.LastModifiedTime = DateTime.Now;
-            paymentPassword.ModifyTime = DateTime.Now;
+            paymentPassword.LastModifiedTime = nowUtc;
+            paymentPassword.ModifyTime = nowUtc;
             paymentPassword.ModifyBy = $"Admin_{adminUserId}";
             paymentPassword.ModifyId = adminUserId;
             paymentPassword.Remark = $"管理员重置 - {request.Reason} - 操作人: {adminUserId}";
@@ -408,7 +417,7 @@ public class PaymentPasswordService : IPaymentPasswordService
     {
         try
         {
-            var result = await _paymentPasswordRepository.ResetFailedAttemptsAsync(targetUserId);
+            var result = await _paymentPasswordRepository.ResetFailedAttemptsAsync(targetUserId, GetUtcNow());
 
             if (result)
             {
@@ -435,7 +444,7 @@ public class PaymentPasswordService : IPaymentPasswordService
         try
         {
             var totalUsers = await _paymentPasswordRepository.QueryCountAsync(p => p.IsEnabled);
-            var lockedUsers = await _paymentPasswordRepository.GetLockedUsersCountAsync();
+            var lockedUsers = await _paymentPasswordRepository.GetLockedUsersCountAsync(GetUtcNow());
             var usersWithPassword = await _paymentPasswordRepository.QueryCountAsync(p => p.IsEnabled && !string.IsNullOrEmpty(p.PasswordHash));
 
             return new PaymentPasswordStatsVo
@@ -461,7 +470,7 @@ public class PaymentPasswordService : IPaymentPasswordService
     {
         try
         {
-            var clearedCount = await _paymentPasswordRepository.ClearExpiredLocksAsync();
+            var clearedCount = await _paymentPasswordRepository.ClearExpiredLocksAsync(GetUtcNow());
 
             if (clearedCount > 0)
             {
@@ -524,7 +533,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             // 使用时间建议
             if (paymentPassword.LastModifiedTime.HasValue)
             {
-                var daysSinceLastChange = (DateTime.Now - paymentPassword.LastModifiedTime.Value).Days;
+                var daysSinceLastChange = (GetUtcNow() - paymentPassword.LastModifiedTime.Value).Days;
                 if (daysSinceLastChange > 90)
                 {
                     suggestions.Add("建议定期更换支付口令，上次修改已超过90天");
@@ -622,11 +631,12 @@ public class PaymentPasswordService : IPaymentPasswordService
 
     private async Task UpgradePaymentPasswordHashAsync(UserPaymentPassword paymentPassword, string password)
     {
+        var nowUtc = GetUtcNow();
         paymentPassword.PasswordHash = HashCurrentPassword(password);
         paymentPassword.Salt = string.Empty;
         paymentPassword.PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion;
-        paymentPassword.LastModifiedTime = DateTime.Now;
-        paymentPassword.ModifyTime = DateTime.Now;
+        paymentPassword.LastModifiedTime = nowUtc;
+        paymentPassword.ModifyTime = nowUtc;
         paymentPassword.ModifyBy = "System";
         paymentPassword.ModifyId = 0;
 
@@ -720,7 +730,7 @@ public class PaymentPasswordService : IPaymentPasswordService
     /// </summary>
     /// <param name="paymentPassword">支付密码实体</param>
     /// <returns>安全状态</returns>
-    private static string GetSecurityStatus(UserPaymentPassword paymentPassword)
+    private string GetSecurityStatus(UserPaymentPassword paymentPassword)
     {
         if (string.IsNullOrEmpty(paymentPassword.PasswordHash))
             return "未设置";
@@ -728,7 +738,7 @@ public class PaymentPasswordService : IPaymentPasswordService
         if (HasLegacyPasscode(paymentPassword))
             return PaymentPasscodeRules.UpgradeRequiredStatusText;
 
-        if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > DateTime.Now)
+        if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > GetUtcNow())
             return "已锁定";
 
         if (paymentPassword.FailedAttempts > 0)
@@ -741,6 +751,11 @@ public class PaymentPasswordService : IPaymentPasswordService
             return "一般";
 
         return "较弱";
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 
     private static PaymentPasswordSecurityLogVo MapPaymentPasswordSecurityLog(AuditLogVo log)

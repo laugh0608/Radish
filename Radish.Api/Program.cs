@@ -68,6 +68,7 @@ using Radish.Service.Base;
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<BusinessCalendar>();
 // -------------- 容器构建阶段 ---------------
 
 static string ResolveSharedConfigPath(string basePath, string contentRootPath)
@@ -1049,14 +1050,24 @@ public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
                 return default;
             }
 
+            if (DateOnly.TryParseExact(
+                    raw,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dateOnly))
+            {
+                return dateOnly.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            }
+
+            if (!HasExplicitOffset(raw))
+            {
+                throw new JsonException("绝对时间必须使用带 Z 或 offset 的 ISO 8601 格式。");
+            }
+
             if (DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto))
             {
                 return dto.UtcDateTime;
-            }
-
-            if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var dt))
-            {
-                return NormalizeToUtc(dt);
             }
 
             throw new JsonException($"无法将字符串 \"{raw}\" 解析为 DateTime。");
@@ -1089,6 +1100,28 @@ public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
             // 数据库存储统一为 UTC，SQLite 读取常为 Unspecified，这里按 UTC 解释以避免重复时区换算
             _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
+    }
+
+    private static bool HasExplicitOffset(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.EndsWith('Z') || trimmed.EndsWith('z'))
+        {
+            return true;
+        }
+
+        if (trimmed.Length < 6)
+        {
+            return false;
+        }
+
+        var offsetStart = trimmed.Length - 6;
+        return (trimmed[offsetStart] == '+' || trimmed[offsetStart] == '-') &&
+               trimmed[offsetStart + 3] == ':' &&
+               char.IsDigit(trimmed[offsetStart + 1]) &&
+               char.IsDigit(trimmed[offsetStart + 2]) &&
+               char.IsDigit(trimmed[offsetStart + 4]) &&
+               char.IsDigit(trimmed[offsetStart + 5]);
     }
 }
 

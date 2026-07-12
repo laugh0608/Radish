@@ -6,6 +6,7 @@ using Radish.Common.CoreTool;
 using Radish.Extension;
 using Radish.Extension.ExperienceExtension;
 using Radish.Extension.SqlSugarExtension;
+using Radish.Common.TimeTool;
 
 namespace Radish.DbMigrate;
 
@@ -38,6 +39,8 @@ internal static class DbMigrateBootstrap
 
     private static void ConfigureServices(HostApplicationBuilder builder)
     {
+        builder.Services.AddSingleton(TimeProvider.System);
+        builder.Services.AddSingleton<BusinessCalendar>();
         builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
         builder.Services.AddAllOptionRegister();
         builder.Services.AddSqlSugarSetup();

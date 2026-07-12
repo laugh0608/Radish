@@ -2,6 +2,9 @@ using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Moq;
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -33,7 +36,7 @@ public sealed class CoinRewardBusinessKeyTest
                 It.IsAny<string>()))
             .ReturnsAsync(grantResult);
 
-        var rewardService = new CoinRewardService(
+        var rewardService = CreateService(
             coinService.Object,
             new Mock<IBaseRepository<CoinTransaction>>(MockBehavior.Strict).Object);
 
@@ -65,7 +68,7 @@ public sealed class CoinRewardBusinessKeyTest
                 It.IsAny<string>()))
             .ReturnsAsync(CoinGrantOnceResult.NewGrant("TXN_LIKE_BONUS"));
 
-        var rewardService = new CoinRewardService(
+        var rewardService = CreateService(
             coinService.Object,
             new Mock<IBaseRepository<CoinTransaction>>(MockBehavior.Strict).Object);
 
@@ -102,7 +105,7 @@ public sealed class CoinRewardBusinessKeyTest
                 It.IsAny<string>()))
             .ReturnsAsync(CoinGrantOnceResult.Existing("TXN_EXISTING_REPLY"));
 
-        var rewardService = new CoinRewardService(
+        var rewardService = CreateService(
             coinService.Object,
             new Mock<IBaseRepository<CoinTransaction>>(MockBehavior.Strict).Object);
 
@@ -121,16 +124,53 @@ public sealed class CoinRewardBusinessKeyTest
     {
         var coinService = new Mock<ICoinService>(MockBehavior.Strict);
         var transactionRepository = new Mock<IBaseRepository<CoinTransaction>>(MockBehavior.Strict);
+        Expression<Func<CoinTransaction, bool>>? capturedPredicate = null;
         transactionRepository
             .Setup(repository => repository.QuerySumAsync(
                 It.IsAny<Expression<Func<CoinTransaction, long>>>(),
                 It.IsAny<Expression<Func<CoinTransaction, bool>>?>()))
+            .Callback<Expression<Func<CoinTransaction, long>>, Expression<Func<CoinTransaction, bool>>?>(
+                (_, predicate) => capturedPredicate = predicate)
             .ReturnsAsync(51);
 
-        var rewardService = new CoinRewardService(coinService.Object, transactionRepository.Object);
+        var rewardService = CreateService(coinService.Object, transactionRepository.Object);
 
         var limitReached = await rewardService.CheckDailyLikeRewardLimitAsync(9001);
 
         limitReached.ShouldBeTrue();
+        capturedPredicate.ShouldNotBeNull();
+        var predicate = capturedPredicate!.Compile();
+        predicate(CreateLikeReward(new DateTime(2026, 7, 11, 16, 0, 0, DateTimeKind.Utc))).ShouldBeTrue();
+        predicate(CreateLikeReward(new DateTime(2026, 7, 12, 15, 59, 59, DateTimeKind.Utc))).ShouldBeTrue();
+        predicate(CreateLikeReward(new DateTime(2026, 7, 11, 15, 59, 59, DateTimeKind.Utc))).ShouldBeFalse();
+    }
+
+    private static CoinTransaction CreateLikeReward(DateTime createTime)
+    {
+        return new CoinTransaction
+        {
+            ToUserId = 9001,
+            TransactionType = "LIKE_REWARD",
+            BusinessType = "POST_LIKE_ACTION",
+            Status = "SUCCESS",
+            CreateTime = createTime
+        };
+    }
+
+    private static CoinRewardService CreateService(
+        ICoinService coinService,
+        IBaseRepository<CoinTransaction> transactionRepository)
+    {
+        var timeProvider = new FixedTimeProvider(
+            new DateTimeOffset(2026, 7, 11, 16, 30, 0, TimeSpan.Zero));
+        var calendar = new BusinessCalendar(
+            timeProvider,
+            Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
+        return new CoinRewardService(coinService, transactionRepository, calendar);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 }

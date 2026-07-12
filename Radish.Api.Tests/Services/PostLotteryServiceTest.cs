@@ -170,6 +170,7 @@ public class PostLotteryServiceTest
             commentRepository.Object,
             notificationService.Object,
             logger.Object,
+            TimeProvider.System,
             Mock.Of<IReliableOutboxService>());
 
         var result = await service.DrawAsync(1001, 9527, "Author");
@@ -226,6 +227,7 @@ public class PostLotteryServiceTest
             commentRepository.Object,
             notificationService.Object,
             logger.Object,
+            TimeProvider.System,
             Mock.Of<IReliableOutboxService>());
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DrawAsync(1001, 9527, "Author"));
@@ -276,6 +278,7 @@ public class PostLotteryServiceTest
             commentRepository.Object,
             notificationService.Object,
             logger.Object,
+            TimeProvider.System,
             Mock.Of<IReliableOutboxService>());
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DrawAsync(1001, 9527, "Author"));
@@ -362,6 +365,7 @@ public class PostLotteryServiceTest
             commentRepository.Object,
             notificationService.Object,
             logger.Object,
+            TimeProvider.System,
             Mock.Of<IReliableOutboxService>());
 
         var result = await service.AutoDrawByPostIdAsync(2001);

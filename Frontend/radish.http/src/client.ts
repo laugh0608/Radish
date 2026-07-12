@@ -4,11 +4,7 @@ import type {
 } from './types';
 import { sanitizeLogValue } from './logSanitizer';
 import { shouldRefreshToken, TokenRefreshErrorType, tryRefreshToken } from './token-refresh';
-import {
-  parseApiResponse,
-  parseApiResponseWithI18n,
-  parseHttpResponse,
-} from './response-parser';
+import { parseHttpResponse } from './response-parser';
 
 export { parseApiResponse, parseApiResponseWithI18n, parseHttpResponse } from './response-parser';
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -22,19 +23,25 @@ public class CommentHighlightJob
     private readonly ICoinRewardService _coinRewardService;
     private readonly IExperienceService _experienceService;
     private readonly CommentHighlightOptions _highlightOptions;
+    private readonly TimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
 
     public CommentHighlightJob(
         IBaseRepository<Comment> commentRepository,
         IBaseRepository<CommentHighlight> highlightRepository,
         ICoinRewardService coinRewardService,
         IExperienceService experienceService,
-        IOptions<CommentHighlightOptions> highlightOptions)
+        IOptions<CommentHighlightOptions> highlightOptions,
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar)
     {
         _commentRepository = commentRepository;
         _highlightRepository = highlightRepository;
         _coinRewardService = coinRewardService;
         _experienceService = experienceService;
         _highlightOptions = highlightOptions.Value;
+        _timeProvider = timeProvider;
+        _businessCalendar = businessCalendar;
     }
 
     /// <summary>
@@ -47,7 +54,8 @@ public class CommentHighlightJob
         try
         {
             // 默认统计昨天的数据
-            var targetDate = (statDate ?? DateTime.Today.AddDays(-1)).Date;
+            var targetDate = statDate?.Date
+                ?? _businessCalendar.GetCurrentDate().AddDays(-1).ToDateTime(TimeOnly.MinValue);
             Log.Information("[CommentHighlight] 开始统计神评/沙发，日期：{StatDate}", targetDate);
 
             // 1. 统计神评（父评论中点赞数最高的）
@@ -77,7 +85,7 @@ public class CommentHighlightJob
         {
             // 🚀 增量扫描优化：只查询最近 24 小时有活动的帖子
             // 逻辑：ModifyTime > yesterday（已修改的）OR (ModifyTime == null AND CreateTime > yesterday)（新创建且未修改的）
-            var yesterday = DateTime.Now.AddDays(-1);
+            var yesterday = GetUtcNow().AddDays(-1);
 
             var postsWithComments = await _commentRepository.QueryDistinctAsync(
                 c => c.PostId,
@@ -194,7 +202,7 @@ public class CommentHighlightJob
                             AuthorName = comment.AuthorName,
                             IsCurrent = true,
                             TenantId = comment.TenantId,
-                            CreateTime = DateTime.Now,
+                            CreateTime = GetUtcNow(),
                             CreateBy = "CommentHighlightJob"
                         });
 
@@ -296,7 +304,7 @@ public class CommentHighlightJob
         {
             // 🚀 增量扫描优化：只查询最近 24 小时有活动的子评论
             // 逻辑：ModifyTime > yesterday（已修改的）OR (ModifyTime == null AND CreateTime > yesterday)（新创建且未修改的）
-            var yesterday = DateTime.Now.AddDays(-1);
+            var yesterday = GetUtcNow().AddDays(-1);
 
             var parentsWithChildren = await _commentRepository.QueryDistinctAsync(
                 c => c.ParentId,
@@ -420,7 +428,7 @@ public class CommentHighlightJob
                             AuthorName = child.AuthorName,
                             IsCurrent = true,
                             TenantId = child.TenantId,
-                            CreateTime = DateTime.Now,
+                            CreateTime = GetUtcNow(),
                             CreateBy = "CommentHighlightJob"
                         });
 
@@ -511,5 +519,10 @@ public class CommentHighlightJob
             Log.Error(ex, "[CommentHighlight] 统计沙发时发生异常");
             throw;
         }
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

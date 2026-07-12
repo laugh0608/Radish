@@ -31,6 +31,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IOperationIdempotencyService? _operationIdempotencyService;
     private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly TimeProvider _timeProvider;
 
     public OrderService(
         IMapper mapper,
@@ -44,7 +45,8 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IAttachmentUrlResolver attachmentUrlResolver,
         IOperationIdempotencyService? operationIdempotencyService = null,
         INotificationService? notificationService = null,
-        IReliableOutboxService? reliableOutboxService = null)
+        IReliableOutboxService? reliableOutboxService = null,
+        TimeProvider? timeProvider = null)
         : base(mapper, orderRepository)
     {
         _orderRepository = orderRepository;
@@ -57,6 +59,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _attachmentUrlResolver = attachmentUrlResolver;
         _operationIdempotencyService = operationIdempotencyService;
         _reliableOutboxService = reliableOutboxService;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     #region 购买流程
@@ -178,7 +181,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 Status = OrderStatus.Pending,
                 UserRemark = dto.UserRemark,
                 TenantId = tenantId,
-                CreateTime = DateTime.Now,
+                CreateTime = GetUtcNow(),
                 CreateBy = "User",
                 CreateId = userId
             };
@@ -201,7 +204,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
                 order.CoinTransactionId = transactionId;
                 order.Status = OrderStatus.Paid;
-                order.PaidTime = DateTime.Now;
+                order.PaidTime = GetUtcNow();
             }
             catch (Exception ex)
             {
@@ -238,12 +241,12 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId, dto.Quantity);
                 order.UserBenefitId = userBenefitId;
                 order.Status = OrderStatus.Completed;
-                order.CompletedTime = DateTime.Now;
+                order.CompletedTime = GetUtcNow();
 
                 // 计算权益到期时间
                 if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
                 {
-                    order.BenefitExpiresAt = DateTime.Now.AddDays(product.DurationDays.Value);
+                    order.BenefitExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
                 }
                 else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
                 {
@@ -291,7 +294,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                     "Order",
                     orderId.ToString(),
                     new NotificationRequestedTaskPayload(notification),
-                    DateTime.UtcNow);
+                    GetUtcNow());
             }
 
             Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",
@@ -588,7 +591,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
-            order.ModifyTime = DateTime.Now;
+            order.ModifyTime = GetUtcNow();
             order.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
             order.ModifyId = operatorId;
 
@@ -636,14 +639,14 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             order.UserBenefitId = userBenefitId;
             order.Status = OrderStatus.Completed;
-            order.CompletedTime = DateTime.Now;
+            order.CompletedTime = GetUtcNow();
             order.FailReason = null;
-            order.ModifyTime = DateTime.Now;
+            order.ModifyTime = GetUtcNow();
 
             // 计算权益到期时间
             if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
             {
-                order.BenefitExpiresAt = DateTime.Now.AddDays(product.DurationDays.Value);
+                order.BenefitExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
             }
             else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
             {
@@ -815,7 +818,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             throw new InvalidOperationException("只能取消待支付的订单");
         }
 
-        var cancelledTime = DateTime.Now;
+        var cancelledTime = GetUtcNow();
         var affected = await _orderRepository.UpdateColumnsAsync(
             o => new Order
             {
@@ -912,5 +915,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
 
         return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

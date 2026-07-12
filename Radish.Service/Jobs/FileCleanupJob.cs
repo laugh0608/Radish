@@ -1,4 +1,5 @@
 using Radish.Common.CoreTool;
+using Radish.Common.TimeTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -18,17 +19,23 @@ public class FileCleanupJob
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IAttachmentReferenceInspector _attachmentReferenceInspector;
     private readonly IFileStorage _fileStorage;
+    private readonly TimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
     private readonly string _tempPath;
     private readonly string _recycleBinPath;
 
     public FileCleanupJob(
         IBaseRepository<Attachment> attachmentRepository,
         IAttachmentReferenceInspector attachmentReferenceInspector,
-        IFileStorage fileStorage)
+        IFileStorage fileStorage,
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar)
     {
         _attachmentRepository = attachmentRepository;
         _attachmentReferenceInspector = attachmentReferenceInspector;
         _fileStorage = fileStorage;
+        _timeProvider = timeProvider;
+        _businessCalendar = businessCalendar;
 
         var dataBasesPath = AppPathTool.GetDataBasesPath();
         _tempPath = Path.Combine(dataBasesPath, "Temp");
@@ -59,7 +66,7 @@ public class FileCleanupJob
         {
             Log.Information("[FileCleanup] 开始清理软删除文件，保留天数：{RetentionDays}", retentionDays);
 
-            var cutoffDate = DateTime.Now.AddDays(-retentionDays);
+            var cutoffDate = GetUtcNow().AddDays(-retentionDays);
 
             // 查询需要清理的附件（软删除且超过保留期）
             // 使用 ModifyTime 判断删除时间（删除操作会更新 ModifyTime）
@@ -129,7 +136,7 @@ public class FileCleanupJob
                 return 0;
             }
 
-            var cutoffTime = DateTime.Now.AddHours(-retentionHours);
+            var cutoffTime = GetUtcNow().AddHours(-retentionHours);
             var cleanedCount = 0;
 
             // 获取所有临时文件
@@ -142,7 +149,7 @@ public class FileCleanupJob
                     var fileInfo = new FileInfo(filePath);
 
                     // 检查文件最后修改时间
-                    if (fileInfo.LastWriteTime < cutoffTime)
+                    if (fileInfo.LastWriteTimeUtc < cutoffTime)
                     {
                         // 移动到回收站（保持数据安全）
                         var relativePath = Path.GetRelativePath(_tempPath, filePath);
@@ -193,7 +200,7 @@ public class FileCleanupJob
                 return 0;
             }
 
-            var cutoffTime = DateTime.Now.AddDays(-retentionDays);
+            var cutoffTime = GetUtcNow().AddDays(-retentionDays);
             var cleanedCount = 0;
 
             // 获取回收站中的所有文件
@@ -206,7 +213,7 @@ public class FileCleanupJob
                     var fileInfo = new FileInfo(filePath);
 
                     // 检查文件创建时间（移入回收站的时间）
-                    if (fileInfo.CreationTime < cutoffTime)
+                    if (fileInfo.CreationTimeUtc < cutoffTime)
                     {
                         // 永久删除文件
                         File.Delete(filePath);
@@ -248,7 +255,7 @@ public class FileCleanupJob
         {
             Log.Information("[FileCleanup] 开始清理孤立附件，保留小时数：{RetentionHours}", retentionHours);
 
-            var cutoffTime = DateTime.Now.AddHours(-retentionHours);
+            var cutoffTime = GetUtcNow().AddHours(-retentionHours);
 
             // 查询孤立附件（未关联业务对象且超过保留期）
             var orphanAttachments = await _attachmentRepository.QueryAsync(a =>
@@ -298,7 +305,7 @@ public class FileCleanupJob
 
                     // 标记为已删除（保留数据库记录）
                     attachment.IsDeleted = true;
-                    attachment.ModifyTime = DateTime.Now;
+                    attachment.ModifyTime = GetUtcNow();
                     await _attachmentRepository.UpdateAsync(attachment);
 
                     cleanedCount++;
@@ -344,7 +351,7 @@ public class FileCleanupJob
         }
 
         // 构建回收站目标路径：DataBases/Recycle/{category}/{年月日}/{原始路径}
-        var dateFolder = DateTime.Now.ToString("yyyyMMdd");
+        var dateFolder = _businessCalendar.GetCurrentDate().ToString("yyyyMMdd");
         var targetPath = Path.Combine(_recycleBinPath, category, dateFolder, relativePath);
 
         // 确保目标目录存在
@@ -357,7 +364,8 @@ public class FileCleanupJob
         // 如果目标文件已存在，添加时间戳后缀
         if (File.Exists(targetPath))
         {
-            var timestamp = DateTime.Now.ToString("HHmmss");
+            var businessNow = TimeZoneInfo.ConvertTime(_timeProvider.GetUtcNow(), _businessCalendar.TimeZone);
+            var timestamp = businessNow.ToString("HHmmss");
             var extension = Path.GetExtension(targetPath);
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(targetPath);
             targetPath = Path.Combine(
@@ -402,5 +410,11 @@ public class FileCleanupJob
             Log.Warning(ex, "[FileCleanup] 清理空目录时发生异常");
         }
     }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
+    }
+
     #endregion
 }

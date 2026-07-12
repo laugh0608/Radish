@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
 using Radish.Common;
 using Radish.Common.DbTool;
+using Radish.Common.TimeTool;
 
 namespace Radish.DbMigrate;
 
@@ -139,6 +140,14 @@ internal static class DbMigrateDoctor
                     .ToLowerInvariant();
                 var mainDb = dbScope.GetConnectionScope(normalizedMainDbConnId);
                 errors.AddRange(FileAccessTokenSecurityMigration.Verify(mainDb));
+                var timeAudit = TimeSemanticsAudit.Inspect(
+                    mainDb,
+                    services.GetRequiredService<BusinessCalendar>());
+                foreach (var summary in timeAudit.Summaries)
+                {
+                    Console.WriteLine($"[Radish.DbMigrate] [Doctor] Time: {summary}");
+                }
+                warnings.AddRange(timeAudit.Warnings);
             }
         }
         catch (Exception exception)

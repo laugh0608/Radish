@@ -20,10 +20,14 @@ public class OperationIdempotencyService : IOperationIdempotencyService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IBaseRepository<OperationIdempotencyRecord> _recordRepository;
+    private readonly TimeProvider _timeProvider;
 
-    public OperationIdempotencyService(IBaseRepository<OperationIdempotencyRecord> recordRepository)
+    public OperationIdempotencyService(
+        IBaseRepository<OperationIdempotencyRecord> recordRepository,
+        TimeProvider timeProvider)
     {
         _recordRepository = recordRepository;
+        _timeProvider = timeProvider;
     }
 
     public string? NormalizeKey(string? idempotencyKey)
@@ -68,7 +72,7 @@ public class OperationIdempotencyService : IOperationIdempotencyService
             throw new ArgumentException("操作类型不能为空", nameof(request));
         }
 
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         var existing = await QueryRecordAsync(request.TenantId, request.UserId, request.OperationType, key);
         if (existing != null)
         {
@@ -124,7 +128,7 @@ public class OperationIdempotencyService : IOperationIdempotencyService
             return;
         }
 
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         record.Status = OperationIdempotencyStatuses.Succeeded;
         record.ResourceType = request.ResourceType;
         record.ResourceId = request.ResourceId;
@@ -150,7 +154,7 @@ public class OperationIdempotencyService : IOperationIdempotencyService
             return;
         }
 
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         record.Status = OperationIdempotencyStatuses.Failed;
         record.ResourceType = null;
         record.ResourceId = null;
@@ -259,6 +263,11 @@ public class OperationIdempotencyService : IOperationIdempotencyService
             record.UserId == userId &&
             record.OperationType == operationType &&
             record.IdempotencyKey == key);
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 
     private static object? NormalizeSummaryValue(object? value)

@@ -16,19 +16,22 @@ public class PostPollService : IPostPollService
     private readonly IBaseRepository<PostPoll> _postPollRepository;
     private readonly IBaseRepository<PostPollOption> _postPollOptionRepository;
     private readonly IBaseRepository<PostPollVote> _postPollVoteRepository;
+    private readonly TimeProvider _timeProvider;
 
     public PostPollService(
         IPostService postService,
         IBaseRepository<Post> postRepository,
         IBaseRepository<PostPoll> postPollRepository,
         IBaseRepository<PostPollOption> postPollOptionRepository,
-        IBaseRepository<PostPollVote> postPollVoteRepository)
+        IBaseRepository<PostPollVote> postPollVoteRepository,
+        TimeProvider timeProvider)
     {
         _postService = postService;
         _postRepository = postRepository;
         _postPollRepository = postPollRepository;
         _postPollOptionRepository = postPollOptionRepository;
         _postPollVoteRepository = postPollVoteRepository;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>
@@ -113,7 +116,7 @@ public class PostPollService : IPostPollService
         }
 
         var operatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
-        var now = DateTime.UtcNow;
+        var now = GetUtcNow();
 
         await _postPollVoteRepository.AddAsync(new PostPollVote
         {
@@ -188,7 +191,7 @@ public class PostPollService : IPostPollService
         }
 
         var operatorName = string.IsNullOrWhiteSpace(userName) ? $"User-{userId}" : userName.Trim();
-        var now = DateTime.UtcNow;
+        var now = GetUtcNow();
 
         poll.IsClosed = true;
         poll.ModifyTime = now;
@@ -205,8 +208,13 @@ public class PostPollService : IPostPollService
         return result.VoPoll;
     }
 
-    private static bool IsPollClosed(PostPoll poll)
+    private bool IsPollClosed(PostPoll poll)
     {
-        return poll.IsClosed || (poll.EndTime != null && poll.EndTime <= DateTime.UtcNow);
+        return poll.IsClosed || (poll.EndTime != null && poll.EndTime <= GetUtcNow());
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

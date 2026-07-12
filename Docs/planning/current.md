@@ -58,6 +58,7 @@ Radish V1 的产品定位固定为：
 - [P3-12-F Q1-A 候选级可靠性验证记录](/records/p3-12-f-q1-a-candidate-validation-2026-07-11)
 - [P3-12-F Q1-B API 错误契约审计与实施方案](/records/p3-12-f-q1-b-api-error-contract-audit-plan-2026-07-11)
 - [P3-12-F Q1-C 文件访问令牌审计与实施方案](/records/p3-12-f-q1-c-file-access-token-governance-plan-2026-07-11)
+- [P3-12-F Q2-A 时间语义与历史数据迁移方案](/records/p3-12-f-q2-a-time-semantics-migration-plan-2026-07-12)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
@@ -65,11 +66,11 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 先完成 Q2-A 时间语义与历史数据迁移方案
+### 1. 收口 Q2-A 后续业务自然日与 schema 批次
 
-- 盘点持久化、跨服务契约、过期比较、奖励、签到、冷却、统计和幂等窗口中的时间来源与时区语义，按发布风险划分迁移批次。
-- 明确 UTC 持久化与跨服务契约、`TimeProvider` 注入、业务 / 用户时区边界，以及既有本地时间数据的识别、转换和兼容策略。
-- 方案确认前不修改时间运行时，不做全仓 `DateTime.Now / Today` 机械替换。
+- 2026-07-12 已完成 `BusinessCalendar`、Release Go 高风险 UTC 链路、首批业务自然日、DbMigrate 只读审计与增量门禁。
+- 当前继续收口经验 / 签到自然日与数据库 `date` 边界，并在生产相似 PostgreSQL 快照上确认列类型和历史分布。
+- 模糊 SQLite 历史绝对时刻继续只报告、不猜测；不做全仓 `DateTime.Now / Today` 机械替换。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
@@ -79,9 +80,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 对正式发布矩阵执行 Q2-A 时间语义只读审计，建立高风险契约与历史数据清单。
-2. 提交时间语义与历史数据迁移方案，明确批次、停止线、兼容和验证口径，等待确认后再进入代码。
-3. Q2-A 方案确认并完成发布必要子集后，再推进 Q2-B PostgreSQL / OpenIddict 升级和 Q2-C 版本单一真值。
+1. 盘点并迁移 `UserExpDailyStats`、签到 / 连续登录等剩余自然日链路，明确 `DateOnly` 与数据库 `date` 契约。
+2. 在生产相似 PostgreSQL 快照执行时间列类型与历史分布只读审计，形成是否需要可写迁移的明确结论。
+3. Q2-A 剩余自然日与历史数据结论收口后，再进入 Q2-B PostgreSQL / OpenIddict 升级方案。
 
 ## 并行维护线
 
@@ -94,7 +95,7 @@ Radish V1 的产品定位固定为：
 ## 当前不做
 
 - 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- Q2-A 方案确认前不修改时间运行时；不提前进入 Q2-B / Q2-C，不混入 Q3、页面调整或无关重构。
+- 不提前进入 Q2-B / Q2-C，不混入 Q3、页面调整或无关重构；不猜测平移模糊 SQLite 历史时刻。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不恢复 WebOS、Tauri 或完整 Flutter 套件为当前主线。

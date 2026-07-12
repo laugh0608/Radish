@@ -21,6 +21,7 @@ public class PostLotteryService : IPostLotteryService
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IReliableOutboxService? _reliableOutboxService;
     private readonly ILogger<PostLotteryService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public PostLotteryService(
         IPostService postService,
@@ -30,6 +31,7 @@ public class PostLotteryService : IPostLotteryService
         IBaseRepository<Comment> commentRepository,
         INotificationService notificationService,
         ILogger<PostLotteryService> logger,
+        TimeProvider timeProvider,
         IReliableOutboxService? reliableOutboxService = null)
     {
         _postService = postService;
@@ -39,6 +41,7 @@ public class PostLotteryService : IPostLotteryService
         _commentRepository = commentRepository;
         _reliableOutboxService = reliableOutboxService;
         _logger = logger;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>按帖子获取抽奖详情</summary>
@@ -93,7 +96,7 @@ public class PostLotteryService : IPostLotteryService
         return await ExecuteDrawAsync(
             post,
             lottery,
-            DateTime.UtcNow,
+            GetUtcNow(),
             NormalizeOperatorName(userId, userName),
             userId,
             allowEmptyParticipants: false);
@@ -192,7 +195,7 @@ public class PostLotteryService : IPostLotteryService
             "PostLottery",
             lottery.Id.ToString(),
             new NotificationRequestedTaskPayload(notification),
-            DateTime.UtcNow);
+            GetUtcNow());
     }
 
     private async Task<Post> GetPostOrThrowAsync(long postId)
@@ -231,12 +234,13 @@ public class PostLotteryService : IPostLotteryService
     {
         var publishTimeUtc = NormalizeToUtc(post.PublishTime ?? post.CreateTime);
         var manualDrawAvailableAt = publishTimeUtc.Add(MinManualDrawLeadTime);
-        if (DateTime.UtcNow < manualDrawAvailableAt)
+        var nowUtc = GetUtcNow();
+        if (nowUtc < manualDrawAvailableAt)
         {
             throw new BusinessException("发帖满 1 小时后才可提前开奖", 409, "Lottery.DrawTooEarly", "error.lottery.draw_too_early");
         }
 
-        if (DateTime.UtcNow >= lottery.DrawTime!.Value)
+        if (nowUtc >= lottery.DrawTime!.Value)
         {
             throw new BusinessException("已到自动开奖时间，请等待系统开奖", 409, "Lottery.AutomaticDrawPending", "error.lottery.automatic_draw_pending");
         }
@@ -244,7 +248,8 @@ public class PostLotteryService : IPostLotteryService
 
     private void EnsureAutoDrawAllowed(PostLottery lottery)
     {
-        if (DateTime.UtcNow < lottery.DrawTime!.Value)
+        var nowUtc = GetUtcNow();
+        if (nowUtc < lottery.DrawTime!.Value)
         {
             throw new BusinessException("未到自动开奖时间", 409, "Lottery.DrawTooEarly", "error.lottery.draw_too_early");
         }
@@ -295,7 +300,7 @@ public class PostLotteryService : IPostLotteryService
                     : candidate.Content.Trim()[..Math.Min(candidate.Content.Trim().Length, 500)],
                 DrawnAt = drawAtUtc,
                 TenantId = lottery.TenantId,
-                CreateTime = DateTime.Now,
+                CreateTime = drawAtUtc,
                 CreateBy = operatorName,
                 CreateId = operatorUserId > 0 ? operatorUserId : 0
             })
@@ -309,7 +314,7 @@ public class PostLotteryService : IPostLotteryService
         lottery.IsDrawn = true;
         lottery.DrawnAt = drawAtUtc;
         lottery.ParticipantCount = candidates.Count;
-        lottery.ModifyTime = DateTime.Now;
+        lottery.ModifyTime = drawAtUtc;
         lottery.ModifyBy = operatorName;
         lottery.ModifyId = operatorUserId > 0 ? operatorUserId : null;
         await _postLotteryRepository.UpdateAsync(lottery);
@@ -343,5 +348,10 @@ public class PostLotteryService : IPostLotteryService
             DateTimeKind.Local => value.ToUniversalTime(),
             _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

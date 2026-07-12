@@ -590,7 +590,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 
 ### 3.1 Time 时间配置（2026-02 新增）
 
-后端新增 `Time` 配置段，用于统一系统默认时区与前端展示格式：
+共享配置 `appsettings.Shared.json` 中的 `Time` 配置段用于统一 API、DbMigrate 等宿主的系统业务时区与前端展示格式：
 
 ```json
 {

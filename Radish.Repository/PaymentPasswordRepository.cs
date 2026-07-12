@@ -43,15 +43,19 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// <param name="failedAttempts">失败次数</param>
     /// <param name="lockedUntil">锁定到期时间</param>
     /// <returns>更新结果</returns>
-    public async Task<bool> UpdateFailedAttemptsAsync(long userId, int failedAttempts, DateTime? lockedUntil = null)
+    public async Task<bool> UpdateFailedAttemptsAsync(
+        long userId,
+        int failedAttempts,
+        DateTime? lockedUntil,
+        DateTime nowUtc)
     {
         var result = await UpdateColumnsAsync(
             p => new UserPaymentPassword
             {
                 FailedAttempts = failedAttempts,
                 LockedUntil = lockedUntil,
-                LastModifiedTime = DateTime.Now,
-                ModifyTime = DateTime.Now,
+                LastModifiedTime = nowUtc,
+                ModifyTime = nowUtc,
                 ModifyBy = "System",
                 ModifyId = 0
             },
@@ -65,15 +69,15 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <returns>重置结果</returns>
-    public async Task<bool> ResetFailedAttemptsAsync(long userId)
+    public async Task<bool> ResetFailedAttemptsAsync(long userId, DateTime nowUtc)
     {
         var result = await UpdateColumnsAsync(
             p => new UserPaymentPassword
             {
                 FailedAttempts = 0,
                 LockedUntil = null,
-                LastModifiedTime = DateTime.Now,
-                ModifyTime = DateTime.Now,
+                LastModifiedTime = nowUtc,
+                ModifyTime = nowUtc,
                 ModifyBy = "System",
                 ModifyId = 0
             },
@@ -87,14 +91,14 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <returns>更新结果</returns>
-    public async Task<bool> UpdateLastUsedTimeAsync(long userId)
+    public async Task<bool> UpdateLastUsedTimeAsync(long userId, DateTime nowUtc)
     {
         var result = await UpdateColumnsAsync(
             p => new UserPaymentPassword
             {
-                LastUsedTime = DateTime.Now,
-                LastModifiedTime = DateTime.Now,
-                ModifyTime = DateTime.Now,
+                LastUsedTime = nowUtc,
+                LastModifiedTime = nowUtc,
+                ModifyTime = nowUtc,
                 ModifyBy = "System",
                 ModifyId = 0
             },
@@ -107,31 +111,31 @@ public class PaymentPasswordRepository : BaseRepository<UserPaymentPassword>, IP
     /// 获取被锁定的用户数量
     /// </summary>
     /// <returns>被锁定的用户数量</returns>
-    public async Task<int> GetLockedUsersCountAsync()
+    public async Task<int> GetLockedUsersCountAsync(DateTime nowUtc)
     {
         return await QueryCountAsync(p => p.IsEnabled &&
                                          p.LockedUntil.HasValue &&
-                                         p.LockedUntil.Value > DateTime.Now);
+                                         p.LockedUntil.Value > nowUtc);
     }
 
     /// <summary>
     /// 清理过期的锁定状态
     /// </summary>
     /// <returns>清理的记录数</returns>
-    public async Task<int> ClearExpiredLocksAsync()
+    public async Task<int> ClearExpiredLocksAsync(DateTime nowUtc)
     {
         var result = await UpdateColumnsAsync(
             p => new UserPaymentPassword
             {
                 LockedUntil = null,
-                LastModifiedTime = DateTime.Now,
-                ModifyTime = DateTime.Now,
+                LastModifiedTime = nowUtc,
+                ModifyTime = nowUtc,
                 ModifyBy = "System",
                 ModifyId = 0
             },
             p => p.IsEnabled &&
                  p.LockedUntil.HasValue &&
-                 p.LockedUntil.Value <= DateTime.Now);
+                 p.LockedUntil.Value <= nowUtc);
 
         return result;
     }

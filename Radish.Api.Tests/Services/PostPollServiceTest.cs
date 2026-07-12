@@ -360,6 +360,7 @@ public class PostPollServiceTest
             postRepository.Object,
             postPollRepository.Object,
             postPollOptionRepository.Object,
-            postPollVoteRepository.Object);
+            postPollVoteRepository.Object,
+            TimeProvider.System);
     }
 }

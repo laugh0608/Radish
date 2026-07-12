@@ -508,7 +508,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         stock: normalizedStockType === 1 ? values.stock : 0,
         durationDays: normalizedDurationType === 1 ? values.durationDays : undefined,
         expiresAt: normalizedDurationType === 2 && values.expiresAt
-          ? dayjs(values.expiresAt).format('YYYY-MM-DD HH:mm:ss')
+          ? dayjs(values.expiresAt).toDate().toISOString()
           : undefined,
       };
 

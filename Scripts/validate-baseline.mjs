@@ -304,6 +304,12 @@ const steps = [
     args: ['run', 'check:sensitive-literals'],
   },
   {
+    title: '时间语义增量防回归扫描',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:time-semantics'],
+  },
+  {
     title: 'Repo Quality contract 自校验',
     phase: 'baseline',
     command: npmCommand,

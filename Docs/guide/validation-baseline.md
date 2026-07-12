@@ -104,6 +104,7 @@ npm run validate:ci
   - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
   - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
   - 运行高置信敏感字面量规则自测与全仓扫描
+  - 运行时间语义增量防回归扫描，禁止业务源码超过 baseline 新增 `DateTime.Now / Today / DateTimeOffset.Now`
   - 运行 `Console` 权限链路扫描
   - 运行 Repo Quality contract 自校验
     - 确保 workflow job 名、ruleset required checks 与本地 `validate:ci` 没有再次分叉

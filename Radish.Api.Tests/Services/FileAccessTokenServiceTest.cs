@@ -17,7 +17,7 @@ namespace Radish.Api.Tests.Services;
 
 public class FileAccessTokenServiceTest
 {
-    private static readonly DateTime FixedNow = new(2026, 7, 11, 12, 0, 0, DateTimeKind.Local);
+    private static readonly DateTime FixedNow = new(2026, 7, 11, 12, 0, 0, DateTimeKind.Utc);
 
     [Fact]
     public async Task CreateTokenAsync_ShouldReturnRawTokenOnceAndPersistOnlyHash()
@@ -263,12 +263,10 @@ public class FileAccessTokenServiceTest
             new FixedTimeProvider(FixedNow));
     }
 
-    private sealed class FixedTimeProvider(DateTime localNow) : TimeProvider
+    private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
     {
-        private readonly DateTimeOffset _utcNow = new(localNow.ToUniversalTime(), TimeSpan.Zero);
+        private readonly DateTimeOffset _utcNow = new(utcNow);
 
         public override DateTimeOffset GetUtcNow() => _utcNow;
-
-        public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Local;
     }
 }

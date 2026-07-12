@@ -208,8 +208,8 @@ export const ExperienceAdminPage = () => {
         pageIndex: targetPageIndex,
         pageSize: targetPageSize,
         expType: targetExpType,
-        startDate: targetStartDate ? targetStartDate.startOf('day').format('YYYY-MM-DD HH:mm:ss') : undefined,
-        endDate: targetEndDate ? targetEndDate.endOf('day').format('YYYY-MM-DD HH:mm:ss') : undefined,
+        startDate: targetStartDate ? targetStartDate.startOf('day').toDate().toISOString() : undefined,
+        endDate: targetEndDate ? targetEndDate.endOf('day').toDate().toISOString() : undefined,
       });
       setTransactions(result.data);
       setTransactionTotal(result.dataCount);
@@ -458,7 +458,7 @@ export const ExperienceAdminPage = () => {
         remark: values.remark.trim(),
         windowDays: reviewContextDraft?.windowDays,
         statDate: reviewContextDraft?.statDate
-          ? dayjs(reviewContextDraft.statDate).startOf('day').format('YYYY-MM-DD HH:mm:ss')
+          ? dayjs(reviewContextDraft.statDate).format('YYYY-MM-DD')
           : undefined,
         ruleCodes: reviewContextDraft?.ruleCodes,
         ruleLabels: reviewContextDraft?.ruleLabels,
@@ -528,7 +528,7 @@ export const ExperienceAdminPage = () => {
       await adminFreezeExperience({
         userId: normalizedUserId,
         reason: values.reason.trim(),
-        frozenUntil: values.frozenUntil ? values.frozenUntil.format('YYYY-MM-DD HH:mm:ss') : undefined,
+        frozenUntil: values.frozenUntil ? values.frozenUntil.toDate().toISOString() : undefined,
       });
 
       message.success('经验已冻结');
