@@ -12,7 +12,7 @@ imageTag: v26.7.1.1203-release
 
 - 记录日期：2026-07-12
 - 发布类型：正式 Web 部署修复补发
-- 当前状态：本地根因修复与生产相似容器验证完成，等待批次级验证、PR、回灌、tag 和镜像
+- 当前状态：本地根因修复与批次级验证完成，等待 PR、回灌、tag 和镜像
 
 ## 发布标识
 
@@ -44,7 +44,12 @@ imageTag: v26.7.1.1203-release
 - DbMigrate Release 容器首次 apply：OpenIddict `applied=1`，最终 `pending=0`。
 - DbMigrate Release 容器第二次 apply：OpenIddict `applied=0`，最终 `pending=0`。
 - DbMigrate Release 容器 verify：通过；Main / Log / Message / Chat ledger 均保持 applied。
-- 完整 build、test、`validate:ci` 与仓库卫生结果待批次验证后回写。
+- `dotnet build Radish.slnx -c Release --no-restore`：通过，`0 warning / 0 error`。
+- 注入 PostgreSQL 的 `dotnet test Radish.Api.Tests -c Release --no-build`：`635 passed / 0 skipped / 0 failed`。
+- `npm run validate:ci`：通过。
+- changed / staged repo hygiene：分别检查本批代码与文档文件，均通过；全仓扫描仍报告 `110` 个既有历史卫生问题和 `32` 个篇幅提醒，本批未新增也未扩入清理范围。
+- `git diff --check`：通过；验证完成后工作区干净。
+- 临时 PostgreSQL 容器、隔离数据库、一次性 DbMigrate 容器与本地诊断镜像均已清理。
 
 ## 服务器恢复边界
 
@@ -56,7 +61,7 @@ imageTag: v26.7.1.1203-release
 
 ## 发布门禁
 
-- [ ] 完成批次级 build、test、`validate:ci`、repo hygiene 与 `git diff --check`
+- [x] 完成批次级 build、test、`validate:ci`、repo hygiene 与 `git diff --check`
 - [ ] `dev -> master` PR required checks 全部通过并合并
 - [ ] 最新 `origin/master` 回灌 `dev`
 - [ ] 在 `master` 合并提交创建并推送 `v26.7.1.1203-release`

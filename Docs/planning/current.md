@@ -43,7 +43,7 @@
   - 2026-07-12 PR `#60` 已合并到 `master`，`master / dev / origin` 已统一到 `6db3668b`；`v26.7.1.1201-release` 已推送，Docker Images `#17` 的 Candidate Quality 与五个正式镜像 job 全部成功，High / Critical 扫描、多架构推送、SBOM 和 provenance 已完成。当前只剩固定 tag 生产部署与部署后复核。
   - 2026-07-12 首次生产部署固定使用 `v26.7.1.1201-release`，PostgreSQL / Redis 健康且 Frontend 已启动，但 DbMigrate 在 baseline 后因 PostgreSQL 小写物理表与硬编码 PascalCase migration SQL 不一致触发 `42P01`；API、Auth、Gateway 未启动。同时确认 DbMigrate 缺少 OpenIddict PostgreSQL 配置并回退 SQLite。服务器数据与 ledger 保留，工程第一顺位切到 `v26.7.1.1202-release` 前滚修复。
   - 2026-07-12 PR `#61` 已合并到 `master`，`master / dev / origin` 已统一到 `2717a8a2`；`v26.7.1.1202-release` 与 Docker Images `#18` 已成功。生产保留 volume 前滚后，自然日 migration 与 OpenIddict PostgreSQL provider 修复均生效，但空 OpenIddict PostgreSQL 首次 `MigrateAsync` 因运行态模型受 Npgsql legacy timestamp 全局开关污染，与 snapshot 的四个 `timestamptz` 字段不一致而阻断。API、Auth、Gateway 仍未启动，工程第一顺位切到 `v26.7.1.1203-release`。
-  - 2026-07-12 `v26.7.1.1203-release` 本地修复已完成：OpenIddict PostgreSQL 四个时间列显式固定为 `timestamp with time zone`，运行态模型差异进入 doctor / apply / Auth 启动门禁；空 PostgreSQL 首次迁移、重复执行、EnsureCreated schema 接管与真实 DbMigrate Release 容器链路均通过。当前等待批次级验证、PR、回灌、tag、镜像和生产固定 tag 前滚。
+  - 2026-07-12 `v26.7.1.1203-release` 本地修复与批次级验证已完成：OpenIddict PostgreSQL 四个时间列显式固定为 `timestamp with time zone`，运行态模型差异进入 doctor / apply / Auth 启动门禁；空 PostgreSQL 首次迁移、重复执行、EnsureCreated schema 接管、真实 DbMigrate Release 容器链路、全量后端 `635` 项和 `validate:ci` 均通过。当前等待 PR、回灌、tag、镜像和生产固定 tag 前滚。
 
 ## V1 产品与发布范围
 
