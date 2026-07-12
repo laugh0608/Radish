@@ -4,6 +4,7 @@ using SqlSugar;
 using Radish.Common;
 using Radish.Common.DbTool;
 using Radish.Common.TimeTool;
+using Radish.Auth.OpenIddict;
 
 namespace Radish.DbMigrate;
 
@@ -20,7 +21,8 @@ internal static class DbMigrateDoctor
         IServiceProvider services,
         IConfiguration configuration,
         string environment,
-        bool strict)
+        bool strict,
+        bool failOnErrors = false)
     {
         Console.WriteLine($"[Radish.DbMigrate] [Doctor] Environment: {environment}");
 
@@ -77,6 +79,7 @@ internal static class DbMigrateDoctor
         if (errors.Count == 0)
         {
             ProbeSeedTables(services, mainDbConnId, warnings, errors);
+            ProbeOpenIddict(services, configuration, warnings, errors);
         }
 
         PrintSection("Warning", warnings);
@@ -85,9 +88,9 @@ internal static class DbMigrateDoctor
         if (errors.Count > 0)
         {
             Console.WriteLine("[Radish.DbMigrate] [Doctor] 结论：当前环境不建议直接执行 seed，请先修复上述问题。");
-            if (strict)
+            if (strict || failOnErrors)
             {
-                throw new InvalidOperationException("DbMigrate verify 失败，请处理上方 Error 后重试。");
+                throw new InvalidOperationException("DbMigrate 检查失败，请处理上方 Error 后重试。");
             }
             return;
         }
@@ -103,6 +106,40 @@ internal static class DbMigrateDoctor
         }
 
         Console.WriteLine("[Radish.DbMigrate] [Doctor] 结论：当前环境可直接执行 init / seed。");
+    }
+
+    private static void ProbeOpenIddict(
+        IServiceProvider services,
+        IConfiguration configuration,
+        List<string> warnings,
+        List<string> errors)
+    {
+        var database = AuthOpenIddictPersistence.ResolveDatabase(configuration);
+        Console.WriteLine($"[Radish.DbMigrate] [Doctor] OpenIddict provider={database.DbType}。");
+
+        try
+        {
+            using var scope = services.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
+            var status = AuthOpenIddictPersistence.Inspect(db, database);
+            Console.WriteLine(
+                $"[Radish.DbMigrate] [Doctor] OpenIddict applied={status.AppliedMigrations.Count}, pending={status.PendingMigrations.Count}。");
+            if (status.PendingMigrations.Count > 0)
+            {
+                warnings.Add(
+                    $"OpenIddict pending migrations：{string.Join(", ", status.PendingMigrations)}；请执行 DbMigrate apply。");
+            }
+        }
+        catch (InvalidOperationException exception) when (
+            database.DbType == DataBaseType.Sqlite &&
+            exception.Message.Contains("SQLite 数据库不存在", StringComparison.Ordinal))
+        {
+            warnings.Add(exception.Message);
+        }
+        catch (Exception exception)
+        {
+            errors.Add($"OpenIddict schema 探测失败：{exception.Message}");
+        }
     }
 
     private static void ProbeSeedTables(IServiceProvider services, string? mainDbConnId, List<string> warnings, List<string> errors)
@@ -148,6 +185,20 @@ internal static class DbMigrateDoctor
                     Console.WriteLine($"[Radish.DbMigrate] [Doctor] Time: {summary}");
                 }
                 warnings.AddRange(timeAudit.Warnings);
+
+                foreach (var status in SchemaMigrationLedger.Inspect(dbScope))
+                {
+                    Console.WriteLine(
+                        $"[Radish.DbMigrate] [Doctor] Schema: {status.Scope}.{status.MigrationId}: {status.Message}");
+                    if (!status.ChecksumMatches)
+                    {
+                        errors.Add($"{status.Scope}.{status.MigrationId} checksum drift。");
+                    }
+                    else if (!status.Applied)
+                    {
+                        warnings.Add($"{status.Scope}.{status.MigrationId} pending；请执行 DbMigrate apply。");
+                    }
+                }
             }
         }
         catch (Exception exception)

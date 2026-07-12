@@ -2,6 +2,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
+    <ProjectReference Include="..\Radish.Auth.Migrations.PostgreSql\Radish.Auth.Migrations.PostgreSql.csproj" />
+    <ProjectReference Include="..\Radish.Auth.Migrations.Sqlite\Radish.Auth.Migrations.Sqlite.csproj" />
+    <ProjectReference Include="..\Radish.Auth.Persistence\Radish.Auth.Persistence.csproj" />
     <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
     <ProjectReference Include="..\Radish.Extension.Log\Radish.Extension.Log.csproj" />
     <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />

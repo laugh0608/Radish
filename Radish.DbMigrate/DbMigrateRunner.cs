@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Radish.Auth.OpenIddict;
 using Radish.Common;
 using Radish.Common.DbTool;
 using Radish.Model;
@@ -45,8 +47,18 @@ internal static class DbMigrateRunner
 
     private static async Task RunApplyAsync(IServiceProvider services, IConfiguration configuration, string environment)
     {
-        Console.WriteLine("[Radish.DbMigrate] 默认执行 apply：自动补齐表结构并填充初始数据。");
-        await RunSeedAsync(services, configuration, environment);
+        Console.WriteLine("[Radish.DbMigrate] 默认执行 apply：检查环境、迁移 schema、填充初始数据并严格验证。");
+        DbMigrateDoctor.Run(services, configuration, environment, strict: false, failOnErrors: true);
+
+        var db = services.GetRequiredService<ISqlSugarClient>();
+        await EnsureBusinessSchemaAsync(services, configuration, environment, db);
+        await ApplyOpenIddictMigrationsAsync(services, configuration);
+
+        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
+        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
+        await InitialDataSeeder.SeedAsync(db, services);
+
+        DbMigrateDoctor.Run(services, configuration, environment, strict: true);
     }
 
     private static async Task RunInitAsync(IServiceProvider services, IConfiguration configuration, string environment)
@@ -85,6 +97,7 @@ internal static class DbMigrateRunner
         }
 
         EnsureSupplementalIndexes(db, mainDbConnId);
+        EnsureSchemaBaseline(services, db);
 
         Console.WriteLine("[Radish.DbMigrate] Init 完成。");
     }
@@ -94,6 +107,19 @@ internal static class DbMigrateRunner
         Console.WriteLine($"[Radish.DbMigrate] Environment: {environment}");
 
         var db = services.GetRequiredService<ISqlSugarClient>();
+        await EnsureBusinessSchemaAsync(services, configuration, environment, db);
+
+        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
+        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
+        await InitialDataSeeder.SeedAsync(db, services);
+    }
+
+    private static async Task EnsureBusinessSchemaAsync(
+        IServiceProvider services,
+        IConfiguration configuration,
+        string environment,
+        ISqlSugarClient db)
+    {
         var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
 
         Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
@@ -123,10 +149,49 @@ internal static class DbMigrateRunner
         }
 
         EnsureSupplementalIndexes(db, mainDbConnId);
+        EnsureSchemaBaseline(services, db);
+    }
 
-        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
-        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
-        await InitialDataSeeder.SeedAsync(db, services);
+    private static void EnsureSchemaBaseline(IServiceProvider services, ISqlSugarClient db)
+    {
+        if (db is not SqlSugarScope dbScope)
+        {
+            throw new InvalidOperationException("Schema ledger 需要 SqlSugarScope 才能覆盖全部 ConnId。");
+        }
+
+        var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+            .ToLowerInvariant();
+        var timeAudit = TimeSemanticsAudit.Inspect(
+            dbScope.GetConnectionScope(normalizedMainDbConnId),
+            services.GetRequiredService<Radish.Common.TimeTool.BusinessCalendar>());
+        if (timeAudit.Warnings.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Main 不满足 baseline adoption 的时间语义：{string.Join("；", timeAudit.Warnings)}");
+        }
+
+        SchemaMigrationLedger.EnsureBaseline(
+            dbScope,
+            services.GetRequiredService<TimeProvider>());
+    }
+
+    private static async Task ApplyOpenIddictMigrationsAsync(
+        IServiceProvider services,
+        IConfiguration configuration)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
+        var database = AuthOpenIddictPersistence.ResolveDatabase(configuration);
+        var applied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database);
+        Console.WriteLine(
+            $"[Radish.DbMigrate] OpenIddict provider={database.DbType}, applied={applied.Count}。");
+        if (applied.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] OpenIddict 已应用：{string.Join(", ", applied)}。");
     }
 
     private static void EnsureSupplementalIndexes(ISqlSugarClient db, string? mainDbConnId)

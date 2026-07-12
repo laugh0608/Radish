@@ -1,54 +1,49 @@
 # 数据库结构变更协作口径
 
-> 本页用于明确 Radish 当前主业务库 schema 变更的正式路径，避免把其他仓库的 EF Core migration 机制误套到本仓库。
+> 本页用于明确 Radish 业务库与 OpenIddict 独立库的 schema 变更正式路径。
 
 ## 当前结论
 
-- `Radish.DbMigrate` 管辖的主业务库当前处于正式上线前阶段，以 `实体定义 + SqlSugar Attribute + Radish.DbMigrate` 作为数据库结构真相源。
-- 开发 / 本地环境通过 `Radish.DbMigrate` 执行 `CreateDatabase + InitTables` 同步结构；遇到破坏性 schema 收口时，可以删除本地 SQLite 后按当前实体重新初始化。
-- 项目正式上线、存在需要保护的测试 / 生产数据库之后，再按发布版本生成、审核和执行发布 SQL；上线前不维护历史发布脚本。
-- `doctor` / `verify` 当前是 `Radish.DbMigrate` 的只读自检入口，用于检查环境、连接定义、关键 `ConnId` 与主库业务表状态，不是 EF Core `ModelSnapshot` 式的迁移历史校验。
-- 在 `Radish.DbMigrate` 管辖范围内，当前不维护 EF Core `Migrations/*.cs`、`*.Designer.cs`、`ModelSnapshot.cs` 这类正式历史链，也不要求执行 `dotnet ef migrations add ...`。
-- 例外边界：`Radish.Auth` 中由 `AuthOpenIddictDbContext` 管理的 OpenIddict 独立库，仍按其 EF Core 机制维护；本页不覆盖该库。
+- SqlSugar 管辖的 Main / Log / Message / Chat 以“实体定义 + 有序 Radish migration + 每库 `RadishSchemaVersion` ledger”为结构真相源；已发布 migration ID 与 checksum 不得原地修改。
+- `init` 只面向空库创建当前结构并登记已包含版本；已有库统一通过 `apply` 前滚，不再把删除本地库作为默认治理办法。
+- `doctor` 与 `verify` 严格只读；前者报告配置、结构、ledger 与 pending，后者把 Warning / Error 作为非零退出门禁。`apply` 负责迁移、seed，并在末尾自动严格 verify。
+- OpenIddict 独立库由 `Radish.Auth.Persistence` 定义模型，SQLite / PostgreSQL 分别维护 provider-specific EF migrations；结构写入同样只由 `Radish.DbMigrate apply` 驱动。
+- Auth 启动不执行 `EnsureCreated()` 或 `Migrate()`；存在 pending migration 或数据库缺失时只读失败并提示先执行 DbMigrate。
 
 ## 环境分工
 
 ### 开发 / 本地
 
-- 默认先执行 `doctor`，再根据需要执行 `init` 或 `apply`。
-- `init` 会基于当前实体执行 `CodeFirst.InitTables`：
-  - 新表会被创建；
-  - 新增字段会自动补列；
-  - 旧字段不会被自动删除。
-- 若部分索引、种子或结构补丁不适合仅靠实体声明表达，可以在 `Radish.DbMigrate` 中补充显式逻辑。
-- 破坏性字段清理、字段重命名和历史兼容层移除完成后，开发者应删除本地 SQLite 数据库并重新初始化，避免旧列继续干扰验证。
+- 新环境执行 `init` 或直接执行 `apply`；已有环境先执行 `doctor`，完成备份后执行 `apply`，最后可单独执行 `verify` 复核。
+- 新表、列、索引、约束和数据回填必须进入有序 migration；seed 只维护幂等基础数据，不承载 schema 演进。
+- 迁移前置检查、Apply 与后置 Verify 必须同时覆盖 SQLite / PostgreSQL，不能依赖 Code First 静默修正既有正式库。
+- 本地临时库仍可删除重建用于开发，但这不能替代已有基线库的升级验证。
 
 ### 测试 / 生产
 
 - 不在 Api / Gateway 启动时自动调用 `InitTables`。
-- 正式上线前若需要测试库，优先按当前实体和 `DbMigrate` 初始化一套干净基线库，不携带预上线历史发布脚本。
-- 项目正式上线或存在需要保护的正式数据库后，必须从已发布基线生成“旧版本 -> 新版本”的发布 SQL，审核后再部署。
-- 发布 SQL 的目录、命名和回滚材料在进入正式数据库治理阶段时重新确认；不把上线前本地 SQLite 迭代历史当成生产迁移链。
+- 测试 / 生产数据库必须先备份，再运行同一 `DbMigrate apply` 迁移链；禁止宿主启动自动改 schema。
+- 默认只前滚；应用回退必须与数据库备份恢复配套，不能依赖未经演练的 Down SQL。
+- 每个发布候选至少覆盖旧基线升级、重复 apply、严格 verify、异常拒绝和备份恢复。
 
 ## 标准流程
 
-1. 修改 `Radish.Model` 中的实体、特性、索引定义，以及相关 `Vo`、AutoMapper、Service / Controller 调用。
-2. 在开发库执行 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor`，再执行 `init` 或 `apply` 同步表结构。
-3. 使用数据库客户端确认表、字段、默认值、索引与约束符合预期。
-4. 若改动属于上线前破坏性 schema 收口，清理旧字段兼容逻辑，并提醒开发者删除本地 SQLite 后重新初始化。
-5. 若改动涉及种子数据或开发库初始化，更新 `Radish.DbMigrate` 的受控初始化逻辑和相关测试数据构造。
-6. 若项目已经存在正式数据库，再从已发布基线生成本次版本需要的发布 SQL，并随发布材料审核；否则不提交上线前历史发布脚本。
-7. 在测试 / 生产部署前先执行本次版本对应的正式 SQL，再启动新版本宿主，并用 `doctor` / `verify` 做只读复核。
+1. 先定义稳定 migration ID、Scope、checksum source、provider 范围、前置检查、Apply、Verify 与恢复方式。
+2. 同步修改实体 / EF 模型和业务调用，确保新库当前结构与旧库前滚结果一致。
+3. 在隔离 SQLite 与 PostgreSQL 基线库执行 `doctor → apply → verify`，复核重入和异常拒绝。
+4. 对既有数据库制作可恢复备份并完成恢复演练；保留批次级验证记录。
+5. 部署时先运行 `Radish.DbMigrate apply`，成功后再启动 Api / Auth / Gateway；宿主只读校验 schema 就绪状态。
 
 ## 显式结构补丁口径
 
-当前用户公开索引、电子宠物、写操作可靠性等结构已经沉淀为实体、索引声明、服务契约和 `Radish.DbMigrate` 初始化逻辑，不再维护上线前阶段的历史发布脚本。
+既有无账本库只能在关键表、列、索引和数据语义校验通过后采用 `20260712_000_baseline`。后续结构变化必须新增 migration，不能继续把无版本补丁散落在 seed 或宿主启动路径。
 
-开发库仍可以通过 `DbMigrate` 显式补丁承接以下需要：
+`DbMigrate` 有序 migration 承接以下需要：
 
-- 结构初始化：新表、新列、索引和约束按当前实体同步。
+- 结构初始化：空库按当前实体创建并登记已包含版本。
+- 结构演进：已有库按 migration ID 前滚表、列、索引和约束。
 - 种子数据：角色、权限、系统设置、保留账号和测试数据按当前模型初始化。
-- 开发期纠偏：仅面向本地或测试基线库的受控修正，不作为生产历史迁移链。
+- 数据迁移：与 schema 变化不可分割的一次性回填必须具备前后置校验和 ledger 记录。
 
 运行时边界保持不变：
 
@@ -58,11 +53,11 @@
 
 ## 边界
 
-- 正式上线前，表、字段、索引、约束这类 schema 变更，必须进入“实体定义 + DbMigrate + 文档 / 验证口径”这条路径。
-- 正式上线后，涉及已有正式数据库的 schema 变更，必须补“发布 SQL + 发布 / 回滚材料”。
+- 表、字段、索引、约束这类 schema 变更，必须进入“模型定义 + 有序 migration + DbMigrate + 文档 / 验证”路径。
+- 涉及已有正式数据库时，必须补备份、前滚、验证与恢复材料。
 - 只改查询逻辑、Service 行为、API 返回模型、前端展示时，不需要为了形式新增 schema SQL。
 - 一次性数据修复、导入导出、运维排障脚本可以存在，但它们不是数据库结构的真相源，也不能替代正式 schema 变更流程。
-- 若改动目标是 `AuthOpenIddictDbContext` 对应的 OpenIddict 独立库，应回到该库自身的 EF Core 流程处理，而不是套用本页。
+- OpenIddict migration 由对应 provider 项目生成，但应用入口仍是 `Radish.DbMigrate apply`，禁止 Auth / API 自行迁移。
 
 ## 参考外部项目时的取舍
 
@@ -70,10 +65,7 @@
   - schema 变更必须有单一真相源；
   - 结构变更、种子数据、一次性修复、运维脚本要分角色治理；
   - 交付物必须可审查、可回滚、可追溯。
-- 不直接照搬的机制：
-  - EF Core `Migrations/*.cs` / `ModelSnapshot.cs` 历史链；
-  - `dotnet ef migrations add ...` 生成迁移文件；
-  - 把 `verify` 理解成“基于 migration 历史链”的校验。
+- EF Core migrations 只用于 OpenIddict 独立库；SqlSugar 业务库使用 Radish ledger，不混用 EF ModelSnapshot。
 
 ## 相关入口
 

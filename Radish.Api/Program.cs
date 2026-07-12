@@ -337,22 +337,9 @@ builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
 // 注册 OpenIddict DbContext（用于客户端管理 API，与 Auth 项目共享数据库）
-var openIddictDatabase = RuntimeDatabaseConfigResolver.Resolve(
-    builder.Configuration,
-    "OpenIddict:Database",
-    builder.Configuration.GetConnectionString("OpenIddict"),
-    "Radish.OpenIddict.db");
-builder.Services.AddDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>(options =>
-{
-    if (openIddictDatabase.DbType == DataBaseType.PostgreSql)
-    {
-        options.UseNpgsql(openIddictDatabase.ConnectionString);
-    }
-    else
-    {
-        options.UseSqlite(openIddictDatabase.ConnectionString);
-    }
-});
+Radish.Auth.OpenIddict.AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(
+    builder.Services,
+    builder.Configuration);
 
 // 注册 OpenIddict Core（仅用于客户端管理，不启用 Server）
 builder.Services.AddOpenIddict()

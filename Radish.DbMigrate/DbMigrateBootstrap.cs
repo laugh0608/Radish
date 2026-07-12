@@ -7,6 +7,7 @@ using Radish.Extension;
 using Radish.Extension.ExperienceExtension;
 using Radish.Extension.SqlSugarExtension;
 using Radish.Common.TimeTool;
+using Radish.Auth.OpenIddict;
 
 namespace Radish.DbMigrate;
 
@@ -45,6 +46,7 @@ internal static class DbMigrateBootstrap
         builder.Services.AddAllOptionRegister();
         builder.Services.AddSqlSugarSetup();
         builder.Services.AddExperienceCalculator(builder.Configuration);
+        AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(builder.Services, builder.Configuration);
         builder.Services.ConfigureApplication();
     }
 }
