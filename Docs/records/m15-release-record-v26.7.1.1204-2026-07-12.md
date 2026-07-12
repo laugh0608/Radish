@@ -12,14 +12,15 @@ imageTag: v26.7.1.1204-release
 
 - 记录日期：2026-07-12
 - 发布类型：正式 Web 部署修复补发
-- 当前状态：本地根因修复与候选级完整验证完成，等待 PR、回灌、tag 和镜像
+- 当前状态：生产固定 tag 前滚成功，首个管理员已创建，服务运行正常
 
 ## 发布标识
 
-- 计划 Git tag：`v26.7.1.1204-release`
+- Git tag：`v26.7.1.1204-release`
 - 产品版本：`26.7.1`
 - 当前修复提交：`8251526f`
-- 最终对应提交：待修复 PR 合并后，以补发 tag 指向的 `master` 提交为准
+- PR：`#63`
+- 最终对应提交：`53539556`
 - 正式发布矩阵：DbMigrate、API、Auth、Gateway、Frontend
 
 ## 补发原因与根因
@@ -47,19 +48,26 @@ imageTag: v26.7.1.1204-release
 - changed / staged repo hygiene 与 `git diff --check`：通过；全仓 `110` 个历史卫生问题均在既有 baseline 内，本批未新增。
 - 临时 PostgreSQL 容器已在验证完成后清理。
 
+## 生产部署结果
+
+- `v26.7.1.1204-release` 五个正式镜像构建成功，生产以固定 `RADISH_IMAGE_TAG=v26.7.1.1204-release` 完成前滚，未部署 `latest`。
+- 既有 PostgreSQL / Redis 持久化数据、Main schema ledger 与 OpenIddict migration history 均保留；DbMigrate、API、Auth、Gateway 与 Frontend 当前运行正常。
+- 首个管理员已通过正式 bootstrap 创建流程成功建立，初始化入口随后按后端管理员存在性契约关闭。
+- 部署后发现公开入口与 Workbench 未统一经过 `BootstrapGate`，导致首次管理员页面在点击“聊天”等私域入口后才出现。该问题不影响当前已初始化生产环境，已转入发布后维护线统一治理，不修改 1204 tag。
+
 ## 服务器恢复边界
 
 - 保留当前 PostgreSQL / Redis volume、已应用 Main schema ledger 与 OpenIddict migration history。
 - 不清库、不删除 volume、不手工修改 migration ledger 或 `__EFMigrationsHistory`。
 - 不移动或复用 1201 / 1202 / 1203 tag，不部署 `latest`。
-- PR 合并、`master -> dev` 回灌、1204 tag 与五镜像门禁完成前，不在生产服务器重复执行 `up -d`。
-- 镜像成功后固定 `RADISH_IMAGE_TAG=v26.7.1.1204-release` 前滚；DbMigrate 成功后才允许 API、Auth、Gateway 启动。
+- 后续部署继续固定明确版本 tag，并保留当前 PostgreSQL / Redis / Auth 证书持久化目录。
+- 首次管理员入口修复通过新的正常维护发布交付，不移动或复用 1204 tag。
 
 ## 发布门禁
 
 - [x] 完成候选级 build、test、`validate:ci`、repo hygiene 与 `git diff --check`
-- [ ] `dev -> master` PR required checks 全部通过并合并
-- [ ] 最新 `origin/master` 回灌 `dev`
-- [ ] 在 `master` 合并提交创建并推送 `v26.7.1.1204-release`
-- [ ] Docker Images 五镜像门禁成功
-- [ ] 生产固定 tag 前滚与部署后复核完成
+- [x] `dev -> master` PR required checks 全部通过并合并
+- [x] 最新 `origin/master` 回灌 `dev`
+- [x] 在 `master` 合并提交创建并推送 `v26.7.1.1204-release`
+- [x] Docker Images 五镜像门禁成功
+- [x] 生产固定 tag 前滚与部署后复核完成

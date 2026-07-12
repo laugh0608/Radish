@@ -7,9 +7,9 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前子阶段**：`P3-12-F 正式发布执行`
-- **工程第一顺位**：`v26.7.1.1204-release / Candidate Quality PostgreSQL DateTime 阻断修复与补发`
-- **产品下一顺位**：`发布后长期维护线与功能完成线`
+- **当前子阶段**：`发布后长期维护与功能完成`
+- **工程第一顺位**：`首次管理员初始化统一入口门禁`
+- **产品下一顺位**：`F1 商城商品效力与权益履约`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -44,7 +44,8 @@
   - 2026-07-12 首次生产部署固定使用 `v26.7.1.1201-release`，PostgreSQL / Redis 健康且 Frontend 已启动，但 DbMigrate 在 baseline 后因 PostgreSQL 小写物理表与硬编码 PascalCase migration SQL 不一致触发 `42P01`；API、Auth、Gateway 未启动。同时确认 DbMigrate 缺少 OpenIddict PostgreSQL 配置并回退 SQLite。服务器数据与 ledger 保留，工程第一顺位切到 `v26.7.1.1202-release` 前滚修复。
   - 2026-07-12 PR `#61` 已合并到 `master`，`master / dev / origin` 已统一到 `2717a8a2`；`v26.7.1.1202-release` 与 Docker Images `#18` 已成功。生产保留 volume 前滚后，自然日 migration 与 OpenIddict PostgreSQL provider 修复均生效，但空 OpenIddict PostgreSQL 首次 `MigrateAsync` 因运行态模型受 Npgsql legacy timestamp 全局开关污染，与 snapshot 的四个 `timestamptz` 字段不一致而阻断。API、Auth、Gateway 仍未启动，工程第一顺位切到 `v26.7.1.1203-release`。
   - 2026-07-12 PR `#62` 已合并到 `master`，`master / dev / origin` 已统一到 `ae0cd43a`；`v26.7.1.1203-release` 已创建并推送。Docker Images `#19` 的 Candidate Quality 在 `635` 项后端测试中出现 `3` 项 PostgreSQL 集成测试失败，错误均为 `DateTimeKind.Unspecified` 无法写入 `timestamp with time zone`；五个镜像 job 未执行，生产未前滚。1203 保持为不可变失败尝试，工程第一顺位切到 1204。
-  - 1204 已完成本地根因修复和候选级验证：PostgreSQL DateTime 参数 UTC 规范化从 SQL 日志 AOP 中拆为独立持久化契约，生产所有 SqlSugar 连接与真实 PostgreSQL 集成测试统一复用，消除 Npgsql 初始化顺序依赖；隔离 PostgreSQL 环境用例 `10/10`、CI 同款全量后端 `635/635`、Release build、`validate:candidate` 与 `validate:ci` 均通过。当前等待 PR、回灌、1204 tag 和镜像。
+  - 2026-07-12 PR `#63` 已合并到 `master`，`master / dev / origin` 已统一到 `53539556`；`v26.7.1.1204-release` 已推送，五镜像构建成功并以固定 tag 完成生产前滚。DbMigrate、API、Auth、Gateway、Frontend 均正常运行，首个管理员已成功创建，`P3-12-F` 正式发布执行至此关闭。
+  - 部署后真实使用发现首次管理员门禁入口不一致：公开入口与 Workbench 未统一经过 `BootstrapGate`，点击“聊天”等私域入口后才显示初始化页。后端管理员存在性、事务与并发保护正确，且当前管理员已创建，因此该问题不阻断现有生产运行；作为发布后维护首项，后续应把门禁上移到 `BrowserAppRouter` 统一编排，删除入口级重复包裹，并覆盖公开、Workbench、私域与 OIDC 回调路由契约。
 
 ## V1 产品与发布范围
 
@@ -90,12 +91,12 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 执行 `v26.7.1.1204-release` PostgreSQL DateTime 修复补发
+### 1. 收口首次管理员初始化统一入口门禁
 
-- `v26.7.1.1201-release`、`v26.7.1.1202-release` 与 `v26.7.1.1203-release` 均保持不可变；1203 明确记录为 Candidate Quality 失败且未产出镜像的尝试。
-- 固化 PostgreSQL DateTime 参数 UTC 契约，保持已发布 migration、schema ledger 与 migration history 不变。
-- 完成候选级验证，通过 PR 合并和 `master -> dev` 回灌后才创建 `v26.7.1.1204-release`。
-- 新镜像通过后在服务器保留现有 PostgreSQL / Redis volume 和已应用 ledger，以固定 tag 前滚；DbMigrate 成功后再执行宿主与页面复核。
+- 将首次管理员状态检查从部分入口的局部包裹上移到 `BrowserAppRouter` 统一编排，避免公开首页、Workbench 与私域入口行为分叉。
+- 删除入口组件中的重复 `BootstrapGate`，明确 OIDC 回调在未初始化状态下的行为，避免新入口再次漏接。
+- 补公开、Workbench、私域和 OIDC 回调的路由契约测试；保持后端管理员存在性、创建事务、限流与并发保护不变。
+- 当前生产管理员已创建且服务正常，本项按非阻断维护批次实施，不移动或复用 `v26.7.1.1204-release`。
 
 ### 2. 进入发布后常态开发
 
@@ -105,10 +106,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 完成 PostgreSQL DateTime 参数契约修复的候选级验证与文档收口。
-2. 通过 PR、回灌、`v26.7.1.1204-release` tag 和五镜像门禁完成补发。
-3. 在服务器保留现有 volume，以固定 `RADISH_IMAGE_TAG=v26.7.1.1204-release` 前滚并执行部署后复核。
-4. 进入长期维护线与商城商品效力专题。
+1. 以独立维护批次统一首次管理员初始化入口门禁，并补精确路由契约测试。
+2. 观察首批真实生产使用中的登录、内容参与、聊天、通知和 Console 管理链路；P0/P1 立即进入维护线，P2/P3 成组排期。
+3. 启动 `F1 商城商品效力与权益履约` 专题，代码前先复核并补齐对应设计边界。
 
 ## 并行维护线
 
