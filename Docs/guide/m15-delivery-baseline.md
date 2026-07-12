@@ -37,10 +37,11 @@ npm run validate:baseline:quick
 4. 等待 `Version Contract / Repo Hygiene / Frontend Lint / Baseline Quick / Dependency Security / Backend Guard / Identity Guard` 通过
 5. 正式发布时，确保候选提交已包含带机器可读元数据且状态真实的发布记录
 6. 合并到 `master`
-7. 在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`，通过后创建规范 tag
-8. 等待 `Docker Images` 工作流再次校验并产出同 tag 镜像
-9. 在部署环境用固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
-10. 部署后补充发布记录中的真实复核与回滚结论
+7. 把最新 `origin/master` 回灌并推送到 `dev`，确认下一轮开发基于当前稳定主线
+8. 在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`，通过后创建规范 tag
+9. 等待 `Docker Images` 工作流再次校验并产出同 tag 镜像
+10. 在部署环境用固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
+11. 部署后补充发布记录中的真实复核与回滚结论
 
 ## 最小部署顺序
 

@@ -22,14 +22,14 @@
   - 2026-07-11 Q0-D 已完成：Markdown 阅读态、富文本导入 / 建链 / 导出共用链接协议白名单，危险或未登记 scheme 统一退化为不可点击文本。
   - 2026-07-11 Q0 成组运行态补验已完成：Scalar 只暴露实际 v1 文档，Gateway 授权码、受保护 API、UserInfo、refresh、audience 拒绝、宿主健康与真实 Markdown / Hub 旅程均通过。
   - 2026-07-11 E8-B 已完成：关系复访、公开 Docs 服务端契约、Console 移动低风险边界、Pencil `P02` 与 Discover 内容优先结构均已收口；七项有限矩阵已通过 PC / mobile CSS 视口成组运行态验收，旅程中发现的公开帖子举报入口和举报队列帖子导航查询阻断已修复并补定向测试。当前无接受后置项和已知 `P0/P1` 阻断。
-  - PR `#58` 已于 2026-07-11 合并到 `master`，合并提交为 `c5906604`；本地 `dev` 保持在 `738b3f67`，继续遵循 `dev -> master` 单向 PR 流程，不把 `master` merge 或 rebase 回 `dev`。
+  - PR `#58` 已于 2026-07-11 合并到 `master`，合并提交为 `c5906604`；2026-07-12 已通过 `9733e73c` 把该 `master` 结果回灌 `dev`。当前固定采用“开发内容经 `dev -> master` PR 集成、每次合入 `master` 后立即 `master -> dev` 回灌”的闭环，不再维持单向 ancestry 分叉。
   - 集成安全复核发现并清除了附件测试脚本中的完整过期 JWT、默认账号密码、client secret 与 password grant；跨平台脚本统一改用进程级 `RADISH_ACCESS_TOKEN`，完整 JWT / Bearer 字面量 / 私钥头扫描已接入 `Baseline Quick / Repo Quality`。
   - `P3-12-F` 进入条件已经满足，阶段正式切换到正式版发布候选；当前仍不把技术 smoke 或页面可达误写成真实使用增长，真正的增长验证从受控试用开始。
   - `P3-12-F` 不再被定义为“所有候选工作全部完成后的奖励阶段”：Q0 与有限产品矩阵负责进入 F，Q1 / Q2 / Q3 的发布必要子集在 F 内完成并作为 Release Go 门禁，Q4 转为持续维护。
   - 2026-07-11 Q1-A 已完成实现收口：14 处裸 `_ = Task.Run` 已按不可丢失业务写、可重算派生数据和 best-effort 实时推送完成迁移；Main / Chat 源库 Outbox、Hangfire 领取与租约恢复、目标写幂等、Message 通知事务、DeadLetter 与受权人工重放 API 已落地。订单权益 / 背包核心写仍保持同步事务，未扩入 Q1-B、Q2、Q3 或页面工作。
   - 2026-07-11 Q1-A 候选级验证已通过：PostgreSQL 源事务回滚、双 Worker 原子领取、租约恢复、通知两表事务与业务键幂等均由环境驱动集成测试覆盖；DbMigrate 首次建库、重入与 verify 通过，真实 API + PostgreSQL Hangfire 已恢复 `Pending` 和过期 `Processing` 重复任务且只生成一份持久通知。验证中发现的 Chat 种子 PostgreSQL 重入阻断与 ReliableOutbox 权限契约缺口已修复。
   - 2026-07-11 Q1-B 已完成：保留 `MessageModel` 并接入全局异常安全边界、稳定错误码、`TraceId / X-Correlation-ID`、模型校验、认证权限与限流统一响应；关键发布 Controller 已同步真实 HTTP 状态，问答、投票、抽奖、轻回应、治理和 Wiki 的异常文案状态分类已清零，HTTP / client / console 与 588 项后端测试通过。
-  - Q1 已形成独立提交：Q1-A `33e4690f / 86466308`、Q1-B `873c5ea5`、Q1-C `ef370884`；`dev` 未合并或 rebase `master`。
+  - Q1 已形成独立提交：Q1-A `33e4690f / 86466308`、Q1-B `873c5ea5`、Q1-C `ef370884`；后续 `9733e73c` 仅完成稳定主线 ancestry 回灌，不改变这些专题提交边界。
   - 2026-07-12 Q1-C 已完整关闭：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、权限、可信代理与日志凭据脱敏均已落地；本地 Main SQLite 已在备份后完成 `DbMigrate apply / verify`，迁移前后完整性检查通过，PostgreSQL 双 Worker 原子额度竞争用例通过 `1/1`。Q1 Release Go 必要子集至此完成，工程第一顺位进入 Q2-A。
   - 2026-07-12 Q2-A Release Go 高风险子集已收口：统一 UTC `TimeProvider` 与系统业务日，迁移 token、幂等、支付、限流、投票 / 抽奖、订单 / 权益、清理、Hangfire 与经验 / 登录自然日；API 自然日改用 `DateOnly`，DbMigrate 能只读报告列类型与异常。SQLite verify、隔离 PostgreSQL 17 集成测试、609 项后端测试与 Baseline Quick 均通过；物理 `date` 改列按职责移交 Q2-B schema ledger。
   - 2026-07-12 Q2-B ledger / OpenIddict 首批已由提交 `7ac68c75` 收口：Main / Log / Message / Chat 引入 `RadishSchemaVersion` baseline 与 checksum drift 门禁，`apply` 接入前置 doctor、OpenIddict 显式迁移、seed 与严格 verify；OpenIddict 持久化边界已从 Auth 宿主拆出，SQLite / PostgreSQL 独立 migration assembly、空库迁移、重入和旧 `EnsureCreated` schema adoption 均已验证，EF Design 传递依赖已安全钉住且 High / Critical 为 `0`。

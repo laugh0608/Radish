@@ -293,14 +293,22 @@ npm run type-check
 git add -A
 git commit -m "chore(release): prepare v26.7.1"
 
-# 5. 通过 dev -> master PR 合并；随后在 master 复核并创建 Git 标签
+# 5. 通过 dev -> master PR 合并；合并后先把 master 回灌 dev
+git fetch origin
+git checkout dev
+git pull --ff-only origin dev
+git merge --ff-only origin/master
+# 如果因 rebase merge 或并发提交无法快进，按 ADR 改用：git merge origin/master
+git push origin dev
+
+# 6. 在 master 复核并创建 Git 标签
 git checkout master
 git pull origin master
 node Scripts/version-contract.mjs --tag v26.7.1-release
 git tag -a v26.7.1-release -m "Release v26.7.1: 简要描述"
 git push origin v26.7.1-release
 
-# 6. 在 GitHub 创建 Release（包含 Release Notes）
+# 7. 在 GitHub 创建 Release（包含 Release Notes）
 ```
 
 ### 版本标识

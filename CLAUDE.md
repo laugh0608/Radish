@@ -67,6 +67,8 @@
 - 主要协作分支：`dev`
 - `master` 仅作为稳定主线，只通过 Pull Request 合并
 - `master` 允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
+- 任何 PR 合并到 `master` 后，必须在开始下一轮 `dev` 开发前把最新 `origin/master` 同步回 `dev`；可快进时优先 fast-forward，否则使用普通 merge
+- `master -> dev` 回灌禁止使用 rebase、reset 或 force push 伪造同步；回灌只收口分支拓扑，不自动触发 tag、发布或部署
 - 文档唯一真相源：`Docs/`
 
 ## AI 执行边界

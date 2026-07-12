@@ -118,10 +118,11 @@ imageTag: v26.7.1-release
 1. 在 `dev` 确认目标产品版本并修改 `version.json`。
 2. 执行 `npm run version:sync`，提交全部生成字段。
 3. 完成 Release Go 验证，并把正式发布记录随候选提交纳入 `dev -> master` PR。
-4. 合并到 `master` 后，在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`。
-5. 创建并推送 tag；Docker workflow 复核相同契约后才允许推送镜像。
-6. 部署时用 `RADISH_IMAGE_TAG=<tag>` 固定五个镜像。
-7. 部署后更新发布记录中的真实验证与回滚结论。
+4. 合并到 `master` 后，先把最新 `origin/master` 回灌并推送到 `dev`，关闭本次 PR 的分支拓扑。
+5. 在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`。
+6. 创建并推送 tag；Docker workflow 复核相同契约后才允许推送镜像。
+7. 部署时用 `RADISH_IMAGE_TAG=<tag>` 固定五个镜像。
+8. 部署后更新发布记录中的真实验证与回滚结论。
 
 合并 `master`、创建 tag 和部署仍是三个独立决策。版本同步完成不自动授权创建 tag 或部署。
 
