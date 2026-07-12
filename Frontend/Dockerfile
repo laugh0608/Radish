@@ -14,9 +14,17 @@ COPY Frontend ./Frontend
 RUN npm run build --workspace=radish.client
 RUN npm run build --workspace=radish.console
 
-FROM node:24-bookworm-slim AS final
+FROM node:24-alpine AS final
 WORKDIR /app
 ENV NODE_ENV=production
+
+RUN rm -rf \
+    /opt/yarn* \
+    /usr/local/bin/corepack \
+    /usr/local/bin/npm \
+    /usr/local/bin/npx \
+    /usr/local/lib/node_modules/corepack \
+    /usr/local/lib/node_modules/npm
 
 COPY --from=build /src/Frontend/radish.client/dist ./client
 COPY --from=build /src/Frontend/radish.console/dist ./console
