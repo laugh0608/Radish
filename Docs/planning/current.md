@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式发布执行`
-- **工程第一顺位**：`v26.7.1.1203-release / OpenIddict PostgreSQL 初始迁移阻断修复与补发`
+- **工程第一顺位**：`v26.7.1.1204-release / Candidate Quality PostgreSQL DateTime 阻断修复与补发`
 - **产品下一顺位**：`发布后长期维护线与功能完成线`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -43,7 +43,8 @@
   - 2026-07-12 PR `#60` 已合并到 `master`，`master / dev / origin` 已统一到 `6db3668b`；`v26.7.1.1201-release` 已推送，Docker Images `#17` 的 Candidate Quality 与五个正式镜像 job 全部成功，High / Critical 扫描、多架构推送、SBOM 和 provenance 已完成。当前只剩固定 tag 生产部署与部署后复核。
   - 2026-07-12 首次生产部署固定使用 `v26.7.1.1201-release`，PostgreSQL / Redis 健康且 Frontend 已启动，但 DbMigrate 在 baseline 后因 PostgreSQL 小写物理表与硬编码 PascalCase migration SQL 不一致触发 `42P01`；API、Auth、Gateway 未启动。同时确认 DbMigrate 缺少 OpenIddict PostgreSQL 配置并回退 SQLite。服务器数据与 ledger 保留，工程第一顺位切到 `v26.7.1.1202-release` 前滚修复。
   - 2026-07-12 PR `#61` 已合并到 `master`，`master / dev / origin` 已统一到 `2717a8a2`；`v26.7.1.1202-release` 与 Docker Images `#18` 已成功。生产保留 volume 前滚后，自然日 migration 与 OpenIddict PostgreSQL provider 修复均生效，但空 OpenIddict PostgreSQL 首次 `MigrateAsync` 因运行态模型受 Npgsql legacy timestamp 全局开关污染，与 snapshot 的四个 `timestamptz` 字段不一致而阻断。API、Auth、Gateway 仍未启动，工程第一顺位切到 `v26.7.1.1203-release`。
-  - 2026-07-12 `v26.7.1.1203-release` 本地修复与批次级验证已完成：OpenIddict PostgreSQL 四个时间列显式固定为 `timestamp with time zone`，运行态模型差异进入 doctor / apply / Auth 启动门禁；空 PostgreSQL 首次迁移、重复执行、EnsureCreated schema 接管、真实 DbMigrate Release 容器链路、全量后端 `635` 项和 `validate:ci` 均通过。当前等待 PR、回灌、tag、镜像和生产固定 tag 前滚。
+  - 2026-07-12 PR `#62` 已合并到 `master`，`master / dev / origin` 已统一到 `ae0cd43a`；`v26.7.1.1203-release` 已创建并推送。Docker Images `#19` 的 Candidate Quality 在 `635` 项后端测试中出现 `3` 项 PostgreSQL 集成测试失败，错误均为 `DateTimeKind.Unspecified` 无法写入 `timestamp with time zone`；五个镜像 job 未执行，生产未前滚。1203 保持为不可变失败尝试，工程第一顺位切到 1204。
+  - 1204 已完成本地根因修复：PostgreSQL DateTime 参数 UTC 规范化从 SQL 日志 AOP 中拆为独立持久化契约，生产所有 SqlSugar 连接与真实 PostgreSQL 集成测试统一复用，消除 Npgsql 初始化顺序依赖；隔离 PostgreSQL 环境用例 `10/10`、CI 同款全量后端 `635/635` 已通过。当前等待候选级完整验证、PR、回灌、1204 tag 和镜像。
 
 ## V1 产品与发布范围
 
@@ -79,6 +80,7 @@ Radish V1 的产品定位固定为：
 - [v26.7.1.1201-release 补发记录](/records/m15-release-record-v26.7.1.1201-2026-07-12)
 - [v26.7.1.1202-release 部署修复补发记录](/records/m15-release-record-v26.7.1.1202-2026-07-12)
 - [v26.7.1.1203-release OpenIddict 修复补发记录](/records/m15-release-record-v26.7.1.1203-2026-07-12)
+- [v26.7.1.1204-release PostgreSQL DateTime 修复补发记录](/records/m15-release-record-v26.7.1.1204-2026-07-12)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -88,11 +90,11 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 执行 `v26.7.1.1203-release` OpenIddict 修复补发
+### 1. 执行 `v26.7.1.1204-release` PostgreSQL DateTime 修复补发
 
-- `v26.7.1.1201-release` 与 `v26.7.1.1202-release` 保持不可变，分别记录已关闭的 PostgreSQL 标识符 / provider 阻断和当前 OpenIddict 模型阻断。
-- 固定 OpenIddict PostgreSQL 时间列模型，保持已发布初始 migration 与既有 migration history 不变。
-- 完成批次级验证，通过 PR 合并和 `master -> dev` 回灌后才创建 `v26.7.1.1203-release`。
+- `v26.7.1.1201-release`、`v26.7.1.1202-release` 与 `v26.7.1.1203-release` 均保持不可变；1203 明确记录为 Candidate Quality 失败且未产出镜像的尝试。
+- 固化 PostgreSQL DateTime 参数 UTC 契约，保持已发布 migration、schema ledger 与 migration history 不变。
+- 完成候选级验证，通过 PR 合并和 `master -> dev` 回灌后才创建 `v26.7.1.1204-release`。
 - 新镜像通过后在服务器保留现有 PostgreSQL / Redis volume 和已应用 ledger，以固定 tag 前滚；DbMigrate 成功后再执行宿主与页面复核。
 
 ### 2. 进入发布后常态开发
@@ -103,9 +105,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 完成 OpenIddict PostgreSQL 运行态模型修复的批次级验证与文档收口。
-2. 通过 PR、回灌、`v26.7.1.1203-release` tag 和五镜像门禁完成补发。
-3. 在服务器保留现有 volume，以固定 `RADISH_IMAGE_TAG=v26.7.1.1203-release` 前滚并执行部署后复核。
+1. 完成 PostgreSQL DateTime 参数契约修复的候选级验证与文档收口。
+2. 通过 PR、回灌、`v26.7.1.1204-release` tag 和五镜像门禁完成补发。
+3. 在服务器保留现有 volume，以固定 `RADISH_IMAGE_TAG=v26.7.1.1204-release` 前滚并执行部署后复核。
 4. 进入长期维护线与商城商品效力专题。
 
 ## 并行维护线

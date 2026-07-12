@@ -6,20 +6,21 @@ imageTag: v26.7.1.1203-release
 
 # M15 OpenIddict 修复补发记录（v26.7.1.1203-release，2026-07-12）
 
-> 本页记录 `v26.7.1.1202-release` 生产前滚被 OpenIddict PostgreSQL 初始 migration 阻断后的修复补发。PR、tag、镜像与生产结果只在实际完成后回写。
+> 本页记录 `v26.7.1.1202-release` 生产前滚被 OpenIddict PostgreSQL 初始 migration 阻断后的修复补发，以及该补发在远程 Candidate Quality 中暴露的新阻断。
 
 ## 记录信息
 
 - 记录日期：2026-07-12
 - 发布类型：正式 Web 部署修复补发
-- 当前状态：本地根因修复与批次级验证完成，等待 PR、回灌、tag 和镜像
+- 当前状态：tag 已推送；Candidate Quality 失败，五个镜像未构建，生产未前滚
 
 ## 发布标识
 
-- 计划 Git tag：`v26.7.1.1203-release`
+- Git tag：`v26.7.1.1203-release`（已推送，保持不可变）
 - 产品版本：`26.7.1`
 - 当前修复提交：`f6daa770`
-- 最终对应提交：待修复 PR 合并后，以补发 tag 指向的 `master` 提交为准
+- PR：`#62`
+- 最终对应提交：`ae0cd43a`
 - 正式发布矩阵：DbMigrate、API、Auth、Gateway、Frontend
 
 ## 补发原因与根因
@@ -51,19 +52,27 @@ imageTag: v26.7.1.1203-release
 - `git diff --check`：通过；验证完成后工作区干净。
 - 临时 PostgreSQL 容器、隔离数据库、一次性 DbMigrate 容器与本地诊断镜像均已清理。
 
+## 远程候选结果
+
+- Docker Images `#19` 的 Candidate Quality 失败：`632 passed / 3 failed / 0 skipped`，进程退出码为 `1`。
+- 失败用例为 `TimeSemanticsPostgresIntegrationTest.Audit_ShouldRecognizePostgreSqlDateContracts`、`FileAccessTokenPostgresIntegrationTest.Consume_ShouldEnforceLimitAcrossPostgreSqlWorkers` 与 `ReliableOutboxPostgresIntegrationTest.Outbox_ShouldPreserveTransactionAndClaimSemantics_OnPostgreSql`。
+- 三项失败均为 Npgsql 拒绝把 `DateTimeKind.Unspecified` 写入 PostgreSQL `timestamp with time zone`。这些直接创建 SqlSugar client / scope 的集成测试没有挂载生产参数规范化 AOP，并隐式依赖 Npgsql legacy timestamp 开关的初始化顺序；新增 OpenIddict 测试改变了进程内初始化时序，使门禁缺口稳定暴露。
+- Candidate Quality 在镜像构建前失败，因此 Backend、Auth、Gateway、DbMigrate 与 Frontend 镜像 job 均未执行，没有可供生产前滚的 1203 镜像。
+- 不移动或复用 1203 tag；根因修复转入 `v26.7.1.1204-release`。
+
 ## 服务器恢复边界
 
 - 不删除或重建 PostgreSQL / Redis volume。
 - 不修改已应用 schema ledger 或 `__EFMigrationsHistory`，不重写 1202 已成功应用的自然日 migration。
-- 不移动或复用 1201 / 1202 tag，不部署 `latest`。
-- PR 合并、`master -> dev` 回灌、1203 tag 与五镜像门禁完成前，不在生产服务器重复执行 `up -d`。
-- 镜像成功后固定 `RADISH_IMAGE_TAG=v26.7.1.1203-release` 前滚；DbMigrate 成功后才允许 API、Auth、Gateway 启动。
+- 不移动或复用 1201 / 1202 / 1203 tag，不部署 `latest`。
+- 1204 PR 合并、`master -> dev` 回灌、tag 与五镜像门禁完成前，不在生产服务器重复执行 `up -d`。
+- 1204 镜像成功后固定 `RADISH_IMAGE_TAG=v26.7.1.1204-release` 前滚；DbMigrate 成功后才允许 API、Auth、Gateway 启动。
 
 ## 发布门禁
 
 - [x] 完成批次级 build、test、`validate:ci`、repo hygiene 与 `git diff --check`
-- [ ] `dev -> master` PR required checks 全部通过并合并
-- [ ] 最新 `origin/master` 回灌 `dev`
-- [ ] 在 `master` 合并提交创建并推送 `v26.7.1.1203-release`
-- [ ] Docker Images 五镜像门禁成功
-- [ ] 生产固定 tag 前滚与部署后复核完成
+- [x] `dev -> master` PR required checks 全部通过并合并
+- [x] 最新 `origin/master` 回灌 `dev`
+- [x] 在 `master` 合并提交创建并推送 `v26.7.1.1203-release`
+- [ ] Docker Images 五镜像门禁成功（Candidate Quality 失败，镜像未构建）
+- [ ] 生产固定 tag 前滚与部署后复核完成（转入 1204）
