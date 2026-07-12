@@ -21,7 +21,14 @@
 - 萝卜坑 Phase 5 中影响工作流闭环的支付密码真实 API、快捷跳转、复制反馈、安全日志判断
 - Console 与后台治理中的模拟 API、用户详情、萝卜币流水、订单列表、商城管理前端和统计 TODO
 - 经验 / 等级治理中的管理员调整、冻结 / 解冻、每日统计、缓存和配置化上限
-- 商城权益效果中的双倍经验、帖子置顶、帖子高亮等可购买权益效果复核
+
+## 已回拉到发布后功能完成线
+
+以下事项在 `v26.7.1-release` 部署后按 [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion) 推进，不再作为普通 backlog：
+
+- 商城商品效力、背包使用、权益激活 / 失效与 Console 排障。
+- `default / guofeng` 主题的用户持久化、主题权益和真实页面生效。
+- client、Console 与 Auth 的 i18n 残余、格式化和双语布局稳定性。
 
 以下事项已回拉到 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)：
 

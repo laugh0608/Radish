@@ -7,9 +7,9 @@
 ## 当前状态
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Release Go 候选级运行态验收与受控试用准备`
-- **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
+- **当前子阶段**：`P3-12-F 正式发布执行`
+- **工程第一顺位**：`v26.7.1-release / master 集成、tag、镜像与部署`
+- **产品下一顺位**：`发布后长期维护线与功能完成线`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -37,7 +37,8 @@
   - 2026-07-12 Q2-B Release Go 必要子集已完整关闭：SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已阻止首次 baseline / 后续 migration 的并发重复执行；baseline 后禁止 Code First / 旧补丁静默修复。SQLite 文件备份恢复自动化测试和 PostgreSQL `pg_dump → 前滚 → pg_restore → 再前滚` 生产相似演练通过；最终全量后端 `618` 通过、`7` 个环境用例跳过，依赖 High / Critical 为 `0`，临时容器已清理。工程第一顺位进入 Q2-C。
   - 2026-07-12 Q2-C Release Go 必要子集已完成：根 `version.json` 统一 .NET、npm workspaces、Rust、Tauri、Flutter 与镜像产品版本，当前候选为 `26.7.1`、Flutter 为 `26.7.1+1`；版本同步、字段漂移、规范 tag、正式发布记录与 Docker 构建前阻断已自动化。Baseline Quick、.NET 构建、Cargo metadata、Flutter analyze 与 `204` 项 Flutter 测试均通过；本批未创建 tag、镜像或部署。工程第一顺位进入 Q3。
   - 2026-07-12 Q3 Release Go 必要子集已完成：根 lint 与 Hook dependency warning 清零，四个前端 workspace 的 lint / type-check / test 进入默认基线，.NET 候选构建按 warning-as-error 执行；全量仓库卫生采用已审计预算阻断新增问题，`Candidate Quality` 提供手动、定期与镜像发布前复用入口，依赖安全、SBOM、High / Critical 镜像扫描和 provenance 已接入。Q3-C 只补 JWT issuer、idle-session handler、Hub 标准 `sub` 与仓储租户软删 / 恢复真实缺口，未重复 Q1 / Q2 已有迁移、并发和错误契约资产；本批未创建 tag、推送镜像或部署。
-  - 2026-07-12 Release Go 候选运行态验收已通过：本地 SQLite 在备份后完成 schema / OpenIddict 升级与严格 verify，真实启动暴露的 split table baseline 接管和 API 异常管线宿主阻断已修复；Gateway PC `1920x1080` 与移动 `390x844` CSS 视口覆盖公开、私域、作者态和 Console 代表路径，宿主探针、公开 head 主路径与候选静态门禁通过。公开用户主页初始 HTML 缺少服务端 head 登记为非阻断 P2；当前 Release Go 仅余小规模受控试用，仍未创建 tag、推送镜像或部署。
+  - 2026-07-12 Release Go 候选运行态验收已通过：本地 SQLite 在备份后完成 schema / OpenIddict 升级与严格 verify，真实启动暴露的 split table baseline 接管和 API 异常管线宿主阻断已修复；Gateway PC `1920x1080` 与移动 `390x844` CSS 视口覆盖公开、私域、作者态和 Console 代表路径，宿主探针、公开 head 主路径与候选静态门禁通过。公开用户主页初始 HTML 缺少服务端 head 登记为非阻断 P2；本批未创建 tag、推送镜像或部署。
+  - 2026-07-12 发布节奏已按个人开发者模式调整：工程 Release Go 证据已经满足正式发布要求；小规模受控试用改为发布后的早期真实使用观察，不再阻挡 tag。正式部署和部署后复核完成后，项目进入长期维护线与功能完成线，优先完成商城商品效力与权益履约，再推进主题和 i18n 完成度。
 
 ## V1 产品与发布范围
 
@@ -69,6 +70,8 @@ Radish V1 的产品定位固定为：
 - [P3-12-F Q2-B 数据库演进与 schema ledger 方案](/records/p3-12-f-q2-b-database-evolution-plan-2026-07-12)
 - [P3-12-F Q2-C 版本单一真值治理方案](/records/p3-12-f-q2-c-version-governance-plan-2026-07-12)
 - [P3-12-F Release Go 候选运行态验收记录](/records/p3-12-f-release-go-candidate-runtime-validation-2026-07-12)
+- [v26.7.1-release 正式发布记录](/records/m15-release-record-2026-07-12)
+- [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
@@ -77,24 +80,25 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 准备 `dev -> master` 候选集成
+### 1. 执行 `v26.7.1-release` 正式发布
 
 - Q1 / Q2 / Q3 与候选运行态验收均已形成独立提交和验证记录。
-- 本轮留痕提交后 `dev` 相对 `c5906604` 为 `23` 个提交、`308` 个文件；最终 PR 前重新 fetch 并刷新 `master...dev` 范围、merge-tree 与 required checks。
-- 是否创建 PR、合并、开始受控试用、创建 tag 和生产发布继续分别决策。
+- 正式发布记录随 `dev -> master` PR 进入 `master`，远程 required checks 通过后再合并。
+- 合并后先执行 `master -> dev` 回灌，再校验并创建 `v26.7.1-release` tag。
+- 五个镜像完成供应链门禁后，使用固定 tag 部署并补部署后复核与发布记录。
 
-### 2. 执行剩余 Release Go 门禁
+### 2. 进入发布后常态开发
 
-- 候选运行态验收已经通过；移动端工具未提供 DPR 设置，记录只声明 `390x844` CSS 视口覆盖。
-- 下一步建立并执行小规模受控试用，记录激活、首次参与、收到回应后的回流、核心任务失败和用户反馈。
-- 公开用户主页服务端 head 缺口按非阻断 P2 进入并行维护线，不冒充受控试用或阻断当前集成准备。
-- 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
+- 长期维护线接收用户反馈、bug、安全、依赖、迁移和部署问题。
+- 功能完成线一次推进一个完整业务专题，首批顺位为商城商品效力与权益履约、主题系统完成、i18n 完成度治理。
+- 发布后的真实使用观察直接形成维护或功能 backlog，不再反向阻挡本次 tag。
 
 ## 下一顺位
 
-1. 最终刷新 `master...dev` 集成范围并准备 `dev -> master` PR。
-2. 建立并执行小规模受控试用记录。
-3. 受控试用无未处置 `P0/P1` 后，再分别决策合并、tag 与生产发布。
+1. 提交正式发布记录与规划调整，准备 `dev -> master` PR。
+2. PR 合并并完成 `master -> dev` 回灌后，创建 `v26.7.1-release` tag。
+3. 等待镜像门禁通过，部署固定 tag 并执行部署后复核。
+4. 进入长期维护线与商城商品效力专题。
 
 ## 并行维护线
 
@@ -106,8 +110,8 @@ Radish V1 的产品定位固定为：
 
 ## 当前不做
 
-- 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- 不创建发布 tag、不推送镜像、不部署；不扩展全仓 strict、完整 E2E 或无关重构。
+- 不在 `dev` 或 PR head 上提前创建正式 tag，不绕过 `master` required checks、镜像扫描或部署前备份。
+- 发布执行期间不扩展全仓 strict、完整 E2E、页面改版或无关重构。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不解冻 Tauri，不恢复完整 Flutter 套件；二者均不得与纯 Web 并行争夺当前主线资源。
