@@ -1,6 +1,6 @@
 # P3-12-F Q1-C 文件访问令牌审计与实施方案
 
-> 状态：`运行时实施与 SQLite 验证已完成；待目标库 apply / verify 与 PostgreSQL 环境用例`
+> 状态：`通过；Q1-C Release Go 门禁已关闭`
 >
 > 日期：`2026-07-11`（Asia/Shanghai）
 >
@@ -166,7 +166,7 @@
 
 Q1-C 完成后再进入 Q2。当前不新增文件分享页面，不迁移其他 token，不做全仓时间语义重构，也不把附件存储、下载审计或 CDN 设计混入本批。
 
-## 八、实施结果与待验收门禁
+## 八、实施结果与验收结论
 
 已完成：
 
@@ -176,7 +176,11 @@ Q1-C 完成后再进入 Q2。当前不新增文件分享页面，不迁移其他
 - 公开基址与可信代理解析已显式化；Service AOP、审计请求体和 SQL AOP 已防止记录原始 token 或完整 hash。
 - `dotnet build Radish.slnx -c Debug --no-restore` 通过，`0` warning / `0` error；`dotnet test Radish.Api.Tests --no-build --no-restore` 通过 `597`、跳过 `2`、失败 `0`。
 
-尚未写入“已完成”的环境门禁：
+2026-07-12 环境门禁：
 
-- 本轮未对用户当前 Main 数据库执行不可逆 `DbMigrate apply`；需在备份后执行 apply，紧接着执行 `verify`。
-- `RADISH_TEST_POSTGRES_CONNECTION_STRING` 未配置，Q1-C PostgreSQL 双 Worker 并发条件更新用例因此明确跳过；不以 SQLite 结果代替生产相似并发语义验收。
+- 本地 Main SQLite 在迁移前已生成完整备份；`FileAccessToken` 迁移前共 `0` 行，不存在旧明文、异常格式或重复值，备份与目标库完整性检查均为 `ok`。
+- 目标库 `DbMigrate apply` 成功，紧接着执行的严格 `verify` 成功；迁移后旧格式、异常格式和重复 hash 均为 `0`。
+- 临时 `postgres:16` 仅绑定 `127.0.0.1:55432`；`FileAccessTokenPostgresIntegrationTest.Consume_ShouldEnforceLimitAcrossPostgreSqlWorkers` 通过 `1/1`，两个独立 Worker 的 30 次并发请求只能取得 5 次额度，最终计数为 5。测试 schema 已删除，临时容器已停止并自动删除。
+- 当前 Codex / macOS 验证环境的默认配置文件监听器曾在应用启动前形成重载循环；关闭 Host 默认配置热重载后，已构建的 DbMigrate 候选二进制可正常完成 `apply / verify`。随后补跑的 `dotnet run` 仍停在本机 MSBuild 层且未进入应用逻辑，残留进程已清理；该工具环境现象不影响候选二进制与数据库门禁结论。
+
+结论：数据库不保存可直接使用的明文 token，原子消费在 PostgreSQL 真实竞争下不会突破 `MaxAccessCount`；Q1-C 退出条件全部满足，可以进入 Q2-A 方案阶段。

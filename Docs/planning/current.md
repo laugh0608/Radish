@@ -8,9 +8,9 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Q1-C 文件访问令牌治理`
+- **工程第一顺位**：`P3-12-F / Q2-A 时间语义与历史数据迁移方案`
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
-- **复核日期**：`2026-07-11`
+- **复核日期**：`2026-07-12`
 - **当前判断**：
   - 纯 Web 已成为 PC / mobile 浏览器默认产品形态，`/desktop` 仅保留 WebOS 历史兼容入口；Flutter 保持移动原生维护线，PC/Tauri 后置。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
@@ -30,7 +30,7 @@
   - 2026-07-11 Q1-A 候选级验证已通过：PostgreSQL 源事务回滚、双 Worker 原子领取、租约恢复、通知两表事务与业务键幂等均由环境驱动集成测试覆盖；DbMigrate 首次建库、重入与 verify 通过，真实 API + PostgreSQL Hangfire 已恢复 `Pending` 和过期 `Processing` 重复任务且只生成一份持久通知。验证中发现的 Chat 种子 PostgreSQL 重入阻断与 ReliableOutbox 权限契约缺口已修复。
   - 2026-07-11 Q1-B 已完成：保留 `MessageModel` 并接入全局异常安全边界、稳定错误码、`TraceId / X-Correlation-ID`、模型校验、认证权限与限流统一响应；关键发布 Controller 已同步真实 HTTP 状态，问答、投票、抽奖、轻回应、治理和 Wiki 的异常文案状态分类已清零，HTTP / client / console 与 588 项后端测试通过。
   - Q1 已形成独立提交：Q1-A `33e4690f / 86466308`、Q1-B `873c5ea5`、Q1-C `ef370884`；`dev` 未合并或 rebase `master`。
-  - 2026-07-11 Q1-C 运行时实施已完成：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、创建者 / 上传者 / System / Admin 权限、可信代理与日志凭据脱敏均已落地。解决方案构建 `0` warning / `0` error，后端测试通过 `597`、跳过 `2`；当前仍需备份后执行目标库 `DbMigrate apply / verify`，并在可用 PostgreSQL 环境补跑双 Worker 并发用例。
+  - 2026-07-12 Q1-C 已完整关闭：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、权限、可信代理与日志凭据脱敏均已落地；本地 Main SQLite 已在备份后完成 `DbMigrate apply / verify`，迁移前后完整性检查通过，PostgreSQL 双 Worker 原子额度竞争用例通过 `1/1`。Q1 Release Go 必要子集至此完成，工程第一顺位进入 Q2-A。
 
 ## V1 产品与发布范围
 
@@ -65,23 +65,23 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 完成 Q1-C 目标库迁移与 PostgreSQL 验收
+### 1. 先完成 Q2-A 时间语义与历史数据迁移方案
 
-- 备份 Main 数据库后执行 `DbMigrate apply`，紧接着执行严格 `verify`，确认不存在旧明文、异常格式或重复 hash。
-- 迁移后不回滚到只理解明文 token 的旧二进制；历史 32 字符 GUID token 仍由新运行时 hash 后命中。
-- 配置 `RADISH_TEST_POSTGRES_CONNECTION_STRING` 后执行 Q1-C PostgreSQL 双 Worker 用例，以真实数据库竞争结果关闭并发门禁。
+- 盘点持久化、跨服务契约、过期比较、奖励、签到、冷却、统计和幂等窗口中的时间来源与时区语义，按发布风险划分迁移批次。
+- 明确 UTC 持久化与跨服务契约、`TimeProvider` 注入、业务 / 用户时区边界，以及既有本地时间数据的识别、转换和兼容策略。
+- 方案确认前不修改时间运行时，不做全仓 `DateTime.Now / Today` 机械替换。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
-- Q1-C 只治理文件访问 token 的存储、消费、撤销、权限、迁移和验证；不在本批混入 Q2、Q3、页面调整或无关附件重构。
+- Q2-A 只收口时间语义、历史数据迁移边界和分批实施顺序；不提前混入 Q2-B、Q2-C、Q3、页面调整或无关重构。
 - 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
 - 候选级运行态 smoke 仍只在用户当轮确认服务已启动后执行。
 
 ## 下一顺位
 
-1. 备份当前 Main 数据库，执行 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply`。
-2. 执行 `dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify`，并在 PostgreSQL 环境补跑 Q1-C 双 Worker 并发用例。
-3. Q1-C 达到 Release Go 退出条件后，先进入 Q2-A 时间语义审计与迁移方案，随后推进 Q2-B PostgreSQL / OpenIddict 升级和 Q2-C 版本单一真值。
+1. 对正式发布矩阵执行 Q2-A 时间语义只读审计，建立高风险契约与历史数据清单。
+2. 提交时间语义与历史数据迁移方案，明确批次、停止线、兼容和验证口径，等待确认后再进入代码。
+3. Q2-A 方案确认并完成发布必要子集后，再推进 Q2-B PostgreSQL / OpenIddict 升级和 Q2-C 版本单一真值。
 
 ## 并行维护线
 
@@ -94,7 +94,7 @@ Radish V1 的产品定位固定为：
 ## 当前不做
 
 - 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- Q1-C 目标库迁移和 PostgreSQL 门禁关闭前不进入 Q2；不混入 Q3、页面调整或无关重构。
+- Q2-A 方案确认前不修改时间运行时；不提前进入 Q2-B / Q2-C，不混入 Q3、页面调整或无关重构。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不恢复 WebOS、Tauri 或完整 Flutter 套件为当前主线。
