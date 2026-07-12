@@ -6,19 +6,19 @@ imageTag: v26.7.1.1202-release
 
 # M15 补发记录（v26.7.1.1202-release，2026-07-12）
 
-> 本页记录 `v26.7.1.1201-release` 首次生产部署被 DbMigrate 阻断后的补发。当前只记录已经发生的修复事实；PR、tag、镜像与部署结果在实际完成后回写。
+> 本页记录 `v26.7.1.1201-release` 首次生产部署被 DbMigrate 阻断后的补发，以及 1202 前滚暴露的后续 OpenIddict 阻断。
 
 ## 记录信息
 
 - 记录日期：2026-07-12
 - 发布类型：正式 Web 部署修复补发
-- 当前状态：本地候选验证完成，等待 PR、tag、镜像和生产重试
+- 当前状态：PR、tag 与五镜像成功；生产前滚仍被 OpenIddict 初始 EF migration 阻断
 
 ## 发布标识
 
 - 计划 Git tag：`v26.7.1.1202-release`
 - 产品版本：`26.7.1`
-- 对应提交：待修复 PR 合并后，以补发 tag 指向的 `master` 提交为准
+- 对应提交：`2717a8a2`（PR `#61` 合并提交）
 - 正式发布矩阵：DbMigrate、API、Auth、Gateway、Frontend
 
 ## 补发原因
@@ -55,6 +55,9 @@ imageTag: v26.7.1.1202-release
 
 ## 生产部署结论
 
-- 部署情况：未部署
-- 复核情况：未执行
-- 说明：五个补发镜像完成候选门禁后再重试，并补数据库 ledger、OpenIddict、宿主健康、公开页面、登录与 Console 复核。
+- Docker Images：`#18` 成功，五个正式镜像已完成候选门禁与推送。
+- 部署情况：已使用固定 `RADISH_IMAGE_TAG=v26.7.1.1202-release` 保留 volume 前滚，但未完成上线。
+- 已确认生效：PostgreSQL 小写物理标识符修复、`main.20260712_001_experience_natural_dates` 应用、OpenIddict provider 切换为 PostgreSQL。
+- 当前阻断：空 OpenIddict PostgreSQL 执行 `20260712030518_20260712_InitialOpenIddict` 前，EF Core 检测运行态模型与 snapshot 不一致；API、Auth、Gateway 未启动。
+- 数据边界：保留 PostgreSQL / Redis volume、已应用 schema ledger 与 `__EFMigrationsHistory`；未清库、未手工改 ledger、未重复执行生产 Compose。
+- 后续处置：旧 tag 保持不可变，改由 `v26.7.1.1203-release` 修复 OpenIddict PostgreSQL 运行态模型后继续前滚。

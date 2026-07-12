@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.EntityFrameworkCore;
+using OpenIddict.EntityFrameworkCore.Models;
 
 namespace Radish.Auth.OpenIddict;
 
@@ -20,5 +21,29 @@ public class AuthOpenIddictDbContext : DbContext
 
         // 注册 OpenIddict 默认实体模型（使用内置实体类型和映射）
         builder.UseOpenIddict();
+
+        if (Database.IsNpgsql())
+        {
+            ConfigurePostgreSqlTimestamps(builder);
+        }
+    }
+
+    private static void ConfigurePostgreSqlTimestamps(ModelBuilder builder)
+    {
+        const string timestampWithTimeZone = "timestamp with time zone";
+
+        builder.Entity<OpenIddictEntityFrameworkCoreAuthorization>()
+            .Property(authorization => authorization.CreationDate)
+            .HasColumnType(timestampWithTimeZone);
+
+        builder.Entity<OpenIddictEntityFrameworkCoreToken>()
+            .Property(token => token.CreationDate)
+            .HasColumnType(timestampWithTimeZone);
+        builder.Entity<OpenIddictEntityFrameworkCoreToken>()
+            .Property(token => token.ExpirationDate)
+            .HasColumnType(timestampWithTimeZone);
+        builder.Entity<OpenIddictEntityFrameworkCoreToken>()
+            .Property(token => token.RedemptionDate)
+            .HasColumnType(timestampWithTimeZone);
     }
 }
