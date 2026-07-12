@@ -29,6 +29,7 @@
 - [专题回归索引](/guide/regression-index)
 - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 - [产品版本与发布标识治理](/guide/version-governance)
+- [时间语义与业务自然日](/guide/time-semantics)
 
 ### 基础设施与安全
 

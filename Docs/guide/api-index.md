@@ -54,6 +54,17 @@
 }
 ```
 
+### 错误与异常契约
+
+- `MessageModel<T>` 的 `statusCode` 必须与真实 HTTP 状态保持一致；前端不得只根据响应体中的成功字段判断网络结果。
+- `BusinessException` 由全局 `ApiExceptionHandler` 转换为稳定的 HTTP 状态、错误码、`messageKey` 和用户可读消息。
+- 未知异常统一返回 `500 + UnexpectedError`，响应中不暴露原始 `ex.Message`、堆栈、SQL 或内部路径。
+- 每个错误响应携带或复用 `TraceId / X-Correlation-ID`，用于关联日志和用户反馈。
+- 全局异常中间件只处理尚未开始写入、且属于 `MessageModel` API 的响应；非 API 响应或已经开始传输的异常重新抛给 ASP.NET Core，不能被吞掉或伪装为成功。
+- Controller 可返回业务失败，但必须同步真实 HTTP 状态；不要依赖统一异常处理器修正错误的 Controller 状态码。
+
+前端 `@radish/http` 会保留真实 HTTP 状态、解析历史 HTTP 200 失败体，并对错误对象中的 token、密码、cookie、authorization 等字段脱敏。页面应使用统一客户端和错误解析，不自行拼接 `fetch` 异常协议。
+
 ### 分页壳
 
 分页接口通常返回：

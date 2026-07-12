@@ -209,13 +209,13 @@
 ## 构建服务镜像
 以下内容主要用于 `CI`、本地容器验证或手动验证镜像入口。测试部署与生产部署默认应直接拉取 `GHCR` 里的预构建镜像，而不是在部署机执行 `docker build` 或 `docker compose build`。
 
-当前仓库已提供首版最小镜像链，对应四个构建入口：
+当前仓库已提供首版最小镜像链，对应五个构建入口：
 
 - `Radish.DbMigrate/Dockerfile`：发布数据库初始化入口，默认用于容器部署时的 `apply` 一次性任务，负责按需 `init + seed` 共享业务库。
 - `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
 - `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
 - `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
-- `Frontend/Dockerfile`：当前采用 `Node 24` 多阶段镜像，先构建 `radish.client` 与 `radish.console`，最终镜像只保留静态产物与内置静态服务器，统一托管 `/` 与 `/console/`。
+- `Frontend/Dockerfile`：使用 `node:24-bookworm-slim` 构建 client / console，以 `node:24-alpine` 作为最终运行层，只保留静态产物与内置静态服务器，并移除运行时不需要的 npm / npx / Corepack / Yarn 入口，统一托管 `/` 与 `/console/`。
 
 常用单镜像构建命令如下：
 
@@ -251,7 +251,7 @@ docker build \
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
 - 部署态默认只注入 `RADISH_PUBLIC_URL`，前端运行时配置统一回退到同一个 Gateway 公开入口
 
-> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并且已经完全切到运行时配置注入；同时 `Frontend/Dockerfile` 已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`，继续沿用“预构建镜像 + 部署时注入公开地址”时不再需要额外改 Dockerfile。
+> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并完全切到运行时配置注入。最终层不承担依赖安装或现场构建职责；基础镜像、系统包或 Node 运行层发生变化时，必须重新执行最终镜像 High / Critical 扫描，不能只依据构建层审计结果。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在收束为两类：

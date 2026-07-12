@@ -19,7 +19,10 @@
 | `Message` | SQLite | `Radish.Message.db` | 通知 / 消息相关数据隔离 |
 | `Chat` | SQLite | `Radish.Chat.db` | 聊天室消息数据隔离 |
 
-除此之外，`Radish.Auth` 还维护独立的 `OpenIddict` 连接，用于 OIDC / 授权服务器相关持久化。
+除此之外，部署态还包含两个独立 PostgreSQL 数据库：
+
+- `OpenIddict`：OIDC 客户端、授权、Scope 与 Token，由 EF Core provider-specific migrations 管理。
+- `Hangfire`：后台任务调度与执行状态，由 Hangfire provider 管理，不纳入业务库 `RadishSchemaVersion` ledger。
 
 ## 2. 宿主与数据库关系
 
@@ -32,6 +35,9 @@
 - `Radish.Gateway`
   - 不承载业务数据库
   - 主要负责路由转发、门户与统一入口
+- `Radish.DbMigrate`
+  - 是业务库 schema ledger 和 OpenIddict migration 的唯一正式写入口
+  - 执行 `doctor → apply → verify`，成功后 API / Auth / Gateway 才能启动
 
 ## 3. 本地默认形态
 
@@ -69,6 +75,15 @@
 3. 宿主 `appsettings.Local.json`
 4. 环境变量
 
+### 结构真相源
+
+- Main / Log / Message / Chat：实体当前模型 + 有序 Radish migration + 每库 `RadishSchemaVersion` ledger。
+- OpenIddict：`AuthOpenIddictDbContext` + SQLite / PostgreSQL 独立 migration assembly 与 snapshot。
+- Hangfire：Hangfire provider 自有 schema。
+- 已发布 migration 不得原地修改；已有正式库不再依赖 Code First、宿主启动或删除数据库修复结构。
+
+详细规则见 [数据库结构变更协作口径](/guide/database-schema-change-governance) 与 [OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)。
+
 ## 5. 建模与查询相关规则
 
 ### 软删除
@@ -102,4 +117,6 @@
 
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
+- [OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)
+- [时间语义与业务自然日](/guide/time-semantics)
 - [开发规范](/architecture/specifications)

@@ -1,6 +1,6 @@
 # 支付与转账幂等治理
 
-> 状态：`首批代码已实现 / 待发布候选回归`
+> 状态：`首批已随 v26.7.1.1204-release 完成候选验证与生产发布`
 >
 > 记录日期：`2026-06-19`（Asia/Shanghai）
 >
@@ -47,6 +47,7 @@
 
 - `Succeeded` 表示该 key 已记录终态响应，不等同于业务一定成功；如果请求已经进入订单、库存、扣款、交易流水或转账内部处理等资产写入边界，即使最终业务响应为失败，也会记录终态响应，避免同 key 重放导致重复写资产。
 - `Failed` 只用于未形成终态资产响应的失败；同 key、同摘要可重新进入处理，不同摘要仍拒绝，避免客户端误复用 key。
+- 幂等记录使用注入的 `TimeProvider` 写入 UTC 创建、完成与过期时刻；当前保留窗口为 24 小时。过期后同 key 会重置为新的 `Processing` 尝试，不依赖服务器本地时区。
 
 ## 接口契约
 
@@ -220,8 +221,9 @@ TenantId + UserId + OperationType + IdempotencyKey
 
 数据库验证：
 
-- 本地 `Radish.DbMigrate` 能创建幂等记录表。
-- 正式数据库阶段的发布 SQL 覆盖新表、唯一约束和必要索引。
+- 空库 `Radish.DbMigrate init/apply` 能创建幂等记录表并登记 schema baseline。
+- 已有正式库的结构变化必须进入有序 migration 与 `RadishSchemaVersion` ledger；不再以临时发布 SQL 或 Code First 作为结构真相源。
+- PostgreSQL 集成测试覆盖同 key 并发与 UTC 过期窗口，通用时间规则见 [时间语义与业务自然日](/guide/time-semantics)。
 
 ## 不做范围
 

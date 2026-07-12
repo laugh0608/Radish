@@ -63,6 +63,13 @@ npm run dev
   - 当前开发服务器是否从正确 workspace 启动
   - `vite.config.ts` 是否仍保留共享包监听配置
 
+### 共享反馈 API
+
+- client / console 需要 Ant Design `message` 或 `notification` 时，从 `@radish/ui` 导入，不直接使用 antd 静态反馈 API。
+- Console 根入口在 `AntApp` 内挂载 `AntdFeedbackBridge`；bridge 通过 effect 注册 scoped API，卸载时只清理自己注册的实例。
+- `@radish/ui` 导出的 `message / notification` 是稳定代理，业务模块可以安全持有引用；不要在 render 期间改写 ref、全局对象或重新创建平行 bridge。
+- 共享 chart 尺寸计算统一复用 `chartDimension`，组件 render 保持纯函数，不用无意义的 memo 或 effect 掩盖简单派生值。
+
 ## 5. UI 设计源协作
 
 正式 Web 的跨页面视觉改造先看设计源，再进代码：
@@ -103,6 +110,11 @@ npm run type-check --workspace=@radish/http
 npm run type-check --workspace=radish.client
 npm run type-check --workspace=radish.console
 
+npm run lint --workspace=@radish/http
+npm run lint --workspace=@radish/ui
+npm run lint --workspace=radish.client
+npm run lint --workspace=radish.console
+
 npm run build --workspace=radish.client
 npm run build --workspace=radish.console
 ```
@@ -120,6 +132,8 @@ npm run type-check --workspace=@radish/http
 - 不要把共享 UI 再拆成第二套“通用组件库”，统一复用 `@radish/ui`
 - 不要在 public / private 页面里重复实现 header、移动底栏或状态卡；`radish.client` 内部优先复用 `components/web-shell`
 - 修改共享包后，优先同时检查 `radish.client` 和 `radish.console` 的使用面
+- 四个 workspace 的 lint 均以 `--max-warnings=0` 进入候选基线；Hook dependency、render ref mutation 和未使用变量不能以 warning 留到发布阶段
+- Console 的 `tsconfig.strict.json` 是渐进 strict 门禁；只扩大已治理文件，不通过跳过检查或恢复独立 lockfile 规避错误
 - 前端运行时配置统一通过 `env.ts` 或运行时配置入口读取，不直接散落读取 `import.meta.env`
 
 ## 8. 常见问题

@@ -70,7 +70,7 @@ await retryPolicy.ExecuteAsync(async () =>
 [AutomaticRetry(Attempts = 3)]
 public async Task CleanExpiredDataAsync()
 {
-    var oneYearAgo = DateTime.Now.AddYears(-1);
+    var oneYearAgo = _timeProvider.GetUtcNow().UtcDateTime.AddYears(-1);
 
     // 归档旧数据
     await ArchiveExpTransactionsAsync(oneYearAgo);

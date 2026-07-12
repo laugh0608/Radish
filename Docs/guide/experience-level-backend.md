@@ -52,6 +52,8 @@ CREATE TABLE exp_transaction (
 
 `reward_business_key` 用于表达同一自然经验奖励事实，例如某条评论获得神评基础经验奖励、点赞增量经验奖励或保留奖励。需要一次性发放的奖励应走带业务键的发放入口；同一 `TenantId + RewardBusinessKey` 重复触发时返回既有流水，不重复增加经验。原有 `idx_dedup` 继续用于日粒度规则和历史兼容，但不替代奖励业务键。
 
+`created_date` 是系统业务时区中的自然日，不是流水 `created_at` 的 UTC 日期截断。Service 通过 `BusinessCalendar` 把发放时刻归属到业务日；API 以 `DateOnly` 输出，数据库物理类型为 `date`。
+
 ### 4.3 经验值类型枚举
 
 | 类型代码 | 说明 | business_type | business_id |
@@ -98,6 +100,8 @@ CREATE TABLE user_exp_daily_stats (
 );
 ```
 
+`stat_date` 同样使用系统业务日。查询最近 N 天时，以 `BusinessCalendar` 计算窗口并补齐缺失日期；返回 `VoStatDate`、峰值日期和异常规则最近命中日期均为 `DateOnly` 的 `yyyy-MM-dd`，不带时间和时区偏移。完整时间契约见 [时间语义与业务自然日](/guide/time-semantics)。
+
 ---
 
 
@@ -118,16 +122,19 @@ public class ExperienceService : IExperienceService
         long? businessId = null,
         string? remark = null)
     {
+        var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
+        var statDate = _businessCalendar.GetCurrentDate();
+
         // 1. 检查用户经验值是否冻结
         var userExp = await _userExpRepository.QueryByIdAsync(userId);
-        if (userExp.ExpFrozen && userExp.FrozenUntil > DateTime.Now)
+        if (userExp.ExpFrozen && userExp.FrozenUntil > nowUtc)
         {
             Log.Warning("用户 {UserId} 经验值已冻结,无法获得经验值", userId);
             return false;
         }
 
         // 2. 检查每日上限
-        var todayExpKey = $"exp:daily:{userId}:{expType}:{DateTime.Today:yyyyMMdd}";
+        var todayExpKey = $"exp:daily:{userId}:{expType}:{statDate:yyyyMMdd}";
         var todayExp = await _cache.GetAsync<int>(todayExpKey);
         var dailyLimit = GetDailyLimit(expType);
 
@@ -163,9 +170,9 @@ public class ExperienceService : IExperienceService
                     CurrentExp = remainingExp,
                     TotalExp = newTotalExp,
                     CurrentLevel = newLevel,
-                    LevelUpAt = newLevel > currentLevel ? DateTime.Now : u.LevelUpAt,
+                    LevelUpAt = newLevel > currentLevel ? nowUtc : u.LevelUpAt,
                     Version = u.Version + 1,
-                    UpdateTime = DateTime.Now
+                    UpdateTime = nowUtc
                 })
                 .Where(u => u.UserId == userId && u.Version == userExp.Version)
                 .ExecuteCommandAsync();
@@ -188,13 +195,13 @@ public class ExperienceService : IExperienceService
                 ExpAfter = remainingExp,
                 LevelBefore = currentLevel,
                 LevelAfter = newLevel,
-                CreatedDate = DateTime.Today
+                CreatedDate = statDate.ToDateTime(TimeOnly.MinValue)
             });
 
             await transaction.CommitAsync();
 
             // 6. 更新缓存
-            await _cache.IncrementAsync(todayExpKey, amount, TimeSpan.FromHours(24));
+            await _cache.IncrementAsync(todayExpKey, amount, _businessCalendar.GetTimeUntilNextDate());
 
             // 7. 如果升级,触发升级事件
             if (newLevel > currentLevel)
@@ -471,6 +478,8 @@ Response:
   ]
 }
 ```
+
+返回窗口按系统业务时区计算，日期字段是纯 `yyyy-MM-dd`。客户端不得把它当 UTC 午夜时间戳再做本地时区转换。
 
 ### 6.4 查询等级排行榜
 

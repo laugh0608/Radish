@@ -8,7 +8,10 @@
 - `init` 只面向空库创建当前结构并登记已包含版本；已有库统一通过 `apply` 前滚，不再把删除本地库作为默认治理办法。
 - `doctor` 与 `verify` 严格只读；前者报告配置、结构、ledger 与 pending，后者把 Warning / Error 作为非零退出门禁。`apply` 负责迁移、seed，并在末尾自动严格 verify。
 - 首个基线为 `20260712_000_baseline`；首个正式业务迁移为 `20260712_001_experience_natural_dates`，用于证明 SQLite / PostgreSQL 的结构与数据补丁可以共享同一 ledger 顺序。
+- 自然日 migration 的业务含义、异常历史值拒绝和 API `DateOnly` 边界见 [时间语义与业务自然日](/guide/time-semantics)。
 - migration 在事务内取得 provider 锁并二次读取 ledger：SQLite 使用 non-deferred 写事务，PostgreSQL 使用 transaction-scoped advisory lock。
+- migration SQL 和结构审计必须通过数据库元数据解析实际表名、列名并按 provider 正确引用；不得假设 PostgreSQL 物理标识符保留 C# / SqlSugar 配置中的大小写。
+- baseline 接管分表实体时，以数据库中实际存在的物理分表族为准，不要求并不存在的逻辑模板表；接管前仍须逐表核对必要列与结构。
 - baseline 已登记后，`init`、Code First 和旧式补丁不得再静默修复缺表 / 缺列；结构漂移必须失败并新增更高 migration ID。
 - OpenIddict 独立库由 `Radish.Auth.Persistence` 定义模型，SQLite / PostgreSQL 分别维护 provider-specific EF migrations；结构写入同样只由 `Radish.DbMigrate apply` 驱动。
 - Auth 启动不执行 `EnsureCreated()` 或 `Migrate()`；存在 pending migration 或数据库缺失时只读失败并提示先执行 DbMigrate。

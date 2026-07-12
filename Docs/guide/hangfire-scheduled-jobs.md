@@ -142,7 +142,7 @@ public class FileCleanupJob
     /// </summary>
     public async Task CleanupDeletedFilesAsync(int retentionDays = 30)
     {
-        var cutoffDate = DateTime.UtcNow.AddDays(-retentionDays);
+        var cutoffDate = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-retentionDays);
 
         // 查询超过保留期的软删除文件
         var filesToDelete = await _attachmentService.QueryAsync(
@@ -326,6 +326,13 @@ _logger.LogError(ex, "任务执行失败: {JobId}", BackgroundJob.Id);
 ---
 
 ## 🛠️ 最佳实践
+
+### 时间与业务日契约
+
+- Cron 表达式只负责触发任务；任务内部的超时、过期、锁定与清理 cutoff 使用注入的 `TimeProvider` UTC 时刻。
+- 每日经验、评论神评 / 沙发、商城日统计、上传日额度与回收目录使用 `BusinessCalendar` 的系统业务日，不使用服务器 `DateTime.Today`。
+- 需要“下一业务日失效”的缓存使用 `BusinessCalendar.GetTimeUntilNextDate()`，不能固定写成 24 小时。
+- Job 测试应注入可控时钟，覆盖 UTC / 业务日边界；完整规则见 [时间语义与业务自然日](/guide/time-semantics)。
 
 ### 1. 任务设计原则
 

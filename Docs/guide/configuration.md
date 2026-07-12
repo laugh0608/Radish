@@ -613,6 +613,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 实现约束：
 - 数据库存储统一使用 UTC；PostgreSQL 写入前由独立的 SqlSugar 参数规范化契约处理 `DateTime` / `DateTimeOffset`，日志开关和测试执行顺序不得改变该行为。
 - 前端按“用户偏好时区 > 浏览器时区 > 系统默认时区”回退策略进行展示。
+- 绝对时刻、业务自然日、物理 `date` 列与测试时钟的完整规则见 [时间语义与业务自然日](/guide/time-semantics)。
 
 ### 3.2 Seed 与首次管理员初始化
 
