@@ -6,14 +6,14 @@ imageTag: v26.7.1.1201-release
 
 # M15 补发记录（v26.7.1.1201-release，2026-07-12）
 
-> 本页记录 `v26.7.1-release` 被前端镜像漏洞门禁阻断后的正式补发。补发 tag 与五个镜像已经完成，生产部署结果仍在实际执行后回写。
+> 本页记录 `v26.7.1-release` 被前端镜像漏洞门禁阻断后的正式补发。补发 tag 与五个镜像已经完成，但首次生产部署被 DbMigrate 阻断，本 tag 未完成上线。
 
 ## 记录信息
 
 - 记录日期：2026-07-12
 - 记录人：项目协作记录
 - 发布类型：正式 Web 补发
-- 当前状态：补发 tag 与五镜像门禁完成，等待生产部署与部署后复核
+- 当前状态：镜像完成，生产 DbMigrate 失败，未上线
 
 ## 发布标识
 
@@ -54,10 +54,17 @@ Flutter 为条件维护资产，Tauri 为冻结实验资产，二者不进入本
 
 ## 生产部署结论
 
-- 部署情况：未部署
-- 复核情况：镜像供应链门禁已完成，部署环境复核未执行
-- 关联记录：[Docker Images #17](https://github.com/laugh0608/Radish/actions/runs/29188581708)；部署后复核完成后补充 M14 记录
-- 说明：部署时必须固定 `RADISH_IMAGE_TAG=v26.7.1.1201-release`，不得改用 `latest` 或原失败 tag。
+- 部署情况：失败，未上线
+- 复核情况：PostgreSQL / Redis 健康，Frontend 已启动；DbMigrate 退出，API、Auth、Gateway 因依赖条件未启动
+- 关联记录：[Docker Images #17](https://github.com/laugh0608/Radish/actions/runs/29188581708)
+- 说明：DbMigrate 在空 PostgreSQL 完成 Code First 与 baseline 登记后，自然日迁移使用硬编码 `"ExpTransaction"` 查询实际小写物理表，触发 `42P01 relation does not exist`。同时发现 DbMigrate 未接收 OpenIddict PostgreSQL 配置并错误报告 `provider=Sqlite`。未删除数据库 volume、未手工修改 ledger，也未绕过迁移启动应用宿主。
+
+## 后续补发决定
+
+- `v26.7.1.1201-release` 与已推送镜像保持不可变，不在服务器直接修改容器内容。
+- 修复 PostgreSQL 物理标识符解析和 DbMigrate OpenIddict 配置后，使用 `v26.7.1.1202-release` 重新发布。
+- 已登记 baseline 保留；修复后的迁移从 pending 状态继续，不要求清库或删除 volume。
+- 补发记录：[v26.7.1.1202-release](/records/m15-release-record-v26.7.1.1202-2026-07-12)。
 
 ## 回滚目标
 

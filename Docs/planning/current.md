@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式发布执行`
-- **工程第一顺位**：`v26.7.1.1201-release / 固定 tag 部署与部署后复核`
+- **工程第一顺位**：`v26.7.1.1202-release / DbMigrate 部署阻断修复与补发`
 - **产品下一顺位**：`发布后长期维护线与功能完成线`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -41,6 +41,7 @@
   - 2026-07-12 发布节奏已按个人开发者模式调整：工程 Release Go 证据已经满足正式发布要求；小规模受控试用改为发布后的早期真实使用观察，不再阻挡 tag。正式部署和部署后复核完成后，项目进入长期维护线与功能完成线，优先完成商城商品效力与权益履约，再推进主题和 i18n 完成度。
   - 2026-07-12 `v26.7.1-release` 已指向 `3f518101` 并推送；Docker Images `#16` 的 Candidate Quality 通过，但前端最终镜像基于 Debian 的运行层命中 High / Critical 漏洞，前端镜像未推送且正式部署未执行。旧 tag 保持不可变并记录为失败发布尝试；补发改用规范扩展标识 `v26.7.1.1201-release`，五个镜像必须全部重新构建并通过门禁。
   - 2026-07-12 PR `#60` 已合并到 `master`，`master / dev / origin` 已统一到 `6db3668b`；`v26.7.1.1201-release` 已推送，Docker Images `#17` 的 Candidate Quality 与五个正式镜像 job 全部成功，High / Critical 扫描、多架构推送、SBOM 和 provenance 已完成。当前只剩固定 tag 生产部署与部署后复核。
+  - 2026-07-12 首次生产部署固定使用 `v26.7.1.1201-release`，PostgreSQL / Redis 健康且 Frontend 已启动，但 DbMigrate 在 baseline 后因 PostgreSQL 小写物理表与硬编码 PascalCase migration SQL 不一致触发 `42P01`；API、Auth、Gateway 未启动。同时确认 DbMigrate 缺少 OpenIddict PostgreSQL 配置并回退 SQLite。服务器数据与 ledger 保留，工程第一顺位切到 `v26.7.1.1202-release` 前滚修复。
 
 ## V1 产品与发布范围
 
@@ -74,6 +75,7 @@ Radish V1 的产品定位固定为：
 - [P3-12-F Release Go 候选运行态验收记录](/records/p3-12-f-release-go-candidate-runtime-validation-2026-07-12)
 - [v26.7.1-release 正式发布记录](/records/m15-release-record-2026-07-12)
 - [v26.7.1.1201-release 补发记录](/records/m15-release-record-v26.7.1.1201-2026-07-12)
+- [v26.7.1.1202-release 部署修复补发记录](/records/m15-release-record-v26.7.1.1202-2026-07-12)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -83,12 +85,12 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 执行 `v26.7.1.1201-release` 正式补发
+### 1. 执行 `v26.7.1.1202-release` 部署修复补发
 
-- `v26.7.1-release` 保留为镜像门禁失败、未部署的历史发布尝试，不移动、不删除、不复用其不完整镜像。
-- 补发提交、`master -> dev` 回灌、`v26.7.1.1201-release` tag 与五镜像供应链门禁均已完成。
-- 生产部署必须固定 `RADISH_IMAGE_TAG=v26.7.1.1201-release`，并在部署前确认备份、证书、持久化目录与生产环境变量。
-- 部署后补数据库、宿主、公开页面、登录、Console 和回滚入口复核，再把发布记录更新为真实结果。
+- `v26.7.1.1201-release` 保留为镜像成功、DbMigrate 部署失败且未上线的历史尝试。
+- 修复自然日 migration 的 PostgreSQL 物理标识符解析，并让 DbMigrate 使用 OpenIddict PostgreSQL。
+- 补真实 PostgreSQL 小写表列、ledger apply / re-entry 回归，通过 PR 合并和 `master -> dev` 回灌后创建 `v26.7.1.1202-release`。
+- 新镜像通过后在服务器保留现有 volume 前滚，DbMigrate 成功后再执行宿主与页面复核。
 
 ### 2. 进入发布后常态开发
 
@@ -98,10 +100,10 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 确认生产部署目标、备份与环境变量，使用固定 `v26.7.1.1201-release` 部署。
-2. 执行部署后复核并回写补发记录。
-3. 进入长期维护线，首个工程治理项为镜像漏洞门禁分层。
-4. 启动商城商品效力与权益履约专题。
+1. 完成 DbMigrate PostgreSQL 物理标识符与 OpenIddict 配置修复及回归。
+2. 通过 PR、回灌、`v26.7.1.1202-release` tag 和五镜像门禁完成补发。
+3. 在服务器保留现有 volume 重试，执行部署后复核并回写记录。
+4. 进入长期维护线与商城商品效力专题。
 
 ## 并行维护线
 
