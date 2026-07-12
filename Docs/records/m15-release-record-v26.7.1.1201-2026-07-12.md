@@ -6,21 +6,21 @@ imageTag: v26.7.1.1201-release
 
 # M15 补发记录（v26.7.1.1201-release，2026-07-12）
 
-> 本页记录 `v26.7.1-release` 被前端镜像漏洞门禁阻断后的正式补发。当前只记录已经发生的修复验证；tag、镜像和生产部署结果在实际完成后回写。
+> 本页记录 `v26.7.1-release` 被前端镜像漏洞门禁阻断后的正式补发。补发 tag 与五个镜像已经完成，但首次生产部署被 DbMigrate 阻断，本 tag 未完成上线。
 
 ## 记录信息
 
 - 记录日期：2026-07-12
 - 记录人：项目协作记录
 - 发布类型：正式 Web 补发
-- 当前状态：等待修复 PR、补发 tag、五镜像门禁和生产部署
+- 当前状态：镜像完成，生产 DbMigrate 失败，未上线
 
 ## 发布标识
 
-- 计划 Git tag：`v26.7.1.1201-release`
+- Git tag：`v26.7.1.1201-release`（已推送）
 - 产品版本：`26.7.1`
-- 对应提交：待修复 PR 合并后，以补发 tag 指向的 `master` 提交为准
-- 候选来源：`dev`
+- 对应提交：`6db3668ba32b5b05243ff1ae9f66fcc2b34a12f7`
+- 候选来源：`master`，并已 fast-forward 回灌到 `dev`
 - 正式发布矩阵：Gateway、API、Auth、DbMigrate、client、Console
 - 镜像 tag：
   - `radish-dbmigrate:v26.7.1.1201-release`
@@ -48,14 +48,23 @@ Flutter 为条件维护资产，Tauri 为冻结实验资产，二者不进入本
   - Client 深链回退：`200`，返回 Client `index.html`。
   - `/console`：`308` 到 `/console/`。
   - Console 深链回退：`200`，返回 Console `index.html`。
-- 补发提交还需通过候选基线、版本契约、仓库卫生和 `git diff --check`。
+- 补发提交已通过候选基线、版本契约、仓库卫生和 `git diff --check`。
+- [Docker Images #17](https://github.com/laugh0608/Radish/actions/runs/29188581708) 的 Candidate Quality、Frontend、API、Auth、Gateway 与 DbMigrate job 全部成功。
+- 五个镜像均已完成 High / Critical 扫描、`linux/amd64 + linux/arm64` 推送、SBOM 与 provenance。
 
 ## 生产部署结论
 
-- 部署情况：未部署
-- 复核情况：未执行
-- 关联记录：补发 tag 对应的 Docker Images 与部署后复核完成后补充
-- 说明：五个镜像必须全部由 `v26.7.1.1201-release` 重新构建并通过漏洞扫描、SBOM 与 provenance 后，才允许设置 `RADISH_IMAGE_TAG=v26.7.1.1201-release` 部署。
+- 部署情况：失败，未上线
+- 复核情况：PostgreSQL / Redis 健康，Frontend 已启动；DbMigrate 退出，API、Auth、Gateway 因依赖条件未启动
+- 关联记录：[Docker Images #17](https://github.com/laugh0608/Radish/actions/runs/29188581708)
+- 说明：DbMigrate 在空 PostgreSQL 完成 Code First 与 baseline 登记后，自然日迁移使用硬编码 `"ExpTransaction"` 查询实际小写物理表，触发 `42P01 relation does not exist`。同时发现 DbMigrate 未接收 OpenIddict PostgreSQL 配置并错误报告 `provider=Sqlite`。未删除数据库 volume、未手工修改 ledger，也未绕过迁移启动应用宿主。
+
+## 后续补发决定
+
+- `v26.7.1.1201-release` 与已推送镜像保持不可变，不在服务器直接修改容器内容。
+- 修复 PostgreSQL 物理标识符解析和 DbMigrate OpenIddict 配置后，使用 `v26.7.1.1202-release` 重新发布。
+- 已登记 baseline 保留；修复后的迁移从 pending 状态继续，不要求清库或删除 volume。
+- 补发记录：[v26.7.1.1202-release](/records/m15-release-record-v26.7.1.1202-2026-07-12)。
 
 ## 回滚目标
 

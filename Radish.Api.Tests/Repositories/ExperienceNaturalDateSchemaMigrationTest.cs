@@ -223,6 +223,44 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
 
     [Fact]
     [Trait("Database", "PostgreSQL")]
+    public async Task ApplyPending_ShouldResolveLowercasePostgreSqlPhysicalIdentifiers()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable(PostgreSqlConnectionStringEnvironmentVariable);
+        Assert.SkipWhen(
+            string.IsNullOrWhiteSpace(adminConnectionString),
+            $"未配置 {PostgreSqlConnectionStringEnvironmentVariable}，跳过 PostgreSQL 物理标识符迁移测试");
+
+        var schema = $"q2b_lowercase_identifier_{Guid.NewGuid():N}";
+        using var adminDb = CreatePostgreSqlClient(adminConnectionString!);
+        await adminDb.Ado.ExecuteCommandAsync($"CREATE SCHEMA {QuoteIdentifier(schema)}");
+        try
+        {
+            var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
+            using var db = CreatePostgreSqlScope(connectionString);
+            using var services = CreateServices();
+            CreateLowercasePostgreSqlTables(db);
+            SeedValidLowercasePostgreSqlValues(db);
+            InsertBaseline(db);
+
+            SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
+            SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
+
+            Assert.Equal(2, db.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal("date", GetColumnType(db, "exptransaction", "createddate"));
+            Assert.Equal("date", GetColumnType(db, "userexpdailystats", "statdate"));
+            Assert.Equal("date", GetColumnType(db, "userexperiencegovernanceaction", "statdate"));
+            var storedDate = db.Ado.GetDataTable(
+                "SELECT createddate FROM exptransaction WHERE id = 1").Rows[0][0];
+            Assert.Equal(new DateOnly(2026, 7, 12), Assert.IsType<DateOnly>(storedDate));
+        }
+        finally
+        {
+            await adminDb.Ado.ExecuteCommandAsync($"DROP SCHEMA IF EXISTS {QuoteIdentifier(schema)} CASCADE");
+        }
+    }
+
+    [Fact]
+    [Trait("Database", "PostgreSQL")]
     public async Task ApplyPending_ShouldSerializeConcurrentPostgreSqlWriters()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -345,6 +383,19 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             "(\"Id\" bigint NOT NULL PRIMARY KEY, \"StatDate\" timestamp without time zone NULL)");
     }
 
+    private static void CreateLowercasePostgreSqlTables(ISqlSugarClient db)
+    {
+        db.Ado.ExecuteCommand(
+            "CREATE TABLE exptransaction " +
+            "(id bigint NOT NULL PRIMARY KEY, createddate timestamp without time zone NOT NULL)");
+        db.Ado.ExecuteCommand(
+            "CREATE TABLE userexpdailystats " +
+            "(id bigint NOT NULL PRIMARY KEY, statdate timestamp with time zone NOT NULL)");
+        db.Ado.ExecuteCommand(
+            "CREATE TABLE userexperiencegovernanceaction " +
+            "(id bigint NOT NULL PRIMARY KEY, statdate timestamp without time zone NULL)");
+    }
+
     private static void SeedValidLegacyValues(ISqlSugarClient db)
     {
         db.Ado.ExecuteCommand(
@@ -366,6 +417,19 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             "VALUES (2, TIMESTAMPTZ '2026-07-11 16:00:00+00')");
         db.Ado.ExecuteCommand(
             "INSERT INTO \"UserExperienceGovernanceAction\" (\"Id\", \"StatDate\") " +
+            "VALUES (3, TIMESTAMP '2026-07-12 00:00:00'), (4, NULL)");
+    }
+
+    private static void SeedValidLowercasePostgreSqlValues(ISqlSugarClient db)
+    {
+        db.Ado.ExecuteCommand(
+            "INSERT INTO exptransaction (id, createddate) " +
+            "VALUES (1, TIMESTAMP '2026-07-11 16:00:00')");
+        db.Ado.ExecuteCommand(
+            "INSERT INTO userexpdailystats (id, statdate) " +
+            "VALUES (2, TIMESTAMPTZ '2026-07-11 16:00:00+00')");
+        db.Ado.ExecuteCommand(
+            "INSERT INTO userexperiencegovernanceaction (id, statdate) " +
             "VALUES (3, TIMESTAMP '2026-07-12 00:00:00'), (4, NULL)");
     }
 
