@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Q2-B PostgreSQL / OpenIddict 数据库演进方案`
+- **工程第一顺位**：`P3-12-F / Q2-C 版本单一真值源`
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -33,7 +33,8 @@
   - 2026-07-12 Q1-C 已完整关闭：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、权限、可信代理与日志凭据脱敏均已落地；本地 Main SQLite 已在备份后完成 `DbMigrate apply / verify`，迁移前后完整性检查通过，PostgreSQL 双 Worker 原子额度竞争用例通过 `1/1`。Q1 Release Go 必要子集至此完成，工程第一顺位进入 Q2-A。
   - 2026-07-12 Q2-A Release Go 高风险子集已收口：统一 UTC `TimeProvider` 与系统业务日，迁移 token、幂等、支付、限流、投票 / 抽奖、订单 / 权益、清理、Hangfire 与经验 / 登录自然日；API 自然日改用 `DateOnly`，DbMigrate 能只读报告列类型与异常。SQLite verify、隔离 PostgreSQL 17 集成测试、609 项后端测试与 Baseline Quick 均通过；物理 `date` 改列按职责移交 Q2-B schema ledger。
   - 2026-07-12 Q2-B ledger / OpenIddict 首批已由提交 `7ac68c75` 收口：Main / Log / Message / Chat 引入 `RadishSchemaVersion` baseline 与 checksum drift 门禁，`apply` 接入前置 doctor、OpenIddict 显式迁移、seed 与严格 verify；OpenIddict 持久化边界已从 Auth 宿主拆出，SQLite / PostgreSQL 独立 migration assembly、空库迁移、重入和旧 `EnsureCreated` schema adoption 均已验证，EF Design 传递依赖已安全钉住且 High / Critical 为 `0`。
-  - Q2-B 首个业务迁移 `20260712_001_experience_natural_dates` 已完成实现与回归：三处经验自然日改为物理 `date`，SQLite 重建保留索引，PostgreSQL 同时覆盖 `timestamp with/without time zone`，异常历史值拒绝、重入和 ledger 记账通过；全量后端 `615` 通过、`6` 个环境用例跳过，隔离 PostgreSQL 17 定向用例另行实跑通过。当前剩余并发 apply 锁与生产相似备份 / 恢复演练。
+  - Q2-B 首个业务迁移 `20260712_001_experience_natural_dates` 已完成实现与回归：三处经验自然日改为物理 `date`，SQLite 重建保留索引，PostgreSQL 同时覆盖 `timestamp with/without time zone`，异常历史值拒绝、重入和 ledger 记账通过；全量后端 `615` 通过、`6` 个环境用例跳过，隔离 PostgreSQL 17 定向用例另行实跑通过。
+  - 2026-07-12 Q2-B Release Go 必要子集已完整关闭：SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已阻止首次 baseline / 后续 migration 的并发重复执行；baseline 后禁止 Code First / 旧补丁静默修复。SQLite 文件备份恢复自动化测试和 PostgreSQL `pg_dump → 前滚 → pg_restore → 再前滚` 生产相似演练通过；最终全量后端 `618` 通过、`7` 个环境用例跳过，依赖 High / Critical 为 `0`，临时容器已清理。工程第一顺位进入 Q2-C。
 
 ## V1 产品与发布范围
 
@@ -70,23 +71,23 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 完成 Q2-B 发布必要子集
+### 1. 先形成 Q2-C 版本单一真值方案
 
-- ledger、OpenIddict 显式迁移与 `20260712_001_experience_natural_dates` 已完成代码侧和跨 provider 定向验证。
-- 下一批补齐 PostgreSQL advisory lock / SQLite 写锁语义，验证两个 apply 不会重复执行同一 migration。
-- 最后在隔离数据库完成旧基线备份、升级、重复 apply、严格 verify 与恢复演练，再判断 Q2-B 是否达到 Release Go 必要子集退出条件。
+- 只读盘点 .NET、npm workspace、Tauri、Flutter、Rust、容器标签、Git tag 与发布记录的当前版本来源和漂移点。
+- 先确认 Radish 日历版本与独立客户端版本边界、单一真值文件、生成 / 同步方向和 tag 前校验，再进入代码。
+- 自动校验必须阻止源版本、部署版本、tag、镜像标签和发布记录不一致，不做无边界的全仓机械替换。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
-- Q2-B 只收口数据库版本账本、生产相似升级和 OpenIddict 显式迁移；不提前混入 Q2-C、Q3、页面调整或无关重构。
+- Q2-C 只收口版本归属、同步方向和发布前一致性校验；不提前混入 Q3、页面调整或无关重构。
 - 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
 - 候选级运行态 smoke 仍只在用户当轮确认服务已启动后执行。
 
 ## 下一顺位
 
-1. 提交经验自然日 `date` 有序迁移与跨 provider 回归。
-2. 补齐 schema migration 并发锁，完成生产相似备份 / 前滚 / 重入 / 严格 verify / 恢复演练。
-3. Q2-B 发布必要子集关闭后进入 Q2-C 版本单一真值。
+1. 提交 Q2-B 并发锁、备份恢复测试与候选验证记录。
+2. 只读审计当前版本源、tag / 镜像 / 发布记录生成链和独立客户端版本边界。
+3. 提交 Q2-C 版本单一真值方案，确认后再实现自动同步与 tag 前阻断。
 
 ## 并行维护线
 

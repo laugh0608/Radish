@@ -1,6 +1,6 @@
 # P3-12-F Q2-B 数据库演进与 schema ledger 方案
 
-> 状态：`ledger / OpenIddict 与首个业务迁移已完成；待并发锁和生产相似演练`
+> 状态：`Release Go 必要子集已完成；验证见 Q2-B 数据库演进验证记录`
 >
 > 日期：`2026-07-12`（Asia/Shanghai）
 >
@@ -22,8 +22,9 @@ Q2-B 建立两个互补真相源：SqlSugar 业务库使用 Radish 自有 schema
 - SQLite / PostgreSQL 17 已覆盖空库迁移、provider 列类型、重入，以及旧 `EnsureCreated` 完整 schema adoption；缺索引 adoption 会被拒绝。
 - EF Design 10.0.0 的 `System.Security.Cryptography.Xml` 传递依赖已钉住安全版本 `10.0.6`，依赖审计 High / Critical 为 `0`。
 - `20260712_001_experience_natural_dates` 已实现：SQLite 通过受控重建保留索引，PostgreSQL 对 `timestamp with/without time zone` 分别按业务时区 / UTC 自然日转换；三列物理类型、异常拒绝、重入和 ledger 记账均有测试。
-- 全量后端 `615` 通过、`6` 个环境测试按约定跳过；隔离 PostgreSQL 17 的 date 新库契约、旧 timestamp 前滚与 timestamptz 数据库侧审计用例另行实跑 `3/3` 通过。
-- 待完成：并发 apply 锁与生产相似备份 / 恢复演练。
+- 最终全量后端 `618` 通过、`7` 个 PostgreSQL 环境测试按约定跳过；date 新库契约、旧 timestamp 前滚、timestamptz 数据库侧审计和双 apply 锁均已在隔离 PostgreSQL 17 实跑通过。
+- SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已完成，首次 baseline 与后续双 apply 实测均不会重复登记或执行 migration。
+- SQLite 文件备份恢复自动化测试、PostgreSQL custom-format dump / restore / 再前滚演练均通过；证据见 [Q2-B 数据库演进验证记录](/records/p3-12-f-q2-b-database-evolution-validation-2026-07-12)。
 
 ## 一、版本账本
 

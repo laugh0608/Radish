@@ -67,6 +67,16 @@ internal static class DbMigrateRunner
 
         var db = services.GetRequiredService<ISqlSugarClient>();
         var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        if (db is SqlSugarScope existingDbScope)
+        {
+            var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+                .ToLowerInvariant();
+            if (SchemaMigrationLedger.HasAppliedBaseline(existingDbScope, normalizedMainDbConnId))
+            {
+                throw new InvalidOperationException(
+                    "DbMigrate init 只允许空库或尚未接管的旧库；当前 Main 已登记 baseline，请使用 apply。");
+            }
+        }
 
         Console.WriteLine("[Radish.DbMigrate] 创建数据库（如不存在）...");
         foreach (var _ in BaseDbConfig.AllConfigs)
@@ -121,12 +131,26 @@ internal static class DbMigrateRunner
         ISqlSugarClient db)
     {
         var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        if (db is not SqlSugarScope dbScope)
+        {
+            throw new InvalidOperationException("DbMigrate schema 管理需要 SqlSugarScope。");
+        }
+
+        var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+            .ToLowerInvariant();
+        var hasAppliedBaseline = SchemaMigrationLedger.HasAppliedBaseline(dbScope, normalizedMainDbConnId);
 
         Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
         var inspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
 
         if (inspectionResult.DatabaseFileMissing || inspectionResult.MissingTables.Count > 0 || inspectionResult.MissingColumns.Count > 0)
         {
+            if (hasAppliedBaseline)
+            {
+                throw new InvalidOperationException(
+                    "已由 schema ledger 接管的 Main 存在缺表或缺列；禁止 Code First 自动修复，请新增有序 migration。");
+            }
+
             if (inspectionResult.DatabaseFileMissing)
             {
                 Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到主库文件缺失 ({inspectionResult.DatabaseFilePath ?? "<unknown>"})，自动执行 init...");
@@ -142,13 +166,17 @@ internal static class DbMigrateRunner
 
             await RunInitAsync(services, configuration, environment);
             Console.WriteLine();
+            return;
         }
         else
         {
             Console.WriteLine("[Radish.DbMigrate] ✓ 数据库表结构已存在");
         }
 
-        EnsureSupplementalIndexes(db, mainDbConnId);
+        if (!hasAppliedBaseline)
+        {
+            EnsureSupplementalIndexes(db, mainDbConnId);
+        }
         EnsureSchemaBaseline(services, db);
     }
 

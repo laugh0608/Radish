@@ -1,6 +1,9 @@
+using System.Buffers.Binary;
+using System.Data;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common.TimeTool;
 using SqlSugar;
@@ -112,35 +115,71 @@ internal static class SchemaMigrationLedger
         foreach (var scope in ResolveScopes(scopes))
         {
             var db = dbScope.GetConnectionScope(scope);
-            EnsureCurrentSchemaCanBeAdopted(db, scope);
-            db.CodeFirst.InitTables<SchemaMigrationRecord>();
-
-            var existing = db.Queryable<SchemaMigrationRecord>()
-                .Where(item => item.MigrationId == BaselineMigrationId)
-                .First();
-            if (existing != null)
+            BeginMigrationTransaction(db);
+            try
             {
-                if (!string.Equals(existing.Checksum, BaselineChecksum, StringComparison.Ordinal))
+                AcquireMigrationLock(db, scope, BaselineMigrationId);
+                EnsureCurrentSchemaCanBeAdopted(db, scope);
+                db.CodeFirst.InitTables<SchemaMigrationRecord>();
+
+                var existing = db.Queryable<SchemaMigrationRecord>()
+                    .Where(item => item.MigrationId == BaselineMigrationId)
+                    .First();
+                if (existing != null)
                 {
-                    throw new InvalidOperationException(
-                        $"{scope}.{BaselineMigrationId} checksum drift，禁止继续迁移。");
+                    if (!string.Equals(existing.Checksum, BaselineChecksum, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException(
+                            $"{scope}.{BaselineMigrationId} checksum drift，禁止继续迁移。");
+                    }
+
+                    db.Ado.CommitTran();
+                    continue;
                 }
 
-                continue;
+                var stopwatch = Stopwatch.StartNew();
+                db.Insertable(new SchemaMigrationRecord
+                {
+                    MigrationId = BaselineMigrationId,
+                    Scope = scope,
+                    Description = BaselineDescription,
+                    Checksum = BaselineChecksum,
+                    AppliedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
+                    DurationMs = stopwatch.ElapsedMilliseconds
+                }).ExecuteCommand();
+                db.Ado.CommitTran();
+                Console.WriteLine($"[Radish.DbMigrate] Schema: {scope}.{BaselineMigrationId} 已登记。");
             }
-
-            var stopwatch = Stopwatch.StartNew();
-            db.Insertable(new SchemaMigrationRecord
+            catch
             {
-                MigrationId = BaselineMigrationId,
-                Scope = scope,
-                Description = BaselineDescription,
-                Checksum = BaselineChecksum,
-                AppliedAtUtc = timeProvider.GetUtcNow().UtcDateTime,
-                DurationMs = stopwatch.ElapsedMilliseconds
-            }).ExecuteCommand();
-            Console.WriteLine($"[Radish.DbMigrate] Schema: {scope}.{BaselineMigrationId} 已登记。");
+                db.Ado.RollbackTran();
+                throw;
+            }
         }
+    }
+
+    public static bool HasAppliedBaseline(SqlSugarScope dbScope, string scope)
+    {
+        var db = dbScope.GetConnectionScope(scope);
+        if (!db.DbMaintenance.IsAnyTable("RadishSchemaVersion", false))
+        {
+            return false;
+        }
+
+        var record = db.Queryable<SchemaMigrationRecord>()
+            .Where(item => item.MigrationId == BaselineMigrationId)
+            .First();
+        if (record == null)
+        {
+            return false;
+        }
+
+        if (!string.Equals(record.Checksum, BaselineChecksum, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"{scope}.{BaselineMigrationId} checksum drift，禁止继续。");
+        }
+
+        return true;
     }
 
     public static void ApplyPending(
@@ -179,9 +218,26 @@ internal static class SchemaMigrationLedger
                 }
 
                 var stopwatch = Stopwatch.StartNew();
-                db.Ado.BeginTran();
+                BeginMigrationTransaction(db);
                 try
                 {
+                    AcquireMigrationLock(db, scope, migration.MigrationId);
+                    existing = db.Queryable<SchemaMigrationRecord>()
+                        .Where(record => record.MigrationId == migration.MigrationId)
+                        .First();
+                    if (existing != null)
+                    {
+                        if (!string.Equals(existing.Checksum, checksum, StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException(
+                                $"{scope}.{migration.MigrationId} checksum drift，禁止继续迁移。");
+                        }
+
+                        ThrowIfVerificationFailed(migration, db, services);
+                        db.Ado.CommitTran();
+                        continue;
+                    }
+
                     migration.Apply(db, services);
                     ThrowIfVerificationFailed(migration, db, services);
                     db.Insertable(new SchemaMigrationRecord
@@ -203,6 +259,45 @@ internal static class SchemaMigrationLedger
                 }
             }
         }
+    }
+
+    private static void BeginMigrationTransaction(ISqlSugarClient db)
+    {
+        if (db.CurrentConnectionConfig.DbType != SqlSugar.DbType.Sqlite)
+        {
+            db.Ado.BeginTran();
+            return;
+        }
+
+        if (db.Ado.Connection is not SqliteConnection connection)
+        {
+            throw new InvalidOperationException("SQLite migration lock 未取得 Microsoft.Data.Sqlite connection。");
+        }
+
+        if (connection.State != ConnectionState.Open)
+        {
+            connection.Open();
+        }
+
+        db.Ado.Transaction = connection.BeginTransaction(deferred: false);
+    }
+
+    private static void AcquireMigrationLock(
+        ISqlSugarClient db,
+        string scope,
+        string migrationId)
+    {
+        if (db.CurrentConnectionConfig.DbType != SqlSugar.DbType.PostgreSQL)
+        {
+            return;
+        }
+
+        var lockSource = $"radish-schema-migration:{scope}:{migrationId}";
+        var lockHash = SHA256.HashData(Encoding.UTF8.GetBytes(lockSource));
+        var lockKey = BinaryPrimitives.ReadInt64BigEndian(lockHash);
+        db.Ado.ExecuteCommand(
+            "SELECT pg_advisory_xact_lock(@lockKey)",
+            new SugarParameter("@lockKey", lockKey));
     }
 
     public static IReadOnlyList<string> VerifyApplied(

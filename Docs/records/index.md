@@ -78,6 +78,7 @@
 - [p3-12-f-q1-c-file-access-token-governance-plan-2026-07-11](/records/p3-12-f-q1-c-file-access-token-governance-plan-2026-07-11)
 - [p3-12-f-q2-a-time-semantics-migration-plan-2026-07-12](/records/p3-12-f-q2-a-time-semantics-migration-plan-2026-07-12)
 - [p3-12-f-q2-b-database-evolution-plan-2026-07-12](/records/p3-12-f-q2-b-database-evolution-plan-2026-07-12)
+- [p3-12-f-q2-b-database-evolution-validation-2026-07-12](/records/p3-12-f-q2-b-database-evolution-validation-2026-07-12)
 - [p3-6-public-growth-observation-record-template](/records/p3-6-public-growth-observation-record-template)
 - [p3-6-public-growth-observation-record-2026-05-20](/records/p3-6-public-growth-observation-record-2026-05-20)
 - [p3-6-public-growth-observation-record-2026-05-18](/records/p3-6-public-growth-observation-record-2026-05-18)
