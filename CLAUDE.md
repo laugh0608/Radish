@@ -59,8 +59,8 @@
 - 后端：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）
 - 网关：`Radish.Gateway`，统一门户与 API 网关
 - 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
-- 前端：React 19 + Vite（Rolldown） + TypeScript，采用 WebOS 桌面化 UI
-- 桌面安装包：`Clients/radish-tauri`，Tauri 壳层复用 `Frontend/radish.client` 的 WebOS 构建产物
+- 前端：React 19 + Vite（Rolldown） + TypeScript，纯 Web 为唯一正式产品主线，WebOS 仅保留 `/desktop` 历史入口
+- 多端口径：Flutter 仅条件式维护现有 MVP；`Clients/radish-tauri` 冻结为实验资产，不进入当前开发与发布门禁
 - UI 组件库：`@radish/ui`，基于 npm workspaces 的共享组件库
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`

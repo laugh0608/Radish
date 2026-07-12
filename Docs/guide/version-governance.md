@@ -47,7 +47,7 @@ npm run check:version-contract
 | Flutter | `Clients/radish.flutter/pubspec.yaml` | `${productVersion}+${flutterBuildNumber}` |
 | 正式 Web 发布矩阵镜像 | DbMigrate、API、Auth、Gateway、Frontend | 使用同一个完整 Git tag |
 
-Tauri 与 Flutter 即使暂不属于本次正式 Web 发布矩阵，也不维护独立产品版本。它们复用 Radish 产品能力和服务端契约，因此展示版本统一；是否构建、签名、分发仍由各自发布矩阵决定。
+Tauri 与 Flutter 即使不属于本次正式 Web 发布矩阵，也不维护独立产品版本。它们复用 Radish 产品能力和服务端契约，因此展示版本统一；跟随产品版本只解决资产可追溯性，不代表进入活跃开发、候选构建、签名或分发。当前 Flutter 为条件维护，Tauri 为冻结实验。
 
 npm workspace 只允许根 `package-lock.json`。`Frontend/radish.client` 与 `Frontend/radish.console` 下不得恢复独立 lockfile。
 

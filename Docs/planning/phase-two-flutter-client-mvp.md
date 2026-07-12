@@ -12,7 +12,7 @@
 > - [前端多壳层策略](/frontend/shell-strategy)
 > - [前端设计文档](/frontend/design)
 
-> 说明：本页保留 Flutter Android MVP 第一轮完成前后的历史批次口径。`2026-05-25` 后，多端主线已收敛为纯 Web + Flutter；PC/Tauri 后置且不再绑定 WebOS。当前路线以 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 和 [当前进行中](/planning/current) 为准。
+> 说明：本页保留 Flutter Android MVP 第一轮完成前后的历史批次口径，不作为当前多端路线依据。当前纯 Web 为唯一正式主线，Flutter 条件维护，Tauri 冻结且不再绑定 WebOS；详见 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 和 [当前进行中](/planning/current)。
 
 ## 1. 目标
 
@@ -161,7 +161,7 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
 3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 评估纯 Web / Flutter 下一批主路径缺口
 4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
-5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；PC/Tauri 后置到纯 Web 与 Flutter 主线之后，若重启应承载纯 Web 增强体验，并单独定义批次，不与 Android MVP 第一轮完成结论混在同一批
+5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；Tauri 冻结，只有明确桌面原生需求与维护预算成立后才评估解冻，并单独定义批次
 
 若 `Phase 2-3` 后续重新进入连续执行批次，且出现“同类展示组件持续在多个页面重复维护”或“除主应用外出现第二个明确 Flutter 消费方”这两类信号之一，则可把 **Flutter UI 组件库治理** 纳入候选，但当前不提升为默认下一事项：
 

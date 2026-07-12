@@ -58,7 +58,8 @@
 
 - 技术栈：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite） / React 19 + Vite（Rolldown） + TypeScript
 - 前端结构：npm workspaces 管理 `radish.http`、`radish.client`、`radish.console`、`radish.ui`
-- 桌面形态：`radish.client` 为 WebOS 桌面化 UI；`Clients/radish-tauri` 为 Tauri 桌面安装包壳层
+- 多端口径：纯 Web 是唯一正式产品主线；Flutter 仅条件式维护现有 MVP，Tauri 冻结为实验资产
+- 桌面形态：`radish.client` 的 `/desktop` 保留 WebOS 历史入口；`Clients/radish-tauri` 仅保留 Tauri 验证资产，不进入当前开发与发布门禁
 - 共享组件：`radish.ui` 为源码直连的共享 UI 组件库，无需单独构建
 - HTTP 客户端：`radish.http` 为统一 API 客户端 workspace
 - 协作分支：`dev`

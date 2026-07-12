@@ -107,7 +107,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 - 不一次性启动完整移动商城、完整通知中心、完整资产中心、完整创作器或完整浏览历史治理。
 - 不启动完整 `PublicId` 全量迁移、数据库主键迁移、ActivityPub / WebFinger 实现。
 - 不启动完整 Playwright / E2E 平台或完整可观测性平台作为继续开发前置。
-- 不让 WebOS / Tauri 抢占纯 Web + Flutter 主线。
+- 不让 WebOS、Flutter 或 Tauri 抢占纯 Web 唯一正式主线。
 
 ## 首批开发批次
 

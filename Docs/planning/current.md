@@ -12,7 +12,7 @@
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
-  - 纯 Web 已成为 PC / mobile 浏览器默认产品形态，`/desktop` 仅保留 WebOS 历史兼容入口；Flutter 保持移动原生维护线，PC/Tauri 后置。
+  - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
   - `P3-12-E1-E7` 已完成首批产品成熟度硬化；E8 首日已回拉主导航、用户语言、页面滚动、聊天工作区和公开文档可见口径。
   - 2026-07-10 全仓审计确认发布工程成熟度落后于产品与功能进度；Q0 属于进入发布候选前必须完成的安全阻断。
@@ -49,7 +49,7 @@ Radish V1 的产品定位固定为：
 - **支撑能力**：Docs 知识沉淀、Workbench 低频能力地图、公开主页与 Console 社区治理。
 - **辅助激励**：经验、宠物、资产、背包和商城；不抢占首页与当前发布主线。
 - **本次正式 Web 发布矩阵**：`Radish.Gateway`、`Radish.Api`、`Radish.Auth`、`Radish.DbMigrate`、`radish.client`、`radish.console`。
-- **维护 / 实验矩阵**：Flutter 为维护与后续受控移动增强；WebOS 为历史兼容；Tauri 与 `Lib/radish.lib` 不属于本次正式 Web 发布阻断面。
+- **维护 / 实验矩阵**：Flutter 仅维护既有 MVP，满足原生价值证据后才重新立项；WebOS 为历史兼容；Tauri 冻结，Tauri 与 `Lib/radish.lib` 均不属于当前开发主线或正式 Web 发布阻断面。
 
 ## 当前执行入口
 
@@ -97,7 +97,7 @@ Radish V1 的产品定位固定为：
 - 公开 head、动态 sitemap、head snapshot 与生产公开域名配置。
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`。
 - WebOS `/desktop` 阻断级兼容维护。
-- Flutter analyze / test 与已落地主路径维护，不扩完整能力套件。
+- Flutter 只做既有 MVP 的阻断、安全与认证兼容维护；不默认新增功能、扩 iOS 或追平 Web。
 - 历史大文件、全量仓库卫生、TypeScript strict 和共享前端边界按 touched-file / 专题治理持续下降，不作为进入 F 的全量前置。
 
 ## 当前不做
@@ -106,7 +106,7 @@ Radish V1 的产品定位固定为：
 - 不创建发布 tag、不推送镜像、不部署；Q3 先审计和确认有限方案，不直接开展全仓 strict、完整 E2E 或无关重构。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
-- 不恢复 WebOS、Tauri 或完整 Flutter 套件为当前主线。
+- 不解冻 Tauri，不恢复完整 Flutter 套件；二者均不得与纯 Web 并行争夺当前主线资源。
 - 不启动推荐算法、ActivityPub / WebFinger、宠物经济扩展、完整移动商城、完整 PWA、完整 E2E 或大而全可观测性平台。
 - 不把 Q4 全量大文件、历史颜色、格式和文档债务设为进入 F 的阻断。
 - 不绕过 Pencil 直接实施新页面族、全局导航、跨页面视觉体系或重大交互；既有页面的小范围密度、文案、状态和布局修正可代码先行并用截图复核。
