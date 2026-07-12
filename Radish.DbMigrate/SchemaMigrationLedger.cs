@@ -339,21 +339,29 @@ internal static class SchemaMigrationLedger
         foreach (var entityType in DbMigrateEntityRegistry.GetEntityTypesForConfig(scope))
         {
             var entityInfo = db.EntityMaintenance.GetEntityInfo(entityType);
-            if (!db.DbMaintenance.IsAnyTable(entityInfo.DbTableName, false))
+            var physicalTableNames = ResolvePhysicalTableNames(db, entityType, entityInfo.DbTableName);
+            if (physicalTableNames.Count == 0)
             {
-                missingObjects.Add(entityInfo.DbTableName);
+                if (!IsSplitTable(entityType))
+                {
+                    missingObjects.Add(entityInfo.DbTableName);
+                }
+
                 continue;
             }
 
-            var existingColumns = db.DbMaintenance
-                .GetColumnInfosByTableName(entityInfo.DbTableName, false)
-                .Select(column => column.DbColumnName)
-                .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            foreach (var column in entityInfo.Columns.Where(column => !column.IsIgnore))
+            foreach (var physicalTableName in physicalTableNames)
             {
-                if (!existingColumns.Contains(column.DbColumnName))
+                var existingColumns = db.DbMaintenance
+                    .GetColumnInfosByTableName(physicalTableName, false)
+                    .Select(column => column.DbColumnName)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+                foreach (var column in entityInfo.Columns.Where(column => !column.IsIgnore))
                 {
-                    missingObjects.Add($"{entityInfo.DbTableName}.{column.DbColumnName}");
+                    if (!existingColumns.Contains(column.DbColumnName))
+                    {
+                        missingObjects.Add($"{physicalTableName}.{column.DbColumnName}");
+                    }
                 }
             }
         }
@@ -363,6 +371,36 @@ internal static class SchemaMigrationLedger
             throw new InvalidOperationException(
                 $"{scope} 不满足 baseline adoption：缺少 {string.Join(", ", missingObjects.Take(20))}。");
         }
+    }
+
+    private static IReadOnlyList<string> ResolvePhysicalTableNames(
+        ISqlSugarClient db,
+        Type entityType,
+        string configuredTableName)
+    {
+        if (!IsSplitTable(entityType))
+        {
+            return db.DbMaintenance.IsAnyTable(configuredTableName, false)
+                ? [configuredTableName]
+                : [];
+        }
+
+        var tokenIndex = configuredTableName.IndexOf('{');
+        var tableNamePrefix = tokenIndex >= 0
+            ? configuredTableName[..tokenIndex]
+            : configuredTableName;
+
+        return db.DbMaintenance.GetTableInfoList(false)
+            .Select(table => table.Name)
+            .Where(tableName => tableName.StartsWith(tableNamePrefix, StringComparison.OrdinalIgnoreCase))
+            .Where(tableName => tableName.Length > tableNamePrefix.Length)
+            .Where(tableName => tableName[tableNamePrefix.Length..].All(char.IsDigit))
+            .ToList();
+    }
+
+    private static bool IsSplitTable(Type entityType)
+    {
+        return entityType.GetCustomAttributes(typeof(SplitTableAttribute), inherit: true).Any();
     }
 
     private static void EnsureRecordedChecksum(

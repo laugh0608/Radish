@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Radish.Common.TimeTool;
 using Radish.DbMigrate;
+using Radish.Model.LogModels;
 using SqlSugar;
 using Xunit;
 
@@ -122,6 +123,45 @@ public sealed class SchemaMigrationLedgerTest
             Assert.Contains("checksum drift", status.Message, StringComparison.Ordinal);
             Assert.Throws<InvalidOperationException>(() =>
                 SchemaMigrationLedger.HasAppliedBaseline(db, "Main"));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    public void EnsureBaseline_ShouldAdoptExistingSplitTablesWithoutRequiringTemplateTable()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-schema-ledger-split-{Guid.NewGuid():N}.db");
+        using var db = new SqlSugarScope(new ConnectionConfig
+        {
+            ConfigId = "Log",
+            ConnectionString = $"Data Source={path}",
+            DbType = DbType.Sqlite,
+            IsAutoCloseConnection = true,
+            InitKeyType = InitKeyType.Attribute
+        });
+
+        try
+        {
+            var logDb = db.GetConnectionScope("Log");
+            logDb.CodeFirst.InitTables<AuditLog>();
+            var templateTableName = logDb.EntityMaintenance.GetEntityInfo<AuditLog>().DbTableName;
+            Assert.False(logDb.DbMaintenance.IsAnyTable(templateTableName, false));
+            Assert.Contains(
+                logDb.DbMaintenance.GetTableInfoList(false),
+                table => table.Name.StartsWith("AuditLog_", StringComparison.Ordinal));
+
+            var timeProvider = new FixedTimeProvider(
+                new DateTimeOffset(2026, 7, 12, 8, 0, 0, TimeSpan.Zero));
+
+            SchemaMigrationLedger.EnsureBaseline(db, timeProvider, ["Log"]);
+
+            Assert.True(SchemaMigrationLedger.HasAppliedBaseline(db, "Log"));
         }
         finally
         {
