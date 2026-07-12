@@ -37,6 +37,7 @@
   - 2026-07-12 Q2-B Release Go 必要子集已完整关闭：SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已阻止首次 baseline / 后续 migration 的并发重复执行；baseline 后禁止 Code First / 旧补丁静默修复。SQLite 文件备份恢复自动化测试和 PostgreSQL `pg_dump → 前滚 → pg_restore → 再前滚` 生产相似演练通过；最终全量后端 `618` 通过、`7` 个环境用例跳过，依赖 High / Critical 为 `0`，临时容器已清理。工程第一顺位进入 Q2-C。
   - 2026-07-12 Q2-C Release Go 必要子集已完成：根 `version.json` 统一 .NET、npm workspaces、Rust、Tauri、Flutter 与镜像产品版本，当前候选为 `26.7.1`、Flutter 为 `26.7.1+1`；版本同步、字段漂移、规范 tag、正式发布记录与 Docker 构建前阻断已自动化。Baseline Quick、.NET 构建、Cargo metadata、Flutter analyze 与 `204` 项 Flutter 测试均通过；本批未创建 tag、镜像或部署。工程第一顺位进入 Q3。
   - 2026-07-12 Q3 Release Go 必要子集已完成：根 lint 与 Hook dependency warning 清零，四个前端 workspace 的 lint / type-check / test 进入默认基线，.NET 候选构建按 warning-as-error 执行；全量仓库卫生采用已审计预算阻断新增问题，`Candidate Quality` 提供手动、定期与镜像发布前复用入口，依赖安全、SBOM、High / Critical 镜像扫描和 provenance 已接入。Q3-C 只补 JWT issuer、idle-session handler、Hub 标准 `sub` 与仓储租户软删 / 恢复真实缺口，未重复 Q1 / Q2 已有迁移、并发和错误契约资产；本批未创建 tag、推送镜像或部署。
+  - 2026-07-12 Release Go 候选运行态验收已通过：本地 SQLite 在备份后完成 schema / OpenIddict 升级与严格 verify，真实启动暴露的 split table baseline 接管和 API 异常管线宿主阻断已修复；Gateway PC `1920x1080` 与移动 `390x844` CSS 视口覆盖公开、私域、作者态和 Console 代表路径，宿主探针、公开 head 主路径与候选静态门禁通过。公开用户主页初始 HTML 缺少服务端 head 登记为非阻断 P2；当前 Release Go 仅余小规模受控试用，仍未创建 tag、推送镜像或部署。
 
 ## V1 产品与发布范围
 
@@ -67,6 +68,7 @@ Radish V1 的产品定位固定为：
 - [P3-12-F Q2-A 时间语义与历史数据迁移方案](/records/p3-12-f-q2-a-time-semantics-migration-plan-2026-07-12)
 - [P3-12-F Q2-B 数据库演进与 schema ledger 方案](/records/p3-12-f-q2-b-database-evolution-plan-2026-07-12)
 - [P3-12-F Q2-C 版本单一真值治理方案](/records/p3-12-f-q2-c-version-governance-plan-2026-07-12)
+- [P3-12-F Release Go 候选运行态验收记录](/records/p3-12-f-release-go-candidate-runtime-validation-2026-07-12)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
@@ -75,24 +77,24 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 完成 Q3 候选质量门禁
+### 1. 准备 `dev -> master` 候选集成
 
-- Q3-A 已完成根 lint / Hook warning 清零、HTTP lint 纳管、.NET warning-as-error 与 Console 首个 strict slice；未扩成全仓 strict。
-- Q3-B 已完成四 workspace 测试基线、候选卫生预算、`Candidate Quality` workflow 与镜像供应链门禁；PR changed-only 快速检查保持不变。
-- Q3-C 仅补真实高风险缺口，复用 Q1 / Q2 的 PostgreSQL 迁移、并发、错误契约和恢复测试。
+- Q1 / Q2 / Q3 与候选运行态验收均已形成独立提交和验证记录。
+- 本轮留痕提交后 `dev` 相对 `c5906604` 为 `23` 个提交、`308` 个文件；最终 PR 前重新 fetch 并刷新 `master...dev` 范围、merge-tree 与 required checks。
+- 是否创建 PR、合并、开始受控试用、创建 tag 和生产发布继续分别决策。
 
-### 2. 推进剩余 Release Go 验收
+### 2. 执行剩余 Release Go 门禁
 
-- 先完成 Q3 批次集成复核并准备 `dev -> master` PR；是否创建 PR、合并和发布仍分别决策。
-- 用户在本会话明确确认 Gateway / API / Auth 与前端已经启动后，才执行 Gateway PC / mobile 候选级 smoke。
-- 运行态验收通过后进入小规模受控试用，记录激活、首次参与、收到回应后的回流、核心任务失败和用户反馈。
+- 候选运行态验收已经通过；移动端工具未提供 DPR 设置，记录只声明 `390x844` CSS 视口覆盖。
+- 下一步建立并执行小规模受控试用，记录激活、首次参与、收到回应后的回流、核心任务失败和用户反馈。
+- 公开用户主页服务端 head 缺口按非阻断 P2 进入并行维护线，不冒充受控试用或阻断当前集成准备。
 - 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
 
 ## 下一顺位
 
-1. 复核 Q3 候选质量门禁批次，准备 `dev -> master` 集成。
-2. 在用户当轮确认服务已启动后执行 Gateway PC / mobile 候选级 smoke 与 Release Go 抽查。
-3. 运行态验收通过后建立并执行小规模受控试用记录。
+1. 最终刷新 `master...dev` 集成范围并准备 `dev -> master` PR。
+2. 建立并执行小规模受控试用记录。
+3. 受控试用无未处置 `P0/P1` 后，再分别决策合并、tag 与生产发布。
 
 ## 并行维护线
 
@@ -117,5 +119,5 @@ Radish V1 的产品定位固定为：
 
 - 开发中按风险执行定向测试、type-check、build、changed-only lint、repo hygiene 与 `git diff --check`。
 - 准备合并到 `master` 时执行批次级 baseline、identity、依赖审计和范围复核。
-- 发布候选运行态检查仍需用户当轮明确说明前后端已经启动。
+- 后续如需再次执行发布候选运行态检查，仍需用户当轮明确说明前后端已经启动。
 - 本页不再记录 P3-1 至 P3-12-D 的命令级流水；历史事实进入 records、changelog 或 archive。
