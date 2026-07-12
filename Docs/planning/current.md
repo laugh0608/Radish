@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式发布执行`
-- **工程第一顺位**：`v26.7.1.1202-release / DbMigrate 部署阻断修复与补发`
+- **工程第一顺位**：`v26.7.1.1203-release / OpenIddict PostgreSQL 初始迁移阻断修复与补发`
 - **产品下一顺位**：`发布后长期维护线与功能完成线`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -42,6 +42,8 @@
   - 2026-07-12 `v26.7.1-release` 已指向 `3f518101` 并推送；Docker Images `#16` 的 Candidate Quality 通过，但前端最终镜像基于 Debian 的运行层命中 High / Critical 漏洞，前端镜像未推送且正式部署未执行。旧 tag 保持不可变并记录为失败发布尝试；补发改用规范扩展标识 `v26.7.1.1201-release`，五个镜像必须全部重新构建并通过门禁。
   - 2026-07-12 PR `#60` 已合并到 `master`，`master / dev / origin` 已统一到 `6db3668b`；`v26.7.1.1201-release` 已推送，Docker Images `#17` 的 Candidate Quality 与五个正式镜像 job 全部成功，High / Critical 扫描、多架构推送、SBOM 和 provenance 已完成。当前只剩固定 tag 生产部署与部署后复核。
   - 2026-07-12 首次生产部署固定使用 `v26.7.1.1201-release`，PostgreSQL / Redis 健康且 Frontend 已启动，但 DbMigrate 在 baseline 后因 PostgreSQL 小写物理表与硬编码 PascalCase migration SQL 不一致触发 `42P01`；API、Auth、Gateway 未启动。同时确认 DbMigrate 缺少 OpenIddict PostgreSQL 配置并回退 SQLite。服务器数据与 ledger 保留，工程第一顺位切到 `v26.7.1.1202-release` 前滚修复。
+  - 2026-07-12 PR `#61` 已合并到 `master`，`master / dev / origin` 已统一到 `2717a8a2`；`v26.7.1.1202-release` 与 Docker Images `#18` 已成功。生产保留 volume 前滚后，自然日 migration 与 OpenIddict PostgreSQL provider 修复均生效，但空 OpenIddict PostgreSQL 首次 `MigrateAsync` 因运行态模型受 Npgsql legacy timestamp 全局开关污染，与 snapshot 的四个 `timestamptz` 字段不一致而阻断。API、Auth、Gateway 仍未启动，工程第一顺位切到 `v26.7.1.1203-release`。
+  - 2026-07-12 `v26.7.1.1203-release` 本地修复已完成：OpenIddict PostgreSQL 四个时间列显式固定为 `timestamp with time zone`，运行态模型差异进入 doctor / apply / Auth 启动门禁；空 PostgreSQL 首次迁移、重复执行、EnsureCreated schema 接管与真实 DbMigrate Release 容器链路均通过。当前等待批次级验证、PR、回灌、tag、镜像和生产固定 tag 前滚。
 
 ## V1 产品与发布范围
 
@@ -76,6 +78,7 @@ Radish V1 的产品定位固定为：
 - [v26.7.1-release 正式发布记录](/records/m15-release-record-2026-07-12)
 - [v26.7.1.1201-release 补发记录](/records/m15-release-record-v26.7.1.1201-2026-07-12)
 - [v26.7.1.1202-release 部署修复补发记录](/records/m15-release-record-v26.7.1.1202-2026-07-12)
+- [v26.7.1.1203-release OpenIddict 修复补发记录](/records/m15-release-record-v26.7.1.1203-2026-07-12)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -85,12 +88,12 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 执行 `v26.7.1.1202-release` 部署修复补发
+### 1. 执行 `v26.7.1.1203-release` OpenIddict 修复补发
 
-- `v26.7.1.1201-release` 保留为镜像成功、DbMigrate 部署失败且未上线的历史尝试。
-- 修复自然日 migration 的 PostgreSQL 物理标识符解析，并让 DbMigrate 使用 OpenIddict PostgreSQL。
-- 补真实 PostgreSQL 小写表列、ledger apply / re-entry 回归，通过 PR 合并和 `master -> dev` 回灌后创建 `v26.7.1.1202-release`。
-- 新镜像通过后在服务器保留现有 volume 前滚，DbMigrate 成功后再执行宿主与页面复核。
+- `v26.7.1.1201-release` 与 `v26.7.1.1202-release` 保持不可变，分别记录已关闭的 PostgreSQL 标识符 / provider 阻断和当前 OpenIddict 模型阻断。
+- 固定 OpenIddict PostgreSQL 时间列模型，保持已发布初始 migration 与既有 migration history 不变。
+- 完成批次级验证，通过 PR 合并和 `master -> dev` 回灌后才创建 `v26.7.1.1203-release`。
+- 新镜像通过后在服务器保留现有 PostgreSQL / Redis volume 和已应用 ledger，以固定 tag 前滚；DbMigrate 成功后再执行宿主与页面复核。
 
 ### 2. 进入发布后常态开发
 
@@ -100,9 +103,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 完成 DbMigrate PostgreSQL 物理标识符与 OpenIddict 配置修复及回归。
-2. 通过 PR、回灌、`v26.7.1.1202-release` tag 和五镜像门禁完成补发。
-3. 在服务器保留现有 volume 重试，执行部署后复核并回写记录。
+1. 完成 OpenIddict PostgreSQL 运行态模型修复的批次级验证与文档收口。
+2. 通过 PR、回灌、`v26.7.1.1203-release` tag 和五镜像门禁完成补发。
+3. 在服务器保留现有 volume，以固定 `RADISH_IMAGE_TAG=v26.7.1.1203-release` 前滚并执行部署后复核。
 4. 进入长期维护线与商城商品效力专题。
 
 ## 并行维护线
