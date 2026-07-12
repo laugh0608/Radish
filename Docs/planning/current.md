@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Q3 候选质量门禁与测试升级`
+- **工程第一顺位**：`P3-12-F / Release Go 候选级运行态验收与受控试用准备`
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -36,6 +36,7 @@
   - Q2-B 首个业务迁移 `20260712_001_experience_natural_dates` 已完成实现与回归：三处经验自然日改为物理 `date`，SQLite 重建保留索引，PostgreSQL 同时覆盖 `timestamp with/without time zone`，异常历史值拒绝、重入和 ledger 记账通过；全量后端 `615` 通过、`6` 个环境用例跳过，隔离 PostgreSQL 17 定向用例另行实跑通过。
   - 2026-07-12 Q2-B Release Go 必要子集已完整关闭：SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已阻止首次 baseline / 后续 migration 的并发重复执行；baseline 后禁止 Code First / 旧补丁静默修复。SQLite 文件备份恢复自动化测试和 PostgreSQL `pg_dump → 前滚 → pg_restore → 再前滚` 生产相似演练通过；最终全量后端 `618` 通过、`7` 个环境用例跳过，依赖 High / Critical 为 `0`，临时容器已清理。工程第一顺位进入 Q2-C。
   - 2026-07-12 Q2-C Release Go 必要子集已完成：根 `version.json` 统一 .NET、npm workspaces、Rust、Tauri、Flutter 与镜像产品版本，当前候选为 `26.7.1`、Flutter 为 `26.7.1+1`；版本同步、字段漂移、规范 tag、正式发布记录与 Docker 构建前阻断已自动化。Baseline Quick、.NET 构建、Cargo metadata、Flutter analyze 与 `204` 项 Flutter 测试均通过；本批未创建 tag、镜像或部署。工程第一顺位进入 Q3。
+  - 2026-07-12 Q3 Release Go 必要子集已完成：根 lint 与 Hook dependency warning 清零，四个前端 workspace 的 lint / type-check / test 进入默认基线，.NET 候选构建按 warning-as-error 执行；全量仓库卫生采用已审计预算阻断新增问题，`Candidate Quality` 提供手动、定期与镜像发布前复用入口，依赖安全、SBOM、High / Critical 镜像扫描和 provenance 已接入。Q3-C 只补 JWT issuer、idle-session handler、Hub 标准 `sub` 与仓储租户软删 / 恢复真实缺口，未重复 Q1 / Q2 已有迁移、并发和错误契约资产；本批未创建 tag、推送镜像或部署。
 
 ## V1 产品与发布范围
 
@@ -74,23 +75,24 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 先形成 Q3 候选质量门禁实施方案
+### 1. 完成 Q3 候选质量门禁
 
-- 审计根 lint error、编译 warning、现有 client / console / HTTP / UI 测试入口与候选基线覆盖关系。
-- 优先形成 Q3-A / Q3-B 的有限实施批次，不以一次性全仓 strict、全量 E2E 或大规模格式化替代风险治理。
-- 迁移、身份、并发与错误契约的高风险集成测试只补真实缺口，复用 Q1 / Q2 已落地资产。
+- Q3-A 已完成根 lint / Hook warning 清零、HTTP lint 纳管、.NET warning-as-error 与 Console 首个 strict slice；未扩成全仓 strict。
+- Q3-B 已完成四 workspace 测试基线、候选卫生预算、`Candidate Quality` workflow 与镜像供应链门禁；PR changed-only 快速检查保持不变。
+- Q3-C 仅补真实高风险缺口，复用 Q1 / Q2 的 PostgreSQL 迁移、并发、错误契约和恢复测试。
 
-### 2. 保持 P3-12-F Release Go 边界
+### 2. 推进剩余 Release Go 验收
 
-- Q3 只收口候选 lint / warning / baseline / 高风险测试与镜像供应链必要子集；不混入页面调整或无关重构。
+- 先完成 Q3 批次集成复核并准备 `dev -> master` PR；是否创建 PR、合并和发布仍分别决策。
+- 用户在本会话明确确认 Gateway / API / Auth 与前端已经启动后，才执行 Gateway PC / mobile 候选级 smoke。
+- 运行态验收通过后进入小规模受控试用，记录激活、首次参与、收到回应后的回流、核心任务失败和用户反馈。
 - 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
-- 候选级运行态 smoke 仍只在用户当轮确认服务已启动后执行。
 
 ## 下一顺位
 
-1. 提交 Q2-C 版本真值、同步 / 校验脚本、CI 与发布记录门禁。
-2. 只读审计 Q3-A 根 lint / 编译 warning / strict 与共享 UI 测试现状。
-3. 形成 Q3 候选质量门禁有限实施方案，确认后再修改 lint、baseline 与供应链 workflow。
+1. 复核 Q3 候选质量门禁批次，准备 `dev -> master` 集成。
+2. 在用户当轮确认服务已启动后执行 Gateway PC / mobile 候选级 smoke 与 Release Go 抽查。
+3. 运行态验收通过后建立并执行小规模受控试用记录。
 
 ## 并行维护线
 
@@ -103,7 +105,7 @@ Radish V1 的产品定位固定为：
 ## 当前不做
 
 - 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- 不创建发布 tag、不推送镜像、不部署；Q3 先审计和确认有限方案，不直接开展全仓 strict、完整 E2E 或无关重构。
+- 不创建发布 tag、不推送镜像、不部署；不扩展全仓 strict、完整 E2E 或无关重构。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不解冻 Tauri，不恢复完整 Flutter 套件；二者均不得与纯 Web 并行争夺当前主线资源。

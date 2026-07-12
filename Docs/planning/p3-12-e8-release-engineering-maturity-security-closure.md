@@ -261,6 +261,10 @@ Q4 维护性与仓库治理
 
 ### Q3 质量门禁与测试升级（F 内 Release Go）
 
+状态：`2026-07-12 已完成 Release Go 必要子集；运行态 smoke 与受控试用仍按独立门禁推进`。
+
+完成口径：根 lint / Hook warning 清零，HTTP / UI / client / console 测试纳入 baseline，.NET 候选构建使用 warning-as-error；全量卫生以审计 baseline 阻断新增问题，候选 workflow 统一执行 lint、baseline、LongId 与依赖安全。镜像发布在推送前复用候选门禁并执行 High / Critical 扫描，推送构建产出 SBOM 与 provenance。Q3-C 仅新增 JWT issuer、idle-session handler、Hub `sub` 和租户软删 / 恢复真实缺口，Q1 / Q2 已覆盖项不重复建设。
+
 #### Q3-A Lint、编译警告与严格度
 
 - 先修复根 lint 的全部 error。

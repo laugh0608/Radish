@@ -18,6 +18,7 @@
 ```bash
 npm run setup:hooks
 npm run check:repo-hygiene
+npm run check:repo-hygiene:candidate
 npm run check:repo-hygiene:changed
 npm run check:repo-quality-contract
 npm run check:dependency-security
@@ -35,6 +36,8 @@ npm run check:identity-impact:staged
 npm run check:backend-impact
 npm run check:backend-impact:staged
 npm run check:long-id-safety
+npm run check:dotnet-warnings
+npm run test:frontend
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -42,6 +45,7 @@ npm run check:host-runtime
 npm run validate:backend
 npm run validate:identity
 npm run validate:ci
+npm run validate:candidate
 ```
 
 对应关系：
@@ -52,6 +56,9 @@ npm run validate:ci
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用
+- `check:repo-hygiene:candidate`
+  - 全量扫描所有已跟踪文件，并以 `Scripts/repo-hygiene-baseline.json` 记录的已审计问题为预算
+  - 历史问题允许持续下降，但新增文件或新增问题指纹会阻断候选验证
 - `check:repo-hygiene:changed`
   - 只检查当前 worktree 变更文件的文本卫生
   - 适合与 GitHub Actions 的 `Repo Hygiene` changed-only 行为对齐
@@ -100,9 +107,13 @@ npm run validate:ci
   - 只判定 staged 变更是否命中身份语义影响面，适合提交前判断是否需要追加 `validate:identity`
 - `check:backend-impact` / `check:backend-impact:staged`
   - 判定当前 worktree 或 staged 变更是否命中后端 / API 影响面，适合与 GitHub Actions 的 `Backend Guard` 对齐，命中后追加 `validate:backend`
+- `test:frontend`
+  - 运行 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console` 的现有测试资产
+- `check:dotnet-warnings`
+  - 以 `--warnaserror` 构建 `Radish.slnx`，用于候选前阻断新增编译 warning
 - `validate:baseline`
   - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
-  - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
+  - 运行四个前端 workspace 的现有测试；`radish.client` 以 `--test-isolation=none` 兼容受限环境
   - 运行高置信敏感字面量规则自测与全仓扫描
   - 运行时间语义增量防回归扫描，禁止业务源码超过 baseline 新增 `DateTime.Now / Today / DateTimeOffset.Now`
   - 运行 `Console` 权限链路扫描
@@ -151,6 +162,10 @@ npm run validate:ci
   - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
   - 当前其本地门禁定义也已改为复用同一份 Repo Quality contract，避免 workflow / ruleset / 本地入口继续各自维护
   - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
+- `validate:candidate`
+  - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline、外部 LongId 字符串安全与联网依赖安全审计
+  - `.github/workflows/candidate-quality.yml` 提供手动、每周定期和 Docker 镜像发布前复用入口，并在 PostgreSQL 17 服务下运行环境集成测试
+  - Docker 镜像先进行本地单平台构建与 High / Critical 漏洞扫描；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像
 
 ## 分层使用建议
 
