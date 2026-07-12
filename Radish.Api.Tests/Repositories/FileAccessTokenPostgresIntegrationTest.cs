@@ -72,12 +72,12 @@ public sealed class FileAccessTokenPostgresIntegrationTest
 
     private static SqlSugarScope CreateScope(string connectionString)
     {
-        return new SqlSugarScope(CreateConfig(connectionString));
+        return PostgreSqlIntegrationSqlSugarFactory.CreateScope(CreateConfig(connectionString));
     }
 
     private static SqlSugarClient CreateClient(string connectionString)
     {
-        return new SqlSugarClient(CreateConfig(connectionString));
+        return PostgreSqlIntegrationSqlSugarFactory.CreateClient(CreateConfig(connectionString));
     }
 
     private static ConnectionConfig CreateConfig(string connectionString)

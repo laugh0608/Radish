@@ -174,10 +174,8 @@ public sealed class ReliableOutboxPostgresIntegrationTest
 
     private static async Task VerifyNotificationTransactionAndBusinessKeyAsync(string messageConnectionString)
     {
-        using var messageScope = new SqlSugarScope(
-        [
-            CreateConnectionConfig("message", messageConnectionString)
-        ]);
+        using var messageScope = PostgreSqlIntegrationSqlSugarFactory.CreateScope(
+            CreateConnectionConfig("message", messageConnectionString));
         var messageDb = messageScope.GetConnectionScope("message");
         messageDb.CodeFirst.InitTables<Notification>();
         messageDb.CodeFirst.InitTables<UserNotification>();
@@ -252,16 +250,15 @@ public sealed class ReliableOutboxPostgresIntegrationTest
 
     private static SqlSugarScope CreateScope(string mainConnectionString, string chatConnectionString)
     {
-        return new SqlSugarScope(
-        [
+        return PostgreSqlIntegrationSqlSugarFactory.CreateScope(
             CreateConnectionConfig("main", mainConnectionString),
-            CreateConnectionConfig("chat", chatConnectionString)
-        ]);
+            CreateConnectionConfig("chat", chatConnectionString));
     }
 
     private static SqlSugarClient CreateSingleConnection(string connectionString, string configId)
     {
-        return new SqlSugarClient(CreateConnectionConfig(configId, connectionString));
+        return PostgreSqlIntegrationSqlSugarFactory.CreateClient(
+            CreateConnectionConfig(configId, connectionString));
     }
 
     private static ConnectionConfig CreateConnectionConfig(string configId, string connectionString)

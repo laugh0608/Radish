@@ -317,7 +317,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
 
     private static SqlSugarClient CreatePostgreSqlClient(string connectionString)
     {
-        return new SqlSugarClient(new ConnectionConfig
+        return PostgreSqlIntegrationSqlSugarFactory.CreateClient(new ConnectionConfig
         {
             ConfigId = "Main",
             ConnectionString = connectionString,
@@ -329,7 +329,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
 
     private static SqlSugarScope CreatePostgreSqlScope(string connectionString)
     {
-        return new SqlSugarScope(new ConnectionConfig
+        return PostgreSqlIntegrationSqlSugarFactory.CreateScope(new ConnectionConfig
         {
             ConfigId = "Main",
             ConnectionString = connectionString,

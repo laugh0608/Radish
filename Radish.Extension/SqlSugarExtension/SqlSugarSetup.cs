@@ -98,17 +98,21 @@ public static class SqlSugarSetup
                         RepositorySetting.SetTenantEntityFilter(dbProvider);
                     }
 
-                    // 打印 SQL 语句
-                    // 注意：Log 库会被 Serilog 数据库 Sink 写入；如果对 Log 库也启用 SQL AOP，会出现“写日志 -> 触发 SQL AOP -> 再写日志”的递归，导致日志疯狂刷新
-                    if (!SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
+                    // PostgreSQL 时间参数规范化是持久化契约，不依赖 SQL 日志是否启用。
+                    // Log 库仍不写 SQL 日志，避免 Serilog 数据库 Sink 递归。
+                    dbProvider.Aop.OnLogExecuting = (s, parameters) =>
                     {
-                        dbProvider.Aop.OnLogExecuting = (s, parameters) =>
+                        PostgreSqlDateTimeParameterNormalizer.Normalize(config, parameters);
+                        if (!SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
                         {
                             SqlSugarAop.OnLogExecuting(dbProvider, ResolveSqlAopUser(), ExtractTableName(s),
                                 ResolveOperateName(dbProvider), s, parameters,
                                 config);
-                        };
+                        }
+                    };
 
+                    if (!SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
+                    {
                         dbProvider.Aop.OnLogExecuted = (s, parameters) =>
                         {
                             var operate = ResolveOperateName(dbProvider);
