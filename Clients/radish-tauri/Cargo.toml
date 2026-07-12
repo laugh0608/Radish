@@ -1,6 +1,6 @@
 [package]
 name = "radish-tauri"
-version = "0.1.0"
+version = "26.7.1"
 description = "Radish Tauri desktop shell"
 authors = ["laugh0608"]
 edition = "2021"

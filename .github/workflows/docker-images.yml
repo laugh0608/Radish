@@ -40,6 +40,20 @@ jobs:
       should_push_frontend: ${{ steps.vars.outputs.should_push_frontend }}
       publish_track: ${{ steps.vars.outputs.publish_track }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Validate source, tag and release record versions
+        if: github.ref_type == 'tag'
+        env:
+          RADISH_RELEASE_TAG: ${{ github.ref_name }}
+        run: node Scripts/version-contract.mjs --tag "${RADISH_RELEASE_TAG}"
+
       - name: Compute image namespace and publish mode
         id: vars
         shell: bash
@@ -170,6 +184,7 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
+            org.opencontainers.image.version=${{ github.ref_name }}
 
   frontend-image:
     name: Frontend Image
@@ -242,3 +257,4 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
+            org.opencontainers.image.version=${{ github.ref_name }}

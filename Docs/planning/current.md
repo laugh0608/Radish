@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式版发布候选`
-- **工程第一顺位**：`P3-12-F / Q2-C 版本单一真值源`
+- **工程第一顺位**：`P3-12-F / Q3 候选质量门禁与测试升级`
 - **产品下一顺位**：`完成 Release Go 门禁后开展小规模受控试用`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -35,6 +35,7 @@
   - 2026-07-12 Q2-B ledger / OpenIddict 首批已由提交 `7ac68c75` 收口：Main / Log / Message / Chat 引入 `RadishSchemaVersion` baseline 与 checksum drift 门禁，`apply` 接入前置 doctor、OpenIddict 显式迁移、seed 与严格 verify；OpenIddict 持久化边界已从 Auth 宿主拆出，SQLite / PostgreSQL 独立 migration assembly、空库迁移、重入和旧 `EnsureCreated` schema adoption 均已验证，EF Design 传递依赖已安全钉住且 High / Critical 为 `0`。
   - Q2-B 首个业务迁移 `20260712_001_experience_natural_dates` 已完成实现与回归：三处经验自然日改为物理 `date`，SQLite 重建保留索引，PostgreSQL 同时覆盖 `timestamp with/without time zone`，异常历史值拒绝、重入和 ledger 记账通过；全量后端 `615` 通过、`6` 个环境用例跳过，隔离 PostgreSQL 17 定向用例另行实跑通过。
   - 2026-07-12 Q2-B Release Go 必要子集已完整关闭：SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已阻止首次 baseline / 后续 migration 的并发重复执行；baseline 后禁止 Code First / 旧补丁静默修复。SQLite 文件备份恢复自动化测试和 PostgreSQL `pg_dump → 前滚 → pg_restore → 再前滚` 生产相似演练通过；最终全量后端 `618` 通过、`7` 个环境用例跳过，依赖 High / Critical 为 `0`，临时容器已清理。工程第一顺位进入 Q2-C。
+  - 2026-07-12 Q2-C Release Go 必要子集已完成：根 `version.json` 统一 .NET、npm workspaces、Rust、Tauri、Flutter 与镜像产品版本，当前候选为 `26.7.1`、Flutter 为 `26.7.1+1`；版本同步、字段漂移、规范 tag、正式发布记录与 Docker 构建前阻断已自动化。Baseline Quick、.NET 构建、Cargo metadata、Flutter analyze 与 `204` 项 Flutter 测试均通过；本批未创建 tag、镜像或部署。工程第一顺位进入 Q3。
 
 ## V1 产品与发布范围
 
@@ -64,6 +65,8 @@ Radish V1 的产品定位固定为：
 - [P3-12-F Q1-C 文件访问令牌审计与实施方案](/records/p3-12-f-q1-c-file-access-token-governance-plan-2026-07-11)
 - [P3-12-F Q2-A 时间语义与历史数据迁移方案](/records/p3-12-f-q2-a-time-semantics-migration-plan-2026-07-12)
 - [P3-12-F Q2-B 数据库演进与 schema ledger 方案](/records/p3-12-f-q2-b-database-evolution-plan-2026-07-12)
+- [P3-12-F Q2-C 版本单一真值治理方案](/records/p3-12-f-q2-c-version-governance-plan-2026-07-12)
+- [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
 - [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
@@ -71,23 +74,23 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 先形成 Q2-C 版本单一真值方案
+### 1. 先形成 Q3 候选质量门禁实施方案
 
-- 只读盘点 .NET、npm workspace、Tauri、Flutter、Rust、容器标签、Git tag 与发布记录的当前版本来源和漂移点。
-- 先确认 Radish 日历版本与独立客户端版本边界、单一真值文件、生成 / 同步方向和 tag 前校验，再进入代码。
-- 自动校验必须阻止源版本、部署版本、tag、镜像标签和发布记录不一致，不做无边界的全仓机械替换。
+- 审计根 lint error、编译 warning、现有 client / console / HTTP / UI 测试入口与候选基线覆盖关系。
+- 优先形成 Q3-A / Q3-B 的有限实施批次，不以一次性全仓 strict、全量 E2E 或大规模格式化替代风险治理。
+- 迁移、身份、并发与错误契约的高风险集成测试只补真实缺口，复用 Q1 / Q2 已落地资产。
 
 ### 2. 保持 P3-12-F Release Go 边界
 
-- Q2-C 只收口版本归属、同步方向和发布前一致性校验；不提前混入 Q3、页面调整或无关重构。
+- Q3 只收口候选 lint / warning / baseline / 高风险测试与镜像供应链必要子集；不混入页面调整或无关重构。
 - 合并到 `master`、创建 tag 和生产发布继续是三个独立决策；当前不创建 tag、不部署。
 - 候选级运行态 smoke 仍只在用户当轮确认服务已启动后执行。
 
 ## 下一顺位
 
-1. 提交 Q2-B 并发锁、备份恢复测试与候选验证记录。
-2. 只读审计当前版本源、tag / 镜像 / 发布记录生成链和独立客户端版本边界。
-3. 提交 Q2-C 版本单一真值方案，确认后再实现自动同步与 tag 前阻断。
+1. 提交 Q2-C 版本真值、同步 / 校验脚本、CI 与发布记录门禁。
+2. 只读审计 Q3-A 根 lint / 编译 warning / strict 与共享 UI 测试现状。
+3. 形成 Q3 候选质量门禁有限实施方案，确认后再修改 lint、baseline 与供应链 workflow。
 
 ## 并行维护线
 
@@ -100,7 +103,7 @@ Radish V1 的产品定位固定为：
 ## 当前不做
 
 - 不创建发布 tag，不进入生产部署或 Phase 4 稳定运营。
-- 不在当前业务数据库直接试跑 Q2-B 写迁移；不提前进入 Q2-C，不混入 Q3、页面调整或无关重构；不猜测平移模糊 SQLite 历史时刻。
+- 不创建发布 tag、不推送镜像、不部署；Q3 先审计和确认有限方案，不直接开展全仓 strict、完整 E2E 或无关重构。
 - 不新增 E9 式全站逐页 UI / 文案扫尾；新缺口必须命中 E8-B 有限矩阵、Q0 或真实阻断。
 - 不把 Console 移动端做成桌面完整能力复制。
 - 不恢复 WebOS、Tauri 或完整 Flutter 套件为当前主线。

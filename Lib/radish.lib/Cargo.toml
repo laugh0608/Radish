@@ -1,6 +1,6 @@
 [package]
 name = "radish-lib"
-version = "26.1.1"
+version = "26.7.1"
 edition = "2024"
 authors = ["Radish Team"]
 description = "Radish native extensions for high-performance image processing and file operations"

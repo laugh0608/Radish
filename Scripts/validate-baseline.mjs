@@ -274,6 +274,18 @@ const npmCommand = resolveNpmCommand();
 
 const steps = [
   {
+    title: '产品版本单一真值校验',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:version-contract'],
+  },
+  {
+    title: '产品版本规则自测',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:version-contract:self-test'],
+  },
+  {
     title: '前端 TypeScript 类型检查',
     phase: 'baseline',
     command: npmCommand,

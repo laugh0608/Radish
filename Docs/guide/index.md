@@ -28,6 +28,7 @@
 - [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)
 - [专题回归索引](/guide/regression-index)
 - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
+- [产品版本与发布标识治理](/guide/version-governance)
 
 ### 基础设施与安全
 
@@ -56,6 +57,7 @@
 - [API 说明索引](/guide/api-index)
 - [M14 宿主运行与最小可观测性基线](/guide/m14-host-runtime-observability-baseline)
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [产品版本与发布标识治理](/guide/version-governance)
 
 ### 文档、通知与控制台
 

@@ -63,7 +63,13 @@
 ## 推荐模板
 
 ```md
-## M15 发布记录（<tag>）
+---
+releaseTag: <vYY.M.RELEASE-release>
+productVersion: <YY.M.RELEASE>
+imageTag: <vYY.M.RELEASE-release>
+---
+
+# M15 发布记录（<tag>）
 
 - 记录日期：YYYY-MM-DD
 - 记录人：<name>
@@ -111,6 +117,14 @@
 - <none or item 1>
 - <item 2>
 ```
+
+正式 `-release` tag 创建前，这三项 front matter 必须已经存在于 tag 目标提交，且通过：
+
+```bash
+node Scripts/version-contract.mjs --tag <tag>
+```
+
+测试轨道记录可以继续使用同一模板，但只有正式 `-release` tag 会强制检查 front matter。发布记录在 tag 前应如实写“未部署”；部署结论必须在实际完成后再更新。
 
 ## 推荐写法
 

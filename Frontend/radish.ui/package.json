@@ -1,6 +1,6 @@
 {
   "name": "@radish/ui",
-  "version": "26.1.1",
+  "version": "26.7.1",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",

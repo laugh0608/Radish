@@ -315,6 +315,20 @@ assertPackageScript(
 
 assertPackageScript(
   packageScripts,
+  'check:version-contract',
+  'node Scripts/version-contract.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:version-contract:self-test',
+  'node --test Scripts/version-contract.test.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
   'check:sensitive-literals',
   'node Scripts/check-sensitive-literals.mjs',
   failures
@@ -328,6 +342,8 @@ assertPackageScript(
 );
 
 for (const requiredFragment of [
+  "args: ['run', 'check:version-contract']",
+  "args: ['run', 'check:version-contract:self-test']",
   "args: ['run', 'check:sensitive-literals:self-test']",
   "args: ['run', 'check:sensitive-literals']",
 ]) {

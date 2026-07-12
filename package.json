@@ -1,7 +1,7 @@
 {
   "name": "radish-root",
   "private": true,
-  "version": "26.1.1",
+  "version": "26.7.1",
   "workspaces": [
     "Frontend/radish.http",
     "Frontend/radish.client",
@@ -16,6 +16,9 @@
     "check:sensitive-literals": "node Scripts/check-sensitive-literals.mjs",
     "check:sensitive-literals:self-test": "node --test Scripts/sensitive-literal-rules.test.mjs",
     "check:time-semantics": "node Scripts/check-time-semantics.mjs",
+    "check:version-contract": "node Scripts/version-contract.mjs",
+    "check:version-contract:self-test": "node --test Scripts/version-contract.test.mjs",
+    "version:sync": "node Scripts/version-contract.mjs --sync",
     "update:time-semantics-baseline": "node Scripts/check-time-semantics.mjs --write-baseline",
     "check:dependency-security": "node Scripts/check-dependency-security.mjs",
     "check:commit-message": "node Scripts/validate-commit-message.mjs",

@@ -1,6 +1,6 @@
 {
   "name": "@radish/http",
-  "version": "26.1.1",
+  "version": "26.7.1",
   "description": "Radish HTTP 客户端库",
   "type": "module",
   "main": "./src/index.ts",
