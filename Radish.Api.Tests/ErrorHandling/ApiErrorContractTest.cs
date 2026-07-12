@@ -4,11 +4,13 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Api.ErrorHandling;
 using Radish.Api.Filters;
@@ -71,6 +73,26 @@ public class ApiErrorContractTest
         var json = await ReadResponseJsonAsync(context);
         Assert.Equal(ApiErrorCodes.Conflict, json.RootElement.GetProperty("code").GetString());
         Assert.Equal("error.common.conflict", json.RootElement.GetProperty("messageKey").GetString());
+    }
+
+    [Fact]
+    public async Task ExceptionPipeline_ShouldBuildAndHandleUnknownApiException()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.Services.AddSingleton<ApiExceptionHandler>();
+        await using var application = builder.Build();
+        application.UseApiExceptionHandler();
+        application.Run(_ => throw new InvalidOperationException("secret startup regression"));
+        var pipeline = ((IApplicationBuilder)application).Build();
+        var context = CreateApiContext();
+        context.RequestServices = application.Services;
+
+        await pipeline(context);
+
+        Assert.Equal(StatusCodes.Status500InternalServerError, context.Response.StatusCode);
+        var json = await ReadResponseJsonAsync(context);
+        Assert.Equal(ApiErrorCodes.UnexpectedError, json.RootElement.GetProperty("code").GetString());
+        Assert.DoesNotContain("secret", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

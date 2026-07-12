@@ -248,7 +248,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             fieldErrors);
     };
 });
-builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddSingleton<ApiExceptionHandler>();
 // 注册健康检查
 var apiHealthCheckTags = ApiHostHealthChecks.Tags;
 builder.Services.AddApiHostHealthChecks();
@@ -593,7 +593,7 @@ var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocali
 app.UseRequestLocalization(localizationOptions.Value);
 
 // 只处理正式 API JSON 请求；协议端点、文件流、Hub 和宿主页面保持各自响应契约。
-app.UseExceptionHandler();
+app.UseApiExceptionHandler();
 
 // 配置 Hangfire Dashboard
 var dashboardEnabled = builder.Configuration.GetValue<bool>("Hangfire:Dashboard:Enable", true);
