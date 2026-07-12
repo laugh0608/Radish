@@ -9,7 +9,8 @@ namespace Radish.Auth.OpenIddict;
 public sealed record AuthOpenIddictMigrationStatus(
     RuntimeDatabaseConfig Database,
     IReadOnlyList<string> AppliedMigrations,
-    IReadOnlyList<string> PendingMigrations);
+    IReadOnlyList<string> PendingMigrations,
+    IReadOnlyList<string> ModelDifferences);
 
 public static class AuthOpenIddictPersistence
 {
@@ -45,8 +46,9 @@ public static class AuthOpenIddictPersistence
         var pending = db.Database.GetMigrations()
             .Where(migration => !appliedSet.Contains(migration))
             .ToList();
+        var modelDifferences = AuthOpenIddictModelConsistency.Inspect(db);
 
-        return new AuthOpenIddictMigrationStatus(database, applied, pending);
+        return new AuthOpenIddictMigrationStatus(database, applied, pending, modelDifferences);
     }
 
     public static void EnsureReady(
@@ -54,6 +56,13 @@ public static class AuthOpenIddictPersistence
         RuntimeDatabaseConfig database)
     {
         var status = Inspect(db, database);
+        if (status.ModelDifferences.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"OpenIddict 运行态模型与 migration snapshot 不一致：" +
+                $"{string.Join("；", status.ModelDifferences)}。");
+        }
+
         if (status.PendingMigrations.Count == 0)
         {
             return;
@@ -73,6 +82,14 @@ public static class AuthOpenIddictPersistence
             db,
             database,
             cancellationToken);
+
+        var modelDifferences = AuthOpenIddictModelConsistency.Inspect(db);
+        if (modelDifferences.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"OpenIddict 运行态模型与 migration snapshot 不一致：" +
+                $"{string.Join("；", modelDifferences)}。");
+        }
 
         var pending = (await db.Database.GetPendingMigrationsAsync(cancellationToken)).ToList();
         if (pending.Count > 0)

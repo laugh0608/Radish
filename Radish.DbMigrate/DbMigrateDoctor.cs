@@ -124,6 +124,12 @@ internal static class DbMigrateDoctor
             var status = AuthOpenIddictPersistence.Inspect(db, database);
             Console.WriteLine(
                 $"[Radish.DbMigrate] [Doctor] OpenIddict applied={status.AppliedMigrations.Count}, pending={status.PendingMigrations.Count}。");
+            if (status.ModelDifferences.Count > 0)
+            {
+                errors.Add(
+                    $"OpenIddict 运行态模型与 migration snapshot 不一致：" +
+                    $"{string.Join("；", status.ModelDifferences)}。");
+            }
             if (status.PendingMigrations.Count > 0)
             {
                 warnings.Add(
