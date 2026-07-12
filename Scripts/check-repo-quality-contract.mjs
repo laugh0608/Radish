@@ -20,6 +20,7 @@ import {
 const repoRoot = process.cwd();
 const workflowPath = path.join(repoRoot, '.github', 'workflows', 'repo-quality.yml');
 const candidateWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'candidate-quality.yml');
+const dockerWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'docker-images.yml');
 const rulesetPath = path.join(repoRoot, '.github', 'rulesets', 'master-protection.json');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const validateCiPath = path.join(repoRoot, 'Scripts', 'validate-ci.mjs');
@@ -235,6 +236,7 @@ function assertDotnetAuditContract(label, source, failures) {
 
 const workflowContent = readUtf8(workflowPath);
 const candidateWorkflowContent = readUtf8(candidateWorkflowPath);
+const dockerWorkflowContent = readUtf8(dockerWorkflowPath);
 const rulesetContent = readUtf8(rulesetPath);
 const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
 const validateCiSource = readUtf8(validateCiPath);
@@ -334,6 +336,21 @@ for (const requiredFragment of [
 ]) {
   if (!candidateWorkflowContent.includes(requiredFragment)) {
     failures.push(`Candidate Quality workflow 缺少候选门禁片段: ${requiredFragment}`);
+  }
+}
+
+for (const requiredFragment of [
+  'uses: ./.github/workflows/candidate-quality.yml',
+  'aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25',
+  'severity: HIGH,CRITICAL',
+  "exit-code: '1'",
+  'sbom: true',
+  'provenance: mode=max',
+  'org.opencontainers.image.source=',
+  'org.opencontainers.image.revision=',
+]) {
+  if (!dockerWorkflowContent.includes(requiredFragment)) {
+    failures.push(`Docker Images workflow 缺少供应链门禁片段: ${requiredFragment}`);
   }
 }
 
