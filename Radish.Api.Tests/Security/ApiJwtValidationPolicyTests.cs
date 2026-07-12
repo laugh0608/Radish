@@ -34,6 +34,13 @@ public class ApiJwtValidationPolicyTests
     }
 
     [Fact]
+    public void ValidateToken_ShouldRejectWrongIssuer()
+    {
+        Should.Throw<SecurityTokenInvalidIssuerException>(() =>
+            ValidateToken(CreateToken(UserScopes.RadishApi, UserScopes.RadishApi, "https://malicious.test")));
+    }
+
+    [Fact]
     public void ValidAudienceWithoutRadishApiScope_ShouldNotSatisfyClientPolicy()
     {
         var principal = ValidateToken(CreateToken(UserScopes.RadishApi, UserScopes.Profile));
@@ -47,10 +54,10 @@ public class ApiJwtValidationPolicyTests
         return handler.ValidateToken(token, ApiJwtValidationPolicy.Create(Issuer, SigningKey), out _);
     }
 
-    private static string CreateToken(string? audience, string scope)
+    private static string CreateToken(string? audience, string scope, string issuer = Issuer)
     {
         var token = new JwtSecurityToken(
-            issuer: Issuer,
+            issuer: issuer,
             audience: audience,
             claims:
             [
