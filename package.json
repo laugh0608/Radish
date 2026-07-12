@@ -10,6 +10,7 @@
   ],
   "scripts": {
     "check:repo-hygiene": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
+    "check:repo-hygiene:candidate": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z --baseline=Scripts/repo-hygiene-baseline.json",
     "check:repo-hygiene:changed": "node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:staged": "node Scripts/run-with-changed-files.mjs --mode=staged -- node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-quality-contract": "node Scripts/check-repo-quality-contract.mjs",
@@ -52,6 +53,7 @@
     "type-check:ui": "npm run type-check --workspace=@radish/ui",
     "type-check:client": "npm run type-check --workspace=radish.client",
     "type-check:console": "npm run type-check --workspace=radish.console",
+    "test:frontend": "npm test --workspace=@radish/http && npm test --workspace=@radish/ui && npm test --workspace=radish.client && npm test --workspace=radish.console",
     "check:dotnet-warnings": "dotnet build Radish.slnx -c Debug --no-restore --warnaserror",
     "validate:baseline": "node Scripts/validate-baseline.mjs",
     "validate:baseline:quick": "node Scripts/validate-baseline.mjs --quick",
@@ -59,6 +61,7 @@
     "validate:backend": "node Scripts/validate-backend-regression.mjs",
     "validate:identity": "node Scripts/validate-identity-regression.mjs",
     "validate:ci": "node Scripts/validate-ci.mjs",
+    "validate:candidate": "node Scripts/validate-candidate.mjs",
     "install:all": "npm install"
   }
 }

@@ -1,10 +1,21 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
 const decoder = new TextDecoder('utf-8', { fatal: true });
 const repoRoot = process.cwd();
 const args = new Set(process.argv.slice(2));
+
+function getArgValue(name) {
+  const prefix = `${name}=`;
+  const direct = process.argv.slice(2).find((arg) => arg.startsWith(prefix));
+  if (direct) {
+    return direct.slice(prefix.length);
+  }
+
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
 
 const binaryExtensions = new Set([
   '.7z',
@@ -154,16 +165,22 @@ const documentationLengthPolicies = [
   }
 ];
 
-function getCandidateFiles() {
+async function readStdin() {
+  const chunks = [];
+  for await (const chunk of process.stdin) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
+
+async function getCandidateFiles() {
   const fileArgs = process.argv.slice(2).filter((arg) => !arg.startsWith('--'));
 
   if (fileArgs.length > 0) {
     return fileArgs;
   }
 
-  const stdin = process.stdin.isTTY
-    ? ''
-    : readFileSync(process.stdin.fd, args.has('--stdin-z') ? null : 'utf8');
+  const stdin = process.stdin.isTTY ? Buffer.alloc(0) : await readStdin();
 
   const chunks = args.has('--stdin-z')
     ? stdin.toString('utf8').split('\0')
@@ -379,8 +396,21 @@ function validateFile(filePath) {
   return issues;
 }
 
-function main() {
-  const files = getCandidateFiles();
+function getIssueFingerprint(file, issue) {
+  return `${file}\u0000${issue}`;
+}
+
+function readAllowedIssueFingerprints(baselinePath) {
+  const baseline = JSON.parse(readFileSync(path.join(repoRoot, baselinePath), 'utf8'));
+  if (!Array.isArray(baseline.issues)) {
+    throw new Error(`卫生 baseline 格式无效：${baselinePath}`);
+  }
+
+  return new Set(baseline.issues.map(({ file, issue }) => getIssueFingerprint(file, issue)));
+}
+
+async function main() {
+  const files = await getCandidateFiles();
 
   if (files.length === 0) {
     console.log('[repo-hygiene] 没有需要检查的文件。');
@@ -400,6 +430,40 @@ function main() {
     if (lengthWarning) {
       warnings.push({ file, warning: lengthWarning });
     }
+  }
+
+  const writeBaselinePath = getArgValue('--write-baseline');
+  if (writeBaselinePath) {
+    const baseline = {
+      version: 1,
+      issues: failures.flatMap(({ file, issues }) => issues.map((issue) => ({ file, issue }))),
+    };
+    writeFileSync(
+      path.join(repoRoot, writeBaselinePath),
+      `${JSON.stringify(baseline, null, 2)}\n`,
+      'utf8'
+    );
+    console.log(`[repo-hygiene] 已写入历史问题 baseline：${writeBaselinePath}（${baseline.issues.length} 项）。`);
+    return;
+  }
+
+  const baselinePath = getArgValue('--baseline');
+  if (baselinePath) {
+    const allowed = readAllowedIssueFingerprints(baselinePath);
+    const unexpected = failures
+      .map(({ file, issues }) => ({
+        file,
+        issues: issues.filter((issue) => !allowed.has(getIssueFingerprint(file, issue))),
+      }))
+      .filter(({ issues }) => issues.length > 0);
+
+    if (unexpected.length === 0) {
+      console.log(`[repo-hygiene] 已全量检查 ${files.length} 个文件；${failures.length} 个历史问题文件均在 baseline 内，未发现新增问题。`);
+      return;
+    }
+
+    failures.length = 0;
+    failures.push(...unexpected);
   }
 
   if (failures.length === 0) {
@@ -434,4 +498,4 @@ function main() {
   process.exit(1);
 }
 
-main();
+await main();

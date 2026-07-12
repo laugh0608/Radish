@@ -19,10 +19,12 @@ import {
 
 const repoRoot = process.cwd();
 const workflowPath = path.join(repoRoot, '.github', 'workflows', 'repo-quality.yml');
+const candidateWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'candidate-quality.yml');
 const rulesetPath = path.join(repoRoot, '.github', 'rulesets', 'master-protection.json');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const validateCiPath = path.join(repoRoot, 'Scripts', 'validate-ci.mjs');
 const validateBaselinePath = path.join(repoRoot, 'Scripts', 'validate-baseline.mjs');
+const validateCandidatePath = path.join(repoRoot, 'Scripts', 'validate-candidate.mjs');
 const dependencySecurityPath = path.join(repoRoot, 'Scripts', 'check-dependency-security.mjs');
 const dotnetCommandPath = path.join(repoRoot, 'Scripts', 'dotnet-command.mjs');
 const dotnetLocalPath = path.join(repoRoot, 'Scripts', 'dotnet-local.ps1');
@@ -232,10 +234,12 @@ function assertDotnetAuditContract(label, source, failures) {
 }
 
 const workflowContent = readUtf8(workflowPath);
+const candidateWorkflowContent = readUtf8(candidateWorkflowPath);
 const rulesetContent = readUtf8(rulesetPath);
 const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
 const validateCiSource = readUtf8(validateCiPath);
 const validateBaselineSource = readUtf8(validateBaselinePath);
+const validateCandidateSource = readUtf8(validateCandidatePath);
 const dependencySecuritySource = readUtf8(dependencySecurityPath);
 const dotnetCommandSource = readUtf8(dotnetCommandPath);
 const dotnetLocalSource = readUtf8(dotnetLocalPath);
@@ -312,6 +316,38 @@ assertPackageScript(
   CHECK_DEPENDENCY_SECURITY_PACKAGE_SCRIPT,
   failures
 );
+
+assertPackageScript(
+  packageScripts,
+  'validate:candidate',
+  'node Scripts/validate-candidate.mjs',
+  failures
+);
+
+for (const requiredFragment of [
+  'workflow_call:',
+  'workflow_dispatch:',
+  'schedule:',
+  'image: postgres:17',
+  'RADISH_TEST_POSTGRES_CONNECTION_STRING:',
+  'run: npm run validate:candidate',
+]) {
+  if (!candidateWorkflowContent.includes(requiredFragment)) {
+    failures.push(`Candidate Quality workflow 缺少候选门禁片段: ${requiredFragment}`);
+  }
+}
+
+for (const requiredFragment of [
+  "['run', 'check:repo-hygiene:candidate']",
+  "['run', 'lint']",
+  "['run', 'validate:baseline', '--', '--warnings-as-errors']",
+  "['run', 'check:long-id-safety']",
+  "['run', 'check:dependency-security']",
+]) {
+  if (!validateCandidateSource.includes(requiredFragment)) {
+    failures.push(`Scripts/validate-candidate.mjs 缺少候选门禁片段: ${requiredFragment}`);
+  }
+}
 
 assertPackageScript(
   packageScripts,
