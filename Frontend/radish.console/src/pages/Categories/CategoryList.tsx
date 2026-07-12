@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -81,7 +81,7 @@ export const CategoryList = () => {
   const canToggleCategory = usePermission(CONSOLE_PERMISSIONS.categoriesToggle);
   const canSortCategory = usePermission(CONSOLE_PERMISSIONS.categoriesSort);
 
-  const loadCategories = async (targetPageIndex = pageIndex, targetPageSize = pageSize) => {
+  const loadCategories = useCallback(async (targetPageIndex = pageIndex, targetPageSize = pageSize) => {
     try {
       setLoading(true);
       const response = await getCategoryPage({
@@ -102,7 +102,7 @@ export const CategoryList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [includeDeleted, isEnabled, keyword, pageIndex, pageSize]);
 
   useEffect(() => {
     if (!canViewCategories) {
@@ -110,7 +110,7 @@ export const CategoryList = () => {
     }
 
     void loadCategories(1, pageSize);
-  }, [canViewCategories, includeDeleted, isEnabled, keyword, pageSize]);
+  }, [canViewCategories, loadCategories, pageSize]);
 
   const handleCreate = () => {
     setFormMode('create');

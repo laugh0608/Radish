@@ -1,4 +1,4 @@
-import { useLoading } from '../../contexts/LoadingContext';
+import { useLoading } from '@/hooks/useLoading';
 import './GlobalLoading.css';
 
 /**

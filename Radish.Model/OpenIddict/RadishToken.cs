@@ -75,7 +75,7 @@ public class RadishToken : RootEntityTKey<long>
     public string? ReferenceId { get; set; }
 
     /// <summary>Token 载荷</summary>
-    /// <remarks>可空，最大长度不限，存储 JWT 或其他格式的 Token ��容</remarks>
+    /// <remarks>可空，最大长度不限，存储 JWT 或其他格式的 Token 内容</remarks>
     [SugarColumn(IsNullable = true, ColumnDataType = "text")]
     public string Payload { get; set; } = string.Empty;
 

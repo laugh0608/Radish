@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -70,7 +70,7 @@ export const StickerList = () => {
   const canSortSticker = usePermission(CONSOLE_PERMISSIONS.stickersSort);
   const canBatchUploadSticker = usePermission(CONSOLE_PERMISSIONS.stickersBatchUpload);
 
-  const loadStickers = async () => {
+  const loadStickers = useCallback(async () => {
     if (!isValidGroupId) {
       return;
     }
@@ -86,7 +86,7 @@ export const StickerList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isValidGroupId, normalizedGroupId]);
 
   useEffect(() => {
     if (!canViewStickers) {
@@ -94,7 +94,7 @@ export const StickerList = () => {
     }
 
     void loadStickers();
-  }, [normalizedGroupId, isValidGroupId, canViewStickers]);
+  }, [canViewStickers, loadStickers]);
 
   const filteredStickers = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();

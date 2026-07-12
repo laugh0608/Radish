@@ -43,7 +43,7 @@
   },
   "scripts": {
     "test": "node --test --test-isolation=none ./tests/markdownUrl.test.ts",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

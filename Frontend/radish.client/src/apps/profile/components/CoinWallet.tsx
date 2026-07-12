@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBalance, type UserBalance } from '@/api/coin';
 import { CoinTransactionList } from './CoinTransactionList';
@@ -19,10 +19,6 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadBalance();
-  }, []);
-
   const loadBalance = async () => {
     setLoading(true);
     setError(null);
@@ -40,6 +36,12 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
       setLoading(false);
     }
   };
+
+  const loadBalanceForEffect = useEffectEvent(loadBalance);
+
+  useEffect(() => {
+    void loadBalanceForEffect();
+  }, [loadBalanceForEffect]);
 
   if (loading) {
     return (

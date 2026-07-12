@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   AntModal as Modal,
   Form,
@@ -88,7 +88,7 @@ export const SystemConfigForm = ({
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
 
-  const loadConfigDetail = async (id: number) => {
+  const loadConfigDetail = useCallback(async (id: number) => {
     try {
       setInitialLoading(true);
       const nextConfig = await getConfigById(id);
@@ -103,7 +103,7 @@ export const SystemConfigForm = ({
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [form]);
 
   const handleSubmit = async () => {
     if (!configId || !config) {
@@ -151,7 +151,7 @@ export const SystemConfigForm = ({
       form.resetFields();
       setConfig(undefined);
     }
-  }, [visible, configId, form]);
+  }, [visible, configId, form, loadConfigDetail]);
 
   const renderValueInput = () => {
     switch (config?.voType) {

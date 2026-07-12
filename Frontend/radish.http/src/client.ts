@@ -123,7 +123,7 @@ export async function apiFetch(
     currentConfig.onResponse?.(response);
 
     // 检查是否需要刷新 token
-    if (withAuth && hasAuthorizationHeader && shouldRefreshToken(response) && !(options as any)._isRetry) {
+    if (withAuth && hasAuthorizationHeader && shouldRefreshToken(response)) {
       try {
         // 刷新 token
         const newToken = await tryRefreshToken();
@@ -193,7 +193,7 @@ export async function apiGet<T>(
  */
 export async function apiPost<T>(
   url: string,
-  data?: any,
+  data?: unknown,
   options?: ApiRequestOptions
 ): Promise<ParsedApiResponse<T>> {
   const response = await apiFetch(url, {
@@ -214,7 +214,7 @@ export async function apiPost<T>(
  */
 export async function apiPut<T>(
   url: string,
-  data?: any,
+  data?: unknown,
   options?: ApiRequestOptions
 ): Promise<ParsedApiResponse<T>> {
   const response = await apiFetch(url, {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useEffectEvent, useRef, useCallback } from 'react';
 import { log } from '@/utils/logger';
 import type { Dispatch, SetStateAction } from 'react';
 import type { TFunction } from 'i18next';
@@ -557,8 +557,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
     setCommentSortBy(null);
   };
 
-  // 初始化：加载分类和热门内容
-  useEffect(() => {
+  const loadInitialForumData = useEffectEvent(() => {
     void loadCategories();
 
     const loadDeferredPanels = () => {
@@ -574,7 +573,14 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
     const timer = window.setTimeout(loadDeferredPanels, 240);
     return () => window.clearTimeout(timer);
-  }, []);
+  });
+
+  const loadPostsForCurrentState = useEffectEvent(() => {
+    void loadPosts();
+  });
+
+  // 初始化：加载分类和热门内容
+  useEffect(() => loadInitialForumData(), [loadInitialForumData]);
 
   // 当选择分类时重新加载帖子
   useEffect(() => {
@@ -599,8 +605,8 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
 
   // 当页码、排序或搜索变化时重新加载帖子
   useEffect(() => {
-    void loadPosts();
-  }, [selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus, pollStatus]);
+    loadPostsForCurrentState();
+  }, [selectedCategoryId, selectedTagName, currentPage, sortBy, searchKeyword, postViewMode, questionStatus, pollStatus, loadPostsForCurrentState]);
 
   return {
     // 状态

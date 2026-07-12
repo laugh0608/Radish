@@ -142,9 +142,9 @@ async function refreshAccessToken(): Promise<string> {
     refreshConfig.onTokenRefreshed(tokenSet.access_token, tokenSet.refresh_token);
 
     return tokenSet.access_token;
-  } catch (err: any) {
+  } catch (err: unknown) {
     // 如果已经是我们包装的错误，直接抛出
-    if (err.error && err.errorType) {
+    if (isTokenRefreshFailure(err)) {
       throw err;
     }
 
@@ -187,11 +187,11 @@ export async function tryRefreshToken(): Promise<string> {
   // 开始刷新
   isRefreshing = true;
   refreshPromise = refreshAccessToken()
-    .catch((err: any) => {
+    .catch((err: unknown) => {
       // 刷新失败，调用失败回调
       if (refreshConfig) {
-        const error = err.error || new Error(String(err));
-        const errorType = err.errorType || TokenRefreshErrorType.Unknown;
+        const error = isTokenRefreshFailure(err) ? err.error : new Error(String(err));
+        const errorType = isTokenRefreshFailure(err) ? err.errorType : TokenRefreshErrorType.Unknown;
         refreshConfig.onRefreshFailed(errorType, error);
       }
       throw err;
@@ -203,6 +203,18 @@ export async function tryRefreshToken(): Promise<string> {
     });
 
   return refreshPromise;
+}
+
+function isTokenRefreshFailure(value: unknown): value is {
+  error: Error;
+  errorType: TokenRefreshErrorType;
+} {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+
+  const candidate = value as { error?: unknown; errorType?: unknown };
+  return candidate.error instanceof Error && typeof candidate.errorType === 'string';
 }
 
 /**

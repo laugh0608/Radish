@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTransactions, type CoinTransaction } from '@/api/coin';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
@@ -24,10 +24,6 @@ export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinT
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string | null>(null);
 
-  useEffect(() => {
-    void loadTransactions();
-  }, [pageIndex, filterType, filterStatus]);
-
   const loadTransactions = async () => {
     setLoading(true);
     setError(null);
@@ -45,6 +41,12 @@ export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinT
       setLoading(false);
     }
   };
+
+  const loadTransactionsForEffect = useEffectEvent(loadTransactions);
+
+  useEffect(() => {
+    void loadTransactionsForEffect();
+  }, [pageIndex, filterType, filterStatus, loadTransactionsForEffect]);
 
   const handlePreviousPage = () => {
     if (pageIndex > 1) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { log } from '@/utils/logger';
 import { PasscodeInput } from '@radish/ui';
 import { getPaymentPasscodeValidationMessage } from '@/utils/paymentPasscode';
@@ -37,8 +37,8 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   const useWhiteRadish = displayMode === 'white';
 
   // 防抖搜索用户
-  const searchUsers = useCallback(
-    debounce(async (query: string) => {
+  const searchUsers = useMemo(
+    () => debounce(async (query: string) => {
       if (!query.trim()) {
         setUserSearchResults([]);
         setShowUserDropdown(false);

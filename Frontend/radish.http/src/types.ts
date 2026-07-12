@@ -1,7 +1,7 @@
 /**
  * API 响应类型 - 对应后端 MessageModel
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   /** 操作是否成功 */
   isSuccess: boolean;
   /** HTTP 状态码 */

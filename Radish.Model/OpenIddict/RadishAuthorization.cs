@@ -49,7 +49,7 @@ public class RadishAuthorization : RootEntityTKey<long>
     /// <summary>授权状态</summary>
     /// <remarks>
     /// <para>可空，最大 50 字符</para>
-    /// <para>Valid：���效</para>
+    /// <para>Valid：有效</para>
     /// <para>Revoked：已撤销</para>
     /// </remarks>
     [SugarColumn(Length = 50, IsNullable = true)]

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { coinApi } from '@/api/coin';
 import { log } from '@/utils/logger';
 import { debounce } from '../../utils';
@@ -188,8 +188,8 @@ export const TransactionHistory = () => {
     [pageSize]
   );
 
-  const debouncedSearch = useCallback(
-    debounce((searchFilters: FilterOptions) => {
+  const debouncedSearch = useMemo(
+    () => debounce((searchFilters: FilterOptions) => {
       setCurrentPage(1);
       void loadTransactions(1, searchFilters);
     }, 500),

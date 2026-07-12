@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -76,7 +76,7 @@ export const TagList = () => {
   const enabledTags = tags.filter((tag) => tag.voIsEnabled && !tag.voIsDeleted).length;
   const fixedTags = tags.filter((tag) => tag.voIsFixed).length;
 
-  const loadTags = async (targetPageIndex = pageIndex, targetPageSize = pageSize) => {
+  const loadTags = useCallback(async (targetPageIndex = pageIndex, targetPageSize = pageSize) => {
     try {
       setLoading(true);
       const response = await getTagPage({
@@ -98,7 +98,7 @@ export const TagList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [includeDeleted, isEnabled, isFixed, keyword, pageIndex, pageSize]);
 
   useEffect(() => {
     if (!canViewTags) {
@@ -106,7 +106,7 @@ export const TagList = () => {
     }
 
     void loadTags(1, pageSize);
-  }, [keyword, isEnabled, isFixed, includeDeleted, canViewTags, pageSize]);
+  }, [canViewTags, loadTags, pageSize]);
 
   const handleCreate = () => {
     setFormMode('create');

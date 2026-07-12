@@ -90,7 +90,8 @@ export type { NotificationCenterProps } from './Notification/NotificationCenter'
 export { NotificationList } from './Notification/NotificationList';
 export type { NotificationListProps } from './Notification/NotificationList';
 
-export { AntdFeedbackBridge, message, notification } from './AntdFeedbackBridge';
+export { AntdFeedbackBridge } from './AntdFeedbackBridge';
+export { message, notification } from './feedbackApi';
 export type { AntdFeedbackBridgeProps } from './AntdFeedbackBridge';
 
 export { ExperienceBar } from './ExperienceBar/ExperienceBar';
