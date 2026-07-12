@@ -6,21 +6,21 @@ imageTag: v26.7.1-release
 
 # M15 发布记录（v26.7.1-release，2026-07-12）
 
-> 本页在正式 tag 前随候选提交进入 `dev -> master` PR。当前只记录已经发生的候选事实；tag、镜像和生产部署结果在实际完成后回写。
+> 本次 tag 已触发正式镜像工作流，但前端镜像被 High / Critical 漏洞门禁阻断。本页固定记录这次失败发布尝试，不移动 tag，也不把部分后端镜像视为可部署发布矩阵。
 
 ## 记录信息
 
 - 记录日期：2026-07-12
 - 记录人：项目协作记录
 - 发布类型：正式 Web 发布
-- 当前状态：等待 `dev -> master` PR、tag、镜像和生产部署
+- 当前状态：镜像门禁失败，发布终止，未部署
 
 ## 发布标识
 
-- 计划 Git tag：`v26.7.1-release`
+- Git tag：`v26.7.1-release`（已推送，保持不可变）
 - 产品版本：`26.7.1`
-- 对应提交：待 PR 合并后，以 `v26.7.1-release` 指向的 `master` 提交为准
-- 候选来源：`dev`
+- 对应提交：`3f51810150a6575374b719d386f9ae990ceb61d4`
+- 候选来源：`master`，并已回灌到 `dev`
 - 正式发布矩阵：Gateway、API、Auth、DbMigrate、client、Console
 - 镜像 tag：
   - `radish-dbmigrate:v26.7.1-release`
@@ -54,9 +54,17 @@ Flutter 为条件维护资产，Tauri 为冻结实验资产，二者不进入本
 ## 生产部署结论
 
 - 部署情况：未部署
-- 复核情况：未执行
-- 关联记录：部署完成后补充 M14 部署后复核记录
-- 说明：必须等待 tag 对应的五个镜像完成构建、SBOM、provenance 和 High / Critical 扫描后，再使用固定 `RADISH_IMAGE_TAG=v26.7.1-release` 部署。
+- 复核情况：Docker Images `#16` 的 Candidate Quality 与四个 Backend Image 均通过；Frontend Image 在 Trivy High / Critical 扫描阶段失败，工作流最终结论为失败
+- 关联记录：[Docker Images #16](https://github.com/laugh0608/Radish/actions/runs/29187581029)
+- 说明：前端最终运行层 `node:24-bookworm-slim` 命中 `19` 个 Debian OS High / Critical 与 npm 内置 `undici 6.26.0` 的 `1` 个 High。前端镜像未推送；四个已推送的后端镜像不构成完整正式发布矩阵，不得部署或作为补发输入。
+
+## 终止与补发决定
+
+- `v26.7.1-release` 不移动、不删除、不强制覆盖。
+- 不放宽 `ignore-unfixed: false` 或 High / Critical 阻断口径。
+- 补发使用 `v26.7.1.1201-release`；产品版本仍为 `26.7.1`。
+- 补发必须从修复后的 `master` 重新构建全部五个镜像，不能复用本次部分产物。
+- 补发记录：[v26.7.1.1201-release](/records/m15-release-record-v26.7.1.1201-2026-07-12)。
 
 ## 回滚目标
 
