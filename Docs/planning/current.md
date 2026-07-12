@@ -8,7 +8,7 @@
 
 - **阶段**：`第三开发阶段：真实使用增长与长期契约治理`
 - **当前子阶段**：`P3-12-F 正式发布执行`
-- **工程第一顺位**：`v26.7.1-release / master 集成、tag、镜像与部署`
+- **工程第一顺位**：`v26.7.1.1201-release / 前端镜像修复、补发与部署`
 - **产品下一顺位**：`发布后长期维护线与功能完成线`
 - **复核日期**：`2026-07-12`
 - **当前判断**：
@@ -39,6 +39,7 @@
   - 2026-07-12 Q3 Release Go 必要子集已完成：根 lint 与 Hook dependency warning 清零，四个前端 workspace 的 lint / type-check / test 进入默认基线，.NET 候选构建按 warning-as-error 执行；全量仓库卫生采用已审计预算阻断新增问题，`Candidate Quality` 提供手动、定期与镜像发布前复用入口，依赖安全、SBOM、High / Critical 镜像扫描和 provenance 已接入。Q3-C 只补 JWT issuer、idle-session handler、Hub 标准 `sub` 与仓储租户软删 / 恢复真实缺口，未重复 Q1 / Q2 已有迁移、并发和错误契约资产；本批未创建 tag、推送镜像或部署。
   - 2026-07-12 Release Go 候选运行态验收已通过：本地 SQLite 在备份后完成 schema / OpenIddict 升级与严格 verify，真实启动暴露的 split table baseline 接管和 API 异常管线宿主阻断已修复；Gateway PC `1920x1080` 与移动 `390x844` CSS 视口覆盖公开、私域、作者态和 Console 代表路径，宿主探针、公开 head 主路径与候选静态门禁通过。公开用户主页初始 HTML 缺少服务端 head 登记为非阻断 P2；本批未创建 tag、推送镜像或部署。
   - 2026-07-12 发布节奏已按个人开发者模式调整：工程 Release Go 证据已经满足正式发布要求；小规模受控试用改为发布后的早期真实使用观察，不再阻挡 tag。正式部署和部署后复核完成后，项目进入长期维护线与功能完成线，优先完成商城商品效力与权益履约，再推进主题和 i18n 完成度。
+  - 2026-07-12 `v26.7.1-release` 已指向 `3f518101` 并推送；Docker Images `#16` 的 Candidate Quality 通过，但前端最终镜像基于 Debian 的运行层命中 High / Critical 漏洞，前端镜像未推送且正式部署未执行。旧 tag 保持不可变并记录为失败发布尝试；补发改用规范扩展标识 `v26.7.1.1201-release`，五个镜像必须全部重新构建并通过门禁。
 
 ## V1 产品与发布范围
 
@@ -71,6 +72,7 @@ Radish V1 的产品定位固定为：
 - [P3-12-F Q2-C 版本单一真值治理方案](/records/p3-12-f-q2-c-version-governance-plan-2026-07-12)
 - [P3-12-F Release Go 候选运行态验收记录](/records/p3-12-f-release-go-candidate-runtime-validation-2026-07-12)
 - [v26.7.1-release 正式发布记录](/records/m15-release-record-2026-07-12)
+- [v26.7.1.1201-release 补发记录](/records/m15-release-record-v26.7.1.1201-2026-07-12)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -80,12 +82,12 @@ Radish V1 的产品定位固定为：
 
 ## 当前目标
 
-### 1. 执行 `v26.7.1-release` 正式发布
+### 1. 执行 `v26.7.1.1201-release` 正式补发
 
-- Q1 / Q2 / Q3 与候选运行态验收均已形成独立提交和验证记录。
-- 正式发布记录随 `dev -> master` PR 进入 `master`，远程 required checks 通过后再合并。
-- 合并后先执行 `master -> dev` 回灌，再校验并创建 `v26.7.1-release` tag。
-- 五个镜像完成供应链门禁后，使用固定 tag 部署并补部署后复核与发布记录。
+- `v26.7.1-release` 保留为镜像门禁失败、未部署的历史发布尝试，不移动、不删除、不复用其不完整镜像。
+- 前端最终运行层收敛后，随补发记录通过 `dev -> master` PR 进入 `master`。
+- 合并后先执行 `master -> dev` 回灌，再校验并创建 `v26.7.1.1201-release` tag；产品版本仍为 `26.7.1`。
+- 五个镜像必须使用补发 tag 全部重新完成漏洞扫描、SBOM 与 provenance，随后才使用固定 tag 部署并补部署后复核。
 
 ### 2. 进入发布后常态开发
 
@@ -95,9 +97,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 提交正式发布记录与规划调整，准备 `dev -> master` PR。
-2. PR 合并并完成 `master -> dev` 回灌后，创建 `v26.7.1-release` tag。
-3. 等待镜像门禁通过，部署固定 tag 并执行部署后复核。
+1. 提交前端运行镜像修复、失败发布记录与 `v26.7.1.1201-release` 补发记录，准备 `dev -> master` PR。
+2. PR 合并并完成 `master -> dev` 回灌后，创建 `v26.7.1.1201-release` tag。
+3. 等待五个补发镜像全部通过门禁，部署固定 tag 并执行部署后复核。
 4. 进入长期维护线与商城商品效力专题。
 
 ## 并行维护线
