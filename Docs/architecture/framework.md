@@ -217,12 +217,12 @@ graph LR
 - PostgreSQL `timestamp with time zone` 写入前，SqlSugar AOP 会规范化 `DateTime` / `DateTimeOffset` 参数：`Local` 转 UTC，`Unspecified` 按 UTC 解释，数组和可枚举时间参数也按同一规则处理。业务展示仍按用户偏好时区 / 浏览器时区 / 系统默认时区回退，数据库侧保持 UTC 真值。
 - 公共实体基类统一继承 `Radish.Model.Root.RootEntityTKey<TKey>`，并在派生类中补充审计字段（`CreatedAt/By`, `UpdatedAt/By`, `IsDeleted`, `ConcurrencyStamp` 等），保证主键类型可控且能被 SqlSugar 的 Attribute 正确识别。
 - 软删除通过 SQLSugar Filter 全局开启；必要时在仓储层提供 `IncludeDeleted` 选项。
-- `Radish.Auth` 的 OpenIddict 独立库继续由 `AuthOpenIddictDbContext` 按 EF Core 管理；以下迁移策略仅针对 `Radish.DbMigrate` 管辖的业务库。
+- OpenIddict 独立库由 `Radish.Auth.Persistence` 中的 `AuthOpenIddictDbContext` 定义模型，SQLite / PostgreSQL 使用独立 EF migration assembly；迁移由 `Radish.DbMigrate apply` 执行，Auth 启动只读校验 pending。
 - 数据库结构变更的完整协作边界见：[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 - 迁移策略：
-  - 开发：通过 `Radish.DbMigrate` 执行 `doctor / init / apply`，在开发库内走 `CreateDatabase()` + `InitTables()` 自动建表 / 补列。
-  - 正式上线前：测试库优先按当前实体与 `DbMigrate` 初始化干净基线；破坏性 schema 收口后删除本地 SQLite 并重新初始化，不维护上线前历史发布脚本。
-  - 正式上线后：存在需要保护的测试 / 生产数据库时，从已发布基线生成并审核发布 SQL，上线前显式执行。
+  - 空库：通过 `Radish.DbMigrate init/apply` 按当前模型创建结构并登记 ledger。
+  - 已有库：先 `doctor` 与备份，再由 `apply` 按有序 migration 前滚，末尾自动严格 `verify`；宿主启动不写 schema。
+  - 发布候选：必须在 SQLite / PostgreSQL 覆盖旧基线升级、重复 apply、异常拒绝和备份恢复。
 - 数据初始化：`Radish.DbMigrate/InitialDataSeeder.cs` 负责创建角色、租户、部门、权限、Console 授权、论坛 / 商城 / 等级等系统基础数据；`system / admin / test` 开发默认账号、默认密码、默认头像和用户角色绑定受 `Seed:DeveloperDefaultsEnabled` 与 `RadishDeployment:Stage=local/test` 共同约束，测试 / 生产默认不创建。
 - PostgreSQL 特性利用：JSONB 列（存储自定义配置）、`tsvector` 搜索、行级锁（积分/库存扣减）。
 

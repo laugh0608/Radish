@@ -2,6 +2,8 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Common.PermissionTool;
@@ -11,6 +13,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 using System.Linq.Expressions;
+using System.Net;
 using Radish.Model.DtoModels;
 
 namespace Radish.Api.Controllers;
@@ -22,6 +25,7 @@ namespace Radish.Api.Controllers;
 /// 提供文件上传、下载、删除等接口
 /// </remarks>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -34,6 +38,7 @@ public class AttachmentController : ControllerBase
     private readonly IUploadRateLimitService _rateLimitService;
     private readonly UploadRateLimitOptions _rateLimitOptions;
     private readonly IFileAccessTokenService _fileAccessTokenService;
+    private readonly IConfiguration _configuration;
 
     public AttachmentController(
         IAttachmentService attachmentService,
@@ -41,7 +46,8 @@ public class AttachmentController : ControllerBase
         IUserService userService,
         IUploadRateLimitService rateLimitService,
         IOptions<UploadRateLimitOptions> rateLimitOptions,
-        IFileAccessTokenService fileAccessTokenService)
+        IFileAccessTokenService fileAccessTokenService,
+        IConfiguration configuration)
     {
         _attachmentService = attachmentService;
         _currentUserAccessor = currentUserAccessor;
@@ -49,6 +55,7 @@ public class AttachmentController : ControllerBase
         _rateLimitService = rateLimitService;
         _rateLimitOptions = rateLimitOptions.Value;
         _fileAccessTokenService = fileAccessTokenService;
+        _configuration = configuration;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -656,9 +663,13 @@ public class AttachmentController : ControllerBase
         try
         {
             var userId = Current.UserId;
-            var baseUrl = $"{Request.Scheme}://{Request.Host}";
+            var baseUrl = ResolvePublicBaseUrl();
 
-            var token = await _fileAccessTokenService.CreateTokenAsync(dto, userId, baseUrl);
+            var token = await _fileAccessTokenService.CreateTokenAsync(
+                dto,
+                userId,
+                Current.IsSystemOrAdmin(),
+                baseUrl);
 
             return new MessageModel
             {
@@ -668,14 +679,13 @@ public class AttachmentController : ControllerBase
                 ResponseData = token
             };
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("创建访问令牌失败，请稍后重试", ex);
         }
     }
 
@@ -693,7 +703,7 @@ public class AttachmentController : ControllerBase
         try
         {
             var userId = Current.UserId;
-            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var ipAddress = ResolveClientIpAddress();
 
             // 验证令牌
             var attachmentId = await _fileAccessTokenService.ValidateAndUseTokenAsync(token, userId, ipAddress);
@@ -735,14 +745,13 @@ public class AttachmentController : ControllerBase
 
             return File(stream, attachment.MimeType, attachment.OriginalName);
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            return StatusCode(500, new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = 500,
-                MessageInfo = ex.Message
-            });
+            throw BuildUnexpectedError("下载文件失败，请稍后重试", ex);
         }
     }
 
@@ -760,7 +769,7 @@ public class AttachmentController : ControllerBase
         try
         {
             var userId = Current.UserId;
-            await _fileAccessTokenService.RevokeTokenAsync(token, userId);
+            await _fileAccessTokenService.RevokeTokenAsync(token, userId, Current.IsSystemOrAdmin());
 
             return new MessageModel
             {
@@ -769,15 +778,28 @@ public class AttachmentController : ControllerBase
                 MessageInfo = "撤销令牌成功"
             };
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("撤销访问令牌失败，请稍后重试", ex);
         }
+    }
+
+    /// <summary>按记录 ID 撤销文件访问令牌</summary>
+    [HttpPost]
+    [Authorize]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> RevokeAccessTokenById([FromBody] RevokeFileAccessTokenDto dto)
+    {
+        await _fileAccessTokenService.RevokeTokenAsync(
+            dto.TokenId,
+            Current.UserId,
+            Current.IsSystemOrAdmin());
+
+        return MessageModel.Success("撤销令牌成功");
     }
 
     /// <summary>
@@ -794,7 +816,10 @@ public class AttachmentController : ControllerBase
         try
         {
             var userId = Current.UserId;
-            var tokens = await _fileAccessTokenService.GetAttachmentTokensAsync(attachmentId, userId);
+            var tokens = await _fileAccessTokenService.GetAttachmentTokensAsync(
+                attachmentId,
+                userId,
+                Current.IsSystemOrAdmin());
 
             return new MessageModel
             {
@@ -804,15 +829,67 @@ public class AttachmentController : ControllerBase
                 ResponseData = tokens
             };
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("获取访问令牌失败，请稍后重试", ex);
         }
+    }
+
+    private static BusinessException BuildUnexpectedError(string message, Exception exception)
+    {
+        return new BusinessException(
+            message,
+            exception,
+            StatusCodes.Status500InternalServerError,
+            "System.UnexpectedError",
+            "error.system.unexpected_error");
+    }
+
+    private string ResolvePublicBaseUrl()
+    {
+        var configuredUrl = _configuration["GatewayService:PublicUrl"];
+        if (string.IsNullOrWhiteSpace(configuredUrl))
+        {
+            configuredUrl = _configuration["RADISH_PUBLIC_URL"];
+        }
+
+        return string.IsNullOrWhiteSpace(configuredUrl)
+            ? $"{Request.Scheme}://{Request.Host}".TrimEnd('/')
+            : configuredUrl.Trim().TrimEnd('/');
+    }
+
+    private string ResolveClientIpAddress()
+    {
+        var remoteIp = HttpContext.Connection.RemoteIpAddress;
+        if (remoteIp != null && IsTrustedFileTokenProxy(remoteIp))
+        {
+            var forwardedFor = Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            var firstAddress = forwardedFor?.Split(',', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()?.Trim();
+            if (IPAddress.TryParse(firstAddress, out var forwardedIp))
+            {
+                return forwardedIp.ToString();
+            }
+        }
+
+        return remoteIp?.ToString() ?? "unknown";
+    }
+
+    private bool IsTrustedFileTokenProxy(IPAddress remoteIp)
+    {
+        if (IPAddress.IsLoopback(remoteIp))
+        {
+            return true;
+        }
+
+        return _configuration
+            .GetSection("FileAccessToken:TrustedProxyAddresses")
+            .Get<string[]>()?
+            .Any(configuredAddress =>
+                IPAddress.TryParse(configuredAddress, out var trustedIp) && trustedIp.Equals(remoteIp)) == true;
     }
 
     #endregion

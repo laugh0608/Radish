@@ -8,7 +8,8 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import { ChartContainer, getInitialChartDimension } from './ChartContainer';
+import { ChartContainer } from './ChartContainer';
+import { getInitialChartDimension } from './chartDimension';
 
 export interface BarChartDataPoint {
   [key: string]: string | number;

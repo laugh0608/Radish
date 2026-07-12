@@ -73,7 +73,7 @@ Content-Type: application/json
 
 {
   "userId": 1,
-  "frozenUntil": "2026-05-08 12:00:00",
+  "frozenUntil": "2026-05-08T04:00:00Z",
   "reason": "测试临时冻结"
 }
 

@@ -19,7 +19,7 @@ public partial class ExperienceService
             return false;
         }
 
-        if (frozenUntil.HasValue && frozenUntil.Value <= DateTime.Now)
+        if (frozenUntil.HasValue && frozenUntil.Value <= GetUtcNow())
         {
             Log.Warning("冻结用户经验失败：冻结到期时间早于当前时间，userId={UserId}, frozenUntil={FrozenUntil}", userId, frozenUntil);
             return false;
@@ -81,7 +81,7 @@ public partial class ExperienceService
             }
         }
 
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         var updatedRows = await _userExpRepository.UpdateColumnsAsync(
             e => new UserExperience
             {
@@ -137,7 +137,7 @@ public partial class ExperienceService
         }
 
         var unfreezeRemark = BuildUnfreezeGovernanceRemark(userExp.FrozenReason);
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         var updatedRows = await _userExpRepository.UpdateColumnsAsync(
             e => new UserExperience
             {
@@ -173,7 +173,7 @@ public partial class ExperienceService
 
     private async Task<UserExperience> NormalizeFreezeStateAsync(UserExperience userExp)
     {
-        var now = DateTime.Now;
+        var now = GetUtcNow();
         if (!IsFreezeExpired(userExp, now))
         {
             return userExp;

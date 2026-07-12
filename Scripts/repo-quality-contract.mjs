@@ -15,6 +15,14 @@ export const REPO_QUALITY_CI_ONLY_CHECKS = [
 
 export const REPO_QUALITY_WORKFLOW_JOBS = [
   {
+    jobId: 'version-contract',
+    checkName: 'Version Contract',
+    requiredFragments: [
+      'run: npm run check:version-contract',
+      'run: npm run check:version-contract:self-test',
+    ],
+  },
+  {
     jobId: 'repo-hygiene',
     checkName: 'Repo Hygiene',
     requiredFragments: [

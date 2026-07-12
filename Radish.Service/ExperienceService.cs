@@ -3,6 +3,7 @@ using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
 using Radish.Common.Exceptions;
+using Radish.Common.TimeTool;
 using Radish.Infrastructure;
 using Radish.IRepository;
 using Radish.IService;
@@ -33,9 +34,11 @@ namespace Radish.Service;
     private readonly IExperienceCalculator _experienceCalculator;
     private readonly ICoinService _coinService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
-    private readonly INotificationService _notificationService;
     private readonly ICaching _caching;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
+    private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly TimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
 
     private const string LevelConfigsCacheKey = "experience:level-configs:enabled";
 
@@ -102,7 +105,10 @@ namespace Radish.Service;
         IAttachmentUrlResolver attachmentUrlResolver,
         INotificationService notificationService,
         ICaching caching,
-        IUnitOfWorkManage? unitOfWorkManage = null)
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar,
+        IUnitOfWorkManage? unitOfWorkManage = null,
+        IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, userExpRepository)
     {
         _userExpRepository = userExpRepository;
@@ -114,8 +120,10 @@ namespace Radish.Service;
         _experienceCalculator = experienceCalculator;
         _coinService = coinService;
         _attachmentUrlResolver = attachmentUrlResolver;
-        _notificationService = notificationService;
         _caching = caching;
+        _timeProvider = timeProvider;
+        _businessCalendar = businessCalendar;
+        _reliableOutboxService = reliableOutboxService;
         _unitOfWorkManage = unitOfWorkManage;
     }
 
@@ -358,14 +366,18 @@ namespace Radish.Service;
         userExp = await NormalizeFreezeStateAsync(userExp);
 
         // 2. 检查是否冻结
-        if (IsFreezeActive(userExp, DateTime.Now))
+        var nowUtc = GetUtcNow();
+        var businessDate = _businessCalendar.GetDate(new DateTimeOffset(nowUtc));
+        var businessDateStorageValue = GetBusinessDateStorageValue(businessDate);
+
+        if (IsFreezeActive(userExp, nowUtc))
         {
             Log.Warning("用户 {UserId} 经验值已冻结，无法获得经验值", userId);
             return false;
         }
 
         // 3. 检查每日上限（防刷机制）
-        var dailyStats = await GetOrCreateDailyStatsAsync(userId, DateTime.Today);
+        var dailyStats = await GetOrCreateDailyStatsAsync(userId, businessDate);
         if (!CheckDailyLimit(dailyStats, amount, expType))
         {
             Log.Warning("用户 {UserId} 经验值已达每日上限，expType={ExpType}, 当日已获得={ExpEarned}",
@@ -391,9 +403,9 @@ namespace Radish.Service;
                 CurrentLevel = newLevel,
                 CurrentExp = newCurrentExp,
                 TotalExp = newTotalExp,
-                LevelUpAt = newLevel > oldLevel ? DateTime.Now : e.LevelUpAt,
+                LevelUpAt = newLevel > oldLevel ? nowUtc : e.LevelUpAt,
                 Version = e.Version + 1,
-                ModifyTime = DateTime.Now
+                ModifyTime = nowUtc
             },
             e => e.UserId == userId && e.Version == userExp.Version
         );
@@ -421,9 +433,9 @@ namespace Radish.Service;
             ExpAfter = newTotalExp,
             LevelBefore = oldLevel,
             LevelAfter = newLevel,
-            CreatedDate = DateTime.Today,
+            CreatedDate = businessDateStorageValue,
             TenantId = tenantId ?? userExp.TenantId,
-            CreateTime = DateTime.Now
+            CreateTime = nowUtc
         };
 
         await _expTransactionRepository.AddAsync(transaction);
@@ -439,19 +451,23 @@ namespace Radish.Service;
         {
             Log.Information("用户 {UserId} 从 Lv.{OldLevel} 升级到 Lv.{NewLevel}", userId, oldLevel, newLevel);
 
-            // 异步处理升级奖励和通知，不影响主流程
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await HandleLevelUpAsync(userId, oldLevel, newLevel);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "处理升级事件失败：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
-                        userId, oldLevel, newLevel);
-                }
-            });
+            var reliableOutboxService = _reliableOutboxService
+                ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+            await reliableOutboxService.AddAsync(
+                ReliableOutboxSources.Main,
+                transaction.TenantId,
+                ReliableTaskTypes.ExperienceLevelChanged,
+                $"task:level-change:exp-transaction:{transaction.Id}",
+                "ExpTransaction",
+                transaction.Id.ToString(),
+                new ExperienceLevelChangedTaskPayload(
+                    transaction.Id,
+                    userId,
+                    oldLevel,
+                    newLevel,
+                    newLevel * 100L,
+                    SnowFlakeSingle.Instance.NextId()),
+                nowUtc);
         }
 
         return true;
@@ -535,7 +551,7 @@ namespace Radish.Service;
                 operatorName: operatorName,
                 reviewResult: reviewResult,
                 windowDays: NormalizeGovernanceWindowDays(request.WindowDays),
-                statDate: request.StatDate?.Date,
+                statDate: request.StatDate,
                 ruleCodes: request.RuleCodes,
                 ruleLabels: request.RuleLabels,
                 recommendationLevel: NormalizeRecommendationLevel(request.RecommendationLevel),
@@ -582,7 +598,7 @@ namespace Radish.Service;
                     // 更新已存在的配置
                     config.ExpRequired = expRequired;
                     config.ExpCumulative = expCumulative;
-                    config.ModifyTime = DateTime.Now;
+                    config.ModifyTime = GetUtcNow();
                     config.ModifyBy = operatorName;
                     config.ModifyId = operatorId;
 
@@ -648,7 +664,7 @@ namespace Radish.Service;
                 e => new UserExperience
                 {
                     IsDeleted = false,
-                    ModifyTime = DateTime.Now,
+                    ModifyTime = GetUtcNow(),
                     ModifyBy = "System",
                     ModifyId = 0
                 },
@@ -676,7 +692,7 @@ namespace Radish.Service;
             LevelUpAt = null,
             ExpFrozen = false,
             Version = 0,
-            CreateTime = DateTime.Now
+            CreateTime = GetUtcNow()
         };
 
         try
@@ -870,113 +886,22 @@ namespace Radish.Service;
         throw lastException ?? new ConcurrencyException("重试失败");
     }
 
-    /// <summary>
-    /// 处理用户升级事件（发放萝卜币奖励、推送通知）
-    /// </summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="oldLevel">旧等级</param>
-    /// <param name="newLevel">新等级</param>
-    private async Task HandleLevelUpAsync(long userId, int oldLevel, int newLevel)
-    {
-        try
-        {
-            // 1. 获取新等级配置
-            var newLevelConfig = await _levelConfigRepository.QueryFirstAsync(l => l.Level == newLevel && l.IsEnabled);
-            if (newLevelConfig == null)
-            {
-                Log.Warning("未找到等级 {Level} 的配置，跳过升级奖励", newLevel);
-                return;
-            }
-
-            // 2. 获取旧等级名称（用于通知）
-            var oldLevelConfig = await _levelConfigRepository.QueryFirstAsync(l => l.Level == oldLevel && l.IsEnabled);
-            var oldLevelName = oldLevelConfig?.LevelName ?? $"Lv.{oldLevel}";
-
-            // 3. 计算并发放萝卜币奖励（等级 × 100）
-            var coinReward = newLevel * 100;
-            if (coinReward > 0)
-            {
-                try
-                {
-                    var transactionNo = await _coinService.GrantCoinAsync(
-                        userId: userId,
-                        amount: coinReward,
-                        transactionType: "LEVEL_UP_REWARD",
-                        businessType: "User",
-                        businessId: userId,
-                        remark: $"升级到 Lv.{newLevel} {newLevelConfig.LevelName}"
-                    );
-
-                    if (!string.IsNullOrEmpty(transactionNo))
-                    {
-                        Log.Information("升级萝卜币奖励发放成功：userId={UserId}, level={Level}, reward={Reward}, transactionNo={TransactionNo}",
-                            userId, newLevel, coinReward, transactionNo);
-                    }
-                    else
-                    {
-                        Log.Warning("升级萝卜币奖励发放失败：userId={UserId}, level={Level}",
-                            userId, newLevel);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "发放升级萝卜币奖励时出错：userId={UserId}, level={Level}",
-                        userId, newLevel);
-                }
-            }
-
-            // 4. 推送升级通知
-            try
-            {
-                var notificationContent = coinReward > 0
-                    ? $"恭喜你从 {oldLevelName} 升级到 {newLevelConfig.LevelName}！获得 {coinReward} 个萝卜币奖励！"
-                    : $"恭喜你从 {oldLevelName} 升级到 {newLevelConfig.LevelName}！";
-
-                await _notificationService.CreateNotificationAsync(new CreateNotificationDto
-                {
-                    Type = NotificationType.LevelUp,
-                    Title = "等级提升",
-                    Content = notificationContent,
-                    Priority = (int)NotificationPriority.High,
-                    BusinessType = BusinessType.User,
-                    BusinessId = userId,
-                    TriggerId = null, // 系统触发
-                    TriggerName = "系统",
-                    TriggerAvatar = null,
-                    ReceiverUserIds = new List<long> { userId }
-                });
-
-                Log.Information("升级通知推送成功：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
-                    userId, oldLevel, newLevel);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "推送升级通知时出错：userId={UserId}, level={Level}",
-                    userId, newLevel);
-            }
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "处理升级事件时出错：userId={UserId}, oldLevel={OldLevel}, newLevel={NewLevel}",
-                userId, oldLevel, newLevel);
-            throw;
-        }
-    }
 
     /// <summary>
     /// 获取或创建每日统计记录
     /// </summary>
-    private async Task<UserExpDailyStats> GetOrCreateDailyStatsAsync(long userId, DateTime statDate)
+    private async Task<UserExpDailyStats> GetOrCreateDailyStatsAsync(long userId, DateOnly statDate)
     {
+        var storageValue = GetBusinessDateStorageValue(statDate);
         var stats = await _dailyStatsRepository.QueryFirstAsync(
-            s => s.UserId == userId && s.StatDate == statDate.Date);
+            s => s.UserId == userId && s.StatDate == storageValue);
 
         if (stats == null)
         {
             stats = new UserExpDailyStats
             {
                 UserId = userId,
-                StatDate = statDate.Date,
+                StatDate = storageValue,
                 ExpEarned = 0,
                 ExpFromPost = 0,
                 ExpFromComment = 0,
@@ -987,7 +912,7 @@ namespace Radish.Service;
                 CommentCount = 0,
                 LikeGivenCount = 0,
                 LikeReceivedCount = 0,
-                CreateTime = DateTime.Now
+                CreateTime = GetUtcNow()
             };
 
             await _dailyStatsRepository.AddAsync(stats);
@@ -1159,8 +1084,23 @@ namespace Radish.Service;
                 break;
         }
 
-        dailyStats.ModifyTime = DateTime.Now;
+        dailyStats.ModifyTime = GetUtcNow();
         await _dailyStatsRepository.UpdateAsync(dailyStats);
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
+    }
+
+    private DateTime GetBusinessDateStorageValue(DateOnly businessDate)
+    {
+        return businessDate.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+    }
+
+    private DateOnly GetStoredBusinessDate(DateTime storageValue)
+    {
+        return DateOnly.FromDateTime(storageValue);
     }
 
     private sealed class ExperienceDailyLimitSettings
@@ -1181,7 +1121,7 @@ namespace Radish.Service;
     }
 
     private sealed record ExperienceGovernanceTargetSnapshot(long TenantId, string UserName);
-    private sealed record AnomalyObservationHit(DateTime StatDate, UserExpDailyStatObservationVo Observation);
+    private sealed record AnomalyObservationHit(DateOnly StatDate, UserExpDailyStatObservationVo Observation);
 
     #endregion
 }

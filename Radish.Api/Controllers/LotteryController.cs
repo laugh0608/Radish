@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -14,6 +16,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛抽奖管理")]
 public class LotteryController : ControllerBase
 {
@@ -55,15 +58,15 @@ public class LotteryController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = ex.Message == "帖子不存在"
-                    ? (int)HttpStatusCodeEnum.NotFound
-                    : (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }
@@ -114,15 +117,15 @@ public class LotteryController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = ex.Message == "帖子不存在"
-                    ? (int)HttpStatusCodeEnum.NotFound
-                    : (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }

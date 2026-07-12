@@ -159,7 +159,7 @@ public class ExperienceControllerTest
             ReviewResult = "Observe",
             Remark = "已结合经验流水人工复核，继续观察。",
             WindowDays = 7,
-            StatDate = new DateTime(2026, 5, 10),
+            StatDate = new DateOnly(2026, 5, 10),
             RuleCodes = ["LIKE_SHARE_HEAVY"],
             RuleLabels = ["点赞占比偏高"],
             RecommendationLevel = "review",

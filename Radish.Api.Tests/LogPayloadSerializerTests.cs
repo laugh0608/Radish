@@ -62,6 +62,31 @@ public class LogPayloadSerializerTests
         json.ShouldContain("\"Length\":5");
     }
 
+    [Fact(DisplayName = "Service AOP 只应记录参数名而不记录原始 token 参数值")]
+    public void DescribeParameters_Should_Not_Expose_String_Argument_Value()
+    {
+        const string rawToken = "abcdef0123456789abcdef0123456789";
+        var method = typeof(LogPayloadSerializerTests).GetMethod(
+            nameof(TokenMethodForLoggingTest),
+            BindingFlags.NonPublic | BindingFlags.Static);
+        method.ShouldNotBeNull();
+        var describeMethod = typeof(ServiceAop).GetMethod(
+            "DescribeParameters",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        describeMethod.ShouldNotBeNull();
+
+        var result = describeMethod.Invoke(null, [method]);
+
+        result.ShouldBeOfType<string>();
+        var description = (string)result;
+        description.ShouldBe("rawToken, userId");
+        description.ShouldNotContain(rawToken);
+    }
+
+    private static void TokenMethodForLoggingTest(string rawToken, long userId)
+    {
+    }
+
     private static string InvokeSerialize(object? value)
     {
         var serializerType = typeof(ServiceAop).Assembly.GetType("Radish.Extension.AopExtension.LogPayloadSerializer");

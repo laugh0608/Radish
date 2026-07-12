@@ -1,7 +1,7 @@
 /**
  * API 响应类型 - 对应后端 MessageModel
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   /** 操作是否成功 */
   isSuccess: boolean;
   /** HTTP 状态码 */
@@ -16,6 +16,8 @@ export interface ApiResponse<T = any> {
   code?: string;
   /** 国际化消息键（可选，用于 i18n） */
   messageKey?: string;
+  /** 服务端诊断关联标识（可选） */
+  traceId?: string;
 }
 
 /**
@@ -60,4 +62,8 @@ export interface ParsedApiResponse<T> {
   code?: string;
   /** HTTP 状态码 */
   statusCode?: number;
+  /** 真实 HTTP 响应状态；兼容期可能与响应体 statusCode 不同 */
+  httpStatus?: number;
+  /** 服务端诊断关联标识 */
+  traceId?: string;
 }

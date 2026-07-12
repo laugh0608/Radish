@@ -1,4 +1,6 @@
 using System.Text.RegularExpressions;
+using System.Text.Json;
+using Radish.Common;
 using Radish.IRepository;
 using AutoMapper;
 using Radish.IRepository.Base;
@@ -21,7 +23,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IChatPresenceService _chatPresenceService;
-    private readonly INotificationService _notificationService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public ChatService(
@@ -42,7 +43,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         _attachmentRepository = attachmentRepository;
         _userRepository = userRepository;
         _chatPresenceService = chatPresenceService;
-        _notificationService = notificationService;
         _attachmentUrlResolver = attachmentUrlResolver;
     }
 
@@ -258,8 +258,33 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             IsDeleted = false
         };
 
-        var messageId = await _messageRepository.AddAsync(message);
+        var messageId = SnowFlakeSingle.Instance.NextId();
         message.Id = messageId;
+        var mentionNotification = await BuildMentionNotificationAsync(
+            tenantId,
+            messageId,
+            request.ChannelId,
+            channel.Name,
+            userId,
+            normalizedUserName,
+            senderAvatarUrl,
+            normalizedContent);
+        ReliableOutboxDraft? mentionOutbox = null;
+        if (mentionNotification != null)
+        {
+            mentionOutbox = new ReliableOutboxDraft(
+                ReliableOutboxSources.Chat,
+                tenantId,
+                ReliableTaskTypes.NotificationRequested,
+                1,
+                $"task:notification:chat-mention:message:{messageId}",
+                "ChannelMessage",
+                messageId.ToString(),
+                JsonSerializer.Serialize(new NotificationRequestedTaskPayload(mentionNotification)),
+                DateTime.UtcNow);
+        }
+
+        await _messageRepository.AddWithOutboxAsync(message, mentionOutbox);
 
         channel.LastMessageId = messageId;
         channel.LastMessageTime = message.CreateTime;
@@ -274,16 +299,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         await EnsureMemberAndUpdateReadStateAsync(channel.Id, userId, tenantId, normalizedUserName, messageId);
-        await SendMentionNotificationsAsync(
-            tenantId,
-            messageId,
-            request.ChannelId,
-            channel.Name,
-            userId,
-            normalizedUserName,
-            senderAvatarUrl,
-            normalizedContent);
-
         var replyMap = new Dictionary<long, ChannelMessage>();
         if (replyToMessage != null)
         {
@@ -678,7 +693,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return avatarMap.TryGetValue(userId, out var avatarAttachmentId) ? avatarAttachmentId : null;
     }
 
-    private async Task SendMentionNotificationsAsync(
+    private async Task<CreateNotificationDto?> BuildMentionNotificationAsync(
         long tenantId,
         long messageId,
         long channelId,
@@ -695,7 +710,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         if (mentionedUserIds.Count == 0)
         {
-            return;
+            return null;
         }
 
         var receivers = await _userRepository.QueryAsync(u =>
@@ -710,7 +725,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         if (receiverUserIds.Count == 0)
         {
-            return;
+            return null;
         }
 
         var preview = BuildMentionPreview(content);
@@ -718,8 +733,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             ? $"{senderUserName} 在频道「{channelName}」中提到了你"
             : $"{senderUserName} 在频道「{channelName}」中提到了你：{preview}";
 
-        await _notificationService.CreateNotificationAsync(new CreateNotificationDto
+        var notificationId = SnowFlakeSingle.Instance.NextId();
+        return new CreateNotificationDto
         {
+            NotificationId = notificationId,
+            BusinessKey = $"notification:chat-mention:message:{messageId}",
             Type = NotificationType.Mentioned,
             Title = "聊天室提及",
             Content = notificationContent,
@@ -731,7 +749,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             ReceiverUserIds = receiverUserIds,
             TenantId = tenantId,
             ExtData = NotificationNavigationHelper.BuildChatNavigationExtData(channelId, messageId)
-        });
+        };
     }
 
     private static List<long> ParseMentionedUserIds(string? content)

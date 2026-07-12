@@ -227,7 +227,7 @@ export const ForumApp = () => {
     void loadDisplayTimeZone();
   }, [loggedIn, userId]);
 
-  const buildSearchTimeRange = () => {
+  const buildSearchTimeRange = useCallback(() => {
     const now = new Date();
     switch (searchTimeRange) {
       case '24h': {
@@ -273,10 +273,22 @@ export const ForumApp = () => {
       default:
         return { startTime: undefined, endTime: undefined };
     }
-  };
+  }, [searchAppliedEndDate, searchAppliedStartDate, searchTimeRange]);
 
   // 数据管理
   const dataState = useForumData(t);
+  const {
+    applyGodCommentPreviewUpdate,
+    commentPageSize,
+    commentSortBy,
+    loadComments,
+    selectedPost,
+    setCommentTotal,
+    setComments,
+    setError: setDataError,
+    setSelectedCategoryId,
+    setSelectedTagName,
+  } = dataState;
 
   const applySearchGodCommentPreviewUpdate = useCallback((postId: LongId, highlight: CommentHighlight | null) => {
     const postKey = String(postId);
@@ -296,15 +308,15 @@ export const ForumApp = () => {
     try {
       const result = await getCurrentGodCommentsBatch([postId], t);
       const highlight = result[String(postId)] ?? null;
-      dataState.applyGodCommentPreviewUpdate(postId, highlight);
+      applyGodCommentPreviewUpdate(postId, highlight);
       applySearchGodCommentPreviewUpdate(postId, highlight);
     } catch (error) {
       log.warn('实时刷新帖子神评预览失败:', error);
     }
-  }, [applySearchGodCommentPreviewUpdate, dataState.applyGodCommentPreviewUpdate, t]);
+  }, [applyGodCommentPreviewUpdate, applySearchGodCommentPreviewUpdate, t]);
 
   const registerCommentTypingUser = useCallback((payload: CommentTypingRealtimeEvent) => {
-    if (!dataState.selectedPost || !isSameCommentId(payload.voPostId, dataState.selectedPost.voId)) {
+    if (!selectedPost || !isSameCommentId(payload.voPostId, selectedPost.voId)) {
       return;
     }
 
@@ -326,7 +338,7 @@ export const ForumApp = () => {
       syncCommentTypingUsers();
     }, 3200));
     syncCommentTypingUsers();
-  }, [dataState.selectedPost, syncCommentTypingUsers, t, userId]);
+  }, [selectedPost, syncCommentTypingUsers, t, userId]);
 
   // 事件处理
   const actionsState = useForumActions({
@@ -357,9 +369,10 @@ export const ForumApp = () => {
     loadPosts: dataState.loadPosts,
     resetCommentSort: dataState.resetCommentSort
   });
+  const { handleSelectPost } = actionsState;
 
   useEffect(() => {
-    const postId = dataState.selectedPost?.voId;
+    const postId = selectedPost?.voId;
     if (!postId) {
       clearCommentTypingUsers();
       return;
@@ -372,13 +385,13 @@ export const ForumApp = () => {
         return;
       }
 
-      dataState.setComments((current) => {
+      setComments((current) => {
         const exists = hasCommentInTree(current, payload.voComment!.voId);
         if (!exists && !payload.voComment!.voParentId) {
-          dataState.setCommentTotal((total) => total + 1);
+          setCommentTotal((total) => total + 1);
         }
 
-        return upsertCommentInTree(current, payload.voComment!, dataState.commentSortBy);
+        return upsertCommentInTree(current, payload.voComment!, commentSortBy);
       });
     });
 
@@ -387,7 +400,7 @@ export const ForumApp = () => {
         return;
       }
 
-      dataState.setComments((current) => upsertCommentInTree(current, payload.voComment!, dataState.commentSortBy));
+      setComments((current) => upsertCommentInTree(current, payload.voComment!, commentSortBy));
     });
 
     const unsubscribeDeleted = commentHub.subscribe('CommentDeleted', (payload) => {
@@ -395,10 +408,10 @@ export const ForumApp = () => {
         return;
       }
 
-      dataState.setComments((current) => {
+      setComments((current) => {
         const exists = hasCommentInTree(current, payload.voCommentId);
         if (exists && !payload.voParentCommentId) {
-          dataState.setCommentTotal((total) => Math.max(0, total - 1));
+          setCommentTotal((total) => Math.max(0, total - 1));
         }
 
         return removeCommentFromTree(current, payload.voCommentId);
@@ -410,7 +423,7 @@ export const ForumApp = () => {
         return;
       }
 
-      dataState.setComments((current) => updateCommentLikeCount(current, payload.voCommentId, payload.voLikeCount!));
+      setComments((current) => updateCommentLikeCount(current, payload.voCommentId, payload.voLikeCount!));
     });
 
     const unsubscribeHighlightsChanged = commentHub.subscribe('CommentHighlightsChanged', (payload) => {
@@ -418,13 +431,13 @@ export const ForumApp = () => {
         return;
       }
 
-      dataState.setComments((current) => applyCommentHighlightEvent(current, payload));
+      setComments((current) => applyCommentHighlightEvent(current, payload));
       if (payload.voHighlightType !== 1) {
         return;
       }
 
       if ((payload.voCurrentCommentIds ?? []).length === 0) {
-        dataState.applyGodCommentPreviewUpdate(payload.voPostId, null);
+        applyGodCommentPreviewUpdate(payload.voPostId, null);
         applySearchGodCommentPreviewUpdate(payload.voPostId, null);
         return;
       }
@@ -446,11 +459,11 @@ export const ForumApp = () => {
     };
   }, [
     clearCommentTypingUsers,
-    dataState.commentSortBy,
-    dataState.selectedPost?.voId,
-    dataState.applyGodCommentPreviewUpdate,
-    dataState.setCommentTotal,
-    dataState.setComments,
+    commentSortBy,
+    selectedPost?.voId,
+    applyGodCommentPreviewUpdate,
+    setCommentTotal,
+    setComments,
     registerCommentTypingUser,
     applySearchGodCommentPreviewUpdate,
     refreshGodCommentPreviewForPost
@@ -464,13 +477,13 @@ export const ForumApp = () => {
     const navigation = await getCommentNavigation(
       postId,
       commentId,
-      dataState.commentPageSize,
+      commentPageSize,
       COMMENT_NAVIGATION_CHILD_PAGE_SIZE,
       t
     );
 
     if (navigation.voRootPageIndex > 1) {
-      await dataState.loadComments(postId, navigation.voRootPageIndex);
+      await loadComments(postId, navigation.voRootPageIndex);
     }
 
     if (!navigation.voIsRootComment && navigation.voParentCommentId && navigation.voChildPageIndex) {
@@ -493,7 +506,7 @@ export const ForumApp = () => {
         source.findIndex((item) => isSameLongId(item.voId, child.voId)) === index
       );
 
-      dataState.setComments((prev) =>
+      setComments((prev) =>
         mergeCommentChildren(prev, navigation.voParentCommentId ?? navigation.voRootCommentId, deduplicatedChildren, totalChildren)
       );
     }
@@ -506,10 +519,10 @@ export const ForumApp = () => {
       navigationKey
     });
     setCommentNavigationNotice(null);
-  }, [dataState.commentPageSize, dataState.loadComments, dataState.setComments, t]);
+  }, [commentPageSize, loadComments, setComments, t]);
 
   const handleNavigateToComment = useCallback(async (commentId: LongId) => {
-    const postId = dataState.selectedPost?.voId;
+    const postId = selectedPost?.voId;
     if (!postId || !commentId) {
       return;
     }
@@ -519,7 +532,7 @@ export const ForumApp = () => {
     } catch {
       setCommentNavigationNotice(t('forum.commentNavigation.notice'));
     }
-  }, [dataState.selectedPost?.voId, navigateToComment, t]);
+  }, [selectedPost?.voId, navigateToComment, t]);
 
   useEffect(() => {
     if (!windowPostIdentifier) {
@@ -543,12 +556,12 @@ export const ForumApp = () => {
       }
 
       setIsSearchView(false);
-      dataState.setSelectedTagName(null);
-      dataState.setSelectedCategoryId(null);
+      setSelectedTagName(null);
+      setSelectedCategoryId(null);
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
 
-      const post = await actionsState.handleSelectPost(windowPostIdentifier);
+      const post = await handleSelectPost(windowPostIdentifier);
       if (cancelled || !windowParams.commentId) {
         return;
       }
@@ -575,16 +588,12 @@ export const ForumApp = () => {
       cancelled = true;
     };
   }, [
-    actionsState.handleSelectPost,
-    dataState.commentPageSize,
-    dataState.loadComments,
-    dataState.setComments,
-    dataState.setError,
+    handleSelectPost,
     windowParams.commentId,
     windowParams.navigationKey,
     windowPostIdentifier,
-    dataState.setSelectedCategoryId,
-    dataState.setSelectedTagName,
+    setSelectedCategoryId,
+    setSelectedTagName,
     t,
     navigateToComment,
   ]);
@@ -597,7 +606,7 @@ export const ForumApp = () => {
     const requestId = ++searchRequestIdRef.current;
     const loadSearchResults = async () => {
       setLoadingSearchPosts(true);
-      dataState.setError(null);
+      setDataError(null);
       try {
         const { startTime, endTime } = buildSearchTimeRange();
         const result = await getPostList(
@@ -649,7 +658,7 @@ export const ForumApp = () => {
         setSearchTotalCount(0);
         setSearchTotalPages(0);
         const message = err instanceof Error ? err.message : String(err);
-        dataState.setError(message);
+        setDataError(message);
       } finally {
         if (requestId === searchRequestIdRef.current) {
           setLoadingSearchPosts(false);
@@ -666,23 +675,25 @@ export const ForumApp = () => {
     searchTimeRange,
     searchAppliedStartDate,
     searchAppliedEndDate,
+    buildSearchTimeRange,
+    setDataError,
     t
   ]);
 
   useEffect(() => {
-    if (!loggedIn || !dataState.selectedPost || !dataState.selectedPost.voAuthorId) {
+    if (!loggedIn || !selectedPost || !selectedPost.voAuthorId) {
       setFollowStatus(null);
       return;
     }
 
-    if (String(dataState.selectedPost.voAuthorId) === String(userId || '0')) {
+    if (String(selectedPost.voAuthorId) === String(userId || '0')) {
       setFollowStatus(null);
       return;
     }
 
     let cancelled = false;
     setFollowLoading(true);
-    void getFollowStatus(dataState.selectedPost.voAuthorId)
+    void getFollowStatus(selectedPost.voAuthorId)
       .then((status) => {
         if (!cancelled) {
           setFollowStatus(status);
@@ -692,7 +703,7 @@ export const ForumApp = () => {
         if (!cancelled) {
           setFollowStatus(null);
           const message = err instanceof Error ? err.message : String(err);
-          dataState.setError(message);
+          setDataError(message);
         }
       })
       .finally(() => {
@@ -707,9 +718,8 @@ export const ForumApp = () => {
   }, [
     loggedIn,
     userId,
-    dataState.selectedPost?.voId,
-    dataState.selectedPost?.voAuthorId,
-    dataState.setError
+    selectedPost,
+    setDataError
   ]);
 
   const handleToggleFollow = async (targetUserId: LongId, isFollowing: boolean) => {

@@ -2,6 +2,10 @@ import { log } from '@/utils/logger';
 import { getAuthServerBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
 
+interface JwtExpirationPayload {
+  exp?: number;
+}
+
 /**
  * Token 刷新管理器
  */
@@ -124,9 +128,12 @@ class TokenRefreshManager {
   /**
    * 解析 JWT Token
    */
-  private parseJwt(token: string): any {
+  private parseJwt(token: string): JwtExpirationPayload | null {
     try {
       const base64Url = token.split('.')[1];
+      if (!base64Url) {
+        return null;
+      }
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
         atob(base64)
@@ -134,8 +141,11 @@ class TokenRefreshManager {
           .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
           .join('')
       );
-      return JSON.parse(jsonPayload);
-    } catch (error) {
+      const parsed = JSON.parse(jsonPayload) as unknown;
+      return typeof parsed === 'object' && parsed !== null
+        ? parsed as JwtExpirationPayload
+        : null;
+    } catch {
       return null;
     }
   }

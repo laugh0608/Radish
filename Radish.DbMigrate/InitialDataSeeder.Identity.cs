@@ -483,6 +483,24 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 500464L,
+                ApiModuleName = "Get reliable task dead letters",
+                LinkUrl = "/api/v1/ReliableOutbox/GetDeadLetters",
+                ControllerName = "ReliableOutbox",
+                ActionName = "GetDeadLetters",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 500465L,
+                ApiModuleName = "Replay reliable task",
+                LinkUrl = "/api/v1/ReliableOutbox/Replay",
+                ControllerName = "ReliableOutbox",
+                ActionName = "Replay",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50049L,
                 ApiModuleName = "Get product categories",
                 LinkUrl = "/api/v1/Shop/GetCategories",

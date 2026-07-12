@@ -112,7 +112,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -231,7 +232,8 @@ public class OrderServiceTest
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             operationIdempotencyService.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -335,7 +337,8 @@ public class OrderServiceTest
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             operationIdempotencyService.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -447,7 +450,8 @@ public class OrderServiceTest
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
             operationIdempotencyService.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -562,7 +566,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -649,7 +654,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -741,7 +747,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.PurchaseAsync(userId, new CreateOrderDto
         {
@@ -822,7 +829,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.CancelOrderAsync(userId, orderId, "用户手动取消");
 
@@ -893,7 +901,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.CancelOrderAsync(userId, orderId, "用户手动取消");
 
@@ -995,7 +1004,8 @@ public class OrderServiceTest
             coinService.Object,
             paymentPasswordService.Object,
             attachmentUrlResolver.Object,
-            notificationService: null);
+            notificationService: null,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var result = await service.GetOrderDetailForAdminAsync(orderId);
 

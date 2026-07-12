@@ -7,6 +7,7 @@
 > - [部署与容器指南](/deployment/guide)
 > - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
 > - [验证基线说明](/guide/validation-baseline)
+> - [产品版本与发布标识治理](/guide/version-governance)
 > - [M15 测试环境最小回滚演练记录（2026-04-06）](/records/m15-test-rollback-rehearsal-2026-04-06)
 > - [M15 生产环境最小回滚预案（2026-04-06）](/records/m15-prod-rollback-playbook-2026-04-06)
 > - [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
@@ -33,12 +34,14 @@ npm run validate:baseline:quick
 ```
 
 3. 发起 `dev -> master` 的 PR
-4. 等待 `Repo Hygiene / Frontend Lint / Baseline Quick / Dependency Security / Backend Guard / Identity Guard` 通过
-5. 合并到 `master`
-6. 创建规范 tag
-7. 等待 `Docker Images` 工作流产出对应镜像
-8. 在部署环境确认 `RADISH_IMAGE_TRACK` 或固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
-9. 补一份发布记录
+4. 等待 `Version Contract / Repo Hygiene / Frontend Lint / Baseline Quick / Dependency Security / Backend Guard / Identity Guard` 通过
+5. 正式发布时，确保候选提交已包含带机器可读元数据且状态真实的发布记录
+6. 合并到 `master`
+7. 把最新 `origin/master` 回灌并推送到 `dev`，确认下一轮开发基于当前稳定主线
+8. 在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`，通过后创建规范 tag
+9. 等待 `Docker Images` 工作流再次校验并产出同 tag 镜像
+10. 在部署环境用固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
+11. 部署后补充发布记录中的真实复核与回滚结论
 
 ## 最小部署顺序
 

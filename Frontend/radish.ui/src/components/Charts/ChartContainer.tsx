@@ -10,13 +10,6 @@ export interface ChartContainerProps {
   className?: string;
 }
 
-export function getInitialChartDimension(height: number | string | undefined) {
-  return {
-    width: 1,
-    height: typeof height === 'number' && Number.isFinite(height) && height > 0 ? height : 220
-  };
-}
-
 /**
  * 图表容器组件 - 提供统一的加载、错误状态和布局
  */

@@ -58,12 +58,15 @@
 
 - 技术栈：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite） / React 19 + Vite（Rolldown） + TypeScript
 - 前端结构：npm workspaces 管理 `radish.http`、`radish.client`、`radish.console`、`radish.ui`
-- 桌面形态：`radish.client` 为 WebOS 桌面化 UI；`Clients/radish-tauri` 为 Tauri 桌面安装包壳层
+- 多端口径：纯 Web 是唯一正式产品主线；Flutter 仅条件式维护现有 MVP，Tauri 冻结为实验资产
+- 桌面形态：`radish.client` 的 `/desktop` 保留 WebOS 历史入口；`Clients/radish-tauri` 仅保留 Tauri 验证资产，不进入当前开发与发布门禁
 - 共享组件：`radish.ui` 为源码直连的共享 UI 组件库，无需单独构建
 - HTTP 客户端：`radish.http` 为统一 API 客户端 workspace
 - 协作分支：`dev`
 - `master` 仅作为稳定主线，只通过 Pull Request 合并
 - `master` 允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
+- 任何 PR 合并到 `master` 后，必须在开始下一轮 `dev` 开发前把最新 `origin/master` 同步回 `dev`；可快进时优先 fast-forward，否则使用普通 merge
+- `master -> dev` 回灌禁止使用 rebase、reset 或 force push 伪造同步；回灌只收口分支拓扑，不自动触发 tag、发布或部署
 - 文档源：`Docs/` 为项目文档唯一真相源
 
 ## AI 执行边界

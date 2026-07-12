@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.CacheTool;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -124,7 +125,7 @@ public class PostQuickReplyServiceTest
         result.VoAuthorId.ShouldBe(3001);
         result.VoContent.ShouldBe("好耶🙂");
 
-        notificationService.VerifyAll();
+        notificationService.VerifyNoOtherCalls();
         quickReplyRepository.VerifyAll();
         postRepository.VerifyAll();
         caching.VerifyAll();
@@ -412,7 +413,7 @@ public class PostQuickReplyServiceTest
             logger,
             quickReplyPerPostCooldownSeconds: 9);
 
-        var exception = await Should.ThrowAsync<InvalidOperationException>(async () =>
+        var exception = await Should.ThrowAsync<BusinessException>(async () =>
             await service.CreateAsync(new CreatePostQuickReplyDto
             {
                 PostId = 1005,
@@ -466,6 +467,7 @@ public class PostQuickReplyServiceTest
             }),
             attachmentService: null,
             notificationService: notificationService.Object,
-            logger: logger.Object);
+            logger: logger.Object,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
     }
 }

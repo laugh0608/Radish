@@ -18,6 +18,7 @@ public class NotificationService : INotificationService
 {
     private readonly IBaseRepository<Notification> _notificationRepository;
     private readonly IBaseRepository<UserNotification> _userNotificationRepository;
+    private readonly INotificationRepository _notificationCustomRepository;
     private readonly INotificationPushService _pushService;
     private readonly INotificationCacheService _cacheService;
     private readonly IMapper _mapper;
@@ -26,6 +27,7 @@ public class NotificationService : INotificationService
     public NotificationService(
         IBaseRepository<Notification> notificationRepository,
         IBaseRepository<UserNotification> userNotificationRepository,
+        INotificationRepository notificationCustomRepository,
         INotificationPushService pushService,
         INotificationCacheService cacheService,
         IMapper mapper,
@@ -33,6 +35,7 @@ public class NotificationService : INotificationService
     {
         _notificationRepository = notificationRepository;
         _userNotificationRepository = userNotificationRepository;
+        _notificationCustomRepository = notificationCustomRepository;
         _pushService = pushService;
         _cacheService = cacheService;
         _mapper = mapper;
@@ -67,10 +70,10 @@ public class NotificationService : INotificationService
                 });
 
             // 使用雪花 ID
-            notification.Id = SnowFlakeSingle.Instance.NextId();
-
-            // 2. 插入通知（支持分表）
-            await _notificationRepository.AddSplitAsync(notification);
+            notification.Id = dto.NotificationId ?? SnowFlakeSingle.Instance.NextId();
+            notification.BusinessKey = string.IsNullOrWhiteSpace(dto.BusinessKey)
+                ? $"notification:{notification.Id}"
+                : dto.BusinessKey.Trim();
 
             _logger.LogInformation(
                 "[NotificationService] 创建通知成功，NotificationId: {NotificationId}, Type: {Type}",
@@ -88,54 +91,54 @@ public class NotificationService : INotificationService
                 return userNotification;
             }).ToList();
 
-            // 批量插入用户通知关系
-            await _userNotificationRepository.AddRangeAsync(userNotifications);
+            // 通知及全部接收关系在 Message 库内原子写入；重复任务复用确定的 NotificationId。
+            var created = await _notificationCustomRepository.PersistAsync(notification, userNotifications);
 
             _logger.LogInformation(
                 "[NotificationService] 创建用户通知关联成功，接收者数量: {Count}",
                 userNotifications.Count);
 
-            // 4. 异步推送未读数变更 + 通知内容到所有接收者
-            _ = Task.Run(async () =>
+            if (!created)
             {
-                try
+                return notification.Id;
+            }
+
+            // 4. 按数据库事实刷新未读缓存，并 best-effort 推送通知。
+            try
+            {
+                var storeType = MapToStoreType(notification.Type);
+                foreach (var userNotification in userNotifications)
                 {
-                    var storeType = MapToStoreType(notification.Type);
-                    foreach (var userNotification in userNotifications)
+                    var userId = userNotification.UserId;
+
+                    var unreadCount = await _cacheService.RefreshUnreadCountAsync(userId);
+                    await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
+
+                    var payload = new
                     {
-                        var userId = userNotification.UserId;
+                        id = notification.Id,
+                        type = storeType,
+                        title = notification.Title,
+                        content = notification.Content,
+                        isRead = userNotification.IsRead,
+                        createdAt = userNotification.CreateTime,
+                        businessId = notification.BusinessId,
+                        businessType = notification.BusinessType,
+                        triggerId = notification.TriggerId,
+                        triggerName = notification.TriggerName,
+                        triggerAvatar = notification.TriggerAvatar,
+                        extData = notification.ExtData
+                    };
 
-                        // 使用缓存服务增量更新未读数
-                        var unreadCount = await _cacheService.IncrementUnreadCountAsync(userId);
-                        await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
-
-                        // 推送完整通知（P1）
-                        var payload = new
-                        {
-                            id = notification.Id,
-                            type = storeType,
-                            title = notification.Title,
-                            content = notification.Content,
-                            isRead = userNotification.IsRead,
-                            createdAt = userNotification.CreateTime,
-                            businessId = notification.BusinessId,
-                            businessType = notification.BusinessType,
-                            triggerId = notification.TriggerId,
-                            triggerName = notification.TriggerName,
-                            triggerAvatar = notification.TriggerAvatar,
-                            extData = notification.ExtData
-                        };
-
-                        await _pushService.PushNotificationAsync(userId, payload);
-                    }
+                    await _pushService.PushNotificationAsync(userId, payload);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex,
-                        "[NotificationService] 推送未读数失败，NotificationId: {NotificationId}",
-                        notification.Id);
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex,
+                    "[NotificationService] 刷新未读缓存或实时推送失败，NotificationId: {NotificationId}",
+                    notification.Id);
+            }
 
             return notification.Id;
         }

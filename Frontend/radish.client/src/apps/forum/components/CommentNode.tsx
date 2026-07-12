@@ -398,7 +398,7 @@ export const CommentNode = ({
       .finally(() => {
         setIsLoadingMore(false);
       });
-  }, [hasChildren, isLoadingMore, level, loadedChildren.length, node.voId, onLoadMoreChildren, pageSize, t]);
+  }, [hasChildren, hasPreloadedChildren, isLoadingMore, level, loadedChildren.length, node.voId, onLoadMoreChildren, pageSize, t]);
 
   // 处理点赞
   const handleLike = async () => {

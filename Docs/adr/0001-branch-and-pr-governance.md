@@ -1,6 +1,6 @@
 # ADR 0001: Branch And PR Governance
 
-更新时间：2026-04-04
+更新时间：2026-07-12
 
 ## 状态
 
@@ -44,8 +44,17 @@ Accepted
 
 - 默认开发流程为 `feature/*` / `docs/*` / `chore/*` -> `dev`
 - 阶段性稳定后，再通过 PR 将 `dev` 合并到 `master`
+- `dev -> master` 的阶段性 PR 优先使用 merge commit，使合并后的 `master` 可以直接 fast-forward 回灌 `dev`；仓库仍允许 rebase merge，但必须承担后续普通 merge 回灌
 - 仅在必须修复稳定主线问题时，才允许 `hotfix/*` 直接向 `master` 发 PR
 - 常规功能、文档、规范与治理类改动，不直接面向 `master`
+
+### `master -> dev` 合并后回灌
+
+- 任何 PR 合并到 `master` 后，都必须把最新 `origin/master` 同步回 `dev`；这包括 `dev -> master` 阶段性集成和 `hotfix/* -> master` 紧急修复
+- 回灌是 `master` PR 的必需收口动作；在回灌完成前，应暂停向 `dev` 追加下一轮提交，避免人为制造不必要的分叉
+- `origin/master` 是 `dev` 的祖先时，优先使用 fast-forward；因 rebase merge 或并发提交无法快进时，使用普通 merge 并完成必要验证
+- 禁止通过 rebase、reset、force push 或重写既有提交来伪造已同步状态
+- 回灌完成后再推送 `dev`，并确认 `dev` 已包含最新 `master`；该动作不代表创建 tag、镜像发布或生产部署
 
 ### `master` 规则
 
@@ -63,6 +72,7 @@ Accepted
 - 允许作为当前阶段默认目标分支
 - 当前阶段不强制启用 branch protection
 - 仍建议保持分支开发与 PR 合并习惯，避免重新回到直接堆叠提交的模式
+- 接受 `master` 合并结果的回灌；回灌完成前不开始下一轮集成开发
 - 如后续 `dev` 成为多人并行开发主集成面，再评估是否逐步补强保护规则
 
 ## 需要在 GitHub 仓库设置中完成的动作
@@ -90,7 +100,7 @@ Accepted
   - `.github/rulesets/README.md`
 - GitHub Actions PR 检查工作流
   - `.github/workflows/repo-quality.yml`
-  - 当前包含 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个 job
+  - 当前包含独立可见的 `Version Contract`，以及 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个 required job
   - `Dependency Security` 固定联网审计 npm / NuGet High 与 Critical；`Backend Guard`、`Identity Guard` 按变更影响面决定是否执行专题验证，但 job 本身保持 required check
   - `Identity Guard` 会先按 impact 判定决定是否执行 `validate:identity`，但 job 本身保持独立可见并作为 required check
   - 当前在 `pull_request -> master/dev` 上触发，其中 `master` ruleset 使用的 required check 名称按 job 名配置
@@ -107,6 +117,7 @@ Accepted
 
 - `master` 可以继续作为稳定主线，而不是日常开发堆叠区
 - `dev` 可以作为当前阶段真实的集成面，承接频繁迭代
+- 每次 `master` 合并结果都会回到 `dev`，避免稳定主线 ancestry 与下一批开发长期分叉
 - PR 模板、验证基线、ruleset 与 workflow 之间的口径更容易长期保持一致
 - 多人或多 Agent 协作时，分支目标与 required checks 的判断成本更低
 - 发布前 required checks、验证基线和协作规则可以围绕同一套治理口径复用
@@ -115,11 +126,13 @@ Accepted
 
 - 开发流程从“直接提交”切换为“分支 + PR + 检查”
 - 需要持续维护 GitHub Settings 中的 ruleset / protection 配置
+- 每次合入 `master` 后增加一次明确的 `master -> dev` 回灌动作
 - 随着验证基线或 workflow 演进，ADR、PR 模板、ruleset README 与协作文件也需要同步维护
 
 ## 后续约束
 
 - 若后续调整分支角色、PR 目标分支、required checks 或 `master` 保护策略，应同步更新本 ADR
+- `master` PR 未完成回灌时，不把该批次视为拓扑收口完成；发现遗漏应先补回灌，再继续下一批开发
 - 若验证基线、协作文件或 PR 模板发生影响分支治理口径的变化，也应评估是否需要同步修订本 ADR
 - 新增同类治理规则时，优先延续“仓库文件声明 + GitHub 设置落地 + ADR 固化”的三层收口方式，避免重新回到只靠口头约定的状态
 - 验证与留痕的默认粒度保持为“开发中 / `PR -> master` / 发布部署”三层：开发中的本地连续提交只做必要验证，不把批次级回归记录和发布级留痕前置到每一个 commit。

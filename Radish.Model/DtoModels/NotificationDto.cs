@@ -8,6 +8,12 @@ namespace Radish.Model.DtoModels;
 /// </remarks>
 public class CreateNotificationDto
 {
+    /// <summary>可靠任务预先确定的通知 ID；普通请求留空。</summary>
+    public long? NotificationId { get; set; }
+
+    /// <summary>通知业务幂等键；可靠任务必须填写。</summary>
+    public string? BusinessKey { get; set; }
+
     /// <summary>
     /// 通知类型（必填）
     /// </summary>

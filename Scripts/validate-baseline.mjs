@@ -120,10 +120,11 @@ function runStep(step) {
 }
 
 function printUsage() {
-  console.log('用法: node Scripts/validate-baseline.mjs [--quick] [--with-host-checks] [--report] [--report-file <path>]');
+  console.log('用法: node Scripts/validate-baseline.mjs [--quick] [--with-host-checks] [--warnings-as-errors] [--report] [--report-file <path>]');
   console.log('');
   console.log('--quick             只执行前端 type-check、client node --test、权限扫描与身份语义轻量校验');
   console.log('--with-host-checks  在 full 模式下追加 DbMigrate doctor / verify 只读自检');
+  console.log('--warnings-as-errors 在 full 模式下将 .NET 编译 warning 视为错误');
   console.log('--report            输出可直接回写到记录/PR 的固定 Markdown 报告');
   console.log('--report-file       将 Markdown 报告直接写入指定文件（会自动启用 --report）');
 }
@@ -268,11 +269,24 @@ if (hasFlag('--help') || hasFlag('-h')) {
 
 const isQuick = hasFlag('--quick');
 const withHostChecks = hasFlag('--with-host-checks');
+const warningsAsErrors = hasFlag('--warnings-as-errors');
 const reportFile = getArgValue('--report-file', '');
 const showReport = hasFlag('--report') || reportFile.length > 0;
 const npmCommand = resolveNpmCommand();
 
 const steps = [
+  {
+    title: '产品版本单一真值校验',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:version-contract'],
+  },
+  {
+    title: '产品版本规则自测',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:version-contract:self-test'],
+  },
   {
     title: '前端 TypeScript 类型检查',
     phase: 'baseline',
@@ -280,10 +294,28 @@ const steps = [
     args: ['run', 'type-check'],
   },
   {
-    title: 'radish.client 最小 node 测试',
+    title: '@radish/http node 测试',
     phase: 'baseline',
     command: npmCommand,
-    args: ['run', 'test', '--workspace=radish.client'],
+    args: ['test', '--workspace=@radish/http'],
+  },
+  {
+    title: '@radish/ui node 测试',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['test', '--workspace=@radish/ui'],
+  },
+  {
+    title: 'radish.client node 测试',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['test', '--workspace=radish.client'],
+  },
+  {
+    title: 'radish.console node 测试',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['test', '--workspace=radish.console'],
   },
   {
     title: 'Console 权限链路扫描',
@@ -302,6 +334,12 @@ const steps = [
     phase: 'baseline',
     command: npmCommand,
     args: ['run', 'check:sensitive-literals'],
+  },
+  {
+    title: '时间语义增量防回归扫描',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:time-semantics'],
   },
   {
     title: 'Repo Quality contract 自校验',
@@ -324,12 +362,16 @@ const steps = [
 ];
 
 if (!isQuick) {
-  const backendBuild = createDotNetCommand([
+  const backendBuildArgs = [
     'build',
     'Radish.slnx',
     '-c',
     'Debug',
-  ], { cwd: repoRoot });
+  ];
+  if (warningsAsErrors) {
+    backendBuildArgs.push('--warnaserror');
+  }
+  const backendBuild = createDotNetCommand(backendBuildArgs, { cwd: repoRoot });
   const backendTest = createDotNetCommand([
     'test',
     'Radish.Api.Tests',

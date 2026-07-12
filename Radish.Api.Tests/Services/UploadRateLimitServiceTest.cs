@@ -1,9 +1,11 @@
+using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
 using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.IService;
 using Radish.Service;
 using Shouldly;
@@ -19,6 +21,8 @@ public class UploadRateLimitServiceTest
     private readonly IUploadRateLimitService _rateLimitService;
     private readonly ICaching _cache;
     private readonly UploadRateLimitOptions _options;
+    private readonly MutableTimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
 
     public UploadRateLimitServiceTest()
     {
@@ -35,7 +39,11 @@ public class UploadRateLimitServiceTest
             MaxDailyUploadSize = 10 * 1024 * 1024 // 10MB
         };
 
-        _rateLimitService = new UploadRateLimitService(_cache, Options.Create(_options));
+        _timeProvider = new MutableTimeProvider(new DateTimeOffset(2026, 7, 11, 15, 0, 0, TimeSpan.Zero));
+        _businessCalendar = new BusinessCalendar(
+            _timeProvider,
+            Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
+        _rateLimitService = CreateService(_options);
     }
 
     [Fact(DisplayName = "测试并发上传限制")]
@@ -228,7 +236,7 @@ public class UploadRateLimitServiceTest
             MaxDailyUploadSize = 1024
         };
 
-        var disabledService = new UploadRateLimitService(_cache, Options.Create(disabledOptions));
+        var disabledService = CreateService(disabledOptions);
         long userId = 10009;
         long fileSize = 10 * 1024 * 1024; // 10MB
 
@@ -256,5 +264,43 @@ public class UploadRateLimitServiceTest
         // Assert
         statistics.UploadedSizeTodayFormatted.ShouldContain("MB");
         statistics.MaxDailyUploadSizeFormatted.ShouldContain("MB");
+    }
+
+    [Fact(DisplayName = "测试每日上传限额按系统业务时区跨日")]
+    public async Task TestDailyLimitUsesBusinessTimeZoneBoundary()
+    {
+        const long userId = 10011;
+        const long fileSize = 1024;
+        _timeProvider.SetUtcNow(new DateTimeOffset(2026, 7, 11, 15, 59, 59, TimeSpan.Zero));
+
+        await _rateLimitService.RecordUploadCompleteAsync(userId, "upload-before-midnight", fileSize);
+        var beforeMidnight = await _rateLimitService.GetUploadStatisticsAsync(userId);
+
+        _timeProvider.SetUtcNow(new DateTimeOffset(2026, 7, 11, 16, 0, 1, TimeSpan.Zero));
+        var afterMidnight = await _rateLimitService.GetUploadStatisticsAsync(userId);
+
+        beforeMidnight.UploadedSizeToday.ShouldBe(fileSize);
+        afterMidnight.UploadedSizeToday.ShouldBe(0);
+    }
+
+    private UploadRateLimitService CreateService(UploadRateLimitOptions options)
+    {
+        return new UploadRateLimitService(
+            _cache,
+            Options.Create(options),
+            _timeProvider,
+            _businessCalendar);
+    }
+
+    private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        private DateTimeOffset _utcNow = utcNow;
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
+
+        public void SetUtcNow(DateTimeOffset value)
+        {
+            _utcNow = value.ToUniversalTime();
+        }
     }
 }

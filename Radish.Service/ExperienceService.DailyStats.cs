@@ -19,16 +19,24 @@ public partial class ExperienceService
         try
         {
             var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
-            var endDate = DateTime.Today;
+            var endDate = _businessCalendar.GetCurrentDate();
             var startDate = endDate.AddDays(-normalizedDays + 1);
+            var startStorageValue = GetBusinessDateStorageValue(startDate);
+            var endStorageValueExclusive = GetBusinessDateStorageValue(endDate.AddDays(1));
             var dailyLimits = GetDailyLimitOptions();
 
             var stats = await _dailyStatsRepository.QueryAsync(
-                s => s.UserId == userId && s.StatDate >= startDate && s.StatDate <= endDate
+                s => s.UserId == userId &&
+                     s.StatDate >= startStorageValue &&
+                     s.StatDate < endStorageValueExclusive
             );
 
             var sortedStats = stats.OrderByDescending(s => s.StatDate).ToList();
             var statVos = Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
+            for (var index = 0; index < sortedStats.Count && index < statVos.Count; index++)
+            {
+                statVos[index].VoStatDate = GetStoredBusinessDate(sortedStats[index].StatDate);
+            }
             var normalizedStats = NormalizeDailyStatsWindow(userId, startDate, endDate, statVos, dailyLimits);
             var ruleSummaries = BuildAnomalyRuleSummaries(normalizedStats, dailyLimits);
             var recommendation = BuildGovernanceRecommendation(normalizedStats, ruleSummaries);
@@ -54,7 +62,7 @@ public partial class ExperienceService
     /// 更新每日统计（内部方法，经验值发放时调用）
     /// </summary>
     [UseTran(Propagation = Propagation.Required)]
-    public async Task UpdateDailyStatsAsync(long userId, string expType, int amount, DateTime statDate)
+    public async Task UpdateDailyStatsAsync(long userId, string expType, int amount, DateOnly statDate)
     {
         if (userId <= 0)
         {
@@ -98,17 +106,17 @@ public partial class ExperienceService
 
     private static List<UserExpDailyStatsVo> NormalizeDailyStatsWindow(
         long userId,
-        DateTime startDate,
-        DateTime endDate,
+        DateOnly startDate,
+        DateOnly endDate,
         List<UserExpDailyStatsVo> stats,
         ExperienceDailyLimitSettings dailyLimits)
     {
         var statMap = stats
-            .GroupBy(stat => stat.VoStatDate.Date)
+            .GroupBy(stat => stat.VoStatDate)
             .ToDictionary(group => group.Key, group => group.First());
 
         var normalizedStats = new List<UserExpDailyStatsVo>();
-        for (var date = endDate.Date; date >= startDate.Date; date = date.AddDays(-1))
+        for (var date = endDate; date >= startDate; date = date.AddDays(-1))
         {
             if (!statMap.TryGetValue(date, out var stat))
             {
@@ -126,13 +134,13 @@ public partial class ExperienceService
         return normalizedStats;
     }
 
-    private static UserExpDailyStatsVo CreateEmptyDailyStatsVo(long userId, DateTime statDate)
+    private static UserExpDailyStatsVo CreateEmptyDailyStatsVo(long userId, DateOnly statDate)
     {
         return new UserExpDailyStatsVo
         {
             VoId = 0,
             VoUserId = userId,
-            VoStatDate = statDate.Date,
+            VoStatDate = statDate,
             VoExpEarned = 0,
             VoExpFromPost = 0,
             VoExpFromComment = 0,
@@ -169,7 +177,7 @@ public partial class ExperienceService
         var nearDailyLimitDays = 0;
         var sourceLimitDays = 0;
         var peakDayExp = long.MinValue;
-        DateTime? peakStatDate = null;
+        DateOnly? peakStatDate = null;
 
         foreach (var stat in stats)
         {
@@ -216,7 +224,7 @@ public partial class ExperienceService
             if (stat.VoExpEarned > peakDayExp)
             {
                 peakDayExp = stat.VoExpEarned;
-                peakStatDate = stat.VoStatDate.Date;
+                peakStatDate = stat.VoStatDate;
             }
         }
 
@@ -350,7 +358,7 @@ public partial class ExperienceService
         var groupedHits = stats
             .SelectMany(stat => stat.VoObservations
                 .Where(IsAnomalyObservation)
-                .Select(observation => new AnomalyObservationHit(stat.VoStatDate.Date, observation)))
+                .Select(observation => new AnomalyObservationHit(stat.VoStatDate, observation)))
             .GroupBy(hit => MapObservationToRuleCode(hit.Observation.VoRuleCode));
 
         var summaries = new List<UserExpAnomalyRuleSummaryVo>();

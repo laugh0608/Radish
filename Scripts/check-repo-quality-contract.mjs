@@ -19,10 +19,13 @@ import {
 
 const repoRoot = process.cwd();
 const workflowPath = path.join(repoRoot, '.github', 'workflows', 'repo-quality.yml');
+const candidateWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'candidate-quality.yml');
+const dockerWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'docker-images.yml');
 const rulesetPath = path.join(repoRoot, '.github', 'rulesets', 'master-protection.json');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const validateCiPath = path.join(repoRoot, 'Scripts', 'validate-ci.mjs');
 const validateBaselinePath = path.join(repoRoot, 'Scripts', 'validate-baseline.mjs');
+const validateCandidatePath = path.join(repoRoot, 'Scripts', 'validate-candidate.mjs');
 const dependencySecurityPath = path.join(repoRoot, 'Scripts', 'check-dependency-security.mjs');
 const dotnetCommandPath = path.join(repoRoot, 'Scripts', 'dotnet-command.mjs');
 const dotnetLocalPath = path.join(repoRoot, 'Scripts', 'dotnet-local.ps1');
@@ -232,10 +235,13 @@ function assertDotnetAuditContract(label, source, failures) {
 }
 
 const workflowContent = readUtf8(workflowPath);
+const candidateWorkflowContent = readUtf8(candidateWorkflowPath);
+const dockerWorkflowContent = readUtf8(dockerWorkflowPath);
 const rulesetContent = readUtf8(rulesetPath);
 const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
 const validateCiSource = readUtf8(validateCiPath);
 const validateBaselineSource = readUtf8(validateBaselinePath);
+const validateCandidateSource = readUtf8(validateCandidatePath);
 const dependencySecuritySource = readUtf8(dependencySecurityPath);
 const dotnetCommandSource = readUtf8(dotnetCommandPath);
 const dotnetLocalSource = readUtf8(dotnetLocalPath);
@@ -315,6 +321,67 @@ assertPackageScript(
 
 assertPackageScript(
   packageScripts,
+  'validate:candidate',
+  'node Scripts/validate-candidate.mjs',
+  failures
+);
+
+for (const requiredFragment of [
+  'workflow_call:',
+  'workflow_dispatch:',
+  'schedule:',
+  'image: postgres:17',
+  'RADISH_TEST_POSTGRES_CONNECTION_STRING:',
+  'run: npm run validate:candidate',
+]) {
+  if (!candidateWorkflowContent.includes(requiredFragment)) {
+    failures.push(`Candidate Quality workflow 缺少候选门禁片段: ${requiredFragment}`);
+  }
+}
+
+for (const requiredFragment of [
+  'uses: ./.github/workflows/candidate-quality.yml',
+  'aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25',
+  'severity: HIGH,CRITICAL',
+  "exit-code: '1'",
+  'sbom: true',
+  'provenance: mode=max',
+  'org.opencontainers.image.source=',
+  'org.opencontainers.image.revision=',
+]) {
+  if (!dockerWorkflowContent.includes(requiredFragment)) {
+    failures.push(`Docker Images workflow 缺少供应链门禁片段: ${requiredFragment}`);
+  }
+}
+
+for (const requiredFragment of [
+  "['run', 'check:repo-hygiene:candidate']",
+  "['run', 'lint']",
+  "['run', 'validate:baseline', '--', '--warnings-as-errors']",
+  "['run', 'check:long-id-safety']",
+  "['run', 'check:dependency-security']",
+]) {
+  if (!validateCandidateSource.includes(requiredFragment)) {
+    failures.push(`Scripts/validate-candidate.mjs 缺少候选门禁片段: ${requiredFragment}`);
+  }
+}
+
+assertPackageScript(
+  packageScripts,
+  'check:version-contract',
+  'node Scripts/version-contract.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:version-contract:self-test',
+  'node --test Scripts/version-contract.test.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
   'check:sensitive-literals',
   'node Scripts/check-sensitive-literals.mjs',
   failures
@@ -328,6 +395,8 @@ assertPackageScript(
 );
 
 for (const requiredFragment of [
+  "args: ['run', 'check:version-contract']",
+  "args: ['run', 'check:version-contract:self-test']",
   "args: ['run', 'check:sensitive-literals:self-test']",
   "args: ['run', 'check:sensitive-literals']",
 ]) {

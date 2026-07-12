@@ -1,0 +1,501 @@
+{
+  "version": 1,
+  "issues": [
+    {
+      "file": ".run/GAA.run.xml",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "DataBases/Uploads/DefaultAvatars/.gitkeep",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "DataBases/Uploads/DefaultIco/.gitkeep",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "DataBases/Uploads/DefaultShopImage/.gitkeep",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Docs/changelog/2026-01/week1.md",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Docs/changelog/2026-01/week4.md",
+      "issue": "包含 Unicode 替换字符（U+FFFD），疑似已有乱码。"
+    },
+    {
+      "file": "Docs/changelog/2026-01/week4.md",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Docs/guide/hangfire-scheduled-jobs.md",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Docs/guide/radish-pit-system.md",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/public/vite.svg",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/public/webos.html",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/public/webos.html",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/AccountOverview.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/BalanceCard.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/BalanceCard.tsx",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/QuickActions.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/RecentTransactions.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/StatsCard.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/AccountOverview/StatsCard.tsx",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/Statistics/StatisticsOverview.tsx",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/Statistics/TrendAnalysis.tsx",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/TransactionHistory/TransactionDetail.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/Transfer/RecentTransfers.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/Transfer/Transfer.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/Transfer/TransferConfirm.module.css",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/components/Transfer/TransferConfirm.tsx",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/apps/radish-pit/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.client/src/assets/react.svg",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/public/vite.svg",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/public/webos.html",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/public/webos.html",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Frontend/radish.console/src/assets/react.svg",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/src/components/NotFound/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/src/pages/Settings/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/src/pages/SystemConfig/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/src/pages/UserProfile/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.console/src/pages/Users/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.ui/src/api/index.ts",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Frontend/radish.ui/src/components/Icon/mdi-subset.json",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/AttributeTool/UseTranAttribute.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/CacheTool/CacheConst.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/CacheTool/ICaching.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/DbTool/MainDb.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/HelpTool/ConsoleHelper.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/HelpTool/LogContextHelper.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/LogTool/AopLogInfoTool.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Common/LogTool/AopLogInfoTool.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/LogTool/LogContextTool.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.Common/MethodInfoTool.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/OptionTool/Core/ConfigurableOptions.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Common/OptionTool/Core/ConfigurableOptions.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/OptionTool/Core/IConfigurableOptions.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/OptionTool/RedisOptions.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/Radish.Common.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Common/TenantTool/MultiTenantAttribute.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/TenantTool/MultiTenantAttribute.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.Common/TenantTool/TenantTypeEnum.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Common/TenantTool/TenantTypeEnum.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.Core/Radish.Core.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Core/RadishCore.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Core/RadishCore.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension.Log/.gitkeep",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/ApplicationSetup.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/AutoMapperExtension/AutoMapperSetup.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/AuditSqlLogProfile.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/CustomProfile.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/RoleProfile.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/ViewModelProfile.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/AutofacExtension/AutofacModuleRegister.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.Extension/AutofacExtension/AutofacPropertyModuleReg.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Extension/JwtTokenGenerate.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/PermissionExtension/PermissionItem.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/PermissionExtension/PermissionRequirement.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Extension/PermissionExtension/PermissionRequirement.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.IRepository/IUserRepository.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.IRepository/Radish.IRepository.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.IService/Base/IBaseService.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.IService/INotificationService.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.IService/Radish.IService.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Infrastructure/Radish.Infrastructure.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Model/ApiModule.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Department.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/DtoModels/AdminAdjustExpDto.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/LogModels/AuditSqlLog.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/LogModels/BaseLog.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Radish.Model.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Model/Role.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Model/Role.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/RoleModulePermission.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Root/IDeleteFilter.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Root/ITenantEntity.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Tenant.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Tenants/BusinessTable.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Tenants/BusinessTable.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.Model/Tenants/MultiBusinessTable.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/Tenants/SubLibBusinessTable.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/UserRole.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/AuditSqlLogVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/BusinessTableVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/DepartmentVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/JobTriggerResultVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/MultiBusinessTableVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/ProductBuyCheckResultVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/RoleVo.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/RoleVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/SubLibBusinessTableVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/TenantCacheResultVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/TenantVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/TokenInfoVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/UserRoleVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/UserStatsVo.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/VoCommentPagedResult.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/VoLikeResult.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/VoPagedResult.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Model/ViewModels/VoUnreadMessageCount.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Repository/Radish.Repository.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Repository/UnitOfWorks/IUnitOfWorkManage.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Repository/UserRepository.cs",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Repository/UserRepository.cs",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "Radish.Repository/UserRepository.cs",
+      "issue": "存在行尾空格或制表符。"
+    },
+    {
+      "file": "Radish.Service/Radish.Service.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.Shared/Radish.Shared.csproj",
+      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
+    },
+    {
+      "file": "Radish.slnLaunch",
+      "issue": "文件末尾缺少换行。"
+    },
+    {
+      "file": "tsconfig.base.json",
+      "issue": "文件末尾缺少换行。"
+    }
+  ]
+}

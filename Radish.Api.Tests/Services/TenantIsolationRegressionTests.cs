@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Radish.Common.CoreTool;
 using Radish.Common.HttpContextTool;
@@ -17,6 +19,7 @@ using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Radish.Repository.Base;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service;
 using SqlSugar;
 using Xunit;
@@ -184,6 +187,59 @@ public class TenantIsolationRegressionTests
         AssertPublicTenantOnlyFilter<UserCommentLike>();
         AssertPublicTenantOnlyFilter<UploadSession>();
         AssertPublicTenantOnlyFilter<UserPaymentPassword>();
+    }
+
+    [Fact(DisplayName = "BaseRepository 真实查询、软删除和恢复均保持租户隔离")]
+    public async Task BaseRepositorySoftDeleteAndRestore_ShouldPreserveTenantIsolation()
+    {
+        EnsurePublicTenantAppContext();
+        var dbPath = Path.Combine(Path.GetTempPath(), $"radish-base-repository-{Guid.NewGuid():N}.db");
+        var db = new SqlSugarScope(new ConnectionConfig
+        {
+            ConfigId = "main",
+            DbType = DbType.Sqlite,
+            ConnectionString = $"Data Source={dbPath}",
+            IsAutoCloseConnection = true,
+            InitKeyType = InitKeyType.Attribute
+        });
+
+        try
+        {
+            db.CodeFirst.InitTables<UserBalance>();
+            db.Insertable(new[]
+            {
+                new UserBalance { Id = 1, UserId = 101, TenantId = 0 },
+                new UserBalance { Id = 2, UserId = 202, TenantId = 2 }
+            }).ExecuteCommand();
+            var unitOfWork = new UnitOfWorkManage(db, NullLogger<UnitOfWorkManage>.Instance);
+            var repository = new BaseRepository<UserBalance>(unitOfWork);
+
+            Assert.NotNull(await repository.QueryByIdAsync(1));
+            Assert.Null(await repository.QueryByIdAsync(2));
+
+            Assert.True(await repository.SoftDeleteByIdAsync(1, "q3-c"));
+            Assert.Null(await repository.QueryByIdAsync(1));
+            var deleted = db.Queryable<UserBalance>().InSingle(1);
+            Assert.True(deleted.IsDeleted);
+            Assert.NotNull(deleted.DeletedAt);
+            Assert.Equal("q3-c", deleted.DeletedBy);
+
+            Assert.False(await repository.RestoreByIdAsync(2));
+            Assert.True(await repository.RestoreByIdAsync(1));
+            var restored = await repository.QueryByIdAsync(1);
+            Assert.NotNull(restored);
+            Assert.False(restored.IsDeleted);
+            Assert.Null(restored.DeletedAt);
+            Assert.Null(restored.DeletedBy);
+        }
+        finally
+        {
+            db.Dispose();
+            if (File.Exists(dbPath))
+            {
+                File.Delete(dbPath);
+            }
+        }
     }
 
     private static void EnsurePublicTenantAppContext()

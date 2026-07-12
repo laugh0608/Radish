@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -13,6 +14,7 @@ namespace Radish.Api.Controllers;
 
 /// <summary>内容治理控制器</summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -68,10 +70,9 @@ public class ContentModerationController : ControllerBase
         {
             return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            var statusCode = ex.Message.Contains("不存在") ? HttpStatusCodeEnum.NotFound : HttpStatusCodeEnum.BadRequest;
-            return BuildError(statusCode, ex.Message);
+            return BuildError((HttpStatusCodeEnum)ex.StatusCode, ex.Message, ex.ErrorCode, ex.MessageKey);
         }
     }
 
@@ -161,10 +162,9 @@ public class ContentModerationController : ControllerBase
         {
             return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            var statusCode = ex.Message.Contains("不存在") ? HttpStatusCodeEnum.NotFound : HttpStatusCodeEnum.BadRequest;
-            return BuildError(statusCode, ex.Message);
+            return BuildError((HttpStatusCodeEnum)ex.StatusCode, ex.Message, ex.ErrorCode, ex.MessageKey);
         }
     }
 
@@ -200,10 +200,9 @@ public class ContentModerationController : ControllerBase
         {
             return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            var statusCode = ex.Message.Contains("不存在") ? HttpStatusCodeEnum.NotFound : HttpStatusCodeEnum.BadRequest;
-            return BuildError(statusCode, ex.Message);
+            return BuildError((HttpStatusCodeEnum)ex.StatusCode, ex.Message, ex.ErrorCode, ex.MessageKey);
         }
     }
 
@@ -231,13 +230,19 @@ public class ContentModerationController : ControllerBase
         }
     }
 
-    private static MessageModel BuildError(HttpStatusCodeEnum statusCode, string message)
+    private static MessageModel BuildError(
+        HttpStatusCodeEnum statusCode,
+        string message,
+        string? code = null,
+        string? messageKey = null)
     {
         return new MessageModel
         {
             IsSuccess = false,
             StatusCode = (int)statusCode,
-            MessageInfo = message
+            MessageInfo = message,
+            Code = code,
+            MessageKey = messageKey
         };
     }
 }

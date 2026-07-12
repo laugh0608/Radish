@@ -3,6 +3,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -16,6 +17,7 @@ namespace Radish.Api.Controllers;
 
 /// <summary>角色接口控制器</summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -136,12 +138,7 @@ public class RoleController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"创建失败：{ex.Message}"
-            };
+            throw BuildUnexpectedError("创建角色失败，请稍后重试", ex);
         }
     }
 
@@ -213,12 +210,7 @@ public class RoleController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"更新失败：{ex.Message}"
-            };
+            throw BuildUnexpectedError("更新角色失败，请稍后重试", ex);
         }
     }
 
@@ -273,12 +265,7 @@ public class RoleController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"删除失败：{ex.Message}"
-            };
+            throw BuildUnexpectedError("删除角色失败，请稍后重试", ex);
         }
     }
 
@@ -330,12 +317,17 @@ public class RoleController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = $"操作失败：{ex.Message}"
-            };
+            throw BuildUnexpectedError("更新角色状态失败，请稍后重试", ex);
         }
+    }
+
+    private static BusinessException BuildUnexpectedError(string message, Exception exception)
+    {
+        return new BusinessException(
+            message,
+            exception,
+            StatusCodes.Status500InternalServerError,
+            "System.UnexpectedError",
+            "error.system.unexpected_error");
     }
 }

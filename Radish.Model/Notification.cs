@@ -16,6 +16,7 @@ namespace Radish.Model;
 [Tenant(configId: "Message")]
 [SplitTable(SplitType.Month)]
 [SugarTable($@"{nameof(Notification)}_{{year}}{{month}}{{day}}")]
+[SugarIndex("idx_notification_tenant_business_key", nameof(TenantId), OrderByType.Asc, nameof(BusinessKey), OrderByType.Asc, IsUnique = true)]
 public class Notification : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认通知实例</summary>
@@ -50,6 +51,7 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
         TriggerName = null;
         TriggerAvatar = null;
         ExtData = null;
+        BusinessKey = null;
         TenantId = 0;
         CreateTime = DateTime.Now;
         CreateBy = "System";
@@ -157,6 +159,9 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
     #endregion
 
     #region 业务关联信息
+
+    [SugarColumn(Length = 220, IsNullable = true, ColumnDescription = "通知业务幂等键")]
+    public string? BusinessKey { get; set; }
 
     /// <summary>业务类型</summary>
     /// <remarks>

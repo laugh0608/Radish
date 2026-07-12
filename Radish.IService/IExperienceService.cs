@@ -156,7 +156,7 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="expType">经验值类型</param>
     /// <param name="amount">经验值数量</param>
     /// <param name="statDate">统计日期</param>
-    Task UpdateDailyStatsAsync(long userId, string expType, int amount, DateTime statDate);
+    Task UpdateDailyStatsAsync(long userId, string expType, int amount, DateOnly statDate);
 
     #endregion
 

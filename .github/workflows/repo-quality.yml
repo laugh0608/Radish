@@ -15,6 +15,24 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  version-contract:
+    name: Version Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
+      - name: Check version contract
+        run: npm run check:version-contract
+
+      - name: Test version contract rules
+        run: npm run check:version-contract:self-test
+
   repo-hygiene:
     name: Repo Hygiene
     runs-on: ubuntu-latest

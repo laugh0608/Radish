@@ -1,7 +1,7 @@
 name: radish_flutter
 description: Phase 2-3 Flutter client MVP shell for Radish.
 publish_to: none
-version: 0.1.0+1
+version: 26.7.1+1
 
 environment:
   sdk: ">=3.6.0 <4.0.0"

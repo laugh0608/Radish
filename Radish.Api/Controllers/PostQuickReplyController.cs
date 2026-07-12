@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -16,6 +18,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛轻回应")]
 public class PostQuickReplyController : ControllerBase
 {
@@ -152,17 +155,15 @@ public class PostQuickReplyController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            var statusCode = ex.Message.Contains("无权", StringComparison.Ordinal)
-                ? HttpStatusCodeEnum.Forbidden
-                : HttpStatusCodeEnum.BadRequest;
-
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = (int)statusCode,
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }
@@ -208,17 +209,15 @@ public class PostQuickReplyController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            var statusCode = ex.Message.Contains("不存在", StringComparison.Ordinal)
-                ? HttpStatusCodeEnum.NotFound
-                : HttpStatusCodeEnum.Forbidden;
-
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = (int)statusCode,
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }

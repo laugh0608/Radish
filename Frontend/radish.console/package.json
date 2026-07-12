@@ -1,14 +1,14 @@
 {
   "name": "radish.console",
   "private": true,
-  "version": "26.1.1",
+  "version": "26.7.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "node --test --test-isolation=none ./tests/tokenClaims.test.ts ./tests/loggerSanitization.test.ts ./tests/orderListUrlState.test.ts ./tests/productListUrlState.test.ts ./tests/rolePermissionHelpers.test.ts ./tests/consoleTroubleshootingPathContracts.test.ts",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint .",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.strict.json --noEmit",
+    "lint": "eslint . --max-warnings=0",
     "preview": "vite preview"
   },
   "dependencies": {

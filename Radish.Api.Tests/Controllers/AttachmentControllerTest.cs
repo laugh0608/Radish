@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Api.Controllers;
@@ -139,7 +140,8 @@ public class AttachmentControllerTest
             userService,
             rateLimitServiceMock.Object,
             Options.Create(new UploadRateLimitOptions { Enable = false }),
-            fileAccessTokenServiceMock.Object);
+            fileAccessTokenServiceMock.Object,
+            new ConfigurationBuilder().AddInMemoryCollection().Build());
     }
 
     private static Mock<IAttachmentService> CreateAttachmentServiceMock()

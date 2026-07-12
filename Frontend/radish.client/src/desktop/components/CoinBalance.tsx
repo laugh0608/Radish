@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBalance, type UserBalance } from '@/api/coin';
 import { useUserStore } from '@/stores/userStore';
@@ -37,17 +37,19 @@ export const CoinBalance = () => {
     }
   };
 
+  const fetchBalanceForEffect = useEffectEvent(fetchBalance);
+  const authenticated = isAuthenticated();
+
   useEffect(() => {
-    void fetchBalance();
-    // 每 30 秒刷新一次余额
+    void fetchBalanceForEffect();
     const interval = setInterval(() => {
-      void fetchBalance();
+      void fetchBalanceForEffect();
     }, 30000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated()]);
+  }, [authenticated, fetchBalanceForEffect]);
 
-  if (!isAuthenticated()) {
+  if (!authenticated) {
     return null;
   }
 

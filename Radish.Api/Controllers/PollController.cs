@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -14,6 +16,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛投票管理")]
 public class PollController : ControllerBase
 {
@@ -57,15 +60,15 @@ public class PollController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = ex.Message == "帖子不存在"
-                    ? (int)HttpStatusCodeEnum.NotFound
-                    : (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }
@@ -118,18 +121,15 @@ public class PollController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = ex.Message switch
-                {
-                    "帖子不存在" => (int)HttpStatusCodeEnum.NotFound,
-                    "只有发帖者可以结束投票" => (int)HttpStatusCodeEnum.Forbidden,
-                    _ => (int)HttpStatusCodeEnum.BadRequest
-                },
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }
@@ -182,18 +182,15 @@ public class PollController : ControllerBase
                 MessageInfo = ex.Message
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = ex.Message switch
-                {
-                    "帖子不存在" => (int)HttpStatusCodeEnum.NotFound,
-                    "只有发帖者可以结束投票" => (int)HttpStatusCodeEnum.Forbidden,
-                    _ => (int)HttpStatusCodeEnum.BadRequest
-                },
-                MessageInfo = ex.Message
+                StatusCode = ex.StatusCode,
+                MessageInfo = ex.Message,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
     }

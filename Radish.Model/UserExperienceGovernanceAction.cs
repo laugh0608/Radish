@@ -47,8 +47,8 @@ public class UserExperienceGovernanceAction : RootEntityTKey<long>, ITenantEntit
     public int? WindowDays { get; set; }
 
     /// <summary>关联命中日期</summary>
-    [SugarColumn(IsNullable = true)]
-    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
+    [SugarColumn(IsNullable = true, ColumnDataType = "date")]
+    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd}", ApplyFormatInEditMode = true)]
     public DateTime? StatDate { get; set; }
 
     /// <summary>规则代码快照（JSON 数组）</summary>

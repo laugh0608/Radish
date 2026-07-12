@@ -23,7 +23,7 @@ public partial class ExperienceService
             if (pageSize > 100) pageSize = 100;
             if (pageSize < 1) pageSize = 50;
             if (pageIndex < 1) pageIndex = 1;
-            var now = DateTime.Now;
+            var now = GetUtcNow();
 
             // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
             var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
@@ -129,7 +129,7 @@ public partial class ExperienceService
                 {
                     PublicId = publicId,
                     PublicIndex = publicIndex,
-                    UpdateTime = DateTime.Now
+                    UpdateTime = GetUtcNow()
                 },
                 item => item.Id == user.Id &&
                         !item.IsDeleted &&
@@ -185,12 +185,11 @@ public partial class ExperienceService
             }
 
             userExp = await NormalizeFreezeStateAsync(userExp);
-            if (IsFreezeActive(userExp, DateTime.Now))
+            var now = GetUtcNow();
+            if (IsFreezeActive(userExp, now))
             {
                 return 0; // 未上榜或仍处于冻结中
             }
-
-            var now = DateTime.Now;
 
             // 统计比该用户经验值高的用户数量
             var higherCount = await _userExpRepository.QueryCountAsync(

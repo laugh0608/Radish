@@ -1,6 +1,8 @@
+using System.Globalization;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
 using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.IService;
 using Serilog;
 
@@ -13,11 +15,19 @@ public class UploadRateLimitService : IUploadRateLimitService
 {
     private readonly ICaching _cache;
     private readonly UploadRateLimitOptions _options;
+    private readonly TimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
 
-    public UploadRateLimitService(ICaching cache, IOptions<UploadRateLimitOptions> options)
+    public UploadRateLimitService(
+        ICaching cache,
+        IOptions<UploadRateLimitOptions> options,
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar)
     {
         _cache = cache;
         _options = options.Value;
+        _timeProvider = timeProvider;
+        _businessCalendar = businessCalendar;
     }
 
     /// <summary>
@@ -218,12 +228,7 @@ public class UploadRateLimitService : IUploadRateLimitService
         var size = long.TryParse(value, out var s) ? s : 0;
         size += fileSize;
 
-        // 计算到今天结束的剩余时间
-        var now = DateTime.Now;
-        var endOfDay = now.Date.AddDays(1);
-        var ttl = endOfDay - now;
-
-        await _cache.SetStringAsync(key, size.ToString(), ttl);
+        await _cache.SetStringAsync(key, size.ToString(), _businessCalendar.GetTimeUntilNextDate());
     }
 
     /// <summary>
@@ -236,7 +241,7 @@ public class UploadRateLimitService : IUploadRateLimitService
     /// </summary>
     private string GetRateKey(long userId)
     {
-        var minute = DateTime.Now.ToString("yyyyMMddHHmm");
+        var minute = _timeProvider.GetUtcNow().UtcDateTime.ToString("yyyyMMddHHmm", CultureInfo.InvariantCulture);
         return $"upload:rate:{userId}:{minute}";
     }
 
@@ -245,8 +250,8 @@ public class UploadRateLimitService : IUploadRateLimitService
     /// </summary>
     private string GetDailySizeKey(long userId)
     {
-        var date = DateTime.Now.ToString("yyyyMMdd");
-        return $"upload:daily:{userId}:{date}";
+        var date = _businessCalendar.GetCurrentDate();
+        return $"upload:daily:{userId}:{date:yyyyMMdd}";
     }
 
     /// <summary>

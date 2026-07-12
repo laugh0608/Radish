@@ -195,22 +195,8 @@ public class AuditLogMiddleware
             var jsonDoc = JsonDocument.Parse(body);
             var root = jsonDoc.RootElement;
 
-            // 检查是否包含敏感字段
-            var sensitiveFields = new[] { "password", "pwd", "secret", "token", "apikey", "api_key" };
-            var hasSensitiveData = false;
-
-            foreach (var field in sensitiveFields)
+            if (root.ValueKind == JsonValueKind.String || ContainsSensitiveField(root))
             {
-                if (root.TryGetProperty(field, out _))
-                {
-                    hasSensitiveData = true;
-                    break;
-                }
-            }
-
-            if (hasSensitiveData)
-            {
-                // 简单处理：返回提示信息
                 return "[包含敏感信息，已脱敏]";
             }
 
@@ -221,6 +207,38 @@ public class AuditLogMiddleware
             // 不是 JSON 格式，直接返回
             return body;
         }
+    }
+
+    private static bool ContainsSensitiveField(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (IsSensitiveField(property.Name) || ContainsSensitiveField(property.Value))
+                {
+                    return true;
+                }
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            return element.EnumerateArray().Any(ContainsSensitiveField);
+        }
+
+        return false;
+    }
+
+    private static bool IsSensitiveField(string fieldName)
+    {
+        return fieldName.Equals("password", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("pwd", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("secret", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("token", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("tokenHash", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("accessToken", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("apiKey", StringComparison.OrdinalIgnoreCase)
+               || fieldName.Equals("api_key", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool ShouldCaptureBodyAsText(string? contentType)

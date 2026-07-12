@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -13,6 +15,7 @@ namespace Radish.Api.Controllers;
 /// 分片上传控制器
 /// </summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -60,12 +63,7 @@ public class ChunkedUploadController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("创建上传会话失败，请稍后重试", ex);
         }
     }
 
@@ -111,12 +109,7 @@ public class ChunkedUploadController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("上传分片失败，请稍后重试", ex);
         }
     }
 
@@ -158,12 +151,7 @@ public class ChunkedUploadController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("合并上传分片失败，请稍后重试", ex);
         }
     }
 
@@ -203,12 +191,7 @@ public class ChunkedUploadController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("获取上传会话失败，请稍后重试", ex);
         }
     }
 
@@ -237,12 +220,17 @@ public class ChunkedUploadController : ControllerBase
         }
         catch (Exception ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            throw BuildUnexpectedError("取消上传失败，请稍后重试", ex);
         }
+    }
+
+    private static BusinessException BuildUnexpectedError(string message, Exception exception)
+    {
+        return new BusinessException(
+            message,
+            exception,
+            StatusCodes.Status500InternalServerError,
+            "System.UnexpectedError",
+            "error.system.unexpected_error");
     }
 }

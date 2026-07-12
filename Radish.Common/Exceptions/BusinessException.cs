@@ -15,17 +15,29 @@ public class BusinessException : Exception
     /// </summary>
     public string? ErrorCode { get; }
 
-    public BusinessException(string message, int statusCode = 400, string? errorCode = null)
+    /// <summary>
+    /// 多语言消息键
+    /// </summary>
+    public string? MessageKey { get; }
+
+    public BusinessException(string message, int statusCode = 400, string? errorCode = null, string? messageKey = null)
         : base(message)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
+        MessageKey = messageKey;
     }
 
-    public BusinessException(string message, Exception innerException, int statusCode = 400, string? errorCode = null)
+    public BusinessException(
+        string message,
+        Exception innerException,
+        int statusCode = 400,
+        string? errorCode = null,
+        string? messageKey = null)
         : base(message, innerException)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
+        MessageKey = messageKey;
     }
 }

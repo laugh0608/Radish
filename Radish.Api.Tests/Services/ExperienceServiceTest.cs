@@ -11,6 +11,8 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.CacheTool;
 using Radish.Common;
+using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -27,9 +29,11 @@ namespace Radish.Api.Tests.Services;
 public class ExperienceServiceTest
 {
     [Fact]
-    public async Task GrantExperienceAsync_ShouldRespectConfiguredDailyLimit()
+    public async Task GrantExperienceAsync_ShouldUseBusinessDateAndRespectLoginDailyLimit()
     {
         const long userId = 9527;
+        var utcNow = new DateTimeOffset(2026, 5, 9, 16, 30, 0, TimeSpan.Zero);
+        var businessDate = new DateOnly(2026, 5, 10);
 
         var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
         var dailyStatsRepository = new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Strict);
@@ -49,16 +53,18 @@ public class ExperienceServiceTest
                 IsDeleted = false
             });
 
+        var dailyStats = new UserExpDailyStats
+        {
+            Id = 8001,
+            UserId = userId,
+            StatDate = ToBusinessDateStorage(businessDate),
+            ExpEarned = 9,
+            ExpFromLogin = 9
+        };
         dailyStatsRepository
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExpDailyStats, bool>>?>()))
-            .ReturnsAsync(new UserExpDailyStats
-            {
-                Id = 8001,
-                UserId = userId,
-                StatDate = DateTime.Today,
-                ExpEarned = 9,
-                ExpFromPost = 4
-            });
+            .ReturnsAsync((Expression<Func<UserExpDailyStats, bool>>? expression) =>
+                expression?.Compile()(dailyStats) == true ? dailyStats : null);
 
         var service = CreateService(
             userExpRepository: userExpRepository,
@@ -74,9 +80,10 @@ public class ExperienceServiceTest
                 ["ExperienceCalculator:DailyLimits:MaxExpFromLike"] = "10",
                 ["ExperienceCalculator:DailyLimits:MaxExpFromHighlight"] = "10",
                 ["ExperienceCalculator:DailyLimits:MaxExpFromLogin"] = "10"
-            });
+            },
+            utcNow: utcNow);
 
-        var success = await service.GrantExperienceAsync(userId, 2, "POST_CREATE");
+        var success = await service.GrantExperienceAsync(userId, 2, "DAILY_LOGIN");
 
         success.ShouldBeFalse();
         levelConfigRepository.Verify(
@@ -227,7 +234,7 @@ public class ExperienceServiceTest
     public async Task UpdateDailyStatsAsync_ShouldCreateStatsAndAccumulateCounters()
     {
         const long userId = 20001;
-        var statDate = new DateTime(2026, 5, 10, 9, 30, 0);
+        var statDate = new DateOnly(2026, 5, 10);
         var storedStats = new List<UserExpDailyStats>();
 
         var dailyStatsRepository = new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Strict);
@@ -253,12 +260,12 @@ public class ExperienceServiceTest
         var service = CreateService(dailyStatsRepository: dailyStatsRepository);
 
         await service.UpdateDailyStatsAsync(userId, "POST_CREATE", 20, statDate);
-        await service.UpdateDailyStatsAsync(userId, "GIVE_LIKE", 2, statDate.AddHours(2));
+        await service.UpdateDailyStatsAsync(userId, "GIVE_LIKE", 2, statDate);
 
         storedStats.Count.ShouldBe(1);
         var stats = storedStats[0];
         stats.UserId.ShouldBe(userId);
-        stats.StatDate.ShouldBe(statDate.Date);
+        stats.StatDate.ShouldBe(ToBusinessDateStorage(statDate));
         stats.ExpEarned.ShouldBe(22);
         stats.ExpFromPost.ShouldBe(20);
         stats.PostCount.ShouldBe(1);
@@ -275,14 +282,14 @@ public class ExperienceServiceTest
     public async Task GetDailyStatsAsync_ShouldBackfillWindowAndBuildSummary()
     {
         const long userId = 20002;
-        var endDate = DateTime.Today;
+        var endDate = new DateOnly(2026, 5, 10);
         var existingStats = new List<UserExpDailyStats>
         {
             new()
             {
                 Id = 9101,
                 UserId = userId,
-                StatDate = endDate,
+                StatDate = ToBusinessDateStorage(endDate),
                 ExpEarned = 40,
                 ExpFromHighlight = 30,
                 ExpFromComment = 10,
@@ -292,7 +299,7 @@ public class ExperienceServiceTest
             {
                 Id = 9102,
                 UserId = userId,
-                StatDate = endDate.AddDays(-2),
+                StatDate = ToBusinessDateStorage(endDate.AddDays(-2)),
                 ExpEarned = 25,
                 ExpFromLike = 20,
                 ExpFromComment = 5,
@@ -314,7 +321,9 @@ public class ExperienceServiceTest
                 return query.ToList();
             });
 
-        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+        var service = CreateService(
+            dailyStatsRepository: dailyStatsRepository,
+            utcNow: new DateTimeOffset(2026, 5, 10, 4, 0, 0, TimeSpan.Zero));
 
         var result = await service.GetDailyStatsAsync(userId, 3);
 
@@ -349,14 +358,14 @@ public class ExperienceServiceTest
     public async Task GetDailyStatsAsync_ShouldTreatDominantSourceAsContextNotAnomaly()
     {
         const long userId = 20003;
-        var endDate = DateTime.Today;
+        var endDate = new DateOnly(2026, 5, 10);
         var existingStats = new List<UserExpDailyStats>
         {
             new()
             {
                 Id = 9201,
                 UserId = userId,
-                StatDate = endDate,
+                StatDate = ToBusinessDateStorage(endDate),
                 ExpEarned = 10,
                 ExpFromLike = 10,
                 LikeReceivedCount = 5
@@ -377,7 +386,9 @@ public class ExperienceServiceTest
                 return query.ToList();
             });
 
-        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+        var service = CreateService(
+            dailyStatsRepository: dailyStatsRepository,
+            utcNow: new DateTimeOffset(2026, 5, 10, 4, 0, 0, TimeSpan.Zero));
 
         var result = await service.GetDailyStatsAsync(userId, 1);
 
@@ -396,14 +407,14 @@ public class ExperienceServiceTest
     public async Task GetDailyStatsAsync_ShouldRecommendManualReviewForRepeatedRule()
     {
         const long userId = 20004;
-        var endDate = DateTime.Today;
+        var endDate = new DateOnly(2026, 5, 10);
         var existingStats = new List<UserExpDailyStats>
         {
             new()
             {
                 Id = 9301,
                 UserId = userId,
-                StatDate = endDate,
+                StatDate = ToBusinessDateStorage(endDate),
                 ExpEarned = 30,
                 ExpFromLike = 24,
                 ExpFromComment = 6,
@@ -413,7 +424,7 @@ public class ExperienceServiceTest
             {
                 Id = 9302,
                 UserId = userId,
-                StatDate = endDate.AddDays(-1),
+                StatDate = ToBusinessDateStorage(endDate.AddDays(-1)),
                 ExpEarned = 25,
                 ExpFromLike = 20,
                 ExpFromComment = 5,
@@ -435,7 +446,9 @@ public class ExperienceServiceTest
                 return query.ToList();
             });
 
-        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+        var service = CreateService(
+            dailyStatsRepository: dailyStatsRepository,
+            utcNow: new DateTimeOffset(2026, 5, 10, 4, 0, 0, TimeSpan.Zero));
 
         var result = await service.GetDailyStatsAsync(userId, 7);
 
@@ -452,14 +465,14 @@ public class ExperienceServiceTest
     public async Task GetDailyStatsAsync_ShouldSuggestFreezeForRepeatedLimitHitAndSourceConcentration()
     {
         const long userId = 20005;
-        var endDate = DateTime.Today;
+        var endDate = new DateOnly(2026, 5, 10);
         var existingStats = new List<UserExpDailyStats>
         {
             new()
             {
                 Id = 9401,
                 UserId = userId,
-                StatDate = endDate,
+                StatDate = ToBusinessDateStorage(endDate),
                 ExpEarned = 50,
                 ExpFromLike = 50,
                 LikeReceivedCount = 25
@@ -468,7 +481,7 @@ public class ExperienceServiceTest
             {
                 Id = 9402,
                 UserId = userId,
-                StatDate = endDate.AddDays(-2),
+                StatDate = ToBusinessDateStorage(endDate.AddDays(-2)),
                 ExpEarned = 50,
                 ExpFromLike = 50,
                 LikeReceivedCount = 25
@@ -489,7 +502,9 @@ public class ExperienceServiceTest
                 return query.ToList();
             });
 
-        var service = CreateService(dailyStatsRepository: dailyStatsRepository);
+        var service = CreateService(
+            dailyStatsRepository: dailyStatsRepository,
+            utcNow: new DateTimeOffset(2026, 5, 10, 4, 0, 0, TimeSpan.Zero));
 
         var result = await service.GetDailyStatsAsync(userId, 7);
 
@@ -716,7 +731,7 @@ public class ExperienceServiceTest
                 ReviewResult = "Observe",
                 Remark = "已回看对应日期经验流水与目标内容，暂未发现直接异常。",
                 WindowDays = 7,
-                StatDate = new DateTime(2026, 5, 10, 18, 30, 0),
+                StatDate = new DateOnly(2026, 5, 10),
                 RuleCodes = ["LIKE_SHARE_HEAVY"],
                 RuleLabels = ["点赞占比偏高"],
                 RecommendationLevel = "review",
@@ -751,7 +766,8 @@ public class ExperienceServiceTest
     public async Task FreezeExperienceAsync_Should_Record_Governance_Action()
     {
         const long userId = 51002;
-        var frozenUntil = DateTime.Now.AddDays(7);
+        var nowUtc = new DateTimeOffset(2026, 5, 10, 4, 0, 0, TimeSpan.Zero);
+        var frozenUntil = nowUtc.UtcDateTime.AddDays(7);
         UserExperienceGovernanceAction? capturedAction = null;
 
         var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
@@ -790,7 +806,8 @@ public class ExperienceServiceTest
         var service = CreateService(
             userExpRepository: userExpRepository,
             userRepository: userRepository,
-            governanceActionRepository: governanceActionRepository);
+            governanceActionRepository: governanceActionRepository,
+            utcNow: nowUtc);
 
         var success = await service.FreezeExperienceAsync(userId, frozenUntil, "经验异常待复核", 9001, "Auditor");
 
@@ -803,6 +820,7 @@ public class ExperienceServiceTest
         capturedAction.ReviewResult.ShouldBeNull();
         capturedAction.Remark.ShouldBe("经验异常待复核");
         capturedAction.FrozenUntil.ShouldBe(frozenUntil);
+        capturedAction.CreateTime.ShouldBe(nowUtc.UtcDateTime);
         capturedAction.CreateBy.ShouldBe("Auditor");
         capturedAction.CreateId.ShouldBe(9001);
     }
@@ -867,6 +885,7 @@ public class ExperienceServiceTest
         result[0].VoReviewResultDisplay.ShouldBe("已复核，继续观察");
         result[0].VoRuleCodes.ShouldBe(["LIKE_SHARE_HEAVY"]);
         result[0].VoRuleLabels.ShouldBe(["点赞占比偏高"]);
+        result[0].VoStatDate.ShouldBe(new DateOnly(2026, 5, 10));
         var evidenceSummary = result[0].VoEvidenceSummary;
         evidenceSummary.ShouldNotBeNull();
         evidenceSummary!.ShouldContain("窗口 7 天");
@@ -880,6 +899,7 @@ public class ExperienceServiceTest
     public async Task AdminAdjustExperienceAsync_Should_Clamp_To_Zero_And_Record_Penalty_Transaction()
     {
         const long userId = 41001;
+        var nowUtc = new DateTimeOffset(2026, 5, 9, 16, 30, 0, TimeSpan.Zero);
         ExpTransaction? capturedTransaction = null;
 
         var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
@@ -938,7 +958,8 @@ public class ExperienceServiceTest
             configValues: new Dictionary<string, string?>
             {
                 ["ExperienceCalculator:EnableCache"] = "false"
-            });
+            },
+            utcNow: nowUtc);
 
         var success = await service.AdminAdjustExperienceAsync(userId, -120, "回收异常经验", 9001, "Auditor");
 
@@ -950,6 +971,8 @@ public class ExperienceServiceTest
         capturedTransaction.ExpAfter.ShouldBe(0);
         capturedTransaction.LevelBefore.ShouldBe(1);
         capturedTransaction.LevelAfter.ShouldBe(0);
+        capturedTransaction.CreatedDate.ShouldBe(new DateTime(2026, 5, 10));
+        capturedTransaction.CreateTime.ShouldBe(nowUtc.UtcDateTime);
         capturedTransaction.CreateBy.ShouldBe("Auditor");
         capturedTransaction.CreateId.ShouldBe(9001);
     }
@@ -966,10 +989,18 @@ public class ExperienceServiceTest
         Mock<IAttachmentUrlResolver>? attachmentUrlResolver = null,
         Mock<INotificationService>? notificationService = null,
         ICaching? caching = null,
-        Dictionary<string, string?>? configValues = null)
+        Dictionary<string, string?>? configValues = null,
+        DateTimeOffset? utcNow = null,
+        string timeZoneId = "Asia/Shanghai")
     {
         var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
         InitializeAppSettings(configValues);
+        TimeProvider timeProvider = utcNow.HasValue
+            ? new FixedTimeProvider(utcNow.Value)
+            : TimeProvider.System;
+        var businessCalendar = new BusinessCalendar(
+            timeProvider,
+            Options.Create(new TimeOptions { DefaultTimeZoneId = timeZoneId }));
 
         return new ExperienceService(
             CreateMapper(),
@@ -983,7 +1014,9 @@ public class ExperienceServiceTest
             (coinService ?? new Mock<ICoinService>(MockBehavior.Loose)).Object,
             (attachmentUrlResolver ?? new Mock<IAttachmentUrlResolver>(MockBehavior.Loose)).Object,
             (notificationService ?? new Mock<INotificationService>(MockBehavior.Loose)).Object,
-            caching ?? new Caching(distributedCache));
+            caching ?? new Caching(distributedCache),
+            timeProvider,
+            businessCalendar);
     }
 
     private static IMapper CreateMapper()
@@ -1072,7 +1105,7 @@ public class ExperienceServiceTest
         {
             VoId = source.Id,
             VoUserId = source.UserId,
-            VoStatDate = source.StatDate,
+            VoStatDate = DateOnly.FromDateTime(source.StatDate),
             VoExpEarned = source.ExpEarned,
             VoExpFromPost = source.ExpFromPost,
             VoExpFromComment = source.ExpFromComment,
@@ -1112,5 +1145,15 @@ public class ExperienceServiceTest
             VoOperatorName = source.CreateBy,
             VoCreateTime = source.CreateTime
         };
+    }
+
+    private static DateTime ToBusinessDateStorage(DateOnly date)
+    {
+        return date.ToDateTime(TimeOnly.MinValue, DateTimeKind.Unspecified);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 }

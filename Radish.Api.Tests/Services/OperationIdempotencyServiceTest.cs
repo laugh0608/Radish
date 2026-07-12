@@ -14,6 +14,8 @@ namespace Radish.Api.Tests.Services;
 
 public class OperationIdempotencyServiceTest
 {
+    private static readonly DateTime FixedNow = new(2026, 7, 12, 0, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public async Task BeginAsync_ShouldReturnStarted_WhenRecordDoesNotExist()
     {
@@ -25,7 +27,7 @@ public class OperationIdempotencyServiceTest
             .Setup(r => r.AddAsync(It.IsAny<OperationIdempotencyRecord>()))
             .ReturnsAsync(9001);
 
-        var service = new OperationIdempotencyService(repository.Object);
+        var service = CreateService(repository);
         var snapshot = service.CreateRequestSnapshot(new Dictionary<string, object?>
         {
             ["productId"] = 1001,
@@ -50,7 +52,9 @@ public class OperationIdempotencyServiceTest
             record.UserId == 9527 &&
             record.OperationType == OperationIdempotencyOperationTypes.ShopPurchase &&
             record.IdempotencyKey == "shop:abc" &&
-            record.Status == OperationIdempotencyStatuses.Processing)), Times.Once);
+            record.Status == OperationIdempotencyStatuses.Processing &&
+            record.CreateTime == FixedNow &&
+            record.ExpiresAt == FixedNow.AddHours(24))), Times.Once);
     }
 
     [Fact]
@@ -67,11 +71,11 @@ public class OperationIdempotencyServiceTest
             RequestSummary = "{}",
             Status = OperationIdempotencyStatuses.Succeeded,
             ResponsePayload = "{\"success\":true}",
-            ExpiresAt = DateTime.Now.AddHours(1)
+            ExpiresAt = FixedNow.AddHours(1)
         };
 
         var repository = CreateRepositoryReturning(existing);
-        var service = new OperationIdempotencyService(repository.Object);
+        var service = CreateService(repository);
 
         var result = await service.BeginAsync(new OperationIdempotencyBeginRequest
         {
@@ -101,11 +105,11 @@ public class OperationIdempotencyServiceTest
             RequestHash = "hash-a",
             RequestSummary = "{}",
             Status = OperationIdempotencyStatuses.Processing,
-            ExpiresAt = DateTime.Now.AddHours(1)
+            ExpiresAt = FixedNow.AddHours(1)
         };
 
         var repository = CreateRepositoryReturning(existing);
-        var service = new OperationIdempotencyService(repository.Object);
+        var service = CreateService(repository);
 
         var result = await service.BeginAsync(new OperationIdempotencyBeginRequest
         {
@@ -136,14 +140,14 @@ public class OperationIdempotencyServiceTest
             RequestSummary = "{}",
             Status = OperationIdempotencyStatuses.Failed,
             ErrorMessage = "余额不足",
-            ExpiresAt = DateTime.Now.AddHours(1)
+            ExpiresAt = FixedNow.AddHours(1)
         };
 
         var repository = CreateRepositoryReturning(existing);
         repository
             .Setup(r => r.UpdateAsync(It.IsAny<OperationIdempotencyRecord>()))
             .ReturnsAsync(true);
-        var service = new OperationIdempotencyService(repository.Object);
+        var service = CreateService(repository);
 
         var result = await service.BeginAsync(new OperationIdempotencyBeginRequest
         {
@@ -167,7 +171,7 @@ public class OperationIdempotencyServiceTest
     public async Task BeginAsync_ShouldRejectInvalidKey()
     {
         var repository = new Mock<IBaseRepository<OperationIdempotencyRecord>>(MockBehavior.Strict);
-        var service = new OperationIdempotencyService(repository.Object);
+        var service = CreateService(repository);
 
         var result = await service.BeginAsync(new OperationIdempotencyBeginRequest
         {
@@ -191,5 +195,18 @@ public class OperationIdempotencyServiceTest
             .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<OperationIdempotencyRecord, bool>>?>()))
             .ReturnsAsync(record);
         return repository;
+    }
+
+    private static OperationIdempotencyService CreateService(
+        Mock<IBaseRepository<OperationIdempotencyRecord>> repository)
+    {
+        return new OperationIdempotencyService(repository.Object, new FixedTimeProvider(FixedNow));
+    }
+
+    private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
+    {
+        private readonly DateTimeOffset _utcNow = new(utcNow);
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
     }
 }

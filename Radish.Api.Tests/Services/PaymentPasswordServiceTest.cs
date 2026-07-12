@@ -18,6 +18,8 @@ namespace Radish.Api.Tests.Services;
 
 public class PaymentPasswordServiceTest
 {
+    private static readonly DateTime FixedNow = new(2026, 7, 12, 0, 0, 0, DateTimeKind.Utc);
+
     [Fact]
     public async Task SetPaymentPasswordAsync_ShouldRejectRepeatedDigitPasscode()
     {
@@ -67,6 +69,8 @@ public class PaymentPasswordServiceTest
         Assert.True(savedPasscode.IsEnabled);
         Assert.Equal(0, savedPasscode.FailedAttempts);
         Assert.Equal(PaymentPasscodeRules.CurrentPasscodeVersion, savedPasscode.PasscodeVersion);
+        Assert.Equal(FixedNow, savedPasscode.CreateTime);
+        Assert.Equal(FixedNow, savedPasscode.LastModifiedTime);
         repository.VerifyAll();
     }
 
@@ -159,10 +163,10 @@ public class PaymentPasswordServiceTest
                 IsEnabled = true
             });
         repository
-            .Setup(store => store.ResetFailedAttemptsAsync(userId))
+            .Setup(store => store.ResetFailedAttemptsAsync(userId, FixedNow))
             .ReturnsAsync(true);
         repository
-            .Setup(store => store.UpdateLastUsedTimeAsync(userId))
+            .Setup(store => store.UpdateLastUsedTimeAsync(userId, FixedNow))
             .ReturnsAsync(true);
 
         var service = CreateService(repository);
@@ -202,10 +206,10 @@ public class PaymentPasswordServiceTest
             .Callback<UserPaymentPassword>(entity => upgradedPasscode = entity)
             .ReturnsAsync(true);
         repository
-            .Setup(store => store.ResetFailedAttemptsAsync(userId))
+            .Setup(store => store.ResetFailedAttemptsAsync(userId, FixedNow))
             .ReturnsAsync(true);
         repository
-            .Setup(store => store.UpdateLastUsedTimeAsync(userId))
+            .Setup(store => store.UpdateLastUsedTimeAsync(userId, FixedNow))
             .ReturnsAsync(true);
 
         var service = CreateService(repository);
@@ -244,7 +248,7 @@ public class PaymentPasswordServiceTest
             .Setup(store => store.GetByUserIdAsync(userId))
             .ReturnsAsync(existingPasscode);
         repository
-            .Setup(store => store.UpdateFailedAttemptsAsync(userId, 1, null))
+            .Setup(store => store.UpdateFailedAttemptsAsync(userId, 1, null, FixedNow))
             .ReturnsAsync(true);
 
         var service = CreateService(repository);
@@ -284,7 +288,15 @@ public class PaymentPasswordServiceTest
             repository.Object,
             new Mock<IAuditLogService>(MockBehavior.Loose).Object,
             new Mock<IMapper>(MockBehavior.Loose).Object,
-            new Mock<ILogger<PaymentPasswordService>>(MockBehavior.Loose).Object);
+            new Mock<ILogger<PaymentPasswordService>>(MockBehavior.Loose).Object,
+            new FixedTimeProvider(FixedNow));
+    }
+
+    private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
+    {
+        private readonly DateTimeOffset _utcNow = new(utcNow);
+
+        public override DateTimeOffset GetUtcNow() => _utcNow;
     }
 
     private static (string Hash, string Salt) CreateLegacySha256Passcode(string passcode)

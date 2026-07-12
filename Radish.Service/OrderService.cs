@@ -30,7 +30,8 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IPaymentPasswordService _paymentPasswordService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IOperationIdempotencyService? _operationIdempotencyService;
-    private readonly INotificationService? _notificationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly TimeProvider _timeProvider;
 
     public OrderService(
         IMapper mapper,
@@ -43,7 +44,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IPaymentPasswordService paymentPasswordService,
         IAttachmentUrlResolver attachmentUrlResolver,
         IOperationIdempotencyService? operationIdempotencyService = null,
-        INotificationService? notificationService = null)
+        INotificationService? notificationService = null,
+        IReliableOutboxService? reliableOutboxService = null,
+        TimeProvider? timeProvider = null)
         : base(mapper, orderRepository)
     {
         _orderRepository = orderRepository;
@@ -55,7 +58,8 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _paymentPasswordService = paymentPasswordService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _operationIdempotencyService = operationIdempotencyService;
-        _notificationService = notificationService;
+        _reliableOutboxService = reliableOutboxService;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     #region 购买流程
@@ -177,7 +181,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 Status = OrderStatus.Pending,
                 UserRemark = dto.UserRemark,
                 TenantId = tenantId,
-                CreateTime = DateTime.Now,
+                CreateTime = GetUtcNow(),
                 CreateBy = "User",
                 CreateId = userId
             };
@@ -200,7 +204,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
                 order.CoinTransactionId = transactionId;
                 order.Status = OrderStatus.Paid;
-                order.PaidTime = DateTime.Now;
+                order.PaidTime = GetUtcNow();
             }
             catch (Exception ex)
             {
@@ -237,12 +241,12 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId, dto.Quantity);
                 order.UserBenefitId = userBenefitId;
                 order.Status = OrderStatus.Completed;
-                order.CompletedTime = DateTime.Now;
+                order.CompletedTime = GetUtcNow();
 
                 // 计算权益到期时间
                 if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
                 {
-                    order.BenefitExpiresAt = DateTime.Now.AddDays(product.DurationDays.Value);
+                    order.BenefitExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
                 }
                 else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
                 {
@@ -266,24 +270,31 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var newBalance = await _coinService.GetBalanceAsync(userId);
 
             // 13. 发送通知
-            if (_notificationService != null && order.Status == OrderStatus.Completed)
+            if (order.Status == OrderStatus.Completed)
             {
-                try
+                var reliableOutboxService = _reliableOutboxService
+                    ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+                var notification = new CreateNotificationDto
                 {
-                    await _notificationService.CreateNotificationAsync(new CreateNotificationDto
-                    {
-                        Type = "PURCHASE_SUCCESS",
-                        Title = "购买成功",
-                        Content = $"您已成功购买 {product.Name}",
-                        BusinessType = "Order",
-                        BusinessId = orderId,
-                        ReceiverUserIds = [userId]
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "发送购买成功通知失败");
-                }
+                    NotificationId = SnowFlakeSingle.Instance.NextId(),
+                    BusinessKey = $"notification:purchase-success:order:{orderId}",
+                    Type = "PURCHASE_SUCCESS",
+                    Title = "购买成功",
+                    Content = $"您已成功购买 {product.Name}",
+                    BusinessType = "Order",
+                    BusinessId = orderId,
+                    ReceiverUserIds = [userId],
+                    TenantId = order.TenantId
+                };
+                await reliableOutboxService.AddAsync(
+                    ReliableOutboxSources.Main,
+                    order.TenantId,
+                    ReliableTaskTypes.NotificationRequested,
+                    $"task:notification:purchase-success:order:{orderId}",
+                    "Order",
+                    orderId.ToString(),
+                    new NotificationRequestedTaskPayload(notification),
+                    GetUtcNow());
             }
 
             Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",
@@ -580,7 +591,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
-            order.ModifyTime = DateTime.Now;
+            order.ModifyTime = GetUtcNow();
             order.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
             order.ModifyId = operatorId;
 
@@ -628,14 +639,14 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             order.UserBenefitId = userBenefitId;
             order.Status = OrderStatus.Completed;
-            order.CompletedTime = DateTime.Now;
+            order.CompletedTime = GetUtcNow();
             order.FailReason = null;
-            order.ModifyTime = DateTime.Now;
+            order.ModifyTime = GetUtcNow();
 
             // 计算权益到期时间
             if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
             {
-                order.BenefitExpiresAt = DateTime.Now.AddDays(product.DurationDays.Value);
+                order.BenefitExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
             }
             else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
             {
@@ -807,7 +818,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             throw new InvalidOperationException("只能取消待支付的订单");
         }
 
-        var cancelledTime = DateTime.Now;
+        var cancelledTime = GetUtcNow();
         var affected = await _orderRepository.UpdateColumnsAsync(
             o => new Order
             {
@@ -904,5 +915,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
 
         return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

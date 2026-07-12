@@ -4,6 +4,7 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
+using Radish.Common.TimeTool;
 using Serilog;
 
 namespace Radish.Service.Jobs;
@@ -21,15 +22,21 @@ public class ShopJob
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IBaseRepository<UserBenefit> _benefitRepository;
     private readonly IOrderService _orderService;
+    private readonly TimeProvider _timeProvider;
+    private readonly BusinessCalendar _businessCalendar;
 
     public ShopJob(
         IBaseRepository<Order> orderRepository,
         IBaseRepository<UserBenefit> benefitRepository,
-        IOrderService orderService)
+        IOrderService orderService,
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar)
     {
         _orderRepository = orderRepository;
         _benefitRepository = benefitRepository;
         _orderService = orderService;
+        _timeProvider = timeProvider;
+        _businessCalendar = businessCalendar;
     }
 
     #region 订单超时取消
@@ -53,7 +60,7 @@ public class ShopJob
 
             Log.Information("[ShopJob] 开始处理超时订单，超时时间：{TimeoutMinutes} 分钟", effectiveTimeoutMinutes);
 
-            var cutoffTime = DateTime.Now.AddMinutes(-effectiveTimeoutMinutes);
+            var cutoffTime = GetUtcNow().AddMinutes(-effectiveTimeoutMinutes);
 
             // 先获取待处理订单 ID 快照，避免后台任务长时间持有完整订单读取结果。
             var timeoutOrderIds = await _orderRepository.QueryDistinctAsync(
@@ -119,7 +126,7 @@ public class ShopJob
         {
             Log.Information("[ShopJob] 开始处理过期权益");
 
-            var now = DateTime.Now;
+            var now = GetUtcNow();
 
             // 查询已到期但未标记过期的权益
             var expiredBenefits = await _benefitRepository.QueryAsync(b =>
@@ -146,7 +153,7 @@ public class ShopJob
                         benefit.IsActive = false;
                         Log.Information("[ShopJob] 权益 {BenefitId} 已过期，自动取消激活", benefit.Id);
                     }
-                    benefit.ModifyTime = DateTime.Now;
+                    benefit.ModifyTime = now;
                     benefit.ModifyBy = "System";
 
                     await _benefitRepository.UpdateAsync(benefit);
@@ -185,16 +192,16 @@ public class ShopJob
         {
             Log.Information("[ShopJob] 开始生成每日商城统计");
 
-            var today = DateTime.Today;
-            var tomorrow = today.AddDays(1);
+            var today = _businessCalendar.GetCurrentDate();
+            var (startUtc, endUtc) = _businessCalendar.GetUtcRange(today);
 
             // 统计今日订单（排除软删除的记录）
             var todayOrders = await _orderRepository.QueryAsync(o =>
-                o.CreateTime >= today && o.CreateTime < tomorrow && !o.IsDeleted);
+                o.CreateTime >= startUtc && o.CreateTime < endUtc && !o.IsDeleted);
 
             var stats = new ShopDailyStats
             {
-                Date = today,
+                Date = today.ToDateTime(TimeOnly.MinValue),
                 TotalOrders = todayOrders?.Count ?? 0,
                 CompletedOrders = todayOrders?.Count(o => o.Status == OrderStatus.Completed) ?? 0,
                 CancelledOrders = todayOrders?.Count(o => o.Status == OrderStatus.Cancelled) ?? 0,
@@ -215,11 +222,19 @@ public class ShopJob
         catch (Exception ex)
         {
             Log.Error(ex, "[ShopJob] 生成每日统计时发生异常");
-            return new ShopDailyStats { Date = DateTime.Today };
+            return new ShopDailyStats
+            {
+                Date = _businessCalendar.GetCurrentDate().ToDateTime(TimeOnly.MinValue)
+            };
         }
     }
 
     #endregion
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
+    }
 }
 
 /// <summary>

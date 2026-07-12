@@ -1,10 +1,12 @@
 import type {
-  ApiResponse,
   ApiRequestOptions,
   ParsedApiResponse,
 } from './types';
 import { sanitizeLogValue } from './logSanitizer';
 import { shouldRefreshToken, TokenRefreshErrorType, tryRefreshToken } from './token-refresh';
+import { parseHttpResponse } from './response-parser';
+
+export { parseApiResponse, parseApiResponseWithI18n, parseHttpResponse } from './response-parser';
 
 /**
  * API 客户端配置
@@ -121,7 +123,7 @@ export async function apiFetch(
     currentConfig.onResponse?.(response);
 
     // 检查是否需要刷新 token
-    if (withAuth && hasAuthorizationHeader && shouldRefreshToken(response) && !(options as any)._isRetry) {
+    if (withAuth && hasAuthorizationHeader && shouldRefreshToken(response)) {
       try {
         // 刷新 token
         const newToken = await tryRefreshToken();
@@ -172,110 +174,6 @@ export async function apiFetch(
 }
 
 /**
- * 解析 API 响应
- */
-export function parseApiResponse<T>(
-  response: ApiResponse<T>
-): ParsedApiResponse<T> {
-  if (response.isSuccess) {
-    return {
-      ok: true,
-      data: response.responseData,
-      statusCode: response.statusCode,
-    };
-  } else {
-    return {
-      ok: false,
-      message: response.messageInfo || '请求失败',
-      code: response.code,
-      statusCode: response.statusCode,
-    };
-  }
-}
-
-/**
- * 解析 API 响应（支持国际化）
- */
-export function parseApiResponseWithI18n<T>(
-  response: ApiResponse<T>,
-  t: (key: string) => string
-): ParsedApiResponse<T> {
-  if (response.isSuccess) {
-    return {
-      ok: true,
-      data: response.responseData,
-      statusCode: response.statusCode,
-    };
-  } else {
-    let message = response.messageInfo;
-
-    if (response.messageKey) {
-      const localized = t(response.messageKey);
-      if (localized && localized !== response.messageKey) {
-        message = localized;
-      }
-    }
-
-    return {
-      ok: false,
-      message,
-      code: response.code,
-      statusCode: response.statusCode,
-    };
-  }
-}
-
-function isApiResponse<T>(value: unknown): value is ApiResponse<T> {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    typeof (value as ApiResponse<T>).isSuccess === 'boolean'
-  );
-}
-
-async function parseHttpResponse<T>(response: Response): Promise<ParsedApiResponse<T>> {
-  if (response.status === 204) {
-    return { ok: true, statusCode: response.status };
-  }
-
-  const contentType = response.headers.get('content-type') || '';
-  const isJson =
-    contentType.includes('application/json') || contentType.includes('+json');
-
-  if (!isJson) {
-    const text = await response.text().catch(() => '');
-    return {
-      ok: false,
-      message: text || `HTTP ${response.status} ${response.statusText}`,
-      statusCode: response.status,
-    };
-  }
-
-  try {
-    const json = (await response.json()) as unknown;
-    if (isApiResponse<T>(json)) {
-      const parsed = parseApiResponse(json);
-      return {
-        ...parsed,
-        statusCode: parsed.statusCode ?? response.status,
-      };
-    }
-
-    return {
-      ok: false,
-      message: `HTTP ${response.status} ${response.statusText}`,
-      statusCode: response.status,
-    };
-  } catch {
-    return {
-      ok: false,
-      message: `HTTP ${response.status} ${response.statusText}`,
-      statusCode: response.status,
-    };
-  }
-}
-
-/**
  * GET 请求的便捷方法
  */
 export async function apiGet<T>(
@@ -295,7 +193,7 @@ export async function apiGet<T>(
  */
 export async function apiPost<T>(
   url: string,
-  data?: any,
+  data?: unknown,
   options?: ApiRequestOptions
 ): Promise<ParsedApiResponse<T>> {
   const response = await apiFetch(url, {
@@ -316,7 +214,7 @@ export async function apiPost<T>(
  */
 export async function apiPut<T>(
   url: string,
-  data?: any,
+  data?: unknown,
   options?: ApiRequestOptions
 ): Promise<ParsedApiResponse<T>> {
   const response = await apiFetch(url, {

@@ -28,6 +28,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using System.IdentityModel.Tokens.Jwt;
 using Radish.Common.HttpContextTool;
+using Radish.Common.TimeTool;
 using Radish.Auth.Models;
 
 // -------------- 容器构建阶段 ---------------
@@ -106,6 +107,9 @@ builder.Host.AddSerilogSetup();
 #endregion
 
 #region 服务注册
+
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<BusinessCalendar>();
 
 // AutoMapper
 builder.Services.AddAutoMapperSetup(builder.Configuration);
@@ -217,23 +221,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     });
 
 // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
-var openIddictDatabase = RuntimeDatabaseConfigResolver.Resolve(
-    builder.Configuration,
-    "OpenIddict:Database",
-    builder.Configuration.GetConnectionString("OpenIddict"),
-    "Radish.OpenIddict.db");
-
-builder.Services.AddDbContext<AuthOpenIddictDbContext>(options =>
-{
-    if (openIddictDatabase.DbType == DataBaseType.PostgreSql)
-    {
-        options.UseNpgsql(openIddictDatabase.ConnectionString);
-    }
-    else
-    {
-        options.UseSqlite(openIddictDatabase.ConnectionString);
-    }
-});
+var openIddictDatabase = AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(
+    builder.Services,
+    builder.Configuration);
 
 var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");
 
@@ -362,11 +352,11 @@ builder.Services.AddOpenIddict()
 var app = builder.Build();
 // -------------- App 初始化阶段 ---------------
 
-// 确保 OpenIddict 所在的 EF Core 数据库已创建
+// 宿主启动只读检查 schema；结构写入统一由 Radish.DbMigrate apply 负责。
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
-    db.Database.EnsureCreated();
+    AuthOpenIddictPersistence.EnsureReady(db, openIddictDatabase);
 }
 
 #region 中间件管道

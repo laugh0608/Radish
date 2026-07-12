@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
+using Radish.Api.ErrorHandling;
+using Radish.Shared.Constants;
 
 namespace Radish.Api.Filters;
 
@@ -29,7 +31,12 @@ public sealed class RequireConsolePermissionAttribute : Attribute, IAsyncAuthori
         var currentUser = currentUserAccessor.Current;
         if (!currentUser.IsAuthenticated)
         {
-            context.Result = new UnauthorizedResult();
+            context.Result = ApiErrorResultFactory.Create(
+                context.HttpContext,
+                StatusCodes.Status401Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
             return;
         }
 
@@ -46,7 +53,12 @@ public sealed class RequireConsolePermissionAttribute : Attribute, IAsyncAuthori
 
         if (!hasPermission)
         {
-            context.Result = new ForbidResult();
+            context.Result = ApiErrorResultFactory.Create(
+                context.HttpContext,
+                StatusCodes.Status403Forbidden,
+                "当前账号无权执行此操作",
+                ApiErrorCodes.Forbidden,
+                "error.auth.forbidden");
         }
     }
 }

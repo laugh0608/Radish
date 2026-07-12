@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Radish.Common.CoreTool;
 using Radish.IRepository;
 using Radish.Model;
@@ -10,8 +11,13 @@ namespace Radish.Repository;
 /// <summary>评论仓储</summary>
 public class CommentRepository : BaseRepository<Comment>, ICommentRepository
 {
-    public CommentRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
+    private readonly IReliableOutboxRepository? _reliableOutboxRepository;
+
+    public CommentRepository(
+        IUnitOfWorkManage unitOfWorkManage,
+        IReliableOutboxRepository? reliableOutboxRepository = null) : base(unitOfWorkManage)
     {
+        _reliableOutboxRepository = reliableOutboxRepository;
     }
 
     public async Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, long commentId)
@@ -24,6 +30,10 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
                 try
                 {
                     var result = await ToggleCommentLikeCoreAsync(userId, commentId);
+                    if (result.Delta > 0)
+                    {
+                        await AddLikeOutboxAsync(result, userId);
+                    }
                     DbProtectedClient.Ado.CommitTran();
                     return result;
                 }
@@ -172,6 +182,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
     {
         return new CommentLikePersistenceResult(
             comment.Id,
+            comment.TenantId,
             comment.PostId,
             comment.ParentId,
             comment.AuthorId,
@@ -179,6 +190,35 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             isLiked,
             likeCount,
             delta);
+    }
+
+    private async Task AddLikeOutboxAsync(CommentLikePersistenceResult result, long likerId)
+    {
+        var repository = _reliableOutboxRepository
+            ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
+        var now = DateTime.Now;
+        var notificationId = SnowFlakeSingle.Instance.NextId();
+        var notificationWindowKey = $"notification:comment-like:{result.CommentId}:receiver:{result.AuthorId}:window:{now.Ticks / (TimeSpan.TicksPerMinute * 5)}";
+        var payload = new LikeEffectsTaskPayload(
+            notificationId,
+            result.CommentId,
+            result.PostId,
+            result.AuthorId,
+            likerId,
+            result.Content,
+            null,
+            now.ToString("yyyyMMdd"),
+            notificationWindowKey);
+        await repository.AddAsync(new ReliableOutboxDraft(
+            ReliableOutboxSources.Main,
+            result.TenantId,
+            ReliableTaskTypes.CommentLiked,
+            1,
+            $"task:comment-like:{result.CommentId}:liker:{likerId}:at:{now.Ticks}",
+            "Comment",
+            result.CommentId.ToString(),
+            JsonSerializer.Serialize(payload),
+            now.ToUniversalTime()));
     }
 
     public async Task<List<Comment>> QueryLatestInteractorCommentsByPostIdsAsync(

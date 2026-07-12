@@ -88,7 +88,8 @@ internal static partial class InitialDataSeeder
         new(61081, 61080, ConsolePermissions.SystemConfigCreate, "新增配置", "Button", "system-config", null, 91, false, false),
         new(61082, 61080, ConsolePermissions.SystemConfigEdit, "编辑配置", "Button", "system-config", null, 92, false, false),
         new(61083, 61080, ConsolePermissions.SystemConfigDelete, "删除配置", "Button", "system-config", null, 93, false, false),
-        new(61090, 0, ConsolePermissions.HangfireView, "定时任务", "Entry", "hangfire", "/hangfire", 100, true, true, "Hangfire Dashboard")
+        new(61090, 0, ConsolePermissions.HangfireView, "定时任务", "Entry", "hangfire", "/hangfire", 100, true, true, "Hangfire Dashboard"),
+        new(61091, 61090, ConsolePermissions.HangfireReplay, "重放可靠任务", "Button", "hangfire", null, 101, false, false)
     ];
 
     private static readonly ConsoleResourceApiSeed[] ConsoleResourceApiSeeds =
@@ -198,7 +199,9 @@ internal static partial class InitialDataSeeder
         new(61082, "/api/v1/SystemConfig/UpdateConfig", "Action"),
         new(61082, "/api/v1/SystemConfig/RestoreConfigDefault", "Action"),
         new(61083, "/api/v1/SystemConfig/DeleteConfig", "Action"),
-        new(61090, "/hangfire(/.*)?", "View")
+        new(61090, "/hangfire(/.*)?", "View"),
+        new(61090, "/api/v1/ReliableOutbox/GetDeadLetters", "View"),
+        new(61091, "/api/v1/ReliableOutbox/Replay", "Action")
     ];
 
     private static async Task SeedConsoleAuthorizationAsync(ISqlSugarClient db)

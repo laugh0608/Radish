@@ -7,7 +7,8 @@ import {
   ResponsiveContainer,
   type PieLabelRenderProps
 } from 'recharts';
-import { ChartContainer, getInitialChartDimension } from './ChartContainer';
+import { ChartContainer } from './ChartContainer';
+import { getInitialChartDimension } from './chartDimension';
 
 export interface PieChartDataPoint {
   name: string;

@@ -1,9 +1,11 @@
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Microsoft.Extensions.Logging;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -17,8 +19,9 @@ public class PostLotteryService : IPostLotteryService
     private readonly IBaseRepository<PostLottery> _postLotteryRepository;
     private readonly IBaseRepository<PostLotteryWinner> _postLotteryWinnerRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
-    private readonly INotificationService _notificationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
     private readonly ILogger<PostLotteryService> _logger;
+    private readonly TimeProvider _timeProvider;
 
     public PostLotteryService(
         IPostService postService,
@@ -27,15 +30,18 @@ public class PostLotteryService : IPostLotteryService
         IBaseRepository<PostLotteryWinner> postLotteryWinnerRepository,
         IBaseRepository<Comment> commentRepository,
         INotificationService notificationService,
-        ILogger<PostLotteryService> logger)
+        ILogger<PostLotteryService> logger,
+        TimeProvider timeProvider,
+        IReliableOutboxService? reliableOutboxService = null)
     {
         _postService = postService;
         _postRepository = postRepository;
         _postLotteryRepository = postLotteryRepository;
         _postLotteryWinnerRepository = postLotteryWinnerRepository;
         _commentRepository = commentRepository;
-        _notificationService = notificationService;
+        _reliableOutboxService = reliableOutboxService;
         _logger = logger;
+        _timeProvider = timeProvider;
     }
 
     /// <summary>按帖子获取抽奖详情</summary>
@@ -49,12 +55,12 @@ public class PostLotteryService : IPostLotteryService
         var post = await _postService.GetPostDetailAsync(postId, viewerUserId);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         if (!post.VoHasLottery || post.VoLottery == null)
         {
-            throw new InvalidOperationException("当前帖子未配置抽奖");
+            throw new BusinessException("当前帖子未配置抽奖", 404, "Lottery.NotFound", "error.lottery.not_found");
         }
 
         return new LotteryResultVo
@@ -70,7 +76,7 @@ public class PostLotteryService : IPostLotteryService
     {
         if (userId <= 0)
         {
-            throw new InvalidOperationException("请先登录后再开奖");
+            throw new BusinessException("请先登录后再开奖", 401, "Auth.Unauthorized", "error.auth.unauthorized");
         }
 
         if (postId <= 0)
@@ -81,7 +87,7 @@ public class PostLotteryService : IPostLotteryService
         var post = await GetPostOrThrowAsync(postId);
         if (post.AuthorId != userId)
         {
-            throw new InvalidOperationException("只有发帖者可以开奖");
+            throw new BusinessException("只有发帖者可以开奖", 403, "Lottery.DrawForbidden", "error.lottery.draw_forbidden");
         }
 
         var lottery = await GetLotteryOrThrowAsync(postId);
@@ -90,7 +96,7 @@ public class PostLotteryService : IPostLotteryService
         return await ExecuteDrawAsync(
             post,
             lottery,
-            DateTime.UtcNow,
+            GetUtcNow(),
             NormalizeOperatorName(userId, userName),
             userId,
             allowEmptyParticipants: false);
@@ -156,8 +162,11 @@ public class PostLotteryService : IPostLotteryService
             ? "抽奖奖品"
             : lottery.PrizeName.Trim();
 
-        await _notificationService.CreateNotificationAsync(new Model.DtoModels.CreateNotificationDto
+        var notificationId = SnowFlakeSingle.Instance.NextId();
+        var notification = new Model.DtoModels.CreateNotificationDto
         {
+            NotificationId = notificationId,
+            BusinessKey = $"notification:lottery-won:lottery:{lottery.Id}",
             Type = NotificationType.LotteryWon,
             Title = "抽奖开奖结果",
             Content = $"你在帖子《{normalizedPostTitle}》的抽奖“{normalizedPrizeName}”中中奖啦。",
@@ -175,7 +184,18 @@ public class PostLotteryService : IPostLotteryService
                 normalizedPrizeName,
                 actualWinnerCount,
                 post.PublicId)
-        });
+        };
+        var reliableOutboxService = _reliableOutboxService
+            ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+        await reliableOutboxService.AddAsync(
+            ReliableOutboxSources.Main,
+            lottery.TenantId,
+            ReliableTaskTypes.NotificationRequested,
+            $"task:notification:lottery-won:lottery:{lottery.Id}",
+            "PostLottery",
+            lottery.Id.ToString(),
+            new NotificationRequestedTaskPayload(notification),
+            GetUtcNow());
     }
 
     private async Task<Post> GetPostOrThrowAsync(long postId)
@@ -183,7 +203,7 @@ public class PostLotteryService : IPostLotteryService
         var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted && p.IsPublished);
         if (post == null)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new BusinessException("帖子不存在", 404, "Forum.PostNotFound", "error.forum.post_not_found");
         }
 
         return post;
@@ -194,17 +214,17 @@ public class PostLotteryService : IPostLotteryService
         var lottery = await _postLotteryRepository.QueryFirstAsync(l => l.PostId == postId && !l.IsDeleted);
         if (lottery == null)
         {
-            throw new InvalidOperationException("当前帖子未配置抽奖");
+            throw new BusinessException("当前帖子未配置抽奖", 404, "Lottery.NotFound", "error.lottery.not_found");
         }
 
         if (lottery.IsDrawn)
         {
-            throw new InvalidOperationException("该抽奖已经开过奖");
+            throw new BusinessException("该抽奖已经开过奖", 409, "Lottery.AlreadyDrawn", "error.lottery.already_drawn");
         }
 
         if (!lottery.DrawTime.HasValue)
         {
-            throw new InvalidOperationException("当前抽奖未配置截止时间");
+            throw new BusinessException("当前抽奖未配置截止时间", 409, "Lottery.DeadlineMissing", "error.lottery.deadline_missing");
         }
 
         return lottery;
@@ -214,22 +234,24 @@ public class PostLotteryService : IPostLotteryService
     {
         var publishTimeUtc = NormalizeToUtc(post.PublishTime ?? post.CreateTime);
         var manualDrawAvailableAt = publishTimeUtc.Add(MinManualDrawLeadTime);
-        if (DateTime.UtcNow < manualDrawAvailableAt)
+        var nowUtc = GetUtcNow();
+        if (nowUtc < manualDrawAvailableAt)
         {
-            throw new InvalidOperationException("发帖满 1 小时后才可提前开奖");
+            throw new BusinessException("发帖满 1 小时后才可提前开奖", 409, "Lottery.DrawTooEarly", "error.lottery.draw_too_early");
         }
 
-        if (DateTime.UtcNow >= lottery.DrawTime!.Value)
+        if (nowUtc >= lottery.DrawTime!.Value)
         {
-            throw new InvalidOperationException("已到自动开奖时间，请等待系统开奖");
+            throw new BusinessException("已到自动开奖时间，请等待系统开奖", 409, "Lottery.AutomaticDrawPending", "error.lottery.automatic_draw_pending");
         }
     }
 
     private void EnsureAutoDrawAllowed(PostLottery lottery)
     {
-        if (DateTime.UtcNow < lottery.DrawTime!.Value)
+        var nowUtc = GetUtcNow();
+        if (nowUtc < lottery.DrawTime!.Value)
         {
-            throw new InvalidOperationException("未到自动开奖时间");
+            throw new BusinessException("未到自动开奖时间", 409, "Lottery.DrawTooEarly", "error.lottery.draw_too_early");
         }
     }
 
@@ -252,7 +274,7 @@ public class PostLotteryService : IPostLotteryService
 
         if (candidates.Count == 0 && !allowEmptyParticipants)
         {
-            throw new InvalidOperationException("当前还没有符合条件的参与者");
+            throw new BusinessException("当前还没有符合条件的参与者", 409, "Lottery.NoEligibleParticipant", "error.lottery.no_eligible_participant");
         }
 
         var actualWinnerCount = candidates.Count == 0
@@ -278,7 +300,7 @@ public class PostLotteryService : IPostLotteryService
                     : candidate.Content.Trim()[..Math.Min(candidate.Content.Trim().Length, 500)],
                 DrawnAt = drawAtUtc,
                 TenantId = lottery.TenantId,
-                CreateTime = DateTime.Now,
+                CreateTime = drawAtUtc,
                 CreateBy = operatorName,
                 CreateId = operatorUserId > 0 ? operatorUserId : 0
             })
@@ -292,26 +314,17 @@ public class PostLotteryService : IPostLotteryService
         lottery.IsDrawn = true;
         lottery.DrawnAt = drawAtUtc;
         lottery.ParticipantCount = candidates.Count;
-        lottery.ModifyTime = DateTime.Now;
+        lottery.ModifyTime = drawAtUtc;
         lottery.ModifyBy = operatorName;
         lottery.ModifyId = operatorUserId > 0 ? operatorUserId : null;
         await _postLotteryRepository.UpdateAsync(lottery);
 
-        try
-        {
-            await NotifyWinnersAsync(post, lottery, winners, operatorName, operatorUserId, actualWinnerCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex,
-                "[PostLotteryService] 开奖成功，但发送中奖通知失败：PostId={PostId}, LotteryId={LotteryId}",
-                post.Id, lottery.Id);
-        }
+        await NotifyWinnersAsync(post, lottery, winners, operatorName, operatorUserId, actualWinnerCount);
 
         var result = await GetByPostIdAsync(post.Id, operatorUserId > 0 ? operatorUserId : null);
         if (result.VoLottery == null)
         {
-            throw new InvalidOperationException("抽奖结果刷新失败");
+            throw new BusinessException("抽奖结果刷新失败，请稍后重试", 500, "System.UnexpectedError", "error.system.unexpected_error");
         }
 
         return result.VoLottery;
@@ -335,5 +348,10 @@ public class PostLotteryService : IPostLotteryService
             DateTimeKind.Local => value.ToUniversalTime(),
             _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
+    }
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
     }
 }

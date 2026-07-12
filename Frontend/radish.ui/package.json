@@ -1,6 +1,6 @@
 {
   "name": "@radish/ui",
-  "version": "26.1.1",
+  "version": "26.7.1",
   "private": true,
   "type": "module",
   "main": "./src/index.ts",
@@ -43,7 +43,7 @@
   },
   "scripts": {
     "test": "node --test --test-isolation=none ./tests/markdownUrl.test.ts",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {

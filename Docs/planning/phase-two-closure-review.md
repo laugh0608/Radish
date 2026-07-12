@@ -4,7 +4,7 @@
 >
 > 评审日期：2026-05-13（Asia/Shanghai）
 >
-> 本页承载第二开发阶段收口清单、后置边界和下一主任务判断。快速入口仍以 [当前进行中](/planning/current) 为准；批次流水和命令级验证记录继续写入 [开发日志](/changelog/) 或 [记录索引](/records/)。`2026-05-25` 后的当前路线已收敛为纯 Web + Flutter 主线，PC/Tauri 后置且不再绑定 WebOS；本页中 Tauri + WebOS 为第二阶段历史验证结论。
+> 本页承载第二开发阶段收口清单、后置边界和下一主任务判断，不作为当前多端路线依据。快速入口仍以 [当前进行中](/planning/current) 为准；当前纯 Web 为唯一正式主线，Flutter 条件维护，Tauri 冻结且不再绑定 WebOS；本页中 Tauri + WebOS 为第二阶段历史验证结论。
 
 ## 评审结论
 
@@ -34,7 +34,7 @@
 | `Phase 2-1` 社区深化第一批 | 已完成当前批次目标 | 论坛轻回应墙、最小回流链路和社区基础互动转入稳定维护 |
 | `Phase 2-2` 移动 Web 形态 | 已完成当前批次目标 | forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口 |
 | `Phase 2-3` Flutter 客户端 MVP | Android 第一轮完成 | Android release APK 通过 RC 命令级验证和真机人工验收，结论为 Go |
-| `Phase 2-4` Tauri + WebOS 桌面安装包评估 | 个人开发阶段验证通过 | 第二阶段历史验证结论成立；当前 PC/Tauri 已后置且不再绑定 WebOS |
+| `Phase 2-4` Tauri + WebOS 桌面安装包评估 | 个人开发阶段验证通过 | 第二阶段历史验证结论成立；当前 Tauri 已冻结且不再绑定 WebOS |
 | `Phase 2-5` 产品功能补全与治理收口 | 多轮小批次已完成 | WebOS 复访、萝卜坑、Console 治理、商城、经验治理、安全治理和构建 warning 已完成阶段性收口 |
 
 ## 转入稳定维护
@@ -45,7 +45,7 @@
 | WebOS / PC 工作台 | 保持桌面工作台主路径稳定，只处理成片工作流中的阻断级缺口 |
 | 后端 + Console 治理 | 只处理新暴露的安全、权限授权一致性、治理数据可信度问题 |
 | Flutter Android MVP | 保持已验收链路稳定，不默认追加低增益微体验批次 |
-| PC/Tauri 桌面安装包 | 保留个人开发阶段 Tauri + WebOS 验证成果；当前后置到纯 Web / Flutter 主线之后，若重启应增强纯 Web |
+| Tauri 桌面安装包 | 保留个人开发阶段 Tauri + WebOS 验证成果；当前冻结，只有明确桌面原生需求与维护预算成立后才评估解冻 |
 | 构建与验证基线 | 继续维护 `validate:baseline`、`validate:baseline:host`、`validate:ci` 和 Identity Guard |
 
 ## 明确后置

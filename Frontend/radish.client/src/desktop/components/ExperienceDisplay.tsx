@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { ExperienceBar } from '@radish/ui/experience-bar';
@@ -37,17 +37,19 @@ export const ExperienceDisplay = () => {
     }
   };
 
+  const fetchExperienceForEffect = useEffectEvent(fetchExperience);
+  const authenticated = isAuthenticated();
+
   useEffect(() => {
-    void fetchExperience();
-    // 每 60 秒刷新一次经验值
+    void fetchExperienceForEffect();
     const interval = setInterval(() => {
-      void fetchExperience();
+      void fetchExperienceForEffect();
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated()]);
+  }, [authenticated, fetchExperienceForEffect]);
 
-  if (!isAuthenticated()) {
+  if (!authenticated) {
     return null;
   }
 

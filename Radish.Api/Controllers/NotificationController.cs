@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -21,6 +22,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("通知管理")]
 [Authorize] // 所有接口都需要登录
 public class NotificationController : ControllerBase

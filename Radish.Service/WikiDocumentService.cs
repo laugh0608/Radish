@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -673,7 +674,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var hasChildren = await _wikiDocumentRepository.QueryExistsAsync(d => d.ParentId == id && !d.IsDeleted);
         if (hasChildren)
         {
-            throw new InvalidOperationException("请先处理子文档后再删除当前文档");
+            throw new BusinessException("请先处理子文档后再删除当前文档", 409, "Wiki.ChildDocumentConflict", "error.wiki.child_document_conflict");
         }
 
         return await _wikiDocumentRepository.SoftDeleteByIdAsync(id, ResolveOperatorName(operatorName));
@@ -834,7 +835,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         if (isSameContent)
         {
-            throw new InvalidOperationException($"当前文档已是 v{revision.Version} 的内容，无需回滚");
+            throw new BusinessException($"当前文档已是 v{revision.Version} 的内容，无需回滚", 409, "Wiki.RevisionAlreadyCurrent", "error.wiki.revision_already_current");
         }
 
         document.Title = revision.Title;
@@ -863,19 +864,19 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         if (importDto.File == null || importDto.File.Length <= 0)
         {
-            throw new InvalidOperationException("Markdown 文件不能为空");
+            throw new BusinessException("Markdown 文件不能为空", 400, "Wiki.MarkdownFileEmpty", "error.wiki.markdown_file_empty");
         }
 
         var extension = Path.GetExtension(importDto.File.FileName).ToLowerInvariant();
         if (extension != ".md" && extension != ".markdown" && extension != ".txt")
         {
-            throw new InvalidOperationException("仅支持 Markdown 文本文件导入");
+            throw new BusinessException("仅支持 Markdown 文本文件导入", 400, "Wiki.MarkdownFileUnsupported", "error.wiki.markdown_file_unsupported");
         }
 
         var markdownContent = await ReadMarkdownAsync(importDto.File);
         if (string.IsNullOrWhiteSpace(markdownContent))
         {
-            throw new InvalidOperationException("导入的 Markdown 内容不能为空");
+            throw new BusinessException("导入的 Markdown 内容不能为空", 400, "Wiki.MarkdownContentEmpty", "error.wiki.markdown_content_empty");
         }
 
         var titleFromHeading = ExtractTitle(markdownContent);
@@ -1146,7 +1147,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         if (!hasAllowedRoles && !hasAllowedPermissions)
         {
-            throw new InvalidOperationException("受限文档至少需要配置一个角色或权限");
+            throw new BusinessException("受限文档至少需要配置一个角色或权限", 400, "Wiki.AccessPolicyRequired", "error.wiki.access_policy_required");
         }
     }
 
@@ -1160,13 +1161,13 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var candidateParentId = parentId.Value;
         if (currentDocumentId.HasValue && candidateParentId == currentDocumentId.Value)
         {
-            throw new InvalidOperationException("父级文档不能是自身");
+            throw new BusinessException("父级文档不能是自身", 400, "Wiki.ParentCannotBeSelf", "error.wiki.parent_cannot_be_self");
         }
 
         var currentParent = await _wikiDocumentRepository.QueryByIdAsync(candidateParentId);
         if (currentParent == null || currentParent.IsDeleted)
         {
-            throw new InvalidOperationException("父级文档不存在");
+            throw new BusinessException("父级文档不存在", 404, "Wiki.ParentNotFound", "error.wiki.parent_not_found");
         }
 
         if (!currentDocumentId.HasValue)
@@ -1178,7 +1179,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         {
             if (currentParent.ParentId.Value == currentDocumentId.Value)
             {
-                throw new InvalidOperationException("父级文档不能设置为当前文档的子孙节点");
+                throw new BusinessException("父级文档不能设置为当前文档的子孙节点", 409, "Wiki.ParentCycleConflict", "error.wiki.parent_cycle_conflict");
             }
 
             currentParent = await _wikiDocumentRepository.QueryByIdAsync(currentParent.ParentId.Value);

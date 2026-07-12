@@ -27,10 +27,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Radish.Auth.Migrations.PostgreSql\Radish.Auth.Migrations.PostgreSql.csproj" />
+    <ProjectReference Include="..\Radish.Auth.Migrations.Sqlite\Radish.Auth.Migrations.Sqlite.csproj" />
     <ProjectReference Include="..\Radish.Extension.Log\Radish.Extension.Log.csproj" />
     <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
     <ProjectReference Include="..\Radish.Service\Radish.Service.csproj" />
-    <ProjectReference Include="..\Radish.Auth\Radish.Auth.csproj" />
+    <ProjectReference Include="..\Radish.Auth.Persistence\Radish.Auth.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>

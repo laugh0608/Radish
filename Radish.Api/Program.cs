@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
@@ -55,7 +56,9 @@ using Radish.Api.HealthChecks;
 using Radish.Api.Hubs;
 using Radish.Api.Services;
 using Radish.Api.Security;
+using Radish.Api.ErrorHandling;
 using Radish.Model;
+using Radish.Shared.Constants;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Radish.IRepository.Base;
 using Radish.IService.Base;
@@ -64,6 +67,8 @@ using Radish.Service.Base;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<BusinessCalendar>();
 // -------------- 容器构建阶段 ---------------
 
 static string ResolveSharedConfigPath(string basePath, string contentRootPath)
@@ -220,6 +225,30 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.Converters.Add(new UtcDateTimeJsonConverter());
         options.JsonSerializerOptions.Converters.Add(new NullableUtcDateTimeJsonConverter());
     });
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+    options.InvalidModelStateResponseFactory = context =>
+    {
+        var fieldErrors = context.ModelState
+            .Where(entry => entry.Value?.Errors.Count > 0)
+            .ToDictionary(
+                entry => entry.Key,
+                entry => entry.Value!.Errors
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage)
+                        ? "输入值格式不正确"
+                        : error.ErrorMessage)
+                    .ToArray());
+
+        return ApiErrorResultFactory.Create(
+            context.HttpContext,
+            StatusCodes.Status400BadRequest,
+            "请求参数验证失败",
+            ApiErrorCodes.ValidationFailed,
+            "error.common.validation_failed",
+            fieldErrors);
+    };
+});
+builder.Services.AddSingleton<ApiExceptionHandler>();
 // 注册健康检查
 var apiHealthCheckTags = ApiHostHealthChecks.Tags;
 builder.Services.AddApiHostHealthChecks();
@@ -308,22 +337,9 @@ builder.Services.AddScoped(typeof(IBaseRepository<>), typeof(BaseRepository<>));
 builder.Services.AddScoped(typeof(IBaseService<,>), typeof(BaseService<,>));
 
 // 注册 OpenIddict DbContext（用于客户端管理 API，与 Auth 项目共享数据库）
-var openIddictDatabase = RuntimeDatabaseConfigResolver.Resolve(
-    builder.Configuration,
-    "OpenIddict:Database",
-    builder.Configuration.GetConnectionString("OpenIddict"),
-    "Radish.OpenIddict.db");
-builder.Services.AddDbContext<Radish.Auth.OpenIddict.AuthOpenIddictDbContext>(options =>
-{
-    if (openIddictDatabase.DbType == DataBaseType.PostgreSql)
-    {
-        options.UseNpgsql(openIddictDatabase.ConnectionString);
-    }
-    else
-    {
-        options.UseSqlite(openIddictDatabase.ConnectionString);
-    }
-});
+Radish.Auth.OpenIddict.AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(
+    builder.Services,
+    builder.Configuration);
 
 // 注册 OpenIddict Core（仅用于客户端管理，不启用 Server）
 builder.Services.AddOpenIddict()
@@ -407,7 +423,35 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     path,
                     context.Error,
                     context.HttpContext.TraceIdentifier);
-                return Task.CompletedTask;
+
+                if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
+                {
+                    return Task.CompletedTask;
+                }
+
+                context.HandleResponse();
+                return ApiErrorResultFactory.WriteAsync(
+                    context.HttpContext,
+                    StatusCodes.Status401Unauthorized,
+                    "请先登录后再继续操作",
+                    ApiErrorCodes.Unauthorized,
+                    "error.auth.unauthorized",
+                    cancellationToken: context.HttpContext.RequestAborted);
+            },
+            OnForbidden = context =>
+            {
+                if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
+                {
+                    return Task.CompletedTask;
+                }
+
+                return ApiErrorResultFactory.WriteAsync(
+                    context.HttpContext,
+                    StatusCodes.Status403Forbidden,
+                    "当前账号无权执行此操作",
+                    ApiErrorCodes.Forbidden,
+                    "error.auth.forbidden",
+                    cancellationToken: context.HttpContext.RequestAborted);
             }
         };
 
@@ -485,6 +529,8 @@ builder.Services.AddScoped<FileCleanupJob>();
 builder.Services.AddScoped<CommentHighlightJob>();
 builder.Services.AddScoped<RetentionRewardJob>();
 builder.Services.AddScoped<ShopJob>();
+builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxDispatcherJob>();
+builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxExecutionJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -545,6 +591,9 @@ app.UseCors(corsPolicyName);
 // 配置请求本地化（根据 Accept-Language 设置 Culture）
 var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
 app.UseRequestLocalization(localizationOptions.Value);
+
+// 只处理正式 API JSON 请求；协议端点、文件流、Hub 和宿主页面保持各自响应契约。
+app.UseApiExceptionHandler();
 
 // 配置 Hangfire Dashboard
 var dashboardEnabled = builder.Configuration.GetValue<bool>("Hangfire:Dashboard:Enable", true);
@@ -622,6 +671,17 @@ app.Lifetime.ApplicationStarted.Register(() =>
 });
 
 // 注册 Hangfire 定时任务
+RecurringJob.AddOrUpdate<Radish.Api.Services.ReliableOutboxDispatcherJob>(
+    "reliable-outbox-dispatch",
+    job => job.DispatchAsync(50),
+    "*/1 * * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+Log.Information("[Hangfire] 已注册可靠 Outbox 分派任务: reliable-outbox-dispatch");
+
 var fileCleanupConfig = builder.Configuration.GetSection("Hangfire:FileCleanup");
 
 // 1. 软删除文件清理任务
@@ -977,14 +1037,24 @@ public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
                 return default;
             }
 
+            if (DateOnly.TryParseExact(
+                    raw,
+                    "yyyy-MM-dd",
+                    CultureInfo.InvariantCulture,
+                    DateTimeStyles.None,
+                    out var dateOnly))
+            {
+                return dateOnly.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
+            }
+
+            if (!HasExplicitOffset(raw))
+            {
+                throw new JsonException("绝对时间必须使用带 Z 或 offset 的 ISO 8601 格式。");
+            }
+
             if (DateTimeOffset.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var dto))
             {
                 return dto.UtcDateTime;
-            }
-
-            if (DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.AllowWhiteSpaces, out var dt))
-            {
-                return NormalizeToUtc(dt);
             }
 
             throw new JsonException($"无法将字符串 \"{raw}\" 解析为 DateTime。");
@@ -1017,6 +1087,28 @@ public sealed class UtcDateTimeJsonConverter : JsonConverter<DateTime>
             // 数据库存储统一为 UTC，SQLite 读取常为 Unspecified，这里按 UTC 解释以避免重复时区换算
             _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
         };
+    }
+
+    private static bool HasExplicitOffset(string value)
+    {
+        var trimmed = value.Trim();
+        if (trimmed.EndsWith('Z') || trimmed.EndsWith('z'))
+        {
+            return true;
+        }
+
+        if (trimmed.Length < 6)
+        {
+            return false;
+        }
+
+        var offsetStart = trimmed.Length - 6;
+        return (trimmed[offsetStart] == '+' || trimmed[offsetStart] == '-') &&
+               trimmed[offsetStart + 3] == ':' &&
+               char.IsDigit(trimmed[offsetStart + 1]) &&
+               char.IsDigit(trimmed[offsetStart + 2]) &&
+               char.IsDigit(trimmed[offsetStart + 4]) &&
+               char.IsDigit(trimmed[offsetStart + 5]);
     }
 }
 

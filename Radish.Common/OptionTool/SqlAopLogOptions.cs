@@ -37,7 +37,10 @@ public sealed class SqlAopLogOptions : IConfigurableOptions
         "ResponseBody",
         "OldContent",
         "NewContent",
-        "ContentSnapshot"
+        "ContentSnapshot",
+        "Token",
+        "TokenHash",
+        "AccessToken"
     ];
 
     /// <summary>直接跳过日志记录的表名</summary>

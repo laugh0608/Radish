@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -1487,7 +1488,7 @@ public class PostServiceTest
             Options.Create(new ForumEditHistoryOptions()),
             CreateDefaultSystemSettingProvider());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.AcceptAnswerAsync(1008, 4005, 9527, "Owner"));
 
         Assert.Equal("当前问题已采纳答案", exception.Message);
@@ -2005,7 +2006,8 @@ public class PostServiceTest
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
-            CreateDefaultSystemSettingProvider());
+            CreateDefaultSystemSettingProvider(),
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var post = new Post(new PostInitializationOptions("投票帖", "今天中午大家一起吃什么比较合适")
         {
@@ -2145,7 +2147,8 @@ public class PostServiceTest
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
-            CreateDefaultSystemSettingProvider());
+            CreateDefaultSystemSettingProvider(),
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var post = new Post(new PostInitializationOptions("短时投票帖", "三分钟后截止的短时投票正文")
         {
@@ -2279,7 +2282,8 @@ public class PostServiceTest
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
-            CreateDefaultSystemSettingProvider());
+            CreateDefaultSystemSettingProvider(),
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var post = new Post(new PostInitializationOptions("问答帖", "这个问题应该怎么分析和解决？")
         {
@@ -2410,7 +2414,8 @@ public class PostServiceTest
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
             CreateDefaultSystemSettingProvider(),
-            postLotteryRepository: postLotteryRepository.Object);
+            postLotteryRepository: postLotteryRepository.Object,
+            reliableOutboxService: Mock.Of<IReliableOutboxService>());
 
         var post = new Post(new PostInitializationOptions("抽奖帖", "评论参与抽奖并说明参与理由")
         {

@@ -114,6 +114,13 @@ PR 模板中应至少能回答：
 - 本轮实际跑了哪些验证
 - 是否需要补充专题验证或发布后动作
 
+### 6. 合并后把 `master` 回灌 `dev`
+
+- 任何 PR 合入 `master` 后，都必须先同步最新 `origin/master` 到 `dev`，再开始下一轮开发
+- 可 fast-forward 时优先快进；若因 rebase merge 或并发提交无法快进，使用普通 merge
+- 回灌后确认 `dev` 已包含最新 `master` 并推送远端；禁止用 rebase、reset 或 force push 改写历史
+- 该动作只关闭本次 PR 的分支拓扑，不自动创建 tag、发布镜像或执行部署
+
 ## 不该做的事
 
 - 不要求把每次本地提交都写成回归记录

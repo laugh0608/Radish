@@ -8,6 +8,8 @@ namespace Radish.IRepository;
 /// <summary>聊天室消息仓储接口</summary>
 public interface IChannelMessageRepository : IBaseRepository<ChannelMessage>
 {
+    Task<long> AddWithOutboxAsync(ChannelMessage message, ReliableOutboxDraft? outboxDraft);
+
     /// <summary>查询单条消息（包含已撤回消息）</summary>
     Task<ChannelMessage?> QueryFirstIncludingDeletedAsync(Expression<Func<ChannelMessage, bool>> whereExpression);
 

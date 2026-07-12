@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.Model;
@@ -16,6 +17,7 @@ namespace Radish.Api.Controllers;
 /// 客户端管理 API
 /// </summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Authorize(Policy = AuthorizationPolicies.Client)]
@@ -243,8 +245,7 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "创建客户端失败: {ClientId}", dto.ClientId);
-            return MessageModel<ClientSecretVo>.Failed("创建失败: " + ex.Message);
+            throw BuildUnexpectedError("创建客户端失败，请稍后重试", ex);
         }
     }
 
@@ -371,8 +372,7 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "更新客户端失败: {Id}", id);
-            return MessageModel<string>.Failed("更新失败: " + ex.Message);
+            throw BuildUnexpectedError("更新客户端失败，请稍后重试", ex);
         }
     }
 
@@ -401,8 +401,7 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "删除客户端失败: {Id}", id);
-            return MessageModel<string>.Failed("删除失败: " + ex.Message);
+            throw BuildUnexpectedError("删除客户端失败，请稍后重试", ex);
         }
     }
 
@@ -444,9 +443,18 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "重置客户端密钥失败: {Id}", id);
-            return MessageModel<ClientSecretVo>.Failed("重置失败: " + ex.Message);
+            throw BuildUnexpectedError("重置客户端密钥失败，请稍后重试", ex);
         }
+    }
+
+    private static BusinessException BuildUnexpectedError(string message, Exception exception)
+    {
+        return new BusinessException(
+            message,
+            exception,
+            StatusCodes.Status500InternalServerError,
+            "System.UnexpectedError",
+            "error.system.unexpected_error");
     }
 
     #region 私有方法

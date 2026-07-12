@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Moq;
+using Radish.Common.OptionTool;
+using Radish.Common.TimeTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.IService;
 using Radish.IRepository.Base;
@@ -16,7 +19,7 @@ public class FileCleanupJobTest
     [Fact]
     public async Task CleanupOrphanAttachmentsAsync_Should_Skip_Attachments_Referenced_By_Sticker()
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var orphanAttachment = new Attachment
         {
             Id = 1001,
@@ -38,7 +41,7 @@ public class FileCleanupJobTest
             .ReturnsAsync(new HashSet<long> { orphanAttachment.Id });
 
         var fileStorage = new Mock<IFileStorage>(MockBehavior.Loose);
-        var job = new FileCleanupJob(attachmentRepository.Object, attachmentReferenceInspector.Object, fileStorage.Object);
+        var job = CreateJob(attachmentRepository, attachmentReferenceInspector, fileStorage, now);
 
         var cleanedCount = await job.CleanupOrphanAttachmentsAsync(24);
 
@@ -53,7 +56,7 @@ public class FileCleanupJobTest
     [Fact]
     public async Task CleanupOrphanAttachmentsAsync_Should_Skip_Attachments_Referenced_By_Chat_And_AnswerContent()
     {
-        var now = DateTime.Now;
+        var now = DateTime.UtcNow;
         var chatAttachment = new Attachment
         {
             Id = 1002,
@@ -83,7 +86,7 @@ public class FileCleanupJobTest
             .ReturnsAsync(new HashSet<long> { chatAttachment.Id, answerAttachment.Id });
 
         var fileStorage = new Mock<IFileStorage>(MockBehavior.Loose);
-        var job = new FileCleanupJob(attachmentRepository.Object, attachmentReferenceInspector.Object, fileStorage.Object);
+        var job = CreateJob(attachmentRepository, attachmentReferenceInspector, fileStorage, now);
 
         var cleanedCount = await job.CleanupOrphanAttachmentsAsync(24);
 
@@ -93,5 +96,28 @@ public class FileCleanupJobTest
 
         attachmentRepository.VerifyAll();
         attachmentReferenceInspector.VerifyAll();
+    }
+
+    private static FileCleanupJob CreateJob(
+        Mock<IBaseRepository<Attachment>> attachmentRepository,
+        Mock<IAttachmentReferenceInspector> attachmentReferenceInspector,
+        Mock<IFileStorage> fileStorage,
+        DateTime nowUtc)
+    {
+        var timeProvider = new FixedTimeProvider(new DateTimeOffset(nowUtc));
+        var calendar = new BusinessCalendar(
+            timeProvider,
+            Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
+        return new FileCleanupJob(
+            attachmentRepository.Object,
+            attachmentReferenceInspector.Object,
+            fileStorage.Object,
+            timeProvider,
+            calendar);
+    }
+
+    private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => utcNow;
     }
 }

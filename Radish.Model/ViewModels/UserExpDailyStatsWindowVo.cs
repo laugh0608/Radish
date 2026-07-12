@@ -56,7 +56,7 @@ public class UserExpDailyStatsSummaryVo
     /// <summary>
     /// 峰值对应日期
     /// </summary>
-    public DateTime? VoPeakStatDate { get; set; }
+    public DateOnly? VoPeakStatDate { get; set; }
 
     /// <summary>
     /// 零增长天数
@@ -102,7 +102,7 @@ public class UserExpAnomalyRuleSummaryVo
     /// <summary>
     /// 最近一次命中日期
     /// </summary>
-    public DateTime? VoLatestHitDate { get; set; }
+    public DateOnly? VoLatestHitDate { get; set; }
 
     /// <summary>
     /// 当前最强信号

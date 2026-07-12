@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -42,7 +43,7 @@ public class WikiDocumentManagementServiceTests
 
         var service = CreateService(repository);
 
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() => service.DeleteDocumentAsync(10, 1, "Tester"));
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.DeleteDocumentAsync(10, 1, "Tester"));
         exception.Message.ShouldBe("请先处理子文档后再删除当前文档");
     }
 
@@ -62,7 +63,7 @@ public class WikiDocumentManagementServiceTests
 
         var service = CreateService(repository);
 
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() => service.RestoreDocumentAsync(11, 1, "Tester"));
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.RestoreDocumentAsync(11, 1, "Tester"));
         exception.Message.ShouldBe("固定文档为只读内容，请修改 Docs 目录中的源文件");
     }
 
@@ -120,7 +121,7 @@ public class WikiDocumentManagementServiceTests
             Sort = 10
         };
 
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() => service.UpdateDocumentAsync(1, dto, 1, "Tester"));
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.UpdateDocumentAsync(1, dto, 1, "Tester"));
         exception.Message.ShouldBe("父级文档不能设置为当前文档的子孙节点");
     }
 
@@ -186,7 +187,7 @@ public class WikiDocumentManagementServiceTests
             Visibility = (int)WikiDocumentVisibilityEnum.Authenticated
         };
 
-        var exception = await Should.ThrowAsync<InvalidOperationException>(() => service.UpdateAccessPolicyAsync(13, dto, 1, "Tester"));
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.UpdateAccessPolicyAsync(13, dto, 1, "Tester"));
         exception.Message.ShouldBe("固定文档为只读内容，请修改 Docs 目录中的源文件");
     }
 

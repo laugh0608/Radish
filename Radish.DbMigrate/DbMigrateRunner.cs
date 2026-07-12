@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using Radish.Auth.OpenIddict;
 using Radish.Common;
 using Radish.Common.DbTool;
 using Radish.Model;
@@ -22,8 +24,11 @@ internal static class DbMigrateRunner
                 break;
 
             case "doctor":
+                DbMigrateDoctor.Run(services, configuration, environment, strict: false);
+                break;
+
             case "verify":
-                DbMigrateDoctor.Run(services, configuration, environment);
+                DbMigrateDoctor.Run(services, configuration, environment, strict: true);
                 break;
 
             case "init":
@@ -42,8 +47,18 @@ internal static class DbMigrateRunner
 
     private static async Task RunApplyAsync(IServiceProvider services, IConfiguration configuration, string environment)
     {
-        Console.WriteLine("[Radish.DbMigrate] 默认执行 apply：自动补齐表结构并填充初始数据。");
-        await RunSeedAsync(services, configuration, environment);
+        Console.WriteLine("[Radish.DbMigrate] 默认执行 apply：检查环境、迁移 schema、填充初始数据并严格验证。");
+        DbMigrateDoctor.Run(services, configuration, environment, strict: false, failOnErrors: true);
+
+        var db = services.GetRequiredService<ISqlSugarClient>();
+        await EnsureBusinessSchemaAsync(services, configuration, environment, db);
+        await ApplyOpenIddictMigrationsAsync(services, configuration);
+
+        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
+        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
+        await InitialDataSeeder.SeedAsync(db, services);
+
+        DbMigrateDoctor.Run(services, configuration, environment, strict: true);
     }
 
     private static async Task RunInitAsync(IServiceProvider services, IConfiguration configuration, string environment)
@@ -52,6 +67,16 @@ internal static class DbMigrateRunner
 
         var db = services.GetRequiredService<ISqlSugarClient>();
         var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        if (db is SqlSugarScope existingDbScope)
+        {
+            var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+                .ToLowerInvariant();
+            if (SchemaMigrationLedger.HasAppliedBaseline(existingDbScope, normalizedMainDbConnId))
+            {
+                throw new InvalidOperationException(
+                    "DbMigrate init 只允许空库或尚未接管的旧库；当前 Main 已登记 baseline，请使用 apply。");
+            }
+        }
 
         Console.WriteLine("[Radish.DbMigrate] 创建数据库（如不存在）...");
         foreach (var _ in BaseDbConfig.AllConfigs)
@@ -82,6 +107,7 @@ internal static class DbMigrateRunner
         }
 
         EnsureSupplementalIndexes(db, mainDbConnId);
+        EnsureSchemaBaseline(services, db);
 
         Console.WriteLine("[Radish.DbMigrate] Init 完成。");
     }
@@ -91,13 +117,40 @@ internal static class DbMigrateRunner
         Console.WriteLine($"[Radish.DbMigrate] Environment: {environment}");
 
         var db = services.GetRequiredService<ISqlSugarClient>();
+        await EnsureBusinessSchemaAsync(services, configuration, environment, db);
+
+        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
+        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
+        await InitialDataSeeder.SeedAsync(db, services);
+    }
+
+    private static async Task EnsureBusinessSchemaAsync(
+        IServiceProvider services,
+        IConfiguration configuration,
+        string environment,
+        ISqlSugarClient db)
+    {
         var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        if (db is not SqlSugarScope dbScope)
+        {
+            throw new InvalidOperationException("DbMigrate schema 管理需要 SqlSugarScope。");
+        }
+
+        var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+            .ToLowerInvariant();
+        var hasAppliedBaseline = SchemaMigrationLedger.HasAppliedBaseline(dbScope, normalizedMainDbConnId);
 
         Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
         var inspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
 
         if (inspectionResult.DatabaseFileMissing || inspectionResult.MissingTables.Count > 0 || inspectionResult.MissingColumns.Count > 0)
         {
+            if (hasAppliedBaseline)
+            {
+                throw new InvalidOperationException(
+                    "已由 schema ledger 接管的 Main 存在缺表或缺列；禁止 Code First 自动修复，请新增有序 migration。");
+            }
+
             if (inspectionResult.DatabaseFileMissing)
             {
                 Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到主库文件缺失 ({inspectionResult.DatabaseFilePath ?? "<unknown>"})，自动执行 init...");
@@ -113,17 +166,61 @@ internal static class DbMigrateRunner
 
             await RunInitAsync(services, configuration, environment);
             Console.WriteLine();
+            return;
         }
         else
         {
             Console.WriteLine("[Radish.DbMigrate] ✓ 数据库表结构已存在");
         }
 
-        EnsureSupplementalIndexes(db, mainDbConnId);
+        if (!hasAppliedBaseline)
+        {
+            EnsureSupplementalIndexes(db, mainDbConnId);
+        }
+        EnsureSchemaBaseline(services, db);
+    }
 
-        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
-        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
-        await InitialDataSeeder.SeedAsync(db, services);
+    private static void EnsureSchemaBaseline(IServiceProvider services, ISqlSugarClient db)
+    {
+        if (db is not SqlSugarScope dbScope)
+        {
+            throw new InvalidOperationException("Schema ledger 需要 SqlSugarScope 才能覆盖全部 ConnId。");
+        }
+
+        var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
+            .ToLowerInvariant();
+        var timeAudit = TimeSemanticsAudit.Inspect(
+            dbScope.GetConnectionScope(normalizedMainDbConnId),
+            services.GetRequiredService<Radish.Common.TimeTool.BusinessCalendar>());
+        if (timeAudit.Warnings.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Main 不满足 baseline adoption 的时间语义：{string.Join("；", timeAudit.Warnings)}");
+        }
+
+        SchemaMigrationLedger.EnsureBaseline(
+            dbScope,
+            services.GetRequiredService<TimeProvider>());
+        SchemaMigrationLedger.ApplyPending(dbScope, services);
+    }
+
+    private static async Task ApplyOpenIddictMigrationsAsync(
+        IServiceProvider services,
+        IConfiguration configuration)
+    {
+        using var scope = services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
+        var database = AuthOpenIddictPersistence.ResolveDatabase(configuration);
+        var applied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database);
+        Console.WriteLine(
+            $"[Radish.DbMigrate] OpenIddict provider={database.DbType}, applied={applied.Count}。");
+        if (applied.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine($"[Radish.DbMigrate] OpenIddict 已应用：{string.Join(", ", applied)}。");
     }
 
     private static void EnsureSupplementalIndexes(ISqlSugarClient db, string? mainDbConnId)
@@ -144,6 +241,7 @@ internal static class DbMigrateRunner
         EnsureInventoryBenefitReliabilitySchema(mainDb);
         EnsureRewardBusinessKeySchema(mainDb);
         EnsureContentSubmissionSchema(mainDb);
+        EnsureFileAccessTokenSecuritySchema(mainDb);
     }
 
     private static void EnsureUserPublicIdentitySchema(ISqlSugarClient db)
@@ -475,6 +573,34 @@ internal static class DbMigrateRunner
             tableName,
             "idx_content_submission_result",
             [nameof(ContentSubmissionRecord.ResultType), nameof(ContentSubmissionRecord.ResultId)]);
+    }
+
+    private static void EnsureFileAccessTokenSecuritySchema(ISqlSugarClient db)
+    {
+        var tableName = db.EntityMaintenance.GetEntityInfo<FileAccessToken>().DbTableName;
+        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        {
+            return;
+        }
+
+        db.CodeFirst.InitTables<FileAccessToken>();
+        var updatedCount = FileAccessTokenSecurityMigration.Apply(db);
+        if (updatedCount > 0)
+        {
+            Console.WriteLine($"[Radish.DbMigrate] 已将 {updatedCount} 条历史文件访问 token 原位转换为 hash。");
+        }
+
+        EnsureIndex(
+            db,
+            tableName,
+            "idx_file_access_token_attachment_active",
+            [nameof(FileAccessToken.AttachmentId), nameof(FileAccessToken.IsRevoked), nameof(FileAccessToken.ExpiresAt)]);
+
+        var issues = FileAccessTokenSecurityMigration.Verify(db);
+        if (issues.Count > 0)
+        {
+            throw new InvalidOperationException(string.Join(Environment.NewLine, issues));
+        }
     }
 
     private static void BackfillCoinRewardBusinessKeys(ISqlSugarClient db)
@@ -990,6 +1116,8 @@ internal static class DbMigrateRunner
         Console.WriteLine("      推荐入口。自动检查数据库、按需 init，并执行 seed。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor");
         Console.WriteLine("      只读检查当前配置、连接定义与主库业务表状态。");
+        Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify");
+        Console.WriteLine("      严格只读检查；存在 Warning / Error 时返回失败。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init");
         Console.WriteLine("      高级命令。仅初始化数据库并基于实体结构创建/更新表结构。");
         Console.WriteLine("  dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed");

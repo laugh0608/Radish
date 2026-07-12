@@ -63,6 +63,7 @@ export const CONSOLE_PERMISSIONS = {
   systemConfigEdit: 'console.system-config.edit',
   systemConfigDelete: 'console.system-config.delete',
   hangfireView: 'console.hangfire.view',
+  hangfireReplay: 'console.hangfire.replay',
 } as const;
 
 export type ConsolePermission = typeof CONSOLE_PERMISSIONS[keyof typeof CONSOLE_PERMISSIONS];

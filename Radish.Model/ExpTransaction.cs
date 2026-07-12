@@ -130,7 +130,7 @@ public class ExpTransaction : RootEntityTKey<long>, ITenantEntity
 
     /// <summary>创建日期</summary>
     /// <remarks>不可为空，用于每日上限和去重控制</remarks>
-    [SugarColumn(IsNullable = false, ColumnDescription = "创建日期")]
+    [SugarColumn(IsNullable = false, ColumnDataType = "date", ColumnDescription = "创建日期")]
     public DateTime CreatedDate { get; set; } = DateTime.Today;
 
     #endregion

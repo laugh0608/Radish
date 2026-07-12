@@ -3,12 +3,17 @@ namespace Radish.Model.ViewModels;
 /// <summary>
 /// 文件访问令牌 ViewModel
 /// </summary>
-public class FileAccessTokenVo
+public class FileAccessTokenSummaryVo
 {
     /// <summary>
-    /// 令牌
+    /// 令牌记录 ID
     /// </summary>
-    public string VoToken { get; set; } = string.Empty;
+    public long VoId { get; set; }
+
+    /// <summary>
+    /// 不可用于访问的令牌摘要
+    /// </summary>
+    public string VoTokenPreview { get; set; } = string.Empty;
 
     /// <summary>
     /// 附件ID
@@ -16,9 +21,9 @@ public class FileAccessTokenVo
     public long VoAttachmentId { get; set; }
 
     /// <summary>
-    /// 访问URL
+    /// 创建用户 ID
     /// </summary>
-    public string VoAccessUrl { get; set; } = string.Empty;
+    public long VoCreatedBy { get; set; }
 
     /// <summary>
     /// 最大访问次数
@@ -33,7 +38,9 @@ public class FileAccessTokenVo
     /// <summary>
     /// 剩余访问次数
     /// </summary>
-    public int VoRemainingAccessCount => VoMaxAccessCount == 0 ? int.MaxValue : VoMaxAccessCount - VoAccessCount;
+    public int VoRemainingAccessCount => VoMaxAccessCount == 0
+        ? int.MaxValue
+        : Math.Max(0, VoMaxAccessCount - VoAccessCount);
 
     /// <summary>
     /// 过期时间
@@ -43,7 +50,7 @@ public class FileAccessTokenVo
     /// <summary>
     /// 是否已过期
     /// </summary>
-    public bool VoIsExpired => DateTime.Now > VoExpiresAt;
+    public bool VoIsExpired { get; set; }
 
     /// <summary>
     /// 是否已撤销
@@ -54,6 +61,30 @@ public class FileAccessTokenVo
     /// 创建时间
     /// </summary>
     public DateTime VoCreateTime { get; set; }
+}
+
+/// <summary>
+/// 创建文件访问令牌时的一次性返回模型。
+/// </summary>
+public sealed class FileAccessTokenCreatedVo : FileAccessTokenSummaryVo
+{
+    /// <summary>
+    /// 原始令牌，仅在创建成功时返回一次。
+    /// </summary>
+    public string VoToken { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 包含原始令牌的访问 URL，仅在创建成功时返回一次。
+    /// </summary>
+    public string VoAccessUrl { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// 按记录 ID 撤销文件访问令牌。
+/// </summary>
+public sealed class RevokeFileAccessTokenDto
+{
+    public long TokenId { get; set; }
 }
 
 /// <summary>

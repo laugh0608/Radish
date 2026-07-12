@@ -18,6 +18,7 @@
 ```bash
 npm run setup:hooks
 npm run check:repo-hygiene
+npm run check:repo-hygiene:candidate
 npm run check:repo-hygiene:changed
 npm run check:repo-quality-contract
 npm run check:dependency-security
@@ -35,6 +36,8 @@ npm run check:identity-impact:staged
 npm run check:backend-impact
 npm run check:backend-impact:staged
 npm run check:long-id-safety
+npm run check:dotnet-warnings
+npm run test:frontend
 npm run validate:baseline
 npm run validate:baseline:quick
 npm run validate:baseline:host
@@ -42,6 +45,7 @@ npm run check:host-runtime
 npm run validate:backend
 npm run validate:identity
 npm run validate:ci
+npm run validate:candidate
 ```
 
 对应关系：
@@ -52,6 +56,9 @@ npm run validate:ci
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用
+- `check:repo-hygiene:candidate`
+  - 全量扫描所有已跟踪文件，并以 `Scripts/repo-hygiene-baseline.json` 记录的已审计问题为预算
+  - 历史问题允许持续下降，但新增文件或新增问题指纹会阻断候选验证
 - `check:repo-hygiene:changed`
   - 只检查当前 worktree 变更文件的文本卫生
   - 适合与 GitHub Actions 的 `Repo Hygiene` changed-only 行为对齐
@@ -100,10 +107,15 @@ npm run validate:ci
   - 只判定 staged 变更是否命中身份语义影响面，适合提交前判断是否需要追加 `validate:identity`
 - `check:backend-impact` / `check:backend-impact:staged`
   - 判定当前 worktree 或 staged 变更是否命中后端 / API 影响面，适合与 GitHub Actions 的 `Backend Guard` 对齐，命中后追加 `validate:backend`
+- `test:frontend`
+  - 运行 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console` 的现有测试资产
+- `check:dotnet-warnings`
+  - 以 `--warnaserror` 构建 `Radish.slnx`，用于候选前阻断新增编译 warning
 - `validate:baseline`
   - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
-  - 运行 `radish.client` 现有 `node --test`（当前以 `--test-isolation=none` 兼容受限环境）
+  - 运行四个前端 workspace 的现有测试；`radish.client` 以 `--test-isolation=none` 兼容受限环境
   - 运行高置信敏感字面量规则自测与全仓扫描
+  - 运行时间语义增量防回归扫描，禁止业务源码超过 baseline 新增 `DateTime.Now / Today / DateTimeOffset.Now`
   - 运行 `Console` 权限链路扫描
   - 运行 Repo Quality contract 自校验
     - 确保 workflow job 名、ruleset required checks 与本地 `validate:ci` 没有再次分叉
@@ -150,6 +162,10 @@ npm run validate:ci
   - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
   - 当前其本地门禁定义也已改为复用同一份 Repo Quality contract，避免 workflow / ruleset / 本地入口继续各自维护
   - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
+- `validate:candidate`
+  - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline、外部 LongId 字符串安全与联网依赖安全审计
+  - `.github/workflows/candidate-quality.yml` 提供手动、每周定期和 Docker 镜像发布前复用入口，并在 PostgreSQL 17 服务下运行环境集成测试
+  - Docker 镜像先进行本地单平台构建与 High / Critical 漏洞扫描；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像
 
 ## 分层使用建议
 
@@ -602,13 +618,13 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 
-## PC/Tauri 后置增强壳验证分层
+## Tauri 冻结实验壳验证分层
 
-PC/Tauri 当前后置到纯 Web 与 Flutter 主线之后，不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；后续若重启 PC 客户端，应以 Tauri 增强纯 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
+Tauri 当前冻结，不进入日常开发、候选 CI 必需矩阵、签名或分发门禁，也不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；只有明确桌面原生需求与维护预算成立后才评估解冻，并以 Tauri 增强纯 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
 
-涉及 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link、Tauri 构建链路、WebOS `/desktop` 保留入口或历史 Tauri + WebOS 验证路径时，开发阶段至少确认 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。
+只有改动实际触达 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link 或历史 Tauri + WebOS 验证路径时，才补 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。单纯修改纯 Web 或 WebOS `/desktop` 不要求追加 Tauri 构建。
 
-历史 Tauri + WebOS 验证已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 `127.0.0.1:48801` loopback 回跳、Windows NSIS installer 构建、本机安装、启动、普通用户卸载与同身份覆盖安装人工验收；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复。当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示；公开分发后仍需结合下载来源、签名、信誉与系统策略重新复核。管理员权限安装后用普通权限卸载可能残留安装文件，当前归类为安装 / 卸载权限上下文不一致风险，不作为 Tauri / NSIS 配置缺陷处理。`Clients/radish-tauri` 曾进入正式桌面包候选身份补验，`productName` / 窗口标题为 `Radish`，`identifier` 为 `com.radish.desktop`；该身份切换只用于验证安装目录、卸载项、同身份覆盖安装和 `radish://` 协议注册清理，不等同于公开发布版。正式候选包生产构建默认基址为 `https://radishx.com`，另有 `npm run build:tauri-local --workspace=radish.client` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证安装包 loopback 登录。Tauri loopback 登录在浏览器关闭后会复用等待中的同路径 listener 以支持再次点击登录。代码签名、自动更新、托盘、菜单、SmartScreen 公开来源复核和正式分发体积仍需在 PC/Tauri 重新进入主线时按纯 Web 增强壳口径重新补验。
+历史 Tauri + WebOS 验证已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 loopback 回跳、Windows NSIS installer 构建、安装、启动、卸载与覆盖安装人工验收；release 命令行窗口问题也已修复。候选身份、安装权限差异、SmartScreen、签名、自动更新、托盘、菜单、协议注册和正式分发体积等细节只作为历史验证事实保留；若 Tauri 未来解冻，再按纯 Web 增强壳重新补验，不把历史结果当作现行发布结论。
 
 ## 受限环境说明
 

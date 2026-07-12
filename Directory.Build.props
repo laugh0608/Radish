@@ -4,9 +4,9 @@
     <RestoreConfigFile Condition="'$(RestoreConfigFile)' == '' and Exists('$(MSBuildThisFileDirectory)NuGet.Config')">$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile>
 
     <!-- 项目版本号 (日历版本: vYY.M.RELEASE) -->
-    <Version>26.1.1</Version>
-    <AssemblyVersion>26.1.1</AssemblyVersion>
-    <FileVersion>26.1.1</FileVersion>
+    <Version>26.7.1</Version>
+    <AssemblyVersion>26.7.1</AssemblyVersion>
+    <FileVersion>26.7.1</FileVersion>
 
     <!-- Rust native outputs (built by cargo) -->
     <RadishRustTargetDir>$(MSBuildThisFileDirectory)Lib/radish.lib/target</RadishRustTargetDir>

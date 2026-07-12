@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useEffectEvent } from 'react';
 import { log } from '@/utils/logger';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
@@ -27,17 +27,6 @@ export const LeaderboardApp = () => {
   const [leaderboardTypes, setLeaderboardTypes] = useState<LeaderboardTypeData[]>([]);
   const [activeType, setActiveType] = useState<LeaderboardType>(LeaderboardType.Experience);
   const pageSize = 50;
-
-  // 加载排行榜类型
-  useEffect(() => {
-    void loadLeaderboardTypes();
-  }, []);
-
-  // 当类型或页码变化时加载数据
-  useEffect(() => {
-    void loadLeaderboard();
-    void loadMyRank();
-  }, [activeType, pageIndex]);
 
   const loadLeaderboardTypes = async () => {
     try {
@@ -76,6 +65,20 @@ export const LeaderboardApp = () => {
       log.error('加载我的排名失败:', err);
     }
   };
+
+  const loadLeaderboardTypesForEffect = useEffectEvent(loadLeaderboardTypes);
+  const loadLeaderboardForEffect = useEffectEvent(() => {
+    void loadLeaderboard();
+    void loadMyRank();
+  });
+
+  useEffect(() => {
+    void loadLeaderboardTypesForEffect();
+  }, [loadLeaderboardTypesForEffect]);
+
+  useEffect(() => {
+    loadLeaderboardForEffect();
+  }, [activeType, pageIndex, loadLeaderboardForEffect]);
 
   const handleTypeChange = (type: LeaderboardType) => {
     setActiveType(type);

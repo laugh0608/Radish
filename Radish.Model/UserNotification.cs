@@ -14,6 +14,7 @@ namespace Radish.Model;
 /// </remarks>
 [Tenant(configId: "Message")]
 [SugarTable("UserNotification")]
+[SugarIndex("idx_user_notification_tenant_user_notification", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(NotificationId), OrderByType.Asc, IsUnique = true)]
 public class UserNotification : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认用户通知实例</summary>

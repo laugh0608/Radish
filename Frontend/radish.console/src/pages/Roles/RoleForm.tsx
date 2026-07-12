@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
   AntModal as Modal,
   Form,
@@ -35,7 +35,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
   ];
 
   // 加载角色详情（编辑模式）
-  const loadRoleDetail = async (id: string) => {
+  const loadRoleDetail = useCallback(async (id: string) => {
     try {
       setInitialLoading(true);
       const role = await getRoleById(id);
@@ -54,7 +54,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [form]);
 
   // 提交表单
   const handleSubmit = async () => {
@@ -111,7 +111,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
     } else {
       form.resetFields();
     }
-  }, [visible, mode, roleId, form]);
+  }, [visible, mode, roleId, form, loadRoleDetail]);
 
   return (
     <Modal

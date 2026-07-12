@@ -107,6 +107,43 @@ public class AuditLogMiddlewareTests
         capturedAuditLog.ResponseBody.ShouldBe("{\"ok\":true}");
     }
 
+    [Fact(DisplayName = "JSON 字符串请求体不应把兼容入口的原始 token 写入审计日志")]
+    public async Task InvokeAsync_Should_Redact_Json_String_RequestBody()
+    {
+        const string rawToken = "abcdef0123456789abcdef0123456789";
+        AuditLog? capturedAuditLog = null;
+        var auditLogServiceMock = new Mock<IBaseService<AuditLog, AuditLogVo>>();
+        auditLogServiceMock
+            .Setup(service => service.AddSplitAsync(It.IsAny<AuditLog>()))
+            .Callback<AuditLog>(auditLog => capturedAuditLog = auditLog)
+            .ReturnsAsync([1L]);
+
+        using var originalBody = new MemoryStream();
+        using var serviceProvider = CreateServiceProvider(auditLogServiceMock.Object);
+        var context = CreateContext(serviceProvider, originalBody);
+        var requestBytes = System.Text.Encoding.UTF8.GetBytes($"\"{rawToken}\"");
+        context.Request.Method = HttpMethods.Post;
+        context.Request.Path = "/api/v1/Attachment/RevokeAccessToken";
+        context.Request.ContentType = "application/json";
+        context.Request.Body = new MemoryStream(requestBytes);
+        context.Request.ContentLength = requestBytes.Length;
+
+        var middleware = new AuditLogMiddleware(_ => Task.CompletedTask, new AuditLogOptions
+        {
+            Enable = true,
+            LogResponseBody = false,
+            AuditMethods = [HttpMethods.Post]
+        });
+
+        await middleware.InvokeAsync(context, serviceProvider);
+
+        capturedAuditLog.ShouldNotBeNull();
+        var requestBody = capturedAuditLog.RequestBody;
+        requestBody.ShouldNotBeNull();
+        requestBody.ShouldBe("[包含敏感信息，已脱敏]");
+        requestBody.ShouldNotContain(rawToken);
+    }
+
     private static ServiceProvider CreateServiceProvider(IBaseService<AuditLog, AuditLogVo>? auditLogService = null)
     {
         var services = new ServiceCollection();

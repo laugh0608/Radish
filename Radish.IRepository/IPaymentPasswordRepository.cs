@@ -28,32 +28,33 @@ public interface IPaymentPasswordRepository : IBaseRepository<UserPaymentPasswor
     /// <param name="userId">用户ID</param>
     /// <param name="failedAttempts">失败次数</param>
     /// <param name="lockedUntil">锁定到期时间</param>
+    /// <param name="nowUtc">当前 UTC 时刻</param>
     /// <returns>更新结果</returns>
-    Task<bool> UpdateFailedAttemptsAsync(long userId, int failedAttempts, DateTime? lockedUntil = null);
+    Task<bool> UpdateFailedAttemptsAsync(long userId, int failedAttempts, DateTime? lockedUntil, DateTime nowUtc);
 
     /// <summary>
     /// 重置失败尝试次数
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <returns>重置结果</returns>
-    Task<bool> ResetFailedAttemptsAsync(long userId);
+    Task<bool> ResetFailedAttemptsAsync(long userId, DateTime nowUtc);
 
     /// <summary>
     /// 更新最后使用时间
     /// </summary>
     /// <param name="userId">用户ID</param>
     /// <returns>更新结果</returns>
-    Task<bool> UpdateLastUsedTimeAsync(long userId);
+    Task<bool> UpdateLastUsedTimeAsync(long userId, DateTime nowUtc);
 
     /// <summary>
     /// 获取被锁定的用户数量
     /// </summary>
     /// <returns>被锁定的用户数量</returns>
-    Task<int> GetLockedUsersCountAsync();
+    Task<int> GetLockedUsersCountAsync(DateTime nowUtc);
 
     /// <summary>
     /// 清理过期的锁定状态
     /// </summary>
     /// <returns>清理的记录数</returns>
-    Task<int> ClearExpiredLocksAsync();
+    Task<int> ClearExpiredLocksAsync(DateTime nowUtc);
 }

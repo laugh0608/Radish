@@ -66,11 +66,11 @@ export function handleHttpError(status: number, message: string): void {
 /**
  * 错误处理装饰器
  */
-export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
+export function withErrorHandling<TArgs extends unknown[], TResult>(
+  fn: (...args: TArgs) => Promise<TResult>,
   errorHandler?: ErrorHandler
-): T {
-  return (async (...args: any[]) => {
+): (...args: TArgs) => Promise<TResult> {
+  return async (...args: TArgs) => {
     try {
       return await fn(...args);
     } catch (error) {
@@ -82,5 +82,5 @@ export function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
       }
       throw error;
     }
-  }) as T;
+  };
 }

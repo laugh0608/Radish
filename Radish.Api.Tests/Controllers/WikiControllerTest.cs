@@ -92,7 +92,7 @@ public class WikiControllerTest
         var result = await controller.GetById(1001);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(400, result.StatusCode);
         Assert.Equal("文档不存在或无权访问", result.MessageInfo);
     }
 
@@ -164,7 +164,7 @@ public class WikiControllerTest
         var result = await controller.Publish(404);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(400, result.StatusCode);
         Assert.False(result.ResponseData);
     }
 
@@ -264,7 +264,7 @@ public class WikiControllerTest
         var result = await controller.GetRevisionDetail(404);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(400, result.StatusCode);
         Assert.Equal("版本不存在", result.MessageInfo);
     }
 

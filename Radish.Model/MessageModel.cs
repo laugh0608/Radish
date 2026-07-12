@@ -1,4 +1,5 @@
 using Radish.Shared.CustomEnum;
+using System.Text.Json.Serialization;
 
 namespace Radish.Model;
 
@@ -29,7 +30,7 @@ namespace Radish.Model;
 /// }
 /// </code>
 /// </remarks>
-public class MessageModel<T>
+public class MessageModel<T> : IMessageModel
 {
     /// <summary>
     /// HTTP 状态码
@@ -60,7 +61,8 @@ public class MessageModel<T>
     /// 开发者调试信息
     /// </summary>
     /// <value>详细的错误信息或调试信息，仅用于开发和调试阶段，生产环境可能为空</value>
-    public string MessageInfoDev { get; set; } = "Nothing happened here.";
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MessageInfoDev { get; set; }
 
     /// <summary>
     /// 响应数据
@@ -79,6 +81,12 @@ public class MessageModel<T>
     /// </summary>
     /// <value>例如 "error.auth.invalid_credentials"，用于前端 i18n 匹配</value>
     public string? MessageKey { get; set; }
+
+    /// <summary>
+    /// 服务端诊断关联标识
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TraceId { get; set; }
 
     /// <summary>
     /// 返回成功响应（无数据）
@@ -201,6 +209,9 @@ public class MessageModel<T>
     {
         return new MessageModel<T>
         {
+            StatusCode = isSuccess
+                ? (int)HttpStatusCodeEnum.Success
+                : (int)HttpStatusCodeEnum.BadRequest,
             MessageInfo = msg,
             ResponseData = responseData,
             IsSuccess = isSuccess,
@@ -217,7 +228,7 @@ public class MessageModel<T>
 /// 适用于返回数据类型不确定的场景，ResponseData 为 object 类型。
 /// 推荐优先使用泛型版本 <see cref="MessageModel{T}"/> 以获得更好的类型安全。
 /// </remarks>
-public class MessageModel
+public class MessageModel : IMessageModel
 {
     /// <summary>
     /// HTTP 状态码
@@ -245,6 +256,12 @@ public class MessageModel
     /// </summary>
     /// <value>例如 "error.auth.invalid_credentials"，用于前端 i18n 匹配</value>
     public string? MessageKey { get; set; }
+
+    /// <summary>
+    /// 服务端诊断关联标识
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? TraceId { get; set; }
 
     /// <summary>
     /// 返回的数据对象
@@ -280,4 +297,22 @@ public class MessageModel
             StatusCode = (int)HttpStatusCodeEnum.BadRequest
         };
     }
+}
+
+/// <summary>
+/// 供 MVC 结果过滤器统一读取响应状态的非泛型契约。
+/// </summary>
+public interface IMessageModel
+{
+    int StatusCode { get; set; }
+
+    bool IsSuccess { get; set; }
+
+    string MessageInfo { get; set; }
+
+    string? Code { get; set; }
+
+    string? MessageKey { get; set; }
+
+    string? TraceId { get; set; }
 }

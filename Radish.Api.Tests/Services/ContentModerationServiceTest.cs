@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.Model;
@@ -368,7 +369,7 @@ public class ContentModerationServiceTest
                 It.IsAny<Expression<Func<ContentReport, bool>>>()))
             .ReturnsAsync(0);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ReviewReportAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.ReviewReportAsync(
             new ReviewContentReportDto
             {
                 ReportId = 70004,

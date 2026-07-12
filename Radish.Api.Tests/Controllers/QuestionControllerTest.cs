@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
@@ -80,7 +81,7 @@ public class QuestionControllerTest
             });
         postServiceMock
             .Setup(service => service.AddAnswerAsync(9528, "普通帖不能回答", 10001, "Tester", 0))
-            .ThrowsAsync(new InvalidOperationException("当前帖子不是问答帖"));
+            .ThrowsAsync(new BusinessException("当前帖子不是问答帖", 400, "Forum.NotQuestionPost"));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 
@@ -110,7 +111,7 @@ public class QuestionControllerTest
             });
         postServiceMock
             .Setup(service => service.AddAnswerAsync(9999, "帖子已经不存在", 10001, "Tester", 0))
-            .ThrowsAsync(new AggregateException(new InvalidOperationException("问答帖不存在")));
+            .ThrowsAsync(new AggregateException(new BusinessException("问答帖不存在", 404, "Forum.QuestionNotFound")));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 
@@ -210,7 +211,7 @@ public class QuestionControllerTest
 
         postServiceMock
             .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
-            .ThrowsAsync(new InvalidOperationException("只有提问者可以采纳答案"));
+            .ThrowsAsync(new BusinessException("只有提问者可以采纳答案", 403, "Forum.AnswerAcceptForbidden"));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 
@@ -233,7 +234,7 @@ public class QuestionControllerTest
 
         postServiceMock
             .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
-            .ThrowsAsync(new AggregateException(new InvalidOperationException("不能采纳自己的回答")));
+            .ThrowsAsync(new AggregateException(new BusinessException("不能采纳自己的回答", 400, "Forum.CannotAcceptOwnAnswer")));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 

@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -136,7 +137,7 @@ public class PostPollServiceTest
 
         var service = CreateService(postService, postRepository, postPollRepository, postPollOptionRepository, postPollVoteRepository);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.VoteAsync(9527, "Tester", new VotePollDto
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.VoteAsync(9527, "Tester", new VotePollDto
         {
             PostId = 1001,
             OptionId = 3001
@@ -170,7 +171,7 @@ public class PostPollServiceTest
 
         var service = CreateService(postService, postRepository, postPollRepository, postPollOptionRepository, postPollVoteRepository);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.VoteAsync(9527, "Tester", new VotePollDto
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.VoteAsync(9527, "Tester", new VotePollDto
         {
             PostId = 1001,
             OptionId = 3001
@@ -207,7 +208,7 @@ public class PostPollServiceTest
 
         var service = CreateService(postService, postRepository, postPollRepository, postPollOptionRepository, postPollVoteRepository);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.VoteAsync(9527, "Tester", new VotePollDto
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.VoteAsync(9527, "Tester", new VotePollDto
         {
             PostId = 1001,
             OptionId = 9999
@@ -307,7 +308,7 @@ public class PostPollServiceTest
 
         var service = CreateService(postService, postRepository, postPollRepository, postPollOptionRepository, postPollVoteRepository);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CloseAsync(1003, 9527, "Tester"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CloseAsync(1003, 9527, "Tester"));
 
         Assert.Equal("只有发帖者可以结束投票", exception.Message);
         postPollRepository.Verify(r => r.UpdateAsync(It.IsAny<PostPoll>()), Times.Never);
@@ -341,7 +342,7 @@ public class PostPollServiceTest
 
         var service = CreateService(postService, postRepository, postPollRepository, postPollOptionRepository, postPollVoteRepository);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CloseAsync(1004, 9527, "Tester"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CloseAsync(1004, 9527, "Tester"));
 
         Assert.Equal("投票已截止", exception.Message);
         postPollRepository.Verify(r => r.UpdateAsync(It.IsAny<PostPoll>()), Times.Never);
@@ -359,6 +360,7 @@ public class PostPollServiceTest
             postRepository.Object,
             postPollRepository.Object,
             postPollOptionRepository.Object,
-            postPollVoteRepository.Object);
+            postPollVoteRepository.Object,
+            TimeProvider.System);
     }
 }

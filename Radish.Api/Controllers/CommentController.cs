@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Filters;
 using Radish.Api.Services;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -22,6 +23,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛评论管理")]
 public class CommentController : ControllerBase
 {
@@ -575,14 +577,10 @@ public class CommentController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            var statusCode = ex.Message.Contains("无法编辑") || ex.Message.Contains("只有作者")
-                ? HttpStatusCodeEnum.Forbidden
-                : HttpStatusCodeEnum.BadRequest;
-
             return new MessageModel
             {
                 IsSuccess = false,
-                StatusCode = (int)statusCode,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
         }

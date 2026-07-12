@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Api.Routing;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -16,6 +17,7 @@ namespace Radish.Api.Controllers;
 
 /// <summary>Wiki 文档控制器</summary>
 [ApiController]
+[ApiErrorContract]
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
@@ -238,9 +240,9 @@ public class WikiController : ControllerBase
             var id = await _wikiDocumentService.CreateDocumentAsync(createDto, Current.UserId, Current.UserName, Current.TenantId);
             return MessageModel<long>.Success("创建成功", id);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<long>.Failed(ex.Message, 0);
+            return BuildFailure<long>(ex, 0);
         }
     }
 
@@ -260,9 +262,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("更新成功", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -278,9 +280,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("删除成功", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -296,9 +298,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("恢复成功", true)
                 : MessageModel<bool>.Failed("文档不存在或无法恢复", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -314,9 +316,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("发布成功", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -332,9 +334,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("已转为草稿", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -350,9 +352,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("归档成功", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -373,9 +375,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("访问策略已更新", true)
                 : MessageModel<bool>.Failed("文档不存在", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -414,9 +416,9 @@ public class WikiController : ControllerBase
                 ? MessageModel<bool>.Success("回滚成功", true)
                 : MessageModel<bool>.Failed("版本不存在或文档已删除", false);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<bool>.Failed(ex.Message, false);
+            return BuildFailure(ex, false);
         }
     }
 
@@ -436,10 +438,24 @@ public class WikiController : ControllerBase
             var id = await _wikiDocumentService.ImportMarkdownAsync(importDto, Current.UserId, Current.UserName, Current.TenantId);
             return MessageModel<long>.Success("导入成功", id);
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
-            return MessageModel<long>.Failed(ex.Message, 0);
+            return BuildFailure<long>(ex, 0);
         }
+    }
+
+    private static MessageModel<T> BuildFailure<T>(Exception exception, T responseData)
+    {
+        var businessException = exception as BusinessException;
+        return new MessageModel<T>
+        {
+            IsSuccess = false,
+            StatusCode = businessException?.StatusCode ?? StatusCodes.Status400BadRequest,
+            MessageInfo = exception.Message,
+            Code = businessException?.ErrorCode,
+            MessageKey = businessException?.MessageKey,
+            ResponseData = responseData
+        };
     }
 
     [HttpGet("{id:long}")]

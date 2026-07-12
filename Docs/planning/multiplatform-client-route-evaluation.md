@@ -1,8 +1,8 @@
 # 多端客户端路线评估方案
 
-> 状态：路线评估收口，主线已收敛为纯 Web + Flutter
+> 状态：路线评估收口，纯 Web 为唯一正式主线
 >
-> 最后更新：2026-05-25（Asia/Shanghai）
+> 最后更新：2026-07-12（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -14,16 +14,16 @@
 
 ## 1. 当前结论
 
-当前不推翻 Flutter，也不把 React WebView 路线扩大到移动端。
+当前不删除 Flutter 或 Tauri 已有代码，也不把它们继续作为与纯 Web 并行的产品主线。
 
 `Phase 2-3 Android MVP` 已完成第一轮 RC 验收并给出 Go 结论，说明 Flutter 线已经能稳定交付一条 Android 原生客户端 MVP。但这不自动等于“长期多端都必须继续用 Flutter”。
 
-本轮路线复盘后，多端路线从“三端并行分工”进一步收敛为两条主线和两个保留 / 后置方向：
+本轮路线复盘后，多端路线从“三端并行分工”进一步收敛为一条正式主线、两类保留资产：
 
-1. **Web 浏览器主线**：根路径 `/` 和默认浏览器入口转向纯 Web，适配 PC 浏览器与移动浏览器，定位为公开阅读、分享、SEO、轻交互和逐步承接登录后高价值链路
-2. **Android / iOS 安装包主线**：继续以 Flutter 作为移动原生客户端路线；Android MVP 已完成第一轮，iOS 后续单独评估
-3. **WebOS 保留入口**：`/desktop` 仅作为历史桌面工作台保留项，不再承接新增功能，既有高价值能力后续逐步迁移到纯 Web 或 Flutter
-4. **Windows / macOS / Linux 安装包后置方向**：PC 客户端放到更后阶段评估；若重启，则使用 Tauri 增强纯 Web 体验，不再默认绑定 WebOS
+1. **纯 Web 正式主线**：根路径 `/` 和默认浏览器入口使用纯 Web，适配 PC 与移动浏览器，承接公开阅读、分享、SEO、登录后高价值链路和后续新功能
+2. **Flutter 条件维护资产**：保留已验收的 Android MVP，只做阻断、安全和认证兼容维护；只有原生能力价值被受控试用证明后才重新立项，iOS 不主动扩展
+3. **WebOS 保留入口**：`/desktop` 仅作为历史桌面工作台保留项，不再承接新增功能，既有高价值能力优先迁移到纯 Web
+4. **Tauri 冻结实验资产**：保留 Windows / macOS / Linux 壳层验证成果，不进入日常开发和发布门禁；只有明确桌面原生需求与维护预算成立后才评估解冻
 
 Capacitor Android 已确认不进入移动端产品化主线；Tauri 不再被理解为“原生重写”，也不再作为 WebOS 桌面分发壳的默认路线。
 
@@ -39,7 +39,7 @@ Flutter Android MVP RC 已完成：
 - 命令级验证：`flutter analyze`、`flutter test`、`smoke_test`、Android JVM 单测、签名检查、release APK 构建与 `git diff --check` 均通过
 - 真机复核：登录、退出、会话恢复、`discover / forum / docs / profile`、forum detail、docs 搜索 / 内链、profile 复访、轻回应发布与最小 forum notification 回流均未发现 `P0 / P1`
 
-因此，React spike 的目的不是补救 Flutter 失败，而是判断哪些平台适合复用 React Web 资产。当前结论更新为：Web 浏览器主线应强化纯 Web；移动安装包不适合回到 WebView 壳路线；PC 安装包不作为近期主线，未来若重启应让 Tauri 增强纯 Web，而不是继续分发 WebOS。
+因此，React spike 的目的不是补救 Flutter 失败，而是判断哪些平台适合复用 React Web 资产。当前结论更新为：所有产品能力先在纯 Web 成立；移动安装包不回到 WebView 壳路线，也不因已有 Flutter 代码默认重复实现；PC 安装包冻结，未来若因明确原生需求解冻，应让 Tauri 增强纯 Web，而不是继续分发 WebOS。
 
 ## 3. 冻结边界
 
@@ -93,7 +93,7 @@ React spike 完成后已产出：
 
 1. 一份 spike 记录，包含命令、环境、样例路径、结论与关键输出摘要
 2. 一张 Flutter 与 React 复用路线对比表
-3. 一份最终路线建议：Web 浏览器与 Flutter 成为主要投入方向，WebOS 转保留 / 迁移，桌面安装包后置且不再绑定 WebOS
+3. 一份最终路线建议：纯 Web 成为唯一正式投入方向，Flutter 条件维护，WebOS 转保留 / 迁移，Tauri 冻结且不再绑定 WebOS
 
 对比维度固定包括：
 
@@ -112,23 +112,23 @@ React spike 完成后已产出：
 最终按以下规则判断：
 
 1. **移动安装包**
-   - Android 继续保留 Flutter MVP 成果
-   - iOS 后续按 Flutter 单独评估，不因 Tauri spike 改变移动端主线
+   - Android 继续保留 Flutter MVP 成果，只做阻断、安全和认证兼容维护
+   - iOS 不主动扩展；只有原生能力价值被证明后才按 Flutter 单独立项
    - Capacitor 不进入移动端产品化主线
 2. **桌面安装包**
-   - PC 客户端后置到纯 Web 与 Flutter 主线之后
-   - 若重启，Tauri 负责系统壳增强，UI 默认承载纯 Web
+   - Tauri 冻结，不进入日常开发和发布门禁
+   - 只有明确桌面原生需求与维护预算成立后才评估解冻；解冻时 UI 默认承载纯 Web
    - 不把 WebOS 作为正式桌面客户端默认体验
 3. **Web 浏览器**
    - 纯 Web 壳层继续面向 PC / 移动浏览器做响应式阅读和轻交互体验
    - 根路径 `/` 和默认浏览器入口转向纯 Web
    - 不把公开内容和新增功能塞回窗口系统
 
-当前实际状态已从“三端分工”进一步收敛为“纯 Web + Flutter 主线”：WebOS 只保留 `/desktop`，PC/Tauri 延后且不再默认绑定 WebOS。
+当前实际状态已从“三端分工”进一步收敛为“纯 Web 唯一正式主线”：Flutter 条件维护，WebOS 只保留 `/desktop`，Tauri 冻结且不再默认绑定 WebOS。
 
 截至 2026-05-04，Capacitor Android 的阶段性结论是：公开只读页面复用成立，但一进入登录态、OIDC 回调、本机 Gateway/Auth 调试和 Android WebView 证书 / 端口代理，复杂度明显高于预期，不符合 Radish 当前“低成本 React 复用”的路线目标。Capacitor 因此不进入移动端产品化主线；截至 2026-05-16，`Frontend/radish.client/android`、`capacitor.config.ts`、`cap:*` scripts 与 Capacitor 依赖已从当前代码中清理，历史结论保留在 spike 记录中。
 
-截至 2026-05-05，Tauri 桌面壳首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证已成立：`Clients/radish-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build`、`cargo build --release` 与 `cargo tauri build` 均已通过；Windows release exe 与 NSIS installer 可生成。Tauri 默认入口曾从 `/docs` 切到 `/desktop`，桌面登录 / 登出优先改为系统浏览器 + `127.0.0.1:48801` loopback 回跳以复用浏览器登录态并避免依赖 Windows 注册表；GUI 启动、WebOS 桌面布局、窗口生命周期观察、真实登录 / 登出回跳、installer 安装、启动、普通用户卸载与同身份覆盖安装测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复；当前本机普通用户安装未出现“未知发布者 / SmartScreen”提示，公开分发后仍需按下载来源、签名、信誉与系统策略复核。管理员安装后用普通权限卸载可能残留安装文件，当前归类为权限上下文不一致风险。当前已进入 `Radish` / `com.radish.desktop` 正式桌面包候选身份补验，并已生成 `Radish_0.1.0_x64-setup.exe`；生产候选构建默认指向 `https://radishx.com`，同时新增 `build:tauri-local` 本地 Auth 验收构建模式指向 `https://localhost:5000`，用于生产 Auth 客户端注册暂未更新时继续验证 loopback 登录。路线复盘后，PC/Tauri 不再作为近期主线，后续若重启应改为增强纯 Web，而不是继续以 WebOS 为默认体验。
+截至 2026-05-05，Tauri 桌面壳首轮命令级 spike、第二轮人工验收与 Windows NSIS installer 首轮验证已成立：`Clients/radish-tauri` 可复用既有 React 构建产物，`npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client`、`cargo build`、`cargo build --release` 与 `cargo tauri build` 均已通过；Windows release exe 与 NSIS installer 可生成。Tauri 默认入口曾从 `/docs` 切到 `/desktop`，桌面登录 / 登出优先改为系统浏览器 + `127.0.0.1:48801` loopback 回跳以复用浏览器登录态并避免依赖 Windows 注册表；GUI 启动、WebOS 桌面布局、窗口生命周期观察、真实登录 / 登出回跳、installer 安装、启动、普通用户卸载与同身份覆盖安装测试后暂未发现问题；release 启动伴随命令行窗口的问题已通过 `windows_subsystem = "windows"` 修复；当时本机普通用户安装未出现“未知发布者 / SmartScreen”提示，公开分发仍需按下载来源、签名、信誉与系统策略复核。管理员安装后用普通权限卸载可能残留安装文件，归类为权限上下文不一致风险。该阶段曾进入 `Radish` / `com.radish.desktop` 正式桌面包候选身份补验，并生成 `Radish_0.1.0_x64-setup.exe`；生产候选构建默认指向 `https://radishx.com`，另有 `build:tauri-local` 本地 Auth 验收构建模式。现行路线已冻结 Tauri，只有明确桌面原生需求与维护预算成立后才评估解冻；若重启，应增强纯 Web，而不是继续以 WebOS 为默认体验。
 
 ## 7. 最终路线建议
 
@@ -149,9 +149,9 @@ React spike 完成后已产出：
 
 职责：
 
-- Android MVP 继续作为已完成移动主线保留
-- iOS 后续若进入，应基于 Flutter 单独评估，而不是回到 Capacitor WebView 路线
-- 移动端重点承载原生导航、原生生命周期、登录回跳、复访、轻互动和通知回流
+- Android MVP 作为已完成验证资产保留，只维护阻断、安全和认证兼容问题
+- iOS 不主动进入；若原生价值成立，应基于 Flutter 单独立项，而不是回到 Capacitor WebView 路线
+- 只有系统推送、后台任务、商店分发或原生生命周期等价值被证明后，才恢复对应移动端开发
 
 不承担：
 
@@ -164,7 +164,7 @@ React spike 完成后已产出：
 职责：
 
 - `/desktop` 继续保留，避免一次性删除既有桌面工作台能力
-- 聊天、通知、个人中心、创作、继续使用等既有能力按价值逐步迁移到纯 Web 或 Flutter
+- 聊天、通知、个人中心、创作、继续使用等既有能力按价值优先迁移到纯 Web
 - 迁移期间只做必要维护和高信号问题修复
 
 不承担：
@@ -173,12 +173,12 @@ React spike 完成后已产出：
 - 移动端体验
 - PC 客户端默认 UI
 
-### 7.4 Windows / macOS / Linux：Tauri 后置增强壳
+### 7.4 Windows / macOS / Linux：Tauri 冻结实验壳
 
 职责：
 
-- 放在纯 Web 与 Flutter 主线之后再评估
-- 若重启，Tauri 负责系统窗口、系统浏览器 loopback 登录回跳、deep link 兼容、系统通知、托盘、文件选择、本地缓存、外部链接等原生桥能力
+- 不进入日常开发、候选 CI 必需矩阵、签名或分发流程
+- 只有托盘、文件系统、协议唤起、自动启动等明确需求与维护预算成立后才评估解冻；若重启，Tauri 负责原生桥能力
 - UI 默认承载纯 Web，不再绑定 WebOS
 
 不承担：
@@ -190,19 +190,21 @@ React spike 完成后已产出：
 ## 8. 建议执行顺序
 
 1. 把根路径 `/` 和默认浏览器入口切向纯 Web，先补齐移动 Web 公开视图验收矩阵暴露的主路径缺口
-2. 保持 Android MVP 第一轮完成状态，不默认开启 Flutter 第 `24` 批低增益微调
-3. 若继续移动端，优先做 Android 内测产品化深化、反馈闭环和 release 前验收材料；iOS 后续单独评估
+2. 保持 Android MVP 第一轮完成状态，只做阻断、安全和认证兼容维护
+3. 先通过纯 Web 受控试用验证原生能力需求；证据成立后再单独评估 Flutter 重启，iOS 不主动扩展
 4. WebOS 只保留 `/desktop`，后续新功能默认不进入 WebOS，既有高价值能力逐步迁移
-5. PC/Tauri 放到最后再评估；若重启，基于纯 Web 做增强体验，不再以 WebOS 为默认体验
+5. 冻结 Tauri；只有明确桌面原生需求与维护预算成立后才评估解冻，并基于纯 Web 做增强体验
 6. 不再推进 Capacitor Android 登录态能力
 
 ## 9. 当前不做
 
 - 不把 Flutter Android MVP 回滚或废弃
+- 不默认为 Flutter 新增功能或追平纯 Web
 - 不立即生成 iOS Flutter 平台工程
 - 不把 Windows / macOS / Linux 作为 Flutter 默认扩平台目标
 - 不把 React spike 扩成完整移动端重构
 - 不把 Tauri 误判为原生 UI 重写路线
+- 不把 Tauri 纳入当前候选构建、签名或分发门禁
 - 不把 WebOS 作为 Tauri 正式桌面体验
 - 不把新功能默认加入 WebOS
 - 不在路线评估期间扩完整通知中心、系统通知栏推送、发帖、完整评论提交、点赞、投票或编辑治理

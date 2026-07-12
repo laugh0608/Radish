@@ -59,14 +59,16 @@
 - 后端：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）
 - 网关：`Radish.Gateway`，统一门户与 API 网关
 - 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
-- 前端：React 19 + Vite（Rolldown） + TypeScript，采用 WebOS 桌面化 UI
-- 桌面安装包：`Clients/radish-tauri`，Tauri 壳层复用 `Frontend/radish.client` 的 WebOS 构建产物
+- 前端：React 19 + Vite（Rolldown） + TypeScript，纯 Web 为唯一正式产品主线，WebOS 仅保留 `/desktop` 历史入口
+- 多端口径：Flutter 仅条件式维护现有 MVP；`Clients/radish-tauri` 冻结为实验资产，不进入当前开发与发布门禁
 - UI 组件库：`@radish/ui`，基于 npm workspaces 的共享组件库
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`
 - 主要协作分支：`dev`
 - `master` 仅作为稳定主线，只通过 Pull Request 合并
 - `master` 允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
+- 任何 PR 合并到 `master` 后，必须在开始下一轮 `dev` 开发前把最新 `origin/master` 同步回 `dev`；可快进时优先 fast-forward，否则使用普通 merge
+- `master -> dev` 回灌禁止使用 rebase、reset 或 force push 伪造同步；回灌只收口分支拓扑，不自动触发 tag、发布或部署
 - 文档唯一真相源：`Docs/`
 
 ## AI 执行边界

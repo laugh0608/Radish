@@ -47,7 +47,7 @@ public class UserExpDailyStats : RootEntityTKey<long>, ITenantEntity
 
     /// <summary>统计日期</summary>
     /// <remarks>不可为空，格式 yyyy-MM-dd</remarks>
-    [SugarColumn(IsNullable = false, ColumnDescription = "统计日期")]
+    [SugarColumn(IsNullable = false, ColumnDataType = "date", ColumnDescription = "统计日期")]
     public DateTime StatDate { get; set; } = DateTime.Today;
 
     #endregion
