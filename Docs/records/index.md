@@ -58,6 +58,7 @@
 - [m15-release-record-v26.7.1.1201-2026-07-12](/records/m15-release-record-v26.7.1.1201-2026-07-12)
 - [m15-release-record-v26.7.1.1202-2026-07-12](/records/m15-release-record-v26.7.1.1202-2026-07-12)
 - [m15-release-record-v26.7.1.1203-2026-07-12](/records/m15-release-record-v26.7.1.1203-2026-07-12)
+- [m15-release-record-v26.7.1.1204-2026-07-12](/records/m15-release-record-v26.7.1.1204-2026-07-12)
 - [m15-test-rollback-rehearsal-2026-04-06](/records/m15-test-rollback-rehearsal-2026-04-06)
 - [m15-prod-rollback-playbook-2026-04-06](/records/m15-prod-rollback-playbook-2026-04-06)
 

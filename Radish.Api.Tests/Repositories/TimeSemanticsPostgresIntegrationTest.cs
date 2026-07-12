@@ -137,7 +137,7 @@ public sealed class TimeSemanticsPostgresIntegrationTest
 
     private static SqlSugarClient CreateClient(string connectionString)
     {
-        return new SqlSugarClient(new ConnectionConfig
+        return PostgreSqlIntegrationSqlSugarFactory.CreateClient(new ConnectionConfig
         {
             ConfigId = "main",
             ConnectionString = connectionString,

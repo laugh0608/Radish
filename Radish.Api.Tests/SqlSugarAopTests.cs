@@ -111,9 +111,7 @@ public class SqlSugarAopTests
         };
         var config = new ConnectionConfig { DbType = SqlSugar.DbType.PostgreSQL };
 
-        InvokePrivateVoid(
-            "NormalizeDateTimeParametersForPostgreSql",
-            new object[] { config, parameters });
+        PostgreSqlDateTimeParameterNormalizer.Normalize(config, parameters);
 
         parameters[0].Value.ShouldBeOfType<DateTime>();
         var normalized = (DateTime)parameters[0].Value;
@@ -131,9 +129,7 @@ public class SqlSugarAopTests
         };
         var config = new ConnectionConfig { DbType = SqlSugar.DbType.PostgreSQL };
 
-        InvokePrivateVoid(
-            "NormalizeDateTimeParametersForPostgreSql",
-            new object[] { config, parameters });
+        PostgreSqlDateTimeParameterNormalizer.Normalize(config, parameters);
 
         parameters[0].Value.ShouldBeOfType<DateTime>();
         var normalized = (DateTime)parameters[0].Value;
@@ -209,11 +205,4 @@ public class SqlSugarAopTests
         return (T)result;
     }
 
-    private static void InvokePrivateVoid(string methodName, params object[] args)
-    {
-        var method = typeof(SqlSugarAop).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
-        method.ShouldNotBeNull();
-
-        method.Invoke(null, args);
-    }
 }
