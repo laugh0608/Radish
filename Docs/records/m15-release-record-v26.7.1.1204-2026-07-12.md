@@ -12,7 +12,7 @@ imageTag: v26.7.1.1204-release
 
 - 记录日期：2026-07-12
 - 发布类型：正式 Web 部署修复补发
-- 当前状态：本地根因修复与 PostgreSQL / 后端回归通过，候选级完整验证进行中
+- 当前状态：本地根因修复与候选级完整验证完成，等待 PR、回灌、tag 和镜像
 
 ## 发布标识
 
@@ -41,7 +41,11 @@ imageTag: v26.7.1.1204-release
 - 环境驱动的全部 PostgreSQL 集成测试：`10 passed / 0 failed`；覆盖 OpenIddict 空库首次迁移、重复执行、EnsureCreated schema 接管、最终模型一致性、时间列契约、文件令牌并发与 ReliableOutbox 事务 / 领取语义。
 - CI 同款全量后端测试：`635 passed / 0 skipped / 0 failed`。
 - `git diff --check` 与本批 staged repo hygiene：通过。
-- Release build、`validate:ci`、Candidate Quality 同款完整验证与最终仓库卫生结果待本批完成后回写。
+- `dotnet build Radish.slnx -c Release --no-restore`：通过，`0 warning / 0 error`。
+- 注入 PostgreSQL 的 `npm run validate:candidate`：通过；全仓 `2422` 个文件卫生预算无新增，前端 lint 零 warning，warnings-as-errors baseline、LongId 安全与依赖安全均通过，npm / NuGet High / Critical 为 `0`，其中后端测试为 `635 passed / 0 skipped / 0 failed`。
+- `npm run validate:ci`：通过；因代码与文档已分批提交，changed-only Backend / Identity Guard 按契约跳过，完整后端验证已由同批 `validate:candidate` 覆盖。
+- changed / staged repo hygiene 与 `git diff --check`：通过；全仓 `110` 个历史卫生问题均在既有 baseline 内，本批未新增。
+- 临时 PostgreSQL 容器已在验证完成后清理。
 
 ## 服务器恢复边界
 
@@ -53,7 +57,7 @@ imageTag: v26.7.1.1204-release
 
 ## 发布门禁
 
-- [ ] 完成候选级 build、test、`validate:ci`、repo hygiene 与 `git diff --check`
+- [x] 完成候选级 build、test、`validate:ci`、repo hygiene 与 `git diff --check`
 - [ ] `dev -> master` PR required checks 全部通过并合并
 - [ ] 最新 `origin/master` 回灌 `dev`
 - [ ] 在 `master` 合并提交创建并推送 `v26.7.1.1204-release`

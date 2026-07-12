@@ -44,7 +44,7 @@
   - 2026-07-12 首次生产部署固定使用 `v26.7.1.1201-release`，PostgreSQL / Redis 健康且 Frontend 已启动，但 DbMigrate 在 baseline 后因 PostgreSQL 小写物理表与硬编码 PascalCase migration SQL 不一致触发 `42P01`；API、Auth、Gateway 未启动。同时确认 DbMigrate 缺少 OpenIddict PostgreSQL 配置并回退 SQLite。服务器数据与 ledger 保留，工程第一顺位切到 `v26.7.1.1202-release` 前滚修复。
   - 2026-07-12 PR `#61` 已合并到 `master`，`master / dev / origin` 已统一到 `2717a8a2`；`v26.7.1.1202-release` 与 Docker Images `#18` 已成功。生产保留 volume 前滚后，自然日 migration 与 OpenIddict PostgreSQL provider 修复均生效，但空 OpenIddict PostgreSQL 首次 `MigrateAsync` 因运行态模型受 Npgsql legacy timestamp 全局开关污染，与 snapshot 的四个 `timestamptz` 字段不一致而阻断。API、Auth、Gateway 仍未启动，工程第一顺位切到 `v26.7.1.1203-release`。
   - 2026-07-12 PR `#62` 已合并到 `master`，`master / dev / origin` 已统一到 `ae0cd43a`；`v26.7.1.1203-release` 已创建并推送。Docker Images `#19` 的 Candidate Quality 在 `635` 项后端测试中出现 `3` 项 PostgreSQL 集成测试失败，错误均为 `DateTimeKind.Unspecified` 无法写入 `timestamp with time zone`；五个镜像 job 未执行，生产未前滚。1203 保持为不可变失败尝试，工程第一顺位切到 1204。
-  - 1204 已完成本地根因修复：PostgreSQL DateTime 参数 UTC 规范化从 SQL 日志 AOP 中拆为独立持久化契约，生产所有 SqlSugar 连接与真实 PostgreSQL 集成测试统一复用，消除 Npgsql 初始化顺序依赖；隔离 PostgreSQL 环境用例 `10/10`、CI 同款全量后端 `635/635` 已通过。当前等待候选级完整验证、PR、回灌、1204 tag 和镜像。
+  - 1204 已完成本地根因修复和候选级验证：PostgreSQL DateTime 参数 UTC 规范化从 SQL 日志 AOP 中拆为独立持久化契约，生产所有 SqlSugar 连接与真实 PostgreSQL 集成测试统一复用，消除 Npgsql 初始化顺序依赖；隔离 PostgreSQL 环境用例 `10/10`、CI 同款全量后端 `635/635`、Release build、`validate:candidate` 与 `validate:ci` 均通过。当前等待 PR、回灌、1204 tag 和镜像。
 
 ## V1 产品与发布范围
 
