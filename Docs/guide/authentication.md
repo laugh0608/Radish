@@ -1088,130 +1088,15 @@ curl https://localhost:7100/connect/userinfo \
 
 ## 13. 迁移指南
 
-### 13.1 从旧版 JWT 迁移
+当前主线已经收敛到 OIDC。旧 JWT 客户端迁移时保留 User / Role / UserRole 业务模型，把 Claims 来源切换到 OpenIddict principal，前端改由 OIDC 库管理 token；`/api/Login/GetJwtToken` 只作为历史兼容入口，不再用于新客户端。
 
-如果从第二阶段的简单 JWT 认证迁移：
-
-1. **保留数据模型**：User/Role/UserRole 等实体无需更改
-2. **更新 Claims 来源**：从 `JwtTokenGenerate` 迁移到 OpenIddict Claims Principal
-3. **调整 Token 验证**：开发运行使用 Authority 发现；测试 / 生产部署改为复用 Auth signing 证书做本地 JWT 验签
-4. **更新前端**：从手动存储 Token 改为 OIDC 库管理
-
-### 13.2 旧版登录接口（临时兼容）
-
-当前主线已经收敛到 OIDC；若仓库内或部署环境仍需短期兼容旧客户端，可暂时保留 `/api/Login/GetJwtToken` 作为过渡入口，但不再作为推荐主链：
-
-```csharp
-[AllowAnonymous]
-[HttpPost]
-[Obsolete("请使用 OIDC /connect/token 端点")]
-public async Task<IActionResult> GetJwtToken(LoginInput input)
-{
-    // 旧逻辑保留，但建议客户端尽快迁移
-}
-```
+OpenIddict 数据库的 provider 选择、migration 生成、验证与部署入口见 [OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)。
 
 ## 14. 数据库配置
 
-### 14.1 OpenIddict 数据库
+OpenIddict 本地默认使用 SQLite，测试 / 生产使用 PostgreSQL；`AuthOpenIddictDbContext` 是模型真相源，SQLite / PostgreSQL 分别维护 migration assembly。结构只由 `Radish.DbMigrate apply` 写入，Auth / API 启动不得自动迁移。
 
-OpenIddict 使用独立的 SQLite 数据库存储客户端、授权、Token 等信息。
-
-> 说明：此前仓库中曾探索过自定义 SqlSugar Store，但未正式接入。现阶段统一由 EF Core (`AuthOpenIddictDbContext`) 管理 OpenIddict 数据库，后续也不再维护那套实验性实现，避免不同 ORM 并行带来的维护成本。
-
-#### 数据库位置
-
-所有数据库文件统一存放在**解决方案根目录**的 `DataBases/` 文件夹：
-
-```
-Radish/
-└── DataBases/
-    ├── Radish.db                    # 业务主数据库（SqlSugar，API 和 Auth 共享）
-    ├── RadishLog.db                 # 业务日志数据库（SqlSugar，API 和 Auth 共享）
-    └── Radish.OpenIddict.db         # OpenIddict 数据库（EF Core，Auth 专用）
-```
-
-**重要说明 - 数据库共享机制**：
-- **业务数据库共享**：`Radish.db` 和 `RadishLog.db` 被 **Radish.Api** 和 **Radish.Auth** 两个项目共同使用
-  - 存储用户、角色、权限、租户等业务数据
-  - Auth 项目需要访问这些数据来验证用户身份和权限
-  - API 项目需要访问这些数据来提供业务功能
-- **OpenIddict 数据库独立**：`Radish.OpenIddict.db` 仅由 **Radish.Auth** 项目使用
-  - 存储 OIDC 认证相关数据（客户端、授权码、令牌、Scope 等）
-  - 使用 EF Core 管理（而不是 SqlSugar）
-  - API 项目通过 `IOpenIddictApplicationManager` 访问此数据库，实现客户端管理 API
-
-#### 共享机制
-
-- **Auth 项目**：启动时创建数据库并初始化种子数据（客户端、测试用户等）
-- **API 项目**：通过 `IOpenIddictApplicationManager` 访问同一数据库，实现客户端管理 API
-
-两个项目通过查找 `Radish.slnx` 文件定位解决方案根目录，确保使用相同的数据库路径。
-
-#### 配置方式
-
-**方式 1：使用默认路径（推荐）**
-
-不配置 `ConnectionStrings:OpenIddict`，系统自动使用：
-```
-{SolutionRoot}/DataBases/Radish.OpenIddict.db
-```
-
-**方式 2：自定义路径**
-
-在 `appsettings.Local.json` 中配置：
-
-```json
-{
-  "ConnectionStrings": {
-    "OpenIddict": "Data Source=/custom/path/Radish.OpenIddict.db"
-  }
-}
-```
-
-### 14.2 业务数据库
-
-业务数据（用户、角色、内容等）使用 SqlSugar 管理，配置在 `Databases` 数组中：
-
-```json
-{
-  "Databases": [
-    {
-      "ConnId": "Main",
-      "DbType": 2,
-      "Enabled": true,
-      "ConnectionString": "Radish.db"
-    },
-    {
-      "ConnId": "Log",
-      "DbType": 2,
-      "Enabled": true,
-      "ConnectionString": "RadishLog.db"
-    }
-  ]
-}
-```
-
-SQLite 数据库文件名会自动拼接到 `DataBases/` 文件夹下。
-
-### 14.3 数据库迁移
-
-#### OpenIddict 数据库
-
-使用 EF Core Migrations：
-
-```bash
-# 添加迁移
-cd Radish.Auth
-dotnet ef migrations add InitialCreate --context AuthOpenIddictDbContext
-
-# 应用迁移
-dotnet ef database update --context AuthOpenIddictDbContext
-```
-
-#### 业务数据库
-
-SqlSugar 使用 CodeFirst 自动创建表结构，无需手动迁移。
+完整配置、设计时命令、空库 / schema adoption / 模型一致性门禁见 [OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)。业务库的 ledger 规则见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 ## 15. Scalar API 文档集成
 

@@ -611,7 +611,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 - `POST /api/v1/User/UpdateMyTimePreference`：登录用户更新个人时区偏好（支持 IANA/Windows 时区 ID，后端会做规范化）。
 
 实现约束：
-- 数据库存储统一使用 UTC；PostgreSQL 写入前会通过 SqlSugar AOP 参数层规范化 `DateTime` / `DateTimeOffset`，避免 `timestamp with time zone` 拒绝本地时间参数。
+- 数据库存储统一使用 UTC；PostgreSQL 写入前由独立的 SqlSugar 参数规范化契约处理 `DateTime` / `DateTimeOffset`，日志开关和测试执行顺序不得改变该行为。
 - 前端按“用户偏好时区 > 浏览器时区 > 系统默认时区”回退策略进行展示。
 
 ### 3.2 Seed 与首次管理员初始化
@@ -642,7 +642,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 - Auth 登录页不再展示任何内置测试账号提示；即使本地或受控测试环境显式创建了开发演示账号，也应通过文档或人工约定获得账号信息。
 - OpenIddict 官方客户端种子不受该开关影响；`radish-client / radish-console / radish-scalar` 与 `radish-api scope` 仍由 `Radish.Auth` 启动时维护，并跟随 `RADISH_PUBLIC_URL` / Issuer 更新回调地址。
 
-新测试 / 生产环境首次部署后，访问 `RADISH_PUBLIC_URL` 根入口；当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。初始化页要求部署人员输入账号和强密码，后端会做服务端校验和并发保护。已有管理员后，初始化接口不可再创建账号。
+新测试 / 生产环境首次部署后，当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。`v26.7.1.1204-release` 当前由聊天、通知、圈子等已接入 `BootstrapGate` 的入口触发检查；公开根入口与 Workbench 的统一顶层门禁已进入发布后维护计划。初始化页要求部署人员输入展示名、邮箱和强密码，后端会做服务端校验和并发保护。已有管理员后，初始化接口不可再创建账号。
 
 ### 4. AutoMapper 许可证
 

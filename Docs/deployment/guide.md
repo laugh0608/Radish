@@ -1,11 +1,12 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.local.yaml` 或 `Deploy/docker-compose.yaml` 组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 DbMigrate、API、Auth、Gateway 与 Frontend 五个镜像入口，并通过 `Deploy/docker-compose.local.yaml` 或 `Deploy/docker-compose.yaml` 组织应用服务及 PostgreSQL / Redis。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
 
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [M15 v26.7.1.1204-release 生产部署记录](/records/m15-release-record-v26.7.1.1204-2026-07-12)
 - [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
 - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
@@ -187,7 +188,7 @@
 - `ghcr.io/<owner>/radish-gateway`
 - `ghcr.io/<owner>/radish-frontend`
 
-截至 `2026-03-28`，`radish-api / radish-auth / radish-gateway / radish-frontend` 已完成一轮真实 `docker pull` 验证；`radish-dbmigrate` 已接入 workflow 与部署编排，待下一次规范 tag 完成首次真实拉取验证。
+截至 `2026-07-12`，`v26.7.1.1204-release` 已完成五个正式镜像的构建、扫描、推送、固定 tag 拉取和生产部署；`radish-dbmigrate` 已在生产完成 PostgreSQL / OpenIddict 前滚，应用服务随后正常启动。
 
 当前 tag 规则如下：
 
@@ -319,7 +320,7 @@ docker compose up -d
 - `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
 - 默认 `RadishDeployment__Stage=production` 且 `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
 - 若误把 `Seed__DeveloperDefaultsEnabled=true` 带入生产或未配置安全阶段，`dbmigrate apply` 会直接失败退出；不要通过改阶段绕过生产防护
-- 首次打开 `RADISH_PUBLIC_URL` 根入口时，`radish.client` 会检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页，要求部署人员设置账号和强密码
+- `v26.7.1.1204-release` 会在进入聊天、通知、圈子等已接入 `BootstrapGate` 的入口时检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页。公开根入口与 Workbench 的统一顶层门禁已登记为发布后维护项，在该修复发布前不要把“根入口必然触发”作为部署验收依据
 - 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
 - `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址；未设置 `RADISH_IMAGE_TAG` 时按 `RADISH_IMAGE_TRACK` 使用浮动别名，设置后优先使用固定版本 tag
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名

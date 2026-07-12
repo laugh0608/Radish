@@ -82,6 +82,7 @@ Radish V1 的产品定位固定为：
 - [v26.7.1.1202-release 部署修复补发记录](/records/m15-release-record-v26.7.1.1202-2026-07-12)
 - [v26.7.1.1203-release OpenIddict 修复补发记录](/records/m15-release-record-v26.7.1.1203-2026-07-12)
 - [v26.7.1.1204-release PostgreSQL DateTime 修复补发记录](/records/m15-release-record-v26.7.1.1204-2026-07-12)
+- [2026-07-12 日终提交回顾与文档审阅](/records/p3-12-day-end-doc-review-2026-07-12)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -109,6 +110,14 @@ Radish V1 的产品定位固定为：
 1. 以独立维护批次统一首次管理员初始化入口门禁，并补精确路由契约测试。
 2. 观察首批真实生产使用中的登录、内容参与、聊天、通知和 Console 管理链路；P0/P1 立即进入维护线，P2/P3 成组排期。
 3. 启动 `F1 商城商品效力与权益履约` 专题，代码前先复核并补齐对应设计边界。
+
+## 明日事项（2026-07-13）
+
+1. 先推送并按正常 PR 流程集成 2026-07-12 日终文档批次；合入 `master` 后立即回灌 `dev`，不创建新 tag。
+2. 针对首次管理员初始化入口不一致，读取 `BrowserAppRouter / BootstrapGate / *Entry` 与路由契约测试，先说明统一顶层门禁方案并等待批准，再实施代码。
+3. 修复范围只覆盖顶层入口编排、重复门禁清理和公开 / Workbench / 私域 / OIDC 回调契约测试；不修改后端管理员、角色、bootstrap state 或生产数据。
+4. 继续观察生产登录、聊天、通知、Console、证书复用和 DbMigrate 重入信号；没有新 P0/P1 时，再进入 `F1 商城商品效力与权益履约` 的专题文档复核。
+5. 若需要真实 Gateway 浏览器复核，先确认明日任务中的服务启动状态或由用户明确说明生产环境可供复核；不沿用今天的运行状态授权。
 
 ## 并行维护线
 

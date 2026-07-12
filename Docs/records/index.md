@@ -74,6 +74,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [p3-12-day-end-doc-review-2026-07-12](/records/p3-12-day-end-doc-review-2026-07-12)
 - [p3-12-e8-pre-master-integration-review-2026-07-11](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
 - [p3-12-e8-b-limited-product-matrix-audit-2026-07-11](/records/p3-12-e8-b-limited-product-matrix-audit-2026-07-11)
 - [p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)

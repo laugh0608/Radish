@@ -214,7 +214,7 @@ graph LR
 
 - SQLSugar 统一由 `SqlSugarScope` 单例提供，`Radish.Common.DbTool.BaseDbConfig.MutiConnectionString` 负责解析配置中的 `MainDb` 与 `Databases` 列表并生成所有连接配置。当前约定这两项放在 `appsettings.Shared.json` 统一维护，宿主按需在本地文件/环境变量覆盖。默认示例包含 `Main`（业务库）与 `Log`（共享日志库）两个 SQLite 文件，可扩展到 PostgreSQL/MySQL 等；若缺少 `Log` 库会在启动阶段直接抛出异常。当前数据库日志设计不是按宿主分库，而是共享 `ConnId=Log` 并按日志类型 / 日期分表。
 - `SqlSugarExtension.SqlSugarSetup` 会为日志库之外的所有连接注册到 `BaseDbConfig.ValidConfig`，并将 `SqlSugarConst.Log` 标记的配置注入日志上下文；SqlSugar 内部缓存通过 `SqlSugarCache` 委托给现有 `ICaching`，AOP 事件统一写入 Serilog，便于分析 SQL。
-- PostgreSQL `timestamp with time zone` 写入前，SqlSugar AOP 会规范化 `DateTime` / `DateTimeOffset` 参数：`Local` 转 UTC，`Unspecified` 按 UTC 解释，数组和可枚举时间参数也按同一规则处理。业务展示仍按用户偏好时区 / 浏览器时区 / 系统默认时区回退，数据库侧保持 UTC 真值。
+- PostgreSQL `timestamp with time zone` 写入前，独立的 `PostgreSqlDateTimeParameterNormalizer` 会通过 SqlSugar 参数 AOP 规范化 `DateTime` / `DateTimeOffset`：`Local` 转 UTC，`Unspecified` 按 UTC 解释，数组和可枚举时间参数也按同一规则处理。该契约对包括 Log 在内的所有 PostgreSQL 连接生效，不依赖 SQL 日志开关或 Npgsql legacy timestamp 初始化顺序；业务展示仍按用户偏好时区 / 浏览器时区 / 系统默认时区回退。
 - 公共实体基类统一继承 `Radish.Model.Root.RootEntityTKey<TKey>`，并在派生类中补充审计字段（`CreatedAt/By`, `UpdatedAt/By`, `IsDeleted`, `ConcurrencyStamp` 等），保证主键类型可控且能被 SqlSugar 的 Attribute 正确识别。
 - 软删除通过 SQLSugar Filter 全局开启；必要时在仓储层提供 `IncludeDeleted` 选项。
 - OpenIddict 独立库由 `Radish.Auth.Persistence` 中的 `AuthOpenIddictDbContext` 定义模型，SQLite / PostgreSQL 使用独立 EF migration assembly；迁移由 `Radish.DbMigrate apply` 执行，Auth 启动只读校验 pending。
