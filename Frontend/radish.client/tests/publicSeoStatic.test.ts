@@ -470,6 +470,7 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
   const listSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumList.tsx'), 'utf8');
+  const stylesSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.module.css'), 'utf8');
   const searchSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumSearch.tsx'), 'utf8');
   const tagSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumTag.tsx'), 'utf8');
   const typeSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumTypeFeed.tsx'), 'utf8');
@@ -486,6 +487,9 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   assert.match(listSource, /route=\{createDefaultSearchRoute\(\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, selectedCategoryId, 'hottest'\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, nextCategoryId\)\}/);
+  assert.match(listSource, /styles\.sidePanelAction/);
+  assert.match(stylesSource, /\.workspaceActionButtons \.workspaceActionButton \{\s*flex: 1 1 150px;/);
+  assert.doesNotMatch(stylesSource, /\n {2}\.workspaceActionButton \{\n {4}flex:/);
   assert.match(searchSource, /route=\{backToListRoute\}/);
   assert.match(searchSource, /route=\{defaultSearchRoute\}/);
   assert.match(searchSource, /route=\{buildSearchRoute\(1, sortBy, value\)\}/);

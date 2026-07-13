@@ -1267,10 +1267,13 @@
   }
 
   .workspaceActionButton {
-    flex: 1 1 150px;
     min-width: 0;
     min-height: 38px;
     padding: 8px 12px;
+  }
+
+  .workspaceActionButtons .workspaceActionButton {
+    flex: 1 1 150px;
   }
 
   .workspaceActionButton span {
