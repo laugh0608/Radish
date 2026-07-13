@@ -1,4 +1,5 @@
 import { lazy, startTransition, useEffect, useState, type ElementType } from 'react';
+import { BootstrapGate } from '@/bootstrap/BootstrapGate';
 import { resolveBrowserEntryKind, type BrowserEntryKind } from '@/bootstrap/entryRoute';
 
 const OidcCallbackPage = lazy(() => import('@/auth/OidcCallbackPage').then((module) => ({ default: module.OidcCallbackPage })));
@@ -61,5 +62,9 @@ export function BrowserAppRouter() {
   }, []);
 
   const Page = resolveEntryComponent(entryKind);
-  return <Page />;
+  return (
+    <BootstrapGate>
+      <Page />
+    </BootstrapGate>
+  );
 }
