@@ -67,7 +67,7 @@
 
 ```text
 Frontend/radish.client/src/circle/
-├── CircleEntry.tsx             # 圈子入口，包裹 BootstrapGate
+├── CircleEntry.tsx             # 圈子业务入口；顶层 BrowserAppRouter 统一承接 BootstrapGate
 ├── CircleApp.tsx               # 登录态、路由、数据加载与渲染
 ├── CircleApp.module.css        # 圈子页面样式
 └── circleRouteState.ts         # /circle tab/page 路由解析

@@ -320,7 +320,7 @@ docker compose up -d
 - `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
 - 默认 `RadishDeployment__Stage=production` 且 `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
 - 若误把 `Seed__DeveloperDefaultsEnabled=true` 带入生产或未配置安全阶段，`dbmigrate apply` 会直接失败退出；不要通过改阶段绕过生产防护
-- `v26.7.1.1204-release` 会在进入聊天、通知、圈子等已接入 `BootstrapGate` 的入口时检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页。公开根入口与 Workbench 的统一顶层门禁已登记为发布后维护项，在该修复发布前不要把“根入口必然触发”作为部署验收依据
+- 已发布的 `v26.7.1.1204-release` 只在进入聊天、通知、圈子等当时已接入 `BootstrapGate` 的入口时触发首次管理员检查；该固定 tag 的行为保持不变。`dev` 已改为由 `BrowserAppRouter` 统一覆盖公开路由、Workbench、私域、WebOS Root 和 OIDC 回调，待包含该提交的新版本发布后，首次部署验收应从任一产品入口确认都会先进入同一初始化门禁；部署固定旧 tag 时仍按旧行为验收
 - 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
 - `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址；未设置 `RADISH_IMAGE_TAG` 时按 `RADISH_IMAGE_TRACK` 使用浮动别名，设置后优先使用固定版本 tag
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名

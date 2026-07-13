@@ -643,7 +643,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 - Auth 登录页不再展示任何内置测试账号提示；即使本地或受控测试环境显式创建了开发演示账号，也应通过文档或人工约定获得账号信息。
 - OpenIddict 官方客户端种子不受该开关影响；`radish-client / radish-console / radish-scalar` 与 `radish-api scope` 仍由 `Radish.Auth` 启动时维护，并跟随 `RADISH_PUBLIC_URL` / Issuer 更新回调地址。
 
-新测试 / 生产环境首次部署后，当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。`v26.7.1.1204-release` 当前由聊天、通知、圈子等已接入 `BootstrapGate` 的入口触发检查；公开根入口与 Workbench 的统一顶层门禁已进入发布后维护计划。初始化页要求部署人员输入展示名、邮箱和强密码，后端会做服务端校验和并发保护。已有管理员后，初始化接口不可再创建账号。
+新测试 / 生产环境首次部署后，当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。当前代码由 `BrowserAppRouter` 在顶层统一挂载 `BootstrapGate`，覆盖公开路由、Workbench、登录态私域、WebOS 历史 Root 和 OIDC 回调；各业务入口不再重复包裹门禁。只有 bootstrap 状态为 `ready` 时才挂载实际页面和 OIDC 回调，避免初始化未完成时提前进入认证或业务路由。初始化页要求部署人员输入展示名、邮箱和强密码，后端会做服务端校验和并发保护；已有管理员后，初始化接口不可再创建账号。
 
 ### 4. AutoMapper 许可证
 

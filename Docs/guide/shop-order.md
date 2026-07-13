@@ -1,742 +1,179 @@
-# 4. 订单系统
+# 4. 商城订单系统
 
+> 版本：v2.0 | 最后更新：2026-07-13
+>
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
-## 4.1 订单数据模型
+订单是购买、支付和履约意图的不可变快照。商品后续改名、改价、下架或软删除，不得改变历史已支付订单的发放内容。
 
-### 4.1.1 订单实体（Order）
+## 4.1 一步购买流程
 
-```csharp
-/// <summary>
-/// 订单实体
-/// </summary>
-[SugarTable("ShopOrder")]
-public class Order : RootEntityTKey<long>, ITenantEntity
-{
-    #region 基础信息
-
-    /// <summary>
-    /// 订单号（展示用，格式：yyyyMMddHHmmss + 6位随机数）
-    /// </summary>
-    [SugarColumn(Length = 30)]
-    public string OrderNo { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 用户 ID
-    /// </summary>
-    public long UserId { get; set; }
-
-    /// <summary>
-    /// 商品 ID
-    /// </summary>
-    public long ProductId { get; set; }
-
-    /// <summary>
-    /// 购买数量
-    /// </summary>
-    public int Quantity { get; set; } = 1;
-
-    #endregion
-
-    #region 商品快照
-
-    /// <summary>
-    /// 商品名称（快照）
-    /// </summary>
-    [SugarColumn(Length = 100)]
-    public string ProductName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 商品图标附件快照 Id
-    /// </summary>
-    [SugarColumn(IsNullable = true)]
-    public long? ProductIconAttachmentId { get; set; }
-
-    /// <summary>
-    /// 商品类型（快照）
-    /// </summary>
-    public ProductType ProductType { get; set; }
-
-    /// <summary>
-    /// 权益类型（快照）
-    /// </summary>
-    public BenefitType? BenefitType { get; set; }
-
-    /// <summary>
-    /// 消耗品类型（快照）
-    /// </summary>
-    public ConsumableType? ConsumableType { get; set; }
-
-    /// <summary>
-    /// 效果参数（快照）
-    /// </summary>
-    [SugarColumn(ColumnDataType = "text", IsNullable = true)]
-    public string? EffectParams { get; set; }
-
-    /// <summary>
-    /// 有效期类型（快照）
-    /// </summary>
-    public DurationType DurationType { get; set; }
-
-    /// <summary>
-    /// 有效期天数（快照）
-    /// </summary>
-    public int? DurationDays { get; set; }
-
-    #endregion
-
-    #region 金额信息
-
-    /// <summary>
-    /// 商品原价（单价）
-    /// </summary>
-    public int OriginalPrice { get; set; }
-
-    /// <summary>
-    /// 商品现价（单价）
-    /// </summary>
-    public int UnitPrice { get; set; }
-
-    /// <summary>
-    /// 订单总金额（UnitPrice × Quantity）
-    /// </summary>
-    public int TotalAmount { get; set; }
-
-    /// <summary>
-    /// 实付金额（萝卜币）
-    /// </summary>
-    public int PaidAmount { get; set; }
-
-    /// <summary>
-    /// 优惠金额（预留）
-    /// </summary>
-    public int DiscountAmount { get; set; }
-
-    #endregion
-
-    #region 订单状态
-
-    /// <summary>
-    /// 订单状态
-    /// </summary>
-    public OrderStatus Status { get; set; }
-
-    /// <summary>
-    /// 支付时间
-    /// </summary>
-    public DateTime? PaidTime { get; set; }
-
-    /// <summary>
-    /// 扣款交易 ID
-    /// </summary>
-    public long? CoinTransactionId { get; set; }
-
-    /// <summary>
-    /// 完成时间（权益发放时间）
-    /// </summary>
-    public DateTime? CompletedTime { get; set; }
-
-    /// <summary>
-    /// 取消时间
-    /// </summary>
-    public DateTime? CancelledTime { get; set; }
-
-    /// <summary>
-    /// 取消原因
-    /// </summary>
-    [SugarColumn(Length = 200, IsNullable = true)]
-    public string? CancelReason { get; set; }
-
-    /// <summary>
-    /// 失败原因
-    /// </summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? FailReason { get; set; }
-
-    #endregion
-
-    #region 权益发放
-
-    /// <summary>
-    /// 发放的权益/背包记录 ID
-    /// </summary>
-    public long? InventoryId { get; set; }
-
-    /// <summary>
-    /// 权益开始时间
-    /// </summary>
-    public DateTime? BenefitStartTime { get; set; }
-
-    /// <summary>
-    /// 权益结束时间
-    /// </summary>
-    public DateTime? BenefitEndTime { get; set; }
-
-    #endregion
-
-    #region 审计字段
-
-    /// <summary>
-    /// 租户 ID
-    /// </summary>
-    public long TenantId { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime CreateTime { get; set; }
-
-    /// <summary>
-    /// 更新时间
-    /// </summary>
-    public DateTime? UpdateTime { get; set; }
-
-    /// <summary>
-    /// 是否删除（软删除）
-    /// </summary>
-    public bool IsDeleted { get; set; }
-
-    /// <summary>
-    /// 备注
-    /// </summary>
-    [SugarColumn(Length = 500, IsNullable = true)]
-    public string? Remark { get; set; }
-
-    #endregion
-}
-```
-
----
-
-## 4.2 订单创建流程
-
-### 4.2.0 当前接口契约
-
-当前用户侧购买仍采用“一步购买”模型：检查购买资格、创建订单、扣减萝卜币、扣减库存和发放背包权益在服务端购买流程内完成。
-
-移动端和 WebOS 均复用同一组私有接口：
+用户侧购买入口：
 
 ```http
-GET /api/v1/Shop/CheckCanBuy/{productId}?quantity=1
+GET  /api/v1/Shop/CheckCanBuy/{productId}?quantity=1
 POST /api/v1/Shop/Purchase
 ```
 
-`Purchase` 请求体包含：
+`Purchase` 请求至少包含：
 
 ```json
 {
   "productId": "2060964941900283904",
   "quantity": 1,
-  "paymentPassword": "123456",
+  "paymentPassword": "******",
   "idempotencyKey": "shop:550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
-契约要求：
+服务端顺序为：
 
-- `productId`、订单 ID、用户 ID 等外部传递的 long 标识在前端应按字符串保留，避免 JavaScript 大整数精度丢失。
-- `CheckCanBuy` 只做购买资格预检，返回 `VoCanBuy / VoReason`，不创建订单、不扣款、不扣库存。
-- `Purchase` 在失败时返回失败响应，并在 `responseData.errorMessage` 或响应消息中给出明确原因；调用端不应把失败响应当作成功订单处理。
-- Web 与 Flutter 官方购买流程应传入 `shop:{uuid}` 幂等键。同一用户同 key 同摘要重试时返回同一订单结果；同 key 但商品、数量或备注不同会被拒绝。
-- 正式 Web / WebOS / Flutter 调用购买前都应先消费 `CheckCanBuy` 结果；资格不通过时只展示原因，不打开支付口令弹窗，不提交 `Purchase`。
-- 正式 Web 和 WebOS 私域商城可继续按既有数量选择和购买弹窗承接；Flutter 当前固定购买 `1` 件商品，失败重试复用同一 `shop:` 幂等键，成功或购买意图重置后生成新 key。
-- `Purchase` 扣款成功后会把胡萝卜流水 ID 写入订单的 `CoinTransactionId`；管理端 `OrderVo.VoCoinTransactionId` 用于从订单详情定位对应扣款流水。
-- Console 订单排障入口按 `BusinessType=Order / BusinessId=OrderId` 定位胡萝卜流水；订单页 URL 状态、商品相关订单跳转和流水回看订单时，`orderId / productId / businessId / userId` 都保持字符串查询参数，`returnTo` 只接受同源相对路径。
-- 购物车、退款、权益激活和道具使用不属于当前移动端购买契约。
+1. 校验商品可售能力、库存、限购、等级和余额。
+2. 校验 6 位数字支付口令。
+3. 绑定购买幂等键与请求摘要。
+4. 扣减限量库存并创建订单快照。
+5. 扣减胡萝卜并记录 `CoinTransactionId`。
+6. 只根据订单快照发放持续权益或消耗品。
+7. 写明履约资源 ID、完成状态和可靠通知任务。
 
-### 4.2.1 订单发放可靠性
+`CheckCanBuy` 只提供资格预检，不创建订单或改变资产；最终写入仍由 `Purchase` 重新校验。
 
-订单购买的可靠性分两层：
+## 4.2 订单快照
 
-- 购买请求层：`OperationIdempotencyRecord` 绑定 `TenantId + UserId + OperationType + IdempotencyKey` 和请求摘要，负责同一次购买请求的处理中提示、终态重放和同 key 不同摘要冲突拒绝。
-- 发放结果层：权益类商品通过 `UserBenefit.SourceOrderId` 唯一约束保护，消耗品类商品通过 `UserInventoryGrantRecord.SourceOrderId` 唯一约束保护，避免订单重试、人工重放或异常重试造成重复权益 / 背包数量。
+`Order` 需要独立保存下列购买时事实：
 
-因此，订单重试时不应绕过发放服务直接补写背包；人工排障也应优先通过订单、扣款流水、`UserBenefit.SourceOrderId` 或 `UserInventoryGrantRecord.SourceOrderId` 查证发放事实。
+| 分组 | 字段 |
+|------|------|
+| 商品 | `ProductId`、`ProductName`、`ProductIconAttachmentId`、`ProductType` |
+| 效果 | `BenefitType`、`ConsumableType`、`BenefitValue` |
+| 有效期 | `DurationType`、`DurationDays`、`FixedExpiresAt` |
+| 库存与金额 | `StockType`、`Quantity`、`UnitPrice`、`TotalPrice` |
+| 支付 | `PaidTime`、`CoinTransactionId` |
+| 结果 | `GrantedBenefitId`、`GrantedInventoryId`、`BenefitExpiresAt` |
 
-### 4.2.2 创建订单服务
+`UserBenefitId` 是兼容旧数据的历史字段，新代码不再写入。持续权益和消耗品必须分别写入 `GrantedBenefitId` 与 `GrantedInventoryId`。
 
-```csharp
-public class OrderService : IOrderService
-{
-    /// <summary>
-    /// 创建订单（一步完成：创建 + 支付 + 发放）
-    /// </summary>
-    [UseTran]
-    public async Task<OrderResultVo> CreateOrderAsync(long userId, OrderCreateVo input)
-    {
-        // 1. 获取商品信息
-        var product = await _productRepository.QueryFirstAsync(p => p.Id == input.ProductId);
-        if (product == null)
-            throw new BusinessException("商品不存在");
+## 4.3 状态机
 
-        // 2. 限购检查
-        var checkResult = await _purchaseLimitChecker.CheckAsync(product, userId, input.Quantity);
-        if (!checkResult.CanPurchase)
-            throw new BusinessException(checkResult.Message);
+```text
+Pending ──支付成功──> Paid ──履约成功──> Completed
+   │                    │
+   ├──取消────────────> Cancelled
+   ├──支付失败────────> Failed(Payment)
+   └────────────────────└──履约失败────> Failed(Fulfillment)
 
-        // 3. 计算金额
-        var totalAmount = product.Price * input.Quantity;
-
-        // 4. 检查余额
-        var balance = await _coinService.GetBalanceAsync(userId);
-        if (balance < totalAmount)
-            throw new BusinessException($"萝卜币不足，需要 {totalAmount}，当前余额 {balance}");
-
-        // 5. 创建订单
-        var order = new Order
-        {
-            Id = SnowFlakeSingle.Instance.NextId(),
-            OrderNo = GenerateOrderNo(),
-            UserId = userId,
-            ProductId = product.Id,
-            Quantity = input.Quantity,
-
-            // 商品快照
-            ProductName = product.Name,
-            ProductIconAttachmentId = product.IconAttachmentId,
-            ProductType = product.ProductType,
-            BenefitType = product.BenefitType,
-            ConsumableType = product.ConsumableType,
-            EffectParams = product.EffectParams,
-            DurationType = product.DurationType,
-            DurationDays = product.DurationDays,
-
-            // 金额
-            OriginalPrice = product.OriginalPrice,
-            UnitPrice = product.Price,
-            TotalAmount = totalAmount,
-            PaidAmount = totalAmount,
-
-            // 状态
-            Status = OrderStatus.Pending,
-            CreateTime = DateTime.Now
-        };
-
-        await _orderRepository.AddAsync(order);
-
-        // 6. 扣减萝卜币
-        var deductResult = await _coinService.DeductAsync(
-            userId: userId,
-            amount: totalAmount,
-            reason: $"购买商品：{product.Name}",
-            businessType: "ShopOrder",
-            businessId: order.Id.ToString()
-        );
-
-        if (!deductResult.Success)
-        {
-            order.Status = OrderStatus.Cancelled;
-            order.CancelReason = "支付失败：" + deductResult.Message;
-            order.CancelledTime = DateTime.Now;
-            await _orderRepository.UpdateAsync(order);
-            throw new BusinessException("支付失败：" + deductResult.Message);
-        }
-
-        // 7. 更新订单状态为已支付
-        order.Status = OrderStatus.Paid;
-        order.PaidTime = DateTime.Now;
-        await _orderRepository.UpdateAsync(order);
-
-        // 8. 扣减库存
-        try
-        {
-            await _productService.DeductStockAsync(product.Id, input.Quantity);
-        }
-        catch (Exception ex)
-        {
-            // 库存扣减失败，回滚萝卜币
-            await _coinService.RefundAsync(
-                userId: userId,
-                amount: totalAmount,
-                reason: $"订单取消退款：{order.OrderNo}",
-                businessType: "ShopOrderRefund",
-                businessId: order.Id.ToString()
-            );
-
-            order.Status = OrderStatus.Cancelled;
-            order.CancelReason = "库存扣减失败：" + ex.Message;
-            order.CancelledTime = DateTime.Now;
-            await _orderRepository.UpdateAsync(order);
-            throw new BusinessException("库存不足，订单已取消");
-        }
-
-        // 9. 发放权益
-        try
-        {
-            var inventoryId = await _inventoryService.GrantAsync(order);
-            order.InventoryId = inventoryId;
-            order.Status = OrderStatus.Completed;
-            order.CompletedTime = DateTime.Now;
-            await _orderRepository.UpdateAsync(order);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "订单 {OrderNo} 权益发放失败", order.OrderNo);
-            order.Status = OrderStatus.Failed;
-            order.FailReason = ex.Message;
-            await _orderRepository.UpdateAsync(order);
-            // 不抛出异常，让用户知道订单已支付，等待人工处理
-        }
-
-        // 10. 发送通知
-        await SendOrderNotificationAsync(order);
-
-        return new OrderResultVo
-        {
-            OrderId = order.Id,
-            OrderNo = order.OrderNo,
-            Status = order.Status,
-            Message = order.Status == OrderStatus.Completed
-                ? "购买成功"
-                : "订单已支付，权益发放中"
-        };
-    }
-}
+Failed(Fulfillment) ──支付证据校验 + 幂等发放──> Completed
 ```
 
-### 4.2.3 订单号生成
+`Completed` 表示支付和发放完成，不表示持续权益当前一定处于启用状态。权益可能随后被停用、到期或撤销。
 
-```csharp
-private string GenerateOrderNo()
-{
-    // 格式：yyyyMMddHHmmss + 6位随机数
-    var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-    var random = new Random().Next(100000, 999999);
-    return $"{timestamp}{random}";
-}
+## 4.4 购买幂等
+
+正式 Web 和 Flutter 为每次用户购买意图生成 `shop:{uuid}`：
+
+- 同一用户、同一键、同一请求摘要返回首次终态结果。
+- 同一键绑定不同商品、数量或备注时拒绝执行。
+- 支付口令校验失败等尚未进入资产写入的失败不占用幂等键。
+- 已开始资产写入的终态失败会被记录，避免重试造成重复扣款或发放。
+
+购买请求幂等和履约资源防重是两层保护：
+
+- `OperationIdempotencyRecord` 防止同一购买动作重复执行。
+- `UserBenefit.SourceOrderId` 防止一张订单产生多份持续权益。
+- `UserInventoryGrantRecord.SourceOrderId` 防止一张订单重复增加消耗品数量。
+
+## 4.5 支付失败与履约失败
+
+支付失败必须记录为：
+
+```text
+Status = Failed
+FailureStage = Payment
 ```
+
+履约失败必须记录为：
+
+```text
+Status = Failed
+FailureStage = Fulfillment
+PaidTime != null
+CoinTransactionId != null
+```
+
+两者不能互换。支付失败订单没有发放资格；履约失败订单也不能仅凭字段组合直接发放，管理员重试前还必须验证真实扣款流水。
+
+## 4.6 管理员重试发放
+
+`POST /api/v1/Shop/RetryGrantBenefit/{orderId}` 需要 `console.orders.retry` 权限。服务端只接受同时满足以下条件的订单：
+
+1. `Status=Failed`。
+2. `FailureStage=Fulfillment`。
+3. `PaidTime` 和 `CoinTransactionId` 均存在。
+4. 扣款流水与订单属于同一租户、同一用户。
+5. 流水为成功消费，`BusinessType=Order`、`BusinessId=OrderId`。
+6. 流水金额等于订单 `TotalPrice`。
+
+重试继续使用原订单快照，不重新读取当前 `Product`。商品被编辑、下架或软删除都不能改变历史履约内容。
+
+发放服务通过来源订单唯一键返回既有结果，因此管理员重复点击不会创建第二份权益或重复增加背包数量。
+
+## 4.7 固定日期和天数有效期
+
+- `Permanent`：履约结果没有到期时间。
+- `Days`：从履约 UTC 时间加订单快照中的天数。
+- `FixedDate`：直接使用订单快照中的固定到期时间。
+- 固定到期时间已经过去时拒绝自动发放，进入人工处理，不擅自延长。
+
+历史订单禁止从当前商品重新读取 `DurationDays` 或固定到期时间。
+
+## 4.8 用户与 Console 展示
+
+用户侧：
+
+- `/shop/orders` 查看订单列表。
+- `/shop/order/:orderId` 查看订单详情和商品快照。
+- 失败状态必须区分“支付失败”和“履约失败”。
+- 所有订单、商品和交易 ID 按字符串 LongId 处理。
+
+Console 订单详情展示：
+
+- 支付时间、扣款流水 ID、失败阶段和失败原因。
+- `GrantedBenefitId` 或 `GrantedInventoryId`。
+- 只有 `VoCanRetryFulfillment=true` 时显示重试资格；服务端仍会再次校验支付证据。
+- 订单到用户、商品和胡萝卜流水的治理回跳。
+
+## 4.9 取消、通知与备注
+
+- 用户只能取消自己的 `Pending` 订单。
+- 系统超时任务也只处理 `Pending` 订单。
+- 购买成功通知通过可靠 Outbox 请求，不因实时推送失败回退订单完成状态。
+- 管理员备注不改变支付、履约或资产事实。
+- F1 不提供用户退款入口；人工补偿不能通过直接改余额或软删订单掩盖问题。
+
+## 4.10 数据库迁移
+
+`20260713_001_shop_order_fulfillment_safety` 通过 schema ledger 完成：
+
+- 增加 `FailureStage`、`FixedExpiresAt`、`GrantedBenefitId`、`GrantedInventoryId`。
+- 按历史支付和履约信息回填失败阶段及资源类型。
+- 保留无法可靠判断的数据供 doctor 报告，不猜测修复高风险异常。
+- verify 检查字段、历史映射和履约资源一致性。
+
+禁止使用运行时 Code First 静默补列或绕过 ledger 修改正式数据库。
+
+## 4.11 排障顺序
+
+遇到订单异常时按以下顺序确认：
+
+1. 查看订单 `Status / FailureStage`。
+2. 对照 `PaidTime / CoinTransactionId / TotalPrice`。
+3. 核对胡萝卜流水的用户、租户、业务类型、业务 ID 和金额。
+4. 检查 `GrantedBenefitId / GrantedInventoryId`。
+5. 检查来源订单唯一记录，确认是否已经发放。
+6. 只有满足重试条件时使用受权重试入口。
+
+不要直接编辑订单状态、背包数量或权益记录来“修好”页面。
 
 ---
 
-## 4.3 订单查询
-
-### 4.3.1 用户订单列表
-
-```csharp
-public async Task<PageModel<OrderListVo>> GetUserOrdersAsync(
-    long userId,
-    OrderQueryVo query)
-{
-    Expression<Func<Order, bool>> where = o => o.UserId == userId && !o.IsDeleted;
-
-    // 状态筛选
-    if (query.Status.HasValue)
-        where = where.And(o => o.Status == query.Status.Value);
-
-    // 商品类型筛选
-    if (query.ProductType.HasValue)
-        where = where.And(o => o.ProductType == query.ProductType.Value);
-
-    // 时间范围筛选
-    if (query.StartTime.HasValue)
-        where = where.And(o => o.CreateTime >= query.StartTime.Value);
-    if (query.EndTime.HasValue)
-        where = where.And(o => o.CreateTime < query.EndTime.Value.AddDays(1));
-
-    var (data, total) = await _orderRepository.QueryPageAsync(
-        whereExpression: where,
-        pageIndex: query.PageIndex,
-        pageSize: query.PageSize,
-        orderByExpression: o => o.CreateTime,
-        orderByType: OrderByType.Desc
-    );
-
-    return new PageModel<OrderListVo>
-    {
-        Items = _mapper.Map<List<OrderListVo>>(data),
-        Total = total,
-        PageIndex = query.PageIndex,
-        PageSize = query.PageSize
-    };
-}
-```
-
-### 4.3.2 订单详情
-
-```csharp
-public async Task<OrderDetailVo?> GetOrderDetailAsync(long userId, long orderId)
-{
-    var order = await _orderRepository.QueryFirstAsync(
-        o => o.Id == orderId && o.UserId == userId && !o.IsDeleted
-    );
-
-    if (order == null) return null;
-
-    var vo = _mapper.Map<OrderDetailVo>(order);
-
-    // 获取关联的权益信息
-    if (order.InventoryId.HasValue)
-    {
-        var inventory = await _inventoryRepository.QueryFirstAsync(
-            i => i.Id == order.InventoryId.Value
-        );
-        vo.Inventory = _mapper.Map<InventoryBriefVo>(inventory);
-    }
-
-    return vo;
-}
-```
-
----
-
-## 4.4 订单状态管理
-
-### 4.4.1 取消订单
-
-```csharp
-public async Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null)
-{
-    var order = await _orderRepository.QueryFirstAsync(
-        o => o.Id == orderId && o.UserId == userId
-    );
-
-    if (order == null)
-        throw new BusinessException("订单不存在");
-
-    if (order.Status != OrderStatus.Pending)
-        throw new BusinessException("只能取消待支付的订单");
-
-    order.Status = OrderStatus.Cancelled;
-    order.CancelReason = reason ?? "用户取消";
-    order.CancelledTime = DateTime.Now;
-    order.UpdateTime = DateTime.Now;
-
-    await _orderRepository.UpdateAsync(order);
-
-    Log.Information("订单 {OrderNo} 已取消，原因：{Reason}", order.OrderNo, order.CancelReason);
-
-    return true;
-}
-```
-
-### 4.4.2 订单超时取消（定时任务）
-
-```csharp
-public async Task CancelTimeoutOrdersAsync()
-{
-    var timeout = DateTime.Now.AddMinutes(-30); // 30 分钟超时
-
-    var timeoutOrders = await _orderRepository.QueryAsync(
-        o => o.Status == OrderStatus.Pending && o.CreateTime < timeout
-    );
-
-    foreach (var order in timeoutOrders)
-    {
-        order.Status = OrderStatus.Cancelled;
-        order.CancelReason = "支付超时自动取消";
-        order.CancelledTime = DateTime.Now;
-        order.UpdateTime = DateTime.Now;
-
-        await _orderRepository.UpdateAsync(order);
-
-        Log.Information("订单 {OrderNo} 超时取消", order.OrderNo);
-    }
-}
-```
-
-### 4.4.3 重试失败订单（管理员）
-
-```csharp
-[Authorize(Policy = "SystemOrAdmin")]
-public async Task<bool> RetryFailedOrderAsync(long orderId)
-{
-    var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId);
-
-    if (order == null)
-        throw new BusinessException("订单不存在");
-
-    if (order.Status != OrderStatus.Failed)
-        throw new BusinessException("只能重试失败的订单");
-
-    try
-    {
-        var inventoryId = await _inventoryService.GrantAsync(order);
-        order.InventoryId = inventoryId;
-        order.Status = OrderStatus.Completed;
-        order.CompletedTime = DateTime.Now;
-        order.UpdateTime = DateTime.Now;
-        order.Remark = $"管理员重试成功 @ {DateTime.Now:yyyy-MM-dd HH:mm:ss}";
-
-        await _orderRepository.UpdateAsync(order);
-
-        // 发送通知
-        await SendOrderNotificationAsync(order);
-
-        Log.Information("订单 {OrderNo} 重试成功", order.OrderNo);
-        return true;
-    }
-    catch (Exception ex)
-    {
-        Log.Error(ex, "订单 {OrderNo} 重试失败", order.OrderNo);
-        order.FailReason = $"重试失败：{ex.Message}";
-        order.UpdateTime = DateTime.Now;
-        await _orderRepository.UpdateAsync(order);
-        throw;
-    }
-}
-```
-
----
-
-## 4.5 订单通知
-
-### 4.5.1 发送订单通知
-
-```csharp
-private async Task SendOrderNotificationAsync(Order order)
-{
-    string title, content;
-
-    switch (order.Status)
-    {
-        case OrderStatus.Completed:
-            title = "购买成功";
-            content = $"您已成功购买「{order.ProductName}」";
-            if (order.BenefitEndTime.HasValue)
-            {
-                content += $"，有效期至 {order.BenefitEndTime:yyyy-MM-dd HH:mm}";
-            }
-            break;
-
-        case OrderStatus.Failed:
-            title = "订单异常";
-            content = $"订单「{order.OrderNo}」权益发放失败，我们正在处理中";
-            break;
-
-        case OrderStatus.Cancelled:
-            title = "订单已取消";
-            content = $"订单「{order.OrderNo}」已取消";
-            break;
-
-        default:
-            return;
-    }
-
-    await _notificationService.SendNotificationAsync(
-        userId: order.UserId,
-        type: NotificationType.System,
-        title: title,
-        content: content,
-        relatedType: "Order",
-        relatedId: order.Id.ToString()
-    );
-}
-```
-
----
-
-## 4.6 订单统计
-
-### 4.6.1 用户订单统计
-
-```csharp
-public async Task<UserOrderStatsVo> GetUserOrderStatsAsync(long userId)
-{
-    var orders = await _orderRepository.QueryAsync(
-        o => o.UserId == userId && !o.IsDeleted
-    );
-
-    return new UserOrderStatsVo
-    {
-        TotalOrders = orders.Count,
-        CompletedOrders = orders.Count(o => o.Status == OrderStatus.Completed),
-        TotalSpent = orders
-            .Where(o => o.Status == OrderStatus.Completed)
-            .Sum(o => o.PaidAmount),
-        RecentOrders = orders
-            .OrderByDescending(o => o.CreateTime)
-            .Take(5)
-            .Select(o => new OrderBriefVo
-            {
-                OrderNo = o.OrderNo,
-                ProductName = o.ProductName,
-                PaidAmount = o.PaidAmount,
-                Status = o.Status,
-                CreateTime = o.CreateTime
-            })
-            .ToList()
-    };
-}
-```
-
-### 4.6.2 商品销售统计（管理员）
-
-```csharp
-public async Task<ProductSalesStatsVo> GetProductSalesStatsAsync(
-    long productId,
-    DateTime? startTime = null,
-    DateTime? endTime = null)
-{
-    Expression<Func<Order, bool>> where = o =>
-        o.ProductId == productId &&
-        o.Status == OrderStatus.Completed;
-
-    if (startTime.HasValue)
-        where = where.And(o => o.CreateTime >= startTime.Value);
-    if (endTime.HasValue)
-        where = where.And(o => o.CreateTime < endTime.Value.AddDays(1));
-
-    var orders = await _orderRepository.QueryAsync(where);
-
-    return new ProductSalesStatsVo
-    {
-        ProductId = productId,
-        TotalSales = orders.Count,
-        TotalQuantity = orders.Sum(o => o.Quantity),
-        TotalRevenue = orders.Sum(o => o.PaidAmount),
-        DailySales = orders
-            .GroupBy(o => o.CreateTime.Date)
-            .Select(g => new DailySalesVo
-            {
-                Date = g.Key,
-                Sales = g.Count(),
-                Revenue = g.Sum(o => o.PaidAmount)
-            })
-            .OrderBy(d => d.Date)
-            .ToList()
-    };
-}
-```
-
----
-
-## 4.7 订单安全
-
-### 4.7.1 幂等性保证
-
-商城购买当前使用 `OperationIdempotencyRecord` 记录服务端幂等状态，不再依赖简单缓存键返回订单。
-
-核心规则：
-
-- 唯一维度：`TenantId + UserId + OperationType + IdempotencyKey`。
-- 请求摘要：包含 `ProductId`、`Quantity`、`UserRemark`，不包含 `PaymentPassword`、登录 token 或前端状态。
-- 同 key 同摘要终态重放：返回既有订单号、扣款结果和背包发放结果，不重复扣库存、扣币或发放权益。
-- 同 key 不同摘要：拒绝执行，提示幂等键已被不同请求使用。
-- 支付口令验证失败不占用幂等键；已进入资产写入后形成的终态失败响应也会被记录，避免重试造成重复资产写入。
-- 权益 / 背包发放还具备订单级唯一约束保护；即使购买终态重放之外再次触发同一订单发放，也应返回既有发放事实，不重复增加权益或背包数量。
-
-详细接口和服务端记录字段见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
-
-### 4.7.2 防刷机制
-
-```csharp
-/// <summary>
-/// 检查用户下单频率
-/// </summary>
-private async Task CheckOrderRateLimitAsync(long userId)
-{
-    var cacheKey = $"order:rate:{userId}";
-    var recentCount = await _cache.GetAsync<int>(cacheKey);
-
-    if (recentCount >= 10) // 每分钟最多 10 单
-    {
-        throw new BusinessException("操作过于频繁，请稍后再试");
-    }
-
-    await _cache.SetAsync(cacheKey, recentCount + 1, TimeSpan.FromMinutes(1));
-}
-```
-
----
-
-> 下一篇：[5. 权益系统](/guide/shop-inventory)
+> 下一篇：[5. 权益与背包](/guide/shop-inventory)
