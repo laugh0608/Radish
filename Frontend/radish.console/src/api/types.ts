@@ -27,6 +27,23 @@ export interface PagedResponse<T> {
   data: T[];
 }
 
+/** 商城消耗品成功使用流水。 */
+export interface ShopEntitlementOperation {
+  voId: string;
+  voUserId: string;
+  voInventoryId: string;
+  voOperationType: string;
+  voConsumableType: string;
+  voConsumableTypeDisplay: string;
+  voQuantity: number;
+  voEffectType: string;
+  voEffectValue?: string | null;
+  voEffectResourceType?: string | null;
+  voEffectResourceId?: string | null;
+  voEffectResourceNo?: string | null;
+  voCreateTime: string;
+}
+
 /**
  * 商品类型枚举
  */

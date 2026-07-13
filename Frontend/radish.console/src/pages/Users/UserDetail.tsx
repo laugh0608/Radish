@@ -25,10 +25,15 @@ import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils
 import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
-import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
+import {
+  adminGetEntitlementOperations,
+  adminGetOrders,
+  getOrderStatusColor,
+  getOrderStatusDisplay,
+} from '@/api/shopApi';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
 import { buildModerationPath } from '@/pages/Moderation/moderationPageUrlState';
-import type { Order } from '@/api/types';
+import type { Order, ShopEntitlementOperation } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
 import './UserDetail.css';
@@ -60,11 +65,13 @@ export const UserDetail = () => {
   const [loading, setLoading] = useState(false);
   const [coinLoading, setCoinLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [operationLoading, setOperationLoading] = useState(false);
   const [user, setUser] = useState<UserDetailData | null>(null);
   const [balance, setBalance] = useState<UserBalanceVo | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
   const [coinTransactions, setCoinTransactions] = useState<CoinTransactionVo[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [entitlementOperations, setEntitlementOperations] = useState<ShopEntitlementOperation[]>([]);
 
   const mapUserDetail = (item: UserListItem): UserDetailData => {
     const displayName = resolveVisibleUserDisplayName(item, item.uuid ? `用户 ${item.uuid}` : '-');
@@ -247,6 +254,25 @@ export const UserDetail = () => {
     }
   }, [userId, canViewOrders]);
 
+  const loadEntitlementOperations = useCallback(async () => {
+    if (!userId || !canViewOrders) return;
+
+    try {
+      setOperationLoading(true);
+      const result = await adminGetEntitlementOperations({
+        userId,
+        pageIndex: 1,
+        pageSize: 10,
+      });
+      setEntitlementOperations(result.data);
+    } catch (error) {
+      log.error('UserDetail', '加载消耗品使用流水失败:', error);
+      setEntitlementOperations([]);
+    } finally {
+      setOperationLoading(false);
+    }
+  }, [userId, canViewOrders]);
+
   useEffect(() => {
     if (userId && canViewUsers) {
       void loadUserDetail();
@@ -259,8 +285,17 @@ export const UserDetail = () => {
       void loadExperience();
       void loadCoinTransactions();
       void loadOrders();
+      void loadEntitlementOperations();
     }
-  }, [userId, canViewUsers, loadBalance, loadExperience, loadCoinTransactions, loadOrders]);
+  }, [
+    userId,
+    canViewUsers,
+    loadBalance,
+    loadExperience,
+    loadCoinTransactions,
+    loadOrders,
+    loadEntitlementOperations,
+  ]);
   // 萝卜币流水表格列
   const coinColumns: TableColumnsType<CoinTransactionVo> = [
     {
@@ -373,6 +408,55 @@ export const UserDetail = () => {
     },
   ];
 
+  const operationColumns: TableColumnsType<ShopEntitlementOperation> = [
+    {
+      title: '道具',
+      dataIndex: 'voConsumableTypeDisplay',
+      key: 'voConsumableTypeDisplay',
+      width: 140,
+    },
+    {
+      title: '数量',
+      dataIndex: 'voQuantity',
+      key: 'voQuantity',
+      width: 90,
+    },
+    {
+      title: '实际效果',
+      key: 'effect',
+      render: (_: unknown, record) => (
+        <Space wrap>
+          <Tag>{record.voEffectType}</Tag>
+          <span>{record.voEffectValue || '-'}</span>
+        </Space>
+      ),
+    },
+    {
+      title: '效果资源',
+      key: 'resource',
+      width: 240,
+      render: (_: unknown, record) => {
+        const resourceReference = record.voEffectResourceNo || record.voEffectResourceId;
+        return record.voEffectResourceType
+          ? `${record.voEffectResourceType}${resourceReference ? ` · ${resourceReference}` : ''}`
+          : '-';
+      },
+    },
+    {
+      title: '操作 ID',
+      dataIndex: 'voId',
+      key: 'voId',
+      width: 190,
+    },
+    {
+      title: '时间',
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
+      width: 180,
+      render: (time: string) => formatDisplayTime(time),
+    },
+  ];
+
   if (!canViewUsers) {
     return (
       <div className="admin-feature-page user-detail-page">
@@ -478,7 +562,7 @@ export const UserDetail = () => {
             <div className="user-detail-section-title">
               <div>
                 <h3>最近记录</h3>
-                <p className="admin-feature-subtle">展示最近 10 条胡萝卜流水和购买记录。</p>
+                <p className="admin-feature-subtle">展示最近 10 条胡萝卜流水、购买记录和消耗品成功使用流水。</p>
               </div>
             </div>
             <Tabs
@@ -520,6 +604,26 @@ export const UserDetail = () => {
                       </div>
                     ) : (
                       <Empty description="没有查看购买记录的权限" />
+                    )
+                  ),
+                },
+                {
+                  key: 'entitlement-operations',
+                  label: '消耗品使用',
+                  children: (
+                    canViewOrders ? (
+                      <div className="admin-table-scroll-region">
+                        <Table
+                          columns={operationColumns}
+                          dataSource={entitlementOperations}
+                          rowKey="voId"
+                          loading={operationLoading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 1050 }}
+                        />
+                      </div>
+                    ) : (
+                      <Empty description="没有查看商城使用流水的权限" />
                     )
                   ),
                 },

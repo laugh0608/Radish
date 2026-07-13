@@ -420,12 +420,34 @@ public class ShopController : ControllerBase
     /// <summary>
     /// 使用改名卡
     /// </summary>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <param name="newNickname">新昵称</param>
+    /// <param name="dto">改名卡使用请求</param>
     /// <returns>使用结果</returns>
-    [HttpPost("{inventoryId:long}")]
+    [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<UseItemResultDto>> UseRenameCard(long inventoryId, [FromQuery] string newNickname)
+    public async Task<MessageModel<UseItemResultDto>> UseRenameCard([FromBody] UseRenameCardDto dto)
+    {
+        return await UseRenameCardCoreAsync(dto);
+    }
+
+    /// <summary>旧版 query string 改名卡入口，仅保留迁移期兼容。</summary>
+    [Obsolete("请改用 POST /api/v1/Shop/UseRenameCard body 请求")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [HttpPost("~/api/v{version:apiVersion}/Shop/UseRenameCard/{inventoryId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<UseItemResultDto>> UseRenameCardLegacy(
+        long inventoryId,
+        [FromQuery] string newNickname,
+        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey)
+    {
+        return await UseRenameCardCoreAsync(new UseRenameCardDto
+        {
+            InventoryId = inventoryId,
+            NewDisplayName = newNickname,
+            IdempotencyKey = idempotencyKey
+        });
+    }
+
+    private async Task<MessageModel<UseItemResultDto>> UseRenameCardCoreAsync(UseRenameCardDto dto)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
@@ -436,7 +458,7 @@ public class ShopController : ControllerBase
         UseItemResultDto result;
         try
         {
-            result = await _userInventoryService.UseRenameCardAsync(userId, inventoryId, newNickname);
+            result = await _userInventoryService.UseRenameCardAsync(userId, dto);
         }
         catch (BusinessException ex)
         {
@@ -635,6 +657,24 @@ public class ShopController : ControllerBase
         }
 
         return MessageModel<OrderVo>.Success("查询成功", result);
+    }
+
+    /// <summary>获取指定用户的消耗品使用流水（管理后台）。</summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.OrdersView)]
+    public async Task<MessageModel<PageModel<ShopEntitlementOperationVo>>> AdminGetEntitlementOperations(
+        long userId,
+        ConsumableType? consumableType = null,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var result = await _userInventoryService.GetOperationsForAdminAsync(
+            userId,
+            consumableType,
+            pageIndex,
+            pageSize);
+        return MessageModel<PageModel<ShopEntitlementOperationVo>>.Success("查询成功", result);
     }
 
     /// <summary>

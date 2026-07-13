@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Model.ViewModels;
@@ -165,6 +166,27 @@ public class UseItemDto
     /// - 其他：可空
     /// </remarks>
     public long? TargetId { get; set; }
+
+    /// <summary>客户端为本次用户动作生成的幂等键。</summary>
+    [Required(ErrorMessage = "幂等键不能为空")]
+    [StringLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string IdempotencyKey { get; set; } = string.Empty;
+}
+
+/// <summary>使用改名卡 DTO。</summary>
+public class UseRenameCardDto
+{
+    /// <summary>背包项 ID。</summary>
+    public long InventoryId { get; set; }
+
+    /// <summary>新的公开展示名。</summary>
+    [Required(ErrorMessage = "新展示名不能为空")]
+    public string NewDisplayName { get; set; } = string.Empty;
+
+    /// <summary>客户端为本次用户动作生成的幂等键。</summary>
+    [Required(ErrorMessage = "幂等键不能为空")]
+    [StringLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string IdempotencyKey { get; set; } = string.Empty;
 }
 
 /// <summary>使用道具结果 DTO</summary>
@@ -172,6 +194,12 @@ public class UseItemResultDto
 {
     /// <summary>是否成功</summary>
     public bool Success { get; set; }
+
+    /// <summary>本次业务操作流水 ID。</summary>
+    public long? OperationId { get; set; }
+
+    /// <summary>是否为既有成功结果的幂等回放。</summary>
+    public bool IsIdempotentReplay { get; set; }
 
     /// <summary>错误信息</summary>
     public string? ErrorMessage { get; set; }
@@ -182,4 +210,55 @@ public class UseItemResultDto
     /// <summary>效果描述</summary>
     /// <remarks>如"获得 100 经验值"、"帖子已置顶 24 小时"</remarks>
     public string? EffectDescription { get; set; }
+
+    /// <summary>效果类型。</summary>
+    public string? EffectType { get; set; }
+
+    /// <summary>效果值。</summary>
+    public string? EffectValue { get; set; }
+
+    /// <summary>效果资源类型。</summary>
+    public string? EffectResourceType { get; set; }
+
+    /// <summary>效果资源 ID。</summary>
+    public long? EffectResourceId { get; set; }
+
+    /// <summary>效果资源编号。</summary>
+    public string? EffectResourceNo { get; set; }
+}
+
+/// <summary>商城权益操作流水视图模型。</summary>
+public sealed class ShopEntitlementOperationVo
+{
+    public long VoId { get; set; }
+
+    public long VoUserId { get; set; }
+
+    public long VoInventoryId { get; set; }
+
+    public string VoOperationType { get; set; } = string.Empty;
+
+    public ConsumableType VoConsumableType { get; set; }
+
+    public string VoConsumableTypeDisplay => VoConsumableType switch
+    {
+        ConsumableType.RenameCard => "改名卡",
+        ConsumableType.ExpCard => "经验卡",
+        ConsumableType.CoinCard => "萝卜币红包",
+        _ => VoConsumableType.ToString()
+    };
+
+    public int VoQuantity { get; set; }
+
+    public string VoEffectType { get; set; } = string.Empty;
+
+    public string? VoEffectValue { get; set; }
+
+    public string? VoEffectResourceType { get; set; }
+
+    public long? VoEffectResourceId { get; set; }
+
+    public string? VoEffectResourceNo { get; set; }
+
+    public DateTime VoCreateTime { get; set; }
 }

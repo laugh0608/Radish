@@ -5,6 +5,7 @@ public static class OperationIdempotencyOperationTypes
 {
     public const string ShopPurchase = "ShopPurchase";
     public const string CoinTransfer = "CoinTransfer";
+    public const string ShopInventoryUse = "ShopInventoryUse";
 }
 
 /// <summary>幂等记录处理状态。</summary>
@@ -20,4 +21,5 @@ public static class OperationIdempotencyResourceTypes
 {
     public const string Order = "Order";
     public const string CoinTransaction = "CoinTransaction";
+    public const string ShopEntitlementOperation = "ShopEntitlementOperation";
 }

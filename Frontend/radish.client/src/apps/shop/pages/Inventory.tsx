@@ -15,8 +15,17 @@ interface InventoryProps {
   loadError?: ShopLoadError | null;
   onActivateBenefit: (benefitId: LongId) => void;
   onDeactivateBenefit: (benefitId: LongId) => void;
-  onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
-  onUseRenameCard: (inventoryId: LongId, newNickname: string) => Promise<boolean>;
+  onUseItem: (
+    inventoryId: LongId,
+    quantity: number,
+    targetId: LongId | undefined,
+    idempotencyKey: string
+  ) => Promise<boolean>;
+  onUseRenameCard: (
+    inventoryId: LongId,
+    newDisplayName: string,
+    idempotencyKey: string
+  ) => Promise<boolean>;
   backHref?: string;
   getSourceOrderHref?: (orderId: LongId) => string;
   getSourceProductHref?: (productId: LongId) => string;
@@ -150,6 +159,13 @@ function handleInventoryLinkClick(event: MouseEvent<HTMLAnchorElement>, action: 
   action();
 }
 
+function buildInventoryUseIdempotencyKey(): string {
+  const randomPart = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return `shop-use:${randomPart}`;
+}
+
 export const Inventory = ({
   benefits,
   inventory,
@@ -175,6 +191,8 @@ export const Inventory = ({
   const [useQuantity, setUseQuantity] = useState(1);
   const [showUseModal, setShowUseModal] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [useIdempotencyKey, setUseIdempotencyKey] = useState(() => buildInventoryUseIdempotencyKey());
+  const [usingItem, setUsingItem] = useState(false);
   const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
   const activeBenefits = benefits.filter((benefit) => benefit.voIsActive && !benefit.voIsExpired).length;
   const availableBenefits = benefits.filter((benefit) => !benefit.voIsExpired).length;
@@ -196,6 +214,7 @@ export const Inventory = ({
     setSelectedItem(item);
     setUseQuantity(1);
     setRenameValue('');
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
     setShowUseModal(true);
   };
 
@@ -204,9 +223,19 @@ export const Inventory = ({
       return;
     }
 
-    const success = isRenameCardItem(selectedItem)
-      ? await onUseRenameCard(selectedItem.voId, renameValue.trim())
-      : await onUseItem(selectedItem.voId, useQuantity);
+    if (usingItem) {
+      return;
+    }
+
+    setUsingItem(true);
+    let success = false;
+    try {
+      success = isRenameCardItem(selectedItem)
+        ? await onUseRenameCard(selectedItem.voId, renameValue.trim(), useIdempotencyKey)
+        : await onUseItem(selectedItem.voId, useQuantity, undefined, useIdempotencyKey);
+    } finally {
+      setUsingItem(false);
+    }
 
     if (!success) {
       return;
@@ -215,13 +244,36 @@ export const Inventory = ({
     setShowUseModal(false);
     setSelectedItem(null);
     setRenameValue('');
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
   };
 
   const handleCloseModal = () => {
+    if (usingItem) {
+      return;
+    }
+
     setShowUseModal(false);
     setSelectedItem(null);
     setUseQuantity(1);
     setRenameValue('');
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
+  };
+
+  const handleUseQuantityChange = (newQuantity: number) => {
+    const normalizedQuantity = Math.max(1, Math.min(selectedItem?.voQuantity ?? 1, newQuantity));
+    if (normalizedQuantity === useQuantity) {
+      return;
+    }
+
+    setUseQuantity(normalizedQuantity);
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
+  };
+
+  const handleRenameValueChange = (newValue: string) => {
+    if (newValue !== renameValue) {
+      setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
+    }
+    setRenameValue(newValue);
   };
 
   if (loading) {
@@ -612,9 +664,9 @@ export const Inventory = ({
                     id="shop-rename-input"
                     className={styles.textInput}
                     value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
+                    onChange={(e) => handleRenameValueChange(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && renameValue.trim()) {
+                      if (e.key === 'Enter' && renameValue.trim() && !usingItem) {
                         void handleConfirmUse();
                       }
                     }}
@@ -628,15 +680,15 @@ export const Inventory = ({
                   <label>{t('shop.inventory.useQuantity')}</label>
                   <div className={styles.quantityControls}>
                     <button
-                      onClick={() => setUseQuantity(Math.max(1, useQuantity - 1))}
-                      disabled={useQuantity <= 1}
+                      onClick={() => handleUseQuantityChange(useQuantity - 1)}
+                      disabled={useQuantity <= 1 || usingItem}
                     >
                       -
                     </button>
                     <span>{useQuantity}</span>
                     <button
-                      onClick={() => setUseQuantity(Math.min(selectedItem.voQuantity, useQuantity + 1))}
-                      disabled={useQuantity >= selectedItem.voQuantity}
+                      onClick={() => handleUseQuantityChange(useQuantity + 1)}
+                      disabled={useQuantity >= selectedItem.voQuantity || usingItem}
                     >
                       +
                     </button>
@@ -645,13 +697,13 @@ export const Inventory = ({
               )}
             </div>
             <div className={styles.modalFooter}>
-              <button className={styles.cancelButton} onClick={handleCloseModal}>
+              <button className={styles.cancelButton} onClick={handleCloseModal} disabled={usingItem}>
                 {t('common.cancel')}
               </button>
               <button
                 className={styles.confirmButton}
                 onClick={() => { void handleConfirmUse(); }}
-                disabled={isRenameCardItem(selectedItem) && !renameValue.trim()}
+                disabled={usingItem || (isRenameCardItem(selectedItem) && !renameValue.trim())}
               >
                 {t('shop.inventory.confirmUse')}
               </button>

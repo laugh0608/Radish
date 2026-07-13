@@ -19,6 +19,7 @@ import type {
   CreateOrderRequest,
   PurchaseResult,
   UseItemRequest,
+  UseRenameCardRequest,
   UseItemResult
 } from '@/types/shop';
 import { getApiBaseUrl } from '@/config/env';
@@ -43,6 +44,7 @@ export type {
   CreateOrderRequest,
   PurchaseResult,
   UseItemRequest,
+  UseRenameCardRequest,
   UseItemResult
 };
 
@@ -287,11 +289,11 @@ export async function useItem(request: UseItemRequest, t: TFunction) {
 /**
  * 使用改名卡
  */
-export async function useRenameCard(inventoryId: LongId, newNickname: string, t: TFunction) {
+export async function useRenameCard(request: UseRenameCardRequest, t: TFunction) {
   void t;
   return await apiPost<UseItemResult>(
-    `/api/v1/Shop/UseRenameCard/${encodeURIComponent(String(inventoryId))}?newNickname=${encodeURIComponent(newNickname)}`,
-    undefined,
+    '/api/v1/Shop/UseRenameCard',
+    request,
     { withAuth: true }
   );
 }

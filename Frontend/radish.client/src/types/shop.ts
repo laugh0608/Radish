@@ -217,6 +217,16 @@ export interface UseItemRequest {
   inventoryId: LongId;
   quantity?: number;
   targetId?: LongId;
+  idempotencyKey: string;
+}
+
+/**
+ * 使用改名卡请求
+ */
+export interface UseRenameCardRequest {
+  inventoryId: LongId;
+  newDisplayName: string;
+  idempotencyKey: string;
 }
 
 /**
@@ -225,6 +235,13 @@ export interface UseItemRequest {
 export interface UseItemResult {
   success: boolean;
   errorMessage?: string;
+  operationId?: LongId;
+  isIdempotentReplay?: boolean;
   remainingQuantity: number;
   effectDescription?: string;
+  effectType?: string;
+  effectValue?: string;
+  effectResourceType?: string;
+  effectResourceId?: LongId;
+  effectResourceNo?: string;
 }

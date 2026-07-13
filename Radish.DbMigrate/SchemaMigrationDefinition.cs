@@ -22,6 +22,7 @@ internal static class SchemaMigrationRegistry
     public static IReadOnlyList<ISchemaMigration> All { get; } =
     [
         ExperienceNaturalDateSchemaMigration.Instance,
-        ShopOrderFulfillmentSafetyMigration.Instance
+        ShopOrderFulfillmentSafetyMigration.Instance,
+        ShopEntitlementOperationSchemaMigration.Instance
     ];
 }

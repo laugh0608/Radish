@@ -11,10 +11,12 @@ import type {
   CreateProductDto,
   UpdateProductDto,
   Order,
+  ShopEntitlementOperation,
 } from './types';
 import {
   ProductType,
   OrderStatus,
+  ConsumableType,
 } from './types';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -187,6 +189,33 @@ export async function adminGetOrder(orderId: string): Promise<Order> {
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取订单详情失败');
+  }
+
+  return response.data;
+}
+
+/** 获取指定用户最近的消耗品使用流水。 */
+export async function adminGetEntitlementOperations(params: {
+  userId: string;
+  consumableType?: ConsumableType;
+  pageIndex?: number;
+  pageSize?: number;
+}): Promise<PagedResponse<ShopEntitlementOperation>> {
+  const searchParams = new URLSearchParams({
+    userId: params.userId,
+    pageIndex: (params.pageIndex || 1).toString(),
+    pageSize: (params.pageSize || 20).toString(),
+  });
+  if (params.consumableType !== undefined) {
+    searchParams.set('consumableType', params.consumableType.toString());
+  }
+
+  const response = await apiGet<PagedResponse<ShopEntitlementOperation>>(
+    `/api/v1/Shop/AdminGetEntitlementOperations?${searchParams.toString()}`,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取消耗品使用流水失败');
   }
 
   return response.data;

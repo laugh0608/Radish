@@ -49,7 +49,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
 
             Assert.Empty(migration.Verify(db, services));
-            Assert.Equal(3, db.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(4, db.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(db, "ExpTransaction", "CreatedDate"));
             Assert.Equal("date", GetColumnType(db, "UserExpDailyStats", "StatDate"));
             Assert.Equal("date", GetColumnType(db, "UserExperienceGovernanceAction", "StatDate"));
@@ -123,7 +123,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             await Task.WhenAll(RunApplyAsync(), RunApplyAsync());
 
             using var verifier = CreateClient(path);
-            Assert.Equal(3, verifier.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(4, verifier.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(verifier, "ExpTransaction", "CreatedDate"));
         }
         finally
@@ -152,14 +152,14 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             using (var firstApply = CreateClient(path))
             {
                 SchemaMigrationLedger.ApplyPending(firstApply, services, ["Main"]);
-                Assert.Equal(3, firstApply.Queryable<SchemaMigrationRecord>().Count());
+                Assert.Equal(4, firstApply.Queryable<SchemaMigrationRecord>().Count());
             }
 
             File.Copy(backupPath, path, overwrite: true);
             using var restoredApply = CreateClient(path);
             SchemaMigrationLedger.ApplyPending(restoredApply, services, ["Main"]);
 
-            Assert.Equal(3, restoredApply.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(4, restoredApply.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(restoredApply, "ExpTransaction", "CreatedDate"));
             Assert.StartsWith(
                 "2026-07-12",
@@ -245,7 +245,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
             SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
 
-            Assert.Equal(3, db.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(4, db.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(db, "exptransaction", "createddate"));
             Assert.Equal("date", GetColumnType(db, "userexpdailystats", "statdate"));
             Assert.Equal("date", GetColumnType(db, "userexperiencegovernanceaction", "statdate"));
@@ -294,7 +294,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             await Task.WhenAll(RunApplyAsync(), RunApplyAsync());
 
             using var verifier = CreatePostgreSqlScope(connectionString);
-            Assert.Equal(3, verifier.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(4, verifier.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(verifier, "ExpTransaction", "CreatedDate"));
         }
         finally

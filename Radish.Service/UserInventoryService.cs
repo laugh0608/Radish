@@ -1,16 +1,22 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Linq.Expressions;
 using AutoMapper;
 using Radish.Common;
 using Radish.Common.AttributeTool;
+using Radish.Common.CoreTool;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -19,27 +25,36 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
 {
     private readonly IBaseRepository<UserInventory> _inventoryRepository;
     private readonly IUserInventoryRepository _userInventoryRepository;
-    private readonly IBaseRepository<User> _userRepository;
+    private readonly IBaseRepository<ShopEntitlementOperation> _operationRepository;
+    private readonly IUserService _userService;
     private readonly ICoinService _coinService;
+    private readonly IOperationIdempotencyService _operationIdempotencyService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
-    private readonly IExperienceService? _experienceService;
+    private readonly IExperienceService _experienceService;
+    private readonly TimeProvider _timeProvider;
 
     public UserInventoryService(
         IMapper mapper,
         IBaseRepository<UserInventory> inventoryRepository,
         IUserInventoryRepository userInventoryRepository,
-        IBaseRepository<User> userRepository,
+        IBaseRepository<ShopEntitlementOperation> operationRepository,
+        IUserService userService,
         ICoinService coinService,
+        IOperationIdempotencyService operationIdempotencyService,
         IAttachmentUrlResolver attachmentUrlResolver,
-        IExperienceService? experienceService = null)
+        IExperienceService experienceService,
+        TimeProvider? timeProvider = null)
         : base(mapper, inventoryRepository)
     {
         _inventoryRepository = inventoryRepository;
         _userInventoryRepository = userInventoryRepository;
-        _userRepository = userRepository;
+        _operationRepository = operationRepository;
+        _userService = userService;
         _coinService = coinService;
+        _operationIdempotencyService = operationIdempotencyService;
         _attachmentUrlResolver = attachmentUrlResolver;
         _experienceService = experienceService;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     #region 背包查询
@@ -108,26 +123,63 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     #region 道具使用
 
     /// <summary>使用道具</summary>
-#pragma warning disable CS0618
     [UseTran(Propagation = Propagation.Required)]
     public async Task<UseItemResultDto> UseItemAsync(long userId, UseItemDto dto)
     {
-        if (dto.Quantity < 1)
+        return await UseInventoryItemAsync(
+            userId,
+            dto.InventoryId,
+            dto.Quantity,
+            dto.TargetId,
+            newDisplayName: null,
+            idempotencyKey: dto.IdempotencyKey,
+            expectedConsumableType: null);
+    }
+
+    /// <summary>使用改名卡</summary>
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<UseItemResultDto> UseRenameCardAsync(long userId, UseRenameCardDto dto)
+    {
+        return await UseInventoryItemAsync(
+            userId,
+            dto.InventoryId,
+            quantity: 1,
+            targetId: null,
+            newDisplayName: dto.NewDisplayName,
+            idempotencyKey: dto.IdempotencyKey,
+            expectedConsumableType: ConsumableType.RenameCard);
+    }
+
+    private async Task<UseItemResultDto> UseInventoryItemAsync(
+        long userId,
+        long inventoryId,
+        int quantity,
+        long? targetId,
+        string? newDisplayName,
+        string? idempotencyKey,
+        ConsumableType? expectedConsumableType)
+    {
+        if (quantity < 1)
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "使用数量必须大于 0" };
+            return Failure("使用数量必须大于 0");
+        }
+
+        var normalizedKey = _operationIdempotencyService.NormalizeKey(idempotencyKey);
+        if (normalizedKey == null)
+        {
+            return Failure("幂等键不能为空");
         }
 
         var item = await _inventoryRepository.QueryFirstAsync(
-            i => i.Id == dto.InventoryId && i.UserId == userId && !i.IsDeleted);
-
+            inventory => inventory.Id == inventoryId && inventory.UserId == userId && !inventory.IsDeleted);
         if (item == null)
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "道具不存在" };
+            return Failure("道具不存在");
         }
 
-        if (item.Quantity < dto.Quantity)
+        if (expectedConsumableType.HasValue && item.ConsumableType != expectedConsumableType.Value)
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "道具数量不足" };
+            return Failure("背包项与请求的道具类型不匹配");
         }
 
         if (IsUnavailableConsumableType(item.ConsumableType))
@@ -135,296 +187,404 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             return CreateUnavailableConsumableResult(item.ConsumableType);
         }
 
-        // 根据道具类型调用不同的使用方法
-        return item.ConsumableType switch
+        if (item.ConsumableType == ConsumableType.RenameCard && string.IsNullOrWhiteSpace(newDisplayName))
         {
-            ConsumableType.RenameCard => new UseItemResultDto
+            return Failure("改名卡需要指定新展示名，请使用专用接口");
+        }
+
+        if (item.ConsumableType is not (ConsumableType.RenameCard or ConsumableType.ExpCard or ConsumableType.CoinCard))
+        {
+            return Failure("不支持的道具类型");
+        }
+
+        var requestSnapshot = _operationIdempotencyService.CreateRequestSnapshot(
+            new Dictionary<string, object?>
             {
-                Success = false,
-                ErrorMessage = "改名卡需要指定新昵称，请使用专用接口"
-            },
-            ConsumableType.ExpCard => await UseExpCardAsync(userId, dto.InventoryId, dto.Quantity),
-            ConsumableType.CoinCard => await UseCoinCardAsync(userId, dto.InventoryId, dto.Quantity),
-            ConsumableType.DoubleExpCard => await UseDoubleExpCardAsync(userId, dto.InventoryId),
-            ConsumableType.PostPinCard => dto.TargetId.HasValue
-                ? await UsePostPinCardAsync(userId, dto.InventoryId, dto.TargetId.Value)
-                : new UseItemResultDto { Success = false, ErrorMessage = "置顶卡需要指定帖子 ID" },
-            ConsumableType.PostHighlightCard => dto.TargetId.HasValue
-                ? await UsePostHighlightCardAsync(userId, dto.InventoryId, dto.TargetId.Value)
-                : new UseItemResultDto { Success = false, ErrorMessage = "高亮卡需要指定帖子 ID" },
-            ConsumableType.LotteryTicket => CreateUnavailableConsumableResult(ConsumableType.LotteryTicket),
-            _ => new UseItemResultDto { Success = false, ErrorMessage = "不支持的道具类型" }
-        };
-    }
-#pragma warning restore CS0618
-
-    /// <summary>使用改名卡</summary>
-    [UseTran(Propagation = Propagation.Required)]
-    public async Task<UseItemResultDto> UseRenameCardAsync(long userId, long inventoryId, string newNickname)
-    {
-        var item = await _inventoryRepository.QueryFirstAsync(
-            i => i.Id == inventoryId &&
-                 i.UserId == userId &&
-                 i.ConsumableType == ConsumableType.RenameCard &&
-                 !i.IsDeleted);
-
-        if (item == null)
+                ["OperationType"] = ShopEntitlementOperationTypes.Use,
+                ["InventoryId"] = inventoryId,
+                ["Quantity"] = quantity,
+                ["TargetId"] = targetId,
+                ["NewDisplayNameHash"] = HashSensitiveValue(newDisplayName?.Trim())
+            });
+        var persistedReplay = await ResolvePersistedOperationAsync(
+            item.TenantId,
+            userId,
+            normalizedKey,
+            requestSnapshot.RequestHash);
+        if (persistedReplay != null)
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "改名卡不存在" };
+            return persistedReplay;
         }
 
-        if (item.Quantity < 1)
+        if (item.Quantity < quantity)
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "改名卡数量不足" };
+            return Failure("道具数量不足");
         }
 
-        if (string.IsNullOrWhiteSpace(newNickname))
+        var idempotency = await _operationIdempotencyService.BeginAsync(new OperationIdempotencyBeginRequest
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "新昵称不能为空" };
+            TenantId = item.TenantId,
+            UserId = userId,
+            OperationType = OperationIdempotencyOperationTypes.ShopInventoryUse,
+            IdempotencyKey = normalizedKey,
+            RequestHash = requestSnapshot.RequestHash,
+            RequestSummary = requestSnapshot.RequestSummary
+        });
+        var earlyResult = ResolveIdempotencyResult(idempotency);
+        if (earlyResult != null)
+        {
+            return earlyResult;
         }
 
-        // 检查昵称是否已被使用
-        var existingUser = await _userRepository.QueryFirstAsync(u => u.UserName == newNickname && u.Id != userId);
-        if (existingUser != null)
-        {
-            return new UseItemResultDto { Success = false, ErrorMessage = "该昵称已被使用" };
-        }
-
-        var user = await _userRepository.QueryFirstAsync(u => u.Id == userId);
-        if (user == null)
-        {
-            return new UseItemResultDto { Success = false, ErrorMessage = "用户不存在" };
-        }
-
-        var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, 1);
+        var operationId = SnowFlakeSingle.Instance.NextId();
+        var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
         if (!deduction.Success)
         {
-            return new UseItemResultDto { Success = false, ErrorMessage = "改名卡数量不足" };
+            throw new BusinessException("道具数量不足");
         }
 
-        var oldNickname = user.UserName;
-        user.UserName = newNickname;
-        var updated = await _userRepository.UpdateAsync(user);
-        if (!updated)
-        {
-            throw new BusinessException("昵称修改失败，请稍后再试");
-        }
-
-        Log.Information("用户 {UserId} 使用改名卡，昵称从 {OldNickname} 改为 {NewNickname}",
-            userId, oldNickname, newNickname);
-
-        return new UseItemResultDto
+        var effect = await ApplyItemEffectAsync(
+            userId,
+            item,
+            quantity,
+            operationId,
+            newDisplayName?.Trim());
+        var result = new UseItemResultDto
         {
             Success = true,
+            OperationId = operationId,
             RemainingQuantity = deduction.RemainingQuantity,
-            EffectDescription = $"昵称已修改为 {newNickname}"
+            EffectDescription = effect.Description,
+            EffectType = effect.EffectType,
+            EffectValue = effect.EffectValue,
+            EffectResourceType = effect.ResourceType,
+            EffectResourceId = effect.ResourceId,
+            EffectResourceNo = effect.ResourceNo
+        };
+        var resultPayload = _operationIdempotencyService.SerializeResponse(result);
+
+        await _operationRepository.AddAsync(new ShopEntitlementOperation
+        {
+            Id = operationId,
+            TenantId = item.TenantId,
+            UserId = userId,
+            InventoryId = inventoryId,
+            OperationType = ShopEntitlementOperationTypes.Use,
+            ConsumableType = item.ConsumableType,
+            Quantity = quantity,
+            ItemValue = item.ItemValue,
+            TargetType = effect.TargetType,
+            TargetId = effect.TargetId,
+            IdempotencyKey = normalizedKey,
+            RequestHash = requestSnapshot.RequestHash,
+            EffectType = effect.EffectType,
+            EffectValue = effect.EffectValue,
+            EffectResourceType = effect.ResourceType,
+            EffectResourceId = effect.ResourceId,
+            EffectResourceNo = effect.ResourceNo,
+            ResultPayload = resultPayload,
+            CreateTime = GetUtcNow(),
+            CreateBy = $"User_{userId}",
+            CreateId = userId
+        });
+
+        await _operationIdempotencyService.CompleteSuccessAsync(new OperationIdempotencyCompletionRequest
+        {
+            RecordId = idempotency.RecordId!.Value,
+            ResourceType = OperationIdempotencyResourceTypes.ShopEntitlementOperation,
+            ResourceId = operationId,
+            ResponsePayload = resultPayload
+        });
+
+        Log.Information(
+            "用户 {UserId} 使用道具 {InventoryId}，操作={OperationId}, 类型={ConsumableType}, 数量={Quantity}",
+            userId,
+            inventoryId,
+            operationId,
+            item.ConsumableType,
+            quantity);
+        return result;
+    }
+
+    private async Task<UseItemEffectResult> ApplyItemEffectAsync(
+        long userId,
+        UserInventory item,
+        int quantity,
+        long operationId,
+        string? newDisplayName)
+    {
+        return item.ConsumableType switch
+        {
+            ConsumableType.RenameCard => await ApplyRenameCardEffectAsync(userId, operationId, newDisplayName!),
+            ConsumableType.ExpCard => await ApplyExperienceCardEffectAsync(userId, item, quantity, operationId),
+            ConsumableType.CoinCard => await ApplyCoinCardEffectAsync(userId, item, quantity, operationId),
+            _ => throw new InvalidOperationException($"不支持的道具类型：{item.ConsumableType}")
         };
     }
 
-    /// <summary>使用经验卡</summary>
-    [UseTran(Propagation = Propagation.Required)]
-    public async Task<UseItemResultDto> UseExpCardAsync(long userId, long inventoryId)
+    private async Task<UseItemEffectResult> ApplyRenameCardEffectAsync(
+        long userId,
+        long operationId,
+        string newDisplayName)
     {
-        return await UseExpCardAsync(userId, inventoryId, 1);
-    }
-
-    private async Task<UseItemResultDto> UseExpCardAsync(long userId, long inventoryId, int quantity)
-    {
+        bool changed;
         try
         {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId &&
-                     i.UserId == userId &&
-                     i.ConsumableType == ConsumableType.ExpCard &&
-                     !i.IsDeleted);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验卡不存在" };
-            }
-
-            if (quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "使用数量必须大于 0" };
-            }
-
-            if (item.Quantity < quantity)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验卡数量不足" };
-            }
-
-            // 解析经验值
-            if (!int.TryParse(item.ItemValue, out var expAmount) || expAmount <= 0)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验卡配置错误" };
-            }
-
-            if (_experienceService == null)
-            {
-                Log.Error("经验值服务不可用，无法发放经验卡奖励");
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验服务暂不可用，请稍后再试" };
-            }
-
-            int totalExpAmount;
-            try
-            {
-                totalExpAmount = checked(expAmount * quantity);
-            }
-            catch (OverflowException)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验卡配置超出范围" };
-            }
-
-            var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
-            if (!deduction.Success)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "经验卡数量不足" };
-            }
-
-            var grantSuccess = await _experienceService.GrantExperienceAsync(
+            changed = await _userService.ChangeDisplayNameAsync(
                 userId,
-                totalExpAmount,
-                "USE_EXP_CARD",
-                "UserInventory",
-                inventoryId);
-
-            if (!grantSuccess)
-            {
-                Log.Error("用户 {UserId} 使用经验卡失败，经验值服务未完成发放", userId);
-                throw new BusinessException("经验值发放失败，请稍后再试");
-            }
-
-            Log.Information("用户 {UserId} 使用经验卡 {Quantity} 张，获得 {ExpAmount} 经验值",
-                userId, quantity, totalExpAmount);
-
-            return new UseItemResultDto
-            {
-                Success = true,
-                RemainingQuantity = deduction.RemainingQuantity,
-                EffectDescription = $"获得 {totalExpAmount} 经验值"
-            };
+                newDisplayName,
+                new UserDisplayNameChangeContext
+                {
+                    OperatorUserId = userId,
+                    OperatorUserName = $"User_{userId}",
+                    Source = UserDisplayNameChangeSources.RenameCard,
+                    Reason = $"使用改名卡，商城操作流水 {operationId}"
+                });
         }
-        catch (BusinessException)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            throw;
+            throw new BusinessException(ex.Message, ex);
         }
-        catch (Exception ex)
+
+        if (!changed)
         {
-            Log.Error(ex, "使用经验卡失败：用户={UserId}", userId);
-            throw;
+            throw new BusinessException("新展示名与当前展示名相同");
         }
+
+        return new UseItemEffectResult(
+            ShopEntitlementEffectTypes.DisplayName,
+            newDisplayName,
+            $"展示名已修改为 {newDisplayName}",
+            ShopEntitlementResourceTypes.User,
+            userId,
+            null,
+            ShopEntitlementResourceTypes.User,
+            userId);
     }
 
-    /// <summary>使用萝卜币红包</summary>
-    [UseTran(Propagation = Propagation.Required)]
-    public async Task<UseItemResultDto> UseCoinCardAsync(long userId, long inventoryId)
+    private async Task<UseItemEffectResult> ApplyExperienceCardEffectAsync(
+        long userId,
+        UserInventory item,
+        int quantity,
+        long operationId)
     {
-        return await UseCoinCardAsync(userId, inventoryId, 1);
-    }
+        if (!int.TryParse(item.ItemValue, out var amount) || amount <= 0)
+        {
+            throw new BusinessException("经验卡配置错误");
+        }
 
-    private async Task<UseItemResultDto> UseCoinCardAsync(long userId, long inventoryId, int quantity)
-    {
+        int totalAmount;
         try
         {
-            var item = await _inventoryRepository.QueryFirstAsync(
-                i => i.Id == inventoryId &&
-                     i.UserId == userId &&
-                     i.ConsumableType == ConsumableType.CoinCard &&
-                     !i.IsDeleted);
-
-            if (item == null)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包不存在" };
-            }
-
-            if (quantity < 1)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "使用数量必须大于 0" };
-            }
-
-            if (item.Quantity < quantity)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包数量不足" };
-            }
-
-            // 解析萝卜币数量
-            if (!long.TryParse(item.ItemValue, out var coinAmount) || coinAmount <= 0)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包配置错误" };
-            }
-
-            long totalCoinAmount;
-            try
-            {
-                totalCoinAmount = checked(coinAmount * quantity);
-            }
-            catch (OverflowException)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包配置超出范围" };
-            }
-
-            var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
-            if (!deduction.Success)
-            {
-                return new UseItemResultDto { Success = false, ErrorMessage = "萝卜币红包数量不足" };
-            }
-
-            try
-            {
-                await _coinService.GrantCoinAsync(
-                    userId,
-                    totalCoinAmount,
-                    "USE_COIN_CARD",
-                    "UserInventory",
-                    inventoryId,
-                    $"使用萝卜币红包获得 {totalCoinAmount} 胡萝卜");
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "用户 {UserId} 使用萝卜币红包失败，萝卜币服务未完成发放", userId);
-                throw new BusinessException("萝卜币发放失败，请稍后再试", ex);
-            }
-
-            Log.Information("用户 {UserId} 使用萝卜币红包 {Quantity} 个，获得 {CoinAmount} 胡萝卜",
-                userId, quantity, totalCoinAmount);
-
-            return new UseItemResultDto
-            {
-                Success = true,
-                RemainingQuantity = deduction.RemainingQuantity,
-                EffectDescription = $"获得 {totalCoinAmount} 胡萝卜"
-            };
+            totalAmount = checked(amount * quantity);
         }
-        catch (BusinessException)
+        catch (OverflowException ex)
         {
-            throw;
+            throw new BusinessException("经验卡配置超出范围", ex);
         }
-        catch (Exception ex)
+
+        var grantResult = await _experienceService.GrantExperienceOnceAsync(
+            userId,
+            totalAmount,
+            "USE_EXP_CARD",
+            BuildEffectBusinessKey(operationId),
+            OperationIdempotencyResourceTypes.ShopEntitlementOperation,
+            operationId,
+            $"使用经验卡获得 {totalAmount} 经验值");
+        if (!grantResult.Granted && !grantResult.AlreadyGranted)
         {
-            Log.Error(ex, "使用萝卜币红包失败：用户={UserId}", userId);
-            throw;
+            throw new BusinessException(grantResult.Reason ?? "经验值发放失败，请稍后再试");
+        }
+
+        return new UseItemEffectResult(
+            ShopEntitlementEffectTypes.Experience,
+            totalAmount.ToString(),
+            $"获得 {totalAmount} 经验值",
+            ShopEntitlementResourceTypes.ExpTransaction,
+            null,
+            null,
+            null,
+            null);
+    }
+
+    private async Task<UseItemEffectResult> ApplyCoinCardEffectAsync(
+        long userId,
+        UserInventory item,
+        int quantity,
+        long operationId)
+    {
+        if (!long.TryParse(item.ItemValue, out var amount) || amount <= 0)
+        {
+            throw new BusinessException("萝卜币红包配置错误");
+        }
+
+        long totalAmount;
+        try
+        {
+            totalAmount = checked(amount * quantity);
+        }
+        catch (OverflowException ex)
+        {
+            throw new BusinessException("萝卜币红包配置超出范围", ex);
+        }
+
+        var grantResult = await _coinService.GrantCoinOnceAsync(
+            userId,
+            totalAmount,
+            "USE_COIN_CARD",
+            BuildEffectBusinessKey(operationId),
+            OperationIdempotencyResourceTypes.ShopEntitlementOperation,
+            operationId,
+            $"使用萝卜币红包获得 {totalAmount} 胡萝卜");
+
+        return new UseItemEffectResult(
+            ShopEntitlementEffectTypes.Coin,
+            totalAmount.ToString(),
+            $"获得 {totalAmount} 胡萝卜",
+            ShopEntitlementResourceTypes.CoinTransaction,
+            null,
+            grantResult.TransactionNo,
+            null,
+            null);
+    }
+
+    private async Task<UseItemResultDto?> ResolvePersistedOperationAsync(
+        long tenantId,
+        long userId,
+        string idempotencyKey,
+        string requestHash)
+    {
+        var operation = await _operationRepository.QueryFirstAsync(item =>
+            item.TenantId == tenantId &&
+            item.UserId == userId &&
+            item.OperationType == ShopEntitlementOperationTypes.Use &&
+            item.IdempotencyKey == idempotencyKey);
+        if (operation == null)
+        {
+            return null;
+        }
+
+        if (!string.Equals(operation.RequestHash, requestHash, StringComparison.Ordinal))
+        {
+            return Failure("幂等键已被不同请求使用");
+        }
+
+        var result = _operationIdempotencyService.DeserializeResponse<UseItemResultDto>(operation.ResultPayload)
+                     ?? throw new InvalidOperationException("商城操作流水缺少可回放结果");
+        result.IsIdempotentReplay = true;
+        return result;
+    }
+
+    private UseItemResultDto? ResolveIdempotencyResult(OperationIdempotencyBeginResult idempotency)
+    {
+        switch (idempotency.Status)
+        {
+            case OperationIdempotencyBeginStatus.Started when idempotency.RecordId.HasValue:
+                return null;
+
+            case OperationIdempotencyBeginStatus.Succeeded:
+            {
+                var result = _operationIdempotencyService.DeserializeResponse<UseItemResultDto>(
+                    idempotency.ResponsePayload);
+                if (result == null)
+                {
+                    throw new InvalidOperationException("幂等记录缺少可回放结果");
+                }
+
+                result.IsIdempotentReplay = true;
+                return result;
+            }
+
+            case OperationIdempotencyBeginStatus.Processing:
+            case OperationIdempotencyBeginStatus.Conflict:
+            case OperationIdempotencyBeginStatus.InvalidKey:
+                return Failure(idempotency.Message ?? "幂等请求无法处理");
+
+            default:
+                throw new InvalidOperationException("幂等记录状态无效");
         }
     }
 
-    /// <summary>使用双倍经验卡</summary>
-#pragma warning disable CS0618
-    public Task<UseItemResultDto> UseDoubleExpCardAsync(long userId, long inventoryId)
+    private static UseItemResultDto Failure(string message)
     {
-        return Task.FromResult(CreateUnavailableConsumableResult(ConsumableType.DoubleExpCard));
+        return new UseItemResultDto { Success = false, ErrorMessage = message };
     }
 
-    /// <summary>使用帖子置顶卡</summary>
-    public Task<UseItemResultDto> UsePostPinCardAsync(long userId, long inventoryId, long postId)
+    private static string BuildEffectBusinessKey(long operationId)
     {
-        return Task.FromResult(CreateUnavailableConsumableResult(ConsumableType.PostPinCard));
+        return $"shop-entitlement-use:{operationId}";
     }
 
-    /// <summary>使用帖子高亮卡</summary>
-    public Task<UseItemResultDto> UsePostHighlightCardAsync(long userId, long inventoryId, long postId)
+    private static string? HashSensitiveValue(string? value)
     {
-        return Task.FromResult(CreateUnavailableConsumableResult(ConsumableType.PostHighlightCard));
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value))).ToLowerInvariant();
     }
-#pragma warning restore CS0618
+
+    private DateTime GetUtcNow()
+    {
+        return _timeProvider.GetUtcNow().UtcDateTime;
+    }
+
+    #endregion
+
+    #region 使用流水查询
+
+    /// <summary>分页查询用户的商城消耗品使用流水（管理后台）。</summary>
+    public async Task<PageModel<ShopEntitlementOperationVo>> GetOperationsForAdminAsync(
+        long userId,
+        ConsumableType? consumableType = null,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(userId), "用户 ID 必须大于 0");
+        }
+
+        pageIndex = Math.Max(1, pageIndex);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        Expression<Func<ShopEntitlementOperation, bool>> where = operation =>
+            operation.UserId == userId &&
+            operation.OperationType == ShopEntitlementOperationTypes.Use;
+        if (consumableType.HasValue)
+        {
+            where = where.And(operation => operation.ConsumableType == consumableType.Value);
+        }
+
+        var (operations, totalCount) = await _operationRepository.QueryPageAsync(
+            whereExpression: where,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: operation => operation.CreateTime,
+            orderByType: OrderByType.Desc);
+        return new PageModel<ShopEntitlementOperationVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
+            Data = operations.Select(operation => new ShopEntitlementOperationVo
+            {
+                VoId = operation.Id,
+                VoUserId = operation.UserId,
+                VoInventoryId = operation.InventoryId,
+                VoOperationType = operation.OperationType,
+                VoConsumableType = operation.ConsumableType,
+                VoQuantity = operation.Quantity,
+                VoEffectType = operation.EffectType,
+                VoEffectValue = operation.EffectValue,
+                VoEffectResourceType = operation.EffectResourceType,
+                VoEffectResourceId = operation.EffectResourceId,
+                VoEffectResourceNo = operation.EffectResourceNo,
+                VoCreateTime = operation.CreateTime
+            }).ToList()
+        };
+    }
 
     #endregion
 
@@ -569,4 +729,14 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     {
         return itemValue ?? string.Empty;
     }
+
+    private sealed record UseItemEffectResult(
+        string EffectType,
+        string? EffectValue,
+        string Description,
+        string? ResourceType,
+        long? ResourceId,
+        string? ResourceNo,
+        string? TargetType,
+        long? TargetId);
 }
