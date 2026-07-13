@@ -49,7 +49,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
 
             Assert.Empty(migration.Verify(db, services));
-            Assert.Equal(2, db.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(3, db.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(db, "ExpTransaction", "CreatedDate"));
             Assert.Equal("date", GetColumnType(db, "UserExpDailyStats", "StatDate"));
             Assert.Equal("date", GetColumnType(db, "UserExperienceGovernanceAction", "StatDate"));
@@ -123,7 +123,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             await Task.WhenAll(RunApplyAsync(), RunApplyAsync());
 
             using var verifier = CreateClient(path);
-            Assert.Equal(2, verifier.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(3, verifier.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(verifier, "ExpTransaction", "CreatedDate"));
         }
         finally
@@ -152,14 +152,14 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             using (var firstApply = CreateClient(path))
             {
                 SchemaMigrationLedger.ApplyPending(firstApply, services, ["Main"]);
-                Assert.Equal(2, firstApply.Queryable<SchemaMigrationRecord>().Count());
+                Assert.Equal(3, firstApply.Queryable<SchemaMigrationRecord>().Count());
             }
 
             File.Copy(backupPath, path, overwrite: true);
             using var restoredApply = CreateClient(path);
             SchemaMigrationLedger.ApplyPending(restoredApply, services, ["Main"]);
 
-            Assert.Equal(2, restoredApply.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(3, restoredApply.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(restoredApply, "ExpTransaction", "CreatedDate"));
             Assert.StartsWith(
                 "2026-07-12",
@@ -245,7 +245,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
             SchemaMigrationLedger.ApplyPending(db, services, ["Main"]);
 
-            Assert.Equal(2, db.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(3, db.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(db, "exptransaction", "createddate"));
             Assert.Equal("date", GetColumnType(db, "userexpdailystats", "statdate"));
             Assert.Equal("date", GetColumnType(db, "userexperiencegovernanceaction", "statdate"));
@@ -294,7 +294,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
             await Task.WhenAll(RunApplyAsync(), RunApplyAsync());
 
             using var verifier = CreatePostgreSqlScope(connectionString);
-            Assert.Equal(2, verifier.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(3, verifier.Queryable<SchemaMigrationRecord>().Count());
             Assert.Equal("date", GetColumnType(verifier, "ExpTransaction", "CreatedDate"));
         }
         finally
@@ -364,6 +364,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
         db.Ado.ExecuteCommand(
             "CREATE TABLE \"UserExperienceGovernanceAction\" " +
             "(\"Id\" INTEGER NOT NULL PRIMARY KEY, \"StatDate\" TEXT NULL)");
+        CreateLegacyShopOrderTable(db, "\"", "INTEGER", "TEXT");
     }
 
     private static void CreateLegacyPostgreSqlTables(ISqlSugarClient db)
@@ -381,6 +382,7 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
         db.Ado.ExecuteCommand(
             "CREATE TABLE \"UserExperienceGovernanceAction\" " +
             "(\"Id\" bigint NOT NULL PRIMARY KEY, \"StatDate\" timestamp without time zone NULL)");
+        CreateLegacyShopOrderTable(db, "\"", "bigint", "timestamp without time zone");
     }
 
     private static void CreateLowercasePostgreSqlTables(ISqlSugarClient db)
@@ -394,7 +396,32 @@ public sealed class ExperienceNaturalDateSchemaMigrationTest
         db.Ado.ExecuteCommand(
             "CREATE TABLE userexperiencegovernanceaction " +
             "(id bigint NOT NULL PRIMARY KEY, statdate timestamp without time zone NULL)");
+        db.Ado.ExecuteCommand(
+            "CREATE TABLE shoporder (" +
+            "id bigint NOT NULL PRIMARY KEY, status integer NOT NULL, paidtime timestamp without time zone NULL, " +
+            "cointransactionid bigint NULL, producttype integer NOT NULL, durationtype integer NOT NULL, " +
+            "benefitexpiresat timestamp without time zone NULL, userbenefitid bigint NULL)");
     }
+
+    private static void CreateLegacyShopOrderTable(
+        ISqlSugarClient db,
+        string quote,
+        string idType,
+        string dateTimeType)
+    {
+        db.Ado.ExecuteCommand(
+            $"CREATE TABLE {QuoteName("ShopOrder", quote)} (" +
+            $"{QuoteName("Id", quote)} {idType} NOT NULL PRIMARY KEY, " +
+            $"{QuoteName("Status", quote)} integer NOT NULL, " +
+            $"{QuoteName("PaidTime", quote)} {dateTimeType} NULL, " +
+            $"{QuoteName("CoinTransactionId", quote)} {idType} NULL, " +
+            $"{QuoteName("ProductType", quote)} integer NOT NULL, " +
+            $"{QuoteName("DurationType", quote)} integer NOT NULL, " +
+            $"{QuoteName("BenefitExpiresAt", quote)} {dateTimeType} NULL, " +
+            $"{QuoteName("UserBenefitId", quote)} {idType} NULL)");
+    }
+
+    private static string QuoteName(string value, string quote) => $"{quote}{value}{quote}";
 
     private static void SeedValidLegacyValues(ISqlSugarClient db)
     {

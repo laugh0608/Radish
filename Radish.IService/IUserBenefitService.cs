@@ -1,5 +1,6 @@
 using Radish.IService.Base;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 
@@ -39,13 +40,10 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
 
     #region 权益发放
 
-    /// <summary>发放权益</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="product">商品信息</param>
-    /// <param name="orderId">订单 ID</param>
-    /// <param name="quantity">购买数量</param>
-    /// <returns>用户权益 ID</returns>
-    Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1);
+    /// <summary>按照订单快照完成商品履约</summary>
+    /// <param name="order">包含不可变商品快照和支付状态的订单</param>
+    /// <returns>明确区分持续权益与消耗品背包的履约结果</returns>
+    Task<OrderFulfillmentResultDto> GrantOrderFulfillmentAsync(Order order);
 
     /// <summary>系统赠送权益</summary>
     /// <param name="userId">用户 ID</param>

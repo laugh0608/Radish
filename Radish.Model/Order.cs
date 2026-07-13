@@ -98,6 +98,11 @@ public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
     [SugarColumn(IsNullable = true, ColumnDescription = "有效期天数")]
     public int? DurationDays { get; set; }
 
+    /// <summary>固定到期时间（快照）</summary>
+    /// <remarks>仅当 DurationType = FixedDate 时使用，历史履约不得重新读取商品当前配置。</remarks>
+    [SugarColumn(IsNullable = true, ColumnDescription = "固定到期时间快照")]
+    public DateTime? FixedExpiresAt { get; set; }
+
     #endregion
 
     #region 价格信息
@@ -123,6 +128,10 @@ public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
     /// <summary>订单状态</summary>
     [SugarColumn(IsNullable = false, ColumnDescription = "订单状态")]
     public OrderStatus Status { get; set; } = OrderStatus.Pending;
+
+    /// <summary>失败阶段</summary>
+    [SugarColumn(IsNullable = false, ColumnDescription = "失败阶段")]
+    public OrderFailureStage FailureStage { get; set; } = OrderFailureStage.None;
 
     /// <summary>支付时间</summary>
     [SugarColumn(IsNullable = true, ColumnDescription = "支付时间")]
@@ -150,10 +159,18 @@ public class Order : RootEntityTKey<long>, IHasUserId, ITenantEntity
 
     #region 权益发放信息
 
-    /// <summary>用户权益 ID</summary>
-    /// <remarks>权益发放成功后关联的 UserBenefit 记录 ID</remarks>
+    /// <summary>历史履约资源 ID</summary>
+    /// <remarks>旧数据曾同时保存 UserBenefit 与 UserInventory ID；新代码不再写入。</remarks>
     [SugarColumn(IsNullable = true, ColumnDescription = "用户权益ID")]
     public long? UserBenefitId { get; set; }
+
+    /// <summary>已发放的持续权益 ID</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "已发放权益ID")]
+    public long? GrantedBenefitId { get; set; }
+
+    /// <summary>已发放的消耗品背包 ID</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "已发放背包ID")]
+    public long? GrantedInventoryId { get; set; }
 
     /// <summary>权益到期时间</summary>
     /// <remarks>计算后的权益到期时间</remarks>

@@ -710,8 +710,8 @@ internal static class DbMigrateRunner
 
         var linkedBenefitIds = db.DbMaintenance.IsAnyTable(db.EntityMaintenance.GetEntityInfo<Order>().DbTableName, false)
             ? db.Queryable<Order>()
-                .Where(order => order.UserBenefitId.HasValue)
-                .Select(order => order.UserBenefitId!.Value)
+                .Where(order => order.GrantedBenefitId.HasValue || order.UserBenefitId.HasValue)
+                .Select(order => order.GrantedBenefitId ?? order.UserBenefitId!.Value)
                 .ToList()
                 .ToHashSet()
             : [];
@@ -830,16 +830,18 @@ internal static class DbMigrateRunner
             .Where(order =>
                 order.ProductType == ProductType.Consumable &&
                 order.Status == OrderStatus.Completed &&
-                order.UserBenefitId.HasValue &&
+                (order.GrantedInventoryId.HasValue || order.UserBenefitId.HasValue) &&
                 order.ConsumableType.HasValue)
             .ToList()
-            .Where(order => !existingSourceOrderIds.Contains(order.Id) && inventoryIds.Contains(order.UserBenefitId!.Value))
+            .Where(order =>
+                !existingSourceOrderIds.Contains(order.Id) &&
+                inventoryIds.Contains(order.GrantedInventoryId ?? order.UserBenefitId!.Value))
             .Select(order => new UserInventoryGrantRecord
             {
                 Id = order.Id,
                 TenantId = order.TenantId,
                 UserId = order.UserId,
-                InventoryId = order.UserBenefitId!.Value,
+                InventoryId = order.GrantedInventoryId ?? order.UserBenefitId!.Value,
                 SourceOrderId = order.Id,
                 SourceProductId = order.ProductId,
                 ConsumableType = order.ConsumableType!.Value,

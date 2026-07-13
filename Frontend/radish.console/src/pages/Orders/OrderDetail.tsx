@@ -144,7 +144,7 @@ export const OrderDetail = ({
               查看扣款流水
             </Button>
           ) : null}
-          {currentOrder?.voStatus === 'Failed' && onRetry ? (
+          {currentOrder?.voCanRetryFulfillment === true && onRetry ? (
             <Button variant="primary" onClick={onRetry}>
               <SyncOutlined />
               重试发放权益
@@ -180,6 +180,10 @@ export const OrderDetail = ({
               </Tag>
             </Descriptions.Item>
 
+            <Descriptions.Item label="失败阶段">
+              {currentOrder.voFailureStageDisplay || '-'}
+            </Descriptions.Item>
+
             <Descriptions.Item label="创建时间">
               {formatDateTime(currentOrder.voCreateTime)}
             </Descriptions.Item>
@@ -194,6 +198,10 @@ export const OrderDetail = ({
 
             <Descriptions.Item label="权益到期时间">
               {formatDateTime(currentOrder.voBenefitExpiresAt)}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="固定到期快照">
+              {formatDateTime(currentOrder.voFixedExpiresAt)}
             </Descriptions.Item>
 
             <Descriptions.Item label="取消时间">
@@ -248,6 +256,14 @@ export const OrderDetail = ({
 
             <Descriptions.Item label="扣款流水 ID" span={2}>
               {currentOrder.voCoinTransactionId || '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="持续权益 ID">
+              {currentOrder.voGrantedBenefitId || '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label="背包资源 ID">
+              {currentOrder.voGrantedInventoryId || '-'}
             </Descriptions.Item>
 
             <Descriptions.Item label="有效期" span={2}>

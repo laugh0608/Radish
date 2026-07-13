@@ -6,6 +6,7 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.CustomEnum;
@@ -132,82 +133,73 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
 
     #region 权益发放
 
-    /// <summary>发放权益</summary>
+    /// <summary>按照订单快照完成商品履约</summary>
     [UseTran(Propagation = Propagation.Required)]
-    public async Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1)
+    public async Task<OrderFulfillmentResultDto> GrantOrderFulfillmentAsync(Order order)
     {
         try
         {
-            if (quantity < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "发放数量必须大于 0");
-            }
+            EnsureValidOrderSnapshot(order);
 
             Log.Information("开始发放权益：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
-                userId, product.Id, orderId);
+                order.UserId, order.ProductId, order.Id);
 
-            // 根据商品类型发放不同的权益
-            if (product.ProductType == ProductType.Benefit && product.BenefitType.HasValue)
+            if (order.ProductType == ProductType.Benefit && order.BenefitType.HasValue)
             {
-                // 发放权益类商品
-                return await GrantBenefitItemAsync(userId, product, orderId);
+                return await GrantBenefitItemAsync(order);
             }
-            else if (product.ProductType == ProductType.Consumable && product.ConsumableType.HasValue)
+
+            if (order.ProductType == ProductType.Consumable && order.ConsumableType.HasValue)
             {
-                // 发放消耗品到背包
-                return await GrantConsumableItemAsync(userId, product, orderId, quantity);
+                return await GrantConsumableItemAsync(order);
             }
-            else
-            {
-                throw new InvalidOperationException($"不支持的商品类型：{product.ProductType}");
-            }
+
+            throw new InvalidOperationException($"不支持的商品类型：{order.ProductType}");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "发放权益失败：用户={UserId}, 商品={ProductId}", userId, product.Id);
+            Log.Error(ex, "发放权益失败：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
+                order.UserId, order.ProductId, order.Id);
             throw;
         }
     }
 
     /// <summary>发放权益类商品</summary>
-    private async Task<long> GrantBenefitItemAsync(long userId, Product product, long orderId)
+    private async Task<OrderFulfillmentResultDto> GrantBenefitItemAsync(Order order)
     {
         var existingBenefit = await _userBenefitRepository.QueryFirstAsync(
-            benefit => benefit.SourceOrderId == orderId && !benefit.IsDeleted);
+            benefit => benefit.SourceOrderId == order.Id && !benefit.IsDeleted);
         if (existingBenefit != null)
         {
-            return existingBenefit.Id;
+            return new OrderFulfillmentResultDto
+            {
+                GrantedBenefitId = existingBenefit.Id,
+                ExpiresAt = existingBenefit.ExpiresAt
+            };
         }
 
+        var now = GetUtcNow();
+        var expiresAt = ResolveBenefitExpiresAt(order, now);
         var benefit = new UserBenefit
         {
-            TenantId = product.TenantId,
-            UserId = userId,
-            BenefitType = product.BenefitType!.Value,
-            BenefitValue = product.BenefitValue ?? string.Empty,
-            BenefitName = product.Name,
-            BenefitIconAttachmentId = product.IconAttachmentId,
-            SourceOrderId = orderId,
-            SourceProductId = product.Id,
+            TenantId = order.TenantId,
+            UserId = order.UserId,
+            BenefitType = order.BenefitType!.Value,
+            BenefitValue = order.BenefitValue ?? string.Empty,
+            BenefitName = order.ProductName,
+            BenefitIconAttachmentId = order.ProductIconAttachmentId,
+            SourceOrderId = order.Id,
+            SourceProductId = order.ProductId,
             SourceType = "Purchase",
-            DurationType = product.DurationType,
-            EffectiveAt = GetUtcNow(),
+            DurationType = order.DurationType,
+            EffectiveAt = now,
+            ExpiresAt = expiresAt,
             IsExpired = false,
             IsActive = false,
-            CreateTime = GetUtcNow(),
+            CreateTime = now,
             CreateBy = "System",
-            CreateId = userId
+            CreateId = order.UserId
         };
-
-        // 计算到期时间
-        if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
-        {
-            benefit.ExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
-        }
-        else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
-        {
-            benefit.ExpiresAt = product.ExpiresAt;
-        }
 
         long benefitId;
         try
@@ -217,45 +209,56 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         catch (Exception ex) when (IsUniqueConstraintException(ex))
         {
             existingBenefit = await _userBenefitRepository.QueryFirstAsync(
-                storedBenefit => storedBenefit.SourceOrderId == orderId && !storedBenefit.IsDeleted);
+                storedBenefit => storedBenefit.SourceOrderId == order.Id && !storedBenefit.IsDeleted);
             if (existingBenefit != null)
             {
-                return existingBenefit.Id;
+                return new OrderFulfillmentResultDto
+                {
+                    GrantedBenefitId = existingBenefit.Id,
+                    ExpiresAt = existingBenefit.ExpiresAt
+                };
             }
 
             throw;
         }
 
         Log.Information("权益发放成功：用户={UserId}, 权益ID={BenefitId}, 类型={BenefitType}",
-            userId, benefitId, product.BenefitType);
+            order.UserId, benefitId, order.BenefitType);
 
-        return benefitId;
+        return new OrderFulfillmentResultDto
+        {
+            GrantedBenefitId = benefitId,
+            ExpiresAt = expiresAt
+        };
     }
 
     /// <summary>发放消耗品到背包</summary>
-    private async Task<long> GrantConsumableItemAsync(long userId, Product product, long orderId, int quantity)
+    private async Task<OrderFulfillmentResultDto> GrantConsumableItemAsync(Order order)
     {
         var grantResult = await _userInventoryRepository.GrantConsumableForOrderAsync(
-            product.TenantId,
-            userId,
-            product.ConsumableType!.Value,
-            product.BenefitValue,
-            product.Name,
-            product.IconAttachmentId,
-            quantity,
-            orderId,
-            product.Id);
+            order.TenantId,
+            order.UserId,
+            order.ConsumableType!.Value,
+            order.BenefitValue,
+            order.ProductName,
+            order.ProductIconAttachmentId,
+            order.Quantity,
+            order.Id,
+            order.ProductId);
 
         Log.Information(
             grantResult.CreatedGrantRecord
                 ? "消耗品发放成功：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 数量={Quantity}"
                 : "消耗品订单已发放，复用既有背包项：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 当前数量={Quantity}",
-            userId,
+            order.UserId,
             grantResult.InventoryId,
-            product.ConsumableType,
+            order.ConsumableType,
             grantResult.CreatedGrantRecord ? grantResult.QuantityDelta : grantResult.CurrentQuantity);
 
-        return grantResult.InventoryId;
+        return new OrderFulfillmentResultDto
+        {
+            GrantedInventoryId = grantResult.InventoryId
+        };
     }
 
     /// <summary>系统赠送权益</summary>
@@ -440,6 +443,53 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     }
 
     #endregion
+
+    private static void EnsureValidOrderSnapshot(Order order)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        if (order.Id <= 0 || order.UserId <= 0 || order.ProductId <= 0)
+        {
+            throw new InvalidOperationException("订单履约快照缺少有效的订单、用户或商品 ID");
+        }
+
+        if (order.Quantity < 1)
+        {
+            throw new InvalidOperationException("订单履约数量必须大于 0");
+        }
+
+        if (order.Status != OrderStatus.Paid &&
+            !(order.Status == OrderStatus.Failed && order.FailureStage == OrderFailureStage.Fulfillment))
+        {
+            throw new InvalidOperationException("只有已支付或履约失败的订单可以发放商品");
+        }
+
+        if (order.ProductType == ProductType.Benefit && !order.BenefitType.HasValue)
+        {
+            throw new InvalidOperationException("权益订单快照缺少权益类型");
+        }
+
+        if (order.ProductType == ProductType.Consumable && !order.ConsumableType.HasValue)
+        {
+            throw new InvalidOperationException("消耗品订单快照缺少消耗品类型");
+        }
+    }
+
+    private static DateTime? ResolveBenefitExpiresAt(Order order, DateTime now)
+    {
+        return order.DurationType switch
+        {
+            DurationType.Permanent => null,
+            DurationType.Days when order.DurationDays is > 0 => now.AddDays(order.DurationDays.Value),
+            DurationType.Days => throw new InvalidOperationException("权益订单快照缺少有效期天数"),
+            DurationType.FixedDate when order.FixedExpiresAt.HasValue && order.FixedExpiresAt.Value > now =>
+                order.FixedExpiresAt.Value,
+            DurationType.FixedDate when order.FixedExpiresAt.HasValue =>
+                throw new InvalidOperationException("权益订单的固定到期时间已过，需人工处理"),
+            DurationType.FixedDate => throw new InvalidOperationException("权益订单快照缺少固定到期时间"),
+            _ => throw new InvalidOperationException($"不支持的有效期类型：{order.DurationType}")
+        };
+    }
 
     private void FillBenefitUrls(List<UserBenefitVo> benefits)
     {

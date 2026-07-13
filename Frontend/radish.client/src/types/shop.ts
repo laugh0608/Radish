@@ -101,6 +101,7 @@ export interface OrderListItem {
   voTotalPrice: number;
   voStatus: string | number;
   voStatusDisplay?: string;
+  voFailureStage?: string | number;
   voCreateTime?: string;
 }
 
@@ -124,7 +125,14 @@ export interface Order {
   voTotalPrice: number;
   voStatus: string | number;
   voStatusDisplay?: string;
+  voFailureStage?: string | number;
+  voFailureStageDisplay?: string;
+  voCanRetryFulfillment?: boolean;
+  voCoinTransactionId?: LongId | null;
+  voGrantedBenefitId?: LongId | null;
+  voGrantedInventoryId?: LongId | null;
   voBenefitExpiresAt?: string | null;
+  voFixedExpiresAt?: string | null;
   voDurationDisplay?: string | null;
   voCreateTime?: string;
   voPaidTime?: string | null;
@@ -196,6 +204,8 @@ export interface PurchaseResult {
   errorCode?: string;
   requiresPasscodeUpgrade?: boolean;
   userBenefitId?: LongId;
+  grantedBenefitId?: LongId;
+  grantedInventoryId?: LongId;
   deductedCoins?: number;
   remainingBalance?: number;
 }

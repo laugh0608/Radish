@@ -121,6 +121,20 @@ public enum OrderStatus
     Failed = 5
 }
 
+/// <summary>订单失败阶段</summary>
+/// <remarks>用于区分未形成有效扣款的支付失败与已支付后的履约失败。</remarks>
+public enum OrderFailureStage
+{
+    /// <summary>订单当前没有失败</summary>
+    None = 0,
+
+    /// <summary>支付阶段失败，禁止发放商品</summary>
+    Payment = 1,
+
+    /// <summary>支付成功后的履约阶段失败，可在支付证据校验通过后重试</summary>
+    Fulfillment = 2
+}
+
 /// <summary>库存类型枚举</summary>
 /// <remarks>
 /// 定义商品库存管理方式

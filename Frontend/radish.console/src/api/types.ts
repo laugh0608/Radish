@@ -163,8 +163,14 @@ export interface Order {
   voTotalPrice: number;
   voStatus: string;
   voStatusDisplay: string;
+  voFailureStage: string | number;
+  voFailureStageDisplay: string;
+  voCanRetryFulfillment: boolean;
   voCoinTransactionId?: string | null;
+  voGrantedBenefitId?: string | null;
+  voGrantedInventoryId?: string | null;
   voBenefitExpiresAt?: string | null;
+  voFixedExpiresAt?: string | null;
   voDurationDisplay?: string | null;
   voCreateTime: string;
   voPaidTime?: string | null;

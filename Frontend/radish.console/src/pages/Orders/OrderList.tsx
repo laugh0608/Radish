@@ -84,6 +84,10 @@ function isCompletedOrder(record: Order): boolean {
   return isOrderStatus(record, 'Completed', 2, '完成');
 }
 
+function canRetryOrderFulfillment(record: Order): boolean {
+  return record.voCanRetryFulfillment === true;
+}
+
 function isPendingOperationOrder(record: Order): boolean {
   return isOrderStatus(record, 'Pending', 0, '待')
     || isOrderStatus(record, 'Paid', 1, '已支付')
@@ -472,7 +476,7 @@ export const OrderList = () => {
           >
             详情
           </Button>
-          {canRetryOrder && isFailedOrder(record) ? (
+          {canRetryOrder && canRetryOrderFulfillment(record) ? (
             <Button
               variant="ghost"
               size="small"
@@ -708,7 +712,7 @@ export const OrderList = () => {
                       资产流水
                     </Button>
                   ) : null}
-                  {canRetryOrder && isFailedOrder(selectedOrderContext) ? (
+                  {canRetryOrder && canRetryOrderFulfillment(selectedOrderContext) ? (
                     <Button size="small" onClick={() => handleRetry(selectedOrderContext)}>
                       重试发放
                     </Button>

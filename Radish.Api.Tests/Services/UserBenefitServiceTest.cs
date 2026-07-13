@@ -53,21 +53,27 @@ public class UserBenefitServiceTest
     }
 
     [Fact]
-    public async Task GrantBenefitAsync_ShouldReuseConsumableOrderGrant_WhenOrderAlreadyGranted()
+    public async Task GrantOrderFulfillmentAsync_ShouldReuseConsumableOrderGrant_WhenOrderAlreadyGranted()
     {
         const long userId = 9527;
         const long productId = 7001;
         const long orderId = 8001;
         const long inventoryId = 9001;
 
-        var product = new Product
+        var order = new Order
         {
-            Id = productId,
+            Id = orderId,
+            UserId = userId,
+            ProductId = productId,
             TenantId = 0,
+            Status = OrderStatus.Paid,
             ProductType = ProductType.Consumable,
             ConsumableType = ConsumableType.ExpCard,
             BenefitValue = "100",
-            Name = "经验卡"
+            ProductName = "经验卡",
+            Quantity = 3,
+            CreateTime = DateTime.Now,
+            CreateBy = "User"
         };
 
         var userBenefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
@@ -94,11 +100,58 @@ public class UserBenefitServiceTest
             userInventoryRepository.Object,
             attachmentUrlResolver.Object);
 
-        var result = await service.GrantBenefitAsync(userId, product, orderId, 3);
+        var result = await service.GrantOrderFulfillmentAsync(order);
 
-        Assert.Equal(inventoryId, result);
+        Assert.Equal(inventoryId, result.GrantedInventoryId);
+        Assert.Null(result.GrantedBenefitId);
         userInventoryRepository.VerifyAll();
         userBenefitRepository.Verify(repository => repository.AddAsync(It.IsAny<UserBenefit>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task GrantOrderFulfillmentAsync_ShouldUseFixedExpiryFromOrderSnapshot()
+    {
+        var fixedExpiresAt = DateTime.UtcNow.AddDays(30);
+        var order = new Order
+        {
+            Id = 8101,
+            TenantId = 3,
+            UserId = 9527,
+            ProductId = 7101,
+            ProductName = "订单快照称号",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Title,
+            BenefitValue = "title-snapshot",
+            DurationType = DurationType.FixedDate,
+            FixedExpiresAt = fixedExpiresAt,
+            Quantity = 1,
+            Status = OrderStatus.Paid,
+            CreateTime = DateTime.UtcNow,
+            CreateBy = "User"
+        };
+        UserBenefit? createdBenefit = null;
+        var userBenefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
+        userBenefitRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserBenefit, bool>>?>()))
+            .ReturnsAsync((UserBenefit?)null);
+        userBenefitRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<UserBenefit>()))
+            .Callback<UserBenefit>(benefit => createdBenefit = benefit)
+            .ReturnsAsync(9101);
+        var service = new UserBenefitService(
+            Mock.Of<IMapper>(),
+            userBenefitRepository.Object,
+            Mock.Of<IUserInventoryRepository>(),
+            Mock.Of<IAttachmentUrlResolver>());
+
+        var result = await service.GrantOrderFulfillmentAsync(order);
+
+        Assert.Equal(9101, result.GrantedBenefitId);
+        Assert.Equal(fixedExpiresAt, result.ExpiresAt);
+        Assert.NotNull(createdBenefit);
+        Assert.Equal(fixedExpiresAt, createdBenefit!.ExpiresAt);
+        Assert.Equal(order.ProductName, createdBenefit.BenefitName);
+        Assert.Equal(order.ProductId, createdBenefit.SourceProductId);
     }
 
     private static Mock<IBaseRepository<UserBenefit>> CreateUserBenefitRepository(UserBenefit benefit)
