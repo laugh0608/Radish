@@ -19,8 +19,15 @@ function getCurrentLocation(): LocationLike | null {
   return window.location;
 }
 
-export function resolveConsoleExternalUrl(location: LocationLike | null = getCurrentLocation()): string {
-  return isLocalClientDevLocation(location) ? 'http://localhost:3100' : '/console/';
+export function resolveConsoleExternalUrl(
+  backTo = '/desktop',
+  location: LocationLike | null = getCurrentLocation(),
+): string {
+  const consoleBaseUrl = isLocalClientDevLocation(location)
+    ? 'http://localhost:3100/console/'
+    : '/console/';
+  const searchParams = new URLSearchParams({ backTo });
+  return `${consoleBaseUrl}?${searchParams.toString()}`;
 }
 
 export function resolveScalarExternalUrl(location: LocationLike | null = getCurrentLocation()): string {

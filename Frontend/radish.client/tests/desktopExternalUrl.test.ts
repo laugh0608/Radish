@@ -8,37 +8,48 @@ import {
 
 test('resolveConsoleExternalUrl 在本地 client 开发直连时返回 Console 开发地址', () => {
   assert.equal(
-    resolveConsoleExternalUrl({
+    resolveConsoleExternalUrl('/desktop', {
       hostname: 'localhost',
       port: '3000',
     }),
-    'http://localhost:3100',
+    'http://localhost:3100/console/?backTo=%2Fdesktop',
   );
 
   assert.equal(
-    resolveConsoleExternalUrl({
+    resolveConsoleExternalUrl('/desktop', {
       hostname: '127.0.0.1',
       port: '3000',
     }),
-    'http://localhost:3100',
+    'http://localhost:3100/console/?backTo=%2Fdesktop',
   );
 });
 
 test('resolveConsoleExternalUrl 在 Gateway 和生产域名下返回相对路径', () => {
   assert.equal(
-    resolveConsoleExternalUrl({
+    resolveConsoleExternalUrl('/desktop', {
       hostname: 'localhost',
       port: '5000',
     }),
-    '/console/',
+    '/console/?backTo=%2Fdesktop',
   );
 
   assert.equal(
-    resolveConsoleExternalUrl({
+    resolveConsoleExternalUrl('/desktop', {
       hostname: 'radishx.com',
       port: '',
     }),
-    '/console/',
+    '/console/?backTo=%2Fdesktop',
+  );
+});
+
+test('resolveConsoleExternalUrl 应保留 client 产品来源', () => {
+  assert.equal(
+    resolveConsoleExternalUrl('/workbench', { hostname: 'radishx.com', port: '' }),
+    '/console/?backTo=%2Fworkbench',
+  );
+  assert.equal(
+    resolveConsoleExternalUrl('/forum/post/2042219067430928384', { hostname: 'localhost', port: '3000' }),
+    'http://localhost:3100/console/?backTo=%2Fforum%2Fpost%2F2042219067430928384',
   );
 });
 

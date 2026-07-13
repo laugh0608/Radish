@@ -19,7 +19,7 @@
 }
 
 .console-route-state--permission p {
-  margin: 0;
+  margin: 0 0 20px;
   color: var(--console-text-secondary);
   line-height: 1.6;
 }

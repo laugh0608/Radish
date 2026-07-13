@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { AntButton } from '@radish/ui';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
+import { ClientBackLink } from '@/components/ClientBackLink';
 import './Login.css';
 
 export function Login() {
@@ -88,6 +89,9 @@ export function Login() {
             >
               登录
             </AntButton>
+            <div className="login-client-back">
+              <ClientBackLink />
+            </div>
           </div>
         </div>
       </div>

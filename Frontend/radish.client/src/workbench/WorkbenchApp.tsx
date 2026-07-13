@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getChannelList } from '@/api/chat';
@@ -6,6 +6,7 @@ import { notificationApi } from '@/api/notification';
 import { readDraftMap, type ChannelDraft } from '@/apps/chat/chatApp.helpers';
 import { getApiBaseUrl } from '@/config/env';
 import { buildMessagesPath } from '@/messages/messagesRouteState';
+import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import { useAuthStore } from '@/stores/authStore';
@@ -36,6 +37,7 @@ interface WorkbenchItem {
   access: WorkbenchAccess;
   href: string;
   links: WorkbenchLink[];
+  crossApp?: boolean;
 }
 
 interface WorkbenchGroup {
@@ -70,6 +72,7 @@ interface WorkbenchActivityState {
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 const FORUM_POST_DRAFT_STORAGE_KEY = 'forum_post_draft';
+const consoleWorkbenchUrl = resolveConsoleExternalUrl('/workbench');
 
 const workbenchGroups: WorkbenchGroup[] = [
   {
@@ -205,9 +208,10 @@ const workbenchGroups: WorkbenchGroup[] = [
         descriptionKey: 'workbench.item.console.description',
         icon: 'mdi:shield-crown-outline',
         access: 'admin',
-        href: '/console/',
+        href: consoleWorkbenchUrl,
+        crossApp: true,
         links: [
-          { labelKey: 'workbench.link.open', href: '/console/' },
+          { labelKey: 'workbench.link.open', href: consoleWorkbenchUrl },
         ],
       },
       {
@@ -352,6 +356,7 @@ export const WorkbenchApp = () => {
   const channels = useChatStore(state => state.channels);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
+  const [pendingCrossAppHref, setPendingCrossAppHref] = useState<string | null>(null);
   const [activityState, setActivityState] = useState<WorkbenchActivityState>({
     loading: false,
     notificationError: false,
@@ -359,6 +364,23 @@ export const WorkbenchApp = () => {
     chatDraftCount: 0,
     hasForumDraft: false,
   });
+  const handleCrossAppNavigate = (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (
+      event.button !== 0
+      || event.metaKey
+      || event.ctrlKey
+      || event.shiftKey
+      || event.altKey
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    setPendingCrossAppHref(href);
+    window.requestAnimationFrame(() => {
+      window.location.assign(href);
+    });
+  };
   const notificationPreviews = useMemo(() => (
     recentNotifications.map(resolveNotificationPreview)
   ), [recentNotifications]);
@@ -802,8 +824,19 @@ export const WorkbenchApp = () => {
               </div>
               <div className={styles.grid}>
                 {group.items.map((item) => (
-                  <article className={styles.item} key={item.titleKey}>
-                    <a className={styles.itemMainLink} href={item.href} aria-label={t(item.titleKey)}>
+                  <article
+                    className={`${styles.item} ${pendingCrossAppHref === item.href ? styles.itemCrossAppPending : ''}`}
+                    key={item.titleKey}
+                    aria-busy={pendingCrossAppHref === item.href}
+                  >
+                    <a
+                      className={styles.itemMainLink}
+                      href={item.href}
+                      aria-label={t(item.titleKey)}
+                      onClick={item.crossApp
+                        ? (event) => handleCrossAppNavigate(event, item.href)
+                        : undefined}
+                    >
                       <span className={styles.itemIcon}>
                         <Icon icon={item.icon} size={22} />
                       </span>
@@ -819,8 +852,17 @@ export const WorkbenchApp = () => {
                     </a>
                     <div className={styles.links} aria-label={t('workbench.linksLabel', { name: t(item.titleKey) })}>
                       {item.links.map((link) => (
-                        <a className={styles.linkChip} href={link.href} key={`${item.titleKey}:${link.href}`}>
-                          {t(link.labelKey)}
+                        <a
+                          className={styles.linkChip}
+                          href={link.href}
+                          key={`${item.titleKey}:${link.href}`}
+                          onClick={item.crossApp
+                            ? (event) => handleCrossAppNavigate(event, link.href)
+                            : undefined}
+                        >
+                          {pendingCrossAppHref === link.href
+                            ? t('workbench.crossApp.pending')
+                            : t(link.labelKey)}
                         </a>
                       ))}
                     </div>

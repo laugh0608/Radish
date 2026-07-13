@@ -335,6 +335,14 @@
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
   box-shadow: var(--theme-shadow-soft);
+  transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+}
+
+.itemCrossAppPending {
+  opacity: 0.72;
+  transform: translateY(1px);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 42%, var(--theme-border-soft) 58%);
+  pointer-events: none;
 }
 
 .itemMainLink {
@@ -445,6 +453,12 @@
 .linkChip:hover,
 .itemMainLink:hover .itemTitle {
   color: var(--theme-brand-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    transition: none;
+  }
 }
 
 @media (max-width: 820px) {

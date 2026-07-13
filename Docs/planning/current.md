@@ -48,6 +48,7 @@
   - 部署后真实使用发现首次管理员门禁入口不一致：公开入口与 Workbench 未统一经过 `BootstrapGate`，点击“聊天”等私域入口后才显示初始化页。后端管理员存在性、事务与并发保护正确，且当前管理员已创建，因此该问题不阻断现有生产运行；工程第一顺位据此切换到顶层门禁统一编排、入口级重复包裹清理与精确路由契约测试。
   - 进入长期维护线后，`dev` 上的日常文档、小修复与连续开发提交默认按完整功能、成组维护或主动发版批次积累；不再为单独文档提交频繁创建 `dev -> master` PR。批次达到可交付边界后再统一集成，合入 `master` 后仍立即回灌 `dev`。
   - 2026-07-13 首次管理员统一入口门禁已在 `dev` 收口：`BrowserAppRouter` 统一承接公开、Workbench、私域、历史 Root 与 OIDC 回调入口，8 处入口级重复包裹已删除；OIDC 只在初始化状态 `ready` 后挂载。`radish.client` 333 项测试、type-check、lint 与生产构建通过，本批未启动服务、未执行 Gateway smoke、未创建 PR 或 tag。
+  - 2026-07-13 Client / Console 跨应用导航首批契约已在 `dev` 收口：两端保持独立 SPA 与 OIDC client，新增受控 `backTo`、当前标签页认证往返保持、全局来源返回、Workbench / WebOS 安全入口和正式 Web 对象回看；client / Console 静态验证与生产构建通过，本批未启动服务、未执行 Gateway smoke、未创建 PR 或 tag。
 
 ## V1 产品与发布范围
 
@@ -89,6 +90,7 @@ Radish V1 的产品定位固定为：
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
 - [前端多壳层策略](/frontend/shell-strategy)
+- [Client 与 Console 跨应用导航契约](/frontend/client-console-navigation-contract)
 - [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
 - [验证基线说明](/guide/validation-baseline)
 
@@ -116,7 +118,7 @@ Radish V1 的产品定位固定为：
 ## 今日事项（2026-07-13）
 
 1. 已完成首次管理员统一入口门禁、重复门禁清理与精确契约测试；后端管理员、角色、bootstrap state 和生产数据未修改。
-2. 2026-07-12 日终文档与本日维护成果继续保留在 `dev`，本日不单独创建 PR，不创建新 tag。
+2. 已完成 Client / Console 双向导航首批契约、来源返回、WebOS 外部窗口安全与正式 Web 回看路径收口；本日维护成果继续保留在 `dev`，不单独创建 PR，不创建新 tag。
 3. 继续观察生产登录、聊天、通知、Console、证书复用和 DbMigrate 重入信号；没有新 P0/P1 时，进入 `F1 商城商品效力与权益履约` 的专题文档复核。
 4. 若需要真实 Gateway 浏览器复核，先确认本任务中的服务启动状态或由用户明确说明生产环境可供复核；不沿用历史运行状态授权。
 

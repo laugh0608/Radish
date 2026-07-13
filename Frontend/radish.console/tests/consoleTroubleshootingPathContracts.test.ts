@@ -121,3 +121,24 @@ test('Console 移动边界应固定高频导航与低风险治理顺序', () => 
   assert.match(moderationSource, /高风险批量策略和复杂权限调整仍保持桌面优先/);
   assert.match(moderationSource, /查看队列/);
 });
+
+test('Console 应提供安全的 client 来源返回入口与 Web 主线对象回看', () => {
+  const mainSource = readConsoleSource('src/main.tsx');
+  const layoutSource = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
+  const clientBackLinkSource = readConsoleSource('src/components/ClientBackLink/ClientBackLink.tsx');
+  const loginSource = readConsoleSource('src/pages/Login/Login.tsx');
+  const oidcCallbackSource = readConsoleSource('src/pages/OidcCallback/OidcCallback.tsx');
+  const routerComponentsSource = readConsoleSource('src/router/routerComponents.tsx');
+  const moderationHelpersSource = readConsoleSource('src/pages/Moderation/moderationPageHelpers.ts');
+
+  assert.match(mainSource, /rememberClientBackTo\(window\.location\.search\)/);
+  assert.match(layoutSource, /<ClientBackLink \/>/);
+  assert.match(clientBackLinkSource, /href=\{clientBackTo\}/);
+  assert.match(clientBackLinkSource, /clearRememberedClientBackTo\(\)/);
+  assert.match(clientBackLinkSource, /正在返回…/);
+  assert.match(loginSource, /<ClientBackLink \/>/);
+  assert.match(oidcCallbackSource, /error \? <ClientBackLink \/>/);
+  assert.match(routerComponentsSource, /<ClientBackLink \/>/);
+  assert.match(moderationHelpersSource, /new URL\('\/messages', getApiBaseUrl\(\)\)/);
+  assert.doesNotMatch(moderationHelpersSource, /new URL\('\/desktop'/);
+});

@@ -34,6 +34,7 @@ import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
 import { getActiveMenuKey, getSidebarRouteGroups, type ConsoleRouteIconKey } from '@/router/routeMeta';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
+import { ClientBackLink } from '../ClientBackLink';
 import './AdminLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -332,6 +333,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 />
               )
             )}
+            <ClientBackLink />
           </div>
           <div className="admin-header-right">
             <SearchOutlined

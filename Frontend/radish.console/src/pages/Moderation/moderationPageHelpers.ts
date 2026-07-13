@@ -210,9 +210,8 @@ export function getManualActionTypeText(value: ManualActionTypeValue | null | un
   }
 }
 
-function buildDesktopChatTargetUrl(channelId: ConsoleLongId, messageId: ConsoleLongId): string {
-  const url = new URL('/desktop', getApiBaseUrl());
-  url.searchParams.set('app', 'chat');
+function buildPublicMessagesTargetUrl(channelId: ConsoleLongId, messageId: ConsoleLongId): string {
+  const url = new URL('/messages', getApiBaseUrl());
   url.searchParams.set('channelId', String(channelId));
   url.searchParams.set('messageId', String(messageId));
   return url.toString();
@@ -372,7 +371,7 @@ export function resolveOpenTarget(input: ModerationTargetNavigationStateInput): 
   if (canOpenChatTarget(targetType, input.targetChannelId, input.targetMessageId)) {
     return {
       label: '打开聊天定位',
-      url: buildDesktopChatTargetUrl(input.targetChannelId!, input.targetMessageId!),
+      url: buildPublicMessagesTargetUrl(input.targetChannelId!, input.targetMessageId!),
     };
   }
 

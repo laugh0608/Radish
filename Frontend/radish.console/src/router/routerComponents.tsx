@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
+import { ClientBackLink } from '../components/ClientBackLink';
 import { RouteGuard } from '../components/PermissionGuard';
 import { useUser } from '../hooks/useUser';
 import { tokenService } from '../services/tokenService';
@@ -44,6 +45,7 @@ export function AuthenticatedLayout() {
         <p>
           请联系管理员为当前角色分配至少一个 Console 页面权限；入口权限会随授权自动收口。
         </p>
+        <ClientBackLink />
       </div>
     );
   }

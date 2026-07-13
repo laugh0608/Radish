@@ -5,6 +5,7 @@ import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { log } from '@/utils/logger';
+import { ClientBackLink } from '@/components/ClientBackLink';
 
 /**
  * OIDC 回调处理页面
@@ -99,6 +100,7 @@ export function OidcCallback() {
       <h1>OIDC 回调处理</h1>
       <p>{messageText}</p>
       {error && <p style={{ color: 'red' }}>错误详情：{error}</p>}
+      {error ? <ClientBackLink /> : null}
     </div>
   );
 }

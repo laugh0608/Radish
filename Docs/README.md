@@ -45,6 +45,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 - [前端设计](./frontend/design.md)
 - [前端多壳层策略](./frontend/shell-strategy.md)
+- [Client 与 Console 跨应用导航契约](./frontend/client-console-navigation-contract.md)
 - [Web UI 共享基座设计说明](./frontend/web-ui-foundation-design.md)
 - [公开 Web 统一体验设计说明](./frontend/public-web-unified-experience-design.md)
 - [私域与作者态 Web 工作流设计说明](./frontend/private-web-workflows-design.md)
