@@ -248,7 +248,7 @@ public class ShopController : ControllerBase
     /// </summary>
     /// <param name="orderId">订单 ID</param>
     /// <param name="reason">取消原因</param>
-    /// <returns>是否成功</returns>
+    /// <returns>选择结果与该类型当前权益</returns>
     [HttpPost("{orderId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<bool>> CancelOrder(long orderId, string? reason = null)
@@ -315,25 +315,27 @@ public class ShopController : ControllerBase
     /// 激活权益
     /// </summary>
     /// <param name="benefitId">权益 ID</param>
-    /// <returns>是否成功</returns>
+    /// <returns>停用结果与该类型当前权益</returns>
     [HttpPost("{benefitId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<bool>> ActivateBenefit(long benefitId)
+    public async Task<MessageModel<UserBenefitActionResultVo>> ActivateBenefit(long benefitId)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return MessageModel<UserBenefitActionResultVo>.Message(false, "未登录", default!);
         }
 
         try
         {
             var result = await _userBenefitService.ActivateBenefitAsync(userId, benefitId);
-            return MessageModel<bool>.Success("激活成功", result);
+            return MessageModel<UserBenefitActionResultVo>.Success(
+                result.VoChanged ? "激活成功" : "权益已处于激活状态",
+                result);
         }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
         }
     }
 
@@ -344,16 +346,25 @@ public class ShopController : ControllerBase
     /// <returns>是否成功</returns>
     [HttpPost("{benefitId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<bool>> DeactivateBenefit(long benefitId)
+    public async Task<MessageModel<UserBenefitActionResultVo>> DeactivateBenefit(long benefitId)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return MessageModel<UserBenefitActionResultVo>.Message(false, "未登录", default!);
         }
 
-        var result = await _userBenefitService.DeactivateBenefitAsync(userId, benefitId);
-        return MessageModel<bool>.Success("取消激活成功", result);
+        try
+        {
+            var result = await _userBenefitService.DeactivateBenefitAsync(userId, benefitId);
+            return MessageModel<UserBenefitActionResultVo>.Success(
+                result.VoChanged ? "取消激活成功" : "权益当前未激活",
+                result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
+        }
     }
 
     #endregion
@@ -659,22 +670,61 @@ public class ShopController : ControllerBase
         return MessageModel<OrderVo>.Success("查询成功", result);
     }
 
-    /// <summary>获取指定用户的消耗品使用流水（管理后台）。</summary>
+    /// <summary>获取指定用户的持续权益与消耗品业务流水（管理后台）。</summary>
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    [RequireConsolePermission(ConsolePermissions.OrdersView)]
+    [RequireConsolePermission(ConsolePermissions.BenefitsView)]
     public async Task<MessageModel<PageModel<ShopEntitlementOperationVo>>> AdminGetEntitlementOperations(
         long userId,
+        string? operationType = null,
+        BenefitType? benefitType = null,
         ConsumableType? consumableType = null,
         int pageIndex = 1,
         int pageSize = 20)
     {
-        var result = await _userInventoryService.GetOperationsForAdminAsync(
+        var result = await _userBenefitService.GetOperationsForAdminAsync(
             userId,
+            operationType,
+            benefitType,
             consumableType,
             pageIndex,
             pageSize);
         return MessageModel<PageModel<ShopEntitlementOperationVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>获取指定用户的持续权益（管理后台）。</summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.BenefitsView)]
+    public async Task<MessageModel<List<UserBenefitVo>>> AdminGetUserBenefits(long userId)
+    {
+        var result = await _userBenefitService.GetUserBenefitsForAdminAsync(userId);
+        return MessageModel<List<UserBenefitVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>撤销指定用户权益（管理后台）。</summary>
+    [HttpPost("{benefitId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.BenefitsRevoke)]
+    public async Task<MessageModel<UserBenefitActionResultVo>> AdminRevokeBenefit(
+        long benefitId,
+        [FromBody] RevokeUserBenefitDto request)
+    {
+        try
+        {
+            var result = await _userBenefitService.RevokeBenefitAsync(
+                benefitId,
+                request.Reason,
+                GetCurrentUserId(),
+                GetCurrentUserName());
+            return MessageModel<UserBenefitActionResultVo>.Success(
+                result.VoChanged ? "权益已撤销" : "权益此前已撤销",
+                result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
+        }
     }
 
     /// <summary>

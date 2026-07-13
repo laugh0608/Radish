@@ -41,13 +41,6 @@ public interface IUserInventoryService : IBaseService<UserInventory, UserInvento
     /// <summary>使用改名卡。</summary>
     Task<UseItemResultDto> UseRenameCardAsync(long userId, UseRenameCardDto dto);
 
-    /// <summary>分页查询用户的商城消耗品使用流水（管理后台）。</summary>
-    Task<PageModel<ShopEntitlementOperationVo>> GetOperationsForAdminAsync(
-        long userId,
-        ConsumableType? consumableType = null,
-        int pageIndex = 1,
-        int pageSize = 20);
-
     #endregion
 
     #region 道具管理

@@ -1,5 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using Radish.Model;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.DbMigrate;
@@ -27,7 +28,8 @@ internal sealed class ShopEntitlementOperationSchemaMigration : ISchemaMigration
     public void Apply(ISqlSugarClient db, IServiceProvider services)
     {
         // 该迁移只增加独立业务流水表，不对历史背包扣减做不可靠反推。
-        db.CodeFirst.InitTables<ShopEntitlementOperation>();
+        // 历史 ledger 必须固定在 v1 形状，后续列只能由新的 migration 演进。
+        db.CodeFirst.InitTables<ShopEntitlementOperationV1>();
     }
 
     public IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services)
@@ -116,5 +118,84 @@ internal sealed class ShopEntitlementOperationSchemaMigration : ISchemaMigration
     private static string QuoteIdentifier(string identifier)
     {
         return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+    }
+
+    [SugarTable(TableName)]
+    [SugarIndex(
+        IdempotencyIndexName,
+        nameof(TenantId), OrderByType.Asc,
+        nameof(UserId), OrderByType.Asc,
+        nameof(OperationType), OrderByType.Asc,
+        nameof(IdempotencyKey), OrderByType.Asc,
+        IsUnique = true)]
+    [SugarIndex(
+        UserTimeIndexName,
+        nameof(TenantId), OrderByType.Asc,
+        nameof(UserId), OrderByType.Asc,
+        nameof(CreateTime), OrderByType.Desc)]
+    [SugarIndex(
+        InventoryTimeIndexName,
+        nameof(TenantId), OrderByType.Asc,
+        nameof(InventoryId), OrderByType.Asc,
+        nameof(CreateTime), OrderByType.Desc)]
+    private sealed class ShopEntitlementOperationV1
+    {
+        [SugarColumn(IsPrimaryKey = true)]
+        public long Id { get; set; }
+
+        public long TenantId { get; set; }
+
+        public long UserId { get; set; }
+
+        public long InventoryId { get; set; }
+
+        [SugarColumn(Length = 40)]
+        public string OperationType { get; set; } = string.Empty;
+
+        public ConsumableType ConsumableType { get; set; }
+
+        public int Quantity { get; set; }
+
+        [SugarColumn(Length = 500)]
+        public string ItemValue { get; set; } = string.Empty;
+
+        [SugarColumn(Length = 40, IsNullable = true)]
+        public string? TargetType { get; set; }
+
+        [SugarColumn(IsNullable = true)]
+        public long? TargetId { get; set; }
+
+        [SugarColumn(Length = 80)]
+        public string IdempotencyKey { get; set; } = string.Empty;
+
+        [SugarColumn(Length = 64)]
+        public string RequestHash { get; set; } = string.Empty;
+
+        [SugarColumn(Length = 40)]
+        public string EffectType { get; set; } = string.Empty;
+
+        [SugarColumn(Length = 500, IsNullable = true)]
+        public string? EffectValue { get; set; }
+
+        [SugarColumn(Length = 40, IsNullable = true)]
+        public string? EffectResourceType { get; set; }
+
+        [SugarColumn(IsNullable = true)]
+        public long? EffectResourceId { get; set; }
+
+        [SugarColumn(Length = 100, IsNullable = true)]
+        public string? EffectResourceNo { get; set; }
+
+        [SugarColumn(Length = 4000)]
+        public string ResultPayload { get; set; } = string.Empty;
+
+        [SugarColumn(IsOnlyIgnoreUpdate = true)]
+        [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
+        public DateTime CreateTime { get; set; }
+
+        [SugarColumn(Length = 50)]
+        public string CreateBy { get; set; } = "System";
+
+        public long CreateId { get; set; }
     }
 }

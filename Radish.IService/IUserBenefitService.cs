@@ -70,22 +70,43 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
     /// <summary>激活权益</summary>
     /// <param name="userId">用户 ID</param>
     /// <param name="benefitId">权益 ID</param>
-    /// <returns>是否成功</returns>
-    Task<bool> ActivateBenefitAsync(long userId, long benefitId);
+    /// <returns>选择结果与该类型当前权益</returns>
+    Task<UserBenefitActionResultVo> ActivateBenefitAsync(long userId, long benefitId);
 
     /// <summary>取消激活权益</summary>
     /// <param name="userId">用户 ID</param>
     /// <param name="benefitId">权益 ID</param>
-    /// <returns>是否成功</returns>
-    Task<bool> DeactivateBenefitAsync(long userId, long benefitId);
+    /// <returns>停用结果与该类型当前权益</returns>
+    Task<UserBenefitActionResultVo> DeactivateBenefitAsync(long userId, long benefitId);
+
+    /// <summary>管理员撤销一份持续权益。</summary>
+    Task<UserBenefitActionResultVo> RevokeBenefitAsync(
+        long benefitId,
+        string reason,
+        long operatorId,
+        string operatorName);
 
     #endregion
 
     #region 权益过期处理
 
-    /// <summary>检查并更新过期权益</summary>
-    /// <returns>更新的数量</returns>
-    Task<int> CheckAndExpireBenefitsAsync();
+    /// <summary>查询一批已到达 UTC 到期时间且尚未物化的权益 ID。</summary>
+    Task<List<long>> GetDueBenefitIdsAsync(int take = 100);
+
+    /// <summary>物化一份权益的过期事实，并可靠请求到期通知。</summary>
+    Task<bool> ExpireBenefitAsync(long benefitId);
+
+    /// <summary>管理后台查询用户权益。</summary>
+    Task<List<UserBenefitVo>> GetUserBenefitsForAdminAsync(long userId);
+
+    /// <summary>管理后台分页查询商城权益与消耗品业务流水。</summary>
+    Task<PageModel<ShopEntitlementOperationVo>> GetOperationsForAdminAsync(
+        long userId,
+        string? operationType = null,
+        BenefitType? benefitType = null,
+        ConsumableType? consumableType = null,
+        int pageIndex = 1,
+        int pageSize = 20);
 
     #endregion
 }

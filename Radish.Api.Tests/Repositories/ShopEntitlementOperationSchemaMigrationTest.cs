@@ -2,9 +2,6 @@ using System;
 using System.IO;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.DbMigrate;
-using Radish.Model;
-using Radish.Shared.Constants;
-using Radish.Shared.CustomEnum;
 using SqlSugar;
 using Xunit;
 
@@ -29,8 +26,8 @@ public sealed class ShopEntitlementOperationSchemaMigrationTest
             Assert.True(db.DbMaintenance.IsAnyTable("ShopEntitlementOperation", false));
             Assert.True(db.DbMaintenance.IsAnyIndex("idx_shop_entitlement_operation_idempotency"));
 
-            db.Insertable(CreateOperation(1)).ExecuteCommand();
-            Assert.ThrowsAny<Exception>(() => db.Insertable(CreateOperation(2)).ExecuteCommand());
+            InsertOperation(db, 1);
+            Assert.ThrowsAny<Exception>(() => InsertOperation(db, 2));
         }
         finally
         {
@@ -41,27 +38,16 @@ public sealed class ShopEntitlementOperationSchemaMigrationTest
         }
     }
 
-    private static ShopEntitlementOperation CreateOperation(long id)
+    private static void InsertOperation(ISqlSugarClient db, long id)
     {
-        return new ShopEntitlementOperation
-        {
-            Id = id,
-            TenantId = 1,
-            UserId = 100,
-            InventoryId = 200,
-            OperationType = ShopEntitlementOperationTypes.Use,
-            ConsumableType = ConsumableType.ExpCard,
-            Quantity = 1,
-            ItemValue = "100",
-            IdempotencyKey = "same-key",
-            RequestHash = "request-hash",
-            EffectType = ShopEntitlementEffectTypes.Experience,
-            EffectValue = "100",
-            ResultPayload = "{}",
-            CreateTime = new DateTime(2026, 7, 13, 8, 0, 0, DateTimeKind.Utc),
-            CreateBy = "test",
-            CreateId = 100
-        };
+        db.Ado.ExecuteCommand(
+            "INSERT INTO \"ShopEntitlementOperation\" " +
+            "(\"Id\", \"TenantId\", \"UserId\", \"InventoryId\", \"OperationType\", " +
+            "\"ConsumableType\", \"Quantity\", \"ItemValue\", \"IdempotencyKey\", \"RequestHash\", " +
+            "\"EffectType\", \"EffectValue\", \"ResultPayload\", \"CreateTime\", \"CreateBy\", \"CreateId\") VALUES " +
+            "(@Id, 1, 100, 200, 'Use', 4, 1, '100', 'same-key', 'request-hash', " +
+            "'ExperienceGrant', '100', '{}', '2026-07-13 08:00:00', 'test', 100)",
+            new SugarParameter("@Id", id));
     }
 
     private static SqlSugarScope CreateClient(string path)

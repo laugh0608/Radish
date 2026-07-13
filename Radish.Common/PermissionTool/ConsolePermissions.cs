@@ -19,6 +19,8 @@ public static class ConsolePermissions
     public const string OrdersRetry = "console.orders.retry";
     public const string OrdersRemark = "console.orders.remark";
     public const string UsersView = "console.users.view";
+    public const string BenefitsView = "console.benefits.view";
+    public const string BenefitsRevoke = "console.benefits.revoke";
     public const string RolesView = "console.roles.view";
     public const string RolesCreate = "console.roles.create";
     public const string RolesEdit = "console.roles.edit";
@@ -107,7 +109,9 @@ public static class ConsolePermissions
             ["/api/v1/Shop/TakeOffSale/.+"] = new[] { ProductsToggleSale },
             ["/api/v1/Shop/AdminGetOrders"] = new[] { OrdersView },
             ["/api/v1/Shop/AdminGetOrder/.+"] = new[] { OrdersView },
-            ["/api/v1/Shop/AdminGetEntitlementOperations"] = new[] { OrdersView },
+            ["/api/v1/Shop/AdminGetEntitlementOperations"] = new[] { BenefitsView },
+            ["/api/v1/Shop/AdminGetUserBenefits"] = new[] { BenefitsView },
+            ["/api/v1/Shop/AdminRevokeBenefit/.+"] = new[] { BenefitsRevoke },
             ["/api/v1/Shop/RetryGrantBenefit/.+"] = new[] { OrdersRetry },
             ["/api/v1/Shop/AdminRemarkOrder/.+"] = new[] { OrdersRemark },
             ["/api/v1/Tag/GetPage"] = new[] { TagsView },
@@ -195,6 +199,8 @@ public static class ConsolePermissions
         OrdersRetry,
         OrdersRemark,
         UsersView,
+        BenefitsView,
+        BenefitsRevoke,
         RolesView,
         RolesCreate,
         RolesEdit,

@@ -13,8 +13,8 @@ interface InventoryProps {
   inventory: UserInventoryItem[];
   loading: boolean;
   loadError?: ShopLoadError | null;
-  onActivateBenefit: (benefitId: LongId) => void;
-  onDeactivateBenefit: (benefitId: LongId) => void;
+  onActivateBenefit: (benefitId: LongId) => Promise<void>;
+  onDeactivateBenefit: (benefitId: LongId) => Promise<void>;
   onUseItem: (
     inventoryId: LongId,
     quantity: number,
@@ -111,15 +111,20 @@ const normalizeConsumableType = (type?: string | null): string => {
 const isRenameCardItem = (item?: UserInventoryItem | null): boolean =>
   normalizeConsumableType(item?.voConsumableType) === 'RenameCard';
 
-const isUnavailableBenefitItem = (benefit?: UserBenefit | null): boolean => {
-  const normalizedType = normalizeBenefitType(benefit?.voBenefitType);
-  return normalizedType === 'Badge'
-    || normalizedType === 'AvatarFrame'
-    || normalizedType === 'Title'
-    || normalizedType === 'Theme'
-    || normalizedType === 'Signature'
-    || normalizedType === 'NameColor'
-    || normalizedType === 'LikeEffect';
+const normalizeBenefitStatus = (status?: string | number | null): 'Available' | 'Active' | 'Expired' | 'Revoked' => {
+  switch (String(status ?? '')) {
+    case '1':
+    case 'Active':
+      return 'Active';
+    case '2':
+    case 'Expired':
+      return 'Expired';
+    case '3':
+    case 'Revoked':
+      return 'Revoked';
+    default:
+      return 'Available';
+  }
 };
 
 const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean => {
@@ -193,9 +198,13 @@ export const Inventory = ({
   const [renameValue, setRenameValue] = useState('');
   const [useIdempotencyKey, setUseIdempotencyKey] = useState(() => buildInventoryUseIdempotencyKey());
   const [usingItem, setUsingItem] = useState(false);
+  const [pendingBenefitId, setPendingBenefitId] = useState<LongId | null>(null);
   const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
-  const activeBenefits = benefits.filter((benefit) => benefit.voIsActive && !benefit.voIsExpired).length;
-  const availableBenefits = benefits.filter((benefit) => !benefit.voIsExpired).length;
+  const activeBenefits = benefits.filter((benefit) => normalizeBenefitStatus(benefit.voStatus) === 'Active').length;
+  const availableBenefits = benefits.filter((benefit) => {
+    const status = normalizeBenefitStatus(benefit.voStatus);
+    return status === 'Available' || status === 'Active';
+  }).length;
   const sourceOrderBenefits = benefits.filter((benefit) => isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)).length;
   const consumableQuantity = inventory.reduce((total, item) => total + Math.max(0, item.voQuantity), 0);
 
@@ -216,6 +225,19 @@ export const Inventory = ({
     setRenameValue('');
     setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
     setShowUseModal(true);
+  };
+
+  const runBenefitAction = async (benefitId: LongId, action: (id: LongId) => Promise<void>) => {
+    if (pendingBenefitId !== null) {
+      return;
+    }
+
+    setPendingBenefitId(benefitId);
+    try {
+      await action(benefitId);
+    } finally {
+      setPendingBenefitId(null);
+    }
   };
 
   const handleConfirmUse = async () => {
@@ -409,6 +431,8 @@ export const Inventory = ({
             ) : (
               benefits.map((benefit) => {
                 const benefitIconUrl = resolveMediaUrl(benefit.voBenefitIcon);
+                const benefitStatus = normalizeBenefitStatus(benefit.voStatus);
+                const benefitActionPending = String(pendingBenefitId ?? '') === String(benefit.voId);
                 const sourceOrderId = isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)
                   ? benefit.voSourceOrderId
                   : undefined;
@@ -435,12 +459,15 @@ export const Inventory = ({
                         <span className={styles.benefitName}>
                           {benefit.voBenefitName || benefit.voBenefitTypeDisplay}
                         </span>
-                        <span className={`${styles.benefitStatus} ${benefit.voIsActive ? styles.active : ''}`}>
-                          {benefit.voIsExpired
-                            ? t('shop.inventory.status.expired')
-                            : benefit.voIsActive
-                              ? t('shop.inventory.status.active')
-                              : t('shop.inventory.status.inactive')}
+                        <span className={`${styles.benefitStatus} ${benefitStatus === 'Active' ? styles.active : ''}`}>
+                          {benefit.voStatusDisplay
+                            || (benefitStatus === 'Expired'
+                              ? t('shop.inventory.status.expired')
+                              : benefitStatus === 'Revoked'
+                                ? t('shop.inventory.status.revoked')
+                                : benefitStatus === 'Active'
+                                  ? t('shop.inventory.status.active')
+                                  : t('shop.inventory.status.inactive'))}
                         </span>
                       </div>
                       <div className={styles.benefitType}>{benefit.voBenefitTypeDisplay ?? ''}</div>
@@ -448,7 +475,7 @@ export const Inventory = ({
                         <span>{t('shop.inventory.source', { value: benefit.voSourceTypeDisplay ?? '' })}</span>
                         <span>{t('shop.inventory.duration', { value: benefit.voDurationDisplay ?? '' })}</span>
                       </div>
-                      {benefit.voExpiresAt && !benefit.voIsExpired && (
+                      {benefit.voExpiresAt && benefitStatus !== 'Expired' && benefitStatus !== 'Revoked' && (
                         <div className={styles.benefitExpiry}>
                           {t('shop.inventory.expireAt', { value: formatTime(benefit.voExpiresAt) })}
                         </div>
@@ -497,29 +524,30 @@ export const Inventory = ({
                       )}
                     </div>
                     <div className={styles.benefitActions}>
-                      {!benefit.voIsExpired && (
-                        benefit.voIsActive ? (
+                      {benefit.voCanDeactivate ? (
                           <button
                             className={styles.deactivateButton}
-                            onClick={() => onDeactivateBenefit(benefit.voId)}
+                            disabled={pendingBenefitId !== null}
+                            onClick={() => void runBenefitAction(benefit.voId, onDeactivateBenefit)}
                           >
-                            {t('shop.inventory.deactivate')}
+                            {benefitActionPending ? t('shop.inventory.processing') : t('shop.inventory.deactivate')}
                           </button>
-                        ) : isUnavailableBenefitItem(benefit) ? (
+                        ) : benefit.voCanActivate ? (
                           <button
                             className={styles.activateButton}
-                            disabled
+                            disabled={pendingBenefitId !== null}
+                            onClick={() => void runBenefitAction(benefit.voId, onActivateBenefit)}
                           >
-                            {t('shop.inventory.unavailable')}
+                            {benefitActionPending ? t('shop.inventory.processing') : t('shop.inventory.activate')}
                           </button>
                         ) : (
                           <button
                             className={styles.activateButton}
-                            onClick={() => onActivateBenefit(benefit.voId)}
+                            disabled
+                            title={benefit.voUnavailableReason ?? undefined}
                           >
-                            {t('shop.inventory.activate')}
+                            {benefit.voUnavailableReason || benefit.voStatusDisplay || t('shop.inventory.unavailable')}
                           </button>
-                        )
                       )}
                     </div>
                   </div>

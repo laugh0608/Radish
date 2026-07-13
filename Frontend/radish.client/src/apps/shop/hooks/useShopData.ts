@@ -348,7 +348,7 @@ export const useShopData = (t: TFunction) => {
     }));
     try {
       const [benefitsResult, inventoryResult] = await Promise.all([
-        shopApi.getMyBenefits(false, t),
+        shopApi.getMyBenefits(true, t),
         shopApi.getMyInventory(t)
       ]);
 

@@ -12,11 +12,14 @@ import type {
   UpdateProductDto,
   Order,
   ShopEntitlementOperation,
+  UserBenefit,
+  UserBenefitActionResult,
 } from './types';
 import {
   ProductType,
   OrderStatus,
   ConsumableType,
+  BenefitType,
 } from './types';
 import { getApiBaseUrl } from '@/config/env';
 
@@ -194,9 +197,11 @@ export async function adminGetOrder(orderId: string): Promise<Order> {
   return response.data;
 }
 
-/** 获取指定用户最近的消耗品使用流水。 */
+/** 获取指定用户最近的持续权益与消耗品业务流水。 */
 export async function adminGetEntitlementOperations(params: {
   userId: string;
+  operationType?: string;
+  benefitType?: BenefitType;
   consumableType?: ConsumableType;
   pageIndex?: number;
   pageSize?: number;
@@ -209,13 +214,49 @@ export async function adminGetEntitlementOperations(params: {
   if (params.consumableType !== undefined) {
     searchParams.set('consumableType', params.consumableType.toString());
   }
+  if (params.operationType) {
+    searchParams.set('operationType', params.operationType);
+  }
+  if (params.benefitType !== undefined) {
+    searchParams.set('benefitType', params.benefitType.toString());
+  }
 
   const response = await apiGet<PagedResponse<ShopEntitlementOperation>>(
     `/api/v1/Shop/AdminGetEntitlementOperations?${searchParams.toString()}`,
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取消耗品使用流水失败');
+    throw new Error(response.message || '获取商城权益流水失败');
+  }
+
+  return response.data;
+}
+
+/** 获取指定用户的全部持续权益及服务端 UTC 状态。 */
+export async function adminGetUserBenefits(userId: string): Promise<UserBenefit[]> {
+  const response = await apiGet<UserBenefit[]>(
+    `/api/v1/Shop/AdminGetUserBenefits?userId=${encodeURIComponent(userId)}`,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取用户持续权益失败');
+  }
+
+  return response.data;
+}
+
+/** 撤销一份持续权益。 */
+export async function adminRevokeBenefit(
+  benefitId: string,
+  reason: string
+): Promise<UserBenefitActionResult> {
+  const response = await apiPost<UserBenefitActionResult>(
+    `/api/v1/Shop/AdminRevokeBenefit/${encodeURIComponent(benefitId)}`,
+    { reason },
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '撤销持续权益失败');
   }
 
   return response.data;

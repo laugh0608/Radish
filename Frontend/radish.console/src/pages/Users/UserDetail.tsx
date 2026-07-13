@@ -7,6 +7,8 @@ import {
   Tag,
   Table,
   message,
+  AntModal as Modal,
+  AntInput as Input,
   type TableColumnsType,
 } from '@radish/ui';
 import { Descriptions, Empty, Tabs } from 'antd';
@@ -27,13 +29,15 @@ import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, ty
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
 import {
   adminGetEntitlementOperations,
+  adminGetUserBenefits,
   adminGetOrders,
+  adminRevokeBenefit,
   getOrderStatusColor,
   getOrderStatusDisplay,
 } from '@/api/shopApi';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
 import { buildModerationPath } from '@/pages/Moderation/moderationPageUrlState';
-import type { Order, ShopEntitlementOperation } from '@/api/types';
+import type { Order, ShopEntitlementOperation, UserBenefit } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
 import './UserDetail.css';
@@ -58,6 +62,8 @@ export const UserDetail = () => {
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
+  const canViewBenefits = usePermission(CONSOLE_PERMISSIONS.benefitsView);
+  const canRevokeBenefits = usePermission(CONSOLE_PERMISSIONS.benefitsRevoke);
   const canViewExperience = usePermission(CONSOLE_PERMISSIONS.experienceView);
   const canViewModeration = usePermission(CONSOLE_PERMISSIONS.moderationView);
   const canReviewModeration = usePermission(CONSOLE_PERMISSIONS.moderationReview);
@@ -66,12 +72,17 @@ export const UserDetail = () => {
   const [coinLoading, setCoinLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
   const [operationLoading, setOperationLoading] = useState(false);
+  const [benefitLoading, setBenefitLoading] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState(false);
   const [user, setUser] = useState<UserDetailData | null>(null);
   const [balance, setBalance] = useState<UserBalanceVo | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
   const [coinTransactions, setCoinTransactions] = useState<CoinTransactionVo[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [entitlementOperations, setEntitlementOperations] = useState<ShopEntitlementOperation[]>([]);
+  const [benefits, setBenefits] = useState<UserBenefit[]>([]);
+  const [revokeTarget, setRevokeTarget] = useState<UserBenefit | null>(null);
+  const [revokeReason, setRevokeReason] = useState('');
 
   const mapUserDetail = (item: UserListItem): UserDetailData => {
     const displayName = resolveVisibleUserDisplayName(item, item.uuid ? `用户 ${item.uuid}` : '-');
@@ -255,7 +266,7 @@ export const UserDetail = () => {
   }, [userId, canViewOrders]);
 
   const loadEntitlementOperations = useCallback(async () => {
-    if (!userId || !canViewOrders) return;
+    if (!userId || !canViewBenefits) return;
 
     try {
       setOperationLoading(true);
@@ -266,12 +277,50 @@ export const UserDetail = () => {
       });
       setEntitlementOperations(result.data);
     } catch (error) {
-      log.error('UserDetail', '加载消耗品使用流水失败:', error);
+      log.error('UserDetail', '加载商城权益流水失败:', error);
       setEntitlementOperations([]);
     } finally {
       setOperationLoading(false);
     }
-  }, [userId, canViewOrders]);
+  }, [userId, canViewBenefits]);
+
+  const loadBenefits = useCallback(async () => {
+    if (!userId || !canViewBenefits) return;
+
+    try {
+      setBenefitLoading(true);
+      setBenefits(await adminGetUserBenefits(userId));
+    } catch (error) {
+      log.error('UserDetail', '加载持续权益失败:', error);
+      setBenefits([]);
+    } finally {
+      setBenefitLoading(false);
+    }
+  }, [userId, canViewBenefits]);
+
+  const handleRevokeBenefit = async () => {
+    if (!revokeTarget) return;
+
+    const normalizedReason = revokeReason.trim();
+    if (normalizedReason.length < 2) {
+      message.warning('请输入至少 2 个字符的撤销原因');
+      return;
+    }
+
+    try {
+      setRevokeLoading(true);
+      const result = await adminRevokeBenefit(revokeTarget.voId, normalizedReason);
+      message.success(result.voChanged ? '权益已撤销' : '权益此前已撤销');
+      setRevokeTarget(null);
+      setRevokeReason('');
+      await Promise.all([loadBenefits(), loadEntitlementOperations()]);
+    } catch (error) {
+      log.error('UserDetail', '撤销持续权益失败:', error);
+      message.error(error instanceof Error ? error.message : '撤销持续权益失败');
+    } finally {
+      setRevokeLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (userId && canViewUsers) {
@@ -286,6 +335,7 @@ export const UserDetail = () => {
       void loadCoinTransactions();
       void loadOrders();
       void loadEntitlementOperations();
+      void loadBenefits();
     }
   }, [
     userId,
@@ -295,6 +345,7 @@ export const UserDetail = () => {
     loadCoinTransactions,
     loadOrders,
     loadEntitlementOperations,
+    loadBenefits,
   ]);
   // 萝卜币流水表格列
   const coinColumns: TableColumnsType<CoinTransactionVo> = [
@@ -410,16 +461,26 @@ export const UserDetail = () => {
 
   const operationColumns: TableColumnsType<ShopEntitlementOperation> = [
     {
-      title: '道具',
-      dataIndex: 'voConsumableTypeDisplay',
-      key: 'voConsumableTypeDisplay',
-      width: 140,
+      title: '业务对象',
+      key: 'businessObject',
+      width: 180,
+      render: (_: unknown, record) => record.voBenefitTypeDisplay
+        || record.voConsumableTypeDisplay
+        || '-',
     },
     {
       title: '数量',
       dataIndex: 'voQuantity',
       key: 'voQuantity',
       width: 90,
+      render: (quantity?: number | null) => quantity ?? '-',
+    },
+    {
+      title: '原因',
+      dataIndex: 'voReason',
+      key: 'voReason',
+      width: 200,
+      render: (reason?: string | null) => reason || '-',
     },
     {
       title: '实际效果',
@@ -454,6 +515,73 @@ export const UserDetail = () => {
       key: 'voCreateTime',
       width: 180,
       render: (time: string) => formatDisplayTime(time),
+    },
+  ];
+
+  const benefitColumns: TableColumnsType<UserBenefit> = [
+    {
+      title: '权益',
+      key: 'benefit',
+      width: 220,
+      render: (_: unknown, record) => (
+        <div>
+          <strong>{record.voBenefitName || record.voBenefitTypeDisplay}</strong>
+          <div className="admin-feature-subtle">{record.voBenefitValue}</div>
+        </div>
+      ),
+    },
+    {
+      title: '状态',
+      dataIndex: 'voStatusDisplay',
+      key: 'voStatusDisplay',
+      width: 110,
+      render: (statusDisplay: string, record) => {
+        const status = String(record.voStatus);
+        const color = status === '1' || status === 'Active'
+          ? 'success'
+          : status === '3' || status === 'Revoked'
+            ? 'error'
+            : status === '2' || status === 'Expired'
+              ? 'default'
+              : 'processing';
+        return <Tag color={color}>{statusDisplay}</Tag>;
+      },
+    },
+    {
+      title: '有效期',
+      dataIndex: 'voDurationDisplay',
+      key: 'voDurationDisplay',
+      width: 180,
+      render: (_: string, record) => record.voExpiresAt
+        ? `${record.voDurationDisplay} · ${formatDisplayTime(record.voExpiresAt)}`
+        : record.voDurationDisplay,
+    },
+    {
+      title: '来源',
+      dataIndex: 'voSourceTypeDisplay',
+      key: 'voSourceTypeDisplay',
+      width: 110,
+    },
+    {
+      title: '撤销信息',
+      key: 'revocation',
+      width: 240,
+      render: (_: unknown, record) => record.voRevokedAt
+        ? `${formatDisplayTime(record.voRevokedAt)} · ${record.voRevocationReason || '-'}`
+        : '-',
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 110,
+      render: (_: unknown, record) => canRevokeBenefits && !record.voRevokedAt ? (
+        <Button onClick={() => {
+          setRevokeTarget(record);
+          setRevokeReason('');
+        }}>
+          撤销
+        </Button>
+      ) : '-',
     },
   ];
 
@@ -562,7 +690,7 @@ export const UserDetail = () => {
             <div className="user-detail-section-title">
               <div>
                 <h3>最近记录</h3>
-                <p className="admin-feature-subtle">展示最近 10 条胡萝卜流水、购买记录和消耗品成功使用流水。</p>
+                <p className="admin-feature-subtle">展示最近资产流水、购买记录、持续权益和商城权益操作。</p>
               </div>
             </div>
             <Tabs
@@ -608,10 +736,30 @@ export const UserDetail = () => {
                   ),
                 },
                 {
-                  key: 'entitlement-operations',
-                  label: '消耗品使用',
+                  key: 'benefits',
+                  label: '持续权益',
                   children: (
-                    canViewOrders ? (
+                    canViewBenefits ? (
+                      <div className="admin-table-scroll-region">
+                        <Table
+                          columns={benefitColumns}
+                          dataSource={benefits}
+                          rowKey="voId"
+                          loading={benefitLoading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 1050 }}
+                        />
+                      </div>
+                    ) : (
+                      <Empty description="没有查看持续权益的权限" />
+                    )
+                  ),
+                },
+                {
+                  key: 'entitlement-operations',
+                  label: '商城权益流水',
+                  children: (
+                    canViewBenefits ? (
                       <div className="admin-table-scroll-region">
                         <Table
                           columns={operationColumns}
@@ -623,7 +771,7 @@ export const UserDetail = () => {
                         />
                       </div>
                     ) : (
-                      <Empty description="没有查看商城使用流水的权限" />
+                      <Empty description="没有查看商城权益流水的权限" />
                     )
                   ),
                 },
@@ -673,6 +821,33 @@ export const UserDetail = () => {
           </div>
         </aside>
       </div>
+      <Modal
+        title="撤销持续权益"
+        open={revokeTarget !== null}
+        okText="确认撤销"
+        cancelText="取消"
+        confirmLoading={revokeLoading}
+        onOk={() => void handleRevokeBenefit()}
+        onCancel={() => {
+          if (revokeLoading) return;
+          setRevokeTarget(null);
+          setRevokeReason('');
+        }}
+      >
+        <p>
+          {revokeTarget
+            ? `将撤销“${revokeTarget.voBenefitName || revokeTarget.voBenefitTypeDisplay}”，撤销后不可重新激活。`
+            : ''}
+        </p>
+        <Input.TextArea
+          rows={4}
+          maxLength={500}
+          showCount
+          value={revokeReason}
+          placeholder="请输入撤销依据（2-500 个字符）"
+          onChange={(event) => setRevokeReason(event.target.value)}
+        />
+      </Modal>
     </div>
   );
 };

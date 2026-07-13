@@ -283,49 +283,6 @@ public class UserInventoryServiceTest
     }
 #pragma warning restore CS0618
 
-    [Fact]
-    public async Task GetOperationsForAdminAsync_ShouldReturnReadonlyUseHistory()
-    {
-        var fixture = CreateFixture(ConsumableType.ExpCard, quantity: 1, itemValue: "100");
-        fixture.OperationRepository
-            .Setup(repository => repository.QueryPageAsync(
-                It.IsAny<Expression<Func<ShopEntitlementOperation, bool>>?>(),
-                1,
-                10,
-                It.IsAny<Expression<Func<ShopEntitlementOperation, object>>?>(),
-                SqlSugar.OrderByType.Desc))
-            .ReturnsAsync((
-                new List<ShopEntitlementOperation>
-                {
-                    new()
-                    {
-                        Id = 7101,
-                        TenantId = 1,
-                        UserId = UserId,
-                        InventoryId = InventoryId,
-                        OperationType = ShopEntitlementOperationTypes.Use,
-                        ConsumableType = ConsumableType.ExpCard,
-                        Quantity = 2,
-                        EffectType = ShopEntitlementEffectTypes.Experience,
-                        EffectValue = "200",
-                        CreateTime = new DateTime(2026, 7, 13, 8, 0, 0, DateTimeKind.Utc)
-                    }
-                },
-                1));
-
-        var result = await fixture.Service.GetOperationsForAdminAsync(
-            UserId,
-            ConsumableType.ExpCard,
-            pageIndex: 1,
-            pageSize: 10);
-
-        var operation = Assert.Single(result.Data);
-        Assert.Equal(1, result.DataCount);
-        Assert.Equal(7101, operation.VoId);
-        Assert.Equal("经验卡", operation.VoConsumableTypeDisplay);
-        Assert.Equal("200", operation.VoEffectValue);
-    }
-
     private static TestFixture CreateFixture(
         ConsumableType consumableType,
         int quantity,

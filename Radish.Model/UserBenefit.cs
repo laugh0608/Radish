@@ -33,7 +33,7 @@ public class UserBenefit : RootEntityTKey<long>, IHasUserId, ITenantEntity
         IsActive = false;
         IsExpired = false;
         TenantId = 0;
-        CreateTime = DateTime.Now;
+        CreateTime = DateTime.UtcNow;
         CreateBy = "System";
         CreateId = 0;
     }
@@ -102,7 +102,7 @@ public class UserBenefit : RootEntityTKey<long>, IHasUserId, ITenantEntity
 
     /// <summary>生效时间</summary>
     [SugarColumn(IsNullable = false, ColumnDescription = "生效时间")]
-    public DateTime EffectiveAt { get; set; } = DateTime.Now;
+    public DateTime EffectiveAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>到期时间</summary>
     /// <remarks>永久权益为 null</remarks>
@@ -127,6 +127,22 @@ public class UserBenefit : RootEntityTKey<long>, IHasUserId, ITenantEntity
     [SugarColumn(IsNullable = true, ColumnDescription = "激活时间")]
     public DateTime? ActivatedAt { get; set; }
 
+    /// <summary>撤销时间（UTC）</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "撤销时间")]
+    public DateTime? RevokedAt { get; set; }
+
+    /// <summary>撤销操作者 ID</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "撤销操作者ID")]
+    public long? RevokedById { get; set; }
+
+    /// <summary>撤销操作者名称</summary>
+    [SugarColumn(Length = 100, IsNullable = true, ColumnDescription = "撤销操作者名称")]
+    public string? RevokedByName { get; set; }
+
+    /// <summary>撤销原因</summary>
+    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "撤销原因")]
+    public string? RevocationReason { get; set; }
+
     #endregion
 
     #region 租户信息
@@ -142,7 +158,7 @@ public class UserBenefit : RootEntityTKey<long>, IHasUserId, ITenantEntity
     /// <summary>创建时间</summary>
     [SugarColumn(IsNullable = false, IsOnlyIgnoreUpdate = true, ColumnDescription = "创建时间")]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
-    public DateTime CreateTime { get; set; } = DateTime.Now;
+    public DateTime CreateTime { get; set; } = DateTime.UtcNow;
 
     /// <summary>创建者名称</summary>
     [SugarColumn(Length = 50, IsNullable = false, ColumnDescription = "创建者名称")]

@@ -14,6 +14,7 @@ import type {
   OrderListItem,
   Order,
   UserBenefit,
+  UserBenefitActionResult,
   UserInventoryItem,
   PagedResponse,
   CreateOrderRequest,
@@ -259,7 +260,7 @@ export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiRespon
  */
 export async function activateBenefit(benefitId: LongId, t: TFunction) {
   void t;
-  return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
+  return await apiPost<UserBenefitActionResult>(`/api/v1/Shop/ActivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
 }
 
 /**
@@ -267,7 +268,7 @@ export async function activateBenefit(benefitId: LongId, t: TFunction) {
  */
 export async function deactivateBenefit(benefitId: LongId, t: TFunction) {
   void t;
-  return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
+  return await apiPost<UserBenefitActionResult>(`/api/v1/Shop/DeactivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
 }
 
 /**

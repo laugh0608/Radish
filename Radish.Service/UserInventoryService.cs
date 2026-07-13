@@ -532,62 +532,6 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
 
     #endregion
 
-    #region 使用流水查询
-
-    /// <summary>分页查询用户的商城消耗品使用流水（管理后台）。</summary>
-    public async Task<PageModel<ShopEntitlementOperationVo>> GetOperationsForAdminAsync(
-        long userId,
-        ConsumableType? consumableType = null,
-        int pageIndex = 1,
-        int pageSize = 20)
-    {
-        if (userId <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(userId), "用户 ID 必须大于 0");
-        }
-
-        pageIndex = Math.Max(1, pageIndex);
-        pageSize = Math.Clamp(pageSize, 1, 100);
-        Expression<Func<ShopEntitlementOperation, bool>> where = operation =>
-            operation.UserId == userId &&
-            operation.OperationType == ShopEntitlementOperationTypes.Use;
-        if (consumableType.HasValue)
-        {
-            where = where.And(operation => operation.ConsumableType == consumableType.Value);
-        }
-
-        var (operations, totalCount) = await _operationRepository.QueryPageAsync(
-            whereExpression: where,
-            pageIndex: pageIndex,
-            pageSize: pageSize,
-            orderByExpression: operation => operation.CreateTime,
-            orderByType: OrderByType.Desc);
-        return new PageModel<ShopEntitlementOperationVo>
-        {
-            Page = pageIndex,
-            PageSize = pageSize,
-            DataCount = totalCount,
-            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
-            Data = operations.Select(operation => new ShopEntitlementOperationVo
-            {
-                VoId = operation.Id,
-                VoUserId = operation.UserId,
-                VoInventoryId = operation.InventoryId,
-                VoOperationType = operation.OperationType,
-                VoConsumableType = operation.ConsumableType,
-                VoQuantity = operation.Quantity,
-                VoEffectType = operation.EffectType,
-                VoEffectValue = operation.EffectValue,
-                VoEffectResourceType = operation.EffectResourceType,
-                VoEffectResourceId = operation.EffectResourceId,
-                VoEffectResourceNo = operation.EffectResourceNo,
-                VoCreateTime = operation.CreateTime
-            }).ToList()
-        };
-    }
-
-    #endregion
-
     #region 道具管理
 
     /// <summary>扣减道具数量</summary>

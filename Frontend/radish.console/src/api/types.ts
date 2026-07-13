@@ -27,21 +27,69 @@ export interface PagedResponse<T> {
   data: T[];
 }
 
-/** 商城消耗品成功使用流水。 */
+/** 商城持续权益与消耗品业务流水。 */
 export interface ShopEntitlementOperation {
   voId: string;
   voUserId: string;
-  voInventoryId: string;
+  voInventoryId?: string | null;
+  voBenefitId?: string | null;
+  voRelatedBenefitId?: string | null;
   voOperationType: string;
-  voConsumableType: string;
-  voConsumableTypeDisplay: string;
-  voQuantity: number;
+  voConsumableType?: string | number | null;
+  voConsumableTypeDisplay?: string | null;
+  voBenefitType?: string | number | null;
+  voBenefitTypeDisplay?: string | null;
+  voQuantity?: number | null;
+  voReason?: string | null;
   voEffectType: string;
   voEffectValue?: string | null;
   voEffectResourceType?: string | null;
   voEffectResourceId?: string | null;
   voEffectResourceNo?: string | null;
   voCreateTime: string;
+  voCreateBy?: string | null;
+}
+
+/** 服务端 UTC 权益状态。 */
+export enum UserBenefitStatus {
+  Available = 0,
+  Active = 1,
+  Expired = 2,
+  Revoked = 3,
+}
+
+/** 用户持续权益。 */
+export interface UserBenefit {
+  voId: string;
+  voUserId: string;
+  voBenefitType: string | number;
+  voBenefitTypeDisplay: string;
+  voBenefitValue: string;
+  voBenefitName?: string | null;
+  voSourceOrderId?: string | null;
+  voSourceProductId?: string | null;
+  voSourceType: string;
+  voSourceTypeDisplay: string;
+  voEffectiveAt: string;
+  voExpiresAt?: string | null;
+  voStatus: string | number;
+  voStatusDisplay: string;
+  voCanActivate: boolean;
+  voCanDeactivate: boolean;
+  voUnavailableReason?: string | null;
+  voRevokedAt?: string | null;
+  voRevokedByName?: string | null;
+  voRevocationReason?: string | null;
+  voDurationDisplay: string;
+  voCreateTime: string;
+}
+
+export interface UserBenefitActionResult {
+  voChanged: boolean;
+  voAction: string;
+  voBenefitId: string;
+  voStatus: string | number;
+  voCurrentBenefitId?: string | null;
 }
 
 /**

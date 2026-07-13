@@ -25,6 +25,11 @@ namespace Radish.Model;
     nameof(TenantId), OrderByType.Asc,
     nameof(InventoryId), OrderByType.Asc,
     nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex(
+    "idx_shop_entitlement_operation_benefit_time",
+    nameof(TenantId), OrderByType.Asc,
+    nameof(BenefitId), OrderByType.Asc,
+    nameof(CreateTime), OrderByType.Desc)]
 public class ShopEntitlementOperation : RootEntityTKey<long>, IHasUserId, ITenantEntity
 {
     /// <summary>租户 ID。</summary>
@@ -36,24 +41,44 @@ public class ShopEntitlementOperation : RootEntityTKey<long>, IHasUserId, ITenan
     public long UserId { get; set; }
 
     /// <summary>背包项 ID。</summary>
-    [SugarColumn(IsNullable = false, ColumnDescription = "背包项ID")]
-    public long InventoryId { get; set; }
+    [SugarColumn(IsNullable = true, ColumnDescription = "背包项ID")]
+    public long? InventoryId { get; set; }
+
+    /// <summary>持续权益 ID。</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "持续权益ID")]
+    public long? BenefitId { get; set; }
+
+    /// <summary>相关权益 ID，例如切换前的选择。</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "相关持续权益ID")]
+    public long? RelatedBenefitId { get; set; }
 
     /// <summary>操作类型。</summary>
     [SugarColumn(Length = 40, IsNullable = false, ColumnDescription = "操作类型")]
     public string OperationType { get; set; } = string.Empty;
 
     /// <summary>消耗品类型快照。</summary>
-    [SugarColumn(IsNullable = false, ColumnDescription = "消耗品类型")]
-    public ConsumableType ConsumableType { get; set; }
+    [SugarColumn(IsNullable = true, ColumnDescription = "消耗品类型")]
+    public ConsumableType? ConsumableType { get; set; }
+
+    /// <summary>权益类型快照。</summary>
+    [SugarColumn(IsNullable = true, ColumnDescription = "权益类型")]
+    public BenefitType? BenefitType { get; set; }
 
     /// <summary>使用数量。</summary>
-    [SugarColumn(IsNullable = false, ColumnDescription = "使用数量")]
-    public int Quantity { get; set; }
+    [SugarColumn(IsNullable = true, ColumnDescription = "使用数量")]
+    public int? Quantity { get; set; }
 
     /// <summary>道具值快照。</summary>
-    [SugarColumn(Length = 500, IsNullable = false, ColumnDescription = "道具值快照")]
-    public string ItemValue { get; set; } = string.Empty;
+    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "道具值快照")]
+    public string? ItemValue { get; set; }
+
+    /// <summary>权益值快照。</summary>
+    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "权益值快照")]
+    public string? BenefitValue { get; set; }
+
+    /// <summary>操作原因。</summary>
+    [SugarColumn(Length = 500, IsNullable = true, ColumnDescription = "操作原因")]
+    public string? Reason { get; set; }
 
     /// <summary>可选目标资源类型。</summary>
     [SugarColumn(Length = 40, IsNullable = true, ColumnDescription = "目标资源类型")]

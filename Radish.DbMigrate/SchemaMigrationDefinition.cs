@@ -15,6 +15,8 @@ internal interface ISchemaMigration
     void Apply(ISqlSugarClient db, IServiceProvider services);
 
     IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services);
+
+    IReadOnlyList<string> Diagnose(ISqlSugarClient db, IServiceProvider services) => [];
 }
 
 internal static class SchemaMigrationRegistry
@@ -23,6 +25,7 @@ internal static class SchemaMigrationRegistry
     [
         ExperienceNaturalDateSchemaMigration.Instance,
         ShopOrderFulfillmentSafetyMigration.Instance,
-        ShopEntitlementOperationSchemaMigration.Instance
+        ShopEntitlementOperationSchemaMigration.Instance,
+        UserActiveBenefitSchemaMigration.Instance
     ];
 }

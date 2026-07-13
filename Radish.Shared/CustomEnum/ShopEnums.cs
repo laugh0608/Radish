@@ -55,6 +55,22 @@ public enum BenefitType
     LikeEffect = 7
 }
 
+/// <summary>用户持续权益的服务端有效状态。</summary>
+public enum UserBenefitStatus
+{
+    /// <summary>权益有效但当前未选择。</summary>
+    Available = 0,
+
+    /// <summary>权益有效且为该类型的当前选择。</summary>
+    Active = 1,
+
+    /// <summary>权益已到达 UTC 到期时间。</summary>
+    Expired = 2,
+
+    /// <summary>权益已被管理员撤销。</summary>
+    Revoked = 3
+}
+
 /// <summary>消耗品类型枚举</summary>
 /// <remarks>
 /// 定义一次性使用的道具类型

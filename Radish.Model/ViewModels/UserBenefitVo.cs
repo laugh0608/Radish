@@ -74,28 +74,60 @@ public class UserBenefitVo
     /// <summary>是否激活使用中</summary>
     public bool VoIsActive { get; set; }
 
-    /// <summary>有效期显示文本</summary>
-    public string VoDurationDisplay
+    /// <summary>服务端按 UTC 计算的当前状态。</summary>
+    public UserBenefitStatus VoStatus { get; set; }
+
+    /// <summary>当前状态显示名称。</summary>
+    public string VoStatusDisplay => VoStatus switch
     {
-        get
-        {
-            if (VoDurationType == DurationType.Permanent)
-                return "永久";
-            if (VoExpiresAt == null)
-                return "未知";
-            if (VoIsExpired)
-                return "已过期";
-            var remaining = VoExpiresAt.Value - DateTime.Now;
-            if (remaining.TotalDays > 1)
-                return $"剩余 {(int)remaining.TotalDays} 天";
-            if (remaining.TotalHours > 1)
-                return $"剩余 {(int)remaining.TotalHours} 小时";
-            return "即将过期";
-        }
-    }
+        UserBenefitStatus.Available => "可用",
+        UserBenefitStatus.Active => "使用中",
+        UserBenefitStatus.Expired => "已过期",
+        UserBenefitStatus.Revoked => "已撤销",
+        _ => "未知"
+    };
+
+    /// <summary>当前是否允许用户选择该权益。</summary>
+    public bool VoCanActivate { get; set; }
+
+    /// <summary>当前是否允许用户停用该权益。</summary>
+    public bool VoCanDeactivate { get; set; }
+
+    /// <summary>当前不可操作原因。</summary>
+    public string? VoUnavailableReason { get; set; }
+
+    /// <summary>撤销时间。</summary>
+    public DateTime? VoRevokedAt { get; set; }
+
+    /// <summary>撤销操作者名称。</summary>
+    public string? VoRevokedByName { get; set; }
+
+    /// <summary>撤销原因。</summary>
+    public string? VoRevocationReason { get; set; }
+
+    /// <summary>有效期显示文本</summary>
+    public string VoDurationDisplay { get; set; } = string.Empty;
 
     /// <summary>创建时间</summary>
     public DateTime VoCreateTime { get; set; }
+}
+
+/// <summary>用户权益选择、停用、过期或撤销的结构化结果。</summary>
+public sealed class UserBenefitActionResultVo
+{
+    public bool VoChanged { get; set; }
+
+    public string VoAction { get; set; } = string.Empty;
+
+    public long VoBenefitId { get; set; }
+
+    public BenefitType VoBenefitType { get; set; }
+
+    public UserBenefitStatus VoStatus { get; set; }
+
+    public long? VoCurrentBenefitId { get; set; }
+
+    public UserBenefitVo? VoCurrentBenefit { get; set; }
 }
 
 /// <summary>用户背包项视图模型</summary>
@@ -234,21 +266,43 @@ public sealed class ShopEntitlementOperationVo
 
     public long VoUserId { get; set; }
 
-    public long VoInventoryId { get; set; }
+    public long? VoInventoryId { get; set; }
+
+    public long? VoBenefitId { get; set; }
+
+    public long? VoRelatedBenefitId { get; set; }
 
     public string VoOperationType { get; set; } = string.Empty;
 
-    public ConsumableType VoConsumableType { get; set; }
+    public ConsumableType? VoConsumableType { get; set; }
 
-    public string VoConsumableTypeDisplay => VoConsumableType switch
+    public string? VoConsumableTypeDisplay => VoConsumableType switch
     {
         ConsumableType.RenameCard => "改名卡",
         ConsumableType.ExpCard => "经验卡",
         ConsumableType.CoinCard => "萝卜币红包",
+        null => null,
         _ => VoConsumableType.ToString()
     };
 
-    public int VoQuantity { get; set; }
+    public BenefitType? VoBenefitType { get; set; }
+
+    public string? VoBenefitTypeDisplay => VoBenefitType switch
+    {
+        BenefitType.Badge => "徽章",
+        BenefitType.AvatarFrame => "头像框",
+        BenefitType.Title => "称号",
+        BenefitType.Theme => "主题",
+        BenefitType.Signature => "签名档",
+        BenefitType.NameColor => "用户名颜色",
+        BenefitType.LikeEffect => "点赞特效",
+        null => null,
+        _ => VoBenefitType.ToString()
+    };
+
+    public int? VoQuantity { get; set; }
+
+    public string? VoReason { get; set; }
 
     public string VoEffectType { get; set; } = string.Empty;
 
@@ -261,4 +315,6 @@ public sealed class ShopEntitlementOperationVo
     public string? VoEffectResourceNo { get; set; }
 
     public DateTime VoCreateTime { get; set; }
+
+    public string VoCreateBy { get; set; } = string.Empty;
 }

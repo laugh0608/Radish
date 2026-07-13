@@ -162,8 +162,27 @@ export interface UserBenefit {
   voExpiresAt?: string | null;
   voIsExpired?: boolean;
   voIsActive?: boolean;
+  voStatus: string | number;
+  voStatusDisplay?: string;
+  voCanActivate: boolean;
+  voCanDeactivate: boolean;
+  voUnavailableReason?: string | null;
+  voRevokedAt?: string | null;
+  voRevokedByName?: string | null;
+  voRevocationReason?: string | null;
   voDurationDisplay?: string;
   voCreateTime?: string;
+}
+
+/** 持续权益选择、停用或撤销结果。 */
+export interface UserBenefitActionResult {
+  voChanged: boolean;
+  voAction: string;
+  voBenefitId: LongId;
+  voBenefitType: string | number;
+  voStatus: string | number;
+  voCurrentBenefitId?: LongId | null;
+  voCurrentBenefit?: UserBenefit | null;
 }
 
 /**
