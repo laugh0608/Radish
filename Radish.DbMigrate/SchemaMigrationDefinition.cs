@@ -29,6 +29,7 @@ internal static class SchemaMigrationRegistry
         ExperienceNaturalDateSchemaMigration.Instance,
         ShopOrderFulfillmentSafetyMigration.Instance,
         ShopEntitlementOperationSchemaMigration.Instance,
-        UserActiveBenefitSchemaMigration.Instance
+        UserActiveBenefitSchemaMigration.Instance,
+        ShopEntitlementOperationSubjectNullabilityMigration.Instance
     ];
 }

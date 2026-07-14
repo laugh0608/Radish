@@ -48,7 +48,8 @@ public sealed class SchemaMigrationLedgerTest
             {
                 ShopOrderFulfillmentSafetyMigration.Instance.MigrationId,
                 ShopEntitlementOperationSchemaMigration.Instance.MigrationId,
-                UserActiveBenefitSchemaMigration.Instance.MigrationId
+                UserActiveBenefitSchemaMigration.Instance.MigrationId,
+                ShopEntitlementOperationSubjectNullabilityMigration.Instance.MigrationId
             };
             mainDb.Deleteable<SchemaMigrationRecord>()
                 .Where(record => f1MigrationIds.Contains(record.MigrationId))
@@ -180,7 +181,7 @@ public sealed class SchemaMigrationLedgerTest
             Assert.True(status.Applied);
             Assert.True(status.ChecksumMatches);
             Assert.All(statuses, item => Assert.True(item.Applied));
-            Assert.Equal(5, mainDb.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(6, mainDb.Queryable<SchemaMigrationRecord>().Count());
             Assert.True(SchemaMigrationLedger.HasAppliedBaseline(db, "Main"));
 
             mainDb.Updateable<SchemaMigrationRecord>()

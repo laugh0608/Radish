@@ -74,6 +74,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f1-e-shop-entitlement-stage-acceptance-2026-07-14](/records/f1-e-shop-entitlement-stage-acceptance-2026-07-14)
 - [p3-12-day-end-doc-review-2026-07-12](/records/p3-12-day-end-doc-review-2026-07-12)
 - [p3-12-e8-pre-master-integration-review-2026-07-11](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
 - [p3-12-e8-b-limited-product-matrix-audit-2026-07-11](/records/p3-12-e8-b-limited-product-matrix-audit-2026-07-11)
