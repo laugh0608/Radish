@@ -140,9 +140,9 @@ Radish V1 的产品定位固定为：
 
 ## 明日事项（2026-07-15）
 
-1. 继续 `F3-B` 第二组，按业务域迁移 Console 用户 / 内容治理 / 订单文案，并收口 client Messages / Me 与共享弹层残余反馈。
-2. 为高频领域失败补稳定 `Code / MessageKey`，完成首批中英文长文本和 PC / mobile 静态布局复核；真实 smoke 仍需当轮启动授权。
-3. 评估当前 `dev` 的 F1 / F2 完整专题成果是否达到统一创建 `dev -> master` PR 的交付边界；不自动创建 PR、tag 或发布。
+1. 推进 `F3-B2` 连续业务批次：按用户 / 治理 / 订单业务域完成 Console 可见文案与表格状态治理，同时完成 client Messages / Me 和这些链路共用弹层的语言、格式化与反馈契约。
+2. 对 `F3-B2` 实际消费的 not-found、conflict、权限和操作失败补稳定 HTTP status、`Code / MessageKey` 与中英文资源，继续清除依赖消息文本的控制流，并补资源一致性、结构化错误和 `0 / 1 / 2` 复数测试。
+3. 完成第二组的中英文长文本及 PC / mobile 静态布局复核、四个前端 workspace 定向验证和后端相关测试；随后复核 `dev` 上 F1、F2 与 F3 成组成果是否达到统一 `dev -> master` PR 边界。真实 smoke、PR、tag 与发布均不自动执行。
 
 ## 并行维护线
 
