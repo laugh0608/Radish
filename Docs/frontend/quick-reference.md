@@ -9,15 +9,21 @@ import { Button, Input, Select, Modal } from '@radish/ui';
 // Hooks
 import { useDebounce, useLocalStorage, useToggle, useClickOutside } from '@radish/ui/hooks';
 
-// 工具函数
-import { formatDate, isEmail, truncate } from '@radish/ui/utils';
+// 工具函数与宿主 locale
+import {
+  formatDate,
+  formatLocalizedDateTime,
+  formatLocalizedNumber,
+  formatLocalizedRelativeTime,
+  isEmail,
+  truncate,
+} from '@radish/ui/utils';
 
-// 类型
-import type { ApiResponse, PaginationParams } from '@radish/ui/types';
-
-// API 分页模型（后端 PagedResponse）
-import type { PagedResponse } from '@radish/ui';
+// HTTP 类型和客户端直接来自 @radish/http
+import { apiGet, type ApiResponse, type PagedResponse } from '@radish/http';
 ```
+
+`@radish/ui` 不持有宿主语言状态。`ThemeProvider` 的 Ant Design locale 由 client / Console 传入；`ReactionBar`、`StickerPicker`、`UserMention` 的用户可见文本分别通过对应 `Labels` 类型注入。
 
 ## 🎨 组件速查
 
@@ -100,7 +106,7 @@ const [isOpen, toggle, setTrue, setFalse] = useToggle(false);
 
 ```tsx
 const ref = useRef(null);
-useClickOutside(ref, () => console.log('clicked outside'));
+useClickOutside(ref, () => setMenuOpen(false));
 ```
 
 ## 🛠️ 工具函数速查

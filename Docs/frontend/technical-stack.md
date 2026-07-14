@@ -24,22 +24,32 @@
 **统一的 API 请求封装**，从 `@radish/ui` 中独立出来，专注于 HTTP 通信。
 
 **核心特性**：
-- 统一配置管理（baseUrl、timeout、token）
+- 统一配置管理（baseUrl、timeout、token、language、message translator）
 - 类型安全的 TypeScript 定义
 - 自动添加 Bearer Token 认证
+- 自动发送 `Accept-Language` 并优先使用本地 `MessageKey` 翻译
+- 保留 HTTP status、`Code / MessageKey / MessageInfo / TraceId` 的结构化错误
 - 请求/响应/错误拦截器
 - 超时控制和错误处理
 
 **使用示例**：
 
 ```typescript
-import { apiGet, apiPost, configureApiClient } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  configureApiClient,
+  createApiResponseError,
+} from '@radish/http';
+import i18n from './i18n';
 
 // 配置 API 客户端
 configureApiClient({
   baseUrl: 'https://localhost:5000',
   timeout: 30000,
   getToken: () => localStorage.getItem('access_token'),
+  getLanguage: () => i18n.resolvedLanguage ?? i18n.language,
+  translateMessage: (key) => i18n.exists(key) ? i18n.t(key) : undefined,
 });
 
 // 发送请求
@@ -47,10 +57,12 @@ const response = await apiGet<Product[]>('/api/v1/Shop/GetProducts', {
   withAuth: true,
 });
 
-if (response.ok && response.data) {
-  console.log('商品列表:', response.data);
+if (!response.ok || !response.data) {
+  throw createApiResponseError(response, i18n.t('shop.loadFailed'));
 }
 ```
+
+业务控制流只读取真实 HTTP status、稳定 `Code` 或明确数据状态，不匹配 `response.message` 的中英文文本。client / Console 日志统一使用各自 `log` 工具。
 
 **详细文档**：参见 [@radish/http 包文档](./http-client.md)
 

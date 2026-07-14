@@ -33,6 +33,15 @@
 
 移动端保持同一条纵向确认路径，不拆成多页，不把技术信息放到主动作前，也不让底部按钮贴边或遮挡卡片边框。
 
+## 语言与资源契约
+
+- Login、Register、Consent 的固定文案与 DataAnnotations 校验统一由 `IStringLocalizer<Errors>` 和 `Radish.Auth/Resources/Errors*.resx` 提供，不在 Razor 中维护 `isZh` 双分支。
+- 默认、`zh`、`en` 三份 Auth 资源必须保持 key 完整一致；动态应用名称、开发方、redirect host 和用户输入只做安全编码，不自动翻译。
+- 语言入口调用 `Account/SetLanguage` 写入 `.AspNetCore.Culture`，Cookie 为一年有效、`HttpOnly`、`Essential`、`SameSite=Lax`，HTTPS 下使用 Secure。
+- 语言切换只允许回到经过 `Url.IsLocalUrl` 校验的本地 `returnUrl`；非法或缺失回跳统一回登录页。
+- OIDC 发起端可以携带 `culture / ui_locales`，但授权页最终以 Auth Request Culture 和文化 Cookie 为渲染真相源。
+- 权限数量使用本地化复数表达；英文长应用名、redirect URI 和权限说明必须允许换行，不遮挡允许 / 取消动作。
+
 ## 文案规则
 
 - 主标题使用“允许某应用访问你的账号？”这类用户动作语言。

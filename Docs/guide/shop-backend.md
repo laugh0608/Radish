@@ -1,6 +1,6 @@
 # 6. 商城后端设计与接口边界
 
-> 版本：v2.0 | 最后更新：2026-07-13
+> 版本：v2.1 | 最后更新：2026-07-14
 >
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
@@ -14,6 +14,7 @@
 | Service | `ProductService` | 商品查询、配置校验、上下架和购买资格 |
 | Service | `OrderService` | 购买事务、订单快照、支付和履约重试 |
 | Service | `UserBenefitService` | 持续权益发放、查询、选择、停用、过期和撤销 |
+| Service | `UserAdornmentService` | 批量读取 Badge / Title 当前选择并输出最小公开身份装饰 |
 | Service | `UserInventoryService` | 消耗品查询、条件扣减、真实效果和使用幂等 |
 | Repository | `IUserBenefitRepository` | 权益选择、过期、撤销的事务仓储和原子 upsert |
 | Repository | `IUserInventoryRepository` | 背包条件扣减和聚合数量并发保护 |
@@ -49,6 +50,7 @@ ShopEntitlementOperation
 | `GET` | `/api/v1/Shop/GetCategories` | 匿名 | 商品分类 |
 | `GET` | `/api/v1/Shop/GetProducts` | 匿名 | 可公开商品分页 |
 | `GET` | `/api/v1/Shop/GetProduct/{id}` | 匿名 | 商品详情 |
+| `GET` | `/api/v1/Shop/GetProductCapabilities` | 匿名 | 服务端权威商品类型、配置与启用能力元数据 |
 | `GET` | `/api/v1/Shop/CheckCanBuy/{id}` | Client | 购买资格和原因 |
 | `POST` | `/api/v1/Shop/Purchase` | Client | 购买结果与履约资源 |
 | `GET` | `/api/v1/Shop/GetMyOrders` | Client | 当前用户订单分页 |
@@ -138,7 +140,7 @@ Console 权限是服务端强制约束，不以按钮是否显示作为安全边
 - 持续权益启用。
 - 历史不可用商品 seed 收敛。
 
-当前允许真实使用的消耗品为改名卡、经验卡和萝卜币红包；所有 `BenefitType` 仍关闭。开放新类型必须同时具备配置校验、发放、使用或启用、真实消费、失效、Console 排障和测试。
+当前允许真实使用的消耗品为改名卡、经验卡和萝卜币红包；允许销售和启用的持续权益为 Badge、Title、Theme。AvatarFrame、Signature、NameColor、LikeEffect 仍关闭。`GetProductCapabilities` 返回 `VoCanSell / VoCanActivate / VoConfigurationRequirements / VoUnavailableReason`，Console 商品表单必须消费该结果，不复制枚举白名单。开放新类型必须同时具备配置校验、发放、使用或启用、真实消费、失效、Console 排障和测试。
 
 ## 6.10 Schema ledger
 
@@ -147,10 +149,11 @@ Console 权限是服务端强制约束，不以按钮是否显示作为安全边
 1. `20260713_001_shop_order_fulfillment_safety`
 2. `20260713_002_shop_entitlement_operation`
 3. `20260713_003_user_active_benefit`
+4. `20260714_001_shop_entitlement_operation_subject_nullability`
 
 `Radish.DbMigrate` 负责：
 
-- `doctor`：报告支付证据、历史资源字段、多激活和无效指针问题。
+- `doctor`：报告支付证据、历史资源字段、多激活、无效指针和 pending migration；不能用目标结构预检阻断负责修复该结构的 pending migration。
 - `apply`：在锁和 ledger 保护下执行显式迁移与安全回填。
 - `verify`：检查字段、唯一索引、选择归属、实时有效性和不可用商品状态。
 

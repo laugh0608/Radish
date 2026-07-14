@@ -1,6 +1,6 @@
 # 2. 商城核心概念
 
-> 版本：v2.0 | 最后更新：2026-07-13
+> 版本：v2.1 | 最后更新：2026-07-14
 >
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
@@ -10,7 +10,7 @@
 
 | `ProductType` | 购买结果 | 当前边界 |
 |---------------|----------|----------|
-| `Benefit` | 生成一份持续权益 `UserBenefit` | 当前所有权益类型仍禁止销售和启用，待真实消费面逐类开放 |
+| `Benefit` | 生成一份持续权益 `UserBenefit` | Badge、Title、Theme 已具备销售 / 启用能力；实际商品仍须满足配置要求并显式上架 |
 | `Consumable` | 增加 `UserInventory` 聚合数量并记录订单级发放事实 | 改名卡、经验卡、萝卜币红包已具备真实使用能力 |
 | `Physical` | 无 | 不实现，不允许创建为可售商品 |
 
@@ -22,10 +22,10 @@
 
 | 值 | 类型 | 产品含义 | 当前状态 |
 |----|------|----------|----------|
-| `1` | `Badge` | 公开身份徽章 | 未开放；F1-D 完成公开消费面后首批开放候选 |
+| `1` | `Badge` | 公开身份徽章 | 能力已开放；必须配置公开有效的徽章附件 |
 | `2` | `AvatarFrame` | 头像装饰 | 未开放 |
-| `3` | `Title` | 公开身份称号 | 未开放；F1-D 完成公开消费面后首批开放候选 |
-| `4` | `Theme` | 产品主题 | 未开放；真实效果归属 F2 |
+| `3` | `Title` | 公开身份称号 | 能力已开放；称号文本长度为 `1-40` |
+| `4` | `Theme` | 产品主题 | 能力已开放；资源只接受 `theme-dark-night / theme-sakura` |
 | `5` | `Signature` | 内容签名 | 未开放 |
 | `6` | `NameColor` | 用户名颜色 | 未开放 |
 | `7` | `LikeEffect` | 轻回应动画 | 未开放 |
@@ -35,6 +35,8 @@
 - `UserBenefit` 表示用户拥有的一份权益。
 - `UserActiveBenefit` 表示该用户某种权益类型的当前选择。
 - `(TenantId, UserId, BenefitType)` 唯一约束保证同类型只有一个当前指针。
+
+“能力已开放”不等于历史商品自动上架。`IsOnSale`、`IsEnabled`、库存、购买限制和类型配置必须全部有效；服务端通过 `GetProductCapabilities` 向 Console 返回 `VoCanSell / VoCanActivate / VoConfigurationRequirements / VoUnavailableReason`，Console 不维护平行能力表。
 
 ## 2.3 消耗品类型
 

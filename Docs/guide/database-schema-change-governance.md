@@ -13,6 +13,8 @@
 - migration SQL 和结构审计必须通过数据库元数据解析实际表名、列名并按 provider 正确引用；不得假设 PostgreSQL 物理标识符保留 C# / SqlSugar 配置中的大小写。
 - baseline 接管分表实体时，以数据库中实际存在的物理分表族为准，不要求并不存在的逻辑模板表；接管前仍须逐表核对必要列与结构。
 - baseline 已登记后，`init`、Code First 和旧式补丁不得再静默修复缺表 / 缺列；结构漂移必须失败并新增更高 migration ID。
+- baseline 已登记且存在 pending migration 时，`apply` 必须先按 ledger 顺序执行 migration，再以目标结构执行 seed readiness / strict verify；不能用“尚未迁移的旧结构不满足目标模型”提前阻断负责修复它的 migration。
+- migration 的前置检查只验证安全执行所需条件，目标列类型、可空性、索引和数据语义由该 migration 的 `Verify` 检查。SQLite 重建表必须保留索引 / trigger，PostgreSQL 必须通过元数据解析真实标识符后精确修改约束。
 - OpenIddict 独立库由 `Radish.Auth.Persistence` 定义模型，SQLite / PostgreSQL 分别维护 provider-specific EF migrations；结构写入同样只由 `Radish.DbMigrate apply` 驱动。
 - Auth 启动不执行 `EnsureCreated()` 或 `Migrate()`；存在 pending migration 或数据库缺失时只读失败并提示先执行 DbMigrate。
 
@@ -34,9 +36,9 @@
 
 ## 标准流程
 
-1. 先定义稳定 migration ID、Scope、checksum source、provider 范围、前置检查、Apply、Verify 与恢复方式。
+1. 先定义稳定 migration ID、Scope、checksum source、provider 范围、旧结构前置条件、Apply、目标结构 Verify 与恢复方式。
 2. 同步修改实体 / EF 模型和业务调用，确保新库当前结构与旧库前滚结果一致。
-3. 在隔离 SQLite 与 PostgreSQL 基线库执行 `doctor → apply → verify`，复核重入和异常拒绝。
+3. 在隔离 SQLite 与 PostgreSQL 基线库执行 `doctor → apply → verify`，同时覆盖“旧结构 + pending migration”、重入、已迁移结构和异常历史值拒绝；不得只测试空库当前结构。
 4. 对既有数据库制作可恢复备份并完成恢复演练；保留批次级验证记录。
 5. 部署时先运行 `Radish.DbMigrate apply`，成功后再启动 Api / Auth / Gateway；宿主只读校验 schema 就绪状态。
 

@@ -11,6 +11,7 @@
   - `configureApiClient`
   - `apiGet / apiPost / apiPut / apiDelete`
   - Token 刷新与认证续期
+  - `Accept-Language`、`MessageKey` 翻译与结构化 `ApiResponseError`
 - `@radish/ui`
   - 组件库
   - `message` 等交互反馈
@@ -22,8 +23,10 @@
 
 ```typescript
 import { configureApiClient } from '@radish/http';
+import i18n from './i18n';
+import { env } from './config/env';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+const apiBaseUrl = env.apiBaseUrl;
 
 configureApiClient({
   baseUrl: apiBaseUrl.replace(/\/$/, ''),
@@ -35,13 +38,17 @@ configureApiClient({
 
     return null;
   },
+  getLanguage: () => i18n.resolvedLanguage ?? i18n.language,
+  translateMessage: (key) => (
+    i18n.exists(key) ? i18n.t(key) : undefined
+  ),
 });
 ```
 
 ### 2. 发起请求
 
 ```typescript
-import { apiGet, apiPost } from '@radish/http';
+import { apiGet, apiPost, type PagedResponse } from '@radish/http';
 
 const products = await apiGet<PagedResponse<Product>>(
   '/api/v1/Shop/GetProducts?pageIndex=1&pageSize=20',
@@ -59,18 +66,23 @@ const created = await apiPost<Product>(
 
 ```typescript
 import { message } from '@radish/ui';
-import { apiDelete } from '@radish/http';
+import { apiDelete, createApiResponseError } from '@radish/http';
+import { useTranslation } from 'react-i18next';
 
+const { t } = useTranslation();
 const result = await apiDelete(`/api/v1/Client/DeleteClient/${id}`, {
   withAuth: true,
 });
 
 if (result.ok) {
-  message.success('删除成功');
+  message.success(t('common.deleteSuccess'));
 } else {
-  message.error(result.message || '删除失败');
+  const error = createApiResponseError(result, t('common.deleteFailed'));
+  message.error(error.message);
 }
 ```
+
+需要区分 not-found、conflict 或权限时，只读取真实 HTTP status、稳定 `Code` 或明确数据状态；不得匹配 `result.message` 的中英文文本。完整规则见[错误处理指南](/frontend/error-handling)。
 
 ## 401 自动续期
 

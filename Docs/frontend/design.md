@@ -395,11 +395,12 @@ export const tokens = {
 
 当前口径：
 
-- `radish.client` 主题状态由根级主题能力驱动
+- `radish.client` 主题状态由根级主题能力驱动；`default / guofeng` 为内置偏好，`theme-dark-night / theme-sakura` 为服务端 Theme 权益主题
 - 新增 UI 改造优先复用语义 token，不继续扩硬编码颜色
-- 高频桌面壳层、商城、论坛、聊天、通知、个人中心和文档应用已完成首轮主题 / i18n 接入
+- 正式 Web Header、PC / mobile 页面族、共享 UI 与 Ant Design 已统一消费当前有效主题；登录、停用、到期、撤销和登出时回退内置主题偏好
+- client 翻译资源已按业务域拆分，client / Console 共用设备语言键但各自维护资源；Auth 使用 `.resx` 与文化 Cookie，HTTP 与共享 UI 分别通过 `@radish/http` 和 locale / labels 契约接线
 - Console 后续新增或明显改动页面优先使用 `--console-*` 局部变量承接 `@radish/ui` / `--theme-*` token，并按页面类型复用 `adminFeature.css` 中的功能页、表格、设置、详情、工作台和摘要栏结构，不启动后台整站视觉重构
-- 后续只在真实联调中处理残余边角，不在设计入口继续追加流水
+- 主题与 i18n 后续按业务域和页面族维护，不在设计入口追加命令级验证流水
 
 主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference)、[UI 设计灵感参考](/frontend/ui-design-inspiration)、[Console 样式与 Token 使用说明](/frontend/console-style-guide) 与 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 

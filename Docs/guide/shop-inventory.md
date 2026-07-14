@@ -1,6 +1,6 @@
 # 5. 商城权益与背包
 
-> 版本：v2.0 | 最后更新：2026-07-13
+> 版本：v2.1 | 最后更新：2026-07-14
 >
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
@@ -84,6 +84,12 @@ POST /api/v1/Shop/DeactivateBenefit/{benefitId}
 停用只删除仍指向目标权益的当前指针。重复停用返回 `VoChanged=false`；并发切换后，旧请求不能误删后来选择的新权益。
 
 两类接口都返回 `UserBenefitActionResultVo`，其中包含操作类型、目标权益状态、该类型当前权益 ID 和当前权益对象，Client 不需要猜测切换结果。
+
+当前允许启用的权益类型为 Badge、Title、Theme：
+
+- Badge / Title 的当前选择由 `UserAdornmentService` 批量装配为公开 `UserAdornmentVo`。
+- Theme 的当前选择由 client 主题运行时读取；切回内置主题时先停用当前 Theme 权益。
+- 其他权益即使存在历史拥有记录，也必须保持 `VoCanActivate=false`。
 
 ## 5.5 到期与撤销
 
@@ -203,8 +209,9 @@ Console 用户详情按权限展示：
 
 - `20260713_002_shop_entitlement_operation`：建立消耗品成功操作流水和使用幂等结果。
 - `20260713_003_user_active_benefit`：建立唯一选择表、撤销字段并扩展通用权益流水。
+- `20260714_001_shop_entitlement_operation_subject_nullability`：放宽 `InventoryId / ConsumableType / Quantity / ItemValue`，使非消耗品的启用、停用、过期和撤销流水不再受历史 `NOT NULL` 约束阻断。
 
-F1-C 迁移会从合法历史 `IsActive` 数据选择每种类型最近的有效记录；多激活、无效激活和无法判断的数据进入 doctor 报告。verify 检查唯一索引、指针归属、实时有效性和兼容镜像。
+F1-C 迁移会从合法历史 `IsActive` 数据选择每种类型最近的有效记录；多激活、无效激活和无法判断的数据进入 doctor 报告。后续字段可空迁移对 SQLite 重建表并恢复索引 / trigger，对 PostgreSQL 精确移除目标列 `NOT NULL`；verify 同时检查可空性、必要索引、唯一指针归属、实时有效性和兼容镜像。
 
 禁止绕过 ledger 用运行时 Code First 修补正式 schema。
 

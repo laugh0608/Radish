@@ -16,14 +16,14 @@ Frontend/
 
 职责边界：
 
-- `@radish/http`：统一 API 客户端、认证续期、请求类型
-- `@radish/ui`：共享组件、交互反馈、展示辅助能力
+- `@radish/http`：统一 API 客户端、认证续期、请求语言、结构化错误和请求类型
+- `@radish/ui`：共享组件、交互反馈、Ant Design theme / locale、本地化格式化和宿主 labels 契约
 - `radish.client`：面向普通用户的纯 Web 前台；普通浏览器根路径 `/` 当前进入 `/discover`，公共头部“工作台”进入 `/workbench` 功能地图，WebOS 工作台能力保留在 `/desktop`
 - `radish.console`：面向后台治理的独立前端
 
 ## 2. 依赖与链接机制
 
-- 仓库根目录的 [`package.json`](</D:/Code/Radish/package.json>) 维护 workspaces 列表
+- 仓库根目录的 `package.json` 维护 workspaces 列表
 - 首次拉仓库或变更前端依赖后，需要在根目录执行一次 `npm install`
 - `@radish/http` 与 `@radish/ui` 通过 workspace 直接链接，不需要单独发布或单独安装
 
@@ -69,6 +69,14 @@ npm run dev
 - Console 根入口在 `AntApp` 内挂载 `AntdFeedbackBridge`；bridge 通过 effect 注册 scoped API，卸载时只清理自己注册的实例。
 - `@radish/ui` 导出的 `message / notification` 是稳定代理，业务模块可以安全持有引用；不要在 render 期间改写 ref、全局对象或重新创建平行 bridge。
 - 共享 chart 尺寸计算统一复用 `chartDimension`，组件 render 保持纯函数，不用无意义的 memo 或 effect 掩盖简单派生值。
+
+### 共享语言与错误边界
+
+- client / Console 各自持有 i18next 实例和资源 registry；共享 `radish_lang` 设备偏好键，但不跨宿主引用翻译资源。
+- `@radish/ui` 不读取 i18next 或 localStorage；`ThemeProvider` 接收宿主解析后的 Ant Design locale，业务组件通过 labels 传入用户文案。
+- 日期、数字和相对时间优先复用 `formatLocalizedDateTime / formatLocalizedNumber / formatLocalizedRelativeTime`，单位与业务词仍留在宿主资源。
+- `@radish/http` 由宿主配置 `getLanguage / translateMessage`，统一发送 `Accept-Language` 并保留 status、`Code / MessageKey / MessageInfo / TraceId`。
+- not-found、conflict 和权限控制流不得匹配中英文消息文本；需要跨 helper 抛错时保留 `ApiResponseError`。
 
 ## 5. UI 设计源协作
 
@@ -135,6 +143,8 @@ npm run type-check --workspace=@radish/http
 - 四个 workspace 的 lint 均以 `--max-warnings=0` 进入候选基线；Hook dependency、render ref mutation 和未使用变量不能以 warning 留到发布阶段
 - Console 的 `tsconfig.strict.json` 是渐进 strict 门禁；只扩大已治理文件，不通过跳过检查或恢复独立 lockfile 规避错误
 - 前端运行时配置统一通过 `env.ts` 或运行时配置入口读取，不直接散落读取 `import.meta.env`
+- 共享组件不得读取宿主 i18n、认证或业务 store；新增可见文案必须形成 labels / render props 边界
+- API 错误控制流只读取 status、稳定 `Code` 或明确数据状态，不把 `MessageInfo` 当作协议字段
 
 ## 8. 常见问题
 
