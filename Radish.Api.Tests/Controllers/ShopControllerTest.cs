@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Moq;
 using Radish.Api.Controllers;
@@ -12,6 +13,31 @@ namespace Radish.Api.Tests.Controllers;
 
 public class ShopControllerTest
 {
+    [Fact]
+    public async Task GetProductCapabilities_ShouldReturnServerAuthorityMetadata()
+    {
+        var capabilities = new List<ShopProductCapabilityVo>
+        {
+            new()
+            {
+                VoProductType = ProductType.Benefit,
+                VoBenefitType = BenefitType.Badge,
+                VoCanSell = true,
+                VoCanActivate = true
+            }
+        };
+        var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
+        productServiceMock
+            .Setup(service => service.GetProductCapabilitiesAsync())
+            .ReturnsAsync(capabilities);
+
+        var controller = CreateController(productServiceMock.Object, Mock.Of<IOrderService>());
+        var result = await controller.GetProductCapabilities();
+
+        Assert.True(result.IsSuccess);
+        Assert.Same(capabilities, result.ResponseData);
+    }
+
     [Fact]
     public async Task AdminGetOrder_ShouldReturnOrderDetail()
     {

@@ -1,0 +1,60 @@
+.adornment {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  vertical-align: middle;
+}
+
+.badge {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.badge img {
+  display: block;
+  object-fit: contain;
+}
+
+.compact .badge img {
+  width: 18px;
+  height: 18px;
+}
+
+.regular .badge img {
+  width: 26px;
+  height: 26px;
+}
+
+.title {
+  min-width: 0;
+  max-width: min(18rem, 100%);
+  padding: 1px 7px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 54%, var(--theme-bg-surface) 46%);
+  color: var(--theme-text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.regular .title {
+  padding: 2px 9px;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .adornment {
+    max-width: 100%;
+  }
+
+  .title {
+    max-width: min(12rem, 100%);
+  }
+}

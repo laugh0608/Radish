@@ -463,6 +463,7 @@ export const ShopApp = () => {
           <Inventory
             benefits={dataState.userBenefits}
             inventory={dataState.userInventory}
+            capabilities={dataState.productCapabilities}
             loading={dataState.loadingInventory}
             onActivateBenefit={actionsState.handleActivateBenefit}
             onDeactivateBenefit={actionsState.handleDeactivateBenefit}

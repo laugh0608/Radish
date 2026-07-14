@@ -44,6 +44,9 @@ public class PostAnswerVo
     /// <summary>作者头像 URL</summary>
     public string? VoAuthorAvatarUrl { get; set; }
 
+    /// <summary>作者当前公开身份装饰</summary>
+    public UserAdornmentVo? VoAuthorAdornment { get; set; }
+
     /// <summary>回答内容</summary>
     public string VoContent { get; set; } = string.Empty;
 

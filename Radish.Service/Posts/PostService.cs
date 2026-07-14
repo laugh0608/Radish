@@ -39,6 +39,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
     private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly IUserAdornmentService? _userAdornmentService;
 
     private sealed record PostContentSettings(
         int MinTitleLength,
@@ -76,7 +77,8 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<Comment>? commentRepository = null,
         IBaseRepository<CommentHighlight>? commentHighlightRepository = null,
         IBaseRepository<User>? userRepository = null,
-        IReliableOutboxService? reliableOutboxService = null)
+        IReliableOutboxService? reliableOutboxService = null,
+        IUserAdornmentService? userAdornmentService = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -103,6 +105,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _attachmentRepository = attachmentRepository;
         _systemSettingProvider = systemSettingProvider;
         _reliableOutboxService = reliableOutboxService;
+        _userAdornmentService = userAdornmentService;
     }
 
     private async Task<PostContentSettings> ValidatePostContentSettingsAsync(string title, string content)

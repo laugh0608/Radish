@@ -41,6 +41,7 @@ import {
   resolvePublicProfileRouteIdentifier,
 } from './publicProfileNavigation';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { UserAdornment } from '@/components/UserAdornment';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -673,6 +674,7 @@ export const PublicProfileApp = ({
                   <div className={styles.identityBody}>
                     <div className={styles.identityText}>
                       <h1 className={styles.userName}>{displayName}</h1>
+                      <UserAdornment adornment={profile?.voAdornment} density="regular" />
                       {displayHandle && (
                         <p className={styles.displayName}>{displayHandle}</p>
                       )}

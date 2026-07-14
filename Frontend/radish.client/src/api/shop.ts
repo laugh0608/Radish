@@ -10,6 +10,7 @@ import type {
   ProductCategory,
   ProductListItem,
   Product,
+  ShopProductCapability,
   ProductBuyCheckResult,
   OrderListItem,
   Order,
@@ -36,6 +37,7 @@ export type {
   ProductCategory,
   ProductListItem,
   Product,
+  ShopProductCapability,
   ProductBuyCheckResult,
   OrderListItem,
   Order,
@@ -157,6 +159,11 @@ export async function getProducts(
 export async function getProduct(productId: LongId, t: TFunction): Promise<ParsedApiResponse<Product>> {
   void t;
   return await apiGet<Product>(`/api/v1/Shop/GetProduct/${encodeURIComponent(String(productId))}`);
+}
+
+export async function getProductCapabilities(t: TFunction): Promise<ParsedApiResponse<ShopProductCapability[]>> {
+  void t;
+  return await apiGet<ShopProductCapability[]>('/api/v1/Shop/GetProductCapabilities');
 }
 
 /**

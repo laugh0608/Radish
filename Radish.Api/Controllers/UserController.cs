@@ -44,6 +44,7 @@ public class UserController : ControllerBase
     private readonly ICommentService _commentService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
+    private readonly IUserAdornmentService _userAdornmentService;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -54,7 +55,8 @@ public class UserController : ControllerBase
         IUserBrowseHistoryService userBrowseHistoryService,
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
-        IOptions<TimeOptions> timeOptions)
+        IOptions<TimeOptions> timeOptions,
+        IUserAdornmentService userAdornmentService)
     {
         _userService = userService;
         _currentUserAccessor = currentUserAccessor;
@@ -64,6 +66,7 @@ public class UserController : ControllerBase
         _userTimePreferenceService = userTimePreferenceService;
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
+        _userAdornmentService = userAdornmentService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -658,6 +661,7 @@ public class UserController : ControllerBase
         }
 
         var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
+        var adornment = await _userAdornmentService.GetUserAdornmentAsync(user.Uuid);
 
         var profile = new UserPublicProfileVo
         {
@@ -669,7 +673,8 @@ public class UserController : ControllerBase
             VoDisplayHandle = user.VoDisplayHandle,
             VoCreateTime = user.VoCreateTime,
             VoAvatarUrl = avatar?.Url,
-            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl
+            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,
+            VoAdornment = adornment
         };
 
         return new MessageModel

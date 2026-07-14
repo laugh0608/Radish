@@ -61,7 +61,8 @@ public class UserBenefitServiceTest
         Assert.Equal(UserBenefitStatus.Expired, expired.VoStatus);
         Assert.False(expired.VoIsActive);
         Assert.Equal(UserBenefitStatus.Revoked, result.Single(item => item.VoId == 6104).VoStatus);
-        Assert.All(result, item => Assert.False(item.VoCanActivate));
+        Assert.True(result.Single(item => item.VoId == 6101).VoCanActivate);
+        Assert.All(result.Where(item => item.VoId != 6101), item => Assert.False(item.VoCanActivate));
         Assert.True(result.Single(item => item.VoId == 6102).VoCanDeactivate);
 
         var usable = await service.GetUserBenefitsAsync(9527);
@@ -176,7 +177,7 @@ public class UserBenefitServiceTest
     }
 
     [Fact]
-    public async Task ActivateBenefitAsync_ShouldRejectUnsupportedBadgeBenefit()
+    public async Task ActivateBenefitAsync_ShouldRejectUnsupportedThemeBenefit()
     {
         const long userId = 9527;
         const long benefitId = 6001;
@@ -185,8 +186,8 @@ public class UserBenefitServiceTest
         {
             Id = benefitId,
             UserId = userId,
-            BenefitType = BenefitType.Badge,
-            BenefitValue = "badge-veteran",
+            BenefitType = BenefitType.Theme,
+            BenefitValue = "theme-sakura",
             IsActive = false,
             IsExpired = false,
             IsDeleted = false,
@@ -208,7 +209,7 @@ public class UserBenefitServiceTest
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ActivateBenefitAsync(userId, benefitId));
 
-        Assert.Equal("徽章暂未开放，当前不可激活", exception.Message);
+        Assert.Equal("主题暂未开放，当前不可激活", exception.Message);
         userBenefitRepository.Verify(repository => repository.UpdateAsync(It.IsAny<UserBenefit>()), Times.Never);
         userBenefitRepository.Verify(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserBenefit, bool>>?>()), Times.Never);
     }

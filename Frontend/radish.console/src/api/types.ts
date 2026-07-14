@@ -210,6 +210,16 @@ export interface Product {
   voVersion: number;
 }
 
+export interface ShopProductCapability {
+  voProductType: string | number;
+  voBenefitType?: string | number | null;
+  voConsumableType?: string | number | null;
+  voCanSell: boolean;
+  voCanActivate: boolean;
+  voConfigurationRequirements: string[];
+  voUnavailableReason?: string | null;
+}
+
 /**
  * 订单 Vo（直接使用后端字段名）
  */

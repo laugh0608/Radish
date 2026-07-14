@@ -16,10 +16,11 @@ import {
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
-import { getCategories, createProduct, updateProduct } from '../../api/shopApi';
+import { getCategories, getProductCapabilities, createProduct, updateProduct } from '../../api/shopApi';
 import type {
   Product,
   ProductCategory,
+  ShopProductCapability,
   CreateProductDto,
   UpdateProductDto,
 } from '../../api/types';
@@ -41,18 +42,51 @@ type ProductFormValues = Omit<CreateProductDto, 'expiresAt'> & {
   expiresAt?: Dayjs;
 };
 
-function isUnsupportedSaleSelection(productType?: unknown, benefitType?: unknown, consumableType?: unknown): boolean {
+function normalizeCapabilityEnum(value: unknown, mapping: Record<string, number>): number | undefined {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) return undefined;
+  if (/^\d+$/.test(normalized)) return Number.parseInt(normalized, 10);
+  return mapping[normalized];
+}
+
+function findProductCapability(
+  capabilities: ShopProductCapability[],
+  productType?: unknown,
+  benefitType?: unknown,
+  consumableType?: unknown
+): ShopProductCapability | undefined {
   const normalizedProductType = Number(productType);
+  const normalizedBenefitType = Number(benefitType);
+  const normalizedConsumableType = Number(consumableType);
+  return capabilities.find((capability) => {
+    const capabilityProductType = normalizeCapabilityEnum(capability.voProductType, {
+      Benefit: 1,
+      Consumable: 2,
+      Physical: 99,
+    });
+    const capabilityBenefitType = normalizeCapabilityEnum(capability.voBenefitType, {
+      Badge: 1,
+      AvatarFrame: 2,
+      Title: 3,
+      Theme: 4,
+      Signature: 5,
+      NameColor: 6,
+      LikeEffect: 7,
+    });
+    const capabilityConsumableType = normalizeCapabilityEnum(capability.voConsumableType, {
+      RenameCard: 1,
+      PostPinCard: 2,
+      PostHighlightCard: 3,
+      ExpCard: 4,
+      CoinCard: 5,
+      DoubleExpCard: 6,
+      LotteryTicket: 99,
+    });
 
-  if (normalizedProductType === 1) {
-    return [1, 2, 3, 4, 5, 6, 7].includes(Number(benefitType));
-  }
-
-  if (normalizedProductType === 2) {
-    return [2, 3, 6, 99].includes(Number(consumableType));
-  }
-
-  return false;
+    return capabilityProductType === normalizedProductType
+      && (normalizedProductType !== 1 || capabilityBenefitType === normalizedBenefitType)
+      && (normalizedProductType !== 2 || capabilityConsumableType === normalizedConsumableType);
+  });
 }
 
 const benefitCategoryMap: Record<number, string> = {
@@ -196,6 +230,7 @@ function normalizeBenefitValue(value: unknown): string | undefined {
 export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFormProps) => {
   const [form] = Form.useForm<ProductFormValues>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [capabilities, setCapabilities] = useState<ShopProductCapability[]>([]);
   const [loading, setLoading] = useState(false);
   const [iconUploading, setIconUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -212,7 +247,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const consumableType = Form.useWatch('consumableType', form);
   const stockType = Form.useWatch('stockType', form);
   const durationType = Form.useWatch('durationType', form);
-  const unsupportedSaleSelection = isUnsupportedSaleSelection(productType, benefitType, consumableType);
+  const selectedCapability = findProductCapability(capabilities, productType, benefitType, consumableType);
+  const unsupportedSaleSelection = selectedCapability?.voCanSell !== true;
   const recommendedCategoryId = resolveRecommendedCategoryId(productType, benefitType, consumableType);
   const allowedCategoryIds = getAllowedCategoryIds(productType, benefitType);
   const filteredCategories = allowedCategoryIds
@@ -334,7 +370,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   // 加载分类列表
   useEffect(() => {
     if (visible) {
-      loadCategories();
+      loadFormMetadata();
     }
   }, [visible]);
 
@@ -461,12 +497,17 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
     form.setFieldValue('categoryId', recommendedCategoryId);
   }, [categoryId, form, recommendedCategoryId, visible]);
 
-  const loadCategories = async () => {
+  const loadFormMetadata = async () => {
     try {
-      const data = await getCategories();
-      setCategories(data);
+      const [categoryData, capabilityData] = await Promise.all([
+        getCategories(),
+        getProductCapabilities(),
+      ]);
+      setCategories(categoryData);
+      setCapabilities(capabilityData);
     } catch (error) {
-      log.error('ProductForm', '加载分类列表失败:', error);
+      log.error('ProductForm', '加载商品表单元数据失败:', error);
+      setCapabilities([]);
     }
   };
 
@@ -621,17 +662,19 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               rules={[{ required: true, message: '请选择权益类型' }]}
             >
               <Select placeholder="请选择权益类型">
-                <Select.Option value={1} disabled>徽章（暂未开放）</Select.Option>
-                <Select.Option value={2} disabled>头像框（暂未开放）</Select.Option>
-                <Select.Option value={3} disabled>称号（暂未开放）</Select.Option>
-                <Select.Option value={4} disabled>主题（暂未开放）</Select.Option>
-                <Select.Option value={5} disabled>签名档（暂未开放）</Select.Option>
-                <Select.Option value={6} disabled>用户名颜色（暂未开放）</Select.Option>
-                <Select.Option value={7} disabled>点赞特效（暂未开放）</Select.Option>
+                <Select.Option value={1} disabled={findProductCapability(capabilities, 1, 1)?.voCanSell !== true}>徽章</Select.Option>
+                <Select.Option value={2} disabled={findProductCapability(capabilities, 1, 2)?.voCanSell !== true}>头像框</Select.Option>
+                <Select.Option value={3} disabled={findProductCapability(capabilities, 1, 3)?.voCanSell !== true}>称号</Select.Option>
+                <Select.Option value={4} disabled={findProductCapability(capabilities, 1, 4)?.voCanSell !== true}>主题</Select.Option>
+                <Select.Option value={5} disabled={findProductCapability(capabilities, 1, 5)?.voCanSell !== true}>签名档</Select.Option>
+                <Select.Option value={6} disabled={findProductCapability(capabilities, 1, 6)?.voCanSell !== true}>用户名颜色</Select.Option>
+                <Select.Option value={7} disabled={findProductCapability(capabilities, 1, 7)?.voCanSell !== true}>点赞特效</Select.Option>
               </Select>
             </Form.Item>
             <div className="admin-form-help-text">
-              当前权益效果尚未接入真实消费链路，不能上架销售。
+              {selectedCapability?.voUnavailableReason
+                || selectedCapability?.voConfigurationRequirements.join('；')
+                || '请选择服务端已开放的权益类型。'}
             </div>
           </>
         )}
@@ -644,17 +687,19 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               rules={[{ required: true, message: '请选择消耗品类型' }]}
             >
               <Select placeholder="请选择消耗品类型">
-                <Select.Option value={1}>改名卡</Select.Option>
-                <Select.Option value={2} disabled>置顶卡（暂未开放）</Select.Option>
-                <Select.Option value={3} disabled>高亮卡（暂未开放）</Select.Option>
-                <Select.Option value={4}>经验卡</Select.Option>
-                <Select.Option value={5}>萝卜币红包</Select.Option>
-                <Select.Option value={6} disabled>双倍经验卡（暂未开放）</Select.Option>
-                <Select.Option value={99} disabled>抽奖券（暂未开放）</Select.Option>
+                <Select.Option value={1} disabled={findProductCapability(capabilities, 2, undefined, 1)?.voCanSell !== true}>改名卡</Select.Option>
+                <Select.Option value={2} disabled={findProductCapability(capabilities, 2, undefined, 2)?.voCanSell !== true}>置顶卡</Select.Option>
+                <Select.Option value={3} disabled={findProductCapability(capabilities, 2, undefined, 3)?.voCanSell !== true}>高亮卡</Select.Option>
+                <Select.Option value={4} disabled={findProductCapability(capabilities, 2, undefined, 4)?.voCanSell !== true}>经验卡</Select.Option>
+                <Select.Option value={5} disabled={findProductCapability(capabilities, 2, undefined, 5)?.voCanSell !== true}>萝卜币红包</Select.Option>
+                <Select.Option value={6} disabled={findProductCapability(capabilities, 2, undefined, 6)?.voCanSell !== true}>双倍经验卡</Select.Option>
+                <Select.Option value={99} disabled={findProductCapability(capabilities, 2, undefined, 99)?.voCanSell !== true}>抽奖券</Select.Option>
               </Select>
             </Form.Item>
             <div className="admin-form-help-text">
-              帖子置顶卡、帖子高亮卡、双倍经验卡、抽奖券当前未开放，不能上架销售。
+              {selectedCapability?.voUnavailableReason
+                || selectedCapability?.voConfigurationRequirements.join('；')
+                || '请选择服务端已开放的消耗品类型。'}
             </div>
           </>
         )}

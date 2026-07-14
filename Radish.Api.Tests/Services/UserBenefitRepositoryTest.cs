@@ -110,6 +110,26 @@ public sealed class UserBenefitRepositoryTest
         Assert.Equal(7, expired.Benefit.TenantId);
     }
 
+    [Fact]
+    public async Task GetActiveSelectionsAsync_ShouldBatchFilterUsersTypesAndTenant()
+    {
+        using var harness = UserBenefitRepositoryHarness.Create();
+        harness.Db.Insertable(new[]
+        {
+            new UserActiveBenefit { Id = 1301, TenantId = 0, UserId = 2001, BenefitType = BenefitType.Badge, BenefitId = 2301 },
+            new UserActiveBenefit { Id = 1302, TenantId = 0, UserId = 2002, BenefitType = BenefitType.Title, BenefitId = 2302 },
+            new UserActiveBenefit { Id = 1303, TenantId = 0, UserId = 2003, BenefitType = BenefitType.Badge, BenefitId = 2303 },
+            new UserActiveBenefit { Id = 1304, TenantId = 7, UserId = 2001, BenefitType = BenefitType.Badge, BenefitId = 2304 },
+            new UserActiveBenefit { Id = 1305, TenantId = 0, UserId = 2001, BenefitType = BenefitType.Theme, BenefitId = 2305 }
+        }).ExecuteCommand();
+
+        var result = await harness.Repository.GetActiveSelectionsAsync(
+            [2001, 2002],
+            [BenefitType.Badge, BenefitType.Title]);
+
+        Assert.Equal([1301L, 1302L], result.OrderBy(item => item.Id).Select(item => item.Id).ToArray());
+    }
+
     private static UserBenefit CreateBenefit(long id, string value)
     {
         return new UserBenefit

@@ -8,6 +8,7 @@ import type { LongId } from '@/api/user';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { Icon } from '@radish/ui/icon';
+import { UserAdornment } from '@/components/UserAdornment';
 import { ImageLightbox } from '@radish/ui/image-lightbox';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
@@ -621,6 +622,7 @@ export const CommentNode = ({
             )}
           </span>
           <span className={styles.author}>{node.voAuthorName}</span>
+          <UserAdornment adornment={node.voAuthorAdornment} />
         </button>
         {node.voCreateTime && (
           <span className={styles.time}> · {formatDateTimeByTimeZone(node.voCreateTime, displayTimeZone)}</span>

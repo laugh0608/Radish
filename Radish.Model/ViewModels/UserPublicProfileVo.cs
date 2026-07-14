@@ -22,4 +22,6 @@ public class UserPublicProfileVo
     public string? VoAvatarUrl { get; set; }
 
     public string? VoAvatarThumbnailUrl { get; set; }
+
+    public UserAdornmentVo? VoAdornment { get; set; }
 }

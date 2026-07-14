@@ -572,6 +572,7 @@ public partial class PostService
         Dictionary<long, string> avatarUrlMap = new();
         Dictionary<long, string> displayNameMap = new();
         Dictionary<long, string> publicIdMap = new();
+        IReadOnlyDictionary<long, UserAdornmentVo> adornmentMap = new Dictionary<long, UserAdornmentVo>();
         if (userIds.Count > 0)
         {
             avatarUrlMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(userIds))
@@ -590,6 +591,11 @@ public partial class PostService
                     .Where(user => !string.IsNullOrWhiteSpace(user.PublicId))
                     .GroupBy(user => user.Id)
                     .ToDictionary(group => group.Key, group => group.First().PublicId!.Trim());
+            }
+
+            if (_userAdornmentService != null)
+            {
+                adornmentMap = await _userAdornmentService.GetUserAdornmentsAsync(userIds);
             }
         }
 
@@ -610,6 +616,8 @@ public partial class PostService
                 post.VoAuthorAvatarUrl = authorAvatarUrl;
             }
 
+            post.VoAuthorAdornment = adornmentMap.GetValueOrDefault(post.VoAuthorId);
+
             if (post.VoQuestion?.VoAnswers?.Count > 0)
             {
                 foreach (var answer in post.VoQuestion.VoAnswers.Where(answer => answer.VoAuthorId > 0))
@@ -628,6 +636,8 @@ public partial class PostService
                     {
                         answer.VoAuthorAvatarUrl = answerAvatarUrl;
                     }
+
+                    answer.VoAuthorAdornment = adornmentMap.GetValueOrDefault(answer.VoAuthorId);
                 }
             }
 

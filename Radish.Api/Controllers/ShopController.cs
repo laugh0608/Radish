@@ -139,6 +139,15 @@ public class ShopController : ControllerBase
         return MessageModel<ProductVo>.Success("查询成功", result);
     }
 
+    /// <summary>获取服务端权威商品能力元数据。</summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<MessageModel<List<ShopProductCapabilityVo>>> GetProductCapabilities()
+    {
+        var result = await _productService.GetProductCapabilitiesAsync();
+        return MessageModel<List<ShopProductCapabilityVo>>.Success("查询成功", result);
+    }
+
     /// <summary>
     /// 检查是否可以购买商品
     /// </summary>

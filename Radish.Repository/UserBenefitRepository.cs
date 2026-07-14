@@ -19,6 +19,24 @@ public sealed class UserBenefitRepository : BaseRepository<UserBenefit>, IUserBe
     {
     }
 
+    public Task<List<UserActiveBenefit>> GetActiveSelectionsAsync(
+        IReadOnlyCollection<long> userIds,
+        IReadOnlyCollection<BenefitType> benefitTypes)
+    {
+        var normalizedUserIds = userIds.Where(userId => userId > 0).Distinct().ToList();
+        var normalizedBenefitTypes = benefitTypes.Distinct().ToList();
+        if (normalizedUserIds.Count == 0 || normalizedBenefitTypes.Count == 0)
+        {
+            return Task.FromResult(new List<UserActiveBenefit>());
+        }
+
+        return CreateTenantQueryableFor<UserActiveBenefit>()
+            .Where(selection =>
+                normalizedUserIds.Contains(selection.UserId) &&
+                normalizedBenefitTypes.Contains(selection.BenefitType))
+            .ToListAsync();
+    }
+
     public Task<List<UserActiveBenefit>> GetActiveSelectionsAsync(long userId)
     {
         return CreateTenantQueryableFor<UserActiveBenefit>()

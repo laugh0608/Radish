@@ -52,7 +52,8 @@ public class UserControllerProfileTest
             Mock.Of<IUserBrowseHistoryService>(),
             Mock.Of<IUserTimePreferenceService>(),
             Mock.Of<IAttachmentService>(),
-            Options.Create(new TimeOptions()));
+            Options.Create(new TimeOptions()),
+            Mock.Of<IUserAdornmentService>());
 
         var result = await controller.UpdateMyProfile(new UpdateMyProfileDto
         {

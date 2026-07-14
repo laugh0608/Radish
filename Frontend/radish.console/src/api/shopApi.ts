@@ -8,6 +8,7 @@ import type {
   PagedResponse,
   Product,
   ProductCategory,
+  ShopProductCapability,
   CreateProductDto,
   UpdateProductDto,
   Order,
@@ -54,6 +55,19 @@ export async function getCategory(categoryId: string): Promise<ProductCategory> 
 
   if (!response.ok || !response.data) {
     throw new Error(response.message || '获取分类详情失败');
+  }
+
+  return response.data;
+}
+
+export async function getProductCapabilities(): Promise<ShopProductCapability[]> {
+  const response = await apiGet<ShopProductCapability[]>(
+    '/api/v1/Shop/GetProductCapabilities',
+    { withAuth: true }
+  );
+
+  if (!response.ok || !response.data) {
+    throw new Error(response.message || '获取商品能力元数据失败');
   }
 
   return response.data;

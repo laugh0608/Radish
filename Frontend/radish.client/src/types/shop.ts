@@ -84,6 +84,16 @@ export interface Product {
   voCreateTime?: string;
 }
 
+export interface ShopProductCapability {
+  voProductType: string | number;
+  voBenefitType?: string | number | null;
+  voConsumableType?: string | number | null;
+  voCanSell: boolean;
+  voCanActivate: boolean;
+  voConfigurationRequirements: string[];
+  voUnavailableReason?: string | null;
+}
+
 export interface ProductBuyCheckResult {
   canBuy: boolean;
   reason: string;

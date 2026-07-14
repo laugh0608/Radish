@@ -134,6 +134,7 @@
   font-size: 12px;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -832,6 +833,7 @@
 .answerAuthorButton {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 0;
   border: none;

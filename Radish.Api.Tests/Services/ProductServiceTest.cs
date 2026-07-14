@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -39,7 +40,7 @@ public class ProductServiceTest
     }
 
     [Fact]
-    public async Task CheckCanBuyAsync_ShouldRejectBadgeBenefit()
+    public async Task CheckCanBuyAsync_ShouldRejectBadgeWithoutRequiredIcon()
     {
         var product = CreateBadgeProduct();
         var productRepository = CreateProductRepository(product);
@@ -58,7 +59,29 @@ public class ProductServiceTest
         var (canBuy, reason) = await service.CheckCanBuyAsync(9527, product.Id, 1);
 
         Assert.False(canBuy);
-        Assert.Equal("徽章暂未开放，当前不可购买", reason);
+        Assert.Equal("商品配置不完整，请联系管理员", reason);
+    }
+
+    [Fact]
+    public async Task GetProductCapabilitiesAsync_ShouldOnlyOpenCompletedProductTypes()
+    {
+        var service = new ProductService(
+            Mock.Of<IMapper>(),
+            Mock.Of<IBaseRepository<Product>>(),
+            Mock.Of<IBaseRepository<ProductCategory>>(),
+            Mock.Of<IBaseRepository<Order>>(),
+            Mock.Of<IAttachmentUrlResolver>());
+
+        var result = await service.GetProductCapabilitiesAsync();
+
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Badge).VoCanSell);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Badge).VoCanActivate);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Title).VoCanSell);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Title).VoCanActivate);
+        Assert.False(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanSell);
+        Assert.False(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanActivate);
+        Assert.False(result.Single(item => item.VoProductType == ProductType.Physical).VoCanSell);
+        Assert.True(result.Single(item => item.VoConsumableType == ConsumableType.CoinCard).VoCanSell);
     }
 
     [Fact]
@@ -144,14 +167,26 @@ public class ProductServiceTest
     }
 
     [Fact]
-    public async Task GetProductDetailAsync_ShouldHideBadgeBenefitFromPublicView()
+    public async Task GetProductDetailAsync_ShouldExposeBadgeBenefitAfterCapabilityCompletion()
     {
         var product = CreateBadgeProduct();
         var productRepository = CreateProductRepository(product);
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        categoryRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()))
+            .ReturnsAsync(new ProductCategory { Id = product.CategoryId, Name = "徽章" });
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper.Setup(item => item.Map<ProductVo>(product)).Returns(new ProductVo
+        {
+            VoId = product.Id,
+            VoName = product.Name,
+            VoCategoryId = product.CategoryId,
+            VoProductType = product.ProductType,
+            VoBenefitType = product.BenefitType,
+            VoBenefitValue = product.BenefitValue
+        });
 
         var service = new ProductService(
             mapper.Object,
@@ -162,8 +197,9 @@ public class ProductServiceTest
 
         var result = await service.GetProductDetailAsync(product.Id);
 
-        Assert.Null(result);
-        categoryRepository.Verify(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()), Times.Never);
+        Assert.NotNull(result);
+        Assert.Equal(BenefitType.Badge, result!.VoBenefitType);
+        Assert.Equal("徽章", result.VoCategoryName);
     }
 
     [Fact]

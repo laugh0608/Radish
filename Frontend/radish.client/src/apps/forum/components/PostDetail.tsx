@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { UserAdornment } from '@/components/UserAdornment';
 import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { LongId } from '@/api/user';
@@ -476,6 +477,7 @@ export const PostDetail = ({
                 )}
               </span>
               <span>{t('forum.postDetail.author', { name: post.voAuthorName })}</span>
+              <UserAdornment adornment={post.voAuthorAdornment} />
             </button>
           )}
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
@@ -841,6 +843,7 @@ export const PostDetail = ({
                               )}
                             </span>
                             <span className={styles.answerAuthor}>{answerAuthorName}</span>
+                            <UserAdornment adornment={answer.voAuthorAdornment} />
                           </button>
                           <span className={styles.answerTime}>
                             {formatDateTimeByTimeZone(answer.voCreateTime, displayTimeZone, unknownTimeLabel)}

@@ -6,6 +6,7 @@
 import { apiGet, configureApiClient } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
+import type { UserAdornment } from '@/types/userAdornment';
 
 // 配置 API 客户端
 configureApiClient({
@@ -67,6 +68,7 @@ export interface PublicUserProfile {
   voCreateTime: string;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
+  voAdornment?: UserAdornment | null;
 }
 
 export interface PublicUserStats {

@@ -2,7 +2,7 @@ import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
-import type { UserBenefit, UserInventoryItem } from '@/types/shop';
+import type { ShopProductCapability, UserBenefit, UserInventoryItem } from '@/types/shop';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
 import type { ShopLoadError } from '../hooks/useShopData';
@@ -11,6 +11,7 @@ import styles from './Inventory.module.css';
 interface InventoryProps {
   benefits: UserBenefit[];
   inventory: UserInventoryItem[];
+  capabilities: ShopProductCapability[];
   loading: boolean;
   loadError?: ShopLoadError | null;
   onActivateBenefit: (benefitId: LongId) => Promise<void>;
@@ -127,13 +128,28 @@ const normalizeBenefitStatus = (status?: string | number | null): 'Available' | 
   }
 };
 
-const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean => {
-  const normalizedType = normalizeConsumableType(item?.voConsumableType);
-  return normalizedType === 'PostPinCard'
-    || normalizedType === 'PostHighlightCard'
-    || normalizedType === 'DoubleExpCard'
-    || normalizedType === 'LotteryTicket';
+const normalizeProductType = (type?: string | number | null): string => {
+  switch (String(type ?? '')) {
+    case '1': return 'Benefit';
+    case '2': return 'Consumable';
+    case '99': return 'Physical';
+    default: return String(type ?? '');
+  }
 };
+
+const findBenefitCapability = (
+  capabilities: ShopProductCapability[],
+  benefitType?: string | null
+): ShopProductCapability | undefined => capabilities.find((capability) =>
+  normalizeProductType(capability.voProductType) === 'Benefit'
+  && normalizeBenefitType(String(capability.voBenefitType ?? '')) === normalizeBenefitType(benefitType));
+
+const findConsumableCapability = (
+  capabilities: ShopProductCapability[],
+  consumableType?: string | null
+): ShopProductCapability | undefined => capabilities.find((capability) =>
+  normalizeProductType(capability.voProductType) === 'Consumable'
+  && normalizeConsumableType(String(capability.voConsumableType ?? '')) === normalizeConsumableType(consumableType));
 
 const isPositiveLongId = (value?: LongId | null): value is LongId => {
   if (typeof value === 'number') {
@@ -174,6 +190,7 @@ function buildInventoryUseIdempotencyKey(): string {
 export const Inventory = ({
   benefits,
   inventory,
+  capabilities,
   loading,
   loadError,
   onActivateBenefit,
@@ -433,6 +450,11 @@ export const Inventory = ({
                 const benefitIconUrl = resolveMediaUrl(benefit.voBenefitIcon);
                 const benefitStatus = normalizeBenefitStatus(benefit.voStatus);
                 const benefitActionPending = String(pendingBenefitId ?? '') === String(benefit.voId);
+                const benefitCapability = findBenefitCapability(capabilities, benefit.voBenefitType);
+                const canActivateBenefit = benefit.voCanActivate && benefitCapability?.voCanActivate === true;
+                const benefitUnavailableReason = benefit.voUnavailableReason
+                  || benefitCapability?.voUnavailableReason
+                  || benefit.voStatusDisplay;
                 const sourceOrderId = isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)
                   ? benefit.voSourceOrderId
                   : undefined;
@@ -532,7 +554,7 @@ export const Inventory = ({
                           >
                             {benefitActionPending ? t('shop.inventory.processing') : t('shop.inventory.deactivate')}
                           </button>
-                        ) : benefit.voCanActivate ? (
+                        ) : canActivateBenefit ? (
                           <button
                             className={styles.activateButton}
                             disabled={pendingBenefitId !== null}
@@ -544,9 +566,9 @@ export const Inventory = ({
                           <button
                             className={styles.activateButton}
                             disabled
-                            title={benefit.voUnavailableReason ?? undefined}
+                            title={benefitUnavailableReason ?? undefined}
                           >
-                            {benefit.voUnavailableReason || benefit.voStatusDisplay || t('shop.inventory.unavailable')}
+                            {benefitUnavailableReason || t('shop.inventory.unavailable')}
                           </button>
                       )}
                     </div>
@@ -567,6 +589,8 @@ export const Inventory = ({
             ) : (
               inventory.map((item) => {
                 const itemIconUrl = resolveMediaUrl(item.voItemIcon);
+                const itemCapability = findConsumableCapability(capabilities, item.voConsumableType);
+                const itemUnavailable = itemCapability?.voCanSell !== true;
                 const sourceProductId = isPositiveLongId(item.voSourceProductId)
                   ? item.voSourceProductId
                   : undefined;
@@ -615,9 +639,9 @@ export const Inventory = ({
                       <button
                         className={styles.useButton}
                         onClick={() => handleUseItemClick(item)}
-                        disabled={item.voQuantity <= 0 || isUnavailableConsumableItem(item)}
+                        disabled={item.voQuantity <= 0 || itemUnavailable}
                       >
-                        {isUnavailableConsumableItem(item)
+                        {itemUnavailable
                           ? t('shop.inventory.unavailable')
                           : t('shop.inventory.use')}
                       </button>

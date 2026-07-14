@@ -40,6 +40,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly IBaseRepository<User>? _userRepository;
     private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly IUserAdornmentService? _userAdornmentService;
 
     public CommentService(
         IMapper mapper,
@@ -60,7 +61,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IBaseRepository<Attachment>? attachmentRepository = null,
         IBaseRepository<User>? userRepository = null,
         ICommentRepository? commentCustomRepository = null,
-        IReliableOutboxService? reliableOutboxService = null)
+        IReliableOutboxService? reliableOutboxService = null,
+        IUserAdornmentService? userAdornmentService = null)
         : base(mapper, baseRepository)
     {
         _commentRepository = baseRepository;
@@ -77,6 +79,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         _userRepository = userRepository;
         _systemSettingProvider = systemSettingProvider;
         _reliableOutboxService = reliableOutboxService;
+        _userAdornmentService = userAdornmentService;
     }
 
     private async Task ValidateCommentContentSettingsAsync(string content)
@@ -496,6 +499,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         Dictionary<long, string> displayNameMap = new();
         Dictionary<long, string> publicIdMap = new();
+        IReadOnlyDictionary<long, UserAdornmentVo> adornmentMap = new Dictionary<long, UserAdornmentVo>();
         if (_userRepository != null)
         {
             var users = await _userRepository.QueryAsync(user =>
@@ -510,7 +514,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 .ToDictionary(group => group.Key, group => group.First().PublicId!.Trim());
         }
 
-        ApplyAuthorProfiles(comments, avatarMap, displayNameMap, publicIdMap);
+        if (_userAdornmentService != null)
+        {
+            adornmentMap = await _userAdornmentService.GetUserAdornmentsAsync(userIds);
+        }
+
+        ApplyAuthorProfiles(comments, avatarMap, displayNameMap, publicIdMap, adornmentMap);
     }
 
     private async Task EnsureCommentUserPublicIdsAsync(List<User> users)
@@ -574,7 +583,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         IEnumerable<CommentVo> comments,
         IReadOnlyDictionary<long, string?> avatarMap,
         IReadOnlyDictionary<long, string> displayNameMap,
-        IReadOnlyDictionary<long, string> publicIdMap)
+        IReadOnlyDictionary<long, string> publicIdMap,
+        IReadOnlyDictionary<long, UserAdornmentVo> adornmentMap)
     {
         foreach (var comment in comments)
         {
@@ -600,9 +610,11 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 comment.VoAuthorAvatarUrl = avatarUrl;
             }
 
+            comment.VoAuthorAdornment = adornmentMap.GetValueOrDefault(comment.VoAuthorId);
+
             if (comment.VoChildren?.Any() == true)
             {
-                ApplyAuthorProfiles(comment.VoChildren, avatarMap, displayNameMap, publicIdMap);
+                ApplyAuthorProfiles(comment.VoChildren, avatarMap, displayNameMap, publicIdMap, adornmentMap);
             }
         }
     }
