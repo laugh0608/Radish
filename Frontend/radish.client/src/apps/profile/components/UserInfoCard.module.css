@@ -20,7 +20,7 @@
   padding: 12px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-soft) 54%, white 46%) 0%,
+    color-mix(in srgb, var(--theme-brand-soft) 54%, var(--theme-surface-highlight) 46%) 0%,
     color-mix(in srgb, var(--theme-accent-jade) 10%, var(--theme-bg-surface) 90%) 100%
   );
   border-radius: 12px;
@@ -31,7 +31,7 @@
 .avatarSection:hover {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%) 0%,
+    color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%) 0%,
     color-mix(in srgb, var(--theme-accent-jade) 18%, var(--theme-bg-surface) 82%) 100%
   );
   transform: translateY(-2px);
@@ -187,7 +187,7 @@
 }
 
 .statItem:hover {
-  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-surface-highlight) 24%);
   transform: translateY(-2px);
 }
 

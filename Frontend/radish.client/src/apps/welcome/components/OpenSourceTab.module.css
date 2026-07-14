@@ -15,7 +15,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-accent-jade) 18%, transparent 82%);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-jade) 12%, transparent 88%), transparent 36%),
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 90%, transparent 10%), color-mix(in srgb, var(--theme-bg-muted) 72%, white 28%));
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 90%, transparent 10%), color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-surface-highlight) 28%));
 }
 
 .heroHeader {
@@ -286,7 +286,7 @@
   padding: 0.3rem 0.65rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--theme-bg-muted) 44%, var(--theme-bg-surface) 56%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, white 32%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, var(--theme-surface-highlight) 32%);
   color: var(--theme-text-secondary);
   font-size: 0.8rem;
 }
@@ -297,7 +297,7 @@
   padding: 0.8rem 0.85rem;
   border-radius: 12px;
   background: color-mix(in srgb, var(--theme-bg-muted) 44%, var(--theme-bg-surface) 56%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, white 32%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, var(--theme-surface-highlight) 32%);
 }
 
 .noteBlock p,

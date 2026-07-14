@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 32%),
     radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-earth) 16%, transparent) 0%, transparent 24%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-app) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -21,7 +21,7 @@
 }
 
 .sectionCard {
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid var(--theme-border-soft);
   border-radius: 28px;
   box-shadow: var(--theme-shadow-soft);
@@ -36,7 +36,7 @@
   gap: 18px;
   padding: 28px 28px 18px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
 }
 
 .sectionHeading {
@@ -74,7 +74,7 @@
 }
 
 .readOnlyBadge {
-  background: color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 78%, var(--theme-surface-highlight) 22%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   color: var(--theme-brand-primary);
 }
@@ -133,7 +133,7 @@
   min-height: 40px;
   padding: 9px 16px;
   border: 1px solid var(--theme-border-strong);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
 }
 
@@ -143,7 +143,7 @@
   padding: 9px 16px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 44%, var(--theme-brand-primary) 56%) 100%);
-  color: #fffaf0;
+  color: var(--theme-text-inverse);
   box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-brand-primary) 22%, transparent);
 }
 
@@ -180,7 +180,7 @@
   margin-bottom: 16px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, var(--theme-surface-highlight) 54%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 
@@ -191,17 +191,17 @@
   padding: 24px;
   border-radius: 24px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .statusCard[data-tone='error'],
 .statusCard[data-tone='notFound'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 7%, white 93%);
+  background: color-mix(in srgb, var(--theme-state-danger) 7%, var(--theme-surface-highlight) 93%);
   border-color: color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
 }
 
 .statusCard[data-tone='loading'] {
-  background: color-mix(in srgb, var(--theme-brand-soft) 42%, white 58%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-surface-highlight) 58%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
 }
 
@@ -217,7 +217,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 56%, white 44%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 56%, var(--theme-surface-highlight) 44%);
   color: var(--theme-brand-primary);
 }
 
@@ -286,7 +286,7 @@
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   min-width: 0;
 }
 
@@ -317,7 +317,7 @@
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .categoryPill {
@@ -339,7 +339,7 @@
 .categoryPillActive {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   color: var(--theme-brand-primary);
 }
 
@@ -351,7 +351,7 @@
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
 }
 
 .shopSearchInputWrap {
@@ -364,7 +364,7 @@
   padding: 0 12px;
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 84%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   color: var(--theme-text-secondary);
 }
 
@@ -401,7 +401,7 @@
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
 }
 
 .featuredProduct:hover,
@@ -516,7 +516,7 @@
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
 }
 
 .productRowInfo {
@@ -542,7 +542,7 @@
   min-height: 30px;
   padding: 6px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 74%, white 26%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 74%, var(--theme-surface-highlight) 26%);
   color: var(--theme-brand-primary);
   font-weight: 800;
 }
@@ -555,7 +555,7 @@
   padding: 28px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-secondary);
   text-align: center;
 }
@@ -591,7 +591,7 @@
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
   min-width: 0;
 }
@@ -611,7 +611,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 64%, white 36%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 64%, var(--theme-surface-highlight) 36%);
   color: var(--theme-brand-primary);
 }
 
@@ -699,13 +699,13 @@
 }
 
 .shareFeedback[data-state='success'] {
-  background: color-mix(in srgb, var(--theme-state-success) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-state-success) 10%, var(--theme-surface-highlight) 90%);
   border: 1px solid color-mix(in srgb, var(--theme-state-success) 20%, transparent);
   color: color-mix(in srgb, var(--theme-state-success) 74%, var(--theme-text-primary) 26%);
 }
 
 .shareFeedback[data-state='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-surface-highlight) 92%);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
   color: var(--theme-state-danger);
 }
@@ -719,7 +719,7 @@
 }
 
 .purchaseFeedback[data-state='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-surface-highlight) 92%);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
   color: var(--theme-state-danger);
 }
@@ -766,7 +766,7 @@
 .detailSection {
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 74%, transparent);
   border-radius: 24px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -794,7 +794,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%) 0%, color-mix(in srgb, var(--theme-bg-muted) 64%, var(--theme-bg-surface) 36%) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 52%, var(--theme-surface-highlight) 48%) 0%, color-mix(in srgb, var(--theme-bg-muted) 64%, var(--theme-bg-surface) 36%) 100%);
   color: var(--theme-brand-primary);
 }
 
@@ -886,7 +886,7 @@
   gap: 10px;
   padding: 18px;
   border-radius: 20px;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 50%, white 50%) 0%, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 50%, var(--theme-surface-highlight) 50%) 0%, color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 

@@ -1,8 +1,8 @@
 .chatApp {
   --chat-badge-bg: var(--theme-state-danger);
   --chat-badge-text: #fff;
-  --chat-avatar-border: color-mix(in srgb, var(--theme-border-strong) 72%, white 28%);
-  --chat-avatar-surface: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+  --chat-avatar-border: color-mix(in srgb, var(--theme-border-strong) 72%, var(--theme-surface-highlight) 28%);
+  --chat-avatar-surface: color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%);
   --chat-link: var(--theme-accent-ink);
   --chat-link-hover: color-mix(in srgb, var(--theme-accent-ink) 82%, black 18%);
   --chat-warning: var(--theme-accent-earth);
@@ -11,11 +11,11 @@
   --chat-quote-bg: color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%);
   --chat-quote-title: var(--theme-accent-ink);
   --chat-bubble-bg: var(--theme-bg-surface);
-  --chat-bubble-border: color-mix(in srgb, var(--theme-border-strong) 55%, white 45%);
+  --chat-bubble-border: color-mix(in srgb, var(--theme-border-strong) 55%, var(--theme-surface-highlight) 45%);
   --chat-bubble-mine-bg: color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%);
   --chat-bubble-mine-border: color-mix(in srgb, var(--theme-brand-primary) 34%, var(--theme-border-strong) 66%);
-  --chat-mention-bg: color-mix(in srgb, var(--theme-brand-soft) 74%, white 26%);
-  --chat-mention-bg-hover: color-mix(in srgb, var(--theme-brand-soft) 92%, white 8%);
+  --chat-mention-bg: color-mix(in srgb, var(--theme-brand-soft) 74%, var(--theme-surface-highlight) 26%);
+  --chat-mention-bg-hover: color-mix(in srgb, var(--theme-brand-soft) 92%, var(--theme-surface-highlight) 8%);
   --chat-mention-text: var(--theme-accent-ink);
   --chat-danger: var(--theme-state-danger);
   --chat-danger-soft: color-mix(in srgb, var(--theme-state-danger) 14%, var(--theme-bg-surface) 86%);
@@ -204,7 +204,7 @@
 .mainHeader {
   border-bottom: 1px solid var(--theme-border-soft);
   padding: 12px 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
 }
 
 .headerMain {
@@ -272,7 +272,7 @@
   min-width: 0;
   min-height: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 98%, white 2%) 0%, color-mix(in srgb, var(--theme-bg-muted) 45%, var(--theme-bg-surface) 55%) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 98%, var(--theme-surface-highlight) 2%) 0%, color-mix(in srgb, var(--theme-bg-muted) 45%, var(--theme-bg-surface) 55%) 100%);
 }
 
 .placeholder {
@@ -333,7 +333,7 @@
 }
 
 .loadNewerButton:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, var(--theme-surface-highlight) 38%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 52%, var(--theme-border-strong) 48%);
 }
 
@@ -621,7 +621,7 @@
 .memberPanel {
   width: 220px;
   border-left: 1px solid var(--theme-border-soft);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 0%, var(--theme-bg-muted) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%) 0%, var(--theme-bg-muted) 100%);
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -636,7 +636,7 @@
 .memberPanelCollapsed {
   width: 40px;
   border-left-color: color-mix(in srgb, var(--theme-border-soft) 55%, transparent 45%);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 0%, color-mix(in srgb, var(--theme-bg-muted) 92%, white 8%) 100%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%) 0%, color-mix(in srgb, var(--theme-bg-muted) 92%, var(--theme-surface-highlight) 8%) 100%);
 }
 
 .memberPanelHeader {
@@ -691,7 +691,7 @@
   height: 28px;
   border: 1px solid var(--chat-avatar-border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 82%, var(--theme-surface-highlight) 18%);
   color: var(--theme-text-secondary);
   flex: 0 0 auto;
   display: inline-flex;
@@ -709,7 +709,7 @@
   height: 26px;
   border-radius: 999px;
   border-color: color-mix(in srgb, var(--chat-avatar-border) 72%, transparent 28%);
-  background: color-mix(in srgb, var(--theme-bg-surface) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .memberPanelHeader:hover .memberCollapseIndicator {
@@ -746,7 +746,7 @@
 }
 
 .memberItem:hover {
-  background: color-mix(in srgb, var(--theme-bg-surface) 70%, white 30%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 70%, var(--theme-surface-highlight) 30%);
 }
 
 .memberAvatar {
@@ -767,7 +767,7 @@
 .inputArea {
   border-top: 1px solid var(--theme-border-soft);
   padding: 10px 14px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   min-width: 0;
 }
 
@@ -807,7 +807,7 @@
   border: 1px solid var(--chat-bubble-mine-border);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--chat-bubble-mine-bg) 72%, white 28%) 0%,
+    color-mix(in srgb, var(--chat-bubble-mine-bg) 72%, var(--theme-surface-highlight) 28%) 0%,
     var(--chat-bubble-mine-bg) 100%
   );
 }
@@ -855,7 +855,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, var(--chat-bubble-border) 72%);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-brand-soft) 30%, white 70%) 0%,
+    color-mix(in srgb, var(--theme-brand-soft) 30%, var(--theme-surface-highlight) 70%) 0%,
     color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-brand-soft) 8%) 100%
   );
 }
@@ -957,10 +957,10 @@
   bottom: calc(100% + 8px);
   border: 1px solid color-mix(in srgb, var(--theme-border-strong) 72%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 96%, var(--theme-surface-highlight) 4%);
   box-shadow:
     0 18px 34px color-mix(in srgb, var(--theme-accent-ink) 14%, transparent),
-    0 0 0 1px color-mix(in srgb, white 68%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--theme-surface-highlight) 68%, transparent);
   backdrop-filter: blur(14px);
   overflow: hidden;
   z-index: 6;
@@ -1205,7 +1205,7 @@
     padding: 0 10px;
     border: 1px solid var(--theme-border-soft);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+    background: color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%);
     color: var(--theme-text-secondary);
     font-size: 13px;
     font-weight: 700;

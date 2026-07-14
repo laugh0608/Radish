@@ -342,7 +342,7 @@
   flex: 1;
   overflow-y: auto;
   padding: 20px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
 }
 
 .loadingText,

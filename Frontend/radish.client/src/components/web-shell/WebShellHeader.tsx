@@ -1,4 +1,4 @@
-import { useEffect, type MouseEvent } from 'react';
+import { useEffect, type MouseEvent, type ReactNode } from 'react';
 import { Icon } from '@radish/ui/icon';
 import styles from './WebShellHeader.module.css';
 
@@ -23,6 +23,7 @@ interface WebShellHeaderProps {
   activeKey?: string;
   navItems?: WebShellNavItem[];
   actionItems?: WebShellNavItem[];
+  actionSlot?: ReactNode;
   mobileNavItems?: WebShellNavItem[];
   hideMobileNav?: boolean;
 }
@@ -225,6 +226,7 @@ export function WebShellHeader({
   activeKey,
   navItems,
   actionItems,
+  actionSlot,
   mobileNavItems,
   hideMobileNav = false,
 }: WebShellHeaderProps) {
@@ -272,6 +274,7 @@ export function WebShellHeader({
           </nav>
 
           <div className={actionRailClassName} aria-label="页面动作">
+            {actionSlot}
             {resolvedActionItems.map((item) => (
               <WebShellLink
                 key={item.key}

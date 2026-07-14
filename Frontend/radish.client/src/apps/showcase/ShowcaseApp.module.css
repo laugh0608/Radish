@@ -32,7 +32,7 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%) 0%,
+      color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%) 0%,
       color-mix(in srgb, var(--theme-bg-surface-muted) 92%, transparent 8%) 100%
     );
   box-shadow: var(--theme-shadow-soft);
@@ -43,7 +43,7 @@
   align-items: center;
   padding: 6px 10px;
   border-radius: var(--theme-radius-pill);
-  background: color-mix(in srgb, var(--theme-brand-soft) 82%, white 18%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 82%, var(--theme-surface-highlight) 18%);
   color: var(--theme-brand-primary);
   font-size: 12px;
   font-weight: 700;
@@ -80,7 +80,7 @@
   min-height: 34px;
   padding: 0 14px;
   border-radius: var(--theme-radius-pill);
-  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%);
   border: 1px solid var(--theme-border-soft);
   color: var(--theme-text-secondary);
   font-size: 13px;
@@ -118,7 +118,7 @@
   gap: 16px;
   padding: 12px 14px;
   border-radius: var(--theme-radius-control);
-  background: color-mix(in srgb, var(--theme-bg-surface) 78%, white 22%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 78%, var(--theme-surface-highlight) 22%);
   border: 1px solid var(--theme-border-soft);
 }
 
@@ -139,7 +139,7 @@
   margin-bottom: 24px;
   padding: 12px;
   border-radius: calc(var(--theme-radius-panel) + 2px);
-  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 82%, var(--theme-surface-highlight) 18%);
   border: 1px solid var(--theme-border-soft);
   box-shadow: var(--theme-shadow-soft);
 }
@@ -163,7 +163,7 @@
 
 .navItem:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--theme-bg-muted) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-surface-highlight) 28%);
   border-color: var(--theme-border-strong);
   color: var(--theme-text-primary);
 }
@@ -172,7 +172,7 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--theme-brand-primary) 90%, white 10%) 0%,
+      color-mix(in srgb, var(--theme-brand-primary) 90%, var(--theme-surface-highlight) 10%) 0%,
       color-mix(in srgb, var(--theme-brand-primary) 76%, black 24%) 100%
     );
   border-color: color-mix(in srgb, var(--theme-brand-primary) 34%, transparent 66%);
@@ -291,7 +291,7 @@
   gap: 10px;
   padding: 16px 12px;
   border-radius: var(--theme-radius-control);
-  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%);
   border: 1px solid var(--theme-border-soft);
   color: var(--theme-text-secondary);
   transition:
@@ -302,7 +302,7 @@
 
 .iconItem:hover {
   transform: translateY(-2px);
-  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-surface-highlight) 24%);
   border-color: var(--theme-border-strong);
 }
 
@@ -352,7 +352,7 @@
   background:
     linear-gradient(
       135deg,
-      color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 0%,
+      color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%) 0%,
       color-mix(in srgb, var(--theme-brand-soft) 32%, var(--theme-bg-surface) 68%) 100%
     );
   color: var(--theme-text-secondary);

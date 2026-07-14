@@ -3,7 +3,7 @@
   height: 100vh;
   height: 100dvh;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 0%, var(--theme-bg-muted) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, var(--theme-surface-highlight) 6%) 0%, var(--theme-bg-muted) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -102,7 +102,7 @@
   min-width: 0;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 95%, white 5%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 95%, var(--theme-surface-highlight) 5%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -333,7 +333,7 @@
   padding: 16px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   transition: opacity 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
 }

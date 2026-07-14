@@ -8,6 +8,7 @@ using Radish.Common.CacheTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
 using SqlSugar;
@@ -47,11 +48,12 @@ public class PublicSitemapService : IPublicSitemapService
         p.IsEnabled &&
         p.IsOnSale &&
         !p.IsDeleted &&
+        !(p.ProductType == ProductType.Benefit &&
+          p.BenefitType == BenefitType.Theme &&
+          p.BenefitValue != ShopThemeResources.DarkNight &&
+          p.BenefitValue != ShopThemeResources.Sakura) &&
         !(p.ProductType == ProductType.Benefit && (
-            p.BenefitType == BenefitType.Badge ||
             p.BenefitType == BenefitType.AvatarFrame ||
-            p.BenefitType == BenefitType.Title ||
-            p.BenefitType == BenefitType.Theme ||
             p.BenefitType == BenefitType.Signature ||
             p.BenefitType == BenefitType.NameColor ||
             p.BenefitType == BenefitType.LikeEffect)) &&

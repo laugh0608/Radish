@@ -437,6 +437,11 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 $"{ShopProductAvailabilityPolicy.GetBenefitTypeDisplayName(benefit.BenefitType)}暂未开放，当前不可激活");
         }
 
+        if (benefit.BenefitType == BenefitType.Theme && !ShopThemeResources.IsSupported(benefit.BenefitValue))
+        {
+            throw new InvalidOperationException("主题资源不存在或已下线，当前不可激活");
+        }
+
         var result = await _userBenefitCustomRepository.ActivateAsync(userId, benefitId, userId, "User", now);
         Log.Information("权益选择完成：用户={UserId}, 权益ID={BenefitId}, Changed={Changed}",
             userId, benefitId, result.Changed);
@@ -640,7 +645,9 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             benefitVo.VoCanDeactivate = status == UserBenefitStatus.Active;
             benefitVo.VoCanActivate = status == UserBenefitStatus.Available &&
                                       benefit.EffectiveAt <= nowUtc &&
-                                      !ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType);
+                                      !ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType) &&
+                                      (benefit.BenefitType != BenefitType.Theme ||
+                                       ShopThemeResources.IsSupported(benefit.BenefitValue));
             benefitVo.VoUnavailableReason = GetUnavailableReason(benefit, status, nowUtc);
             benefitVo.VoDurationDisplay = GetDurationDisplay(benefit, status);
             benefitVo.VoBenefitIcon = ResolveAttachmentUrl(benefitVo.VoBenefitIconAttachmentId);
@@ -677,6 +684,8 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         {
             UserBenefitStatus.Revoked => benefit.RevocationReason ?? "权益已撤销",
             UserBenefitStatus.Expired => "权益已过期",
+            _ when benefit.BenefitType == BenefitType.Theme && !ShopThemeResources.IsSupported(benefit.BenefitValue) =>
+                "主题资源不存在或已下线",
             UserBenefitStatus.Active => null,
             _ when benefit.EffectiveAt > nowUtc => "权益尚未生效",
             _ when ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType) =>

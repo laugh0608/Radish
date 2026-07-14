@@ -21,7 +21,7 @@
 
 .uploadArea:hover {
   border-color: var(--theme-border-strong);
-  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-surface-highlight) 24%);
 }
 
 .fileInput {
@@ -82,7 +82,7 @@
 }
 
 .removeButton:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--theme-bg-muted) 74%, white 26%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 74%, var(--theme-surface-highlight) 26%);
 }
 
 .removeButton:disabled {

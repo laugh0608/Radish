@@ -7,6 +7,7 @@ import type { LongId } from '@/api/user';
 import type { Product, ProductBuyCheckResult } from '@/types/shop';
 import * as shopApi from '@/api/shop';
 import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
+import { reconcileThemeBenefitActionResult } from '@/theme/themeEntitlements';
 import type { ShopAppState } from '../ShopApp';
 
 interface UseShopActionsProps {
@@ -176,6 +177,9 @@ export const useShopActions = (props: UseShopActionsProps) => {
     try {
       const result = await shopApi.activateBenefit(benefitId, t);
       if (result.ok) {
+        if (result.data) {
+          reconcileThemeBenefitActionResult(result.data);
+        }
         setError(null);
         // 刷新背包数据
         await loadInventory();
@@ -193,6 +197,9 @@ export const useShopActions = (props: UseShopActionsProps) => {
     try {
       const result = await shopApi.deactivateBenefit(benefitId, t);
       if (result.ok) {
+        if (result.data) {
+          reconcileThemeBenefitActionResult(result.data);
+        }
         setError(null);
         // 刷新背包数据
         await loadInventory();

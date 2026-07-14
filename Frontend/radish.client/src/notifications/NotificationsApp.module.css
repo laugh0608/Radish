@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-muted) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-muted) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -33,7 +33,7 @@
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -108,7 +108,7 @@
   padding: 14px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-shadow-soft) 46%, transparent 54%);
 }
 
@@ -167,7 +167,7 @@
 .railCard {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
   padding: 14px;
 }
@@ -288,7 +288,7 @@
   padding: 12px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%);
   color: inherit;
   text-decoration: none;
   transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;

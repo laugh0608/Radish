@@ -3,6 +3,7 @@ import { redirectToLogin } from '@/services/auth';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { resolveMediaUrl } from '@/utils/media';
+import { ThemeSwitcher } from '@/theme/ThemeSwitcher';
 
 interface PublicShellHeaderProps {
   brandMark: string;
@@ -86,6 +87,7 @@ export const PublicShellHeader = ({
       activeKey={activeKey}
       mobileNavItems={mobileNavItems}
       hideMobileNav={hideMobileNav}
+      actionSlot={<ThemeSwitcher />}
       actionItems={actionItems}
       onBrandClick={onBrandClick}
     />

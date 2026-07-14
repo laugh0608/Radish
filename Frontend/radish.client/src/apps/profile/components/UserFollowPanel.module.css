@@ -80,7 +80,7 @@
 .feedStreamTabActive {
   border-color: var(--theme-brand-primary);
   color: var(--theme-accent-ink);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .loading,
@@ -181,7 +181,7 @@
 }
 
 .mutualBadge {
-  background: color-mix(in srgb, var(--theme-state-success) 18%, white 82%);
+  background: color-mix(in srgb, var(--theme-state-success) 18%, var(--theme-surface-highlight) 82%);
   color: var(--theme-state-success);
   border-radius: 999px;
   font-size: 12px;
@@ -226,7 +226,7 @@
 
 .retryButton:hover {
   border-color: var(--theme-border-strong);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .pagination {

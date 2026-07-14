@@ -9,7 +9,7 @@
   background:
     radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 30%),
     radial-gradient(circle at 88% 16%, color-mix(in srgb, var(--theme-accent-jade) 16%, transparent) 0%, transparent 26%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-app) 100%);
 }
 
 .main {
@@ -31,7 +31,7 @@
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -44,7 +44,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 8px;
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-surface) 58%, color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface) 82%) 100%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -81,7 +81,7 @@
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%);
 }
 
 .authorSummaryIcon {
@@ -142,7 +142,7 @@
 
 .navItemActive {
   border-color: color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   color: var(--theme-brand-primary);
 }
 
@@ -161,7 +161,7 @@
 }
 
 .primaryButton {
-  background: color-mix(in srgb, var(--theme-brand-soft) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 76%, var(--theme-surface-highlight) 24%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
   color: var(--theme-brand-primary);
 }
@@ -182,7 +182,7 @@
 .panel {
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, transparent);
   border-radius: 24px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   overflow: hidden;
   min-width: 0;
@@ -212,7 +212,7 @@
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
   min-width: 0;
 }
@@ -336,7 +336,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 74%, transparent);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%
   );
 }
@@ -420,7 +420,7 @@
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
 }
 
 .documentMain {
@@ -505,9 +505,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  border: 1px solid color-mix(in srgb, var(--theme-state-warning, #b7791f) 24%, transparent);
+  border: 1px solid color-mix(in srgb, var(--theme-state-warning) 28%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-state-warning, #b7791f) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-state-warning) 14%, var(--theme-bg-surface) 86%);
   color: var(--theme-text-secondary);
   font-size: 13px;
   line-height: 1.65;
@@ -635,7 +635,7 @@
   padding: 18px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .revisionPreviewHeader {

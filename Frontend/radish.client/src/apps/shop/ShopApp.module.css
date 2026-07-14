@@ -32,7 +32,7 @@
 }
 
 .title:hover {
-  color: color-mix(in srgb, var(--theme-brand-primary) 78%, white 22%);
+  color: color-mix(in srgb, var(--theme-brand-primary) 78%, var(--theme-surface-highlight) 22%);
 }
 
 .nav {
@@ -85,7 +85,7 @@
   padding: 8px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -111,7 +111,7 @@
 
 .privateRouteNavItemActive {
   border-color: color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   color: var(--theme-brand-primary);
 }
 

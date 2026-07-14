@@ -2,14 +2,14 @@
   display: flex;
   align-items: center;
   padding: 4px 8px;
-  background: color-mix(in srgb, var(--theme-dock-item-bg) 88%, white 12%);
+  background: color-mix(in srgb, var(--theme-dock-item-bg) 88%, var(--theme-surface-highlight) 12%);
   border-radius: 8px;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
 .experienceDisplay:hover {
-  background: color-mix(in srgb, var(--theme-dock-item-hover-bg) 82%, white 18%);
+  background: color-mix(in srgb, var(--theme-dock-item-hover-bg) 82%, var(--theme-surface-highlight) 18%);
 }
 
 .loading,

@@ -9,6 +9,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
 using SqlSugar;
@@ -26,9 +27,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 #pragma warning disable CS0618
     private static readonly Expression<Func<Product, bool>> SupportedPublicProductExpression = p =>
         p.ProductType != ProductType.Physical &&
+        !(p.ProductType == ProductType.Benefit &&
+          p.BenefitType == BenefitType.Theme &&
+          p.BenefitValue != ShopThemeResources.DarkNight &&
+          p.BenefitValue != ShopThemeResources.Sakura) &&
         !(p.ProductType == ProductType.Benefit && (
             p.BenefitType == BenefitType.AvatarFrame ||
-            p.BenefitType == BenefitType.Theme ||
             p.BenefitType == BenefitType.Signature ||
             p.BenefitType == BenefitType.NameColor ||
             p.BenefitType == BenefitType.LikeEffect)) &&
@@ -42,9 +46,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         p.IsOnSale &&
         !p.IsDeleted &&
         p.ProductType != ProductType.Physical &&
+        !(p.ProductType == ProductType.Benefit &&
+          p.BenefitType == BenefitType.Theme &&
+          p.BenefitValue != ShopThemeResources.DarkNight &&
+          p.BenefitValue != ShopThemeResources.Sakura) &&
         !(p.ProductType == ProductType.Benefit && (
             p.BenefitType == BenefitType.AvatarFrame ||
-            p.BenefitType == BenefitType.Theme ||
             p.BenefitType == BenefitType.Signature ||
             p.BenefitType == BenefitType.NameColor ||
             p.BenefitType == BenefitType.LikeEffect)) &&
@@ -681,6 +688,8 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 BenefitType.Badge when iconAttachmentId is not > 0 => "徽章必须配置图标附件",
                 BenefitType.Title when string.IsNullOrWhiteSpace(normalizedValue) => "称号文本不能为空",
                 BenefitType.Title when normalizedValue!.Length > 40 => "称号文本长度不能超过 40 个字符",
+                BenefitType.Theme when !ShopThemeResources.IsSupported(normalizedValue) =>
+                    $"主题资源标识必须是：{string.Join("、", ShopThemeResources.SupportedValues)}",
                 _ => null
             };
         }

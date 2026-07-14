@@ -10,6 +10,7 @@ using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
 
@@ -67,11 +68,12 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         product.IsEnabled &&
         product.IsOnSale &&
         !product.IsDeleted &&
+        !(product.ProductType == ProductType.Benefit &&
+          product.BenefitType == BenefitType.Theme &&
+          product.BenefitValue != ShopThemeResources.DarkNight &&
+          product.BenefitValue != ShopThemeResources.Sakura) &&
         !(product.ProductType == ProductType.Benefit && (
-            product.BenefitType == BenefitType.Badge ||
             product.BenefitType == BenefitType.AvatarFrame ||
-            product.BenefitType == BenefitType.Title ||
-            product.BenefitType == BenefitType.Theme ||
             product.BenefitType == BenefitType.Signature ||
             product.BenefitType == BenefitType.NameColor ||
             product.BenefitType == BenefitType.LikeEffect)) &&

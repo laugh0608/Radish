@@ -177,7 +177,7 @@ public class UserBenefitServiceTest
     }
 
     [Fact]
-    public async Task ActivateBenefitAsync_ShouldRejectUnsupportedThemeBenefit()
+    public async Task ActivateBenefitAsync_ShouldRejectUnknownThemeResource()
     {
         const long userId = 9527;
         const long benefitId = 6001;
@@ -187,7 +187,7 @@ public class UserBenefitServiceTest
             Id = benefitId,
             UserId = userId,
             BenefitType = BenefitType.Theme,
-            BenefitValue = "theme-sakura",
+            BenefitValue = "theme-retired",
             IsActive = false,
             IsExpired = false,
             IsDeleted = false,
@@ -209,9 +209,53 @@ public class UserBenefitServiceTest
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.ActivateBenefitAsync(userId, benefitId));
 
-        Assert.Equal("主题暂未开放，当前不可激活", exception.Message);
+        Assert.Equal("主题资源不存在或已下线，当前不可激活", exception.Message);
         userBenefitRepository.Verify(repository => repository.UpdateAsync(It.IsAny<UserBenefit>()), Times.Never);
         userBenefitRepository.Verify(repository => repository.QueryAsync(It.IsAny<Expression<Func<UserBenefit, bool>>?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ActivateBenefitAsync_ShouldActivateRegisteredThemeResource()
+    {
+        const long userId = 9527;
+        const long benefitId = 6002;
+        var nowUtc = new DateTime(2026, 7, 14, 8, 0, 0, DateTimeKind.Utc);
+        var benefit = new UserBenefit
+        {
+            Id = benefitId,
+            UserId = userId,
+            BenefitType = BenefitType.Theme,
+            BenefitValue = "theme-sakura",
+            BenefitName = "樱花主题",
+            EffectiveAt = nowUtc.AddDays(-1),
+            CreateTime = nowUtc.AddDays(-1),
+            CreateBy = "System"
+        };
+        var userBenefitRepository = CreateUserBenefitRepository(benefit);
+        var customRepository = new Mock<IUserBenefitRepository>(MockBehavior.Strict);
+        customRepository
+            .Setup(repository => repository.ActivateAsync(userId, benefitId, userId, "User", nowUtc))
+            .ReturnsAsync(new UserBenefitPersistenceResult(benefit, true, benefitId, null));
+        var mapperConfiguration = new MapperConfiguration(
+            config => config.AddProfile<ShopProfile>(),
+            NullLoggerFactory.Instance);
+        var service = new UserBenefitService(
+            mapperConfiguration.CreateMapper(),
+            userBenefitRepository.Object,
+            Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
+            customRepository.Object,
+            Mock.Of<IUserInventoryRepository>(),
+            Mock.Of<IAttachmentUrlResolver>(),
+            timeProvider: new FixedTimeProvider(nowUtc));
+
+        var result = await service.ActivateBenefitAsync(userId, benefitId);
+
+        Assert.True(result.VoChanged);
+        Assert.Equal(BenefitType.Theme, result.VoBenefitType);
+        Assert.Equal(benefitId, result.VoCurrentBenefitId);
+        Assert.Equal("theme-sakura", result.VoCurrentBenefit!.VoBenefitValue);
+        Assert.Equal(UserBenefitStatus.Active, result.VoCurrentBenefit.VoStatus);
+        customRepository.VerifyAll();
     }
 
     [Fact]

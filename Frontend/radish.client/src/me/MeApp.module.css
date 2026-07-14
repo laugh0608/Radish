@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 0%, var(--theme-bg-muted) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, var(--theme-surface-highlight) 6%) 0%, var(--theme-bg-muted) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -23,7 +23,7 @@
 .detailPanel {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -64,7 +64,7 @@
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   color: var(--theme-brand-primary);
   font-family: var(--theme-font-serif);
   font-size: 30px;
@@ -158,13 +158,13 @@
 .primaryButton {
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 36%, transparent);
   background: var(--theme-brand-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
 }
 
 .secondaryButton,
 .refreshButton {
   border: 1px solid var(--theme-border-soft);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
 }
 
@@ -209,7 +209,7 @@
 .subPageRail {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -264,7 +264,7 @@
   border-radius: 8px;
   padding: 0 12px;
   color: var(--theme-text-secondary);
-  background: color-mix(in srgb, var(--theme-bg-muted) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 58%, var(--theme-surface-highlight) 42%);
   font-size: 13px;
   font-weight: 800;
   text-decoration: none;
@@ -281,7 +281,7 @@
 .subPageRouteTabActive {
   color: var(--theme-brand-primary);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 42%, var(--theme-border-soft) 58%);
-  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
 }
 
 .subPageMetrics {
@@ -299,7 +299,7 @@
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-muted) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 46%, var(--theme-surface-highlight) 54%);
 }
 
 .subPageMetricIcon,
@@ -311,7 +311,7 @@
   align-items: center;
   justify-content: center;
   color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 60%, white 40%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 60%, var(--theme-surface-highlight) 40%);
 }
 
 .subPageMetricBody {
@@ -380,7 +380,7 @@
 .railItem {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-muted) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 46%, var(--theme-surface-highlight) 54%);
 }
 
 .previewCard {
@@ -400,7 +400,7 @@
   border-radius: 999px;
   padding: 0 10px;
   color: var(--theme-accent-ink);
-  background: color-mix(in srgb, var(--theme-brand-soft) 66%, white 34%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 66%, var(--theme-surface-highlight) 34%);
   font-size: 12px;
   font-weight: 800;
 }
@@ -440,7 +440,7 @@
   border-radius: 999px;
   padding: 0 8px;
   color: var(--theme-text-secondary);
-  background: color-mix(in srgb, var(--theme-bg-surface) 80%, white 20%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 80%, var(--theme-surface-highlight) 20%);
   font-size: 12px;
 }
 
@@ -454,7 +454,7 @@
   padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 34%, transparent);
   background: var(--theme-brand-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   font-size: 13px;
   font-weight: 800;
   text-decoration: none;
@@ -527,11 +527,11 @@
 
 .segmentedTab {
   color: var(--theme-text-secondary);
-  background: color-mix(in srgb, var(--theme-bg-muted) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 58%, var(--theme-surface-highlight) 42%);
 }
 
 .segmentedTabActive {
-  color: #fff;
+  color: var(--theme-text-inverse);
   background: var(--theme-brand-primary);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 72%, transparent);
 }
@@ -647,7 +647,7 @@
   padding: 12px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-muted) 54%, white 46%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 54%, var(--theme-surface-highlight) 46%);
 }
 
 .listItem {
@@ -666,17 +666,17 @@
   align-items: center;
   justify-content: center;
   color: var(--theme-text-primary);
-  background: color-mix(in srgb, var(--theme-border-soft) 48%, white 52%);
+  background: color-mix(in srgb, var(--theme-border-soft) 48%, var(--theme-surface-highlight) 52%);
 }
 
 .itemIcon[data-tone="positive"] {
   color: color-mix(in srgb, var(--theme-accent-jade) 72%, var(--theme-text-primary) 28%);
-  background: color-mix(in srgb, var(--theme-accent-jade) 18%, white 82%);
+  background: color-mix(in srgb, var(--theme-accent-jade) 18%, var(--theme-surface-highlight) 82%);
 }
 
 .itemIcon[data-tone="negative"] {
   color: var(--theme-state-danger);
-  background: color-mix(in srgb, var(--theme-state-danger) 13%, white 87%);
+  background: color-mix(in srgb, var(--theme-state-danger) 13%, var(--theme-surface-highlight) 87%);
 }
 
 .itemBody {

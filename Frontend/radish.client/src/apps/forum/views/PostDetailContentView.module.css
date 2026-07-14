@@ -72,7 +72,7 @@
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 84%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 0%, color-mix(in srgb, var(--theme-bg-component) 78%, var(--theme-bg-surface) 22%) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%) 0%, color-mix(in srgb, var(--theme-bg-component) 78%, var(--theme-bg-surface) 22%) 100%);
 }
 
 .discussionTitle {
@@ -184,18 +184,18 @@
   width: min(1120px, calc(100vw - 40px));
   border-radius: 24px 24px 14px 14px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 97%, white 3%) 0%, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 97%, var(--theme-surface-highlight) 3%) 0%, color-mix(in srgb, var(--theme-bg-app) 94%, var(--theme-surface-highlight) 6%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 88%, transparent);
   box-shadow:
     0 28px 60px color-mix(in srgb, var(--theme-accent-ink) 18%, transparent),
-    0 0 0 1px color-mix(in srgb, white 36%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--theme-surface-highlight) 36%, transparent);
 }
 
 .commentSheet :global(.radish-bottom-sheet-handle) {
   width: 48px;
   height: 5px;
   margin: 8px 0 2px;
-  background: color-mix(in srgb, var(--theme-brand-primary) 22%, white 78%);
+  background: color-mix(in srgb, var(--theme-brand-primary) 22%, var(--theme-surface-highlight) 78%);
 }
 
 .commentSheet :global(.radish-bottom-sheet-header) {

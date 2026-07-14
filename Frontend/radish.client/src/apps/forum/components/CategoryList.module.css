@@ -51,7 +51,7 @@
 .categoryButton.active {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-primary) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-brand-primary) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-brand-primary) 72%, var(--theme-accent-ink) 28%) 100%
   );
   border-color: var(--theme-brand-primary);

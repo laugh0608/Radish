@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 32%),
     radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-jade) 16%, transparent) 0%, transparent 24%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-app) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -33,7 +33,7 @@
 .railCard {
   min-width: 0;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
   box-sizing: border-box;
@@ -90,12 +90,12 @@
 
 .discussionTab {
   color: var(--theme-text-secondary);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
 }
 
 .discussionTabActive {
   color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 66%, white 34%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 66%, var(--theme-surface-highlight) 34%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
 }
 
@@ -169,7 +169,7 @@
   align-items: center;
   border-radius: 999px;
   padding: 0 10px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, var(--theme-surface-highlight) 38%);
   color: var(--theme-brand-primary);
   font-size: 0.78rem;
   font-weight: 700;
@@ -202,7 +202,7 @@
   border-radius: 28px;
   padding: 22px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%) 100%);
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
 }
@@ -252,12 +252,12 @@
 
 .primaryButton {
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 44%, var(--theme-brand-primary) 56%) 100%);
-  color: #fffaf0;
+  color: var(--theme-text-inverse);
   box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-brand-primary) 22%, transparent);
 }
 
 .secondaryButton {
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
@@ -278,13 +278,13 @@
 }
 
 .shareFeedback[data-state='success'] {
-  background: color-mix(in srgb, var(--theme-accent-jade) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-accent-jade) 10%, var(--theme-surface-highlight) 90%);
   border: 1px solid color-mix(in srgb, var(--theme-accent-jade) 20%, transparent);
   color: color-mix(in srgb, var(--theme-accent-jade) 74%, var(--theme-text-primary) 26%);
 }
 
 .shareFeedback[data-state='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-surface-highlight) 92%);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
   color: var(--theme-state-danger);
 }
@@ -305,7 +305,7 @@
 
 .summaryCard {
   border-radius: 22px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   min-height: 0;
   display: flex;
@@ -365,7 +365,7 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  background: color-mix(in srgb, var(--theme-brand-soft) 64%, white 36%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 64%, var(--theme-surface-highlight) 36%);
   color: var(--theme-brand-primary);
 }
 
@@ -397,22 +397,22 @@
 }
 
 .summaryStatus[data-state='ready'] {
-  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, var(--theme-surface-highlight) 38%);
   color: var(--theme-brand-primary);
 }
 
 .summaryStatus[data-state='loading'] {
-  background: color-mix(in srgb, var(--theme-accent-jade) 18%, white 82%);
+  background: color-mix(in srgb, var(--theme-accent-jade) 18%, var(--theme-surface-highlight) 82%);
   color: color-mix(in srgb, var(--theme-accent-jade) 64%, black 36%);
 }
 
 .summaryStatus[data-state='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, var(--theme-surface-highlight) 88%);
   color: color-mix(in srgb, var(--theme-state-danger) 68%, black 32%);
 }
 
 .summaryStatus[data-state='empty'] {
-  background: color-mix(in srgb, var(--theme-border-soft) 36%, white 64%);
+  background: color-mix(in srgb, var(--theme-border-soft) 36%, var(--theme-surface-highlight) 64%);
   color: var(--theme-text-tertiary);
 }
 
@@ -479,7 +479,7 @@
   min-height: 34px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
   text-decoration: none;
   display: inline-flex;
@@ -496,7 +496,7 @@
 .summaryActionButton:hover {
   transform: translateY(-1px);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 32%, transparent);
-  background: color-mix(in srgb, var(--theme-brand-soft) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, var(--theme-surface-highlight) 54%);
 }
 
 .sectionGrid {
@@ -514,7 +514,7 @@
   min-width: 0;
   border-radius: 22px;
   padding: 20px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
   box-sizing: border-box;
@@ -556,7 +556,7 @@
   min-height: 30px;
   padding: 0 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 60%, white 40%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 60%, var(--theme-surface-highlight) 40%);
   color: var(--theme-brand-primary);
   font-size: 0.8rem;
   font-weight: 600;
@@ -569,7 +569,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, var(--theme-surface-highlight) 48%);
   color: var(--theme-brand-primary);
   font-size: 0.88rem;
   font-weight: 600;
@@ -643,7 +643,7 @@
   min-height: 30px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
   padding: 0 12px;
   cursor: pointer;
@@ -662,7 +662,7 @@
 .feedContentItem {
   min-width: 0;
   border-radius: 20px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   box-shadow: 0 12px 24px color-mix(in srgb, var(--theme-text-primary) 7%, transparent);
 }
@@ -790,7 +790,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
   color: var(--theme-brand-primary);
 }
 
@@ -830,7 +830,7 @@
   display: inline-flex;
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--theme-border) 72%, transparent);
-  background: color-mix(in srgb, var(--theme-surface-2) 90%, #fff 10%);
+  background: color-mix(in srgb, var(--theme-surface-2) 90%, var(--theme-bg-surface) 10%);
   color: var(--theme-text-primary);
   min-height: 34px;
   padding: 0 14px;
@@ -845,7 +845,7 @@
 .leaderboardItem {
   border-radius: 18px;
   padding: 14px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
 }
 
@@ -909,7 +909,7 @@
 }
 
 .itemChipAccent {
-  background: color-mix(in srgb, var(--theme-brand-soft) 64%, white 36%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 64%, var(--theme-surface-highlight) 36%);
   color: var(--theme-brand-primary);
 }
 
@@ -924,7 +924,7 @@
   min-width: 0;
   border-radius: 18px;
   padding: 14px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
   text-align: left;
   color: inherit;
@@ -952,7 +952,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
   color: var(--theme-brand-primary);
 }
 
@@ -1026,7 +1026,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
   color: var(--theme-brand-primary);
 }
 
@@ -1090,7 +1090,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
   color: var(--theme-brand-primary);
 }
 
@@ -1110,7 +1110,7 @@
   display: flex;
   align-items: flex-start;
   gap: 14px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 68%, transparent);
 }
 
@@ -1125,7 +1125,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
   color: var(--theme-brand-primary);
   flex: none;
 }
@@ -1239,7 +1239,7 @@
     padding: 0 12px;
     border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
     border-radius: 12px;
-    background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+    background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
     color: var(--theme-text-secondary);
     font-size: 0.88rem;
     font-weight: 700;
@@ -1276,7 +1276,7 @@
     padding: 0 12px;
     border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
     border-radius: 999px;
-    background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+    background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
     color: var(--theme-text-secondary);
     font-size: 0.8rem;
     font-weight: 800;
@@ -1287,7 +1287,7 @@
 
   .mobileFilterChipActive {
     border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
-    background: color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%);
+    background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%);
     color: var(--theme-brand-primary);
   }
 

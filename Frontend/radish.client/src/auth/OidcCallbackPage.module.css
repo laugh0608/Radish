@@ -5,7 +5,7 @@
   padding: 24px;
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, var(--theme-surface-highlight) 6%) 0%, var(--theme-bg-app) 100%);
   color: var(--theme-text-primary);
 }
 
@@ -16,7 +16,7 @@
   padding: 28px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 84%, transparent);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
 }
 

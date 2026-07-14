@@ -16,7 +16,6 @@ public static class ShopProductAvailabilityPolicy
     public static bool IsUnavailableBenefitType(BenefitType? benefitType)
     {
         return benefitType is BenefitType.AvatarFrame
-            or BenefitType.Theme
             or BenefitType.Signature
             or BenefitType.NameColor
             or BenefitType.LikeEffect;
@@ -24,7 +23,7 @@ public static class ShopProductAvailabilityPolicy
 
     public static bool CanActivateBenefitType(BenefitType? benefitType)
     {
-        return benefitType is BenefitType.Badge or BenefitType.Title;
+        return benefitType is BenefitType.Badge or BenefitType.Title or BenefitType.Theme;
     }
 
     public static string? GetUnavailableReason(
@@ -39,7 +38,6 @@ public static class ShopProductAvailabilityPolicy
 
         return productType switch
         {
-            ProductType.Benefit when benefitType == BenefitType.Theme => "主题真实效果归属 F2，当前不可售或启用",
             ProductType.Benefit => $"{GetBenefitTypeDisplayName(benefitType)}尚未完成公开消费面，当前不可售或启用",
             ProductType.Consumable => $"{GetConsumableTypeDisplayName(consumableType)}当前不可售或使用",
             ProductType.Physical => "当前版本不支持实物商品",
@@ -58,6 +56,7 @@ public static class ShopProductAvailabilityPolicy
             {
                 BenefitType.Badge => ["资源标识必填，长度 1-100，仅允许字母、数字、点、下划线和连字符", "必须配置公开有效的徽章图标附件"],
                 BenefitType.Title => ["称号文本必填，长度 1-40"],
+                BenefitType.Theme => ["主题资源标识必须为 theme-dark-night 或 theme-sakura"],
                 _ => ["权益资源值必填"]
             };
         }

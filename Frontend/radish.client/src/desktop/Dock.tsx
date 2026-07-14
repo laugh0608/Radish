@@ -44,8 +44,20 @@ export const Dock = () => {
   const timeLocale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
   const languageIcon = currentLanguage === 'en' ? 'mdi:format-letter-case' : 'mdi:translate-variant';
   const languageBadge = currentLanguage === 'en' ? 'EN' : 'ZH';
-  const themeIcon = currentTheme.id === 'default' ? 'mdi:view-dashboard-outline' : 'mdi:landscape';
-  const themeBadge = currentTheme.id === 'default' ? '简' : '风';
+  const themeIcon = currentTheme.id === 'default'
+    ? 'mdi:view-dashboard-outline'
+    : currentTheme.id === 'theme-dark-night'
+      ? 'mdi:weather-night'
+      : currentTheme.id === 'theme-sakura'
+        ? 'mdi:flower-outline'
+        : 'mdi:landscape';
+  const themeBadge = currentTheme.id === 'default'
+    ? '简'
+    : currentTheme.id === 'theme-dark-night'
+      ? '夜'
+      : currentTheme.id === 'theme-sakura'
+        ? '樱'
+        : '风';
 
   const loggedIn = hasAuthenticatedSession(authAuthenticated, userId);
 

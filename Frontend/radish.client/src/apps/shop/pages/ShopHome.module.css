@@ -35,7 +35,7 @@
   border-radius: 24px;
   padding: 28px;
   background:
-    linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 36%, var(--theme-bg-surface) 64%) 100%);
+    linear-gradient(145deg, color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%) 0%, color-mix(in srgb, var(--theme-brand-soft) 36%, var(--theme-bg-surface) 64%) 100%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
 }
@@ -103,7 +103,7 @@
   padding: 0 14px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 52%, var(--theme-surface-highlight) 48%);
   color: var(--theme-brand-primary);
   font-size: 13px;
   font-weight: 700;
@@ -127,7 +127,7 @@
 .guideCard {
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   min-width: 0;
 }
@@ -161,7 +161,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 18px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   color: var(--theme-brand-primary);
   overflow: hidden;
 }
@@ -251,7 +251,7 @@
   width: 76px;
   height: 76px;
   border-radius: 24px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   color: var(--theme-brand-primary);
   font-size: 34px;
 }
@@ -265,7 +265,7 @@
   min-height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-state-danger) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-state-danger) 92%, var(--theme-surface-highlight) 8%);
   color: #fffaf0;
   font-size: 12px;
   font-weight: 700;
@@ -392,7 +392,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   font-size: 24px;
   margin-bottom: 14px;
 }

@@ -29,7 +29,7 @@
   padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--theme-border-strong);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
   font-size: 13px;
   font-weight: 700;
@@ -58,7 +58,7 @@
   margin-bottom: 16px;
   padding: 16px;
   border-radius: 22px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   box-shadow: var(--theme-shadow-soft);
   min-width: 0;
@@ -78,7 +78,7 @@
   padding: 0 14px;
   border: 1px solid var(--theme-border-strong);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 96%, var(--theme-surface-highlight) 4%);
   color: var(--theme-text-primary);
   font-size: 14px;
   outline: none;
@@ -135,7 +135,7 @@
   padding: 0 14px;
   border-radius: 999px;
   border: 1px solid var(--theme-border-strong);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-secondary);
   font-size: 13px;
   font-weight: 600;
@@ -156,7 +156,7 @@
   margin-bottom: 12px;
   padding: 10px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, var(--theme-surface-highlight) 54%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
   color: var(--theme-brand-primary);
   font-size: 13px;
@@ -205,7 +205,7 @@
   overflow: hidden;
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   color: inherit;
   cursor: pointer;
@@ -243,7 +243,7 @@
   width: 76px;
   height: 76px;
   border-radius: 24px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   color: var(--theme-brand-primary);
   font-size: 34px;
 }
@@ -257,7 +257,7 @@
   min-height: 26px;
   padding: 0 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-state-danger) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-state-danger) 92%, var(--theme-surface-highlight) 8%);
   color: #fffaf0;
   font-size: 12px;
   font-weight: 700;
@@ -360,7 +360,7 @@
   min-height: 40px;
   border-radius: 12px;
   border: 1px solid var(--theme-border-strong);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
   cursor: pointer;
   text-decoration: none;

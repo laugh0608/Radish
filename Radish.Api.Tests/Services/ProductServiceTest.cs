@@ -78,10 +78,40 @@ public class ProductServiceTest
         Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Badge).VoCanActivate);
         Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Title).VoCanSell);
         Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Title).VoCanActivate);
-        Assert.False(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanSell);
-        Assert.False(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanActivate);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanSell);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanActivate);
         Assert.False(result.Single(item => item.VoProductType == ProductType.Physical).VoCanSell);
         Assert.True(result.Single(item => item.VoConsumableType == ConsumableType.CoinCard).VoCanSell);
+    }
+
+    [Fact]
+    public async Task CreateProductAsync_ShouldRejectUnknownThemeResource()
+    {
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
+        var service = new ProductService(
+            Mock.Of<IMapper>(),
+            productRepository.Object,
+            Mock.Of<IBaseRepository<ProductCategory>>(),
+            Mock.Of<IBaseRepository<Order>>(),
+            Mock.Of<IAttachmentUrlResolver>());
+        var dto = new CreateProductDto
+        {
+            Name = "未注册主题",
+            CategoryId = "theme",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Theme,
+            BenefitValue = "theme-not-registered",
+            Price = 200,
+            StockType = StockType.Unlimited,
+            DurationType = DurationType.Permanent,
+            IsOnSale = false
+        };
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => service.CreateProductAsync(dto, 10001, "tester"));
+
+        Assert.Equal("主题资源标识必须是：theme-dark-night、theme-sakura", exception.Message);
+        productRepository.Verify(repository => repository.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact]
@@ -200,6 +230,39 @@ public class ProductServiceTest
         Assert.NotNull(result);
         Assert.Equal(BenefitType.Badge, result!.VoBenefitType);
         Assert.Equal("徽章", result.VoCategoryName);
+    }
+
+    [Fact]
+    public async Task GetProductDetailAsync_ShouldHideUnknownThemeResource()
+    {
+        var product = new Product
+        {
+            Id = 100059,
+            Name = "旧主题",
+            CategoryId = "theme",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Theme,
+            BenefitValue = "theme-retired",
+            IsEnabled = true,
+            IsOnSale = true,
+            StockType = StockType.Unlimited,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var service = new ProductService(
+            Mock.Of<IMapper>(),
+            CreateProductRepository(product).Object,
+            categoryRepository.Object,
+            Mock.Of<IBaseRepository<Order>>(),
+            Mock.Of<IAttachmentUrlResolver>());
+
+        var result = await service.GetProductDetailAsync(product.Id);
+
+        Assert.Null(result);
+        categoryRepository.Verify(
+            repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()),
+            Times.Never);
     }
 
     [Fact]

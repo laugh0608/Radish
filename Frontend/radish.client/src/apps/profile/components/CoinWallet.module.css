@@ -134,7 +134,7 @@
 }
 
 .statItem:hover {
-  background: color-mix(in srgb, var(--theme-bg-muted) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 76%, var(--theme-surface-highlight) 24%);
   transform: translateY(-2px);
 }
 

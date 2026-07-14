@@ -69,7 +69,7 @@
 
 .stepCard:hover {
   transform: translateX(4px);
-  border-color: color-mix(in srgb, var(--theme-border-strong) 78%, white 22%);
+  border-color: color-mix(in srgb, var(--theme-border-strong) 78%, var(--theme-surface-highlight) 22%);
   box-shadow: 0 14px 30px color-mix(in srgb, var(--theme-accent-earth) 10%, transparent 90%);
 }
 
@@ -83,8 +83,8 @@
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-primary) 86%, white 14%),
-    color-mix(in srgb, var(--theme-accent-ink) 72%, white 28%)
+    color-mix(in srgb, var(--theme-brand-primary) 86%, var(--theme-surface-highlight) 14%),
+    color-mix(in srgb, var(--theme-accent-ink) 72%, var(--theme-surface-highlight) 28%)
   );
   color: white;
   font-size: 0.82rem;

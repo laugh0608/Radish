@@ -215,6 +215,23 @@ test('纯 Web 壳层应使用统一产品级导航而不是 public / private 两
   assert.doesNotMatch(i18nSource, /public\.shell\.(discoverAction|circleAction|desktopAction|myStatusAction)/);
 });
 
+test('正式 Web 主题入口应由共享 Header 覆盖桌面与移动视图', () => {
+  const publicShellSource = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
+  const shellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
+  const shellStylesSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.module.css'), 'utf8');
+  const switcherSource = readFileSync(resolve(clientRoot, 'src/theme/ThemeSwitcher.tsx'), 'utf8');
+
+  assert.match(publicShellSource, /actionSlot=\{<ThemeSwitcher \/>\}/);
+  assert.match(shellSource, /actionSlot\?: ReactNode/);
+  assert.match(shellSource, /\{actionSlot\}/);
+  assert.match(switcherSource, /themeOptions\.map/);
+  assert.match(switcherSource, /redirectToLogin/);
+  assert.match(switcherSource, /buildPublicShopPath/);
+  assert.match(switcherSource, /keyword: '主题'/);
+  assert.match(shellStylesSource, /@media \(max-width: 1080px\)[\s\S]*\.actionRail[\s\S]*padding: 4px/);
+  assert.match(shellStylesSource, /@media \(max-width: 720px\)[\s\S]*\.actionRail[\s\S]*display: inline-flex/);
+});
+
 test('正式 Web 壳层切换应复用当前 React 入口而不是整页重载', () => {
   const mainSource = readFileSync(resolve(clientRoot, 'src/main.tsx'), 'utf8');
   const browserRouterSource = readFileSync(resolve(clientRoot, 'src/bootstrap/BrowserAppRouter.tsx'), 'utf8');
