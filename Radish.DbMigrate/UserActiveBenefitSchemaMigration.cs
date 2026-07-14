@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
 using Radish.Model;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.DbMigrate;
@@ -88,23 +89,11 @@ internal sealed class UserActiveBenefitSchemaMigration : ISchemaMigration
         }
 
         var nowUtc = services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
-        var rows = db.Queryable<UserBenefit>()
-            .Select(benefit => new
-            {
-                benefit.Id,
-                benefit.TenantId,
-                benefit.UserId,
-                benefit.BenefitType,
-                benefit.IsActive,
-                benefit.IsDeleted,
-                benefit.RevokedAt,
-                benefit.EffectiveAt,
-                benefit.ExpiresAt,
-                benefit.ActivatedAt,
-                benefit.ModifyTime,
-                benefit.CreateTime
-            })
-            .ToList();
+        var hasRevokedAtColumn = DatabaseIdentifierResolver.ResolveColumn(
+            db,
+            BenefitTableName,
+            nameof(UserBenefit.RevokedAt)) != null;
+        var rows = QueryDiagnosticRows(db, hasRevokedAtColumn);
         var warnings = new List<string>();
         var conflictGroups = rows
             .Where(row =>
@@ -130,6 +119,49 @@ internal sealed class UserActiveBenefitSchemaMigration : ISchemaMigration
         }
 
         return warnings;
+    }
+
+    private static List<BenefitDiagnosticRow> QueryDiagnosticRows(
+        ISqlSugarClient db,
+        bool includeRevokedAt)
+    {
+        if (includeRevokedAt)
+        {
+            return db.Queryable<UserBenefit>()
+                .Select(benefit => new BenefitDiagnosticRow
+                {
+                    Id = benefit.Id,
+                    TenantId = benefit.TenantId,
+                    UserId = benefit.UserId,
+                    BenefitType = benefit.BenefitType,
+                    IsActive = benefit.IsActive,
+                    IsDeleted = benefit.IsDeleted,
+                    RevokedAt = benefit.RevokedAt,
+                    EffectiveAt = benefit.EffectiveAt,
+                    ExpiresAt = benefit.ExpiresAt,
+                    ActivatedAt = benefit.ActivatedAt,
+                    ModifyTime = benefit.ModifyTime,
+                    CreateTime = benefit.CreateTime
+                })
+                .ToList();
+        }
+
+        return db.Queryable<UserBenefit>()
+            .Select(benefit => new BenefitDiagnosticRow
+            {
+                Id = benefit.Id,
+                TenantId = benefit.TenantId,
+                UserId = benefit.UserId,
+                BenefitType = benefit.BenefitType,
+                IsActive = benefit.IsActive,
+                IsDeleted = benefit.IsDeleted,
+                EffectiveAt = benefit.EffectiveAt,
+                ExpiresAt = benefit.ExpiresAt,
+                ActivatedAt = benefit.ActivatedAt,
+                ModifyTime = benefit.ModifyTime,
+                CreateTime = benefit.CreateTime
+            })
+            .ToList();
     }
 
     public IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services)
@@ -217,5 +249,32 @@ internal sealed class UserActiveBenefitSchemaMigration : ISchemaMigration
         }
 
         return issues;
+    }
+
+    private sealed class BenefitDiagnosticRow
+    {
+        public long Id { get; set; }
+
+        public long TenantId { get; set; }
+
+        public long UserId { get; set; }
+
+        public BenefitType BenefitType { get; set; }
+
+        public bool IsActive { get; set; }
+
+        public bool IsDeleted { get; set; }
+
+        public DateTime? RevokedAt { get; set; }
+
+        public DateTime EffectiveAt { get; set; }
+
+        public DateTime? ExpiresAt { get; set; }
+
+        public DateTime? ActivatedAt { get; set; }
+
+        public DateTime? ModifyTime { get; set; }
+
+        public DateTime CreateTime { get; set; }
     }
 }

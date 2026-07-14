@@ -16,6 +16,9 @@ internal interface ISchemaMigration
 
     IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services);
 
+    /// <summary>
+    /// 在迁移应用前诊断历史数据。实现必须兼容该迁移尚未补齐的新表或新列。
+    /// </summary>
     IReadOnlyList<string> Diagnose(ISqlSugarClient db, IServiceProvider services) => [];
 }
 

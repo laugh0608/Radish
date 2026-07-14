@@ -77,6 +77,48 @@ public sealed class UserActiveBenefitSchemaMigrationTest
         }
     }
 
+    [Fact]
+    public void Diagnose_ShouldSupportPendingRevocationColumnsBeforeApply()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-active-benefit-preflight-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path);
+        using var services = new ServiceCollection()
+            .AddSingleton<TimeProvider>(new FixedTimeProvider(new DateTimeOffset(NowUtc)))
+            .BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<UserBenefit>();
+            db.Insertable(new[]
+            {
+                CreateBenefit(2001, BenefitType.Title, true, NowUtc.AddHours(-2), null),
+                CreateBenefit(2002, BenefitType.Title, true, NowUtc.AddHours(-1), null)
+            }).ExecuteCommand();
+            foreach (var columnName in new[] { "RevokedAt", "RevokedById", "RevokedByName", "RevocationReason" })
+            {
+                db.Ado.ExecuteCommand($"ALTER TABLE \"ShopUserBenefit\" DROP COLUMN \"{columnName}\"");
+            }
+
+            var migration = UserActiveBenefitSchemaMigration.Instance;
+            var diagnostics = migration.Diagnose(db, services);
+
+            Assert.Contains(diagnostics, item => item.Contains("多激活权益", StringComparison.Ordinal));
+
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            var selection = Assert.Single(db.Queryable<UserActiveBenefit>().ToList());
+            Assert.Equal(2002, selection.BenefitId);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
     private static UserBenefit CreateBenefit(
         long id,
         BenefitType benefitType,

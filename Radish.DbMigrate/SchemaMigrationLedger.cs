@@ -119,6 +119,19 @@ internal static class SchemaMigrationLedger
             try
             {
                 AcquireMigrationLock(db, scope, BaselineMigrationId);
+                if (db.DbMaintenance.IsAnyTable("RadishSchemaVersion", false))
+                {
+                    var appliedBaseline = db.Queryable<SchemaMigrationRecord>()
+                        .Where(item => item.MigrationId == BaselineMigrationId)
+                        .First();
+                    if (appliedBaseline != null)
+                    {
+                        EnsureBaselineChecksumMatches(scope, appliedBaseline);
+                        db.Ado.CommitTran();
+                        continue;
+                    }
+                }
+
                 EnsureCurrentSchemaCanBeAdopted(db, scope);
                 db.CodeFirst.InitTables<SchemaMigrationRecord>();
 
@@ -127,12 +140,7 @@ internal static class SchemaMigrationLedger
                     .First();
                 if (existing != null)
                 {
-                    if (!string.Equals(existing.Checksum, BaselineChecksum, StringComparison.Ordinal))
-                    {
-                        throw new InvalidOperationException(
-                            $"{scope}.{BaselineMigrationId} checksum drift，禁止继续迁移。");
-                    }
-
+                    EnsureBaselineChecksumMatches(scope, existing);
                     db.Ado.CommitTran();
                     continue;
                 }
@@ -155,6 +163,15 @@ internal static class SchemaMigrationLedger
                 db.Ado.RollbackTran();
                 throw;
             }
+        }
+    }
+
+    private static void EnsureBaselineChecksumMatches(string scope, SchemaMigrationRecord record)
+    {
+        if (!string.Equals(record.Checksum, BaselineChecksum, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"{scope}.{BaselineMigrationId} checksum drift，禁止继续迁移。");
         }
     }
 
