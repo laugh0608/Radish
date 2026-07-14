@@ -1,5 +1,6 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createReactionBarLabels } from '../utils/reactionBarLabels';
 import { UserAdornment } from '@/components/UserAdornment';
 import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -138,6 +139,7 @@ export const PostDetail = ({
   onReport,
 }: PostDetailProps) => {
   const { t } = useTranslation();
+  const reactionLabels = useMemo(() => createReactionBarLabels(t), [t]);
   const isReadOnly = mode === 'readOnly';
   const containerClassName = `${styles.container} ${density === 'compact' ? styles.containerCompact : ''}`;
   const resolveProfileUserId = (userId: LongId, publicId?: string | null): LongId =>
@@ -1004,6 +1006,7 @@ export const PostDetail = ({
               stickerGroups={stickerGroups}
               onToggle={onToggleReaction}
               onRequireLogin={onRequireReactionLogin}
+              labels={reactionLabels}
             />
           )}
 

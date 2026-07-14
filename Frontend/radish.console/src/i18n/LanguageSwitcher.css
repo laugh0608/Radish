@@ -1,0 +1,26 @@
+.console-language-switcher {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+  color: var(--console-text-secondary);
+  background: var(--console-bg-surface);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.console-language-switcher:hover {
+  color: var(--console-text-primary);
+  background: var(--console-bg-muted);
+}
+
+@media (max-width: 768px) {
+  .console-language-switcher span {
+    display: none;
+  }
+}

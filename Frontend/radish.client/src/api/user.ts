@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { apiGet, configureApiClient } from '@radish/http';
+import { apiGet, configureApiClient, createApiResponseError } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 import type { UserAdornment } from '@/types/userAdornment';
@@ -210,7 +210,7 @@ export async function getPublicProfile(identifier: PublicUserIdentifier): Promis
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载公开资料失败');
+    throw createApiResponseError(response, '加载公开资料失败');
   }
 
   return response.data;

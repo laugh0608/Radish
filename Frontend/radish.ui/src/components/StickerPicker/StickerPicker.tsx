@@ -39,6 +39,14 @@ export interface StickerPickerSelection {
   thumbnailUrl?: string;
 }
 
+export interface StickerPickerLabels {
+  searchPlaceholder: string;
+  clearSearch: string;
+  reactionOnly: (name: string) => string;
+  noEmoji: string;
+  noSticker: string;
+}
+
 export interface StickerPickerProps {
   groups: StickerPickerGroup[];
   onSelect: (selection: StickerPickerSelection) => void;
@@ -49,7 +57,16 @@ export interface StickerPickerProps {
   className?: string;
   triggerTitle?: string;
   emojis?: string[];
+  labels?: StickerPickerLabels;
 }
+
+const defaultLabels: StickerPickerLabels = {
+  searchPlaceholder: '搜索表情',
+  clearSearch: '清空搜索',
+  reactionOnly: (name) => `${name}（仅支持 Reaction）`,
+  noEmoji: '未找到匹配的表情',
+  noSticker: '该分组暂无可插入表情',
+};
 
 const normalizeCode = (value: string): string => value.trim().toLowerCase();
 
@@ -73,6 +90,7 @@ export const StickerPicker = ({
   className = '',
   triggerTitle = '插入表情包',
   emojis = DEFAULT_EMOJIS,
+  labels = defaultLabels,
 }: StickerPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -260,14 +278,14 @@ export const StickerPicker = ({
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               className={styles.searchInput}
-              placeholder="搜索表情"
+              placeholder={labels.searchPlaceholder}
             />
             {keyword && (
               <button
                 type="button"
                 className={styles.clearButton}
                 onClick={() => setKeyword('')}
-                aria-label="清空搜索"
+                aria-label={labels.clearSearch}
               >
                 <Icon icon="mdi:close" size={14} />
               </button>
@@ -298,7 +316,7 @@ export const StickerPicker = ({
                     key={`${sticker.code}-${sticker.name}`}
                     type="button"
                     className={`${styles.stickerItem} ${disabledInInsert ? styles.stickerItemDisabled : ''}`}
-                    title={disabledInInsert ? `${sticker.name}（仅支持 Reaction）` : sticker.name}
+                    title={disabledInInsert ? labels.reactionOnly(sticker.name) : sticker.name}
                     onClick={() => handleSelectSticker(sticker)}
                     disabled={disabledInInsert}
                   >
@@ -311,10 +329,10 @@ export const StickerPicker = ({
           )}
 
           {activeTab === 'emoji' && filteredEmojis.length === 0 && (
-            <div className={styles.empty}>未找到匹配的表情</div>
+            <div className={styles.empty}>{labels.noEmoji}</div>
           )}
           {activeTab !== 'emoji' && filteredStickers.length === 0 && (
-            <div className={styles.empty}>该分组暂无可插入表情</div>
+            <div className={styles.empty}>{labels.noSticker}</div>
           )}
         </div>
       )}

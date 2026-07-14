@@ -58,6 +58,10 @@ export interface ParsedApiResponse<T> {
   data?: T;
   /** 错误消息 */
   message?: string;
+  /** 服务端原始消息；用于诊断与本地化缺失时回退 */
+  messageInfo?: string;
+  /** 国际化消息键 */
+  messageKey?: string;
   /** 错误码 */
   code?: string;
   /** HTTP 状态码 */

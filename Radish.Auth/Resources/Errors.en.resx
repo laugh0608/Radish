@@ -66,4 +66,89 @@
   <data name="auth.consent.deny" xml:space="preserve">
     <value>Cancel authorization</value>
   </data>
+  <data name="auth.login.client.title" xml:space="preserve"><value>Client requesting sign-in</value></data>
+  <data name="auth.login.client.unknown" xml:space="preserve"><value>Unknown client</value></data>
+  <data name="auth.login.client.id" xml:space="preserve"><value>Client ID</value></data>
+  <data name="auth.login.client.description" xml:space="preserve"><value>Application description</value></data>
+  <data name="auth.login.client.defaultDescription" xml:space="preserve"><value>This client has not provided a description.</value></data>
+  <data name="auth.login.client.developer" xml:space="preserve"><value>Developer: {0}</value></data>
+  <data name="auth.login.client.logoAlt" xml:space="preserve"><value>Client logo</value></data>
+  <data name="auth.login.developerLabel" xml:space="preserve"><value>Developer</value></data>
+  <data name="auth.login.registerPrompt" xml:space="preserve"><value>Need an account?</value></data>
+  <data name="auth.login.registerAction" xml:space="preserve"><value>Create one</value></data>
+  <data name="auth.login.submitting" xml:space="preserve"><value>Signing in...</value></data>
+  <data name="auth.register.title" xml:space="preserve"><value>Create a new account</value></data>
+  <data name="auth.register.heroTitle" xml:space="preserve"><value>New account</value></data>
+  <data name="auth.register.heading" xml:space="preserve"><value>Create your account</value></data>
+  <data name="auth.register.description" xml:space="preserve"><value>Join Radish and continue the current flow as soon as your account is created.</value></data>
+  <data name="auth.register.rewardTitle" xml:space="preserve"><value>New user bonus</value></data>
+  <data name="auth.register.rewardDescription" xml:space="preserve"><value>Receive 50 carrots automatically after your account is created.</value></data>
+  <data name="auth.register.defaultServiceDescription" xml:space="preserve"><value>Radish unified identity service</value></data>
+  <data name="auth.register.defaultClientName" xml:space="preserve"><value>Radish Community</value></data>
+  <data name="auth.register.developerLabel" xml:space="preserve"><value>Developer</value></data>
+  <data name="auth.register.displayNameLabel" xml:space="preserve"><value>Display name</value></data>
+  <data name="auth.register.displayNamePlaceholder" xml:space="preserve"><value>{0}-{1} Chinese characters, letters, or numbers</value></data>
+  <data name="auth.register.displayNameHint" xml:space="preserve"><value>This public display name has future change limits, so choose carefully.</value></data>
+  <data name="auth.register.passwordLabel" xml:space="preserve"><value>Password</value></data>
+  <data name="auth.register.passwordPlaceholder" xml:space="preserve"><value>At least 6 characters</value></data>
+  <data name="auth.register.confirmPasswordLabel" xml:space="preserve"><value>Confirm password</value></data>
+  <data name="auth.register.confirmPasswordPlaceholder" xml:space="preserve"><value>Enter the password again</value></data>
+  <data name="auth.register.emailLabel" xml:space="preserve"><value>Email</value></data>
+  <data name="auth.register.emailPlaceholder" xml:space="preserve"><value>Used for password recovery and notifications</value></data>
+  <data name="auth.register.submit" xml:space="preserve"><value>Create account</value></data>
+  <data name="auth.register.loginPrompt" xml:space="preserve"><value>Already have an account?</value></data>
+  <data name="auth.register.loginAction" xml:space="preserve"><value>Sign in</value></data>
+  <data name="auth.register.password.show" xml:space="preserve"><value>Show</value></data>
+  <data name="auth.register.password.hide" xml:space="preserve"><value>Hide</value></data>
+  <data name="auth.register.client.logoAlt" xml:space="preserve"><value>Client logo</value></data>
+  <data name="auth.register.error.displayNameRequired" xml:space="preserve"><value>Display name is required.</value></data>
+  <data name="auth.register.error.displayNameCharacters" xml:space="preserve"><value>Display name can contain only Chinese characters, letters, and numbers.</value></data>
+  <data name="auth.register.error.displayNameLength" xml:space="preserve"><value>Display name must be between {0} and {1} characters.</value></data>
+  <data name="auth.register.error.displayNameReserved" xml:space="preserve"><value>This display name is reserved. Choose another one.</value></data>
+  <data name="auth.register.error.passwordRequired" xml:space="preserve"><value>Password is required.</value></data>
+  <data name="auth.register.error.passwordLength" xml:space="preserve"><value>Password must be between 6 and 100 characters.</value></data>
+  <data name="auth.register.error.confirmPasswordRequired" xml:space="preserve"><value>Confirm your password.</value></data>
+  <data name="auth.register.error.passwordMismatch" xml:space="preserve"><value>The passwords do not match.</value></data>
+  <data name="auth.register.error.emailRequired" xml:space="preserve"><value>Email is required.</value></data>
+  <data name="auth.register.error.emailInvalid" xml:space="preserve"><value>Enter a valid email address.</value></data>
+  <data name="auth.register.error.emailLength" xml:space="preserve"><value>Email cannot exceed 254 characters.</value></data>
+  <data name="auth.register.error.emailRegistered" xml:space="preserve"><value>This email is already registered.</value></data>
+  <data name="auth.register.error.unexpected" xml:space="preserve"><value>Registration failed. Try again later. Diagnostic ID: {0}</value></data>
+  <data name="auth.register.success" xml:space="preserve"><value>Account created. You received 50 carrots; sign in to continue.</value></data>
+  <data name="auth.consent.requestingApp" xml:space="preserve"><value>the requesting app</value></data>
+  <data name="auth.consent.currentAccount" xml:space="preserve"><value>Current account</value></data>
+  <data name="auth.consent.permissionCount.one" xml:space="preserve"><value>{0} permission</value></data>
+  <data name="auth.consent.permissionCount.other" xml:space="preserve"><value>{0} permissions</value></data>
+  <data name="auth.consent.pageEyebrow" xml:space="preserve"><value>Radish secure authorization</value></data>
+  <data name="auth.consent.targetLabel" xml:space="preserve"><value>Authorization request</value></data>
+  <data name="auth.consent.headingText" xml:space="preserve"><value>Allow {0} to access your Radish account?</value></data>
+  <data name="auth.consent.heroCopy" xml:space="preserve"><value>You are authorizing as {0}. After approval, you will return to {1} to continue.</value></data>
+  <data name="auth.consent.identityTitle" xml:space="preserve"><value>Account and app</value></data>
+  <data name="auth.consent.identityHint" xml:space="preserve"><value>Check the account, app, and return destination before allowing access.</value></data>
+  <data name="auth.consent.accountLabel" xml:space="preserve"><value>Signed in as</value></data>
+  <data name="auth.consent.appLabel" xml:space="preserve"><value>Application</value></data>
+  <data name="auth.consent.developerLabel" xml:space="preserve"><value>Developer</value></data>
+  <data name="auth.consent.redirectLabel" xml:space="preserve"><value>Return to</value></data>
+  <data name="auth.consent.permissionTitle" xml:space="preserve"><value>After approval it can</value></data>
+  <data name="auth.consent.permissionHint" xml:space="preserve"><value>Only the scopes included in this request will be granted. You can review raw scopes in technical details.</value></data>
+  <data name="auth.consent.safetyTitle" xml:space="preserve"><value>It will not get</value></data>
+  <data name="auth.consent.safetyPoint1" xml:space="preserve"><value>Your password, payment passcode, one-time codes, or saved browser credentials.</value></data>
+  <data name="auth.consent.safetyPoint2" xml:space="preserve"><value>The ability to automatically change your profile, assets, or grant new admin permissions.</value></data>
+  <data name="auth.consent.riskHint" xml:space="preserve"><value>If the app, account, or destination looks wrong, cancel authorization. Cancelling will not sign you out of Radish.</value></data>
+  <data name="auth.consent.decisionHint" xml:space="preserve"><value>Allow only when the app, account, and destination all look right.</value></data>
+  <data name="auth.consent.technicalTitle" xml:space="preserve"><value>View technical details</value></data>
+  <data name="auth.consent.technicalHint" xml:space="preserve"><value>For troubleshooting and security review. You do not need these details for normal confirmation.</value></data>
+  <data name="auth.consent.clientIdLabel" xml:space="preserve"><value>Client ID</value></data>
+  <data name="auth.consent.redirectUriLabel" xml:space="preserve"><value>Full redirect URI</value></data>
+  <data name="auth.consent.rawScopeLabel" xml:space="preserve"><value>Raw scope</value></data>
+  <data name="auth.consent.scope.openid.title" xml:space="preserve"><value>Confirm signed-in identity</value></data>
+  <data name="auth.consent.scope.openid.description" xml:space="preserve"><value>Lets the app know which Radish account is acting.</value></data>
+  <data name="auth.consent.scope.profile.title" xml:space="preserve"><value>Read display name and avatar</value></data>
+  <data name="auth.consent.scope.profile.description" xml:space="preserve"><value>Shows your basic profile inside the app.</value></data>
+  <data name="auth.consent.scope.offlineAccess.title" xml:space="preserve"><value>Keep this session</value></data>
+  <data name="auth.consent.scope.offlineAccess.description" xml:space="preserve"><value>Reduces repeated sign-ins or repeated approvals for a short period.</value></data>
+  <data name="auth.consent.scope.radishApi.title" xml:space="preserve"><value>Continue the current service action</value></data>
+  <data name="auth.consent.scope.radishApi.description" xml:space="preserve"><value>Completes the protected task you opened in the requesting app.</value></data>
+  <data name="auth.consent.scope.additional.title" xml:space="preserve"><value>Additional access</value></data>
+  <data name="auth.consent.scope.additional.description" xml:space="preserve"><value>An extra scope declared by the requesting app. Review it before continuing.</value></data>
 </root>

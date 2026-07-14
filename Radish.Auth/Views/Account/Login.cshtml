@@ -7,13 +7,12 @@
 @{
     ViewData["Title"] = Localizer["auth.login.title"];
     var client = Model.Client;
-    var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
     var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.login.client.unknown"].Value : client.DisplayName;
     var clientDescription = string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.login.client.defaultDescription"].Value : client.Description;
-    var developerLabel = isZh ? "开发者" : "Developer";
-    var registerPrompt = isZh ? "没有账号？" : "Need an account?";
-    var registerAction = isZh ? "立即注册" : "Create one";
-    var loginSubmittingText = isZh ? "登录中..." : "Signing in...";
+    var developerLabel = Localizer["auth.login.developerLabel"];
+    var registerPrompt = Localizer["auth.login.registerPrompt"];
+    var registerAction = Localizer["auth.login.registerAction"];
+    var loginSubmittingText = Localizer["auth.login.submitting"];
 }
 
 <!DOCTYPE html>
@@ -476,8 +475,8 @@
                     </div>
 
                     <div class="lang-switcher">
-                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
-                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en')">English</button>
                     </div>
                 </div>
 
@@ -531,10 +530,14 @@
 
     <script>
         function switchLanguage(culture) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('culture', culture);
-            url.searchParams.set('ui-culture', culture);
-            window.location.href = url.toString();
+            const returnUrl = new URL(window.location.href);
+            returnUrl.searchParams.delete('culture');
+            returnUrl.searchParams.delete('ui-culture');
+            const localReturnUrl = `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`;
+            const switchUrl = new URL('@Url.Action("SetLanguage", "Account")', window.location.origin);
+            switchUrl.searchParams.set('culture', culture);
+            switchUrl.searchParams.set('returnUrl', localReturnUrl);
+            window.location.assign(switchUrl.toString());
         }
 
         document.addEventListener('DOMContentLoaded', () => {

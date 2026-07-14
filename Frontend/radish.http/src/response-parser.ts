@@ -6,6 +6,8 @@ export function parseApiResponse<T>(response: ApiResponse<T>): ParsedApiResponse
     return {
       ok: true,
       data: response.responseData,
+      messageInfo: response.messageInfo,
+      messageKey: response.messageKey,
       statusCode: response.statusCode,
       traceId: response.traceId,
     };
@@ -14,6 +16,8 @@ export function parseApiResponse<T>(response: ApiResponse<T>): ParsedApiResponse
   return {
     ok: false,
     message: response.messageInfo || '请求失败',
+    messageInfo: response.messageInfo,
+    messageKey: response.messageKey,
     code: response.code,
     statusCode: response.statusCode,
     traceId: response.traceId,

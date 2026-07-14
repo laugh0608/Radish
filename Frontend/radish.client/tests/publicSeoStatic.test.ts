@@ -7,6 +7,14 @@ import { fileURLToPath } from 'node:url';
 const testDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(testDir, '..');
 
+function readLocaleResources(): string {
+  const domainNames = ['core', 'shell', 'discover', 'community', 'account', 'commerce', 'docs'];
+  return ['en', 'zh']
+    .flatMap((language) => domainNames.map((domain) =>
+      readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
+    .join('\n');
+}
+
 test('robots.txt 应开放公开入口并指向公开 sitemap', () => {
   const robots = readFileSync(resolve(clientRoot, 'public/robots.txt'), 'utf8');
 
@@ -45,7 +53,7 @@ test('公开商城详情购买入口应指向正式 Web 购买回流路径', () 
 });
 
 test('公开商品榜单文案应指向商品详情购买而不是阻断购买能力', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/i18n.ts'), 'utf8');
+  const source = readLocaleResources();
 
   assert.match(
     source,
@@ -69,7 +77,7 @@ test('公开商品榜单文案应指向商品详情购买而不是阻断购买�
 });
 
 test('公开个人页账号动作文案应指向个人页面而不是工作台', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/i18n.ts'), 'utf8');
+  const source = readLocaleResources();
 
   assert.match(source, /Orders, inventory, assets, and other account actions stay on signed-in personal pages/);
   assert.match(source, /订单、背包、资产和其他账号动作继续留在登录后的个人页面/);
@@ -83,7 +91,7 @@ test('公开个人页账号动作文案应指向个人页面而不是工作台',
 
 test('公开个人页应提供受控登录回流与关注状态切换', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
-  const i18nSource = readFileSync(resolve(clientRoot, 'src/i18n.ts'), 'utf8');
+  const i18nSource = readLocaleResources();
 
   assert.match(source, /from '@\/api\/userFollow'/);
   assert.match(source, /getFollowStatus\(profile\.voUserId\)/);
@@ -141,7 +149,7 @@ test('公开发现和论坛列表不应渲染教学式阅读说明卡', () => {
   const discoverStylesSource = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.module.css'), 'utf8');
   const forumListSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumList.tsx'), 'utf8');
   const forumUtilsSource = readFileSync(resolve(clientRoot, 'src/public/forum/publicForumUtils.ts'), 'utf8');
-  const i18nSource = readFileSync(resolve(clientRoot, 'src/i18n.ts'), 'utf8');
+  const i18nSource = readLocaleResources();
 
   assert.doesNotMatch(discoverSource, /discoverGuideItems|heroTitleRow|heroGuideGrid|pulseKicker|discussionKicker/);
   assert.doesNotMatch(discoverSource, /summaryCards|routeGuideCards|routeGuideMap|PublicDiscoverFeed/);
@@ -187,22 +195,22 @@ test('纯 Web 壳层应使用统一产品级导航而不是 public / private 两
   const source = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
   const shellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
   const shellStylesSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.module.css'), 'utf8');
-  const i18nSource = readFileSync(resolve(clientRoot, 'src/i18n.ts'), 'utf8');
+  const i18nSource = readLocaleResources();
 
   assert.match(shellSource, /function shouldHandleShellLinkClick/);
   assert.match(shellSource, /function navigateToShellPath/);
-  assert.match(shellSource, /const productNavItems: WebShellNavItem\[\] = \[/);
+  assert.match(shellSource, /function getDefaultNavItems/);
   assert.match(shellSource, /key: 'discover'[\s\S]*key: 'forum'[\s\S]*key: 'chat'[\s\S]*key: 'more'/);
-  assert.match(shellSource, /const productMobileNavItems: WebShellNavItem\[\] = \[/);
+  assert.match(shellSource, /function getDefaultMobileNavItems/);
   assert.match(shellSource, /key: 'discover'[\s\S]*key: 'forum'[\s\S]*key: 'chat'[\s\S]*key: 'more'[\s\S]*key: 'me'/);
-  assert.match(shellSource, /aria-label="产品导航"/);
-  assert.match(shellSource, /aria-label="产品移动导航"/);
+  assert.match(shellSource, /aria-label=\{t\('public\.shell\.navLabel'\)\}/);
+  assert.match(shellSource, /aria-label=\{t\('public\.shell\.mobileNavLabel'\)\}/);
   assert.match(shellSource, /hideMobileNav/);
   assert.match(shellSource, /href=\{item\.href\}/);
   assert.match(shellSource, /event\.preventDefault\(\);/);
   assert.match(shellSource, /item\.onClick\(\);/);
   assert.match(shellSource, /if \(navigateToShellPath\(item\.href\)\) \{/);
-  assert.match(source, /function buildShellActionItems\(authAction: WebShellNavItem\): WebShellNavItem\[\]/);
+  assert.match(source, /function buildShellActionItems\(authAction: WebShellNavItem, notificationsLabel: string\): WebShellNavItem\[\]/);
   assert.match(source, /key: 'notifications'[\s\S]*href: '\/notifications'/);
   assert.match(source, /key: 'me'[\s\S]*href: '\/me'/);
   assert.match(source, /avatarUrl: resolveMediaUrl\(avatarUrl\)/);
@@ -221,7 +229,7 @@ test('正式 Web 主题入口应由共享 Header 覆盖桌面与移动视图', (
   const shellStylesSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.module.css'), 'utf8');
   const switcherSource = readFileSync(resolve(clientRoot, 'src/theme/ThemeSwitcher.tsx'), 'utf8');
 
-  assert.match(publicShellSource, /actionSlot=\{<ThemeSwitcher \/>\}/);
+  assert.match(publicShellSource, /<LanguageSwitcher \/>[\s\S]*<ThemeSwitcher \/>/);
   assert.match(shellSource, /actionSlot\?: ReactNode/);
   assert.match(shellSource, /\{actionSlot\}/);
   assert.match(switcherSource, /themeOptions\.map/);
@@ -246,7 +254,7 @@ test('正式 Web 壳层切换应复用当前 React 入口而不是整页重载',
   assert.match(mainSource, /<BrowserAppRouter \/>/);
   assert.match(shellSource, /window\.history\.pushState\(\{\}, '', nextPath\);/);
   assert.match(shellSource, /window\.dispatchEvent\(new PopStateEvent\('popstate'/);
-  assert.match(publicShellSource, /buildShellActionItems\(authAction\)/);
+  assert.match(publicShellSource, /buildShellActionItems\(authAction, t\('public\.shell\.nav\.notifications'\)\)/);
   assert.doesNotMatch(publicShellSource, /window\.location\.href = href/);
 });
 
@@ -310,7 +318,7 @@ test('正式 Web 页头登录态账号应展示用户名而不是公开句柄', 
   const userStoreSource = readFileSync(resolve(clientRoot, 'src/stores/userStore.ts'), 'utf8');
   const authBootstrapSource = readFileSync(resolve(clientRoot, 'src/services/authBootstrap.ts'), 'utf8');
 
-  assert.match(publicShellSource, /const userLabel = userName\?\.trim\(\) \|\| displayName\?\.trim\(\) \|\| '我的';/);
+  assert.match(publicShellSource, /const userLabel = userName\?\.trim\(\) \|\| displayName\?\.trim\(\) \|\| t\('public\.shell\.nav\.me'\);/);
   assert.doesNotMatch(publicShellSource, /const userLabel = displayHandle/);
   assert.match(userStoreSource, /const userName = user\.userName\?\.trim\(\) \|\| displayName;/);
   assert.match(authBootstrapSource, /const userName = user\.voUserName\.trim\(\);/);

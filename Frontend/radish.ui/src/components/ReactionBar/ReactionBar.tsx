@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   StickerPicker,
+  type StickerPickerLabels,
   type StickerPickerGroup,
   type StickerPickerSelection,
 } from '../StickerPicker/StickerPicker';
@@ -26,6 +27,19 @@ export interface ReactionTogglePayload {
   emojiValue: string;
 }
 
+export interface ReactionBarLabels {
+  loginHint: string;
+  limitHint: (limit: number) => string;
+  reactionLabel: (emoji: string, count: number, selected: boolean) => string;
+  expandRemaining: (count: number) => string;
+  expandTitle: string;
+  collapse: string;
+  addReaction: string;
+  addEmoji: (emoji: string) => string;
+  moreEmoji: string;
+  stickerPicker: StickerPickerLabels;
+}
+
 export interface ReactionBarProps {
   targetType: ReactionTargetType;
   targetId: number | string;
@@ -36,7 +50,27 @@ export interface ReactionBarProps {
   className?: string;
   onToggle: (payload: ReactionTogglePayload) => Promise<void>;
   onRequireLogin?: () => void;
+  labels?: ReactionBarLabels;
 }
+
+const defaultLabels: ReactionBarLabels = {
+  loginHint: '登录后可添加回应',
+  limitHint: (limit) => `你已对该内容添加了 ${limit} 种回应（上限）`,
+  reactionLabel: (emoji, count, selected) => `${emoji}，${count} 人回应，${selected ? '已选择' : '未选择'}`,
+  expandRemaining: (count) => `展开更多回应，剩余 ${count} 个`,
+  expandTitle: '展开更多',
+  collapse: '收起',
+  addReaction: '添加回应',
+  addEmoji: (emoji) => `添加 ${emoji}`,
+  moreEmoji: '更多表情',
+  stickerPicker: {
+    searchPlaceholder: '搜索表情',
+    clearSearch: '清空搜索',
+    reactionOnly: (name) => `${name}（仅支持 Reaction）`,
+    noEmoji: '未找到匹配的表情',
+    noSticker: '该分组暂无可插入表情',
+  },
+};
 
 const buildKey = (item: Pick<ReactionSummaryItem, 'voEmojiType' | 'voEmojiValue'>): string =>
   `${item.voEmojiType}:${item.voEmojiValue}`;
@@ -60,6 +94,7 @@ export const ReactionBar = ({
   className = '',
   onToggle,
   onRequireLogin,
+  labels = defaultLabels,
 }: ReactionBarProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
@@ -219,8 +254,8 @@ export const ReactionBar = ({
     }
   };
 
-  const loginHint = '登录后可添加回应';
-  const limitHint = `你已对该内容添加了 ${MAX_USER_REACTIONS} 种回应（上限）`;
+  const loginHint = labels.loginHint;
+  const limitHint = labels.limitHint(MAX_USER_REACTIONS);
 
   return (
     <div
@@ -233,7 +268,7 @@ export const ReactionBar = ({
         {displayItems.map((item) => {
           const isPending = pendingKey === buildKey(item);
           const isDisabled = loading || isPending || (!item.voIsReacted && reachedReactionLimit) || !isLoggedIn;
-          const label = `${item.voEmojiValue}，${item.voCount} 人回应，${item.voIsReacted ? '已选择' : '未选择'}`;
+          const label = labels.reactionLabel(item.voEmojiValue, item.voCount, item.voIsReacted);
 
           return (
             <button
@@ -270,8 +305,8 @@ export const ReactionBar = ({
             type="button"
             className={`${styles.bubble} ${styles.expandBubble}`}
             onClick={() => setExpanded(true)}
-            aria-label={`展开更多回应，剩余 ${hiddenCount} 个`}
-            title="展开更多"
+            aria-label={labels.expandRemaining(hiddenCount)}
+            title={labels.expandTitle}
           >
             +{hiddenCount}
           </button>
@@ -283,7 +318,7 @@ export const ReactionBar = ({
             className={styles.collapseButton}
             onClick={() => setExpanded(false)}
           >
-            收起
+            {labels.collapse}
           </button>
         )}
 
@@ -297,8 +332,8 @@ export const ReactionBar = ({
             }
             setPickerOpen((prev) => !prev);
           }}
-          title={!isLoggedIn ? loginHint : reachedReactionLimit ? limitHint : '添加回应'}
-          aria-label="添加回应"
+          title={!isLoggedIn ? loginHint : reachedReactionLimit ? limitHint : labels.addReaction}
+          aria-label={labels.addReaction}
           disabled={loading}
         >
           <span className={styles.plusText}>+</span>
@@ -321,7 +356,7 @@ export const ReactionBar = ({
                   void handleQuickEmoji(emoji);
                 }}
                 disabled={disabled}
-                title={disabled ? limitHint : `添加 ${emoji}`}
+                title={disabled ? limitHint : labels.addEmoji(emoji)}
               >
                 {emoji}
               </button>
@@ -336,7 +371,8 @@ export const ReactionBar = ({
               }}
               mode="reaction"
               theme="light"
-              triggerTitle="更多表情"
+              triggerTitle={labels.moreEmoji}
+              labels={labels.stickerPicker}
               disabled={loading || reachedReactionLimit}
               panelPlacement="left"
               className={styles.pickerTrigger}

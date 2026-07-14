@@ -11,7 +11,9 @@ import {
   Avatar,
   message,
   type TableColumnsType,
+  formatLocalizedDateTime,
 } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
 import {
   EditOutlined,
   SearchOutlined,
@@ -42,17 +44,12 @@ import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils
 import '../adminFeature.css';
 import './UserList.css';
 
-function formatUserTime(value?: string | null) {
+function formatUserTime(value: string | null | undefined, language: string) {
   if (!value) {
     return '-';
   }
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return date.toLocaleString('zh-CN');
+  return formatLocalizedDateTime(value, language);
 }
 
 function getListItemStatus(user: UserListItem) {
@@ -60,7 +57,9 @@ function getListItemStatus(user: UserListItem) {
 }
 
 export const UserList = () => {
-  useDocumentTitle('用户管理');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('console.route.users'));
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -194,14 +193,14 @@ export const UserList = () => {
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
-      render: (voCreateTime: string) => formatUserTime(voCreateTime),
+      render: (voCreateTime: string) => formatUserTime(voCreateTime, language),
     },
     {
       title: '更新时间',
       dataIndex: 'voUpdateTime',
       key: 'voUpdateTime',
       width: 180,
-      render: (voUpdateTime?: string | null) => formatUserTime(voUpdateTime),
+      render: (voUpdateTime?: string | null) => formatUserTime(voUpdateTime, language),
     },
     {
       title: '操作',
@@ -416,11 +415,11 @@ export const UserList = () => {
                 </div>
                 <div className="admin-feature-rail__item">
                   <span>创建时间</span>
-                  <strong>{formatUserTime(selectedUser.voCreateTime)}</strong>
+                  <strong>{formatUserTime(selectedUser.voCreateTime, language)}</strong>
                 </div>
                 <div className="admin-feature-rail__item">
                   <span>更新时间</span>
-                  <strong>{formatUserTime(selectedUser.voUpdateTime)}</strong>
+                  <strong>{formatUserTime(selectedUser.voUpdateTime, language)}</strong>
                 </div>
               </div>
               <div className="admin-feature-rail__actions">

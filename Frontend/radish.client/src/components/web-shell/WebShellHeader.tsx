@@ -1,6 +1,7 @@
 import { useEffect, type MouseEvent, type ReactNode } from 'react';
 import { Icon } from '@radish/ui/icon';
 import styles from './WebShellHeader.module.css';
+import { useTranslation } from 'react-i18next';
 
 export type WebShellVariant = 'public' | 'private';
 
@@ -27,21 +28,6 @@ interface WebShellHeaderProps {
   mobileNavItems?: WebShellNavItem[];
   hideMobileNav?: boolean;
 }
-
-const productNavItems: WebShellNavItem[] = [
-  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
-  { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'chat', label: '聊天', href: '/messages', icon: 'mdi:message-text-outline' },
-  { key: 'more', label: '更多', href: '/workbench', icon: 'mdi:dots-grid' },
-];
-
-const productMobileNavItems: WebShellNavItem[] = [
-  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
-  { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'chat', label: '聊天', href: '/messages', icon: 'mdi:message-text-outline' },
-  { key: 'more', label: '更多', href: '/workbench', icon: 'mdi:dots-grid' },
-  { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
-];
 
 function shouldHandleShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return !event.defaultPrevented
@@ -167,12 +153,20 @@ function resolveActiveKey(variant: WebShellVariant): string {
   return variant === 'private' ? 'more' : 'discover';
 }
 
-function getDefaultNavItems(): WebShellNavItem[] {
-  return productNavItems;
+function getDefaultNavItems(t: (key: string) => string): WebShellNavItem[] {
+  return [
+    { key: 'discover', label: t('public.shell.nav.discover'), href: '/discover', icon: 'mdi:compass-outline' },
+    { key: 'forum', label: t('public.shell.nav.forum'), href: '/forum', icon: 'mdi:forum-outline' },
+    { key: 'chat', label: t('public.shell.nav.chat'), href: '/messages', icon: 'mdi:message-text-outline' },
+    { key: 'more', label: t('public.shell.nav.more'), href: '/workbench', icon: 'mdi:dots-grid' },
+  ];
 }
 
-function getDefaultMobileNavItems(): WebShellNavItem[] {
-  return productMobileNavItems;
+function getDefaultMobileNavItems(t: (key: string) => string): WebShellNavItem[] {
+  return [
+    ...getDefaultNavItems(t),
+    { key: 'me', label: t('public.shell.nav.me'), href: '/me', icon: 'mdi:account-circle-outline' },
+  ];
 }
 
 interface WebShellLinkProps {
@@ -230,9 +224,10 @@ export function WebShellHeader({
   mobileNavItems,
   hideMobileNav = false,
 }: WebShellHeaderProps) {
+  const { t } = useTranslation();
   const resolvedActiveKey = normalizeActiveKey(activeKey ?? resolveActiveKey(variant));
-  const resolvedNavItems = navItems ?? getDefaultNavItems();
-  const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems();
+  const resolvedNavItems = navItems ?? getDefaultNavItems(t);
+  const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems(t);
   const resolvedActionItems = actionItems ?? [];
   const headerClassName = `${styles.header} ${variant === 'private' ? styles.privateHeader : styles.publicHeader}`;
   const actionRailClassName = styles.actionRail;
@@ -261,7 +256,7 @@ export function WebShellHeader({
             </span>
           </button>
 
-          <nav className={styles.navRail} aria-label="产品导航">
+          <nav className={styles.navRail} aria-label={t('public.shell.navLabel')}>
             {resolvedNavItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -289,7 +284,7 @@ export function WebShellHeader({
       </header>
 
       {!hideMobileNav && (
-        <nav className={styles.mobileTabBar} aria-label="产品移动导航" data-web-mobile-nav="true">
+        <nav className={styles.mobileTabBar} aria-label={t('public.shell.mobileNavLabel')} data-web-mobile-nav="true">
           {resolvedMobileNavItems.map((item) => (
             <WebShellLink
               key={item.key}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createApiResponseError, isApiResponseNotFoundError } from '@radish/http';
 import { PurchaseModal } from '@/apps/shop/components/PurchaseModal';
 import {
   checkCanBuy,
@@ -130,14 +131,6 @@ function PublicStatusCard({ tone, title, description, primaryAction, secondaryAc
   );
 }
 
-function isProductNotFound(message: string | null): boolean {
-  if (!message) {
-    return false;
-  }
-
-  return /商品不存在|not\s+found|404/i.test(message);
-}
-
 function buildProductsRouteKey(route: PublicShopProductsRoute): string {
   return buildPublicShopPath(route);
 }
@@ -173,6 +166,7 @@ export const PublicShopApp = ({
   const [featuredError, setFeaturedError] = useState<string | null>(null);
   const [productsError, setProductsError] = useState<string | null>(null);
   const [productError, setProductError] = useState<string | null>(null);
+  const [productNotFound, setProductNotFound] = useState(false);
   const [currentPage, setCurrentPage] = useState(() => route.kind === 'products' ? route.page : 1);
   const [totalPages, setTotalPages] = useState(1);
   const [reloadToken, setReloadToken] = useState(0);
@@ -455,6 +449,7 @@ export const PublicShopApp = ({
     const loadProductDetail = async () => {
       setProductLoading(true);
       setProductError(null);
+      setProductNotFound(false);
       setSelectedProduct(null);
 
       try {
@@ -464,7 +459,7 @@ export const PublicShopApp = ({
         }
 
         if (!result.ok || !result.data) {
-          throw new Error(result.message || t('shop.public.loadFailedDescription'));
+          throw createApiResponseError(result, t('shop.public.loadFailedDescription'));
         }
 
         setSelectedProduct(result.data);
@@ -474,6 +469,7 @@ export const PublicShopApp = ({
         }
 
         setSelectedProduct(null);
+        setProductNotFound(isApiResponseNotFoundError(error));
         setProductError(error instanceof Error ? error.message : String(error));
       } finally {
         if (requestId === detailRequestIdRef.current) {
@@ -817,10 +813,10 @@ export const PublicShopApp = ({
     if (productError && !selectedProduct) {
       return (
         <PublicStatusCard
-          tone={isProductNotFound(productError) ? 'notFound' : 'error'}
-          title={isProductNotFound(productError) ? t('shop.public.notFoundTitle') : t('shop.public.loadFailedTitle')}
-          description={isProductNotFound(productError) ? t('shop.public.notFoundDescription') : productError}
-          primaryAction={isProductNotFound(productError)
+          tone={productNotFound ? 'notFound' : 'error'}
+          title={productNotFound ? t('shop.public.notFoundTitle') : t('shop.public.loadFailedTitle')}
+          description={productNotFound ? t('shop.public.notFoundDescription') : productError}
+          primaryAction={productNotFound
             ? undefined
             : {
                 label: t('common.retry'),

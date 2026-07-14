@@ -1,6 +1,7 @@
-import { ThemeProvider as SharedThemeProvider } from '@radish/ui';
+import { antdLocales, ThemeProvider as SharedThemeProvider } from '@radish/ui';
 import type { PropsWithChildren } from 'react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeStore } from '@/stores/themeStore';
 import { tokenService } from '@/services/tokenService';
@@ -15,11 +16,14 @@ import {
   invalidateThemeEntitlementSync,
   refreshThemeEntitlements,
 } from './themeEntitlements';
+import { normalizeLanguage } from '@/locales/language';
 
 export const ThemeProvider = ({ children }: PropsWithChildren) => {
+  const { i18n } = useTranslation();
   const theme = useThemeStore(state => state.theme);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const definition = themeDefinitions[theme];
+  const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh';
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -57,6 +61,7 @@ export const ThemeProvider = ({ children }: PropsWithChildren) => {
     <SharedThemeProvider
       dark={definition.colorScheme === 'dark'}
       themeConfig={definition.themeConfig}
+      locale={antdLocales[language]}
     >
       {children}
     </SharedThemeProvider>

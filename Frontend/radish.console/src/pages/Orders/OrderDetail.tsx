@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Descriptions, Tag, Button, Space, AntInput as Input, message } from '@radish/ui';
+import { Modal, Descriptions, Tag, Button, Space, AntInput as Input, message, formatLocalizedDateTime } from '@radish/ui';
 import { SyncOutlined } from '@radish/ui';
 import { adminGetOrder, getOrderStatusColor } from '../../api/shopApi';
 import type { Order } from '../../api/types';
+import { useTranslation } from 'react-i18next';
 
 interface OrderDetailProps {
   visible: boolean;
@@ -19,17 +20,12 @@ interface OrderDetailProps {
   onSaveRemark?: (remark: string) => void;
 }
 
-function formatDateTime(value?: string | null): string {
+function formatDateTime(value: string | null | undefined, language: string): string {
   if (!value) {
     return '-';
   }
 
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return parsed.toLocaleString('zh-CN');
+  return formatLocalizedDateTime(value, language);
 }
 
 export const OrderDetail = ({
@@ -46,6 +42,8 @@ export const OrderDetail = ({
   savingRemark = false,
   onSaveRemark,
 }: OrderDetailProps) => {
+  const { i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [detailOrder, setDetailOrder] = useState<Order | undefined>(fallbackOrder);
   const [adminRemark, setAdminRemark] = useState('');
   const [loading, setLoading] = useState(false);
@@ -185,27 +183,27 @@ export const OrderDetail = ({
             </Descriptions.Item>
 
             <Descriptions.Item label="创建时间">
-              {formatDateTime(currentOrder.voCreateTime)}
+              {formatDateTime(currentOrder.voCreateTime, language)}
             </Descriptions.Item>
 
             <Descriptions.Item label="支付时间">
-              {formatDateTime(currentOrder.voPaidTime)}
+              {formatDateTime(currentOrder.voPaidTime, language)}
             </Descriptions.Item>
 
             <Descriptions.Item label="完成时间">
-              {formatDateTime(currentOrder.voCompletedTime)}
+              {formatDateTime(currentOrder.voCompletedTime, language)}
             </Descriptions.Item>
 
             <Descriptions.Item label="权益到期时间">
-              {formatDateTime(currentOrder.voBenefitExpiresAt)}
+              {formatDateTime(currentOrder.voBenefitExpiresAt, language)}
             </Descriptions.Item>
 
             <Descriptions.Item label="固定到期快照">
-              {formatDateTime(currentOrder.voFixedExpiresAt)}
+              {formatDateTime(currentOrder.voFixedExpiresAt, language)}
             </Descriptions.Item>
 
             <Descriptions.Item label="取消时间">
-              {formatDateTime(currentOrder.voCancelledTime)}
+              {formatDateTime(currentOrder.voCancelledTime, language)}
             </Descriptions.Item>
 
             <Descriptions.Item label="取消原因" span={2}>

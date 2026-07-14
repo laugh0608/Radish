@@ -1,5 +1,6 @@
 import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '@radish/ui';
 import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
 import type { ShopProductCapability, UserBenefit, UserInventoryItem } from '@/types/shop';
@@ -207,7 +208,8 @@ export const Inventory = ({
   diagnosticActionLabel,
   onCopyDiagnostics
 }: InventoryProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [activeTab, setActiveTab] = useState<TabType>('benefits');
   const [selectedItem, setSelectedItem] = useState<UserInventoryItem | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
@@ -227,7 +229,7 @@ export const Inventory = ({
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
-    return new Date(timeStr).toLocaleString('zh-CN', {
+    return formatLocalizedDateTime(timeStr, language, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

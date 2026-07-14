@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { formatLocalizedNumber } from '@radish/ui';
 import {
   leaderboardApi,
   LeaderboardCategory,
@@ -376,7 +377,7 @@ export const PublicLeaderboardApp = ({
   onNavigateToProfile,
   onNavigateToShopProduct,
 }: PublicLeaderboardAppProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
   const userId = useUserStore((state) => state.userId);
@@ -750,7 +751,7 @@ export const PublicLeaderboardApp = ({
                             {item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback')}
                           </span>
                           <span className={`${styles.userStatChip} ${styles.userMetricChip}`}>
-                            {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
+                            {formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
                           </span>
                           <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                         </div>
@@ -813,13 +814,13 @@ export const PublicLeaderboardApp = ({
                           <span className={styles.sideInfoLabel}>{t('shop.meta.price')}</span>
                           <span className={styles.sideInfoValue}>
                             {t('leaderboard.public.productPrice', {
-                              price: Number(item.voProductPrice || 0).toLocaleString(),
+                              price: formatLocalizedNumber(Number(item.voProductPrice || 0), i18n.resolvedLanguage ?? i18n.language),
                             })}
                           </span>
                         </div>
                       </div>
                       <div className={styles.itemMetric}>
-                        <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
+                        <span className={styles.metricValue}>{formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
                         <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                       </div>

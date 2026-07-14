@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import type { ContentReportTargetType } from '@/api/contentModeration';
@@ -163,6 +164,7 @@ export const PublicForumDetail = ({
   const [loadingQuickReplies, setLoadingQuickReplies] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+  const [postNotFound, setPostNotFound] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [quickReplyError, setQuickReplyError] = useState<string | null>(null);
   const [commentPagingError, setCommentPagingError] = useState<string | null>(null);
@@ -357,6 +359,7 @@ export const PublicForumDetail = ({
       setLoadingComments(true);
       setLoadingQuickReplies(true);
       setPostError(null);
+      setPostNotFound(false);
       setCommentError(null);
       setQuickReplyError(null);
       setCommentPagingError(null);
@@ -386,6 +389,7 @@ export const PublicForumDetail = ({
         setQuickReplyTotal(0);
         setCommentTotal(0);
         setLoadedCommentPages(0);
+        setPostNotFound(isApiResponseNotFoundError(err));
         setPostError(message);
         return;
       } finally {
@@ -1359,7 +1363,8 @@ export const PublicForumDetail = ({
   const detailState = resolvePublicForumDetailLoadState({
     loadingPost,
     hasPost: !!post,
-    postError
+    postError,
+    postNotFound
   });
   const quickReplySectionState = resolvePublicForumReadSectionState({
     loading: loadingQuickReplies,

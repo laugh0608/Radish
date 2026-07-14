@@ -16,6 +16,13 @@ export type {
   ParsedApiResponse,
 } from './types';
 
+export type { ApiClientConfig } from './client';
+export {
+  ApiResponseError,
+  createApiResponseError,
+  isApiResponseNotFoundError,
+} from './api-response-error';
+
 // API 客户端
 export {
   configureApiClient,

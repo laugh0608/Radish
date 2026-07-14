@@ -81,6 +81,7 @@ features:
 - [私域与作者态 Web 工作流设计](/frontend/private-web-workflows-design)
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design)
 - [国际化指南](/architecture/i18n)
+- [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)
 - [文档系统方案](/guide/document-system)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)

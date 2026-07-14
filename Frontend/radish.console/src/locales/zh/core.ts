@@ -1,0 +1,16 @@
+export const zhCore = {
+  'lang.zh': '中文',
+  'lang.en': 'EN',
+  'lang.switch': '切换语言',
+  'common.loading': '加载中...',
+  'common.unknownUser': '未知用户',
+  'console.unit.carrot': '胡萝卜',
+  'error.auth.invalid_credentials': '用户名或密码错误。',
+  'error.common.conflict': '资源状态已发生变化，请刷新后重试。',
+  'error.common.internal_error': '请求暂时无法完成，请稍后重试。',
+  'error.common.not_found': '未找到请求的资源。',
+  'error.common.validation_failed': '请检查提交内容后重试。',
+  'error.rate_limit.exceeded': '请求过于频繁，请稍后重试。',
+  'error.rate_limit.ip_blocked': '当前网络的请求暂时受限。',
+  'error.user.not_found': '未找到该用户。',
+} as const;

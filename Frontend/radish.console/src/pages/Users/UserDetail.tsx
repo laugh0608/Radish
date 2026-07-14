@@ -10,7 +10,9 @@ import {
   AntModal as Modal,
   AntInput as Input,
   type TableColumnsType,
+  formatLocalizedDateTime,
 } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
 import { Descriptions, Empty, Tabs } from 'antd';
 import {
   UserOutlined,
@@ -53,12 +55,14 @@ interface UserDetailData {
 }
 
 export const UserDetail = () => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
-  useDocumentTitle('用户详情');
+  useDocumentTitle(t('console.route.user-detail'));
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
@@ -101,12 +105,7 @@ export const UserDetail = () => {
   const formatDisplayTime = (time?: string | null) => {
     if (!time) return '-';
 
-    const date = new Date(time);
-    if (Number.isNaN(date.getTime())) {
-      return time;
-    }
-
-    return date.toLocaleString('zh-CN');
+    return formatLocalizedDateTime(time, language);
   };
 
   const getSignedCoinAmount = (transaction: CoinTransactionVo) => {

@@ -88,6 +88,8 @@
 
 ### F3. i18n 完成度治理
 
+> 当前审计、首批实现状态与后续批次入口见 [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)。
+
 现有 client 主路径资源化继续向正式 Web 边缘路径扩展：
 
 - client、Console 与 Auth 的语言选择和持久化。

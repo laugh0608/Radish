@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createReactionBarLabels } from '../utils/reactionBarLabels';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
@@ -279,6 +280,7 @@ export const CommentNode = ({
   onNavigateToComment,
 }: CommentNodeProps) => {
   const { t } = useTranslation();
+  const reactionLabels = useMemo(() => createReactionBarLabels(t), [t]);
   // 判断是否是作者本人
   const isAuthor = !isSameLongId(currentUserId, '0') && isSameLongId(node.voAuthorId, currentUserId);
 
@@ -775,6 +777,7 @@ export const CommentNode = ({
             stickerGroups={stickerGroups}
             onToggle={(payload) => onToggleReaction(node.voId, payload)}
             onRequireLogin={onRequireReactionLogin}
+            labels={reactionLabels}
           />
         )}
 

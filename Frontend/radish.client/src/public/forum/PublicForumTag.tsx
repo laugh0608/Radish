@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import {
   getCurrentGodCommentsBatch,
@@ -82,6 +83,7 @@ export const PublicForumTag = ({
   const [loadingTag, setLoadingTag] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
+  const [tagNotFound, setTagNotFound] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
@@ -146,6 +148,7 @@ export const PublicForumTag = ({
     const loadTag = async () => {
       setLoadingTag(true);
       setTagError(null);
+      setTagNotFound(false);
       try {
         const tag = await getTagBySlug(routeState.tagSlug, t);
         if (requestId !== tagRequestIdRef.current) {
@@ -160,6 +163,7 @@ export const PublicForumTag = ({
 
         const message = err instanceof Error ? err.message : String(err);
         setSelectedTag(null);
+        setTagNotFound(isApiResponseNotFoundError(err));
         setTagError(message);
       } finally {
         if (requestId === tagRequestIdRef.current) {
@@ -263,7 +267,8 @@ export const PublicForumTag = ({
   const tagState = resolvePublicForumTagLoadState({
     loadingTag,
     hasTag: !!selectedTag,
-    tagError
+    tagError,
+    tagNotFound
   });
   const pageTitle = selectedTag?.voName
     || (tagState.kind === 'notFound' ? t('forum.public.tagUnavailableTitle') : t('forum.public.tagTitle'));

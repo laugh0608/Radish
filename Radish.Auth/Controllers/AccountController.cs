@@ -19,6 +19,7 @@ using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
 using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Localization;
 
 namespace Radish.Auth.Controllers;
 
@@ -77,6 +78,31 @@ public class AccountController : Controller
         };
 
         return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult SetLanguage(string culture, string? returnUrl = null)
+    {
+        var normalizedCulture = NormalizeSupportedCulture(culture);
+        Response.Cookies.Append(
+            CookieRequestCultureProvider.DefaultCookieName,
+            CookieRequestCultureProvider.MakeCookieValue(new RequestCulture(normalizedCulture)),
+            new CookieOptions
+            {
+                Expires = DateTimeOffset.UtcNow.AddYears(1),
+                HttpOnly = true,
+                IsEssential = true,
+                SameSite = SameSiteMode.Lax,
+                Secure = Request.IsHttps,
+                Path = "/"
+            });
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return LocalRedirect(returnUrl);
+        }
+
+        return RedirectToAction(nameof(Login))!;
     }
 
     [HttpPost]
@@ -250,13 +276,13 @@ public class AccountController : Controller
 
             if (ReservedDisplayNames.Contains(displayName))
             {
-                TempData["RegisterError"] = "该展示名为系统保留名称，请更换";
+                TempData["RegisterError"] = _errorsLocalizer["auth.register.error.displayNameReserved"].Value;
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
             if (email == null)
             {
-                TempData["RegisterError"] = "请填写有效的电子邮箱";
+                TempData["RegisterError"] = _errorsLocalizer["auth.register.error.emailInvalid"].Value;
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
@@ -264,7 +290,7 @@ public class AccountController : Controller
             var existingEmails = await _userService.QueryAsync(u => u.UserEmail == email);
             if (existingEmails.Any())
             {
-                TempData["RegisterError"] = "邮箱已被注册";
+                TempData["RegisterError"] = _errorsLocalizer["auth.register.error.emailRegistered"].Value;
                 return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
             }
 
@@ -296,7 +322,7 @@ public class AccountController : Controller
             Log.Information("用户 {UserId} 注册奖励发放成功，流水号: {TransactionNo}", userId, transactionNo);
 
             // 6. 注册成功，跳转到登录页
-            TempData["RegisterSuccess"] = "注册成功！已赠送 50 胡萝卜，请登录。";
+            TempData["RegisterSuccess"] = _errorsLocalizer["auth.register.success"].Value;
             return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, email });
         }
         catch (Exception ex)
@@ -306,7 +332,9 @@ public class AccountController : Controller
                 "用户注册失败: {DisplayName}, TraceId: {TraceId}",
                 model.DisplayName,
                 HttpContext.TraceIdentifier);
-            TempData["RegisterError"] = $"注册失败，请稍后重试（诊断标识：{HttpContext.TraceIdentifier}）";
+            TempData["RegisterError"] = _errorsLocalizer[
+                "auth.register.error.unexpected",
+                HttpContext.TraceIdentifier].Value;
             return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
         }
     }
@@ -359,17 +387,20 @@ public class AccountController : Controller
         return $"{maskedLocal}@{domain}";
     }
 
-    private static bool IsDisplayNameValid(string displayName, int minLength, int maxLength, out string errorMessage)
+    private bool IsDisplayNameValid(string displayName, int minLength, int maxLength, out string errorMessage)
     {
         if (displayName.Length < minLength || displayName.Length > maxLength)
         {
-            errorMessage = $"展示名长度必须在 {minLength}-{maxLength} 个字符之间";
+            errorMessage = _errorsLocalizer[
+                "auth.register.error.displayNameLength",
+                minLength,
+                maxLength].Value;
             return false;
         }
 
         if (!displayName.All(IsValidDisplayNameCharacter))
         {
-            errorMessage = "展示名只能包含中文、英文字母和数字";
+            errorMessage = _errorsLocalizer["auth.register.error.displayNameCharacters"].Value;
             return false;
         }
 
@@ -383,6 +414,13 @@ public class AccountController : Controller
                (value >= 'a' && value <= 'z') ||
                (value >= 'A' && value <= 'Z') ||
                (value >= '\u4e00' && value <= '\u9fff');
+    }
+
+    private static string NormalizeSupportedCulture(string? culture)
+    {
+        return culture?.Trim().StartsWith("en", StringComparison.OrdinalIgnoreCase) == true
+            ? "en"
+            : "zh";
     }
 
     private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)

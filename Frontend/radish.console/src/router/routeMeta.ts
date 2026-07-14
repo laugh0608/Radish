@@ -1,6 +1,7 @@
 import { CONSOLE_PERMISSIONS, type ConsolePermission } from '@/constants/permissions';
 import { hasPermission } from '@/hooks/usePermission';
 import type { UserInfo } from '@/types/user';
+import i18n from '@/i18n';
 
 export interface ConsoleRouteMeta {
   key: string;
@@ -280,6 +281,31 @@ export const routeTitleMap: Record<string, string> = Object.fromEntries(
   ]
 );
 
+function translateRouteText(key: string, fallback: string): string {
+  return i18n.exists(key) ? i18n.t(key) : fallback;
+}
+
+function localizeConsoleRoute(route: ConsoleRouteMeta): ConsoleRouteMeta {
+  return {
+    ...route,
+    title: translateRouteText(`console.route.${route.key}`, route.title),
+  };
+}
+
+export function getConsoleRouteTitle(pathname: string): string {
+  if (pathname === '/login') {
+    return translateRouteText('console.route.login', '登录');
+  }
+  if (pathname === '/callback') {
+    return translateRouteText('console.route.callback', 'OIDC 回调');
+  }
+
+  const route = consoleRouteMeta.find((item) => item.path === pathname);
+  return route
+    ? translateRouteText(`console.route.${route.key}`, route.title)
+    : translateRouteText('console.route.page', '页面');
+}
+
 export function canAccessConsoleRoute(route: ConsoleRouteMeta, user: UserInfo | null | undefined): boolean {
   if (route.authOnly) {
     return Boolean(user);
@@ -311,6 +337,7 @@ export function canEnterConsole(user: UserInfo | null | undefined): boolean {
 export function getSidebarRoutes(user: UserInfo | null | undefined): ConsoleRouteMeta[] {
   return consoleRouteMeta
     .filter((route) => route.sidebarVisible && canAccessConsoleRoute(route, user))
+    .map(localizeConsoleRoute)
     .sort((left, right) => {
       const leftGroup = left.group ?? 'system';
       const rightGroup = right.group ?? 'system';
@@ -334,14 +361,16 @@ export function getSidebarRouteGroups(user: UserInfo | null | undefined): Consol
   return consoleRouteGroupOrder
     .map((group) => ({
       key: group,
-      label: consoleRouteGroupLabels[group],
+      label: translateRouteText(`console.group.${group}`, consoleRouteGroupLabels[group]),
       routes: groupedRoutes.get(group) ?? [],
     }))
     .filter((group) => group.routes.length > 0);
 }
 
 export function getSearchableRoutes(user: UserInfo | null | undefined): ConsoleRouteMeta[] {
-  return consoleRouteMeta.filter((route) => route.searchVisible && canAccessConsoleRoute(route, user));
+  return consoleRouteMeta
+    .filter((route) => route.searchVisible && canAccessConsoleRoute(route, user))
+    .map(localizeConsoleRoute);
 }
 
 export function getDefaultAuthorizedPath(user: UserInfo | null | undefined): string {

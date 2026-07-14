@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
 import {
@@ -235,6 +236,7 @@ export const PublicProfileApp = ({
   const [stats, setStats] = useState<PublicUserStats | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileNotFound, setProfileNotFound] = useState(false);
   const [posts, setPosts] = useState<PublicUserPost[]>([]);
   const [comments, setComments] = useState<PublicUserComment[]>([]);
   const [loadingContent, setLoadingContent] = useState(true);
@@ -256,6 +258,7 @@ export const PublicProfileApp = ({
     const loadProfile = async () => {
       setLoadingProfile(true);
       setProfileError(null);
+      setProfileNotFound(false);
       setProfile(null);
       setStats(null);
 
@@ -279,6 +282,7 @@ export const PublicProfileApp = ({
         const message = error instanceof Error ? error.message : String(error);
         setProfile(null);
         setStats(null);
+        setProfileNotFound(isApiResponseNotFoundError(error));
         setProfileError(message);
       } finally {
         if (requestId === profileRequestIdRef.current) {
@@ -597,10 +601,10 @@ export const PublicProfileApp = ({
           />
         ) : profileError ? (
           <PublicStatusCard
-            tone={profileError.includes('不存在') ? 'notFound' : 'error'}
-            title={profileError.includes('不存在') ? t('profile.public.notFoundTitle') : t('profile.public.loadFailedTitle')}
-            description={profileError.includes('不存在') ? t('profile.public.notFoundDescription') : profileError}
-            primaryAction={profileError.includes('不存在')
+            tone={profileNotFound ? 'notFound' : 'error'}
+            title={profileNotFound ? t('profile.public.notFoundTitle') : t('profile.public.loadFailedTitle')}
+            description={profileNotFound ? t('profile.public.notFoundDescription') : profileError}
+            primaryAction={profileNotFound
               ? undefined
               : {
                   label: t('common.retry'),

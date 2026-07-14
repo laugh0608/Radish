@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Breadcrumb, HomeOutlined } from '@radish/ui';
 import type { BreadcrumbProps } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
+import { getConsoleRouteTitle } from '@/router/routeMeta';
 
 /**
  * 路由到面包屑映射
@@ -24,6 +26,7 @@ const routeBreadcrumbMap: Record<string, string> = {
  */
 export function AppBreadcrumb() {
   const location = useLocation();
+  const { t, i18n } = useTranslation();
 
   const breadcrumbItems: BreadcrumbProps['items'] = useMemo(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -34,7 +37,7 @@ export function AppBreadcrumb() {
         title: (
           <Link to="/" className="admin-breadcrumb-home">
             <HomeOutlined />
-            <span>首页</span>
+            <span>{t('console.breadcrumb.home')}</span>
           </Link>
         ),
       },
@@ -46,7 +49,9 @@ export function AppBreadcrumb() {
 
       pathSegments.forEach((segment, index) => {
         currentPath += `/${segment}`;
-        const breadcrumbName = routeBreadcrumbMap[currentPath];
+        const breadcrumbName = routeBreadcrumbMap[currentPath]
+          ? getConsoleRouteTitle(currentPath)
+          : undefined;
 
         if (breadcrumbName) {
           const isLast = index === pathSegments.length - 1;
@@ -64,7 +69,7 @@ export function AppBreadcrumb() {
     }
 
     return items;
-  }, [location.pathname]);
+  }, [i18n.resolvedLanguage, location.pathname, t]);
 
   // 如果只有首页一个面包屑，不显示面包屑导航
   if (breadcrumbItems.length <= 1) {

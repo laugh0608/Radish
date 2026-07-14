@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import {
   getCategoryById,
@@ -84,6 +85,7 @@ export const PublicForumList = ({
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [selectedCategoryError, setSelectedCategoryError] = useState<string | null>(null);
+  const [selectedCategoryNotFound, setSelectedCategoryNotFound] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
@@ -136,6 +138,7 @@ export const PublicForumList = ({
       selectedCategoryRequestIdRef.current += 1;
       setSelectedCategory(null);
       setSelectedCategoryError(null);
+      setSelectedCategoryNotFound(false);
       setLoadingSelectedCategory(false);
       return;
     }
@@ -151,6 +154,7 @@ export const PublicForumList = ({
     const loadSelectedCategory = async () => {
       setLoadingSelectedCategory(true);
       setSelectedCategoryError(null);
+      setSelectedCategoryNotFound(false);
       try {
         const category = await getCategoryById(selectedCategoryId, t);
         if (requestId !== selectedCategoryRequestIdRef.current) {
@@ -165,6 +169,7 @@ export const PublicForumList = ({
 
         const message = err instanceof Error ? err.message : String(err);
         setSelectedCategory((current) => current && current.voId === selectedCategoryId ? current : null);
+        setSelectedCategoryNotFound(isApiResponseNotFoundError(err));
         setSelectedCategoryError(message);
       } finally {
         if (requestId === selectedCategoryRequestIdRef.current) {
@@ -299,7 +304,8 @@ export const PublicForumList = ({
     categoryId: selectedCategoryId,
     loadingCategory: loadingSelectedCategory,
     hasCategory: !!selectedCategory,
-    categoryError: selectedCategoryError
+    categoryError: selectedCategoryError,
+    categoryNotFound: selectedCategoryNotFound
   });
   const activeCategory = selectedCategory
     || (selectedCategoryId ? categories.find((item) => item.voId === selectedCategoryId) ?? null : null);

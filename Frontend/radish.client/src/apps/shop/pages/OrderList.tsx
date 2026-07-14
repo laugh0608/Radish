@@ -3,6 +3,7 @@ import type { OrderListItem } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { formatLocalizedDateTime, formatLocalizedNumber } from '@radish/ui';
 import { getOrderStatusColor, normalizeOrderStatus, OrderStatus } from '@/api/shop';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
@@ -71,7 +72,8 @@ export const OrderList = ({
   diagnosticActionLabel,
   onCopyDiagnostics
 }: OrderListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const loadErrorActions: WebStateSlotAction[] = loadError?.scope === 'orders'
     ? [
         {
@@ -225,13 +227,13 @@ export const OrderList = ({
                                 <h3 className={styles.productName}>{order.voProductName}</h3>
                                 <div className={styles.orderMeta}>
                                   <span>{t('shop.orders.quantity', { count: order.voQuantity })}</span>
-                                  <span>{t('shop.orders.totalPrice', { price: order.voTotalPrice.toLocaleString() })}</span>
+                                  <span>{t('shop.orders.totalPrice', { price: formatLocalizedNumber(order.voTotalPrice, language) })}</span>
                                 </div>
                               </div>
                             </div>
 
                             <div className={styles.orderTime}>
-                              {order.voCreateTime ? new Date(order.voCreateTime).toLocaleString() : ''}
+                              {order.voCreateTime ? formatLocalizedDateTime(order.voCreateTime, language) : ''}
                             </div>
                           </div>
                         </>

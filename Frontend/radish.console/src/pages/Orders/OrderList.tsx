@@ -12,7 +12,10 @@ import {
   message,
   ConfirmDialog,
   type TableColumnsType,
+  formatLocalizedDateTime,
+  formatLocalizedNumber,
 } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
 import {
   EyeOutlined,
   ReloadOutlined,
@@ -95,7 +98,9 @@ function isPendingOperationOrder(record: Order): boolean {
 }
 
 export const OrderList = () => {
-  useDocumentTitle('订单管理');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('console.route.orders'));
   const navigate = useNavigate();
   const location = useLocation();
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
@@ -412,7 +417,7 @@ export const OrderList = () => {
       key: 'voUnitPrice',
       width: 120,
       render: (price: unknown) => (
-        <span className="order-list-price">{normalizeOrderPrice(price)} 胡萝卜</span>
+        <span className="order-list-price">{formatLocalizedNumber(normalizeOrderPrice(price), language)} {t('console.unit.carrot')}</span>
       ),
     },
     {
@@ -422,7 +427,7 @@ export const OrderList = () => {
       width: 120,
       render: (price: unknown) => (
         <span className="order-list-price order-list-price--total">
-          {normalizeOrderPrice(price)} 胡萝卜
+          {formatLocalizedNumber(normalizeOrderPrice(price), language)} {t('console.unit.carrot')}
         </span>
       ),
     },
@@ -441,7 +446,7 @@ export const OrderList = () => {
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
-      render: (time: string) => new Date(time).toLocaleString('zh-CN'),
+      render: (time: string) => formatLocalizedDateTime(time, language),
     },
     {
       title: '操作',

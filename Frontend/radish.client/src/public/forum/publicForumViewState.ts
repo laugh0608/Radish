@@ -1,62 +1,31 @@
 export type PublicForumDetailLoadState =
   | { kind: 'loading' }
   | { kind: 'ready' }
-  | { kind: 'notFound'; message: string }
+  | { kind: 'notFound' }
   | { kind: 'error'; message: string };
 
 export type PublicForumCategoryLoadState =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'ready' }
-  | { kind: 'notFound'; message: string }
+  | { kind: 'notFound' }
   | { kind: 'error'; message: string };
 
 export type PublicForumTagLoadState =
   | { kind: 'loading' }
   | { kind: 'ready' }
-  | { kind: 'notFound'; message: string }
+  | { kind: 'notFound' }
   | { kind: 'error'; message: string };
 
 export type PublicForumReadSectionState = 'loading' | 'ready' | 'empty' | 'error';
-
-const PUBLIC_FORUM_NOT_FOUND_PATTERNS = [
-  /帖子不存在/i,
-  /已被删除/i,
-  /not\s+found/i,
-  /\b404\b/,
-  /\b410\b/
-];
-
-const PUBLIC_FORUM_CATEGORY_NOT_FOUND_PATTERNS = [
-  /分类不存在/i,
-  /分类.*不可用/i,
-  /not\s+found/i,
-  /\b404\b/,
-  /\b410\b/
-];
-
-const PUBLIC_FORUM_TAG_NOT_FOUND_PATTERNS = [
-  /标签不存在/i,
-  /标签.*不可用/i,
-  /not\s+found/i,
-  /\b404\b/,
-  /\b410\b/
-];
-
-export function isPublicForumPostNotFoundError(message: string | null | undefined): boolean {
-  if (!message) {
-    return false;
-  }
-
-  return PUBLIC_FORUM_NOT_FOUND_PATTERNS.some((pattern) => pattern.test(message));
-}
 
 export function resolvePublicForumDetailLoadState(input: {
   loadingPost: boolean;
   hasPost: boolean;
   postError: string | null;
+  postNotFound: boolean;
 }): PublicForumDetailLoadState {
-  const { loadingPost, hasPost, postError } = input;
+  const { loadingPost, hasPost, postError, postNotFound } = input;
 
   if (loadingPost && !hasPost) {
     return { kind: 'loading' };
@@ -66,11 +35,8 @@ export function resolvePublicForumDetailLoadState(input: {
     return { kind: 'ready' };
   }
 
-  if (isPublicForumPostNotFoundError(postError)) {
-    return {
-      kind: 'notFound',
-      message: postError || '帖子不存在或已被删除'
-    };
+  if (postNotFound) {
+    return { kind: 'notFound' };
   }
 
   if (postError) {
@@ -83,21 +49,14 @@ export function resolvePublicForumDetailLoadState(input: {
   return { kind: 'loading' };
 }
 
-export function isPublicForumCategoryNotFoundError(message: string | null | undefined): boolean {
-  if (!message) {
-    return false;
-  }
-
-  return PUBLIC_FORUM_CATEGORY_NOT_FOUND_PATTERNS.some((pattern) => pattern.test(message));
-}
-
 export function resolvePublicForumCategoryLoadState(input: {
   categoryId: string | null;
   loadingCategory: boolean;
   hasCategory: boolean;
   categoryError: string | null;
+  categoryNotFound: boolean;
 }): PublicForumCategoryLoadState {
-  const { categoryId, loadingCategory, hasCategory, categoryError } = input;
+  const { categoryId, loadingCategory, hasCategory, categoryError, categoryNotFound } = input;
 
   if (!categoryId) {
     return { kind: 'idle' };
@@ -111,11 +70,8 @@ export function resolvePublicForumCategoryLoadState(input: {
     return { kind: 'ready' };
   }
 
-  if (isPublicForumCategoryNotFoundError(categoryError)) {
-    return {
-      kind: 'notFound',
-      message: categoryError || '分类不存在或已不可用'
-    };
+  if (categoryNotFound) {
+    return { kind: 'notFound' };
   }
 
   if (categoryError) {
@@ -128,20 +84,13 @@ export function resolvePublicForumCategoryLoadState(input: {
   return { kind: 'loading' };
 }
 
-export function isPublicForumTagNotFoundError(message: string | null | undefined): boolean {
-  if (!message) {
-    return false;
-  }
-
-  return PUBLIC_FORUM_TAG_NOT_FOUND_PATTERNS.some((pattern) => pattern.test(message));
-}
-
 export function resolvePublicForumTagLoadState(input: {
   loadingTag: boolean;
   hasTag: boolean;
   tagError: string | null;
+  tagNotFound: boolean;
 }): PublicForumTagLoadState {
-  const { loadingTag, hasTag, tagError } = input;
+  const { loadingTag, hasTag, tagError, tagNotFound } = input;
 
   if (loadingTag && !hasTag) {
     return { kind: 'loading' };
@@ -151,11 +100,8 @@ export function resolvePublicForumTagLoadState(input: {
     return { kind: 'ready' };
   }
 
-  if (isPublicForumTagNotFoundError(tagError)) {
-    return {
-      kind: 'notFound',
-      message: tagError || '标签不存在或已不可用'
-    };
+  if (tagNotFound) {
+    return { kind: 'notFound' };
   }
 
   if (tagError) {

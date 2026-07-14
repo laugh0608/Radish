@@ -10,8 +10,8 @@ public sealed class RegisterViewModel
     /// <summary>
     /// 公开展示名
     /// </summary>
-    [Required(ErrorMessage = "展示名不能为空")]
-    [RegularExpression(@"^[\u4e00-\u9fffa-zA-Z0-9]+$", ErrorMessage = "展示名只能包含中文、英文字母和数字")]
+    [Required(ErrorMessage = "auth.register.error.displayNameRequired")]
+    [RegularExpression(@"^[\u4e00-\u9fffa-zA-Z0-9]+$", ErrorMessage = "auth.register.error.displayNameCharacters")]
     public string DisplayName { get; set; } = string.Empty;
 
     /// <summary>
@@ -27,25 +27,25 @@ public sealed class RegisterViewModel
     /// <summary>
     /// 密码
     /// </summary>
-    [Required(ErrorMessage = "密码不能为空")]
-    [StringLength(100, MinimumLength = 6, ErrorMessage = "密码长度必须在 6-100 个字符之间")]
+    [Required(ErrorMessage = "auth.register.error.passwordRequired")]
+    [StringLength(100, MinimumLength = 6, ErrorMessage = "auth.register.error.passwordLength")]
     [DataType(DataType.Password)]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
     /// 确认密码
     /// </summary>
-    [Required(ErrorMessage = "确认密码不能为空")]
-    [Compare("Password", ErrorMessage = "两次输入的密码不一致")]
+    [Required(ErrorMessage = "auth.register.error.confirmPasswordRequired")]
+    [Compare("Password", ErrorMessage = "auth.register.error.passwordMismatch")]
     [DataType(DataType.Password)]
     public string ConfirmPassword { get; set; } = string.Empty;
 
     /// <summary>
     /// 电子邮箱
     /// </summary>
-    [Required(ErrorMessage = "电子邮箱不能为空")]
-    [EmailAddress(ErrorMessage = "邮箱格式不正确")]
-    [StringLength(254, ErrorMessage = "邮箱长度不能超过 254 个字符")]
+    [Required(ErrorMessage = "auth.register.error.emailRequired")]
+    [EmailAddress(ErrorMessage = "auth.register.error.emailInvalid")]
+    [StringLength(254, ErrorMessage = "auth.register.error.emailLength")]
     public string? Email { get; set; }
 
     /// <summary>

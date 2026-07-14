@@ -1,0 +1,34 @@
+.trigger {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--rx-radius-pill);
+  background: transparent;
+  color: var(--rx-text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.trigger:hover {
+  border-color: color-mix(in srgb, var(--rx-brand-primary) 24%, transparent);
+  background: color-mix(in srgb, var(--rx-brand-soft) 72%, var(--theme-surface-highlight) 28%);
+  color: var(--rx-brand-primary);
+}
+
+@media (max-width: 1080px) {
+  .trigger {
+    width: 40px;
+    padding: 0;
+  }
+
+  .trigger span {
+    display: none;
+  }
+}

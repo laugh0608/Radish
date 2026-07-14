@@ -23,6 +23,8 @@ test('parseHttpResponse 应保留真实 HTTP 状态与 MessageModel 契约状态
   assert.deepEqual(parsed, {
     ok: false,
     message: '资源状态已发生变化，请刷新后重试',
+    messageInfo: '资源状态已发生变化，请刷新后重试',
+    messageKey: 'error.common.conflict',
     code: 'Common.Conflict',
     statusCode: 409,
     traceId: 'trace-body',

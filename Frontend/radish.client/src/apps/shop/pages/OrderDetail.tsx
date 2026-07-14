@@ -1,5 +1,6 @@
 import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '@radish/ui';
 import { Icon } from '@radish/ui/icon';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
@@ -60,7 +61,8 @@ export const OrderDetail = ({
   diagnosticActionLabel,
   onCopyDiagnostics
 }: OrderDetailProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
@@ -171,7 +173,7 @@ export const OrderDetail = ({
   // 格式化时间
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
-    return new Date(timeStr).toLocaleString('zh-CN', {
+    return formatLocalizedDateTime(timeStr, language, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

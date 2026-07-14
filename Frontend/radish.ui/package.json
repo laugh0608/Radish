@@ -42,7 +42,7 @@
     "./notification": "./src/components/Notification/Notification.tsx"
   },
   "scripts": {
-    "test": "node --test --test-isolation=none ./tests/markdownUrl.test.ts",
+    "test": "node --test --test-isolation=none ./tests/*.test.ts",
     "lint": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit"
   },

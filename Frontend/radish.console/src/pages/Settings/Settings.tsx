@@ -22,6 +22,8 @@ import { userApi, type UserTimePreferenceVo } from '@/api/user';
 import { log } from '@/utils/logger';
 import '../adminFeature.css';
 import './Settings.css';
+import { useTranslation } from 'react-i18next';
+import { normalizeLanguage, type SupportedLanguage } from '@/locales/language';
 
 interface SettingsData {
   timeZoneId: string;
@@ -29,7 +31,6 @@ interface SettingsData {
   browserNotifications: boolean;
   systemNotifications: boolean;
   theme: 'light';
-  language: 'zh-CN';
   pageSize: number;
   twoFactorAuth: boolean;
   sessionTimeout: number;
@@ -41,7 +42,6 @@ const DEFAULT_SETTINGS: SettingsData = {
   browserNotifications: true,
   systemNotifications: false,
   theme: 'light',
-  language: 'zh-CN',
   pageSize: 20,
   twoFactorAuth: false,
   sessionTimeout: 30,
@@ -65,7 +65,9 @@ function buildSettings(preference?: UserTimePreferenceVo | null): SettingsData {
 }
 
 export const Settings = () => {
-  useDocumentTitle('设置');
+  const { t, i18n } = useTranslation();
+  const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh';
+  useDocumentTitle(t('console.route.settings'));
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(false);
@@ -280,10 +282,14 @@ export const Settings = () => {
                 options={[{ label: '浅色主题', value: 'light' }]}
               />
             </Form.Item>
-            <Form.Item name="language" label="语言">
+            <Form.Item label={t('settings.language.label')}>
               <Select
-                disabled
-                options={[{ label: '简体中文', value: 'zh-CN' }]}
+                value={language}
+                options={[
+                  { label: t('lang.zh'), value: 'zh' },
+                  { label: t('lang.en'), value: 'en' },
+                ]}
+                onChange={(value: SupportedLanguage) => void i18n.changeLanguage(value)}
               />
             </Form.Item>
             <Form.Item name="pageSize" label="每页显示条数">

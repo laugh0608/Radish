@@ -4,9 +4,14 @@ import { AntButton } from '@radish/ui';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import { ClientBackLink } from '@/components/ClientBackLink';
 import './Login.css';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
+import { normalizeLanguage } from '@/locales/language';
 
 export function Login() {
-  useDocumentTitle('登录');
+  const { t, i18n } = useTranslation();
+  const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh';
+  useDocumentTitle(t('console.login.title'));
   const [loading, setLoading] = useState(false);
   const hasAutoLoginTriggeredRef = useRef(false);
 
@@ -21,9 +26,11 @@ export function Login() {
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('redirect_uri', redirectUri);
     authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
+    authorizeUrl.searchParams.set('culture', language);
+    authorizeUrl.searchParams.set('ui_locales', language);
 
     window.location.href = authorizeUrl.toString();
-  }, []);
+  }, [language]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -45,29 +52,32 @@ export function Login() {
 
   return (
     <div className="login-container">
+      <div className="login-language-switcher">
+        <LanguageSwitcher />
+      </div>
       <div className="login-box">
         {/* 左侧信息区域 */}
         <div className="login-info">
           <h2>Radish Console</h2>
-          <p>现代化社区平台管理控制台</p>
-          <p>统一管理用户、应用、权限和系统设置</p>
+          <p>{t('console.login.description')}</p>
+          <p>{t('console.login.summary')}</p>
 
           <div className="login-info-features">
             <div className="login-info-feature">
               <div className="login-info-feature-icon">+</div>
-              <span>统一身份认证 (OIDC)</span>
+              <span>{t('console.login.feature.oidc')}</span>
             </div>
             <div className="login-info-feature">
               <div className="login-info-feature-icon">+</div>
-              <span>细粒度权限控制</span>
+              <span>{t('console.login.feature.permission')}</span>
             </div>
             <div className="login-info-feature">
               <div className="login-info-feature-icon">+</div>
-              <span>实时系统监控</span>
+              <span>{t('console.login.feature.monitoring')}</span>
             </div>
             <div className="login-info-feature">
               <div className="login-info-feature-icon">+</div>
-              <span>应用生态管理</span>
+              <span>{t('console.login.feature.application')}</span>
             </div>
           </div>
         </div>
@@ -75,8 +85,8 @@ export function Login() {
         {/* 右侧登录表单区域 */}
         <div className="login-form">
           <div className="login-header">
-            <h1>登录</h1>
-            <p>使用统一身份认证登录管理控制台</p>
+            <h1>{t('console.login.title')}</h1>
+            <p>{t('console.login.hint')}</p>
           </div>
 
           <div className="login-content">
@@ -87,7 +97,7 @@ export function Login() {
               onClick={handleLogin}
               loading={loading}
             >
-              登录
+              {t('console.login.action')}
             </AntButton>
             <div className="login-client-back">
               <ClientBackLink />

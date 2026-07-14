@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { Icon } from '@radish/ui/icon';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
@@ -113,14 +114,6 @@ function flattenPublicDocsTree(nodes: WikiDocumentTreeNodeVo[], depth: number = 
       ...flattenPublicDocsTree(children, depth + 1)
     ];
   });
-}
-
-function isPublicDocumentNotFound(message: string | null | undefined): boolean {
-  if (!message) {
-    return false;
-  }
-
-  return /文档不存在|无权访问|not\s+found|404/i.test(message);
 }
 
 function buildPublicDocsDiagnosticTarget(route: PublicDocsRoute): Record<string, string | number | boolean | undefined> {
@@ -1221,6 +1214,7 @@ const PublicDocsDetail = ({
   const [documentDetail, setDocumentDetail] = useState<WikiDocumentDetailVo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
   const articleBodyRef = useRef<HTMLDivElement>(null);
   const currentDocsPath = buildPublicDocsPath({
@@ -1246,6 +1240,7 @@ const PublicDocsDetail = ({
     const loadDetail = async () => {
       setLoading(true);
       setError(null);
+      setNotFound(false);
 
       try {
         const detail = await getPublicWikiDocumentBySlug(route.slug);
@@ -1255,6 +1250,7 @@ const PublicDocsDetail = ({
       } catch (err) {
         if (!cancelled) {
           setDocumentDetail(null);
+          setNotFound(isApiResponseNotFoundError(err));
           setError(err instanceof Error ? err.message : String(err));
         }
       } finally {
@@ -1361,7 +1357,7 @@ const PublicDocsDetail = ({
     ? 'loading'
     : documentDetail
       ? 'ready'
-      : isPublicDocumentNotFound(error)
+      : notFound
         ? 'notFound'
         : error
         ? 'error'

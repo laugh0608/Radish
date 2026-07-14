@@ -662,6 +662,13 @@ export const CreateCommentForm = ({
                   onClose={() => setShowMention(false)}
                   position={mentionPosition}
                   positionMode="absolute"
+                  labels={{
+                    title: t('forum.mention.title'),
+                    loading: t('forum.mention.loading'),
+                    inputHint: t('forum.mention.inputHint'),
+                    empty: t('forum.mention.empty'),
+                    selectHint: t('forum.mention.selectHint'),
+                  }}
                 />
               )}
             </>

@@ -41,7 +41,7 @@ export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
 
 export { UserMention } from './UserMention/UserMention';
-export type { UserMentionProps, UserMentionOption } from './UserMention/UserMention';
+export type { UserMentionProps, UserMentionOption, UserMentionLabels } from './UserMention/UserMention';
 
 export { StickerPicker } from './StickerPicker/StickerPicker';
 export type {
@@ -50,6 +50,7 @@ export type {
   StickerPickerGroup,
   StickerPickerSticker,
   StickerPickerSelection,
+  StickerPickerLabels,
 } from './StickerPicker/StickerPicker';
 
 export { ReactionBar } from './ReactionBar/ReactionBar';
@@ -58,6 +59,7 @@ export type {
   ReactionSummaryItem,
   ReactionTogglePayload,
   ReactionTargetType,
+  ReactionBarLabels,
 } from './ReactionBar/ReactionBar';
 
 export { FileUpload } from './FileUpload/FileUpload';
@@ -197,6 +199,7 @@ export {
   TrophyOutlined,
   WalletOutlined,
   TagsOutlined,
+  TranslationOutlined,
 } from '@ant-design/icons';
 
 // Re-export types

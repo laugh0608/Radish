@@ -7,6 +7,7 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,6 +30,38 @@ namespace Radish.Api.Tests.Controllers;
 public class AccountControllerTest
 {
     [Fact]
+    public void SetLanguage_ShouldPersistNormalizedCultureAndKeepLocalReturnUrl()
+    {
+        var httpContext = new DefaultHttpContext();
+        httpContext.Request.Scheme = "https";
+        var urlHelper = new Mock<IUrlHelper>();
+        urlHelper.Setup(helper => helper.IsLocalUrl("/Account/Login?returnUrl=%2Fconsole"))
+            .Returns(true);
+        var controller = new AccountController(
+            CreateErrorsLocalizer().Object,
+            Mock.Of<IUserService>(),
+            Mock.Of<IOpenIddictApplicationManager>(),
+            Mock.Of<ICoinService>(),
+            CreateSystemSettingProvider())
+        {
+            ControllerContext = new ControllerContext { HttpContext = httpContext },
+            Url = urlHelper.Object
+        };
+
+        var result = controller.SetLanguage("en-US", "/Account/Login?returnUrl=%2Fconsole");
+
+        var redirect = Assert.IsType<LocalRedirectResult>(result);
+        Assert.Equal("/Account/Login?returnUrl=%2Fconsole", redirect.Url);
+        var cultureCookie = Assert.Single(
+            httpContext.Response.Headers.SetCookie,
+            value => value!.StartsWith($"{CookieRequestCultureProvider.DefaultCookieName}=", StringComparison.Ordinal));
+        Assert.Contains("c%3Den%7Cuic%3Den", cultureCookie, StringComparison.Ordinal);
+        Assert.Contains("httponly", cultureCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("secure", cultureCookie, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", cultureCookie, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task Register_ShouldGrantRegistrationReward_WhenUserCreated()
     {
         const long userId = 123456;
@@ -40,7 +73,7 @@ public class AccountControllerTest
             .Setup(service => service.AddAsync(It.IsAny<User>()))
             .ReturnsAsync(userId);
 
-        var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
+        var errorsLocalizer = CreateErrorsLocalizer();
         var applicationManager = new Mock<IOpenIddictApplicationManager>();
         var coinService = new Mock<ICoinService>();
         coinService
@@ -83,7 +116,7 @@ public class AccountControllerTest
     public async Task Register_ShouldRejectDisplayNameShorterThanRule()
     {
         var userServiceMock = new Mock<IUserService>();
-        var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
+        var errorsLocalizer = CreateErrorsLocalizer();
         var applicationManager = new Mock<IOpenIddictApplicationManager>();
         var coinService = new Mock<ICoinService>();
         var httpContext = new DefaultHttpContext();
@@ -146,7 +179,7 @@ public class AccountControllerTest
             .Setup(s => s.GetUserRoleNamesAsync(userVo.Uuid))
             .ReturnsAsync(new List<string> { "Admin" });
 
-        var errorsLocalizer = new Mock<IStringLocalizer<Errors>>();
+        var errorsLocalizer = CreateErrorsLocalizer();
 
         ClaimsPrincipal? signInPrincipal = null;
         var authServiceMock = new Mock<IAuthenticationService>();
@@ -229,5 +262,23 @@ public class AccountControllerTest
             .Setup(item => item.GetInt32Async(SystemConfigDefaults.DisplayNameMaxLengthKey))
             .ReturnsAsync(displayNameMaxLength ?? int.Parse(SystemConfigDefaults.DefaultDisplayNameMaxLength));
         return provider.Object;
+    }
+
+    private static Mock<IStringLocalizer<Errors>> CreateErrorsLocalizer()
+    {
+        var localizer = new Mock<IStringLocalizer<Errors>>();
+        localizer
+            .Setup(item => item[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key));
+        localizer
+            .Setup(item => item[It.IsAny<string>(), It.IsAny<object[]>()])
+            .Returns((string key, object[] arguments) =>
+            {
+                var value = key == "auth.register.error.displayNameLength"
+                    ? $"展示名长度必须在 {arguments[0]}-{arguments[1]} 个字符之间"
+                    : key;
+                return new LocalizedString(key, value);
+            });
+        return localizer;
     }
 }

@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { formatDistanceToNow } from 'date-fns';
-import { enUS, zhCN } from 'date-fns/locale';
 import { log } from '@/utils/logger';
 import { NotificationList } from '@radish/ui/notification-list';
+import { formatLocalizedRelativeTime } from '@radish/ui';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { notificationApi, type UserNotificationVo } from '@/api/notification';
 import { getPublicProfile, type LongId } from '@/api/user';
@@ -62,12 +61,8 @@ export const NotificationCenter = ({ onNavigateNotification, headingLevel = 'h1'
     delete: t('notification.shared.delete'),
   }), [t]);
   const formatRelativeTime = useCallback((createdAt: string) => {
-    const locale = i18n.language.startsWith('en') ? enUS : zhCN;
-    return formatDistanceToNow(new Date(createdAt), {
-      addSuffix: true,
-      locale,
-    });
-  }, [i18n.language]);
+    return formatLocalizedRelativeTime(createdAt, i18n.resolvedLanguage ?? i18n.language);
+  }, [i18n.language, i18n.resolvedLanguage]);
 
   const mapApiNotificationToStore = useCallback((n: UserNotificationVo): NotificationItem => {
     const notification = n.voNotification;

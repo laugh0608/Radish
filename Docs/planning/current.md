@@ -95,6 +95,7 @@ Radish V1 的产品定位固定为：
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [商城商品效力与权益履约专题](/features/shop-product-effect-entitlement-fulfillment)
 - [前端主题与 i18n 实施说明](/frontend/theme-i18n-implementation)
+- [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -121,7 +122,7 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 按[前端主题与 i18n 实施说明](/frontend/theme-i18n-implementation)进入 `F3 i18n 完成度治理`，先审计正式 Web 高频页面、共享反馈文案、长文本布局、语言持久化和服务端错误映射，再更新独立实施边界；不重新混入已收口的主题运行时。
+1. 按 [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)继续推进 `F3-B`：`F3-A` 核心契约与首组正式 Web 链路已实现，下一组收口 Console 用户 / 治理 / 订单业务文案、client Messages / Me 残余共享反馈和高频领域错误键；不重新混入已收口的主题运行时。
 2. 观察首批真实生产使用中的登录、内容参与、聊天、通知和 Console 管理链路；P0/P1 立即进入维护线，P2/P3 成组排期。
 3. 当前 `dev` 成果达到完整功能、成组维护或主动发版边界后，再统一创建 `dev -> master` PR；不为连续开发中的单独文档或小提交频繁开 PR。
 
@@ -134,11 +135,13 @@ Radish V1 的产品定位固定为：
 5. 已完成 F1-E 数据迁移修复、DbMigrate 严格验证，以及徽章 / 称号真实激活、同类切换、停用和公开身份同步验收。
 6. 已完成订单、背包、公开主页、帖子评论和 Console 排障的 PC / mobile 复核；临时数据已精确清理，F1 专题正式收口。
 7. 已完成 F2 四主题统一运行时、正式 Web 入口、Theme 权益服务端契约和 PC / mobile 页面族验收；临时数据已精确清理，F2 专题正式收口。
+8. 已完成 F3 对 client、Console、Auth、共享 HTTP / UI 边界的首轮审计，并建立独立实施说明。
+9. 已完成 `F3-A` 核心契约和 `F3-B` 第一组实现：资源 registry、语言持久化、Ant Design locale、HTTP 错误本地化、Auth `.resx` / culture cookie、共享 formatter 与首批正式 Web 消费链路均已落地；尚未执行运行态验收。
 
 ## 明日事项（2026-07-15）
 
-1. 进入 `F3 i18n 完成度治理`，先完成正式 Web 高频链路的硬编码文案、语言切换、持久化、长文本布局和错误反馈审计。
-2. 根据审计更新独立 i18n 实施边界、服务端 / 客户端文案职责和 PC / mobile 验收矩阵，再进入成组实现。
+1. 继续 `F3-B` 第二组，按业务域迁移 Console 用户 / 内容治理 / 订单文案，并收口 client Messages / Me 与共享弹层残余反馈。
+2. 为高频领域失败补稳定 `Code / MessageKey`，完成首批中英文长文本和 PC / mobile 静态布局复核；真实 smoke 仍需当轮启动授权。
 3. 评估当前 `dev` 的 F1 / F2 完整专题成果是否达到统一创建 `dev -> master` PR 的交付边界；不自动创建 PR、tag 或发布。
 
 ## 并行维护线

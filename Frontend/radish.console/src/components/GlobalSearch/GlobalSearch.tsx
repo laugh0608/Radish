@@ -5,6 +5,7 @@ import { SearchOutlined } from '@radish/ui';
 import { useUser } from '@/hooks/useUser';
 import { getSearchableRoutes } from '@/router/routeMeta';
 import './GlobalSearch.css';
+import { useTranslation } from 'react-i18next';
 
 interface SearchResult {
   key: string;
@@ -19,6 +20,7 @@ interface GlobalSearchProps {
 }
 
 export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
+  const { t, i18n } = useTranslation();
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
       key: route.key,
       title: route.title,
       path: route.path,
-      description: `导航到 ${route.title}`,
+      description: t('console.search.navigateTo', { title: route.title }),
     }));
 
     return menuItems.filter(
@@ -42,7 +44,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
         item.title.toLowerCase().includes(lowerKeyword) ||
         item.path.toLowerCase().includes(lowerKeyword)
     );
-  }, [loading, user]);
+  }, [i18n.resolvedLanguage, loading, t, user]);
 
   useEffect(() => {
     const nextResults = searchMenuItems(searchText);
@@ -73,7 +75,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
       title={
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <SearchOutlined />
-          <span>全局搜索</span>
+          <span>{t('console.search.title')}</span>
         </div>
       }
       open={visible}
@@ -84,7 +86,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
     >
       <div className="global-search-content">
         <AntInput
-          placeholder="搜索菜单..."
+          placeholder={t('console.search.placeholder')}
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -111,13 +113,13 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
             </div>
           ) : searchText ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: '#8c8c8c' }}>
-              没有找到匹配的结果
+              {t('console.search.empty')}
             </div>
           ) : (
             <div className="global-search-hint">
-              <p>输入关键词搜索菜单项</p>
+              <p>{t('console.search.hint')}</p>
               <p className="global-search-hint-secondary">
-                提示：使用 <kbd>Ctrl</kbd> + <kbd>K</kbd> 快速打开搜索
+                {t('console.search.shortcut')}
               </p>
             </div>
           )}

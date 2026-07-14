@@ -1,0 +1,16 @@
+export const enCore = {
+  'lang.zh': '中文',
+  'lang.en': 'EN',
+  'lang.switch': 'Switch language',
+  'common.loading': 'Loading...',
+  'common.unknownUser': 'Unknown user',
+  'console.unit.carrot': 'carrots',
+  'error.auth.invalid_credentials': 'The username or password is incorrect.',
+  'error.common.conflict': 'The resource has changed. Refresh and try again.',
+  'error.common.internal_error': 'The request could not be completed. Please try again later.',
+  'error.common.not_found': 'The requested resource was not found.',
+  'error.common.validation_failed': 'Check the submitted information and try again.',
+  'error.rate_limit.exceeded': 'Too many requests. Please try again later.',
+  'error.rate_limit.ip_blocked': 'Requests from this network are temporarily restricted.',
+  'error.user.not_found': 'The user was not found.',
+} as const;

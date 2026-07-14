@@ -5,19 +5,24 @@ import type {
 import { sanitizeLogValue } from './logSanitizer';
 import { shouldRefreshToken, TokenRefreshErrorType, tryRefreshToken } from './token-refresh';
 import { parseHttpResponse } from './response-parser';
+import { createLocalizedRequestHeaders, localizeParsedApiResponse } from './i18n-contract';
 
 export { parseApiResponse, parseApiResponseWithI18n, parseHttpResponse } from './response-parser';
 
 /**
  * API 客户端配置
  */
-interface ApiClientConfig {
+export interface ApiClientConfig {
   /** 默认基础 URL */
   baseUrl: string;
   /** 默认超时时间（毫秒） */
   timeout: number;
   /** 获取 token 的函数 */
   getToken?: () => string | null;
+  /** 获取当前请求语言；宿主负责返回服务端可识别的语言标签 */
+  getLanguage?: () => string | null | undefined;
+  /** 根据服务端 messageKey 解析用户可见消息 */
+  translateMessage?: (key: string) => string | undefined;
   /** 请求拦截器 */
   onRequest?: (url: string, options: RequestInit) => void | Promise<void>;
   /** 响应拦截器 */
@@ -82,20 +87,16 @@ export async function apiFetch(
       : input;
 
   // 构建请求头
-  const finalHeaders: HeadersInit = {
-    Accept: 'application/json',
-    ...headers,
-  };
+  const finalHeaders = createLocalizedRequestHeaders(headers, currentConfig.getLanguage?.());
 
   // 添加认证信息
   if (withAuth) {
     const token = currentConfig.getToken?.();
     if (token) {
-      (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
+      finalHeaders.set('Authorization', `Bearer ${token}`);
     }
   }
-  const hasAuthorizationHeader = typeof (finalHeaders as Record<string, string>).Authorization === 'string' &&
-    (finalHeaders as Record<string, string>).Authorization.trim().length > 0;
+  const hasAuthorizationHeader = finalHeaders.has('Authorization');
 
   // 构建请求配置
   const fetchOptions: RequestInit = {
@@ -129,10 +130,8 @@ export async function apiFetch(
         const newToken = await tryRefreshToken();
 
         // 使用新 token 重试请求
-        const retryHeaders = {
-          ...finalHeaders,
-          Authorization: `Bearer ${newToken}`,
-        };
+        const retryHeaders = new Headers(finalHeaders);
+        retryHeaders.set('Authorization', `Bearer ${newToken}`);
 
         const retryResponse = await fetch(url, {
           ...fetchOptions,
@@ -173,6 +172,19 @@ export async function apiFetch(
   }
 }
 
+async function parseConfiguredHttpResponse<T>(response: Response): Promise<ParsedApiResponse<T>> {
+  const parsed = await parseHttpResponse<T>(response);
+  return localizeParsedApiResponse(parsed, currentConfig.translateMessage);
+}
+
+function createJsonHeaders(headers?: HeadersInit): Headers {
+  const result = new Headers(headers);
+  if (!result.has('Content-Type')) {
+    result.set('Content-Type', 'application/json');
+  }
+  return result;
+}
+
 /**
  * GET 请求的便捷方法
  */
@@ -185,7 +197,7 @@ export async function apiGet<T>(
     ...options,
   });
 
-  return await parseHttpResponse<T>(response);
+  return await parseConfiguredHttpResponse<T>(response);
 }
 
 /**
@@ -197,16 +209,13 @@ export async function apiPost<T>(
   options?: ApiRequestOptions
 ): Promise<ParsedApiResponse<T>> {
   const response = await apiFetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    body: data ? JSON.stringify(data) : undefined,
     ...options,
+    method: 'POST',
+    headers: createJsonHeaders(options?.headers),
+    body: data ? JSON.stringify(data) : undefined,
   });
 
-  return await parseHttpResponse<T>(response);
+  return await parseConfiguredHttpResponse<T>(response);
 }
 
 /**
@@ -218,16 +227,13 @@ export async function apiPut<T>(
   options?: ApiRequestOptions
 ): Promise<ParsedApiResponse<T>> {
   const response = await apiFetch(url, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...options?.headers,
-    },
-    body: data ? JSON.stringify(data) : undefined,
     ...options,
+    method: 'PUT',
+    headers: createJsonHeaders(options?.headers),
+    body: data ? JSON.stringify(data) : undefined,
   });
 
-  return await parseHttpResponse<T>(response);
+  return await parseConfiguredHttpResponse<T>(response);
 }
 
 /**
@@ -242,5 +248,5 @@ export async function apiDelete<T>(
     ...options,
   });
 
-  return await parseHttpResponse<T>(response);
+  return await parseConfiguredHttpResponse<T>(response);
 }
