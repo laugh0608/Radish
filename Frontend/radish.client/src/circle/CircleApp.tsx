@@ -30,7 +30,7 @@ import { redirectToLogin } from '@/services/auth';
 import { buildCircleReturnPath } from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
-import { formatDateTimeByTimeZone, getBrowserTimeZoneId, DEFAULT_TIME_ZONE } from '@/utils/dateTime';
+import { getBrowserTimeZoneId, DEFAULT_TIME_ZONE } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { log } from '@/utils/logger';
@@ -41,6 +41,7 @@ import {
   type CircleRoute,
   type CircleTab
 } from './circleRouteState';
+import { formatCircleDateTime, formatCircleNumber } from './circlePresentation';
 import styles from './CircleApp.module.css';
 
 const PAGE_SIZE = 10;
@@ -105,7 +106,8 @@ function buildAvatarStyle(seed: string) {
 }
 
 export const CircleApp = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -192,17 +194,17 @@ export const CircleApp = () => {
     setErrorMessage(null);
 
     try {
-      const summaryPromise = getMyFollowSummary()
+      const summaryPromise = getMyFollowSummary(t)
         .then(setSummary)
         .catch((error) => {
           log.warn('CircleApp', '加载圈子汇总失败', error);
         });
 
       const pageResult = nextRoute.tab === 'feed'
-        ? await getMyFollowingFeed(nextRoute.page, PAGE_SIZE)
+        ? await getMyFollowingFeed(nextRoute.page, PAGE_SIZE, t)
         : nextRoute.tab === 'following'
-          ? await getMyFollowing(nextRoute.page, PAGE_SIZE)
-          : await getMyFollowers(nextRoute.page, PAGE_SIZE);
+          ? await getMyFollowing(nextRoute.page, PAGE_SIZE, t)
+          : await getMyFollowers(nextRoute.page, PAGE_SIZE, t);
 
       await summaryPromise;
 
@@ -334,14 +336,14 @@ export const CircleApp = () => {
               {item.voSummary ? <p className={styles.feedSummary}>{item.voSummary}</p> : null}
               <div className={styles.metaRow}>
                 <span>{t('circle.author', { name: item.voAuthorName || t('common.unknownUser') })}</span>
-                {item.voCreateTime ? <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span> : null}
+                {item.voCreateTime ? <span>{formatCircleDateTime(item.voCreateTime, displayTimeZone, language)}</span> : null}
                 <span className={styles.metric}>
                   <Icon icon="mdi:comment-text-outline" size={15} />
-                  <span>{item.voCommentCount || 0}</span>
+                  <span>{formatCircleNumber(item.voCommentCount || 0, language)}</span>
                 </span>
                 <span className={styles.metric}>
                   <Icon icon="mdi:heart-outline" size={15} />
-                  <span>{item.voLikeCount || 0}</span>
+                  <span>{formatCircleNumber(item.voLikeCount || 0, language)}</span>
                 </span>
               </div>
             </article>
@@ -388,7 +390,7 @@ export const CircleApp = () => {
                   {user.voIsMutualFollow ? <span className={styles.mutualBadge}>{t('circle.mutualFollow')}</span> : null}
                 </span>
                 <span className={styles.userMeta}>
-                  {t('circle.followTime', { time: formatDateTimeByTimeZone(user.voFollowTime, displayTimeZone) })}
+                  {t('circle.followTime', { time: formatCircleDateTime(user.voFollowTime, displayTimeZone, language) })}
                 </span>
               </span>
               <Icon icon="mdi:chevron-right" size={20} />
@@ -468,15 +470,18 @@ export const CircleApp = () => {
               <span>{t('circle.rail.scope')}</span>
             </div>
             <div>
-              <strong>{t('common.pageInfo', { current: route.page, total: totalPages })}</strong>
+              <strong>{t('common.pageInfo', {
+                current: formatCircleNumber(route.page, language),
+                total: formatCircleNumber(totalPages, language),
+              })}</strong>
               <span>{t('circle.rail.page')}</span>
             </div>
             <div>
-              <strong>{total}</strong>
+              <strong>{formatCircleNumber(total, language)}</strong>
               <span>{t('circle.rail.total')}</span>
             </div>
             <div>
-              <strong>{secondaryMetricValue}</strong>
+              <strong>{formatCircleNumber(secondaryMetricValue, language)}</strong>
               <span>{t(secondaryMetricKey)}</span>
             </div>
           </div>
@@ -585,21 +590,21 @@ export const CircleApp = () => {
                 <span className={styles.summaryIcon}>
                   <Icon icon="mdi:account-heart-outline" size={20} />
                 </span>
-                <strong>{summary.voFollowingCount}</strong>
+                <strong>{formatCircleNumber(summary.voFollowingCount, language)}</strong>
                 <span>{t('circle.summary.following')}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryIcon}>
                   <Icon icon="mdi:account-group-outline" size={20} />
                 </span>
-                <strong>{summary.voFollowerCount}</strong>
+                <strong>{formatCircleNumber(summary.voFollowerCount, language)}</strong>
                 <span>{t('circle.summary.followers')}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryIcon}>
                   <Icon icon={tabIcons[route.tab]} size={20} />
                 </span>
-                <strong>{total}</strong>
+                <strong>{formatCircleNumber(total, language)}</strong>
                 <span>{t(`circle.summary.${route.tab}`)}</span>
               </div>
             </div>
@@ -649,7 +654,10 @@ export const CircleApp = () => {
                 <p>{t(`circle.section.${route.tab}.description`)}</p>
               </div>
               {authReady && loggedIn && !errorMessage ? (
-                <span className={styles.resultCount}>{t('circle.resultCount', { count: total })}</span>
+                <span className={styles.resultCount}>{t('circle.resultCount', {
+                  count: total,
+                  formattedCount: formatCircleNumber(total, language),
+                })}</span>
               ) : null}
             </div>
             <div className={styles.content}>{renderContent()}</div>
@@ -680,7 +688,10 @@ export const CircleApp = () => {
                 {t('common.previousPage')}
               </a>
             )}
-            <span>{t('common.pageInfo', { current: route.page, total: totalPages })}</span>
+            <span>{t('common.pageInfo', {
+              current: formatCircleNumber(route.page, language),
+              total: formatCircleNumber(totalPages, language),
+            })}</span>
             {route.page >= totalPages ? (
               <button type="button" className={styles.pageButton} disabled>
                 {t('common.nextPage')}

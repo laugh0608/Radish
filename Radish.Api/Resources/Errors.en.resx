@@ -129,4 +129,22 @@
   <data name="error.wiki.parent_cycle_conflict" xml:space="preserve">
     <value>A descendant of this document cannot be selected as its parent.</value>
   </data>
+  <data name="error.user_follow.invalid_target_user" xml:space="preserve">
+    <value>The target user is invalid.</value>
+  </data>
+  <data name="error.user_follow.self_follow_rejected" xml:space="preserve">
+    <value>You cannot follow yourself.</value>
+  </data>
+  <data name="error.user_follow.self_unfollow_rejected" xml:space="preserve">
+    <value>You cannot unfollow yourself.</value>
+  </data>
+  <data name="error.user_follow.target_unavailable" xml:space="preserve">
+    <value>The target user does not exist or is unavailable.</value>
+  </data>
+  <data name="error.user_follow.follow_rejected" xml:space="preserve">
+    <value>The follow action could not be completed.</value>
+  </data>
+  <data name="error.user_follow.invalid_stream_type" xml:space="preserve">
+    <value>This content stream type is not supported.</value>
+  </data>
 </root>

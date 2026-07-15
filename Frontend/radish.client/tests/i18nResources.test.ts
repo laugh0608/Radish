@@ -46,6 +46,8 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.ok(enKeys.includes('forum.quickReply.total_other'));
   assert.ok(enKeys.includes('me.assets.transactionCount_one'));
   assert.ok(enKeys.includes('me.assets.transactionCount_other'));
+  assert.ok(enKeys.includes('circle.resultCount_one'));
+  assert.ok(enKeys.includes('circle.resultCount_other'));
   assert.ok(!enKeys.includes('shop.productCount'));
 
   const instance = i18next.createInstance();
@@ -60,6 +62,8 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
           'forum.quickReply.total_other': '{{count}} replies',
           'me.assets.transactionCount_one': '{{count}} record',
           'me.assets.transactionCount_other': '{{count}} records',
+          'circle.resultCount_one': '{{count}} item',
+          'circle.resultCount_other': '{{count}} items',
         },
       },
       zh: {
@@ -78,6 +82,8 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.equal(instance.t('me.assets.transactionCount', { count: 0 }), '0 records');
   assert.equal(instance.t('me.assets.transactionCount', { count: 1 }), '1 record');
   assert.equal(instance.t('me.assets.transactionCount', { count: 2 }), '2 records');
+  assert.equal(instance.t('circle.resultCount', { count: 1 }), '1 item');
+  assert.equal(instance.t('circle.resultCount', { count: 2 }), '2 items');
 
   await instance.changeLanguage('zh');
   assert.equal(instance.t('shop.productCount', { count: 2 }), '2 件商品');

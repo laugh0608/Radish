@@ -328,7 +328,7 @@ export const PublicProfileApp = ({
     }
 
     setFollowLoading(true);
-    getFollowStatus(profile.voUserId)
+    getFollowStatus(profile.voUserId, t)
       .then((status) => {
         if (!cancelled) {
           setFollowStatus(status);
@@ -350,7 +350,7 @@ export const PublicProfileApp = ({
     return () => {
       cancelled = true;
     };
-  }, [isOwnProfile, loggedIn, profile]);
+  }, [isOwnProfile, loggedIn, profile, t]);
 
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
@@ -539,8 +539,8 @@ export const PublicProfileApp = ({
     setFollowError(null);
     try {
       const nextStatus = followStatus?.voIsFollowing
-        ? await unfollowUser(profile.voUserId)
-        : await followUser(profile.voUserId);
+        ? await unfollowUser(profile.voUserId, t)
+        : await followUser(profile.voUserId, t);
       setFollowStatus(nextStatus);
 
       if (route.intent === 'follow') {

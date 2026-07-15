@@ -693,7 +693,7 @@ export const ForumApp = () => {
 
     let cancelled = false;
     setFollowLoading(true);
-    void getFollowStatus(selectedPost.voAuthorId)
+    void getFollowStatus(selectedPost.voAuthorId, t)
       .then((status) => {
         if (!cancelled) {
           setFollowStatus(status);
@@ -719,7 +719,8 @@ export const ForumApp = () => {
     loggedIn,
     userId,
     selectedPost,
-    setDataError
+    setDataError,
+    t,
   ]);
 
   const handleToggleFollow = async (targetUserId: LongId, isFollowing: boolean) => {
@@ -732,8 +733,8 @@ export const ForumApp = () => {
     dataState.setError(null);
     try {
       const status = isFollowing
-        ? await unfollowUser(targetUserId)
-        : await followUser(targetUserId);
+        ? await unfollowUser(targetUserId, t)
+        : await followUser(targetUserId, t);
       setFollowStatus(status);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

@@ -129,4 +129,22 @@
   <data name="error.wiki.parent_cycle_conflict" xml:space="preserve">
     <value>父级文档不能设置为当前文档的子孙节点。</value>
   </data>
+  <data name="error.user_follow.invalid_target_user" xml:space="preserve">
+    <value>目标用户无效。</value>
+  </data>
+  <data name="error.user_follow.self_follow_rejected" xml:space="preserve">
+    <value>不能关注自己。</value>
+  </data>
+  <data name="error.user_follow.self_unfollow_rejected" xml:space="preserve">
+    <value>不能取消关注自己。</value>
+  </data>
+  <data name="error.user_follow.target_unavailable" xml:space="preserve">
+    <value>目标用户不存在或当前不可用。</value>
+  </data>
+  <data name="error.user_follow.follow_rejected" xml:space="preserve">
+    <value>当前无法完成关注操作。</value>
+  </data>
+  <data name="error.user_follow.invalid_stream_type" xml:space="preserve">
+    <value>不支持该内容流类型。</value>
+  </data>
 </root>

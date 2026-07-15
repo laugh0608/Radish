@@ -94,9 +94,9 @@ test('公开个人页应提供受控登录回流与关注状态切换', () => {
   const i18nSource = readLocaleResources();
 
   assert.match(source, /from '@\/api\/userFollow'/);
-  assert.match(source, /getFollowStatus\(profile\.voUserId\)/);
-  assert.match(source, /followUser\(profile\.voUserId\)/);
-  assert.match(source, /unfollowUser\(profile\.voUserId\)/);
+  assert.match(source, /getFollowStatus\(profile\.voUserId, t\)/);
+  assert.match(source, /followUser\(profile\.voUserId, t\)/);
+  assert.match(source, /unfollowUser\(profile\.voUserId, t\)/);
   assert.match(source, /buildPublicProfileFollowReturnPath\(profileRouteIdentifier\)/);
   assert.match(source, /redirectToLogin\(\{ returnPath:/);
   assert.match(source, /aria-pressed=\{loggedIn \? followStatus\?\.voIsFollowing === true : undefined\}/);

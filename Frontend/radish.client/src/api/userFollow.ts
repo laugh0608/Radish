@@ -1,4 +1,11 @@
-import { apiGet, apiPost, configureApiClient } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  configureApiClient,
+  createApiResponseError,
+  type ParsedApiResponse,
+} from '@radish/http';
+import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 import type { PostItem, VoPagedResult } from '@/types/forum';
 import type { LongId } from './user';
@@ -34,109 +41,77 @@ export interface UserFollowUser {
 
 export type DistributionStreamType = 'recommend' | 'hot' | 'newest';
 
-export async function followUser(targetUserId: LongId): Promise<UserFollowStatus> {
-  const response = await apiPost<UserFollowStatus>(
+async function ensureOk<T>(request: Promise<ParsedApiResponse<T>>, fallbackMessage: string): Promise<T> {
+  const response = await request;
+  if (!response.ok || response.data === undefined) {
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      fallbackMessage,
+    );
+  }
+
+  return response.data;
+}
+
+export async function followUser(targetUserId: LongId, t: TFunction): Promise<UserFollowStatus> {
+  return await ensureOk(apiPost<UserFollowStatus>(
     '/api/v1/UserFollow/Follow',
     { targetUserId },
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '关注失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.followFailed'));
 }
 
-export async function unfollowUser(targetUserId: LongId): Promise<UserFollowStatus> {
-  const response = await apiPost<UserFollowStatus>(
+export async function unfollowUser(targetUserId: LongId, t: TFunction): Promise<UserFollowStatus> {
+  return await ensureOk(apiPost<UserFollowStatus>(
     '/api/v1/UserFollow/Unfollow',
     { targetUserId },
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '取消关注失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.unfollowFailed'));
 }
 
-export async function getFollowStatus(targetUserId: LongId): Promise<UserFollowStatus> {
-  const response = await apiGet<UserFollowStatus>(
+export async function getFollowStatus(targetUserId: LongId, t: TFunction): Promise<UserFollowStatus> {
+  return await ensureOk(apiGet<UserFollowStatus>(
     `/api/v1/UserFollow/GetFollowStatus?targetUserId=${encodeURIComponent(String(targetUserId))}`,
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取关注状态失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.statusFailed'));
 }
 
-export async function getMyFollowers(pageIndex: number, pageSize: number): Promise<VoPagedResult<UserFollowUser>> {
-  const response = await apiGet<VoPagedResult<UserFollowUser>>(
+export async function getMyFollowers(pageIndex: number, pageSize: number, t: TFunction): Promise<VoPagedResult<UserFollowUser>> {
+  return await ensureOk(apiGet<VoPagedResult<UserFollowUser>>(
     `/api/v1/UserFollow/GetMyFollowers?pageIndex=${pageIndex}&pageSize=${pageSize}`,
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取粉丝列表失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.followersFailed'));
 }
 
-export async function getMyFollowing(pageIndex: number, pageSize: number): Promise<VoPagedResult<UserFollowUser>> {
-  const response = await apiGet<VoPagedResult<UserFollowUser>>(
+export async function getMyFollowing(pageIndex: number, pageSize: number, t: TFunction): Promise<VoPagedResult<UserFollowUser>> {
+  return await ensureOk(apiGet<VoPagedResult<UserFollowUser>>(
     `/api/v1/UserFollow/GetMyFollowing?pageIndex=${pageIndex}&pageSize=${pageSize}`,
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取关注列表失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.followingFailed'));
 }
 
-export async function getMyFollowingFeed(pageIndex: number, pageSize: number): Promise<VoPagedResult<PostItem>> {
-  const response = await apiGet<VoPagedResult<PostItem>>(
+export async function getMyFollowingFeed(pageIndex: number, pageSize: number, t: TFunction): Promise<VoPagedResult<PostItem>> {
+  return await ensureOk(apiGet<VoPagedResult<PostItem>>(
     `/api/v1/UserFollow/GetMyFollowingFeed?pageIndex=${pageIndex}&pageSize=${pageSize}`,
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取关系链动态失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.feedFailed'));
 }
 
 export async function getMyDistributionFeed(
   streamType: DistributionStreamType,
   pageIndex: number,
-  pageSize: number
+  pageSize: number,
+  t: TFunction,
 ): Promise<VoPagedResult<PostItem>> {
-  const response = await apiGet<VoPagedResult<PostItem>>(
+  return await ensureOk(apiGet<VoPagedResult<PostItem>>(
     `/api/v1/UserFollow/GetMyDistributionFeed?streamType=${streamType}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
     { withAuth: true }
-  );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取分发流失败');
-  }
-
-  return response.data;
+  ), t('userFollow.error.distributionFailed'));
 }
 
-export async function getMyFollowSummary(): Promise<UserFollowSummary> {
-  const response = await apiGet<UserFollowSummary>('/api/v1/UserFollow/GetMySummary', { withAuth: true });
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取关系链汇总失败');
-  }
-
-  return response.data;
+export async function getMyFollowSummary(t: TFunction): Promise<UserFollowSummary> {
+  return await ensureOk(
+    apiGet<UserFollowSummary>('/api/v1/UserFollow/GetMySummary', { withAuth: true }),
+    t('userFollow.error.summaryFailed'),
+  );
 }

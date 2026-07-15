@@ -264,7 +264,7 @@ export const ProfileApp = () => {
         ),
         reuseInFlightRequest(
           buildProfileRequestKey('follow-status', apiBaseUrl, viewingUserIdKey),
-          () => getFollowStatus(viewingUserId)
+          () => getFollowStatus(viewingUserId, t)
         ),
       ]);
 
@@ -294,7 +294,7 @@ export const ProfileApp = () => {
     return () => {
       cancelled = true;
     };
-  }, [apiBaseUrl, isOwnProfile, loggedIn, viewingUserId, viewingUserIdKey]);
+  }, [apiBaseUrl, isOwnProfile, loggedIn, t, viewingUserId, viewingUserIdKey]);
 
   const handlePostClick = (postId: LongId, postPublicId?: string | null) => {
     openApp('forum', buildForumAppParams({ postId, postPublicId: postPublicId ?? undefined }));
@@ -411,8 +411,8 @@ export const ProfileApp = () => {
     setFollowLoading(true);
     try {
       const nextStatus = followStatus?.voIsFollowing
-        ? await unfollowUser(viewingUserId)
-        : await followUser(viewingUserId);
+        ? await unfollowUser(viewingUserId, t)
+        : await followUser(viewingUserId, t);
       setFollowStatus(nextStatus);
     } catch (error) {
       log.error('ProfileApp', '切换关注状态失败：', error);
