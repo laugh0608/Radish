@@ -45,6 +45,25 @@ public static class ShopProductAvailabilityPolicy
         };
     }
 
+    public static string? GetUnavailableReasonKey(
+        ProductType productType,
+        BenefitType? benefitType,
+        ConsumableType? consumableType)
+    {
+        if (!IsUnavailablePublicProduct(productType, benefitType, consumableType))
+        {
+            return null;
+        }
+
+        return productType switch
+        {
+            ProductType.Benefit => "products.capability.unavailable.benefit",
+            ProductType.Consumable => "products.capability.unavailable.consumable",
+            ProductType.Physical => "products.capability.unavailable.physical",
+            _ => "products.capability.unavailable.unknown"
+        };
+    }
+
     public static IReadOnlyList<string> GetConfigurationRequirements(
         ProductType productType,
         BenefitType? benefitType,
@@ -73,6 +92,40 @@ public static class ShopProductAvailabilityPolicy
         }
 
         return ["当前版本不支持该商品类型"];
+    }
+
+    public static IReadOnlyList<string> GetConfigurationRequirementKeys(
+        ProductType productType,
+        BenefitType? benefitType,
+        ConsumableType? consumableType)
+    {
+        if (productType == ProductType.Benefit)
+        {
+            return benefitType switch
+            {
+                BenefitType.Badge =>
+                [
+                    "products.capability.requirement.badgeResource",
+                    "products.capability.requirement.badgeIcon"
+                ],
+                BenefitType.Title => ["products.capability.requirement.titleText"],
+                BenefitType.Theme => ["products.capability.requirement.themeResource"],
+                _ => ["products.capability.requirement.benefitValue"]
+            };
+        }
+
+        if (productType == ProductType.Consumable)
+        {
+            return consumableType switch
+            {
+                ConsumableType.ExpCard => ["products.capability.requirement.expValue"],
+                ConsumableType.CoinCard => ["products.capability.requirement.coinValue"],
+                ConsumableType.RenameCard => ["products.capability.requirement.noExtraValue"],
+                _ => ["products.capability.requirement.consumableUnavailable"]
+            };
+        }
+
+        return ["products.capability.requirement.productTypeUnavailable"];
     }
 
 #pragma warning disable CS0618

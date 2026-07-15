@@ -255,7 +255,7 @@ F1 首批只开放 `Badge` 和 `Title`：
 
 保留现有商城查询、购买、订单和背包接口，F1 调整或新增：
 
-- 商品能力元数据：返回类型是否可售、是否可启用、配置约束和不可用原因，供 Console 与 Client 展示。
+- 商品能力元数据：返回类型是否可售、是否可启用、配置约束和不可用原因，供 Console 与 Client 展示；配置要求与不可用原因同时提供稳定本地化 key，展示端优先解析 key，兼容文本不得参与业务控制流。
 - `UseItem` 请求增加 `IdempotencyKey`。
 - 改名卡改为 body DTO，包含 `InventoryId / NewDisplayName / IdempotencyKey`；旧 query 入口标记废弃并在后续 API 版本移除。
 - 权益启用 / 停用返回结构化结果和当前选择，不只返回 `bool`。

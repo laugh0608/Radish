@@ -185,19 +185,19 @@ export interface Product {
   voCoverImage?: string | null;
   voCategoryId: string;
   voCategoryName?: string | null;
-  voProductType: string;
-  voBenefitType?: string | null;
-  voConsumableType?: string | null;
+  voProductType: string | number;
+  voBenefitType?: string | number | null;
+  voConsumableType?: string | number | null;
   voBenefitValue?: string | null;
   voPrice: number;
   voOriginalPrice?: number | null;
   voHasDiscount: boolean;
   voDiscountPercent?: number | null;
-  voStockType: string;
+  voStockType: string | number;
   voStock: number;
   voSoldCount: number;
   voLimitPerUser: number;
-  voDurationType: string;
+  voDurationType: string | number;
   voDurationDays?: number | null;
   voExpiresAt?: string | null;
   voDurationDisplay: string;
@@ -217,7 +217,9 @@ export interface ShopProductCapability {
   voCanSell: boolean;
   voCanActivate: boolean;
   voConfigurationRequirements: string[];
+  voConfigurationRequirementKeys?: string[];
   voUnavailableReason?: string | null;
+  voUnavailableReasonKey?: string | null;
 }
 
 /**

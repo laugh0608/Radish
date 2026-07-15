@@ -4,9 +4,12 @@ import {
   apiPost,
   apiPut,
   configureApiClient,
-  parseApiResponse,
+  createApiResponseError,
+  parseApiResponseWithI18n,
   type ApiResponse,
+  type ParsedApiResponse,
 } from '@radish/http';
+import type { TFunction } from 'i18next';
 import type { LongId } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { buildWikiListUrl } from '../wikiApp.helpers';
@@ -27,76 +30,82 @@ configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
 
-async function ensureOk<T>(request: Promise<{ ok: boolean; data?: T; message?: string }>, fallbackMessage: string): Promise<T> {
+async function ensureOk<T>(
+  request: Promise<ParsedApiResponse<T>>,
+  fallbackMessage: string,
+): Promise<T> {
   const response = await request;
   if (!response.ok || response.data === undefined) {
-    throw new Error(response.message || fallbackMessage);
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      fallbackMessage,
+    );
   }
 
   return response.data;
 }
 
-export async function getWikiTree(): Promise<WikiDocumentTreeNodeVo[]> {
-  return await ensureOk(apiGet<WikiDocumentTreeNodeVo[]>('/api/v1/Wiki/GetTree', { withAuth: true }), '加载文档目录失败');
+export async function getWikiTree(t: TFunction): Promise<WikiDocumentTreeNodeVo[]> {
+  return await ensureOk(apiGet<WikiDocumentTreeNodeVo[]>('/api/v1/Wiki/GetTree', { withAuth: true }), t('wiki.toast.loadListFailed'));
 }
 
-export async function getWikiList(query: WikiListQuery = {}): Promise<WikiPageModel<WikiDocumentVo>> {
-  return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildWikiListUrl(query), { withAuth: true }), '加载文档列表失败');
+export async function getWikiList(query: WikiListQuery, t: TFunction): Promise<WikiPageModel<WikiDocumentVo>> {
+  return await ensureOk(apiGet<WikiPageModel<WikiDocumentVo>>(buildWikiListUrl(query), { withAuth: true }), t('wiki.toast.loadListFailed'));
 }
 
-export async function getWikiDocumentById(id: LongId, includeDeleted: boolean = false): Promise<WikiDocumentDetailVo> {
+export async function getWikiDocumentById(id: LongId, includeDeleted: boolean, t: TFunction): Promise<WikiDocumentDetailVo> {
   const suffix = includeDeleted ? '?includeDeleted=true' : '';
   return await ensureOk(
     apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetById/${encodeURIComponent(String(id))}${suffix}`, { withAuth: true }),
-    '加载文档详情失败'
+    t('wiki.toast.loadDetailFailed')
   );
 }
 
-export async function getWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {
-  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }), '加载文档详情失败');
+export async function getWikiDocumentBySlug(slug: string, t: TFunction): Promise<WikiDocumentDetailVo> {
+  return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }), t('wiki.toast.loadDetailFailed'));
 }
 
-export async function createWikiDocument(request: CreateWikiDocumentRequest): Promise<LongId> {
-  return await ensureOk(apiPost<LongId>('/api/v1/Wiki/Create', request, { withAuth: true }), '创建文档失败');
+export async function createWikiDocument(request: CreateWikiDocumentRequest, t: TFunction): Promise<LongId> {
+  return await ensureOk(apiPost<LongId>('/api/v1/Wiki/Create', request, { withAuth: true }), t('wiki.toast.saveFailed'));
 }
 
-export async function updateWikiDocument(id: LongId, request: UpdateWikiDocumentRequest): Promise<boolean> {
-  return await ensureOk(apiPut<boolean>(`/api/v1/Wiki/Update/${encodeURIComponent(String(id))}`, request, { withAuth: true }), '更新文档失败');
+export async function updateWikiDocument(id: LongId, request: UpdateWikiDocumentRequest, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPut<boolean>(`/api/v1/Wiki/Update/${encodeURIComponent(String(id))}`, request, { withAuth: true }), t('wiki.toast.saveFailed'));
 }
 
-export async function deleteWikiDocument(id: LongId): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Delete/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '删除文档失败');
+export async function deleteWikiDocument(id: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Delete/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), t('wiki.toast.deleteFailed'));
 }
 
-export async function restoreWikiDocument(id: LongId): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Restore/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '恢复文档失败');
+export async function restoreWikiDocument(id: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Restore/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), t('wiki.toast.restoreFailed'));
 }
 
-export async function publishWikiDocument(id: LongId): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Publish/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '发布文档失败');
+export async function publishWikiDocument(id: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Publish/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), t('wiki.toast.publishFailed'));
 }
 
-export async function unpublishWikiDocument(id: LongId): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Unpublish/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '撤下文档失败');
+export async function unpublishWikiDocument(id: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Unpublish/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), t('wiki.toast.unpublishFailed'));
 }
 
-export async function archiveWikiDocument(id: LongId): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Archive/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), '归档文档失败');
+export async function archiveWikiDocument(id: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Archive/${encodeURIComponent(String(id))}`, undefined, { withAuth: true }), t('wiki.toast.archiveFailed'));
 }
 
-export async function getWikiRevisionList(id: LongId): Promise<WikiDocumentRevisionItemVo[]> {
-  return await ensureOk(apiGet<WikiDocumentRevisionItemVo[]>(`/api/v1/Wiki/GetRevisionList/${encodeURIComponent(String(id))}`, { withAuth: true }), '加载版本历史失败');
+export async function getWikiRevisionList(id: LongId, t: TFunction): Promise<WikiDocumentRevisionItemVo[]> {
+  return await ensureOk(apiGet<WikiDocumentRevisionItemVo[]>(`/api/v1/Wiki/GetRevisionList/${encodeURIComponent(String(id))}`, { withAuth: true }), t('wiki.toast.loadRevisionListFailed'));
 }
 
-export async function getWikiRevisionDetail(revisionId: LongId): Promise<WikiDocumentRevisionDetailVo> {
-  return await ensureOk(apiGet<WikiDocumentRevisionDetailVo>(`/api/v1/Wiki/GetRevisionDetail/${encodeURIComponent(String(revisionId))}`, { withAuth: true }), '加载版本详情失败');
+export async function getWikiRevisionDetail(revisionId: LongId, t: TFunction): Promise<WikiDocumentRevisionDetailVo> {
+  return await ensureOk(apiGet<WikiDocumentRevisionDetailVo>(`/api/v1/Wiki/GetRevisionDetail/${encodeURIComponent(String(revisionId))}`, { withAuth: true }), t('wiki.toast.loadRevisionDetailFailed'));
 }
 
-export async function rollbackWikiRevision(revisionId: LongId): Promise<boolean> {
-  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${encodeURIComponent(String(revisionId))}`, undefined, { withAuth: true }), '回滚版本失败');
+export async function rollbackWikiRevision(revisionId: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${encodeURIComponent(String(revisionId))}`, undefined, { withAuth: true }), t('wiki.toast.rollbackFailed'));
 }
 
-export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Promise<LongId> {
+export async function importWikiMarkdown(request: ImportWikiMarkdownRequest, t: TFunction): Promise<LongId> {
   const formData = new FormData();
   formData.append('file', request.file);
 
@@ -122,10 +131,10 @@ export async function importWikiMarkdown(request: ImportWikiMarkdownRequest): Pr
   });
 
   const json = await response.json() as ApiResponse<LongId>;
-  const parsed = parseApiResponse<LongId>(json);
+  const parsed = parseApiResponseWithI18n<LongId>(json, (key) => t(key));
 
   if (!parsed.ok || parsed.data === undefined) {
-    throw new Error(parsed.message || '导入 Markdown 失败');
+    throw createApiResponseError(parsed, t('wiki.toast.importFailed'));
   }
 
   return parsed.data;
@@ -149,7 +158,7 @@ function getFileNameFromDisposition(contentDisposition: string | null, fallbackF
   return fallbackFileName;
 }
 
-export async function downloadWikiMarkdown(id: LongId): Promise<{ blob: Blob; fileName: string }> {
+export async function downloadWikiMarkdown(id: LongId, t: TFunction): Promise<{ blob: Blob; fileName: string }> {
   const response = await apiFetch(`/api/v1/Wiki/ExportMarkdown/${encodeURIComponent(String(id))}`, {
     method: 'GET',
     withAuth: true,
@@ -159,11 +168,11 @@ export async function downloadWikiMarkdown(id: LongId): Promise<{ blob: Blob; fi
   });
 
   if (!response.ok) {
-    let errorMessage = '导出 Markdown 失败';
+    let errorMessage = t('wiki.toast.exportFailed');
 
     try {
       const json = await response.json() as ApiResponse<string>;
-      const parsed = parseApiResponse<string>(json);
+      const parsed = parseApiResponseWithI18n<string>(json, (key) => t(key));
       errorMessage = parsed.message || errorMessage;
     } catch {
       const text = await response.text().catch(() => '');

@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -82,6 +83,15 @@ public class ProductServiceTest
         Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanActivate);
         Assert.False(result.Single(item => item.VoProductType == ProductType.Physical).VoCanSell);
         Assert.True(result.Single(item => item.VoConsumableType == ConsumableType.CoinCard).VoCanSell);
+        Assert.Equal(
+            [
+                "products.capability.requirement.badgeResource",
+                "products.capability.requirement.badgeIcon"
+            ],
+            result.Single(item => item.VoBenefitType == BenefitType.Badge).VoConfigurationRequirementKeys);
+        Assert.Equal(
+            "products.capability.unavailable.physical",
+            result.Single(item => item.VoProductType == ProductType.Physical).VoUnavailableReasonKey);
     }
 
     [Fact]
@@ -107,10 +117,12 @@ public class ProductServiceTest
             IsOnSale = false
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<BusinessException>(
             () => service.CreateProductAsync(dto, 10001, "tester"));
 
         Assert.Equal("主题资源标识必须是：theme-dark-night、theme-sakura", exception.Message);
+        Assert.Equal("Product.ConfigurationInvalid", exception.ErrorCode);
+        Assert.Equal("error.product.configuration_invalid", exception.MessageKey);
         productRepository.Verify(repository => repository.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -168,8 +180,10 @@ public class ProductServiceTest
             DurationDays = 5
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateProductAsync(dto, 10001, "tester"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CreateProductAsync(dto, 10001, "tester"));
         Assert.Equal("萝卜币红包必须配置正整数胡萝卜数量", exception.Message);
+        Assert.Equal("Product.ConfigurationInvalid", exception.ErrorCode);
+        Assert.Equal("error.product.configuration_invalid", exception.MessageKey);
         productRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -379,9 +393,11 @@ public class ProductServiceTest
             orderRepository.Object,
             attachmentUrlResolver.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteProductAsync(product.Id, 10001, "tester"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteProductAsync(product.Id, 10001, "tester"));
 
         Assert.Equal("商品已有订单记录，不能删除；请下架商品以保留历史订单快照", exception.Message);
+        Assert.Equal("Product.DeleteOrderConflict", exception.ErrorCode);
+        Assert.Equal("error.product.delete_order_conflict", exception.MessageKey);
         productRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -403,7 +419,7 @@ public class ProductServiceTest
             orderRepository.Object,
             attachmentUrlResolver.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateProductAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateProductAsync(
             new UpdateProductDto
             {
                 Id = product.Id,
@@ -422,6 +438,8 @@ public class ProductServiceTest
             "tester"));
 
         Assert.Equal("商品信息已被其他管理员修改，请刷新后重试", exception.Message);
+        Assert.Equal("Product.VersionConflict", exception.ErrorCode);
+        Assert.Equal("error.product.version_conflict", exception.MessageKey);
         productRepository.Verify(
             repository => repository.UpdateColumnsAsync(
                 It.IsAny<Expression<Func<Product, Product>>>(),

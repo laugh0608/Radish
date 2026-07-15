@@ -35,6 +35,9 @@ public class AuthResourceParityTest
         Assert.Equal(chineseKeys, englishKeys);
         Assert.Contains("error.order.retry_rejected", chineseKeys);
         Assert.Contains("error.moderation.concurrent_review_conflict", chineseKeys);
+        Assert.Contains("error.product.version_conflict", chineseKeys);
+        Assert.Contains("error.wiki.document_not_found", chineseKeys);
+        Assert.Contains("error.wiki.parent_cycle_conflict", chineseKeys);
     }
 
     private static string FindRepositoryRoot()

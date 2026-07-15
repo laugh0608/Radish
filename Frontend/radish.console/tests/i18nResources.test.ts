@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders', 'settings'];
+const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders', 'products', 'settings', 'documents'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   return domainNames.flatMap((domain) => {
@@ -40,6 +40,18 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
           'moderation.reportCount_other': '{{count}} reports',
           'systemConfig.filter.active_one': '{{count}} filter',
           'systemConfig.filter.active_other': '{{count}} filters',
+          'products.list.productCount_one': '{{count}} product',
+          'products.list.productCount_other': '{{count}} products',
+          'documents.filter.active_one': '{{count}} filter',
+          'documents.filter.active_other': '{{count}} filters',
+          'documents.count.documents_one': '{{count}} document',
+          'documents.count.documents_other': '{{count}} documents',
+          'documents.count.versions_one': '{{count}} version',
+          'documents.count.versions_other': '{{count}} versions',
+          'documents.count.roles_one': '{{count}} role',
+          'documents.count.roles_other': '{{count}} roles',
+          'documents.count.permissions_one': '{{count}} permission',
+          'documents.count.permissions_other': '{{count}} permissions',
         },
       },
     },
@@ -55,4 +67,18 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
   assert.equal(instance.t('systemConfig.filter.active', { count: 0 }), '0 filters');
   assert.equal(instance.t('systemConfig.filter.active', { count: 1 }), '1 filter');
   assert.equal(instance.t('systemConfig.filter.active', { count: 2 }), '2 filters');
+  assert.equal(instance.t('products.list.productCount', { count: 0 }), '0 products');
+  assert.equal(instance.t('products.list.productCount', { count: 1 }), '1 product');
+  assert.equal(instance.t('products.list.productCount', { count: 2 }), '2 products');
+  assert.equal(instance.t('documents.filter.active', { count: 0 }), '0 filters');
+  assert.equal(instance.t('documents.filter.active', { count: 1 }), '1 filter');
+  assert.equal(instance.t('documents.filter.active', { count: 2 }), '2 filters');
+  assert.equal(instance.t('documents.count.documents', { count: 0 }), '0 documents');
+  assert.equal(instance.t('documents.count.documents', { count: 1 }), '1 document');
+  assert.equal(instance.t('documents.count.documents', { count: 2 }), '2 documents');
+  assert.equal(instance.t('documents.count.versions', { count: 1 }), '1 version');
+  assert.equal(instance.t('documents.count.versions', { count: 2 }), '2 versions');
+  assert.equal(instance.t('documents.count.roles', { count: 0 }), '0 roles');
+  assert.equal(instance.t('documents.count.roles', { count: 1 }), '1 role');
+  assert.equal(instance.t('documents.count.permissions', { count: 2 }), '2 permissions');
 });

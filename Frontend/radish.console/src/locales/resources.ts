@@ -1,24 +1,28 @@
 import { enCore } from './en/core';
 import { enDashboard } from './en/dashboard';
+import { enDocuments } from './en/documents';
 import { enShell } from './en/shell';
 import { enModeration } from './en/moderation';
 import { enOrders } from './en/orders';
+import { enProducts } from './en/products';
 import { enSettings } from './en/settings';
 import { enUsers } from './en/users';
 import { zhCore } from './zh/core';
 import { zhDashboard } from './zh/dashboard';
+import { zhDocuments } from './zh/documents';
 import { zhShell } from './zh/shell';
 import { zhModeration } from './zh/moderation';
 import { zhOrders } from './zh/orders';
+import { zhProducts } from './zh/products';
 import { zhSettings } from './zh/settings';
 import { zhUsers } from './zh/users';
 
 export const consoleTranslationDomains = {
-  en: [enCore, enShell, enDashboard, enUsers, enModeration, enOrders, enSettings],
-  zh: [zhCore, zhShell, zhDashboard, zhUsers, zhModeration, zhOrders, zhSettings],
+  en: [enCore, enShell, enDashboard, enUsers, enModeration, enOrders, enProducts, enSettings, enDocuments],
+  zh: [zhCore, zhShell, zhDashboard, zhUsers, zhModeration, zhOrders, zhProducts, zhSettings, zhDocuments],
 } as const;
 
 export const resources = {
-  en: { translation: { ...enCore, ...enShell, ...enDashboard, ...enUsers, ...enModeration, ...enOrders, ...enSettings } },
-  zh: { translation: { ...zhCore, ...zhShell, ...zhDashboard, ...zhUsers, ...zhModeration, ...zhOrders, ...zhSettings } },
+  en: { translation: { ...enCore, ...enShell, ...enDashboard, ...enUsers, ...enModeration, ...enOrders, ...enProducts, ...enSettings, ...enDocuments } },
+  zh: { translation: { ...zhCore, ...zhShell, ...zhDashboard, ...zhUsers, ...zhModeration, ...zhOrders, ...zhProducts, ...zhSettings, ...zhDocuments } },
 } as const;

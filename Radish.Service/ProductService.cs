@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using AutoMapper;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -332,10 +333,13 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             VoConfigurationRequirements = ShopProductAvailabilityPolicy
                 .GetConfigurationRequirements(productType, benefitType, consumableType)
                 .ToList(),
+            VoConfigurationRequirementKeys = ShopProductAvailabilityPolicy
+                .GetConfigurationRequirementKeys(productType, benefitType, consumableType)
+                .ToList(),
             VoUnavailableReason = ShopProductAvailabilityPolicy.GetUnavailableReason(
-                productType,
-                benefitType,
-                consumableType)
+                productType, benefitType, consumableType),
+            VoUnavailableReasonKey = ShopProductAvailabilityPolicy.GetUnavailableReasonKey(
+                productType, benefitType, consumableType)
         };
     }
 
@@ -525,7 +529,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
             {
-                throw new InvalidOperationException("商品不存在");
+                throw CreateProductNotFoundException();
             }
 
             EnsureExpectedProductVersion(product, dto.ExpectedVersion);
@@ -566,7 +570,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => p.Id == dto.Id && p.TenantId == product.TenantId && p.Version == dto.ExpectedVersion && !p.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+                throw CreateProductVersionConflictException();
             }
 
             Log.Information("更新商品成功：{ProductId}, 操作员={Operator}", dto.Id, operatorName);
@@ -588,12 +592,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null)
             {
-                return false;
+                throw CreateProductNotFoundException();
             }
 
             if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
             {
-                throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，不能上架销售");
+                throw CreateProductSaleUnsupportedException(product.BenefitType, product.ConsumableType);
             }
 
             await EnsureValidProductConfigurationAsync(
@@ -615,7 +619,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+                throw CreateProductVersionConflictException();
             }
 
             Log.Information("商品 {ProductId} 上架成功", productId);
@@ -640,7 +644,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             return;
         }
 
-        throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(benefitType, consumableType)}暂未开放，不能上架销售");
+        throw CreateProductSaleUnsupportedException(benefitType, consumableType);
     }
 
     private async Task EnsureValidProductConfigurationAsync(
@@ -667,7 +671,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             errorMessage = "徽章图标附件不存在、不可公开或已失效";
         }
 
-        throw new InvalidOperationException(errorMessage);
+        throw new BusinessException(
+            errorMessage,
+            400,
+            "Product.ConfigurationInvalid",
+            "error.product.configuration_invalid");
     }
 
     private static string? GetInvalidProductConfigurationMessage(
@@ -730,11 +738,43 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             && parsedValue > 0;
     }
 
+    private static BusinessException CreateProductNotFoundException()
+    {
+        return new BusinessException(
+            "商品不存在",
+            404,
+            "Product.NotFound",
+            "error.product.not_found");
+    }
+
+    private static BusinessException CreateProductSaleUnsupportedException(
+        BenefitType? benefitType,
+        ConsumableType? consumableType)
+    {
+        var productName = ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(
+            benefitType,
+            consumableType);
+        return new BusinessException(
+            $"{productName}暂未开放，不能上架销售",
+            409,
+            "Product.SaleUnsupported",
+            "error.product.sale_unsupported");
+    }
+
+    private static BusinessException CreateProductVersionConflictException()
+    {
+        return new BusinessException(
+            "商品信息已被其他管理员修改，请刷新后重试",
+            409,
+            "Product.VersionConflict",
+            "error.product.version_conflict");
+    }
+
     private static void EnsureExpectedProductVersion(Product product, int expectedVersion)
     {
         if (product.Version != expectedVersion)
         {
-            throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+            throw CreateProductVersionConflictException();
         }
     }
 
@@ -746,7 +786,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null)
             {
-                return false;
+                throw CreateProductNotFoundException();
             }
 
             EnsureExpectedProductVersion(product, expectedVersion);
@@ -762,7 +802,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+                throw CreateProductVersionConflictException();
             }
 
             Log.Information("商品 {ProductId} 下架成功", productId);
@@ -867,7 +907,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null)
             {
-                throw new InvalidOperationException("商品不存在");
+                throw CreateProductNotFoundException();
             }
 
             var relatedOrderCount = await _orderRepository.QueryCountAsync(
@@ -876,7 +916,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     && order.TenantId == product.TenantId);
             if (relatedOrderCount > 0)
             {
-                throw new InvalidOperationException("商品已有订单记录，不能删除；请下架商品以保留历史订单快照");
+                throw new BusinessException(
+                    "商品已有订单记录，不能删除；请下架商品以保留历史订单快照",
+                    409,
+                    "Product.DeleteOrderConflict",
+                    "error.product.delete_order_conflict");
             }
 
             product.IsDeleted = true;
@@ -887,15 +931,20 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             product.ModifyId = operatorId;
 
             var result = await _productRepository.UpdateAsync(product);
-            if (result)
+            if (!result)
             {
-                Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
-                    productId,
-                    product.ModifyBy,
-                    operatorId);
+                throw new BusinessException(
+                    "商品删除失败，请刷新后重试",
+                    409,
+                    "Product.OperationRejected",
+                    "error.product.operation_rejected");
             }
 
-            return result;
+            Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
+                productId,
+                product.ModifyBy,
+                operatorId);
+            return true;
         }
         catch (Exception ex)
         {

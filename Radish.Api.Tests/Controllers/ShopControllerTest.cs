@@ -124,7 +124,9 @@ public class ShopControllerTest
         var result = await controller.AdminGetProduct(1001);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("商品不存在", result.MessageInfo);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("Product.NotFound", result.Code);
+        Assert.Equal("error.product.not_found", result.MessageKey);
     }
 
     [Fact]
@@ -133,14 +135,45 @@ public class ShopControllerTest
         var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
         productServiceMock
             .Setup(service => service.DeleteProductAsync(1001, 10001, "Tester"))
-            .ThrowsAsync(new InvalidOperationException("存在未完成订单，不能删除商品"));
+            .ThrowsAsync(new BusinessException(
+                "商品已有订单记录，不能删除；请下架商品以保留历史订单快照",
+                409,
+                "Product.DeleteOrderConflict",
+                "error.product.delete_order_conflict"));
         var orderServiceMock = new Mock<IOrderService>(MockBehavior.Strict);
 
         var controller = CreateController(productServiceMock.Object, orderServiceMock.Object);
         var result = await controller.DeleteProduct(1001);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("存在未完成订单，不能删除商品", result.MessageInfo);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal("Product.DeleteOrderConflict", result.Code);
+        Assert.Equal("error.product.delete_order_conflict", result.MessageKey);
+        Assert.False(result.ResponseData);
+    }
+
+    [Fact]
+    public async Task PutOnSale_ShouldPreserveStableBusinessError()
+    {
+        var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
+        productServiceMock
+            .Setup(service => service.PutOnSaleAsync(1002, 3))
+            .ThrowsAsync(new BusinessException(
+                "头像框暂未开放，不能上架销售",
+                409,
+                "Product.SaleUnsupported",
+                "error.product.sale_unsupported"));
+        var controller = CreateController(productServiceMock.Object, Mock.Of<IOrderService>());
+
+        var result = await controller.PutOnSale(1002, new ProductVersionWriteDto
+        {
+            ExpectedVersion = 3
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal("Product.SaleUnsupported", result.Code);
+        Assert.Equal("error.product.sale_unsupported", result.MessageKey);
         Assert.False(result.ResponseData);
     }
 

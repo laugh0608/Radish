@@ -17,5 +17,11 @@ public sealed class ShopProductCapabilityVo
 
     public List<string> VoConfigurationRequirements { get; set; } = new();
 
+    /// <summary>配置要求的稳定本地化键，与 <see cref="VoConfigurationRequirements"/> 按索引对应。</summary>
+    public List<string> VoConfigurationRequirementKeys { get; set; } = new();
+
     public string? VoUnavailableReason { get; set; }
+
+    /// <summary>不可售原因的稳定本地化键。</summary>
+    public string? VoUnavailableReasonKey { get; set; }
 }

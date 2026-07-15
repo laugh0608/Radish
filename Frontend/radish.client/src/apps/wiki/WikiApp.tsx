@@ -203,7 +203,7 @@ export const WikiApp = () => {
 
     try {
       const [treeData, pageData] = await Promise.all([
-        getWikiTree(),
+        getWikiTree(t),
         getWikiList({
           pageIndex: 1,
           pageSize: 100,
@@ -211,7 +211,7 @@ export const WikiApp = () => {
           status: isAdmin && statusFilter !== '' ? Number(statusFilter) : undefined,
           includeDeleted: showingDeleted,
           deletedOnly: showingDeleted,
-        }),
+        }, t),
       ]);
 
       setTree(treeData);
@@ -244,7 +244,7 @@ export const WikiApp = () => {
     setLoadingDetail(true);
 
     try {
-      const detail = await getWikiDocumentById(documentId, showingDeleted);
+      const detail = await getWikiDocumentById(documentId, showingDeleted, t);
       setSelectedDocument(detail);
     } catch (error) {
       log.error('WikiApp', '加载文档详情失败:', error);
@@ -262,7 +262,7 @@ export const WikiApp = () => {
     }
 
     try {
-      const detail = await getWikiDocumentBySlug(normalizedSlug);
+      const detail = await getWikiDocumentBySlug(normalizedSlug, t);
       setSelectedDocumentId(detail.voId);
       setSelectedDocument(detail);
     } catch (error) {
@@ -273,7 +273,7 @@ export const WikiApp = () => {
 
   const loadDocumentByRouteId = useCallback(async (documentId: LongId) => {
     try {
-      const detail = await getWikiDocumentById(documentId, showingDeleted);
+      const detail = await getWikiDocumentById(documentId, showingDeleted, t);
       setSelectedDocumentId(detail.voId);
       setSelectedDocument(detail);
     } catch (error) {
@@ -293,7 +293,7 @@ export const WikiApp = () => {
     setLoadingRevisionList(true);
 
     try {
-      const revisions = await getWikiRevisionList(documentId);
+      const revisions = await getWikiRevisionList(documentId, t);
       setRevisionList(revisions);
 
       if (revisions.length === 0) {
@@ -331,7 +331,7 @@ export const WikiApp = () => {
     setLoadingRevisionDetail(true);
 
     try {
-      const detail = await getWikiRevisionDetail(revisionId);
+      const detail = await getWikiRevisionDetail(revisionId, t);
       setSelectedRevision(detail);
     } catch (error) {
       log.error('WikiApp', '加载版本详情失败:', error);
@@ -613,7 +613,7 @@ export const WikiApp = () => {
 
     try {
       if (editorMode === 'create') {
-        const createdId = await createWikiDocument(buildCreateRequest(draft));
+        const createdId = await createWikiDocument(buildCreateRequest(draft), t);
         toast.success(t('wiki.toast.created'));
         closeEditor();
         await refreshCollections(true);
@@ -626,7 +626,7 @@ export const WikiApp = () => {
         return;
       }
 
-      await updateWikiDocument(selectedDocumentId, buildUpdateRequest(draft));
+      await updateWikiDocument(selectedDocumentId, buildUpdateRequest(draft), t);
       toast.success(t('wiki.toast.updated'));
       closeEditor();
       await refreshDocumentWorkspace(selectedDocumentId, false);
@@ -645,7 +645,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await publishWikiDocument(selectedDocumentId);
+      await publishWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.published'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
@@ -663,7 +663,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await unpublishWikiDocument(selectedDocumentId);
+      await unpublishWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.unpublished'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
@@ -681,7 +681,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await archiveWikiDocument(selectedDocumentId);
+      await archiveWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.archived'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
@@ -711,7 +711,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await deleteWikiDocument(selectedDocumentId);
+      await deleteWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.deleted'));
       setDeleteConfirmOpen(false);
       await refreshCollections(true);
@@ -731,7 +731,7 @@ export const WikiApp = () => {
     setSubmitting(true);
     try {
       const restoredDocumentId = selectedDocumentId;
-      await restoreWikiDocument(restoredDocumentId);
+      await restoreWikiDocument(restoredDocumentId, t);
       toast.success(t('wiki.toast.restored'));
 
       if (showingDeleted) {
@@ -755,7 +755,7 @@ export const WikiApp = () => {
     }
 
     try {
-      const { blob, fileName } = await downloadWikiMarkdown(selectedDocumentId);
+      const { blob, fileName } = await downloadWikiMarkdown(selectedDocumentId, t);
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -788,7 +788,7 @@ export const WikiApp = () => {
         file,
         parentId: selectedDocumentId ?? undefined,
         publishAfterImport: false,
-      });
+      }, t);
 
       toast.success(t('wiki.toast.imported'));
       await refreshCollections(true);
@@ -872,7 +872,7 @@ export const WikiApp = () => {
     setSubmitting(true);
 
     try {
-      await rollbackWikiRevision(selectedRevisionId);
+      await rollbackWikiRevision(selectedRevisionId, t);
       toast.success(t('wiki.toast.rolledBack', { version: selectedRevision?.voVersion ?? '' }));
       setRollbackConfirmOpen(false);
       await refreshDocumentWorkspace(selectedDocumentId, false);

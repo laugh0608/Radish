@@ -122,7 +122,11 @@ public class ShopController : ControllerBase
         var result = await _productService.GetProductDetailAsync(productId);
         if (result == null)
         {
-            return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
+            return BuildError<ProductVo>(
+                HttpStatusCodeEnum.NotFound,
+                "商品不存在",
+                "Product.NotFound",
+                "error.product.not_found");
         }
 
         if (Current.UserId > 0)
@@ -542,7 +546,11 @@ public class ShopController : ControllerBase
         var result = await _productService.GetProductDetailForAdminAsync(productId);
         if (result == null)
         {
-            return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
+            return BuildError<ProductVo>(
+                HttpStatusCodeEnum.NotFound,
+                "商品不存在",
+                "Product.NotFound",
+                "error.product.not_found");
         }
 
         return MessageModel<ProductVo>.Success("查询成功", result);
@@ -564,9 +572,23 @@ public class ShopController : ControllerBase
             var productId = await _productService.CreateProductAsync(dto, userId, userName);
             return MessageModel<long>.Success("创建成功", productId);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                0L);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<long>.Message(false, ex.Message, default);
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                0L);
         }
     }
 
@@ -586,9 +608,23 @@ public class ShopController : ControllerBase
             var result = await _productService.UpdateProductAsync(dto, userId, userName);
             return MessageModel<bool>.Success("更新成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -608,9 +644,23 @@ public class ShopController : ControllerBase
             var result = await _productService.DeleteProductAsync(productId, userId, userName);
             return MessageModel<bool>.Success("删除成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -627,9 +677,23 @@ public class ShopController : ControllerBase
             var result = await _productService.PutOnSaleAsync(productId, request.ExpectedVersion);
             return MessageModel<bool>.Success("上架成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -646,9 +710,23 @@ public class ShopController : ControllerBase
             var result = await _productService.TakeOffSaleAsync(productId, request.ExpectedVersion);
             return MessageModel<bool>.Success("下架成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 

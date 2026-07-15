@@ -42,6 +42,24 @@
   <data name="error.shop.benefit_operation_rejected" xml:space="preserve">
     <value>当前权益操作无法完成，请刷新后核对权益状态。</value>
   </data>
+  <data name="error.product.not_found" xml:space="preserve">
+    <value>商品不存在。</value>
+  </data>
+  <data name="error.product.configuration_invalid" xml:space="preserve">
+    <value>商品配置无效，请核对能力要求后重试。</value>
+  </data>
+  <data name="error.product.sale_unsupported" xml:space="preserve">
+    <value>当前商品类型尚未开放，不能上架销售。</value>
+  </data>
+  <data name="error.product.version_conflict" xml:space="preserve">
+    <value>商品已被其他管理员修改，请刷新后重试。</value>
+  </data>
+  <data name="error.product.delete_order_conflict" xml:space="preserve">
+    <value>商品已有订单记录，不能删除；请下架商品以保留历史订单快照。</value>
+  </data>
+  <data name="error.product.operation_rejected" xml:space="preserve">
+    <value>商品操作无法完成，请刷新后重试。</value>
+  </data>
   <data name="error.moderation.validation_failed" xml:space="preserve">
     <value>治理请求参数无效，请检查后重试。</value>
   </data>
@@ -62,5 +80,53 @@
   </data>
   <data name="error.moderation.concurrent_review_conflict" xml:space="preserve">
     <value>举报单已被处理，请刷新审核队列。</value>
+  </data>
+  <data name="error.wiki.validation_failed" xml:space="preserve">
+    <value>文档请求参数无效，请检查后重试。</value>
+  </data>
+  <data name="error.wiki.document_not_found" xml:space="preserve">
+    <value>文档不存在。</value>
+  </data>
+  <data name="error.wiki.document_not_accessible" xml:space="preserve">
+    <value>文档不存在或当前账号无权访问。</value>
+  </data>
+  <data name="error.wiki.restore_rejected" xml:space="preserve">
+    <value>文档不存在或当前状态无法恢复。</value>
+  </data>
+  <data name="error.wiki.revision_not_found" xml:space="preserve">
+    <value>文档版本不存在。</value>
+  </data>
+  <data name="error.wiki.rollback_rejected" xml:space="preserve">
+    <value>版本不存在或文档已删除，无法回滚。</value>
+  </data>
+  <data name="error.wiki.built_in_read_only" xml:space="preserve">
+    <value>固定文档为只读内容，请修改 Docs 目录中的源文件。</value>
+  </data>
+  <data name="error.wiki.child_document_conflict" xml:space="preserve">
+    <value>请先处理子文档后再删除当前文档。</value>
+  </data>
+  <data name="error.wiki.revision_already_current" xml:space="preserve">
+    <value>当前文档已经是该版本内容，无需回滚。</value>
+  </data>
+  <data name="error.wiki.markdown_file_empty" xml:space="preserve">
+    <value>Markdown 文件不能为空。</value>
+  </data>
+  <data name="error.wiki.markdown_file_unsupported" xml:space="preserve">
+    <value>仅支持 Markdown 文本文件导入。</value>
+  </data>
+  <data name="error.wiki.markdown_content_empty" xml:space="preserve">
+    <value>导入的 Markdown 内容不能为空。</value>
+  </data>
+  <data name="error.wiki.access_policy_required" xml:space="preserve">
+    <value>受限文档至少需要配置一个角色或权限。</value>
+  </data>
+  <data name="error.wiki.parent_cannot_be_self" xml:space="preserve">
+    <value>父级文档不能是自身。</value>
+  </data>
+  <data name="error.wiki.parent_not_found" xml:space="preserve">
+    <value>父级文档不存在。</value>
+  </data>
+  <data name="error.wiki.parent_cycle_conflict" xml:space="preserve">
+    <value>父级文档不能设置为当前文档的子孙节点。</value>
   </data>
 </root>
