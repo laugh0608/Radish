@@ -14,7 +14,7 @@ import { normalizeLanguage } from './locales/language'
 rememberClientBackTo(window.location.search)
 void applySiteBranding(getApiBaseUrl())
 
-function ConsoleRoot() {
+export function ConsoleRoot() {
   const { i18n } = useTranslation()
   const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh'
 

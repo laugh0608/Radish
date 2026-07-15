@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type MouseEv
 import { useTranslation } from 'react-i18next';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
+import { formatLocalizedNumber } from '@radish/ui';
 import type { MyAttachmentItem } from '@/api/attachment';
 import { coinApi, type CoinTransaction, type UserBalance } from '@/api/coin';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
@@ -44,6 +45,7 @@ import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
+import { getIntlLocale } from '@/locales/language';
 import { MeAssetsPage } from './MeAssetsPage';
 import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
@@ -154,14 +156,6 @@ const initialExperienceContext: MeExperienceContext = {
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
-}
-
-function formatNumber(value: number | null | undefined): string {
-  return Number(value ?? 0).toLocaleString();
-}
-
-function formatSignedNumber(value: number): string {
-  return `${value > 0 ? '+' : ''}${formatNumber(value)}`;
 }
 
 function truncatePreviewText(value: string | null | undefined, fallback: string, maxLength = 96): string {
@@ -345,9 +339,17 @@ function buildMeRouteReturnPath(route: MeRoute): string {
 }
 
 export const MeApp = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const formatNumber = (value: number | null | undefined) => (
+    formatLocalizedNumber(Number(value ?? 0), language)
+  );
+  const formatSignedNumber = (value: number) => `${value > 0 ? '+' : ''}${formatNumber(value)}`;
+  const formatDisplayDateTime = (value: string | number | Date | null | undefined, fallback = '-') => (
+    formatDateTimeByTimeZone(value, displayTimeZone, fallback, getIntlLocale(language))
+  );
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
   const storeDisplayName = useUserStore(state => state.displayName);
@@ -567,7 +569,7 @@ export const MeApp = () => {
   const balance = dashboardData.balance;
   const pet = dashboardData.pet;
   const loadedAtLabel = dashboardData.loadedAt
-    ? formatDateTimeByTimeZone(dashboardData.loadedAt, displayTimeZone)
+    ? formatDisplayDateTime(dashboardData.loadedAt)
     : null;
 
   const rememberSelfPublicProfileSource = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
@@ -875,7 +877,7 @@ export const MeApp = () => {
             badge: activeContentTabLabel,
             title: firstItem.voTitle,
             description: truncatePreviewText(firstItem.voContent, t('me.preview.noSummary')),
-            meta: formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone),
+            meta: formatDisplayDateTime(firstItem.voCreateTime),
             href: buildForumDetailHref(firstItem.voId, firstItem.voPublicId),
             rememberSource: true,
             actionLabel: t('me.preview.openPublicDetail'),
@@ -904,7 +906,7 @@ export const MeApp = () => {
             badge: activeContentTabLabel,
             title: t('me.preview.commentTitle'),
             description: truncatePreviewText(firstItem.voContent, t('me.preview.noSummary')),
-            meta: formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone),
+            meta: formatDisplayDateTime(firstItem.voCreateTime),
             href: buildForumDetailHref(firstItem.voPostId, firstItem.voPostPublicId, firstItem.voId),
             rememberSource: true,
             actionLabel: t('me.preview.openPublicDetail'),
@@ -930,7 +932,7 @@ export const MeApp = () => {
             badge: activeContentTabLabel,
             title: firstItem.voPostTitle,
             description: truncatePreviewText(firstItem.voContent, t('me.preview.noSummary')),
-            meta: formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone),
+            meta: formatDisplayDateTime(firstItem.voCreateTime),
             href: buildForumDetailHref(firstItem.voPostId, firstItem.voPostPublicId),
             rememberSource: true,
             actionLabel: t('me.preview.openPublicDetail'),
@@ -1016,7 +1018,7 @@ export const MeApp = () => {
               badge: firstItem.voTargetTypeDisplay,
               title: firstItem.voTitle,
               description: truncatePreviewText(firstItem.voSummary, t('profile.browse.noSummary')),
-              meta: formatDateTimeByTimeZone(firstItem.voLastViewTime, displayTimeZone),
+              meta: formatDisplayDateTime(firstItem.voLastViewTime),
               href,
               rememberSource: Boolean(href),
               actionLabel: t('me.preview.openPublicRoute'),
@@ -1098,7 +1100,7 @@ export const MeApp = () => {
                 firstItem.voMimeType || firstItem.voExtension,
                 t('me.attachments.previewDescription')
               ),
-              meta: firstItem.voCreateTime ? formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone) : t('me.preview.noTime'),
+              meta: firstItem.voCreateTime ? formatDisplayDateTime(firstItem.voCreateTime) : t('me.preview.noTime'),
               href,
               external: Boolean(href),
               actionLabel: t('profile.attachments.download'),
@@ -1189,7 +1191,7 @@ export const MeApp = () => {
                     after: firstTransaction.voLevelAfter,
                   })
                 ),
-                meta: formatDateTimeByTimeZone(firstTransaction.voCreateTime, displayTimeZone),
+                meta: formatDisplayDateTime(firstTransaction.voCreateTime),
                 stats: [
                   formatSignedNumber(firstTransaction.voExpAmount),
                   t('me.experience.previewBalance', { value: formatNumber(firstTransaction.voExpAfter) }),
@@ -1438,10 +1440,10 @@ export const MeApp = () => {
               <p className={styles.errorText}>{dashboardData.errors.assets}</p>
             ) : balance ? (
               <>
-                <div className={styles.balanceValue}>{balance.voBalanceDisplay || `${formatNumber(balance.voBalance)} ${t('me.carrotUnit')}`}</div>
+                <div className={styles.balanceValue}>{formatNumber(balance.voBalance)} {t('me.carrotUnit')}</div>
                 <div className={styles.metricRow}>
                   <span>{t('me.frozenBalance')}</span>
-                  <strong>{balance.voFrozenBalanceDisplay || `${formatNumber(balance.voFrozenBalance)} ${t('me.carrotUnit')}`}</strong>
+                  <strong>{formatNumber(balance.voFrozenBalance)} {t('me.carrotUnit')}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.totalEarned')}</span>
@@ -1522,7 +1524,7 @@ export const MeApp = () => {
                     </div>
                     <div className={styles.itemBody}>
                       <strong>{transaction.voExpTypeDisplay || transaction.voExpType}</strong>
-                      <span>{formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}</span>
+                      <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
                     </div>
                     <div className={styles.itemAmount}>{formatSignedNumber(transaction.voExpAmount)}</div>
                   </div>
@@ -1558,10 +1560,10 @@ export const MeApp = () => {
                       <Icon icon={transaction.voAmount >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
                     </div>
                     <div className={styles.itemBody}>
-                      <strong>{transaction.voTransactionTypeDisplay || transaction.voTransactionType}</strong>
-                      <span>{formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}</span>
+                      <strong>{t(`me.assets.type.${transaction.voTransactionType}`, { defaultValue: transaction.voTransactionType })}</strong>
+                      <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
                     </div>
-                    <div className={styles.itemAmount}>{transaction.voAmountDisplay || formatSignedNumber(transaction.voAmount)}</div>
+                    <div className={styles.itemAmount}>{formatSignedNumber(transaction.voAmount)}</div>
                   </div>
                 ))}
               </div>
@@ -1602,7 +1604,7 @@ export const MeApp = () => {
                           <strong>{item.voTitle}</strong>
                         )}
                         <span>
-                          {item.voTargetTypeDisplay} · {formatDateTimeByTimeZone(item.voLastViewTime, displayTimeZone)}
+                          {item.voTargetTypeDisplay} · {formatDisplayDateTime(item.voLastViewTime)}
                         </span>
                       </div>
                       <span className={styles.viewCount}>{t('me.viewCount', { count: item.voViewCount })}</span>
@@ -1624,7 +1626,7 @@ export const MeApp = () => {
       <PublicShellHeader
         variant="private"
         activeKey="me"
-        brandMark="我"
+        brandMark={t('me.brandMark')}
         brandName={t('me.title')}
         brandSubline={t('me.shellSubline')}
         onBrandClick={() => {

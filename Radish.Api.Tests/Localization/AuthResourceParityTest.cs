@@ -23,6 +23,20 @@ public class AuthResourceParityTest
         Assert.Equal(defaultKeys, englishKeys);
     }
 
+    [Fact]
+    public void ApiErrorResources_ShouldKeepChineseAndEnglishKeysAligned()
+    {
+        var resourcesDirectory = Path.Combine(FindRepositoryRoot(), "Radish.Api", "Resources");
+        var chineseKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.zh.resx"));
+        var englishKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.en.resx"));
+
+        Assert.Equal(chineseKeys.Length, chineseKeys.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(englishKeys.Length, englishKeys.Distinct(StringComparer.Ordinal).Count());
+        Assert.Equal(chineseKeys, englishKeys);
+        Assert.Contains("error.order.retry_rejected", chineseKeys);
+        Assert.Contains("error.moderation.concurrent_review_conflict", chineseKeys);
+    }
+
     private static string FindRepositoryRoot()
     {
         var current = new DirectoryInfo(Directory.GetCurrentDirectory());

@@ -4,42 +4,43 @@ import {
   type UserModerationActionVo,
 } from '@/api/moderationApi';
 import { getApiBaseUrl } from '@/config/env';
+import type { TFunction } from 'i18next';
 
-export const REVIEW_STATUS_OPTIONS = [
-  { label: '全部状态', value: -1 },
-  { label: '待审核', value: 0 },
-  { label: '已通过', value: 1 },
-  { label: '已驳回', value: 2 },
+export const getReviewStatusOptions = (t: TFunction) => [
+  { label: t('moderation.reviewStatus.all'), value: -1 },
+  { label: t('moderation.reviewStatus.pending'), value: 0 },
+  { label: t('moderation.reviewStatus.approved'), value: 1 },
+  { label: t('moderation.reviewStatus.rejected'), value: 2 },
 ];
 
-export const TARGET_TYPE_OPTIONS = [
-  { label: '帖子', value: 'Post' },
-  { label: '评论', value: 'Comment' },
-  { label: '轻回应', value: 'PostQuickReply' },
-  { label: '聊天消息', value: 'ChatMessage' },
-  { label: '商品', value: 'Product' },
+export const getTargetTypeOptions = (t: TFunction) => [
+  { label: t('moderation.target.post'), value: 'Post' },
+  { label: t('moderation.target.comment'), value: 'Comment' },
+  { label: t('moderation.target.quickReply'), value: 'PostQuickReply' },
+  { label: t('moderation.target.chatMessage'), value: 'ChatMessage' },
+  { label: t('moderation.target.product'), value: 'Product' },
 ];
 
-export const REASON_TYPE_OPTIONS = [
-  { label: '垃圾内容', value: 'Spam' },
-  { label: '辱骂骚扰', value: 'Abuse' },
-  { label: '色情低俗', value: 'Pornography' },
-  { label: '违法违规', value: 'Illegal' },
-  { label: '欺诈误导', value: 'Fraud' },
-  { label: '其他', value: 'Other' },
+export const getReasonTypeOptions = (t: TFunction) => [
+  { label: t('moderation.reason.spam'), value: 'Spam' },
+  { label: t('moderation.reason.abuse'), value: 'Abuse' },
+  { label: t('moderation.reason.pornography'), value: 'Pornography' },
+  { label: t('moderation.reason.illegal'), value: 'Illegal' },
+  { label: t('moderation.reason.fraud'), value: 'Fraud' },
+  { label: t('moderation.reason.other'), value: 'Other' },
 ];
 
-export const TARGET_NAVIGATION_STATUS_OPTIONS = [
-  { label: '可回看', value: 'Ready' },
-  { label: '已降级', value: 'Fallback' },
-  { label: '已失效', value: 'Unavailable' },
-  { label: '未接入回看', value: 'Unsupported' },
+export const getTargetNavigationStatusOptions = (t: TFunction) => [
+  { label: t('moderation.navigation.ready'), value: 'Ready' },
+  { label: t('moderation.navigation.fallback'), value: 'Fallback' },
+  { label: t('moderation.navigation.unavailable'), value: 'Unavailable' },
+  { label: t('moderation.navigation.unsupported'), value: 'Unsupported' },
 ];
 
-export const ACTION_OPTIONS = [
-  { label: '不处罚', value: 0 },
-  { label: '禁言', value: 1 },
-  { label: '封禁', value: 2 },
+export const getActionOptions = (t: TFunction) => [
+  { label: t('moderation.action.none'), value: 0 },
+  { label: t('moderation.action.mute'), value: 1 },
+  { label: t('moderation.action.ban'), value: 2 },
 ];
 
 export const MANUAL_ACTION_TYPE = {
@@ -51,41 +52,41 @@ export const MANUAL_ACTION_TYPE = {
 
 export type ManualActionTypeValue = typeof MANUAL_ACTION_TYPE[keyof typeof MANUAL_ACTION_TYPE];
 
-export const MANUAL_ACTION_OPTIONS = [
-  { label: '禁言', value: MANUAL_ACTION_TYPE.mute },
-  { label: '封禁', value: MANUAL_ACTION_TYPE.ban },
-  { label: '解除禁言', value: MANUAL_ACTION_TYPE.unmute },
-  { label: '解除封禁', value: MANUAL_ACTION_TYPE.unban },
+export const getManualActionOptions = (t: TFunction) => [
+  { label: t('moderation.action.mute'), value: MANUAL_ACTION_TYPE.mute },
+  { label: t('moderation.action.ban'), value: MANUAL_ACTION_TYPE.ban },
+  { label: t('moderation.action.unmute'), value: MANUAL_ACTION_TYPE.unmute },
+  { label: t('moderation.action.unban'), value: MANUAL_ACTION_TYPE.unban },
 ];
 
-export const ACTION_LOG_ACTION_TYPE_OPTIONS = [
-  { label: '禁言', value: 'Mute' },
-  { label: '封禁', value: 'Ban' },
-  { label: '解除禁言', value: 'Unmute' },
-  { label: '解除封禁', value: 'Unban' },
+export const getActionLogActionTypeOptions = (t: TFunction) => [
+  { label: t('moderation.action.mute'), value: 'Mute' },
+  { label: t('moderation.action.ban'), value: 'Ban' },
+  { label: t('moderation.action.unmute'), value: 'Unmute' },
+  { label: t('moderation.action.unban'), value: 'Unban' },
 ];
 
-export const ACTION_LOG_STATUS_OPTIONS = [
-  { label: '生效中', value: 'active' },
-  { label: '已结束', value: 'inactive' },
+export const getActionLogStatusOptions = (t: TFunction) => [
+  { label: t('moderation.action.active'), value: 'active' },
+  { label: t('moderation.action.inactive'), value: 'inactive' },
 ];
 
-const TARGET_TYPE_LABEL_MAP: Record<string, string> = {
-  Post: '帖子',
-  Comment: '评论',
-  PostQuickReply: '轻回应',
-  ChatMessage: '聊天消息',
-  Product: '商品',
-  Unknown: '未知目标',
+const TARGET_TYPE_KEY_MAP: Record<string, string> = {
+  Post: 'moderation.target.post',
+  Comment: 'moderation.target.comment',
+  PostQuickReply: 'moderation.target.quickReply',
+  ChatMessage: 'moderation.target.chatMessage',
+  Product: 'moderation.target.product',
+  Unknown: 'moderation.target.unknown',
 };
 
-const REASON_TYPE_LABEL_MAP: Record<string, string> = {
-  Spam: '垃圾内容',
-  Abuse: '辱骂骚扰',
-  Pornography: '色情低俗',
-  Illegal: '违法违规',
-  Fraud: '欺诈误导',
-  Other: '其他',
+const REASON_TYPE_KEY_MAP: Record<string, string> = {
+  Spam: 'moderation.reason.spam',
+  Abuse: 'moderation.reason.abuse',
+  Pornography: 'moderation.reason.pornography',
+  Illegal: 'moderation.reason.illegal',
+  Fraud: 'moderation.reason.fraud',
+  Other: 'moderation.reason.other',
 };
 
 export type ActionLogActiveFilter = 'active' | 'inactive';
@@ -159,12 +160,12 @@ export interface ModerationTargetDisplayInput extends ModerationTargetNavigation
   showTargetUser?: boolean;
 }
 
-export function getReasonTypeLabel(value: string | null | undefined): string {
-  return value ? (REASON_TYPE_LABEL_MAP[value] ?? value) : '未分类';
+export function getReasonTypeLabel(value: string | null | undefined, t: TFunction): string {
+  return value ? t(REASON_TYPE_KEY_MAP[value] ?? value) : t('moderation.target.notCategorized');
 }
 
-export function getTargetTypeLabel(value: string | null | undefined): string {
-  return value ? (TARGET_TYPE_LABEL_MAP[value] ?? value) : '未知目标';
+export function getTargetTypeLabel(value: string | null | undefined, t: TFunction): string {
+  return value ? t(TARGET_TYPE_KEY_MAP[value] ?? value) : t('moderation.target.unknown');
 }
 
 export function toOptionalString(value: unknown): string | undefined {
@@ -180,33 +181,33 @@ export function hasPositiveLongId(value: unknown): boolean {
   return toPositiveLongString(String(value ?? '')) !== undefined;
 }
 
-export function getActionTypeText(value: string | null | undefined): string {
+export function getActionTypeText(value: string | null | undefined, t: TFunction): string {
   switch (value) {
     case 'Mute':
-      return '禁言';
+      return t('moderation.action.mute');
     case 'Ban':
-      return '封禁';
+      return t('moderation.action.ban');
     case 'Unmute':
-      return '解除禁言';
+      return t('moderation.action.unmute');
     case 'Unban':
-      return '解除封禁';
+      return t('moderation.action.unban');
     default:
-      return '治理动作';
+      return t('moderation.action.generic');
   }
 }
 
-export function getManualActionTypeText(value: ManualActionTypeValue | null | undefined): string {
+export function getManualActionTypeText(value: ManualActionTypeValue | null | undefined, t: TFunction): string {
   switch (value) {
     case MANUAL_ACTION_TYPE.mute:
-      return '禁言';
+      return t('moderation.action.mute');
     case MANUAL_ACTION_TYPE.ban:
-      return '封禁';
+      return t('moderation.action.ban');
     case MANUAL_ACTION_TYPE.unmute:
-      return '解除禁言';
+      return t('moderation.action.unmute');
     case MANUAL_ACTION_TYPE.unban:
-      return '解除封禁';
+      return t('moderation.action.unban');
     default:
-      return '治理动作';
+      return t('moderation.action.generic');
   }
 }
 
@@ -240,16 +241,16 @@ export function canOpenChatTarget(
     && hasPositiveLongId(messageId);
 }
 
-export function resolveNavigationStatusLabel(status: string | null | undefined): { color: string; label: string } {
+export function resolveNavigationStatusLabel(status: string | null | undefined, t: TFunction): { color: string; label: string } {
   switch (status) {
     case 'Fallback':
-      return { color: 'warning', label: '已降级' };
+      return { color: 'warning', label: t('moderation.navigation.fallback') };
     case 'Unavailable':
-      return { color: 'default', label: '已失效' };
+      return { color: 'default', label: t('moderation.navigation.unavailable') };
     case 'Unsupported':
-      return { color: 'default', label: '未接入回看' };
+      return { color: 'default', label: t('moderation.navigation.unsupported') };
     default:
-      return { color: 'success', label: '可回看' };
+      return { color: 'success', label: t('moderation.navigation.ready') };
   }
 }
 
@@ -313,20 +314,23 @@ export function buildActionSourceTargetNavigationInput(record: UserModerationAct
   };
 }
 
-export function buildQueueManualActionReason(record: ContentReportQueueItemVo): string {
-  const reasonLabel = getReasonTypeLabel(record.voReasonType);
+export function buildQueueManualActionReason(record: ContentReportQueueItemVo, t: TFunction): string {
+  const reasonLabel = getReasonTypeLabel(record.voReasonType, t);
   const reasonDetail = record.voReasonDetail?.trim();
   return reasonDetail
-    ? `来源举报单 #${record.voReportId}：${reasonLabel}，${reasonDetail}`
-    : `来源举报单 #${record.voReportId}：${reasonLabel}`;
+    ? t('moderation.reason.fromReportWithDetail', { reportId: record.voReportId, reason: reasonLabel, detail: reasonDetail })
+    : t('moderation.reason.fromReport', { reportId: record.voReportId, reason: reasonLabel });
 }
 
-export function buildActionLogManualActionReason(record: UserModerationActionVo, actionType?: ManualActionTypeValue): string {
+export function buildActionLogManualActionReason(record: UserModerationActionVo, t: TFunction, actionType?: ManualActionTypeValue): string {
   if (actionType === MANUAL_ACTION_TYPE.unmute || actionType === MANUAL_ACTION_TYPE.unban) {
-    return `参考动作单 #${record.voActionId}，人工复核后${getManualActionTypeText(actionType)}`;
+    return t('moderation.reason.fromActionUndo', {
+      actionId: record.voActionId,
+      action: getManualActionTypeText(actionType, t),
+    });
   }
 
-  return `参考动作单 #${record.voActionId}，继续对用户 #${record.voTargetUserId} 执行人工治理`;
+  return t('moderation.reason.fromAction', { actionId: record.voActionId, userId: record.voTargetUserId });
 }
 
 function pickLatestActiveModerationAction(
@@ -361,7 +365,7 @@ export function buildManualModerationStatusSnapshot(
   };
 }
 
-export function resolveOpenTarget(input: ModerationTargetNavigationStateInput): ModerationOpenTarget | null {
+export function resolveOpenTarget(input: ModerationTargetNavigationStateInput, t: TFunction): ModerationOpenTarget | null {
   const navigationStatus = input.navigationStatus ?? 'Ready';
   if (navigationStatus === 'Unavailable' || navigationStatus === 'Unsupported') {
     return null;
@@ -370,14 +374,14 @@ export function resolveOpenTarget(input: ModerationTargetNavigationStateInput): 
   const targetType = input.targetType ?? null;
   if (canOpenChatTarget(targetType, input.targetChannelId, input.targetMessageId)) {
     return {
-      label: '打开聊天定位',
+      label: t('moderation.open.chat'),
       url: buildPublicMessagesTargetUrl(input.targetChannelId!, input.targetMessageId!),
     };
   }
 
   if (targetType === 'Post' && hasPositiveLongId(input.targetPostId)) {
     return {
-      label: '打开帖子详情',
+      label: t('moderation.open.post'),
       url: buildPublicForumTargetUrl(input.targetPostId!),
     };
   }
@@ -386,21 +390,21 @@ export function resolveOpenTarget(input: ModerationTargetNavigationStateInput): 
     const targetCommentId = input.targetCommentId ?? input.targetContentId;
     const isFallback = navigationStatus === 'Fallback';
     return {
-      label: isFallback ? '打开所属帖子' : '打开评论定位',
+      label: t(isFallback ? 'moderation.open.parentPost' : 'moderation.open.comment'),
       url: buildPublicForumTargetUrl(input.targetPostId!, isFallback ? undefined : targetCommentId),
     };
   }
 
   if (targetType === 'PostQuickReply' && hasPositiveLongId(input.targetPostId)) {
     return {
-      label: '打开所属帖子',
+      label: t('moderation.open.parentPost'),
       url: buildPublicForumTargetUrl(input.targetPostId!),
     };
   }
 
   if (targetType === 'Product' && hasPositiveLongId(input.targetContentId)) {
     return {
-      label: '打开商品详情',
+      label: t('moderation.open.product'),
       url: buildPublicShopTargetUrl(input.targetContentId!),
     };
   }
@@ -408,21 +412,25 @@ export function resolveOpenTarget(input: ModerationTargetNavigationStateInput): 
   return null;
 }
 
-export function resolveMissingTargetMessage(targetType: string | null | undefined, navigationMessage?: string | null): string {
+export function resolveMissingTargetMessage(
+  targetType: string | null | undefined,
+  navigationMessage: string | null | undefined,
+  t: TFunction,
+): string {
   if (navigationMessage && navigationMessage.trim().length > 0) {
     return navigationMessage;
   }
 
   switch (targetType) {
     case 'ChatMessage':
-      return '当前举报项缺少聊天定位信息';
+      return t('moderation.missing.chat');
     case 'Post':
     case 'Comment':
     case 'PostQuickReply':
-      return '当前举报项缺少论坛定位信息';
+      return t('moderation.missing.forum');
     case 'Product':
-      return '当前举报项缺少商品定位信息';
+      return t('moderation.missing.product');
     default:
-      return '当前目标类型未接入直接回看，请结合创建时快照、举报原因和用户治理记录复核。';
+      return t('moderation.missing.unsupported');
   }
 }

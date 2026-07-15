@@ -20,7 +20,7 @@ interface GlobalSearchProps {
 }
 
 export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [searchText, setSearchText] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
     }
 
     const lowerKeyword = keyword.toLowerCase();
-    const menuItems: SearchResult[] = getSearchableRoutes(user).map((route) => ({
+    const menuItems: SearchResult[] = getSearchableRoutes(user, t).map((route) => ({
       key: route.key,
       title: route.title,
       path: route.path,
@@ -44,7 +44,7 @@ export function GlobalSearch({ visible, onClose }: GlobalSearchProps) {
         item.title.toLowerCase().includes(lowerKeyword) ||
         item.path.toLowerCase().includes(lowerKeyword)
     );
-  }, [i18n.resolvedLanguage, loading, t, user]);
+  }, [loading, t, user]);
 
   useEffect(() => {
     const nextResults = searchMenuItems(searchText);

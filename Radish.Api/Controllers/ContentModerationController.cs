@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -24,11 +26,16 @@ public class ContentModerationController : ControllerBase
 {
     private readonly IContentModerationService _contentModerationService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-    public ContentModerationController(IContentModerationService contentModerationService, ICurrentUserAccessor currentUserAccessor)
+    public ContentModerationController(
+        IContentModerationService contentModerationService,
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _contentModerationService = contentModerationService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -42,12 +49,12 @@ public class ContentModerationController : ControllerBase
     {
         if (dto.TargetContentId <= 0)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "举报目标 ID 无效");
+            return BuildValidationError();
         }
 
         if (string.IsNullOrWhiteSpace(dto.TargetType))
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "举报目标类型不能为空");
+            return BuildValidationError();
         }
 
         try
@@ -66,9 +73,9 @@ public class ContentModerationController : ControllerBase
                 ResponseData = reportId
             };
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildValidationError();
         }
         catch (BusinessException ex)
         {
@@ -124,9 +131,9 @@ public class ContentModerationController : ControllerBase
                 ResponseData = result
             };
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildValidationError();
         }
     }
 
@@ -140,7 +147,7 @@ public class ContentModerationController : ControllerBase
     {
         if (dto.ReportId <= 0)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "举报单 ID 无效");
+            return BuildValidationError();
         }
 
         try
@@ -158,9 +165,9 @@ public class ContentModerationController : ControllerBase
                 ResponseData = result
             };
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildValidationError();
         }
         catch (BusinessException ex)
         {
@@ -178,7 +185,7 @@ public class ContentModerationController : ControllerBase
     {
         if (dto.TargetUserId <= 0)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
+            return BuildValidationError();
         }
 
         try
@@ -196,9 +203,9 @@ public class ContentModerationController : ControllerBase
                 ResponseData = result
             };
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildValidationError();
         }
         catch (BusinessException ex)
         {
@@ -224,23 +231,35 @@ public class ContentModerationController : ControllerBase
                 ResponseData = result
             };
         }
-        catch (ArgumentException ex)
+        catch (ArgumentException)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildValidationError();
         }
     }
 
-    private static MessageModel BuildError(
+    private MessageModel BuildValidationError()
+    {
+        return BuildError(
+            HttpStatusCodeEnum.BadRequest,
+            "治理请求参数无效，请检查后重试",
+            "Moderation.ValidationFailed",
+            "error.moderation.validation_failed");
+    }
+
+    private MessageModel BuildError(
         HttpStatusCodeEnum statusCode,
         string message,
         string? code = null,
         string? messageKey = null)
     {
+        var localizedMessage = messageKey is null ? null : _errorsLocalizer[messageKey];
         return new MessageModel
         {
             IsSuccess = false,
             StatusCode = (int)statusCode,
-            MessageInfo = message,
+            MessageInfo = localizedMessage is { ResourceNotFound: false }
+                ? localizedMessage.Value
+                : message,
             Code = code,
             MessageKey = messageKey
         };

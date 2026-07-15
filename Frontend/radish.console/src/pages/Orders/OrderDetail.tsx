@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Descriptions, Tag, Button, Space, AntInput as Input, message, formatLocalizedDateTime } from '@radish/ui';
+import { Modal, Descriptions, Tag, Button, Space, AntInput as Input, message, formatLocalizedDateTime, formatLocalizedNumber } from '@radish/ui';
 import { SyncOutlined } from '@radish/ui';
-import { adminGetOrder, getOrderStatusColor } from '../../api/shopApi';
+import { adminGetOrder } from '../../api/shopApi';
 import type { Order } from '../../api/types';
 import { useTranslation } from 'react-i18next';
+import {
+  getOrderFailureStageLabel,
+  getOrderDurationLabel,
+  getOrderProductTypeLabel,
+  getOrderStatusColor,
+  getOrderStatusLabel,
+} from './orderPresentation';
 
 interface OrderDetailProps {
   visible: boolean;
@@ -42,7 +49,7 @@ export const OrderDetail = ({
   savingRemark = false,
   onSaveRemark,
 }: OrderDetailProps) => {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [detailOrder, setDetailOrder] = useState<Order | undefined>(fallbackOrder);
   const [adminRemark, setAdminRemark] = useState('');
@@ -81,7 +88,7 @@ export const OrderDetail = ({
           return;
         }
 
-        const errorMessage = error instanceof Error ? error.message : '加载订单详情失败';
+        const errorMessage = error instanceof Error ? error.message : t('orders.detail.loadFailed');
         setLoadError(errorMessage);
         setDetailOrder((current) => current ?? fallbackOrder);
         message.error(errorMessage);
@@ -97,7 +104,7 @@ export const OrderDetail = ({
     return () => {
       cancelled = true;
     };
-  }, [fallbackOrder, orderId, reloadToken, visible]);
+  }, [fallbackOrder, orderId, reloadToken, t, visible]);
 
   const currentOrder = detailOrder ?? fallbackOrder;
 
@@ -121,7 +128,7 @@ export const OrderDetail = ({
 
   return (
     <Modal
-      title="订单详情"
+      title={t('orders.detail.title')}
       isOpen={visible}
       onClose={onClose}
       size="large"
@@ -129,23 +136,23 @@ export const OrderDetail = ({
         <Space wrap>
           {currentOrder && onViewUser ? (
             <Button onClick={() => onViewUser(currentOrder)}>
-              查看用户
+              {t('orders.action.viewUser')}
             </Button>
           ) : null}
           {currentOrder && onViewProduct ? (
             <Button onClick={() => onViewProduct(currentOrder)}>
-              查看商品
+              {t('orders.action.viewProduct')}
             </Button>
           ) : null}
           {currentOrder?.voCoinTransactionId && onViewCoinTransaction ? (
             <Button onClick={() => onViewCoinTransaction(currentOrder)}>
-              查看扣款流水
+              {t('orders.detail.viewDebit')}
             </Button>
           ) : null}
           {currentOrder?.voCanRetryFulfillment === true && onRetry ? (
             <Button variant="primary" onClick={onRetry}>
               <SyncOutlined />
-              重试发放权益
+              {t('orders.detail.retry')}
             </Button>
           ) : null}
           {canRemark && onSaveRemark ? (
@@ -154,121 +161,125 @@ export const OrderDetail = ({
               onClick={() => onSaveRemark(normalizedEditingRemark)}
               disabled={!canSaveRemark}
             >
-              {savingRemark ? '保存中...' : '保存备注'}
+              {t(savingRemark ? 'orders.detail.saving' : 'orders.detail.saveRemark')}
             </Button>
           ) : null}
-          <Button onClick={onClose}>关闭</Button>
+          <Button onClick={onClose}>{t('orders.detail.close')}</Button>
         </Space>
       }
     >
       {!currentOrder ? (
         <div className="order-detail-empty">
-          {loading ? '正在加载订单详情...' : loadError ?? '未找到订单详情'}
+          {loading ? t('orders.detail.loading') : loadError ?? t('orders.detail.notFound')}
         </div>
       ) : (
         <>
           <Descriptions bordered column={2}>
-            <Descriptions.Item label="订单号" span={2}>
+            <Descriptions.Item label={t('orders.detail.field.orderNo')} span={2}>
               {currentOrder.voOrderNo}
             </Descriptions.Item>
 
-            <Descriptions.Item label="订单状态">
+            <Descriptions.Item label={t('orders.detail.field.status')}>
               <Tag color={getOrderStatusColor(currentOrder.voStatus)}>
-                {currentOrder.voStatusDisplay}
+                {getOrderStatusLabel(currentOrder, t)}
               </Tag>
             </Descriptions.Item>
 
-            <Descriptions.Item label="失败阶段">
-              {currentOrder.voFailureStageDisplay || '-'}
+            <Descriptions.Item label={t('orders.detail.field.failureStage')}>
+              {getOrderFailureStageLabel(currentOrder.voFailureStage, t)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="创建时间">
+            <Descriptions.Item label={t('orders.detail.field.createdAt')}>
               {formatDateTime(currentOrder.voCreateTime, language)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="支付时间">
+            <Descriptions.Item label={t('orders.detail.field.paidAt')}>
               {formatDateTime(currentOrder.voPaidTime, language)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="完成时间">
+            <Descriptions.Item label={t('orders.detail.field.completedAt')}>
               {formatDateTime(currentOrder.voCompletedTime, language)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="权益到期时间">
+            <Descriptions.Item label={t('orders.detail.field.benefitExpiresAt')}>
               {formatDateTime(currentOrder.voBenefitExpiresAt, language)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="固定到期快照">
+            <Descriptions.Item label={t('orders.detail.field.fixedExpiresAt')}>
               {formatDateTime(currentOrder.voFixedExpiresAt, language)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="取消时间">
+            <Descriptions.Item label={t('orders.detail.field.cancelledAt')}>
               {formatDateTime(currentOrder.voCancelledTime, language)}
             </Descriptions.Item>
 
-            <Descriptions.Item label="取消原因" span={2}>
+            <Descriptions.Item label={t('orders.detail.field.cancelReason')} span={2}>
               {currentOrder.voCancelReason || '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="失败原因" span={2}>
+            <Descriptions.Item label={t('orders.detail.field.failReason')} span={2}>
               {currentOrder.voFailReason ? (
                 <span className="order-detail-danger">{currentOrder.voFailReason}</span>
               ) : '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="用户 ID">
+            <Descriptions.Item label={t('orders.detail.field.userId')}>
               {currentOrder.voUserId}
             </Descriptions.Item>
 
-            <Descriptions.Item label="用户展示">
-              {currentOrder.voUserName || '未知'}
+            <Descriptions.Item label={t('orders.detail.field.user')}>
+              {currentOrder.voUserName || t('orders.common.unknown')}
             </Descriptions.Item>
 
-            <Descriptions.Item label="商品 ID">
+            <Descriptions.Item label={t('orders.detail.field.productId')}>
               {currentOrder.voProductId}
             </Descriptions.Item>
 
-            <Descriptions.Item label="商品名称">
+            <Descriptions.Item label={t('orders.detail.field.product')}>
               {currentOrder.voProductName}
             </Descriptions.Item>
 
-            <Descriptions.Item label="商品类型">
-              <Tag color="blue">{currentOrder.voProductTypeDisplay}</Tag>
+            <Descriptions.Item label={t('orders.detail.field.productType')}>
+              <Tag color="blue">{getOrderProductTypeLabel(currentOrder.voProductType, t)}</Tag>
             </Descriptions.Item>
 
-            <Descriptions.Item label="数量">
+            <Descriptions.Item label={t('orders.detail.field.quantity')}>
               {currentOrder.voQuantity}
             </Descriptions.Item>
 
-            <Descriptions.Item label="单价">
+            <Descriptions.Item label={t('orders.detail.field.unitPrice')}>
               <span className="order-detail-price">
-                {currentOrder.voUnitPrice} 胡萝卜
+                {formatLocalizedNumber(currentOrder.voUnitPrice, language)} {t('console.unit.carrot')}
               </span>
             </Descriptions.Item>
 
-            <Descriptions.Item label="总价">
+            <Descriptions.Item label={t('orders.detail.field.totalPrice')}>
               <span className="order-detail-price order-detail-price--total">
-                {currentOrder.voTotalPrice} 胡萝卜
+                {formatLocalizedNumber(currentOrder.voTotalPrice, language)} {t('console.unit.carrot')}
               </span>
             </Descriptions.Item>
 
-            <Descriptions.Item label="扣款流水 ID" span={2}>
+            <Descriptions.Item label={t('orders.detail.field.coinTransactionId')} span={2}>
               {currentOrder.voCoinTransactionId || '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="持续权益 ID">
+            <Descriptions.Item label={t('orders.detail.field.benefitId')}>
               {currentOrder.voGrantedBenefitId || '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="背包资源 ID">
+            <Descriptions.Item label={t('orders.detail.field.inventoryId')}>
               {currentOrder.voGrantedInventoryId || '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="有效期" span={2}>
-              {currentOrder.voDurationDisplay || '-'}
+            <Descriptions.Item label={t('orders.detail.field.duration')} span={2}>
+              {getOrderDurationLabel(
+                currentOrder,
+                t,
+                (value) => formatDateTime(value, language),
+              )}
             </Descriptions.Item>
 
-            <Descriptions.Item label="用户备注" span={2}>
+            <Descriptions.Item label={t('orders.detail.field.userRemark')} span={2}>
               {currentOrder.voUserRemark || '-'}
             </Descriptions.Item>
           </Descriptions>
@@ -281,14 +292,14 @@ export const OrderDetail = ({
 
           {canRemark ? (
             <div className="order-detail-remark">
-              <div className="order-detail-remark__label">管理员备注</div>
+              <div className="order-detail-remark__label">{t('orders.detail.adminRemark')}</div>
               <Input.TextArea
                 rows={4}
                 maxLength={500}
                 showCount
                 value={adminRemark}
                 onChange={(event) => setAdminRemark(event.target.value)}
-                placeholder="补充处理结论、追查线索或人工处置说明"
+                placeholder={t('orders.detail.remarkPlaceholder')}
                 disabled={savingRemark}
               />
             </div>

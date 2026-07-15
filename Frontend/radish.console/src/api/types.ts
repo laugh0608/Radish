@@ -246,6 +246,8 @@ export interface Order {
   voGrantedInventoryId?: string | null;
   voBenefitExpiresAt?: string | null;
   voFixedExpiresAt?: string | null;
+  voDurationType: string | number;
+  voDurationDays?: number | null;
   voDurationDisplay?: string | null;
   voCreateTime: string;
   voPaidTime?: string | null;

@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Routing;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -29,6 +31,7 @@ public class ShopController : ControllerBase
     private readonly IUserInventoryService _userInventoryService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
     public ShopController(
         IProductService productService,
@@ -36,7 +39,8 @@ public class ShopController : ControllerBase
         IUserBenefitService userBenefitService,
         IUserInventoryService userInventoryService,
         IUserBrowseHistoryService userBrowseHistoryService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _productService = productService;
         _orderService = orderService;
@@ -44,6 +48,7 @@ public class ShopController : ControllerBase
         _userInventoryService = userInventoryService;
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -246,7 +251,11 @@ public class ShopController : ControllerBase
         var result = await _orderService.GetOrderDetailAsync(userId, orderId);
         if (result == null)
         {
-            return MessageModel<OrderVo>.Message(false, "订单不存在", default!);
+            return BuildError<OrderVo>(
+                HttpStatusCodeEnum.NotFound,
+                "订单不存在",
+                "Order.NotFound",
+                "error.order.not_found");
         }
 
         return MessageModel<OrderVo>.Success("查询成功", result);
@@ -673,7 +682,11 @@ public class ShopController : ControllerBase
         var result = await _orderService.GetOrderDetailForAdminAsync(orderId);
         if (result == null)
         {
-            return MessageModel<OrderVo>.Message(false, "订单不存在", default!);
+            return BuildError<OrderVo>(
+                HttpStatusCodeEnum.NotFound,
+                "订单不存在",
+                "Order.NotFound",
+                "error.order.not_found");
         }
 
         return MessageModel<OrderVo>.Success("查询成功", result);
@@ -730,9 +743,13 @@ public class ShopController : ControllerBase
                 result.VoChanged ? "权益已撤销" : "权益此前已撤销",
                 result);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
+            return BuildError<UserBenefitActionResultVo>(
+                HttpStatusCodeEnum.Conflict,
+                "当前权益操作无法完成，请刷新后核对权益状态",
+                "Shop.BenefitOperationRejected",
+                "error.shop.benefit_operation_rejected");
         }
     }
 
@@ -749,9 +766,23 @@ public class ShopController : ControllerBase
             var result = await _orderService.RetryGrantBenefitAsync(orderId);
             return MessageModel<bool>.Success("重新发放成功", result);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Order.RetryRejected",
+                ex.MessageKey ?? "error.order.retry_rejected",
+                false);
+        }
+        catch (InvalidOperationException)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                "当前订单不能重新发放，请刷新后核对订单状态与支付证据",
+                "Order.RetryRejected",
+                "error.order.retry_rejected",
+                false);
         }
     }
 
@@ -772,11 +803,30 @@ public class ShopController : ControllerBase
                 GetCurrentUserName());
             return result
                 ? MessageModel<bool>.Success("备注已保存", true)
-                : MessageModel<bool>.Message(false, "备注保存失败", false);
+                : BuildError(
+                    HttpStatusCodeEnum.Conflict,
+                    "订单备注保存失败，请刷新后重试",
+                    "Order.RemarkFailed",
+                    "error.order.remark_failed",
+                    responseData: false);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Order.RemarkFailed",
+                ex.MessageKey ?? "error.order.remark_failed",
+                false);
+        }
+        catch (InvalidOperationException)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                "订单备注保存失败，请刷新后重试",
+                "Order.RemarkFailed",
+                "error.order.remark_failed",
+                false);
         }
     }
 
@@ -790,6 +840,25 @@ public class ShopController : ControllerBase
     /// <summary>获取当前用户名</summary>
     private string GetCurrentUserName() =>
         string.IsNullOrWhiteSpace(Current.UserName) ? "Unknown" : Current.UserName;
+
+    private MessageModel<T> BuildError<T>(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey,
+        T? responseData = default)
+    {
+        var localizedMessage = _errorsLocalizer[messageKey];
+        return new MessageModel<T>
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            ResponseData = responseData,
+            Code = code,
+            MessageKey = messageKey
+        };
+    }
 
     #endregion
 }

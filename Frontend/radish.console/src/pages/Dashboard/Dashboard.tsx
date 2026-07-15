@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -32,9 +32,10 @@ import {
   ConsoleStatusChip,
   ConsoleToolbar,
 } from '@/components/ConsolePage';
-import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
+import { adminGetOrders } from '@/api/shopApi';
 import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/pages/Orders/orderPresentation';
 import type { Order } from '@/api/types';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
@@ -90,12 +91,12 @@ export const Dashboard = () => {
   const [statsLoading, setStatsLoading] = useState(false);
 
   const routeGroups = useMemo(
-    () => getSidebarRouteGroups(user),
-    [user, i18n.resolvedLanguage]
+    () => getSidebarRouteGroups(user, t),
+    [t, user]
   );
   const visibleRouteCount = routeGroups.reduce((total, group) => total + group.routes.length, 0);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       const data = await getDashboardStats();
@@ -106,9 +107,9 @@ export const Dashboard = () => {
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [t]);
 
-  const loadRecentOrders = async () => {
+  const loadRecentOrders = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminGetOrders({
@@ -122,11 +123,11 @@ export const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     void loadStats();
-  }, []);
+  }, [loadStats]);
 
   useEffect(() => {
     if (!canViewOrders) {
@@ -136,7 +137,7 @@ export const Dashboard = () => {
     }
 
     void loadRecentOrders();
-  }, [canViewOrders]);
+  }, [canViewOrders, loadRecentOrders]);
 
   const handleOpenOrderDetail = (order: Order) => {
     navigate(buildOrderDetailPath({
@@ -177,7 +178,7 @@ export const Dashboard = () => {
       width: 100,
       render: (_, record) => (
         <Tag color={getOrderStatusColor(record.voStatus)}>
-          {record.voStatusDisplay}
+          {getOrderStatusLabel(record, t)}
         </Tag>
       ),
     },

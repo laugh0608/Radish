@@ -2,8 +2,10 @@ import {
   Button,
   Space,
   Tag,
+  formatLocalizedDateTime,
   type TableColumnsType,
 } from '@radish/ui';
+import type { TFunction } from 'i18next';
 import {
   type ContentReportQueueItemVo,
   type UserModerationActionVo,
@@ -47,17 +49,19 @@ interface ModerationLogColumnActions {
 }
 
 export function createModerationQueueColumns(
-  actions: ModerationQueueColumnActions
+  actions: ModerationQueueColumnActions,
+  t: TFunction,
+  language: string,
 ): TableColumnsType<ContentReportQueueItemVo> {
   return [
     {
-      title: '举报单',
+      title: t('moderation.column.report'),
       key: 'report',
       width: 110,
       render: (_, record) => `#${record.voReportId}`,
     },
     {
-      title: '目标',
+      title: t('moderation.column.target'),
       key: 'target',
       width: 340,
       render: (_, record) => (
@@ -70,23 +74,23 @@ export function createModerationQueueColumns(
       ),
     },
     {
-      title: '举报人',
+      title: t('moderation.column.reporter'),
       key: 'reporter',
       width: 180,
       render: (_, record) => `${record.voReporterUserName} (#${record.voReporterUserId})`,
     },
     {
-      title: '原因',
+      title: t('moderation.column.reason'),
       key: 'reason',
       render: (_, record) => (
         <div>
-          <div>{getReasonTypeLabel(record.voReasonType)}</div>
+          <div>{getReasonTypeLabel(record.voReasonType, t)}</div>
           {record.voReasonDetail ? <div className="moderation-table-muted">{record.voReasonDetail}</div> : null}
         </div>
       ),
     },
     {
-      title: '状态',
+      title: t('moderation.column.status'),
       key: 'status',
       width: 160,
       render: (_, record) => (
@@ -97,18 +101,19 @@ export function createModerationQueueColumns(
       ),
     },
     {
-      title: '提交时间',
+      title: t('moderation.column.submittedAt'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
+      render: (value: string) => formatLocalizedDateTime(value, language),
     },
     {
-      title: '操作',
+      title: t('moderation.column.action'),
       key: 'actions',
       width: 460,
       render: (_, record) => {
         const targetNavigationInput = buildQueueTargetNavigationInput(record);
-        const openTarget = resolveOpenTarget(targetNavigationInput);
+        const openTarget = resolveOpenTarget(targetNavigationInput, t);
 
         return (
           <Space wrap>
@@ -121,7 +126,9 @@ export function createModerationQueueColumns(
               </Button>
             ) : record.voTargetNavigationStatus === 'Unavailable' || record.voTargetNavigationStatus === 'Unsupported' ? (
               <span className="moderation-table-muted">
-                {record.voTargetNavigationStatus === 'Unsupported' ? '未接入回看' : '目标已失效'}
+                {t(record.voTargetNavigationStatus === 'Unsupported'
+                  ? 'moderation.navigation.unsupported'
+                  : 'moderation.navigation.targetUnavailable')}
               </span>
             ) : null}
             {hasPositiveLongId(record.voTargetUserId) ? (
@@ -130,11 +137,11 @@ export function createModerationQueueColumns(
                 onClick={() => {
                   actions.onApplyActionLogPreset({
                     targetUserId: String(record.voTargetUserId),
-                    hint: `已带入被举报用户 #${record.voTargetUserId} 的治理动作日志，便于核对该用户历史处罚记录。`,
+                    hint: t('moderation.hint.targetUserLogs', { userId: record.voTargetUserId }),
                   });
                 }}
               >
-                查看目标动作
+                {t('moderation.column.viewTargetActions')}
               </Button>
             ) : null}
             {actions.canReview && hasPositiveLongId(record.voTargetUserId) ? (
@@ -152,12 +159,12 @@ export function createModerationQueueColumns(
                     durationHours: record.voReviewActionType === 'Mute' || record.voReviewActionType === 'Ban'
                       ? record.voReviewDurationHours ?? undefined
                       : undefined,
-                    reason: buildQueueManualActionReason(record),
-                    hint: `已带入举报单 #${record.voReportId} 与被举报用户 #${record.voTargetUserId}，可继续执行手动禁言 / 封禁或补录解除动作。`,
+                    reason: buildQueueManualActionReason(record, t),
+                    hint: t('moderation.hint.reportManual', { reportId: record.voReportId, userId: record.voTargetUserId }),
                   });
                 }}
               >
-                手动处置
+                {t('moderation.column.manual')}
               </Button>
             ) : null}
             {record.voReviewActionType !== 'None' ? (
@@ -167,19 +174,19 @@ export function createModerationQueueColumns(
                   actions.onApplyActionLogPreset({
                     targetUserId: hasPositiveLongId(record.voTargetUserId) ? String(record.voTargetUserId) : undefined,
                     sourceReportId: String(record.voReportId),
-                    hint: `已带入举报单 #${record.voReportId} 关联的治理动作日志。`,
+                    hint: t('moderation.hint.reportLogs', { reportId: record.voReportId }),
                   });
                 }}
               >
-                查看关联动作
+                {t('moderation.column.viewRelatedActions')}
               </Button>
             ) : null}
             {record.voStatus === 'Pending' && actions.canReview ? (
               <Button size="small" variant="primary" onClick={() => actions.onOpenReviewModal(record)}>
-                审核
+                {t('moderation.column.review')}
               </Button>
             ) : (
-              <span className="moderation-table-muted">{record.voReviewedByName || '已处理'}</span>
+              <span className="moderation-table-muted">{record.voReviewedByName || t('moderation.column.processed')}</span>
             )}
           </Space>
         );
@@ -189,29 +196,31 @@ export function createModerationQueueColumns(
 }
 
 export function createModerationLogColumns(
-  actions: ModerationLogColumnActions
+  actions: ModerationLogColumnActions,
+  t: TFunction,
+  language: string,
 ): TableColumnsType<UserModerationActionVo> {
   return [
     {
-      title: '动作单',
+      title: t('moderation.column.actionRecord'),
       key: 'voActionId',
       width: 110,
       render: (_, record) => `#${record.voActionId}`,
     },
     {
-      title: '目标用户',
+      title: t('moderation.column.targetUser'),
       key: 'targetUser',
       width: 180,
-      render: (_, record) => record.voTargetUserName || `用户 ${record.voTargetUserId}`,
+      render: (_, record) => record.voTargetUserName || t('moderation.target.user', { id: record.voTargetUserId }),
     },
     {
-      title: '动作',
+      title: t('moderation.column.action'),
       key: 'actionType',
       width: 140,
       render: (_, record) => <ActionTypeTag value={record.voActionType} />,
     },
     {
-      title: '来源举报',
+      title: t('moderation.column.sourceReport'),
       key: 'sourceReport',
       width: 360,
       render: (_, record) => {
@@ -223,38 +232,38 @@ export function createModerationLogColumns(
           record.voSourceReportTargetType
             ? (
               <div>
-                <div>举报单 #{record.voSourceReportId}</div>
+                <div>{t('moderation.column.reportRef', { id: record.voSourceReportId })}</div>
                 <ModerationTargetDisplay input={buildActionSourceTargetDisplayInput(record)} />
               </div>
             )
-            : <div className="moderation-table-muted">未保留目标快照</div>
+            : <div className="moderation-table-muted">{t('moderation.column.noSnapshot')}</div>
         );
       },
     },
     {
-      title: '原因',
+      title: t('moderation.column.reason'),
       dataIndex: 'voReason',
       key: 'voReason',
     },
     {
-      title: '操作者',
+      title: t('moderation.column.operator'),
       dataIndex: 'voOperatorUserName',
       key: 'voOperatorUserName',
       width: 140,
     },
     {
-      title: '状态',
+      title: t('moderation.column.status'),
       key: 'voIsActive',
       width: 100,
-      render: (_, record) => <Tag color={record.voIsActive ? 'processing' : 'default'}>{record.voIsActive ? '生效中' : '已结束'}</Tag>,
+      render: (_, record) => <Tag color={record.voIsActive ? 'processing' : 'default'}>{t(record.voIsActive ? 'moderation.action.active' : 'moderation.action.inactive')}</Tag>,
     },
     {
-      title: '操作',
+      title: t('moderation.column.action'),
       key: 'actions',
       width: 420,
       render: (_, record) => {
         const targetNavigationInput = buildActionSourceTargetNavigationInput(record);
-        const openTarget = resolveOpenTarget(targetNavigationInput);
+        const openTarget = resolveOpenTarget(targetNavigationInput, t);
 
         return (
           <Space wrap>
@@ -268,9 +277,9 @@ export function createModerationLogColumns(
             ) : (
               <span className="moderation-table-muted">
                 {record.voSourceReportTargetNavigationStatus === 'Unsupported'
-                  ? '未接入回看'
+                  ? t('moderation.navigation.unsupported')
                   : record.voSourceReportTargetNavigationStatus === 'Unavailable'
-                    ? '目标已失效'
+                    ? t('moderation.navigation.targetUnavailable')
                     : '-'}
               </span>
             )}
@@ -280,11 +289,11 @@ export function createModerationLogColumns(
                 onClick={() => {
                   actions.onApplyQueuePreset({
                     keyword: String(record.voSourceReportId),
-                    hint: `已带入来源举报单 #${record.voSourceReportId}，便于回看原始审核记录与目标快照。`,
+                    hint: t('moderation.hint.sourceReport', { reportId: record.voSourceReportId }),
                   });
                 }}
               >
-                查看原举报
+                {t('moderation.column.viewOriginalReport')}
               </Button>
             ) : null}
             {actions.canReview ? (
@@ -294,12 +303,17 @@ export function createModerationLogColumns(
                   actions.onApplyManualActionPreset({
                     targetUserId: String(record.voTargetUserId),
                     sourceReportId: record.voSourceReportId ? String(record.voSourceReportId) : undefined,
-                    reason: buildActionLogManualActionReason(record),
-                    hint: `已带入动作单 #${record.voActionId} 的目标用户${record.voSourceReportId ? ` 与来源举报单 #${record.voSourceReportId}` : ''}，可继续执行人工治理。`,
+                    reason: buildActionLogManualActionReason(record, t),
+                    hint: t('moderation.hint.actionManual', {
+                      actionId: record.voActionId,
+                      source: record.voSourceReportId
+                        ? t('moderation.hint.sourceSuffix', { reportId: record.voSourceReportId })
+                        : '',
+                    }),
                   });
                 }}
               >
-                手动处置
+                {t('moderation.column.manual')}
               </Button>
             ) : null}
             {actions.canReview && record.voIsActive && (record.voActionType === 'Mute' || record.voActionType === 'Ban') ? (
@@ -314,12 +328,15 @@ export function createModerationLogColumns(
                     targetUserId: String(record.voTargetUserId),
                     sourceReportId: record.voSourceReportId ? String(record.voSourceReportId) : undefined,
                     actionType,
-                    reason: buildActionLogManualActionReason(record, actionType),
-                    hint: `已根据动作单 #${record.voActionId} 带入${getManualActionTypeText(actionType)}建议，提交后会自动回跳到对应日志记录。`,
+                    reason: buildActionLogManualActionReason(record, t, actionType),
+                    hint: t('moderation.hint.actionUndo', {
+                      actionId: record.voActionId,
+                      action: getManualActionTypeText(actionType, t),
+                    }),
                   });
                 }}
               >
-                {record.voActionType === 'Mute' ? '解除禁言' : '解除封禁'}
+                {t(record.voActionType === 'Mute' ? 'moderation.action.unmute' : 'moderation.action.unban')}
               </Button>
             ) : null}
           </Space>
@@ -327,16 +344,17 @@ export function createModerationLogColumns(
       },
     },
     {
-      title: '开始时间',
+      title: t('moderation.column.startedAt'),
       dataIndex: 'voStartTime',
       key: 'voStartTime',
       width: 180,
+      render: (value: string) => formatLocalizedDateTime(value, language),
     },
     {
-      title: '结束时间',
+      title: t('moderation.column.endedAt'),
       key: 'voEndTime',
       width: 180,
-      render: (_, record) => record.voEndTime || '-',
+      render: (_, record) => record.voEndTime ? formatLocalizedDateTime(record.voEndTime, language) : '-',
     },
   ];
 }

@@ -170,7 +170,7 @@ export const MessagesApp = () => {
       <PublicShellHeader
         variant="private"
         activeKey="chat"
-        brandMark="聊"
+        brandMark={t('messages.brandMark')}
         brandName={t('messages.title')}
         brandSubline={t('messages.shellSubline')}
         hideMobileNav={route.channelId !== undefined}

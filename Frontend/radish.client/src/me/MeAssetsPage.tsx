@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { formatLocalizedNumber } from '@radish/ui';
 import {
   coinApi,
   TransactionStatus,
@@ -12,6 +13,7 @@ import { WebStateSlot } from '@/components/web-shell';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { copyRecoveryDiagnostics } from '@/utils/recoveryDiagnostics';
+import { getIntlLocale } from '@/locales/language';
 import { buildMePath, type MeRoute } from './meRouteState';
 import styles from './MeAssetsPage.module.css';
 
@@ -51,12 +53,12 @@ function shouldHandleMeAssetsLink(event: MouseEvent<HTMLAnchorElement>): boolean
     && !event.altKey;
 }
 
-function formatNumber(value: number | null | undefined): string {
-  return Number(value ?? 0).toLocaleString();
+function formatNumber(value: number | null | undefined, language: string): string {
+  return formatLocalizedNumber(Number(value ?? 0), language);
 }
 
-function formatAmount(transaction: CoinTransaction): string {
-  return transaction.voAmountDisplay || `${transaction.voAmount > 0 ? '+' : ''}${formatNumber(transaction.voAmount)}`;
+function formatAmount(transaction: CoinTransaction, language: string): string {
+  return `${transaction.voAmount > 0 ? '+' : ''}${formatNumber(transaction.voAmount, language)}`;
 }
 
 function getTransactionTone(transaction: CoinTransaction): 'positive' | 'negative' {
@@ -77,7 +79,8 @@ function sumTransactions(
 }
 
 export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const [pageData, setPageData] = useState<AssetsPageData>(initialData);
   const [loading, setLoading] = useState(false);
@@ -180,7 +183,7 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
           <p>{t(isTransactionsMode ? 'me.assets.transactionsDescription' : 'me.assets.overviewDescription')}</p>
           {!isTransactionsMode && (
             <strong className={styles.heroBalance}>
-              {balance?.voBalanceDisplay || `${formatNumber(balance?.voBalance)} ${t('me.carrotUnit')}`}
+              {formatNumber(balance?.voBalance, language)} {t('me.carrotUnit')}
             </strong>
           )}
         </div>
@@ -203,19 +206,19 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
       <section className={styles.summaryGrid}>
         <article className={styles.summaryCard}>
           <span>{t('me.assets.available')}</span>
-          <strong>{balance?.voBalanceDisplay || `${formatNumber(balance?.voBalance)} ${t('me.carrotUnit')}`}</strong>
+          <strong>{formatNumber(balance?.voBalance, language)} {t('me.carrotUnit')}</strong>
         </article>
         <article className={styles.summaryCard}>
           <span>{t('me.frozenBalance')}</span>
-          <strong>{balance?.voFrozenBalanceDisplay || `${formatNumber(balance?.voFrozenBalance)} ${t('me.carrotUnit')}`}</strong>
+          <strong>{formatNumber(balance?.voFrozenBalance, language)} {t('me.carrotUnit')}</strong>
         </article>
         <article className={styles.summaryCard}>
           <span>{t('me.totalEarned')}</span>
-          <strong>{formatNumber(balance?.voTotalEarned)}</strong>
+          <strong>{formatNumber(balance?.voTotalEarned, language)}</strong>
         </article>
         <article className={styles.summaryCard}>
           <span>{t('me.assets.totalSpent')}</span>
-          <strong>{formatNumber(balance?.voTotalSpent)}</strong>
+          <strong>{formatNumber(balance?.voTotalSpent, language)}</strong>
         </article>
       </section>
 
@@ -321,11 +324,11 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
                     <Icon icon={transaction.voAmount >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
                   </div>
                   <div className={styles.transactionBody}>
-                    <strong>{transaction.voTransactionTypeDisplay || transaction.voTransactionType}</strong>
+                    <strong>{t(`me.assets.type.${transaction.voTransactionType}`, { defaultValue: transaction.voTransactionType })}</strong>
                     <span>
-                      {formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}
+                      {formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone, '-', getIntlLocale(language))}
                       {' · '}
-                      {transaction.voStatusDisplay || transaction.voStatus}
+                      {t(`me.assets.status.${transaction.voStatus}`, { defaultValue: transaction.voStatus })}
                     </span>
                     {(transaction.voBusinessType || transaction.voBusinessId || transaction.voRemark) && (
                       <span>
@@ -334,7 +337,7 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
                     )}
                   </div>
                   <div className={styles.transactionAmount} data-tone={getTransactionTone(transaction)}>
-                    {formatAmount(transaction)}
+                    {formatAmount(transaction, language)}
                   </div>
                 </article>
               ))}
@@ -381,25 +384,25 @@ export function MeAssetsPage({ mode, onNavigate }: MeAssetsPageProps) {
           <div className={styles.railMetricList}>
             <article>
               <span>{t('me.assets.rail.income')}</span>
-              <strong>+{formatNumber(transactionIncome)}</strong>
+              <strong>+{formatNumber(transactionIncome, language)}</strong>
             </article>
             <article>
               <span>{t('me.assets.rail.spending')}</span>
-              <strong>{formatNumber(transactionSpending)}</strong>
+              <strong>{formatNumber(transactionSpending, language)}</strong>
             </article>
             <article>
               <span>{t('me.assets.rail.abnormal')}</span>
-              <strong>{formatNumber(abnormalTransactions.length)}</strong>
+              <strong>{formatNumber(abnormalTransactions.length, language)}</strong>
             </article>
           </div>
           {latestTransaction && (
             <div className={styles.railPreview}>
               <span>{t('me.assets.rail.latest')}</span>
-              <strong>{latestTransaction.voTransactionTypeDisplay || latestTransaction.voTransactionType}</strong>
+              <strong>{t(`me.assets.type.${latestTransaction.voTransactionType}`, { defaultValue: latestTransaction.voTransactionType })}</strong>
               <p>
-                {formatAmount(latestTransaction)}
+                {formatAmount(latestTransaction, language)}
                 {' · '}
-                {latestTransaction.voStatusDisplay || latestTransaction.voStatus}
+                {t(`me.assets.status.${latestTransaction.voStatus}`, { defaultValue: latestTransaction.voStatus })}
               </p>
             </div>
           )}

@@ -9,24 +9,6 @@ export const CHAT_DRAFT_STORAGE_KEY = 'radish.chat.drafts.v1';
 export const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-function defaultTranslate(key: string, options?: Record<string, unknown>): string {
-  if (key === 'common.userFallback') {
-    return options?.id ? `用户${options.id}` : '用户';
-  }
-
-  const fallbacks: Record<string, string> = {
-    'chat.recalled': '消息已撤回',
-    'chat.imageMessage': '图片消息',
-    'chat.genericMessage': '消息',
-    'chat.connection.connecting': '正在连接',
-    'chat.connection.reconnecting': '正在重连',
-    'chat.connection.disconnected': '连接已断开',
-    'common.unknownUser': '未知用户',
-  };
-
-  return fallbacks[key] ?? key;
-}
-
 export interface MentionContext {
   start: number;
   end: number;
@@ -77,13 +59,13 @@ export function getEntityKey(value: EntityIdValue | null | undefined): string {
   return normalizeEntityId(value) ?? '';
 }
 
-export function formatChatTime(time: string): string {
+export function formatChatTime(time: string, locale: 'zh-CN' | 'en-US' = 'zh-CN'): string {
   const date = new Date(time);
   if (Number.isNaN(date.getTime())) {
     return '--:--';
   }
 
-  return date.toLocaleTimeString('zh-CN', {
+  return date.toLocaleTimeString(locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
@@ -149,7 +131,7 @@ export function normalizeMentionText(content: string | null | undefined): string
   return content.replace(MENTION_PATTERN, (_, name: string) => `@${name}`);
 }
 
-export function getMessagePreviewText(message: ChannelMessageVo, t: Translate = defaultTranslate): string {
+export function getMessagePreviewText(message: ChannelMessageVo, t: Translate): string {
   if (message.voIsRecalled) {
     return t('chat.recalled');
   }
@@ -166,7 +148,7 @@ export function getMessagePreviewText(message: ChannelMessageVo, t: Translate = 
   return t('chat.genericMessage');
 }
 
-export function getConnectionHint(connectionState: string, t: Translate = defaultTranslate): string | null {
+export function getConnectionHint(connectionState: string, t: Translate): string | null {
   switch (connectionState) {
     case 'connecting':
       return t('chat.connection.connecting');
@@ -293,7 +275,7 @@ export function getErrorMessage(error: unknown, fallbackMessage: string): string
   return error instanceof Error ? error.message : fallbackMessage;
 }
 
-export function getFallbackUserName(userId?: EntityIdValue | null, t: Translate = defaultTranslate): string {
+export function getFallbackUserName(userId: EntityIdValue | null | undefined, t: Translate): string {
   const normalizedId = normalizeEntityId(userId);
   return normalizedId
     ? t('common.userFallback', { id: normalizedId })

@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.Common.CoreTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -706,10 +707,13 @@ public class OrderServiceTest
             coinTransactionRepository,
             userBenefitService);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.RetryGrantBenefitAsync(orderId));
 
         Assert.Equal("支付阶段失败的订单不能重试发放", exception.Message);
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal("Order.RetryRejected", exception.ErrorCode);
+        Assert.Equal("error.order.retry_rejected", exception.MessageKey);
         userBenefitService.Verify(
             benefitService => benefitService.GrantOrderFulfillmentAsync(It.IsAny<Order>()),
             Times.Never);
@@ -735,10 +739,13 @@ public class OrderServiceTest
             coinTransactionRepository,
             userBenefitService);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.RetryGrantBenefitAsync(orderId));
 
         Assert.Equal("订单扣款流水与履约快照不匹配，不能自动重试发放", exception.Message);
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal("Order.RetryRejected", exception.ErrorCode);
+        Assert.Equal("error.order.retry_rejected", exception.MessageKey);
         userBenefitService.Verify(
             benefitService => benefitService.GrantOrderFulfillmentAsync(It.IsAny<Order>()),
             Times.Never);

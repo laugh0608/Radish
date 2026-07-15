@@ -59,6 +59,7 @@ export const zhCommunity = {
   'notification.web.targetFollow': '关注通知回到公开主页。',
   'notification.web.targetGovernance': '治理通知在证据目标未开放时仍保留可回看详情。',
   'messages.title': '聊天',
+  'messages.brandMark': '聊',
   'messages.shellSubline': '会话聊天',
   'messages.auth.loading': '正在载入聊天...',
   'messages.auth.redirecting': '正在前往登录...',

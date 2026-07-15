@@ -573,7 +573,11 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
-                throw new InvalidOperationException("订单不存在");
+                throw new BusinessException(
+                    "订单不存在",
+                    (int)HttpStatusCodeEnum.NotFound,
+                    "Order.NotFound",
+                    "error.order.not_found");
             }
 
             order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
@@ -606,17 +610,21 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
-                throw new InvalidOperationException("订单不存在");
+                throw new BusinessException(
+                    "订单不存在",
+                    (int)HttpStatusCodeEnum.NotFound,
+                    "Order.NotFound",
+                    "error.order.not_found");
             }
 
             if (order.Status != OrderStatus.Failed)
             {
-                throw new InvalidOperationException("只能重试发放失败的订单");
+                throw BuildRetryRejected("只能重试发放失败的订单");
             }
 
             if (order.FailureStage != OrderFailureStage.Fulfillment)
             {
-                throw new InvalidOperationException("支付阶段失败的订单不能重试发放");
+                throw BuildRetryRejected("支付阶段失败的订单不能重试发放");
             }
 
             await EnsureValidPaymentEvidenceAsync(order);
@@ -653,7 +661,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         if (!order.PaidTime.HasValue || !order.CoinTransactionId.HasValue)
         {
-            throw new InvalidOperationException("订单缺少有效支付证据，不能重试发放");
+            throw BuildRetryRejected("订单缺少有效支付证据，不能重试发放");
         }
 
         var transaction = await _coinTransactionRepository.QueryFirstAsync(transaction =>
@@ -668,8 +676,17 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
         if (transaction == null)
         {
-            throw new InvalidOperationException("订单扣款流水与履约快照不匹配，不能自动重试发放");
+            throw BuildRetryRejected("订单扣款流水与履约快照不匹配，不能自动重试发放");
         }
+    }
+
+    private static BusinessException BuildRetryRejected(string message)
+    {
+        return new BusinessException(
+            message,
+            (int)HttpStatusCodeEnum.Conflict,
+            "Order.RetryRejected",
+            "error.order.retry_rejected");
     }
 
     private static long NormalizeTenantId(long tenantId)

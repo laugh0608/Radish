@@ -59,6 +59,7 @@ export const enCommunity = {
   'notification.web.targetFollow': 'Follow notifications return to public profiles.',
   'notification.web.targetGovernance': 'Governance notifications stay reviewable when evidence targets are not exposed.',
   'messages.title': 'Chat',
+  'messages.brandMark': 'C',
   'messages.shellSubline': 'Conversations',
   'messages.auth.loading': 'Loading chat...',
   'messages.auth.redirecting': 'Redirecting to sign in...',

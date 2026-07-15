@@ -30,4 +30,37 @@
   <data name="error.user.not_found" xml:space="preserve">
     <value>用户不存在。</value>
   </data>
+  <data name="error.order.not_found" xml:space="preserve">
+    <value>订单不存在。</value>
+  </data>
+  <data name="error.order.retry_rejected" xml:space="preserve">
+    <value>当前订单不能重新发放，请刷新后核对订单状态与支付证据。</value>
+  </data>
+  <data name="error.order.remark_failed" xml:space="preserve">
+    <value>订单备注保存失败，请刷新后重试。</value>
+  </data>
+  <data name="error.shop.benefit_operation_rejected" xml:space="preserve">
+    <value>当前权益操作无法完成，请刷新后核对权益状态。</value>
+  </data>
+  <data name="error.moderation.validation_failed" xml:space="preserve">
+    <value>治理请求参数无效，请检查后重试。</value>
+  </data>
+  <data name="error.moderation.target_user_not_found" xml:space="preserve">
+    <value>目标用户不存在。</value>
+  </data>
+  <data name="error.moderation.report_already_pending" xml:space="preserve">
+    <value>该内容已有待处理举报，请勿重复提交。</value>
+  </data>
+  <data name="error.moderation.report_not_found" xml:space="preserve">
+    <value>举报单不存在。</value>
+  </data>
+  <data name="error.moderation.report_already_reviewed" xml:space="preserve">
+    <value>该举报单已处理，请刷新审核队列。</value>
+  </data>
+  <data name="error.moderation.target_action_unsupported" xml:space="preserve">
+    <value>当前目标不支持联动用户治理动作。</value>
+  </data>
+  <data name="error.moderation.concurrent_review_conflict" xml:space="preserve">
+    <value>举报单已被处理，请刷新审核队列。</value>
+  </data>
 </root>

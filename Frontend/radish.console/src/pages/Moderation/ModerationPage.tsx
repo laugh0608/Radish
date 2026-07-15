@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AntInput as Input,
   AntModal as Modal,
@@ -31,19 +32,19 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import {
-  ACTION_LOG_ACTION_TYPE_OPTIONS,
-  ACTION_LOG_STATUS_OPTIONS,
-  ACTION_OPTIONS,
   MANUAL_ACTION_TYPE,
-  REASON_TYPE_OPTIONS,
-  REVIEW_STATUS_OPTIONS,
-  TARGET_NAVIGATION_STATUS_OPTIONS,
-  TARGET_TYPE_OPTIONS,
   buildManualModerationStatusSnapshot,
   buildQueueTargetDisplayInput,
+  getActionLogActionTypeOptions,
+  getActionLogStatusOptions,
+  getActionOptions,
   getActionTypeText,
   getReasonTypeLabel,
+  getReasonTypeOptions,
+  getReviewStatusOptions,
+  getTargetNavigationStatusOptions,
   getTargetTypeLabel,
+  getTargetTypeOptions,
   hasPositiveLongId,
   resolveNavigationStatusLabel,
   resolveMissingTargetMessage,
@@ -72,7 +73,9 @@ import './index.css';
 import '../adminFeature.css';
 
 export const ModerationPage = () => {
-  useDocumentTitle('内容治理');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('moderation.title'));
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const querySection = parseModerationSectionQuery(searchParams.get('section'));
@@ -136,14 +139,14 @@ export const ModerationPage = () => {
   };
 
   const handleOpenTarget = (input: ModerationTargetNavigationStateInput) => {
-    const target = resolveOpenTarget(input);
+    const target = resolveOpenTarget(input, t);
     if (!target) {
-      message.error(resolveMissingTargetMessage(input.targetType, input.navigationMessage));
+      message.error(resolveMissingTargetMessage(input.targetType, input.navigationMessage, t));
       return;
     }
 
-      window.open(target.url, '_blank', 'noopener');
-    };
+    window.open(target.url, '_blank', 'noopener');
+  };
 
   const loadQueue = async (
     targetPageIndex = queuePageIndex,
@@ -190,8 +193,8 @@ export const ModerationPage = () => {
       setQueuePageIndex(page.voPageIndex);
       setQueuePageSize(page.voPageSize);
     } catch (error) {
-      log.error('ModerationPage', '加载审核队列失败:', error);
-      message.error('加载审核队列失败');
+      log.error('ModerationPage', 'Failed to load moderation review queue:', error);
+      message.error(t('moderation.loadQueueFailed'));
     } finally {
       setLoadingQueue(false);
     }
@@ -232,8 +235,8 @@ export const ModerationPage = () => {
       setLogPageIndex(page.voPageIndex);
       setLogPageSize(page.voPageSize);
     } catch (error) {
-      log.error('ModerationPage', '加载治理动作日志失败:', error);
-      message.error('加载治理动作日志失败');
+      log.error('ModerationPage', 'Failed to load moderation action logs:', error);
+      message.error(t('moderation.loadLogsFailed'));
     } finally {
       setLoadingLogs(false);
     }
@@ -301,12 +304,12 @@ export const ModerationPage = () => {
     const normalizedTargetUserId = nextTargetUserId.length > 0 ? toPositiveLongString(nextTargetUserId) : '';
     const normalizedSourceReportId = nextSourceReportId.length > 0 ? toPositiveLongString(nextSourceReportId) : '';
     if (nextTargetUserId.length > 0 && !normalizedTargetUserId) {
-      message.error('请输入有效的目标用户 ID');
+      message.error(t('moderation.invalidTargetUserId'));
       return;
     }
 
     if (nextSourceReportId.length > 0 && !normalizedSourceReportId) {
-      message.error('请输入有效的关联举报单 ID');
+      message.error(t('moderation.invalidSourceReportId'));
       return;
     }
 
@@ -392,13 +395,13 @@ export const ModerationPage = () => {
 
       setManualStatusSnapshot(buildManualModerationStatusSnapshot(normalizedTargetUserId, page.voItems));
     } catch (error) {
-      log.error('ModerationPage', '加载手动治理当前状态失败:', error);
+      log.error('ModerationPage', 'Failed to load current manual moderation status:', error);
       if (requestId !== manualStatusRequestIdRef.current) {
         return;
       }
 
       setManualStatusSnapshot(null);
-      setManualStatusError('加载当前治理状态失败');
+      setManualStatusError(t('moderation.loadStatusFailed'));
     } finally {
       if (requestId === manualStatusRequestIdRef.current) {
         setManualStatusLoading(false);
@@ -451,7 +454,7 @@ export const ModerationPage = () => {
 
       applyQueuePreset({
         keyword: querySourceReportId,
-        hint: `已从排障入口带入举报单 #${querySourceReportId}，可继续回看原始审核记录与目标快照。`,
+        hint: t('moderation.hint.queueFromRoute', { reportId: querySourceReportId }),
       });
       return;
     }
@@ -461,8 +464,8 @@ export const ModerationPage = () => {
         targetUserId: queryTargetUserId,
         sourceReportId: querySourceReportId,
         hint: queryTargetUserId
-          ? `已从排障入口带入用户 #${queryTargetUserId}，可继续执行禁言 / 封禁 / 解除动作。`
-          : '已进入手动治理区，请先输入目标用户 ID。',
+          ? t('moderation.hint.manualFromRoute', { userId: queryTargetUserId })
+          : t('moderation.hint.manualRouteEmpty'),
       });
       return;
     }
@@ -471,12 +474,12 @@ export const ModerationPage = () => {
       targetUserId: queryTargetUserId,
       sourceReportId: querySourceReportId,
       hint: queryTargetUserId
-        ? `已从排障入口带入用户 #${queryTargetUserId} 的治理动作日志。`
-        : '已进入治理动作日志，可继续按用户或举报单筛选。',
+        ? t('moderation.hint.logsFromRoute', { userId: queryTargetUserId })
+        : t('moderation.hint.logsRouteEmpty'),
     });
     // URL presets are applied once per query key; depending on non-memoized page commands would replay them on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [querySection, querySourceReportId, queryTargetUserId, returnTo]);
+  }, [querySection, querySourceReportId, queryTargetUserId, returnTo, t]);
 
   const resetManualActionForm = () => {
     manualActionForm.resetFields();
@@ -522,7 +525,7 @@ export const ModerationPage = () => {
         reviewRemark: values.reviewRemark,
       });
 
-      message.success('审核完成');
+      message.success(t('moderation.reviewSuccess'));
       setReviewingItem(null);
       await loadQueue();
       if (values.isApproved && values.actionType > 0) {
@@ -531,7 +534,7 @@ export const ModerationPage = () => {
           sourceReportId: String(reviewedItem.voReportId),
           actionType: values.actionType === 1 ? 'Mute' : values.actionType === 2 ? 'Ban' : undefined,
           isActive: 'active',
-          hint: `已带入举报单 #${reviewedItem.voReportId} 关联的治理动作日志，便于继续核对实际处罚是否已落下。`,
+          hint: t('moderation.hint.reviewResult', { reportId: reviewedItem.voReportId }),
         });
       } else {
         await loadLogs();
@@ -541,8 +544,8 @@ export const ModerationPage = () => {
         return;
       }
 
-      log.error('ModerationPage', '提交审核失败:', error);
-      message.error('提交审核失败');
+      log.error('ModerationPage', 'Failed to submit moderation review:', error);
+      message.error(t('moderation.reviewFailed'));
     } finally {
       setSubmittingReview(false);
     }
@@ -559,12 +562,12 @@ export const ModerationPage = () => {
         : undefined;
 
       if (!normalizedTargetUserId) {
-        message.error('请输入有效的目标用户 ID');
+        message.error(t('moderation.invalidTargetUserId'));
         return;
       }
 
       if (sourceReportIdText.length > 0 && !normalizedSourceReportId) {
-        message.error('请输入有效的关联举报单 ID');
+        message.error(t('moderation.invalidSourceReportId'));
         return;
       }
 
@@ -579,8 +582,8 @@ export const ModerationPage = () => {
         sourceReportId: normalizedSourceReportId ?? null,
       });
 
-      const actionText = getActionTypeText(result.voActionType);
-      message.success(`${actionText}已执行`);
+      const actionText = getActionTypeText(result.voActionType, t);
+      message.success(t('moderation.manualSuccess', { action: actionText }));
       manualActionForm.setFieldsValue({
         targetUserId: normalizedTargetUserId,
         sourceReportId: normalizedSourceReportId ?? '',
@@ -588,22 +591,22 @@ export const ModerationPage = () => {
         durationHours: undefined,
         reason: '',
       });
-      setManualActionContextHint(`已执行${actionText}，目标用户与来源举报单已保留在表单中；下方日志已自动定位到动作单 #${result.voActionId}。`);
+      setManualActionContextHint(t('moderation.hint.executed', { action: actionText, actionId: result.voActionId }));
       void loadManualActionStatus(normalizedTargetUserId);
       applyActionLogPreset({
         targetUserId: String(result.voTargetUserId),
         sourceReportId: result.voSourceReportId ? String(result.voSourceReportId) : undefined,
         actionType: result.voActionType,
         isActive: result.voIsActive ? 'active' : 'inactive',
-        hint: `已定位到刚执行的${actionText}动作单 #${result.voActionId}。`,
+        hint: t('moderation.hint.executedLog', { action: actionText, actionId: result.voActionId }),
       });
     } catch (error) {
       if (error && typeof error === 'object' && 'errorFields' in error) {
         return;
       }
 
-      log.error('ModerationPage', '执行手动治理动作失败:', error);
-      message.error('执行手动治理动作失败');
+      log.error('ModerationPage', 'Failed to apply manual moderation action:', error);
+      message.error(t('moderation.manualFailed'));
     } finally {
       setSubmittingManualAction(false);
     }
@@ -615,14 +618,14 @@ export const ModerationPage = () => {
     onApplyActionLogPreset: applyActionLogPreset,
     onApplyManualActionPreset: applyManualActionPreset,
     onOpenReviewModal: openReviewModal,
-  });
+  }, t, language);
 
   const logColumns = createModerationLogColumns({
     canReview,
     onOpenTarget: handleOpenTarget,
     onApplyQueuePreset: applyQueuePreset,
     onApplyManualActionPreset: applyManualActionPreset,
-  });
+  }, t, language);
   const activeQueueFilterCount = [
     statusFilter !== -1 ? 'status' : undefined,
     queueTargetTypeFilter,
@@ -644,95 +647,95 @@ export const ModerationPage = () => {
     ? buildQueueTargetDisplayInput(primaryQueueItem)
     : null;
   const primaryQueueNavigationLabel = primaryQueueItem
-    ? resolveNavigationStatusLabel(primaryQueueItem.voTargetNavigationStatus)
-    : { label: '未选择' };
+    ? resolveNavigationStatusLabel(primaryQueueItem.voTargetNavigationStatus, t)
+    : { label: t('moderation.notSelected') };
 
   return (
     <div className="admin-feature-page">
       <ConsolePageHeader
-        eyebrow="内容治理"
-        title="内容治理"
-        description="举报队列、手动治理动作与治理日志统一在 Console 收口。"
+        eyebrow={t('moderation.title')}
+        title={t('moderation.title')}
+        description={t('moderation.description')}
         icon={<SafetyOutlined />}
         status={(
           <ConsoleStatusChip tone={canReview ? 'success' : 'neutral'}>
-            {canReview ? '可审核处置' : '只读查看'}
+            {t(canReview ? 'moderation.canReview' : 'moderation.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={(
           <Space wrap>
             {returnTo ? (
               <Button onClick={() => navigate(returnTo)}>
-                返回来源
+                {t('moderation.backToSource')}
               </Button>
             ) : null}
             <Button icon={<ReloadOutlined />} onClick={() => {
               void Promise.all([loadQueue(), loadLogs()]);
             }}>
-              刷新
+              {t('moderation.refresh')}
             </Button>
           </Space>
         )}
       />
 
-      <ConsoleMetricGrid label="内容治理工作台指标">
-        <ConsoleMetricCard label="举报队列" value={queueTotal} description="当前筛选后的举报单" tone="info" />
-        <ConsoleMetricCard label="本页举报" value={queueItems.length} description="当前页可见举报单" />
-        <ConsoleMetricCard label="治理日志" value={logTotal} description="当前筛选后的动作记录" tone="success" />
+      <ConsoleMetricGrid label={t('moderation.metrics.label')}>
+        <ConsoleMetricCard label={t('moderation.metrics.queue')} value={queueTotal} description={t('moderation.metrics.queueDescription')} tone="info" />
+        <ConsoleMetricCard label={t('moderation.metrics.page')} value={queueItems.length} description={t('moderation.metrics.pageDescription')} />
+        <ConsoleMetricCard label={t('moderation.metrics.logs')} value={logTotal} description={t('moderation.metrics.logsDescription')} tone="success" />
         <ConsoleMetricCard
-          label="筛选条件"
+          label={t('moderation.metrics.filters')}
           value={activeQueueFilterCount + activeLogFilterCount}
-          description="队列与日志合计筛选"
+          description={t('moderation.metrics.filtersDescription')}
           tone={activeQueueFilterCount + activeLogFilterCount > 0 ? 'warning' : 'neutral'}
         />
       </ConsoleMetricGrid>
 
       <div className="admin-feature-banner">
-        当前治理链路已统一接入帖子、评论、聊天室消息和商品举报，审核通过后可联动禁言 / 封禁；历史动作也支持继续处置或直接解除。
+        {t('moderation.banner')}
       </div>
 
-      <section className="governance-task-flow" aria-label="内容治理工作台任务流">
+      <section className="governance-task-flow" aria-label={t('moderation.flow.label')}>
         <div className="governance-task-flow__item">
           <span>1</span>
-          <strong>举报队列</strong>
-          <p>{queueTotal} 条当前筛选举报，{queueItems.length} 条在本页等待核对。</p>
+          <strong>{t('moderation.flow.queueTitle')}</strong>
+          <p>{t('moderation.flow.queue', { total: queueTotal, visible: queueItems.length })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>2</span>
-          <strong>目标证据</strong>
-          <p>{primaryQueueItem ? `${getTargetTypeLabel(primaryQueueItem.voTargetType)} · ${getReasonTypeLabel(primaryQueueItem.voReasonType)}` : '等待选择可回看的举报目标。'}</p>
+          <strong>{t('moderation.flow.evidenceTitle')}</strong>
+          <p>{primaryQueueItem ? `${getTargetTypeLabel(primaryQueueItem.voTargetType, t)} · ${getReasonTypeLabel(primaryQueueItem.voReasonType, t)}` : t('moderation.flow.evidenceEmpty')}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>3</span>
-          <strong>处理动作</strong>
-          <p>{canReview ? '审核联动或手动治理均需写入理由与范围。' : '当前账号只读，不能执行治理动作。'}</p>
+          <strong>{t('moderation.flow.actionTitle')}</strong>
+          <p>{t(canReview ? 'moderation.flow.actionAllowed' : 'moderation.flow.actionReadOnly')}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>4</span>
-          <strong>最近留痕</strong>
-          <p>{logTotal} 条动作记录，当前页 {activeActionLogCount} 条仍在生效。</p>
+          <strong>{t('moderation.flow.logTitle')}</strong>
+          <p>{t('moderation.flow.log', { total: logTotal, active: activeActionLogCount })}</p>
         </div>
       </section>
 
-      <section className="moderation-mobile-operations" aria-label="移动治理操作边界">
+      <section className="moderation-mobile-operations" aria-label={t('moderation.mobile.label')}>
         <div>
-          <span className="moderation-mobile-operations__eyebrow">移动治理</span>
-          <h3>移动视图处理顺序</h3>
+          <span className="moderation-mobile-operations__eyebrow">{t('moderation.mobile.eyebrow')}</span>
+          <h3>{t('moderation.mobile.title')}</h3>
           <p>
-            手机视图优先完成低风险核对：先筛选举报队列，打开目标或快照确认上下文，再执行审核或带入手动治理；高风险批量策略和复杂权限调整仍保持桌面优先。
+            {t('moderation.mobile.description')}
           </p>
         </div>
         <Space wrap>
           <Button size="small" onClick={focusQueueSection}>
-            查看队列
+            {t('moderation.mobile.queue')}
           </Button>
           {canReview ? (
             <Button size="small" onClick={focusManualActionSection}>
-              手动处置
+              {t('moderation.mobile.manual')}
             </Button>
           ) : null}
           <Button size="small" onClick={focusLogSection}>
-            查看日志
+            {t('moderation.mobile.logs')}
           </Button>
         </Space>
       </section>
@@ -742,14 +745,14 @@ export const ModerationPage = () => {
           <section className="admin-feature-card" ref={queueSectionRef}>
             <div className="admin-feature-header">
               <div>
-                <h3>举报审核队列</h3>
-                <p className="admin-feature-subtle">按状态、目标类型、举报原因、回看状态和关键词筛选举报单，并在审核时直接联动治理动作。</p>
+                <h3>{t('moderation.queue.title')}</h3>
+                <p className="admin-feature-subtle">{t('moderation.queue.description')}</p>
               </div>
               <Space wrap>
                 <Select
                   value={statusFilter}
                   className="moderation-filter-control moderation-filter-control--sm"
-                  options={REVIEW_STATUS_OPTIONS}
+                  options={getReviewStatusOptions(t)}
                   onChange={(value) => {
                     setQueueContextHint(null);
                     setStatusFilter(value);
@@ -758,9 +761,9 @@ export const ModerationPage = () => {
                 <Select
                   value={queueTargetTypeFilter}
                   className="moderation-filter-control moderation-filter-control--sm"
-                  options={TARGET_TYPE_OPTIONS}
+                  options={getTargetTypeOptions(t)}
                   allowClear
-                  placeholder="目标类型"
+                  placeholder={t('moderation.queue.targetType')}
                   onChange={(value) => {
                     setQueueContextHint(null);
                     setQueueTargetTypeFilter(toOptionalString(value));
@@ -769,9 +772,9 @@ export const ModerationPage = () => {
                 <Select
                   value={queueReasonTypeFilter}
                   className="moderation-filter-control moderation-filter-control--sm"
-                  options={REASON_TYPE_OPTIONS}
+                  options={getReasonTypeOptions(t)}
                   allowClear
-                  placeholder="举报原因"
+                  placeholder={t('moderation.queue.reason')}
                   onChange={(value) => {
                     setQueueContextHint(null);
                     setQueueReasonTypeFilter(toOptionalString(value));
@@ -780,9 +783,9 @@ export const ModerationPage = () => {
                 <Select
                   value={queueNavigationStatusFilter}
                   className="moderation-filter-control moderation-filter-control--sm"
-                  options={TARGET_NAVIGATION_STATUS_OPTIONS}
+                  options={getTargetNavigationStatusOptions(t)}
                   allowClear
-                  placeholder="回看状态"
+                  placeholder={t('moderation.queue.navigationStatus')}
                   onChange={(value) => {
                     setQueueContextHint(null);
                     setQueueNavigationStatusFilter(toOptionalString(value));
@@ -790,7 +793,7 @@ export const ModerationPage = () => {
                 />
                 <Input
                   allowClear
-                  placeholder="搜索举报单 / 目标 / 快照 / 用户 / 原因补充"
+                  placeholder={t('moderation.queue.search')}
                   value={queueKeywordInput}
                   onChange={(event) => {
                     setQueueContextHint(null);
@@ -803,10 +806,10 @@ export const ModerationPage = () => {
                   variant="primary"
                   onClick={applyQueueKeywordSearch}
                 >
-                  查询
+                  {t('moderation.query')}
                 </Button>
                 <Button onClick={resetQueueFilters}>
-                  重置
+                  {t('moderation.reset')}
                 </Button>
               </Space>
             </div>
@@ -839,11 +842,11 @@ export const ModerationPage = () => {
 
         {canReview ? (
           <div className="governance-workbench__actions">
-            <section className="admin-feature-rail" aria-label="内容治理证据卷宗">
+            <section className="admin-feature-rail" aria-label={t('moderation.evidence.label')}>
               <div className="admin-feature-rail__header">
                 <div>
-                  <span className="admin-feature-rail__eyebrow">证据档案</span>
-                  <h3>目标证据卷宗</h3>
+                  <span className="admin-feature-rail__eyebrow">{t('moderation.evidence.eyebrow')}</span>
+                  <h3>{t('moderation.evidence.title')}</h3>
                 </div>
                 <ConsoleStatusChip tone={primaryQueueItem ? 'info' : 'neutral'}>
                   {primaryQueueNavigationLabel.label}
@@ -860,37 +863,37 @@ export const ModerationPage = () => {
                   />
                   <div className="admin-feature-rail__list">
                     <div className="admin-feature-rail__item">
-                      <span>举报单</span>
+                      <span>{t('moderation.evidence.report')}</span>
                       <strong>#{primaryQueueItem.voReportId}</strong>
                     </div>
                     <div className="admin-feature-rail__item">
-                      <span>举报人</span>
+                      <span>{t('moderation.evidence.reporter')}</span>
                       <strong>{primaryQueueItem.voReporterUserName || `#${primaryQueueItem.voReporterUserId}`}</strong>
                     </div>
                     <div className="admin-feature-rail__item">
-                      <span>原因</span>
-                      <strong>{getReasonTypeLabel(primaryQueueItem.voReasonType)}</strong>
+                      <span>{t('moderation.evidence.reason')}</span>
+                      <strong>{getReasonTypeLabel(primaryQueueItem.voReasonType, t)}</strong>
                     </div>
                   </div>
                   <div className="admin-feature-rail__actions">
                     <Button size="small" onClick={() => handleOpenTarget(primaryQueueTargetInput)}>
-                      打开目标
+                      {t('moderation.evidence.open')}
                     </Button>
                     <Button
                       size="small"
                       onClick={() => applyActionLogPreset({
                         targetUserId: hasPositiveLongId(primaryQueueItem.voTargetUserId) ? String(primaryQueueItem.voTargetUserId) : undefined,
                         sourceReportId: String(primaryQueueItem.voReportId),
-                        hint: `已带入举报单 #${primaryQueueItem.voReportId} 的治理留痕，便于核对处置结果。`,
+                        hint: t('moderation.hint.evidenceLogs', { reportId: primaryQueueItem.voReportId }),
                       })}
                     >
-                      查看留痕
+                      {t('moderation.evidence.logs')}
                     </Button>
                   </div>
                 </>
               ) : (
                 <p className="admin-feature-rail__empty">
-                  当前筛选下没有可见举报单；调整状态、目标类型或关键词后可重新形成证据卷宗。
+                  {t('moderation.evidence.empty')}
                 </p>
               )}
             </section>
@@ -919,12 +922,12 @@ export const ModerationPage = () => {
           <section className="admin-feature-card" ref={logSectionRef}>
             <div className="admin-feature-header">
               <div>
-                <h3>治理动作日志</h3>
-                <p className="admin-feature-subtle">回看审核联动与手动执行后实际落下的治理动作，并支持从举报队列或动作记录回跳到对应上下文。</p>
+                <h3>{t('moderation.logs.title')}</h3>
+                <p className="admin-feature-subtle">{t('moderation.logs.description')}</p>
               </div>
               <Space wrap>
                 <Input
-                  placeholder="按目标用户 ID 过滤"
+                  placeholder={t('moderation.logs.targetUserId')}
                   value={logTargetUserIdInput}
                   onChange={(event) => {
                     setLogContextHint(null);
@@ -933,7 +936,7 @@ export const ModerationPage = () => {
                   className="moderation-filter-control moderation-filter-control--md"
                 />
                 <Input
-                  placeholder="关联举报单 ID"
+                  placeholder={t('moderation.logs.sourceReportId')}
                   value={logSourceReportIdInput}
                   onChange={(event) => {
                     setLogContextHint(null);
@@ -944,9 +947,9 @@ export const ModerationPage = () => {
                 <Select
                   value={logActionTypeFilter}
                   className="moderation-filter-control moderation-filter-control--sm"
-                  options={ACTION_LOG_ACTION_TYPE_OPTIONS}
+                  options={getActionLogActionTypeOptions(t)}
                   allowClear
-                  placeholder="治理动作"
+                  placeholder={t('moderation.logs.action')}
                   onChange={(value) => {
                     setLogContextHint(null);
                     setLogActionTypeFilter(toOptionalString(value));
@@ -955,9 +958,9 @@ export const ModerationPage = () => {
                 <Select
                   value={logIsActiveFilter}
                   className="moderation-filter-control moderation-filter-control--sm"
-                  options={ACTION_LOG_STATUS_OPTIONS}
+                  options={getActionLogStatusOptions(t)}
                   allowClear
-                  placeholder="动作状态"
+                  placeholder={t('moderation.logs.status')}
                   onChange={(value) => {
                     setLogContextHint(null);
                     setLogIsActiveFilter((value === 'active' || value === 'inactive') ? value : undefined);
@@ -965,7 +968,7 @@ export const ModerationPage = () => {
                 />
                 <Input
                   allowClear
-                  placeholder="搜索动作单 / 目标用户 / 原因 / 操作者"
+                  placeholder={t('moderation.logs.search')}
                   value={logKeywordInput}
                   onChange={(event) => {
                     setLogContextHint(null);
@@ -978,10 +981,10 @@ export const ModerationPage = () => {
                   variant="primary"
                   onClick={applyLogFilters}
                 >
-                  查询
+                  {t('moderation.query')}
                 </Button>
                 <Button onClick={resetLogFilters}>
-                  重置
+                  {t('moderation.reset')}
                 </Button>
               </Space>
             </div>
@@ -994,9 +997,9 @@ export const ModerationPage = () => {
 
             {latestActionLog ? (
               <div className="admin-feature-inline-context">
-                <span>最近动作 #{latestActionLog.voActionId}</span>
-                <strong>{getActionTypeText(latestActionLog.voActionType)}</strong>
-                <span>{latestActionLog.voIsActive ? '生效中' : '已结束'}</span>
+                <span>{t('moderation.logs.latest', { id: latestActionLog.voActionId })}</span>
+                <strong>{getActionTypeText(latestActionLog.voActionType, t)}</strong>
+                <span>{t(latestActionLog.voIsActive ? 'moderation.action.active' : 'moderation.action.inactive')}</span>
                 <span>{latestActionLog.voOperatorUserName}</span>
               </div>
             ) : null}
@@ -1022,7 +1025,9 @@ export const ModerationPage = () => {
       </div>
 
       <Modal
-        title={reviewingItem ? `审核举报单 #${reviewingItem.voReportId}` : '审核举报单'}
+        title={reviewingItem
+          ? t('moderation.review.titleWithId', { id: reviewingItem.voReportId })
+          : t('moderation.review.title')}
         open={!!reviewingItem}
         onOk={handleSubmitReview}
         onCancel={() => setReviewingItem(null)}
@@ -1032,7 +1037,7 @@ export const ModerationPage = () => {
         <Form form={form} layout="vertical">
           {reviewingItem ? (
             <div className="moderation-review-preview">
-              <div className="moderation-review-preview__label">审核目标</div>
+              <div className="moderation-review-preview__label">{t('moderation.review.target')}</div>
               <ModerationTargetDisplay
                 input={{
                   ...buildQueueTargetDisplayInput(reviewingItem),
@@ -1042,17 +1047,25 @@ export const ModerationPage = () => {
             </div>
           ) : null}
 
-          <Form.Item name="isApproved" label="审核结果" rules={[{ required: true, message: '请选择审核结果' }]}>
+          <Form.Item
+            name="isApproved"
+            label={t('moderation.review.result')}
+            rules={[{ required: true, message: t('moderation.review.resultRequired') }]}
+          >
             <Select
               options={[
-                { label: '通过举报', value: true },
-                { label: '驳回举报', value: false },
+                { label: t('moderation.review.approve'), value: true },
+                { label: t('moderation.review.reject'), value: false },
               ]}
             />
           </Form.Item>
 
-          <Form.Item name="actionType" label="治理动作" rules={[{ required: true, message: '请选择治理动作' }]}>
-            <Select options={ACTION_OPTIONS} />
+          <Form.Item
+            name="actionType"
+            label={t('moderation.review.action')}
+            rules={[{ required: true, message: t('moderation.review.actionRequired') }]}
+          >
+            <Select options={getActionOptions(t)} />
           </Form.Item>
 
           <Form.Item
@@ -1062,9 +1075,9 @@ export const ModerationPage = () => {
             {({ getFieldValue }) => (
               <Form.Item
                 name="durationHours"
-                label="持续时长（小时）"
+                label={t('moderation.review.duration')}
                 rules={getFieldValue('actionType') > 0
-                  ? [{ required: true, message: '请输入动作时长' }]
+                  ? [{ required: true, message: t('moderation.review.durationRequired') }]
                   : []}
               >
                 <InputNumber min={1} max={720} className="moderation-full-width-control" disabled={getFieldValue('actionType') === 0} />
@@ -1072,8 +1085,13 @@ export const ModerationPage = () => {
             )}
           </Form.Item>
 
-          <Form.Item name="reviewRemark" label="审核备注">
-            <Input.TextArea rows={4} maxLength={500} showCount placeholder="补充审核说明或处理依据" />
+          <Form.Item name="reviewRemark" label={t('moderation.review.remark')}>
+            <Input.TextArea
+              rows={4}
+              maxLength={500}
+              showCount
+              placeholder={t('moderation.review.remarkPlaceholder')}
+            />
           </Form.Item>
         </Form>
       </Modal>

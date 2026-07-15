@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Localization;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Api.Resources;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.ViewModels;
@@ -69,6 +72,46 @@ public class ShopControllerTest
     }
 
     [Fact]
+    public async Task AdminGetOrder_ShouldReturnStableNotFoundError_WhenOrderMissing()
+    {
+        var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
+        var orderServiceMock = new Mock<IOrderService>(MockBehavior.Strict);
+        orderServiceMock
+            .Setup(service => service.GetOrderDetailForAdminAsync(7999))
+            .ReturnsAsync((OrderVo?)null);
+
+        var controller = CreateController(productServiceMock.Object, orderServiceMock.Object);
+        var result = await controller.AdminGetOrder(7999);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("Order.NotFound", result.Code);
+        Assert.Equal("error.order.not_found", result.MessageKey);
+    }
+
+    [Fact]
+    public async Task RetryGrantBenefit_ShouldPreserveStableBusinessError()
+    {
+        var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
+        var orderServiceMock = new Mock<IOrderService>(MockBehavior.Strict);
+        orderServiceMock
+            .Setup(service => service.RetryGrantBenefitAsync(7002))
+            .ThrowsAsync(new BusinessException(
+                "只能重试发放失败的订单",
+                409,
+                "Order.RetryRejected",
+                "error.order.retry_rejected"));
+
+        var controller = CreateController(productServiceMock.Object, orderServiceMock.Object);
+        var result = await controller.RetryGrantBenefit(7002);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal("Order.RetryRejected", result.Code);
+        Assert.Equal("error.order.retry_rejected", result.MessageKey);
+    }
+
+    [Fact]
     public async Task AdminGetProduct_ShouldReturnNotFound_WhenProductMissing()
     {
         var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
@@ -117,6 +160,16 @@ public class ShopControllerTest
             Mock.Of<IUserBenefitService>(),
             Mock.Of<IUserInventoryService>(),
             Mock.Of<IUserBrowseHistoryService>(),
-            currentUserAccessorMock.Object);
+            currentUserAccessorMock.Object,
+            CreateErrorsLocalizer());
+    }
+
+    private static IStringLocalizer<Errors> CreateErrorsLocalizer()
+    {
+        var localizerMock = new Mock<IStringLocalizer<Errors>>();
+        localizerMock
+            .Setup(localizer => localizer[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key, resourceNotFound: true));
+        return localizerMock.Object;
     }
 }

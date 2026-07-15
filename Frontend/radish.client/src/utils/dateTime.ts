@@ -50,7 +50,8 @@ export function getBrowserTimeZoneId(fallback: string = DEFAULT_TIME_ZONE): stri
 export function formatDateTimeByTimeZone(
   value: string | Date | number | null | undefined,
   timeZoneId: string,
-  fallback: string = '-'
+  fallback: string = '-',
+  locale: 'zh-CN' | 'en-US' = 'zh-CN'
 ): string {
   if (value === null || value === undefined || value === '') {
     return fallback;
@@ -62,7 +63,7 @@ export function formatDateTimeByTimeZone(
   }
 
   const safeTimeZone = resolveTimeZoneId(timeZoneId);
-  const formatter = new Intl.DateTimeFormat('zh-CN', {
+  const formatter = new Intl.DateTimeFormat(locale, {
     timeZone: safeTimeZone,
     year: 'numeric',
     month: '2-digit',
@@ -73,6 +74,10 @@ export function formatDateTimeByTimeZone(
     hour12: false,
     hourCycle: 'h23'
   });
+
+  if (locale === 'en-US') {
+    return formatter.format(date);
+  }
 
   const parts = formatter.formatToParts(date);
   const partMap: Record<string, string> = {};

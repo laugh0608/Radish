@@ -3,7 +3,14 @@
  * 直接使用后端 Vo 字段名，无需映射
  */
 
-import { apiGet, apiPost, apiPut, apiDelete, configureApiClient } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete,
+  configureApiClient,
+  createApiResponseError,
+} from '@radish/http';
 import type {
   PagedResponse,
   Product,
@@ -189,7 +196,7 @@ export async function adminGetOrders(params: {
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取订单列表失败');
+    throw createApiResponseError(response, '获取订单列表失败');
   }
 
   return response.data;
@@ -205,7 +212,7 @@ export async function adminGetOrder(orderId: string): Promise<Order> {
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取订单详情失败');
+    throw createApiResponseError(response, '获取订单详情失败');
   }
 
   return response.data;
@@ -240,7 +247,7 @@ export async function adminGetEntitlementOperations(params: {
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取商城权益流水失败');
+    throw createApiResponseError(response, '获取商城权益流水失败');
   }
 
   return response.data;
@@ -253,7 +260,7 @@ export async function adminGetUserBenefits(userId: string): Promise<UserBenefit[
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户持续权益失败');
+    throw createApiResponseError(response, '获取用户持续权益失败');
   }
 
   return response.data;
@@ -270,72 +277,10 @@ export async function adminRevokeBenefit(
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '撤销持续权益失败');
+    throw createApiResponseError(response, '撤销持续权益失败');
   }
 
   return response.data;
-}
-
-// ==================== 工具函数 ====================
-
-/**
- * 获取订单状态颜色
- */
-export function getOrderStatusColor(status: string): string {
-  switch (status) {
-    case 'Pending':
-      return '#faad14'; // 橙色
-    case 'Paid':
-      return '#52c41a'; // 绿色
-    case 'Completed':
-      return '#52c41a'; // 绿色
-    case 'Cancelled':
-      return '#ff4d4f'; // 红色
-    case 'Refunded':
-      return '#722ed1'; // 紫色
-    case 'Failed':
-      return '#ff4d4f'; // 红色
-    default:
-      return '#d9d9d9'; // 灰色
-  }
-}
-
-/**
- * 获取订单状态显示文本
- */
-export function getOrderStatusDisplay(status: string): string {
-  switch (status) {
-    case 'Pending':
-      return '待付款';
-    case 'Paid':
-      return '已付款';
-    case 'Completed':
-      return '已完成';
-    case 'Cancelled':
-      return '已取消';
-    case 'Refunded':
-      return '已退款';
-    case 'Failed':
-      return '发放失败';
-    default:
-      return '未知状态';
-  }
-}
-
-/**
- * 获取商品类型显示文本
- */
-export function getProductTypeDisplay(type: string): string {
-  switch (type) {
-    case 'Benefit':
-      return '权益商品';
-    case 'Consumable':
-      return '消耗品';
-    case 'Physical':
-      return '实体商品';
-    default:
-      return '未知类型';
-  }
 }
 
 /**
@@ -349,7 +294,7 @@ export async function retryGrantBenefit(orderId: string): Promise<void> {
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '重试发放权益失败');
+    throw createApiResponseError(response, '重试发放权益失败');
   }
 }
 
@@ -364,7 +309,7 @@ export async function adminRemarkOrder(orderId: string, remark: string): Promise
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '保存订单备注失败');
+    throw createApiResponseError(response, '保存订单备注失败');
   }
 }
 

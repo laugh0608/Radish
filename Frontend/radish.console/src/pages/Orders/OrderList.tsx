@@ -28,8 +28,6 @@ import {
   adminGetOrder,
   adminRemarkOrder,
   retryGrantBenefit,
-  getOrderStatusColor,
-  getProductTypeDisplay,
 } from '../../api/shopApi';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
@@ -42,6 +40,12 @@ import {
 } from '@/components/ConsolePage';
 import type { Order, OrderStatus } from '../../api/types';
 import { OrderDetail } from './OrderDetail';
+import {
+  getOrderProductTypeLabel,
+  getOrderStatusColor,
+  getOrderStatusLabel,
+  isOrderInStatus,
+} from './orderPresentation';
 import {
   DEFAULT_ORDER_PAGE_INDEX,
   DEFAULT_ORDER_PAGE_SIZE,
@@ -70,21 +74,12 @@ function normalizeOrderPrice(value: unknown): number {
   return 0;
 }
 
-function isOrderStatus(record: Order, statusName: string, statusValue: number, displayKeyword?: string): boolean {
-  const rawStatus = String(record.voStatus ?? '');
-  if (rawStatus === statusName || rawStatus === String(statusValue)) {
-    return true;
-  }
-
-  return displayKeyword ? record.voStatusDisplay?.includes(displayKeyword) === true : false;
-}
-
 function isFailedOrder(record: Order): boolean {
-  return isOrderStatus(record, 'Failed', 5, '失败');
+  return isOrderInStatus(record, 'Failed');
 }
 
 function isCompletedOrder(record: Order): boolean {
-  return isOrderStatus(record, 'Completed', 2, '完成');
+  return isOrderInStatus(record, 'Completed');
 }
 
 function canRetryOrderFulfillment(record: Order): boolean {
@@ -92,8 +87,8 @@ function canRetryOrderFulfillment(record: Order): boolean {
 }
 
 function isPendingOperationOrder(record: Order): boolean {
-  return isOrderStatus(record, 'Pending', 0, '待')
-    || isOrderStatus(record, 'Paid', 1, '已支付')
+  return isOrderInStatus(record, 'Pending')
+    || isOrderInStatus(record, 'Paid')
     || isFailedOrder(record);
 }
 
@@ -207,7 +202,7 @@ export const OrderList = () => {
       }
     } catch (error) {
       log.error('OrderList', '加载订单列表失败:', error);
-      message.error('加载订单列表失败');
+      message.error(error instanceof Error ? error.message : t('orders.list.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -323,14 +318,14 @@ export const OrderList = () => {
 
     try {
       await retryGrantBenefit(retryOrder.voId);
-      message.success('重试成功');
+      message.success(t('orders.list.retrySuccess'));
       await loadOrders();
       if (String(selectedOrderId) === String(retryOrder.voId)) {
         setDetailReloadToken((current) => current + 1);
       }
     } catch (error) {
       log.error('OrderList', '重试失败:', error);
-      message.error(error instanceof Error ? error.message : '重试失败');
+      message.error(error instanceof Error ? error.message : t('orders.list.retryFailed'));
     } finally {
       setConfirmVisible(false);
       setRetryOrder(undefined);
@@ -362,11 +357,11 @@ export const OrderList = () => {
             }
           : item
       )));
-      message.success('订单备注已保存');
+      message.success(t('orders.list.remarkSaved'));
       setDetailReloadToken((current) => current + 1);
     } catch (error) {
       log.error('OrderList', '保存订单备注失败:', error);
-      message.error(error instanceof Error ? error.message : '保存订单备注失败');
+      message.error(error instanceof Error ? error.message : t('orders.list.remarkFailed'));
     } finally {
       setSavingRemark(false);
     }
@@ -374,45 +369,45 @@ export const OrderList = () => {
 
   const columns: TableColumnsType<Order> = [
     {
-      title: '订单号',
+      title: t('orders.column.orderNo'),
       dataIndex: 'voOrderNo',
       key: 'voOrderNo',
       width: 180,
       fixed: 'left',
     },
     {
-      title: '用户',
+      title: t('orders.column.user'),
       key: 'user',
       width: 150,
       render: (_: unknown, record: Order) => (
         <div className="order-list-entity">
-          <div className="order-list-entity__title">{record.voUserName || '未知'}</div>
+          <div className="order-list-entity__title">{record.voUserName || t('orders.common.unknown')}</div>
           <div className="order-list-entity__meta">ID: {record.voUserId}</div>
         </div>
       ),
     },
     {
-      title: '商品',
+      title: t('orders.column.product'),
       key: 'product',
       width: 200,
       render: (_: unknown, record: Order) => (
         <div className="order-list-entity">
           <div className="order-list-entity__title">{record.voProductName}</div>
           <div className="order-list-entity__meta">
-            {getProductTypeDisplay(record.voProductType)} | ID: {record.voProductId}
+            {getOrderProductTypeLabel(record.voProductType, t)} | ID: {record.voProductId}
           </div>
         </div>
       ),
     },
     {
-      title: '数量',
+      title: t('orders.column.quantity'),
       dataIndex: 'voQuantity',
       key: 'voQuantity',
       width: 80,
       align: 'center',
     },
     {
-      title: '单价',
+      title: t('orders.column.unitPrice'),
       dataIndex: 'voUnitPrice',
       key: 'voUnitPrice',
       width: 120,
@@ -421,7 +416,7 @@ export const OrderList = () => {
       ),
     },
     {
-      title: '总价',
+      title: t('orders.column.totalPrice'),
       dataIndex: 'voTotalPrice',
       key: 'voTotalPrice',
       width: 120,
@@ -432,24 +427,24 @@ export const OrderList = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('orders.column.status'),
       key: 'status',
       width: 120,
       render: (_: unknown, record: Order) => (
         <Tag color={getOrderStatusColor(record.voStatus)}>
-          {record.voStatusDisplay}
+          {getOrderStatusLabel(record, t)}
         </Tag>
       ),
     },
     {
-      title: '创建时间',
+      title: t('orders.column.createdAt'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
       render: (time: string) => formatLocalizedDateTime(time, language),
     },
     {
-      title: '操作',
+      title: t('orders.column.action'),
       key: 'action',
       width: 280,
       fixed: 'right',
@@ -461,7 +456,7 @@ export const OrderList = () => {
               size="small"
               onClick={() => handleViewUser(record)}
             >
-              查看用户
+              {t('orders.action.viewUser')}
             </Button>
           ) : null}
           {canViewProducts ? (
@@ -470,7 +465,7 @@ export const OrderList = () => {
               size="small"
               onClick={() => handleViewProduct(record)}
             >
-              查看商品
+              {t('orders.action.viewProduct')}
             </Button>
           ) : null}
           <Button
@@ -479,7 +474,7 @@ export const OrderList = () => {
             icon={<EyeOutlined />}
             onClick={() => handleViewDetail(record)}
           >
-            详情
+            {t('orders.action.detail')}
           </Button>
           {canRetryOrder && canRetryOrderFulfillment(record) ? (
             <Button
@@ -488,7 +483,7 @@ export const OrderList = () => {
               icon={<SyncOutlined />}
               onClick={() => handleRetry(record)}
             >
-              重试
+              {t('orders.action.retry')}
             </Button>
           ) : null}
         </Space>
@@ -503,72 +498,74 @@ export const OrderList = () => {
   return (
     <div className="admin-feature-page order-list-page">
       <ConsolePageHeader
-        eyebrow="交易运营"
-        title="订单管理"
-        description="查看商城订单、定位用户与商品，并处理发放失败重试和管理员备注。"
+        eyebrow={t('orders.list.eyebrow')}
+        title={t('orders.list.title')}
+        description={t('orders.list.description')}
         icon={<FileTextOutlined />}
         status={(
           <ConsoleStatusChip tone={canRemarkOrder ? 'success' : 'neutral'}>
-            {canRemarkOrder ? '可备注' : '只读'}
+            {t(canRemarkOrder ? 'orders.list.canRemark' : 'orders.common.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={returnTo?.startsWith('/') ? (
           <Button onClick={() => navigate(returnTo)}>
-            返回来源
+            {t('orders.common.backToSource')}
           </Button>
         ) : undefined}
       />
 
-      <ConsoleMetricGrid label="订单列表指标">
-        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的订单数量" tone="info" />
-        <ConsoleMetricCard label="本页订单" value={orders.length} description="当前页可见订单" />
-        <ConsoleMetricCard label="本页完成" value={completedOrders} description="本页已完成订单" tone="success" />
+      <ConsoleMetricGrid label={t('orders.list.metrics.label')}>
+        <ConsoleMetricCard label={t('orders.list.metrics.results')} value={total} description={t('orders.list.metrics.resultsDescription')} tone="info" />
+        <ConsoleMetricCard label={t('orders.list.metrics.page')} value={orders.length} description={t('orders.list.metrics.pageDescription')} />
+        <ConsoleMetricCard label={t('orders.list.metrics.completed')} value={completedOrders} description={t('orders.list.metrics.completedDescription')} tone="success" />
         <ConsoleMetricCard
-          label="发放失败"
+          label={t('orders.list.metrics.failed')}
           value={failedOrders}
-          description="本页需关注的失败订单"
+          description={t('orders.list.metrics.failedDescription')}
           tone={failedOrders > 0 ? 'danger' : 'neutral'}
         />
       </ConsoleMetricGrid>
 
-      <section className="governance-task-flow" aria-label="订单运营任务流">
+      <section className="governance-task-flow" aria-label={t('orders.list.flow.label')}>
         <div className="governance-task-flow__item">
           <span>1</span>
-          <strong>订单范围</strong>
-          <p>{total} 条筛选结果，当前页 {orders.length} 条订单。</p>
+          <strong>{t('orders.list.flow.scopeTitle')}</strong>
+          <p>{t('orders.list.flow.scope', { total, visible: orders.length })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>2</span>
-          <strong>失败优先</strong>
-          <p>{failedOrders} 条发放失败，{pendingOperationOrders} 条处于待处理链路。</p>
+          <strong>{t('orders.list.flow.failedTitle')}</strong>
+          <p>{t('orders.list.flow.failed', { failed: failedOrders, pending: pendingOperationOrders })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>3</span>
-          <strong>交易金额</strong>
-          <p>本页合计 {pageTotalPrice} 胡萝卜，用于核对订单摘要。</p>
+          <strong>{t('orders.list.flow.amountTitle')}</strong>
+          <p>{t('orders.list.flow.amount', { amount: formatLocalizedNumber(pageTotalPrice, language) })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>4</span>
-          <strong>留痕回流</strong>
-          <p>{selectedOrderContext ? `当前聚焦 ${selectedOrderContext.voOrderNo}` : '选择订单后可回看用户、商品和资产流水。'}</p>
+          <strong>{t('orders.list.flow.traceTitle')}</strong>
+          <p>{selectedOrderContext
+            ? t('orders.list.flow.focused', { orderNo: selectedOrderContext.voOrderNo })
+            : t('orders.list.flow.select')}</p>
         </div>
       </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选订单"
-            description="按用户、订单状态、商品或订单号定位交易记录。"
+            title={t('orders.list.toolbar.title')}
+            description={t('orders.list.toolbar.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('orders.list.filterCount', { count: activeFilterCount }) : t('orders.list.noFilters')}
               </ConsoleStatusChip>
             )}
           >
             <div className="admin-table-toolbar__filters">
               <Input
                 className="order-list-filter-input order-list-filter-input--id"
-                placeholder="用户 ID"
+                placeholder={t('orders.list.filter.userId')}
                 type="number"
                 value={draftUserId}
                 onChange={(e) => setDraftUserId(e.target.value ? e.target.value.trim() : undefined)}
@@ -577,22 +574,22 @@ export const OrderList = () => {
 
               <Select
                 className="order-list-filter-select"
-                placeholder="订单状态"
+                placeholder={t('orders.list.filter.status')}
                 allowClear
                 value={draftStatus}
                 onChange={setDraftStatus}
               >
-                <Select.Option value={0}>待支付</Select.Option>
-                <Select.Option value={1}>已支付</Select.Option>
-                <Select.Option value={2}>已完成</Select.Option>
-                <Select.Option value={3}>已取消</Select.Option>
-                <Select.Option value={4}>已退款</Select.Option>
-                <Select.Option value={5}>发放失败</Select.Option>
+                <Select.Option value={0}>{t('orders.status.pending')}</Select.Option>
+                <Select.Option value={1}>{t('orders.status.paid')}</Select.Option>
+                <Select.Option value={2}>{t('orders.status.completed')}</Select.Option>
+                <Select.Option value={3}>{t('orders.status.cancelled')}</Select.Option>
+                <Select.Option value={4}>{t('orders.status.refunded')}</Select.Option>
+                <Select.Option value={5}>{t('orders.status.fulfillmentFailed')}</Select.Option>
               </Select>
 
               <Input
                 className="order-list-filter-input order-list-filter-input--id"
-                placeholder="商品 ID"
+                placeholder={t('orders.list.filter.productId')}
                 type="number"
                 value={draftProductId}
                 onChange={(e) => setDraftProductId(e.target.value ? e.target.value.trim() : undefined)}
@@ -601,7 +598,7 @@ export const OrderList = () => {
 
               <Input
                 className="order-list-filter-input"
-                placeholder="订单号"
+                placeholder={t('orders.list.filter.orderNo')}
                 value={draftOrderNo}
                 onChange={(e) => setDraftOrderNo(e.target.value)}
                 onPressEnter={handleSearch}
@@ -609,11 +606,11 @@ export const OrderList = () => {
               />
 
               <Button variant="primary" icon={<SearchOutlined />} onClick={handleSearch}>
-                搜索
+                {t('orders.list.search')}
               </Button>
 
               <Button icon={<ReloadOutlined />} onClick={handleReset}>
-                重置
+                {t('orders.list.reset')}
               </Button>
             </div>
           </ConsoleToolbar>
@@ -630,7 +627,7 @@ export const OrderList = () => {
                 total: total,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (itemTotal) => `共 ${itemTotal} 条`,
+                showTotal: (itemTotal) => t('orders.list.pagination', { count: itemTotal }),
                 onChange: (page, size) => {
                   syncSearchParams({
                     userId: queryUserId,
@@ -648,84 +645,84 @@ export const OrderList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>订单运营摘要</h3>
-          <p className="admin-feature-subtle">核对当前筛选、失败重试、管理员备注和用户 / 商品 / 资产回流。</p>
+          <h3>{t('orders.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('orders.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__label">{t('orders.summary.scope')}</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部订单'}
+                {activeFilterCount > 0 ? t('orders.summary.filterCount', { count: activeFilterCount }) : t('orders.summary.all')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">待处理链路</span>
-              <span className="admin-table-summary__value">{pendingOperationOrders} 条订单</span>
+              <span className="admin-table-summary__label">{t('orders.summary.pending')}</span>
+              <span className="admin-table-summary__value">{t('orders.list.orderCount', { count: pendingOperationOrders })}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">本页成交额</span>
-              <span className="admin-table-summary__value">{pageTotalPrice} 胡萝卜</span>
+              <span className="admin-table-summary__label">{t('orders.summary.pageAmount')}</span>
+              <span className="admin-table-summary__value">{formatLocalizedNumber(pageTotalPrice, language)} {t('console.unit.carrot')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">失败重试</span>
+              <span className="admin-table-summary__label">{t('orders.summary.retry')}</span>
               <span className="admin-table-summary__value">
-                {canRetryOrder ? '可重试发放失败订单' : '无重试权限'}
+                {t(canRetryOrder ? 'orders.summary.canRetry' : 'orders.summary.noRetry')}
               </span>
             </div>
           </div>
 
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">当前订单</span>
-              <span className="admin-table-summary__value">{selectedOrderContext?.voOrderNo ?? '未选择订单'}</span>
+              <span className="admin-table-summary__label">{t('orders.summary.current')}</span>
+              <span className="admin-table-summary__value">{selectedOrderContext?.voOrderNo ?? t('orders.summary.notSelected')}</span>
             </div>
             {selectedOrderContext ? (
               <>
                 <div className="admin-table-summary__item">
-                  <span className="admin-table-summary__label">商品 / 用户</span>
+                  <span className="admin-table-summary__label">{t('orders.summary.productUser')}</span>
                   <span className="admin-table-summary__value">
                     {selectedOrderContext.voProductName} · {selectedOrderContext.voUserName || `#${selectedOrderContext.voUserId}`}
                   </span>
                 </div>
                 <div className="admin-table-summary__item">
-                  <span className="admin-table-summary__label">状态 / 金额</span>
+                  <span className="admin-table-summary__label">{t('orders.summary.statusAmount')}</span>
                   <span className="admin-table-summary__value">
-                    {selectedOrderContext.voStatusDisplay} · {normalizeOrderPrice(selectedOrderContext.voTotalPrice)} 胡萝卜
+                    {getOrderStatusLabel(selectedOrderContext, t)} · {formatLocalizedNumber(normalizeOrderPrice(selectedOrderContext.voTotalPrice), language)} {t('console.unit.carrot')}
                   </span>
                 </div>
                 {selectedOrderContext.voAdminRemark || selectedOrderContext.voFailReason ? (
                   <div className="admin-feature-inline-context">
-                    <strong>{selectedOrderContext.voFailReason ? '失败原因' : '管理员备注'}</strong>
+                    <strong>{t(selectedOrderContext.voFailReason ? 'orders.summary.failureReason' : 'orders.summary.adminRemark')}</strong>
                     <span>{selectedOrderContext.voFailReason || selectedOrderContext.voAdminRemark}</span>
                   </div>
                 ) : null}
                 <div className="admin-feature-rail__actions">
                   <Button size="small" onClick={() => handleViewDetail(selectedOrderContext)}>
-                    订单详情
+                    {t('orders.detail.title')}
                   </Button>
                   {canViewUsers ? (
                     <Button size="small" onClick={() => handleViewUser(selectedOrderContext)}>
-                      查看用户
+                      {t('orders.action.viewUser')}
                     </Button>
                   ) : null}
                   {canViewProducts ? (
                     <Button size="small" onClick={() => handleViewProduct(selectedOrderContext)}>
-                      查看商品
+                      {t('orders.action.viewProduct')}
                     </Button>
                   ) : null}
                   {canViewCoins ? (
                     <Button size="small" onClick={() => handleViewCoinTransaction(selectedOrderContext)}>
-                      资产流水
+                      {t('orders.action.coinTransaction')}
                     </Button>
                   ) : null}
                   {canRetryOrder && canRetryOrderFulfillment(selectedOrderContext) ? (
                     <Button size="small" onClick={() => handleRetry(selectedOrderContext)}>
-                      重试发放
+                      {t('orders.action.retryFulfillment')}
                     </Button>
                   ) : null}
                 </div>
               </>
             ) : (
-              <p className="admin-feature-rail__empty">当前页暂无订单，调整筛选条件后会形成订单运营摘要。</p>
+              <p className="admin-feature-rail__empty">{t('orders.summary.empty')}</p>
             )}
           </div>
         </aside>
@@ -752,8 +749,8 @@ export const OrderList = () => {
 
       <ConfirmDialog
         isOpen={confirmVisible}
-        title="确认重试"
-        message={`确定要重新发放订单"${retryOrder?.voOrderNo}"的权益吗？`}
+        title={t('orders.retry.title')}
+        message={t('orders.retry.message', { orderNo: retryOrder?.voOrderNo ?? '-' })}
         onConfirm={handleConfirmRetry}
         onCancel={() => {
           setConfirmVisible(false);

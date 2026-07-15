@@ -110,6 +110,12 @@ public class OrderVo
     /// <summary>固定到期时间快照</summary>
     public DateTime? VoFixedExpiresAt { get; set; }
 
+    /// <summary>有效期类型快照</summary>
+    public DurationType VoDurationType { get; set; }
+
+    /// <summary>有效期天数快照</summary>
+    public int? VoDurationDays { get; set; }
+
     /// <summary>有效期显示文本</summary>
     public string? VoDurationDisplay { get; set; }
 

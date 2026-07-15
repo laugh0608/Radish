@@ -12,6 +12,7 @@ import {
   toNumericId,
 } from './chatApp.helpers';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
+import { getIntlLocale } from '@/locales/language';
 import styles from './ChatApp.module.css';
 
 interface ChatMessageListProps {
@@ -61,7 +62,8 @@ export const ChatMessageList = ({
   onDismissFailedMessage,
   onLoadNewerHistory,
 }: ChatMessageListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage ?? i18n.language);
 
   return (
     <div className={styles.messageViewport} ref={messageScrollRef} onScroll={onScroll}>
@@ -121,7 +123,7 @@ export const ChatMessageList = ({
                     >
                       <span className={styles.userName}>{messageUserName}</span>
                     </button>
-                    <span className={styles.time}>{formatChatTime(message.voCreateTime)}</span>
+                    <span className={styles.time}>{formatChatTime(message.voCreateTime, locale)}</span>
                     {!message.voIsRecalled && messageStatus === 'sent' && (
                       <button
                         type="button"

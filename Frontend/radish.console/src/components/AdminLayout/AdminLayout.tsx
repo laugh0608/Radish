@@ -85,7 +85,7 @@ export interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(() => isMobileSidebarLayout());
   const [isMobileLayout, setIsMobileLayout] = useState(() => isMobileSidebarLayout());
   const [searchVisible, setSearchVisible] = useState(false);
@@ -102,8 +102,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   useGlobalSearchHotkey(() => setSearchVisible(true));
 
   const sidebarGroups = useMemo(
-    () => getSidebarRouteGroups(user),
-    [user, i18n.resolvedLanguage]
+    () => getSidebarRouteGroups(user, t),
+    [t, user]
   );
   const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const activeMenuKey = getActiveMenuKey(location.pathname);

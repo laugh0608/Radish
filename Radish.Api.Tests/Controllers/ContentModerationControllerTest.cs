@@ -1,8 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Localization;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -31,6 +33,8 @@ public class ContentModerationControllerTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Moderation.ValidationFailed", result.Code);
+        Assert.Equal("error.moderation.validation_failed", result.MessageKey);
     }
 
     [Fact]
@@ -122,7 +126,11 @@ public class ContentModerationControllerTest
                 10001,
                 "Tester",
                 0))
-            .ThrowsAsync(new BusinessException("举报单不存在", 404, "Moderation.ReportNotFound"));
+            .ThrowsAsync(new BusinessException(
+                "举报单不存在",
+                404,
+                "Moderation.ReportNotFound",
+                "error.moderation.report_not_found"));
 
         var controller = CreateController(serviceMock.Object);
         var result = await controller.Review(new ReviewContentReportDto
@@ -135,6 +143,8 @@ public class ContentModerationControllerTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
+        Assert.Equal("Moderation.ReportNotFound", result.Code);
+        Assert.Equal("error.moderation.report_not_found", result.MessageKey);
     }
 
     [Fact]
@@ -264,11 +274,23 @@ public class ContentModerationControllerTest
             TenantId = 0
         });
 
-        return new ContentModerationController(moderationService, currentUserAccessorMock.Object);
+        return new ContentModerationController(
+            moderationService,
+            currentUserAccessorMock.Object,
+            CreateErrorsLocalizer());
     }
 
     private static Mock<IContentModerationService> CreateServiceMock()
     {
         return new Mock<IContentModerationService>(MockBehavior.Strict);
+    }
+
+    private static IStringLocalizer<Errors> CreateErrorsLocalizer()
+    {
+        var localizerMock = new Mock<IStringLocalizer<Errors>>();
+        localizerMock
+            .Setup(localizer => localizer[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key, resourceNotFound: true));
+        return localizerMock.Object;
     }
 }

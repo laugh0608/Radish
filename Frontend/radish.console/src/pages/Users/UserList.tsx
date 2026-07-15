@@ -24,7 +24,6 @@ import {
 import {
   userManagementApi,
   getUserStatusColor,
-  getUserStatusDisplay,
   UserStatus,
   type UserListParams,
 } from '../../api/userManagement';
@@ -67,6 +66,18 @@ export const UserList = () => {
   const [pageIndex, setPageIndex] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const getUserStatusLabel = (currentStatus: UserStatus) => {
+    switch (currentStatus) {
+      case UserStatus.Normal:
+        return t('users.list.status.normal');
+      case UserStatus.Disabled:
+        return t('users.list.status.disabled');
+      case UserStatus.Locked:
+        return t('users.list.status.locked');
+      default:
+        return t('users.list.status.unknown');
+    }
+  };
 
   // 筛选条件
   const [keyword, setKeyword] = useState<string>('');
@@ -81,7 +92,12 @@ export const UserList = () => {
   const disabledUsers = users.length - enabledUsers;
   const selectedUser = users.find((user) => !user.voIsEnable) ?? users[0] ?? null;
   const selectedUserName = selectedUser
-    ? resolveVisibleUserDisplayName(selectedUser, selectedUser.uuid ? `用户 ${selectedUser.uuid}` : '未知用户')
+    ? resolveVisibleUserDisplayName(
+        selectedUser,
+        selectedUser.uuid
+          ? t('users.common.userFallback', { id: selectedUser.uuid })
+          : t('common.unknownUser'),
+      )
     : '';
   const selectedUserHandle = selectedUser ? resolveVisibleUserHandle(selectedUser, selectedUserName) : '';
 
@@ -112,11 +128,11 @@ export const UserList = () => {
         setPageIndex(response.data.pageIndex || targetPageIndex);
         setPageSize(response.data.pageSize || targetPageSize);
       } else {
-        message.error(response.message || '获取用户列表失败');
+        message.error(response.message || t('users.list.loadFailed'));
       }
     } catch (error) {
       log.error('UserList', '加载用户列表失败', error);
-      message.error('加载用户列表失败');
+      message.error(t('users.list.loadFailed'));
     } finally {
       setLoading(false);
     }
@@ -140,12 +156,15 @@ export const UserList = () => {
   // 表格列定义
   const columns: TableColumnsType<UserListItem> = [
     {
-      title: '用户',
+      title: t('users.list.column.user'),
       key: 'user',
       width: 260,
       render: (_, record) => (
         (() => {
-          const displayName = resolveVisibleUserDisplayName(record, record.uuid ? `用户 ${record.uuid}` : '未知用户');
+          const displayName = resolveVisibleUserDisplayName(
+            record,
+            record.uuid ? t('users.common.userFallback', { id: record.uuid }) : t('common.unknownUser'),
+          );
           const displayHandle = resolveVisibleUserHandle(record, displayName);
 
           return (
@@ -170,40 +189,40 @@ export const UserList = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('users.list.column.status'),
       key: 'status',
       width: 100,
       render: (_, record) => {
         const currentStatus = getListItemStatus(record);
         return (
           <Tag color={getUserStatusColor(currentStatus)}>
-            {getUserStatusDisplay(currentStatus)}
+            {getUserStatusLabel(currentStatus)}
           </Tag>
         );
       },
     },
     {
-      title: '公开索引',
+      title: t('users.list.column.publicIndex'),
       key: 'publicIndex',
       width: 120,
       render: (_, record) => record.voPublicIndex ? `#${record.voPublicIndex}` : '-',
     },
     {
-      title: '创建时间',
+      title: t('users.list.column.createdAt'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
       render: (voCreateTime: string) => formatUserTime(voCreateTime, language),
     },
     {
-      title: '更新时间',
+      title: t('users.list.column.updatedAt'),
       dataIndex: 'voUpdateTime',
       key: 'voUpdateTime',
       width: 180,
       render: (voUpdateTime?: string | null) => formatUserTime(voUpdateTime, language),
     },
     {
-      title: '操作',
+      title: t('users.list.column.action'),
       key: 'actions',
       width: 160,
       render: (_, record) => (
@@ -215,7 +234,7 @@ export const UserList = () => {
               icon={<EditOutlined />}
               onClick={() => navigate(`/users/${record.uuid}`)}
             >
-              查看详情
+              {t('users.list.action.viewDetail')}
             </Button>
           ) : null}
         </Space>
@@ -236,62 +255,66 @@ export const UserList = () => {
   return (
     <div className="admin-feature-page user-list">
       <ConsolePageHeader
-        eyebrow="用户运营"
-        title="用户管理"
-        description="查看账号状态、定位用户详情，并为后续治理动作提供入口。"
+        eyebrow={t('users.list.eyebrow')}
+        title={t('users.list.title')}
+        description={t('users.list.description')}
         icon={<TeamOutlined />}
         status={(
           <ConsoleStatusChip tone={canViewUsers ? 'success' : 'danger'}>
-            {canViewUsers ? '可查看' : '无权限'}
+            {t(canViewUsers ? 'users.common.viewable' : 'users.common.noPermission')}
           </ConsoleStatusChip>
         )}
       />
 
-      <ConsoleMetricGrid label="用户列表指标">
-        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的账号数量" tone="info" />
-        <ConsoleMetricCard label="本页账号" value={users.length} description="当前页可见账号" />
-        <ConsoleMetricCard label="本页启用" value={enabledUsers} description="当前页启用账号" tone="success" />
-        <ConsoleMetricCard label="本页禁用" value={disabledUsers} description="当前页禁用账号" tone={disabledUsers > 0 ? 'warning' : 'success'} />
+      <ConsoleMetricGrid label={t('users.list.metrics.label')}>
+        <ConsoleMetricCard label={t('users.list.metrics.results')} value={total} description={t('users.list.metrics.resultsDescription')} tone="info" />
+        <ConsoleMetricCard label={t('users.list.metrics.page')} value={users.length} description={t('users.list.metrics.pageDescription')} />
+        <ConsoleMetricCard label={t('users.list.metrics.enabled')} value={enabledUsers} description={t('users.list.metrics.enabledDescription')} tone="success" />
+        <ConsoleMetricCard label={t('users.list.metrics.disabled')} value={disabledUsers} description={t('users.list.metrics.disabledDescription')} tone={disabledUsers > 0 ? 'warning' : 'success'} />
       </ConsoleMetricGrid>
 
-      <section className="governance-task-flow" aria-label="用户对象管理任务流">
+      <section className="governance-task-flow" aria-label={t('users.list.flow.label')}>
         <div className="governance-task-flow__item">
           <span>1</span>
-          <strong>查询范围</strong>
-          <p>{total} 个匹配账号，当前页 {users.length} 个；关键词、状态和角色筛选先限定对象池。</p>
+          <strong>{t('users.list.flow.scopeTitle')}</strong>
+          <p>{t('users.list.flow.scope', { total, visible: users.length })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>2</span>
-          <strong>状态检查</strong>
-          <p>当前页 {enabledUsers} 个正常、{disabledUsers} 个禁用；账号冻结等深层动作回到治理工作台处理。</p>
+          <strong>{t('users.list.flow.statusTitle')}</strong>
+          <p>{t('users.list.flow.status', { enabled: enabledUsers, disabled: disabledUsers })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>3</span>
-          <strong>对象详情</strong>
-          <p>{selectedUser ? `${selectedUserName} ${selectedUserHandle ? selectedUserHandle : ''}` : '选择用户后查看详情'}，详情页承接资产、经验和订单回流。</p>
+          <strong>{t('users.list.flow.detailTitle')}</strong>
+          <p>{t('users.list.flow.detail', {
+            user: selectedUser
+              ? `${selectedUserName} ${selectedUserHandle || ''}`.trim()
+              : t('users.list.flow.selectUser'),
+          })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>4</span>
-          <strong>审计边界</strong>
-          <p>当前列表只呈现账号对象线索；完整审计日志与高风险状态变更不在本批扩展。</p>
+          <strong>{t('users.list.flow.auditTitle')}</strong>
+          <p>{t('users.list.flow.audit')}</p>
         </div>
       </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选用户"
-            description="按展示名、公开句柄、邮箱、状态或角色定位账号。"
+            title={t('users.list.toolbar.title')}
+            description={t('users.list.toolbar.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('users.list.filterCount', { count: activeFilterCount }) : t('users.list.noFilters')}
               </ConsoleStatusChip>
             )}
           >
             <div className="admin-table-toolbar__filters">
               <Input
                 className="user-list-filter-input"
-                placeholder="搜索展示名、公开句柄或邮箱"
+                placeholder={t('users.list.filter.keyword')}
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onPressEnter={handleSearch}
@@ -300,26 +323,26 @@ export const UserList = () => {
 
               <Select
                 className="user-list-filter-select user-list-filter-select--status"
-                placeholder="用户状态"
+                placeholder={t('users.list.filter.status')}
                 value={status}
                 onChange={setStatus}
                 allowClear
               >
-                <Select.Option value={UserStatus.Normal}>正常</Select.Option>
-                <Select.Option value={UserStatus.Disabled}>禁用</Select.Option>
-                <Select.Option value={UserStatus.Locked}>锁定</Select.Option>
+                <Select.Option value={UserStatus.Normal}>{t('users.list.status.normal')}</Select.Option>
+                <Select.Option value={UserStatus.Disabled}>{t('users.list.status.disabled')}</Select.Option>
+                <Select.Option value={UserStatus.Locked}>{t('users.list.status.locked')}</Select.Option>
               </Select>
 
               <Select
                 className="user-list-filter-select"
-                placeholder="用户角色"
+                placeholder={t('users.list.filter.role')}
                 value={role}
                 onChange={setRole}
                 allowClear
               >
-                <Select.Option value="System">系统管理员</Select.Option>
-                <Select.Option value="Admin">管理员</Select.Option>
-                <Select.Option value="User">普通用户</Select.Option>
+                <Select.Option value="System">{t('users.list.role.system')}</Select.Option>
+                <Select.Option value="Admin">{t('users.list.role.admin')}</Select.Option>
+                <Select.Option value="User">{t('users.list.role.user')}</Select.Option>
               </Select>
 
               <Button
@@ -327,14 +350,14 @@ export const UserList = () => {
                 icon={<SearchOutlined />}
                 onClick={handleSearch}
               >
-                搜索
+                {t('users.list.search')}
               </Button>
 
               <Button
                 icon={<ReloadOutlined />}
                 onClick={handleReset}
               >
-                重置
+                {t('users.list.reset')}
               </Button>
             </div>
           </ConsoleToolbar>
@@ -352,7 +375,7 @@ export const UserList = () => {
                 showSizeChanger: true,
                 showQuickJumper: true,
                 showTotal: (total, range) =>
-                  `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+                  t('users.list.pagination', { start: range[0], end: range[1], total }),
                 onChange: (page, size) => {
                   const nextPageSize = size || 20;
                   setPageIndex(page);
@@ -365,60 +388,60 @@ export const UserList = () => {
           </section>
         </main>
 
-        <aside className="admin-table-aside" aria-label="用户对象摘要">
+        <aside className="admin-table-aside" aria-label={t('users.list.summary.label')}>
           <div className="admin-feature-rail__header">
             <div>
-              <span className="admin-feature-rail__eyebrow">当前对象</span>
-              <h3>用户对象摘要</h3>
+              <span className="admin-feature-rail__eyebrow">{t('users.list.summary.eyebrow')}</span>
+              <h3>{t('users.list.summary.label')}</h3>
             </div>
             <ConsoleStatusChip tone={canViewUsers ? 'success' : 'danger'}>
-              {canViewUsers ? '可查看' : '无权限'}
+              {t(canViewUsers ? 'users.common.viewable' : 'users.common.noPermission')}
             </ConsoleStatusChip>
           </div>
-          <p className="admin-feature-subtle">用于核对当前查询范围、选中用户和后续对象治理入口。</p>
+          <p className="admin-feature-subtle">{t('users.list.summary.description')}</p>
           <div className="admin-feature-rail__list">
             <div className="admin-feature-rail__item">
-              <span>查询范围</span>
-              <strong>{activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部用户'}</strong>
+              <span>{t('users.list.summary.scope')}</span>
+              <strong>{activeFilterCount > 0 ? t('users.list.summary.filterCount', { count: activeFilterCount }) : t('users.list.summary.allUsers')}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>分页规模</span>
-              <strong>{pageSize} 条 / 页，第 {pageIndex} 页</strong>
+              <span>{t('users.list.summary.pagination')}</span>
+              <strong>{t('users.list.summary.paginationValue', { pageSize, page: pageIndex })}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>状态队列</span>
-              <strong>{disabledUsers > 0 ? `${disabledUsers} 个禁用账号需要关注` : '当前页无禁用账号'}</strong>
+              <span>{t('users.list.summary.statusQueue')}</span>
+              <strong>{disabledUsers > 0 ? t('users.list.summary.disabledAttention', { count: disabledUsers }) : t('users.list.summary.noDisabled')}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>可执行动作</span>
-              <strong>{canViewUsers ? '查看用户详情' : '无用户查看权限'}</strong>
+              <span>{t('users.list.summary.actions')}</span>
+              <strong>{t(canViewUsers ? 'users.list.summary.viewDetail' : 'users.list.summary.noViewPermission')}</strong>
             </div>
           </div>
           {selectedUser ? (
             <>
               <div className="admin-feature-rail__callout">
-                <span>当前用户</span>
+                <span>{t('users.list.summary.currentUser')}</span>
                 <strong>{selectedUserName}</strong>
                 <p>{selectedUserHandle || selectedUser.voUserEmail || selectedUser.uuid}</p>
                 <Space wrap>
                   <Tag color={getUserStatusColor(getListItemStatus(selectedUser))}>
-                    {getUserStatusDisplay(getListItemStatus(selectedUser))}
+                    {getUserStatusLabel(getListItemStatus(selectedUser))}
                   </Tag>
                   {selectedUser.voPublicIndex ? <Tag color="blue">#{selectedUser.voPublicIndex}</Tag> : null}
-                  {selectedUser.voIsDeleted ? <Tag color="default">已删除</Tag> : null}
+                  {selectedUser.voIsDeleted ? <Tag color="default">{t('users.list.status.deleted')}</Tag> : null}
                 </Space>
               </div>
               <div className="admin-feature-rail__list">
                 <div className="admin-feature-rail__item">
-                  <span>邮箱</span>
+                  <span>{t('users.list.summary.email')}</span>
                   <strong>{selectedUser.voUserEmail || '-'}</strong>
                 </div>
                 <div className="admin-feature-rail__item">
-                  <span>创建时间</span>
+                  <span>{t('users.list.summary.createdAt')}</span>
                   <strong>{formatUserTime(selectedUser.voCreateTime, language)}</strong>
                 </div>
                 <div className="admin-feature-rail__item">
-                  <span>更新时间</span>
+                  <span>{t('users.list.summary.updatedAt')}</span>
                   <strong>{formatUserTime(selectedUser.voUpdateTime, language)}</strong>
                 </div>
               </div>
@@ -429,7 +452,7 @@ export const UserList = () => {
                   icon={<EditOutlined />}
                   onClick={() => navigate(`/users/${selectedUser.uuid}`)}
                 >
-                  打开用户详情
+                  {t('users.list.summary.openDetail')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -442,16 +465,16 @@ export const UserList = () => {
                     void loadUsers(1, pageSize, nextKeyword, status, role);
                   }}
                 >
-                  设为筛选
+                  {t('users.list.summary.useAsFilter')}
                 </Button>
               </div>
               <div className="admin-feature-inline-context">
-                <strong>权限与风险线索</strong>
-                <span>用户状态写入、资产、经验和治理动作继续进入对应专页，不在用户列表直接扩展。</span>
+                <strong>{t('users.list.summary.riskTitle')}</strong>
+                <span>{t('users.list.summary.riskDescription')}</span>
               </div>
             </>
           ) : (
-            <p className="admin-feature-rail__empty">当前页暂无用户，调整筛选条件后会形成对象摘要。</p>
+            <p className="admin-feature-rail__empty">{t('users.list.summary.empty')}</p>
           )}
         </aside>
       </div>

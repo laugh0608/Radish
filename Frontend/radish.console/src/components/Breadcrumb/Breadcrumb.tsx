@@ -26,7 +26,7 @@ const routeBreadcrumbMap: Record<string, string> = {
  */
 export function AppBreadcrumb() {
   const location = useLocation();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   const breadcrumbItems: BreadcrumbProps['items'] = useMemo(() => {
     const pathSegments = location.pathname.split('/').filter(Boolean);
@@ -50,7 +50,7 @@ export function AppBreadcrumb() {
       pathSegments.forEach((segment, index) => {
         currentPath += `/${segment}`;
         const breadcrumbName = routeBreadcrumbMap[currentPath]
-          ? getConsoleRouteTitle(currentPath)
+          ? getConsoleRouteTitle(currentPath, t)
           : undefined;
 
         if (breadcrumbName) {
@@ -69,7 +69,7 @@ export function AppBreadcrumb() {
     }
 
     return items;
-  }, [i18n.resolvedLanguage, location.pathname, t]);
+  }, [location.pathname, t]);
 
   // 如果只有首页一个面包屑，不显示面包屑导航
   if (breadcrumbItems.length <= 1) {
