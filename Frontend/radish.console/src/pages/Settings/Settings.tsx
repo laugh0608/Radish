@@ -82,7 +82,7 @@ export const Settings = () => {
       setInitializing(true);
       const response = await userApi.getMyTimePreference();
       if (!response.ok || !response.data) {
-        throw new Error(response.message || '加载设置失败');
+        throw new Error(t('settings.personal.feedback.loadFailed'));
       }
 
       const nextSettings = buildSettings(response.data);
@@ -91,11 +91,11 @@ export const Settings = () => {
       form.setFieldsValue(nextSettings);
     } catch (error) {
       log.error('Settings', '加载设置失败:', error);
-      message.error(error instanceof Error ? error.message : '加载设置失败');
+      message.error(error instanceof Error ? error.message : t('settings.personal.feedback.loadFailed'));
     } finally {
       setInitializing(false);
     }
-  }, [form]);
+  }, [form, t]);
 
   useEffect(() => {
     void loadSettings();
@@ -108,17 +108,17 @@ export const Settings = () => {
 
       const response = await userApi.updateMyTimePreference(values.timeZoneId);
       if (!response.ok || !response.data) {
-        throw new Error(response.message || '保存设置失败');
+        throw new Error(t('settings.personal.feedback.saveFailed'));
       }
 
       const nextSettings = buildSettings(response.data);
       setTimePreference(response.data);
       setSettings(nextSettings);
       form.setFieldsValue(nextSettings);
-      message.success('设置保存成功');
+      message.success(t('settings.personal.feedback.saveSuccess'));
     } catch (error) {
       log.error('Settings', '保存设置失败:', error);
-      message.error(error instanceof Error ? error.message : '保存设置失败');
+      message.error(error instanceof Error ? error.message : t('settings.personal.feedback.saveFailed'));
     } finally {
       setLoading(false);
     }
@@ -136,15 +136,15 @@ export const Settings = () => {
       });
 
       if (!response.ok) {
-        throw new Error(response.message || '修改密码失败');
+        throw new Error(t('settings.personal.feedback.passwordFailed'));
       }
 
-      message.success('密码修改成功');
+      message.success(t('settings.personal.feedback.passwordSuccess'));
       setPasswordModalVisible(false);
       passwordForm.resetFields();
     } catch (error) {
       log.error('Settings', '修改密码失败:', error);
-      message.error(error instanceof Error ? error.message : '修改密码失败');
+      message.error(error instanceof Error ? error.message : t('settings.personal.feedback.passwordFailed'));
     } finally {
       setPasswordLoading(false);
     }
@@ -152,25 +152,25 @@ export const Settings = () => {
 
   const handleReset = () => {
     Modal.confirm({
-      title: '重置设置',
-      content: '确定要将时区恢复为系统默认值吗？',
+      title: t('settings.personal.feedback.resetTitle'),
+      content: t('settings.personal.feedback.resetContent'),
       onOk: async () => {
         const fallbackTimeZone = timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId;
         try {
           setLoading(true);
           const response = await userApi.updateMyTimePreference(fallbackTimeZone);
           if (!response.ok || !response.data) {
-            throw new Error(response.message || '重置设置失败');
+            throw new Error(t('settings.personal.feedback.resetFailed'));
           }
 
           const nextSettings = buildSettings(response.data);
           setTimePreference(response.data);
           setSettings(nextSettings);
           form.setFieldsValue(nextSettings);
-          message.success('设置已重置为系统默认值');
+          message.success(t('settings.personal.feedback.resetSuccess'));
         } catch (error) {
           log.error('Settings', '重置设置失败:', error);
-          message.error(error instanceof Error ? error.message : '重置设置失败');
+          message.error(error instanceof Error ? error.message : t('settings.personal.feedback.resetFailed'));
         } finally {
           setLoading(false);
         }
@@ -184,13 +184,13 @@ export const Settings = () => {
         <div className="admin-feature-header">
           <div>
             <h2>
-              <SettingOutlined /> 设置
+              <SettingOutlined /> {t('settings.personal.title')}
             </h2>
-            <p className="admin-feature-subtle">管理个人偏好、安全凭证和后续通知策略入口。</p>
+            <p className="admin-feature-subtle">{t('settings.personal.description')}</p>
           </div>
           <Space>
             <Button onClick={handleReset} disabled={initializing || loading}>
-              重置默认
+              {t('settings.personal.resetDefault')}
             </Button>
             <Button
               type="primary"
@@ -199,25 +199,25 @@ export const Settings = () => {
               disabled={initializing}
               onClick={handleSave}
             >
-              保存设置
+              {t('settings.personal.save')}
             </Button>
           </Space>
         </div>
       </section>
 
       <div className="admin-settings-layout">
-        <aside className="admin-settings-nav" aria-label="设置分组">
-          <h3>设置分组</h3>
-          <p className="admin-feature-subtle">按配置影响范围进入对应分组。</p>
+        <aside className="admin-settings-nav" aria-label={t('settings.personal.navLabel')}>
+          <h3>{t('settings.personal.navTitle')}</h3>
+          <p className="admin-feature-subtle">{t('settings.personal.navDescription')}</p>
           <nav className="admin-settings-nav__list">
             <a className="admin-settings-nav__item" href="#settings-notifications">
-              <BellOutlined /> 通知设置
+              <BellOutlined /> {t('settings.personal.notifications.title')}
             </a>
             <a className="admin-settings-nav__item" href="#settings-interface">
-              <EyeOutlined /> 界面设置
+              <EyeOutlined /> {t('settings.personal.interface.title')}
             </a>
             <a className="admin-settings-nav__item" href="#settings-security">
-              <LockOutlined /> 安全设置
+              <LockOutlined /> {t('settings.personal.security.title')}
             </a>
           </nav>
         </aside>
@@ -233,21 +233,21 @@ export const Settings = () => {
               <div>
                 <div className="admin-setting-section__title-main">
                   <BellOutlined />
-                  <h3>通知设置</h3>
+                  <h3>{t('settings.personal.notifications.title')}</h3>
                 </div>
-                <p className="admin-feature-subtle">通知策略当前作为后置能力展示，保存时不写入通知配置。</p>
+                <p className="admin-feature-subtle">{t('settings.personal.notifications.description')}</p>
               </div>
-              <Tag>后置</Tag>
+              <Tag>{t('settings.personal.notifications.deferred')}</Tag>
             </div>
 
-            <Form.Item name="emailNotifications" label="邮件通知" valuePropName="checked">
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
+            <Form.Item name="emailNotifications" label={t('settings.personal.notifications.email')} valuePropName="checked">
+              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
             </Form.Item>
-            <Form.Item name="browserNotifications" label="浏览器通知" valuePropName="checked">
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
+            <Form.Item name="browserNotifications" label={t('settings.personal.notifications.browser')} valuePropName="checked">
+              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
             </Form.Item>
-            <Form.Item name="systemNotifications" label="系统通知" valuePropName="checked">
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
+            <Form.Item name="systemNotifications" label={t('settings.personal.notifications.system')} valuePropName="checked">
+              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
             </Form.Item>
           </section>
 
@@ -256,30 +256,30 @@ export const Settings = () => {
               <div>
                 <div className="admin-setting-section__title-main">
                   <EyeOutlined />
-                  <h3>界面设置</h3>
+                  <h3>{t('settings.personal.interface.title')}</h3>
                 </div>
-                <p className="admin-feature-subtle">当前只开放时区偏好，其余界面选项保留为只读能力占位。</p>
+                <p className="admin-feature-subtle">{t('settings.personal.interface.description')}</p>
               </div>
             </div>
 
             <Form.Item
               name="timeZoneId"
-              label="时区"
-              rules={[{ required: true, message: '请选择时区' }]}
+              label={t('settings.personal.interface.timeZone')}
+              rules={[{ required: true, message: t('settings.personal.interface.timeZoneRequired') }]}
             >
               <Select options={TIME_ZONE_OPTIONS} />
             </Form.Item>
             <div className="settings-meta">
-              <span>系统默认：{timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId}</span>
-              <span>展示格式：{timePreference?.voDisplayFormat || 'yyyy-MM-dd HH:mm:ss'}</span>
+              <span>{t('settings.personal.interface.systemDefault', { value: timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId })}</span>
+              <span>{t('settings.personal.interface.displayFormat', { value: timePreference?.voDisplayFormat || 'yyyy-MM-dd HH:mm:ss' })}</span>
             </div>
 
             <Divider />
 
-            <Form.Item name="theme" label="主题">
+            <Form.Item name="theme" label={t('settings.personal.interface.theme')}>
               <Select
                 disabled
-                options={[{ label: '浅色主题', value: 'light' }]}
+                options={[{ label: t('settings.personal.interface.lightTheme'), value: 'light' }]}
               />
             </Form.Item>
             <Form.Item label={t('settings.language.label')}>
@@ -292,10 +292,10 @@ export const Settings = () => {
                 onChange={(value: SupportedLanguage) => void i18n.changeLanguage(value)}
               />
             </Form.Item>
-            <Form.Item name="pageSize" label="每页显示条数">
+            <Form.Item name="pageSize" label={t('settings.personal.interface.pageSize')}>
               <Select
                 disabled
-                options={[{ label: '20 条/页', value: 20 }]}
+                options={[{ label: t('settings.personal.interface.pageSizeValue', { count: 20 }), value: 20 }]}
               />
             </Form.Item>
           </section>
@@ -305,67 +305,67 @@ export const Settings = () => {
               <div>
                 <div className="admin-setting-section__title-main">
                   <LockOutlined />
-                  <h3>安全设置</h3>
+                  <h3>{t('settings.personal.security.title')}</h3>
                 </div>
-                <p className="admin-feature-subtle">高风险账户动作集中在本分组，避免与偏好配置混排。</p>
+                <p className="admin-feature-subtle">{t('settings.personal.security.description')}</p>
               </div>
             </div>
 
-            <Form.Item name="twoFactorAuth" label="双因素认证" valuePropName="checked">
-              <Switch checkedChildren="开启" unCheckedChildren="关闭" disabled />
+            <Form.Item name="twoFactorAuth" label={t('settings.personal.security.twoFactor')} valuePropName="checked">
+              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
             </Form.Item>
-            <Form.Item name="sessionTimeout" label="会话超时时间（分钟）">
+            <Form.Item name="sessionTimeout" label={t('settings.personal.security.sessionTimeout')}>
               <Select
                 disabled
-                options={[{ label: '30 分钟', value: 30 }]}
+                options={[{ label: t('settings.personal.security.sessionTimeoutValue', { count: 30 }), value: 30 }]}
               />
             </Form.Item>
 
             <Divider />
 
             <div className="password-section">
-              <h4>密码管理</h4>
-              <p>定期更换密码可以提高账户安全性。</p>
+              <h4>{t('settings.personal.security.passwordTitle')}</h4>
+              <p>{t('settings.personal.security.passwordDescription')}</p>
               <Button
                 icon={<LockOutlined />}
                 onClick={() => setPasswordModalVisible(true)}
               >
-                修改密码
+                {t('settings.personal.security.changePassword')}
               </Button>
             </div>
           </section>
         </Form>
 
         <aside className="admin-settings-aside">
-          <h3>当前影响范围</h3>
-          <p className="admin-feature-subtle">本页仅保存个人时区偏好和密码变更，不调整系统级治理策略。</p>
+          <h3>{t('settings.personal.scope.title')}</h3>
+          <p className="admin-feature-subtle">{t('settings.personal.scope.description')}</p>
           <div className="admin-settings-aside__list">
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">当前时区</span>
+              <span className="admin-settings-aside__label">{t('settings.personal.scope.currentTimeZone')}</span>
               <span className="admin-settings-aside__value">{settings.timeZoneId}</span>
             </div>
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">系统默认</span>
+              <span className="admin-settings-aside__label">{t('settings.personal.scope.systemDefault')}</span>
               <span className="admin-settings-aside__value">
                 {timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId}
               </span>
             </div>
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">展示格式</span>
+              <span className="admin-settings-aside__label">{t('settings.personal.scope.displayFormat')}</span>
               <span className="admin-settings-aside__value">
                 {timePreference?.voDisplayFormat || 'yyyy-MM-dd HH:mm:ss'}
               </span>
             </div>
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">通知能力</span>
-              <span className="admin-settings-aside__value">后续接入</span>
+              <span className="admin-settings-aside__label">{t('settings.personal.scope.notifications')}</span>
+              <span className="admin-settings-aside__value">{t('settings.personal.scope.planned')}</span>
             </div>
           </div>
         </aside>
       </div>
 
       <Modal
-        title="修改密码"
+        title={t('settings.personal.password.title')}
         open={passwordModalVisible}
         onOk={handleChangePassword}
         onCancel={() => {
@@ -379,42 +379,42 @@ export const Settings = () => {
         <Form form={passwordForm} layout="vertical">
           <Form.Item
             name="currentPassword"
-            label="当前密码"
-            rules={[{ required: true, message: '请输入当前密码' }]}
+            label={t('settings.personal.password.current')}
+            rules={[{ required: true, message: t('settings.personal.password.currentRequired') }]}
           >
-            <Input.Password placeholder="请输入当前密码" />
+            <Input.Password placeholder={t('settings.personal.password.currentPlaceholder')} />
           </Form.Item>
           <Form.Item
             name="newPassword"
-            label="新密码"
+            label={t('settings.personal.password.new')}
             rules={[
-              { required: true, message: '请输入新密码' },
-              { min: 6, message: '密码长度至少6位' },
+              { required: true, message: t('settings.personal.password.newRequired') },
+              { min: 6, message: t('settings.personal.password.minLength') },
               {
                 pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{6,}$/,
-                message: '密码必须包含大小写字母和数字',
+                message: t('settings.personal.password.pattern'),
               },
             ]}
           >
-            <Input.Password placeholder="请输入新密码" />
+            <Input.Password placeholder={t('settings.personal.password.newPlaceholder')} />
           </Form.Item>
           <Form.Item
             name="confirmPassword"
-            label="确认新密码"
+            label={t('settings.personal.password.confirm')}
             dependencies={['newPassword']}
             rules={[
-              { required: true, message: '请确认新密码' },
+              { required: true, message: t('settings.personal.password.confirmRequired') },
               ({ getFieldValue }) => ({
                 validator(_, value) {
                   if (!value || getFieldValue('newPassword') === value) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error('两次输入的密码不一致'));
+                  return Promise.reject(new Error(t('settings.personal.password.mismatch')));
                 },
               }),
             ]}
           >
-            <Input.Password placeholder="请再次输入新密码" />
+            <Input.Password placeholder={t('settings.personal.password.confirmPlaceholder')} />
           </Form.Item>
         </Form>
       </Modal>

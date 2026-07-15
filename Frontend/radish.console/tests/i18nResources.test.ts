@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders'];
+const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders', 'settings'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   return domainNames.flatMap((domain) => {
@@ -38,6 +38,8 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
           'orders.list.orderCount_other': '{{count}} orders',
           'moderation.reportCount_one': '{{count}} report',
           'moderation.reportCount_other': '{{count}} reports',
+          'systemConfig.filter.active_one': '{{count}} filter',
+          'systemConfig.filter.active_other': '{{count}} filters',
         },
       },
     },
@@ -50,4 +52,7 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
   assert.equal(instance.t('orders.list.orderCount', { count: 2 }), '2 orders');
   assert.equal(instance.t('moderation.reportCount', { count: 1 }), '1 report');
   assert.equal(instance.t('moderation.reportCount', { count: 2 }), '2 reports');
+  assert.equal(instance.t('systemConfig.filter.active', { count: 0 }), '0 filters');
+  assert.equal(instance.t('systemConfig.filter.active', { count: 1 }), '1 filter');
+  assert.equal(instance.t('systemConfig.filter.active', { count: 2 }), '2 filters');
 });
