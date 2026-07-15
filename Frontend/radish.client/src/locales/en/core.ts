@@ -29,6 +29,7 @@ export const enCore = {
   'lang.switch': 'Switch language',
   'error.auth.invalid_credentials': 'The username or password is incorrect.',
   'error.auth.legacy_login_deprecated': 'This sign-in method is no longer available. Please use the unified sign-in page.',
+  'error.auth.unauthorized': 'Sign in to continue.',
   'error.common.conflict': 'The resource has changed. Refresh and try again.',
   'error.common.internal_error': 'The request could not be completed. Please try again later.',
   'error.common.not_found': 'The requested resource was not found.',

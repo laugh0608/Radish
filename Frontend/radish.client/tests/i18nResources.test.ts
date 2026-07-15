@@ -48,6 +48,10 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.ok(enKeys.includes('me.assets.transactionCount_other'));
   assert.ok(enKeys.includes('circle.resultCount_one'));
   assert.ok(enKeys.includes('circle.resultCount_other'));
+  assert.ok(enKeys.includes('pet.care.remaining_one'));
+  assert.ok(enKeys.includes('pet.care.remaining_other'));
+  assert.ok(enKeys.includes('pet.care.cooldownRemaining_minute_one'));
+  assert.ok(enKeys.includes('pet.care.cooldownRemaining_minute_other'));
   assert.ok(!enKeys.includes('shop.productCount'));
 
   const instance = i18next.createInstance();
@@ -64,6 +68,10 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
           'me.assets.transactionCount_other': '{{count}} records',
           'circle.resultCount_one': '{{count}} item',
           'circle.resultCount_other': '{{count}} items',
+          'pet.care.remaining_one': '{{count}} use left today',
+          'pet.care.remaining_other': '{{count}} uses left today',
+          'pet.care.cooldownRemaining_minute_one': 'About {{count}} minute left',
+          'pet.care.cooldownRemaining_minute_other': 'About {{count}} minutes left',
         },
       },
       zh: {
@@ -84,6 +92,10 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.equal(instance.t('me.assets.transactionCount', { count: 2 }), '2 records');
   assert.equal(instance.t('circle.resultCount', { count: 1 }), '1 item');
   assert.equal(instance.t('circle.resultCount', { count: 2 }), '2 items');
+  assert.equal(instance.t('pet.care.remaining', { count: 1 }), '1 use left today');
+  assert.equal(instance.t('pet.care.remaining', { count: 2 }), '2 uses left today');
+  assert.equal(instance.t('pet.care.cooldownRemaining', { context: 'minute', count: 1 }), 'About 1 minute left');
+  assert.equal(instance.t('pet.care.cooldownRemaining', { context: 'minute', count: 2 }), 'About 2 minutes left');
 
   await instance.changeLanguage('zh');
   assert.equal(instance.t('shop.productCount', { count: 2 }), '2 件商品');

@@ -147,4 +147,19 @@
   <data name="error.user_follow.invalid_stream_type" xml:space="preserve">
     <value>This content stream type is not supported.</value>
   </data>
+  <data name="error.pet.invalid_request" xml:space="preserve">
+    <value>Check the pet profile or care details and try again.</value>
+  </data>
+  <data name="error.pet.invalid_action" xml:space="preserve">
+    <value>This care action is not supported.</value>
+  </data>
+  <data name="error.pet.not_claimed" xml:space="preserve">
+    <value>Claim your pet first.</value>
+  </data>
+  <data name="error.pet.daily_limit_reached" xml:space="preserve">
+    <value>This care action has reached its daily limit.</value>
+  </data>
+  <data name="error.pet.care_cooldown" xml:space="preserve">
+    <value>This care action is still cooling down.</value>
+  </data>
 </root>

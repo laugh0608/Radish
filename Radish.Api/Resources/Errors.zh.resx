@@ -147,4 +147,19 @@
   <data name="error.user_follow.invalid_stream_type" xml:space="preserve">
     <value>不支持该内容流类型。</value>
   </data>
+  <data name="error.pet.invalid_request" xml:space="preserve">
+    <value>请检查宠物资料或照顾参数后重试。</value>
+  </data>
+  <data name="error.pet.invalid_action" xml:space="preserve">
+    <value>不支持该照顾动作。</value>
+  </data>
+  <data name="error.pet.not_claimed" xml:space="preserve">
+    <value>请先领取电子宠物。</value>
+  </data>
+  <data name="error.pet.daily_limit_reached" xml:space="preserve">
+    <value>今天该照顾动作的次数已经用完。</value>
+  </data>
+  <data name="error.pet.care_cooldown" xml:space="preserve">
+    <value>该照顾动作仍在冷却中。</value>
+  </data>
 </root>

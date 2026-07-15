@@ -20,6 +20,10 @@ import {
 import { getApiBaseUrl } from '@/config/env';
 import { WebStateSlot } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import {
+  resolvePetGrowthStageTranslationKey,
+  resolvePetMoodTranslationKey,
+} from '@/pet/petPresentation';
 import { buildPublicForumPath } from '@/public/forumRouteState';
 import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
@@ -459,7 +463,7 @@ export const MeApp = () => {
       coinApi.getBalance(),
       coinApi.getTransactions(1, 5),
       getMyBrowseHistory(1, 5),
-      getMyPet(),
+      getMyPet(t),
     ]);
 
     const errors: MeDashboardData['errors'] = {};
@@ -1484,11 +1488,11 @@ export const MeApp = () => {
                 <div className={styles.balanceValue}>{pet.voName}</div>
                 <div className={styles.metricRow}>
                   <span>{t('me.petMood')}</span>
-                  <strong>{pet.voMoodDisplay}</strong>
+                  <strong>{t(resolvePetMoodTranslationKey(pet.voMood))}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.petStage')}</span>
-                  <strong>{pet.voGrowthStageName}</strong>
+                  <strong>{t(resolvePetGrowthStageTranslationKey(pet.voGrowthStage))}</strong>
                 </div>
               </>
             ) : (

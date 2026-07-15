@@ -20,12 +20,19 @@ import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import { buildPetReturnPath } from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
-import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import {
   getCooldownDisplayParts,
   getPetLogStatDeltas,
+  formatPetDateTime,
+  formatPetNumber,
+  formatPetSignedNumber,
+  resolvePetActionTranslationKey,
   resolvePetActionAvailability,
+  resolvePetGrowthStageTranslationKey,
+  resolvePetLogMessageTranslationKey,
+  resolvePetMoodTranslationKey,
   resolvePetStatLevel,
   resolvePetStatusInsight,
   type PetActionAvailabilityKind,
@@ -113,12 +120,9 @@ function buildIdempotencyKey(actionType: PetCareActionType): string {
   return `web:${actionType}:${randomPart}`;
 }
 
-function formatSignedValue(value: number): string {
-  return value > 0 ? `+${value}` : `${value}`;
-}
-
 export const PetApp = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -193,8 +197,8 @@ export const PetApp = () => {
       setFeedback(null);
     }
     try {
-      const pet = await getMyPet();
-      const logs = pet ? (await getPetLogs(1, 8)).voItems : [];
+      const pet = await getMyPet(t);
+      const logs = pet ? (await getPetLogs(1, 8, t)).voItems : [];
       setPageData({
         pet,
         logs,
@@ -239,7 +243,7 @@ export const PetApp = () => {
     setError(null);
     setFeedback(null);
     try {
-      const pet = await claimPet({ name: claimName.trim() || undefined });
+      const pet = await claimPet({ name: claimName.trim() || t('pet.claim.placeholder') }, t);
       setPageData({
         pet,
         logs: [],
@@ -277,7 +281,7 @@ export const PetApp = () => {
       const pet = await updatePetProfile({
         name: profileName.trim() || pageData.pet.voName,
         isPublic,
-      });
+      }, t);
       setPageData(current => ({
         ...current,
         pet,
@@ -313,7 +317,7 @@ export const PetApp = () => {
       const result = await carePet({
         actionType: action.voActionType,
         idempotencyKey: buildIdempotencyKey(action.voActionType),
-      });
+      }, t);
       setPageData(current => ({
         pet: result.voPet,
         logs: [result.voLog, ...current.logs.filter(item => item.voId !== result.voLog.voId)].slice(0, 8),
@@ -327,9 +331,8 @@ export const PetApp = () => {
         titleKey: 'pet.feedback.care.title',
         descriptionKey: 'pet.feedback.care.description',
         values: {
-          action: result.voLog.voActionName,
-          message: result.voMessage || result.voLog.voMessage,
-          growth: result.voLog.voGrowthDelta,
+          action: t(resolvePetActionTranslationKey(result.voLog.voActionType)),
+          growth: formatPetSignedNumber(result.voLog.voGrowthDelta, language),
         },
         deltas: getPetLogStatDeltas(result.voLog),
       });
@@ -341,7 +344,7 @@ export const PetApp = () => {
     } finally {
       setActiveAction(null);
     }
-  }, [activeAction, loadPetData, nowTick, t]);
+  }, [activeAction, language, loadPetData, nowTick, t]);
 
   const formatCooldownLabel = useCallback((cooldownMs: number) => {
     const parts = getCooldownDisplayParts(cooldownMs);
@@ -350,10 +353,11 @@ export const PetApp = () => {
     }
 
     return t('pet.care.cooldownRemaining', {
-      value: parts.value,
-      unit: t(`pet.care.cooldownUnit.${parts.unit}`),
+      context: parts.unit,
+      count: parts.value,
+      formattedCount: formatPetNumber(parts.value, language),
     });
-  }, [t]);
+  }, [language, t]);
 
   const renderFeedback = () => {
     if (!feedback) {
@@ -370,7 +374,7 @@ export const PetApp = () => {
             <div className={styles.feedbackDeltas}>
               {feedback.deltas.map(delta => (
                 <em key={delta.statKey}>
-                  {t(statLabelKeys[delta.statKey])} {formatSignedValue(delta.value)}
+                  {t(statLabelKeys[delta.statKey])} {formatPetSignedNumber(delta.value, language)}
                 </em>
               ))}
             </div>
@@ -416,7 +420,7 @@ export const PetApp = () => {
   const renderPetDashboard = (pet: PetProfile) => {
     const insight = resolvePetStatusInsight(pet);
     const loadedAtLabel = pageData.loadedAt
-      ? formatDateTimeByTimeZone(pageData.loadedAt, displayTimeZone)
+      ? formatPetDateTime(pageData.loadedAt, displayTimeZone, language)
       : null;
     const actionStates = pet.voCareActions.map(action => ({
       action,
@@ -447,9 +451,9 @@ export const PetApp = () => {
             <p className={styles.kicker}>{t('pet.hero.kicker')}</p>
             <h1>{pet.voName}</h1>
             <div className={styles.heroMeta}>
-              <span>{pet.voGrowthStageName}</span>
-              <span>{pet.voMoodDisplay}</span>
-              <span>{t('pet.growthValue', { value: pet.voGrowthValue })}</span>
+              <span>{t(resolvePetGrowthStageTranslationKey(pet.voGrowthStage))}</span>
+              <span>{t(resolvePetMoodTranslationKey(pet.voMood))}</span>
+              <span>{t('pet.growthValue', { value: formatPetNumber(pet.voGrowthValue, language) })}</span>
               {loadedAtLabel ? <span>{t('pet.refreshedAt', { time: loadedAtLabel })}</span> : null}
             </div>
             <div className={styles.heroMetrics} aria-label={t('pet.metricsLabel')}>
@@ -457,14 +461,14 @@ export const PetApp = () => {
                 <span className={styles.heroMetricIcon}>
                   <Icon icon="mdi:sprout-outline" size={20} />
                 </span>
-                <strong>{pet.voGrowthValue}</strong>
+                <strong>{formatPetNumber(pet.voGrowthValue, language)}</strong>
                 <span>{t('pet.metric.growth')}</span>
               </div>
               <div className={styles.heroMetric}>
                 <span className={styles.heroMetricIcon}>
                   <Icon icon="mdi:history" size={20} />
                 </span>
-                <strong>{pageData.logs.length}</strong>
+                <strong>{formatPetNumber(pageData.logs.length, language)}</strong>
                 <span>{t('pet.metric.logs')}</span>
               </div>
               <div className={styles.heroMetric}>
@@ -509,7 +513,7 @@ export const PetApp = () => {
                     <div className={styles.statHeader}>
                       <Icon icon={stat.icon} size={20} />
                       <span>{t(stat.labelKey)}</span>
-                      <strong>{value}</strong>
+                      <strong>{formatPetNumber(value, language)}</strong>
                     </div>
                     <div className={styles.statTrack} aria-hidden="true">
                       <span style={{ width: `${value}%` }} />
@@ -534,7 +538,7 @@ export const PetApp = () => {
                     ? formatCooldownLabel(availability.cooldownMs)
                     : null;
                   const nextLabel = action.voNextAvailableAt
-                    ? formatDateTimeByTimeZone(action.voNextAvailableAt, displayTimeZone)
+                    ? formatPetDateTime(action.voNextAvailableAt, displayTimeZone, language)
                     : null;
                   const availabilityKey = pending ? 'pending' : availability.kind;
 
@@ -552,10 +556,13 @@ export const PetApp = () => {
                         size={22}
                         className={pending ? styles.spin : undefined}
                       />
-                      <strong>{action.voActionName}</strong>
+                      <strong>{t(resolvePetActionTranslationKey(action.voActionType))}</strong>
                       <span>
                         {action.voRemainingToday > 0
-                          ? t('pet.care.remaining', { count: action.voRemainingToday })
+                          ? t('pet.care.remaining', {
+                              count: action.voRemainingToday,
+                              formattedCount: formatPetNumber(action.voRemainingToday, language),
+                            })
                           : t('pet.care.usedUp')}
                       </span>
                       <small className={styles.actionStatus}>{t(`pet.care.availability.${availabilityKey}`)}</small>
@@ -609,10 +616,10 @@ export const PetApp = () => {
                           <Icon icon={actionIcons[item.voActionType] ?? 'mdi:history'} size={18} />
                         </div>
                         <div>
-                          <strong>{item.voMessage || item.voActionName}</strong>
-                          <span>{formatDateTimeByTimeZone(item.voCreateTime, displayTimeZone)}</span>
+                          <strong>{t(resolvePetLogMessageTranslationKey(item.voActionType), { name: pet.voName })}</strong>
+                          <span>{formatPetDateTime(item.voCreateTime, displayTimeZone, language)}</span>
                         </div>
-                        <em>{t('pet.logs.growthDelta', { value: item.voGrowthDelta })}</em>
+                        <em>{t('pet.logs.growthDelta', { value: formatPetSignedNumber(item.voGrowthDelta, language) })}</em>
                       </div>
                     ))}
                   </div>
@@ -636,15 +643,15 @@ export const PetApp = () => {
               </div>
               <div className={styles.railMetrics}>
                 <div>
-                  <strong>{readyActionCount}</strong>
+                  <strong>{formatPetNumber(readyActionCount, language)}</strong>
                   <span>{t('pet.rail.readyActions')}</span>
                 </div>
                 <div>
-                  <strong>{cooldownActionCount}</strong>
+                  <strong>{formatPetNumber(cooldownActionCount, language)}</strong>
                   <span>{t('pet.rail.cooldownActions')}</span>
                 </div>
                 <div>
-                  <strong>{usedUpActionCount}</strong>
+                  <strong>{formatPetNumber(usedUpActionCount, language)}</strong>
                   <span>{t('pet.rail.usedActions')}</span>
                 </div>
               </div>
@@ -683,11 +690,14 @@ export const PetApp = () => {
                         className={pending ? styles.spin : undefined}
                       />
                       <span>
-                        <strong>{action.voActionName}</strong>
+                        <strong>{t(resolvePetActionTranslationKey(action.voActionType))}</strong>
                         <small>
                           {cooldownLabel
                             || (action.voRemainingToday > 0
-                              ? t('pet.care.remaining', { count: action.voRemainingToday })
+                              ? t('pet.care.remaining', {
+                                  count: action.voRemainingToday,
+                                  formattedCount: formatPetNumber(action.voRemainingToday, language),
+                                })
                               : t('pet.care.usedUp'))}
                         </small>
                       </span>
@@ -717,7 +727,7 @@ export const PetApp = () => {
                   <span>{t('pet.rail.lastCare')}</span>
                   <strong>
                     {lastLog
-                      ? formatDateTimeByTimeZone(lastLog.voCreateTime, displayTimeZone)
+                      ? formatPetDateTime(lastLog.voCreateTime, displayTimeZone, language)
                       : t('pet.rail.noLastCare')}
                   </strong>
                 </div>

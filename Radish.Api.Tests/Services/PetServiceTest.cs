@@ -214,6 +214,7 @@ public class PetServiceTest
         }));
 
         Assert.Equal("Pet.DailyLimitReached", error.ErrorCode);
+        Assert.Equal("error.pet.daily_limit_reached", error.MessageKey);
         petRepository.Verify(repo => repo.UpdateAsync(It.IsAny<PetProfile>()), Times.Never);
         logRepository.Verify(repo => repo.AddAsync(It.IsAny<PetStatLog>()), Times.Never);
     }
@@ -243,6 +244,7 @@ public class PetServiceTest
         }));
 
         Assert.Equal("Pet.CareCooldown", error.ErrorCode);
+        Assert.Equal("error.pet.care_cooldown", error.MessageKey);
         petRepository.Verify(repo => repo.UpdateAsync(It.IsAny<PetProfile>()), Times.Never);
         logRepository.Verify(repo => repo.AddAsync(It.IsAny<PetStatLog>()), Times.Never);
     }

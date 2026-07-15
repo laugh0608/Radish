@@ -29,6 +29,7 @@ export const zhCore = {
   'lang.switch': '切换语言',
   'error.auth.invalid_credentials': '用户名或密码错误。',
   'error.auth.legacy_login_deprecated': '当前登录方式已停用，请使用统一登录页。',
+  'error.auth.unauthorized': '请先登录后再继续。',
   'error.common.conflict': '资源状态已发生变化，请刷新后重试。',
   'error.common.internal_error': '请求暂时无法完成，请稍后重试。',
   'error.common.not_found': '未找到请求的资源。',

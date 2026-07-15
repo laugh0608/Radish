@@ -1,12 +1,43 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
+  formatPetDateTime,
+  formatPetNumber,
+  formatPetSignedNumber,
   getCooldownDisplayParts,
   getPetLogStatDeltas,
+  resolvePetActionTranslationKey,
   resolvePetActionAvailability,
+  resolvePetGrowthStageTranslationKey,
+  resolvePetLogMessageTranslationKey,
+  resolvePetMoodTranslationKey,
   resolvePetStatLevel,
   resolvePetStatusInsight,
 } from '../src/pet/petPresentation.ts';
+
+test('宠物展示值应按当前语言格式化数字和日期', () => {
+  assert.equal(formatPetNumber('12345', 'zh'), '12,345');
+  assert.equal(formatPetNumber('9007199254740993', 'en'), '9,007,199,254,740,993');
+  assert.equal(formatPetNumber('', 'en'), '-');
+  assert.equal(formatPetNumber('invalid', 'en'), '-');
+  assert.equal(formatPetSignedNumber(12345, 'en'), '+12,345');
+  assert.equal(formatPetSignedNumber('-12345', 'en'), '-12,345');
+
+  const value = '2026-07-15T04:30:00.000Z';
+  assert.equal(formatPetDateTime(value, 'Asia/Shanghai', 'zh'), '2026-07-15 12:30:00');
+  assert.match(formatPetDateTime(value, 'Asia/Shanghai', 'en'), /07\/15\/2026, 12:30:00/);
+});
+
+test('宠物系统派生内容应从稳定字段映射本地词元', () => {
+  assert.equal(resolvePetGrowthStageTranslationKey(1), 'pet.growthStage.sprout');
+  assert.equal(resolvePetGrowthStageTranslationKey(4), 'pet.growthStage.mature');
+  assert.equal(resolvePetMoodTranslationKey('hungry'), 'pet.mood.hungry');
+  assert.equal(resolvePetMoodTranslationKey('unknown'), 'pet.mood.calm');
+  assert.equal(resolvePetActionTranslationKey('feed'), 'pet.care.action.feed');
+  assert.equal(resolvePetActionTranslationKey('unknown'), 'pet.care.action.unknown');
+  assert.equal(resolvePetLogMessageTranslationKey('rest'), 'pet.logs.message.rest');
+  assert.equal(resolvePetLogMessageTranslationKey('unknown'), 'pet.logs.message.unknown');
+});
 
 test('resolvePetStatusInsight 应按心情和状态值给出明确关注项', () => {
   assert.deepEqual(resolvePetStatusInsight({
