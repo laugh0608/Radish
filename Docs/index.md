@@ -85,7 +85,7 @@ features:
 - [文档系统方案](/guide/document-system)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)
-- [Radish 电子宠物](/features/radish-pet-roadmap)
+- [Radish 电子宠物系统](/guide/radish-pet-system)
 - [个人圈子](/features/circle)
 - [商城商品效力与权益履约](/features/shop-product-effect-entitlement-fulfillment)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)

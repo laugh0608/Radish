@@ -1,6 +1,6 @@
 # 4. 商城订单系统
 
-> 版本：v2.0 | 最后更新：2026-07-13
+> 版本：v2.1 | 最后更新：2026-07-15
 >
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
@@ -149,6 +149,18 @@ Console 订单详情展示：
 - 购买成功通知通过可靠 Outbox 请求，不因实时推送失败回退订单完成状态。
 - 管理员备注不改变支付、履约或资产事实。
 - F1 不提供用户退款入口；人工补偿不能通过直接改余额或软删订单掩盖问题。
+
+### 4.9.1 管理端错误契约
+
+订单治理接口使用结构化失败响应，至少保留 HTTP status、`Code`、`MessageKey` 与安全 `MessageInfo`：
+
+| 场景 | HTTP | Code | MessageKey |
+| --- | ---: | --- | --- |
+| 订单不存在 | `404` | `Order.NotFound` | `error.order.not_found` |
+| 支付证据或状态不允许重试履约 | `409` | `Order.RetryRejected` | `error.order.retry_rejected` |
+| 管理员备注保存失败或发生状态冲突 | `409` | `Order.RemarkFailed` | `error.order.remark_failed` |
+
+Console 必须通过 status、`Code` 和 `voCanRetryFulfillment` 决定 not-found、冲突与动作资格；`MessageKey` 用于宿主本地化，服务端按 `Accept-Language` 返回的 `MessageInfo` 只作安全回退。管理员备注、订单失败原因和商品快照名称属于人工或历史内容，保持原文。
 
 ## 4.10 数据库迁移
 

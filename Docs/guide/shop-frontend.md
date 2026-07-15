@@ -1,6 +1,6 @@
 # 7. 商城前端与操作说明
 
-> 版本：v2.1 | 最后更新：2026-07-14
+> 版本：v2.2 | 最后更新：2026-07-15
 >
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
@@ -27,6 +27,8 @@
 - Client 与 Console 的订单、权益和流水 ID 均使用 `LongId` 字符串。
 - 业务时间只用于格式化展示，不在浏览器重新判定权益有效状态。
 - 服务端 `MessageModel<T>` 失败不能被当成成功数据消费。
+- 商品、订单、权益、能力与失败阶段按稳定枚举值或 key 决定筛选、状态样式和操作资格；`vo*Display` 只作兼容展示，不参与控制流或本地化映射。
+- 商品名称、描述、管理员备注、失败原因和撤销原因等配置型或人工内容保持原文；金额、数量和日期按当前 locale 展示，英文可计数文案使用 plural 规则。
 
 ## 7.3 购买流程
 
@@ -60,7 +62,8 @@
 
 | 字段 | UI 用途 |
 |------|---------|
-| `voStatus / voStatusDisplay` | 状态徽标 |
+| `voStatus` | 状态徽标、筛选和控制流的稳定值 |
+| `voStatusDisplay` | 兼容展示回退，不参与控制流 |
 | `voCanActivate` | 是否显示可用的“启用”动作 |
 | `voCanDeactivate` | 是否显示可用的“停用”动作 |
 | `voUnavailableReason` | 禁用原因和按钮提示 |
@@ -107,6 +110,8 @@ Badge、Title、Theme 权益可以按服务端 `voCanActivate / voCanDeactivate`
 
 操作失败时保留背包项和表单上下文，并展示可理解的服务端原因。不得通过静默刷新或默认成功掩盖失败。
 
+Client 与 Console 的商城 helper 统一抛出 `ApiResponseError`，保留 `httpStatus / code / messageKey / traceId`。页面以 HTTP status、稳定 `Code`、`voCan*` 和明确数据状态决定未登录、无权限、not-found、并发冲突或履约重试资格；本地提示优先解析 `MessageKey`，缺少资源时使用服务端安全 `MessageInfo`，不得匹配中英文错误消息。
+
 ## 7.8 Console 商品和订单治理
 
 Console 通过 Gateway 的 `/console/` 访问：
@@ -116,6 +121,8 @@ Console 通过 Gateway 的 `/console/` 访问：
 - 订单详情：可回到用户、商品和胡萝卜流水。
 
 重试按钮只在 `voCanRetryFulfillment` 成立时展示，但服务端仍会再次验证支付证据。Console 不提供直接编辑订单状态或发放资源 ID 的表单。
+
+商品表单从服务端能力矩阵读取稳定类型与能力元数据。配置要求优先解析 `voConfigurationRequirementKeys`，不可售原因优先解析 `voUnavailableReasonKey`；兼容的 `voConfigurationRequirements / voUnavailableReason` 只在缺少本地资源时展示，不能决定类型是否可售、是否可启用或是否允许上架。
 
 ## 7.9 Console 用户权益治理
 

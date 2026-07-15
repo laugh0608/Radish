@@ -54,7 +54,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [纯 Web 私域复访入口](./frontend/private-web-revisit.md)
 - [Flutter 移动端 handoff 与回流说明](./guide/flutter-mobile-handoff.md)
 - [公开内容 SEO 与分享基线](./frontend/public-seo-sharing.md)
-- [Radish 电子宠物](./features/radish-pet-roadmap.md)
+- [Radish 电子宠物系统说明](./guide/radish-pet-system.md)
 - [Console 样式与 Token 使用说明](./frontend/console-style-guide.md)
 - [视觉主题规范](./frontend/visual-theme-spec.md)
 - [视觉颜色参考](./frontend/visual-color-reference.md)

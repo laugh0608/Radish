@@ -80,6 +80,15 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 ## 统一契约
 
+### 多语言与内容边界
+
+- `/workbench`、`/me`、资产、消息、通知、圈子、宠物、经验和 Docs 作者态的固定界面文案由 `radish.client` 对应业务域资源提供；共享组件通过 labels、formatter 或显式 locale 接收宿主文案。
+- 系统类型、状态、筛选和动作资格只按稳定字段解析；`vo*Display`、当前语言下的服务端文案和错误消息不得参与控制流。已知词元显示本地文案，未知值使用业务域明确的 `Unknown` 策略；没有登记策略时保留稳定原值。
+- 用户名称、帖子 / 消息内容、文档标题与正文、商品内容、等级名称、备注、冻结 / 撤销原因等配置型或人工内容没有稳定本地化标识时保持原文，不创建客户端猜测翻译表。
+- 日期、相对时间、数字、分页、图表刻度和英文数量规则使用当前 locale；LongId 与后端 `long` 金额保持字符串安全，图表只在适配边界投影数值。
+- 私域 API 失败统一保留 `ApiResponseError` 的 `httpStatus / code / messageKey / traceId`。页面按稳定字段决定重试、not-found、权限或冲突分支，复制诊断继续排除 token、支付口令、完整请求体和隐私正文。
+- `/workbench` 与 `/me` 的摘要卡属于实际消费者，必须复用各业务域 presentation / formatter，不能重新引入硬编码文案或从 display 字段反推状态。
+
 ### 私域壳层
 
 - 登录态头部保留品牌、私域导航、当前身份和同步 / 登录状态。

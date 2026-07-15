@@ -196,7 +196,7 @@
 
 ### 电子宠物
 
-电子宠物接口以 Scalar / OpenAPI 和 [Radish 电子宠物开发计划](/features/radish-pet-roadmap) 为准。当前 `PetController` 全部需要登录态 `Client` 授权，使用当前用户身份定位自己的宠物：
+电子宠物接口以 Scalar / OpenAPI 和 [Radish 电子宠物系统说明](/guide/radish-pet-system) 为准；长期边界与后续阶段另见[开发计划](/features/radish-pet-roadmap)。当前 `PetController` 全部需要登录态 `Client` 授权，使用当前用户身份定位自己的宠物：
 
 - `GET /api/v1/Pet/GetMy`：读取当前用户宠物状态；未领取时返回明确空态，不隐式创建宠物。
 - `POST /api/v1/Pet/Claim`：领取默认宠物；同一用户重复领取返回已有宠物，不创建多只宠物。
@@ -205,6 +205,8 @@
 - `GET /api/v1/Pet/GetLogs`：查询当前用户宠物状态流水；未领取时返回分页空态。
 
 `PetProfileVo` 会返回宠物 `VoPublicId`、名称、形态、成长阶段、心情、饱食度、清洁度、精力、成长值、公开展示开关、最后照顾时间和 `VoCareActions`。前端只展示动作可用性与反馈，不计算最终状态；状态变化以服务端返回和 `PetStatLogVo` 为准。
+
+Pet 高频失败使用稳定 `Pet.*` Code 与 `error.pet.*` MessageKey；Client 通过 `ApiResponseError` 保留 status、Code、MessageKey 和 TraceId，不匹配中英文消息决定未领取、次数耗尽或冷却状态。成长阶段、心情和动作展示只读取稳定字段，宠物名称保持用户原文。
 
 ### 附件与上传
 

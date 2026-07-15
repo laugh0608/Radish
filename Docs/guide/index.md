@@ -105,6 +105,7 @@
   - [radish-pit-backend](/guide/radish-pit-backend)
   - [radish-pit-frontend](/guide/radish-pit-frontend)
 - Radish Pet：
+  - [radish-pet-system](/guide/radish-pet-system)
   - [radish-pet-roadmap](/features/radish-pet-roadmap)
 
 ## 二、专项评审与迁移说明
