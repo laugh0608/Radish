@@ -40,6 +40,8 @@ public class AuthResourceParityTest
         Assert.Contains("error.wiki.parent_cycle_conflict", chineseKeys);
         Assert.Contains("error.pet.care_cooldown", chineseKeys);
         Assert.Contains("error.pet.daily_limit_reached", chineseKeys);
+        Assert.Contains("error.experience.not_found", chineseKeys);
+        Assert.Contains("error.experience.other_user_forbidden", chineseKeys);
     }
 
     private static string FindRepositoryRoot()

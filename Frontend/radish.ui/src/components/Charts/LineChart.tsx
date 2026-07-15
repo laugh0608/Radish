@@ -33,6 +33,7 @@ export interface LineChartProps {
   showGrid?: boolean;
   showLegend?: boolean;
   className?: string;
+  valueFormatter?: (value: number) => string;
 }
 
 /**
@@ -48,7 +49,8 @@ export const LineChart = ({
   height = 300,
   showGrid = true,
   showLegend = true,
-  className
+  className,
+  valueFormatter,
 }: LineChartProps) => {
   const initialDimension = getInitialChartDimension(height);
 
@@ -71,8 +73,10 @@ export const LineChart = ({
           <YAxis
             stroke="var(--theme-text-secondary, #5d6b75)"
             style={{ fontSize: '12px' }}
+            tickFormatter={valueFormatter}
           />
           <Tooltip
+            formatter={(value) => typeof value === 'number' && valueFormatter ? valueFormatter(value) : value}
             contentStyle={{
               backgroundColor: 'var(--theme-bg-surface, #fbfcfc)',
               border: '1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16))',

@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -9,6 +11,8 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers.v1;
 
@@ -24,13 +28,16 @@ public class ExperienceController : ControllerBase
 {
     private readonly IExperienceService _experienceService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
     public ExperienceController(
         IExperienceService experienceService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _experienceService = experienceService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -49,18 +56,30 @@ public class ExperienceController : ControllerBase
         var targetUserId = userId ?? currentUserId;
         if (targetUserId <= 0)
         {
-            return MessageModel<UserExperienceVo>.Message(false, "未登录", default!);
+            return BuildError<UserExperienceVo>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         if (userId.HasValue && userId.Value != currentUserId)
         {
-            return MessageModel<UserExperienceVo>.Message(false, "无权查看其他用户经验信息", default!);
+            return BuildError<UserExperienceVo>(
+                HttpStatusCodeEnum.Forbidden,
+                "无权查看其他用户经验信息",
+                "Experience.OtherUserForbidden",
+                "error.experience.other_user_forbidden");
         }
 
         var result = await _experienceService.GetUserExperienceAsync(targetUserId);
         if (result == null)
         {
-            return MessageModel<UserExperienceVo>.Message(false, "用户经验值信息不存在", default!);
+            return BuildError<UserExperienceVo>(
+                HttpStatusCodeEnum.NotFound,
+                "用户经验值信息不存在",
+                "Experience.NotFound",
+                "error.experience.not_found");
         }
 
         return MessageModel<UserExperienceVo>.Success("查询成功", result);
@@ -180,7 +199,11 @@ public class ExperienceController : ControllerBase
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
-            return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "未登录", default!);
+            return BuildError<PageModel<ExpTransactionVo>>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType, startDate, endDate);
@@ -410,6 +433,23 @@ public class ExperienceController : ControllerBase
     /// 获取当前操作者名称
     /// </summary>
     private string GetCurrentOperatorName() => GetCurrentUserName() ?? UserRoles.Admin;
+
+    private MessageModel<T> BuildError<T>(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey)
+    {
+        var localizedMessage = _errorsLocalizer[messageKey];
+        return new MessageModel<T>
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            Code = code,
+            MessageKey = messageKey
+        };
+    }
 
     #endregion
 }

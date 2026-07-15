@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { Button } from '@radish/ui/button';
 import { GlassPanel } from '@radish/ui/glass-panel';
@@ -15,6 +16,8 @@ import { BarChart } from '@radish/ui/bar-chart';
 import { PieChart } from '@radish/ui/pie-chart';
 import { AreaChart } from '@radish/ui/area-chart';
 import { useTheme } from '@/theme/useTheme';
+import { createExperienceBarPresentation } from '@/experience/experiencePresentation';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import styles from './ShowcaseApp.module.css';
 
 type SectionId = 'overview' | 'basic' | 'form' | 'feedback' | 'data' | 'charts';
@@ -83,7 +86,14 @@ const areaChartData = [
  * 面向当前 WebOS 主题与共享组件的维护中预览页。
  */
 export const ShowcaseApp = () => {
+  const { t, i18n } = useTranslation();
   const { currentTheme } = useTheme();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const experienceBarPresentation = useMemo(
+    () => createExperienceBarPresentation(t, language, displayTimeZone),
+    [displayTimeZone, language, t],
+  );
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const [inputValue, setInputValue] = useState('');
   const [selectValue, setSelectValue] = useState('');
@@ -492,6 +502,7 @@ export const ShowcaseApp = () => {
                       showProgress={true}
                       showTooltip={true}
                       animated={true}
+                      presentation={experienceBarPresentation}
                     />
                   </div>
                   <div>
@@ -502,6 +513,7 @@ export const ShowcaseApp = () => {
                       showLevel={true}
                       showProgress={true}
                       animated={true}
+                      presentation={experienceBarPresentation}
                     />
                   </div>
                   <div>
@@ -512,6 +524,7 @@ export const ShowcaseApp = () => {
                       showLevel={true}
                       showProgress={false}
                       animated={true}
+                      presentation={experienceBarPresentation}
                     />
                   </div>
                 </div>

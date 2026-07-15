@@ -24,6 +24,13 @@ import {
   resolvePetGrowthStageTranslationKey,
   resolvePetMoodTranslationKey,
 } from '@/pet/petPresentation';
+import {
+  buildExperienceBarData,
+  createExperienceBarPresentation,
+  formatExperienceNumber,
+  formatExperienceSignedNumber,
+  formatExperienceType,
+} from '@/experience/experiencePresentation';
 import { buildPublicForumPath } from '@/public/forumRouteState';
 import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
@@ -73,7 +80,7 @@ const ExperienceDetailApp = lazy(() =>
   import('@/apps/experience-detail/ExperienceDetailApp').then((module) => ({ default: module.ExperienceDetailApp }))
 );
 
-type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse' | 'pet';
+type MeDataErrorKey = 'profile' | 'experience' | 'experienceTransactions' | 'assets' | 'browse' | 'pet';
 
 interface MeDashboardData {
   publicProfile: PublicUserProfile | null;
@@ -347,6 +354,10 @@ export const MeApp = () => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const experienceBarPresentation = useMemo(
+    () => createExperienceBarPresentation(t, language, displayTimeZone),
+    [displayTimeZone, language, t],
+  );
   const formatNumber = (value: number | null | undefined) => (
     formatLocalizedNumber(Number(value ?? 0), language)
   );
@@ -458,8 +469,8 @@ export const MeApp = () => {
       petResult,
     ] = await Promise.allSettled([
       getPublicProfile(userId),
-      experienceApi.getMyExperience(),
-      experienceApi.getTransactions({ pageIndex: 1, pageSize: 5 }),
+      experienceApi.getMyExperience(t),
+      experienceApi.getTransactions({ pageIndex: 1, pageSize: 5 }, t),
       coinApi.getBalance(),
       coinApi.getTransactions(1, 5),
       getMyBrowseHistory(1, 5),
@@ -472,14 +483,16 @@ export const MeApp = () => {
       errors.profile = getErrorMessage(profileResult.reason, t('me.error.profile'));
       log.warn('MeApp', '加载公开资料失败', profileResult.reason);
     }
-    if (experienceResult.status === 'rejected' || expTransactionsResult.status === 'rejected') {
-      const reason = experienceResult.status === 'rejected'
-        ? experienceResult.reason
-        : expTransactionsResult.status === 'rejected'
-          ? expTransactionsResult.reason
-          : null;
-      errors.experience = getErrorMessage(reason, t('me.error.experience'));
-      log.warn('MeApp', '加载经验状态失败', reason);
+    if (experienceResult.status === 'rejected') {
+      errors.experience = getErrorMessage(experienceResult.reason, t('me.error.experience'));
+      log.warn('MeApp', '加载经验状态失败', experienceResult.reason);
+    }
+    if (expTransactionsResult.status === 'rejected') {
+      errors.experienceTransactions = getErrorMessage(
+        expTransactionsResult.reason,
+        t('experience.transactions.loadFailed'),
+      );
+      log.warn('MeApp', '加载近期经验流水失败', expTransactionsResult.reason);
     }
     if (balanceResult.status === 'rejected' || coinTransactionsResult.status === 'rejected') {
       const reason = balanceResult.status === 'rejected'
@@ -1180,13 +1193,14 @@ export const MeApp = () => {
           onPageIndexChange={(page) => navigateToMeRoute({ kind: 'experience', page })}
           onDataLoaded={(snapshot) => {
             const firstTransaction = snapshot.transactions[0];
+            const levelName = snapshot.experience?.voCurrentLevelName.trim();
             const levelLabel = snapshot.experience
-              ? `Lv.${snapshot.experience.voCurrentLevel} ${snapshot.experience.voCurrentLevelName}`
+              ? `Lv.${snapshot.experience.voCurrentLevel}${levelName ? ` ${levelName}` : ''}`
               : null;
             const preview: MeSubPagePreview | null = firstTransaction
               ? {
                 icon: firstTransaction.voExpAmount >= 0 ? 'mdi:plus-circle-outline' : 'mdi:minus-circle-outline',
-                badge: firstTransaction.voExpTypeDisplay || firstTransaction.voExpType,
+                badge: formatExperienceType(firstTransaction.voExpType, t),
                 title: firstTransaction.voIsLevelUp ? t('me.experience.previewLevelUp') : t('me.experience.previewTransaction'),
                 description: truncatePreviewText(
                   firstTransaction.voRemark,
@@ -1197,8 +1211,10 @@ export const MeApp = () => {
                 ),
                 meta: formatDisplayDateTime(firstTransaction.voCreateTime),
                 stats: [
-                  formatSignedNumber(firstTransaction.voExpAmount),
-                  t('me.experience.previewBalance', { value: formatNumber(firstTransaction.voExpAfter) }),
+                  formatExperienceSignedNumber(firstTransaction.voExpAmount, language),
+                  t('me.experience.previewBalance', {
+                    value: formatExperienceNumber(firstTransaction.voExpAfter, language),
+                  }),
                 ],
               }
               : snapshot.experience
@@ -1207,10 +1223,12 @@ export const MeApp = () => {
                   badge: t('me.experienceTitle'),
                   title: levelLabel ?? t('me.experience.detailTitle'),
                   description: t('me.experience.previewNoTransactions'),
-                  meta: t('me.experience.previewTotalExp', { value: formatNumber(snapshot.experience.voTotalExp) }),
+                  meta: t('me.experience.previewTotalExp', {
+                    value: formatExperienceNumber(snapshot.experience.voTotalExp, language),
+                  }),
                   stats: [
                     t('me.nextLevel'),
-                    formatNumber(snapshot.experience.voExpToNextLevel),
+                    formatExperienceNumber(snapshot.experience.voExpToNextLevel, language),
                   ],
                 }
                 : null;
@@ -1414,20 +1432,21 @@ export const MeApp = () => {
             ) : experience ? (
               <>
                 <ExperienceBar
-                  data={experience}
+                  data={buildExperienceBarData(experience)}
                   size="medium"
                   showLevel={true}
                   showProgress={true}
                   showTooltip={true}
                   animated={true}
+                  presentation={experienceBarPresentation}
                 />
                 <div className={styles.metricRow}>
                   <span>{t('me.totalExp')}</span>
-                  <strong>{formatNumber(experience.voTotalExp)}</strong>
+                  <strong>{formatExperienceNumber(experience.voTotalExp, language)}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.nextLevel')}</span>
-                  <strong>{formatNumber(experience.voExpToNextLevel)}</strong>
+                  <strong>{formatExperienceNumber(experience.voExpToNextLevel, language)}</strong>
                 </div>
               </>
             ) : (
@@ -1519,7 +1538,9 @@ export const MeApp = () => {
                 {t('me.openExperienceDetail')}
               </a>
             </div>
-            {dashboardData.expTransactions.length > 0 ? (
+            {dashboardData.errors.experienceTransactions ? (
+              <p className={styles.errorText}>{dashboardData.errors.experienceTransactions}</p>
+            ) : dashboardData.expTransactions.length > 0 ? (
               <div className={styles.itemList}>
                 {dashboardData.expTransactions.map((transaction) => (
                   <div key={transaction.voId} className={styles.listItem}>
@@ -1527,10 +1548,12 @@ export const MeApp = () => {
                       <Icon icon={transaction.voExpAmount >= 0 ? 'mdi:plus' : 'mdi:minus'} size={16} />
                     </div>
                     <div className={styles.itemBody}>
-                      <strong>{transaction.voExpTypeDisplay || transaction.voExpType}</strong>
+                      <strong>{formatExperienceType(transaction.voExpType, t)}</strong>
                       <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
                     </div>
-                    <div className={styles.itemAmount}>{formatSignedNumber(transaction.voExpAmount)}</div>
+                    <div className={styles.itemAmount}>
+                      {formatExperienceSignedNumber(transaction.voExpAmount, language)}
+                    </div>
                   </div>
                 ))}
               </div>

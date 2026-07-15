@@ -2,21 +2,21 @@ import { useState } from 'react';
 import './ExperienceBar.css';
 
 /**
- * 经验条数据接口
- * 直接使用后端 Vo 字段名，前端适配后端
+ * 经验条的稳定展示数据结构。
+ * 字段沿用后端 Vo 命名，阈值可由宿主从累计值与剩余值推导。
  */
 export interface ExperienceData {
   voUserId: string;
-  voCurrentExp: number;
+  voCurrentExp: ExperienceNumericValue;
   voCurrentLevel: number;
-  voNextLevelExp: number;
-  voTotalExp: number;
+  voNextLevelExp: ExperienceNumericValue;
+  voTotalExp: ExperienceNumericValue;
   voLevelProgress: number;
   voCurrentLevelName: string;
   voLevelDescription?: string;
   voCanLevelUp?: boolean;
   voNextLevelName: string;
-  voExpToNextLevel: number;
+  voExpToNextLevel: ExperienceNumericValue;
   voExpGainedToday?: number;
   voDailyExpLimit?: number;
   voRemainingDailyExp?: number;
@@ -32,6 +32,27 @@ export interface ExperienceData {
   voLevelUpAt?: string;
 }
 
+export type ExperienceNumericValue = number | string;
+
+export interface ExperienceBarLabels {
+  rank: (rank: string) => string;
+  currentProgress: string;
+  nextLevel: string;
+  remainingExperience: (value: string) => string;
+  totalExperience: string;
+  frozen: string;
+  frozenUntil: (value: string) => string;
+  frozenReason: (value: string) => string;
+  lastLevelUp: (value: string) => string;
+}
+
+export interface ExperienceBarPresentation {
+  labels: ExperienceBarLabels;
+  formatNumber: (value: ExperienceNumericValue) => string;
+  formatPercentage: (value: number) => string;
+  formatDateTime: (value: string | number | Date) => string;
+}
+
 export interface ExperienceBarProps {
   data: ExperienceData;
   size?: 'small' | 'medium' | 'large';
@@ -40,6 +61,7 @@ export interface ExperienceBarProps {
   showTooltip?: boolean;
   animated?: boolean;
   className?: string;
+  presentation: ExperienceBarPresentation;
 }
 
 export const ExperienceBar = ({
@@ -49,7 +71,8 @@ export const ExperienceBar = ({
   showProgress = true,
   showTooltip = true,
   animated = true,
-  className = ''
+  className = '',
+  presentation,
 }: ExperienceBarProps) => {
   const [showDetail, setShowDetail] = useState(false);
 
@@ -64,7 +87,10 @@ export const ExperienceBar = ({
   ].filter(Boolean).join(' ');
 
   // voLevelProgress 是 0-1 之间的小数，需要转换为百分比
-  const progressPercentage = Math.min(100, Math.max(0, data.voLevelProgress * 100));
+  const progressRatio = Math.min(1, Math.max(0, data.voLevelProgress));
+  const progressPercentage = progressRatio * 100;
+  const formattedCurrentExp = presentation.formatNumber(data.voCurrentExp);
+  const formattedNextLevelExp = presentation.formatNumber(data.voNextLevelExp);
 
   return (
     <div
@@ -102,9 +128,9 @@ export const ExperienceBar = ({
         {/* 经验值文本 */}
         {showProgress && (
           <div className="radish-exp-bar__text">
-            <span className="radish-exp-bar__current">{data.voCurrentExp}</span>
+            <span className="radish-exp-bar__current">{formattedCurrentExp}</span>
             <span className="radish-exp-bar__separator">/</span>
-            <span className="radish-exp-bar__max">{data.voNextLevelExp}</span>
+            <span className="radish-exp-bar__max">{formattedNextLevelExp}</span>
           </div>
         )}
       </div>
@@ -118,43 +144,43 @@ export const ExperienceBar = ({
             </span>
             {data.voRank && (
               <span className="radish-exp-bar__tooltip-rank">
-                排名 #{data.voRank}
+                {presentation.labels.rank(presentation.formatNumber(data.voRank))}
               </span>
             )}
           </div>
 
           <div className="radish-exp-bar__tooltip-progress">
-            <div className="radish-exp-bar__tooltip-label">当前进度</div>
+            <div className="radish-exp-bar__tooltip-label">{presentation.labels.currentProgress}</div>
             <div className="radish-exp-bar__tooltip-value">
-              {data.voCurrentExp} / {data.voNextLevelExp} ({progressPercentage.toFixed(1)}%)
+              {formattedCurrentExp} / {formattedNextLevelExp} ({presentation.formatPercentage(progressRatio)})
             </div>
           </div>
 
           <div className="radish-exp-bar__tooltip-next">
-            <div className="radish-exp-bar__tooltip-label">下一等级</div>
+            <div className="radish-exp-bar__tooltip-label">{presentation.labels.nextLevel}</div>
             <div className="radish-exp-bar__tooltip-value">
               {data.voNextLevelName} (Lv.{data.voCurrentLevel + 1})
             </div>
             <div className="radish-exp-bar__tooltip-remaining">
-              还需 {data.voExpToNextLevel} 经验值
+              {presentation.labels.remainingExperience(presentation.formatNumber(data.voExpToNextLevel))}
             </div>
           </div>
 
           <div className="radish-exp-bar__tooltip-total">
-            <div className="radish-exp-bar__tooltip-label">总经验值</div>
-            <div className="radish-exp-bar__tooltip-value">{data.voTotalExp}</div>
+            <div className="radish-exp-bar__tooltip-label">{presentation.labels.totalExperience}</div>
+            <div className="radish-exp-bar__tooltip-value">{presentation.formatNumber(data.voTotalExp)}</div>
           </div>
 
           {data.voExpFrozen && (
             <div className="radish-exp-bar__tooltip-frozen">
               <div className="radish-exp-bar__tooltip-frozen-icon">🔒</div>
               <div className="radish-exp-bar__tooltip-frozen-text">
-                经验值已冻结
-                {data.voFrozenUntil && ` 至 ${new Date(data.voFrozenUntil).toLocaleDateString()}`}
+                {presentation.labels.frozen}
+                {data.voFrozenUntil && presentation.labels.frozenUntil(presentation.formatDateTime(data.voFrozenUntil))}
               </div>
               {data.voFrozenReason && (
                 <div className="radish-exp-bar__tooltip-frozen-reason">
-                  原因：{data.voFrozenReason}
+                  {presentation.labels.frozenReason(data.voFrozenReason)}
                 </div>
               )}
             </div>
@@ -162,7 +188,7 @@ export const ExperienceBar = ({
 
           {data.voLevelUpAt && (
             <div className="radish-exp-bar__tooltip-levelup">
-              上次升级：{new Date(data.voLevelUpAt).toLocaleString()}
+              {presentation.labels.lastLevelUp(presentation.formatDateTime(data.voLevelUpAt))}
             </div>
           )}
         </div>

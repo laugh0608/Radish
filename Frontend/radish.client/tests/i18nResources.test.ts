@@ -52,6 +52,10 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.ok(enKeys.includes('pet.care.remaining_other'));
   assert.ok(enKeys.includes('pet.care.cooldownRemaining_minute_one'));
   assert.ok(enKeys.includes('pet.care.cooldownRemaining_minute_other'));
+  assert.ok(enKeys.includes('experience.bar.remainingExperience_one'));
+  assert.ok(enKeys.includes('experience.bar.remainingExperience_other'));
+  assert.ok(enKeys.includes('experience.chart.rangeDays_one'));
+  assert.ok(enKeys.includes('experience.chart.rangeDays_other'));
   assert.ok(!enKeys.includes('shop.productCount'));
 
   const instance = i18next.createInstance();
@@ -72,6 +76,10 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
           'pet.care.remaining_other': '{{count}} uses left today',
           'pet.care.cooldownRemaining_minute_one': 'About {{count}} minute left',
           'pet.care.cooldownRemaining_minute_other': 'About {{count}} minutes left',
+          'experience.bar.remainingExperience_one': '{{value}} EXP point needed',
+          'experience.bar.remainingExperience_other': '{{value}} EXP points needed',
+          'experience.chart.rangeDays_one': 'Last {{count}} day',
+          'experience.chart.rangeDays_other': 'Last {{count}} days',
         },
       },
       zh: {
@@ -96,6 +104,11 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.equal(instance.t('pet.care.remaining', { count: 2 }), '2 uses left today');
   assert.equal(instance.t('pet.care.cooldownRemaining', { context: 'minute', count: 1 }), 'About 1 minute left');
   assert.equal(instance.t('pet.care.cooldownRemaining', { context: 'minute', count: 2 }), 'About 2 minutes left');
+  assert.equal(instance.t('experience.bar.remainingExperience', { count: 0, value: '0' }), '0 EXP points needed');
+  assert.equal(instance.t('experience.bar.remainingExperience', { count: 1, value: '1' }), '1 EXP point needed');
+  assert.equal(instance.t('experience.bar.remainingExperience', { count: 2, value: '2' }), '2 EXP points needed');
+  assert.equal(instance.t('experience.chart.rangeDays', { count: 1 }), 'Last 1 day');
+  assert.equal(instance.t('experience.chart.rangeDays', { count: 2 }), 'Last 2 days');
 
   await instance.changeLanguage('zh');
   assert.equal(instance.t('shop.productCount', { count: 2 }), '2 件商品');

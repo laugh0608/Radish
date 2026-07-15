@@ -21,6 +21,9 @@
   <data name="error.auth.legacy_login_deprecated" xml:space="preserve">
     <value>旧版登录接口已废弃，请使用 OIDC 登录流程。</value>
   </data>
+  <data name="error.auth.unauthorized" xml:space="preserve">
+    <value>请先登录后再继续。</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>服务器内部错误，请稍后重试。</value>
   </data>
@@ -29,6 +32,12 @@
   </data>
   <data name="error.user.not_found" xml:space="preserve">
     <value>用户不存在。</value>
+  </data>
+  <data name="error.experience.other_user_forbidden" xml:space="preserve">
+    <value>无权查看其他用户的私有经验明细。</value>
+  </data>
+  <data name="error.experience.not_found" xml:space="preserve">
+    <value>当前账号的经验数据不存在。</value>
   </data>
   <data name="error.order.not_found" xml:space="preserve">
     <value>订单不存在。</value>

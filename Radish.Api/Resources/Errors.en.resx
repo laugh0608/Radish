@@ -21,6 +21,9 @@
   <data name="error.auth.legacy_login_deprecated" xml:space="preserve">
     <value>The legacy login endpoint is deprecated. Please use the OIDC login flow.</value>
   </data>
+  <data name="error.auth.unauthorized" xml:space="preserve">
+    <value>Sign in to continue.</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>Internal server error. Please try again later.</value>
   </data>
@@ -29,6 +32,12 @@
   </data>
   <data name="error.user.not_found" xml:space="preserve">
     <value>User not found.</value>
+  </data>
+  <data name="error.experience.other_user_forbidden" xml:space="preserve">
+    <value>You cannot view another user’s private experience details.</value>
+  </data>
+  <data name="error.experience.not_found" xml:space="preserve">
+    <value>Experience data was not found for this account.</value>
   </data>
   <data name="error.order.not_found" xml:space="preserve">
     <value>The order was not found.</value>

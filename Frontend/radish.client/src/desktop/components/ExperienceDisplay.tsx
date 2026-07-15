@@ -1,9 +1,14 @@
-import { useState, useEffect, useEffectEvent } from 'react';
+import { useState, useEffect, useEffectEvent, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { experienceApi, type ExperienceData } from '@/api/experience';
 import { useUserStore } from '@/stores/userStore';
+import {
+  buildExperienceBarData,
+  createExperienceBarPresentation,
+} from '@/experience/experiencePresentation';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import styles from './ExperienceDisplay.module.css';
 
 /**
@@ -12,11 +17,17 @@ import styles from './ExperienceDisplay.module.css';
  * 显示用户的等级和经验值进度条
  */
 export const ExperienceDisplay = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { isAuthenticated } = useUserStore();
   const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const experienceBarPresentation = useMemo(
+    () => createExperienceBarPresentation(t, language, displayTimeZone),
+    [displayTimeZone, language, t],
+  );
 
   const fetchExperience = async () => {
     if (!isAuthenticated()) {
@@ -27,7 +38,7 @@ export const ExperienceDisplay = () => {
     setError(null);
 
     try {
-      const result = await experienceApi.getMyExperience();
+      const result = await experienceApi.getMyExperience(t);
       setExperience(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('desktop.experience.loadFailed'));
@@ -72,12 +83,13 @@ export const ExperienceDisplay = () => {
   return (
     <div className={styles.experienceDisplay}>
       <ExperienceBar
-        data={experience}
+        data={buildExperienceBarData(experience)}
         size="small"
         showLevel={true}
         showProgress={true}
         showTooltip={true}
         animated={true}
+        presentation={experienceBarPresentation}
       />
     </div>
   );

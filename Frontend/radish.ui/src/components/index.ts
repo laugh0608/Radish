@@ -97,7 +97,14 @@ export { message, notification } from './feedbackApi';
 export type { AntdFeedbackBridgeProps } from './AntdFeedbackBridge';
 
 export { ExperienceBar } from './ExperienceBar/ExperienceBar';
-export type { ExperienceBarProps, ExperienceData } from './ExperienceBar/ExperienceBar';
+export type {
+  ExperienceBarLabels,
+  ExperienceBarPresentation,
+  ExperienceBarProps,
+  ExperienceData,
+  ExperienceData as ExperienceBarData,
+  ExperienceNumericValue,
+} from './ExperienceBar/ExperienceBar';
 
 export { LevelUpModal } from './LevelUpModal/LevelUpModal';
 export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal';
