@@ -74,6 +74,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f3-i18n-day-end-doc-review-2026-07-15](/records/f3-i18n-day-end-doc-review-2026-07-15)
 - [f2-theme-system-stage-acceptance-2026-07-14](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [f1-e-shop-entitlement-stage-acceptance-2026-07-14](/records/f1-e-shop-entitlement-stage-acceptance-2026-07-14)
 - [p3-12-day-end-doc-review-2026-07-12](/records/p3-12-day-end-doc-review-2026-07-12)

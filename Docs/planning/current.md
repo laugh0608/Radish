@@ -100,6 +100,7 @@ Radish V1 的产品定位固定为：
 - [v26.7.1.1203-release OpenIddict 修复补发记录](/records/m15-release-record-v26.7.1.1203-2026-07-12)
 - [v26.7.1.1204-release PostgreSQL DateTime 修复补发记录](/records/m15-release-record-v26.7.1.1204-2026-07-12)
 - [2026-07-12 日终提交回顾与文档审阅](/records/p3-12-day-end-doc-review-2026-07-12)
+- [2026-07-15 F3 i18n 日终提交回顾与文档审阅](/records/f3-i18n-day-end-doc-review-2026-07-15)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [商城商品效力与权益履约专题](/features/shop-product-effect-entitlement-fulfillment)
 - [前端主题与 i18n 实施说明](/frontend/theme-i18n-implementation)
@@ -136,22 +137,21 @@ Radish V1 的产品定位固定为：
 
 ## 今日事项（2026-07-15）
 
-1. 已完成 `F3-B2`：Console 用户 / 内容治理 / 订单完整业务文案与表格状态治理，client Messages / Me 语言格式化和高频数量复数收口。
-2. 已补订单 / 权益 / 内容治理实际消费错误的稳定 HTTP status、`Code / MessageKey`、API 双语资源与结构化前端异常；订单状态控制流和有效期展示改用结构化字段。
-3. 已完成四个前端 workspace 的 type-check、lint、test，两端 production build、后端全量测试与解决方案构建。真实 smoke、PR、tag 与发布均未执行。
-4. 已提交 `F3-B2` 为 `904c5b8d`；随后完成 `F3-C1` Console 个人设置 / 系统设置双语治理，并将运行时词元编辑登记为独立后置专题。
-5. 已完成 `F3-C2` Console 商品配置域：服务端权威能力矩阵、稳定能力说明 key、商品错误契约与 Console 双语页面形成闭环；商品运营内容不做自动翻译。
-6. 已完成 `F3-C3` Docs 业务域：client 作者态、Console 文档治理、Wiki 稳定错误契约与双语资源形成闭环；用户及运营文档内容保持原文。
-7. 已提交 `F3-C2 / F3-C3` 为 `d0e72b2b`，并提交 `F3-C4` client 圈子域为 `5d7ae5e0`。
-8. 已完成 `F3-C5` client 宠物域：系统派生内容改用稳定字段本地化，宠物名保持原文，Pet 结构化错误、locale 格式化与英文单复数形成闭环。
-9. 已完成 `F3-C6` client 经验域：经验详情、`/me` 摘要、桌面状态和共享经验条完成双语词元、locale 格式化与结构化错误治理；等级名、备注和冻结原因保持原文，排行与经验业务规则未变更。
-10. 已完成 `F3-C7` client 萝卜资产域：萝卜坑、`/me`、Profile 与桌面实际消费者统一双语词元、long 安全金额和结构化 Coin / PaymentPassword 错误；交易通知归回正式 `/notifications`，资产业务规则未变更。
+1. 已成组完成 `F3-B2` 与 `F3-C1-C3`：Console 用户、内容治理、订单、设置、商品与文档治理，以及 client Messages、Me 和 Docs 作者态均进入宿主双语资源、locale formatter 与结构化错误契约。
+2. 已成组完成 `F3-C4-C7`：圈子、宠物、经验和萝卜资产实际消费面统一稳定词元、英文数量规则、日期 / 数字 / 图表格式及人工内容原文边界；未改变对应业务规则、数据库或迁移。
+3. 今日 7 个功能提交依次为：`904c5b8d`（F3-B2）、`bc791dd9`（F3-C1）、`d0e72b2b`（F3-C2 / C3）、`5d7ae5e0`（F3-C4）、`eef594b9`（F3-C5）、`cf76c647`（F3-C6）、`ab66ab57`（F3-C7）。
+4. 最终静态基线为 client `370` 项、共享 UI `8` 项、Console `47` 项、`@radish/http` `11` 项测试通过；后端 `674` 项通过、`11` 项环境用例跳过，解决方案构建 `0 warning / 0 error`，Baseline Quick 通过。
+5. 已按最终代码审阅并修正经验前端与 API 专题文档；圈子、宠物、商品、萝卜坑、私域工作流及 i18n 治理文档与实现边界一致。详细记录见 [2026-07-15 F3 i18n 日终审阅](/records/f3-i18n-day-end-doc-review-2026-07-15)。
+6. 今日未启动服务、未执行浏览器 smoke，未创建 PR、tag 或发布；`dev` 继续按成组功能批次积累。
 
 ## 明日事项（2026-07-16）
 
-1. 推进 `F3-C8` client 剩余页面族：先核对低频设置、公开承诺、页面 head 与正式消费的共享反馈 / 上传组件，明确系统词元、长文本和用户内容边界后成组实施。
-2. 同步治理这些页面实际消费的 API 高频失败、共享 labels、locale formatter、英文长文与 `0 / 1 / 2` 复数门禁，不做全仓逐字符串替换，也不自动翻译用户内容。
-3. 继续在开发轮次使用静态验证；PC / mobile 真实语言切换、OIDC 往返和失败态矩阵统一保留到 F3-D 专题验收，并在启动服务前重新取得当轮授权。
+1. 推进 `F3-C8` client 剩余页面族，先建立低频设置、公开用户承诺、页面 head、共享反馈与上传组件的真实消费矩阵；只纳入正式路由和实际调用者，不做全仓逐字符串替换。
+2. 按“系统词元 / 运营内容 / 用户内容 / 文件元数据”划定本地化边界：系统状态和动作进入双语资源，用户输入与运营长文保持原文，公开 head 使用与页面正文一致的稳定来源。
+3. 统一共享反馈、上传进度、失败提示和空态组件的 labels / formatter 注入方式；共享 UI 不持有 client i18n 状态，实际消费 API 的高频失败同步采用 HTTP status、`Code / MessageKey` 与 `ApiResponseError`。
+4. 成组处理 locale 日期、数字、文件大小、分页与 `0 / 1 / 2` 英文复数，并复核英文长标题、承诺正文、按钮组和上传错误在 PC / mobile 布局中的换行、截断与可读性。
+5. 补资源 parity、稳定词元、共享组件契约、长文本 fixture、API 错误与实际消费者防回归测试；完成 client test / type-check / lint / production build、Baseline Quick、仓库卫生和差异检查。
+6. `F3-C8` 完成后按治理顺位准备 `F3-C9` Console 剩余管理域，优先角色权限、分类标签、表情、经验和萝卜管理；不把运行时在线词元编辑混入 `SystemConfig`。PC / mobile 真实语言切换与 OIDC 往返仍统一留到 `F3-D` 专题验收，启动服务前重新取得当轮授权。
 
 ## 并行维护线
 

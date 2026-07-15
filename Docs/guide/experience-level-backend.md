@@ -383,163 +383,51 @@ public async Task ExecuteAsync()
 
 ## 6. API 设计
 
-### 6.1 查询用户经验值信息
+### 6.1 client 查询接口
 
-```http
-GET /api/v1/Experience/GetUserExperience
-Authorization: Bearer {token}
-Query Parameters:
-  - userId: long (可选,不传则查询当前用户)
+| 接口 | 访问边界 | 返回 |
+| --- | --- | --- |
+| `GET /api/v1/Experience/GetMyExperience` | 登录用户；可省略 `userId`，client 不允许借此查看其他用户 | `MessageModel<UserExperienceVo>` |
+| `GET /api/v1/Experience/GetTransactions` | 当前登录用户 | `MessageModel<PageModel<ExpTransactionVo>>` |
+| `GET /api/v1/Experience/GetLeaderboard` | 匿名可读 | `MessageModel<PageModel<LeaderboardItemVo>>` |
+| `GET /api/v1/Experience/GetMyRank` | 当前登录用户 | `MessageModel<int>` |
 
-Response:
-{
-  "isSuccess": true,
-  "responseData": {
-    "userId": 12345,
-    "currentLevel": 3,
-    "currentLevelName": "金丹",
-    "currentExp": 450,
-    "totalExp": 1250,
-    "expToNextLevel": 550,         // 距离下一级还需多少经验
-    "nextLevel": 4,
-    "nextLevelName": "元婴",
-    "levelProgress": 0.45,         // 当前等级进度(0-1)
-    "themeColor": "#FFC107",
-    "badgeUrl": "/assets/badges/level-3.png",
-    "levelUpAt": "2025-12-20T10:30:00Z",
-    "rank": 1234,                  // 经验值排名(可选)
-    "expFrozen": false
-  }
-}
-```
+摘要与流水响应继续使用 Vo 前缀字段。client 对以下字段采用稳定边界：
 
-### 6.2 查询经验值记录
+- `voCurrentExp / voTotalExp / voExpToNextLevel / voExpBefore / voExpAfter` 按 long 字符串接收；
+- `voLevelProgress` 是 `0-1` 比例；
+- `voExpType` 是本地化和分组使用的稳定系统类型；
+- `voExpTypeDisplay` 只保留历史兼容，不参与 client 控制；
+- 等级名称、流水备注和冻结原因属于配置或人工内容，保持原文。
 
-```http
-GET /api/v1/Experience/GetExpTransactions
-Authorization: Bearer {token}
-Query Parameters:
-  - pageIndex: int (默认 1)
-  - pageSize: int (默认 20, 最大 100)
-  - expType: string (可选,筛选类型)
-  - startDate: date (可选)
-  - endDate: date (可选)
+`GetTransactions` 支持 `pageIndex / pageSize / expType / startDate / endDate`。正式 `/me/experience` 当前使用分页参数；筛选能力保留在 API 契约中。
 
-Response:
-{
-  "isSuccess": true,
-  "responseData": {
-    "page": 1,
-    "pageSize": 20,
-    "dataCount": 156,
-    "pageCount": 8,
-    "data": [
-      {
-        "id": 123,
-        "expType": "POST_LIKED",
-        "expAmount": 5,
-        "businessType": "Post",
-        "businessId": 456,
-        "remark": "帖子被点赞",
-        "levelBefore": 2,
-        "levelAfter": 2,
-        "createdAt": "2026-01-02T10:30:00Z"
-      }
-    ]
-  }
-}
-```
+### 6.2 Console 查询与治理接口
 
-### 6.3 查询每日经验值统计
+Console 使用独立受权接口：
 
-```http
-GET /api/v1/Experience/GetDailyStats
-Authorization: Bearer {token}
-Query Parameters:
-  - days: int (默认 7, 最大 30) - 查询最近N天
+- `GetUserExperience/{userId}`；
+- `GetUserTransactions/{userId}`；
+- `GetUserDailyStats/{userId}`；
+- `GetUserGovernanceActions/{userId}`；
+- `AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience` 和人工复核接口。
 
-Response:
-{
-  "isSuccess": true,
-  "responseData": [
-    {
-      "statDate": "2026-01-02",
-      "expEarned": 45,
-      "expFromPost": 10,
-      "expFromComment": 6,
-      "expFromLike": 24,
-      "expFromHighlight": 0,
-      "expFromLogin": 5,
-      "postCount": 1,
-      "commentCount": 3,
-      "likeGivenCount": 8,
-      "likeReceivedCount": 4
-    }
-  ]
-}
-```
+查询、调整和冻结分别受 `ExperienceView / ExperienceAdjust / ExperienceFreeze` 等 Console 权限保护。client 不复用这些管理接口，也不在前端实现等级公式、每日上限或冻结判断。
 
-返回窗口按系统业务时区计算，日期字段是纯 `yyyy-MM-dd`。客户端不得把它当 UTC 午夜时间戳再做本地时区转换。
+每日统计窗口按系统业务时区计算，`VoStatDate` 等自然日字段是纯 `yyyy-MM-dd`。客户端不得把它当 UTC 午夜时间戳再进行本地时区转换。
 
-### 6.4 查询等级排行榜
+### 6.3 结构化错误契约
 
-```http
-GET /api/v1/Experience/GetLeaderboard
-Authorization: Bearer {token}
-Query Parameters:
-  - pageIndex: int (默认 1)
-  - pageSize: int (默认 50, 最大 100)
-  - type: string (默认 total_exp, 可选: current_level)
+`ExperienceController` 使用 `[ApiErrorContract]` 同步 `MessageModel.StatusCode` 与真实 HTTP status。当前 client 高频错误如下：
 
-Response:
-{
-  "isSuccess": true,
-  "responseData": {
-    "page": 1,
-    "pageSize": 50,
-    "dataCount": 10000,
-    "data": [
-      {
-        "rank": 1,
-        "userId": 789,
-        "userName": "修仙大佬",
-        "avatarUrl": "/avatars/789.jpg",
-        "currentLevel": 9,
-        "currentLevelName": "渡劫",
-        "totalExp": 98765,
-        "isCurrentUser": false
-      }
-    ],
-    "currentUserRank": 1234,        // 当前用户排名
-    "currentUserExp": {
-      "userId": 12345,
-      "currentLevel": 3,
-      "totalExp": 1250
-    }
-  }
-}
-```
+| 场景 | HTTP status | Code | MessageKey |
+| --- | ---: | --- | --- |
+| 当前身份无效 | `401` | `Auth.Unauthorized` | `error.auth.unauthorized` |
+| 借 client 摘要接口查看其他用户 | `403` | `Experience.OtherUserForbidden` | `error.experience.other_user_forbidden` |
+| 当前用户经验数据不存在 | `404` | `Experience.NotFound` | `error.experience.not_found` |
 
-### 6.5 管理员调整经验值(Admin)
+API 中英文资源位于 `Radish.Api/Resources/Errors.zh.resx` 与 `Errors.en.resx`。client 必须通过 `@radish/http` 保留 status、`Code / MessageKey / TraceId` 并抛出 `ApiResponseError`；用户可见 fallback 由宿主当前语言提供，业务控制流不得依赖 `MessageInfo` 文本。
 
-```http
-POST /api/v1/Experience/Admin/AdjustExperience
-Authorization: Bearer {token}
-Roles: System, Admin
-Content-Type: application/json
-
-Body:
-{
-  "userId": 12345,
-  "expAmount": -100,               // 负数=扣除, 正数=增加
-  "reason": "违规发帖,扣除经验值"
-}
-
-Response:
-{
-  "isSuccess": true,
-  "messageInfo": "经验值调整成功"
-}
-```
+本契约治理不改变经验获取规则、等级公式、每日上限、排行算法、冻结语义、数据库或迁移。
 
 ---

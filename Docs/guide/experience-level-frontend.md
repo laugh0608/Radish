@@ -1,323 +1,109 @@
-# 7. 前端展示设计
+# 经验值与等级系统：前端展示设计
 
 > 入口页：[经验值与等级系统设计方案](/guide/experience-level-system)
+>
+> 当前状态：纯 Web 正式入口与 WebOS 历史兼容入口已实现；本文记录现行组件、数据和多语言契约，不再保留未落地的示例组件。
 
-## 7.1 个人主页经验条
+## 7.1 入口与职责
 
-**位置**:`Frontend/radish.client/src/apps/profile/components/ExperienceBar.tsx`
+| 展示面 | 位置 | 职责 |
+| --- | --- | --- |
+| `/me` 经验摘要 | `Frontend/radish.client/src/me/MeApp.tsx` | 当前等级、经验进度、最近经验流水和进入详情的正式入口 |
+| `/me/experience` | `Frontend/radish.client/src/apps/experience-detail/ExperienceDetailApp.tsx` | 等级进度、累计进度、趋势、来源分布和分页流水 |
+| WebOS `/desktop` | `Frontend/radish.client/src/desktop/AppRegistry.tsx` | 历史兼容窗口入口，复用同一个 `ExperienceDetailApp` |
+| 桌面状态展示 | `Frontend/radish.client/src/desktop/components/ExperienceDisplay.tsx` | 只读经验状态与共享经验条 |
+| 共享经验条 | `Frontend/radish.ui/src/components/ExperienceBar/ExperienceBar.tsx` | 纯展示组件，由宿主注入 labels 与 formatter |
+| 组件展示页 | `Frontend/radish.client/src/apps/showcase/ShowcaseApp.tsx` | 开发态组件示例，不属于正式业务入口 |
 
-**功能**:
-- 显示当前等级昵称和图标
-- 显示经验条进度(当前经验/升级所需经验)
-- 鼠标悬停显示详细信息(累计经验、排名等)
-- 升级时播放动画效果
+纯 Web 是正式产品主线。WebOS 入口只做阻断级兼容，不再独立演进经验业务；Console 的经验配置和人工治理属于管理域，不从 client 展示实现反推。
 
-**示例**:
-```tsx
-import React from 'react';
-import styles from './ExperienceBar.module.css';
+## 7.2 API 与数据边界
 
-interface ExperienceBarProps {
-  currentLevel: number;
-  currentLevelName: string;
-  currentExp: number;
-  expToNextLevel: number;
-  levelProgress: number;
-  themeColor: string;
-  totalExp: number;
-  rank?: number;
-}
+client 经验 API 位于 `Frontend/radish.client/src/api/experience.ts`，统一使用 `@radish/http`：
 
-export const ExperienceBar: React.FC<ExperienceBarProps> = ({
-  currentLevel,
-  currentLevelName,
-  currentExp,
-  expToNextLevel,
-  levelProgress,
-  themeColor,
-  totalExp,
-  rank
-}) => {
-  return (
-    <div className={styles.experienceBar}>
-      <div className={styles.levelInfo}>
-        <div className={styles.levelBadge} style={{ borderColor: themeColor }}>
-          <span className={styles.levelText}>Lv.{currentLevel}</span>
-          <span className={styles.levelName}>{currentLevelName}</span>
-        </div>
+- `getMyExperience(t)`：读取当前用户经验摘要；
+- `getTransactions(params, t)`：读取当前用户分页经验流水；
+- `getLeaderboard(...)`、`getMyRank()`：保留既有排行调用能力，公开排行榜不属于 F3-C6 的返工范围。
 
-        <div className={styles.expDetails}>
-          <div className={styles.expText}>
-            {currentExp} / {currentExp + expToNextLevel}
-          </div>
-          <div className={styles.expSubText}>
-            距离下一级还需 {expToNextLevel} 经验
-          </div>
-        </div>
-      </div>
+当前真实消费的经验摘要与流水 API 必须遵守以下约束：
 
-      <div className={styles.progressBar}>
-        <div
-          className={styles.progressFill}
-          style={{
-            width: `${levelProgress * 100}%`,
-            backgroundColor: themeColor
-          }}
-        >
-          <div className={styles.progressGlow} />
-        </div>
-      </div>
+1. 失败抛出结构化 `ApiResponseError`，保留 HTTP status、`Code`、`MessageKey`、服务端消息和 `TraceId`。
+2. 页面提供当前语言的安全 fallback；控制流不得匹配中文或英文错误句子。
+3. 后端 `long` ID、当前经验、累计经验、升级阈值和流水前后值在 client 按字符串接收，展示和加法使用整数安全逻辑。
+4. `voLevelProgress` 是 `0-1` 比例值；百分比只在展示层格式化，不回写业务数据。
 
-      <div className={styles.statsRow}>
-        <div className={styles.statItem}>
-          <span className={styles.statLabel}>累计经验</span>
-          <span className={styles.statValue}>{totalExp.toLocaleString()}</span>
-        </div>
-        {rank && (
-          <div className={styles.statItem}>
-            <span className={styles.statLabel}>经验排名</span>
-            <span className={styles.statValue}>#{rank}</span>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-```
+## 7.3 稳定词元与原文内容
 
-**CSS 动画**(升级特效):
-```css
-/* ExperienceBar.module.css */
-@keyframes levelUpGlow {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(255, 215, 0, 1);
-  }
-}
+集中展示逻辑位于 `Frontend/radish.client/src/experience/experiencePresentation.ts`。
 
-.levelBadge.levelUp {
-  animation: levelUpGlow 1.5s ease-in-out 3;
-}
+### 7.3.1 系统经验类型
 
-@keyframes progressFill {
-  0% {
-    width: 0%;
-  }
-  100% {
-    width: var(--target-width);
-  }
-}
+- 只按稳定 `voExpType` 查找 `experience.type.*` 宿主词元。
+- `voExpTypeDisplay` 仅作为历史响应兼容字段，不参与控制、分组或本地化。
+- 已登记类型包括发帖、评论、点赞、神评、沙发、登录、资料完善、管理员调整和惩罚等系统类型。
+- 未登记类型直接显示去除首尾空白后的稳定原值，避免伪造含义。
 
-.progressFill {
-  animation: progressFill 1s ease-out;
-}
-```
+### 7.3.2 配置与人工内容
 
-## 7.2 升级动画弹窗
+以下内容没有稳定本地化标识时必须保持服务端原文：
 
-**位置**:`Frontend/radish.client/src/components/LevelUpModal/LevelUpModal.tsx`
+- `voCurrentLevelName`、`voNextLevelName`；
+- 流水 `voRemark`；
+- `voFrozenReason`；
+- 用户名、头像和其他用户资料。
 
-**触发时机**:
-- WebSocket 推送升级事件时
-- 或刷新页面时检测到等级变化
+页面只在等级名称为空时使用 `Lv.{level}` 形式的中性兜底，不建立本地等级翻译表。
 
-**功能**:
-- 全屏烟花/光效动画
-- 显示旧等级 → 新等级
-- 显示解锁的新特权
-- 自动 3 秒后关闭或手动关闭
+## 7.4 locale 与时区
 
-**示例**:
-```tsx
-import React, { useEffect, useState } from 'react';
-import { Modal } from '@radish/ui';
-import Confetti from 'react-confetti';
-import styles from './LevelUpModal.module.css';
+经验域 formatter 显式接收当前语言与展示时区：
 
-interface LevelUpModalProps {
-  visible: boolean;
-  oldLevel: number;
-  oldLevelName: string;
-  newLevel: number;
-  newLevelName: string;
-  newPrivileges: string[];
-  themeColor: string;
-  onClose: () => void;
-}
+- `formatExperienceNumber`：支持超出 `Number.MAX_SAFE_INTEGER` 的整数字符串；
+- `formatExperienceSignedNumber`：为正向流水增加本地化数字后的 `+` 标记；
+- `formatExperiencePercent`：使用 `Intl.NumberFormat` 百分比格式；
+- `formatExperienceDateTime`：使用统一时区 formatter；
+- `buildExperienceDailyStats`：先按展示时区归属自然日，再按当前 locale 生成图表日期；
+- `buildExperienceSourceStats`：按稳定 `voExpType` 聚合并本地化图例名称。
 
-export const LevelUpModal: React.FC<LevelUpModalProps> = ({
-  visible,
-  oldLevel,
-  oldLevelName,
-  newLevel,
-  newLevelName,
-  newPrivileges,
-  themeColor,
-  onClose
-}) => {
-  const [showConfetti, setShowConfetti] = useState(false);
+英文数量文案必须传递数值 `count` 进行 plural 判定；大整数展示值另以已格式化字符串传入，不能为方便插值而把 long 转成不安全的 `number`。
 
-  useEffect(() => {
-    if (visible) {
-      setShowConfetti(true);
-      const timer = setTimeout(() => {
-        setShowConfetti(false);
-        onClose();
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [visible, onClose]);
+## 7.5 `ExperienceBar` 共享契约
 
-  return (
-    <>
-      {showConfetti && <Confetti recycle={false} numberOfPieces={500} />}
+`@radish/ui` 不导入 `react-i18next`，也不读取 client 的语言状态。宿主通过 `ExperienceBarPresentation` 注入：
 
-      <Modal visible={visible} onClose={onClose} showCloseButton={false}>
-        <div className={styles.levelUpModal}>
-          <div className={styles.title}>恭喜升级!</div>
+- 排名、当前进度、下一级、剩余经验、总经验、冻结和升级时间 labels；
+- 数字 formatter；
+- 百分比 formatter；
+- 日期时间 formatter。
 
-          <div className={styles.levelTransition}>
-            <div className={styles.oldLevel}>
-              <span className={styles.levelNumber}>Lv.{oldLevel}</span>
-              <span className={styles.levelName}>{oldLevelName}</span>
-            </div>
+`ExperienceBar` 接受 `number | string` 的经验数值，内部只负责布局、进度比例限制、tooltip 和冻结态展示。client 使用 `buildExperienceBarData` 推导当前等级阈值，不能把共享组件扩展为等级计算或业务规则持有者。
 
-            <div className={styles.arrow}>→</div>
+## 7.6 经验详情页面
 
-            <div className={styles.newLevel} style={{ color: themeColor }}>
-              <span className={styles.levelNumber}>Lv.{newLevel}</span>
-              <span className={styles.levelName}>{newLevelName}</span>
-            </div>
-          </div>
+`ExperienceDetailApp` 当前行为：
 
-          {newPrivileges.length > 0 && (
-            <div className={styles.privileges}>
-              <div className={styles.privilegesTitle}>解锁新特权</div>
-              <ul className={styles.privilegesList}>
-                {newPrivileges.map((privilege, index) => (
-                  <li key={index} className={styles.privilegeItem}>
-                    ✓ {privilege}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+1. 先读取经验摘要，再读取当前页经验流水；摘要失败显示整体错误和重试，流水失败保留摘要并显示局部错误。
+2. 展示当前等级进度与累计进度，两处复用同一 `ExperienceBarPresentation`。
+3. 趋势提供 7 天 / 30 天展示窗口；当前图表基于已加载流水构造，缺失日期补零。
+4. 来源分布按稳定经验类型聚合；共享 `LineChart / PieChart` 由宿主提供数字和百分比 formatter。
+5. 流水列表展示本地化系统类型、locale 时间、等级变化、带符号经验值和原文备注。
+6. 分页由正式 `/me/experience` 路由状态或组件内部状态驱动，页码文案使用宿主词元。
 
-          <button className={styles.closeButton} onClick={onClose}>
-            确定
-          </button>
-        </div>
-      </Modal>
-    </>
-  );
-};
-```
+公开排行榜维持既有实现和算法，本页面不内嵌或改写排行逻辑。
 
-## 7.3 Dock 等级徽章显示
+## 7.7 测试与维护门禁
 
-**位置**:`Frontend/radish.client/src/desktop/Dock.tsx`
+经验前端改动至少复核：
 
-**功能**:
-- 在用户头像旁显示当前等级徽章
-- 点击跳转到个人主页经验详情
-- 鼠标悬停显示等级进度
+- `Frontend/radish.client/tests/experienceApiContract.test.ts`：结构化错误和真实消费者字段边界；
+- `Frontend/radish.client/tests/experiencePresentation.test.ts`：稳定词元、未知值、long 数字、日期、百分比与时区分组；
+- `Frontend/radish.client/tests/i18nResources.test.ts`：中英文资源 parity 和 `0 / 1 / 2` 数量规则；
+- `Frontend/radish.ui/tests/experienceBarContract.test.ts`：共享组件的宿主 labels / formatter 契约。
 
-**示例**:
-```tsx
-// 在 Dock 用户信息区域添加
-<div className={styles.userInfo}>
-  <img src={user.avatarUrl} alt="头像" className={styles.avatar} />
+维护时不得：
 
-  <div
-    className={styles.levelBadge}
-    style={{ backgroundColor: user.themeColor }}
-    title={`Lv.${user.currentLevel} ${user.currentLevelName}`}
-  >
-    Lv.{user.currentLevel}
-  </div>
-
-  <span className={styles.userName}>{user.userName}</span>
-</div>
-```
-
-## 7.4 经验值明细页面
-
-**位置**:`Frontend/radish.client/src/apps/profile/pages/ExperienceDetail.tsx`
-
-**功能**:
-- 经验值曲线图(最近 7 天/30 天)
-- 经验值来源饼图(发帖/评论/点赞等占比)
-- 经验值明细列表(分页)
-- 等级排行榜
-
-**使用图表库**:Recharts
-
-**示例**:
-```tsx
-import React from 'react';
-import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { ExperienceBar } from '../components/ExperienceBar';
-import styles from './ExperienceDetail.module.css';
-
-export const ExperienceDetail: React.FC = () => {
-  // 数据从 API 获取...
-  const dailyStats = useDailyStats(7);
-  const sourceDistribution = useExpSourceDistribution();
-  const transactions = useExpTransactions(1, 20);
-
-  return (
-    <div className={styles.experienceDetail}>
-      <h2>经验值详情</h2>
-
-      {/* 经验条 */}
-      <ExperienceBar {...userExp} />
-
-      {/* 经验值曲线 */}
-      <div className={styles.chartSection}>
-        <h3>经验值趋势</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={dailyStats}>
-            <XAxis dataKey="statDate" />
-            <YAxis />
-            <Tooltip />
-            <Line type="monotone" dataKey="expEarned" stroke="#8884d8" strokeWidth={2} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* 经验值来源饼图 */}
-      <div className={styles.chartSection}>
-        <h3>经验值来源</h3>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie data={sourceDistribution} dataKey="value" nameKey="name" cx="50%" cy="50%" label>
-              {sourceDistribution.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
-            </Pie>
-            <Tooltip />
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* 经验值明细列表 */}
-      <div className={styles.transactionList}>
-        <h3>经验值明细</h3>
-        {transactions.map(tx => (
-          <div key={tx.id} className={styles.transactionItem}>
-            <div className={styles.txInfo}>
-              <span className={styles.txType}>{tx.remark}</span>
-              <span className={styles.txTime}>{new Date(tx.createdAt).toLocaleString()}</span>
-            </div>
-            <span className={styles.txAmount}>+{tx.expAmount}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-```
-
----
+- 用 `voExpTypeDisplay`、等级名称或备注参与业务判断；
+- 在共享 UI 中持有宿主 i18n 实例；
+- 将 long 经验值无条件转为 `number` 后计算或格式化；
+- 为配置等级名、人工备注或冻结原因自行编造翻译；
+- 在前端重算等级公式、每日上限、排行或冻结业务语义。
