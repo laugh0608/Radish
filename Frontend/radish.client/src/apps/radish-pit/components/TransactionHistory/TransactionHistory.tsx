@@ -1,7 +1,17 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { coinApi } from '@/api/coin';
 import { log } from '@/utils/logger';
-import { debounce } from '../../utils';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { useUserStore } from '@/stores/userStore';
+import {
+  formatCoinDateTime,
+  formatCoinNumber,
+  formatTransactionStatus,
+  formatTransactionType,
+  getSignedTransactionAmount,
+} from '../../utils';
 import { TransactionFilters } from './TransactionFilters';
 import type { FilterOptions } from './TransactionFilters';
 import { TransactionList } from './TransactionList';
@@ -10,20 +20,6 @@ import type { CoinTransaction } from '@/api/coin';
 import styles from './TransactionHistory.module.css';
 
 const EXPORT_PAGE_SIZE = 100;
-
-const csvHeaders = [
-  '交易流水号',
-  '创建时间',
-  '交易类型',
-  '状态',
-  '金额',
-  '手续费',
-  '发起方',
-  '接收方',
-  '业务类型',
-  '业务编号',
-  '备注',
-];
 
 const csvCell = (value: string | number | null | undefined): string => {
   const text = value === null || value === undefined ? '' : String(value);
@@ -57,7 +53,11 @@ const matchesDateRange = (transaction: CoinTransaction, dateRange: FilterOptions
   return true;
 };
 
-const matchesSearchKeyword = (transaction: CoinTransaction, searchKeyword?: string): boolean => {
+const matchesSearchKeyword = (
+  transaction: CoinTransaction,
+  t: TFunction,
+  searchKeyword?: string,
+): boolean => {
   const keyword = searchKeyword?.trim().toLowerCase();
   if (!keyword) {
     return true;
@@ -67,8 +67,10 @@ const matchesSearchKeyword = (transaction: CoinTransaction, searchKeyword?: stri
     transaction.voTransactionNo,
     transaction.voFromUserName,
     transaction.voToUserName,
-    transaction.voTransactionTypeDisplay,
-    transaction.voStatusDisplay,
+    transaction.voTransactionType,
+    formatTransactionType(transaction.voTransactionType, t),
+    transaction.voStatus,
+    formatTransactionStatus(transaction.voStatus, t),
     transaction.voBusinessType,
     transaction.voBusinessId,
     transaction.voRemark,
@@ -79,26 +81,46 @@ const matchesSearchKeyword = (transaction: CoinTransaction, searchKeyword?: stri
 
 const applyClientExportFilters = (
   exportTransactions: CoinTransaction[],
-  exportFilters: FilterOptions
+  exportFilters: FilterOptions,
+  t: TFunction,
 ): CoinTransaction[] => {
   return exportTransactions.filter(
     (transaction) =>
       matchesDateRange(transaction, exportFilters.dateRange) &&
-      matchesSearchKeyword(transaction, exportFilters.searchKeyword)
+      matchesSearchKeyword(transaction, t, exportFilters.searchKeyword)
   );
 };
 
-const buildTransactionsCsv = (exportTransactions: CoinTransaction[]): string => {
+const buildTransactionsCsv = (
+  exportTransactions: CoinTransaction[],
+  t: TFunction,
+  language: string,
+  timeZone: string,
+  currentUserId: string,
+): string => {
+  const csvHeaders = [
+    t('pit.history.csv.transactionNo'),
+    t('pit.history.csv.createdAt'),
+    t('pit.history.csv.type'),
+    t('pit.history.csv.status'),
+    t('pit.history.csv.amount'),
+    t('pit.history.csv.fee'),
+    t('pit.history.csv.sender'),
+    t('pit.history.csv.recipient'),
+    t('pit.history.csv.businessType'),
+    t('pit.history.csv.businessId'),
+    t('pit.history.csv.remark'),
+  ];
   const rows = exportTransactions.map((transaction) =>
     [
       transaction.voTransactionNo,
-      transaction.voCreateTime,
-      transaction.voTransactionTypeDisplay || transaction.voTransactionType,
-      transaction.voStatusDisplay || transaction.voStatus,
-      transaction.voAmountDisplay || transaction.voAmount,
-      transaction.voFeeDisplay || transaction.voFee,
-      transaction.voFromUserName,
-      transaction.voToUserName,
+      formatCoinDateTime(transaction.voCreateTime, timeZone, language),
+      formatTransactionType(transaction.voTransactionType, t),
+      formatTransactionStatus(transaction.voStatus, t),
+      formatCoinNumber(getSignedTransactionAmount(transaction, currentUserId), language),
+      formatCoinNumber(transaction.voFee, language),
+      transaction.voFromUserId ? transaction.voFromUserName : t('pit.common.system'),
+      transaction.voToUserId ? transaction.voToUserName : t('pit.common.system'),
       transaction.voBusinessType,
       transaction.voBusinessId,
       transaction.voRemark,
@@ -140,6 +162,10 @@ const downloadCsv = (csvContent: string, fileName: string) => {
  * 交易记录组件
  */
 export const TransactionHistory = () => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const currentUserId = String(useUserStore((state) => state.userId));
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -165,11 +191,12 @@ export const TransactionHistory = () => {
           page,
           pageSize,
           searchFilters.transactionType || null,
-          searchFilters.status || null
+          searchFilters.status || null,
+          t,
         );
 
         setTransactions(response.data);
-        setTotalPages(response.pageCount);
+        setTotalPages(Math.max(1, response.pageCount || 1));
         setTotalCount(response.dataCount);
         setCurrentPage(page);
 
@@ -178,22 +205,14 @@ export const TransactionHistory = () => {
           totalCount: response.dataCount,
         });
       } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : '加载交易记录失败';
+        const errorMessage = err instanceof Error ? err.message : t('pit.api.transactionsFailed');
         setError(errorMessage);
         log.error('加载交易记录失败:', err);
       } finally {
         setLoading(false);
       }
     },
-    [pageSize]
-  );
-
-  const debouncedSearch = useMemo(
-    () => debounce((searchFilters: FilterOptions) => {
-      setCurrentPage(1);
-      void loadTransactions(1, searchFilters);
-    }, 500),
-    [loadTransactions]
+    [pageSize, t]
   );
 
   useEffect(() => {
@@ -203,7 +222,7 @@ export const TransactionHistory = () => {
   const handleFilterChange = (newFilters: FilterOptions) => {
     setExportNotice(null);
     setFilters(newFilters);
-    debouncedSearch(newFilters);
+    setCurrentPage(1);
   };
 
   const handlePageChange = (page: number) => {
@@ -240,7 +259,8 @@ export const TransactionHistory = () => {
         1,
         EXPORT_PAGE_SIZE,
         filters.transactionType || null,
-        filters.status || null
+        filters.status || null,
+        t,
       );
       const exportTransactions = [...firstPage.data];
 
@@ -249,21 +269,28 @@ export const TransactionHistory = () => {
           page,
           EXPORT_PAGE_SIZE,
           filters.transactionType || null,
-          filters.status || null
+          filters.status || null,
+          t,
         );
         exportTransactions.push(...pageResult.data);
       }
 
-      const filteredTransactions = applyClientExportFilters(exportTransactions, filters);
+      const filteredTransactions = applyClientExportFilters(exportTransactions, filters, t);
       if (filteredTransactions.length === 0) {
-        setExportNotice('当前筛选条件下没有可导出的交易记录');
+        setExportNotice(t('pit.history.exportEmpty'));
         return;
       }
 
-      downloadCsv(buildTransactionsCsv(filteredTransactions), createExportFileName());
-      setExportNotice(`已导出 ${filteredTransactions.length.toLocaleString()} 条交易记录`);
+      downloadCsv(
+        buildTransactionsCsv(filteredTransactions, t, language, displayTimeZone, currentUserId),
+        createExportFileName(),
+      );
+      setExportNotice(t('pit.history.exported', {
+        count: filteredTransactions.length,
+        value: formatCoinNumber(filteredTransactions.length, language),
+      }));
     } catch (err) {
-      setExportNotice('导出失败，请稍后重试');
+      setExportNotice(t('pit.history.exportFailed'));
       log.error('导出交易记录失败:', err);
     } finally {
       setExporting(false);
@@ -274,27 +301,32 @@ export const TransactionHistory = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>交易记录</h2>
-          <p className={styles.subtitle}>查看您的萝卜交易历史，共 {totalCount.toLocaleString()} 条记录</p>
+          <h2 className={styles.title}>{t('pit.history.title')}</h2>
+          <p className={styles.subtitle}>{t('pit.history.description', {
+            count: totalCount,
+            value: formatCoinNumber(totalCount, language),
+          })}</p>
         </div>
         <div className={styles.headerRight}>
           <button
             className={styles.displayModeButton}
             onClick={toggleDisplayMode}
-            title={`切换到${displayMode === 'carrot' ? '白萝卜' : '胡萝卜'}显示`}
+            title={t('pit.currency.switchTo', {
+              mode: t(displayMode === 'carrot' ? 'pit.currency.white' : 'pit.currency.carrot'),
+            })}
           >
             {displayMode === 'carrot' ? '🥕' : '🤍'}
-            {displayMode === 'carrot' ? '胡萝卜' : '白萝卜'}
+            {t(displayMode === 'carrot' ? 'pit.currency.carrot' : 'pit.currency.white')}
           </button>
           <button
             className={styles.exportButton}
             onClick={handleExport}
             disabled={exporting || loading}
-            title="导出当前筛选条件下的交易记录"
+            title={t('pit.history.exportTitle')}
           >
-            📥 {exporting ? '导出中' : '导出'}
+            📥 {t(exporting ? 'pit.history.exporting' : 'pit.history.export')}
           </button>
-          <button className={styles.refreshButton} onClick={handleRefresh} title="刷新数据">
+          <button className={styles.refreshButton} onClick={handleRefresh} title={t('pit.common.refresh')}>
             🔄
           </button>
         </div>

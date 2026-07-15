@@ -1,195 +1,188 @@
 # 萝卜坑应用核心概念
 
-> 版本：v1.0 | 最后更新：2026-01-24 | 状态：设计中
+> 版本：v1.1 | 最后更新：2026-07-15 | 状态：已实现，持续维护
 
-本文档定义萝卜坑应用的核心概念、数据结构和业务规则。
+本文定义萝卜资产域当前实际使用的数据语义和跨层稳定契约。具体阈值与业务实现以 Service 和测试为准，前端不得从展示文案反推规则。
 
----
+## 1. 单位与精度
 
-## 2. 核心概念
+- **胡萝卜**：存储、计算和 API 业务语义中的最小整数单位。
+- **白萝卜**：展示单位，`1 白萝卜 = 1000 胡萝卜`。
+- **CoinAmount**：后端为 `long`，client 类型为十进制整数字符串。
+- **LongId**：用户、流水实体和业务对象的 `long` 标识在 client 同样按字符串处理。
 
-### 2.1 基础概念定义
+client 不得先将完整 `long` 转为 `number` 再比较、累加或格式化。胡萝卜 / 白萝卜换算使用整数商和三位余数；图表库需要 `number` 时，只能在图表适配边界显式投影。
 
-#### 萝卜币货币体系
-- **胡萝卜**：系统最小货币单位，用于存储和计算
-- **白萝卜**：用户显示单位，1白萝卜 = 1000胡萝卜
-- **转换规则**：系统内部使用胡萝卜，用户界面显示白萝卜
+## 2. 账户与流水
 
-#### 账户类型
-- **个人账户**：普通用户的萝卜币账户
-- **系统账户**：用于奖励发放的虚拟账户
-- **冻结账户**：临时冻结资金的特殊状态
+### 2.1 账户字段
 
-#### 交易类型枚举
+```ts
+type CoinAmount = string;
+type LongId = string;
 
-```typescript
-enum TransactionType {
-  SYSTEM_REWARD = 'system_reward',      // 系统奖励
-  LIKE_REWARD = 'like_reward',          // 点赞奖励
-  COMMENT_REWARD = 'comment_reward',    // 评论奖励
-  TRANSFER_IN = 'transfer_in',          // 转账收入
-  TRANSFER_OUT = 'transfer_out',        // 转账支出
-  ADMIN_ADJUST = 'admin_adjust',        // 管理员调整
-  FREEZE = 'freeze',                    // 资金冻结
-  UNFREEZE = 'unfreeze'                 // 资金解冻
-}
-```
-
-#### 交易状态枚举
-
-```typescript
-enum TransactionStatus {
-  PENDING = 'pending',        // 待处理
-  PROCESSING = 'processing',  // 处理中
-  SUCCESS = 'success',        // 成功
-  FAILED = 'failed',         // 失败
-  CANCELLED = 'cancelled'     // 已取消
-}
-```
-
-### 2.2 数据结构定义
-
-#### 用户余额结构 (UserBalance)
-
-```typescript
 interface UserBalance {
-  id: number;                    // 主键ID
-  userId: number;                // 用户ID
-  balance: number;               // 可用余额(胡萝卜)
-  frozenBalance: number;         // 冻结余额(胡萝卜)
-  totalEarned: number;           // 累计获得(胡萝卜)
-  totalSpent: number;            // 累计消费(胡萝卜)
-  totalTransferredIn: number;    // 累计转入(胡萝卜)
-  totalTransferredOut: number;   // 累计转出(胡萝卜)
-  version: number;               // 乐观锁版本号
-  createTime: Date;              // 创建时间
-  modifyTime: Date;              // 修改时间
+  voUserId: LongId;
+  voBalance: CoinAmount;
+  voFrozenBalance: CoinAmount;
+  voTotalEarned: CoinAmount;
+  voTotalSpent: CoinAmount;
+  voTotalTransferredIn: CoinAmount;
+  voTotalTransferredOut: CoinAmount;
+  voCreateTime: string;
+  voModifyTime?: string | null;
 }
 ```
 
-#### 交易记录结构 (CoinTransaction)
+`voBalanceDisplay / voFrozenBalanceDisplay` 是历史兼容展示字段。当前 client 使用数值字段和 locale formatter，不依赖服务端固定格式。
 
-```typescript
+### 2.2 流水字段
+
+```ts
 interface CoinTransaction {
-  id: number;                    // 主键ID
-  transactionNo: string;         // 交易流水号
-  fromUserId?: number;           // 发起方用户ID
-  toUserId?: number;             // 接收方用户ID
-  amount: number;                // 交易金额(胡萝卜)
-  fee: number;                   // 手续费(胡萝卜)
-  theoreticalAmount: number;     // 理论金额(白萝卜)
-  roundingDiff: number;          // 舍入差额(白萝卜)
-  transactionType: TransactionType; // 交易类型
-  status: TransactionStatus;     // 交易状态
-  businessType?: string;         // 业务类型
-  businessId?: number;           // 业务ID
-  remark?: string;               // 备注
-  createTime: Date;              // 创建时间
+  voId: LongId;
+  voTransactionNo: string;
+  voFromUserId: LongId | null;
+  voFromUserName: string | null;
+  voToUserId: LongId | null;
+  voToUserName: string | null;
+  voAmount: CoinAmount;
+  voFee: CoinAmount;
+  voTransactionType: string;
+  voStatus: string;
+  voBusinessType: string | null;
+  voBusinessId: LongId | null;
+  voRemark: string | null;
+  voCreateTime: string;
 }
 ```
 
-#### 支付密码结构 (UserPaymentPassword)
+- `voTransactionNo` 是完整流水号字符串，不得以数值 ID 替代。
+- `voFromUserId / voToUserId` 用于判断当前用户的收支方向；空参与方表示系统。
+- 用户名和备注属于人工内容，原样展示。
+- `voTransactionTypeDisplay / voStatusDisplay / voAmountDisplay / voFeeDisplay` 仅保留旧消费者兼容。
 
-```typescript
-interface UserPaymentPassword {
-  id: number;                    // 主键ID
-  userId: number;                // 用户ID
-  passwordHash: string;          // 密码哈希值，v2 为 Argon2id 编码串
-  salt: string;                  // 旧版 SHA256 盐值，v2 保留为空字符串
-  passcodeVersion?: number;      // 1=SHA256旧版，2=Argon2id当前版
-  failedAttempts: number;        // 失败尝试次数
-  lockedUntil?: Date;            // 锁定到期时间
-  lastUsedTime?: Date;           // 最后使用时间
-  createTime: Date;              // 创建时间
-  modifyTime: Date;              // 修改时间
-}
+## 3. 稳定系统词元
+
+### 3.1 交易类型
+
+当前已知类型包括：
+
+```text
+SYSTEM_GRANT
+LIKE_REWARD
+COMMENT_REWARD
+HIGHLIGHT_REWARD
+GODCOMMENT_REWARD
+GODLIKE_REWARD
+SOFA_REWARD
+TRANSFER
+TRANSFER_IN
+TRANSFER_OUT
+TIP
+CONSUME
+PURCHASE
+REFUND
+PENALTY
+ADMIN_ADJUST
 ```
 
-### 2.3 业务规则定义
+client 只按 `voTransactionType` 解析宿主词元。服务端新增未知类型时，client 显示稳定原值，不猜测或映射为“其他类型”。
 
-#### 转账规则
+### 3.2 交易状态
 
-| 规则项 | 限制值 | 说明 |
-|--------|--------|------|
-| 单笔转账最小金额 | 1胡萝卜 | 避免微小金额转账 |
-| 单笔转账最大金额 | 100万胡萝卜 | 防止大额异常转账 |
-| 日累计转账限额 | 500万胡萝卜 | 单日转账总额限制 |
-| 转账手续费 | 0胡萝卜 | 当前免手续费 |
-| 转账冷却时间 | 10秒 | 防止频繁操作 |
-| 重复提交保护 | `coin-transfer:{uuid}` | 同 key 同摘要重试返回同一终态 |
-
-#### 支付密码规则
-
-| 规则项 | 限制值 | 说明 |
-|--------|--------|------|
-| 密码长度 | 6位数字 | 纯数字密码 |
-| 失败锁定次数 | 5次 | 连续失败5次锁定 |
-| 锁定时间 | 30分钟 | 自动解锁时间 |
-| 密码有效期 | 90天 | 定期提醒更新 |
-| 重复密码限制 | 不能与最近3次相同 | 防止密码重复使用 |
-
-#### 余额计算规则
-
-```typescript
-// 总余额 = 可用余额 + 冻结余额
-totalBalance = balance + frozenBalance
-
-// 可转账金额 = 可用余额
-availableForTransfer = balance
-
-// 累计净收入 = 累计获得 - 累计消费
-netIncome = totalEarned - totalSpent
-
-// 累计净转账 = 累计转入 - 累计转出
-netTransfer = totalTransferredIn - totalTransferredOut
+```text
+PENDING
+SUCCESS
+FAILED
+CANCELLED
 ```
 
-### 2.4 状态机定义
+控制流、颜色和筛选都使用 `voStatus`；未知状态保留原值并使用中性样式。
 
-#### 交易状态流转
+### 3.3 统计分类
 
-```
-[PENDING] ──验证通过──> [PROCESSING] ──执行成功──> [SUCCESS]
-    │                        │
-    │                        └──执行失败──> [FAILED]
-    │
-    └──验证失败/用户取消──> [CANCELLED]
-```
+统计接口按方向返回稳定分类：
 
-#### 支付密码状态流转
-
-```
-[NORMAL] ──输入错误──> [FAILED_ATTEMPT] ──达到上限──> [LOCKED]
-    │                        │                      │
-    │                        └──重置计数──> [NORMAL] │
-    │                                              │
-    └──管理员解锁/时间到期──<─────────────────────────┘
+```text
+IN_SYSTEM_GRANT  IN_LIKE_REWARD  IN_COMMENT_REWARD
+IN_GOD_COMMENT_REWARD  IN_SOFA_REWARD  IN_TRANSFER
+IN_REFUND  IN_OTHER
+OUT_TRANSFER  OUT_CONSUME  OUT_PENALTY  OUT_OTHER
 ```
 
-### 2.5 安全机制
+`voCategory` 是系统词元，不是运营分类名称。client 按 `pit.statistics.category.*` 解析，未知分类直接显示原值。
 
-#### 并发控制
-- **乐观锁**：使用版本号防止并发修改
-- **重试机制**：失败时指数退避重试（最多3次）
-- **事务隔离**：确保转账操作的原子性
+### 3.4 安全日志
 
-#### 数据完整性
-- **余额一致性**：转账前后总金额保持不变
-- **审计追踪**：所有操作记录完整日志
-- **数据校验**：关键数据多重校验
+- `voType`：`password_verify / password_change / password_set / account_unlock / payment_password` 等稳定类型。
+- `voResult`：`success / failed`。
+- `voAction`：历史中文动作说明，仅保留兼容。
+- IP、User-Agent 和时间是审计内容，分别按原文和当前 locale 展示。
 
-#### 安全防护
-- **密码加密**：BCrypt哈希存储
-- **防暴力破解**：失败次数限制和锁定机制
-- **操作日志**：完整的用户操作记录
+## 4. 业务规则边界
 
----
+### 4.1 用户间转移
+
+服务端权威规则包括：
+
+- 发起方和接收方不能相同；
+- 金额必须是正整数；
+- 发起方可用余额必须充足，双方账户必须可用；
+- 支付口令必须已配置、格式有效、验证成功且未锁定；
+- 写入使用事务与既有并发重试；
+- 可选幂等键按同键同请求摘要重放，同键不同摘要返回冲突。
+
+前端校验只用于即时反馈，不能替代服务端规则。本文不新增单笔上限、每日上限、冷却或手续费规则。
+
+### 4.2 余额关系
+
+```text
+总余额 = 可用余额 + 冻结余额
+累计净收入 = 累计获得 - 累计消费
+累计净转移 = 累计转入 - 累计转出
+```
+
+这些关系用于展示计算，不改变 Service 的记账语义。
+
+### 4.3 支付口令
+
+- 当前口令是六位数字，六位完全相同不被接受；
+- 当前哈希版本为 Argon2id；可识别的 SHA-256 v1 在成功验证后自动升级，缺失或超出支持范围的版本必须重置；
+- 连续失败五次进入三十分钟锁定；
+- 修改口令前验证当前口令；
+- 口令明文不得进入日志或持久化响应。
+
+## 5. 错误契约
+
+### 5.1 萝卜流水与转移
+
+| 场景 | HTTP | Code | MessageKey |
+| --- | ---: | --- | --- |
+| 流水不存在 | 404 | `Coin.TransactionNotFound` | `error.coin.transaction_not_found` |
+| 自转移 | 400 | `Coin.TransferSelfRejected` | `error.coin.transfer_self_rejected` |
+| 金额无效 | 400 | `Coin.TransferAmountInvalid` | `error.coin.transfer_amount_invalid` |
+| 余额不足 | 409 | `Coin.TransferInsufficientBalance` | `error.coin.transfer_insufficient_balance` |
+| 账户不可用 | 409 | `Coin.TransferAccountUnavailable` | `error.coin.transfer_account_unavailable` |
+| 并发冲突 | 409 | `Coin.TransferConcurrencyConflict` | `error.coin.transfer_concurrency_conflict` |
+| 同请求处理中 | 409 | `Coin.TransferProcessing` | `error.coin.transfer_processing` |
+| 幂等键冲突 / 无效 | 409 / 400 | `Coin.TransferIdempotencyConflict / Invalid` | 对应 `error.coin.*` |
+| 终态重放缺失 | 409 | `Coin.TransferReplayUnavailable` | `error.coin.transfer_replay_unavailable` |
+
+### 5.2 支付口令
+
+| 场景 | HTTP | Code | MessageKey |
+| --- | ---: | --- | --- |
+| 缺少、格式错误、重复数字、确认不一致 | 400 | `PaymentPassword.*` | 对应 `error.payment_password.*` |
+| 已配置 / 未配置 | 409 | `PaymentPassword.AlreadyConfigured / NotConfigured` | 对应 `error.payment_password.*` |
+| 验证失败 | 400 | `PaymentPassword.Invalid` | `error.payment_password.invalid` |
+| 暂时锁定 | 429 | `PaymentPassword.Locked` | `error.payment_password.locked` |
+| 旧口令升级 | 409 | `PAYMENT_PASSCODE_UPGRADE_REQUIRED` | `error.payment_password.upgrade_required` |
+
+`MessageInfo` 是按 `Accept-Language` 生成的安全兜底；client 控制流只使用 HTTP status 和 `Code`，本地提示优先使用 `MessageKey`。
 
 ## 相关文档
+
 - [萝卜坑应用总体设计](/guide/radish-pit-system)
 - [萝卜坑功能模块](/guide/radish-pit-game-mechanics)
 - [萝卜币系统](/guide/radish-coin-system)
-
----
-
-> 本文档随萝卜坑应用开发持续更新，如有变更请同步修改 [更新日志](/changelog/)。

@@ -7,11 +7,12 @@ import { searchUsersForMention, type UserMentionOption } from '@/api/user';
 import { normalizePositiveLongIdKey } from '@/utils/longId';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { useTranslation } from 'react-i18next';
+import type { CoinAmount } from '@/api/coin';
 import type { TransferFormData } from '../../types';
 import styles from './TransferForm.module.css';
 
 interface TransferFormProps {
-  balance: number;
+  balance: CoinAmount;
   displayMode: 'carrot' | 'white';
   loading: boolean;
   onSubmit: (data: TransferFormData) => void;
@@ -21,7 +22,8 @@ interface TransferFormProps {
  * 转账表单组件
  */
 export const TransferForm = ({ balance, displayMode, loading, onSubmit }: TransferFormProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [formData, setFormData] = useState<Partial<TransferFormData>>({
     amount: 0,
     note: '',
@@ -34,7 +36,11 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   const [showUserDropdown, setShowUserDropdown] = useState(false);
   const [amountValidation, setAmountValidation] = useState<{ isValid: boolean; message?: string }>({ isValid: true });
 
-  const useWhiteRadish = displayMode === 'white';
+  const passcodeValidationMessages = {
+    requiredMessage: t('pit.passcode.validation.required'),
+    formatMessage: t('pit.passcode.validation.format'),
+    repeatedDigitsMessage: t('pit.passcode.validation.repeatedDigits'),
+  };
 
   // 防抖搜索用户
   const searchUsers = useMemo(
@@ -77,7 +83,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
     // 实时验证转账金额
     if (field === 'amount') {
-      const validation = validateTransferAmount(Number(value), balance);
+      const validation = validateTransferAmount(Number(value), balance, t);
       setAmountValidation(validation);
     }
   };
@@ -98,7 +104,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
     const displayHandle = resolveVisibleUserHandle(user, displayName) || displayName;
 
     if (!userId) {
-      setErrors(prev => ({ ...prev, recipientId: '用户 ID 无效，请重新选择接收方' }));
+      setErrors(prev => ({ ...prev, recipientId: t('pit.transfer.validation.recipientInvalid') }));
       return;
     }
 
@@ -120,25 +126,28 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
     // 验证接收方
     if (!recipientId) {
-      newErrors.recipientId = '请选择接收方用户';
+      newErrors.recipientId = t('pit.transfer.validation.recipientRequired');
     }
 
     if (!formData.recipientName?.trim()) {
-      newErrors.recipientName = '请输入接收方展示名或公开句柄';
+      newErrors.recipientName = t('pit.transfer.validation.recipientQueryRequired');
     }
 
     // 验证金额
     if (!formData.amount || formData.amount <= 0) {
-      newErrors.amount = '请输入转移金额';
+      newErrors.amount = t('pit.transfer.validation.amountRequired');
     } else {
-      const validation = validateTransferAmount(formData.amount, balance);
+      const validation = validateTransferAmount(formData.amount, balance, t);
       if (!validation.isValid) {
-        newErrors.amount = validation.message || '金额无效';
+        newErrors.amount = validation.message || t('pit.transfer.validation.amountInvalid');
       }
     }
 
     // 验证支付口令
-    const paymentPasscodeError = getPaymentPasscodeValidationMessage(formData.paymentPassword ?? '');
+    const paymentPasscodeError = getPaymentPasscodeValidationMessage(
+      formData.paymentPassword ?? '',
+      passcodeValidationMessages,
+    );
     if (paymentPasscodeError) {
       newErrors.paymentPassword = paymentPasscodeError;
     }
@@ -173,7 +182,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
   };
 
   const handleQuickAmount = (percentage: number) => {
-    const quickAmount = Math.floor(balance * percentage);
+    const quickAmount = Math.floor(Math.min(Number(balance), 100000) * percentage);
     handleInputChange('amount', quickAmount);
   };
 
@@ -182,7 +191,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载账户信息中...</p>
+          <p>{t('pit.overview.loading')}</p>
         </div>
       </div>
     );
@@ -194,10 +203,12 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>
             <span className={styles.cardIcon}>💸</span>
-            转移信息
+            {t('pit.transfer.form.title')}
           </h3>
           <div className={styles.balanceInfo}>
-            可用存量: {formatCoinAmount(balance, true, useWhiteRadish)}
+            {t('pit.transfer.form.available', {
+              value: formatCoinAmount(balance, language, t, displayMode),
+            })}
           </div>
         </div>
 
@@ -205,13 +216,13 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
           {/* 接收方选择 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              接收方 <span className={styles.required}>*</span>
+              {t('pit.transfer.form.recipient')} <span className={styles.required}>*</span>
             </label>
             <div className={styles.userSearchContainer}>
               <input
                 type="text"
                 className={`${styles.input} ${errors.recipientName ? styles.error : ''}`}
-                placeholder="输入展示名或公开句柄搜索..."
+                placeholder={t('pit.transfer.form.recipientPlaceholder')}
                 value={userSearchQuery}
                 onChange={(e) => handleUserSearch(e.target.value)}
                 onFocus={() => userSearchResults.length > 0 && setShowUserDropdown(true)}
@@ -260,7 +271,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
           {/* 转移金额 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              转移金额 <span className={styles.required}>*</span>
+              {t('pit.transfer.form.amount')} <span className={styles.required}>*</span>
             </label>
             <div className={styles.amountContainer}>
               <input
@@ -268,14 +279,14 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                 className={`${styles.input} ${styles.amountInput} ${
                   errors.amount || !amountValidation.isValid ? styles.error : ''
                 }`}
-                placeholder="请输入转移金额"
+                placeholder={t('pit.transfer.form.amountPlaceholder')}
                 value={formData.amount || ''}
                 onChange={(e) => handleInputChange('amount', Number(e.target.value))}
                 min="1"
-                max={balance}
+                max={Math.min(Number(balance), 100000)}
               />
               <div className={styles.amountUnit}>
-                {useWhiteRadish ? '白萝卜' : '胡萝卜'}
+                {t('pit.currency.carrot')}
               </div>
             </div>
 
@@ -307,7 +318,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
                 className={styles.quickAmountButton}
                 onClick={() => handleQuickAmount(1)}
               >
-                全部
+                {t('pit.transfer.form.allAvailable')}
               </button>
             </div>
 
@@ -320,10 +331,10 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
 
           {/* 转移备注 */}
           <div className={styles.formGroup}>
-            <label className={styles.label}>转移备注</label>
+            <label className={styles.label}>{t('pit.transfer.form.remark')}</label>
             <textarea
               className={styles.textarea}
-              placeholder="请输入转移备注（可选）"
+              placeholder={t('pit.transfer.form.remarkPlaceholder')}
               value={formData.note || ''}
               onChange={(e) => handleInputChange('note', e.target.value)}
               maxLength={200}
@@ -337,14 +348,14 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
           {/* 支付口令 */}
           <div className={styles.formGroup}>
             <label className={styles.label}>
-              支付口令 <span className={styles.required}>*</span>
+              {t('pit.transfer.form.passcode')} <span className={styles.required}>*</span>
             </label>
             <PasscodeInput
               id="transfer-payment-passcode"
               value={formData.paymentPassword || ''}
               onChange={(value) => handleInputChange('paymentPassword', value)}
               error={errors.paymentPassword}
-              helperText="请输入 6 位数字支付口令以确认本次转移"
+              helperText={t('pit.transfer.form.passcodeHelper')}
               autoComplete="current-password"
             />
           </div>
@@ -356,7 +367,7 @@ export const TransferForm = ({ balance, displayMode, loading, onSubmit }: Transf
               className={styles.submitButton}
               disabled={!amountValidation.isValid || Object.keys(errors).length > 0}
             >
-              下一步
+              {t('pit.common.next')}
             </button>
           </div>
         </form>

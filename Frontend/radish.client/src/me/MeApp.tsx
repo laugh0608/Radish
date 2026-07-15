@@ -2,7 +2,6 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState, type MouseEv
 import { useTranslation } from 'react-i18next';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
-import { formatLocalizedNumber } from '@radish/ui';
 import type { MyAttachmentItem } from '@/api/attachment';
 import { coinApi, type CoinTransaction, type UserBalance } from '@/api/coin';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
@@ -31,6 +30,12 @@ import {
   formatExperienceSignedNumber,
   formatExperienceType,
 } from '@/experience/experiencePresentation';
+import {
+  absoluteCoinValue,
+  formatCoinNumber,
+  formatTransactionType,
+  resolveTransactionDirection,
+} from '@/coin/coinPresentation';
 import { buildPublicForumPath } from '@/public/forumRouteState';
 import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
@@ -358,10 +363,6 @@ export const MeApp = () => {
     () => createExperienceBarPresentation(t, language, displayTimeZone),
     [displayTimeZone, language, t],
   );
-  const formatNumber = (value: number | null | undefined) => (
-    formatLocalizedNumber(Number(value ?? 0), language)
-  );
-  const formatSignedNumber = (value: number) => `${value > 0 ? '+' : ''}${formatNumber(value)}`;
   const formatDisplayDateTime = (value: string | number | Date | null | undefined, fallback = '-') => (
     formatDateTimeByTimeZone(value, displayTimeZone, fallback, getIntlLocale(language))
   );
@@ -471,8 +472,8 @@ export const MeApp = () => {
       getPublicProfile(userId),
       experienceApi.getMyExperience(t),
       experienceApi.getTransactions({ pageIndex: 1, pageSize: 5 }, t),
-      coinApi.getBalance(),
-      coinApi.getTransactions(1, 5),
+      coinApi.getBalance(t),
+      coinApi.getTransactions(1, 5, null, null, t),
       getMyBrowseHistory(1, 5),
       getMyPet(t),
     ]);
@@ -1463,14 +1464,14 @@ export const MeApp = () => {
               <p className={styles.errorText}>{dashboardData.errors.assets}</p>
             ) : balance ? (
               <>
-                <div className={styles.balanceValue}>{formatNumber(balance.voBalance)} {t('me.carrotUnit')}</div>
+                <div className={styles.balanceValue}>{formatCoinNumber(balance.voBalance, language)} {t('me.carrotUnit')}</div>
                 <div className={styles.metricRow}>
                   <span>{t('me.frozenBalance')}</span>
-                  <strong>{formatNumber(balance.voFrozenBalance)} {t('me.carrotUnit')}</strong>
+                  <strong>{formatCoinNumber(balance.voFrozenBalance, language)} {t('me.carrotUnit')}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.totalEarned')}</span>
-                  <strong>{formatNumber(balance.voTotalEarned)}</strong>
+                  <strong>{formatCoinNumber(balance.voTotalEarned, language)}</strong>
                 </div>
               </>
             ) : (
@@ -1581,18 +1582,23 @@ export const MeApp = () => {
             </div>
             {dashboardData.coinTransactions.length > 0 ? (
               <div className={styles.itemList}>
-                {dashboardData.coinTransactions.map((transaction) => (
-                  <div key={transaction.voId} className={styles.listItem}>
-                    <div className={styles.itemIcon} data-tone={transaction.voAmount >= 0 ? 'positive' : 'negative'}>
-                      <Icon icon={transaction.voAmount >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
+                {dashboardData.coinTransactions.map((transaction) => {
+                  const direction = resolveTransactionDirection(transaction, userId);
+                  return (
+                    <div key={transaction.voId} className={styles.listItem}>
+                      <div className={styles.itemIcon} data-tone={direction === 'in' ? 'positive' : 'negative'}>
+                        <Icon icon={direction === 'in' ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
+                      </div>
+                      <div className={styles.itemBody}>
+                        <strong>{formatTransactionType(transaction.voTransactionType, t)}</strong>
+                        <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
+                      </div>
+                      <div className={styles.itemAmount}>
+                        {direction === 'in' ? '+' : '-'}{formatCoinNumber(absoluteCoinValue(transaction.voAmount), language)}
+                      </div>
                     </div>
-                    <div className={styles.itemBody}>
-                      <strong>{t(`me.assets.type.${transaction.voTransactionType}`, { defaultValue: transaction.voTransactionType })}</strong>
-                      <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
-                    </div>
-                    <div className={styles.itemAmount}>{formatSignedNumber(transaction.voAmount)}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className={styles.emptyText}>{t('me.recentAssetsEmpty')}</p>

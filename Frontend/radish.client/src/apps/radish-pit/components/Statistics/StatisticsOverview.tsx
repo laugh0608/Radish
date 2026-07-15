@@ -1,4 +1,15 @@
-import { formatCoinAmount } from '../../utils';
+import { useTranslation } from 'react-i18next';
+import {
+  addCoinValues,
+  compareCoinValues,
+  divideCoinValue,
+  formatCoinAmount,
+  formatCoinNumber,
+  formatCoinRatio,
+  formatStatisticsCategory,
+  subtractCoinValues,
+  toCoinChartNumber,
+} from '../../utils';
 import type { StatisticsData } from '../../types';
 import styles from './StatisticsOverview.module.css';
 
@@ -20,14 +31,15 @@ export const StatisticsOverview = ({
   displayMode,
   timeRange
 }: StatisticsOverviewProps) => {
-  const useWhiteRadish = displayMode === 'white';
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
 
   if (loading) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载统计数据中...</p>
+          <p>{t('pit.statistics.loading')}</p>
         </div>
       </div>
     );
@@ -38,7 +50,7 @@ export const StatisticsOverview = ({
       <div className={styles.container}>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
-          <h3>加载失败</h3>
+          <h3>{t('pit.common.loadFailed')}</h3>
           <p>{error}</p>
         </div>
       </div>
@@ -50,8 +62,8 @@ export const StatisticsOverview = ({
       <div className={styles.container}>
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>📊</div>
-          <h3>暂无统计数据</h3>
-          <p>开始使用萝卜后，统计数据将显示在这里</p>
+          <h3>{t('pit.statistics.empty')}</h3>
+          <p>{t('pit.statistics.emptyDescription')}</p>
         </div>
       </div>
     );
@@ -59,21 +71,15 @@ export const StatisticsOverview = ({
 
   // 从趋势数据中计算收入和支出总额
   const trendData = data.voTrendData || [];
-  const totalIncome = trendData.reduce((sum, item) => sum + item.voIncome, 0);
-  const totalExpense = trendData.reduce((sum, item) => sum + item.voExpense, 0);
-  const netProfit = totalIncome - totalExpense;
+  const totalIncome = addCoinValues(...trendData.map((item) => item.voIncome));
+  const totalExpense = addCoinValues(...trendData.map((item) => item.voExpense));
+  const netProfit = subtractCoinValues(totalIncome, totalExpense);
+  const netProfitIsPositive = compareCoinValues(netProfit, 0) >= 0;
 
   // 分类统计数据
   const categoryStats = data.voCategoryStats || [];
 
-  const getTimeRangeText = () => {
-    switch (timeRange) {
-      case 'month': return '本月';
-      case 'quarter': return '本季度';
-      case 'year': return '本年度';
-      default: return '当前';
-    }
-  };
+  const timeRangeText = t(`pit.statistics.period.${timeRange}`);
 
   return (
     <div className={styles.container}>
@@ -82,13 +88,12 @@ export const StatisticsOverview = ({
         <div className={`${styles.metricCard} ${styles.income}`}>
           <div className={styles.metricIcon}>📈</div>
           <div className={styles.metricContent}>
-            <div className={styles.metricLabel}>{getTimeRangeText()}收入</div>
+            <div className={styles.metricLabel}>{t('pit.statistics.periodIncome', { range: timeRangeText })}</div>
             <div className={styles.metricValue}>
-              {formatCoinAmount(totalIncome, true, useWhiteRadish)}
+              {formatCoinAmount(totalIncome, language, t, displayMode)}
             </div>
             <div className={styles.metricChange}>
-              <span className={styles.changePositive}>+12.5%</span>
-              <span className={styles.changeText}>较上期</span>
+              <span className={styles.changeText}>{t('pit.statistics.currentPeriod')}</span>
             </div>
           </div>
         </div>
@@ -96,30 +101,26 @@ export const StatisticsOverview = ({
         <div className={`${styles.metricCard} ${styles.expense}`}>
           <div className={styles.metricIcon}>📉</div>
           <div className={styles.metricContent}>
-            <div className={styles.metricLabel}>{getTimeRangeText()}支出</div>
+            <div className={styles.metricLabel}>{t('pit.statistics.periodExpense', { range: timeRangeText })}</div>
             <div className={styles.metricValue}>
-              {formatCoinAmount(totalExpense, true, useWhiteRadish)}
+              {formatCoinAmount(totalExpense, language, t, displayMode)}
             </div>
             <div className={styles.metricChange}>
-              <span className={styles.changeNegative}>-5.2%</span>
-              <span className={styles.changeText}>较上期</span>
+              <span className={styles.changeText}>{t('pit.statistics.currentPeriod')}</span>
             </div>
           </div>
         </div>
 
-        <div className={`${styles.metricCard} ${styles.profit} ${netProfit >= 0 ? styles.positive : styles.negative}`}>
-          <div className={styles.metricIcon}>{netProfit >= 0 ? '💰' : '⚠️'}</div>
+        <div className={`${styles.metricCard} ${styles.profit} ${netProfitIsPositive ? styles.positive : styles.negative}`}>
+          <div className={styles.metricIcon}>{netProfitIsPositive ? '💰' : '⚠️'}</div>
           <div className={styles.metricContent}>
-            <div className={styles.metricLabel}>{getTimeRangeText()}净收益</div>
+            <div className={styles.metricLabel}>{t('pit.statistics.periodNet', { range: timeRangeText })}</div>
             <div className={styles.metricValue}>
-              {netProfit >= 0 ? '+' : ''}
-              {formatCoinAmount(netProfit, true, useWhiteRadish)}
+              {netProfitIsPositive ? '+' : ''}
+              {formatCoinAmount(netProfit, language, t, displayMode)}
             </div>
             <div className={styles.metricChange}>
-              <span className={netProfit >= 0 ? styles.changePositive : styles.changeNegative}>
-                {netProfit >= 0 ? '+' : ''}18.7%
-              </span>
-              <span className={styles.changeText}>较上期</span>
+              <span className={styles.changeText}>{t('pit.statistics.currentPeriod')}</span>
             </div>
           </div>
         </div>
@@ -127,15 +128,15 @@ export const StatisticsOverview = ({
 
       {/* 快速统计 */}
       <div className={styles.quickStats}>
-        <h4 className={styles.quickStatsTitle}>快速统计</h4>
+        <h4 className={styles.quickStatsTitle}>{t('pit.statistics.quick')}</h4>
         <div className={styles.quickStatsGrid}>
           <div className={styles.quickStatItem}>
             <div className={styles.quickStatIcon}>🎯</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {categoryStats.reduce((sum, cat) => sum + cat.voCount, 0)}
+                {formatCoinNumber(categoryStats.reduce((sum, cat) => sum + cat.voCount, 0), language)}
               </div>
-              <div className={styles.quickStatLabel}>总交易次数</div>
+              <div className={styles.quickStatLabel}>{t('pit.statistics.totalTransactions')}</div>
             </div>
           </div>
 
@@ -143,9 +144,15 @@ export const StatisticsOverview = ({
             <div className={styles.quickStatIcon}>📅</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {trendData.length > 0 ? Math.round(totalIncome / trendData.length) : 0}
+                {formatCoinAmount(
+                  trendData.length > 0 ? divideCoinValue(totalIncome, trendData.length) : 0,
+                  language,
+                  t,
+                  displayMode,
+                  false,
+                )}
               </div>
-              <div className={styles.quickStatLabel}>日均收入</div>
+              <div className={styles.quickStatLabel}>{t('pit.statistics.dailyAverage')}</div>
             </div>
           </div>
 
@@ -153,9 +160,11 @@ export const StatisticsOverview = ({
             <div className={styles.quickStatIcon}>🏆</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {categoryStats.length > 0 ? categoryStats[0].voCategory : '无'}
+                {categoryStats.length > 0
+                  ? formatStatisticsCategory(categoryStats[0].voCategory, t)
+                  : t('pit.common.none')}
               </div>
-              <div className={styles.quickStatLabel}>主要收入来源</div>
+              <div className={styles.quickStatLabel}>{t('pit.statistics.mainSource')}</div>
             </div>
           </div>
 
@@ -163,9 +172,14 @@ export const StatisticsOverview = ({
             <div className={styles.quickStatIcon}>💡</div>
             <div className={styles.quickStatContent}>
               <div className={styles.quickStatValue}>
-                {totalExpense > 0 ? Math.round((totalIncome / totalExpense) * 100) : 0}%
+                {formatCoinRatio(
+                  compareCoinValues(totalExpense, 0) > 0
+                    ? toCoinChartNumber(totalIncome) / toCoinChartNumber(totalExpense)
+                    : 0,
+                  language,
+                )}
               </div>
-              <div className={styles.quickStatLabel}>收支比率</div>
+              <div className={styles.quickStatLabel}>{t('pit.statistics.ratio')}</div>
             </div>
           </div>
         </div>
@@ -173,23 +187,30 @@ export const StatisticsOverview = ({
 
       {/* 分类排行 */}
       <div className={styles.categoryRanking}>
-        <h4 className={styles.categoryTitle}>收入分类排行</h4>
+        <h4 className={styles.categoryTitle}>{t('pit.statistics.categoryRanking')}</h4>
         <div className={styles.categoryList}>
           {categoryStats.slice(0, 5).map((category, index) => (
             <div key={category.voCategory} className={styles.categoryItem}>
               <div className={styles.categoryRank}>#{index + 1}</div>
               <div className={styles.categoryInfo}>
-                <div className={styles.categoryName}>{category.voCategory}</div>
-                <div className={styles.categoryCount}>{category.voCount} 次</div>
+                <div className={styles.categoryName}>{formatStatisticsCategory(category.voCategory, t)}</div>
+                <div className={styles.categoryCount}>
+                  {t('pit.statistics.transactionCount', {
+                    count: category.voCount,
+                    value: formatCoinNumber(category.voCount, language),
+                  })}
+                </div>
               </div>
               <div className={styles.categoryAmount}>
-                {formatCoinAmount(category.voAmount, true, useWhiteRadish)}
+                {formatCoinAmount(category.voAmount, language, t, displayMode)}
               </div>
               <div className={styles.categoryProgress}>
                 <div
                   className={styles.categoryProgressBar}
                   style={{
-                    width: `${categoryStats[0]?.voAmount ? (category.voAmount / categoryStats[0].voAmount) * 100 : 0}%`
+                    width: `${categoryStats[0] && compareCoinValues(categoryStats[0].voAmount, 0) > 0
+                      ? (toCoinChartNumber(category.voAmount) / toCoinChartNumber(categoryStats[0].voAmount)) * 100
+                      : 0}%`
                   }}
                 ></div>
               </div>

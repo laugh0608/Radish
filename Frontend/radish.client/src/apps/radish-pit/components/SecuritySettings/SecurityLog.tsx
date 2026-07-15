@@ -1,61 +1,73 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { paymentPasswordApi, type PaymentPasswordSecurityLog } from '@/api/paymentPassword';
-import { formatDateTime } from '../../utils';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { formatCoinDateTime, formatCoinNumber, formatSecurityLogType } from '../../utils';
 import styles from './SecurityLog.module.css';
 
+type SecurityLogFilter = 'all' | 'success' | 'failed';
+
+const PAGE_SIZE = 20;
+
 /**
- * 安全日志组件
+ * 安全日志组件。展示名称只由稳定 voType / voResult 词元解析。
  */
 export const SecurityLog = () => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
   const [logs, setLogs] = useState<PaymentPasswordSecurityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'success' | 'failed'>('all');
+  const [filter, setFilter] = useState<SecurityLogFilter>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadSecurityLogs();
-  }, []);
-
-  const loadSecurityLogs = async () => {
+  const loadSecurityLogs = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await paymentPasswordApi.getSecurityLogs(1, 20);
+      const response = await paymentPasswordApi.getSecurityLogs(currentPage, PAGE_SIZE, t);
       setLogs(response.data);
+      setTotalPages(Math.max(1, response.pageCount || 1));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '加载安全日志失败';
+      const errorMessage = err instanceof Error ? err.message : t('pit.api.securityLogsFailed');
       setError(errorMessage);
-      log.error('加载安全日志失败:', err);
+      log.error('SecurityLog', '加载安全日志失败', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, t]);
+
+  useEffect(() => {
+    void loadSecurityLogs();
+  }, [loadSecurityLogs]);
 
   const getLogIcon = (type: string, result: string): string => {
     if (result === 'failed') return '❌';
 
     switch (type) {
       case 'password_verify': return '🔍';
-      case 'password_change': return '🔑';
+      case 'password_change':
+      case 'password_set': return '🔑';
       case 'account_lock': return '🔒';
       case 'account_unlock': return '🔓';
       default: return '📝';
     }
   };
 
-  const filteredLogs = logs.filter(logItem => {
-    if (filter === 'all') return true;
-    return logItem.voResult === filter;
-  });
+  const filteredLogs = logs.filter((logItem) => filter === 'all' || logItem.voResult === filter);
+  const successfulCount = logs.filter((logItem) => logItem.voResult === 'success').length;
+  const failedCount = logs.filter((logItem) => logItem.voResult === 'failed').length;
 
   if (loading) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载安全日志中...</p>
+          <p>{t('pit.security.log.loading')}</p>
         </div>
       </div>
     );
@@ -66,10 +78,10 @@ export const SecurityLog = () => {
       <div className={styles.container}>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
-          <h3>加载失败</h3>
+          <h3>{t('pit.common.loadFailed')}</h3>
           <p>{error}</p>
-          <button className={styles.retryButton} onClick={loadSecurityLogs}>
-            重试
+          <button className={styles.retryButton} onClick={() => void loadSecurityLogs()}>
+            {t('pit.common.retry')}
           </button>
         </div>
       </div>
@@ -78,41 +90,37 @@ export const SecurityLog = () => {
 
   return (
     <div className={styles.container}>
-      {/* 筛选器 */}
       <div className={styles.filters}>
         <h3 className={styles.filtersTitle}>
           <span className={styles.filtersIcon}>📋</span>
-          安全日志
+          {t('pit.security.log.title')}
         </h3>
         <div className={styles.filterButtons}>
-          <button
-            className={`${styles.filterButton} ${filter === 'all' ? styles.active : ''}`}
-            onClick={() => setFilter('all')}
-          >
-            全部 ({logs.length})
-          </button>
-          <button
-            className={`${styles.filterButton} ${filter === 'success' ? styles.active : ''}`}
-            onClick={() => setFilter('success')}
-          >
-            成功 ({logs.filter(l => l.voResult === 'success').length})
-          </button>
-          <button
-            className={`${styles.filterButton} ${filter === 'failed' ? styles.active : ''}`}
-            onClick={() => setFilter('failed')}
-          >
-            失败 ({logs.filter(l => l.voResult === 'failed').length})
-          </button>
+          {([
+            ['all', logs.length],
+            ['success', successfulCount],
+            ['failed', failedCount],
+          ] as Array<[SecurityLogFilter, number]>).map(([value, count]) => (
+            <button
+              key={value}
+              className={`${styles.filterButton} ${filter === value ? styles.active : ''}`}
+              onClick={() => setFilter(value)}
+            >
+              {t(`pit.security.log.filter.${value}`, {
+                count,
+                value: formatCoinNumber(count, language),
+              })}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 日志列表 */}
       <div className={styles.logList}>
         {filteredLogs.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>📝</div>
-            <p>暂无安全日志</p>
-            <p className={styles.emptyHint}>安全相关操作记录将显示在这里</p>
+            <p>{t('pit.security.log.empty')}</p>
+            <p className={styles.emptyHint}>{t('pit.security.log.emptyDescription')}</p>
           </div>
         ) : (
           filteredLogs.map((logItem) => (
@@ -123,19 +131,19 @@ export const SecurityLog = () => {
 
               <div className={styles.logContent}>
                 <div className={styles.logMain}>
-                  <div className={styles.logAction}>{logItem.voAction}</div>
-                  <div className={`${styles.logResult} ${styles[logItem.voResult]}`}>
-                    {logItem.voResult === 'success' ? '成功' : '失败'}
+                  <div className={styles.logAction}>{formatSecurityLogType(logItem.voType, t)}</div>
+                  <div className={`${styles.logResult} ${styles[logItem.voResult] ?? ''}`}>
+                    {t(`pit.security.log.result.${logItem.voResult}`, { defaultValue: logItem.voResult })}
                   </div>
                 </div>
 
                 <div className={styles.logDetails}>
                   <div className={styles.logTime}>
-                    {formatDateTime(logItem.voCreatedAt)}
+                    {formatCoinDateTime(logItem.voCreatedAt, displayTimeZone, language)}
                   </div>
                   {logItem.voIpAddress && (
                     <div className={styles.logIp}>
-                      IP: {logItem.voIpAddress}
+                      {t('pit.security.log.ip', { value: logItem.voIpAddress })}
                     </div>
                   )}
                 </div>
@@ -144,6 +152,29 @@ export const SecurityLog = () => {
           ))
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button
+            className={styles.pageButton}
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+          >
+            {t('pit.common.prevPage')}
+          </button>
+          <span>{t('pit.common.pageInfo', {
+            current: formatCoinNumber(currentPage, language),
+            total: formatCoinNumber(totalPages, language),
+          })}</span>
+          <button
+            className={styles.pageButton}
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+          >
+            {t('pit.common.nextPage')}
+          </button>
+        </div>
+      )}
     </div>
   );
 };

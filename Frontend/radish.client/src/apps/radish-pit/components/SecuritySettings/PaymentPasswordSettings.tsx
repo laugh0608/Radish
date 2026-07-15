@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { paymentPasswordApi } from '@/api/paymentPassword';
 import { PasscodeInput } from '@radish/ui';
@@ -10,6 +11,8 @@ import {
   isSequentialPaymentPasscode
 } from '@/utils/paymentPasscode';
 import { toast } from '@radish/ui/toast';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { formatCoinDateTime, formatCoinNumber, formatPasscodeStrength } from '../../utils';
 import type { SecurityStatus } from '../../types';
 import styles from './PaymentPasswordSettings.module.css';
 
@@ -30,6 +33,9 @@ interface PasswordFormData {
  * 支付密码设置组件
  */
 export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSettingsProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
   const [action, setAction] = useState<PasswordAction>('none');
   const [formData, setFormData] = useState<PasswordFormData>({
     newPassword: '',
@@ -56,18 +62,6 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
     }
   };
 
-  const getPasswordStrengthText = (strength: number): string => {
-    switch (strength) {
-      case 0: return '未完成';
-      case 1: return '无效';
-      case 2: return '较弱';
-      case 3: return '一般';
-      case 4: return '稳妥';
-      case 5: return '较强';
-      default: return '未知';
-    }
-  };
-
   const getPasswordStrengthColor = (strength: number): string => {
     if (strength <= 1) return 'critical';
     if (strength <= 2) return 'low';
@@ -81,7 +75,9 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
     // 验证当前口令（修改口令时）
     if (action === 'change') {
       const currentPasswordError = getPaymentPasscodeValidationMessage(formData.currentPassword ?? '', {
-        requiredMessage: '请输入当前支付口令',
+        requiredMessage: t('pit.passcode.validation.currentRequired'),
+        formatMessage: t('pit.passcode.validation.format'),
+        repeatedDigitsMessage: t('pit.passcode.validation.repeatedDigits'),
         allowRepeatedDigits: true,
       });
       if (currentPasswordError) {
@@ -90,16 +86,20 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
     }
 
     // 验证新口令
-    const newPasswordError = getPaymentPasscodeValidationMessage(formData.newPassword);
+    const newPasswordError = getPaymentPasscodeValidationMessage(formData.newPassword, {
+      requiredMessage: t('pit.passcode.validation.newRequired'),
+      formatMessage: t('pit.passcode.validation.format'),
+      repeatedDigitsMessage: t('pit.passcode.validation.repeatedDigits'),
+    });
     if (newPasswordError) {
       newErrors.newPassword = newPasswordError;
     }
 
     // 验证确认口令
     if (!formData.confirmPassword.trim()) {
-      newErrors.confirmPassword = '请确认新支付口令';
+      newErrors.confirmPassword = t('pit.passcode.validation.confirmRequired');
     } else if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = '两次输入的支付口令不一致';
+      newErrors.confirmPassword = t('pit.passcode.validation.mismatch');
     }
 
     setErrors(newErrors);
@@ -122,14 +122,14 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
         await paymentPasswordApi.setPaymentPassword({
           newPassword: formData.newPassword,
           confirmPassword: formData.confirmPassword
-        });
+        }, t);
       } else if (action === 'change') {
         log.debug('PaymentPasswordSettings', '修改支付口令');
         await paymentPasswordApi.changePaymentPassword({
           currentPassword: formData.currentPassword!,
           newPassword: formData.newPassword,
           confirmPassword: formData.confirmPassword
-        });
+        }, t);
       }
 
       // 重置表单
@@ -143,13 +143,13 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
       toast.success(
         action === 'set'
           ? requiresPasscodeUpgrade
-            ? '支付口令重置成功'
-            : '支付口令设置成功'
-          : '支付口令修改成功'
+            ? t('pit.security.passcode.resetSuccess')
+            : t('pit.security.passcode.setSuccess')
+          : t('pit.security.passcode.changeSuccess')
       );
     } catch (error) {
       log.error('支付口令操作失败:', error);
-      toast.error(error instanceof Error ? error.message : '操作失败，请稍后重试');
+      toast.error(error instanceof Error ? error.message : t('pit.security.passcode.operationFailed'));
     } finally {
       setLoading(false);
     }
@@ -170,7 +170,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
           <div className={styles.statusHeader}>
             <h3 className={styles.statusTitle}>
               <span className={styles.statusIcon}>🔑</span>
-              支付口令状态
+              {t('pit.security.passcode.statusTitle')}
             </h3>
           </div>
 
@@ -183,23 +183,27 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
               </div>
               <div className={styles.indicatorText}>
                 <div className={styles.indicatorTitle}>
-                  {requiresPasscodeUpgrade ? '旧支付口令已废弃' : status?.hasPaymentPassword ? '已设置支付口令' : '未设置支付口令'}
+                  {t(requiresPasscodeUpgrade
+                    ? 'pit.security.passcode.legacy'
+                    : status?.hasPaymentPassword
+                      ? 'pit.security.passcode.configuredFull'
+                      : 'pit.security.passcode.notConfiguredFull')}
                 </div>
                 <div className={styles.indicatorDescription}>
-                  {requiresPasscodeUpgrade
-                    ? '旧支付口令不再支持商城购买和萝卜转移，请直接重置为新的 6 位数字支付口令'
+                  {t(requiresPasscodeUpgrade
+                    ? 'pit.security.passcode.legacyDescription'
                     : status?.hasPaymentPassword
-                    ? '您的转移和购买操作会在支付口令验证后执行'
-                    : '设置支付口令可以保护您的萝卜资产'}
+                      ? 'pit.security.passcode.verifiedOperations'
+                      : 'pit.security.passcode.notConfiguredDescription')}
                 </div>
               </div>
             </div>
 
             {requiresPasscodeUpgrade && (
               <div className={styles.upgradeNotice}>
-                <div className={styles.upgradeTitle}>需要立即重置</div>
+                <div className={styles.upgradeTitle}>{t('pit.security.passcode.resetRequiredTitle')}</div>
                 <div className={styles.upgradeText}>
-                  旧支付口令已经废弃，不能再用于商城购买、萝卜转移或口令修改。请直接设置新的 6 位数字支付口令。
+                  {t('pit.security.passcode.resetRequiredDescription')}
                 </div>
               </div>
             )}
@@ -207,23 +211,28 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
             {status?.hasPaymentPassword && (
               <div className={styles.passwordInfo}>
                 <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>口令强度</div>
+                  <div className={styles.infoLabel}>{t('pit.security.passcode.strength')}</div>
                   <div className={styles.infoValue}>
                     <span className={`${styles.strengthBadge} ${styles[getPasswordStrengthColor(status.strengthLevel ?? 0)]}`}>
-                      {status.strengthLevelDisplay || '未知'}
+                      {formatPasscodeStrength(status.strengthLevel, t)}
                     </span>
                   </div>
                 </div>
                 <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>最后修改</div>
+                  <div className={styles.infoLabel}>{t('pit.security.passcode.lastModified')}</div>
                   <div className={styles.infoValue}>
-                    {status.lastPasswordChangeTimeDisplay || '未知'}
+                    {status.lastPasswordChangeTime
+                      ? formatCoinDateTime(status.lastPasswordChangeTime, displayTimeZone, language)
+                      : t('pit.common.unknown')}
                   </div>
                 </div>
                 <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>失败尝试</div>
+                  <div className={styles.infoLabel}>{t('pit.security.passcode.failedAttempts')}</div>
                   <div className={styles.infoValue}>
-                    {status.failedAttempts} 次
+                    {t('pit.security.attempts.count', {
+                      count: status.failedAttempts,
+                      value: formatCoinNumber(status.failedAttempts, language),
+                    })}
                   </div>
                 </div>
               </div>
@@ -236,14 +245,16 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
                 className={styles.primaryButton}
                 onClick={() => setAction('change')}
               >
-                修改支付口令
+                {t('pit.security.passcode.changeFull')}
               </button>
             ) : (
               <button
                 className={styles.primaryButton}
                 onClick={() => setAction('set')}
               >
-                {requiresPasscodeUpgrade ? '重置为新口令' : '设置支付口令'}
+                {t(requiresPasscodeUpgrade
+                  ? 'pit.security.passcode.resetAsNew'
+                  : 'pit.security.passcode.setFull')}
               </button>
             )}
           </div>
@@ -253,14 +264,14 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
         <div className={styles.securityTips}>
           <h4 className={styles.tipsTitle}>
             <span className={styles.tipsIcon}>💡</span>
-            安全提示
+            {t('pit.security.passcode.tipsTitle')}
           </h4>
           <ul className={styles.tipsList}>
-            <li>支付口令用于保护您的萝卜转移和商城消费</li>
-            <li>支付口令必须为 6 位数字，且不能为 6 个相同数字</li>
-            <li>建议避免使用连续数字组合，例如 123456 或 654321</li>
-            <li>支付口令应与登录密码不同，并定期更换</li>
-            <li>不要在公共场所输入支付口令</li>
+            <li>{t('pit.security.passcode.tipPurpose')}</li>
+            <li>{t('pit.security.passcode.tipFormat')}</li>
+            <li>{t('pit.security.passcode.tipSequence')}</li>
+            <li>{t('pit.security.passcode.tipSeparate')}</li>
+            <li>{t('pit.security.passcode.tipPublic')}</li>
           </ul>
         </div>
       </div>
@@ -273,22 +284,22 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
         <div className={styles.formHeader}>
           <h3 className={styles.formTitle}>
             <span className={styles.formIcon}>🔑</span>
-            {action === 'set' ? '设置支付口令' : '修改支付口令'}
+            {t(action === 'set' ? 'pit.security.passcode.setFull' : 'pit.security.passcode.changeFull')}
           </h3>
           <p className={styles.formSubtitle}>
-            {action === 'set'
+            {t(action === 'set'
               ? requiresPasscodeUpgrade
-                ? '旧支付口令已废弃，请直接设置新的 6 位数字支付口令'
-                : '设置 6 位数字支付口令以保护您的萝卜转移和购买操作'
-              : '输入当前支付口令，并设置新的 6 位数字支付口令'}
+                ? 'pit.security.passcode.formResetDescription'
+                : 'pit.security.passcode.formSetDescription'
+              : 'pit.security.passcode.formChangeDescription')}
           </p>
         </div>
 
         {requiresPasscodeUpgrade && action === 'set' && (
           <div className={styles.upgradeNotice}>
-            <div className={styles.upgradeTitle}>旧口令不再可用</div>
+            <div className={styles.upgradeTitle}>{t('pit.security.passcode.legacyUnavailable')}</div>
             <div className={styles.upgradeText}>
-              本次提交会直接将您的旧支付口令重置为新的 6 位数字支付口令，无需再输入旧口令。
+              {t('pit.security.passcode.legacyResetDescription')}
             </div>
           </div>
         )}
@@ -298,7 +309,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
           {action === 'change' && (
             <div className={styles.formGroup}>
               <label className={styles.label}>
-                当前支付口令 <span className={styles.required}>*</span>
+                {t('pit.security.passcode.current')} <span className={styles.required}>*</span>
               </label>
               <PasscodeInput
                 id="payment-passcode-current"
@@ -306,7 +317,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
                 onChange={(value) => handleInputChange('currentPassword', value)}
                 autoComplete="current-password"
                 error={errors.currentPassword}
-                helperText="请输入当前 6 位支付口令"
+                helperText={t('pit.security.passcode.currentHelper')}
                 disabled={loading}
               />
             </div>
@@ -315,7 +326,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
           {/* 新口令 */}
           <div className={styles.formGroup}>
               <label className={styles.label}>
-                新支付口令 <span className={styles.required}>*</span>
+                {t('pit.security.passcode.new')} <span className={styles.required}>*</span>
               </label>
             <PasscodeInput
               id="payment-passcode-new"
@@ -323,15 +334,15 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
               onChange={(value) => handleInputChange('newPassword', value)}
               autoComplete="new-password"
               error={errors.newPassword}
-              helperText="请输入新的 6 位数字支付口令"
+              helperText={t('pit.security.passcode.newHelper')}
               disabled={loading}
               autoFocus={action === 'set'}
             />
             {formData.newPassword && (
               <div className={styles.passwordStrength}>
-                <div className={styles.strengthLabel}>口令强度：</div>
+                <div className={styles.strengthLabel}>{t('pit.security.passcode.strengthLabel')}</div>
                 <div className={`${styles.strengthValue} ${styles[getPasswordStrengthColor(passwordStrength)]}`}>
-                  {getPasswordStrengthText(passwordStrength)}
+                  {formatPasscodeStrength(passwordStrength, t)}
                 </div>
                 <div className={styles.strengthBar}>
                   <div
@@ -346,7 +357,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
           {/* 确认口令 */}
           <div className={styles.formGroup}>
               <label className={styles.label}>
-                确认新支付口令 <span className={styles.required}>*</span>
+                {t('pit.security.passcode.confirm')} <span className={styles.required}>*</span>
               </label>
             <PasscodeInput
               id="payment-passcode-confirm"
@@ -354,23 +365,23 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
               onChange={(value) => handleInputChange('confirmPassword', value)}
               autoComplete="new-password"
               error={errors.confirmPassword}
-              helperText="请再次输入新的 6 位数字支付口令"
+              helperText={t('pit.security.passcode.confirmHelper')}
               disabled={loading}
             />
           </div>
 
           {/* 口令要求 */}
           <div className={styles.passwordRequirements}>
-            <h5 className={styles.requirementsTitle}>口令要求：</h5>
+            <h5 className={styles.requirementsTitle}>{t('pit.security.passcode.requirements')}</h5>
             <ul className={styles.requirementsList}>
               <li className={isPaymentPasscodeFormatValid(formData.newPassword) ? styles.met : ''}>
-                必须为 6 位数字
+                {t('pit.security.passcode.requirementFormat')}
               </li>
               <li className={isPaymentPasscodeValid(formData.newPassword) ? styles.met : ''}>
-                不能为 6 个相同数字
+                {t('pit.security.passcode.requirementRepeated')}
               </li>
               <li className={isPaymentPasscodeFormatValid(formData.newPassword) && !isSequentialPaymentPasscode(formData.newPassword) ? styles.met : ''}>
-                避免使用连续数字组合
+                {t('pit.security.passcode.requirementSequence')}
               </li>
             </ul>
           </div>
@@ -383,7 +394,7 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
               onClick={handleCancel}
               disabled={loading}
             >
-              取消
+              {t('pit.common.cancel')}
             </button>
             <button
               type="submit"
@@ -393,7 +404,9 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
                 !isPaymentPasscodeValid(formData.newPassword) ||
                 formData.newPassword !== formData.confirmPassword ||
                 (action === 'change' && Boolean(getPaymentPasscodeValidationMessage(formData.currentPassword ?? '', {
-                  requiredMessage: '请输入当前支付口令',
+                  requiredMessage: t('pit.passcode.validation.currentRequired'),
+                  formatMessage: t('pit.passcode.validation.format'),
+                  repeatedDigitsMessage: t('pit.passcode.validation.repeatedDigits'),
                   allowRepeatedDigits: true,
                 })))
               }
@@ -401,12 +414,14 @@ export const PaymentPasswordSettings = ({ status, onUpdate }: PaymentPasswordSet
               {loading ? (
                 <>
                   <div className={styles.buttonSpinner}></div>
-                  处理中...
+                  {t('pit.common.processing')}
                 </>
               ) : (
                 action === 'set'
-                  ? requiresPasscodeUpgrade ? '重置口令' : '设置口令'
-                  : '修改口令'
+                  ? t(requiresPasscodeUpgrade
+                    ? 'pit.security.passcode.resetShort'
+                    : 'pit.security.passcode.setShort')
+                  : t('pit.security.passcode.changeShort')
               )}
             </button>
           </div>

@@ -171,4 +171,61 @@
   <data name="error.pet.care_cooldown" xml:space="preserve">
     <value>该照顾动作仍在冷却中。</value>
   </data>
+  <data name="error.coin.transaction_not_found" xml:space="preserve">
+    <value>交易记录不存在。</value>
+  </data>
+  <data name="error.coin.transfer_self_rejected" xml:space="preserve">
+    <value>不能向自己转移萝卜。</value>
+  </data>
+  <data name="error.coin.transfer_amount_invalid" xml:space="preserve">
+    <value>转移金额必须大于 0。</value>
+  </data>
+  <data name="error.coin.transfer_insufficient_balance" xml:space="preserve">
+    <value>可用萝卜存量不足。</value>
+  </data>
+  <data name="error.coin.transfer_account_unavailable" xml:space="preserve">
+    <value>当前资产账户状态不可用于转移。</value>
+  </data>
+  <data name="error.coin.transfer_concurrency_conflict" xml:space="preserve">
+    <value>资产状态已发生变化，请刷新后重试。</value>
+  </data>
+  <data name="error.coin.transfer_processing" xml:space="preserve">
+    <value>本次转移仍在处理中，请稍后查询结果。</value>
+  </data>
+  <data name="error.coin.transfer_idempotency_conflict" xml:space="preserve">
+    <value>同一请求标识已用于其他转移内容。</value>
+  </data>
+  <data name="error.coin.transfer_idempotency_invalid" xml:space="preserve">
+    <value>转移请求标识格式无效。</value>
+  </data>
+  <data name="error.coin.transfer_replay_unavailable" xml:space="preserve">
+    <value>暂时无法读取此前的转移结果，请稍后重试。</value>
+  </data>
+  <data name="error.payment_password.required" xml:space="preserve">
+    <value>请输入支付口令。</value>
+  </data>
+  <data name="error.payment_password.format_invalid" xml:space="preserve">
+    <value>支付口令必须为 6 位数字。</value>
+  </data>
+  <data name="error.payment_password.repeated_digits" xml:space="preserve">
+    <value>支付口令不能为 6 个相同数字。</value>
+  </data>
+  <data name="error.payment_password.confirmation_mismatch" xml:space="preserve">
+    <value>两次输入的支付口令不一致。</value>
+  </data>
+  <data name="error.payment_password.already_configured" xml:space="preserve">
+    <value>支付口令已设置，请使用修改口令功能。</value>
+  </data>
+  <data name="error.payment_password.not_configured" xml:space="preserve">
+    <value>尚未设置支付口令。</value>
+  </data>
+  <data name="error.payment_password.invalid" xml:space="preserve">
+    <value>支付口令不正确，请重试。</value>
+  </data>
+  <data name="error.payment_password.locked" xml:space="preserve">
+    <value>支付口令已临时锁定，请稍后重试。</value>
+  </data>
+  <data name="error.payment_password.upgrade_required" xml:space="preserve">
+    <value>旧支付口令已停用，请前往安全设置重置新的 6 位数字支付口令。</value>
+  </data>
 </root>

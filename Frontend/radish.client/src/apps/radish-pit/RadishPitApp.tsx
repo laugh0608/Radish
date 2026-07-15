@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import type { TabType } from './types';
@@ -24,6 +25,7 @@ const Statistics = lazy(() =>
  * 萝卜坑应用主组件
  */
 export const RadishPitApp = () => {
+  const { t } = useTranslation();
   const { isAuthenticated } = useUserStore();
   const [activeTab, setActiveTab] = useState<TabType>('overview');
 
@@ -32,8 +34,8 @@ export const RadishPitApp = () => {
       <div className={styles.container}>
         <div className={styles.notLoggedIn}>
           <div className={styles.notLoggedInIcon}>🥕</div>
-          <h2>欢迎来到萝卜坑</h2>
-          <p>请先登录以管理您的萝卜</p>
+          <h2>{t('pit.auth.title')}</h2>
+          <p>{t('pit.auth.description')}</p>
         </div>
       </div>
     );
@@ -66,8 +68,8 @@ export const RadishPitApp = () => {
       <div className={styles.topBar}>
         <div className={styles.brand}>
           <span className={styles.brandIcon}>🥕</span>
-          <span className={styles.brandName}>萝卜坑</span>
-          <span className={styles.brandHint}>资产中心</span>
+          <span className={styles.brandName}>{t('pit.title')}</span>
+          <span className={styles.brandHint}>{t('pit.subtitle')}</span>
         </div>
       </div>
 
@@ -78,42 +80,42 @@ export const RadishPitApp = () => {
             onClick={() => handleTabChange('overview')}
           >
             <span className={styles.tabIcon}>📊</span>
-            <span className={styles.tabText}>账户总览</span>
+            <span className={styles.tabText}>{t('pit.tab.overview')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'transfer' ? styles.active : ''}`}
             onClick={() => handleTabChange('transfer')}
           >
             <span className={styles.tabIcon}>💸</span>
-            <span className={styles.tabText}>转移</span>
+            <span className={styles.tabText}>{t('pit.tab.transfer')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`}
             onClick={() => handleTabChange('history')}
           >
             <span className={styles.tabIcon}>📋</span>
-            <span className={styles.tabText}>记录</span>
+            <span className={styles.tabText}>{t('pit.tab.history')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'security' ? styles.active : ''}`}
             onClick={() => handleTabChange('security')}
           >
             <span className={styles.tabIcon}>🔒</span>
-            <span className={styles.tabText}>安全</span>
+            <span className={styles.tabText}>{t('pit.tab.security')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'statistics' ? styles.active : ''}`}
             onClick={() => handleTabChange('statistics')}
           >
             <span className={styles.tabIcon}>📈</span>
-            <span className={styles.tabText}>统计</span>
+            <span className={styles.tabText}>{t('pit.tab.statistics')}</span>
           </button>
         </div>
       </div>
 
       <div className={styles.content}>
         <div className={styles.contentInner}>
-          <Suspense fallback={<div className={styles.loading}>加载中...</div>}>
+          <Suspense fallback={<div className={styles.loading}>{t('pit.common.loading')}</div>}>
             {renderTabContent()}
           </Suspense>
         </div>

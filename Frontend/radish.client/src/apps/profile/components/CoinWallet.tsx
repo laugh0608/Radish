@@ -1,6 +1,11 @@
 import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBalance, type UserBalance } from '@/api/coin';
+import {
+  compareCoinValues,
+  formatCoinAmount,
+  formatCoinNumber,
+} from '@/coin/coinPresentation';
 import { CoinTransactionList } from './CoinTransactionList';
 import styles from './CoinWallet.module.css';
 
@@ -14,7 +19,8 @@ interface CoinWalletProps {
  * 显示用户余额信息和交易记录
  */
 export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [balance, setBalance] = useState<UserBalance | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,23 +82,23 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
           <div className={styles.balanceItem}>
             <div className={styles.balanceLabel}>{t('profile.wallet.availableBalance')}</div>
               <div className={styles.balanceValue}>
-              <span className={styles.carrotAmount}>{(balance.voBalance || 0).toLocaleString()}</span>
+              <span className={styles.carrotAmount}>{formatCoinNumber(balance.voBalance, language)}</span>
               <span className={styles.unit}>{t('profile.wallet.carrotUnit')}</span>
             </div>
             <div className={styles.balanceValueAlt}>
-              {t('profile.wallet.whiteRadishAmount', { amount: balance.voBalanceDisplay })}
+              {formatCoinAmount(balance.voBalance, language, t, 'white')}
             </div>
           </div>
 
-          {(balance.voFrozenBalance || 0) > 0 && (
+          {compareCoinValues(balance.voFrozenBalance, 0) > 0 && (
             <div className={styles.balanceItem}>
               <div className={styles.balanceLabel}>{t('profile.wallet.frozenBalance')}</div>
               <div className={styles.balanceValue}>
-                <span className={styles.carrotAmount}>{(balance.voFrozenBalance || 0).toLocaleString()}</span>
+                <span className={styles.carrotAmount}>{formatCoinNumber(balance.voFrozenBalance, language)}</span>
                 <span className={styles.unit}>{t('profile.wallet.carrotUnit')}</span>
               </div>
               <div className={styles.balanceValueAlt}>
-                {t('profile.wallet.whiteRadishAmount', { amount: balance.voFrozenBalanceDisplay })}
+                {formatCoinAmount(balance.voFrozenBalance, language, t, 'white')}
               </div>
             </div>
           )}
@@ -100,19 +106,19 @@ export const CoinWallet = ({ apiBaseUrl }: CoinWalletProps) => {
 
         <div className={styles.statsGrid}>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>+{(balance.voTotalEarned || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>+{formatCoinNumber(balance.voTotalEarned, language)}</div>
             <div className={styles.statLabel}>{t('profile.wallet.totalEarned')}</div>
           </div>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>-{(balance.voTotalSpent || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>-{formatCoinNumber(balance.voTotalSpent, language)}</div>
             <div className={styles.statLabel}>{t('profile.wallet.totalSpent')}</div>
           </div>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>+{(balance.voTotalTransferredIn || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>+{formatCoinNumber(balance.voTotalTransferredIn, language)}</div>
             <div className={styles.statLabel}>{t('profile.wallet.totalTransferredIn')}</div>
           </div>
           <div className={styles.statItem}>
-            <div className={styles.statValue}>-{(balance.voTotalTransferredOut || 0).toLocaleString()}</div>
+            <div className={styles.statValue}>-{formatCoinNumber(balance.voTotalTransferredOut, language)}</div>
             <div className={styles.statLabel}>{t('profile.wallet.totalTransferredOut')}</div>
           </div>
         </div>

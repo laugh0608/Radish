@@ -1,4 +1,18 @@
-import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransactionStatusColor, getSafeUserDisplayName } from '../../utils';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import {
+  absoluteCoinValue,
+  formatCoinAmount,
+  formatCoinNumber,
+  formatCoinRelativeDateTime,
+  formatTransactionStatus,
+  formatTransactionType,
+  getSafeUserDisplayName,
+  getTransactionIcon,
+  getTransactionStatusTone,
+  resolveTransactionDirection,
+} from '../../utils';
 import { useUserStore } from '@/stores/userStore';
 import type { CoinTransaction } from '@/api/coin';
 import styles from './TransactionList.module.css';
@@ -31,16 +45,18 @@ export const TransactionList = ({
   onPageChange,
   onRefresh
 }: TransactionListProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
   const { userId } = useUserStore();
   const currentUserId = String(userId);
-  const useWhiteRadish = displayMode === 'white';
 
   if (loading) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载交易记录中...</p>
+          <p>{t('pit.history.loading')}</p>
         </div>
       </div>
     );
@@ -51,10 +67,10 @@ export const TransactionList = ({
       <div className={styles.container}>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
-          <h3>加载失败</h3>
+          <h3>{t('pit.common.loadFailed')}</h3>
           <p>{error}</p>
           <button className={styles.retryButton} onClick={onRefresh}>
-            重试
+            {t('pit.common.retry')}
           </button>
         </div>
       </div>
@@ -66,9 +82,9 @@ export const TransactionList = ({
       <div className={styles.container}>
         <div className={styles.empty}>
           <div className={styles.emptyIcon}>📝</div>
-          <h3>暂无交易记录</h3>
-          <p>当前筛选条件下没有找到交易记录</p>
-          <p className={styles.emptyHint}>尝试调整筛选条件或开始使用萝卜</p>
+          <h3>{t('pit.history.emptyTitle')}</h3>
+          <p>{t('pit.history.emptyFiltered')}</p>
+          <p className={styles.emptyHint}>{t('pit.history.emptyHint')}</p>
         </div>
       </div>
     );
@@ -138,7 +154,7 @@ export const TransactionList = ({
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
         >
-          上一页
+          {t('pit.common.prevPage')}
         </button>
         {pages}
         <button
@@ -146,7 +162,7 @@ export const TransactionList = ({
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
         >
-          下一页
+          {t('pit.common.nextPage')}
         </button>
       </div>
     );
@@ -157,12 +173,15 @@ export const TransactionList = ({
       {/* 统计信息 */}
       <div className={styles.summary}>
         <div className={styles.summaryInfo}>
-          第 {((currentPage - 1) * 20 + 1).toLocaleString()} - {Math.min(currentPage * 20, totalCount).toLocaleString()} 条，
-          共 {totalCount.toLocaleString()} 条记录
+          {t('pit.history.pageSummary', {
+            start: formatCoinNumber((currentPage - 1) * 20 + 1, language),
+            end: formatCoinNumber(Math.min(currentPage * 20, totalCount), language),
+            value: formatCoinNumber(totalCount, language),
+          })}
         </div>
         <div className={styles.summaryActions}>
           <span className={styles.displayMode}>
-            {displayMode === 'carrot' ? '胡萝卜模式' : '白萝卜模式'}
+            {t(displayMode === 'carrot' ? 'pit.currency.carrotMode' : 'pit.currency.whiteMode')}
           </span>
         </div>
       </div>
@@ -183,34 +202,34 @@ export const TransactionList = ({
               <div className={styles.transactionMain}>
                 <div className={styles.transactionLeft}>
                   <div className={styles.transactionType}>
-                    {getTransactionTypeDisplay(transaction.voTransactionType)}
+                    {formatTransactionType(transaction.voTransactionType, t)}
                   </div>
                   <div className={styles.transactionParties}>
-                    {renderTransactionParties(transaction, currentUserId)}
+                    {renderTransactionParties(transaction, currentUserId, t)}
                   </div>
                 </div>
 
                 <div className={styles.transactionRight}>
                   <div className={styles.transactionAmount}>
                     <span className={`${styles.amountValue} ${
-                      getAmountDirection(transaction, currentUserId) === 'in' ? styles.positive : styles.negative
+                      resolveTransactionDirection(transaction, currentUserId) === 'in' ? styles.positive : styles.negative
                     }`}>
-                      {getAmountDirection(transaction, currentUserId) === 'in' ? '+' : '-'}
-                      {formatCoinAmount(Math.abs(transaction.voAmount), true, useWhiteRadish)}
+                      {resolveTransactionDirection(transaction, currentUserId) === 'in' ? '+' : '-'}
+                      {formatCoinAmount(absoluteCoinValue(transaction.voAmount), language, t, displayMode)}
                     </span>
                   </div>
-                  <div className={`${styles.transactionStatus} ${styles[getTransactionStatusColor(transaction.voStatus)]}`}>
-                    {transaction.voStatusDisplay}
+                  <div className={`${styles.transactionStatus} ${styles[getTransactionStatusTone(transaction.voStatus)]}`}>
+                    {formatTransactionStatus(transaction.voStatus, t)}
                   </div>
                 </div>
               </div>
 
               <div className={styles.transactionDetails}>
                 <div className={styles.transactionTime}>
-                  {formatDateTime(transaction.voCreateTime)}
+                  {formatCoinRelativeDateTime(transaction.voCreateTime, displayTimeZone, language)}
                 </div>
                 <div className={styles.transactionNo}>
-                  流水号: {transaction.voTransactionNo}
+                  {t('pit.common.transactionNoValue', { value: transaction.voTransactionNo })}
                 </div>
               </div>
 
@@ -236,58 +255,27 @@ export const TransactionList = ({
 };
 
 /**
- * 根据交易类型获取图标
- */
-const getTransactionIcon = (transactionType: string): string => {
-  const iconMap: Record<string, string> = {
-    'SYSTEM_GRANT': '🎁',
-    'LIKE_REWARD': '👍',
-    'COMMENT_REWARD': '💬',
-    'GODLIKE_REWARD': '⭐',
-    'SOFA_REWARD': '🛋️',
-    'TRANSFER_IN': '📥',
-    'TRANSFER_OUT': '📤',
-    'PURCHASE': '🛒',
-    'ADMIN_ADJUST': '⚙️'
-  };
-
-  return iconMap[transactionType] || '💰';
-};
-
-/**
  * 渲染交易参与方信息
  */
-const renderTransactionParties = (transaction: CoinTransaction, currentUserId: string): string => {
-  const fromUser = transaction.voFromUserName;
-  const toUser = transaction.voToUserName;
+const renderTransactionParties = (
+  transaction: CoinTransaction,
+  currentUserId: string,
+  t: TFunction,
+): string => {
+  const fromUser = transaction.voFromUserId ? transaction.voFromUserName : null;
+  const toUser = transaction.voToUserId ? transaction.voToUserName : null;
 
   if (!fromUser && !toUser) {
-    return '系统交易';
+    return t('pit.history.systemTransaction');
   }
 
   if (!fromUser) {
-    return `系统 → ${getSafeUserDisplayName(toUser || '', transaction.voToUserId === currentUserId)}`;
+    return `${t('pit.common.system')} → ${getSafeUserDisplayName(toUser || '', transaction.voToUserId === currentUserId, t('pit.common.me'))}`;
   }
 
   if (!toUser) {
-    return `${getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId)} → 系统`;
+    return `${getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId, t('pit.common.me'))} → ${t('pit.common.system')}`;
   }
 
-  return `${getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId)} → ${getSafeUserDisplayName(toUser, transaction.voToUserId === currentUserId)}`;
-};
-
-/**
- * 获取金额方向（收入/支出）
- */
-const getAmountDirection = (transaction: CoinTransaction, currentUserId: string): 'in' | 'out' => {
-  // 如果当前用户是接收方，则为收入
-  if (transaction.voToUserId === currentUserId) {
-    return 'in';
-  }
-  // 如果当前用户是发送方，则为支出
-  if (transaction.voFromUserId === currentUserId) {
-    return 'out';
-  }
-  // 系统交易，根据金额正负判断
-  return transaction.voAmount > 0 ? 'in' : 'out';
+  return `${getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId, t('pit.common.me'))} → ${getSafeUserDisplayName(toUser, transaction.voToUserId === currentUserId, t('pit.common.me'))}`;
 };

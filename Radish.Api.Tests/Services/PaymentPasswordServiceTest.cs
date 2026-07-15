@@ -1,6 +1,7 @@
 using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.Common.HelpTool;
 using Radish.IRepository;
 using Radish.IService;
@@ -26,13 +27,15 @@ public class PaymentPasswordServiceTest
         var repository = new Mock<IPaymentPasswordRepository>(MockBehavior.Strict);
         var service = CreateService(repository);
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.SetPaymentPasswordAsync(9527, new SetPaymentPasswordRequest
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.SetPaymentPasswordAsync(9527, new SetPaymentPasswordRequest
         {
             NewPassword = "111111",
             ConfirmPassword = "111111"
         }));
 
-        Assert.Equal("支付口令不能为6个相同数字", exception.Message);
+        Assert.Equal(400, exception.StatusCode);
+        Assert.Equal(PaymentPasscodeErrorCodes.RepeatedDigits, exception.ErrorCode);
+        Assert.Equal("error.payment_password.repeated_digits", exception.MessageKey);
         repository.Verify(repository => repository.GetByUserIdAsync(It.IsAny<long>()), Times.Never);
     }
 
@@ -143,6 +146,7 @@ public class PaymentPasswordServiceTest
         Assert.False(result.IsSuccess);
         Assert.True(result.RequiresPasscodeUpgrade);
         Assert.Equal(PaymentPasscodeErrorCodes.UpgradeRequired, result.ErrorCode);
+        Assert.Equal("error.payment_password.upgrade_required", result.MessageKey);
         Assert.Equal(PaymentPasscodeRules.UpgradeRequiredErrorMessage, result.ErrorMessage);
         repository.VerifyAll();
     }
@@ -261,9 +265,43 @@ public class PaymentPasswordServiceTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal(4, result.RemainingAttempts);
+        Assert.Equal(PaymentPasscodeErrorCodes.Invalid, result.ErrorCode);
+        Assert.Equal("error.payment_password.invalid", result.MessageKey);
         Assert.Equal(PaymentPasscodeRules.LegacySha256PasscodeVersion, existingPasscode.PasscodeVersion);
         Assert.Equal(legacyHash, existingPasscode.PasswordHash);
         Assert.Equal(legacySalt, existingPasscode.Salt);
+        repository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task VerifyPaymentPasswordAsync_ShouldReturnLockedContract_WhenLockIsActive()
+    {
+        const long userId = 9527;
+        var repository = new Mock<IPaymentPasswordRepository>(MockBehavior.Strict);
+        repository
+            .Setup(store => store.GetByUserIdAsync(userId))
+            .ReturnsAsync(new UserPaymentPassword
+            {
+                UserId = userId,
+                PasswordHash = PasswordHasher.HashPassword("274958"),
+                Salt = string.Empty,
+                PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion,
+                IsEnabled = true,
+                LockedUntil = FixedNow.AddMinutes(10)
+            });
+
+        var service = CreateService(repository);
+        var result = await service.VerifyPaymentPasswordAsync(userId, new VerifyPaymentPasswordRequest
+        {
+            Password = "274958",
+            BusinessType = "CoinTransfer"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.True(result.IsLocked);
+        Assert.Equal(PaymentPasscodeErrorCodes.Locked, result.ErrorCode);
+        Assert.Equal("error.payment_password.locked", result.MessageKey);
+        Assert.Equal(10, result.LockedRemainingMinutes);
         repository.VerifyAll();
     }
 

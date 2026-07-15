@@ -171,4 +171,61 @@
   <data name="error.pet.care_cooldown" xml:space="preserve">
     <value>This care action is still cooling down.</value>
   </data>
+  <data name="error.coin.transaction_not_found" xml:space="preserve">
+    <value>The transaction was not found.</value>
+  </data>
+  <data name="error.coin.transfer_self_rejected" xml:space="preserve">
+    <value>You cannot transfer carrots to yourself.</value>
+  </data>
+  <data name="error.coin.transfer_amount_invalid" xml:space="preserve">
+    <value>The transfer amount must be greater than zero.</value>
+  </data>
+  <data name="error.coin.transfer_insufficient_balance" xml:space="preserve">
+    <value>Your available carrot balance is insufficient.</value>
+  </data>
+  <data name="error.coin.transfer_account_unavailable" xml:space="preserve">
+    <value>The current asset account state does not allow this transfer.</value>
+  </data>
+  <data name="error.coin.transfer_concurrency_conflict" xml:space="preserve">
+    <value>The asset state changed. Refresh and try again.</value>
+  </data>
+  <data name="error.coin.transfer_processing" xml:space="preserve">
+    <value>This transfer is still processing. Check its result shortly.</value>
+  </data>
+  <data name="error.coin.transfer_idempotency_conflict" xml:space="preserve">
+    <value>This request identifier was already used for different transfer details.</value>
+  </data>
+  <data name="error.coin.transfer_idempotency_invalid" xml:space="preserve">
+    <value>The transfer request identifier is invalid.</value>
+  </data>
+  <data name="error.coin.transfer_replay_unavailable" xml:space="preserve">
+    <value>The previous transfer result is temporarily unavailable. Try again shortly.</value>
+  </data>
+  <data name="error.payment_password.required" xml:space="preserve">
+    <value>Enter your payment passcode.</value>
+  </data>
+  <data name="error.payment_password.format_invalid" xml:space="preserve">
+    <value>The payment passcode must contain exactly six digits.</value>
+  </data>
+  <data name="error.payment_password.repeated_digits" xml:space="preserve">
+    <value>The payment passcode cannot use the same digit six times.</value>
+  </data>
+  <data name="error.payment_password.confirmation_mismatch" xml:space="preserve">
+    <value>The payment passcodes do not match.</value>
+  </data>
+  <data name="error.payment_password.already_configured" xml:space="preserve">
+    <value>A payment passcode is already configured. Use the change action instead.</value>
+  </data>
+  <data name="error.payment_password.not_configured" xml:space="preserve">
+    <value>No payment passcode has been configured.</value>
+  </data>
+  <data name="error.payment_password.invalid" xml:space="preserve">
+    <value>The payment passcode is incorrect. Try again.</value>
+  </data>
+  <data name="error.payment_password.locked" xml:space="preserve">
+    <value>The payment passcode is temporarily locked. Try again later.</value>
+  </data>
+  <data name="error.payment_password.upgrade_required" xml:space="preserve">
+    <value>The legacy payment passcode is disabled. Reset a new six-digit passcode in Security settings.</value>
+  </data>
 </root>

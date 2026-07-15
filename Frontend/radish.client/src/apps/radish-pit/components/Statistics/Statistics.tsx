@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStatistics } from '../../hooks';
 import { StatisticsOverview } from './StatisticsOverview';
 import styles from './Statistics.module.css';
@@ -20,6 +21,7 @@ type TimeRange = 'month' | 'quarter' | 'year';
  * 收支统计组件
  */
 export const Statistics = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<StatisticsTab>('overview');
   const [timeRange, setTimeRange] = useState<TimeRange>('month');
   const [displayMode, setDisplayMode] = useState<'carrot' | 'white'>('carrot');
@@ -88,8 +90,8 @@ export const Statistics = () => {
     <div className={styles.container}>
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>收支统计</h2>
-          <p className={styles.subtitle}>分析您的萝卜收入和支出情况</p>
+          <h2 className={styles.title}>{t('pit.statistics.title')}</h2>
+          <p className={styles.subtitle}>{t('pit.statistics.description')}</p>
         </div>
         <div className={styles.headerRight}>
           <div className={styles.timeRangeSelector}>
@@ -97,30 +99,32 @@ export const Statistics = () => {
               className={`${styles.timeRangeButton} ${timeRange === 'month' ? styles.active : ''}`}
               onClick={() => handleTimeRangeChange('month')}
             >
-              月度
+              {t('pit.statistics.range.month')}
             </button>
             <button
               className={`${styles.timeRangeButton} ${timeRange === 'quarter' ? styles.active : ''}`}
               onClick={() => handleTimeRangeChange('quarter')}
             >
-              季度
+              {t('pit.statistics.range.quarter')}
             </button>
             <button
               className={`${styles.timeRangeButton} ${timeRange === 'year' ? styles.active : ''}`}
               onClick={() => handleTimeRangeChange('year')}
             >
-              年度
+              {t('pit.statistics.range.year')}
             </button>
           </div>
           <button
             className={styles.displayModeButton}
             onClick={toggleDisplayMode}
-            title={`切换到${displayMode === 'carrot' ? '白萝卜' : '胡萝卜'}显示`}
+            title={t('pit.currency.switchTo', {
+              mode: t(displayMode === 'carrot' ? 'pit.currency.white' : 'pit.currency.carrot'),
+            })}
           >
             {displayMode === 'carrot' ? '🥕' : '🤍'}
-            {displayMode === 'carrot' ? '胡萝卜' : '白萝卜'}
+            {t(displayMode === 'carrot' ? 'pit.currency.carrot' : 'pit.currency.white')}
           </button>
-          <button className={styles.refreshButton} onClick={refetch} title="刷新数据">
+          <button className={styles.refreshButton} onClick={refetch} title={t('pit.common.refresh')}>
             🔄
           </button>
         </div>
@@ -133,34 +137,34 @@ export const Statistics = () => {
             onClick={() => handleTabChange('overview')}
           >
             <span className={styles.tabIcon}>📊</span>
-            <span className={styles.tabText}>统计概览</span>
+            <span className={styles.tabText}>{t('pit.statistics.tab.overview')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'chart' ? styles.active : ''}`}
             onClick={() => handleTabChange('chart')}
           >
             <span className={styles.tabIcon}>📈</span>
-            <span className={styles.tabText}>收支图表</span>
+            <span className={styles.tabText}>{t('pit.statistics.tab.chart')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'category' ? styles.active : ''}`}
             onClick={() => handleTabChange('category')}
           >
             <span className={styles.tabIcon}>🏷️</span>
-            <span className={styles.tabText}>分类统计</span>
+            <span className={styles.tabText}>{t('pit.statistics.tab.category')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'trend' ? styles.active : ''}`}
             onClick={() => handleTabChange('trend')}
           >
             <span className={styles.tabIcon}>📉</span>
-            <span className={styles.tabText}>趋势分析</span>
+            <span className={styles.tabText}>{t('pit.statistics.tab.trend')}</span>
           </button>
         </div>
       </div>
 
       <div className={styles.content}>
-        <Suspense fallback={<div>统计模块加载中...</div>}>
+        <Suspense fallback={<div>{t('pit.statistics.moduleLoading')}</div>}>
           {renderTabContent()}
         </Suspense>
       </div>

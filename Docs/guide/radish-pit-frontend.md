@@ -1,611 +1,217 @@
 # 萝卜坑应用前端设计
 
-> 版本：v1.0 | 最后更新：2026-06-19 | 状态：实施后维护
+> 版本：v1.1 | 最后更新：2026-07-15 | 状态：已实现，持续维护
 
-本文档详细描述萝卜坑应用的前端技术实现方案。
+本文描述萝卜资产域在 `radish.client` 的当前实现边界。业务规则由后端 Service 负责，前端只承担交互、展示、本地化和结构化错误消费。
 
-> 当前实现补充：转账确认流程会在进入确认页时生成 `coin-transfer:{uuid}` 幂等键，并随 `paymentPassword` 一起提交给后端；统一使用 `log` 工具输出非敏感排障信息，不直接输出支付口令或完整请求体。
+## 1. 入口与页面职责
 
----
+### 1.1 正式与兼容入口
 
-## 9. 前端架构设计
+- `/me/assets`：正式 Web 资产摘要与最近流水。
+- `/me`：资产摘要卡片。
+- Profile：`CoinWallet`、`CoinTransactionList` 和用户资料余额摘要。
+- `/desktop`：历史 WebOS 兼容入口，萝卜坑窗口和桌面余额继续复用同一业务契约。
+- `/notifications`：正式交易通知入口；萝卜坑内部不维护通知标签、模拟数据或第二套通知状态。
 
-### 9.1 整体架构
+### 1.2 萝卜坑窗口
 
-萝卜坑应用采用模块化的前端架构，基于React 19和TypeScript构建，集成到现有的WebOS桌面系统中。
+`RadishPitApp` 保留五个业务标签：
 
-```
-Frontend/radish.client/src/apps/radish-pit/
-├── index.ts                    # 应用入口和注册
-├── RadishPit.tsx              # 主组件容器
-├── components/                 # 功能组件
-│   ├── AccountOverview/       # 账户总览模块
-│   │   ├── index.tsx
-│   │   ├── BalanceCard.tsx
-│   │   ├── StatisticsCard.tsx
-│   │   └── RecentTransactions.tsx
-│   ├── Transfer/              # 转账功能模块
-│   │   ├── index.tsx
-│   │   ├── TransferForm.tsx
-│   │   ├── TransferConfirm.tsx
-│   │   └── TransferResult.tsx
-│   ├── TransactionHistory/    # 交易记录模块
-│   │   ├── index.tsx
-│   │   ├── TransactionList.tsx
-│   │   ├── TransactionFilter.tsx
-│   │   └── TransactionDetail.tsx
-│   ├── SecuritySettings/      # 安全设置模块
-│   │   ├── index.tsx
-│   │   ├── PaymentPassword.tsx
-│   │   ├── SecurityLog.tsx
-│   │   └── DeviceManagement.tsx
-│   ├── Statistics/            # 统计分析模块
-│   │   ├── index.tsx
-│   │   ├── IncomeChart.tsx
-│   │   └── CategoryChart.tsx
-│   └── NotificationCenter/    # 通知中心模块
-│       ├── index.tsx
-│       └── NotificationList.tsx
-├── hooks/                     # 自定义Hooks
-│   ├── useBalance.ts
-│   ├── useTransactions.ts
-│   ├── useTransfer.ts
-│   └── usePaymentPassword.ts
-├── utils/                     # 工具函数
-│   ├── coinFormatter.ts
-│   ├── transactionHelper.ts
-│   └── securityHelper.ts
-├── types/                     # 类型定义
-│   ├── balance.ts
-│   ├── transaction.ts
-│   └── security.ts
-└── styles/                    # 样式文件
-    ├── index.css
-    └── components/
+1. `overview`：账户总览、累计统计、快捷入口和最近流水；
+2. `transfer`：接收方搜索、金额、备注、支付口令、确认与结果；
+3. `history`：筛选、分页、详情和 CSV 导出；
+4. `statistics`：时间范围、趋势、分类和摘要；
+5. `security`：口令状态、设置 / 修改、安全日志和建议。
+
+## 2. 代码边界
+
+```text
+src/api/
+  coin.ts                     # 萝卜 API、DTO 和结构化错误
+  paymentPassword.ts          # 支付口令 API、DTO 和结构化错误
+src/coin/
+  coinPresentation.ts         # 稳定词元、long 安全运算和 locale formatter
+src/apps/radish-pit/
+  RadishPitApp.tsx
+  hooks/index.ts              # 查询与动作状态
+  types/index.ts              # 页面交互类型
+  components/
+    AccountOverview/
+    Transfer/
+    TransactionHistory/
+    Statistics/
+    SecuritySettings/
+src/me/
+  MeApp.tsx
+  MeAssetsPage.tsx
+src/apps/profile/components/
+  CoinWallet.tsx
+  CoinTransactionList.tsx
+  UserInfoCard.tsx
+src/desktop/components/
+  CoinBalance.tsx
 ```
 
-### 9.2 应用注册
+- API helper 统一使用 `@radish/http`，每个调用由宿主传入 `t` 作为安全 fallback。
+- `coinPresentation.ts` 是跨萝卜页面的唯一展示解析层，不持有 React 或宿主语言状态。
+- 页面组件不读取服务端固定中文展示字段。
+- `@radish/ui` 图表通过 `valueFormatter` 接收宿主金额展示，不反向依赖 client i18n。
 
-在WebOS桌面系统中注册萝卜坑应用：
+## 3. API 契约
 
-```typescript
-// Frontend/radish.client/src/apps/radish-pit/index.ts
-import { lazy } from 'react';
+### 3.1 coinApi
 
-const RadishPit = lazy(() => import('./RadishPit'));
+当前真实消费方法：
 
-export default RadishPit;
-
-// Frontend/radish.client/src/desktop/AppRegistry.tsx
-{
-  id: 'radish-pit',
-  name: '萝卜坑',
-  icon: 'mdi:treasure-chest',
-  description: '萝卜币管理中心',
-  component: RadishPit,
-  type: 'window',
-  defaultSize: { width: 1200, height: 800 },
-  minSize: { width: 800, height: 600 },
-  requiredRoles: ['User'],
-  category: 'finance'
-}
+```ts
+coinApi.getBalance(t)
+coinApi.getTransactions(pageIndex, pageSize, transactionType, status, t)
+coinApi.getTransactionByNo(transactionNo, t)
+coinApi.transfer(request, t)
+coinApi.getStatistics(timeRange, t)
 ```
 
-### 9.3 主组件设计
+关键 DTO 规则：
 
-```typescript
-// RadishPit.tsx
-import React, { useState } from 'react';
-import { Tabs } from '@radish/ui';
-import AccountOverview from './components/AccountOverview';
-import Transfer from './components/Transfer';
-import TransactionHistory from './components/TransactionHistory';
-import SecuritySettings from './components/SecuritySettings';
-import Statistics from './components/Statistics';
-import NotificationCenter from './components/NotificationCenter';
+- `CoinAmount` 和 `LongId` 是十进制整数字符串；
+- `voTransactionNo` 是字符串；
+- `voTransactionType / voStatus / voCategory` 是稳定系统词元；
+- `voRemark`、参与方名称和业务字段是原文内容；
+- `vo*Display` 只保留响应兼容，不进入页面控制和本地化。
 
-const RadishPit: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+### 3.2 paymentPasswordApi
 
-  const tabs = [
-    { key: 'overview', label: '账户总览', icon: 'mdi:account-balance' },
-    { key: 'transfer', label: '转移萝卜币', icon: 'mdi:transfer' },
-    { key: 'history', label: '交易记录', icon: 'mdi:history' },
-    { key: 'statistics', label: '收支统计', icon: 'mdi:chart-line' },
-    { key: 'security', label: '安全设置', icon: 'mdi:security' },
-    { key: 'notifications', label: '通知中心', icon: 'mdi:bell' }
-  ];
+当前真实消费方法：
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'overview':
-        return <AccountOverview />;
-      case 'transfer':
-        return <Transfer />;
-      case 'history':
-        return <TransactionHistory />;
-      case 'statistics':
-        return <Statistics />;
-      case 'security':
-        return <SecuritySettings />;
-      case 'notifications':
-        return <NotificationCenter />;
-      default:
-        return <AccountOverview />;
-    }
-  };
-
-  return (
-    <div className="radish-pit">
-      <div className="radish-pit-header">
-        <h1>萝卜坑</h1>
-        <p>您的萝卜币管理中心</p>
-      </div>
-
-      <Tabs
-        items={tabs}
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        type="card"
-      />
-
-      <div className="radish-pit-content">
-        {renderContent()}
-      </div>
-    </div>
-  );
-};
-
-export default RadishPit;
+```ts
+paymentPasswordApi.getPaymentPasswordStatus(t)
+paymentPasswordApi.setPaymentPassword(request, t)
+paymentPasswordApi.changePaymentPassword(request, t)
+paymentPasswordApi.getSecurityLogs(pageIndex, pageSize, t)
 ```
 
----
+验证、强度和安全建议 helper 保持同一结构化错误签名。安全日志只按 `voType / voResult` 解析；`voAction`、强度 display 和日期 display 不参与展示。
 
-## 10. 核心组件设计
+### 3.3 失败处理
 
-### 10.1 账户总览组件
+API helper 在以下情况统一抛出 `ApiResponseError`：
 
-```typescript
-// components/AccountOverview/index.tsx
-import React from 'react';
-import { Card, Button } from '@radish/ui';
-import BalanceCard from './BalanceCard';
-import StatisticsCard from './StatisticsCard';
-import RecentTransactions from './RecentTransactions';
-import { useBalance } from '../../hooks/useBalance';
+- HTTP 或 `MessageModel.IsSuccess` 失败；
+- 必需响应数据缺失；
+- 服务端返回稳定 `Code / MessageKey`；
+- 网络、非 JSON 或通用错误由 `@radish/http` 生成安全 fallback。
 
-const AccountOverview: React.FC = () => {
-  const { balance, loading, refresh } = useBalance();
+页面可以展示 `error.message`，但控制流必须使用 `code / httpStatus / statusCode`。旧支付口令升级只识别 `PAYMENT_PASSCODE_UPGRADE_REQUIRED`，不得匹配中英文错误消息。
 
-  return (
-    <div className="account-overview">
-      <div className="overview-grid">
-        <div className="balance-section">
-          <BalanceCard balance={balance} loading={loading} onRefresh={refresh} />
-        </div>
+## 4. 稳定词元本地化
 
-        <div className="statistics-section">
-          <StatisticsCard balance={balance} />
-        </div>
+### 4.1 交易和统计
 
-        <div className="quick-actions">
-          <Card title="快速操作">
-            <div className="action-buttons">
-              <Button type="primary" icon="mdi:transfer">
-                转移萝卜币
-              </Button>
-              <Button icon="mdi:history">
-                收纳记录
-              </Button>
-              <Button icon="mdi:send">
-                发送记录
-              </Button>
-              <Button icon="mdi:security">
-                安全设置
-              </Button>
-            </div>
-          </Card>
-        </div>
-
-        <div className="recent-transactions">
-          <RecentTransactions />
-        </div>
-      </div>
-    </div>
-  );
-};
+```ts
+formatTransactionType(transaction.voTransactionType, t)
+formatTransactionStatus(transaction.voStatus, t)
+formatStatisticsCategory(item.voCategory, t)
 ```
 
-```typescript
-// components/AccountOverview/BalanceCard.tsx
-import React, { useState } from 'react';
-import { Card, Switch, Button } from '@radish/ui';
-import { formatCoinAmount } from '../../utils/coinFormatter';
-import type { UserBalance } from '../../types/balance';
+已知词元解析到 `commerce` 域下的 `pit.*` 中英文资源；未知词元显示 `trim()` 后的稳定原值。筛选值、状态样式、方向判断和图标同样只使用稳定字段。
 
-interface BalanceCardProps {
-  balance: UserBalance | null;
-  loading: boolean;
-  onRefresh: () => void;
-}
+统计分类由服务端返回 `IN_* / OUT_*`。前端不得重新根据中文分类名归组，也不得从翻译结果判断收入或支出。
 
-const BalanceCard: React.FC<BalanceCardProps> = ({ balance, loading, onRefresh }) => {
-  const [showInCarrot, setShowInCarrot] = useState(true);
+### 4.2 参与方与人工内容
 
-  if (loading || !balance) {
-    return <Card title="当前存量" loading />;
-  }
+- 系统参与方由 `voFromUserId / voToUserId === null` 判断并显示宿主词元。
+- 当前用户由稳定用户 ID 判断并显示“我 / Me”。
+- 用户名、备注、业务标识、IP 和 User-Agent 保持原文。
+- 未知且非空的系统类型显示稳定原值，不编造翻译。
 
-  return (
-    <Card
-      title="当前存量"
-      extra={
-        <div className="balance-controls">
-          <Switch
-            checked={showInCarrot}
-            onChange={setShowInCarrot}
-            checkedChildren="胡萝卜"
-            unCheckedChildren="白萝卜"
-          />
-          <Button icon="mdi:refresh" onClick={onRefresh} />
-        </div>
-      }
-    >
-      <div className="balance-display">
-        <div className="main-balance">
-          <span className="amount">
-            {formatCoinAmount(balance.balance, showInCarrot)}
-          </span>
-          <span className="unit">
-            {showInCarrot ? '胡萝卜' : '白萝卜'}
-          </span>
-        </div>
+### 4.3 支付口令状态
 
-        {!showInCarrot && (
-          <div className="sub-balance">
-            ({formatCoinAmount(balance.balance, true)} 胡萝卜)
-          </div>
-        )}
+- 口令强度使用数值等级解析 `pit.security.strength.*`。
+- 安全日志类型使用 `voType`，结果使用 `voResult`。
+- 锁定剩余分钟、失败次数和日志数量使用 i18next plural。
+- 服务端 `voSecurityStatus / voSecuritySuggestions` 的历史中文内容不作为当前页面展示来源。
 
-        {balance.frozenBalance > 0 && (
-          <div className="frozen-balance">
-            🧊 冻结存量: {formatCoinAmount(balance.frozenBalance, showInCarrot)} {showInCarrot ? '胡萝卜' : '白萝卜'}
-          </div>
-        )}
+## 5. 金额、日期与图表
 
-        <div className="total-balance">
-          📊 总资产: {formatCoinAmount(balance.balance + balance.frozenBalance, showInCarrot)} {showInCarrot ? '胡萝卜' : '白萝卜'}
-        </div>
-      </div>
-    </Card>
-  );
-};
+### 5.1 long 安全金额
+
+`coinPresentation.ts` 提供：
+
+```ts
+compareCoinValues
+addCoinValues
+subtractCoinValues
+divideCoinValue
+absoluteCoinValue
+formatCoinNumber
+formatCoinAmount
 ```
 
-### 10.2 转账组件
+实现先将十进制整数字符串转为 `BigInt`。白萝卜显示使用整数商、三位余数和当前 locale 的小数分隔符，因此不会因 `Number` 丢失长整数精度。
 
-```typescript
-// components/Transfer/index.tsx
-import React, { useState } from 'react';
-import { log } from '@/utils/logger';
-import TransferForm from './TransferForm';
-import TransferConfirm from './TransferConfirm';
-import TransferResult from './TransferResult';
-import type { TransferData, TransferResult } from '../../types/transaction';
+转移表单的业务输入当前仍是受控正整数 `number`，提交前同时经过页面即时校验和后端权威校验；余额等后端 `long` 字段不得转换为 `number` 后参与完整精度运算。
 
-type TransferStep = 'form' | 'confirm' | 'result';
+### 5.2 日期与时区
 
-const Transfer: React.FC = () => {
-  const [currentStep, setCurrentStep] = useState<TransferStep>('form');
-  const [transferData, setTransferData] = useState<TransferData | null>(null);
-  const [transferResult, setTransferResult] = useState<TransferResult | null>(null);
+- 流水、日志和结果时间使用当前语言的 locale。
+- 展示时刻继续使用用户 / 浏览器展示时区。
+- 趋势接口的 `yyyy-MM-dd` 日期键按 UTC 中午构造，仅用于避免日历标签跨日，不改变服务端统计日期。
+- 近七日可使用本地化相对时间，较早数据使用完整 locale 日期时间。
 
-  const handleFormSubmit = (data: TransferData) => {
-    setTransferData({
-      ...data,
-      idempotencyKey: `coin-transfer:${crypto.randomUUID()}`
-    });
-    setCurrentStep('confirm');
-  };
+### 5.3 图表
 
-  const handleConfirm = async (paymentPassword: string) => {
-    if (!transferData) return;
+服务端金额保持字符串直到图表适配边界。`toCoinChartNumber` 只服务于图形库坐标；tooltip、标签和摘要仍从原始值或宿主 `valueFormatter` 生成 locale 文本。
 
-    try {
-      const result = await transferAPI.transfer({
-        ...transferData,
-        paymentPassword
-      });
+## 6. 页面交互要点
 
-      setTransferResult(result);
-      setCurrentStep('result');
-    } catch (error) {
-      log.error('Transfer failed', error);
-    }
-  };
+### 6.1 转移
 
-  const handleReset = () => {
-    setCurrentStep('form');
-    setTransferData(null);
-    setTransferResult(null);
-  };
+- 接收方搜索保留稳定字符串用户 ID；
+- 幂等键使用 `coin-transfer:${crypto.randomUUID()}`；
+- 提交期间保持同一请求键，返回表单或开始新转移时才生成新键；
+- 成功结果展示完整 `voTransactionNo`；
+- 旧口令升级结果引导进入安全设置，其他失败保留结构化错误提示。
 
-  return (
-    <div className="transfer-container">
-      {currentStep === 'form' && (
-        <TransferForm onSubmit={handleFormSubmit} />
-      )}
+### 6.2 流水
 
-      {currentStep === 'confirm' && transferData && (
-        <TransferConfirm
-          data={transferData}
-          onConfirm={handleConfirm}
-          onBack={() => setCurrentStep('form')}
-        />
-      )}
+- 筛选条件使用稳定交易类型和状态；
+- 页码、总数和当前范围使用 locale 数字与英文单复数；
+- 详情与 CSV 使用完整流水号、原始备注和 locale 日期；
+- CSV 的收入 / 支出符号由当前用户与参与方 ID 关系计算。
 
-      {currentStep === 'result' && transferResult && (
-        <TransferResult
-          result={transferResult}
-          onReset={handleReset}
-        />
-      )}
-    </div>
-  );
-};
+### 6.3 安全日志
+
+- 服务端分页，页码变化重新请求；
+- 当前页可以按成功 / 失败结果过滤并显示数量；
+- 操作名称只使用稳定类型映射；
+- IP 和 User-Agent 是审计原文，允许换行或截断，不翻译。
+
+## 7. 资源与测试门禁
+
+萝卜域词元位于：
+
+```text
+src/locales/zh/commerce.ts
+src/locales/en/commerce.ts
 ```
 
-```typescript
-// components/Transfer/TransferForm.tsx
-import React, { useState } from 'react';
-import { Form, Input, Button, Card, Select } from '@radish/ui';
-import { useBalance } from '../../hooks/useBalance';
-import { useTransferLimit } from '../../hooks/useTransferLimit';
-import { formatCoinAmount } from '../../utils/coinFormatter';
+必须保持：
 
-interface TransferFormProps {
-  onSubmit: (data: TransferData) => void;
-}
+- 中英文 key parity 和跨域无重复键；
+- 资源单文件不超过治理上限；
+- `0 / 1 / 2` 英文数量规则；
+- 交易类型、状态、统计分类和安全日志未知词元原值回退；
+- 超出 JavaScript 安全整数的金额比较、加减、换算与格式化测试；
+- API 使用 `createApiResponseError` 且所有真实消费者不读取 `vo*Display / voAction`；
+- Radish Pit 不重新出现模拟通知中心；
+- client test、type-check、lint 和 production build 通过。
 
-const TransferForm: React.FC<TransferFormProps> = ({ onSubmit }) => {
-  const [form] = Form.useForm();
-  const [amountUnit, setAmountUnit] = useState<'carrot' | 'radish'>('carrot');
-  const { balance } = useBalance();
-  const { limit } = useTransferLimit();
-
-  const handleSubmit = (values: any) => {
-    const amount = amountUnit === 'carrot' ? values.amount : values.amount * 1000;
-
-    onSubmit({
-      toUserId: values.toUserId,
-      amount,
-      remark: values.remark
-    });
-  };
-
-  return (
-    <Card title="转移萝卜币" className="transfer-form">
-      <Form form={form} onFinish={handleSubmit} layout="vertical">
-        <Form.Item
-          name="toUserId"
-          label="接收方"
-          rules={[{ required: true, message: '请输入接收方用户ID或用户名' }]}
-        >
-          <Input
-            placeholder="输入用户名或ID"
-            prefix="🔍"
-          />
-        </Form.Item>
-
-        <Form.Item
-          name="amount"
-          label="转移数量"
-          rules={[
-            { required: true, message: '请输入转移数量' },
-            { type: 'number', min: 1, message: '转移数量必须大于0' }
-          ]}
-        >
-          <Input
-            type="number"
-            placeholder="输入金额"
-            prefix="💰"
-            suffix={
-              <Select
-                value={amountUnit}
-                onChange={setAmountUnit}
-                options={[
-                  { value: 'carrot', label: '胡萝卜' },
-                  { value: 'radish', label: '白萝卜' }
-                ]}
-              />
-            }
-          />
-        </Form.Item>
-
-        <div className="balance-info">
-          <p>可用存量: {formatCoinAmount(balance?.balance || 0, true)} 胡萝卜</p>
-          {limit && (
-            <p>日剩余限额: {formatCoinAmount(limit.remainingAmount, true)} 胡萝卜</p>
-          )}
-        </div>
-
-        <Form.Item
-          name="remark"
-          label="备注信息 (可选)"
-        >
-          <Input.TextArea
-            placeholder="添加转移说明..."
-            rows={3}
-            maxLength={200}
-          />
-        </Form.Item>
-
-        <Form.Item>
-          <Button type="primary" htmlType="submit" block>
-            下一步
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
-  );
-};
-```
-
-### 10.3 自定义Hooks
-
-```typescript
-// hooks/useBalance.ts
-import { useState, useEffect, useCallback } from 'react';
-import { coinAPI } from '../../../api/coin';
-import type { UserBalance } from '../types/balance';
-
-export const useBalance = () => {
-  const [balance, setBalance] = useState<UserBalance | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchBalance = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await coinAPI.getBalance();
-      setBalance(result);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '获取余额失败');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchBalance();
-
-    // 每30秒自动刷新余额
-    const interval = setInterval(fetchBalance, 30000);
-
-    return () => clearInterval(interval);
-  }, [fetchBalance]);
-
-  return {
-    balance,
-    loading,
-    error,
-    refresh: fetchBalance
-  };
-};
-```
-
-```typescript
-// hooks/useTransfer.ts
-import { useState } from 'react';
-import { coinAPI } from '../../../api/coin';
-import type { TransferData, TransferResult } from '../types/transaction';
-
-export const useTransfer = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const transfer = async (data: TransferData & { paymentPassword: string; idempotencyKey?: string }): Promise<TransferResult> => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const result = await coinAPI.transfer(data);
-      return result;
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '转账失败';
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const validateTransfer = async (toUserId: number, amount: number) => {
-    try {
-      const result = await coinAPI.validateTransfer({ toUserId, amount });
-      return result;
-    } catch (err) {
-      throw new Error(err instanceof Error ? err.message : '验证失败');
-    }
-  };
-
-  return {
-    transfer,
-    validateTransfer,
-    loading,
-    error
-  };
-};
-```
-
-### 10.4 工具函数
-
-```typescript
-// utils/coinFormatter.ts
-
-/**
- * 格式化萝卜币金额显示
- * @param amount 金额(胡萝卜)
- * @param showInCarrot 是否显示为胡萝卜单位
- * @returns 格式化后的金额字符串
- */
-export const formatCoinAmount = (amount: number, showInCarrot: boolean = true): string => {
-  if (showInCarrot) {
-    // 胡萝卜单位，添加千分位分隔符
-    return amount.toLocaleString('zh-CN');
-  } else {
-    // 白萝卜单位，转换并保留3位小数
-    const radishAmount = amount / 1000;
-    return radishAmount.toLocaleString('zh-CN', {
-      minimumFractionDigits: 3,
-      maximumFractionDigits: 3
-    });
-  }
-};
-
-/**
- * 解析用户输入的金额
- * @param input 用户输入
- * @param unit 单位类型
- * @returns 胡萝卜单位的金额
- */
-export const parseAmountInput = (input: string, unit: 'carrot' | 'radish'): number => {
-  const amount = parseFloat(input.replace(/,/g, ''));
-
-  if (isNaN(amount) || amount <= 0) {
-    throw new Error('请输入有效的金额');
-  }
-
-  return unit === 'carrot' ? Math.floor(amount) : Math.floor(amount * 1000);
-};
-
-/**
- * 获取交易类型的显示名称和图标
- * @param type 交易类型
- * @returns 显示信息
- */
-export const getTransactionTypeInfo = (type: string) => {
-  const typeMap: Record<string, { name: string; icon: string; color: string }> = {
-    'system_reward': { name: '系统奖励', icon: '🎁', color: '#52c41a' },
-    'like_reward': { name: '点赞奖励', icon: '👍', color: '#1890ff' },
-    'comment_reward': { name: '评论奖励', icon: '💬', color: '#722ed1' },
-    'transfer_in': { name: '转账收入', icon: '↙️', color: '#52c41a' },
-    'transfer_out': { name: '转账支出', icon: '↗️', color: '#ff4d4f' },
-    'admin_adjust': { name: '管理员调整', icon: '⚙️', color: '#faad14' }
-  };
-
-  return typeMap[type] || { name: '未知类型', icon: '❓', color: '#d9d9d9' };
-};
-```
-
----
+后端同步验证 Coin / PaymentPassword Service、Controller、错误资源 parity、完整 `Radish.Api.Tests` 和解决方案构建。
 
 ## 相关文档
+
 - [萝卜坑应用总体设计](/guide/radish-pit-system)
 - [萝卜坑核心概念](/guide/radish-pit-core-concepts)
 - [萝卜坑后端设计](/guide/radish-pit-backend)
-
----
-
-> 本文档随萝卜坑应用开发持续更新，如有变更请同步修改 [更新日志](/changelog/)。
+- [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)

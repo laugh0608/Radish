@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { useCoinBalance, useTransfer } from '../../hooks';
 import { TransferForm } from './TransferForm';
@@ -31,6 +32,7 @@ interface TransferProps {
 }
 
 export const Transfer = ({ onNavigate }: TransferProps) => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState<TransferStep>('form');
   const [transferData, setTransferData] = useState<TransferFormData | null>(null);
   const [transferResult, setTransferResult] = useState<TransferResultType | null>(null);
@@ -65,7 +67,7 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
       log.error('转账失败:', error);
       setTransferResult({
         success: false,
-        message: error instanceof Error ? error.message : '转账失败，请稍后重试'
+        message: error instanceof Error ? error.message : t('pit.api.transferFailed')
       });
       setCurrentStep('result');
     }
@@ -129,17 +131,19 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
       {/* 页面标题和操作 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>转移萝卜</h2>
-          <p className={styles.subtitle}>向其他用户转移您的萝卜</p>
+          <h2 className={styles.title}>{t('pit.transfer.title')}</h2>
+          <p className={styles.subtitle}>{t('pit.transfer.description')}</p>
         </div>
         <div className={styles.headerRight}>
           <button
             className={styles.displayModeButton}
             onClick={toggleDisplayMode}
-            title={`切换到${displayMode === 'carrot' ? '白萝卜' : '胡萝卜'}显示`}
+            title={t('pit.currency.switchTo', {
+              mode: t(displayMode === 'carrot' ? 'pit.currency.white' : 'pit.currency.carrot'),
+            })}
           >
             {displayMode === 'carrot' ? '🥕' : '🤍'}
-            {displayMode === 'carrot' ? '胡萝卜' : '白萝卜'}
+            {t(displayMode === 'carrot' ? 'pit.currency.carrot' : 'pit.currency.white')}
           </button>
         </div>
       </div>
@@ -151,19 +155,19 @@ export const Transfer = ({ onNavigate }: TransferProps) => {
             ['confirm', 'result'].includes(currentStep) ? styles.completed : ''
           }`}>
             <div className={styles.stepNumber}>1</div>
-            <div className={styles.stepLabel}>填写信息</div>
+            <div className={styles.stepLabel}>{t('pit.transfer.step.form')}</div>
           </div>
           <div className={styles.stepConnector}></div>
           <div className={`${styles.step} ${currentStep === 'confirm' ? styles.active : ''} ${
             currentStep === 'result' ? styles.completed : ''
           }`}>
             <div className={styles.stepNumber}>2</div>
-            <div className={styles.stepLabel}>确认转移</div>
+            <div className={styles.stepLabel}>{t('pit.transfer.step.confirm')}</div>
           </div>
           <div className={styles.stepConnector}></div>
           <div className={`${styles.step} ${currentStep === 'result' ? styles.active : ''}`}>
             <div className={styles.stepNumber}>3</div>
-            <div className={styles.stepLabel}>转移结果</div>
+            <div className={styles.stepLabel}>{t('pit.transfer.step.result')}</div>
           </div>
         </div>
       </div>

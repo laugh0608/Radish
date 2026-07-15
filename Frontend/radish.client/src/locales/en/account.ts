@@ -593,5 +593,7 @@ export const enAccount = {
   'profile.transactions.transactionNo': 'Transaction No: {{value}}',
   'profile.transactions.amountWhiteRadish': '{{amount}} White Radish',
   'profile.transactions.fee': 'Fee: {{amount}}',
-  'profile.transactions.pageInfo': 'Page {{current}} / {{total}} ({{count}} total)',
+  'profile.transactions.pageInfo': 'Page {{current}} / {{total}} ({{value}} total)',
+  'profile.transactions.pageInfo_one': 'Page {{current}} / {{total}} ({{value}} transaction)',
+  'profile.transactions.pageInfo_other': 'Page {{current}} / {{total}} ({{value}} transactions)',
 } as const;

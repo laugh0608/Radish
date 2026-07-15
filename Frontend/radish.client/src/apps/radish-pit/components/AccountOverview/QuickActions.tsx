@@ -1,4 +1,5 @@
 import { log } from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 import type { TabType } from '../../types';
 import styles from './QuickActions.module.css';
 
@@ -10,6 +11,7 @@ interface QuickActionsProps {
  * 快捷操作组件
  */
 export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
+  const { t } = useTranslation();
   const handleAction = (action: TabType) => {
     log.debug('QuickActions', `执行快捷操作: ${action}`);
     onNavigate(action);
@@ -25,29 +27,29 @@ export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
     {
       id: 'transfer',
       icon: '💸',
-      title: '快速转移',
-      description: '向其他用户转移萝卜',
+      title: t('pit.overview.action.transferTitle'),
+      description: t('pit.overview.action.transferDescription'),
       color: 'blue'
     },
     {
       id: 'history',
       icon: '📋',
-      title: '查看记录',
-      description: '查看详细交易记录',
+      title: t('pit.overview.action.historyTitle'),
+      description: t('pit.overview.action.historyDescription'),
       color: 'green'
     },
     {
       id: 'security',
       icon: '🔒',
-      title: '安全设置',
-      description: '设置支付口令和安全选项',
+      title: t('pit.overview.action.securityTitle'),
+      description: t('pit.overview.action.securityDescription'),
       color: 'orange'
     },
     {
       id: 'statistics',
       icon: '📈',
-      title: '收支统计',
-      description: '查看详细的收支分析',
+      title: t('pit.overview.action.statisticsTitle'),
+      description: t('pit.overview.action.statisticsDescription'),
       color: 'purple'
     }
   ];
@@ -57,7 +59,7 @@ export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
       <div className={styles.header}>
         <h3 className={styles.title}>
           <span className={styles.icon}>⚡</span>
-          快捷操作
+          {t('pit.overview.quickActions')}
         </h3>
       </div>
 

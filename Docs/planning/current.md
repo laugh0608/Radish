@@ -62,6 +62,7 @@
   - 2026-07-15 F3-C4 client 圈子域已完成本地实现与静态回归：系统词元、locale 日期 / 数字和英文数量规则形成闭环，帖子与用户内容继续保留原文；共享 UserFollow API 改用宿主本地化 fallback 与结构化错误，后端补齐稳定状态、`Code / MessageKey` 和双语资源。client 354 项、后端 662 项测试及 client production build 通过，11 项环境用例按配置跳过；未启动服务或执行 Gateway smoke。
   - 2026-07-15 F3-C5 client 宠物域已完成本地实现与静态回归：`/pet` 与 `/me` 摘要按稳定阶段、心情和动作字段解析系统词元，宠物名称继续保留原文；日期、数字、次数、冷却和流水反馈按 locale 与英文单复数展示。Pet API 与后端高频失败补齐结构化错误和双语资源。client 357 项、后端 664 项测试与 client production build 通过，11 项环境用例按配置跳过，解决方案构建 0 warning / 0 error；未扩展宠物经济、任务、Console 配置或公开名片，未启动服务或执行 Gateway smoke。
   - 2026-07-15 F3-C6 client 经验域已完成本地实现与静态回归：经验详情、`/me` 摘要、桌面状态与共享 `ExperienceBar` 由宿主双语词元和 locale formatter 驱动，分页、图表与英文数量规则形成闭环；系统类型只按稳定 `voExpType` 解析，未知类型保留原值，等级名、备注和冻结原因继续保留配置或人工原文。当前经验 API 改用结构化 `ApiResponseError`，未登录、越权和经验数据不存在具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源。client 363 项、共享 UI 8 项、后端 668 项测试通过，11 项环境用例按配置跳过，client production build 与解决方案构建通过；未改经验规则、等级公式、上限、排行、冻结语义、数据库或 Console，未启动服务或执行 Gateway smoke。
+  - 2026-07-15 F3-C7 client 萝卜资产域已完成本地实现与静态回归：萝卜坑五个标签、`/me` 资产摘要、Profile 钱包 / 流水、资料余额与桌面余额统一使用宿主双语词元、locale formatter 和 long 字符串安全金额；交易类型、状态、统计分类和安全日志只按稳定字段解析，未知词元保留原值，人工及审计内容保持原文。Coin / PaymentPassword API 改用结构化 `ApiResponseError`，高频失败具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源，模拟通知入口已删除并继续由 `/notifications` 承接。client 370 项、共享 UI 8 项、后端 674 项测试通过，11 项环境用例按配置跳过，client production build、解决方案构建与 Baseline Quick 通过；未改资产、转移、奖励、统计、口令锁定等业务规则，未改数据库、迁移或 Console，未启动服务或执行 Gateway smoke。
 
 ## V1 产品与发布范围
 
@@ -129,7 +130,7 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 按 [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)继续 `F3-C`：推进 client 萝卜坑、低频设置与公开承诺，以及 Console 权限、分类标签、表情、经验和胡萝卜管理；不重新混入已收口的主题运行时、Docs / 商品 / 圈子 / 宠物 / 经验域或后置在线翻译平台。
+1. 按 [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)推进 `F3-C8`：成组收口 client 剩余低频设置、公开承诺长文本与正式页面实际消费的共享反馈 / 上传组件，完成词元、长文本布局、locale formatter、结构化错误和共享 labels 契约；不重新混入已收口的主题运行时、Docs / 商品 / 圈子 / 宠物 / 经验 / 萝卜资产域或后置在线翻译平台。
 2. 观察首批真实生产使用中的登录、内容参与、聊天、通知和 Console 管理链路；P0/P1 立即进入维护线，P2/P3 成组排期。
 3. 当前 `dev` 成果达到完整功能、成组维护或主动发版边界后，再统一创建 `dev -> master` PR；不为连续开发中的单独文档或小提交频繁开 PR。
 
@@ -144,11 +145,12 @@ Radish V1 的产品定位固定为：
 7. 已提交 `F3-C2 / F3-C3` 为 `d0e72b2b`，并提交 `F3-C4` client 圈子域为 `5d7ae5e0`。
 8. 已完成 `F3-C5` client 宠物域：系统派生内容改用稳定字段本地化，宠物名保持原文，Pet 结构化错误、locale 格式化与英文单复数形成闭环。
 9. 已完成 `F3-C6` client 经验域：经验详情、`/me` 摘要、桌面状态和共享经验条完成双语词元、locale 格式化与结构化错误治理；等级名、备注和冻结原因保持原文，排行与经验业务规则未变更。
+10. 已完成 `F3-C7` client 萝卜资产域：萝卜坑、`/me`、Profile 与桌面实际消费者统一双语词元、long 安全金额和结构化 Coin / PaymentPassword 错误；交易通知归回正式 `/notifications`，资产业务规则未变更。
 
 ## 明日事项（2026-07-16）
 
-1. 继续按剩余业务域复核真实用户可见缺口，优先选择一组能形成完整页面与错误契约闭环的 client 或 Console 业务面。
-2. 延续域级 registry、结构化错误、formatter 和 `0 / 1 / 2` 复数门禁，不做全仓逐字符串替换，也不自动翻译用户内容。
+1. 推进 `F3-C8` client 剩余页面族：先核对低频设置、公开承诺、页面 head 与正式消费的共享反馈 / 上传组件，明确系统词元、长文本和用户内容边界后成组实施。
+2. 同步治理这些页面实际消费的 API 高频失败、共享 labels、locale formatter、英文长文与 `0 / 1 / 2` 复数门禁，不做全仓逐字符串替换，也不自动翻译用户内容。
 3. 继续在开发轮次使用静态验证；PC / mobile 真实语言切换、OIDC 往返和失败态矩阵统一保留到 F3-D 专题验收，并在启动服务前重新取得当轮授权。
 
 ## 并行维护线

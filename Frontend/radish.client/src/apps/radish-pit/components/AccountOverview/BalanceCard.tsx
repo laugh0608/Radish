@@ -1,9 +1,11 @@
-import { formatCoinAmount } from '../../utils';
+import { useTranslation } from 'react-i18next';
+import type { CoinAmount } from '@/api/coin';
+import { addCoinValues, compareCoinValues, formatCoinAmount } from '../../utils';
 import styles from './BalanceCard.module.css';
 
 interface BalanceCardProps {
-  balance: number;
-  frozenBalance: number;
+  balance: CoinAmount;
+  frozenBalance: CoinAmount;
   displayMode: 'carrot' | 'white';
 }
 
@@ -11,18 +13,19 @@ interface BalanceCardProps {
  * 余额卡片组件
  */
 export const BalanceCard = ({ balance, frozenBalance, displayMode }: BalanceCardProps) => {
-  const totalBalance = balance + frozenBalance;
-  const useWhiteRadish = displayMode === 'white';
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const totalBalance = addCoinValues(balance, frozenBalance);
 
   return (
     <div className={styles.card}>
       <div className={styles.header}>
         <h3 className={styles.title}>
           <span className={styles.icon}>💰</span>
-          当前存量
+          {t('pit.balance.title')}
         </h3>
         <div className={styles.displayMode}>
-          {displayMode === 'carrot' ? '胡萝卜模式' : '白萝卜模式'}
+          {t(displayMode === 'carrot' ? 'pit.currency.carrotMode' : 'pit.currency.whiteMode')}
         </div>
       </div>
 
@@ -30,26 +33,26 @@ export const BalanceCard = ({ balance, frozenBalance, displayMode }: BalanceCard
         {/* 主要余额 */}
         <div className={styles.mainBalance}>
           <div className={styles.balanceAmount}>
-            {formatCoinAmount(balance, false, useWhiteRadish)}
+            {formatCoinAmount(balance, language, t, displayMode, false)}
           </div>
           <div className={styles.balanceUnit}>
-            {useWhiteRadish ? '白萝卜' : '胡萝卜'}
+            {t(displayMode === 'white' ? 'pit.currency.white' : 'pit.currency.carrot')}
           </div>
-          <div className={styles.balanceLabel}>可用存量</div>
+          <div className={styles.balanceLabel}>{t('pit.balance.available')}</div>
         </div>
 
         {/* 余额详情 */}
         <div className={styles.balanceDetails}>
           <div className={styles.detailItem}>
-            <div className={styles.detailLabel}>冻结存量</div>
+            <div className={styles.detailLabel}>{t('pit.balance.frozen')}</div>
             <div className={styles.detailValue}>
-              {formatCoinAmount(frozenBalance, true, useWhiteRadish)}
+              {formatCoinAmount(frozenBalance, language, t, displayMode)}
             </div>
           </div>
           <div className={styles.detailItem}>
-            <div className={styles.detailLabel}>总存量</div>
+            <div className={styles.detailLabel}>{t('pit.balance.total')}</div>
             <div className={styles.detailValue}>
-              {formatCoinAmount(totalBalance, true, useWhiteRadish)}
+              {formatCoinAmount(totalBalance, language, t, displayMode)}
             </div>
           </div>
         </div>
@@ -58,16 +61,16 @@ export const BalanceCard = ({ balance, frozenBalance, displayMode }: BalanceCard
         {displayMode === 'white' && (
           <div className={styles.exchangeRate}>
             <span className={styles.exchangeIcon}>ℹ️</span>
-            1 白萝卜 = 1,000 胡萝卜
+            {t('pit.currency.exchangeRate', { value: formatCoinAmount(1000, language, t) })}
           </div>
         )}
       </div>
 
       {/* 余额状态指示器 */}
       <div className={styles.statusIndicator}>
-        <div className={`${styles.statusDot} ${balance > 0 ? styles.active : styles.inactive}`}></div>
+        <div className={`${styles.statusDot} ${compareCoinValues(balance, 0) > 0 ? styles.active : styles.inactive}`}></div>
         <span className={styles.statusText}>
-          {balance > 0 ? '账户正常' : '存量不足'}
+          {t(compareCoinValues(balance, 0) > 0 ? 'pit.balance.normal' : 'pit.balance.empty')}
         </span>
       </div>
     </div>

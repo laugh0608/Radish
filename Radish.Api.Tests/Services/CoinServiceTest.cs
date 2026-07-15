@@ -14,6 +14,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Radish.Shared.Security;
 using SqlSugar;
 using Xunit;
@@ -659,10 +660,13 @@ public class CoinServiceTest
 
         var service = CreateCoinService(paymentPasswordServiceMock.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
             service.TransferAsync(fromUserId, toUserId, amount, "274958", "测试转账"));
 
         Assert.Equal(PaymentPasscodeRules.UpgradeRequiredErrorMessage, exception.Message);
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal(PaymentPasscodeErrorCodes.UpgradeRequired, exception.ErrorCode);
+        Assert.Equal("error.payment_password.upgrade_required", exception.MessageKey);
         paymentPasswordServiceMock.VerifyAll();
     }
 
@@ -752,15 +756,13 @@ public class CoinServiceTest
                 Status = OperationIdempotencyBeginStatus.Succeeded,
                 RecordId = 9004,
                 ResponsePayload = "payload",
+                ErrorCode = CoinErrorCodes.TransferInsufficientBalance,
                 ErrorMessage = errorMessage
             });
-        operationIdempotencyService
-            .Setup(service => service.DeserializeResponse<TransactionResultVo>("payload"))
-            .Returns(new TransactionResultVo());
 
         var service = CreateCoinService(paymentPasswordServiceMock.Object, operationIdempotencyService.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.TransferAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.TransferAsync(
             fromUserId,
             toUserId,
             amount,
@@ -769,6 +771,9 @@ public class CoinServiceTest
             idempotencyKey));
 
         Assert.Equal(errorMessage, exception.Message);
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal(CoinErrorCodes.TransferInsufficientBalance, exception.ErrorCode);
+        Assert.Equal("error.coin.transfer_insufficient_balance", exception.MessageKey);
         _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
         _balanceChangeLogRepositoryMock.Verify(r => r.AddAsync(It.IsAny<BalanceChangeLog>()), Times.Never);
         paymentPasswordServiceMock.VerifyAll();
@@ -939,7 +944,7 @@ public class CoinServiceTest
 
         var service = CreateCoinService(paymentPasswordServiceMock.Object, operationIdempotencyService.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.TransferAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.TransferAsync(
             fromUserId,
             toUserId,
             amount,
@@ -948,14 +953,52 @@ public class CoinServiceTest
             idempotencyKey));
 
         Assert.Contains("余额不足", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(CoinErrorCodes.TransferInsufficientBalance, exception.ErrorCode);
+        Assert.Equal("error.coin.transfer_insufficient_balance", exception.MessageKey);
         Assert.NotNull(completionRequest);
         Assert.Equal(9005, completionRequest!.RecordId);
         Assert.Contains("余额不足", completionRequest.ErrorMessage, StringComparison.Ordinal);
+        Assert.Equal(CoinErrorCodes.TransferInsufficientBalance, completionRequest.ErrorCode);
         Assert.Equal("payload", completionRequest.ResponsePayload);
         _coinTransactionRepositoryMock.Verify(r => r.AddAsync(It.IsAny<CoinTransaction>()), Times.Never);
         _balanceChangeLogRepositoryMock.Verify(r => r.AddAsync(It.IsAny<BalanceChangeLog>()), Times.Never);
         paymentPasswordServiceMock.VerifyAll();
         operationIdempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetStatisticsAsync_ShouldReturnStableCategoryCodes()
+    {
+        const long userId = 123456;
+        var createTime = DateTime.UtcNow.AddDays(-1);
+        _coinTransactionRepositoryMock
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
+            .ReturnsAsync([
+                new CoinTransaction
+                {
+                    ToUserId = userId,
+                    Amount = 20,
+                    TransactionType = "LIKE_REWARD",
+                    Status = "SUCCESS",
+                    CreateTime = createTime
+                },
+                new CoinTransaction
+                {
+                    FromUserId = userId,
+                    ToUserId = 654321,
+                    Amount = 10,
+                    TransactionType = "TRANSFER",
+                    Status = "SUCCESS",
+                    CreateTime = createTime
+                }
+            ]);
+
+        var service = CreateCoinService();
+        var result = await service.GetStatisticsAsync(userId, "month");
+
+        Assert.Contains(result.VoCategoryStats, item => item.VoCategory == "IN_LIKE_REWARD");
+        Assert.Contains(result.VoCategoryStats, item => item.VoCategory == "OUT_TRANSFER");
+        Assert.DoesNotContain(result.VoCategoryStats, item => item.VoCategory.Contains('入') || item.VoCategory.Contains('出'));
     }
 
     #endregion

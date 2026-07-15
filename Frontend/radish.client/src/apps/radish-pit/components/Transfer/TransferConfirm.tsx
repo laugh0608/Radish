@@ -1,4 +1,5 @@
 import { formatCoinAmount, getSafeUserDisplayName } from '../../utils';
+import { useTranslation } from 'react-i18next';
 import type { TransferFormData } from '../../types';
 import styles from './TransferConfirm.module.css';
 
@@ -20,7 +21,9 @@ export const TransferConfirm = ({
   onConfirm,
   onCancel
 }: TransferConfirmProps) => {
-  const useWhiteRadish = displayMode === 'white';
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const recipientName = getSafeUserDisplayName(transferData.recipientName, false, t('pit.common.me'));
 
   return (
     <div className={styles.container}>
@@ -28,9 +31,9 @@ export const TransferConfirm = ({
         <div className={styles.cardHeader}>
           <h3 className={styles.cardTitle}>
             <span className={styles.cardIcon}>🔍</span>
-            确认转移信息
+            {t('pit.transfer.confirm.title')}
           </h3>
-          <p className={styles.cardSubtitle}>请仔细核对以下转移信息，确认无误后点击确认转移</p>
+          <p className={styles.cardSubtitle}>{t('pit.transfer.confirm.description')}</p>
         </div>
 
         <div className={styles.confirmContent}>
@@ -40,8 +43,8 @@ export const TransferConfirm = ({
               <div className={styles.transferParty}>
                 <div className={styles.partyIcon}>👤</div>
                 <div className={styles.partyInfo}>
-                  <div className={styles.partyLabel}>转出方</div>
-                  <div className={styles.partyName}>我</div>
+                  <div className={styles.partyLabel}>{t('pit.transfer.confirm.sender')}</div>
+                  <div className={styles.partyName}>{t('pit.common.me')}</div>
                 </div>
               </div>
 
@@ -49,16 +52,16 @@ export const TransferConfirm = ({
                 <div className={styles.arrowLine}></div>
                 <div className={styles.arrowHead}>→</div>
                 <div className={styles.transferAmount}>
-                  {formatCoinAmount(transferData.amount, true, useWhiteRadish)}
+                  {formatCoinAmount(transferData.amount, language, t, displayMode)}
                 </div>
               </div>
 
               <div className={styles.transferParty}>
                 <div className={styles.partyIcon}>👥</div>
                 <div className={styles.partyInfo}>
-                  <div className={styles.partyLabel}>接收方</div>
+                  <div className={styles.partyLabel}>{t('pit.transfer.confirm.recipient')}</div>
                   <div className={styles.partyName}>
-                    {getSafeUserDisplayName(transferData.recipientName)}
+                    {recipientName}
                   </div>
                 </div>
               </div>
@@ -67,39 +70,39 @@ export const TransferConfirm = ({
 
           {/* 转移详情 */}
           <div className={styles.transferDetails}>
-            <h4 className={styles.detailsTitle}>转移详情</h4>
+            <h4 className={styles.detailsTitle}>{t('pit.transfer.confirm.details')}</h4>
             <div className={styles.detailsList}>
               <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>接收方用户</div>
+                <div className={styles.detailLabel}>{t('pit.transfer.confirm.recipientUser')}</div>
                 <div className={styles.detailValue}>
-                  {getSafeUserDisplayName(transferData.recipientName)}
+                  {recipientName}
                 </div>
               </div>
 
               <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>转移金额</div>
+                <div className={styles.detailLabel}>{t('pit.transfer.confirm.amount')}</div>
                 <div className={`${styles.detailValue} ${styles.amountValue}`}>
-                  {formatCoinAmount(transferData.amount, true, useWhiteRadish)}
+                  {formatCoinAmount(transferData.amount, language, t, displayMode)}
                 </div>
               </div>
 
               <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>手续费</div>
+                <div className={styles.detailLabel}>{t('pit.transfer.confirm.fee')}</div>
                 <div className={styles.detailValue}>
-                  免费
+                  {t('pit.transfer.confirm.free')}
                 </div>
               </div>
 
               <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>实际到账</div>
+                <div className={styles.detailLabel}>{t('pit.transfer.confirm.receivedAmount')}</div>
                 <div className={`${styles.detailValue} ${styles.amountValue}`}>
-                  {formatCoinAmount(transferData.amount, true, useWhiteRadish)}
+                  {formatCoinAmount(transferData.amount, language, t, displayMode)}
                 </div>
               </div>
 
               {transferData.note && (
                 <div className={styles.detailItem}>
-                  <div className={styles.detailLabel}>转移备注</div>
+                  <div className={styles.detailLabel}>{t('pit.transfer.confirm.remark')}</div>
                   <div className={styles.detailValue}>
                     {transferData.note}
                   </div>
@@ -107,9 +110,9 @@ export const TransferConfirm = ({
               )}
 
               <div className={styles.detailItem}>
-                <div className={styles.detailLabel}>预计到账时间</div>
+                <div className={styles.detailLabel}>{t('pit.transfer.confirm.arrival')}</div>
                 <div className={styles.detailValue}>
-                  即时到账
+                  {t('pit.transfer.confirm.instant')}
                 </div>
               </div>
             </div>
@@ -119,12 +122,12 @@ export const TransferConfirm = ({
           <div className={styles.securityTips}>
             <div className={styles.tipsHeader}>
               <span className={styles.tipsIcon}>🔒</span>
-              <span className={styles.tipsTitle}>安全提示</span>
+              <span className={styles.tipsTitle}>{t('pit.transfer.confirm.securityTitle')}</span>
             </div>
             <ul className={styles.tipsList}>
-              <li>请确认接收方用户信息正确，转移后无法撤销</li>
-              <li>转移完成后，萝卜将立即从您的账户扣除</li>
-              <li>如有疑问，请联系客服或取消本次转移</li>
+              <li>{t('pit.transfer.confirm.securityRecipient')}</li>
+              <li>{t('pit.transfer.confirm.securityDebit')}</li>
+              <li>{t('pit.transfer.confirm.securitySupport')}</li>
             </ul>
           </div>
 
@@ -136,7 +139,7 @@ export const TransferConfirm = ({
               onClick={onCancel}
               disabled={loading}
             >
-              取消转移
+              {t('pit.transfer.confirm.cancel')}
             </button>
             <button
               type="button"
@@ -147,10 +150,10 @@ export const TransferConfirm = ({
               {loading ? (
                 <>
                   <div className={styles.buttonSpinner}></div>
-                  处理中...
+                  {t('pit.common.processing')}
                 </>
               ) : (
-                '确认转移'
+                t('pit.transfer.confirm.submit')
               )}
             </button>
           </div>

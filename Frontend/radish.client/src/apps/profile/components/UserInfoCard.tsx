@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { log } from '@/utils/logger';
 import { apiGet, configureApiClient } from '@radish/http';
 import type { ApiResponse } from '@radish/http';
@@ -15,6 +16,8 @@ import { buildTimeZoneOptions, formatDateTimeByTimeZone, resolveTimeZoneId } fro
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import type { LongId } from '@/api/user';
+import { getBalance, type UserBalance } from '@/api/coin';
+import { getIntlLocale } from '@/locales/language';
 import { reuseInFlightRequest } from '../requestDedup';
 import styles from './UserInfoCard.module.css';
 
@@ -61,20 +64,6 @@ interface ProfileInfo {
   voAvatarThumbnailUrl?: string | null;
 }
 
-interface CoinBalanceInfo {
-  voUserId: LongId;
-  voBalance: number | string;
-  voBalanceDisplay: string;
-  voFrozenBalance: number | string;
-  voFrozenBalanceDisplay: string;
-  voTotalEarned: number | string;
-  voTotalSpent: number | string;
-  voTotalTransferredIn: number | string;
-  voTotalTransferredOut: number | string;
-  voCreateTime: string;
-  voModifyTime?: string | null;
-}
-
 function getAuthHeader(): string | null {
   const token = tokenService.getAccessToken();
   return token ? `Bearer ${token}` : null;
@@ -86,19 +75,21 @@ function resolveUrl(apiBaseUrl: string, url: string | null | undefined): string 
 
 function formatCoinAmount(
   amount: number | string | null | undefined,
+  language: string,
   translate: (key: string) => string
 ): string {
-  const parsed = typeof amount === 'string' ? Number(amount) : amount;
-  const value = Number.isFinite(parsed) ? (parsed as number) : 0;
-  const negative = value < 0;
-  const abs = Math.abs(value);
+  const normalized = String(amount ?? 0).trim();
+  const value = /^-?\d+$/.test(normalized) ? BigInt(normalized) : 0n;
+  const negative = value < 0n;
+  const abs = negative ? -value : value;
 
-  const whiteRadish = Math.floor(abs / 1000);
-  const carrot = abs % 1000;
+  const whiteRadish = abs / 1000n;
+  const carrot = abs % 1000n;
+  const formatter = new Intl.NumberFormat(getIntlLocale(language));
 
   const parts: string[] = [];
-  if (whiteRadish > 0) parts.push(`${whiteRadish} ${translate('profile.coin.whiteRadish')}`);
-  if (carrot > 0 || parts.length === 0) parts.push(`${carrot} ${translate('profile.coin.carrot')}`);
+  if (whiteRadish > 0n) parts.push(`${formatter.format(whiteRadish)} ${translate('profile.coin.whiteRadish')}`);
+  if (carrot > 0n || parts.length === 0) parts.push(`${formatter.format(carrot)} ${translate('profile.coin.carrot')}`);
 
   const result = parts.join(' ');
   return negative ? `-${result}` : result;
@@ -106,7 +97,7 @@ function formatCoinAmount(
 
 interface OwnProfileBundle {
   profile: ProfileInfo | null;
-  coinBalance: CoinBalanceInfo | null;
+  coinBalance: UserBalance | null;
 }
 
 function buildOwnProfileRequestKey(apiBaseUrl: string, userId: LongId): string {
@@ -116,20 +107,21 @@ function buildOwnProfileRequestKey(apiBaseUrl: string, userId: LongId): string {
 async function fetchOwnProfileBundle(
   apiBaseUrl: string,
   userId: LongId,
+  t: TFunction,
   reuseInFlight: boolean
 ): Promise<OwnProfileBundle> {
   const loadBundle = async () => {
     const [profileResult, coinBalanceResult] = await Promise.allSettled([
       apiGet<ProfileInfo>('/api/v1/User/GetMyProfile', { withAuth: true }),
-      apiGet<CoinBalanceInfo>('/api/v1/Coin/GetBalance', { withAuth: true })
+      getBalance(t)
     ]);
 
     return {
       profile: profileResult.status === 'fulfilled' && profileResult.value.ok
         ? profileResult.value.data ?? null
         : null,
-      coinBalance: coinBalanceResult.status === 'fulfilled' && coinBalanceResult.value.ok
-        ? coinBalanceResult.value.data ?? null
+      coinBalance: coinBalanceResult.status === 'fulfilled'
+        ? coinBalanceResult.value
         : null
     };
   };
@@ -153,11 +145,12 @@ export const UserInfoCard = ({
   savingTimeZone = false,
   onTimeZoneChange
 }: UserInfoCardProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { setUser, tenantId, roles, permissions } = useUserStore();
 
   const [profile, setProfile] = useState<ProfileInfo | null>(null);
-  const [coinBalance, setCoinBalance] = useState<CoinBalanceInfo | null>(null);
+  const [coinBalance, setCoinBalance] = useState<UserBalance | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -208,7 +201,7 @@ export const UserInfoCard = ({
     setLoadingProfile(true);
 
     try {
-      const result = await fetchOwnProfileBundle(apiBaseUrl, userId, reuseInFlight);
+      const result = await fetchOwnProfileBundle(apiBaseUrl, userId, t, reuseInFlight);
       if (requestId !== loadProfileRequestIdRef.current) {
         return;
       }
@@ -393,7 +386,7 @@ export const UserInfoCard = ({
             </div>
             <div className={styles.metaItem}>
               <Icon icon="mdi:wallet" size={16} />
-              <span>{formatCoinAmount(coinBalance?.voBalance, (key) => t(key))}</span>
+              <span>{formatCoinAmount(coinBalance?.voBalance, language, (key) => t(key))}</span>
             </div>
             {profile?.voAddress && (
               <div className={styles.metaItem}>

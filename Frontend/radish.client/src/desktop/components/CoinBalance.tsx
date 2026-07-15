@@ -1,6 +1,7 @@
 import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getBalance, type UserBalance } from '@/api/coin';
+import { formatCoinAmount, formatCoinNumber } from '@/coin/coinPresentation';
 import { useUserStore } from '@/stores/userStore';
 import styles from './CoinBalance.module.css';
 
@@ -10,7 +11,8 @@ import styles from './CoinBalance.module.css';
  * 显示用户的萝卜币余额，支持切换显示模式（胡萝卜/白萝卜）
  */
 export const CoinBalance = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { isAuthenticated } = useUserStore();
   const [balance, setBalance] = useState<UserBalance | null>(null);
   const [loading, setLoading] = useState(false);
@@ -82,8 +84,8 @@ export const CoinBalance = () => {
       title={
         balance
           ? t('desktop.coinBalance.toggleTitle', {
-              carrot: (balance.voBalance || 0).toLocaleString(),
-              radish: balance.voBalanceDisplay || t('profile.wallet.whiteRadishAmount', { amount: 0 }),
+              carrot: formatCoinNumber(balance.voBalance, language),
+              radish: formatCoinAmount(balance.voBalance, language, t, 'white', false),
             })
           : t('desktop.coinBalance.loading')
       }
@@ -94,8 +96,8 @@ export const CoinBalance = () => {
       <span className={styles.amount}>
         {balance ? (
           displayMode === 'carrot'
-            ? (balance.voBalance || 0).toLocaleString()
-            : (balance.voBalanceDisplay || t('profile.wallet.whiteRadishAmount', { amount: 0 }))
+            ? formatCoinNumber(balance.voBalance, language)
+            : formatCoinAmount(balance.voBalance, language, t, 'white', false)
         ) : (
           loading ? '...' : (error ? t('desktop.coinBalance.error') : '0')
         )}

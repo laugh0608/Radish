@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCoinBalance, useAccountStats } from '../../hooks';
 import { BalanceCard } from './BalanceCard';
 import { StatsCard } from './StatsCard';
@@ -15,6 +16,7 @@ interface AccountOverviewProps {
  * 账户总览组件
  */
 export const AccountOverview = ({ onNavigate }: AccountOverviewProps) => {
+  const { t } = useTranslation();
   const [displayMode, setDisplayMode] = useState<'carrot' | 'white'>('carrot');
   const { balance, frozenBalance, loading: balanceLoading, error: balanceError, refetch: refetchBalance } = useCoinBalance();
   const { stats, loading: statsLoading, error: statsError, refetch: refetchStats } = useAccountStats();
@@ -32,7 +34,7 @@ export const AccountOverview = ({ onNavigate }: AccountOverviewProps) => {
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载账户信息中...</p>
+          <p>{t('pit.overview.loading')}</p>
         </div>
       </div>
     );
@@ -43,10 +45,10 @@ export const AccountOverview = ({ onNavigate }: AccountOverviewProps) => {
       <div className={styles.container}>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
-          <h3>加载失败</h3>
+          <h3>{t('pit.common.loadFailed')}</h3>
           <p>{balanceError || statsError}</p>
           <button className={styles.retryButton} onClick={handleRefresh}>
-            重试
+            {t('pit.common.retry')}
           </button>
         </div>
       </div>
@@ -58,19 +60,21 @@ export const AccountOverview = ({ onNavigate }: AccountOverviewProps) => {
       {/* 页面标题和操作 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>账户总览</h2>
-          <p className={styles.subtitle}>查看您的萝卜存量和统计信息</p>
+          <h2 className={styles.title}>{t('pit.overview.title')}</h2>
+          <p className={styles.subtitle}>{t('pit.overview.description')}</p>
         </div>
         <div className={styles.headerRight}>
           <button
             className={styles.displayModeButton}
             onClick={toggleDisplayMode}
-            title={`切换到${displayMode === 'carrot' ? '白萝卜' : '胡萝卜'}显示`}
+            title={t('pit.currency.switchTo', {
+              mode: t(displayMode === 'carrot' ? 'pit.currency.white' : 'pit.currency.carrot'),
+            })}
           >
             {displayMode === 'carrot' ? '🥕' : '🤍'}
-            {displayMode === 'carrot' ? '胡萝卜' : '白萝卜'}
+            {t(displayMode === 'carrot' ? 'pit.currency.carrot' : 'pit.currency.white')}
           </button>
-          <button className={styles.refreshButton} onClick={handleRefresh} title="刷新数据">
+          <button className={styles.refreshButton} onClick={handleRefresh} title={t('pit.common.refresh')}>
             🔄
           </button>
         </div>

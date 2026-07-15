@@ -190,6 +190,11 @@ public class PaymentPasswordVerifyResult
     public string? ErrorCode { get; set; }
 
     /// <summary>
+    /// 多语言消息键
+    /// </summary>
+    public string? MessageKey { get; set; }
+
+    /// <summary>
     /// 剩余尝试次数
     /// </summary>
     public int RemainingAttempts { get; set; }

@@ -34,6 +34,7 @@ export interface AreaChartProps {
   showLegend?: boolean;
   stacked?: boolean;
   className?: string;
+  valueFormatter?: (value: number) => string;
 }
 
 /**
@@ -50,7 +51,8 @@ export const AreaChart = ({
   showGrid = true,
   showLegend = true,
   stacked = false,
-  className
+  className,
+  valueFormatter,
 }: AreaChartProps) => {
   const initialDimension = getInitialChartDimension(height);
 
@@ -73,8 +75,10 @@ export const AreaChart = ({
           <YAxis
             stroke="var(--theme-text-secondary, #5d6b75)"
             style={{ fontSize: '12px' }}
+            tickFormatter={valueFormatter}
           />
           <Tooltip
+            formatter={(value) => typeof value === 'number' && valueFormatter ? valueFormatter(value) : value}
             contentStyle={{
               backgroundColor: 'var(--theme-bg-surface, #fbfcfc)',
               border: '1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16))',

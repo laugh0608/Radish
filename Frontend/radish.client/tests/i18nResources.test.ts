@@ -56,6 +56,14 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.ok(enKeys.includes('experience.bar.remainingExperience_other'));
   assert.ok(enKeys.includes('experience.chart.rangeDays_one'));
   assert.ok(enKeys.includes('experience.chart.rangeDays_other'));
+  assert.ok(enKeys.includes('pit.overview.recentCount_one'));
+  assert.ok(enKeys.includes('pit.overview.recentCount_other'));
+  assert.ok(enKeys.includes('pit.statistics.transactionCount_one'));
+  assert.ok(enKeys.includes('pit.statistics.transactionCount_other'));
+  assert.ok(enKeys.includes('profile.transactions.pageInfo_one'));
+  assert.ok(enKeys.includes('profile.transactions.pageInfo_other'));
+  assert.ok(enKeys.includes('pit.security.account.unlockRemaining_one'));
+  assert.ok(enKeys.includes('pit.security.account.unlockRemaining_other'));
   assert.ok(!enKeys.includes('shop.productCount'));
 
   const instance = i18next.createInstance();
@@ -80,6 +88,14 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
           'experience.bar.remainingExperience_other': '{{value}} EXP points needed',
           'experience.chart.rangeDays_one': 'Last {{count}} day',
           'experience.chart.rangeDays_other': 'Last {{count}} days',
+          'pit.overview.recentCount_one': '{{value}} recent transaction',
+          'pit.overview.recentCount_other': '{{value}} recent transactions',
+          'pit.statistics.transactionCount_one': '{{value}} transaction',
+          'pit.statistics.transactionCount_other': '{{value}} transactions',
+          'profile.transactions.pageInfo_one': 'Page {{current}} / {{total}} ({{value}} transaction)',
+          'profile.transactions.pageInfo_other': 'Page {{current}} / {{total}} ({{value}} transactions)',
+          'pit.security.account.unlockRemaining_one': 'Unlocks in about {{value}} minute',
+          'pit.security.account.unlockRemaining_other': 'Unlocks in about {{value}} minutes',
         },
       },
       zh: {
@@ -109,6 +125,14 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
   assert.equal(instance.t('experience.bar.remainingExperience', { count: 2, value: '2' }), '2 EXP points needed');
   assert.equal(instance.t('experience.chart.rangeDays', { count: 1 }), 'Last 1 day');
   assert.equal(instance.t('experience.chart.rangeDays', { count: 2 }), 'Last 2 days');
+  assert.equal(instance.t('pit.overview.recentCount', { count: 1, value: '1' }), '1 recent transaction');
+  assert.equal(instance.t('pit.overview.recentCount', { count: 2, value: '2' }), '2 recent transactions');
+  assert.equal(instance.t('pit.statistics.transactionCount', { count: 1, value: '1' }), '1 transaction');
+  assert.equal(instance.t('pit.statistics.transactionCount', { count: 2, value: '2' }), '2 transactions');
+  assert.equal(instance.t('profile.transactions.pageInfo', { current: '1', total: '2', count: 1, value: '1' }), 'Page 1 / 2 (1 transaction)');
+  assert.equal(instance.t('profile.transactions.pageInfo', { current: '1', total: '2', count: 2, value: '2' }), 'Page 1 / 2 (2 transactions)');
+  assert.equal(instance.t('pit.security.account.unlockRemaining', { count: 1, value: '1' }), 'Unlocks in about 1 minute');
+  assert.equal(instance.t('pit.security.account.unlockRemaining', { count: 2, value: '2' }), 'Unlocks in about 2 minutes');
 
   await instance.changeLanguage('zh');
   assert.equal(instance.t('shop.productCount', { count: 2 }), '2 件商品');

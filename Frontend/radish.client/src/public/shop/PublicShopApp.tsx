@@ -567,8 +567,7 @@ export const PublicShopApp = ({
       const errorMessage = result.data?.errorMessage || result.message || t('shop.error.purchaseFailed');
       const requiresPasscodeUpgrade = Boolean(result.data?.requiresPasscodeUpgrade)
         || isPaymentPasscodeUpgradeRequiredError({
-          code: result.data?.errorCode,
-          message: errorMessage
+          code: result.data?.errorCode
         });
 
       if (requiresPasscodeUpgrade) {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { useSecurityStatus } from '../../hooks';
 import { SecurityOverview } from './SecurityOverview';
@@ -13,6 +14,7 @@ type SecurityTab = 'overview' | 'password' | 'log' | 'tips';
  * 安全设置组件
  */
 export const SecuritySettings = () => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<SecurityTab>('overview');
   const { status, loading, error, refetch } = useSecurityStatus();
   const requiresPasscodeUpgrade = Boolean(status?.requiresPasscodeUpgrade);
@@ -61,8 +63,8 @@ export const SecuritySettings = () => {
       {/* 页面标题 */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h2 className={styles.title}>安全设置</h2>
-          <p className={styles.subtitle}>管理您的萝卜坑账户安全设置</p>
+          <h2 className={styles.title}>{t('pit.security.title')}</h2>
+          <p className={styles.subtitle}>{t('pit.security.description')}</p>
         </div>
         <div className={styles.headerRight}>
           <div className={`${styles.securityLevel} ${
@@ -71,7 +73,13 @@ export const SecuritySettings = () => {
           }`}>
             <span className={styles.securityIcon}>🔒</span>
             <span className={styles.securityText}>
-              {status?.isLocked ? '已锁定' : requiresPasscodeUpgrade ? '需重置' : hasPaymentPasscode ? '安全' : '一般'}
+              {t(status?.isLocked
+                ? 'pit.security.state.locked'
+                : requiresPasscodeUpgrade
+                  ? 'pit.security.state.resetRequired'
+                  : hasPaymentPasscode
+                    ? 'pit.security.state.secure'
+                    : 'pit.security.state.fair')}
             </span>
           </div>
         </div>
@@ -85,16 +93,16 @@ export const SecuritySettings = () => {
             onClick={() => handleTabChange('overview')}
           >
             <span className={styles.tabIcon}>📊</span>
-            <span className={styles.tabText}>安全概览</span>
+            <span className={styles.tabText}>{t('pit.security.tab.overview')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'password' ? styles.active : ''}`}
             onClick={() => handleTabChange('password')}
           >
             <span className={styles.tabIcon}>🔑</span>
-            <span className={styles.tabText}>支付口令</span>
+            <span className={styles.tabText}>{t('pit.security.tab.passcode')}</span>
             {requiresPasscodeUpgrade ? (
-              <span className={styles.tabBadge}>重置</span>
+              <span className={styles.tabBadge}>{t('pit.security.resetBadge')}</span>
             ) : !hasPaymentPasscode ? (
               <span className={styles.tabBadge}>!</span>
             ) : null}
@@ -104,14 +112,14 @@ export const SecuritySettings = () => {
             onClick={() => handleTabChange('log')}
           >
             <span className={styles.tabIcon}>📋</span>
-            <span className={styles.tabText}>安全日志</span>
+            <span className={styles.tabText}>{t('pit.security.tab.logs')}</span>
           </button>
           <button
             className={`${styles.tab} ${activeTab === 'tips' ? styles.active : ''}`}
             onClick={() => handleTabChange('tips')}
           >
             <span className={styles.tabIcon}>💡</span>
-            <span className={styles.tabText}>安全建议</span>
+            <span className={styles.tabText}>{t('pit.security.tab.tips')}</span>
             {status && (requiresPasscodeUpgrade || !hasPaymentPasscode) && (
               <span className={styles.tabBadge}>1</span>
             )}

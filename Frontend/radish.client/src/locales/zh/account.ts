@@ -593,5 +593,7 @@ export const zhAccount = {
   'profile.transactions.transactionNo': '流水号：{{value}}',
   'profile.transactions.amountWhiteRadish': '{{amount}} 白萝卜',
   'profile.transactions.fee': '手续费：{{amount}}',
-  'profile.transactions.pageInfo': '第 {{current}} / {{total}} 页（共 {{count}} 条）',
+  'profile.transactions.pageInfo': '第 {{current}} / {{total}} 页（共 {{value}} 条）',
+  'profile.transactions.pageInfo_one': '第 {{current}} / {{total}} 页（共 {{value}} 笔交易）',
+  'profile.transactions.pageInfo_other': '第 {{current}} / {{total}} 页（共 {{value}} 笔交易）',
 } as const;

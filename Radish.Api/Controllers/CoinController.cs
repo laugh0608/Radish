@@ -1,7 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Resources;
 using Radish.Api.Filters;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
@@ -9,6 +12,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Radish.Shared.Security;
 
@@ -31,13 +35,16 @@ public class CoinController : ControllerBase
 {
     private readonly ICoinService _coinService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
     public CoinController(
         ICoinService coinService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _coinService = coinService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -203,12 +210,11 @@ public class CoinController : ControllerBase
 
         if (transaction == null)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                MessageInfo = "交易记录不存在"
-            };
+            return BuildError(
+                HttpStatusCodeEnum.NotFound,
+                "交易记录不存在",
+                CoinErrorCodes.TransactionNotFound,
+                "error.coin.transaction_not_found");
         }
 
         return new MessageModel
@@ -308,12 +314,16 @@ public class CoinController : ControllerBase
     /// - 支付密码连续错误 5 次会被锁定 30 分钟
     /// </remarks>
     /// <response code="200">转账成功</response>
-    /// <response code="400">参数错误（如余额不足、支付密码错误）</response>
+    /// <response code="400">参数或支付口令格式错误</response>
     /// <response code="401">未授权</response>
+    /// <response code="409">余额、账户、并发或幂等状态冲突</response>
+    /// <response code="429">支付口令暂时锁定</response>
     [HttpPost]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
     public async Task<MessageModel> Transfer([FromBody] TransferDto request)
     {
         try
@@ -337,33 +347,22 @@ public class CoinController : ControllerBase
                 ResponseData = new TransactionResultVo { VoTransactionNo = transactionNo }
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message,
-                ResponseData = BuildTransferFailureResult(ex.Message)
-            };
-        }
-        catch (ArgumentException ex)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message,
-                ResponseData = BuildTransferFailureResult(ex.Message)
-            };
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? CoinErrorCodes.TransferAccountUnavailable,
+                ex.MessageKey ?? "error.coin.transfer_account_unavailable",
+                BuildTransferFailureResult(ex.ErrorCode));
         }
     }
 
     #endregion
 
-    private static TransactionResultVo? BuildTransferFailureResult(string? message)
+    private static TransactionResultVo? BuildTransferFailureResult(string? errorCode)
     {
-        if (!string.Equals(message, PaymentPasscodeRules.UpgradeRequiredErrorMessage, StringComparison.Ordinal))
+        if (!string.Equals(errorCode, PaymentPasscodeErrorCodes.UpgradeRequired, StringComparison.Ordinal))
         {
             return null;
         }
@@ -372,6 +371,25 @@ public class CoinController : ControllerBase
         {
             VoErrorCode = PaymentPasscodeErrorCodes.UpgradeRequired,
             VoRequiresPasscodeUpgrade = true
+        };
+    }
+
+    private MessageModel BuildError(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey,
+        object? responseData = null)
+    {
+        var localizedMessage = _errorsLocalizer[messageKey];
+        return new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            Code = code,
+            MessageKey = messageKey,
+            ResponseData = responseData
         };
     }
 
