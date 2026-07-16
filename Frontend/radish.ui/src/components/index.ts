@@ -35,7 +35,12 @@ export { ImageLightbox } from './ImageLightbox/ImageLightbox';
 export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
 
 export { MarkdownEditor } from './MarkdownEditor/MarkdownEditor';
-export type { MarkdownEditorProps } from './MarkdownEditor/MarkdownEditor';
+export type {
+  MarkdownEditorLabels,
+  MarkdownEditorProps,
+  MarkdownEditorUploadKind,
+  MarkdownEditorUploadProgressReporter,
+} from './MarkdownEditor/MarkdownEditor';
 
 export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
@@ -74,7 +79,7 @@ export type {
 } from './ChunkedFileUpload/ChunkedFileUpload';
 
 export { ImageCropper } from './ImageCropper/ImageCropper';
-export type { ImageCropperProps } from './ImageCropper/ImageCropper';
+export type { ImageCropperLabels, ImageCropperProps } from './ImageCropper/ImageCropper';
 
 export { Toast, ToastContainer } from './Toast/Toast';
 export { toast, toastManager } from './Toast';

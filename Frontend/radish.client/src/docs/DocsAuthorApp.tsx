@@ -12,6 +12,7 @@ import {
 } from '@radish/ui';
 import type { LongId } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import {
   createWikiDocument,
   getWikiDocumentById,
@@ -69,9 +70,9 @@ import {
 import {
   buildDocsAuthorPath,
   createDefaultDocsAuthorRoute,
-  parseDocsAuthorRoute,
   type DocsAuthorRoute,
 } from './docsAuthorRouteState';
+import { shouldHandleAuthorLinkClick, useDocsAuthorNavigation } from './useDocsAuthorNavigation';
 import styles from './DocsAuthorApp.module.css';
 
 interface CollectionState {
@@ -127,23 +128,6 @@ const initialRevisionState: RevisionState = {
   loadingDetail: false,
   error: null,
 };
-
-function resolveInitialDocsAuthorRoute(): DocsAuthorRoute {
-  if (typeof window === 'undefined') {
-    return createDefaultDocsAuthorRoute();
-  }
-
-  return parseDocsAuthorRoute(window.location.pathname) ?? createDefaultDocsAuthorRoute();
-}
-
-function shouldHandleAuthorLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
-  return !event.defaultPrevented
-    && event.button === 0
-    && !event.metaKey
-    && !event.ctrlKey
-    && !event.shiftKey
-    && !event.altKey;
-}
 
 function canEditDocument(document: WikiDocumentDetailVo | null): boolean {
   return Boolean(document) && canMaintainWikiDocument(document);
@@ -227,11 +211,12 @@ export function DocsAuthorApp() {
   const roles = useUserStore((state) => state.roles || []);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const canUseAuthorTools = useMemo(() => canUseDocsAuthorTools(roles), [roles]);
-  const [route, setRoute] = useState<DocsAuthorRoute>(() => resolveInitialDocsAuthorRoute());
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [collectionState, setCollectionState] = useState<CollectionState>(initialCollectionState);
   const [editorState, setEditorState] = useState<EditorState>(initialEditorState);
+  const [isEditorUploading, setIsEditorUploading] = useState(false);
+  const { route, navigateToRoute } = useDocsAuthorNavigation(isEditorUploading);
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
   const treeRef = useRef<WikiDocumentTreeNodeVo[]>([]);
 
@@ -241,18 +226,6 @@ export function DocsAuthorApp() {
   useEffect(() => {
     treeRef.current = collectionState.tree;
   }, [collectionState.tree]);
-
-  const navigateToRoute = useCallback((nextRoute: DocsAuthorRoute, options?: { replace?: boolean }) => {
-    const nextPath = buildDocsAuthorPath(nextRoute);
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (options?.replace) {
-      window.history.replaceState(window.history.state, '', nextPath);
-    } else if (currentPath !== nextPath) {
-      window.history.pushState(window.history.state, '', nextPath);
-    }
-
-    setRoute(nextRoute);
-  }, []);
 
   const loadCollections = useCallback(async () => {
     setCollectionState((current) => ({
@@ -415,25 +388,6 @@ export function DocsAuthorApp() {
   }, [apiBaseUrl]);
 
   useEffect(() => {
-    const handlePopState = () => {
-      setRoute(resolveInitialDocsAuthorRoute());
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []);
-
-  useEffect(() => {
-    const canonicalPath = buildDocsAuthorPath(route);
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (currentPath !== canonicalPath) {
-      window.history.replaceState(window.history.state, '', canonicalPath);
-    }
-  }, [route]);
-
-  useEffect(() => {
     document.title = t('wiki.author.documentTitle');
   }, [t]);
 
@@ -477,7 +431,17 @@ export function DocsAuthorApp() {
     }
 
     event.preventDefault();
+    if (isEditorUploading) {
+      return;
+    }
+
     navigateToRoute(nextRoute);
+  };
+
+  const preventEditorNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
+      event.preventDefault();
+    }
   };
 
   const setDraft = useCallback((updater: (current: EditorDraft) => EditorDraft) => {
@@ -506,13 +470,17 @@ export function DocsAuthorApp() {
     }));
   }, [collectionState.tree, route]);
 
-  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
+  const handleImageUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownImageUploadResult> => {
     const attachment = await uploadImage(
       {
         file,
         businessType: 'Wiki',
         generateThumbnail: true,
         removeExif: true,
+        onProgress: reportProgress,
       },
       t,
     );
@@ -524,11 +492,15 @@ export function DocsAuthorApp() {
     };
   };
 
-  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
+  const handleDocumentUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownDocumentUploadResult> => {
     const attachment = await uploadDocument(
       {
         file,
         businessType: 'Wiki',
+        onProgress: reportProgress,
       },
       t,
     );
@@ -616,6 +588,7 @@ export function DocsAuthorApp() {
           route={route}
           tree={collectionState.tree}
           state={editorState}
+          isEditorUploading={isEditorUploading}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
           onNavigate={handleRouteLinkClick}
           onParentChange={handleParentChange}
@@ -623,6 +596,7 @@ export function DocsAuthorApp() {
           onSave={handleSave}
           onImageUpload={handleImageUpload}
           onDocumentUpload={handleDocumentUpload}
+          onEditorUploadingChange={setIsEditorUploading}
         />
       );
     }
@@ -658,6 +632,7 @@ export function DocsAuthorApp() {
         brandName={t('wiki.author.title')}
         brandSubline={t('wiki.author.brandSubline')}
         onBrandClick={() => navigateToRoute(createDefaultDocsAuthorRoute())}
+        navigationLocked={isEditorUploading}
       />
 
       <main className={styles.main}>
@@ -697,6 +672,7 @@ export function DocsAuthorApp() {
             className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
             href={mineHref}
             onClick={(event) => handleRouteLinkClick(event, { kind: 'mine' })}
+            aria-disabled={isEditorUploading}
           >
             <Icon icon="mdi:file-document-multiple-outline" size={18} />
             <span>{t('wiki.author.actions.myDocuments')}</span>
@@ -705,11 +681,17 @@ export function DocsAuthorApp() {
             className={route.kind === 'compose' ? styles.navItemActive : styles.navItem}
             href={composeHref}
             onClick={(event) => handleRouteLinkClick(event, { kind: 'compose' })}
+            aria-disabled={isEditorUploading}
           >
             <Icon icon="mdi:plus-box-outline" size={18} />
             <span>{t('wiki.author.actions.create')}</span>
           </a>
-          <a className={styles.navItem} href={buildPublicDocsPath({ kind: 'list' })}>
+          <a
+            className={styles.navItem}
+            href={buildPublicDocsPath({ kind: 'list' })}
+            onClick={preventEditorNavigationWhileUploading}
+            aria-disabled={isEditorUploading}
+          >
             <Icon icon="mdi:book-open-page-variant-outline" size={18} />
             <span>{t('wiki.author.actions.publicReading')}</span>
           </a>
@@ -1007,19 +989,22 @@ interface DocsEditorPageProps {
   route: DocsAuthorRoute & ({ kind: 'compose' } | { kind: 'edit' });
   tree: WikiDocumentTreeNodeVo[];
   state: EditorState;
+  isEditorUploading: boolean;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
   onParentChange: (parentId: string) => void;
   onSetDraft: (updater: (current: EditorDraft) => EditorDraft) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
-  onImageUpload: (file: File) => Promise<MarkdownImageUploadResult>;
-  onDocumentUpload: (file: File) => Promise<MarkdownDocumentUploadResult>;
+  onImageUpload: (file: File, reportProgress: (progress: number) => void) => Promise<MarkdownImageUploadResult>;
+  onDocumentUpload: (file: File, reportProgress: (progress: number) => void) => Promise<MarkdownDocumentUploadResult>;
+  onEditorUploadingChange: (uploading: boolean) => void;
 }
 
 function DocsEditorPage({
   route,
   tree,
   state,
+  isEditorUploading,
   onBack,
   onNavigate,
   onParentChange,
@@ -1027,8 +1012,16 @@ function DocsEditorPage({
   onSave,
   onImageUpload,
   onDocumentUpload,
+  onEditorUploadingChange,
 }: DocsEditorPageProps) {
   const { t, i18n } = useTranslation();
+  const markdownEditorLabels = useMemo(
+    () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, t],
+  );
+  const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
+    log.error('DocsEditorPage', `Markdown ${kind} upload failed:`, error);
+  }, []);
   const parentOptions = useMemo(
     () => buildParentOptions(tree, route.kind === 'edit' ? route.documentId : null),
     [route, tree]
@@ -1045,6 +1038,20 @@ function DocsEditorPage({
     normalizeOptionalNumber(state.draft.visibility) ?? WikiDocumentVisibility.Authenticated,
     t,
   );
+  const handleEditorSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (isEditorUploading) {
+      event.preventDefault();
+      return;
+    }
+
+    onSave(event);
+  };
+
+  const preventNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
+      event.preventDefault();
+    }
+  };
 
   if (state.loading) {
     return (
@@ -1079,7 +1086,13 @@ function DocsEditorPage({
           <a
             className={styles.secondaryButton}
             href={buildDocsAuthorPath({ kind: 'mine' })}
-            onClick={onBack}
+            onClick={(event) => {
+              preventNavigationWhileUploading(event);
+              if (!event.defaultPrevented) {
+                onBack(event);
+              }
+            }}
+            aria-disabled={isEditorUploading}
           >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{t('wiki.author.actions.backToList')}</span>
@@ -1088,14 +1101,25 @@ function DocsEditorPage({
             <a
               className={styles.secondaryButton}
               href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
-              onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
+              onClick={(event) => {
+                preventNavigationWhileUploading(event);
+                if (!event.defaultPrevented) {
+                  onNavigate(event, { kind: 'revisions', documentId: route.documentId });
+                }
+              }}
+              aria-disabled={isEditorUploading}
             >
               <Icon icon="mdi:history" size={18} />
               <span>{t('wiki.author.actions.revisions')}</span>
             </a>
           ) : null}
           {publicReadHref ? (
-            <a className={styles.secondaryButton} href={publicReadHref}>
+            <a
+              className={styles.secondaryButton}
+              href={publicReadHref}
+              onClick={preventNavigationWhileUploading}
+              aria-disabled={isEditorUploading}
+            >
               <Icon icon="mdi:book-open-page-variant-outline" size={18} />
               <span>{t('wiki.author.actions.publicReading')}</span>
             </a>
@@ -1113,7 +1137,7 @@ function DocsEditorPage({
         </div>
       ) : null}
 
-      <form className={styles.editorForm} onSubmit={onSave}>
+      <form className={styles.editorForm} onSubmit={handleEditorSubmit}>
         <div className={styles.formGrid}>
           <label className={styles.field}>
             <span>{t('wiki.author.form.title')}</span>
@@ -1197,18 +1221,21 @@ function DocsEditorPage({
         <MarkdownEditor
           value={state.draft.markdownContent}
           onChange={(value) => onSetDraft((current) => ({ ...current, markdownContent: value }))}
+          labels={markdownEditorLabels}
           minHeight={420}
           disabled={readOnly || state.submitting}
           placeholder={t('wiki.author.form.markdownPlaceholder')}
           onImageUpload={onImageUpload}
           onDocumentUpload={onDocumentUpload}
+          onUploadError={handleEditorUploadError}
+          onUploadingChange={onEditorUploadingChange}
         />
 
         <div className={styles.editorActions}>
           <span className={styles.editorHint}>
             {t('wiki.author.editor.currentVisibility', { visibility: draftVisibilityText })}
           </span>
-          <button type="submit" className={styles.primaryButton} disabled={readOnly || state.submitting}>
+          <button type="submit" className={styles.primaryButton} disabled={readOnly || state.submitting || isEditorUploading}>
             <Icon icon={state.submitting ? 'mdi:progress-clock' : 'mdi:content-save-outline'} size={18} />
             <span>{state.submitting ? t('wiki.author.actions.saving') : t('wiki.author.actions.save')}</span>
           </button>
@@ -1249,7 +1276,13 @@ function DocsEditorPage({
             <a
               className={styles.railLink}
               href={buildDocsAuthorPath({ kind: 'mine' })}
-              onClick={onBack}
+              onClick={(event) => {
+                preventNavigationWhileUploading(event);
+                if (!event.defaultPrevented) {
+                  onBack(event);
+                }
+              }}
+              aria-disabled={isEditorUploading}
             >
               <Icon icon="mdi:arrow-left" size={18} />
               <span>{t('wiki.author.actions.backToList')}</span>
@@ -1258,14 +1291,25 @@ function DocsEditorPage({
               <a
                 className={styles.railLink}
                 href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
-                onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
+                onClick={(event) => {
+                  preventNavigationWhileUploading(event);
+                  if (!event.defaultPrevented) {
+                    onNavigate(event, { kind: 'revisions', documentId: route.documentId });
+                  }
+                }}
+                aria-disabled={isEditorUploading}
               >
                 <Icon icon="mdi:history" size={18} />
                 <span>{t('wiki.author.actions.revisions')}</span>
               </a>
             ) : null}
             {publicReadHref ? (
-              <a className={styles.railLink} href={publicReadHref}>
+              <a
+                className={styles.railLink}
+                href={publicReadHref}
+                onClick={preventNavigationWhileUploading}
+                aria-disabled={isEditorUploading}
+              >
                 <Icon icon="mdi:book-open-page-variant-outline" size={18} />
                 <span>{t('wiki.author.actions.publicReading')}</span>
               </a>

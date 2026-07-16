@@ -1223,6 +1223,17 @@
   color: var(--theme-state-danger);
 }
 
+.deleteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.deleteButton:disabled:hover {
+  background-color: transparent;
+  border-color: var(--theme-border-soft);
+  color: var(--theme-text-primary);
+}
+
 @media (max-width: 720px) {
   .pollHeader,
   .pollFooter,

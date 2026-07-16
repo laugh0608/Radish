@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -15,6 +18,208 @@ namespace Radish.Api.Tests.Services;
 
 public class ForumContentWriteServiceTest
 {
+    [Fact]
+    public void PublishRequestDtos_Should_Leave_DomainValidation_To_StablePublishContract()
+    {
+        var requestProperties = new[]
+        {
+            typeof(PublishPostDto).GetProperty(nameof(PublishPostDto.ClientSubmissionId)),
+            typeof(PublishPostDto).GetProperty(nameof(PublishPostDto.ContentType)),
+            typeof(PublishPostDto).GetProperty(nameof(PublishPostDto.CategoryId)),
+            typeof(CreatePollDto).GetProperty(nameof(CreatePollDto.Question)),
+            typeof(CreatePollDto).GetProperty(nameof(CreatePollDto.Options)),
+            typeof(PollOptionDto).GetProperty(nameof(PollOptionDto.OptionText)),
+            typeof(CreateLotteryDto).GetProperty(nameof(CreateLotteryDto.PrizeName)),
+            typeof(CreateLotteryDto).GetProperty(nameof(CreateLotteryDto.PrizeDescription)),
+            typeof(CreateLotteryDto).GetProperty(nameof(CreateLotteryDto.WinnerCount))
+        };
+
+        foreach (var property in requestProperties)
+        {
+            Assert.NotNull(property);
+            Assert.Empty(property.GetCustomAttributes<ValidationAttribute>());
+        }
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_OversizedContent_Before_Creating_SubmissionSnapshot()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        var service = CreateService(contentSubmissionService, postService);
+        var post = CreatePost();
+        post.Content = new string('内', 50001);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
+            post,
+            poll: null,
+            lottery: null,
+            isQuestion: false,
+            tagNames: ["Radish"],
+            allowCreateTag: true,
+            clientSubmissionId: "forum-post:abc"));
+
+        Assert.Equal(400, exception.StatusCode);
+        Assert.Equal(ForumPublishErrorCodes.ContentTooLong, exception.ErrorCode);
+        Assert.Equal("error.forum.publish_content_too_long", exception.MessageKey);
+        contentSubmissionService.Verify(
+            item => item.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>()),
+            Times.Never);
+        contentSubmissionService.Verify(
+            item => item.BeginAsync(It.IsAny<ContentSubmissionBeginRequest>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_InvalidNestedPoll_Before_Creating_SubmissionSnapshot()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        var service = CreateService(contentSubmissionService, postService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
+            CreatePost(),
+            poll: new CreatePollDto
+            {
+                Question = "投票",
+                Options =
+                [
+                    new PollOptionDto { OptionText = new string('A', 101) },
+                    new PollOptionDto { OptionText = "B" }
+                ]
+            },
+            lottery: null,
+            isQuestion: false,
+            tagNames: ["Radish"],
+            allowCreateTag: true,
+            clientSubmissionId: "forum-post:abc"));
+
+        Assert.Equal(ForumPublishErrorCodes.PollOptionTooLong, exception.ErrorCode);
+        Assert.Equal("error.forum.publish_poll_option_too_long", exception.MessageKey);
+        contentSubmissionService.Verify(
+            item => item.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_NullPollOption_Before_Creating_SubmissionSnapshot()
+    {
+        var exception = await AssertPublishShapeRejectedBeforeSnapshotAsync(
+            poll: new CreatePollDto
+            {
+                Question = "投票",
+                Options =
+                [
+                    new PollOptionDto { OptionText = "A" },
+                    null!,
+                    new PollOptionDto { OptionText = "B" }
+                ]
+            },
+            lottery: null);
+
+        Assert.Equal(ForumPublishErrorCodes.PollOptionsRequired, exception.ErrorCode);
+        Assert.Equal("error.forum.publish_poll_options_required", exception.MessageKey);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_ExpiredPoll_Before_Creating_SubmissionSnapshot()
+    {
+        var exception = await AssertPublishShapeRejectedBeforeSnapshotAsync(
+            poll: new CreatePollDto
+            {
+                Question = "投票",
+                EndTime = DateTime.UtcNow.AddMinutes(-1),
+                Options =
+                [
+                    new PollOptionDto { OptionText = "A" },
+                    new PollOptionDto { OptionText = "B" }
+                ]
+            },
+            lottery: null);
+
+        Assert.Equal(ForumPublishErrorCodes.PollEndTimeInvalid, exception.ErrorCode);
+        Assert.Equal("error.forum.publish_poll_end_time_invalid", exception.MessageKey);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_MissingLotteryDrawTime_Before_Creating_SubmissionSnapshot()
+    {
+        var exception = await AssertPublishShapeRejectedBeforeSnapshotAsync(
+            poll: null,
+            lottery: new CreateLotteryDto
+            {
+                PrizeName = "奖品",
+                WinnerCount = 1
+            });
+
+        Assert.Equal(ForumPublishErrorCodes.LotteryDrawTimeRequired, exception.ErrorCode);
+        Assert.Equal("error.forum.publish_lottery_draw_time_required", exception.MessageKey);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Reject_TooSoonLotteryDrawTime_Before_Creating_SubmissionSnapshot()
+    {
+        var exception = await AssertPublishShapeRejectedBeforeSnapshotAsync(
+            poll: null,
+            lottery: new CreateLotteryDto
+            {
+                PrizeName = "奖品",
+                DrawTime = DateTime.UtcNow.AddMinutes(30),
+                WinnerCount = 1
+            });
+
+        Assert.Equal(ForumPublishErrorCodes.LotteryDrawTimeTooSoon, exception.ErrorCode);
+        Assert.Equal("error.forum.publish_lottery_draw_time_too_soon", exception.MessageKey);
+    }
+
+    [Fact]
+    public async Task PublishPostAsync_Should_Record_StableBusinessErrorCode_When_CreateFails()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(service => service.CompleteFailureAsync(
+                7001,
+                ForumPublishErrorCodes.PollOptionsDuplicate,
+                "投票选项不能重复"))
+            .Returns(Task.CompletedTask);
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        postService
+            .Setup(service => service.PublishPostAsync(
+                It.IsAny<Post>(),
+                It.IsAny<CreatePollDto?>(),
+                It.IsAny<CreateLotteryDto?>(),
+                It.IsAny<bool>(),
+                It.IsAny<List<string>?>(),
+                It.IsAny<bool>()))
+            .ThrowsAsync(new BusinessException(
+                "投票选项不能重复",
+                400,
+                ForumPublishErrorCodes.PollOptionsDuplicate,
+                "error.forum.publish_poll_options_duplicate"));
+        var service = CreateService(contentSubmissionService, postService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
+            CreatePost(),
+            poll: null,
+            lottery: null,
+            isQuestion: false,
+            tagNames: ["Radish"],
+            allowCreateTag: true,
+            clientSubmissionId: "forum-post:abc"));
+
+        Assert.Equal(ForumPublishErrorCodes.PollOptionsDuplicate, exception.ErrorCode);
+        contentSubmissionService.Verify(
+            service => service.CompleteFailureAsync(
+                7001,
+                ForumPublishErrorCodes.PollOptionsDuplicate,
+                "投票选项不能重复"),
+            Times.Once);
+    }
+
     [Fact]
     public async Task PublishPostAsync_Should_Not_Mark_Failed_When_Post_Created_But_Completion_First_Fails()
     {
@@ -138,6 +343,69 @@ public class ForumContentWriteServiceTest
                 request.FrequencyTargetType == null &&
                 request.FrequencyTargetId == null)),
             Times.Once);
+    }
+
+    [Theory]
+    [InlineData(
+        ContentSubmissionBeginStatus.InvalidKey,
+        400,
+        "Forum.PublishSubmissionIdInvalid",
+        "error.forum.publish_submission_id_invalid")]
+    [InlineData(
+        ContentSubmissionBeginStatus.Conflict,
+        409,
+        "Forum.PublishSubmissionConflict",
+        "error.forum.publish_submission_conflict")]
+    [InlineData(
+        ContentSubmissionBeginStatus.Processing,
+        409,
+        "Forum.PublishSubmissionProcessing",
+        "error.forum.publish_submission_processing")]
+    [InlineData(
+        ContentSubmissionBeginStatus.FrequencyLimited,
+        429,
+        "Forum.PublishRateLimited",
+        "error.forum.publish_rate_limited")]
+    public async Task PublishPostAsync_Should_Map_SubmissionRejection_To_StableBusinessContract(
+        ContentSubmissionBeginStatus beginStatus,
+        int expectedStatusCode,
+        string expectedErrorCode,
+        string expectedMessageKey)
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(service => service.BeginAsync(It.IsAny<ContentSubmissionBeginRequest>()))
+            .ReturnsAsync(new ContentSubmissionBeginResult
+            {
+                Status = beginStatus,
+                RecordId = 7001,
+                Message = "submission rejected"
+            });
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        var service = CreateService(contentSubmissionService, postService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
+            CreatePost(),
+            poll: null,
+            lottery: null,
+            isQuestion: false,
+            tagNames: ["Radish"],
+            allowCreateTag: true,
+            clientSubmissionId: "forum-post:abc"));
+
+        Assert.Equal(expectedStatusCode, exception.StatusCode);
+        Assert.Equal(expectedErrorCode, exception.ErrorCode);
+        Assert.Equal(expectedMessageKey, exception.MessageKey);
+        Assert.Equal("submission rejected", exception.Message);
+        postService.Verify(
+            item => item.PublishPostAsync(
+                It.IsAny<Post>(),
+                It.IsAny<CreatePollDto?>(),
+                It.IsAny<CreateLotteryDto?>(),
+                It.IsAny<bool>(),
+                It.IsAny<List<string>?>(),
+                It.IsAny<bool>()),
+            Times.Never);
     }
 
     [Fact]
@@ -421,6 +689,36 @@ public class ForumContentWriteServiceTest
             });
 
         return contentSubmissionService;
+    }
+
+    private static async Task<BusinessException> AssertPublishShapeRejectedBeforeSnapshotAsync(
+        CreatePollDto? poll,
+        CreateLotteryDto? lottery)
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        var service = CreateService(contentSubmissionService, postService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
+            CreatePost(),
+            poll,
+            lottery,
+            isQuestion: false,
+            tagNames: ["Radish"],
+            allowCreateTag: true,
+            clientSubmissionId: "forum-post:validation"));
+
+        Assert.Equal(400, exception.StatusCode);
+        contentSubmissionService.Verify(
+            item => item.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>(),
+                It.IsAny<IReadOnlyDictionary<string, object?>>()),
+            Times.Never);
+        contentSubmissionService.Verify(
+            item => item.BeginAsync(It.IsAny<ContentSubmissionBeginRequest>()),
+            Times.Never);
+
+        return exception;
     }
 
     private static ForumContentWriteService CreateService(

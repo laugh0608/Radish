@@ -2181,6 +2181,61 @@ public class PostServiceTest
     }
 
     [Fact]
+    public async Task PublishPostAsync_Should_Return_StableForbiddenContract_When_TagCreationIsNotAllowed()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var postTagRepository = new Mock<IBaseRepository<PostTag>>(MockBehavior.Strict);
+        var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
+        postRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<Post>()))
+            .ReturnsAsync(1002);
+        postTagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
+            .ReturnsAsync([]);
+        tagRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Tag, bool>>?>()))
+            .ReturnsAsync([]);
+
+        var service = new PostService(
+            Mock.Of<IMapper>(),
+            postRepository.Object,
+            Mock.Of<IBaseRepository<UserPostLike>>(),
+            postTagRepository.Object,
+            Mock.Of<IBaseRepository<Category>>(),
+            tagRepository.Object,
+            Mock.Of<IBaseRepository<PostPoll>>(),
+            Mock.Of<IBaseRepository<PostPollOption>>(),
+            Mock.Of<IBaseRepository<PostPollVote>>(),
+            Mock.Of<IBaseRepository<PostQuestion>>(),
+            Mock.Of<IBaseRepository<PostAnswer>>(),
+            Mock.Of<ITagService>(),
+            Mock.Of<ICoinRewardService>(),
+            Mock.Of<INotificationService>(),
+            Mock.Of<INotificationDedupService>(),
+            Mock.Of<IExperienceService>(),
+            Mock.Of<IBaseRepository<PostEditHistory>>(),
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
+        var post = new Post(new PostInitializationOptions("标签权限", "普通成员不能隐式创建不存在的标签")
+        {
+            AuthorId = 9527,
+            AuthorName = "Tester",
+            TenantId = 9,
+            IsPublished = true
+        });
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
+            post,
+            tagNames: ["不存在的标签"],
+            allowCreateTag: false));
+
+        Assert.Equal(403, exception.StatusCode);
+        Assert.Equal("Forum.PublishTagCreateForbidden", exception.ErrorCode);
+        Assert.Equal("error.forum.publish_tag_create_forbidden", exception.MessageKey);
+    }
+
+    [Fact]
     public async Task PublishPostAsync_Should_CreateQuestionMarker_When_IsQuestionIsTrue()
     {
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
@@ -2479,7 +2534,7 @@ public class PostServiceTest
             IsPublished = true
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
             post,
             null,
             new CreateLotteryDto
@@ -2493,7 +2548,9 @@ public class PostServiceTest
             ["抽奖"],
             allowCreateTag: false));
 
-        Assert.Equal("抽奖截止时间必须至少晚于发帖时间 1 小时 (Parameter 'lottery')", exception.Message);
+        Assert.Equal(400, exception.StatusCode);
+        Assert.Equal("Forum.PublishLotteryDrawTimeTooSoon", exception.ErrorCode);
+        Assert.Equal("error.forum.publish_lottery_draw_time_too_soon", exception.MessageKey);
     }
 
     [Fact]
@@ -2529,7 +2586,7 @@ public class PostServiceTest
             IsPublished = true
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
             post,
             null,
             new CreateLotteryDto
@@ -2542,7 +2599,9 @@ public class PostServiceTest
             ["抽奖"],
             allowCreateTag: false));
 
-        Assert.Equal("问答帖、投票和抽奖暂时互斥", exception.Message);
+        Assert.Equal(400, exception.StatusCode);
+        Assert.Equal("Forum.PublishFeatureCombinationInvalid", exception.ErrorCode);
+        Assert.Equal("error.forum.publish_feature_combination_invalid", exception.MessageKey);
     }
 
     [Fact]
@@ -2578,12 +2637,14 @@ public class PostServiceTest
             IsPublished = true
         };
 
-        var exception = await Assert.ThrowsAsync<ArgumentException>(() => service.PublishPostAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.PublishPostAsync(
             post,
             tagNames: ["公告"],
             allowCreateTag: false));
 
-        Assert.Equal("帖子标题不能超过 3 个字符", exception.Message);
+        Assert.Equal(400, exception.StatusCode);
+        Assert.Equal("Forum.PublishTitleTooLong", exception.ErrorCode);
+        Assert.Equal("error.forum.publish_title_too_long", exception.MessageKey);
     }
 
     private static ISystemSettingProvider CreateDefaultSystemSettingProvider(

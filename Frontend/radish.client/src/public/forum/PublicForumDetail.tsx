@@ -53,11 +53,8 @@ import {
   updateCommentLikeCount,
   upsertCommentInTree
 } from '@/apps/forum/utils/commentRealtimeTree';
-import { buildPublicForumPath, type PublicForumDetailIntent } from '../forumRouteState';
-import {
-  rememberPublicRouteSourceTransfer,
-  type PublicRouteSourceState,
-} from '../publicRouteNavigation';
+import { buildPublicForumPath } from '../forumRouteState';
+import { rememberPublicRouteSourceTransfer } from '../publicRouteNavigation';
 import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
 import {
   applyPublicStructuredData,
@@ -81,6 +78,8 @@ import {
   resolvePublicProfileUserId,
 } from './publicForumUtils';
 import { handlePublicForumLinkClick } from './publicForumLinkHandlers';
+import type { PublicForumCommentNavigationTarget, PublicForumDetailProps } from './publicForumDetailTypes';
+import { usePublicForumDetailNavigationGuard } from './usePublicForumDetailNavigationGuard';
 import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
@@ -107,28 +106,6 @@ const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
   new Set(rootComments.map((comment) => String(comment.voId)))
 );
 
-interface PublicForumCommentNavigationTarget {
-  commentId: LongId;
-  expandedRootCommentId?: LongId;
-  navigationKey: string;
-}
-
-interface PublicForumDetailProps {
-  postId: string;
-  commentId?: string;
-  intent?: PublicForumDetailIntent;
-  sourceState?: PublicRouteSourceState | null;
-  displayTimeZone: string;
-  backLabel: string;
-  backHref: string;
-  onBack: () => void;
-  onOpenAuthorProfile?: (userId: string) => void;
-  onOpenTag?: (tagSlug: string) => void;
-  onOpenQuestion?: () => void;
-  onOpenPoll?: () => void;
-  onOpenLottery?: () => void;
-}
-
 export const PublicForumDetail = ({
   postId,
   commentId,
@@ -138,6 +115,8 @@ export const PublicForumDetail = ({
   backLabel,
   backHref,
   onBack,
+  isAnswerEditorUploading,
+  onAnswerEditorUploadingChange,
   onOpenAuthorProfile,
   onOpenTag,
   onOpenQuestion,
@@ -208,6 +187,23 @@ export const PublicForumDetail = ({
   const postHistoryPageSize = 10;
   const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
   const isCurrentUserAuthor = !!post && !!currentUserId && isSameLongId(post.voAuthorId, currentUserId);
+
+  const {
+    handleBackWhileEditorIdle,
+    handleOpenAuthorProfileWhileEditorIdle,
+    handleOpenTagWhileEditorIdle,
+    handleOpenQuestionWhileEditorIdle,
+    handleOpenPollWhileEditorIdle,
+    handleOpenLotteryWhileEditorIdle,
+  } = usePublicForumDetailNavigationGuard({
+    navigationLocked: isAnswerEditorUploading,
+    onBack,
+    onOpenAuthorProfile,
+    onOpenTag,
+    onOpenQuestion,
+    onOpenPoll,
+    onOpenLottery,
+  });
 
   const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: LongId) => {
     if (!isAuthenticated) {
@@ -1415,7 +1411,8 @@ export const PublicForumDetail = ({
           <a
             className={styles.backButton}
             href={backHref}
-            onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+            onClick={(event) => handlePublicForumLinkClick(event, handleBackWhileEditorIdle)}
+            aria-disabled={isAnswerEditorUploading}
           >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>
@@ -1449,7 +1446,7 @@ export const PublicForumDetail = ({
             secondaryAction={{
               label: backLabel,
               href: backHref,
-              onClick: onBack
+              onClick: handleBackWhileEditorIdle
             }}
           />
         )}
@@ -1466,7 +1463,7 @@ export const PublicForumDetail = ({
             secondaryAction={{
               label: backLabel,
               href: backHref,
-              onClick: onBack
+              onClick: handleBackWhileEditorIdle
             }}
           />
         )}
@@ -1493,16 +1490,17 @@ export const PublicForumDetail = ({
               showSectionTitle={false}
               postTitleHeadingLevel={1}
               onAnswerQuestion={handleAnswerQuestion}
+              onAnswerEditorUploadingChange={onAnswerEditorUploadingChange}
               onAcceptAnswer={handleAcceptAnswer}
               answerAutoFocusKey={answerAutoFocusKey}
               onEdit={() => void handleEditPostAction()}
               onViewHistory={() => void handleViewPostHistory()}
-              onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+              onAuthorClick={(userId) => handleOpenAuthorProfileWhileEditorIdle(String(userId))}
               resolveAuthorProfileId={resolvePublicProfileUserId}
-              onTagClick={(_, tagSlug) => onOpenTag?.(tagSlug)}
-              onQuestionClick={onOpenQuestion}
-              onPollClick={onOpenPoll}
-              onLotteryClick={onOpenLottery}
+              onTagClick={(_, tagSlug) => handleOpenTagWhileEditorIdle(tagSlug)}
+              onQuestionClick={handleOpenQuestionWhileEditorIdle}
+              onPollClick={handleOpenPollWhileEditorIdle}
+              onLotteryClick={handleOpenLotteryWhileEditorIdle}
               onReport={(targetId) => handleOpenReport('Post', targetId)}
             />
 
@@ -1799,7 +1797,7 @@ export const PublicForumDetail = ({
                     isAuthenticated={isAuthenticated}
                     showTitle={false}
                     density="compact"
-                    onAuthorClick={(userId) => onOpenAuthorProfile?.(String(userId))}
+                    onAuthorClick={(userId) => handleOpenAuthorProfileWhileEditorIdle(String(userId))}
                     resolveAuthorProfileId={resolvePublicProfileUserId}
                     onNavigateToComment={(targetCommentId) => void navigateToComment(
                       targetCommentId,
@@ -1872,7 +1870,8 @@ export const PublicForumDetail = ({
           <a
             className={`${styles.backButton} ${styles.sidePanelAction}`}
             href={backHref}
-            onClick={(event) => handlePublicForumLinkClick(event, onBack)}
+            onClick={(event) => handlePublicForumLinkClick(event, handleBackWhileEditorIdle)}
+            aria-disabled={isAnswerEditorUploading}
           >
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{backLabel}</span>

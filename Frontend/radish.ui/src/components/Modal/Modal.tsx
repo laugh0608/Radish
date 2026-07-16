@@ -4,6 +4,7 @@ import './Modal.css';
 export interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
+  closeLabel: string;
   title?: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -15,6 +16,7 @@ export interface ModalProps {
 export const Modal = ({
   isOpen,
   onClose,
+  closeLabel,
   title,
   children,
   footer,
@@ -62,9 +64,11 @@ export const Modal = ({
           <div className="radish-modal-header">
             <h2 className="radish-modal-title">{title}</h2>
             <button
+              type="button"
               className="radish-modal-close"
               onClick={onClose}
-              aria-label="关闭"
+              aria-label={closeLabel}
+              title={closeLabel}
             >
               ×
             </button>

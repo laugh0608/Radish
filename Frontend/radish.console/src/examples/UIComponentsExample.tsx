@@ -119,6 +119,7 @@ export const UIComponentsExample = () => {
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
+          closeLabel="取消"
           title="示例模态框"
           size="medium"
           footer={

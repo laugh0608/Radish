@@ -4,10 +4,22 @@ import { log } from '@/utils/logger';
  * 附件上传相关的 API 调用
  */
 
-import { configureApiClient, apiFetch, apiGet, parseApiResponseWithI18n, type ApiResponse } from '@radish/http';
+import {
+  ApiResponseError,
+  apiDelete,
+  apiGet,
+  apiPost,
+  apiPut,
+  configureApiClient,
+  createApiResponseError,
+  getApiClientConfig,
+  parseApiResponseWithI18n,
+  type ApiClientConfig,
+  type ApiResponse,
+  type ParsedApiResponse,
+} from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
-import { tokenService } from '@/services/tokenService';
 
 // 配置 API 客户端
 configureApiClient({
@@ -21,6 +33,97 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+const recoverableUploadStatuses = new Set([500, 502, 503, 504]);
+
+class UploadTransportError extends Error {
+  readonly retryable: boolean;
+
+  constructor(message: string, retryable: boolean) {
+    super(message);
+    this.name = 'UploadTransportError';
+    this.retryable = retryable;
+  }
+}
+
+function resolveTranslation(
+  key: string,
+  t?: TFunction,
+  configuredTranslator = getApiClientConfig().translateMessage,
+): string | undefined {
+  const configuredMessage = configuredTranslator?.(key);
+  if (configuredMessage && configuredMessage !== key) {
+    return configuredMessage;
+  }
+
+  if (!t) {
+    return undefined;
+  }
+
+  const callerMessage = t(key);
+  return typeof callerMessage === 'string' && callerMessage !== key
+    ? callerMessage
+    : undefined;
+}
+
+function resolveFallbackMessage(key: string, t?: TFunction): string {
+  return resolveTranslation(key, t) ?? key;
+}
+
+function localizeResponse<T>(
+  response: ParsedApiResponse<T>,
+  t?: TFunction,
+): ParsedApiResponse<T> {
+  if (!response.messageKey) {
+    return response;
+  }
+
+  const localizedMessage = resolveTranslation(response.messageKey, t);
+  return localizedMessage
+    ? { ...response, message: localizedMessage }
+    : response;
+}
+
+function requireResponseData<T>(
+  response: ParsedApiResponse<T>,
+  fallbackKey: string,
+  t?: TFunction,
+): T {
+  if (!response.ok || response.data === undefined) {
+    throw createApiResponseError(
+      localizeResponse(response, t),
+      resolveFallbackMessage(fallbackKey, t),
+    );
+  }
+
+  return response.data;
+}
+
+function requireSuccessfulResponse(
+  response: ParsedApiResponse<unknown>,
+  fallbackKey: string,
+  t?: TFunction,
+): void {
+  if (!response.ok) {
+    throw createApiResponseError(
+      localizeResponse(response, t),
+      resolveFallbackMessage(fallbackKey, t),
+    );
+  }
+}
+
+function isRetryableUploadError(error: Error): boolean {
+  if (error instanceof UploadTransportError) {
+    return error.retryable;
+  }
+
+  if (!(error instanceof ApiResponseError)) {
+    return false;
+  }
+
+  const status = error.httpStatus ?? error.statusCode;
+  return status !== undefined && recoverableUploadStatuses.has(status);
+}
+
 /**
  * 带重试的上传函数
  * @param uploadFn 上传函数
@@ -30,6 +133,7 @@ function delay(ms: number): Promise<void> {
  */
 async function uploadWithRetry<T>(
   uploadFn: () => Promise<T>,
+  exhaustedFallbackMessage: string,
   maxRetries: number = 3,
   baseDelay: number = 1000
 ): Promise<T> {
@@ -39,7 +143,11 @@ async function uploadWithRetry<T>(
     try {
       return await uploadFn();
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
+      lastError = error instanceof Error ? error : new Error(exhaustedFallbackMessage);
+
+      if (!isRetryableUploadError(lastError)) {
+        throw lastError;
+      }
 
       // 如果是最后一次尝试，直接抛出错误
       if (attempt === maxRetries) {
@@ -48,12 +156,164 @@ async function uploadWithRetry<T>(
 
       // 指数退避：1s, 2s, 4s
       const delayTime = baseDelay * Math.pow(2, attempt);
-      log.warn(`上传失败，${delayTime}ms 后重试（第 ${attempt + 1}/${maxRetries} 次）:`, lastError.message);
+      log.warn('Attachment upload failed; scheduling a retry.', {
+        attempt: attempt + 1,
+        maxRetries,
+        delayMs: delayTime,
+        message: lastError.message,
+      });
       await delay(delayTime);
     }
   }
 
-  throw lastError || new Error('上传失败');
+  throw lastError ?? new Error(exhaustedFallbackMessage);
+}
+
+function isApiResponseEnvelope<T>(value: unknown): value is ApiResponse<T> {
+  return typeof value === 'object'
+    && value !== null
+    && typeof (value as ApiResponse<T>).isSuccess === 'boolean';
+}
+
+function getXhrStatus(xhr: XMLHttpRequest): number | undefined {
+  return xhr.status > 0 ? xhr.status : undefined;
+}
+
+function getXhrTraceId(xhr: XMLHttpRequest): string | undefined {
+  return xhr.getResponseHeader('x-correlation-id')?.trim() || undefined;
+}
+
+function parseXhrApiResponse<T>(
+  xhr: XMLHttpRequest,
+  t: TFunction,
+  config: Readonly<ApiClientConfig>,
+): ParsedApiResponse<T> | null {
+  let json: unknown;
+  try {
+    json = JSON.parse(xhr.responseText) as unknown;
+  } catch {
+    return null;
+  }
+
+  if (!isApiResponseEnvelope<T>(json)) {
+    return null;
+  }
+
+  const parsed = parseApiResponseWithI18n<T>(json, (key) => (
+    resolveTranslation(key, t, config.translateMessage) ?? key
+  ));
+
+  return {
+    ...parsed,
+    statusCode: parsed.statusCode ?? getXhrStatus(xhr),
+    httpStatus: getXhrStatus(xhr),
+    traceId: parsed.traceId || getXhrTraceId(xhr),
+    message: !json.messageInfo && !json.messageKey ? undefined : parsed.message,
+  };
+}
+
+function createUnparsedXhrError(
+  xhr: XMLHttpRequest,
+  fallbackMessage: string,
+): ApiResponseError {
+  const status = getXhrStatus(xhr);
+  return createApiResponseError({
+    ok: false,
+    statusCode: status,
+    httpStatus: status,
+    traceId: getXhrTraceId(xhr),
+  }, fallbackMessage);
+}
+
+function uploadFormData<T>(options: {
+  path: string;
+  formData: FormData;
+  onProgress?: (progress: number) => void;
+  t: TFunction;
+  failureKey: string;
+}): Promise<T> {
+  const { path, formData, onProgress, t, failureKey } = options;
+  const config = getApiClientConfig();
+  const url = `${getApiBaseUrl()}${path}`;
+  const invalidResponseMessage = resolveTranslation(
+    'attachment.api.invalidResponse',
+    t,
+    config.translateMessage,
+  ) ?? 'attachment.api.invalidResponse';
+  const networkErrorMessage = resolveTranslation(
+    'attachment.api.networkError',
+    t,
+    config.translateMessage,
+  ) ?? 'attachment.api.networkError';
+  const cancelledMessage = resolveTranslation(
+    'attachment.api.uploadCancelled',
+    t,
+    config.translateMessage,
+  ) ?? 'attachment.api.uploadCancelled';
+  const failureMessage = resolveTranslation(failureKey, t, config.translateMessage) ?? failureKey;
+
+  return new Promise<T>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+
+    if (onProgress) {
+      xhr.upload.addEventListener('progress', (event) => {
+        if (event.lengthComputable) {
+          onProgress(Math.round((event.loaded / event.total) * 100));
+        }
+      });
+    }
+
+    xhr.addEventListener('load', () => {
+      if (xhr.status === 0) {
+        reject(new UploadTransportError(networkErrorMessage, true));
+        return;
+      }
+
+      const parsed = parseXhrApiResponse<T>(xhr, t, config);
+      if (!parsed) {
+        reject(createUnparsedXhrError(xhr, invalidResponseMessage));
+        return;
+      }
+
+      if (xhr.status >= 200 && xhr.status < 300 && parsed.ok && parsed.data !== undefined) {
+        resolve(parsed.data);
+        return;
+      }
+
+      reject(createApiResponseError(
+        xhr.status >= 200 && xhr.status < 300 ? parsed : { ...parsed, ok: false },
+        failureMessage,
+      ));
+    });
+
+    xhr.addEventListener('error', () => {
+      reject(new UploadTransportError(networkErrorMessage, true));
+    });
+
+    xhr.addEventListener('timeout', () => {
+      reject(new UploadTransportError(networkErrorMessage, true));
+    });
+
+    xhr.addEventListener('abort', () => {
+      reject(new UploadTransportError(cancelledMessage, false));
+    });
+
+    xhr.open('POST', url);
+    xhr.timeout = config.timeout;
+    xhr.setRequestHeader('Accept', 'application/json');
+
+    const language = config.getLanguage?.()?.trim();
+    if (language) {
+      xhr.setRequestHeader('Accept-Language', language);
+    }
+
+    const token = config.getToken?.();
+    if (token) {
+      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    }
+
+    xhr.send(formData);
+  });
 }
 
 /**
@@ -266,7 +526,7 @@ export async function uploadImage(
   options: ImageUploadOptions,
   t: TFunction
 ): Promise<AttachmentInfo> {
-  // 使用重试机制包装上传逻辑
+  const failureKey = 'attachment.api.imageUploadFailed';
   return uploadWithRetry(async () => {
     const {
       file,
@@ -280,8 +540,6 @@ export async function uploadImage(
       onProgress
     } = options;
 
-    const url = `${getApiBaseUrl()}/api/v1/Attachment/UploadImage`;
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('businessType', businessType);
@@ -294,62 +552,14 @@ export async function uploadImage(
     formData.append('watermarkText', watermarkText);
     formData.append('removeExif', removeExif.toString());
 
-    // 使用 XMLHttpRequest 以支持上传进度
-    return new Promise<AttachmentInfo>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      // 上传进度
-      if (onProgress) {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
-            onProgress(progress);
-          }
-        });
-      }
-
-      // 上传完成
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
-            const parsed = parseApiResponseWithI18n<AttachmentInfo>(json, t);
-
-            if (!parsed.ok || !parsed.data) {
-              reject(new Error(parsed.message || '上传失败'));
-            } else {
-              resolve(parsed.data);
-            }
-          } catch {
-            reject(new Error('解析响应失败'));
-          }
-        } else {
-          reject(new Error(`上传失败: HTTP ${xhr.status}`));
-        }
-      });
-
-      // 上传错误
-      xhr.addEventListener('error', () => {
-        reject(new Error('网络错误'));
-      });
-
-      // 上传取消
-      xhr.addEventListener('abort', () => {
-        reject(new Error('上传已取消'));
-      });
-
-      // 发送请求
-      xhr.open('POST', url);
-
-      // 添加认证头
-      const token = tokenService.getAccessToken();
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      }
-
-      xhr.send(formData);
+    return uploadFormData<AttachmentInfo>({
+      path: '/api/v1/Attachment/UploadImage',
+      formData,
+      onProgress,
+      t,
+      failureKey,
     });
-  });
+  }, resolveFallbackMessage(failureKey, t));
 }
 
 /**
@@ -362,7 +572,7 @@ export async function uploadDocument(
   options: DocumentUploadOptions,
   t: TFunction
 ): Promise<AttachmentInfo> {
-  // 使用重试机制包装上传逻辑
+  const failureKey = 'attachment.api.documentUploadFailed';
   return uploadWithRetry(async () => {
     const {
       file,
@@ -371,8 +581,6 @@ export async function uploadDocument(
       onProgress
     } = options;
 
-    const url = `${getApiBaseUrl()}/api/v1/Attachment/UploadDocument`;
-
     const formData = new FormData();
     formData.append('file', file);
     formData.append('businessType', businessType);
@@ -380,62 +588,14 @@ export async function uploadDocument(
       formData.append('businessId', businessId.toString());
     }
 
-    // 使用 XMLHttpRequest 以支持上传进度
-    return new Promise<AttachmentInfo>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      // 上传进度
-      if (onProgress) {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const progress = Math.round((e.loaded / e.total) * 100);
-            onProgress(progress);
-          }
-        });
-      }
-
-      // 上传完成
-      xhr.addEventListener('load', () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          try {
-            const json = JSON.parse(xhr.responseText) as ApiResponse<AttachmentInfo>;
-            const parsed = parseApiResponseWithI18n<AttachmentInfo>(json, t);
-
-            if (!parsed.ok || !parsed.data) {
-              reject(new Error(parsed.message || '上传失败'));
-            } else {
-              resolve(parsed.data);
-            }
-          } catch {
-            reject(new Error('解析响应失败'));
-          }
-        } else {
-          reject(new Error(`上传失败: HTTP ${xhr.status}`));
-        }
-      });
-
-      // 上传错误
-      xhr.addEventListener('error', () => {
-        reject(new Error('网络错误'));
-      });
-
-      // 上传取消
-      xhr.addEventListener('abort', () => {
-        reject(new Error('上传已取消'));
-      });
-
-      // 发送请求
-      xhr.open('POST', url);
-
-      // 添加认证头
-      const token = tokenService.getAccessToken();
-      if (token) {
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-      }
-
-      xhr.send(formData);
+    return uploadFormData<AttachmentInfo>({
+      path: '/api/v1/Attachment/UploadDocument',
+      formData,
+      onProgress,
+      t,
+      failureKey,
     });
-  });
+  }, resolveFallbackMessage(failureKey, t));
 }
 
 /**
@@ -448,21 +608,11 @@ export async function getAttachmentById(
   id: string,
   t: TFunction
 ): Promise<AttachmentInfo> {
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/GetById/${id}`;
-  const response = await apiFetch(url, { withAuth: false });
-
-  if (!response.ok) {
-    throw new Error(`获取附件失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<AttachmentInfo>;
-  const parsed = parseApiResponseWithI18n<AttachmentInfo>(json, t);
-
-  if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '获取附件失败');
-  }
-
-  return parsed.data;
+  const response = await apiGet<AttachmentInfo>(
+    `/api/v1/Attachment/GetById/${encodeURIComponent(id)}`,
+    { withAuth: false },
+  );
+  return requireResponseData(response, 'attachment.api.loadFailed', t);
 }
 
 /**
@@ -477,21 +627,11 @@ export async function getAttachmentsByBusiness(
   businessId: string,
   t: TFunction
 ): Promise<AttachmentInfo[]> {
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/GetByBusiness?businessType=${encodeURIComponent(businessType)}&businessId=${businessId}`;
-  const response = await apiFetch(url, { withAuth: false });
-
-  if (!response.ok) {
-    throw new Error(`获取附件列表失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<AttachmentInfo[]>;
-  const parsed = parseApiResponseWithI18n<AttachmentInfo[]>(json, t);
-
-  if (!parsed.ok || !parsed.data) {
-    throw new Error(parsed.message || '获取附件列表失败');
-  }
-
-  return parsed.data;
+  const response = await apiGet<AttachmentInfo[]>(
+    `/api/v1/Attachment/GetByBusiness?businessType=${encodeURIComponent(businessType)}&businessId=${encodeURIComponent(businessId)}`,
+    { withAuth: false },
+  );
+  return requireResponseData(response, 'attachment.api.listLoadFailed', t);
 }
 
 export async function getMyAttachments(options: {
@@ -518,12 +658,7 @@ export async function getMyAttachments(options: {
     `/api/v1/Attachment/GetMyAttachments?${params.toString()}`,
     { withAuth: true }
   );
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载附件失败');
-  }
-
-  return response.data;
+  return requireResponseData(response, 'profile.attachments.loadFailed');
 }
 
 /**
@@ -535,22 +670,11 @@ export async function deleteAttachment(
   id: string,
   t: TFunction
 ): Promise<void> {
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/Delete/${id}`;
-  const response = await apiFetch(url, {
-    method: 'DELETE',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`删除附件失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponseWithI18n<void>(json, t);
-
-  if (!parsed.ok) {
-    throw new Error(parsed.message || '删除附件失败');
-  }
+  const response = await apiDelete<void>(
+    `/api/v1/Attachment/Delete/${encodeURIComponent(id)}`,
+    { withAuth: true },
+  );
+  requireSuccessfulResponse(response, 'attachment.api.deleteFailed', t);
 }
 
 /**
@@ -562,26 +686,12 @@ export async function deleteAttachmentsBatch(
   ids: string[],
   t: TFunction
 ): Promise<void> {
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/DeleteBatch`;
-  const response = await apiFetch(url, {
-    method: 'POST',
-    withAuth: true,
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(ids)
-  });
-
-  if (!response.ok) {
-    throw new Error(`批量删除附件失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponseWithI18n<void>(json, t);
-
-  if (!parsed.ok) {
-    throw new Error(parsed.message || '批量删除附件失败');
-  }
+  const response = await apiPost<void>(
+    '/api/v1/Attachment/DeleteBatch',
+    ids,
+    { withAuth: true },
+  );
+  requireSuccessfulResponse(response, 'attachment.api.batchDeleteFailed', t);
 }
 
 /**
@@ -597,20 +707,10 @@ export async function updateAttachmentBusinessAssociation(
   businessId: string,
   t: TFunction
 ): Promise<void> {
-  const url = `${getApiBaseUrl()}/api/v1/Attachment/UpdateBusinessAssociation/${id}?businessType=${encodeURIComponent(businessType)}&businessId=${businessId}`;
-  const response = await apiFetch(url, {
-    method: 'PUT',
-    withAuth: true
-  });
-
-  if (!response.ok) {
-    throw new Error(`更新业务关联失败: HTTP ${response.status}`);
-  }
-
-  const json = await response.json() as ApiResponse<void>;
-  const parsed = parseApiResponseWithI18n<void>(json, t);
-
-  if (!parsed.ok) {
-    throw new Error(parsed.message || '更新业务关联失败');
-  }
+  const response = await apiPut<void>(
+    `/api/v1/Attachment/UpdateBusinessAssociation/${encodeURIComponent(id)}?businessType=${encodeURIComponent(businessType)}&businessId=${encodeURIComponent(businessId)}`,
+    undefined,
+    { withAuth: true },
+  );
+  requireSuccessfulResponse(response, 'attachment.api.updateAssociationFailed', t);
 }

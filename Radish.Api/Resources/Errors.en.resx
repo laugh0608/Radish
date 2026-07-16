@@ -24,6 +24,168 @@
   <data name="error.auth.unauthorized" xml:space="preserve">
     <value>Sign in to continue.</value>
   </data>
+  <data name="error.bootstrap.display_name_required" xml:space="preserve">
+    <value>Enter a display name.</value>
+  </data>
+  <data name="error.bootstrap.display_name_length_invalid" xml:space="preserve">
+    <value>The display name must contain {0}-{1} characters.</value>
+  </data>
+  <data name="error.bootstrap.display_name_characters_invalid" xml:space="preserve">
+    <value>The display name can contain only Chinese characters, English letters, and numbers.</value>
+  </data>
+  <data name="error.bootstrap.email_invalid" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="error.bootstrap.password_required" xml:space="preserve">
+    <value>Enter a password.</value>
+  </data>
+  <data name="error.bootstrap.password_confirmation_mismatch" xml:space="preserve">
+    <value>The passwords do not match.</value>
+  </data>
+  <data name="error.bootstrap.password_length_invalid" xml:space="preserve">
+    <value>The password must contain at least {0} characters.</value>
+  </data>
+  <data name="error.bootstrap.password_complexity_invalid" xml:space="preserve">
+    <value>The password must include an uppercase letter, a lowercase letter, a number, and a special character.</value>
+  </data>
+  <data name="error.bootstrap.password_contains_display_name" xml:space="preserve">
+    <value>The password cannot contain the display name.</value>
+  </data>
+  <data name="error.bootstrap.password_contains_email_local_part" xml:space="preserve">
+    <value>The password cannot contain the part of the email address before @.</value>
+  </data>
+  <data name="error.bootstrap.password_weak" xml:space="preserve">
+    <value>Default and commonly used weak passwords are not allowed.</value>
+  </data>
+  <data name="error.bootstrap.already_initialized" xml:space="preserve">
+    <value>An administrator already exists, so initialization is closed.</value>
+  </data>
+  <data name="error.bootstrap.email_taken" xml:space="preserve">
+    <value>This email address is already registered.</value>
+  </data>
+  <data name="error.bootstrap.concurrent_initialization" xml:space="preserve">
+    <value>Administrator initialization is already in progress. Refresh and try again.</value>
+  </data>
+  <data name="error.bootstrap.initialization_failed" xml:space="preserve">
+    <value>Administrator initialization failed. Try again later.</value>
+  </data>
+  <data name="error.forum.publish_title_required" xml:space="preserve">
+    <value>Enter a post title.</value>
+  </data>
+  <data name="error.forum.publish_title_too_short" xml:space="preserve">
+    <value>The post title is too short. Add more detail before publishing.</value>
+  </data>
+  <data name="error.forum.publish_title_too_long" xml:space="preserve">
+    <value>The post title is too long. Shorten it before publishing.</value>
+  </data>
+  <data name="error.forum.publish_content_required" xml:space="preserve">
+    <value>Enter post content.</value>
+  </data>
+  <data name="error.forum.publish_content_too_short" xml:space="preserve">
+    <value>The post content is too short. Add more detail before publishing.</value>
+  </data>
+  <data name="error.forum.publish_content_too_long" xml:space="preserve">
+    <value>The post content is too long. Shorten it before publishing.</value>
+  </data>
+  <data name="error.forum.publish_category_required" xml:space="preserve">
+    <value>Select a post category before publishing.</value>
+  </data>
+  <data name="error.forum.publish_content_type_invalid" xml:space="preserve">
+    <value>The post content type is invalid.</value>
+  </data>
+  <data name="error.forum.publish_tag_count_invalid" xml:space="preserve">
+    <value>Select between one and five tags before publishing.</value>
+  </data>
+  <data name="error.forum.publish_feature_combination_invalid" xml:space="preserve">
+    <value>Question, poll, and lottery features cannot be enabled together.</value>
+  </data>
+  <data name="error.forum.publish_poll_question_required" xml:space="preserve">
+    <value>Enter a poll question.</value>
+  </data>
+  <data name="error.forum.publish_poll_question_too_long" xml:space="preserve">
+    <value>The poll question cannot exceed 200 characters.</value>
+  </data>
+  <data name="error.forum.publish_poll_end_time_invalid" xml:space="preserve">
+    <value>The poll end time must be in the future.</value>
+  </data>
+  <data name="error.forum.publish_poll_options_required" xml:space="preserve">
+    <value>Enter poll options.</value>
+  </data>
+  <data name="error.forum.publish_poll_option_count_invalid" xml:space="preserve">
+    <value>A poll must contain between two and six options.</value>
+  </data>
+  <data name="error.forum.publish_poll_options_duplicate" xml:space="preserve">
+    <value>Poll options must be unique.</value>
+  </data>
+  <data name="error.forum.publish_poll_option_too_long" xml:space="preserve">
+    <value>Each poll option cannot exceed 100 characters.</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_name_required" xml:space="preserve">
+    <value>Enter a lottery prize name.</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_name_too_long" xml:space="preserve">
+    <value>The prize name cannot exceed 100 characters.</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_description_too_long" xml:space="preserve">
+    <value>The prize description cannot exceed 500 characters.</value>
+  </data>
+  <data name="error.forum.publish_lottery_draw_time_required" xml:space="preserve">
+    <value>Select a lottery draw time.</value>
+  </data>
+  <data name="error.forum.publish_lottery_draw_time_too_soon" xml:space="preserve">
+    <value>The lottery draw time must be at least one hour after publication.</value>
+  </data>
+  <data name="error.forum.publish_lottery_winner_count_invalid" xml:space="preserve">
+    <value>The winner count must be between 1 and 20.</value>
+  </data>
+  <data name="error.forum.publish_forbidden" xml:space="preserve">
+    <value>Your current account status does not allow publishing.</value>
+  </data>
+  <data name="error.forum.publish_tag_create_forbidden" xml:space="preserve">
+    <value>A selected tag does not exist, and your account cannot create new tags.</value>
+  </data>
+  <data name="error.forum.publish_submission_id_invalid" xml:space="preserve">
+    <value>The submission identifier is invalid. Refresh and submit again.</value>
+  </data>
+  <data name="error.forum.publish_submission_conflict" xml:space="preserve">
+    <value>This submission conflicts with an existing request. Refresh and submit again.</value>
+  </data>
+  <data name="error.forum.publish_submission_processing" xml:space="preserve">
+    <value>Your content is still being submitted. Check the result shortly.</value>
+  </data>
+  <data name="error.forum.publish_rate_limited" xml:space="preserve">
+    <value>You are publishing too frequently. Try again later.</value>
+  </data>
+  <data name="error.attachment.file_empty" xml:space="preserve">
+    <value>Select a non-empty file to upload.</value>
+  </data>
+  <data name="error.attachment.image_type_unsupported" xml:space="preserve">
+    <value>This image format is not supported.</value>
+  </data>
+  <data name="error.attachment.document_type_unsupported" xml:space="preserve">
+    <value>This document format is not supported.</value>
+  </data>
+  <data name="error.attachment.upload_forbidden" xml:space="preserve">
+    <value>Your account does not have permission to upload this file.</value>
+  </data>
+  <data name="error.attachment.rate_limited" xml:space="preserve">
+    <value>You are uploading too frequently. Try again later.</value>
+  </data>
+  <data name="error.attachment.file_too_large" xml:space="preserve">
+    <value>The selected file exceeds the upload size limit.</value>
+  </data>
+  <data name="error.attachment.unsupported_media_type" xml:space="preserve">
+    <value>This file type is not supported.</value>
+  </data>
+  <data name="error.attachment.content_mismatch" xml:space="preserve">
+    <value>The file content does not match its extension.</value>
+  </data>
+  <data name="error.attachment.storage_failed" xml:space="preserve">
+    <value>The file could not be stored. Try again later.</value>
+  </data>
+  <data name="error.attachment.processing_failed" xml:space="preserve">
+    <value>The file could not be processed. Try again later.</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>Internal server error. Please try again later.</value>
   </data>

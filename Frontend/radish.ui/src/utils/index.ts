@@ -10,6 +10,7 @@ export {
 } from './intl';
 export type { RadishIntlLocale } from './intl';
 export { resolveSanitizedMarkdownLinkHref, sanitizeMarkdownLinkHref } from './markdownUrl';
+export { escapeMarkdownLabel } from './markdownLabel';
 export {
   buildAttachmentAssetUrl,
   buildAttachmentMarkdownUrl,

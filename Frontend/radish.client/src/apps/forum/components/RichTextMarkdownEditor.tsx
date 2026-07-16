@@ -4,6 +4,9 @@ import {
   buildAttachmentMarkdownUrl,
   sanitizeMarkdownLinkHref,
   type MarkdownDocumentUploadResult,
+  type MarkdownEditorLabels,
+  type MarkdownEditorUploadKind,
+  type MarkdownEditorUploadProgressReporter,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
 import {
@@ -17,34 +20,71 @@ import styles from './RichTextMarkdownEditor.module.css';
 interface RichTextMarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
+  labels: RichTextMarkdownEditorLabels;
   placeholder?: string;
   minHeight?: number;
   disabled?: boolean;
   toolbarExtras?: ReactNode;
   className?: string;
-  onImageUpload?: (file: File) => Promise<MarkdownImageUploadResult>;
-  onDocumentUpload?: (file: File) => Promise<MarkdownDocumentUploadResult>;
+  onImageUpload?: (
+    file: File,
+    reportProgress: MarkdownEditorUploadProgressReporter,
+  ) => Promise<MarkdownImageUploadResult>;
+  onDocumentUpload?: (
+    file: File,
+    reportProgress: MarkdownEditorUploadProgressReporter,
+  ) => Promise<MarkdownDocumentUploadResult>;
+  onUploadError?: (kind: MarkdownEditorUploadKind, error: unknown) => void;
+  onUploadingChange?: (uploading: boolean) => void;
 }
+
+interface RichTextMarkdownEditorLabels extends MarkdownEditorLabels {
+  linkPrompt: string;
+  imageUnavailable: string;
+}
+
+const normalizeUploadProgress = (progress: number): number | null => {
+  if (!Number.isFinite(progress)) {
+    return null;
+  }
+
+  return Math.min(Math.max(Math.round(progress), 0), 100);
+};
 
 export const RichTextMarkdownEditor = ({
   value,
   onChange,
-  placeholder = '直接输入正文，底层会保存为 Markdown',
+  labels,
+  placeholder,
   minHeight = 320,
   disabled = false,
   toolbarExtras,
   className = '',
   onImageUpload,
-  onDocumentUpload
+  onDocumentUpload,
+  onUploadError,
+  onUploadingChange,
 }: RichTextMarkdownEditorProps) => {
   const editorRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
   const lastEmittedMarkdownRef = useRef(value);
+  const uploadInFlightRef = useRef(false);
+  const onUploadingChangeRef = useRef(onUploadingChange);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const editorHtml = useMemo(() => markdownToRichHtml(value), [value]);
+
+  useEffect(() => {
+    onUploadingChangeRef.current = onUploadingChange;
+    onUploadingChange?.(uploading);
+  }, [onUploadingChange, uploading]);
+
+  useEffect(() => () => {
+    onUploadingChangeRef.current?.(false);
+  }, []);
 
   useEffect(() => {
     if (!editorRef.current || value === lastEmittedMarkdownRef.current) {
@@ -55,7 +95,12 @@ export const RichTextMarkdownEditor = ({
   }, [editorHtml, value]);
 
   const syncMarkdownFromDom = () => {
-    const html = editorRef.current?.innerHTML ?? '';
+    const editor = editorRef.current;
+    if (!editor) {
+      return;
+    }
+
+    const html = editor.innerHTML;
     const markdown = htmlToMarkdown(html);
     lastEmittedMarkdownRef.current = markdown;
     onChange(markdown);
@@ -75,14 +120,15 @@ export const RichTextMarkdownEditor = ({
     syncMarkdownFromDom();
   };
 
-  const insertHtml = (html: string) => {
-    if (disabled || uploading) {
-      return;
+  const insertHtml = (html: string, allowDuringUpload = false): boolean => {
+    if (!editorRef.current || disabled || (uploadInFlightRef.current && !allowDuringUpload)) {
+      return false;
     }
 
     focusEditor();
     document.execCommand('insertHTML', false, html);
     syncMarkdownFromDom();
+    return true;
   };
 
   const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
@@ -103,42 +149,60 @@ export const RichTextMarkdownEditor = ({
   };
 
   const handleImageSelection = async (file: File) => {
-    if (!onImageUpload) {
-      insertHtml('<p><em>请在 Markdown 模式中插入图片</em></p>');
+    if (disabled || uploading || uploadInFlightRef.current) {
       return;
     }
 
+    if (!onImageUpload) {
+      setUploadError(labels.imageUnavailable);
+      return;
+    }
+
+    uploadInFlightRef.current = true;
     setUploading(true);
+    setUploadProgress(null);
     setUploadError(null);
     try {
-      const result = await onImageUpload(file);
+      const result = await onImageUpload(file, (progress) => {
+        setUploadProgress(normalizeUploadProgress(progress));
+      });
       const markdownSrc = buildAttachmentMarkdownUrl(result.attachmentId, {
         displayVariant: result.displayVariant,
         scalePercent: result.scalePercent,
       });
-      insertHtml(`<p>${buildRichImageHtml(markdownSrc, file.name)}</p>`);
+      insertHtml(`<p>${buildRichImageHtml(markdownSrc, file.name)}</p>`, true);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : '图片上传失败');
+      setUploadError(labels.upload.formatError('image', error));
+      onUploadError?.('image', error);
     } finally {
+      uploadInFlightRef.current = false;
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
   const handleDocumentSelection = async (file: File) => {
-    if (!onDocumentUpload) {
+    if (disabled || uploading || uploadInFlightRef.current || !onDocumentUpload) {
       return;
     }
 
+    uploadInFlightRef.current = true;
     setUploading(true);
+    setUploadProgress(null);
     setUploadError(null);
     try {
-      const result = await onDocumentUpload(file);
+      const result = await onDocumentUpload(file, (progress) => {
+        setUploadProgress(normalizeUploadProgress(progress));
+      });
       const markdownHref = buildAttachmentMarkdownUrl(result.attachmentId);
-      insertHtml(`<p>${buildRichLinkHtml(markdownHref, result.fileName || file.name)}</p>`);
+      insertHtml(`<p>${buildRichLinkHtml(markdownHref, result.fileName || file.name)}</p>`, true);
     } catch (error) {
-      setUploadError(error instanceof Error ? error.message : '文档上传失败');
+      setUploadError(labels.upload.formatError('document', error));
+      onUploadError?.('document', error);
     } finally {
+      uploadInFlightRef.current = false;
       setUploading(false);
+      setUploadProgress(null);
     }
   };
 
@@ -146,44 +210,44 @@ export const RichTextMarkdownEditor = ({
     <div className={`${styles.container} ${className}`.trim()}>
       <div className={styles.toolbar}>
         <div className={styles.toolbarGroup}>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('formatBlock', 'h2')} title="标题" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('formatBlock', 'h2')} title={labels.toolbar.heading} disabled={disabled || uploading}>
             <Icon icon="mdi:format-header-2" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('bold')} title="粗体" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('bold')} title={labels.toolbar.bold} disabled={disabled || uploading}>
             <Icon icon="mdi:format-bold" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('italic')} title="斜体" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('italic')} title={labels.toolbar.italic} disabled={disabled || uploading}>
             <Icon icon="mdi:format-italic" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('strikeThrough')} title="删除线" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('strikeThrough')} title={labels.toolbar.strikethrough} disabled={disabled || uploading}>
             <Icon icon="mdi:format-strikethrough-variant" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('formatBlock', 'blockquote')} title="引用" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('formatBlock', 'blockquote')} title={labels.toolbar.quote} disabled={disabled || uploading}>
             <Icon icon="mdi:format-quote-close" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => insertHtml('<code>行内代码</code>')} title="行内代码" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => insertHtml(`<code>${labels.insert.inlineCode}</code>`)} title={labels.toolbar.inlineCode} disabled={disabled || uploading}>
             <Icon icon="mdi:code-tags" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => insertHtml('<pre><code>代码块</code></pre>')} title="代码块" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => insertHtml(`<pre><code>${labels.insert.codeBlock}</code></pre>`)} title={labels.toolbar.codeBlock} disabled={disabled || uploading}>
             <Icon icon="mdi:code-braces-box" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('insertUnorderedList')} title="无序列表" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('insertUnorderedList')} title={labels.toolbar.unorderedList} disabled={disabled || uploading}>
             <Icon icon="mdi:format-list-bulleted" size={18} />
           </button>
-          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('insertOrderedList')} title="有序列表" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => runCommand('insertOrderedList')} title={labels.toolbar.orderedList} disabled={disabled || uploading}>
             <Icon icon="mdi:format-list-numbered" size={18} />
           </button>
           <button
             type="button"
             className={styles.toolbarButton}
             onClick={() => {
-              const safeHref = sanitizeMarkdownLinkHref(window.prompt('输入链接地址'));
+              const safeHref = sanitizeMarkdownLinkHref(window.prompt(labels.linkPrompt));
               if (safeHref) {
                 runCommand('createLink', safeHref);
               }
             }}
-            title="链接"
-            disabled={disabled}
+            title={labels.toolbar.link}
+            disabled={disabled || uploading}
           >
             <Icon icon="mdi:link-variant" size={18} />
           </button>
@@ -191,7 +255,7 @@ export const RichTextMarkdownEditor = ({
             type="button"
             className={styles.toolbarButton}
             onClick={() => imageInputRef.current?.click()}
-            title="图片"
+            title={labels.toolbar.image}
             disabled={disabled || uploading}
           >
             <Icon icon="mdi:image-outline" size={18} />
@@ -201,13 +265,13 @@ export const RichTextMarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => documentInputRef.current?.click()}
-              title="附件"
+              title={labels.toolbar.document}
               disabled={disabled || uploading}
             >
               <Icon icon="mdi:file-document-outline" size={18} />
             </button>
           )}
-          <button type="button" className={styles.toolbarButton} onClick={() => insertHtml('<hr />')} title="分割线" disabled={disabled}>
+          <button type="button" className={styles.toolbarButton} onClick={() => insertHtml('<hr />')} title={labels.toolbar.horizontalRule} disabled={disabled || uploading}>
             <Icon icon="mdi:minus" size={18} />
           </button>
         </div>
@@ -223,23 +287,29 @@ export const RichTextMarkdownEditor = ({
           className={styles.editor}
           contentEditable={!disabled && !uploading}
           suppressContentEditableWarning={true}
-          data-placeholder={placeholder}
+          data-placeholder={placeholder ?? labels.placeholder}
           onInput={syncMarkdownFromDom}
           onPaste={handlePaste}
           dangerouslySetInnerHTML={{ __html: editorHtml }}
         />
 
         {uploading && (
-          <div className={styles.overlay}>
+          <div className={styles.overlay} role="status" aria-live="polite">
             <Icon icon="mdi:loading" size={20} className={styles.spinIcon} />
-            <span>上传中...</span>
+            <span>{labels.upload.formatUploading(uploadProgress)}</span>
           </div>
         )}
 
         {uploadError && (
-          <div className={styles.error}>
+          <div className={styles.error} role="alert">
             <span>{uploadError}</span>
-            <button type="button" className={styles.errorDismiss} onClick={() => setUploadError(null)}>
+            <button
+              type="button"
+              className={styles.errorDismiss}
+              onClick={() => setUploadError(null)}
+              title={labels.upload.dismissError}
+              aria-label={labels.upload.dismissError}
+            >
               <Icon icon="mdi:close" size={14} />
             </button>
           </div>
@@ -251,6 +321,7 @@ export const RichTextMarkdownEditor = ({
         type="file"
         accept="image/*"
         hidden
+        disabled={disabled || uploading}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) {
@@ -263,6 +334,7 @@ export const RichTextMarkdownEditor = ({
         ref={documentInputRef}
         type="file"
         hidden
+        disabled={disabled || uploading}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file) {

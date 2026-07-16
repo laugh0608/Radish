@@ -1,8 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Api.Routing;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.IService.Base;
@@ -10,6 +13,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
@@ -34,6 +38,7 @@ public class PostController : ControllerBase
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly IForumContentWriteService _forumContentWriteService;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
     public PostController(
         IPostService postService,
@@ -43,7 +48,8 @@ public class PostController : ControllerBase
         IBaseService<Comment, CommentVo>? commentService,
         IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor,
-        IForumContentWriteService forumContentWriteService)
+        IForumContentWriteService forumContentWriteService,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _postService = postService;
         _userService = userService;
@@ -51,6 +57,7 @@ public class PostController : ControllerBase
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
         _forumContentWriteService = forumContentWriteService;
+        _errorsLocalizer = errorsLocalizer;
         _ = attachmentService;
         _ = commentService;
     }
@@ -298,26 +305,25 @@ public class PostController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
     public async Task<MessageModel> Publish([FromBody] PublishPostDto request)
     {
         if (string.IsNullOrWhiteSpace(request.Title))
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "帖子标题不能为空"
-            };
+            return BuildPublishError(
+                HttpStatusCodeEnum.BadRequest,
+                "帖子标题不能为空",
+                ForumPublishErrorCodes.TitleRequired);
         }
 
         if (string.IsNullOrWhiteSpace(request.Content))
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "帖子内容不能为空"
-            };
+            return BuildPublishError(
+                HttpStatusCodeEnum.BadRequest,
+                "帖子内容不能为空",
+                ForumPublishErrorCodes.ContentRequired);
         }
 
         var normalizedTagNames = request.TagNames?
@@ -328,23 +334,19 @@ public class PostController : ControllerBase
 
         if (normalizedTagNames.Count is < 1 or > 5)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "发布帖子时标签数量必须在 1 到 5 个之间"
-            };
+            return BuildPublishError(
+                HttpStatusCodeEnum.BadRequest,
+                "发布帖子时标签数量必须在 1 到 5 个之间",
+                ForumPublishErrorCodes.TagCountInvalid);
         }
 
         var publishPermission = await _contentModerationService.GetPublishPermissionAsync(Current.UserId);
         if (!publishPermission.VoCanPublish)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
-                MessageInfo = publishPermission.VoDenyReason ?? "当前状态无法发布内容"
-            };
+            return BuildPublishError(
+                HttpStatusCodeEnum.Forbidden,
+                publishPermission.VoDenyReason ?? "当前状态无法发布内容",
+                ForumPublishErrorCodes.Forbidden);
         }
 
         var allowCreateTag = Current.IsSystemOrAdmin();
@@ -377,24 +379,47 @@ public class PostController : ControllerBase
                 ResponseData = publishResult.Result
             };
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex) when (ex.StatusCode < StatusCodes.Status500InternalServerError)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
-                MessageInfo = ex.Message
-            };
+            return BuildError(
+                ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode,
+                ex.MessageKey);
         }
-        catch (ArgumentException ex)
+    }
+
+    private MessageModel BuildPublishError(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string errorCode)
+    {
+        return BuildError(
+            (int)statusCode,
+            fallbackMessage,
+            errorCode,
+            ForumPublishErrorCodes.ResolveMessageKey(errorCode));
+    }
+
+    private MessageModel BuildError(
+        int statusCode,
+        string fallbackMessage,
+        string? errorCode,
+        string? messageKey)
+    {
+        var localizedMessage = string.IsNullOrWhiteSpace(messageKey)
+            ? null
+            : _errorsLocalizer[messageKey];
+        return new MessageModel
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
-        }
+            IsSuccess = false,
+            StatusCode = statusCode,
+            MessageInfo = localizedMessage is null || localizedMessage.ResourceNotFound
+                ? fallbackMessage
+                : localizedMessage.Value,
+            Code = errorCode,
+            MessageKey = messageKey
+        };
     }
 
     /// <summary>

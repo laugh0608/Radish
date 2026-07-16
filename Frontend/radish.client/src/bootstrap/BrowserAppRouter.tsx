@@ -1,5 +1,6 @@
-import { lazy, startTransition, useEffect, useState, type ElementType } from 'react';
+import { lazy, startTransition, useCallback, useEffect, useRef, useState, type ElementType } from 'react';
 import { BootstrapGate } from '@/bootstrap/BootstrapGate';
+import { BrowserNavigationLockContext, type BrowserNavigationLockUpdater } from '@/bootstrap/browserNavigationLock';
 import { resolveBrowserEntryKind, type BrowserEntryKind } from '@/bootstrap/entryRoute';
 
 const OidcCallbackPage = lazy(() => import('@/auth/OidcCallbackPage').then((module) => ({ default: module.OidcCallbackPage })));
@@ -47,9 +48,29 @@ function resolveEntryComponent(entryKind: BrowserEntryKind): ElementType {
 
 export function BrowserAppRouter() {
   const [entryKind, setEntryKind] = useState<BrowserEntryKind>(() => getCurrentEntryKind());
+  const navigationLocksRef = useRef<Set<symbol>>(new Set());
+  const updateNavigationLock = useCallback<BrowserNavigationLockUpdater>((token, locked) => {
+    const current = navigationLocksRef.current;
+    if (current.has(token) === locked) {
+      return;
+    }
+
+    const next = new Set(current);
+    if (locked) {
+      next.add(token);
+    } else {
+      next.delete(token);
+    }
+    navigationLocksRef.current = next;
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
+      const navigationLocked = navigationLocksRef.current.size > 0;
+      if (navigationLocked) {
+        return;
+      }
+
       startTransition(() => {
         setEntryKind(getCurrentEntryKind());
       });
@@ -64,7 +85,9 @@ export function BrowserAppRouter() {
   const Page = resolveEntryComponent(entryKind);
   return (
     <BootstrapGate>
-      <Page />
+      <BrowserNavigationLockContext.Provider value={updateNavigationLock}>
+        <Page />
+      </BrowserNavigationLockContext.Provider>
     </BootstrapGate>
   );
 }

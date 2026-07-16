@@ -8,6 +8,12 @@ import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { deleteAttachment, getMyAttachments, type MyAttachmentItem } from '@/api/attachment';
 import { resolveMediaUrl } from '@/utils/media';
 import { useTranslation } from 'react-i18next';
+import { getIntlLocale } from '@/locales/language';
+import {
+  formatAttachmentFileSize,
+  resolveAttachmentBusinessType,
+} from '@/attachments/attachmentPresentation';
+import { log } from '@/utils/logger';
 import styles from './UserAttachmentList.module.css';
 
 interface UserAttachmentListProps {
@@ -47,13 +53,14 @@ export const UserAttachmentList = ({
   onItemsLoaded,
   onStateChange
 }: UserAttachmentListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
 
   const [attachments, setAttachments] = useState<MyAttachmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(initialPage);
   const [totalPages, setTotalPages] = useState(1);
-  const [error, setError] = useState<string | null>(null);
+  const [errorKey, setErrorKey] = useState<string | null>(null);
 
   const [businessType, setBusinessType] = useState<BusinessTypeFilter>(initialBusinessType);
   const [keyword, setKeyword] = useState(initialKeyword);
@@ -82,7 +89,7 @@ export const UserAttachmentList = ({
 
   const loadAttachments = async () => {
     setLoading(true);
-    setError(null);
+    setErrorKey(null);
 
     try {
       const result = await getMyAttachments({
@@ -95,8 +102,9 @@ export const UserAttachmentList = ({
       setAttachments(loadedAttachments);
       onItemsLoaded?.(loadedAttachments);
       setTotalPages(result.pageCount || 1);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (error) {
+      log.error('UserAttachmentList', '加载我的附件失败:', error);
+      setErrorKey('profile.attachments.loadFailed');
       setAttachments([]);
       onItemsLoaded?.([]);
       setTotalPages(1);
@@ -147,8 +155,9 @@ export const UserAttachmentList = ({
     try {
       await deleteAttachment(deleteTargetId, t);
       await loadAttachments();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+    } catch (error) {
+      log.error('UserAttachmentList', '删除附件失败:', error);
+      setErrorKey('attachment.api.deleteFailed');
     } finally {
       setDeleteTargetId(null);
     }
@@ -166,8 +175,8 @@ export const UserAttachmentList = ({
     return <div className={styles.loading}>{t('common.loading')}</div>;
   }
 
-  if (error) {
-    return <div className={styles.error}>{t('profile.attachments.loadFailedWithDetail', { error })}</div>;
+  if (errorKey) {
+    return <div className={styles.error}>{t(errorKey)}</div>;
   }
 
   return (
@@ -190,6 +199,7 @@ export const UserAttachmentList = ({
           onChange={(e) => setKeywordInput(e.target.value)}
         />
         <button
+          type="button"
           className={styles.actionButton}
           onClick={() => {
             updateAppliedState({
@@ -232,10 +242,17 @@ export const UserAttachmentList = ({
                       {att.voOriginalName}
                     </div>
                     <div className={styles.meta}>
-                      <span className={styles.metaItem}>{att.voFileSizeFormatted || `${att.voFileSize} B`}</span>
-                      <span className={styles.metaItem}>{att.voBusinessType || t('profile.attachments.business.general')}</span>
+                      <span className={styles.metaItem}>{formatAttachmentFileSize(att.voFileSize, language)}</span>
+                      <span className={styles.metaItem}>{resolveAttachmentBusinessType(att.voBusinessType, t)}</span>
                       <span className={styles.metaItem}>
-                        {att.voCreateTime ? formatDateTimeByTimeZone(att.voCreateTime, displayTimeZone) : ''}
+                        {att.voCreateTime
+                          ? formatDateTimeByTimeZone(
+                              att.voCreateTime,
+                              displayTimeZone,
+                              '-',
+                              getIntlLocale(language),
+                            )
+                          : ''}
                       </span>
                     </div>
                   </div>
@@ -246,7 +263,7 @@ export const UserAttachmentList = ({
                         <a className={styles.link} href={href} target="_blank" rel="noreferrer">
                           {t('profile.attachments.download')}
                         </a>
-                        <button className={styles.actionButton} onClick={() => void handleCopyLink(href)}>
+                        <button type="button" className={styles.actionButton} onClick={() => void handleCopyLink(href)}>
                           {t('profile.attachments.copyLink')}
                         </button>
                       </>
@@ -254,6 +271,7 @@ export const UserAttachmentList = ({
                       <span className={styles.disabledLink}>{t('profile.attachments.noLink')}</span>
                     )}
                     <button
+                      type="button"
                       className={`${styles.actionButton} ${styles.dangerButton}`}
                       onClick={() => openDeleteConfirm(att.voId)}
                     >
@@ -270,6 +288,7 @@ export const UserAttachmentList = ({
       {totalPages > 1 && (
         <div className={styles.pagination}>
           <button
+            type="button"
             onClick={() => updateAppliedState({ page: Math.max(1, page - 1) })}
             disabled={page === 1}
             className={styles.pageButton}
@@ -280,6 +299,7 @@ export const UserAttachmentList = ({
             {t('common.pageInfo', { current: page, total: totalPages })}
           </span>
           <button
+            type="button"
             onClick={() => updateAppliedState({ page: Math.min(totalPages, page + 1) })}
             disabled={page === totalPages}
             className={styles.pageButton}
@@ -293,6 +313,8 @@ export const UserAttachmentList = ({
         isOpen={confirmDeleteOpen}
         title={t('profile.attachments.confirmDeleteTitle')}
         message={t('profile.attachments.confirmDeleteMessage')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
         danger
         onCancel={() => {
           setConfirmDeleteOpen(false);

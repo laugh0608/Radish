@@ -751,6 +751,8 @@ export const OrderList = () => {
         isOpen={confirmVisible}
         title={t('orders.retry.title')}
         message={t('orders.retry.message', { orderNo: retryOrder?.voOrderNo ?? '-' })}
+        confirmText={t('orders.action.retry')}
+        cancelText={t('orders.detail.close')}
         onConfirm={handleConfirmRetry}
         onCancel={() => {
           setConfirmVisible(false);

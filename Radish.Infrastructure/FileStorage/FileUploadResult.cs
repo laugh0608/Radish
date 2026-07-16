@@ -16,6 +16,11 @@ public class FileUploadResult
     public string? ErrorMessage { get; set; }
 
     /// <summary>
+    /// 稳定失败类别，供业务层映射 HTTP 状态和对外错误码。
+    /// </summary>
+    public FileUploadFailureKind FailureKind { get; set; }
+
+    /// <summary>
     /// 存储文件名（唯一标识）
     /// </summary>
     public string StoredName { get; set; } = string.Empty;
@@ -58,11 +63,17 @@ public class FileUploadResult
     /// <summary>
     /// 创建失败结果
     /// </summary>
-    public static FileUploadResult Fail(string errorMessage)
+    public static FileUploadResult Fail(FileUploadFailureKind failureKind, string errorMessage)
     {
+        if (failureKind == FileUploadFailureKind.None)
+        {
+            throw new ArgumentOutOfRangeException(nameof(failureKind), failureKind, "A failed upload must have a failure kind.");
+        }
+
         return new FileUploadResult
         {
             Success = false,
+            FailureKind = failureKind,
             ErrorMessage = errorMessage
         };
     }

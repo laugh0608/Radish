@@ -1,2 +1,7 @@
 export { MarkdownEditor } from './MarkdownEditor';
-export type { MarkdownEditorProps } from './MarkdownEditor';
+export type {
+  MarkdownEditorLabels,
+  MarkdownEditorProps,
+  MarkdownEditorUploadKind,
+  MarkdownEditorUploadProgressReporter,
+} from './MarkdownEditor';

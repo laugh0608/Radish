@@ -1,3 +1,5 @@
+using Radish.Shared.Constants;
+
 namespace Radish.Model.DtoModels;
 
 public sealed class BootstrapCreateAdminDto
@@ -33,6 +35,12 @@ public sealed class BootstrapAdminCreationResult
 
     public string Message { get; set; } = string.Empty;
 
+    public string Code { get; set; } = string.Empty;
+
+    public string MessageKey { get; set; } = string.Empty;
+
+    public object[] MessageArguments { get; set; } = Array.Empty<object>();
+
     public static BootstrapAdminCreationResult Created(long userId, string displayName, string email)
     {
         return new BootstrapAdminCreationResult
@@ -45,12 +53,19 @@ public sealed class BootstrapAdminCreationResult
         };
     }
 
-    public static BootstrapAdminCreationResult Failed(BootstrapAdminCreationStatus status, string message)
+    public static BootstrapAdminCreationResult Failed(
+        BootstrapAdminCreationStatus status,
+        string message,
+        string code,
+        params object[] messageArguments)
     {
         return new BootstrapAdminCreationResult
         {
             Status = status,
-            Message = message
+            Message = message,
+            Code = code,
+            MessageKey = BootstrapErrorCodes.ResolveMessageKey(code),
+            MessageArguments = messageArguments
         };
     }
 }

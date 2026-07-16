@@ -534,6 +534,8 @@ export const zhAccount = {
   'profile.avatar.selectImage': '点击选择图片',
   'profile.avatar.uploadHint': '支持 JPG、PNG 格式，最大 5MB',
   'profile.avatar.processing': '处理中...',
+  'profile.avatar.cropZoom': '缩放',
+  'profile.avatar.cropFailed': '无法裁切图片，请重新选择后再试。',
   'profile.avatar.removeAvatar': '移除头像',
   'profile.avatar.uploading': '上传中...',
   'profile.avatar.selectImageFile': '请选择图片文件',

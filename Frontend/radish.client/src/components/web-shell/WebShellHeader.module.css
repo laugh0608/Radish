@@ -109,6 +109,16 @@
   justify-self: end;
 }
 
+.actionSlot {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+}
+
+.actionSlotLocked {
+  pointer-events: none;
+}
+
 .navItem,
 .actionItem {
   min-width: 0;

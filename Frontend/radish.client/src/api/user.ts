@@ -135,8 +135,6 @@ export async function searchUsersForMention(
   t: TFunction,
   limit: number = 10
 ): Promise<UserMentionOption[]> {
-  void t;
-
   if (!keyword.trim()) {
     return [];
   }
@@ -147,7 +145,10 @@ export async function searchUsersForMention(
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '搜索用户失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.mention.searchFailed'),
+    );
   }
 
   // 直接返回后端数据，不做字段映射

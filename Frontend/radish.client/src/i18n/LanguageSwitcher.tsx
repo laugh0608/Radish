@@ -13,7 +13,7 @@ export function LanguageSwitcher() {
       type="button"
       className={styles.trigger}
       aria-label={t('lang.switch')}
-      title={`${t('lang.switch')}：${t(`lang.${nextLanguage}`)}`}
+      title={t('lang.switchTo', { language: t(`lang.${nextLanguage}`) })}
       onClick={() => void i18n.changeLanguage(nextLanguage)}
     >
       <Icon icon="mdi:translate" size={18} />

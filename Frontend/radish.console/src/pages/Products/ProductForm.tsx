@@ -530,6 +530,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       title={product ? t('products.form.editTitle') : t('products.form.createTitle')}
       isOpen={visible}
       onClose={handleRequestClose}
+      closeLabel={t('products.form.cancel')}
       size="large"
       closeOnOverlayClick={false}
       closeOnEscape={false}

@@ -134,6 +134,7 @@
   font-size: 12px;
   line-height: 1.4;
   color: var(--theme-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .replyMeta {
@@ -199,6 +200,7 @@
   color: var(--theme-brand-primary);
   font-size: 11px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .replyDivider {
@@ -216,6 +218,8 @@
 
 .uploadError span {
   min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
 }
 
 .textareaWrapper {

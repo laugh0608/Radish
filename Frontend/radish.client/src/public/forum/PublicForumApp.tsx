@@ -32,6 +32,8 @@ interface PublicForumAppProps {
     href?: string;
     onBack: () => void;
   } | null;
+  navigationLocked: boolean;
+  onNavigationLockChange: (locked: boolean) => void;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToSearch?: (keyword?: string) => void;
@@ -46,6 +48,8 @@ export const PublicForumApp = ({
   fallbackBrowseRoute,
   routeSourceState,
   detailBackAction,
+  navigationLocked,
+  onNavigationLockChange,
   onNavigate,
   onNavigateToProfile,
   onNavigateToSearch,
@@ -126,8 +130,13 @@ export const PublicForumApp = ({
         brandMark="论"
         brandName={t('desktop.apps.forum.name')}
         brandSubline={t('forum.public.shellLabel')}
-        onBrandClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+        onBrandClick={() => {
+          if (!navigationLocked) {
+            onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 });
+          }
+        }}
         loginLabel={t('public.shell.loginAction')}
+        navigationLocked={navigationLocked}
       />
 
       <main className={styles.main}>
@@ -142,6 +151,8 @@ export const PublicForumApp = ({
             backLabel={detailBackLabel}
             backHref={detailBackHref}
             onBack={handleForumDetailBack}
+            isAnswerEditorUploading={navigationLocked}
+            onAnswerEditorUploadingChange={onNavigationLockChange}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
             onOpenQuestion={onNavigateToQuestion}

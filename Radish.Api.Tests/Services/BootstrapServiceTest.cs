@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Moq;
 using Radish.Common.HelpTool;
@@ -6,6 +7,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
@@ -47,8 +49,39 @@ public class BootstrapServiceTest
         });
 
         Assert.Equal(BootstrapAdminCreationStatus.InvalidInput, result.Status);
+        Assert.Equal(BootstrapErrorCodes.PasswordWeak, result.Code);
+        Assert.Equal("error.bootstrap.password_weak", result.MessageKey);
         repository.Verify(
             r => r.TryCreateFirstAdministratorAsync(
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<PublicIndexReservationPolicy>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateFirstAdministratorAsync_ShouldPreserveValidationMessageArguments()
+    {
+        var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
+        var coinService = new Mock<ICoinService>(MockBehavior.Strict);
+        var systemSettingProvider = CreateSystemSettingProvider();
+        var service = new BootstrapService(repository.Object, coinService.Object, systemSettingProvider.Object);
+
+        var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
+        {
+            DisplayName = "A",
+            Email = "admin@radish.test",
+            Password = "Strong!Pass123",
+            ConfirmPassword = "Strong!Pass123"
+        });
+
+        Assert.Equal(BootstrapAdminCreationStatus.InvalidInput, result.Status);
+        Assert.Equal(BootstrapErrorCodes.DisplayNameLengthInvalid, result.Code);
+        Assert.Equal("error.bootstrap.display_name_length_invalid", result.MessageKey);
+        Assert.Equal(new object[] { 2, 24 }, result.MessageArguments);
+        repository.Verify(
+            item => item.TryCreateFirstAdministratorAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
                 It.IsAny<string>(),
@@ -97,6 +130,37 @@ public class BootstrapServiceTest
         Assert.NotNull(capturedPolicy);
         Assert.True(capturedPolicy!.ShouldReserve(1000));
         Assert.False(capturedPolicy.ShouldReserve(1001));
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(9001), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateFirstAdministratorAsync_ShouldRemainCreated_WhenRegistrationRewardFailsAfterCommit()
+    {
+        var repository = new Mock<IBootstrapRepository>(MockBehavior.Strict);
+        repository
+            .Setup(item => item.TryCreateFirstAdministratorAsync(
+                "Owner",
+                It.IsAny<string>(),
+                "owner@radish.test",
+                It.IsAny<PublicIndexReservationPolicy>()))
+            .ReturnsAsync(BootstrapAdminCreationResult.Created(9001, "Owner", "owner@radish.test"));
+        var coinService = new Mock<ICoinService>(MockBehavior.Strict);
+        coinService
+            .Setup(service => service.GrantRegistrationRewardAsync(9001))
+            .ThrowsAsync(new InvalidOperationException("temporary reward failure"));
+        var systemSettingProvider = CreateSystemSettingProvider();
+        var service = new BootstrapService(repository.Object, coinService.Object, systemSettingProvider.Object);
+
+        var result = await service.CreateFirstAdministratorAsync(new BootstrapCreateAdminDto
+        {
+            DisplayName = "Owner",
+            Email = "owner@radish.test",
+            Password = "Strong!Pass123",
+            ConfirmPassword = "Strong!Pass123"
+        });
+
+        Assert.Equal(BootstrapAdminCreationStatus.Created, result.Status);
+        Assert.Equal(9001, result.UserId);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(9001), Times.Once);
     }
 

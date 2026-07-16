@@ -49,6 +49,8 @@ public class LocalFileStorage : IFileStorage
         string contentType,
         FileUploadOptionsDto? options = null)
     {
+        string? writeTargetPath = null;
+
         try
         {
             options ??= new FileUploadOptionsDto();
@@ -60,20 +62,26 @@ public class LocalFileStorage : IFileStorage
             // 验证文件大小
             if (stream.Length > maxSize)
             {
-                return FileUploadResult.Fail($"文件大小超过限制（最大 {maxSize / 1024 / 1024}MB）");
+                return FileUploadResult.Fail(
+                    FileUploadFailureKind.FileTooLarge,
+                    $"文件大小超过限制（最大 {maxSize / 1024 / 1024}MB）");
             }
 
             // 验证文件类型
             if (!IsAllowedFileType(extension))
             {
-                return FileUploadResult.Fail($"不支持的文件类型：{extension}");
+                return FileUploadResult.Fail(
+                    FileUploadFailureKind.UnsupportedType,
+                    $"不支持的文件类型：{extension}");
             }
 
             // 验证文件头（Magic Number）防止扩展名伪装
             var isValidMagicNumber = await ValidateFileMagicNumberAsync(stream, extension);
             if (!isValidMagicNumber)
             {
-                return FileUploadResult.Fail($"文件内容与扩展名不匹配，可能是伪装文件");
+                return FileUploadResult.Fail(
+                    FileUploadFailureKind.ContentMismatch,
+                    "文件内容与扩展名不匹配，可能是伪装文件");
             }
 
             // 生成唯一文件名（使用 Snowflake ID + 原始扩展名）
@@ -94,6 +102,7 @@ public class LocalFileStorage : IFileStorage
             relativePath = relativePath.Replace('\\', '/');
 
             var fullPath = Path.Combine(_rootPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            writeTargetPath = fullPath;
 
             // 确保目录存在
             var directory = Path.GetDirectoryName(fullPath);
@@ -137,7 +146,21 @@ public class LocalFileStorage : IFileStorage
         }
         catch (Exception ex)
         {
-            return FileUploadResult.Fail($"文件上传失败：{ex.Message}");
+            if (!string.IsNullOrWhiteSpace(writeTargetPath) && File.Exists(writeTargetPath))
+            {
+                try
+                {
+                    File.Delete(writeTargetPath);
+                }
+                catch
+                {
+                    // 保留原始存储异常，上层会记录并按 StorageFailed 返回。
+                }
+            }
+
+            return FileUploadResult.Fail(
+                FileUploadFailureKind.StorageFailed,
+                $"文件上传失败：{ex.Message}");
         }
     }
 

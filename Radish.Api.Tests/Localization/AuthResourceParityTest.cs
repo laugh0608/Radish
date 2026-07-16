@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Linq;
+using Radish.Shared.Constants;
 using Xunit;
 
 namespace Radish.Api.Tests.Localization;
@@ -42,6 +44,54 @@ public class AuthResourceParityTest
         Assert.Contains("error.pet.daily_limit_reached", chineseKeys);
         Assert.Contains("error.experience.not_found", chineseKeys);
         Assert.Contains("error.experience.other_user_forbidden", chineseKeys);
+        Assert.Contains("error.bootstrap.display_name_length_invalid", chineseKeys);
+        Assert.Contains("error.bootstrap.password_weak", chineseKeys);
+        Assert.Contains("error.bootstrap.concurrent_initialization", chineseKeys);
+        Assert.Contains("error.bootstrap.initialization_failed", chineseKeys);
+    }
+
+    [Fact]
+    public void ForumPublishErrorCodes_ShouldResolveToChineseAndEnglishApiResources()
+    {
+        var resourcesDirectory = Path.Combine(FindRepositoryRoot(), "Radish.Api", "Resources");
+        var chineseKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.zh.resx")).ToHashSet(StringComparer.Ordinal);
+        var englishKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.en.resx")).ToHashSet(StringComparer.Ordinal);
+        var errorCodes = typeof(ForumPublishErrorCodes)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            .Select(field => Assert.IsType<string>(field.GetRawConstantValue()))
+            .ToArray();
+
+        Assert.NotEmpty(errorCodes);
+        Assert.Equal(errorCodes.Length, errorCodes.Distinct(StringComparer.Ordinal).Count());
+        foreach (var errorCode in errorCodes)
+        {
+            var messageKey = ForumPublishErrorCodes.ResolveMessageKey(errorCode);
+            Assert.Contains(messageKey, chineseKeys);
+            Assert.Contains(messageKey, englishKeys);
+        }
+    }
+
+    [Fact]
+    public void AttachmentErrorCodes_ShouldResolveToChineseAndEnglishApiResources()
+    {
+        var resourcesDirectory = Path.Combine(FindRepositoryRoot(), "Radish.Api", "Resources");
+        var chineseKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.zh.resx")).ToHashSet(StringComparer.Ordinal);
+        var englishKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.en.resx")).ToHashSet(StringComparer.Ordinal);
+        var errorCodes = typeof(AttachmentErrorCodes)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            .Select(field => Assert.IsType<string>(field.GetRawConstantValue()))
+            .ToArray();
+
+        Assert.NotEmpty(errorCodes);
+        Assert.Equal(errorCodes.Length, errorCodes.Distinct(StringComparer.Ordinal).Count());
+        foreach (var errorCode in errorCodes)
+        {
+            var messageKey = AttachmentErrorCodes.ResolveMessageKey(errorCode);
+            Assert.Contains(messageKey, chineseKeys);
+            Assert.Contains(messageKey, englishKeys);
+        }
     }
 
     private static string FindRepositoryRoot()

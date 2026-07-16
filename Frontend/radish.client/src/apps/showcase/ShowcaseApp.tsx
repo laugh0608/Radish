@@ -441,6 +441,7 @@ export const ShowcaseApp = () => {
               <Modal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
+                closeLabel={t('common.close')}
                 title="组件说明补充"
               >
                 <div className={styles.modalBody}>
@@ -457,6 +458,8 @@ export const ShowcaseApp = () => {
                 isOpen={confirmOpen}
                 title="确认更新展示状态"
                 message="确认后会保留当前筛选分类，并重新计算展示页可见组件状态。"
+                confirmText={t('common.confirm')}
+                cancelText={t('common.cancel')}
                 onCancel={() => setConfirmOpen(false)}
                 onConfirm={() => {
                   setConfirmOpen(false);

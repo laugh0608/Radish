@@ -4,6 +4,7 @@ import './BottomSheet.css';
 export interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
+  closeLabel: string;
   title?: string;
   children: ReactNode;
   footer?: ReactNode;
@@ -19,6 +20,7 @@ export interface BottomSheetProps {
 export const BottomSheet = ({
   isOpen,
   onClose,
+  closeLabel,
   title,
   children,
   footer,
@@ -71,9 +73,11 @@ export const BottomSheet = ({
           <div className="radish-bottom-sheet-header">
             <h2 className="radish-bottom-sheet-title">{title}</h2>
             <button
+              type="button"
               className="radish-bottom-sheet-close"
               onClick={onClose}
-              aria-label="关闭"
+              aria-label={closeLabel}
+              title={closeLabel}
             >
               ×
             </button>

@@ -143,6 +143,14 @@
   color: var(--theme-bg-surface);
 }
 
+.modeButton:disabled,
+.headerIconButton:disabled,
+.cancelButton:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .headerActionButton,
 .headerIconButton,
 .settingsClose,

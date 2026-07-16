@@ -459,6 +459,7 @@ export const UserInfoCard = ({
           setIsEditOpen(false);
           setSaveError(null);
         }}
+        closeLabel={t('common.close')}
         title={t('profile.info.editDialogTitle')}
       >
         <div className={styles.editForm}>
@@ -488,6 +489,8 @@ export const UserInfoCard = ({
         isOpen={confirmOpen}
         title={t('profile.info.confirmSaveTitle')}
         message={t('profile.info.confirmSaveMessage')}
+        confirmText={t('common.confirm')}
+        cancelText={t('common.cancel')}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={handleSave}
       />

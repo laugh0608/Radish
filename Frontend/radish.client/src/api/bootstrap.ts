@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@radish/http';
+import { apiGet, apiPost, createApiResponseError } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 
 export interface BootstrapStatus {
@@ -23,14 +23,27 @@ const bootstrapApiOptions = {
   baseUrl: getApiBaseUrl(),
 };
 
-export async function getBootstrapStatus() {
-  return await apiGet<BootstrapStatus>('/api/v1/Bootstrap/Status', bootstrapApiOptions);
+export async function getBootstrapStatus(fallbackMessage: string): Promise<BootstrapStatus> {
+  const response = await apiGet<BootstrapStatus>('/api/v1/Bootstrap/Status', bootstrapApiOptions);
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, fallbackMessage);
+  }
+
+  return response.data;
 }
 
-export async function createFirstAdministrator(request: BootstrapCreateAdminRequest) {
-  return await apiPost<BootstrapAdminCreated>(
+export async function createFirstAdministrator(
+  request: BootstrapCreateAdminRequest,
+  fallbackMessage: string,
+): Promise<BootstrapAdminCreated> {
+  const response = await apiPost<BootstrapAdminCreated>(
     '/api/v1/Bootstrap/CreateFirstAdministrator',
     request,
     bootstrapApiOptions,
   );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, fallbackMessage);
+  }
+
+  return response.data;
 }

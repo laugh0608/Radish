@@ -92,7 +92,7 @@ export function ThemeSwitcher() {
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-label={t('theme.switch')}
-        title={`${t('theme.switch')}：${t(currentTheme.labelKey)}`}
+        title={t('theme.switchTo', { theme: t(currentTheme.labelKey) })}
         onClick={() => setOpen(value => !value)}
       >
         <Icon icon={currentTheme.colorScheme === 'dark' ? 'mdi:weather-night' : 'mdi:palette-outline'} size={18} />

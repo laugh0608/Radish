@@ -5,6 +5,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.Models;
 using Radish.Repository.UnitOfWorks;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -44,7 +45,8 @@ public class BootstrapRepository : IBootstrapRepository
                 db.Ado.CommitTran();
                 return BootstrapAdminCreationResult.Failed(
                     BootstrapAdminCreationStatus.AlreadyInitialized,
-                    "系统已存在管理员，初始化入口已关闭");
+                    "系统已存在管理员，初始化入口已关闭",
+                    BootstrapErrorCodes.AlreadyInitialized);
             }
 
             var emailExists = await db.Queryable<User>()
@@ -54,7 +56,8 @@ public class BootstrapRepository : IBootstrapRepository
                 db.Ado.CommitTran();
                 return BootstrapAdminCreationResult.Failed(
                     BootstrapAdminCreationStatus.EmailTaken,
-                    "邮箱已被注册");
+                    "邮箱已被注册",
+                    BootstrapErrorCodes.EmailTaken);
             }
 
             await db.Insertable(new SystemBootstrapState
@@ -122,12 +125,14 @@ public class BootstrapRepository : IBootstrapRepository
             {
                 return BootstrapAdminCreationResult.Failed(
                     BootstrapAdminCreationStatus.AlreadyInitialized,
-                    "系统已存在管理员，初始化入口已关闭");
+                    "系统已存在管理员，初始化入口已关闭",
+                    BootstrapErrorCodes.AlreadyInitialized);
             }
 
             return BootstrapAdminCreationResult.Failed(
                 BootstrapAdminCreationStatus.ConcurrentInitialization,
-                "管理员初始化正在进行，请刷新后重试");
+                "管理员初始化正在进行，请刷新后重试",
+                BootstrapErrorCodes.ConcurrentInitialization);
         }
         catch
         {

@@ -534,6 +534,8 @@ export const enAccount = {
   'profile.avatar.selectImage': 'Select image',
   'profile.avatar.uploadHint': 'Supports JPG and PNG up to 5MB',
   'profile.avatar.processing': 'Processing...',
+  'profile.avatar.cropZoom': 'Zoom',
+  'profile.avatar.cropFailed': 'Unable to crop the image. Select it again and retry.',
   'profile.avatar.removeAvatar': 'Remove avatar',
   'profile.avatar.uploading': 'Uploading...',
   'profile.avatar.selectImageFile': 'Please select an image file',

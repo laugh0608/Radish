@@ -25,6 +25,12 @@
   padding-bottom: 28px;
 }
 
+.publishedContent {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
 .eyebrow {
   color: var(--rx-text-secondary);
   font-size: 12px;
@@ -38,6 +44,7 @@
   font-family: var(--rx-font-heading);
   font-size: clamp(34px, 5vw, 58px);
   line-height: 1.05;
+  overflow-wrap: anywhere;
 }
 
 .hero p {
@@ -46,6 +53,14 @@
   color: var(--rx-text-secondary);
   font-size: 16px;
   line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+
+.originalLanguageNote {
+  padding-left: 12px;
+  border-left: 2px solid var(--rx-border-strong);
+  color: var(--rx-text-muted) !important;
+  font-size: 13px !important;
 }
 
 .anchorRail {
@@ -67,6 +82,9 @@
   font-size: 13px;
   font-weight: 700;
   text-decoration: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .anchorRail a:hover {
@@ -102,6 +120,7 @@
   margin-top: 8px;
   color: var(--rx-text-primary);
   font-size: 18px;
+  overflow-wrap: anywhere;
 }
 
 .summaryGrid p {
@@ -137,12 +156,14 @@
   font-family: var(--rx-font-heading);
   font-size: 24px;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .sectionHeader p {
   margin: 0;
   color: var(--rx-text-secondary);
   line-height: 1.75;
+  overflow-wrap: anywhere;
 }
 
 .section ul {
@@ -154,6 +175,10 @@
 
 .section li + li {
   margin-top: 10px;
+}
+
+.section li {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 900px) {

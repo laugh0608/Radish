@@ -806,6 +806,8 @@ export const ProductList = () => {
         isOpen={deleteConfirmVisible}
         title={t('products.delete.title')}
         message={t('products.delete.message', { name: deletingProduct?.voName ?? '' })}
+        confirmText={t('products.action.delete')}
+        cancelText={t('products.form.cancel')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           setDeleteConfirmVisible(false);

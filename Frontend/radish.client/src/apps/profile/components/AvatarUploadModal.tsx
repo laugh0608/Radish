@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Modal } from '@radish/ui/modal';
 import { ImageCropper } from '@radish/ui/image-cropper';
 import { uploadImage } from '@/api/attachment';
+import { resolveAttachmentUploadErrorMessage } from '@/attachments/attachmentPresentation';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { tokenService } from '@/services/tokenService';
@@ -46,6 +47,8 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   };
 
   const handleCropComplete = async (croppedBlob: Blob) => {
+    let failureFallback = t('profile.avatar.uploadFailed');
+
     try {
       setUploading(true);
       setError(null);
@@ -71,6 +74,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       log.debug('AvatarUploadModal', '图片上传成功:', uploadResult);
 
       const attachmentId = uploadResult.voId;
+      failureFallback = t('profile.avatar.setAvatarFailed');
       const token = tokenService.getAccessToken();
       const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
         method: 'POST',
@@ -86,14 +90,14 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       log.debug('AvatarUploadModal', 'SetMyAvatar 响应:', json);
 
       if (!res.ok || !json.isSuccess) {
-        throw new Error(json.message || t('profile.avatar.setAvatarFailed'));
+        throw new Error(failureFallback);
       }
 
       log.debug('AvatarUploadModal', '头像设置成功');
       onSuccess();
     } catch (error) {
       log.error('AvatarUploadModal', '上传头像失败:', error);
-      setError(error instanceof Error ? error.message : t('profile.avatar.uploadFailed'));
+      setError(resolveAttachmentUploadErrorMessage(error, failureFallback));
       setShowCropper(false);
     } finally {
       setUploading(false);
@@ -125,14 +129,14 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       log.debug('AvatarUploadModal', '移除头像响应:', json);
 
       if (!res.ok || !json.isSuccess) {
-        throw new Error(json.message || t('profile.avatar.removeAvatarFailed'));
+        throw new Error(t('profile.avatar.removeAvatarFailed'));
       }
 
       log.debug('AvatarUploadModal', '头像移除成功');
       onSuccess();
     } catch (error) {
       log.error('AvatarUploadModal', '移除头像失败:', error);
-      setError(error instanceof Error ? error.message : t('profile.avatar.removeFailed'));
+      setError(t('profile.avatar.removeFailed'));
     } finally {
       setUploading(false);
     }
@@ -148,7 +152,12 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={t('profile.avatar.title')}>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      closeLabel={t('common.close')}
+      title={t('profile.avatar.title')}
+    >
       <div className={styles.container}>
         {!showCropper ? (
           <div className={styles.uploadSection}>
@@ -172,6 +181,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
 
             <div className={styles.actions}>
               <button
+                type="button"
                 onClick={handleRemoveAvatar}
                 className={styles.removeButton}
                 disabled={uploading}
@@ -185,9 +195,18 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
             {selectedFile && (
               <ImageCropper
                 image={selectedFile}
+                labels={{
+                  zoom: t('profile.avatar.cropZoom'),
+                  cancel: t('common.cancel'),
+                  confirm: t('common.confirm'),
+                  cropFailed: t('profile.avatar.cropFailed'),
+                }}
                 aspect={1}
                 onCropComplete={handleCropComplete}
                 onCancel={handleCropCancel}
+                onError={(cropError) => {
+                  log.error('AvatarUploadModal', '裁切头像失败:', cropError);
+                }}
               />
             )}
             {uploading && (

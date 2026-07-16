@@ -16,6 +16,8 @@
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight));
   box-shadow: 0 18px 45px rgba(26, 36, 42, 0.16);
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .kicker {
@@ -87,13 +89,15 @@
 
 .primaryButton {
   min-height: 42px;
-  padding: 0 18px;
+  padding: 10px 18px;
   border: 0;
   border-radius: 6px;
   background: var(--theme-brand-primary);
   color: var(--theme-bg-surface);
   font: inherit;
   font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
   cursor: pointer;
 }
 

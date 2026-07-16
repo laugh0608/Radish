@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Radish.Common.CoreTool;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
@@ -14,6 +15,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Serilog;
 
 namespace Radish.Service;
@@ -64,6 +66,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         long uploaderId,
         string uploaderName)
     {
+        FileUploadResult? successfulUpload = null;
+        Dictionary<string, string>? generatedSizes = null;
+        var attachmentPersisted = false;
+
         try
         {
             var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
@@ -72,7 +78,11 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             if (file == null || file.Length == 0)
             {
                 Log.Warning("上传文件为空");
-                return null;
+                throw new BusinessException(
+                    "文件不能为空",
+                    StatusCodes.Status400BadRequest,
+                    AttachmentErrorCodes.FileEmpty,
+                    AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.FileEmpty));
             }
 
             var fileName = file.FileName;
@@ -141,9 +151,11 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             if (!uploadResult.Success)
             {
-                Log.Error("文件上传失败：{ErrorMessage}", uploadResult.ErrorMessage);
-                return null;
+                Log.Error("文件上传失败：{FailureKind}, {ErrorMessage}", uploadResult.FailureKind, uploadResult.ErrorMessage);
+                throw CreateUploadFailureException(uploadResult);
             }
+
+            successfulUpload = uploadResult;
 
             // 4. 如果是图片，添加水印（在其他处理之前）
             if (optionsDto.AddWatermark && IsImageFile(extension))
@@ -166,10 +178,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
 
             // 4.6. 如果是图片，生成多尺寸
-            Dictionary<string, string>? multipleSizes = null;
             if (optionsDto.GenerateMultipleSizes && IsImageFile(extension))
             {
-                multipleSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath);
+                generatedSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath);
             }
 
             // 5. 如果是图片，移除 EXIF
@@ -191,9 +202,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 StorageType = "Local", // 当前只支持本地存储
                 StoragePath = uploadResult.StoragePath,
                 ThumbnailPath = uploadResult.ThumbnailPath,
-                SmallPath = multipleSizes?.GetValueOrDefault("small"),
-                MediumPath = multipleSizes?.GetValueOrDefault("medium"),
-                LargePath = multipleSizes?.GetValueOrDefault("large"),
+                SmallPath = generatedSizes?.GetValueOrDefault("small"),
+                MediumPath = generatedSizes?.GetValueOrDefault("medium"),
+                LargePath = generatedSizes?.GetValueOrDefault("large"),
                 FileHash = fileHash,
                 UploaderId = uploaderId,
                 UploaderName = uploaderName,
@@ -206,15 +217,30 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             var attachmentId = await AddAsync(attachment);
             attachment.Id = attachmentId;
+            attachmentPersisted = true;
 
             Log.Information("文件上传成功：{AttachmentId}, 路径：{StoragePath}", attachmentId, uploadResult.StoragePath);
 
             return Mapper.Map<AttachmentVo>(attachment);
         }
+        catch (BusinessException)
+        {
+            if (!attachmentPersisted)
+            {
+                await CleanupFailedUploadAsync(successfulUpload, generatedSizes);
+            }
+
+            throw;
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "上传文件时发生异常：{FileName}", file?.FileName);
-            return null;
+            if (!attachmentPersisted)
+            {
+                await CleanupFailedUploadAsync(successfulUpload, generatedSizes);
+            }
+
+            throw;
         }
     }
 
@@ -577,7 +603,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         if (string.IsNullOrWhiteSpace(thumbnailPath))
         {
-            return;
+            throw CreateProcessingFailedException();
         }
 
         try
@@ -597,11 +623,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             if (!result.Success)
             {
                 Log.Warning("缩略图生成失败：{ErrorMessage}", result.ErrorMessage);
+                throw CreateProcessingFailedException();
             }
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "生成缩略图时发生异常：{SourcePath}", sourcePath);
+            throw CreateProcessingFailedException(ex);
         }
     }
 
@@ -670,12 +702,19 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     {
                         File.Delete(tempPath);
                     }
+
+                    throw CreateProcessingFailedException();
                 }
             }
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "添加水印时发生异常：{FilePath}", filePath);
+            throw CreateProcessingFailedException(ex);
         }
     }
 
@@ -741,12 +780,19 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     {
                         File.Delete(tempPath);
                     }
+
+                    throw CreateProcessingFailedException();
                 }
             }
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "移除 EXIF 信息时发生异常：{FilePath}", filePath);
+            throw CreateProcessingFailedException(ex);
         }
     }
 
@@ -782,9 +828,23 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 sizes
             );
 
+            if (results.Count != sizes.Count || results.Any(sizeResult => !sizeResult.Success))
+            {
+                Log.Warning(
+                    "多尺寸图片生成失败：{SuccessCount}/{ExpectedCount}",
+                    results.Count(sizeResult => sizeResult.Success),
+                    sizes.Count);
+                foreach (var sizeResult in results)
+                {
+                    DeletePhysicalFileIfExists(sizeResult.OutputPath);
+                }
+
+                throw CreateProcessingFailedException();
+            }
+
             // 转换为相对路径
             var sourceRelativePath = sourcePath;
-            foreach (var sizeResult in results.Where(r => r.Success))
+            foreach (var sizeResult in results)
             {
                 var sizeName = Path.GetFileNameWithoutExtension(sizeResult.OutputPath)
                     .Replace(fileNameWithoutExt + "_", "");
@@ -804,12 +864,116 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 Log.Information("生成 {SizeName} 尺寸成功：{Path}", sizeName, finalRelativePath);
             }
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "生成多尺寸图片时发生异常：{SourcePath}", sourcePath);
+            throw CreateProcessingFailedException(ex);
         }
 
         return result;
+    }
+
+    private async Task CleanupFailedUploadAsync(
+        FileUploadResult? uploadResult,
+        IReadOnlyDictionary<string, string>? generatedSizes)
+    {
+        if (uploadResult == null)
+        {
+            return;
+        }
+
+        var paths = new[]
+            {
+                uploadResult.StoragePath,
+                uploadResult.ThumbnailPath
+            }
+            .Concat(generatedSizes?.Values ?? [])
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var path in paths)
+        {
+            try
+            {
+                var deleted = await _fileStorage.DeleteAsync(path!);
+                if (!deleted && await _fileStorage.ExistsAsync(path!))
+                {
+                    Log.Warning("失败上传文件未能清理：{StoragePath}", path);
+                }
+            }
+            catch (Exception cleanupException)
+            {
+                Log.Warning(
+                    cleanupException,
+                    "清理失败上传文件时发生异常：{StoragePath}",
+                    path);
+            }
+        }
+    }
+
+    private static void DeletePhysicalFileIfExists(string? path)
+    {
+        if (!string.IsNullOrWhiteSpace(path) && File.Exists(path))
+        {
+            File.Delete(path);
+        }
+    }
+
+    private static BusinessException CreateUploadFailureException(FileUploadResult uploadResult)
+    {
+        var (statusCode, errorCode, message) = uploadResult.FailureKind switch
+        {
+            FileUploadFailureKind.FileTooLarge => (
+                StatusCodes.Status413PayloadTooLarge,
+                AttachmentErrorCodes.FileTooLarge,
+                uploadResult.ErrorMessage ?? "文件大小超过限制"),
+            FileUploadFailureKind.UnsupportedType => (
+                StatusCodes.Status415UnsupportedMediaType,
+                AttachmentErrorCodes.UnsupportedMediaType,
+                uploadResult.ErrorMessage ?? "不支持该文件类型"),
+            FileUploadFailureKind.ContentMismatch => (
+                StatusCodes.Status415UnsupportedMediaType,
+                AttachmentErrorCodes.ContentMismatch,
+                uploadResult.ErrorMessage ?? "文件内容与扩展名不匹配"),
+            FileUploadFailureKind.StorageFailed => (
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.StorageFailed,
+                "文件存储失败，请稍后重试"),
+            _ => (
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.StorageFailed,
+                "文件存储失败，请稍后重试")
+        };
+
+        return new BusinessException(
+            message,
+            statusCode,
+            errorCode,
+            AttachmentErrorCodes.ResolveMessageKey(errorCode));
+    }
+
+    private static BusinessException CreateProcessingFailedException(Exception? innerException = null)
+    {
+        const string message = "文件处理失败，请稍后重试";
+        var messageKey = AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.ProcessingFailed);
+
+        return innerException == null
+            ? new BusinessException(
+                message,
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.ProcessingFailed,
+                messageKey)
+            : new BusinessException(
+                message,
+                innerException,
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.ProcessingFailed,
+                messageKey);
     }
 
     #endregion

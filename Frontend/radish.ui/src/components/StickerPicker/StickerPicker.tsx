@@ -55,18 +55,10 @@ export interface StickerPickerProps {
   panelPlacement?: 'left' | 'right';
   disabled?: boolean;
   className?: string;
-  triggerTitle?: string;
+  triggerTitle: string;
   emojis?: string[];
-  labels?: StickerPickerLabels;
+  labels: StickerPickerLabels;
 }
-
-const defaultLabels: StickerPickerLabels = {
-  searchPlaceholder: '搜索表情',
-  clearSearch: '清空搜索',
-  reactionOnly: (name) => `${name}（仅支持 Reaction）`,
-  noEmoji: '未找到匹配的表情',
-  noSticker: '该分组暂无可插入表情',
-};
 
 const normalizeCode = (value: string): string => value.trim().toLowerCase();
 
@@ -88,9 +80,9 @@ export const StickerPicker = ({
   panelPlacement = 'right',
   disabled = false,
   className = '',
-  triggerTitle = '插入表情包',
+  triggerTitle,
   emojis = DEFAULT_EMOJIS,
-  labels = defaultLabels,
+  labels,
 }: StickerPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -129,6 +121,13 @@ export const StickerPicker = ({
   }, [activeTab, normalizedGroups]);
 
   useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setKeyword('');
+    }
+  }, [disabled]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
@@ -144,15 +143,17 @@ export const StickerPicker = ({
 
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
         setOpen(false);
       }
     };
 
     document.addEventListener('pointerdown', handleOutsidePointerDown, true);
-    window.addEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleEsc, true);
     return () => {
       document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
-      window.removeEventListener('keydown', handleEsc);
+      window.removeEventListener('keydown', handleEsc, true);
     };
   }, [open]);
 
@@ -190,13 +191,17 @@ export const StickerPicker = ({
   }, [mode, normalizedKeyword, selectedGroup]);
 
   const handleSelectEmoji = (emoji: string) => {
+    if (disabled) {
+      return;
+    }
+
     onSelect({ type: 'unicode', emoji });
     setOpen(false);
     setKeyword('');
   };
 
   const handleSelectSticker = (sticker: StickerPickerSticker) => {
-    if (!selectedGroup) {
+    if (disabled || !selectedGroup) {
       return;
     }
 
@@ -233,7 +238,7 @@ export const StickerPicker = ({
         <Icon icon="mdi:sticker-emoji" size={18} />
       </button>
 
-      {open && (
+      {open && !disabled && (
         <div
           className={`${styles.panel} ${
             panelPlacement === 'left' ? styles.panelLeft : styles.panelRight

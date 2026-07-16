@@ -27,6 +27,7 @@ interface WebShellHeaderProps {
   actionSlot?: ReactNode;
   mobileNavItems?: WebShellNavItem[];
   hideMobileNav?: boolean;
+  navigationLocked?: boolean;
 }
 
 function shouldHandleShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
@@ -174,17 +175,24 @@ interface WebShellLinkProps {
   className: string;
   activeClassName: string;
   isActive: boolean;
+  navigationLocked: boolean;
 }
 
-function WebShellLink({ item, className, activeClassName, isActive }: WebShellLinkProps) {
+function WebShellLink({ item, className, activeClassName, isActive, navigationLocked }: WebShellLinkProps) {
   return (
     <a
       className={`${className} ${isActive ? activeClassName : ''}`}
       href={item.href}
       aria-current={isActive ? 'page' : undefined}
+      aria-disabled={navigationLocked || undefined}
       title={item.label}
       onClick={(event) => {
         if (!shouldHandleShellLinkClick(event)) {
+          return;
+        }
+
+        if (navigationLocked) {
+          event.preventDefault();
           return;
         }
 
@@ -223,6 +231,7 @@ export function WebShellHeader({
   actionSlot,
   mobileNavItems,
   hideMobileNav = false,
+  navigationLocked = false,
 }: WebShellHeaderProps) {
   const { t } = useTranslation();
   const resolvedActiveKey = normalizeActiveKey(activeKey ?? resolveActiveKey(variant));
@@ -248,7 +257,7 @@ export function WebShellHeader({
     <>
       <header className={headerClassName}>
         <div className={styles.inner}>
-          <button type="button" className={styles.brand} onClick={onBrandClick}>
+          <button type="button" className={styles.brand} onClick={onBrandClick} disabled={navigationLocked}>
             <span className={styles.brandMark}>{brandMark}</span>
             <span className={styles.brandCopy}>
               <span className={styles.brandName}>{brandName}</span>
@@ -264,12 +273,21 @@ export function WebShellHeader({
                 className={styles.navItem}
                 activeClassName={styles.navItemActive}
                 isActive={item.key === resolvedActiveKey}
+                navigationLocked={navigationLocked}
               />
             ))}
           </nav>
 
-          <div className={actionRailClassName} aria-label="页面动作">
-            {actionSlot}
+          <div className={actionRailClassName} aria-label={t('public.shell.actionsLabel')}>
+            {actionSlot && (
+              <div
+                className={`${styles.actionSlot} ${navigationLocked ? styles.actionSlotLocked : ''}`}
+                aria-disabled={navigationLocked || undefined}
+                inert={navigationLocked || undefined}
+              >
+                {actionSlot}
+              </div>
+            )}
             {resolvedActionItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -277,6 +295,7 @@ export function WebShellHeader({
                 className={styles.actionItem}
                 activeClassName={styles.actionItemActive}
                 isActive={item.key === resolvedActiveKey}
+                navigationLocked={navigationLocked}
               />
             ))}
           </div>
@@ -292,6 +311,7 @@ export function WebShellHeader({
               className={styles.mobileTab}
               activeClassName={styles.mobileTabActive}
               isActive={item.key === resolvedActiveKey}
+              navigationLocked={navigationLocked}
             />
           ))}
         </nav>

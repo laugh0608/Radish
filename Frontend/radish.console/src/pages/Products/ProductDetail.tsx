@@ -131,6 +131,7 @@ export const ProductDetail = ({
       title={t('products.detail.title')}
       isOpen={visible}
       onClose={onClose}
+      closeLabel={t('products.action.close')}
       size="large"
       footer={
         <Space wrap>

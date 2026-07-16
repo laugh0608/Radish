@@ -1,4 +1,4 @@
-import { apiPost, configureApiClient } from '@radish/http';
+import { apiPost, configureApiClient, createApiResponseError } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 
 configureApiClient({
@@ -14,11 +14,14 @@ export interface SubmitContentReportRequest {
   reasonDetail?: string;
 }
 
-export async function submitContentReport(request: SubmitContentReportRequest): Promise<string> {
+export async function submitContentReport(
+  request: SubmitContentReportRequest,
+  fallbackMessage: string,
+): Promise<string> {
   const response = await apiPost<string>('/api/v1/ContentModeration/Report', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
-    throw new Error(response.message || '举报提交失败');
+    throw createApiResponseError(response, fallbackMessage);
   }
 
   return response.data;

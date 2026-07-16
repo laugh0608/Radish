@@ -277,6 +277,13 @@
   box-shadow: var(--theme-shadow-soft);
 }
 
+.quickActionButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
 .quickActionButtonActive {
   background: linear-gradient(135deg, var(--theme-brand-primary), color-mix(in srgb, var(--theme-brand-primary) 70%, var(--theme-accent-ink) 30%));
   border-color: var(--theme-brand-primary);

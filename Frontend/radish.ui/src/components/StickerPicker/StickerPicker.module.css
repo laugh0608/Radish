@@ -30,7 +30,7 @@
 .panel {
   position: absolute;
   top: calc(100% + 8px);
-  width: 360px;
+  width: min(360px, calc(100vw - 24px));
   border-radius: 10px;
   border: 1px solid #475569;
   background: #0f172a;

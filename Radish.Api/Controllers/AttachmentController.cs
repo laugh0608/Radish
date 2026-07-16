@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Options;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
@@ -15,6 +17,7 @@ using Radish.Shared.CustomEnum;
 using System.Linq.Expressions;
 using System.Net;
 using Radish.Model.DtoModels;
+using Radish.Shared.Constants;
 
 namespace Radish.Api.Controllers;
 
@@ -39,6 +42,8 @@ public class AttachmentController : ControllerBase
     private readonly UploadRateLimitOptions _rateLimitOptions;
     private readonly IFileAccessTokenService _fileAccessTokenService;
     private readonly IConfiguration _configuration;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
+    private readonly ILogger<AttachmentController> _logger;
 
     public AttachmentController(
         IAttachmentService attachmentService,
@@ -47,7 +52,9 @@ public class AttachmentController : ControllerBase
         IUploadRateLimitService rateLimitService,
         IOptions<UploadRateLimitOptions> rateLimitOptions,
         IFileAccessTokenService fileAccessTokenService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IStringLocalizer<Errors> errorsLocalizer,
+        ILogger<AttachmentController> logger)
     {
         _attachmentService = attachmentService;
         _currentUserAccessor = currentUserAccessor;
@@ -56,6 +63,8 @@ public class AttachmentController : ControllerBase
         _rateLimitOptions = rateLimitOptions.Value;
         _fileAccessTokenService = fileAccessTokenService;
         _configuration = configuration;
+        _errorsLocalizer = errorsLocalizer;
+        _logger = logger;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -65,6 +74,24 @@ public class AttachmentController : ControllerBase
         return string.IsNullOrWhiteSpace(businessType)
             ? "General"
             : businessType.Trim();
+    }
+
+    private MessageModel UploadFailure(
+        int statusCode,
+        string fallbackMessage,
+        string errorCode,
+        string? messageKey = null)
+    {
+        var resolvedMessageKey = messageKey ?? AttachmentErrorCodes.ResolveMessageKey(errorCode);
+        var localizedMessage = _errorsLocalizer[resolvedMessageKey];
+        return new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            Code = errorCode,
+            MessageKey = resolvedMessageKey
+        };
     }
 
     private static string[] GetRequiredStickerUploadPermissions(string businessType)
@@ -132,7 +159,11 @@ public class AttachmentController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status415UnsupportedMediaType)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> UploadImage(
         [FromForm] IFormFile file,
         [FromForm] string businessType = "General",
@@ -144,12 +175,10 @@ public class AttachmentController : ControllerBase
     {
         if (file == null || file.Length == 0)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "文件不能为空"
-            };
+            return UploadFailure(
+                StatusCodes.Status400BadRequest,
+                "文件不能为空",
+                AttachmentErrorCodes.FileEmpty);
         }
 
         // 验证是否为图片
@@ -157,12 +186,10 @@ public class AttachmentController : ControllerBase
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!imageExtensions.Contains(extension))
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg/ico）"
-            };
+            return UploadFailure(
+                StatusCodes.Status415UnsupportedMediaType,
+                "仅支持图片格式（jpg/jpeg/png/gif/bmp/webp/svg/ico）",
+                AttachmentErrorCodes.ImageTypeUnsupported);
         }
 
         var userId = Current.UserId;
@@ -171,12 +198,10 @@ public class AttachmentController : ControllerBase
 
         if (!await HasStickerUploadPermissionAsync(normalizedBusinessType))
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
-                MessageInfo = "当前账号暂无该表情上传权限"
-            };
+            return UploadFailure(
+                StatusCodes.Status403Forbidden,
+                "当前账号暂无该表情上传权限",
+                AttachmentErrorCodes.UploadForbidden);
         }
 
         // 限流检查
@@ -185,12 +210,10 @@ public class AttachmentController : ControllerBase
             var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, file.Length);
             if (!isAllowed)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = 429, // Too Many Requests
-                    MessageInfo = errorMessage ?? "上传请求过于频繁，请稍后再试"
-                };
+                return UploadFailure(
+                    StatusCodes.Status429TooManyRequests,
+                    errorMessage ?? "上传请求过于频繁，请稍后再试",
+                    AttachmentErrorCodes.RateLimited);
             }
         }
 
@@ -227,12 +250,10 @@ public class AttachmentController : ControllerBase
                     await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
                 }
 
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                    MessageInfo = "文件上传失败"
-                };
+                return UploadFailure(
+                    StatusCodes.Status500InternalServerError,
+                    "文件处理失败，请稍后重试",
+                    AttachmentErrorCodes.ProcessingFailed);
             }
 
             // 记录上传完成
@@ -248,6 +269,17 @@ public class AttachmentController : ControllerBase
                 MessageInfo = "上传成功",
                 ResponseData = attachment
             };
+        }
+        catch (BusinessException ex)
+        {
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
+            }
+
+            LogUploadBusinessFailure(ex);
+            var errorCode = ex.ErrorCode ?? AttachmentErrorCodes.ProcessingFailed;
+            return UploadFailure(ex.StatusCode, ex.Message, errorCode, ex.MessageKey);
         }
         catch (Exception)
         {
@@ -270,19 +302,20 @@ public class AttachmentController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status415UnsupportedMediaType)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> UploadDocument(
         [FromForm] IFormFile file,
         [FromForm] string businessType = "Document")
     {
         if (file == null || file.Length == 0)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "文件不能为空"
-            };
+            return UploadFailure(
+                StatusCodes.Status400BadRequest,
+                "文件不能为空",
+                AttachmentErrorCodes.FileEmpty);
         }
 
         // 验证是否为文档
@@ -290,12 +323,10 @@ public class AttachmentController : ControllerBase
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!documentExtensions.Contains(extension))
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "仅支持文档格式（pdf/doc/docx/xls/xlsx/ppt/pptx/txt/md）"
-            };
+            return UploadFailure(
+                StatusCodes.Status415UnsupportedMediaType,
+                "仅支持文档格式（pdf/doc/docx/xls/xlsx/ppt/pptx/txt/md）",
+                AttachmentErrorCodes.DocumentTypeUnsupported);
         }
 
         var userId = Current.UserId;
@@ -307,12 +338,10 @@ public class AttachmentController : ControllerBase
             var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, file.Length);
             if (!isAllowed)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = 429, // Too Many Requests
-                    MessageInfo = errorMessage ?? "上传请求过于频繁，请稍后再试"
-                };
+                return UploadFailure(
+                    StatusCodes.Status429TooManyRequests,
+                    errorMessage ?? "上传请求过于频繁，请稍后再试",
+                    AttachmentErrorCodes.RateLimited);
             }
         }
 
@@ -348,12 +377,10 @@ public class AttachmentController : ControllerBase
                     await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
                 }
 
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                    MessageInfo = "文件上传失败"
-                };
+                return UploadFailure(
+                    StatusCodes.Status500InternalServerError,
+                    "文件处理失败，请稍后重试",
+                    AttachmentErrorCodes.ProcessingFailed);
             }
 
             // 记录上传完成
@@ -370,6 +397,17 @@ public class AttachmentController : ControllerBase
                 ResponseData = attachment
             };
         }
+        catch (BusinessException ex)
+        {
+            if (_rateLimitOptions.Enable)
+            {
+                await _rateLimitService.RecordUploadFailedAsync(userId, uploadId);
+            }
+
+            LogUploadBusinessFailure(ex);
+            var errorCode = ex.ErrorCode ?? AttachmentErrorCodes.ProcessingFailed;
+            return UploadFailure(ex.StatusCode, ex.Message, errorCode, ex.MessageKey);
+        }
         catch (Exception)
         {
             // 记录上传失败
@@ -382,6 +420,25 @@ public class AttachmentController : ControllerBase
     }
 
     #endregion
+
+    private void LogUploadBusinessFailure(BusinessException exception)
+    {
+        var traceId = ControllerContext.HttpContext?.TraceIdentifier;
+        if (exception.StatusCode >= StatusCodes.Status500InternalServerError)
+        {
+            _logger.LogError(
+                exception,
+                "Attachment upload server error {ErrorCode}; TraceId: {TraceId}",
+                exception.ErrorCode,
+                traceId);
+            return;
+        }
+
+        _logger.LogWarning(
+            "Attachment upload business error {ErrorCode}; TraceId: {TraceId}",
+            exception.ErrorCode,
+            traceId);
+    }
 
     #region Query
 

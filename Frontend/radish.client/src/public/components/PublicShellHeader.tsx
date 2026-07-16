@@ -17,6 +17,7 @@ interface PublicShellHeaderProps {
   mobileNavItems?: WebShellNavItem[];
   hideMobileNav?: boolean;
   loginLabel?: string;
+  navigationLocked?: boolean;
 }
 
 function buildCurrentReturnPath(): string {
@@ -54,6 +55,7 @@ export const PublicShellHeader = ({
   mobileNavItems,
   hideMobileNav,
   loginLabel,
+  navigationLocked = false,
 }: PublicShellHeaderProps) => {
   const { t } = useTranslation();
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
@@ -98,6 +100,7 @@ export const PublicShellHeader = ({
       )}
       actionItems={actionItems}
       onBrandClick={onBrandClick}
+      navigationLocked={navigationLocked}
     />
   );
 };

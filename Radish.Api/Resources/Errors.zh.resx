@@ -24,6 +24,168 @@
   <data name="error.auth.unauthorized" xml:space="preserve">
     <value>请先登录后再继续。</value>
   </data>
+  <data name="error.bootstrap.display_name_required" xml:space="preserve">
+    <value>展示名不能为空。</value>
+  </data>
+  <data name="error.bootstrap.display_name_length_invalid" xml:space="preserve">
+    <value>展示名长度必须为 {0}-{1} 位。</value>
+  </data>
+  <data name="error.bootstrap.display_name_characters_invalid" xml:space="preserve">
+    <value>展示名只能包含中文、英文字母和数字。</value>
+  </data>
+  <data name="error.bootstrap.email_invalid" xml:space="preserve">
+    <value>请填写有效的电子邮箱。</value>
+  </data>
+  <data name="error.bootstrap.password_required" xml:space="preserve">
+    <value>密码不能为空。</value>
+  </data>
+  <data name="error.bootstrap.password_confirmation_mismatch" xml:space="preserve">
+    <value>两次输入的密码不一致。</value>
+  </data>
+  <data name="error.bootstrap.password_length_invalid" xml:space="preserve">
+    <value>密码长度至少 {0} 位。</value>
+  </data>
+  <data name="error.bootstrap.password_complexity_invalid" xml:space="preserve">
+    <value>密码必须同时包含大写字母、小写字母、数字和特殊字符。</value>
+  </data>
+  <data name="error.bootstrap.password_contains_display_name" xml:space="preserve">
+    <value>密码不能包含展示名。</value>
+  </data>
+  <data name="error.bootstrap.password_contains_email_local_part" xml:space="preserve">
+    <value>密码不能包含邮箱前缀。</value>
+  </data>
+  <data name="error.bootstrap.password_weak" xml:space="preserve">
+    <value>不能使用默认密码或常见弱密码。</value>
+  </data>
+  <data name="error.bootstrap.already_initialized" xml:space="preserve">
+    <value>系统已存在管理员，初始化入口已关闭。</value>
+  </data>
+  <data name="error.bootstrap.email_taken" xml:space="preserve">
+    <value>邮箱已被注册。</value>
+  </data>
+  <data name="error.bootstrap.concurrent_initialization" xml:space="preserve">
+    <value>管理员初始化正在进行，请刷新后重试。</value>
+  </data>
+  <data name="error.bootstrap.initialization_failed" xml:space="preserve">
+    <value>管理员初始化失败，请稍后重试。</value>
+  </data>
+  <data name="error.forum.publish_title_required" xml:space="preserve">
+    <value>帖子标题不能为空。</value>
+  </data>
+  <data name="error.forum.publish_title_too_short" xml:space="preserve">
+    <value>帖子标题太短，请补充后再发布。</value>
+  </data>
+  <data name="error.forum.publish_title_too_long" xml:space="preserve">
+    <value>帖子标题超过允许长度，请精简后再发布。</value>
+  </data>
+  <data name="error.forum.publish_content_required" xml:space="preserve">
+    <value>帖子内容不能为空。</value>
+  </data>
+  <data name="error.forum.publish_content_too_short" xml:space="preserve">
+    <value>帖子内容太短，请补充后再发布。</value>
+  </data>
+  <data name="error.forum.publish_content_too_long" xml:space="preserve">
+    <value>帖子内容超过允许长度，请精简后再发布。</value>
+  </data>
+  <data name="error.forum.publish_category_required" xml:space="preserve">
+    <value>发布前请选择帖子分类。</value>
+  </data>
+  <data name="error.forum.publish_content_type_invalid" xml:space="preserve">
+    <value>帖子内容类型无效。</value>
+  </data>
+  <data name="error.forum.publish_tag_count_invalid" xml:space="preserve">
+    <value>发布帖子时请选择 1 到 5 个标签。</value>
+  </data>
+  <data name="error.forum.publish_feature_combination_invalid" xml:space="preserve">
+    <value>问答、投票和抽奖功能不能同时启用。</value>
+  </data>
+  <data name="error.forum.publish_poll_question_required" xml:space="preserve">
+    <value>请填写投票问题。</value>
+  </data>
+  <data name="error.forum.publish_poll_question_too_long" xml:space="preserve">
+    <value>投票问题不能超过 200 个字符。</value>
+  </data>
+  <data name="error.forum.publish_poll_end_time_invalid" xml:space="preserve">
+    <value>投票截止时间必须晚于当前时间。</value>
+  </data>
+  <data name="error.forum.publish_poll_options_required" xml:space="preserve">
+    <value>请填写投票选项。</value>
+  </data>
+  <data name="error.forum.publish_poll_option_count_invalid" xml:space="preserve">
+    <value>投票选项数量必须在 2 到 6 个之间。</value>
+  </data>
+  <data name="error.forum.publish_poll_options_duplicate" xml:space="preserve">
+    <value>投票选项不能重复。</value>
+  </data>
+  <data name="error.forum.publish_poll_option_too_long" xml:space="preserve">
+    <value>单个投票选项不能超过 100 个字符。</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_name_required" xml:space="preserve">
+    <value>请填写抽奖奖品名称。</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_name_too_long" xml:space="preserve">
+    <value>奖品名称不能超过 100 个字符。</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_description_too_long" xml:space="preserve">
+    <value>奖品说明不能超过 500 个字符。</value>
+  </data>
+  <data name="error.forum.publish_lottery_draw_time_required" xml:space="preserve">
+    <value>请选择抽奖截止时间。</value>
+  </data>
+  <data name="error.forum.publish_lottery_draw_time_too_soon" xml:space="preserve">
+    <value>抽奖截止时间必须至少晚于发帖时间 1 小时。</value>
+  </data>
+  <data name="error.forum.publish_lottery_winner_count_invalid" xml:space="preserve">
+    <value>中奖人数必须在 1 到 20 之间。</value>
+  </data>
+  <data name="error.forum.publish_forbidden" xml:space="preserve">
+    <value>当前账号状态无法发布内容。</value>
+  </data>
+  <data name="error.forum.publish_tag_create_forbidden" xml:space="preserve">
+    <value>所选标签不存在，当前账号无权创建新标签。</value>
+  </data>
+  <data name="error.forum.publish_submission_id_invalid" xml:space="preserve">
+    <value>提交标识格式无效，请刷新后重新提交。</value>
+  </data>
+  <data name="error.forum.publish_submission_conflict" xml:space="preserve">
+    <value>本次提交与已有请求冲突，请刷新后重新提交。</value>
+  </data>
+  <data name="error.forum.publish_submission_processing" xml:space="preserve">
+    <value>内容正在提交，请稍后确认结果。</value>
+  </data>
+  <data name="error.forum.publish_rate_limited" xml:space="preserve">
+    <value>发布过于频繁，请稍后重试。</value>
+  </data>
+  <data name="error.attachment.file_empty" xml:space="preserve">
+    <value>请选择非空文件后上传。</value>
+  </data>
+  <data name="error.attachment.image_type_unsupported" xml:space="preserve">
+    <value>不支持该图片格式。</value>
+  </data>
+  <data name="error.attachment.document_type_unsupported" xml:space="preserve">
+    <value>不支持该文档格式。</value>
+  </data>
+  <data name="error.attachment.upload_forbidden" xml:space="preserve">
+    <value>当前账号无权上传该文件。</value>
+  </data>
+  <data name="error.attachment.rate_limited" xml:space="preserve">
+    <value>上传过于频繁，请稍后重试。</value>
+  </data>
+  <data name="error.attachment.file_too_large" xml:space="preserve">
+    <value>所选文件超过上传大小限制。</value>
+  </data>
+  <data name="error.attachment.unsupported_media_type" xml:space="preserve">
+    <value>不支持该文件类型。</value>
+  </data>
+  <data name="error.attachment.content_mismatch" xml:space="preserve">
+    <value>文件内容与扩展名不匹配。</value>
+  </data>
+  <data name="error.attachment.storage_failed" xml:space="preserve">
+    <value>文件存储失败，请稍后重试。</value>
+  </data>
+  <data name="error.attachment.processing_failed" xml:space="preserve">
+    <value>文件处理失败，请稍后重试。</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>服务器内部错误，请稍后重试。</value>
   </data>

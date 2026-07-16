@@ -6,8 +6,8 @@ export interface ConfirmDialogProps {
   isOpen: boolean;
   title: string;
   message: string;
-  confirmText?: string;
-  cancelText?: string;
+  confirmText: string;
+  cancelText: string;
   onConfirm: () => void;
   onCancel: () => void;
   danger?: boolean;
@@ -17,14 +17,14 @@ export const ConfirmDialog = ({
   isOpen,
   title,
   message,
-  confirmText = '确认',
-  cancelText = '取消',
+  confirmText,
+  cancelText,
   onConfirm,
   onCancel,
   danger = false
 }: ConfirmDialogProps) => {
   return (
-    <Modal isOpen={isOpen} onClose={onCancel} title={title}>
+    <Modal isOpen={isOpen} onClose={onCancel} closeLabel={cancelText} title={title}>
       <div className={styles.content}>
         <p className={styles.message}>{message}</p>
         <div className={styles.actions}>
