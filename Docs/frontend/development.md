@@ -75,7 +75,7 @@ npm run dev
 - client / Console 各自持有 i18next 实例和资源 registry；共享 `radish_lang` 设备偏好键，但不跨宿主引用翻译资源。
 - `@radish/ui` 不读取 i18next 或 localStorage；`ThemeProvider` 接收宿主解析后的 Ant Design locale，业务组件通过 labels 传入用户文案。
 - 日期、数字和相对时间优先复用 `formatLocalizedDateTime / formatLocalizedNumber / formatLocalizedRelativeTime`，单位与业务词仍留在宿主资源。
-- `@radish/http` 由宿主配置 `getLanguage / translateMessage`，统一发送 `Accept-Language` 并保留 status、`Code / MessageKey / MessageInfo / TraceId`。
+- `@radish/http` 由宿主配置 `getLanguage / translateMessage(key, args?)`，统一发送 `Accept-Language` 并保留 status、`Code / MessageKey / MessageArguments / MessageInfo / TraceId`；动态参数只用于展示格式化。
 - not-found、conflict 和权限控制流不得匹配中英文消息文本；需要跨 helper 抛错时保留 `ApiResponseError`。
 
 ## 5. UI 设计源协作

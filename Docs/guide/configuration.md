@@ -169,28 +169,6 @@ ASP.NET Core 配置系统使用**深度合并**策略：
 
 **重要提示**：如果要修改数组中的某个元素，建议提供完整的数组配置，以避免配置混淆。
 
-### 验证配置优先级
-
-可以在启动时打印配置值来验证加载顺序：
-
-**Program.cs**（开发环境调试用）：
-```csharp
-var app = builder.Build();
-
-if (app.Environment.IsDevelopment())
-{
-    var dbType = app.Configuration["Databases:0:DbType"];
-    var connStr = app.Configuration["Databases:0:ConnectionString"];
-    var redisEnabled = app.Configuration["Redis:Enable"];
-
-    app.Logger.LogInformation("=== 配置加载验证 ===");
-    app.Logger.LogInformation("Database Type: {DbType}", dbType);
-    app.Logger.LogInformation("Database Connection: {ConnStr}", connStr);
-    app.Logger.LogInformation("Redis Enabled: {RedisEnabled}", redisEnabled);
-    app.Logger.LogInformation("====================");
-}
-```
-
 ## 快速开始
 
 ### 新开发者配置步骤
@@ -330,74 +308,20 @@ services:
 
 `Databases`、`OpenIddict:Database` 与 `Hangfire` 都支持按配置切换 `DbType`：本地默认 `2=SQLite`，部署态通过环境变量覆盖为 `4=PostgreSQL`。OpenIddict 的配置由 `Radish.Api` 与 `Radish.Auth` 共享；Hangfire 配置只由 `Radish.Api` 使用。
 
-### 2.1 文件存储配置（FileStorage）
+### 2.1 文件上传与存储配置
 
-文件上传相关的所有配置集中在 `FileStorage` 节点中，包含存储后端、图片处理、水印、去重等选项。
+文件上传链路由三组配置共同约束：`FileStorage` 负责存储后端、大小与扩展名、图片处理、水印和去重；`UploadRateLimit` 负责用户级并发、频率与日容量预留；`ChunkedUpload` 负责分片大小、会话有效期和临时目录。
 
-**核心配置示例**：
-```json
-{
-  "FileStorage": {
-    "Type": "Local",
-    "MaxFileSize": {
-      "Avatar": 2097152,
-      "Image": 5242880,
-      "Document": 31457280,
-      "Video": 52428800,
-      "Audio": 10485760
-    },
-    "AllowedExtensions": {
-      "Image": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".ico"],
-      "Document": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md"],
-      "Video": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
-      "Audio": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"]
-    },
-    "Local": {
-      "BasePath": "DataBases/Uploads",
-      "BaseUrl": "/uploads"
-    },
-    "ImageProcessing": {
-      "GenerateThumbnail": true,
-      "GenerateMultipleSizes": false,
-      "Sizes": {
-        "Small": { "Width": 400, "Height": 300 },
-        "Medium": { "Width": 800, "Height": 600 },
-        "Large": { "Width": 1200, "Height": 900 }
-      },
-      "CompressQuality": 85,
-      "RemoveExif": true
-    },
-    "Watermark": {
-      "Enable": false,
-      "Type": "Text",
-      "Text": {
-        "Content": "Radish",
-        "Position": "BottomRight",
-        "FontSize": 24,
-        "FontSizeRelative": 0.05,
-        "Color": "#FFFFFF",
-        "Opacity": 0.5
-      }
-    },
-    "Deduplication": {
-      "Enable": true
-    }
-  }
-}
-```
+| 节点 | 职责 | 当前默认与硬约束 |
+| --- | --- | --- |
+| `FileStorage` | 存储后端、大小、扩展名、图片处理、水印、去重 | 当前只实现 `Local`；用户附件真值为 `attachmentId`，读取走 `/_assets/attachments/*` |
+| `UploadRateLimit` | 单用户并发、分钟尝试次数、日容量预留 | 默认启用，`5` 个并发、`20` 次 / 分钟、`100 MiB` / 日 |
+| `ChunkedUpload` | 分片大小、会话有效期、临时目录 | 默认启用，`1 / 2 / 10 MiB` 最小 / 默认 / 最大分片，`24h` 会话，`DataBases/Temp/Chunks` |
 
-**说明**：
-- `Type`：存储后端类型（`Local`/`MinIO`/`OSS`）
-- `Local.BasePath`：本地文件存储根目录（相对于仓库根目录）
-- `Local.BaseUrl`：版本内置 `DefaultIco` 的兼容路由前缀；用户附件不经该前缀直出，也不作为附件业务真值
-- `ImageProcessing.GenerateMultipleSizes`：是否生成多尺寸图片
-- `Watermark`：水印配置（默认关闭）
-- `Deduplication.Enable`：是否在安全归属与处理语义一致时复用已有附件；内容哈希算法固定为 SHA-256，不接受运行时降级配置
-
-补充口径：
-
-- 当前附件业务统一以 `attachmentId` 为真值，对外展示统一推荐 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
-- 因此 `Local.BaseUrl=/uploads` 主要影响底层文件暴露与静态存储路径，不应被前端正文或业务表当作长期引用地址写回数据库。
+- `BusinessType` 白名单是 `Radish.Shared/Constants/AttachmentBusinessTypes.cs` 的代码契约，不允许通过配置扩展；新增类型必须同步授权策略与测试。
+- `FileStorage:Local:BaseUrl=/uploads` 只用于版本内置 `DefaultIco` 兼容路径；如需修改，必须同步 Gateway 和外层反向代理的可信精确路由，且不得暴露整个用户上传根目录。
+- `ChunkedUpload:Enable=true` 时必须满足 `0 < MinChunkSize <= DefaultChunkSize <= MaxChunkSize <= 10 MiB`、会话有效期 `1-168h`、临时目录非空；相对目录按解决方案根解析。
+- 完整默认值、业务类型、限流结算、分片会话和部署停止线统一查看[文件上传与附件管理](/features/file-upload-design)，本页不重复维护大段配置副本。
 
 ### 2.2 Hangfire 定时任务配置
 
@@ -883,59 +807,7 @@ config.AddEnvironmentVariables();
 
 **是的。** `appsettings.Local.json` 在 `appsettings.Shared.json`、`appsettings.json` 之后加载；若同名键存在，会覆盖前面的值（最终仍可被环境变量覆盖）。
 
-**配置加载代码**（在 `Program.cs` 中）：
-```csharp
-config.AddJsonFile("appsettings.Shared.json", optional: true, reloadOnChange: false);
-config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);  // 最后加载，最高优先级
-```
-
-**示例验证**：
-
-1. **appsettings.Shared.json**（共享默认配置）：
-```json
-{
-  "Redis": {
-    "Enable": false,
-    "ConnectionString": "localhost:6379"
-  }
-}
-```
-
-2. **appsettings.Local.json**（你的本地配置）：
-```json
-{
-  "Redis": {
-    "Enable": true,
-    "ConnectionString": "production:6379,password=secret"
-  }
-}
-```
-
-3. **最终生效的配置**：
-```json
-{
-  "Redis": {
-    "Enable": true,                                           // ✅ 来自 Local.json
-    "ConnectionString": "production:6379,password=secret"     // ✅ 来自 Local.json
-  }
-}
-```
-
-**注意事项**：
-- ✅ 对于简单值（字符串、数字、布尔值），Local.json 的值会完全覆盖
-- ✅ 对于对象，会进行深度合并（未指定的字段保留已加载配置中的值）
-- ⚠️ 对于数组（如 `Databases`），建议提供完整的数组配置，避免索引混淆
-
-**验证方法**：
-```csharp
-// 在 Program.cs 中添加（开发环境）
-if (app.Environment.IsDevelopment())
-{
-    app.Logger.LogInformation("Redis Enabled: {Value}",
-        app.Configuration["Redis:Enable"]);
-}
-```
+简单值直接覆盖，对象按键深度合并；数组按索引覆盖，因此修改 `Databases` 等数组时应提供完整数组。具体示例见本文前面的“配置合并机制”。
 
 ### Q1: 如何验证配置是否生效？
 
@@ -987,72 +859,14 @@ services:
 
 ### Q4: 团队成员如何快速配置？
 
-新成员加入时：
-
-**方式一：直接运行（最简单）**
-```bash
-# 1. 克隆仓库
-git clone https://github.com/your-org/Radish.git
-cd Radish
-
-# 2. 直接运行（使用默认 SQLite 配置）
-dotnet run --project Radish.Api
-dotnet run --project Radish.Auth
-dotnet run --project Radish.Gateway
-```
-
-**方式二：自定义配置（可选）**
-```bash
-# 1. 克隆仓库
-git clone https://github.com/your-org/Radish.git
-cd Radish
-
-# 2. 创建本地覆盖文件
-#    新建 Radish.Api/appsettings.Local.json
-#    新建 Radish.Auth/appsettings.Local.json
-#    新建 Radish.Gateway/appsettings.Local.json
-
-# 3. 编辑 appsettings.Local.json，取消注释并修改需要的配置项
-#    - 数据库密码（切换到 PostgreSQL 时）
-#    - Redis 密码（启用 Redis 时）
-#    - 其他敏感信息
-#
-#    所有配置项都有详细注释说明
-
-# 4. 启动项目
-dotnet run --project Radish.Api
-```
+克隆仓库后可直接使用默认 SQLite + 内存缓存运行。需要 PostgreSQL、Redis 或本机密钥时，只在对应宿主创建未提交的 `appsettings.Local.json` 并写入差异项；启动方式见本文“快速开始”。
 
 ### Q5: 如果误提交了敏感数据怎么办？
 
-```bash
-# 1. 从 Git 历史中完全删除文件
-git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch Radish.Api/appsettings.Local.json" \
-  --prune-empty --tag-name-filter cat -- --all
-
-# 2. 强制推送（危险操作，需要团队协调）
-git push origin --force --all
-
-# 3. 立即更换泄露的密码/密钥
-```
-
-**注意**：这是最后的补救措施，预防才是关键。
+立即吊销并轮换泄露的密码或密钥，再由仓库管理员按团队流程清理 Git 历史、协调受影响分支和远端镜像。历史重写属于破坏性操作，不应直接照抄通用命令执行。
 
 ## 相关文档
 
 - [ASP.NET Core 配置系统](https://learn.microsoft.com/zh-cn/aspnet/core/fundamentals/configuration/)
 - [开发规范](/architecture/specifications)
 - [部署指南](/deployment/guide)
-
-## 变更日志
-
-- **2026-05-07**：
-  - 正式收口为三种配置文件：`appsettings.Shared.json`、`appsettings.json`、`appsettings.Local.json`
-  - 移除 `appsettings.{Environment}.json` 口径，部署差异统一改为环境变量
-  - 明确禁止提交 `appsettings.Local.json` 与其他 `appsettings.*.json` 变体
-- **2025-12-08**：
-  - 优化配置策略：Local.json 只需包含需要覆盖的配置项，利用深度合并自动继承其他配置
-  - 补充配置优先级和合并机制说明
-  - 简化配置文件结构，`appsettings.json` 现作为完整配置模板
-- **2025-11-27**：初始版本，引入 `appsettings.Local.json` 配置管理策略

@@ -6,6 +6,7 @@
 
 - **想快速理解系统怎么组成**：本页（架构总览）
 - **想知道代码分层/约束/规范**：[开发规范](/architecture/specifications)
+- **想查 BaseService / BaseRepository 完整能力与使用场景**：[BaseService 与 BaseRepository 专题指南](/architecture/base-service-repository-guide)
 - **想看更细的后端/网关实现要点**：[开发框架说明](/architecture/framework)
 - **想看长期 ID 体系与社区联邦方向**：[标识体系与社区联邦长期路线](/architecture/id-and-federation-roadmap)
 - **想看用户登录名、邮箱、展示名与公开索引边界**：[用户身份语义与公开索引](/architecture/user-identity-semantics)

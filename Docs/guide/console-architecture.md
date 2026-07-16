@@ -98,7 +98,7 @@ Console 独立维护 `core / shell / dashboard / users / moderation / orders / p
 
 #### 4.2.1 统一 API 客户端
 
-普通 API 调用统一使用 `@radish/http` / `@radish/ui` 提供的客户端，不再维护 Console 自定义 fetch 封装。
+普通 API 调用统一使用 `@radish/http`，`@radish/ui` 只承载共享组件与反馈代理；Console 不再维护自定义 fetch 封装。
 
 统一收益包括：
 
@@ -107,15 +107,15 @@ Console 独立维护 `core / shell / dashboard / users / moderation / orders / p
 - 错误处理口径一致
 - baseUrl 配置一致
 
-业务 API helper 在失败时使用 `createApiResponseError` 抛出 `ApiResponseError`，保留 `httpStatus / code / messageKey / traceId`。页面控制流读取 status、稳定 `Code` 或结构化数据状态；提示优先使用本地 `MessageKey`，缺键时显示服务端安全 `MessageInfo`，禁止匹配中英文消息判断权限、not-found 或并发冲突。
+已迁移的业务 API helper 在失败时使用 `createApiResponseError` 抛出 `ApiResponseError`，保留 `httpStatus / code / messageKey / messageArguments / traceId`。页面控制流读取 status、稳定 `Code` 或结构化数据状态；提示优先使用本地 `MessageKey` 和位置参数格式化，缺键时显示服务端安全 `MessageInfo`，禁止匹配中英文消息判断权限、not-found 或并发冲突。当前 `stickerApi.ts` 仍自行解析响应并抛普通 `Error`，角色、分类、标签、表情、经验与萝卜管理域的同类缺口由 `F3-C9` 成组迁移。
 
 #### 4.2.2 特殊场景：上传进度
 
-像 `Sticker` 图片上传这类需要上传进度的场景，允许使用 `XMLHttpRequest`，但必须：
+像 `Sticker` 图片上传这类需要上传进度的场景，允许在统一附件适配器内使用 `XMLHttpRequest`，但必须：
 
-- 从 `getApiClientConfig()` 获取 `baseUrl` 与 token
-- 只在上传等确有必要的场景使用
-- 不再额外复制一套普通 HTTP 客户端逻辑
+- 从 `getApiClientConfig()` 获取 base URL、timeout、token、语言与消息翻译器
+- 保留 `AbortSignal`、非幂等不自动重试、HTTP status、`Code / MessageKey / MessageArguments / TraceId` 和非 JSON 失败语义
+- 页面只调用 `Frontend/radish.console/src/api/attachmentApi.ts`，不得复制 XHR、认证或错误解析；其余请求继续使用 `@radish/http`
 
 ### 4.3 后端权限快照组装
 

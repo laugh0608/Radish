@@ -152,6 +152,8 @@ interface ApiResponse<T = unknown> {
   responseData?: T;
   code?: string;
   messageKey?: string;
+  messageArguments?: unknown[];
+  traceId?: string;
 }
 ```
 

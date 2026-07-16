@@ -13,8 +13,8 @@
 - **`AttachmentVo.VoUrl` / `VoThumbnailUrl` 是运行时派生字段**。后端通过 `IAttachmentUrlResolver` 把附件 Id 解析成相对资源路径：
   - 原图：`/_assets/attachments/{id}`
   - 缩略图：`/_assets/attachments/{id}/thumbnail`
-- **正文中的图片 / 文档引用统一保存为 `attachment://{id}` 协议**。论坛帖子、评论、Wiki 等场景不再把上传后的完整 URL 直接写入 Markdown / 富文本正文；孤立清理会扫描当前正文，Wiki 历史版本因支持回滚也持续视为有效引用。
-- **更换域名时不再需要更新附件类数据库字段**。只要公开入口、反向代理和运行时配置切到新域名，媒体资源 URL 会自然跟随切换。
+- **新写入与已迁移正文中的图片 / 文档引用统一保存为 `attachment://{id}` 协议**。论坛帖子、评论、Wiki 等场景不再把新上传的完整 URL 写入 Markdown / 富文本正文；孤立清理会扫描当前正文，Wiki 历史版本因支持回滚也持续视为有效引用。
+- **采用 `attachmentId / attachment://` 的数据在更换域名时无需更新附件类字段**。历史正文、Wiki revision、系统配置或外部缓存若仍保存 `/uploads/**` 或旧域名绝对 URL，必须先盘点和迁移。
 
 ---
 
@@ -80,13 +80,13 @@
   - `POST /api/v1/Attachment/DeleteBatch`
 - 上传接口只创建 `BusinessId = null` 的未绑定附件，不接受调用方指定业务对象；通用附件控制器不再开放任意 `BusinessType / BusinessId` 改挂入口。帖子、评论、聊天等关联由对应业务服务完成，头像只通过 `User/SetMyAvatar` 在事务内设置或清空；favicon 的引用真值为启用中的 `Site.Branding.FaviconUrl`，孤立清理会解析其 `/_assets/attachments/{id}` 并保护对应附件
 
-### 2) 公开资源访问口径
+### 2) 受控资源访问口径
 
 - `GET /_assets/attachments/{id}`
   - 返回附件原始文件流
   - 适合作为运行时展示地址
 - `GET /_assets/attachments/{id}/thumbnail`
-  - 返回缩略图文件流
+  - 已记录 `ThumbnailPath` 时返回缩略图；未生成或未记录缩略图时回退原文件，已记录路径但物理文件缺失时返回 `404`
   - 适合作为列表预览、卡片缩略图和富文本缩略显示地址
 
 > 所有业务附件读取只允许通过 `/_assets/attachments/*`、`Attachment/Download/{id}` 与 `DownloadByToken` 的受控链路。用户上传根目录不再通过 `/uploads/**` 直接静态暴露；`/uploads/DefaultIco/**` 只保留版本内置的可信默认图标。
@@ -182,7 +182,7 @@
 
 ## 正文引用协议
 
-当前论坛、评论、Wiki 等正文层已经统一采用 `attachment://{id}` 协议：
+论坛、评论、Wiki 等正文的新写入链路及已迁移数据采用 `attachment://{id}` 协议；渲染器暂时兼容历史站内 `/uploads/**` 引用：
 
 ```markdown
 ![示例图片](attachment://123456789#radish:display=thumbnail&scale=60)
@@ -200,7 +200,7 @@
 
 ### 1) FileStorage
 
-- `FileStorage:Type`：`Local` / `MinIO` / `OSS`
+- `FileStorage:Type`：当前仅支持 `Local`；`MinIO / OSS` 配置结构为预留，适配器未实现，选择后会在首次解析存储服务时失败，部署态不得启用
 - `FileStorage:Local:BasePath`：默认 `DataBases/Uploads`
 - `FileStorage:Local:BaseUrl`：默认 `/uploads`
 - `FileStorage:MaxFileSize`：按业务类型控制单文件大小（当前默认 `Document=30MB`）
@@ -280,6 +280,8 @@
 - 依赖 `AttachmentId` 的贴图、Reaction、聊天图片、商品图标 / 封面、订单商品图标快照
 - 正文中的 `attachment://{id}` 引用
 
+历史 `/uploads/**` 或旧域名绝对 URL 不在此列；正文、Wiki revision、`Site.Branding.FaviconUrl` 与外部缓存仍需在域名或静态路由切换前盘点。
+
 ### 需要同步调整的配置
 
 - `RADISH_PUBLIC_URL`
@@ -291,10 +293,12 @@
 
 ## 未完成事项（TODO）
 
-- 前端分片上传交互完善（暂停 / 恢复、断点续传 UI、失败重试策略可视化）
+- 只有在建立可恢复会话关联、跨请求重入与失败语义后，才评估前端暂停 / 恢复和断点续传 UI；当前入口不得展示无法兑现的伪暂停
 - 分片上传横向扩容前补共享临时存储、分布式会话互斥与跨实例回归；当前部署边界为单实例
 - 为附件持久化增加稳定的上传会话 correlation / 唯一约束，使“附件已落库但会话完成状态持续回写失败且响应丢失”的极端路径可在后续请求中找回既有附件
 - 为普通上传和分片上传增加持久化配额结算记录及可重放 outbox，避免缓存结算失败造成当日用量漏记或预留滞留
 - 建立按业务域派生的附件可见性契约及历史数据迁移，至少覆盖 `Chat`、`Document` 和受限 `Wiki`
-- 临时令牌审计与管理界面
-- 临时令牌管理界面与端到端验收覆盖
+- 临时令牌审计、管理界面与端到端验收覆盖
+- 盘点并迁移历史正文、Wiki revision 与 `Site.Branding.FaviconUrl` 中的 `/uploads/**` / 旧域名直链；完成生产数据抽样与运行态回归前，不得把关闭用户上传静态根目录视为历史数据已经收口
+- 专题验收时在取得启动授权后通过真实 API + Gateway 验证普通 `/uploads/<business>/...` 不可达、`/uploads/DefaultIco/...` 可达，以及受控路由的 deleted / disabled / private / thumbnail 行为；当前源码与配置断言不能替代该验证
+- 评估缩略图路由对未生成缩略图的附件是否应明确返回 `404`，避免列表场景意外拉取原始大文件；改变前需先定义兼容策略

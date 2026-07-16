@@ -43,7 +43,7 @@
 
 ### 不再需要手工修改的数据库数据
 
-当前附件相关业务已经完成“去 URL 真值化”收口。更换域名时，不再需要手工修改以下数据库字段：
+采用 `AttachmentId / attachment://` 的新写入与已迁移数据已经完成“去 URL 真值化”收口。更换域名时，不再需要手工修改以下字段：
 
 - `Attachment` 记录
 - `Sticker.AttachmentId`、`StickerGroup.CoverAttachmentId`
@@ -53,6 +53,8 @@
 - `ProductCategory.IconAttachmentId`
 - `Order.ProductIconAttachmentId`
 - 正文中的 `attachment://{id}` 引用
+
+例外：历史 Markdown / 富文本、Wiki revision、`Site.Branding.FaviconUrl` 或外部缓存若仍保存 `/uploads/**` 或旧域名绝对 URL，必须在关闭兼容静态入口或切换域名前完成盘点、迁移与抽样验证。
 
 原因很简单：
 
@@ -348,10 +350,11 @@ docker compose up -d
 3. 重新执行 `pull + up -d`
 4. 按 `M14` 顺序复跑 `check:host-runtime`、维护记录汇总与部署后最小复核
 
-**文件上传目录挂载（生产环境建议）**：
-- 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
-- 建议挂载到宿主机持久化目录，避免容器重启丢失文件
-- Gateway 当前默认已经转发 `/_assets/attachments/**`；如果前面还有 `Nginx / Traefik / Caddy`，也要同步放行该路径，且不得重新把整个用户上传目录映射为 `/uploads/**`
+**附件与分片部署边界**：
+
+- `${FileStorage:Local:BasePath}`（默认 `DataBases/Uploads`）与 `ChunkedUpload:TempChunkPath`（默认 `DataBases/Temp/Chunks`）都必须位于持久化挂载内；Gateway 和外层反向代理只放行 `/_assets/attachments/**` 与可信 `DefaultIco` 路由，不映射整个 `/uploads/**`。
+- 当前会话互斥使用进程内 `AsyncKeyedLock`，启用分片上传的 `Radish.Api` 必须保持单实例；扩容前需同时具备共享临时存储、按会话分布式锁和故障切换验收，粘性会话不能作为一致性保证。细节见[文件上传与附件管理](/features/file-upload-design)。
+- 合并到 `master` 前至少盘点历史 `/uploads/**` 直链；阶段验收取得启动授权后，再通过真实 Gateway 验证用户上传静态路径不可达、`DefaultIco` 可达及受控附件状态 / 私有访问规则。
 
 如需分别单独运行镜像，可参考：
 
@@ -725,224 +728,6 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - 端口占用可通过 `docker compose ps` 或 `lsof -i :8080` 定位，调整 `ports` 映射即可。
 - 清理旧镜像：`docker image prune -f`；清理多余卷：`docker volume prune`（慎用）。
 
-## 未来两镜像多容器部署设计（规划阶段）
+## 后续镜像治理边界
 
-> 本节用于记录未来在服务器上采用“两个镜像、多容器”的部署思路，目前 **仅作为设计文档，不在开发阶段使用 Docker 进行启动与测试**。
->
-> 当前仓库已经有一套真实可构建的最小镜像链，本节保留的是“进一步压缩镜像数量”的后续设计，不代表当前首版 `dev` 已经切换到该方案。
-
-### 设计目标与前提
-
-- 目标机器内存约 **4–8GB**，希望在资源有限的前提下尽量简化镜像数量；
-- 采用 **两个基础镜像**：
-  - `radish-backend`：承载所有 .NET 服务（Api / Gateway / Auth / DbMigrate 等）；
-  - `radish-frontend`：承载所有前端项目的构建与静态资源（radish.client / radish.console）。
-- 在 Compose 层面仍然按照服务拆分多个容器：
-  - 后端：`gateway`、`api`、`auth`（以及可选的 `db-migrate` 等 Job 容器）；
-  - 前端：`client`（未来可扩展为 `console`、`docs` 独立容器）；
-  - 数据：`postgres`、`redis`。
-- 区分概念：**镜像数量少** 不代表只跑少量容器，每个服务仍然应有独立容器，便于监控、扩容和故障隔离。
-
-### 后端镜像设计示例（Dockerfile.backend 草案）
-
-> 下述 Dockerfile 仅为设计示例，用于说明统一后端镜像的构建思路，**仓库中默认不会自动创建该文件**。当后续确实需要上线容器部署时，可在确认路径与项目之后再落地。
-
-```dockerfile
-# 统一构建所有 .NET 服务的后端镜像
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
-
-# 复制解决方案与各项目文件（根据实际项目补充）
-COPY Radish.slnx ./
-COPY Radish.Api/Radish.Api.csproj Radish.Api/
-COPY Radish.Auth/Radish.Auth.csproj Radish.Auth/
-COPY Radish.Gateway/Radish.Gateway.csproj Radish.Gateway/
-# 如有额外 Job/Web 项目，可在此继续追加 COPY + restore
-
-RUN dotnet restore Radish.Api/Radish.Api.csproj
-RUN dotnet restore Radish.Auth/Radish.Auth.csproj
-RUN dotnet restore Radish.Gateway/Radish.Gateway.csproj
-
-# 复制全部源代码
-COPY . .
-
-# 分别发布到不同目录，供运行时容器按需选择入口
-RUN dotnet publish Radish.Api/Radish.Api.csproj -c Release -o /app/api /p:UseAppHost=false
-RUN dotnet publish Radish.Auth/Radish.Auth.csproj -c Release -o /app/auth /p:UseAppHost=false
-RUN dotnet publish Radish.Gateway/Radish.Gateway.csproj -c Release -o /app/gateway /p:UseAppHost=false
-# 例如：RUN dotnet publish Radish.DbMigrate/Radish.DbMigrate.csproj -c Release -o /app/dbmigrate /p:UseAppHost=false
-
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
-WORKDIR /app
-
-COPY --from=build /app/api /app/api
-COPY --from=build /app/auth /app/auth
-COPY --from=build /app/gateway /app/gateway
-# COPY --from=build /app/dbmigrate /app/dbmigrate
-
-# 运行时不在镜像中写死 ENTRYPOINT，由 docker-compose 的 command 决定具体运行哪一个服务
-```
-
-### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾公开内容 SEO）
-
-> 同样仅作为设计示例，说明如何用单一前端镜像承载前端项目。
-> 当前 `radish.client` 已先采用 SPA 静态产物 + 运行时 head helper 的 SEO 基线：`index.html` 提供站点默认 meta，`publicHead` 在公开路由运行时维护 title、description、Open Graph 与 canonical，`public/robots.txt` 和 `public/sitemap.xml` 作为静态抓取 seed。SSR / SSG 不属于当前部署前置条件，后续若正式立项再补专门服务入口。
-
-```dockerfile
-FROM node:20 AS base
-WORKDIR /app
-
-# 安装三个前端项目的依赖
-COPY Frontend/radish.client/package*.json Frontend/radish.client/
-COPY Frontend/radish.console/package*.json Frontend/radish.console/
-
-RUN cd Frontend/radish.client && npm install
-RUN cd Frontend/radish.console && npm install
-
-# 复制源代码
-COPY radish.client radish.client
-COPY radish.console radish.console
-
-# 统一构建所有前端项目
-# - radish.client: 当前构建为静态 SPA 产物，包含 robots.txt / sitemap.xml seed
-# - radish.console: 通常构建为静态站点
-RUN cd Frontend/radish.client && npm run build
-RUN cd Frontend/radish.console && npm run build
-
-# 运行时可使用 Nginx / Caddy / 静态文件服务承载 dist
-# - 未匹配的公开 SPA 路由仍回退 index.html
-# - robots.txt / sitemap.xml 需要直接作为静态文件返回
-FROM nginx:alpine AS final
-COPY --from=base /app/Frontend/radish.client/dist /usr/share/nginx/html
-```
-
-> 注意：上面的 Dockerfile 仍是部署设计示例，真实仓库镜像入口以当前 `Frontend/Dockerfile` 和 Compose 配置为准。若后续切到 SSR / SSG，需要重新定义前端运行时、缓存策略和健康检查，而不是沿用当前静态文件服务假设。
-
-### 两镜像多容器的 Compose 结构示例（草案）
-
-> 本小节给出一个基于 `radish-backend` 与 `radish-frontend` 的 Compose 结构示例，并结合 4–8GB 内存的目标机器给出初始内存限制配置。数值仅供参考，实际部署应结合 `docker stats` 和监控数据调整。
-
-推荐在仓库根目录使用 `docker-compose.yaml` 统一编排（路径可根据团队习惯调整）：
-
-```yaml
-version: "3.9"
-
-services:
-  gateway:
-    image: radish-backend
-    container_name: radish-gateway
-    command: ["dotnet", "Radish.Gateway.dll"]
-    working_dir: /app/gateway
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
-    ports:
-      - "5000:5000"
-      - "5001:5001"
-    depends_on:
-      - api
-      - auth
-      - client
-    mem_reservation: 192m
-    mem_limit: 384m
-    networks:
-      - radish-net
-
-  api:
-    image: radish-backend
-    container_name: radish-api
-    command: ["dotnet", "Radish.Api.dll"]
-    working_dir: /app/api
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
-      # ConnectionStrings__Main: "Host=postgres;Port=5432;Database=radish;Username=radish;Password=change_me"
-    depends_on:
-      - postgres
-      - redis
-    mem_reservation: 256m
-    mem_limit: 768m
-    networks:
-      - radish-net
-
-  auth:
-    image: radish-backend
-    container_name: radish-auth
-    command: ["dotnet", "Radish.Auth.dll"]
-    working_dir: /app/auth
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
-    depends_on:
-      - postgres
-      - redis
-    mem_reservation: 256m
-    mem_limit: 512m
-    networks:
-      - radish-net
-
-  client:
-    image: radish-frontend
-    container_name: radish-client
-    ports:
-      - "3000:80"  # 生产环境可由 Gateway 或外部反向代理统一暴露
-    mem_reservation: 64m
-    mem_limit: 256m
-    networks:
-      - radish-net
-
-  postgres:
-    image: postgres:16
-    container_name: radish-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: "radish"
-      POSTGRES_USER: "radish"
-      POSTGRES_PASSWORD: "change_me"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    mem_reservation: 256m
-    mem_limit: 768m
-    networks:
-      - radish-net
-
-  redis:
-    image: redis:7
-    container_name: radish-redis
-    restart: unless-stopped
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
-    volumes:
-      - redisdata:/data
-    ports:
-      - "6379:6379"
-    mem_reservation: 64m
-    mem_limit: 256m
-    networks:
-      - radish-net
-
-networks:
-  radish-net:
-    driver: bridge
-
-volumes:
-  pgdata:
-  redisdata:
-```
-
-该结构下，在 4–8GB 宿主机上：
-
-- 所有服务的 `mem_limit` 上限之和约为 3GB 左右，保留了充足的系统与缓冲空间；
-- 后续可根据实际监控情况对 `mem_reservation` 与 `mem_limit` 做细调：
-  - 如果某服务常年远低于软限制，可适当下调节省资源；
-  - 如果某服务经常接近硬限制，则需要考虑优化缓存/查询或上调限制。
-
-### 当前开发阶段的约定与落地建议
-
-- **当前阶段默认仍优先宿主机运行与调试**：
-  - 后端推荐继续使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
-  - 前端推荐继续使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
-  - Docker 相关内容当前已不再只是草案，而是首版 `dev` 的最小构建 / 交付验证资产；但运行态联调与日常开发默认仍以宿主机方式为主。
-- **在真正落地容器部署前，建议遵循以下步骤**：
-  1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yaml`）；
-  2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；
-  3. 在测试环境中逐步启用各服务容器，并使用 `docker stats`/监控系统验证内存与 CPU 占用情况；
-  4. 确认没有影响现有非容器化部署流程后，再考虑将该方案纳入正式的部署流水线。
+当前真实交付仍以五个独立镜像和 `Deploy/docker-compose*.yaml` 为准，不维护未落地的“两镜像多容器”草案。若未来因镜像复用、制品体积或资源治理重新立项，需先确认服务隔离、独立扩缩容、健康检查、资源限制与回滚边界，再新增专题设计；不得用草案替代本页记录的真实部署入口。

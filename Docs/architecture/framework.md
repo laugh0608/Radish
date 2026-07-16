@@ -17,7 +17,7 @@
   - 管理后台（同 React 工程内实现管理视图）：分类、内容、用户、积分与商城配置。
 
 - **非功能性要求**
-  - 安全：所有外部访问统一收口到 Gateway 公共入口并以 HTTPS 对外暴露；测试部署可由 Gateway 容器直接提供 TLS，生产部署则由外部 `Nginx / Traefik / Caddy` 终止 TLS。前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
+  - 安全：所有外部访问统一收口到 Gateway 公共入口并以 HTTPS 对外暴露；测试与生产部署均由外部 `Nginx / Traefik / Caddy` 终止 TLS，只有本地容器验证由 Gateway 直接使用开发证书。前端不做自定义“二次加密”（不做 RSA 前端加密）。结合 JWT + Refresh、基于角色的授权、CSP/CORS、参数验证与敏感信息集中管控。开发阶段 Radish.Api 保留 HTTPS 端口便于直接调试，但在完成 Gateway/OIDC 接入并进入生产环境前，应关闭或限制直接暴露的 API HTTPS 端口，仅通过 Gateway/反向代理对外提供服务。
   - 性能：关键查询 P95 ≤ 200ms；SQLSugar Profile + PostgreSQL EXPLAIN 校验索引；读多写少场景可使用内存缓存。
   - 可用性：健康检查 `/health`, `/healthz`; SQLSugar 迁移幂等；容器探针。
   - 可观测性：Serilog 结构化日志、请求跟踪 ID、PostgreSQL 慢查询日志、前端监控埋点；宿主侧当前按 [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline) 收束最小运行观测边界。
@@ -250,7 +250,7 @@ graph LR
 3. **部署流水线**：
    - 当前仓库已具备 `Radish.DbMigrate`、`Radish.Api`、`Radish.Auth`、`Radish.Gateway` 与 `Frontend` 五个 Dockerfile，多阶段构建资产已形成最小镜像链。
    - `Deploy/docker-compose.local.yaml` 与部署态 `Deploy/docker-compose.yaml` 已形成仓库级最小编排；开发运行已明确独立于 Compose；`Docker Images` workflow 当前已收口为仅响应 `v*-dev / v*-test / v*-release` tag 与手动补跑规范 tag，普通 `dev` push 不再触发镜像发布。
-   - 当前部署口径已明确分层：开发运行继续使用本地默认开发证书；测试部署由 Gateway 容器内直接提供 HTTPS，并自动生成 / 复用测试 TLS 与 Auth OIDC 证书；生产部署由外部反代终止 HTTPS，容器内部保持 HTTP，Auth OIDC 证书通过持久化挂载目录自动生成或预置后复用。
+   - 当前部署口径已明确分层：开发运行和本地容器验证可使用本地开发证书；测试与生产部署统一由外部反代终止 HTTPS，Gateway 容器内保持 HTTP；Auth OIDC 证书通过持久化挂载目录自动生成或预置后复用。
 4. **质量门禁**：
    - PR 应附带与改动相匹配的构建 / 测试 / `type-check` / `HttpTest` 结果；若变更数据库需提供迁移脚本与回滚建议。
    - 关键模块需要 Code Review + Pair Walkthrough。

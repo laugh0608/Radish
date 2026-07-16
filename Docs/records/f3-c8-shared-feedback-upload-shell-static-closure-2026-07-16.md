@@ -2,7 +2,7 @@
 
 > 日期：2026-07-16（Asia/Shanghai）
 >
-> 范围：首个代码检查点 `d5341095`，以及其后同一批次的附件安全、分片上传、原子限流、裁切生命周期、公开 head、论坛事务和动态错误参数加固。
+> 范围：代码检查点 `d5341095` 与最终收口提交 `762e32ac`，覆盖共享反馈、附件安全、分片上传、原子限流、裁切生命周期、公开 head、论坛事务和动态错误参数加固。
 
 ## 结论
 
@@ -28,7 +28,7 @@
 - 存储路径使用规范化后的 containment 校验，拒绝绝对路径、父目录逃逸和存储根路径本身。
 - 服务端根据扩展名与文件签名判定 MIME，不信任 multipart `Content-Type`；内容与声明不一致返回稳定错误。
 - 图片处理失败会清理原文件、缩略图、多尺寸输出和临时文件；附件持久化成功后的记账失败只记录诊断，不把已成功的非幂等上传伪装为失败。
-- 用户上传根目录不再经 `/uploads/**` 静态直出；原图、缩略图、下载与 token 下载统一复用 disabled / deleted / public 访问判定，只保留 `/uploads/DefaultIco/**` 可信内置图标。
+- 用户上传根目录不再经 `/uploads/**` 静态直出；受控读取统一阻断 disabled / deleted，私有附件只允许上传者或 `System / Admin`，token 下载通过独立入口且不能绕过文件状态，只保留 `/uploads/DefaultIco/**` 可信内置图标。
 - 孤立附件清理会识别启用中的 favicon 受控资源 URL、Wiki 当前正文和全部可回滚 revision 正文；替换、恢复默认或删除正文引用后，旧附件才重新进入清理候选。
 - 分片链路补齐属主 / 租户、精确分片长度、会话串行、跨租户清理与 15 分钟终态配额重放；当前仍以单实例、本地临时目录和缓存预留为停止线。
 
@@ -45,7 +45,8 @@
 - 附件已落库但会话完成状态持续回写失败且响应丢失时，仍需 attachment session correlation / 唯一约束找回既有附件。
 - 普通上传缺少 durable quota settlement；分片终态重放也只覆盖缓存预留仍存在且未发生批次饥饿的窗口，最终需持久化 ledger / outbox。
 - 分片临时存储与会话锁只支持严格单实例；前端不承诺跨请求暂停 / 恢复。
-- `Chat / Document / Wiki` 的业务域 ACL 与历史数据迁移尚未完成，敏感文件不得依赖当前统一 `IsPublic = true` 语义。
+- `Chat / Document / Wiki` 的业务域 ACL 与历史数据迁移尚未完成，这些类型当前不得承载敏感文件，不能把统一 `IsPublic = true` 语义误写成私有附件治理已经完成。
+- 历史正文、Wiki revision 与 favicon 配置中的 `/uploads/**` / 旧域名直链尚需生产数据盘点和迁移；当前源码与配置断言也不能替代真实 Gateway 路由验收。
 
 ## 静态验证
 
@@ -55,7 +56,7 @@
 - `@radish/http`：13 项测试、type-check、lint 通过。
 - `Radish.Api.Tests`：814 项通过、12 项 PostgreSQL 环境用例按配置跳过、0 项失败。
 - `dotnet build Radish.slnx -c Debug --no-restore`：0 warning、0 error。
-- `npm run validate:baseline:quick`、changed repo hygiene 与 `git diff --check` 通过。
+- `npm run validate:baseline:quick` 与 `git diff --check` 通过；changed repo hygiene 未发现文本卫生错误，保留文档建议篇幅提醒。
 - client production build 保留既有大 chunk 提示；Console production build 无警告。
 
 ## 下一顺位

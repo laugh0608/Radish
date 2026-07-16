@@ -32,7 +32,9 @@ Radish.Gateway (https://localhost:5000，可选 http://localhost:5001 -> 5000)
 测试部署：
 客户端 (浏览器/前端应用)
     ↓
-Radish.Gateway (https://IP:port 或测试域名，容器内直接提供 HTTPS)
+Nginx / Traefik / Caddy (测试域名 HTTPS)
+    ↓
+Radish.Gateway (http://gateway:5000，容器内仅提供 HTTP)
 
 生产部署：
 客户端 (浏览器/前端应用)
@@ -43,7 +45,7 @@ Radish.Gateway (http://gateway:5000，容器内仅提供 HTTP)
 
 统一路由：
     ├─→ /api/** (业务 API → Radish.Api :5100)
-    ├─→ /_assets/attachments/** (附件公开资源 → Radish.Api :5100)
+    ├─→ /_assets/attachments/** (附件受控读取 → Radish.Api :5100)
     ├─→ /uploads/DefaultIco/** (版本内置可信默认图标 → Radish.Api :5100)
     ├─→ /scalar/** (API 文档 → Radish.Api :5100)
     ├─→ /openapi/** (OpenAPI 规范 → Radish.Api :5100)
@@ -142,103 +144,42 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | 路径模式 | 目标服务 | 说明 | 特殊配置 |
 |---------|---------|------|---------|
 | `/api/**` | Radish.Api (:5100) | 业务 API 接口 | - |
-| `/_assets/attachments/**` | Radish.Api (:5100) | 附件公开资源口径 | - |
+| `/_assets/attachments/**` | Radish.Api (:5100) | 附件受控读取 | - |
 | `/uploads/DefaultIco/**` | Radish.Api (:5100) | 版本内置可信默认图标 | - |
 | `/scalar/**` | Radish.Api (:5100) | Scalar API 文档 | - |
 | `/openapi/**` | Radish.Api (:5100) | OpenAPI 规范 | - |
 | `/hangfire/**` | Radish.Api (:5100) | Hangfire 定时任务面板 | - |
-| `/console/**` | radish.console (:3100) | 管理控制台 | PathRemovePrefix, WebSocket |
+| `/console/**` | radish.console (:3100) | 管理控制台 | 保留 `/console` 前缀，WebSocket |
 | `/Account/**` | Radish.Auth (:5200) | OIDC 登录页面 | X-Forwarded-* 头 |
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
 
 补充说明：
 
-- 附件业务公开访问口径已经切换到 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
+- 附件业务受控读取口径已经切换到 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail`。
 - `Radish.Gateway/appsettings.json` 当前已内建 `/_assets/attachments/** -> Radish.Api` 路由，避免该路径落到前端兜底路由。
 - 如果系统前面还有 `Nginx / Traefik / Caddy`，仍需确保该路径被继续放行到 Gateway，而不是被前端静态站点或默认首页吞掉。
 - Gateway 与 API 均不得代理或静态暴露整个 `/uploads/**` 用户存储根目录；只保留 `/uploads/DefaultIco/**` 可信内置资产。业务附件必须经过 `/_assets/attachments/**` 的状态与访问权限判定。
+- `/_assets/attachments/**` 是受控附件路由：Gateway 只负责转发；API 当前检查启用 / 删除状态，`IsPublic = false` 时只允许上传者或 `System / Admin` 读取。临时 token 使用独立的 `DownloadByToken` 入口，`Chat / Document / Wiki` 领域 ACL 仍是后续治理项。`/uploads/DefaultIco/**` 只从 `${FileStorage:Local:BasePath}/DefaultIco`（默认 `DataBases/Uploads/DefaultIco`）提供版本内置图标。
 
-#### 完整配置示例
+#### 配置真相源
 
-```json
-{
-  "ReverseProxy": {
-    "Routes": {
-      "api-route": {
-        "ClusterId": "apiCluster",
-        "Match": { "Path": "/api/{**catch-all}" }
-      },
-      "console-route": {
-        "ClusterId": "consoleCluster",
-        "Match": { "Path": "/console/{**catch-all}" },
-        "Transforms": [
-          { "PathRemovePrefix": "/console" },
-          { "RequestHeaderOriginalHost": "true" }
-        ]
-      },
-      "auth-account-route": {
-        "ClusterId": "authCluster",
-        "Match": { "Path": "/Account/{**catch-all}" },
-        "Transforms": [
-          { "RequestHeader": "X-Forwarded-Host", "Set": "{host}" },
-          { "RequestHeader": "X-Forwarded-Proto", "Set": "{scheme}" },
-          { "RequestHeader": "X-Forwarded-For", "Append": "{RemoteIpAddress}" }
-        ]
-      },
-      "frontend-root": {
-        "ClusterId": "frontendCluster",
-        "Match": { "Path": "/{**catch-all}" },
-        "Order": 1000,
-        "Transforms": [
-          { "RequestHeaderOriginalHost": "true" }
-        ]
-      }
-    },
-    "Clusters": {
-      "apiCluster": {
-        "Destinations": {
-          "api": { "Address": "http://localhost:5100" }
-        }
-      },
-      "authCluster": {
-        "Destinations": {
-          "auth": { "Address": "http://localhost:5200" }
-        }
-      },
-      "frontendCluster": {
-        "Destinations": {
-          "frontend": { "Address": "http://localhost:3000" }
-        }
-      },
-      "consoleCluster": {
-        "Destinations": {
-          "console": { "Address": "http://localhost:3100" }
-        }
-      }
-    }
-  }
-}
-```
-
-说明：
-
-- 当前主线不再维护独立的 Docs 前端项目或旧的 Docs 下游服务。
-- 固定项目文档统一收口到仓库 `Docs/`，由 `Radish.Api` 启动后同步到 WebOS“文档”应用；Gateway 当前仅保留 `/scalar` 等面向 API 文档与服务入口的代理能力。
+- 完整路由、顺序、变换与集群地址只以 `Radish.Gateway/appsettings.json` 为准；本页的路由表用于解释职责，不复制整段易漂移配置。
+- 当前主线不维护独立 Docs 前端或旧 Docs 下游服务；固定项目文档由 `Radish.Api` 同步给 WebOS“文档”应用，Gateway 只保留 `/scalar` 等 API 文档入口。
 
 #### 路由特性说明
 
-**1. Console 路由的路径转换**
+**1. Console 路由保留 base 前缀**
 
-Console 路由使用 `PathRemovePrefix` 转换，将 `/console/*` 转发到下游的 `/`：
+Console 路由不移除 `/console` 前缀，转发路径与浏览器请求保持一致：
 
 ```
 客户端请求: https://localhost:5000/console/dashboard
     ↓
-Gateway 转发: http://localhost:3100/dashboard
+Gateway 转发: http://localhost:3100/console/dashboard
 ```
 
-这样配合 Console 的 Vite `base: '/console/'` 配置，确保资源路径正确。
+这与 Console 的 Vite `base: '/console/'` 配置一致；重新引入 `PathRemovePrefix` 会破坏页面与静态资源路径。
 
 **2. Auth 路由的代理头**
 
@@ -309,8 +250,8 @@ Gateway 使用 YARP 实现反向代理，支持以下功能：
 - 自动转发请求头和查询参数
 
 **路径转换**：
-- `PathRemovePrefix`：移除路径前缀（如 Console 路由）
-- 保留原始路径（默认行为）
+- 当前正式路由默认保留原始路径；Console 必须把 `/console/**` 原样交给配置了 `base: '/console/'` 的 Vite 宿主
+- 只有下游明确以根路径承载且契约要求去前缀时才允许 `PathRemovePrefix`，不得把它套用到当前 Console 路由
 
 **请求头转换**：
 - `X-Forwarded-*` 头注入（Host、Proto、For）
@@ -678,15 +619,15 @@ docker compose up -d
 这样可以保证：
 
 - Gateway 公开地址、CORS、前端运行时回退地址保持一致
-- 测试环境的 Gateway TLS 证书可以自动生成并挂载复用
+- 测试与生产都由外层反向代理终止 TLS，Gateway 容器内保持 HTTP
 - 生产环境不会误把 Gateway 配成容器内 HTTPS
 - Auth 的 OIDC 证书与 Gateway 的公开入口口径不会分叉
 
 ### 生产环境注意事项
 
 1. **TLS / HTTPS 职责划分**：
-   - 测试部署：Gateway 容器内直接提供 HTTPS，可自动生成自签名测试证书
-   - 生产部署：TLS 由外部 `Nginx / Traefik / Caddy` 终止，Gateway 容器内仅提供 HTTP
+   - 测试与生产部署：TLS 由外部 `Nginx / Traefik / Caddy` 终止，Gateway 容器内仅提供 HTTP
+   - 只有本地容器验证可由 Gateway 使用开发证书直接提供 HTTPS
    - 若生产反代层已经处理 HTTPS，不要再要求 Gateway 容器额外暴露 `5001` 或自行做 TLS 重定向
 
 2. **性能优化**：
@@ -779,7 +720,7 @@ curl http://localhost:5200/health
 
 **A**: 检查以下配置：
 
-1. **路径转换**：确保配置了 `PathRemovePrefix`
+1. **路径转发**：确认没有配置 `PathRemovePrefix`，下游仍收到 `/console/**`
 2. **Vite base 配置**：确保 Console 的 `vite.config.ts` 中 `base: '/console/'`
 3. **WebSocket 支持**：确保配置了 `RequestHeaderOriginalHost`
 
@@ -791,7 +732,6 @@ curl http://localhost:5200/health
     "ClusterId": "consoleCluster",
     "Match": { "Path": "/console/{**catch-all}" },
     "Transforms": [
-      { "PathRemovePrefix": "/console" },
       { "RequestHeaderOriginalHost": "true" }
     ]
   }
@@ -856,13 +796,13 @@ SignalR 连接需要有效的 JWT Token：
 ```typescript
 // 前端代码
 import { hasAccessToken } from '@/services/auth';
+import { tokenService } from '@/services/tokenService';
 
 // 仅在已登录时建立连接
 if (hasAccessToken()) {
-  const token = localStorage.getItem('access_token');
   const connection = new HubConnectionBuilder()
-    .withUrl('https://localhost:5000/hubs/notification', {
-      accessTokenFactory: () => token || '',
+    .withUrl('/hub/notification', {
+      accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
     })
     .build();
 }
