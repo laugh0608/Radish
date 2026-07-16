@@ -2,6 +2,11 @@ import { type ChangeEvent, type ClipboardEvent, type ReactNode, useCallback, use
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
+import {
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
+  isSupportedAttachmentImageMimeType,
+} from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
@@ -820,6 +825,11 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
       return;
     }
 
+    if (!isSupportedAttachmentImageFile(file)) {
+      toast.error(t('chat.imageSendFailed'));
+      return;
+    }
+
     setUploadingImage(true);
     setImageUploadProgress(0);
 
@@ -887,7 +897,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
     }
 
     const clipboardItems = Array.from(event.clipboardData.items);
-    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const imageItem = clipboardItems.find((item) => isSupportedAttachmentImageMimeType(item.type));
     const pastedImage = imageItem?.getAsFile();
 
     if (!pastedImage) {
@@ -1510,7 +1520,7 @@ export const ChatApp = ({ onOpenUserProfile }: ChatAppProps = {}) => {
                   <input
                     ref={imageInputRef}
                     type="file"
-                    accept="image/*"
+                    accept={attachmentImageAccept}
                     className={styles.hiddenFileInput}
                     onChange={(event) => {
                       void handleImageSelected(event);

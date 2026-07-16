@@ -1,4 +1,6 @@
 using Radish.Common.CoreTool;
+using Microsoft.Extensions.Options;
+using Radish.Common.OptionTool;
 using Radish.Common.TimeTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.IRepository.Base;
@@ -22,6 +24,7 @@ public class FileCleanupJob
     private readonly TimeProvider _timeProvider;
     private readonly BusinessCalendar _businessCalendar;
     private readonly string _tempPath;
+    private readonly string _chunkTempPath;
     private readonly string _recycleBinPath;
 
     public FileCleanupJob(
@@ -29,7 +32,27 @@ public class FileCleanupJob
         IAttachmentReferenceInspector attachmentReferenceInspector,
         IFileStorage fileStorage,
         TimeProvider timeProvider,
-        BusinessCalendar businessCalendar)
+        BusinessCalendar businessCalendar,
+        IOptions<ChunkedUploadOptions> chunkedUploadOptions)
+        : this(
+            attachmentRepository,
+            attachmentReferenceInspector,
+            fileStorage,
+            timeProvider,
+            businessCalendar,
+            chunkedUploadOptions,
+            AppPathTool.GetDataBasesPath())
+    {
+    }
+
+    internal FileCleanupJob(
+        IBaseRepository<Attachment> attachmentRepository,
+        IAttachmentReferenceInspector attachmentReferenceInspector,
+        IFileStorage fileStorage,
+        TimeProvider timeProvider,
+        BusinessCalendar businessCalendar,
+        IOptions<ChunkedUploadOptions> chunkedUploadOptions,
+        string dataBasesPath)
     {
         _attachmentRepository = attachmentRepository;
         _attachmentReferenceInspector = attachmentReferenceInspector;
@@ -37,9 +60,15 @@ public class FileCleanupJob
         _timeProvider = timeProvider;
         _businessCalendar = businessCalendar;
 
-        var dataBasesPath = AppPathTool.GetDataBasesPath();
         _tempPath = Path.Combine(dataBasesPath, "Temp");
         _recycleBinPath = Path.Combine(dataBasesPath, "Recycle");
+        var configuredChunkPath = string.IsNullOrWhiteSpace(chunkedUploadOptions.Value.TempChunkPath)
+            ? "DataBases/Temp/Chunks"
+            : chunkedUploadOptions.Value.TempChunkPath;
+        var solutionRoot = AppPathTool.GetSolutionRootOrBasePath();
+        _chunkTempPath = Path.IsPathRooted(configuredChunkPath)
+            ? Path.GetFullPath(configuredChunkPath)
+            : Path.GetFullPath(Path.Combine(solutionRoot, configuredChunkPath));
 
         if (!Directory.Exists(_tempPath))
         {
@@ -144,6 +173,11 @@ public class FileCleanupJob
 
             foreach (var filePath in tempFiles)
             {
+                if (PathContainmentTool.IsSameOrDescendant(_chunkTempPath, filePath))
+                {
+                    continue;
+                }
+
                 try
                 {
                     var fileInfo = new FileInfo(filePath);
@@ -153,11 +187,16 @@ public class FileCleanupJob
                     {
                         // 移动到回收站（保持数据安全）
                         var relativePath = Path.GetRelativePath(_tempPath, filePath);
-                        var recyclePath = Path.Combine("Temp", relativePath);
-                        await MoveToRecycleBinAsync(recyclePath, "temp", _tempPath);
-
-                        cleanedCount++;
-                        Log.Information("[FileCleanup] 已将临时文件移至回收站：{FilePath}", relativePath);
+                        var moved = await MoveToRecycleBinAsync(
+                            relativePath,
+                            "temp",
+                            _tempPath,
+                            Path.Combine("Temp", relativePath));
+                        if (moved)
+                        {
+                            cleanedCount++;
+                            Log.Information("[FileCleanup] 已将临时文件移至回收站：{FilePath}", relativePath);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -337,7 +376,12 @@ public class FileCleanupJob
     /// <param name="relativePath">文件相对路径</param>
     /// <param name="category">分类（deleted/temp/orphan）</param>
     /// <param name="sourceBasePath">源文件基础路径（可选，用于临时文件等非标准路径）</param>
-    private async Task MoveToRecycleBinAsync(string relativePath, string category, string? sourceBasePath = null)
+    /// <param name="targetRelativePath">回收站内的相对路径；默认与源相对路径一致。</param>
+    private async Task<bool> MoveToRecycleBinAsync(
+        string relativePath,
+        string category,
+        string? sourceBasePath = null,
+        string? targetRelativePath = null)
     {
         // 如果提供了自定义基础路径，使用它；否则使用文件存储的路径
         var sourceFullPath = sourceBasePath != null
@@ -347,12 +391,16 @@ public class FileCleanupJob
         if (!File.Exists(sourceFullPath))
         {
             Log.Warning("[FileCleanup] 文件不存在，跳过：{FilePath}", sourceFullPath);
-            return;
+            return false;
         }
 
         // 构建回收站目标路径：DataBases/Recycle/{category}/{年月日}/{原始路径}
         var dateFolder = _businessCalendar.GetCurrentDate().ToString("yyyyMMdd");
-        var targetPath = Path.Combine(_recycleBinPath, category, dateFolder, relativePath);
+        var targetPath = Path.Combine(
+            _recycleBinPath,
+            category,
+            dateFolder,
+            targetRelativePath ?? relativePath);
 
         // 确保目标目录存在
         var targetDir = Path.GetDirectoryName(targetPath);
@@ -375,6 +423,7 @@ public class FileCleanupJob
 
         // 移动文件
         await Task.Run(() => File.Move(sourceFullPath, targetPath));
+        return true;
     }
 
     /// <summary>
@@ -390,6 +439,11 @@ public class FileCleanupJob
 
             foreach (var dir in directories)
             {
+                if (PathContainmentTool.IsSameOrDescendant(_chunkTempPath, dir))
+                {
+                    continue;
+                }
+
                 try
                 {
                     if (Directory.GetFiles(dir).Length == 0 &&

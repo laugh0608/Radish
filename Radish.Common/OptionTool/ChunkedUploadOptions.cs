@@ -7,6 +7,12 @@ namespace Radish.Common.OptionTool;
 /// </summary>
 public class ChunkedUploadOptions : IConfigurableOptions
 {
+    /// <summary>HTTP 传输层支持的最大分片大小（10 MiB）。</summary>
+    public const int TransportMaxChunkSize = 10 * 1024 * 1024;
+
+    /// <summary>包含 multipart 边界和字段开销的请求上限（11 MiB）。</summary>
+    public const long MultipartRequestSizeLimit = 11L * 1024 * 1024;
+
     /// <summary>
     /// 是否启用分片上传
     /// </summary>

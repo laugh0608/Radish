@@ -11,6 +11,7 @@ export interface ModalProps {
   size?: 'small' | 'medium' | 'large';
   closeOnOverlayClick?: boolean;
   closeOnEscape?: boolean;
+  closeDisabled?: boolean;
 }
 
 export const Modal = ({
@@ -22,10 +23,11 @@ export const Modal = ({
   footer,
   size = 'medium',
   closeOnOverlayClick = true,
-  closeOnEscape = true
+  closeOnEscape = true,
+  closeDisabled = false,
 }: ModalProps) => {
   useEffect(() => {
-    if (!isOpen || !closeOnEscape) return;
+    if (!isOpen || !closeOnEscape || closeDisabled) return;
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -35,7 +37,7 @@ export const Modal = ({
 
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, closeOnEscape, onClose]);
+  }, [isOpen, closeOnEscape, closeDisabled, onClose]);
 
   useEffect(() => {
     if (isOpen) {
@@ -52,7 +54,7 @@ export const Modal = ({
   if (!isOpen) return null;
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (closeOnOverlayClick && e.target === e.currentTarget) {
+    if (!closeDisabled && closeOnOverlayClick && e.target === e.currentTarget) {
       onClose();
     }
   };
@@ -69,6 +71,7 @@ export const Modal = ({
               onClick={onClose}
               aria-label={closeLabel}
               title={closeLabel}
+              disabled={closeDisabled}
             >
               ×
             </button>

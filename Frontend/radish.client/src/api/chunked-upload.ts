@@ -2,9 +2,18 @@
  * 分片上传相关的 API 调用
  */
 
-import { apiGet, apiPost, configureApiClient, getApiClientConfig } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  configureApiClient,
+  createApiResponseError,
+  getApiClientConfig,
+  parseApiResponseWithI18n,
+  type ApiResponse,
+} from '@radish/http';
 import type { AttachmentInfo } from '@/api/attachment';
 import { getApiBaseUrl } from '@/config/env';
+import { normalizePositiveLongIdKey } from '@/utils/longId';
 
 // 配置 API 客户端
 configureApiClient({
@@ -76,6 +85,78 @@ export interface UploadSession {
   createTime: string;
 }
 
+interface UploadSessionVoResponse {
+  voSessionId: string;
+  voFileName: string;
+  voTotalSize: number | string;
+  voChunkSize: number;
+  voTotalChunks: number;
+  voUploadedChunks: number;
+  voUploadedChunkIndexes: number[];
+  voProgress: number;
+  voStatus: string;
+  voAttachmentId?: string | number | null;
+  voExpiresAt: string;
+  voCreateTime: string;
+}
+
+export interface ChunkedUploadAttachmentInfo {
+  attachmentId: string;
+  fileName: string;
+  fileSize: number;
+  accessUrl: string;
+}
+
+function mapUploadSession(response: UploadSessionVoResponse): UploadSession {
+  const totalSize = typeof response.voTotalSize === 'number'
+    ? response.voTotalSize
+    : Number(response.voTotalSize);
+  if (
+    typeof response.voSessionId !== 'string'
+    || !Number.isSafeInteger(totalSize)
+    || totalSize <= 0
+    || !Array.isArray(response.voUploadedChunkIndexes)
+    || !response.voUploadedChunkIndexes.every(Number.isSafeInteger)
+  ) {
+    throw new Error('分片上传会话响应格式无效');
+  }
+
+  const attachmentId = response.voAttachmentId == null
+    ? undefined
+    : normalizePositiveLongIdKey(response.voAttachmentId) ?? undefined;
+  return {
+    sessionId: response.voSessionId,
+    fileName: response.voFileName,
+    totalSize,
+    chunkSize: response.voChunkSize,
+    totalChunks: response.voTotalChunks,
+    uploadedChunks: response.voUploadedChunks,
+    uploadedChunkIndexes: response.voUploadedChunkIndexes,
+    progress: response.voProgress,
+    status: response.voStatus,
+    attachmentId,
+    expiresAt: response.voExpiresAt,
+    createTime: response.voCreateTime,
+  };
+}
+
+function mapMergedAttachment(response: AttachmentInfo): ChunkedUploadAttachmentInfo {
+  const attachmentId = normalizePositiveLongIdKey(response.voId);
+  const fileSize = typeof response.voFileSize === 'number'
+    ? response.voFileSize
+    : Number(response.voFileSize);
+  if (!attachmentId || !Number.isSafeInteger(fileSize) || fileSize < 0) {
+    throw new Error('分片上传附件响应格式无效');
+  }
+
+  return {
+    attachmentId,
+    fileName: response.voOriginalName,
+    fileSize,
+    accessUrl: response.voUrl,
+  };
+}
+
 /**
  * 创建上传会话选项
  */
@@ -105,10 +186,6 @@ export interface CreateSessionOptions {
    */
   businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
 
-  /**
-   * 业务 ID（可选）
-   */
-  businessId?: string;
 }
 
 /**
@@ -159,19 +236,17 @@ export async function createSession(
     totalSize,
     mimeType,
     chunkSize = 2 * 1024 * 1024, // 默认 2MB
-    businessType = 'General',
-    businessId
+    businessType = 'General'
   } = options;
 
-  const response = await apiPost<UploadSession>(
+  const response = await apiPost<UploadSessionVoResponse>(
     '/api/v1/ChunkedUpload/CreateSession',
     {
       fileName,
       totalSize,
       mimeType,
       chunkSize,
-      businessType,
-      businessId
+      businessType
     },
     { withAuth: true }
   );
@@ -180,7 +255,7 @@ export async function createSession(
     throw new Error(response.message || '创建上传会话失败');
   }
 
-  return response.data;
+  return mapUploadSession(response.data);
 }
 
 /**
@@ -198,7 +273,8 @@ export async function uploadChunk(
   sessionId: string,
   chunkIndex: number,
   chunkBlob: Blob,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal,
 ): Promise<UploadSession> {
   const config = getApiClientConfig();
   const url = `${config.baseUrl}/api/v1/ChunkedUpload/UploadChunk`;
@@ -211,6 +287,31 @@ export async function uploadChunk(
   // 使用 XMLHttpRequest 以支持上传进度
   return new Promise<UploadSession>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
+    let settled = false;
+
+    const cleanup = () => signal?.removeEventListener('abort', handleSignalAbort);
+    const resolveOnce = (value: UploadSession) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(value);
+    };
+    const rejectOnce = (error: Error) => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(error);
+    };
+    function handleSignalAbort() {
+      xhr.abort();
+    }
+
+    if (signal?.aborted) {
+      rejectOnce(new Error('上传已取消'));
+      return;
+    }
+
+    signal?.addEventListener('abort', handleSignalAbort, { once: true });
 
     // 上传进度
     if (onProgress) {
@@ -226,33 +327,64 @@ export async function uploadChunk(
     xhr.addEventListener('load', () => {
       if (xhr.status >= 200 && xhr.status < 300) {
         try {
-          const json = JSON.parse(xhr.responseText);
-          // 假设后端返回的是标准 ApiResponse 格式
-          if (json.isSuccess && json.responseData) {
-            resolve(json.responseData);
+          const json = JSON.parse(xhr.responseText) as ApiResponse<UploadSessionVoResponse>;
+          if (typeof json?.isSuccess !== 'boolean') {
+            rejectOnce(new Error('解析响应失败'));
+            return;
+          }
+
+          const parsed = parseApiResponseWithI18n(json, (key, messageArguments) => (
+            config.translateMessage?.(key, messageArguments) ?? key
+          ));
+          parsed.httpStatus = xhr.status;
+          parsed.traceId ||= xhr.getResponseHeader('x-correlation-id') || undefined;
+          if (parsed.ok && parsed.data) {
+            resolveOnce(mapUploadSession(parsed.data));
           } else {
-            reject(new Error(json.messageInfo || '上传分片失败'));
+            rejectOnce(createApiResponseError(parsed, '上传分片失败'));
           }
         } catch {
-          reject(new Error('解析响应失败'));
+          rejectOnce(new Error('解析响应失败'));
         }
       } else {
-        reject(new Error(`上传分片失败: HTTP ${xhr.status}`));
+        try {
+          const json = JSON.parse(xhr.responseText) as ApiResponse<UploadSessionVoResponse>;
+          const parsed = parseApiResponseWithI18n(json, (key, messageArguments) => (
+            config.translateMessage?.(key, messageArguments) ?? key
+          ));
+          parsed.httpStatus = xhr.status;
+          parsed.traceId ||= xhr.getResponseHeader('x-correlation-id') || undefined;
+          rejectOnce(createApiResponseError(parsed, `上传分片失败: HTTP ${xhr.status}`));
+        } catch {
+          rejectOnce(new Error(`上传分片失败: HTTP ${xhr.status}`));
+        }
       }
     });
 
     // 上传错误
     xhr.addEventListener('error', () => {
-      reject(new Error('网络错误'));
+      rejectOnce(new Error('网络错误'));
+    });
+
+    // 请求超时
+    xhr.addEventListener('timeout', () => {
+      rejectOnce(new Error('上传分片超时'));
     });
 
     // 上传取消
     xhr.addEventListener('abort', () => {
-      reject(new Error('上传已取消'));
+      rejectOnce(new Error('上传已取消'));
     });
 
     // 发送请求
     xhr.open('POST', url);
+    xhr.timeout = config.timeout;
+    xhr.setRequestHeader('Accept', 'application/json');
+
+    const language = config.getLanguage?.()?.trim();
+    if (language) {
+      xhr.setRequestHeader('Accept-Language', language);
+    }
 
     // 添加认证头（从统一配置获取 token）
     const token = config.getToken?.();
@@ -272,7 +404,7 @@ export async function uploadChunk(
 export async function getSession(
   sessionId: string
 ): Promise<UploadSession> {
-  const response = await apiGet<UploadSession>(
+  const response = await apiGet<UploadSessionVoResponse>(
     `/api/v1/ChunkedUpload/GetSession?sessionId=${encodeURIComponent(sessionId)}`,
     { withAuth: true }
   );
@@ -281,7 +413,7 @@ export async function getSession(
     throw new Error(response.message || '获取上传会话失败');
   }
 
-  return response.data;
+  return mapUploadSession(response.data);
 }
 
 /**
@@ -291,7 +423,7 @@ export async function getSession(
  */
 export async function mergeChunks(
   options: MergeChunksOptions
-): Promise<AttachmentInfo> {
+): Promise<ChunkedUploadAttachmentInfo> {
   const {
     sessionId,
     generateThumbnail = true,
@@ -318,7 +450,7 @@ export async function mergeChunks(
     throw new Error(response.message || '合并分片失败');
   }
 
-  return response.data;
+  return mapMergedAttachment(response.data);
 }
 
 /**

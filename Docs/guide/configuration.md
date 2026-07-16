@@ -347,7 +347,7 @@ services:
       "Audio": 10485760
     },
     "AllowedExtensions": {
-      "Image": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg"],
+      "Image": [".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".ico"],
       "Document": [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md"],
       "Video": [".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"],
       "Audio": [".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma"]
@@ -380,8 +380,7 @@ services:
       }
     },
     "Deduplication": {
-      "Enable": true,
-      "HashAlgorithm": "SHA256"
+      "Enable": true
     }
   }
 }
@@ -390,10 +389,10 @@ services:
 **说明**：
 - `Type`：存储后端类型（`Local`/`MinIO`/`OSS`）
 - `Local.BasePath`：本地文件存储根目录（相对于仓库根目录）
-- `Local.BaseUrl`：底层静态文件暴露前缀，不再作为附件业务真值
+- `Local.BaseUrl`：版本内置 `DefaultIco` 的兼容路由前缀；用户附件不经该前缀直出，也不作为附件业务真值
 - `ImageProcessing.GenerateMultipleSizes`：是否生成多尺寸图片
 - `Watermark`：水印配置（默认关闭）
-- `Deduplication`：文件去重配置（默认启用）
+- `Deduplication.Enable`：是否在安全归属与处理语义一致时复用已有附件；内容哈希算法固定为 SHA-256，不接受运行时降级配置
 
 补充口径：
 

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Moq;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Service;
@@ -191,6 +192,81 @@ public class AttachmentReferenceInspectorTest
             referencedIds);
     }
 
+    [Theory]
+    [InlineData("/_assets/attachments/91001", 91001, true)]
+    [InlineData("https://radish.example/_assets/attachments/91002?cache=1#preview", 91002, true)]
+    [InlineData("/_assets/attachments/91003/thumbnail", 91003, true)]
+    [InlineData("https://radish.example/uploads/SiteFavicon/91004.ico", 91004, false)]
+    [InlineData("/_assets/attachments/91005/other", 91005, false)]
+    public async Task GetReferencedAttachmentIdsAsync_Should_Collect_Enabled_SiteFavicon_Asset_Reference(
+        string configuredValue,
+        long expectedAttachmentId,
+        bool expectedReferenced)
+    {
+        var systemConfigRepository = CreateSystemConfigRepositoryMock(new SystemConfigRecord
+        {
+            Id = 1,
+            Key = SystemConfigDefaults.SiteFaviconKey,
+            Value = configuredValue,
+            IsEnabled = true
+        });
+        var inspector = CreateInspector(systemConfigRepository: systemConfigRepository);
+
+        var referencedIds = await inspector.GetReferencedAttachmentIdsAsync(new[] { expectedAttachmentId });
+
+        Assert.Equal(expectedReferenced, referencedIds.Contains(expectedAttachmentId));
+    }
+
+    [Fact]
+    public async Task GetReferencedAttachmentIdsAsync_Should_Ignore_Disabled_SiteFavicon_Override()
+    {
+        var systemConfigRepository = CreateSystemConfigRepositoryMock(new SystemConfigRecord
+        {
+            Id = 1,
+            Key = SystemConfigDefaults.SiteFaviconKey,
+            Value = "/_assets/attachments/92001",
+            IsEnabled = false
+        });
+        var inspector = CreateInspector(systemConfigRepository: systemConfigRepository);
+
+        var referencedIds = await inspector.GetReferencedAttachmentIdsAsync(new long[] { 92001 });
+
+        Assert.Empty(referencedIds);
+    }
+
+    [Fact]
+    public async Task GetReferencedAttachmentIdsAsync_Should_Collect_Current_And_Rollbackable_Wiki_Content_References()
+    {
+        var inspector = CreateInspector(
+            wikiDocumentRepository: CreateRepositoryMock(new List<WikiDocument>
+            {
+                new()
+                {
+                    Id = 101,
+                    Title = "当前文档",
+                    Slug = "current",
+                    MarkdownContent = "![current](attachment://93001)",
+                    IsDeleted = false
+                }
+            }),
+            wikiDocumentRevisionRepository: CreateRepositoryMock(new List<WikiDocumentRevision>
+            {
+                new()
+                {
+                    Id = 201,
+                    DocumentId = 101,
+                    Version = 1,
+                    Title = "历史版本",
+                    MarkdownContent = "[rollback](attachment://93002)",
+                    SourceType = "Custom"
+                }
+            }));
+
+        var referencedIds = await inspector.GetReferencedAttachmentIdsAsync(new long[] { 93001, 93002, 93999 });
+
+        Assert.Equal(new HashSet<long> { 93001, 93002 }, referencedIds);
+    }
+
     private static AttachmentReferenceInspector CreateInspector(
         Mock<IBaseRepository<Sticker>>? stickerRepository = null,
         Mock<IBaseRepository<Post>>? postRepository = null,
@@ -204,10 +280,12 @@ public class AttachmentReferenceInspectorTest
         Mock<IBaseRepository<StickerGroup>>? stickerGroupRepository = null,
         Mock<IBaseRepository<Reaction>>? reactionRepository = null,
         Mock<IBaseRepository<WikiDocument>>? wikiDocumentRepository = null,
+        Mock<IBaseRepository<WikiDocumentRevision>>? wikiDocumentRevisionRepository = null,
         Mock<IBaseRepository<UserBrowseHistory>>? browseHistoryRepository = null,
         Mock<IBaseRepository<UserBenefit>>? userBenefitRepository = null,
         Mock<IBaseRepository<UserInventory>>? userInventoryRepository = null,
-        Mock<IBaseRepository<Order>>? orderRepository = null)
+        Mock<IBaseRepository<Order>>? orderRepository = null,
+        Mock<ISystemConfigRepository>? systemConfigRepository = null)
     {
         return new AttachmentReferenceInspector(
             (stickerRepository ?? CreateRepositoryMock(new List<Sticker>())).Object,
@@ -222,10 +300,12 @@ public class AttachmentReferenceInspectorTest
             (stickerGroupRepository ?? CreateRepositoryMock(new List<StickerGroup>())).Object,
             (reactionRepository ?? CreateRepositoryMock(new List<Reaction>())).Object,
             (wikiDocumentRepository ?? CreateRepositoryMock(new List<WikiDocument>())).Object,
+            (wikiDocumentRevisionRepository ?? CreateRepositoryMock(new List<WikiDocumentRevision>())).Object,
             (browseHistoryRepository ?? CreateRepositoryMock(new List<UserBrowseHistory>())).Object,
             (userBenefitRepository ?? CreateRepositoryMock(new List<UserBenefit>())).Object,
             (userInventoryRepository ?? CreateRepositoryMock(new List<UserInventory>())).Object,
-            (orderRepository ?? CreateRepositoryMock(new List<Order>())).Object);
+            (orderRepository ?? CreateRepositoryMock(new List<Order>())).Object,
+            (systemConfigRepository ?? CreateSystemConfigRepositoryMock()).Object);
     }
 
     private static Mock<IBaseRepository<TEntity>> CreateRepositoryMock<TEntity>(List<TEntity> result)
@@ -235,6 +315,15 @@ public class AttachmentReferenceInspectorTest
         repository
             .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<TEntity, bool>>>()))
             .ReturnsAsync(result);
+        return repository;
+    }
+
+    private static Mock<ISystemConfigRepository> CreateSystemConfigRepositoryMock(SystemConfigRecord? record = null)
+    {
+        var repository = new Mock<ISystemConfigRepository>(MockBehavior.Strict);
+        repository
+            .Setup(r => r.GetByKeyAsync(SystemConfigDefaults.SiteFaviconKey))
+            .ReturnsAsync(record);
         return repository;
     }
 }

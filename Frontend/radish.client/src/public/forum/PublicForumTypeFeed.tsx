@@ -265,10 +265,6 @@ export const PublicForumTypeFeed = ({
     void loadPosts();
   }, [currentPage, reloadToken, routeState.kind, sortBy, t]);
 
-  useEffect(() => {
-    document.title = `${t('desktop.apps.forum.name')} · ${header.title}`;
-  }, [header.title, t]);
-
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
   }, [currentPage, isCompactViewport, totalPages]);

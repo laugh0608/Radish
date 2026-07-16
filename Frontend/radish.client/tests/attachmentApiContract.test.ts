@@ -10,6 +10,7 @@ interface ParsedResponse<T = unknown> {
   message?: string;
   messageInfo?: string;
   messageKey?: string;
+  messageArguments?: unknown[];
   code?: string;
   statusCode?: number;
   httpStatus?: number;
@@ -37,7 +38,7 @@ class TestApiResponseError extends Error {
 }
 
 interface XhrScenario {
-  event: 'load' | 'error' | 'abort' | 'timeout';
+  event: 'load' | 'error' | 'abort' | 'timeout' | 'pending';
   status?: number;
   responseText?: string;
   responseHeaders?: Record<string, string>;
@@ -62,6 +63,7 @@ class MockXmlHttpRequest {
   timeout = 0;
   method = '';
   url = '';
+  sendCount = 0;
 
   constructor() {
     const scenario = MockXmlHttpRequest.scenarios.shift();
@@ -96,7 +98,14 @@ class MockXmlHttpRequest {
   }
 
   send(): void {
-    queueMicrotask(() => this.listeners.get(this.scenario.event)?.());
+    this.sendCount += 1;
+    if (this.scenario.event !== 'pending') {
+      queueMicrotask(() => this.listeners.get(this.scenario.event)?.());
+    }
+  }
+
+  abort(): void {
+    queueMicrotask(() => this.listeners.get('abort')?.());
   }
 }
 
@@ -108,7 +117,18 @@ const defaultTranslations: Record<string, string> = {
   'attachment.api.uploadCancelled': 'Upload cancelled',
   'attachment.api.deleteFailed': 'Delete failed',
   'profile.attachments.loadFailed': 'Failed to load attachments',
+  'profile.avatar.setAvatarFailed': 'Failed to set avatar',
+  'profile.avatar.removeAvatarFailed': 'Failed to remove avatar',
+  'error.attachment.upload_forbidden': 'You cannot use this attachment as your avatar.',
+  'error.attachment.file_too_large': 'The selected file exceeds the {{0}} limit.',
 };
+
+function translateMessage(key: string, messageArguments?: readonly unknown[]): string | undefined {
+  const template = defaultTranslations[key];
+  return template?.replace(/\{\{(\d+)\}\}/g, (_, index: string) => (
+    String(messageArguments?.[Number(index)] ?? '')
+  ));
+}
 
 const harness = {
   config: {
@@ -116,7 +136,7 @@ const harness = {
     timeout: 3456,
     getToken: () => 'access-token',
     getLanguage: () => 'en-US',
-    translateMessage: (key: string) => defaultTranslations[key],
+    translateMessage,
   },
   apiGet: async (): Promise<ParsedResponse> => ({ ok: true, data: {} }),
   apiDelete: async (): Promise<ParsedResponse> => ({ ok: true }),
@@ -131,17 +151,21 @@ const harness = {
     responseData?: T;
     messageInfo?: string;
     messageKey?: string;
+    messageArguments?: unknown[];
     code?: string;
     statusCode?: number;
     traceId?: string;
-  }, translate: (key: string) => string): ParsedResponse<T> => {
-    const localized = response.messageKey ? translate(response.messageKey) : undefined;
+  }, translate: (key: string, messageArguments?: readonly unknown[]) => string): ParsedResponse<T> => {
+    const localized = response.messageKey
+      ? translate(response.messageKey, response.messageArguments)
+      : undefined;
     return response.isSuccess
       ? {
           ok: true,
           data: response.responseData,
           messageInfo: response.messageInfo,
           messageKey: response.messageKey,
+          messageArguments: response.messageArguments,
           statusCode: response.statusCode,
           traceId: response.traceId,
         }
@@ -152,6 +176,7 @@ const harness = {
             : response.messageInfo,
           messageInfo: response.messageInfo,
           messageKey: response.messageKey,
+          messageArguments: response.messageArguments,
           code: response.code,
           statusCode: response.statusCode,
           traceId: response.traceId,
@@ -211,9 +236,14 @@ await bundle.close();
 const chunk = generated.output.find((item) => item.type === 'chunk');
 assert.ok(chunk && chunk.type === 'chunk');
 const attachmentApi = await import(`data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`) as {
-  uploadImage: (options: { file: File }, t: (key: string) => string) => Promise<unknown>;
+  uploadImage: (options: { file: File; signal?: AbortSignal }, t: (key: string) => string) => Promise<unknown>;
   getMyAttachments: () => Promise<unknown>;
   deleteAttachment: (id: string, t: (key: string) => string) => Promise<void>;
+  setMyAvatar: (
+    id: string | null,
+    t: (key: string) => string,
+    signal?: AbortSignal,
+  ) => Promise<void>;
 };
 
 function messageModel(options: {
@@ -222,6 +252,7 @@ function messageModel(options: {
   data?: unknown;
   message?: string;
   messageKey?: string;
+  messageArguments?: unknown[];
   code?: string;
   traceId?: string;
 }): string {
@@ -231,6 +262,7 @@ function messageModel(options: {
     responseData: options.data,
     messageInfo: options.message,
     messageKey: options.messageKey,
+    messageArguments: options.messageArguments,
     code: options.code,
     traceId: options.traceId,
   });
@@ -238,20 +270,6 @@ function messageModel(options: {
 
 function t(key: string): string {
   return defaultTranslations[key] ?? key;
-}
-
-async function withoutRetryDelay<T>(action: () => Promise<T>): Promise<T> {
-  const originalSetTimeout = globalThis.setTimeout;
-  globalThis.setTimeout = ((callback: (...args: unknown[]) => void) => {
-    queueMicrotask(callback);
-    return 0 as unknown as ReturnType<typeof setTimeout>;
-  }) as typeof setTimeout;
-
-  try {
-    return await action();
-  } finally {
-    globalThis.setTimeout = originalSetTimeout;
-  }
 }
 
 beforeEach(() => {
@@ -262,7 +280,7 @@ beforeEach(() => {
     timeout: 3456,
     getToken: () => 'access-token',
     getLanguage: () => 'en-US',
-    translateMessage: (key: string) => defaultTranslations[key],
+    translateMessage,
   });
   harness.apiGet = async () => ({ ok: true, data: {} });
   harness.apiDelete = async () => ({ ok: true });
@@ -333,26 +351,27 @@ test('400 MessageModel 应保留结构化错误且不得触发重试', async () 
   assert.equal(MockXmlHttpRequest.instances.length, 1);
 });
 
-test('网络失败与明确可恢复 5xx 才重试，业务 4xx 和非 JSON 响应不重试', async () => {
-  MockXmlHttpRequest.scenarios = [
-    { event: 'error' },
-    {
-      event: 'load',
-      status: 503,
-      responseText: messageModel({ success: false, status: 503, message: 'temporarily unavailable' }),
-    },
-    {
-      event: 'load',
-      status: 200,
-      responseText: messageModel({ success: true, status: 200, data: { voId: '99' } }),
-    },
-  ];
+test('网络、5xx、4xx 与非 JSON 失败均只提交一次并交由用户手动重试', async () => {
+  MockXmlHttpRequest.scenarios = [{ event: 'error' }];
+  await assert.rejects(
+    attachmentApi.uploadImage({ file: new File(['network'], 'network.png') }, t),
+    (error: unknown) => error instanceof Error && error.message === 'Network request failed',
+  );
+  assert.equal(MockXmlHttpRequest.instances.length, 1);
+  assert.equal(MockXmlHttpRequest.instances[0]?.sendCount, 1);
 
-  const result = await withoutRetryDelay(() => attachmentApi.uploadImage({
-    file: new File(['retry'], 'retry.png'),
-  }, t));
-  assert.deepEqual(result, { voId: '99' });
-  assert.equal(MockXmlHttpRequest.instances.length, 3);
+  MockXmlHttpRequest.scenarios = [{
+    event: 'load',
+    status: 503,
+    responseText: messageModel({ success: false, status: 503, message: 'temporarily unavailable' }),
+  }];
+  MockXmlHttpRequest.instances = [];
+  await assert.rejects(
+    attachmentApi.uploadImage({ file: new File(['server'], 'server.png') }, t),
+    (error: unknown) => error instanceof TestApiResponseError && error.httpStatus === 503,
+  );
+  assert.equal(MockXmlHttpRequest.instances.length, 1);
+  assert.equal(MockXmlHttpRequest.instances[0]?.sendCount, 1);
 
   MockXmlHttpRequest.scenarios = [{ event: 'load', status: 400, responseText: '<html>bad request</html>' }];
   MockXmlHttpRequest.instances = [];
@@ -366,6 +385,64 @@ test('网络失败与明确可恢复 5xx 才重试，业务 4xx 和非 JSON 响�
     },
   );
   assert.equal(MockXmlHttpRequest.instances.length, 1);
+  assert.equal(MockXmlHttpRequest.instances[0]?.sendCount, 1);
+});
+
+test('上传应保留动态消息参数并交给本地化函数格式化', async () => {
+  MockXmlHttpRequest.scenarios = [{
+    event: 'load',
+    status: 413,
+    responseText: messageModel({
+      success: false,
+      status: 413,
+      message: 'server fallback',
+      messageKey: 'error.attachment.file_too_large',
+      messageArguments: ['5 MB'],
+      code: 'Attachment.FileTooLarge',
+    }),
+  }];
+
+  await assert.rejects(
+    attachmentApi.uploadImage({ file: new File(['large'], 'large.png') }, t),
+    (error: unknown) => {
+      assert.ok(error instanceof TestApiResponseError);
+      assert.equal(error.message, 'The selected file exceeds the 5 MB limit.');
+      return true;
+    },
+  );
+  assert.equal(MockXmlHttpRequest.instances.length, 1);
+});
+
+test('AbortSignal 在发送前与发送中都应取消上传且不产生重试', async () => {
+  const preAborted = new AbortController();
+  preAborted.abort();
+  MockXmlHttpRequest.scenarios = [{ event: 'pending' }];
+
+  await assert.rejects(
+    attachmentApi.uploadImage({
+      file: new File(['pre'], 'pre.png'),
+      signal: preAborted.signal,
+    }, t),
+    (error: unknown) => error instanceof Error && error.message === 'Upload cancelled',
+  );
+  assert.equal(MockXmlHttpRequest.instances.length, 1);
+  assert.equal(MockXmlHttpRequest.instances[0]?.sendCount, 0);
+
+  const active = new AbortController();
+  MockXmlHttpRequest.scenarios = [{ event: 'pending' }];
+  MockXmlHttpRequest.instances = [];
+  const uploadPromise = attachmentApi.uploadImage({
+    file: new File(['active'], 'active.png'),
+    signal: active.signal,
+  }, t);
+  active.abort();
+
+  await assert.rejects(
+    uploadPromise,
+    (error: unknown) => error instanceof Error && error.message === 'Upload cancelled',
+  );
+  assert.equal(MockXmlHttpRequest.instances.length, 1);
+  assert.equal(MockXmlHttpRequest.instances[0]?.sendCount, 1);
 });
 
 test('取消上传应使用调用方本地化 fallback 且不重试', async () => {
@@ -412,6 +489,41 @@ test('附件列表和删除 API 应将解析后的响应直接提升为 ApiRespo
     assert.ok(error instanceof TestApiResponseError);
     assert.equal(error.code, 'ATTACHMENT_DELETE_DENIED');
     assert.equal(error.httpStatus, 409);
+    return true;
+  });
+});
+
+test('头像绑定应复用统一客户端并保留结构化错误与取消信号', async () => {
+  const controller = new AbortController();
+  let requestArguments: unknown[] = [];
+  harness.apiPost = async (...args: unknown[]) => {
+    requestArguments = args;
+    return { ok: true };
+  };
+
+  await attachmentApi.setMyAvatar('9223372036854775001', t, controller.signal);
+
+  assert.equal(requestArguments[0], '/api/v1/User/SetMyAvatar');
+  assert.deepEqual(requestArguments[1], { attachmentId: '9223372036854775001' });
+  assert.deepEqual(requestArguments[2], { withAuth: true, signal: controller.signal });
+
+  harness.apiPost = async () => ({
+    ok: false,
+    message: 'You cannot use this attachment as your avatar.',
+    messageInfo: '无权设置该附件为头像',
+    messageKey: 'error.attachment.upload_forbidden',
+    code: 'Attachment.UploadForbidden',
+    statusCode: 403,
+    httpStatus: 403,
+    traceId: 'trace-avatar',
+  });
+
+  await assert.rejects(attachmentApi.setMyAvatar(null, t), (error: unknown) => {
+    assert.ok(error instanceof TestApiResponseError);
+    assert.equal(error.code, 'Attachment.UploadForbidden');
+    assert.equal(error.messageKey, 'error.attachment.upload_forbidden');
+    assert.equal(error.httpStatus, 403);
+    assert.equal(error.traceId, 'trace-avatar');
     return true;
   });
 });

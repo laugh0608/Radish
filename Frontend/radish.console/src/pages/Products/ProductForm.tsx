@@ -15,6 +15,8 @@ import {
   Space,
   PlusOutlined,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
@@ -26,7 +28,10 @@ import type {
   CreateProductDto,
   UpdateProductDto,
 } from '../../api/types';
-import { uploadAttachmentImage } from '../../api/attachmentApi';
+import {
+  uploadAttachmentImage,
+  type ConsoleAttachmentBusinessType,
+} from '../../api/attachmentApi';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import dayjs, { type Dayjs } from 'dayjs';
@@ -262,7 +267,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   };
 
   const createUploadHandler = (
-    businessType: string,
+    businessType: ConsoleAttachmentBusinessType,
     setUploading: (value: boolean) => void,
     setPreview: (value: string | undefined) => void,
     fieldName: 'iconAttachmentId' | 'coverAttachmentId'
@@ -273,9 +278,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
       const error = new Error(t('products.form.upload.imageOnly'));
       options.onError?.(error);
@@ -697,7 +700,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
             <Space wrap>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('ProductIcon', setIconUploading, setIconPreviewUrl, 'iconAttachmentId')}
                 disabled={iconUploading || loading}
@@ -753,7 +756,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
             <Space wrap>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('ProductCover', setCoverUploading, setCoverPreviewUrl, 'coverAttachmentId')}
                 disabled={coverUploading || loading}

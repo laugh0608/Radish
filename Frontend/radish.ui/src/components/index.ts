@@ -79,7 +79,11 @@ export type {
 } from './ChunkedFileUpload/ChunkedFileUpload';
 
 export { ImageCropper } from './ImageCropper/ImageCropper';
-export type { ImageCropperLabels, ImageCropperProps } from './ImageCropper/ImageCropper';
+export type {
+  ImageCropperLabels,
+  ImageCropperProcessingChangeHandler,
+  ImageCropperProps,
+} from './ImageCropper/ImageCropper';
 
 export { Toast, ToastContainer } from './Toast/Toast';
 export { toast, toastManager } from './Toast';

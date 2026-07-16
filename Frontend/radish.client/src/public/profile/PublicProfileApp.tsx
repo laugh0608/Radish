@@ -29,11 +29,11 @@ import {
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
 import {
-  applyPublicStructuredData,
   buildProfilePageStructuredData,
-  removePublicStructuredData,
 } from '../publicStructuredData';
-import { buildPublicShareUrl } from '../publicHead';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
+import { isCurrentProfileHeadSource } from '../publicHeadSourceIdentity';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import {
@@ -430,49 +430,47 @@ export const PublicProfileApp = ({
     void loadContent();
   }, [contentReloadToken, onNavigate, profile, profileRouteIdentifier, route.page, route.tab]);
 
-  useEffect(() => {
-    if (loadingProfile) {
-      return;
-    }
-
-    const titleName = profile
-      ? resolveVisibleUserHandle(
-          profile,
-          resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
-        ) || resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
-      : null;
-    const nextTitle = titleName
-      ? `${titleName} · ${t('profile.public.title')}`
-      : t('profile.public.title');
-
-    document.title = nextTitle;
-  }, [loadingProfile, profile, route.userId, t]);
-
   const avatarUrl = useMemo(
     () => resolveMediaUrl(profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl),
     [profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]
   );
 
-  useEffect(() => {
-    if (!profile) {
-      removePublicStructuredData();
-      return;
+  const publicHeadSnapshot = useMemo(() => {
+    if (!profile || !isCurrentProfileHeadSource(route, profile)) {
+      return null;
     }
 
-    applyPublicStructuredData(buildProfilePageStructuredData({
+    const canonicalRoute: PublicProfileRoute = {
+      kind: 'detail',
+      userId: profileRouteIdentifier,
+      tab: route.tab,
+      page: route.page,
+    };
+    const canonicalPath = buildPublicProfilePath(canonicalRoute);
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'profile', route: canonicalRoute }, t);
+    const visibleName = resolveVisibleUserDisplayName(
       profile,
-      stats,
-      imageUrl: avatarUrl,
-      canonicalPath: buildPublicProfilePath({
-        kind: 'detail',
-        userId: profileRouteIdentifier,
-        tab: route.tab,
-        page: route.page,
-      }),
-    }));
+      t('common.userFallback', { id: route.userId }),
+    );
+    const titleName = resolveVisibleUserHandle(profile, visibleName) || visibleName;
+    const head = {
+      ...routeHead,
+      title: `${titleName} · ${t('profile.public.title')}`,
+      description: routeHead.description,
+      imageUrl: avatarUrl || undefined,
+    };
 
-    return removePublicStructuredData;
-  }, [avatarUrl, profile, profileRouteIdentifier, route.page, route.tab, stats]);
+    return {
+      head,
+      structuredData: buildProfilePageStructuredData({
+        profile,
+        stats,
+        imageUrl: avatarUrl,
+        canonicalPath,
+      }),
+    };
+  }, [avatarUrl, profile, profileRouteIdentifier, route, stats, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   const displayName = profile
     ? resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))

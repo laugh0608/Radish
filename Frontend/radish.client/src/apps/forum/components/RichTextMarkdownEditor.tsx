@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode, type ClipboardEvent } from 'react';
 import { Icon } from '@radish/ui/icon';
 import {
+  attachmentImageAccept,
   buildAttachmentMarkdownUrl,
+  isSupportedAttachmentImageMimeType,
   sanitizeMarkdownLinkHref,
   type MarkdownDocumentUploadResult,
   type MarkdownEditorLabels,
@@ -133,7 +135,7 @@ export const RichTextMarkdownEditor = ({
 
   const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
     const clipboardItems = Array.from(event.clipboardData.items);
-    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const imageItem = clipboardItems.find((item) => isSupportedAttachmentImageMimeType(item.type));
     const pastedImage = imageItem?.getAsFile();
 
     if (pastedImage) {
@@ -319,7 +321,7 @@ export const RichTextMarkdownEditor = ({
       <input
         ref={imageInputRef}
         type="file"
-        accept="image/*"
+        accept={attachmentImageAccept}
         hidden
         disabled={disabled || uploading}
         onChange={(event) => {

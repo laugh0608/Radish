@@ -205,7 +205,7 @@ export const enCommunity = {
   'error.forum.publish_submission_id_invalid': 'The submission identifier is invalid. Refresh and submit again.',
   'error.forum.publish_submission_conflict': 'This submission conflicts with an existing request. Refresh and submit again.',
   'error.forum.publish_submission_processing': 'Your content is still being submitted. Check the result shortly.',
-  'error.forum.publish_rate_limited': 'You are publishing too frequently. Try again later.',
+  'error.forum.publish_rate_limited': 'You are submitting too frequently. Try again in {{0}} seconds.',
   'circle.rail.label': 'Circle task context',
   'circle.rail.contextKicker': 'Current scope',
   'circle.rail.contextTitle': 'Relation context',

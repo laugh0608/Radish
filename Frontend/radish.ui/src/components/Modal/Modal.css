@@ -98,9 +98,14 @@
     color var(--theme-transition-standard, 220ms ease);
 }
 
-.radish-modal-close:hover {
+.radish-modal-close:hover:not(:disabled) {
   background-color: color-mix(in srgb, var(--theme-bg-muted, #e1e7e8) 72%, white 28%);
   color: var(--theme-text-primary, #23313b);
+}
+
+.radish-modal-close:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .radish-modal-body {

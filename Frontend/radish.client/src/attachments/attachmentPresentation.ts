@@ -12,11 +12,16 @@ const businessTypeKeys: Readonly<Record<string, string>> = {
 };
 
 const uploadErrorCodes = new Set([
+  'Attachment.NotFound',
   'Attachment.FileEmpty',
   'Attachment.ImageTypeUnsupported',
   'Attachment.DocumentTypeUnsupported',
+  'Attachment.BusinessTypeUnsupported',
   'Attachment.UploadForbidden',
   'Attachment.RateLimited',
+  'Attachment.ConcurrentUploadLimitReached',
+  'Attachment.UploadFrequencyLimitReached',
+  'Attachment.DailyUploadSizeLimitReached',
   'Attachment.FileTooLarge',
   'Attachment.UnsupportedMediaType',
   'Attachment.ContentMismatch',
@@ -25,11 +30,16 @@ const uploadErrorCodes = new Set([
 ]);
 
 const uploadErrorMessageKeys = new Set([
+  'error.attachment.not_found',
   'error.attachment.file_empty',
   'error.attachment.image_type_unsupported',
   'error.attachment.document_type_unsupported',
+  'error.attachment.business_type_unsupported',
   'error.attachment.upload_forbidden',
   'error.attachment.rate_limited',
+  'error.attachment.concurrent_upload_limit_reached',
+  'error.attachment.upload_frequency_limit_reached',
+  'error.attachment.daily_upload_size_limit_reached',
   'error.attachment.file_too_large',
   'error.attachment.unsupported_media_type',
   'error.attachment.content_mismatch',

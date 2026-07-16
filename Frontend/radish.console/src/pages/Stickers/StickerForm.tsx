@@ -9,6 +9,8 @@ import {
   PlusOutlined,
   Space,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
@@ -57,9 +59,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
       const error = new Error('仅支持上传图片文件');
       options.onError?.(error);
@@ -284,7 +284,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
 
             <Space>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={handleImageUpload}
                 disabled={imageUploading || loading}

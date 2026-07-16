@@ -1,3 +1,4 @@
+using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
 using Radish.IService;
 using Radish.Model;
@@ -52,6 +53,7 @@ public class ForumContentWriteService : IForumContentWriteService
         _commentService = commentService;
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<long>> PublishPostAsync(
         Post post,
         CreatePollDto? poll,
@@ -96,43 +98,24 @@ public class ForumContentWriteService : IForumContentWriteService
 
         EnsurePostPublishStarted(beginResult);
 
-        long? createdPostId = null;
-        try
-        {
-            createdPostId = await _postService.PublishPostAsync(
-                post,
-                poll,
-                lottery,
-                isQuestion,
-                tagNames,
-                allowCreateTag);
+        var createdPostId = await _postService.PublishPostAsync(
+            post,
+            poll,
+            lottery,
+            isQuestion,
+            tagNames,
+            allowCreateTag);
 
-            await CompleteSuccessAsync(
-                beginResult,
-                ContentSubmissionResultTypes.Post,
-                createdPostId.Value,
-                post.PublicId);
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.Post,
+            createdPostId,
+            post.PublicId);
 
-            return ContentWriteResult<long>.CreatedResult(createdPostId.Value);
-        }
-        catch (Exception ex)
-        {
-            if (createdPostId.HasValue)
-            {
-                await CompleteSuccessAsync(
-                    beginResult,
-                    ContentSubmissionResultTypes.Post,
-                    createdPostId.Value,
-                    post.PublicId);
-
-                return ContentWriteResult<long>.CreatedResult(createdPostId.Value);
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        return ContentWriteResult<long>.CreatedResult(createdPostId);
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<CommentCreateResult>> CreateCommentAsync(
         Comment comment,
         string? clientSubmissionId)
@@ -176,52 +159,22 @@ public class ForumContentWriteService : IForumContentWriteService
 
         EnsureStarted(beginResult);
 
-        long? createdCommentId = null;
-        CommentHighlightRecheckResultVo? createdHighlightRecheckResult = null;
-        try
+        var (createdCommentId, createdHighlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.Comment,
+            createdCommentId,
+            null);
+
+        return ContentWriteResult<CommentCreateResult>.CreatedResult(new CommentCreateResult
         {
-            var (newCommentId, highlightRecheckResult) = await _commentService.AddCommentAsync(comment);
-            createdCommentId = newCommentId;
-            createdHighlightRecheckResult = highlightRecheckResult;
-
-            await CompleteSuccessAsync(
-                beginResult,
-                ContentSubmissionResultTypes.Comment,
-                createdCommentId.Value,
-                null);
-
-            return ContentWriteResult<CommentCreateResult>.CreatedResult(new CommentCreateResult
-            {
-                CommentId = createdCommentId.Value,
-                HighlightRecheckResult = createdHighlightRecheckResult
-            });
-        }
-        catch (Exception ex)
-        {
-            if (createdCommentId.HasValue)
-            {
-                await CompleteSuccessAsync(
-                    beginResult,
-                    ContentSubmissionResultTypes.Comment,
-                    createdCommentId.Value,
-                    null);
-
-                return ContentWriteResult<CommentCreateResult>.CreatedResult(new CommentCreateResult
-                {
-                    CommentId = createdCommentId.Value,
-                    HighlightRecheckResult = createdHighlightRecheckResult ?? new CommentHighlightRecheckResultVo
-                    {
-                        VoPostId = comment.PostId,
-                        VoChanged = false
-                    }
-                });
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+            CommentId = createdCommentId,
+            HighlightRecheckResult = createdHighlightRecheckResult
+        });
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<PostQuestionVo>> AddAnswerAsync(
         long postId,
         string content,
@@ -260,36 +213,17 @@ public class ForumContentWriteService : IForumContentWriteService
 
         EnsureStarted(beginResult);
 
-        PostQuestionVo? createdQuestion = null;
-        try
-        {
-            createdQuestion = await _postService.AddAnswerAsync(postId, content, authorId, authorName, tenantId);
-            await CompleteSuccessAsync(
-                beginResult,
-                ContentSubmissionResultTypes.PostQuestion,
-                postId,
-                null);
+        var createdQuestion = await _postService.AddAnswerAsync(postId, content, authorId, authorName, tenantId);
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.PostQuestion,
+            postId,
+            null);
 
-            return ContentWriteResult<PostQuestionVo>.CreatedResult(createdQuestion);
-        }
-        catch (Exception ex)
-        {
-            if (createdQuestion != null)
-            {
-                await CompleteSuccessAsync(
-                    beginResult,
-                    ContentSubmissionResultTypes.PostQuestion,
-                    postId,
-                    null);
-
-                return ContentWriteResult<PostQuestionVo>.CreatedResult(createdQuestion);
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        return ContentWriteResult<PostQuestionVo>.CreatedResult(createdQuestion);
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<PostEditResult>> UpdatePostAsync(
         long tenantId,
         long postId,
@@ -343,37 +277,22 @@ public class ForumContentWriteService : IForumContentWriteService
                 "内容没有变化，无需保存");
         }
 
-        var postUpdated = false;
-        try
-        {
-            await _postService.UpdatePostAsync(
-                postId,
-                title,
-                content,
-                categoryId,
-                tagNames,
-                allowCreateTag,
-                operatorId,
-                operatorName,
-                isAdmin);
-            postUpdated = true;
+        await _postService.UpdatePostAsync(
+            postId,
+            title,
+            content,
+            categoryId,
+            tagNames,
+            allowCreateTag,
+            operatorId,
+            operatorName,
+            isAdmin);
 
-            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
-            return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
-        }
-        catch (Exception ex)
-        {
-            if (postUpdated)
-            {
-                await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
-                return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
+        return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<CommentEditResult>> UpdateCommentAsync(
         long tenantId,
         long commentId,
@@ -422,35 +341,19 @@ public class ForumContentWriteService : IForumContentWriteService
                 "内容没有变化，无需保存");
         }
 
-        var commentUpdated = false;
-        try
+        var (success, message) = await _commentService.UpdateCommentAsync(
+            commentId,
+            content,
+            operatorId,
+            operatorName,
+            isAdmin);
+        if (!success)
         {
-            var (success, message) = await _commentService.UpdateCommentAsync(
-                commentId,
-                content,
-                operatorId,
-                operatorName,
-                isAdmin);
-            if (!success)
-            {
-                throw new InvalidOperationException(message);
-            }
-
-            commentUpdated = true;
-            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
-            return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment), message);
+            throw new InvalidOperationException(message);
         }
-        catch (Exception ex)
-        {
-            if (commentUpdated)
-            {
-                await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
-                return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment));
-            }
 
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
+        return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment), message);
     }
 
     private async Task<PostQuestionVo> ResolveQuestionAsync(long postId, long viewerUserId)
@@ -486,28 +389,28 @@ public class ForumContentWriteService : IForumContentWriteService
 
         throw beginResult.Status switch
         {
-            ContentSubmissionBeginStatus.InvalidKey => CreatePublishSubmissionException(
+            ContentSubmissionBeginStatus.InvalidKey => CreateSubmissionException(
                 beginResult,
                 HttpStatusCodeEnum.BadRequest,
                 ForumPublishErrorCodes.SubmissionIdInvalid,
                 "提交标识格式无效，请刷新后重新提交"),
-            ContentSubmissionBeginStatus.Conflict => CreatePublishSubmissionException(
+            ContentSubmissionBeginStatus.Conflict => CreateSubmissionException(
                 beginResult,
                 HttpStatusCodeEnum.Conflict,
                 ForumPublishErrorCodes.SubmissionConflict,
                 "提交标识已被其他内容使用，请刷新后重新提交"),
-            ContentSubmissionBeginStatus.Processing => CreatePublishSubmissionException(
+            ContentSubmissionBeginStatus.Processing => CreateSubmissionException(
                 beginResult,
                 HttpStatusCodeEnum.Conflict,
                 ForumPublishErrorCodes.SubmissionProcessing,
                 "内容正在提交，请稍后确认"),
-            ContentSubmissionBeginStatus.FrequencyLimited => CreatePublishSubmissionException(
+            ContentSubmissionBeginStatus.FrequencyLimited => CreateSubmissionException(
                 beginResult,
                 HttpStatusCodeEnum.TooManyRequests,
                 ForumPublishErrorCodes.RateLimited,
                 "发布过于频繁，请稍后重试"),
             ContentSubmissionBeginStatus.Succeeded or ContentSubmissionBeginStatus.DuplicateContent =>
-                CreatePublishSubmissionException(
+                CreateSubmissionException(
                     beginResult,
                     HttpStatusCodeEnum.Conflict,
                     ForumPublishErrorCodes.SubmissionConflict,
@@ -724,17 +627,23 @@ public class ForumContentWriteService : IForumContentWriteService
             ForumPublishErrorCodes.ResolveMessageKey(errorCode));
     }
 
-    private static BusinessException CreatePublishSubmissionException(
+    private static BusinessException CreateSubmissionException(
         ContentSubmissionBeginResult beginResult,
         HttpStatusCodeEnum statusCode,
         string errorCode,
         string fallbackMessage)
     {
+        object[] messageArguments = errorCode == ForumPublishErrorCodes.RateLimited
+            ? [beginResult.RetryAfterSeconds ?? throw new InvalidOperationException(
+                "内容提交频率限制结果缺少 RetryAfterSeconds")]
+            : [];
+
         return new BusinessException(
             beginResult.Message ?? fallbackMessage,
             (int)statusCode,
             errorCode,
-            ForumPublishErrorCodes.ResolveMessageKey(errorCode));
+            ForumPublishErrorCodes.ResolveMessageKey(errorCode),
+            messageArguments);
     }
 
     private static void EnsureStarted(ContentSubmissionBeginResult beginResult)
@@ -744,7 +653,36 @@ public class ForumContentWriteService : IForumContentWriteService
             return;
         }
 
-        throw new ArgumentException(beginResult.Message ?? "内容提交状态无效，请稍后重试");
+        throw beginResult.Status switch
+        {
+            ContentSubmissionBeginStatus.InvalidKey => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.BadRequest,
+                ForumPublishErrorCodes.SubmissionIdInvalid,
+                "提交标识格式无效，请刷新后重新提交"),
+            ContentSubmissionBeginStatus.Conflict => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.Conflict,
+                ForumPublishErrorCodes.SubmissionConflict,
+                "提交标识已被其他内容使用，请刷新后重新提交"),
+            ContentSubmissionBeginStatus.Processing => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.Conflict,
+                ForumPublishErrorCodes.SubmissionProcessing,
+                "内容正在提交，请稍后确认"),
+            ContentSubmissionBeginStatus.FrequencyLimited => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.TooManyRequests,
+                ForumPublishErrorCodes.RateLimited,
+                "操作过于频繁，请稍后重试"),
+            ContentSubmissionBeginStatus.Succeeded or ContentSubmissionBeginStatus.DuplicateContent =>
+                CreateSubmissionException(
+                    beginResult,
+                    HttpStatusCodeEnum.Conflict,
+                    ForumPublishErrorCodes.SubmissionConflict,
+                    "此前提交结果暂不可用，请刷新后重试"),
+            _ => new ContentSubmissionConsistencyException("内容提交服务返回了未知状态")
+        };
     }
 
     private async Task CompleteSuccessAsync(
@@ -755,7 +693,7 @@ public class ForumContentWriteService : IForumContentWriteService
     {
         if (!beginResult.RecordId.HasValue)
         {
-            return;
+            throw new ContentSubmissionConsistencyException("内容提交记录缺少 RecordId，无法完成成功状态");
         }
 
         await _contentSubmissionService.CompleteSuccessAsync(new ContentSubmissionCompletionRequest
@@ -765,23 +703,6 @@ public class ForumContentWriteService : IForumContentWriteService
             ResultId = resultId,
             ResultPublicId = resultPublicId
         });
-    }
-
-    private async Task CompleteFailureAsync(ContentSubmissionBeginResult beginResult, Exception exception)
-    {
-        if (!beginResult.RecordId.HasValue)
-        {
-            return;
-        }
-
-        var errorCode = exception is BusinessException businessException &&
-                        !string.IsNullOrWhiteSpace(businessException.ErrorCode)
-            ? businessException.ErrorCode
-            : exception.GetType().Name;
-        await _contentSubmissionService.CompleteFailureAsync(
-            beginResult.RecordId.Value,
-            errorCode,
-            exception.Message);
     }
 
     private static IReadOnlyDictionary<string, object?> BuildPostCreateRequestValues(

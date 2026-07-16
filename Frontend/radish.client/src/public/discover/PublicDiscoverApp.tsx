@@ -129,10 +129,6 @@ export const PublicDiscoverApp = ({
   });
 
   useEffect(() => {
-    document.title = `${t('discover.public.pageTitle')} · ${t('discover.public.shellLabel')}`;
-  }, [t]);
-
-  useEffect(() => {
     let cancelled = false;
 
     const loadCommunity = async () => {

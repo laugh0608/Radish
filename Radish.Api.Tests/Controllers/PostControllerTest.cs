@@ -1009,6 +1009,61 @@ public class PostControllerTest
         Assert.Equal("Poll options must be unique.", result.MessageInfo);
     }
 
+    [Fact]
+    public async Task Publish_Should_Format_And_Expose_RateLimit_MessageArguments()
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var attachmentServiceMock = new Mock<IBaseService<Attachment, AttachmentVo>>(MockBehavior.Strict);
+        var commentServiceMock = new Mock<IBaseService<Comment, CommentVo>>(MockBehavior.Strict);
+
+        moderationServiceMock
+            .Setup(service => service.GetPublishPermissionAsync(10001))
+            .ReturnsAsync(new ContentModerationPermissionVo
+            {
+                VoUserId = 10001,
+                VoCanPublish = true
+            });
+        postServiceMock
+            .Setup(service => service.PublishPostAsync(
+                It.IsAny<Post>(),
+                It.IsAny<CreatePollDto?>(),
+                It.IsAny<CreateLotteryDto?>(),
+                false,
+                It.IsAny<List<string>?>(),
+                false))
+            .ThrowsAsync(new BusinessException(
+                "operation rate limited",
+                429,
+                ForumPublishErrorCodes.RateLimited,
+                ForumPublishErrorCodes.ResolveMessageKey(ForumPublishErrorCodes.RateLimited),
+                9));
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            attachmentServiceMock.Object,
+            commentServiceMock.Object,
+            errorsLocalizer: CreateFormattingLocalizer(
+                "error.forum.publish_rate_limited",
+                arguments => $"Try again in {arguments[0]} seconds."));
+
+        var result = await controller.Publish(new PublishPostDto
+        {
+            Title = "Rate limited post",
+            Content = "Body",
+            CategoryId = 1,
+            TagNames = ["Community"]
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(429, result.StatusCode);
+        Assert.Equal(ForumPublishErrorCodes.RateLimited, result.Code);
+        Assert.Equal("error.forum.publish_rate_limited", result.MessageKey);
+        Assert.Equal("Try again in 9 seconds.", result.MessageInfo);
+        Assert.Equal(new object[] { 9 }, result.MessageArguments);
+    }
+
     [Theory]
     [InlineData("title", "Forum.PublishTitleRequired", "error.forum.publish_title_required")]
     [InlineData("content", "Forum.PublishContentRequired", "error.forum.publish_content_required")]
@@ -1292,6 +1347,9 @@ public class PostControllerTest
         localizer
             .Setup(item => item[It.IsAny<string>()])
             .Returns((string name) => new LocalizedString(name, name, resourceNotFound: true));
+        localizer
+            .Setup(item => item[It.IsAny<string>(), It.IsAny<object[]>()])
+            .Returns((string name, object[] _) => new LocalizedString(name, name, resourceNotFound: true));
         return localizer.Object;
     }
 
@@ -1301,6 +1359,17 @@ public class PostControllerTest
         localizer
             .Setup(item => item[messageKey])
             .Returns(new LocalizedString(messageKey, localizedMessage));
+        return localizer.Object;
+    }
+
+    private static IStringLocalizer<Errors> CreateFormattingLocalizer(
+        string messageKey,
+        Func<object[], string> format)
+    {
+        var localizer = new Mock<IStringLocalizer<Errors>>(MockBehavior.Strict);
+        localizer
+            .Setup(item => item[messageKey, It.IsAny<object[]>()])
+            .Returns((string key, object[] arguments) => new LocalizedString(key, format(arguments)));
         return localizer.Object;
     }
 }

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -9,36 +11,29 @@ using Radish.Common.TimeTool;
 using Radish.IService;
 using Radish.Service;
 using Shouldly;
+using StackExchange.Redis;
 using Xunit;
 
 namespace Radish.Api.Tests.Services;
 
-/// <summary>
-/// 上传限流服务测试
-/// </summary>
 public class UploadRateLimitServiceTest
 {
-    private readonly IUploadRateLimitService _rateLimitService;
     private readonly ICaching _cache;
     private readonly UploadRateLimitOptions _options;
     private readonly MutableTimeProvider _timeProvider;
     private readonly BusinessCalendar _businessCalendar;
+    private readonly IUploadRateLimitService _rateLimitService;
 
     public UploadRateLimitServiceTest()
     {
-        // 使用内存缓存进行测试
-        var distributedCache = new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
-        _cache = new Caching(distributedCache);
-
-        // 配置测试选项（降低限制便于测试）
+        _cache = new Caching(new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions())));
         _options = new UploadRateLimitOptions
         {
             Enable = true,
             MaxConcurrentUploads = 3,
             MaxUploadsPerMinute = 5,
-            MaxDailyUploadSize = 10 * 1024 * 1024 // 10MB
+            MaxDailyUploadSize = 10 * 1024 * 1024
         };
-
         _timeProvider = new MutableTimeProvider(new DateTimeOffset(2026, 7, 11, 15, 0, 0, TimeSpan.Zero));
         _businessCalendar = new BusinessCalendar(
             _timeProvider,
@@ -46,241 +41,164 @@ public class UploadRateLimitServiceTest
         _rateLimitService = CreateService(_options);
     }
 
-    [Fact(DisplayName = "测试并发上传限制")]
-    public async Task TestConcurrentUploadLimit()
+    [Fact(DisplayName = "并发 Acquire 只允许原子取得配置数量的预留")]
+    public async Task AcquireUploadAsync_ShouldAtomicallyEnforceConcurrentLimit()
     {
-        // Arrange
-        long userId = 10001;
-        long fileSize = 1024; // 1KB
+        const long userId = 10001;
+        var attempts = Enumerable.Range(0, 20)
+            .Select(index => _rateLimitService.AcquireUploadAsync(userId, $"upload-{index}", 1024));
 
-        // Act & Assert - 前 3 个上传应该成功
-        for (int i = 1; i <= 3; i++)
-        {
-            var uploadId = $"upload-{i}";
-            var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-            isAllowed.ShouldBeTrue($"第 {i} 个上传应该被允许");
-            errorMessage.ShouldBeNull();
+        var results = await Task.WhenAll(attempts);
 
-            await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
-        }
-
-        // 第 4 个上传应该被拒绝（超过并发限制）
-        var (isAllowed4, errorMessage4) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-        isAllowed4.ShouldBeFalse("第 4 个上传应该被拒绝");
-        errorMessage4.ShouldNotBeNull();
-        errorMessage4.ShouldContain("并发上传限制");
-
-        // 完成一个上传后，应该可以开始新的上传
-        await _rateLimitService.RecordUploadCompleteAsync(userId, "upload-1", fileSize);
-
-        var (isAllowed5, errorMessage5) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-        isAllowed5.ShouldBeTrue("完成一个上传后，新上传应该被允许");
+        results.Count(result => result.IsAllowed).ShouldBe(3);
+        results.Where(result => !result.IsAllowed)
+            .ShouldAllBe(result => result.FailureKind == UploadRateLimitFailureKind.ConcurrentUploads);
+        var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
+        statistics.CurrentConcurrentUploads.ShouldBe(3);
+        statistics.UploadsThisMinute.ShouldBe(3);
+        statistics.ReservedUploadSizeToday.ShouldBe(3 * 1024);
+        statistics.UploadedSizeToday.ShouldBe(0);
     }
 
-    [Fact(DisplayName = "测试速率限制")]
-    public async Task TestRateLimit()
+    [Fact(DisplayName = "失败释放并发与日容量但保留分钟尝试次数")]
+    public async Task FailUploadAsync_ShouldReleaseReservationButKeepAttemptCount()
     {
-        // Arrange
-        long userId = 10002;
-        long fileSize = 1024; // 1KB
-
-        // Act & Assert - 前 5 个上传应该成功
-        for (int i = 1; i <= 5; i++)
+        var service = CreateService(new UploadRateLimitOptions
         {
-            var uploadId = $"upload-{i}";
-            var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-            isAllowed.ShouldBeTrue($"第 {i} 个上传应该被允许");
+            Enable = true,
+            MaxConcurrentUploads = 1,
+            MaxUploadsPerMinute = 2,
+            MaxDailyUploadSize = 10_000
+        });
+        const long userId = 10002;
 
-            await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
-            await _rateLimitService.RecordUploadCompleteAsync(userId, uploadId, fileSize);
-        }
+        (await service.AcquireUploadAsync(userId, "upload-a", 4000)).IsAllowed.ShouldBeTrue();
+        await service.FailUploadAsync(userId, "upload-a");
+        var afterFailure = await service.GetUploadStatisticsAsync(userId);
+        afterFailure.CurrentConcurrentUploads.ShouldBe(0);
+        afterFailure.ReservedUploadSizeToday.ShouldBe(0);
+        afterFailure.UploadsThisMinute.ShouldBe(1);
 
-        // 第 6 个上传应该被拒绝（超过速率限制）
-        var (isAllowed6, errorMessage6) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-        isAllowed6.ShouldBeFalse("第 6 个上传应该被拒绝");
-        errorMessage6.ShouldNotBeNull();
-        errorMessage6.ShouldContain("速率限制");
+        (await service.AcquireUploadAsync(userId, "upload-b", 4000)).IsAllowed.ShouldBeTrue();
+        await service.FailUploadAsync(userId, "upload-b");
+        var rejected = await service.AcquireUploadAsync(userId, "upload-c", 4000);
+        rejected.IsAllowed.ShouldBeFalse();
+        rejected.FailureKind.ShouldBe(UploadRateLimitFailureKind.UploadFrequency);
+        rejected.MessageArguments.ShouldBe(new object[] { 2L, 2L });
     }
 
-    [Fact(DisplayName = "测试日上传大小限制")]
-    public async Task TestDailySizeLimit()
+    [Fact(DisplayName = "完成上传把预留转为已用日容量且重复完成幂等")]
+    public async Task CompleteUploadAsync_ShouldSettleDailySizeIdempotently()
     {
-        // Arrange
-        long userId = 10003;
-        long fileSize = 3 * 1024 * 1024; // 3MB
+        const long userId = 10003;
+        const long fileSize = 3 * 1024 * 1024;
+        (await _rateLimitService.AcquireUploadAsync(userId, "upload-a", fileSize)).IsAllowed.ShouldBeTrue();
 
-        // Act & Assert - 前 3 个上传应该成功（共 9MB）
-        for (int i = 1; i <= 3; i++)
-        {
-            var uploadId = $"upload-{i}";
-            var (isAllowed, errorMessage) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-            isAllowed.ShouldBeTrue($"第 {i} 个上传应该被允许");
+        await _rateLimitService.CompleteUploadAsync(userId, "upload-a");
+        await _rateLimitService.CompleteUploadAsync(userId, "upload-a");
 
-            await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
-            await _rateLimitService.RecordUploadCompleteAsync(userId, uploadId, fileSize);
-        }
-
-        // 第 4 个上传应该被拒绝（9MB + 3MB = 12MB > 10MB 限制）
-        var (isAllowed4, errorMessage4) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-        isAllowed4.ShouldBeFalse("第 4 个上传应该被拒绝");
-        errorMessage4.ShouldNotBeNull();
-        errorMessage4.ShouldContain("今日");
+        var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
+        statistics.CurrentConcurrentUploads.ShouldBe(0);
+        statistics.ReservedUploadSizeToday.ShouldBe(0);
+        statistics.UploadedSizeToday.ShouldBe(fileSize);
+        statistics.UploadsThisMinute.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "测试上传失败时减少并发计数")]
-    public async Task TestUploadFailedReducesConcurrentCount()
+    [Fact(DisplayName = "日容量检查包含进行中的预留并在失败后释放")]
+    public async Task AcquireUploadAsync_ShouldIncludeReservedDailySize()
     {
-        // Arrange
-        long userId = 10004;
-        long fileSize = 1024;
-
-        // Act - 开始 3 个上传
-        for (int i = 1; i <= 3; i++)
+        var service = CreateService(new UploadRateLimitOptions
         {
-            var uploadId = $"upload-{i}";
-            await _rateLimitService.RecordUploadStartAsync(userId, uploadId);
-        }
+            Enable = true,
+            MaxConcurrentUploads = 5,
+            MaxUploadsPerMinute = 10,
+            MaxDailyUploadSize = 10 * 1024 * 1024
+        });
+        const long userId = 10004;
+        const long sixMegabytes = 6 * 1024 * 1024;
 
-        // 第 4 个上传应该被拒绝
-        var (isAllowed1, _) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-        isAllowed1.ShouldBeFalse();
+        (await service.AcquireUploadAsync(userId, "upload-a", sixMegabytes)).IsAllowed.ShouldBeTrue();
+        var rejected = await service.AcquireUploadAsync(userId, "upload-b", sixMegabytes);
+        rejected.FailureKind.ShouldBe(UploadRateLimitFailureKind.DailyUploadSize);
+        rejected.MessageArguments.ShouldBe(new object[] { "6 MB", "4 MB", "6 MB" });
 
-        // 标记第 1 个上传失败
-        await _rateLimitService.RecordUploadFailedAsync(userId, "upload-1");
-
-        // Assert - 现在应该可以开始新的上传
-        var (isAllowed2, _) = await _rateLimitService.CheckUploadAllowedAsync(userId, fileSize);
-        isAllowed2.ShouldBeTrue("上传失败后，新上传应该被允许");
+        await service.FailUploadAsync(userId, "upload-a");
+        (await service.AcquireUploadAsync(userId, "upload-c", sixMegabytes)).IsAllowed.ShouldBeTrue();
+        var statistics = await service.GetUploadStatisticsAsync(userId);
+        statistics.OccupiedUploadSizeToday.ShouldBe(sixMegabytes);
     }
 
-    [Fact(DisplayName = "测试获取上传统计信息")]
-    public async Task TestGetUploadStatistics()
+    [Fact(DisplayName = "跨业务日完成仍结算到取得预留时所属日期")]
+    public async Task CompleteUploadAsync_ShouldSettleToReservationBusinessDate()
     {
-        // Arrange
-        long userId = 10005;
-        long fileSize = 2 * 1024 * 1024; // 2MB
+        const long userId = 10005;
+        const long fileSize = 2048;
+        var beforeMidnight = new DateTimeOffset(2026, 7, 11, 15, 59, 59, TimeSpan.Zero);
+        var afterMidnight = new DateTimeOffset(2026, 7, 11, 16, 0, 1, TimeSpan.Zero);
+        _timeProvider.SetUtcNow(beforeMidnight);
+        (await _rateLimitService.AcquireUploadAsync(userId, "upload-a", fileSize, TimeSpan.FromHours(2)))
+            .IsAllowed.ShouldBeTrue();
 
-        // Act - 开始 2 个上传，完成 1 个
-        await _rateLimitService.RecordUploadStartAsync(userId, "upload-1");
-        await _rateLimitService.RecordUploadStartAsync(userId, "upload-2");
-        await _rateLimitService.RecordUploadCompleteAsync(userId, "upload-1", fileSize);
+        _timeProvider.SetUtcNow(afterMidnight);
+        await _rateLimitService.CompleteUploadAsync(userId, "upload-a");
+        (await _rateLimitService.GetUploadStatisticsAsync(userId)).UploadedSizeToday.ShouldBe(0);
 
-        // 获取统计信息
+        _timeProvider.SetUtcNow(beforeMidnight);
+        (await _rateLimitService.GetUploadStatisticsAsync(userId)).UploadedSizeToday.ShouldBe(fileSize);
+    }
+
+    [Fact(DisplayName = "过期预留不再占并发和日容量")]
+    public async Task AcquireUploadAsync_ShouldPruneExpiredReservations()
+    {
+        const long userId = 10006;
+        (await _rateLimitService.AcquireUploadAsync(userId, "upload-a", 1024, TimeSpan.FromSeconds(1)))
+            .IsAllowed.ShouldBeTrue();
+        _timeProvider.SetUtcNow(_timeProvider.GetUtcNow().AddSeconds(2));
+
         var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
 
-        // Assert
-        statistics.ShouldNotBeNull();
-        statistics.CurrentConcurrentUploads.ShouldBe(1, "应该有 1 个正在上传的文件");
-        statistics.UploadsThisMinute.ShouldBe(1, "本分钟应该有 1 个已完成的上传");
-        statistics.UploadedSizeToday.ShouldBe(fileSize, "今日上传大小应该等于已完成文件的大小");
-        statistics.MaxConcurrentUploads.ShouldBe(_options.MaxConcurrentUploads);
-        statistics.MaxUploadsPerMinute.ShouldBe(_options.MaxUploadsPerMinute);
-        statistics.MaxDailyUploadSize.ShouldBe(_options.MaxDailyUploadSize);
+        statistics.CurrentConcurrentUploads.ShouldBe(0);
+        statistics.ReservedUploadSizeToday.ShouldBe(0);
+        statistics.UploadsThisMinute.ShouldBe(1);
     }
 
-    [Fact(DisplayName = "测试重置用户限流计数")]
-    public async Task TestResetUserLimits()
+    [Fact(DisplayName = "禁用限流时 Acquire Complete Fail 均为空操作")]
+    public async Task DisabledRateLimit_ShouldAllowWithoutAccounting()
     {
-        // Arrange
-        long userId = 10006;
-        long fileSize = 1024;
+        var service = CreateService(new UploadRateLimitOptions
+        {
+            Enable = false,
+            MaxConcurrentUploads = 1,
+            MaxUploadsPerMinute = 1,
+            MaxDailyUploadSize = 1
+        });
+        const long userId = 10007;
 
-        // Act - 开始一些上传
-        await _rateLimitService.RecordUploadStartAsync(userId, "upload-1");
-        await _rateLimitService.RecordUploadStartAsync(userId, "upload-2");
-        await _rateLimitService.RecordUploadCompleteAsync(userId, "upload-1", fileSize);
+        (await service.AcquireUploadAsync(userId, "upload-a", 10_000)).IsAllowed.ShouldBeTrue();
+        await service.CompleteUploadAsync(userId, "upload-a");
+        await service.FailUploadAsync(userId, "upload-a");
 
-        // 重置限流计数
-        await _rateLimitService.ResetUserLimitsAsync(userId);
-
-        // 获取统计信息
-        var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
-
-        // Assert - 所有计数应该被重置为 0
+        var statistics = await service.GetUploadStatisticsAsync(userId);
         statistics.CurrentConcurrentUploads.ShouldBe(0);
         statistics.UploadsThisMinute.ShouldBe(0);
         statistics.UploadedSizeToday.ShouldBe(0);
     }
 
-    [Fact(DisplayName = "测试不同用户的限流独立")]
-    public async Task TestDifferentUsersAreIndependent()
+    [Fact(DisplayName = "重置会清空当前用户的预留与计数")]
+    public async Task ResetUserLimitsAsync_ShouldClearCurrentState()
     {
-        // Arrange
-        long user1 = 10007;
-        long user2 = 10008;
-        long fileSize = 1024;
+        const long userId = 10008;
+        (await _rateLimitService.AcquireUploadAsync(userId, "upload-a", 1024)).IsAllowed.ShouldBeTrue();
+        await _rateLimitService.CompleteUploadAsync(userId, "upload-a");
+        (await _rateLimitService.AcquireUploadAsync(userId, "upload-b", 2048)).IsAllowed.ShouldBeTrue();
 
-        // Act - 用户 1 达到并发限制
-        for (int i = 1; i <= 3; i++)
-        {
-            await _rateLimitService.RecordUploadStartAsync(user1, $"user1-upload-{i}");
-        }
-
-        var (user1Allowed, _) = await _rateLimitService.CheckUploadAllowedAsync(user1, fileSize);
-        var (user2Allowed, _) = await _rateLimitService.CheckUploadAllowedAsync(user2, fileSize);
-
-        // Assert
-        user1Allowed.ShouldBeFalse("用户 1 应该被限流");
-        user2Allowed.ShouldBeTrue("用户 2 不应该被限流");
-    }
-
-    [Fact(DisplayName = "测试限流禁用时允许所有上传")]
-    public async Task TestDisabledRateLimitAllowsAllUploads()
-    {
-        // Arrange
-        var disabledOptions = new UploadRateLimitOptions
-        {
-            Enable = false,
-            MaxConcurrentUploads = 1,
-            MaxUploadsPerMinute = 1,
-            MaxDailyUploadSize = 1024
-        };
-
-        var disabledService = CreateService(disabledOptions);
-        long userId = 10009;
-        long fileSize = 10 * 1024 * 1024; // 10MB
-
-        // Act - 即使超过所有限制，也应该被允许
-        var (isAllowed, errorMessage) = await disabledService.CheckUploadAllowedAsync(userId, fileSize);
-
-        // Assert
-        isAllowed.ShouldBeTrue("禁用限流时应该允许所有上传");
-        errorMessage.ShouldBeNull();
-    }
-
-    [Fact(DisplayName = "测试文件大小格式化")]
-    public async Task TestFileSizeFormatting()
-    {
-        // Arrange
-        long userId = 10010;
-        long fileSize = 5 * 1024 * 1024; // 5MB
-
-        // Act
-        await _rateLimitService.RecordUploadStartAsync(userId, "upload-1");
-        await _rateLimitService.RecordUploadCompleteAsync(userId, "upload-1", fileSize);
+        await _rateLimitService.ResetUserLimitsAsync(userId);
 
         var statistics = await _rateLimitService.GetUploadStatisticsAsync(userId);
-
-        // Assert
-        statistics.UploadedSizeTodayFormatted.ShouldContain("MB");
-        statistics.MaxDailyUploadSizeFormatted.ShouldContain("MB");
-    }
-
-    [Fact(DisplayName = "测试每日上传限额按系统业务时区跨日")]
-    public async Task TestDailyLimitUsesBusinessTimeZoneBoundary()
-    {
-        const long userId = 10011;
-        const long fileSize = 1024;
-        _timeProvider.SetUtcNow(new DateTimeOffset(2026, 7, 11, 15, 59, 59, TimeSpan.Zero));
-
-        await _rateLimitService.RecordUploadCompleteAsync(userId, "upload-before-midnight", fileSize);
-        var beforeMidnight = await _rateLimitService.GetUploadStatisticsAsync(userId);
-
-        _timeProvider.SetUtcNow(new DateTimeOffset(2026, 7, 11, 16, 0, 1, TimeSpan.Zero));
-        var afterMidnight = await _rateLimitService.GetUploadStatisticsAsync(userId);
-
-        beforeMidnight.UploadedSizeToday.ShouldBe(fileSize);
-        afterMidnight.UploadedSizeToday.ShouldBe(0);
+        statistics.CurrentConcurrentUploads.ShouldBe(0);
+        statistics.UploadsThisMinute.ShouldBe(0);
+        statistics.UploadedSizeToday.ShouldBe(0);
+        statistics.ReservedUploadSizeToday.ShouldBe(0);
     }
 
     private UploadRateLimitService CreateService(UploadRateLimitOptions options)
@@ -288,8 +206,10 @@ public class UploadRateLimitServiceTest
         return new UploadRateLimitService(
             _cache,
             Options.Create(options),
+            Options.Create(new RedisOptions { Enable = false }),
             _timeProvider,
-            _businessCalendar);
+            _businessCalendar,
+            Array.Empty<IConnectionMultiplexer>());
     }
 
     private sealed class MutableTimeProvider(DateTimeOffset utcNow) : TimeProvider

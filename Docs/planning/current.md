@@ -10,7 +10,7 @@
 - **当前子阶段**：`发布后长期维护与功能完成`
 - **工程第一顺位**：`F3 i18n 完成度治理`
 - **产品下一顺位**：`多语言体验完成`
-- **复核日期**：`2026-07-15`
+- **复核日期**：`2026-07-16`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
@@ -63,6 +63,7 @@
   - 2026-07-15 F3-C5 client 宠物域已完成本地实现与静态回归：`/pet` 与 `/me` 摘要按稳定阶段、心情和动作字段解析系统词元，宠物名称继续保留原文；日期、数字、次数、冷却和流水反馈按 locale 与英文单复数展示。Pet API 与后端高频失败补齐结构化错误和双语资源。client 357 项、后端 664 项测试与 client production build 通过，11 项环境用例按配置跳过，解决方案构建 0 warning / 0 error；未扩展宠物经济、任务、Console 配置或公开名片，未启动服务或执行 Gateway smoke。
   - 2026-07-15 F3-C6 client 经验域已完成本地实现与静态回归：经验详情、`/me` 摘要、桌面状态与共享 `ExperienceBar` 由宿主双语词元和 locale formatter 驱动，分页、图表与英文数量规则形成闭环；系统类型只按稳定 `voExpType` 解析，未知类型保留原值，等级名、备注和冻结原因继续保留配置或人工原文。当前经验 API 改用结构化 `ApiResponseError`，未登录、越权和经验数据不存在具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源。client 363 项、共享 UI 8 项、后端 668 项测试通过，11 项环境用例按配置跳过，client production build 与解决方案构建通过；未改经验规则、等级公式、上限、排行、冻结语义、数据库或 Console，未启动服务或执行 Gateway smoke。
   - 2026-07-15 F3-C7 client 萝卜资产域已完成本地实现与静态回归：萝卜坑五个标签、`/me` 资产摘要、Profile 钱包 / 流水、资料余额与桌面余额统一使用宿主双语词元、locale formatter 和 long 字符串安全金额；交易类型、状态、统计分类和安全日志只按稳定字段解析，未知词元保留原值，人工及审计内容保持原文。Coin / PaymentPassword API 改用结构化 `ApiResponseError`，高频失败具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源，模拟通知入口已删除并继续由 `/notifications` 承接。client 370 项、共享 UI 8 项、后端 674 项测试通过，11 项环境用例按配置跳过，client production build、解决方案构建与 Baseline Quick 通过；未改资产、转移、奖励、统计、口令锁定等业务规则，未改数据库、迁移或 Console，未启动服务或执行 Gateway smoke。
+  - 2026-07-16 F3-C8 已完成本地实现与静态收口：client 低频页面、公开承诺、统一公开 head、共享反馈 / 上传 labels 与结构化错误已覆盖真实消费者；上传边界同步固定业务类型、权限、路径、服务端 MIME / 文件签名、禁用 SVG、单次提交和失败清理，头像裁切具备处理期关闭锁与失效任务隔离。实际链路复核中暴露的论坛发布原子性、PostgreSQL 唯一冲突恢复和动态错误参数也已按事务保存点与安全标量参数契约治理。首个检查点提交为 `d5341095`；最终静态基线为 client 415 项、共享 UI 21 项、Console 52 项、`@radish/http` 13 项、后端 814 项通过，12 项 PostgreSQL 环境用例跳过，解决方案构建 0 warning / 0 error，两端 production build 与 Baseline Quick 通过。未启动服务或执行 Gateway smoke，详见 [F3-C8 静态收口记录](/records/f3-c8-shared-feedback-upload-shell-static-closure-2026-07-16)。
 
 ## V1 产品与发布范围
 
@@ -131,31 +132,31 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 按 [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)推进 `F3-C8`：成组收口 client 剩余低频设置、公开承诺长文本与正式页面实际消费的共享反馈 / 上传组件，完成词元、长文本布局、locale formatter、结构化错误和共享 labels 契约；不重新混入已收口的主题运行时、Docs / 商品 / 圈子 / 宠物 / 经验 / 萝卜资产域或后置在线翻译平台。
+1. 按 [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)推进 `F3-C9`：成组收口 Console 角色权限、分类标签、表情、经验和萝卜管理的正式路由与真实消费者，先核对现有专题边界，再完成宿主词元、locale formatter、英文数量规则和结构化错误；不把运行时在线词元编辑混入 `SystemConfig`，不返工已完成的 client 业务域。
 2. 观察首批真实生产使用中的登录、内容参与、聊天、通知和 Console 管理链路；P0/P1 立即进入维护线，P2/P3 成组排期。
 3. 当前 `dev` 成果达到完整功能、成组维护或主动发版边界后，再统一创建 `dev -> master` PR；不为连续开发中的单独文档或小提交频繁开 PR。
 
-## 今日事项（2026-07-15）
+## 今日事项（2026-07-16）
 
-1. 已成组完成 `F3-B2` 与 `F3-C1-C3`：Console 用户、内容治理、订单、设置、商品与文档治理，以及 client Messages、Me 和 Docs 作者态均进入宿主双语资源、locale formatter 与结构化错误契约。
-2. 已成组完成 `F3-C4-C7`：圈子、宠物、经验和萝卜资产实际消费面统一稳定词元、英文数量规则、日期 / 数字 / 图表格式及人工内容原文边界；未改变对应业务规则、数据库或迁移。
-3. 今日 7 个功能提交依次为：`904c5b8d`（F3-B2）、`bc791dd9`（F3-C1）、`d0e72b2b`（F3-C2 / C3）、`5d7ae5e0`（F3-C4）、`eef594b9`（F3-C5）、`cf76c647`（F3-C6）、`ab66ab57`（F3-C7）。
-4. 最终静态基线为 client `370` 项、共享 UI `8` 项、Console `47` 项、`@radish/http` `11` 项测试通过；后端 `674` 项通过、`11` 项环境用例跳过，解决方案构建 `0 warning / 0 error`，Baseline Quick 通过。
-5. 已按最终代码审阅并修正经验前端与 API 专题文档；圈子、宠物、商品、萝卜坑、私域工作流及 i18n 治理文档与实现边界一致。详细记录见 [2026-07-15 F3 i18n 日终审阅](/records/f3-i18n-day-end-doc-review-2026-07-15)。
-6. 今日未启动服务、未执行浏览器 smoke，未创建 PR、tag 或发布；`dev` 继续按成组功能批次积累。
+1. 已完成 `F3-C8` 首个检查点 `d5341095`：低频页面、公开承诺、共享反馈、Markdown / 上传 labels、进度与结构化错误进入宿主契约，运营长文和用户内容继续保留原文。
+2. 已统一公开页面 head 生命周期、`/legal` 正式入口与根级 Toast；公开详情只提交快照，由唯一 owner 写入 canonical、Open Graph、Twitter 与 JSON-LD，离开公开壳层时统一清理。
+3. 已按真实上传链路完成安全与一致性治理：固定业务类型与 Console 权限、图片专属类型、路径 containment、服务端 MIME / 文件签名、禁用 SVG、取消自动重试、`AbortSignal`、失败产物清理，以及关闭用户上传根目录静态直出；favicon、Wiki 当前正文和可回滚历史版本已纳入孤立附件引用检查。
+4. 已加固头像裁切处理期关闭锁和失效任务隔离，并把论坛发布 ledger、业务写与 Outbox 纳入同一事务；PostgreSQL 唯一冲突通过保存点恢复，成功记账失败时 fail closed。
+5. 分片链路已补精确长度、会话属主、原子配额预留、跨租户过期清理和 15 分钟终态结算重放；自动开始每个文件只触发一次，进入服务端合并后关闭不可兑现的取消入口；动态错误参数只允许短标量数组，经 API 规范化后交给前端翻译器。
+6. 最终静态基线为 client `415` 项、共享 UI `21` 项、Console `52` 项、`@radish/http` `13` 项、后端 `814` 项测试通过；`12` 项 PostgreSQL 环境用例跳过，解决方案构建 `0 warning / 0 error`，两端 production build 与 Baseline Quick 通过。未启动服务或执行浏览器 smoke，未创建 PR、tag 或发布。
 
-## 明日事项（2026-07-16）
+## 下一开发日事项（2026-07-17）
 
-1. 推进 `F3-C8` client 剩余页面族，先建立低频设置、公开用户承诺、页面 head、共享反馈与上传组件的真实消费矩阵；只纳入正式路由和实际调用者，不做全仓逐字符串替换。
-2. 按“系统词元 / 运营内容 / 用户内容 / 文件元数据”划定本地化边界：系统状态和动作进入双语资源，用户输入与运营长文保持原文，公开 head 使用与页面正文一致的稳定来源。
-3. 统一共享反馈、上传进度、失败提示和空态组件的 labels / formatter 注入方式；共享 UI 不持有 client i18n 状态，实际消费 API 的高频失败同步采用 HTTP status、`Code / MessageKey` 与 `ApiResponseError`。
-4. 成组处理 locale 日期、数字、文件大小、分页与 `0 / 1 / 2` 英文复数，并复核英文长标题、承诺正文、按钮组和上传错误在 PC / mobile 布局中的换行、截断与可读性。
-5. 补资源 parity、稳定词元、共享组件契约、长文本 fixture、API 错误与实际消费者防回归测试；完成 client test / type-check / lint / production build、Baseline Quick、仓库卫生和差异检查。
-6. `F3-C8` 完成后按治理顺位准备 `F3-C9` Console 剩余管理域，优先角色权限、分类标签、表情、经验和萝卜管理；不把运行时在线词元编辑混入 `SystemConfig`。PC / mobile 真实语言切换与 OIDC 往返仍统一留到 `F3-D` 专题验收，启动服务前重新取得当轮授权。
+1. 推进 `F3-C9` Console 剩余管理域，先建立角色权限、分类标签、表情、经验和萝卜管理的正式路由、实际消费者与现有专题文档矩阵。
+2. 继续区分系统词元、运营内容、用户内容与审计原文；筛选、状态、动作和校验进入宿主资源，名称、备注及运营正文不自动翻译。
+3. 复用已稳定的 `@radish/http`、`ApiResponseError`、共享上传类型和 formatter，不为 Console 再建第二套 XHR、错误或附件白名单。
+4. 补 Console 资源 parity、稳定枚举、`0 / 1 / 2` 数量、LongId、权限动作与结构化错误测试，并执行 Console test / type-check / lint / production build、Baseline Quick、仓库卫生与差异检查。
+5. PC / mobile 真实语言切换、长文本布局与 OIDC 往返继续统一留到 `F3-D` 专题验收；执行前重新取得当轮服务启动授权。
 
 ## 并行维护线
 
 - 公开 head、动态 sitemap、head snapshot 与生产公开域名配置。
+- 附件持久化与访问边界：补 `Chat / Document / Wiki` 业务域 ACL 与历史迁移、分片 attachment correlation、durable quota settlement，以及多实例共享临时存储 / 分布式锁。
 - 镜像漏洞门禁分层：Critical 与可修复 High / Critical 保持阻断，无修复 High 转为可追溯维护项与定期复核。
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`。
 - WebOS `/desktop` 阻断级兼容维护。

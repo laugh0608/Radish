@@ -19,13 +19,13 @@ export function createLocalizedRequestHeaders(
 
 export function localizeParsedApiResponse<T>(
   parsed: ParsedApiResponse<T>,
-  translateMessage: ((key: string) => string | undefined) | undefined
+  translateMessage: ((key: string, messageArguments?: readonly unknown[]) => string | undefined) | undefined
 ): ParsedApiResponse<T> {
   if (parsed.ok || !parsed.messageKey || !translateMessage) {
     return parsed;
   }
 
-  const localized = translateMessage(parsed.messageKey);
+  const localized = translateMessage(parsed.messageKey, parsed.messageArguments);
   if (!localized || localized === parsed.messageKey) {
     return parsed;
   }

@@ -20,7 +20,8 @@ import {
 } from '../leaderboardRouteState';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
-import { buildPublicShareUrl } from '../publicHead';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
 import { resolvePublicUserRouteIdentifier } from '../publicId';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { buildPublicProfilePath } from '../profileRouteState';
@@ -411,6 +412,17 @@ export const PublicLeaderboardApp = ({
       ?? fallbackTypes.find((item) => item.voType === activeRouteDefinition.type)
       ?? fallbackTypes[0];
   }, [activeRouteDefinition.type, fallbackTypes, types]);
+  const publicHeadSnapshot = useMemo(() => {
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'leaderboard', route }, t);
+    return {
+      head: {
+        ...routeHead,
+        title: `${activeTypeConfig.voName} · ${t('desktop.apps.leaderboard.name')}`,
+        description: activeTypeConfig.voDescription?.trim() || routeHead.description,
+      },
+    };
+  }, [activeTypeConfig.voDescription, activeTypeConfig.voName, route, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -431,10 +443,6 @@ export const PublicLeaderboardApp = ({
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  useEffect(() => {
-    document.title = `${activeTypeConfig.voName} · ${t('desktop.apps.leaderboard.name')}`;
-  }, [activeTypeConfig.voName, t]);
 
   useEffect(() => {
     let cancelled = false;

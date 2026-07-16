@@ -24,21 +24,11 @@ Accept: application/json
 ### 下载指定附件
 GET {{Api_HostAddress}}/api/v1/Attachment/Download/{{AttachmentId}}
 
-### 直接访问上传文件
-GET {{Api_HostAddress}}/uploads/General/2025/12/1234567890.jpg
+### 通过受控附件路由访问原图
+GET {{Api_HostAddress}}/_assets/attachments/{{AttachmentId}}
 
-### 访问缩略图
-GET {{Api_HostAddress}}/uploads/General/2025/12/1234567890_thumb.jpg
-
-### 更新附件业务关联
-PUT {{Api_HostAddress}}/api/v1/Attachment/UpdateBusinessAssociation/{{AttachmentId}}?businessType=Post&businessId=70001
-Authorization: Bearer {{Access_Token}}
-Content-Type: application/json
-
-### 更新附件到 Comment
-PUT {{Api_HostAddress}}/api/v1/Attachment/UpdateBusinessAssociation/{{AttachmentId}}?businessType=Comment&businessId=90001
-Authorization: Bearer {{Access_Token}}
-Content-Type: application/json
+### 通过受控附件路由访问缩略图
+GET {{Api_HostAddress}}/_assets/attachments/{{AttachmentId}}/thumbnail
 
 ### 删除单个附件
 DELETE {{Api_HostAddress}}/api/v1/Attachment/Delete/{{AttachmentId}}

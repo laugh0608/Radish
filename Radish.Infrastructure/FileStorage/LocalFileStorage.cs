@@ -3,9 +3,13 @@ using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
 using SqlSugar;
+using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Text;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
+using Serilog;
 
 namespace Radish.Infrastructure.FileStorage;
 
@@ -46,7 +50,6 @@ public class LocalFileStorage : IFileStorage
     public async Task<FileUploadResult> UploadAsync(
         Stream stream,
         string fileName,
-        string contentType,
         FileUploadOptionsDto? options = null)
     {
         string? writeTargetPath = null;
@@ -55,20 +58,31 @@ public class LocalFileStorage : IFileStorage
         {
             options ??= new FileUploadOptionsDto();
 
+            if (!AttachmentBusinessTypes.TryNormalize(options.BusinessType, out var businessType))
+            {
+                return FileUploadResult.Fail(
+                    FileUploadFailureKind.InvalidBusinessType,
+                    "不支持该附件业务类型");
+            }
+
             // 根据业务类型获取文件大小限制
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            var maxSize = GetMaxFileSizeByType(options.BusinessType, extension);
+            var maxSize = FileStoragePolicy.GetMaxFileSize(_options, businessType, extension);
 
             // 验证文件大小
             if (stream.Length > maxSize)
             {
                 return FileUploadResult.Fail(
                     FileUploadFailureKind.FileTooLarge,
-                    $"文件大小超过限制（最大 {maxSize / 1024 / 1024}MB）");
+                    $"文件大小超过限制（最大 {FormatFileSize(maxSize)}）",
+                    FormatFileSize(maxSize));
             }
 
             // 验证文件类型
-            if (!IsAllowedFileType(extension))
+            if (!FileStoragePolicy.IsAllowedForBusinessType(
+                    _options,
+                    extension,
+                    AttachmentBusinessTypes.RequiresImage(businessType)))
             {
                 return FileUploadResult.Fail(
                     FileUploadFailureKind.UnsupportedType,
@@ -90,7 +104,6 @@ public class LocalFileStorage : IFileStorage
 
             // 构建存储路径：{BusinessType}/{Year}/{Month}/{FileName}
             var now = DateTime.Now;
-            var businessType = string.IsNullOrWhiteSpace(options.BusinessType) ? "General" : options.BusinessType;
             var relativePath = Path.Combine(
                 businessType,
                 now.Year.ToString(),
@@ -101,7 +114,7 @@ public class LocalFileStorage : IFileStorage
             // 标准化路径分隔符为正斜杠（URL 格式）
             relativePath = relativePath.Replace('\\', '/');
 
-            var fullPath = Path.Combine(_rootPath, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var fullPath = ResolveContainedPath(relativePath);
             writeTargetPath = fullPath;
 
             // 确保目录存在
@@ -138,13 +151,14 @@ public class LocalFileStorage : IFileStorage
                 storedName: storedName,
                 storagePath: relativePath,
                 fileSize: stream.Length,
+                contentType: GetContentType(extension),
                 fileHash: fileHash
             );
             result.ThumbnailPath = thumbnailPath;
 
             return result;
         }
-        catch (Exception ex)
+        catch (Exception exception)
         {
             if (!string.IsNullOrWhiteSpace(writeTargetPath) && File.Exists(writeTargetPath))
             {
@@ -158,9 +172,11 @@ public class LocalFileStorage : IFileStorage
                 }
             }
 
+            Log.Error(exception, "本地附件存储失败：{FileName}", fileName);
+
             return FileUploadResult.Fail(
                 FileUploadFailureKind.StorageFailed,
-                $"文件上传失败：{ex.Message}");
+                "文件存储失败，请稍后重试");
         }
     }
 
@@ -175,7 +191,7 @@ public class LocalFileStorage : IFileStorage
     {
         try
         {
-            var fullPath = Path.Combine(_rootPath, filePath);
+            var fullPath = ResolveContainedPath(filePath);
 
             if (!File.Exists(fullPath))
             {
@@ -186,7 +202,7 @@ public class LocalFileStorage : IFileStorage
 
             // 删除缩略图（如果存在）
             var thumbnailPath = GenerateThumbnailPath(filePath);
-            var fullThumbnailPath = Path.Combine(_rootPath, thumbnailPath);
+            var fullThumbnailPath = ResolveContainedPath(thumbnailPath);
             if (File.Exists(fullThumbnailPath))
             {
                 await Task.Run(() => File.Delete(fullThumbnailPath));
@@ -211,7 +227,7 @@ public class LocalFileStorage : IFileStorage
     {
         try
         {
-            var fullPath = Path.Combine(_rootPath, filePath);
+            var fullPath = ResolveContainedPath(filePath);
 
             if (!File.Exists(fullPath))
             {
@@ -242,8 +258,15 @@ public class LocalFileStorage : IFileStorage
     /// </summary>
     public async Task<bool> ExistsAsync(string filePath)
     {
-        var fullPath = Path.Combine(_rootPath, filePath);
-        return await Task.FromResult(File.Exists(fullPath));
+        try
+        {
+            var fullPath = ResolveContainedPath(filePath);
+            return await Task.FromResult(File.Exists(fullPath));
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     #endregion
@@ -257,7 +280,7 @@ public class LocalFileStorage : IFileStorage
     {
         try
         {
-            var fullPath = Path.Combine(_rootPath, filePath);
+            var fullPath = ResolveContainedPath(filePath);
 
             if (!File.Exists(fullPath))
             {
@@ -292,7 +315,7 @@ public class LocalFileStorage : IFileStorage
     /// </summary>
     public string GetFullPath(string relativePath)
     {
-        return Path.Combine(_rootPath, relativePath);
+        return ResolveContainedPath(relativePath);
     }
 
     #endregion
@@ -300,22 +323,11 @@ public class LocalFileStorage : IFileStorage
     #region Private Helper Methods
 
     /// <summary>
-    /// 验证文件类型是否允许
-    /// </summary>
-    private bool IsAllowedFileType(string extension)
-    {
-        return _options.AllowedExtensions.Image.Contains(extension) ||
-               _options.AllowedExtensions.Document.Contains(extension) ||
-               _options.AllowedExtensions.Video.Contains(extension) ||
-               _options.AllowedExtensions.Audio.Contains(extension);
-    }
-
-    /// <summary>
     /// 判断是否为图片文件
     /// </summary>
     private bool IsImageFile(string extension)
     {
-        return _options.AllowedExtensions.Image.Contains(extension);
+        return FileStoragePolicy.IsImageExtension(_options, extension);
     }
 
     /// <summary>
@@ -326,122 +338,113 @@ public class LocalFileStorage : IFileStorage
     /// <returns>是否匹配</returns>
     private async Task<bool> ValidateFileMagicNumberAsync(Stream stream, string extension)
     {
-        // 文件签名字典（Magic Numbers）
-        var fileSignatures = new Dictionary<string, byte[][]>
-        {
-            // 图片格式
-            [".jpg"] = new[] { new byte[] { 0xFF, 0xD8, 0xFF } },
-            [".jpeg"] = new[] { new byte[] { 0xFF, 0xD8, 0xFF } },
-            [".png"] = new[] { new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A } },
-            [".gif"] = new[] { new byte[] { 0x47, 0x49, 0x46, 0x38 } }, // GIF8
-            [".bmp"] = new[] { new byte[] { 0x42, 0x4D } }, // BM
-            [".webp"] = new[] { new byte[] { 0x52, 0x49, 0x46, 0x46 } }, // RIFF (需要进一步检查 WEBP)
-            [".ico"] = new[] { new byte[] { 0x00, 0x00, 0x01, 0x00 } }, // ICO
-
-            // 文档格式
-            [".pdf"] = new[] { new byte[] { 0x25, 0x50, 0x44, 0x46 } }, // %PDF
-            [".doc"] = new[] { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } }, // OLE2
-            [".docx"] = new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP (Office Open XML)
-            [".xlsx"] = new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP
-            [".pptx"] = new[] { new byte[] { 0x50, 0x4B, 0x03, 0x04 } }, // ZIP
-            [".xls"] = new[] { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } }, // OLE2
-            [".ppt"] = new[] { new byte[] { 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1 } }, // OLE2
-
-            // 文本格式（通常没有固定签名，跳过检查）
-            [".txt"] = Array.Empty<byte[]>(),
-            [".md"] = Array.Empty<byte[]>(),
-            [".svg"] = Array.Empty<byte[]>() // SVG 是 XML 文本
-        };
-
-        // 如果扩展名不在字典中，默认通过（不检查）
-        if (!fileSignatures.ContainsKey(extension))
-        {
-            return true;
-        }
-
-        var signatures = fileSignatures[extension];
-
-        // 如果没有签名定义（如文本文件），跳过检查
-        if (signatures.Length == 0)
-        {
-            return true;
-        }
-
-        // 读取文件头（最多 8 字节）
-        var headerBytes = new byte[8];
         var originalPosition = stream.Position;
-        stream.Position = 0;
+        try
+        {
+            if (extension is ".txt" or ".md")
+            {
+                return await ValidateUtf8TextAsync(stream);
+            }
 
-        var bytesRead = await stream.ReadAsync(headerBytes, 0, headerBytes.Length);
-        stream.Position = originalPosition; // 恢复原始位置
+            if (extension is ".docx" or ".xlsx" or ".pptx")
+            {
+                return ValidateOfficeOpenXml(stream, extension);
+            }
 
-        if (bytesRead == 0)
+            stream.Position = 0;
+            var header = new byte[16];
+            var bytesRead = await stream.ReadAsync(header.AsMemory(0, header.Length));
+            if (bytesRead == 0)
+            {
+                return false;
+            }
+
+            return extension switch
+            {
+                ".jpg" or ".jpeg" => StartsWith(header, bytesRead, [0xFF, 0xD8, 0xFF]),
+                ".png" => StartsWith(header, bytesRead, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+                ".gif" => StartsWith(header, bytesRead, [0x47, 0x49, 0x46, 0x38]),
+                ".bmp" => StartsWith(header, bytesRead, [0x42, 0x4D]),
+                ".webp" => StartsWith(header, bytesRead, [0x52, 0x49, 0x46, 0x46]) &&
+                           MatchesAt(header, bytesRead, 8, [0x57, 0x45, 0x42, 0x50]),
+                ".ico" => StartsWith(header, bytesRead, [0x00, 0x00, 0x01, 0x00]),
+                ".pdf" => StartsWith(header, bytesRead, [0x25, 0x50, 0x44, 0x46]),
+                ".doc" or ".xls" or ".ppt" => StartsWith(
+                    header,
+                    bytesRead,
+                    [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]),
+                ".mp4" or ".mov" => MatchesAt(header, bytesRead, 4, [0x66, 0x74, 0x79, 0x70]),
+                ".avi" => StartsWith(header, bytesRead, [0x52, 0x49, 0x46, 0x46]) &&
+                          MatchesAt(header, bytesRead, 8, [0x41, 0x56, 0x49, 0x20]),
+                ".wmv" or ".wma" => StartsWith(
+                    header,
+                    bytesRead,
+                    [0x30, 0x26, 0xB2, 0x75, 0x8E, 0x66, 0xCF, 0x11, 0xA6, 0xD9, 0x00, 0xAA, 0x00, 0x62, 0xCE, 0x6C]),
+                ".flv" => StartsWith(header, bytesRead, [0x46, 0x4C, 0x56]),
+                ".mkv" or ".webm" => StartsWith(header, bytesRead, [0x1A, 0x45, 0xDF, 0xA3]),
+                ".mp3" => StartsWith(header, bytesRead, [0x49, 0x44, 0x33]) ||
+                          (bytesRead >= 2 && header[0] == 0xFF && (header[1] & 0xE0) == 0xE0),
+                ".wav" => StartsWith(header, bytesRead, [0x52, 0x49, 0x46, 0x46]) &&
+                          MatchesAt(header, bytesRead, 8, [0x57, 0x41, 0x56, 0x45]),
+                ".flac" => StartsWith(header, bytesRead, [0x66, 0x4C, 0x61, 0x43]),
+                ".aac" => StartsWith(header, bytesRead, [0x41, 0x44, 0x49, 0x46]) ||
+                          (bytesRead >= 2 && header[0] == 0xFF && (header[1] & 0xF6) == 0xF0),
+                ".ogg" => StartsWith(header, bytesRead, [0x4F, 0x67, 0x67, 0x53]),
+                _ => false
+            };
+        }
+        catch (InvalidDataException)
         {
             return false;
         }
-
-        // 检查是否匹配任一签名
-        foreach (var signature in signatures)
+        catch (DecoderFallbackException)
         {
-            if (bytesRead >= signature.Length)
-            {
-                var matches = true;
-                for (int i = 0; i < signature.Length; i++)
-                {
-                    if (headerBytes[i] != signature[i])
-                    {
-                        matches = false;
-                        break;
-                    }
-                }
-
-                if (matches)
-                {
-                    return true;
-                }
-            }
+            return false;
         }
-
-        return false;
+        finally
+        {
+            stream.Position = originalPosition;
+        }
     }
 
-    /// <summary>
-    /// 根据业务类型和文件扩展名获取文件大小限制
-    /// </summary>
-    /// <param name="businessType">业务类型（Avatar/Post/Document等）</param>
-    /// <param name="extension">文件扩展名</param>
-    /// <returns>文件大小限制（字节）</returns>
-    private long GetMaxFileSizeByType(string businessType, string extension)
+    private static bool StartsWith(byte[] content, int contentLength, byte[] signature)
     {
-        // 如果明确指定了 Avatar，使用头像限制
-        if (businessType?.Equals("Avatar", StringComparison.OrdinalIgnoreCase) == true)
-        {
-            return _options.MaxFileSize.Avatar;
-        }
+        return MatchesAt(content, contentLength, 0, signature);
+    }
 
-        // 根据文件扩展名判断文件类型
-        if (_options.AllowedExtensions.Image.Contains(extension))
-        {
-            return _options.MaxFileSize.Image;
-        }
+    private static bool MatchesAt(byte[] content, int contentLength, int offset, byte[] signature)
+    {
+        return contentLength >= offset + signature.Length &&
+               content.AsSpan(offset, signature.Length).SequenceEqual(signature);
+    }
 
-        if (_options.AllowedExtensions.Document.Contains(extension))
+    private static bool ValidateOfficeOpenXml(Stream stream, string extension)
+    {
+        stream.Position = 0;
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true);
+        var requiredPrefix = extension switch
         {
-            return _options.MaxFileSize.Document;
-        }
+            ".docx" => "word/",
+            ".xlsx" => "xl/",
+            ".pptx" => "ppt/",
+            _ => string.Empty
+        };
 
-        if (_options.AllowedExtensions.Video.Contains(extension))
-        {
-            return _options.MaxFileSize.Video;
-        }
+        return archive.GetEntry("[Content_Types].xml") != null &&
+               archive.Entries.Any(entry =>
+                   entry.FullName.StartsWith(requiredPrefix, StringComparison.OrdinalIgnoreCase));
+    }
 
-        if (_options.AllowedExtensions.Audio.Contains(extension))
-        {
-            return _options.MaxFileSize.Audio;
-        }
+    private static async Task<bool> ValidateUtf8TextAsync(Stream stream)
+    {
+        stream.Position = 0;
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        var text = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true)
+            .GetString(memory.ToArray());
 
-        // 默认使用文档限制（10MB）
-        return _options.MaxFileSize.Document;
+        return !text.Any(character => character == '\0' ||
+            (char.IsControl(character) && character is not ('\r' or '\n' or '\t')));
     }
 
     /// <summary>
@@ -477,7 +480,7 @@ public class LocalFileStorage : IFileStorage
     /// <summary>
     /// 根据文件扩展名获取 MIME 类型
     /// </summary>
-    private string GetContentType(string extension)
+    private static string GetContentType(string extension)
     {
         return extension.ToLowerInvariant() switch
         {
@@ -487,7 +490,6 @@ public class LocalFileStorage : IFileStorage
             ".gif" => "image/gif",
             ".bmp" => "image/bmp",
             ".webp" => "image/webp",
-            ".svg" => "image/svg+xml",
             ".ico" => "image/x-icon",
 
             // Documents
@@ -521,6 +523,40 @@ public class LocalFileStorage : IFileStorage
             // Default
             _ => "application/octet-stream"
         };
+    }
+
+    private string ResolveContainedPath(string relativePath)
+    {
+        if (string.IsNullOrWhiteSpace(relativePath) || Path.IsPathRooted(relativePath))
+        {
+            throw new InvalidOperationException("文件路径必须是存储根目录内的相对路径");
+        }
+
+        var fullPath = Path.GetFullPath(Path.Combine(_rootPath, relativePath));
+        var relativeToRoot = Path.GetRelativePath(_rootPath, fullPath);
+        if (relativeToRoot.Equals("..", StringComparison.Ordinal) ||
+            relativeToRoot.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal) ||
+            Path.IsPathRooted(relativeToRoot) ||
+            relativeToRoot.Equals(".", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("文件路径越出配置的存储根目录");
+        }
+
+        return fullPath;
+    }
+
+    private static string FormatFileSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB", "TB"];
+        var value = (double)bytes;
+        var unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.Length - 1)
+        {
+            value /= 1024;
+            unitIndex++;
+        }
+
+        return $"{value:0.##} {units[unitIndex]}";
     }
 
     #endregion

@@ -30,12 +30,10 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
-import { buildPublicShareUrl } from '../publicHead';
-import {
-  applyPublicStructuredData,
-  buildShopProductStructuredData,
-  removePublicStructuredData,
-} from '../publicStructuredData';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { buildShopProductStructuredData } from '../publicStructuredData';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
+import { isCurrentShopProductHeadSource } from '../publicHeadSourceIdentity';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
@@ -270,24 +268,57 @@ export const PublicShopApp = ({
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [route]);
 
-  useEffect(() => {
-    document.title = `${pageTitle} · ${t('desktop.apps.shop.name')}`;
-  }, [pageTitle, t]);
+  const publicHeadSnapshot = useMemo(() => {
+    if (route.kind === 'products' && route.categoryId) {
+      const selectedCategory = categories.find(
+        (category) => String(category.voId) === route.categoryId,
+      );
+      if (!selectedCategory) {
+        return null;
+      }
 
-  useEffect(() => {
-    if (route.kind !== 'detail' || !selectedProduct) {
-      removePublicStructuredData();
-      return;
+      const routeHead = buildLocalizedPublicRouteHead({ app: 'shop', route }, t);
+      return {
+        head: {
+          ...routeHead,
+          title: `${selectedCategory.voName} · ${t('desktop.apps.shop.name')}`,
+          description: selectedCategory.voDescription?.trim() || routeHead.description,
+        },
+      };
     }
 
-    applyPublicStructuredData(buildShopProductStructuredData({
-      product: selectedProduct,
-      imageUrl: resolveMediaUrl(selectedProduct.voCoverImage || selectedProduct.voIcon),
-      canonicalPath: buildPublicShopPath({ kind: 'detail', productId: String(selectedProduct.voId) }),
-    }));
+    if (
+      route.kind !== 'detail'
+      || !selectedProduct
+      || !isCurrentShopProductHeadSource(route, selectedProduct.voId)
+    ) {
+      return null;
+    }
 
-    return removePublicStructuredData;
-  }, [route.kind, selectedProduct]);
+    const canonicalRoute: PublicShopRoute = {
+      kind: 'detail',
+      productId: String(selectedProduct.voId),
+    };
+    const canonicalPath = buildPublicShopPath(canonicalRoute);
+    const imageUrl = resolveMediaUrl(selectedProduct.voCoverImage || selectedProduct.voIcon);
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'shop', route: canonicalRoute }, t);
+    const head = {
+      ...routeHead,
+      title: `${pageTitle} · ${t('desktop.apps.shop.name')}`,
+      description: selectedProduct.voDescription?.trim() || routeHead.description,
+      imageUrl: imageUrl || undefined,
+    };
+
+    return {
+      head,
+      structuredData: buildShopProductStructuredData({
+        product: selectedProduct,
+        imageUrl,
+        canonicalPath,
+      }),
+    };
+  }, [categories, pageTitle, route, selectedProduct, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   const buildShopShareUrl = useCallback(() => {
     const productId = route.kind === 'detail' ? route.productId : String(selectedProduct?.voId ?? '');

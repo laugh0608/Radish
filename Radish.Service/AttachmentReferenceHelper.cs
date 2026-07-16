@@ -5,6 +5,8 @@ namespace Radish.Service;
 
 internal static partial class AttachmentReferenceHelper
 {
+    private const string AttachmentAssetPathPrefix = "/_assets/attachments/";
+
     [GeneratedRegex(@"!\[[^\]]*\]\((?<url>[^)\s]+)\)|\[[^\]]+\]\((?<url>[^)\s]+)\)", RegexOptions.IgnoreCase)]
     private static partial Regex MarkdownLinkRegex();
 
@@ -70,6 +72,49 @@ internal static partial class AttachmentReferenceHelper
     public static bool IsAttachmentReferenced(Attachment attachment, IReadOnlySet<long> referencedAttachmentIds)
     {
         return attachment.Id > 0 && referencedAttachmentIds.Contains(attachment.Id);
+    }
+
+    public static long? ExtractAttachmentIdFromAssetUrl(string? rawUrl)
+    {
+        if (string.IsNullOrWhiteSpace(rawUrl))
+        {
+            return null;
+        }
+
+        var value = rawUrl.Trim();
+        string path;
+        if (Uri.TryCreate(value, UriKind.Absolute, out var absoluteUri) &&
+            (absoluteUri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+             absoluteUri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase)))
+        {
+            path = absoluteUri.AbsolutePath;
+        }
+        else
+        {
+            var fragmentIndex = value.IndexOf('#');
+            if (fragmentIndex >= 0)
+            {
+                value = value[..fragmentIndex];
+            }
+
+            var queryIndex = value.IndexOf('?');
+            path = queryIndex >= 0 ? value[..queryIndex] : value;
+        }
+
+        if (!path.StartsWith(AttachmentAssetPathPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var idSegment = path[AttachmentAssetPathPrefix.Length..].TrimEnd('/');
+        if (idSegment.EndsWith("/thumbnail", StringComparison.OrdinalIgnoreCase))
+        {
+            idSegment = idSegment[..^"/thumbnail".Length];
+        }
+
+        return long.TryParse(idSegment, out var attachmentId) && attachmentId > 0
+            ? attachmentId
+            : null;
     }
 
     private static void AddAttachmentId(ISet<long> attachmentIds, string? rawUrl)

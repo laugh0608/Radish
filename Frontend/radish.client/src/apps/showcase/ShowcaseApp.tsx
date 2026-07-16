@@ -8,7 +8,7 @@ import { Input } from '@radish/ui/input';
 import { Select } from '@radish/ui/select';
 import { Modal } from '@radish/ui/modal';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
-import { ToastContainer, toast } from '@radish/ui/toast';
+import { toast } from '@radish/ui/toast';
 import { ExperienceBar, type ExperienceData } from '@radish/ui/experience-bar';
 import { TableSkeleton, SimpleSkeleton, CardSkeleton } from '@radish/ui/skeleton';
 import { LineChart } from '@radish/ui/line-chart';
@@ -626,7 +626,6 @@ export const ShowcaseApp = () => {
           </section>
         )}
       </div>
-      <ToastContainer />
     </div>
   );
 };

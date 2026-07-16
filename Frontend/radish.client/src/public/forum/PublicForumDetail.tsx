@@ -55,12 +55,10 @@ import {
 } from '@/apps/forum/utils/commentRealtimeTree';
 import { buildPublicForumPath } from '../forumRouteState';
 import { rememberPublicRouteSourceTransfer } from '../publicRouteNavigation';
-import { applyPublicHead, buildPublicShareUrl } from '../publicHead';
-import {
-  applyPublicStructuredData,
-  buildForumPostStructuredData,
-  removePublicStructuredData,
-} from '../publicStructuredData';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { buildForumPostStructuredData } from '../publicStructuredData';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
+import { isCurrentForumPostHeadSource } from '../publicHeadSourceIdentity';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import {
   resolvePublicForumDetailLoadState,
@@ -625,36 +623,37 @@ export const PublicForumDetail = ({
     registerRootCommentRemoval
   ]);
 
-  useEffect(() => {
-    if (!post?.voTitle) {
-      return;
-    }
-
-    document.title = `${post.voTitle} · ${t('desktop.apps.forum.name')}`;
-  }, [post?.voTitle, t]);
-
-  useEffect(() => {
-    if (!post) {
-      removePublicStructuredData();
-      return;
+  const publicHeadSnapshot = useMemo(() => {
+    if (!post || !isCurrentForumPostHeadSource(postId, post)) {
+      return null;
     }
 
     const coverImageUrl = resolveMediaUrl(post.voCoverImage);
-    const postHead = buildForumPostPublicHead(post, commentId, coverImageUrl);
-    applyPublicHead(postHead);
-
+    const routeHead = buildLocalizedPublicRouteHead({
+      app: 'forum',
+      route: commentId
+        ? { kind: 'detail', postId, commentId }
+        : { kind: 'detail', postId },
+    }, t);
+    const postHead = buildForumPostPublicHead(post, commentId, coverImageUrl, {
+      appName: t('desktop.apps.forum.name'),
+      routeHead,
+    });
     const structuredPost = {
       ...post,
       voCoverImage: coverImageUrl,
     };
 
-    applyPublicStructuredData(buildForumPostStructuredData({
-      post: structuredPost,
-      canonicalPath: postHead.canonicalPath,
-    }));
-
-    return removePublicStructuredData;
-  }, [commentId, post]);
+    return {
+      head: postHead,
+      structuredData: buildForumPostStructuredData({
+        post: structuredPost,
+        canonicalPath: postHead.canonicalPath,
+        fallbackDescription: routeHead.description,
+      }),
+    };
+  }, [commentId, post, postId, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   useEffect(() => {
     const targetPostId = post?.voId;

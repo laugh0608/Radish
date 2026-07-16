@@ -43,3 +43,26 @@ test('缺少本地翻译时应回退服务端消息', () => {
 
   assert.equal(localizeParsedApiResponse(parsed, (key) => key), parsed);
 });
+
+test('动态消息参数应传给翻译器并保留诊断字段', () => {
+  const parsed = {
+    ok: false,
+    message: '所选文件超过上传大小限制（最大 5 MB）。',
+    messageInfo: '所选文件超过上传大小限制（最大 5 MB）。',
+    messageKey: 'error.attachment.file_too_large',
+    messageArguments: ['5 MB'],
+    code: 'Attachment.FileTooLarge',
+    statusCode: 413,
+  };
+
+  const localized = localizeParsedApiResponse(parsed, (key, arguments_) => (
+    key === 'error.attachment.file_too_large'
+      ? `The file exceeds the ${String(arguments_?.[0])} limit.`
+      : key
+  ));
+
+  assert.deepEqual(localized, {
+    ...parsed,
+    message: 'The file exceeds the 5 MB limit.',
+  });
+});

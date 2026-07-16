@@ -7,6 +7,7 @@ using Moq;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service;
 using Radish.Shared.Constants;
 using SqlSugar;
@@ -261,6 +262,66 @@ public class ContentSubmissionServiceTest
     }
 
     [Fact]
+    public async Task BeginAsync_Should_Query_Existing_Record_After_UniqueConflict_Savepoint_Rollback()
+    {
+        var records = new List<ContentSubmissionRecord>();
+        var existing = CreateRecord(
+            id: 8001,
+            clientSubmissionId: "forum-post:abc",
+            requestDigest: "digest-a",
+            status: ContentSubmissionStatuses.Pending);
+        var repository = new Mock<IBaseRepository<ContentSubmissionRecord>>(MockBehavior.Strict);
+        var queryCount = 0;
+        repository
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<ContentSubmissionRecord, bool>>>()))
+            .Returns((Expression<Func<ContentSubmissionRecord, bool>>? whereExpression) =>
+            {
+                queryCount++;
+                var predicate = whereExpression?.Compile();
+                return Task.FromResult(predicate == null
+                    ? records.FirstOrDefault()
+                    : records.FirstOrDefault(predicate));
+            });
+        repository
+            .Setup(r => r.QueryPageAsync(
+                It.IsAny<Expression<Func<ContentSubmissionRecord, bool>>?>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<Expression<Func<ContentSubmissionRecord, object>>?>(),
+                It.IsAny<OrderByType>()))
+            .ReturnsAsync((new List<ContentSubmissionRecord>(), 0));
+        repository
+            .Setup(r => r.AddAsync(It.IsAny<ContentSubmissionRecord>()))
+            .ThrowsAsync(new InvalidOperationException("23505 duplicate key value violates unique constraint"));
+
+        var unitOfWork = new Mock<IUnitOfWorkManage>(MockBehavior.Strict);
+        unitOfWork
+            .Setup(uow => uow.ExecuteInSavepointAsync(It.IsAny<Func<Task<long>>>()))
+            .Returns(async (Func<Task<long>> operation) =>
+            {
+                try
+                {
+                    return await operation();
+                }
+                catch
+                {
+                    records.Add(existing);
+                    throw;
+                }
+            });
+        var service = new ContentSubmissionService(repository.Object, unitOfWork.Object);
+
+        var result = await service.BeginAsync(CreateBeginRequest(clientSubmissionId: "forum-post:abc"));
+
+        Assert.Equal(ContentSubmissionBeginStatus.Processing, result.Status);
+        Assert.Equal(8001, result.RecordId);
+        Assert.Equal(2, queryCount);
+        unitOfWork.Verify(
+            uow => uow.ExecuteInSavepointAsync(It.IsAny<Func<Task<long>>>()),
+            Times.Once);
+    }
+
+    [Fact]
     public async Task BeginAsync_Should_Reject_Invalid_Client_Key_Without_Querying_Repository()
     {
         var (service, repository) = CreateService();
@@ -305,29 +366,75 @@ public class ContentSubmissionServiceTest
     }
 
     [Fact]
-    public async Task CompleteFailureAsync_Should_Update_Record_Error()
+    public async Task CompleteSuccessAsync_Should_FailClosed_When_Record_Does_Not_Exist()
+    {
+        var (service, repository) = CreateService();
+
+        var exception = await Assert.ThrowsAsync<ContentSubmissionConsistencyException>(() =>
+            service.CompleteSuccessAsync(new ContentSubmissionCompletionRequest
+            {
+                RecordId = 8001,
+                ResultType = ContentSubmissionResultTypes.Post,
+                ResultId = 9001
+            }));
+
+        Assert.Contains("记录不存在", exception.Message);
+        repository.Verify(r => r.UpdateAsync(It.IsAny<ContentSubmissionRecord>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CompleteSuccessAsync_Should_FailClosed_When_Update_Does_Not_Persist()
     {
         var existing = CreateRecord(
             id: 8001,
             clientSubmissionId: "forum-post:abc",
             requestDigest: "digest-a",
-            status: ContentSubmissionStatuses.Pending,
-            resultType: ContentSubmissionResultTypes.Post,
-            resultId: 9001,
-            resultPublicId: "post-public-id");
+            status: ContentSubmissionStatuses.Pending);
         var (service, repository) = CreateService([existing]);
+        repository
+            .Setup(r => r.UpdateAsync(existing))
+            .ReturnsAsync(false);
 
-        await service.CompleteFailureAsync(8001, "PublishFailed", "publish error");
+        var exception = await Assert.ThrowsAsync<ContentSubmissionConsistencyException>(() =>
+            service.CompleteSuccessAsync(new ContentSubmissionCompletionRequest
+            {
+                RecordId = 8001,
+                ResultType = ContentSubmissionResultTypes.Post,
+                ResultId = 9001
+            }));
 
-        Assert.Equal(ContentSubmissionStatuses.Failed, existing.Status);
-        Assert.Null(existing.ResultType);
-        Assert.Null(existing.ResultId);
-        Assert.Null(existing.ResultPublicId);
-        Assert.Equal("PublishFailed", existing.ErrorCode);
-        Assert.Equal("publish error", existing.ErrorMessage);
-        Assert.NotNull(existing.CompleteTime);
-        Assert.NotNull(existing.ModifyTime);
+        Assert.Contains("未持久化", exception.Message);
+        repository.Verify(r => r.UpdateAsync(existing), Times.Once);
+    }
 
+    [Fact]
+    public async Task BeginAsync_Should_FailClosed_When_Insert_Returns_InvalidId()
+    {
+        var (service, repository) = CreateService(nextId: 0);
+
+        var exception = await Assert.ThrowsAsync<ContentSubmissionConsistencyException>(() =>
+            service.BeginAsync(CreateBeginRequest()));
+
+        Assert.Contains("有效记录 ID", exception.Message);
+        repository.Verify(r => r.AddAsync(It.IsAny<ContentSubmissionRecord>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task BeginAsync_Should_FailClosed_When_Expired_Record_Reset_Does_Not_Persist()
+    {
+        var existing = CreateRecord(
+            id: 8001,
+            clientSubmissionId: "forum-post:abc",
+            requestDigest: "digest-a",
+            status: ContentSubmissionStatuses.Pending);
+        existing.ExpiresAt = DateTime.Now.AddMinutes(-1);
+        var (service, repository) = CreateService([existing]);
+        repository.Setup(r => r.UpdateAsync(existing)).ReturnsAsync(false);
+
+        var exception = await Assert.ThrowsAsync<ContentSubmissionConsistencyException>(() =>
+            service.BeginAsync(CreateBeginRequest()));
+
+        Assert.Contains("重置状态未持久化", exception.Message);
         repository.Verify(r => r.UpdateAsync(existing), Times.Once);
     }
 
@@ -367,7 +474,8 @@ public class ContentSubmissionServiceTest
 
     private static (ContentSubmissionService Service, Mock<IBaseRepository<ContentSubmissionRecord>> Repository) CreateService(
         List<ContentSubmissionRecord>? records = null,
-        long nextId = 1001)
+        long nextId = 1001,
+        Mock<IUnitOfWorkManage>? unitOfWork = null)
     {
         var storedRecords = records ?? [];
         var nextRecordId = nextId;
@@ -432,7 +540,12 @@ public class ContentSubmissionServiceTest
             .Setup(r => r.UpdateAsync(It.IsAny<ContentSubmissionRecord>()))
             .ReturnsAsync(true);
 
-        return (new ContentSubmissionService(repository.Object), repository);
+        var effectiveUnitOfWork = unitOfWork ?? new Mock<IUnitOfWorkManage>(MockBehavior.Strict);
+        effectiveUnitOfWork
+            .Setup(uow => uow.ExecuteInSavepointAsync(It.IsAny<Func<Task<long>>>()))
+            .Returns((Func<Task<long>> operation) => operation());
+
+        return (new ContentSubmissionService(repository.Object, effectiveUnitOfWork.Object), repository);
     }
 
     private static ContentSubmissionBeginRequest CreateBeginRequest(

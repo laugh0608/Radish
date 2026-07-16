@@ -6,6 +6,7 @@ namespace Radish.Infrastructure.FileStorage;
 public enum FileUploadFailureKind
 {
     None = 0,
+    InvalidBusinessType,
     FileTooLarge,
     UnsupportedType,
     ContentMismatch,

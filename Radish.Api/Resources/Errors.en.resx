@@ -154,10 +154,13 @@
     <value>Your content is still being submitted. Check the result shortly.</value>
   </data>
   <data name="error.forum.publish_rate_limited" xml:space="preserve">
-    <value>You are publishing too frequently. Try again later.</value>
+    <value>You are submitting too frequently. Try again in {0} seconds.</value>
   </data>
   <data name="error.attachment.file_empty" xml:space="preserve">
     <value>Select a non-empty file to upload.</value>
+  </data>
+  <data name="error.attachment.not_found" xml:space="preserve">
+    <value>The attachment does not exist or is no longer available.</value>
   </data>
   <data name="error.attachment.image_type_unsupported" xml:space="preserve">
     <value>This image format is not supported.</value>
@@ -165,14 +168,26 @@
   <data name="error.attachment.document_type_unsupported" xml:space="preserve">
     <value>This document format is not supported.</value>
   </data>
+  <data name="error.attachment.business_type_unsupported" xml:space="preserve">
+    <value>This attachment business type is not supported.</value>
+  </data>
   <data name="error.attachment.upload_forbidden" xml:space="preserve">
     <value>Your account does not have permission to upload this file.</value>
   </data>
   <data name="error.attachment.rate_limited" xml:space="preserve">
     <value>You are uploading too frequently. Try again later.</value>
   </data>
+  <data name="error.attachment.concurrent_upload_limit_reached" xml:space="preserve">
+    <value>You currently have {0} uploads in progress, which reaches the concurrent upload limit of {1}.</value>
+  </data>
+  <data name="error.attachment.upload_frequency_limit_reached" xml:space="preserve">
+    <value>You started {0} uploads this minute, which reaches the limit of {1} upload attempts per minute. Try again later.</value>
+  </data>
+  <data name="error.attachment.daily_upload_size_limit_reached" xml:space="preserve">
+    <value>Your completed and reserved uploads use {0} today, leaving {1}; this {2} file cannot be uploaded.</value>
+  </data>
   <data name="error.attachment.file_too_large" xml:space="preserve">
-    <value>The selected file exceeds the upload size limit.</value>
+    <value>The selected file exceeds the upload size limit of {0}.</value>
   </data>
   <data name="error.attachment.unsupported_media_type" xml:space="preserve">
     <value>This file type is not supported.</value>
@@ -185,6 +200,27 @@
   </data>
   <data name="error.attachment.processing_failed" xml:space="preserve">
     <value>The file could not be processed. Try again later.</value>
+  </data>
+  <data name="error.attachment.chunked_upload_disabled" xml:space="preserve">
+    <value>Chunked uploads are currently disabled.</value>
+  </data>
+  <data name="error.attachment.upload_session_invalid" xml:space="preserve">
+    <value>The upload session request is invalid. Check the file and chunk parameters.</value>
+  </data>
+  <data name="error.attachment.upload_session_not_found" xml:space="preserve">
+    <value>The upload session does not exist or your account cannot access it.</value>
+  </data>
+  <data name="error.attachment.upload_session_expired" xml:space="preserve">
+    <value>The upload session expired. Start the upload again.</value>
+  </data>
+  <data name="error.attachment.upload_session_state_conflict" xml:space="preserve">
+    <value>The upload session state does not allow this operation.</value>
+  </data>
+  <data name="error.attachment.upload_chunk_invalid" xml:space="preserve">
+    <value>The upload chunk index or data length is invalid.</value>
+  </data>
+  <data name="error.attachment.upload_chunks_incomplete" xml:space="preserve">
+    <value>Some chunks are still missing, so the upload cannot be merged yet.</value>
   </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>Internal server error. Please try again later.</value>

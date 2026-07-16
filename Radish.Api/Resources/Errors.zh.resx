@@ -154,10 +154,13 @@
     <value>内容正在提交，请稍后确认结果。</value>
   </data>
   <data name="error.forum.publish_rate_limited" xml:space="preserve">
-    <value>发布过于频繁，请稍后重试。</value>
+    <value>操作过于频繁，请在 {0} 秒后重试。</value>
   </data>
   <data name="error.attachment.file_empty" xml:space="preserve">
     <value>请选择非空文件后上传。</value>
+  </data>
+  <data name="error.attachment.not_found" xml:space="preserve">
+    <value>附件不存在或已不可用。</value>
   </data>
   <data name="error.attachment.image_type_unsupported" xml:space="preserve">
     <value>不支持该图片格式。</value>
@@ -165,14 +168,26 @@
   <data name="error.attachment.document_type_unsupported" xml:space="preserve">
     <value>不支持该文档格式。</value>
   </data>
+  <data name="error.attachment.business_type_unsupported" xml:space="preserve">
+    <value>不支持该附件业务类型。</value>
+  </data>
   <data name="error.attachment.upload_forbidden" xml:space="preserve">
     <value>当前账号无权上传该文件。</value>
   </data>
   <data name="error.attachment.rate_limited" xml:space="preserve">
     <value>上传过于频繁，请稍后重试。</value>
   </data>
+  <data name="error.attachment.concurrent_upload_limit_reached" xml:space="preserve">
+    <value>当前有 {0} 个文件正在上传，已达到并发上传限制（最多 {1} 个）。</value>
+  </data>
+  <data name="error.attachment.upload_frequency_limit_reached" xml:space="preserve">
+    <value>本分钟已发起 {0} 次上传，已达到速率限制（最多 {1} 次/分钟），请稍后再试。</value>
+  </data>
+  <data name="error.attachment.daily_upload_size_limit_reached" xml:space="preserve">
+    <value>今日已使用或预留 {0}，剩余配额 {1}，无法上传此文件（{2}）。</value>
+  </data>
   <data name="error.attachment.file_too_large" xml:space="preserve">
-    <value>所选文件超过上传大小限制。</value>
+    <value>所选文件超过上传大小限制（最大 {0}）。</value>
   </data>
   <data name="error.attachment.unsupported_media_type" xml:space="preserve">
     <value>不支持该文件类型。</value>
@@ -185,6 +200,27 @@
   </data>
   <data name="error.attachment.processing_failed" xml:space="preserve">
     <value>文件处理失败，请稍后重试。</value>
+  </data>
+  <data name="error.attachment.chunked_upload_disabled" xml:space="preserve">
+    <value>分片上传当前未启用。</value>
+  </data>
+  <data name="error.attachment.upload_session_invalid" xml:space="preserve">
+    <value>上传会话请求无效，请检查文件和分片参数。</value>
+  </data>
+  <data name="error.attachment.upload_session_not_found" xml:space="preserve">
+    <value>上传会话不存在或当前账号无权访问。</value>
+  </data>
+  <data name="error.attachment.upload_session_expired" xml:space="preserve">
+    <value>上传会话已过期，请重新开始上传。</value>
+  </data>
+  <data name="error.attachment.upload_session_state_conflict" xml:space="preserve">
+    <value>上传会话当前状态不允许执行该操作。</value>
+  </data>
+  <data name="error.attachment.upload_chunk_invalid" xml:space="preserve">
+    <value>上传分片的索引或数据长度无效。</value>
+  </data>
+  <data name="error.attachment.upload_chunks_incomplete" xml:space="preserve">
+    <value>仍有分片未上传完成，暂时无法合并。</value>
   </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>服务器内部错误，请稍后重试。</value>

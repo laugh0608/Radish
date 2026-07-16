@@ -1,6 +1,7 @@
 import { StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { configureApiClient } from '@radish/http';
+import { ToastContainer } from '@radish/ui/toast';
 import { tokenService } from '@/services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
 import { applySiteBranding } from '@/services/siteBranding';
@@ -63,7 +64,9 @@ void applySiteBranding(getApiBaseUrl());
 configureApiClient({
   getToken: () => tokenService.getAccessToken(),
   getLanguage: () => getIntlLocale(i18n.resolvedLanguage ?? i18n.language),
-  translateMessage: (key) => i18n.exists(key) ? i18n.t(key) : undefined,
+  translateMessage: (key, messageArguments) => i18n.exists(key)
+    ? i18n.t(key, Object.fromEntries((messageArguments ?? []).map((value, index) => [index, value])))
+    : undefined,
 });
 
 createRoot(document.getElementById('root')!).render(
@@ -73,6 +76,7 @@ createRoot(document.getElementById('root')!).render(
         <Suspense fallback={<div className="appLoading">{i18n.t('desktop.appLoading')}</div>}>
           <BrowserAppRouter />
         </Suspense>
+        <ToastContainer />
       </ThemeProvider>
     </LanguageProvider>
   </StrictMode>

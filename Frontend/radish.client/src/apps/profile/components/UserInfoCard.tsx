@@ -501,7 +501,6 @@ export const UserInfoCard = ({
             isOpen={isAvatarModalOpen}
             onClose={() => setIsAvatarModalOpen(false)}
             onSuccess={handleAvatarUploadSuccess}
-            apiBaseUrl={apiBaseUrl}
           />
         </Suspense>
       )}

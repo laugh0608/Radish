@@ -73,27 +73,6 @@ export const PublicForumApp = ({
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
 
   useEffect(() => {
-    const titleKey = route.kind === 'detail'
-      ? 'forum.postDetail.title'
-      : route.kind === 'compose'
-        ? 'forum.public.composeTitle'
-        : route.kind === 'search'
-          ? 'forum.public.searchTitle'
-          : route.kind === 'tag'
-            ? 'forum.public.tagTitle'
-            : route.kind === 'question'
-              ? 'forum.public.questionTitle'
-              : route.kind === 'poll'
-                ? 'forum.public.pollTitle'
-                : route.kind === 'lottery'
-                  ? 'forum.public.lotteryTitle'
-                  : 'forum.allPosts';
-    const nextTitle = `${t('desktop.apps.forum.name')} · ${t(titleKey)}`;
-
-    document.title = nextTitle;
-  }, [route.kind, t]);
-
-  useEffect(() => {
     const page = pageRef.current;
     const previousRoute = previousRouteRef.current;
 

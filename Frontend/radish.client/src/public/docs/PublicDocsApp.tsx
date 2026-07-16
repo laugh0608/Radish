@@ -26,21 +26,18 @@ import {
   getPublicDetailBackLabelKey,
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
-import {
-  applyPublicStructuredData,
-  buildDocsArticleStructuredData,
-  removePublicStructuredData,
-} from '../publicStructuredData';
-import { buildPublicShareUrl } from '../publicHead';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
+import { isCurrentDocsHeadSource } from '../publicHeadSourceIdentity';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { copyRecoveryDiagnostics } from '@/utils/recoveryDiagnostics';
 import { getPublicWikiDocumentBySlug, getPublicWikiList, getPublicWikiTree } from './publicDocsApi';
 import { PublicDocsDetailRail, PublicDocsListRail, PublicDocsSearchRail } from './PublicDocsRails';
+import { buildPublicDocsHeadSnapshot } from './publicDocsHead';
 import { toSourceText, toStatusText, toVisibilityText } from './publicDocsFormat';
 import styles from './PublicDocsApp.module.css';
-
 const PUBLIC_DOCS_SEARCH_PAGE_SIZE = 10;
 
 interface PublicDocsAppProps {
@@ -384,16 +381,6 @@ export const PublicDocsApp = ({
     };
     setPendingRestoreScrollTop(null);
   };
-
-  useEffect(() => {
-    const nextTitle = route.kind === 'list'
-      ? `${t('desktop.apps.document.name')} · ${t('wiki.public.pageTitle')}`
-      : route.kind === 'search'
-        ? `${t('desktop.apps.document.name')} · ${route.keyword ? t('wiki.public.searchResultTitle', { keyword: route.keyword }) : t('wiki.public.searchTitle')}`
-        : `${t('desktop.apps.document.name')} · ${t('wiki.public.detailTitle')}`;
-
-    document.title = nextTitle;
-  }, [route, t]);
 
   const getDiagnosticActionLabel = () => t(diagnosticCopyState === 'copied'
     ? 'common.diagnosticsCopied'
@@ -1266,31 +1253,23 @@ const PublicDocsDetail = ({
     };
   }, [reloadToken, route.slug]);
 
-  useEffect(() => {
-    if (!documentDetail?.voTitle) {
-      return;
+  const publicHeadSnapshot = useMemo(() => {
+    if (!documentDetail || !isCurrentDocsHeadSource(route, documentDetail)) {
+      return null;
     }
 
-    globalThis.document.title = `${documentDetail.voTitle} · ${t('desktop.apps.document.name')}`;
-  }, [documentDetail?.voTitle, t]);
-
-  useEffect(() => {
-    if (!documentDetail) {
-      removePublicStructuredData();
-      return;
-    }
-
-    applyPublicStructuredData(buildDocsArticleStructuredData({
-      document: documentDetail,
-      canonicalPath: buildPublicDocsPath({
-        kind: 'detail',
-        slug: documentDetail.voSlug,
-        anchor: route.anchor,
-      }),
-    }));
-
-    return removePublicStructuredData;
-  }, [documentDetail, route.anchor]);
+    const canonicalRoute: PublicDocsRoute = {
+      kind: 'detail',
+      slug: documentDetail.voSlug,
+      anchor: route.anchor,
+    };
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'docs', route: canonicalRoute }, t);
+    return buildPublicDocsHeadSnapshot(documentDetail, route.anchor, {
+      appName: t('desktop.apps.document.name'),
+      routeHead,
+    });
+  }, [documentDetail, route, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   useEffect(() => {
     if (!documentDetail?.voSlug) {

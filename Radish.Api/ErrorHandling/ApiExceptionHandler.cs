@@ -44,6 +44,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
                 businessException.Message,
                 businessException.ErrorCode ?? ApiErrorCodes.ValidationFailed,
                 businessException.MessageKey,
+                businessException.MessageArguments.ToArray(),
                 cancellationToken: cancellationToken);
             return true;
         }

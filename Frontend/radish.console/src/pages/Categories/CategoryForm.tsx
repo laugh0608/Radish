@@ -10,10 +10,15 @@ import {
   Space,
   PlusOutlined,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
-import { uploadAttachmentImage } from '@/api/attachmentApi';
+import {
+  uploadAttachmentImage,
+  type ConsoleAttachmentBusinessType,
+} from '@/api/attachmentApi';
 import {
   createCategory,
   getCategoryPage,
@@ -53,7 +58,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
   };
 
   const createUploadHandler = (
-    businessType: string,
+    businessType: ConsoleAttachmentBusinessType,
     setUploading: (value: boolean) => void,
     setPreview: (value: string | undefined) => void,
     fieldName: 'iconAttachmentId' | 'coverAttachmentId'
@@ -64,9 +69,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
       const error = new Error('仅支持上传图片文件');
       message.error(error.message);
@@ -249,7 +252,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
 
             <Space>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('CategoryIcon', setIconUploading, setIconPreviewUrl, 'iconAttachmentId')}
                 disabled={iconUploading || loading}
@@ -300,7 +303,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
 
             <Space>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('CategoryCover', setCoverUploading, setCoverPreviewUrl, 'coverAttachmentId')}
                 disabled={coverUploading || loading}

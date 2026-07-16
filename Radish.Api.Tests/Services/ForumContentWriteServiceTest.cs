@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
 using Moq;
+using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
 using Radish.IService;
 using Radish.Model;
@@ -18,6 +19,27 @@ namespace Radish.Api.Tests.Services;
 
 public class ForumContentWriteServiceTest
 {
+    [Fact]
+    public void WriteMethods_Should_Keep_SubmissionLedger_And_BusinessMutation_In_One_Transaction()
+    {
+        string[] methodNames =
+        [
+            nameof(ForumContentWriteService.PublishPostAsync),
+            nameof(ForumContentWriteService.CreateCommentAsync),
+            nameof(ForumContentWriteService.AddAnswerAsync),
+            nameof(ForumContentWriteService.UpdatePostAsync),
+            nameof(ForumContentWriteService.UpdateCommentAsync)
+        ];
+
+        foreach (var methodName in methodNames)
+        {
+            var method = typeof(ForumContentWriteService).GetMethod(methodName, BindingFlags.Instance | BindingFlags.Public);
+
+            Assert.NotNull(method);
+            Assert.NotNull(method.GetCustomAttribute<UseTranAttribute>());
+        }
+    }
+
     [Fact]
     public void PublishRequestDtos_Should_Leave_DomainValidation_To_StablePublishContract()
     {
@@ -177,15 +199,9 @@ public class ForumContentWriteServiceTest
     }
 
     [Fact]
-    public async Task PublishPostAsync_Should_Record_StableBusinessErrorCode_When_CreateFails()
+    public async Task PublishPostAsync_Should_Preserve_StableBusinessException_When_CreateFails()
     {
         var contentSubmissionService = CreateContentSubmissionService();
-        contentSubmissionService
-            .Setup(service => service.CompleteFailureAsync(
-                7001,
-                ForumPublishErrorCodes.PollOptionsDuplicate,
-                "投票选项不能重复"))
-            .Returns(Task.CompletedTask);
         var postService = new Mock<IPostService>(MockBehavior.Strict);
         postService
             .Setup(service => service.PublishPostAsync(
@@ -212,22 +228,15 @@ public class ForumContentWriteServiceTest
             clientSubmissionId: "forum-post:abc"));
 
         Assert.Equal(ForumPublishErrorCodes.PollOptionsDuplicate, exception.ErrorCode);
-        contentSubmissionService.Verify(
-            service => service.CompleteFailureAsync(
-                7001,
-                ForumPublishErrorCodes.PollOptionsDuplicate,
-                "投票选项不能重复"),
-            Times.Once);
     }
 
     [Fact]
-    public async Task PublishPostAsync_Should_Not_Mark_Failed_When_Post_Created_But_Completion_First_Fails()
+    public async Task PublishPostAsync_Should_Propagate_CompletionFailure_Without_Retry()
     {
         var contentSubmissionService = CreateContentSubmissionService();
         contentSubmissionService
-            .SetupSequence(s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
-            .ThrowsAsync(new InvalidOperationException("temporary completion failure"))
-            .Returns(Task.CompletedTask);
+            .Setup(s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
+            .ThrowsAsync(new InvalidOperationException("completion unavailable"));
 
         var postService = new Mock<IPostService>(MockBehavior.Strict);
         postService
@@ -242,37 +251,29 @@ public class ForumContentWriteServiceTest
 
         var service = CreateService(contentSubmissionService, postService);
 
-        var result = await service.PublishPostAsync(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.PublishPostAsync(
             CreatePost(),
             poll: null,
             lottery: null,
             isQuestion: false,
             tagNames: ["Radish"],
             allowCreateTag: true,
-            clientSubmissionId: "forum-post:abc");
+            clientSubmissionId: "forum-post:abc"));
 
-        Assert.Equal(ContentWriteStatus.Created, result.Status);
-        Assert.Equal(9001, result.Result);
-
+        Assert.Equal("completion unavailable", exception.Message);
         contentSubmissionService.Verify(
             s => s.CompleteSuccessAsync(It.Is<ContentSubmissionCompletionRequest>(request =>
                 request.RecordId == 7001 &&
                 request.ResultType == ContentSubmissionResultTypes.Post &&
                 request.ResultId == 9001 &&
                 request.ResultPublicId == "pst_test")),
-            Times.Exactly(2));
-        contentSubmissionService.Verify(
-            s => s.CompleteFailureAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string?>()),
-            Times.Never);
+            Times.Once);
     }
 
     [Fact]
-    public async Task PublishPostAsync_Should_Mark_Failed_When_Post_Create_Fails()
+    public async Task PublishPostAsync_Should_Rethrow_CreateFailure_Without_Overwriting_It()
     {
         var contentSubmissionService = CreateContentSubmissionService();
-        contentSubmissionService
-            .Setup(s => s.CompleteFailureAsync(7001, "InvalidOperationException", "publish failed"))
-            .Returns(Task.CompletedTask);
 
         var postService = new Mock<IPostService>(MockBehavior.Strict);
         postService
@@ -300,9 +301,6 @@ public class ForumContentWriteServiceTest
         contentSubmissionService.Verify(
             s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()),
             Times.Never);
-        contentSubmissionService.Verify(
-            s => s.CompleteFailureAsync(7001, "InvalidOperationException", "publish failed"),
-            Times.Once);
     }
 
     [Fact]
@@ -379,7 +377,8 @@ public class ForumContentWriteServiceTest
             {
                 Status = beginStatus,
                 RecordId = 7001,
-                Message = "submission rejected"
+                Message = "submission rejected",
+                RetryAfterSeconds = beginStatus == ContentSubmissionBeginStatus.FrequencyLimited ? 7 : null
             });
         var postService = new Mock<IPostService>(MockBehavior.Strict);
         var service = CreateService(contentSubmissionService, postService);
@@ -397,6 +396,14 @@ public class ForumContentWriteServiceTest
         Assert.Equal(expectedErrorCode, exception.ErrorCode);
         Assert.Equal(expectedMessageKey, exception.MessageKey);
         Assert.Equal("submission rejected", exception.Message);
+        if (beginStatus == ContentSubmissionBeginStatus.FrequencyLimited)
+        {
+            Assert.Equal(new object[] { 7 }, exception.MessageArguments);
+        }
+        else
+        {
+            Assert.Empty(exception.MessageArguments);
+        }
         postService.Verify(
             item => item.PublishPostAsync(
                 It.IsAny<Post>(),
@@ -438,6 +445,69 @@ public class ForumContentWriteServiceTest
                 request.FrequencyTargetType == "Post" &&
                 request.FrequencyTargetId == 2001)),
             Times.Once);
+    }
+
+    [Theory]
+    [InlineData(
+        ContentSubmissionBeginStatus.InvalidKey,
+        400,
+        ForumPublishErrorCodes.SubmissionIdInvalid,
+        "error.forum.publish_submission_id_invalid")]
+    [InlineData(
+        ContentSubmissionBeginStatus.Conflict,
+        409,
+        ForumPublishErrorCodes.SubmissionConflict,
+        "error.forum.publish_submission_conflict")]
+    [InlineData(
+        ContentSubmissionBeginStatus.Processing,
+        409,
+        ForumPublishErrorCodes.SubmissionProcessing,
+        "error.forum.publish_submission_processing")]
+    [InlineData(
+        ContentSubmissionBeginStatus.FrequencyLimited,
+        429,
+        ForumPublishErrorCodes.RateLimited,
+        "error.forum.publish_rate_limited")]
+    public async Task CreateCommentAsync_Should_Map_SubmissionRejection_To_StableBusinessContract(
+        ContentSubmissionBeginStatus beginStatus,
+        int expectedStatusCode,
+        string expectedErrorCode,
+        string expectedMessageKey)
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(service => service.BeginAsync(It.IsAny<ContentSubmissionBeginRequest>()))
+            .ReturnsAsync(new ContentSubmissionBeginResult
+            {
+                Status = beginStatus,
+                RecordId = 7001,
+                Message = "submission rejected",
+                RetryAfterSeconds = beginStatus == ContentSubmissionBeginStatus.FrequencyLimited ? 7 : null
+            });
+        var commentService = new Mock<ICommentService>(MockBehavior.Strict);
+        var service = CreateService(
+            contentSubmissionService,
+            new Mock<IPostService>(MockBehavior.Strict),
+            commentService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.CreateCommentAsync(CreateComment(), "forum-comment:abc"));
+
+        Assert.Equal(expectedStatusCode, exception.StatusCode);
+        Assert.Equal(expectedErrorCode, exception.ErrorCode);
+        Assert.Equal(expectedMessageKey, exception.MessageKey);
+        if (beginStatus == ContentSubmissionBeginStatus.FrequencyLimited)
+        {
+            Assert.Equal(new object[] { 7 }, exception.MessageArguments);
+        }
+        else
+        {
+            Assert.Empty(exception.MessageArguments);
+        }
+
+        commentService.Verify(
+            item => item.AddCommentAsync(It.IsAny<Comment>()),
+            Times.Never);
     }
 
     [Fact]
@@ -654,9 +724,6 @@ public class ForumContentWriteServiceTest
         contentSubmissionService.Verify(
             s => s.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()),
             Times.Never);
-        contentSubmissionService.Verify(
-            s => s.CompleteFailureAsync(It.IsAny<long>(), It.IsAny<string?>(), It.IsAny<string?>()),
-            Times.Never);
         commentService.Verify(
             s => s.UpdateCommentAsync(
                 It.IsAny<long>(),
@@ -665,6 +732,78 @@ public class ForumContentWriteServiceTest
                 It.IsAny<string>(),
                 It.IsAny<bool>()),
             Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdatePostAsync_Should_Preserve_CompletionConsistencyFailure()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(service => service.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
+            .ThrowsAsync(new ContentSubmissionConsistencyException("completion unavailable"));
+        var postService = new Mock<IPostService>(MockBehavior.Strict);
+        postService
+            .Setup(service => service.GetPostDetailAsync(2001, 42, "default"))
+            .ReturnsAsync(new PostVo
+            {
+                VoId = 2001,
+                VoPublicId = "pst_2001",
+                VoTitle = "原帖子标题",
+                VoContent = "原帖子内容",
+                VoCategoryId = 101,
+                VoTags = "Radish"
+            });
+        var service = CreateService(contentSubmissionService, postService);
+
+        var exception = await Assert.ThrowsAsync<ContentSubmissionConsistencyException>(() =>
+            service.UpdatePostAsync(
+                tenantId: 9,
+                postId: 2001,
+                title: "原帖子标题",
+                content: "原帖子内容",
+                categoryId: 101,
+                tagNames: ["Radish"],
+                allowCreateTag: false,
+                operatorId: 42,
+                operatorName: "Owner",
+                isAdmin: false,
+                clientSubmissionId: "forum-post-edit:failure"));
+
+        Assert.Equal("completion unavailable", exception.Message);
+    }
+
+    [Fact]
+    public async Task UpdateCommentAsync_Should_Preserve_CompletionConsistencyFailure()
+    {
+        var contentSubmissionService = CreateContentSubmissionService();
+        contentSubmissionService
+            .Setup(service => service.CompleteSuccessAsync(It.IsAny<ContentSubmissionCompletionRequest>()))
+            .ThrowsAsync(new ContentSubmissionConsistencyException("completion unavailable"));
+        var commentService = new Mock<ICommentService>(MockBehavior.Strict);
+        commentService
+            .Setup(service => service.QueryFirstAsync(It.IsAny<Expression<Func<Comment, bool>>?>()))
+            .ReturnsAsync(new CommentVo
+            {
+                VoId = 3001,
+                VoPostId = 2001,
+                VoContent = "原评论内容"
+            });
+        var service = CreateService(
+            contentSubmissionService,
+            new Mock<IPostService>(MockBehavior.Strict),
+            commentService);
+
+        var exception = await Assert.ThrowsAsync<ContentSubmissionConsistencyException>(() =>
+            service.UpdateCommentAsync(
+                tenantId: 9,
+                commentId: 3001,
+                content: "原评论内容",
+                operatorId: 42,
+                operatorName: "Owner",
+                isAdmin: false,
+                clientSubmissionId: "forum-comment-edit:failure"));
+
+        Assert.Equal("completion unavailable", exception.Message);
     }
 
     private static Mock<IContentSubmissionService> CreateContentSubmissionService()

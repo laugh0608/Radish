@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { ToastContainer, toast } from '@radish/ui/toast';
+import { toast } from '@radish/ui/toast';
 import type { NotificationItemData } from '@radish/ui/notification';
 import { Icon } from '@radish/ui/icon';
 import { useTranslation } from 'react-i18next';
@@ -414,7 +414,6 @@ export const NotificationsApp = () => {
       <main className={styles.main}>
         {renderContent()}
       </main>
-      <ToastContainer />
     </div>
   );
 };

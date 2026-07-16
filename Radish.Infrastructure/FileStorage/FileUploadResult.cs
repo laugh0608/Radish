@@ -46,9 +46,24 @@ public class FileUploadResult
     public string? FileHash { get; set; }
 
     /// <summary>
+    /// 由服务端根据已验证文件类型确定的 MIME 类型。
+    /// </summary>
+    public string ContentType { get; set; } = "application/octet-stream";
+
+    /// <summary>
+    /// 可安全公开的本地化格式参数。
+    /// </summary>
+    public object[] MessageArguments { get; set; } = Array.Empty<object>();
+
+    /// <summary>
     /// 创建成功结果
     /// </summary>
-    public static FileUploadResult Ok(string storedName, string storagePath, long fileSize, string? fileHash = null)
+    public static FileUploadResult Ok(
+        string storedName,
+        string storagePath,
+        long fileSize,
+        string contentType,
+        string? fileHash = null)
     {
         return new FileUploadResult
         {
@@ -56,6 +71,7 @@ public class FileUploadResult
             StoredName = storedName,
             StoragePath = storagePath,
             FileSize = fileSize,
+            ContentType = contentType,
             FileHash = fileHash
         };
     }
@@ -63,7 +79,10 @@ public class FileUploadResult
     /// <summary>
     /// 创建失败结果
     /// </summary>
-    public static FileUploadResult Fail(FileUploadFailureKind failureKind, string errorMessage)
+    public static FileUploadResult Fail(
+        FileUploadFailureKind failureKind,
+        string errorMessage,
+        params object[] messageArguments)
     {
         if (failureKind == FileUploadFailureKind.None)
         {
@@ -74,7 +93,8 @@ public class FileUploadResult
         {
             Success = false,
             FailureKind = failureKind,
-            ErrorMessage = errorMessage
+            ErrorMessage = errorMessage,
+            MessageArguments = messageArguments ?? Array.Empty<object>()
         };
     }
 }

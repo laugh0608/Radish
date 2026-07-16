@@ -1,7 +1,7 @@
 @Access_Token = 在这里粘贴通过 OIDC 获取的 access_token
 @Api_HostAddress = http://localhost:5100
 
-@SessionId = <从创建会话响应中复制 sessionId>
+@SessionId = <从创建会话响应中复制 voSessionId>
 
 ### 创建分片上传会话
 POST {{Api_HostAddress}}/api/v1/ChunkedUpload/CreateSession
@@ -9,12 +9,11 @@ Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
 
 {
-  "fileName": "large-video.mp4",
-  "totalSize": 104857600,
+  "fileName": "sample-video.mp4",
+  "totalSize": 4194304,
   "mimeType": "video/mp4",
   "chunkSize": 2097152,
-  "businessType": "Video",
-  "businessId": null
+  "businessType": "General"
 }
 
 ### 上传第一个分片
@@ -81,7 +80,7 @@ Content-Type: application/json
 
 "{{SessionId}}"
 
-### 测试分片大小限制（预期 400）
+### 测试 multipart 请求大小限制（预期 413）
 POST {{Api_HostAddress}}/api/v1/ChunkedUpload/UploadChunk
 Authorization: Bearer {{Access_Token}}
 Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW

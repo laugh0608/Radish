@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ToastContainer } from '@radish/ui/toast';
 import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { getApiBaseUrl } from '@/config/env';
 import { notificationHub } from '@/services/notificationHub';
@@ -159,8 +158,6 @@ export const Shell = () => {
       <div className={styles.dockLayer}>
         <Dock />
       </div>
-      <ToastContainer />
-
       {/* 升级动画弹窗 */}
       {levelUpData && (
         <LevelUpModal

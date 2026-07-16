@@ -113,6 +113,16 @@ const workbenchGroups: WorkbenchGroup[] = [
         ],
       },
       {
+        titleKey: 'workbench.item.legal.title',
+        descriptionKey: 'workbench.item.legal.description',
+        icon: 'mdi:shield-check-outline',
+        access: 'public',
+        href: '/legal',
+        links: [
+          { labelKey: 'workbench.link.readCommitments', href: '/legal' },
+        ],
+      },
+      {
         titleKey: 'workbench.item.publicShop.title',
         descriptionKey: 'workbench.item.publicShop.description',
         icon: 'mdi:storefront-outline',

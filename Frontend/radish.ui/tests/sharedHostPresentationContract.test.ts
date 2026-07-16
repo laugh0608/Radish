@@ -55,6 +55,10 @@ test('MarkdownEditor 上传契约支持真实进度和宿主错误处理', () =>
 
 test('Modal、BottomSheet 与 ConfirmDialog 不持有宿主语言默认值', () => {
   assert.match(modalSource, /closeLabel: string;/);
+  assert.match(modalSource, /closeDisabled\?: boolean;/);
+  assert.match(modalSource, /!isOpen \|\| !closeOnEscape \|\| closeDisabled/);
+  assert.match(modalSource, /!closeDisabled && closeOnOverlayClick/);
+  assert.match(modalSource, /disabled=\{closeDisabled\}/);
   assert.match(modalSource, /aria-label=\{closeLabel\}/);
   assert.match(modalSource, /type="button"/);
   assert.match(bottomSheetSource, /closeLabel: string;/);
@@ -69,9 +73,20 @@ test('Modal、BottomSheet 与 ConfirmDialog 不持有宿主语言默认值', () 
 test('ImageCropper 使用宿主词元并把裁切错误交还宿主', () => {
   assert.match(imageCropperSource, /labels: ImageCropperLabels;/);
   assert.match(imageCropperSource, /onError\?: \(error: unknown\) => void;/);
+  assert.match(
+    imageCropperSource,
+    /onProcessingChange\?: ImageCropperProcessingChangeHandler;/,
+  );
+  assert.match(imageCropperSource, /onProcessingChangeRef\.current\?\.\(true\)/);
+  assert.match(imageCropperSource, /onProcessingChangeRef\.current\?\.\(false\)/);
   assert.match(imageCropperSource, /setErrorMessage\(labels\.cropFailed\)/);
   assert.match(imageCropperSource, /onError\?\.\(error\)/);
   assert.match(imageCropperSource, /processingRef\.current/);
+  assert.match(imageCropperSource, /processingGenerationRef\.current/);
+  assert.match(imageCropperSource, /if \(Object\.is\(imageRef\.current, image\)\)/);
+  assert.match(imageCropperSource, /const wasProcessing = processingRef\.current;/);
+  assert.match(imageCropperSource, /setCroppedAreaPixels\(null\)/);
+  assert.match(imageCropperSource, /!mountedRef\.current \|\| processingGeneration !== processingGenerationRef\.current/);
   assert.match(imageCropperSource, /await onCropComplete\(croppedBlob\)/);
   assert.match(imageCropperSource, /disabled=\{processing\}/);
   assert.match(imageCropperSource, /type="button"/);

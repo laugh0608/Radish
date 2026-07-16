@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useId, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useId, useLayoutEffect, useRef } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import styles from './ImageCropper.module.css';
@@ -10,6 +10,8 @@ export interface ImageCropperLabels {
   cropFailed: string;
 }
 
+export type ImageCropperProcessingChangeHandler = (processing: boolean) => void;
+
 export interface ImageCropperProps {
   image: string | File;
   labels: ImageCropperLabels;
@@ -17,6 +19,7 @@ export interface ImageCropperProps {
   onCropComplete: (croppedBlob: Blob) => void | Promise<void>;
   onCancel: () => void;
   onError?: (error: unknown) => void;
+  onProcessingChange?: ImageCropperProcessingChangeHandler;
 }
 
 export const ImageCropper: React.FC<ImageCropperProps> = ({
@@ -26,6 +29,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   onCropComplete,
   onCancel,
   onError,
+  onProcessingChange,
 }) => {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -34,7 +38,45 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const processingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const processingGenerationRef = useRef(0);
+  const onProcessingChangeRef = useRef(onProcessingChange);
+  const imageRef = useRef(image);
   const zoomInputId = useId();
+
+  useEffect(() => {
+    onProcessingChangeRef.current = onProcessingChange;
+  }, [onProcessingChange]);
+
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      processingRef.current = false;
+      processingGenerationRef.current += 1;
+    };
+  }, []);
+
+  useLayoutEffect(() => {
+    if (Object.is(imageRef.current, image)) {
+      return;
+    }
+
+    const wasProcessing = processingRef.current;
+    imageRef.current = image;
+    processingGenerationRef.current += 1;
+    processingRef.current = false;
+    setProcessing(false);
+    setCroppedAreaPixels(null);
+    setErrorMessage(null);
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+
+    if (wasProcessing) {
+      onProcessingChangeRef.current?.(false);
+    }
+  }, [image]);
 
   React.useEffect(() => {
     if (typeof image === 'string') {
@@ -56,18 +98,34 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const handleConfirm = async () => {
     if (!croppedAreaPixels || processingRef.current) return;
 
+    const processingGeneration = processingGenerationRef.current + 1;
+    processingGenerationRef.current = processingGeneration;
     processingRef.current = true;
     setProcessing(true);
     setErrorMessage(null);
+    onProcessingChangeRef.current?.(true);
+
     try {
       const croppedBlob = await getCroppedImg(imageUrl, croppedAreaPixels);
+
+      if (!mountedRef.current || processingGeneration !== processingGenerationRef.current) {
+        return;
+      }
+
       await onCropComplete(croppedBlob);
     } catch (error) {
+      if (!mountedRef.current || processingGeneration !== processingGenerationRef.current) {
+        return;
+      }
+
       setErrorMessage(labels.cropFailed);
       onError?.(error);
     } finally {
-      processingRef.current = false;
-      setProcessing(false);
+      if (mountedRef.current && processingGeneration === processingGenerationRef.current) {
+        processingRef.current = false;
+        setProcessing(false);
+        onProcessingChangeRef.current?.(false);
+      }
     }
   };
 

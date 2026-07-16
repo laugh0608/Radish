@@ -205,7 +205,7 @@ export const zhCommunity = {
   'error.forum.publish_submission_id_invalid': '提交标识格式无效，请刷新后重新提交。',
   'error.forum.publish_submission_conflict': '本次提交与已有请求冲突，请刷新后重新提交。',
   'error.forum.publish_submission_processing': '内容正在提交，请稍后确认结果。',
-  'error.forum.publish_rate_limited': '发布过于频繁，请稍后重试。',
+  'error.forum.publish_rate_limited': '操作过于频繁，请在 {{0}} 秒后重试。',
   'circle.rail.label': '圈子辅助信息',
   'circle.rail.contextKicker': '当前范围',
   'circle.rail.contextTitle': '关系概览',

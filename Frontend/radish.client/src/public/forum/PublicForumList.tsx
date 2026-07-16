@@ -19,6 +19,8 @@ import type {
   PublicListSort,
 } from '../forumRouteState';
 import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
+import { buildLocalizedPublicRouteHead } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
@@ -93,6 +95,25 @@ export const PublicForumList = ({
   );
   const selectedCategoryRequestIdRef = useRef(0);
   const postsRequestIdRef = useRef(0);
+  const publicHeadSnapshot = useMemo(() => {
+    if (
+      !routeState.categoryId
+      || !selectedCategory
+      || String(selectedCategory.voId) !== routeState.categoryId
+    ) {
+      return null;
+    }
+
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'forum', route: routeState }, t);
+    return {
+      head: {
+        ...routeHead,
+        title: `${selectedCategory.voName} · ${t('desktop.apps.forum.name')}`,
+        description: buildCategoryIntro(selectedCategory, routeHead.description),
+      },
+    };
+  }, [routeState, selectedCategory, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,11 +246,6 @@ export const PublicForumList = ({
       window.cancelAnimationFrame(frameId);
     };
   }, [loadingPosts, onScrollRestored, restoreScrollTop, scrollContainerRef]);
-
-  useEffect(() => {
-    const title = selectedCategory?.voName || buildActiveSectionTitle(categories, selectedCategoryId, t('forum.allPosts'));
-    document.title = `${t('desktop.apps.forum.name')} · ${title}`;
-  }, [categories, selectedCategory, selectedCategoryId, t]);
 
   useEffect(() => {
     const requestId = ++postsRequestIdRef.current;

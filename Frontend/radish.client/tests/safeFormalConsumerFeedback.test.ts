@@ -17,10 +17,48 @@ const userAttachmentListSource = readFileSync(
 
 test('头像上传仅展示稳定附件错误或本地化 fallback', () => {
   assert.match(avatarUploadModalSource, /resolveAttachmentUploadErrorMessage\(error, failureFallback\)/);
-  assert.match(avatarUploadModalSource, /setError\(t\('profile\.avatar\.removeFailed'\)\)/);
+  assert.match(avatarUploadModalSource, /setError\(resolveAttachmentUploadErrorMessage\(error, failureFallback\)\)/);
   assert.doesNotMatch(avatarUploadModalSource, /error instanceof Error \? error\.message/);
   assert.doesNotMatch(avatarUploadModalSource, /json\.message/);
+  assert.doesNotMatch(avatarUploadModalSource, /\bfetch\s*\(/);
+  assert.match(avatarUploadModalSource, /await setMyAvatar\(String\(attachmentId\), t, requestController\.signal\)/);
+  assert.match(avatarUploadModalSource, /await setMyAvatar\(null, t, requestController\.signal\)/);
   assert.match(avatarUploadModalSource, /type="button"[\s\S]*?onClick=\{handleRemoveAvatar\}/);
+});
+
+test('头像裁切与上传以同一生命周期锁定关闭并丢弃失效任务结果', () => {
+  assert.match(avatarUploadModalSource, /const operationGenerationRef = useRef\(0\)/);
+  assert.match(avatarUploadModalSource, /const uploadingRef = useRef\(false\)/);
+  assert.match(avatarUploadModalSource, /const cropperProcessingRef = useRef\(false\)/);
+  assert.match(
+    avatarUploadModalSource,
+    /const activeRequestControllerRef = useRef<AbortController \| null>\(null\)/,
+  );
+  assert.match(avatarUploadModalSource, /activeRequestControllerRef\.current\?\.abort\(\)/);
+  assert.match(avatarUploadModalSource, /operationGenerationRef\.current \+= 1;[\s\S]*?activeRequestControllerRef\.current\?\.abort\(\)/);
+  assert.match(avatarUploadModalSource, /mountedRef\.current = false;[\s\S]*?invalidateActiveOperation\(\)/);
+  assert.match(avatarUploadModalSource, /const interactionLocked = uploading \|\| cropperProcessing;/);
+  assert.match(avatarUploadModalSource, /closeDisabled=\{interactionLocked\}/);
+  assert.match(avatarUploadModalSource, /closeOnOverlayClick=\{!interactionLocked\}/);
+  assert.match(avatarUploadModalSource, /closeOnEscape=\{!interactionLocked\}/);
+  assert.match(avatarUploadModalSource, /onProcessingChange=\{handleCropperProcessingChange\}/);
+  assert.match(avatarUploadModalSource, /signal: requestController\.signal/);
+  assert.match(
+    avatarUploadModalSource,
+    /if \(uploadingRef\.current \|\| cropperProcessingRef\.current\) \{[\s\S]*?return;[\s\S]*?\}/,
+  );
+  assert.match(
+    avatarUploadModalSource,
+    /await uploadImage\([\s\S]*?if \(!isOperationCurrent\(operationGeneration\)\) \{[\s\S]*?return;/,
+  );
+  assert.match(
+    avatarUploadModalSource,
+    /await setMyAvatar\([\s\S]*?if \(!isOperationCurrent\(operationGeneration\)\) \{[\s\S]*?return;/,
+  );
+  assert.match(
+    avatarUploadModalSource,
+    /if \(succeeded && isOperationCurrent\(operationGeneration\)\) \{[\s\S]*?onSuccess\(\);/,
+  );
 });
 
 test('论坛发布仅展示稳定本地化错误或宿主 fallback', () => {

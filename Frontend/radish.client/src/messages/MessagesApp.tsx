@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ToastContainer } from '@radish/ui/toast';
 import { WebStateSlot } from '@/components/web-shell';
 import { ChatApp, type ChatAppProfileNavigationTarget } from '@/apps/chat/ChatApp';
 import { CurrentWindowProvider } from '@/desktop/CurrentWindowContext';
@@ -182,7 +181,6 @@ export const MessagesApp = () => {
       <main className={styles.main}>
         {renderContent()}
       </main>
-      <ToastContainer />
     </div>
   );
 };

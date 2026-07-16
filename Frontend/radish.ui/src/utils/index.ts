@@ -12,6 +12,11 @@ export type { RadishIntlLocale } from './intl';
 export { resolveSanitizedMarkdownLinkHref, sanitizeMarkdownLinkHref } from './markdownUrl';
 export { escapeMarkdownLabel } from './markdownLabel';
 export {
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
+  isSupportedAttachmentImageMimeType,
+} from './attachmentFileTypes';
+export {
   buildAttachmentAssetUrl,
   buildAttachmentMarkdownUrl,
   normalizeAttachmentId,

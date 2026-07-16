@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +13,20 @@ function readLocaleResources(): string {
     .flatMap((language) => domainNames.map((domain) =>
       readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
     .join('\n');
+}
+
+function readTypeScriptSources(directory: string, prefix = ''): Array<{ path: string; source: string }> {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const entryPath = resolve(directory, entry.name);
+    const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      return readTypeScriptSources(entryPath, relativePath);
+    }
+
+    return /\.tsx?$/.test(entry.name)
+      ? [{ path: relativePath, source: readFileSync(entryPath, 'utf8') }]
+      : [];
+  });
 }
 
 test('robots.txt 应开放公开入口并指向公开 sitemap', () => {
@@ -456,11 +470,91 @@ test('正式 Web 商城交易入口应提供订单与库存真实链接', () => 
 });
 
 test('公开入口应为所有公开路由应用通用 JSON-LD', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
+  const entrySource = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
+  const lifecycleSource = readFileSync(resolve(clientRoot, 'src/public/PublicHeadLifecycle.tsx'), 'utf8');
 
-  assert.match(source, /applyPublicStructuredData/);
-  assert.match(source, /buildPublicRouteStructuredData\(route\)/);
-  assert.match(source, /return removePublicStructuredData/);
+  assert.match(entrySource, /<PublicHeadLifecycleOwner route=\{route\} routeKey=\{buildPublicPath\(route\)\}>/);
+  assert.doesNotMatch(entrySource, /applyPublic(?:Head|StructuredData)/);
+  assert.match(lifecycleSource, /applyPublicHead\(resolvedHead\)/);
+  assert.match(lifecycleSource, /applyPublicStructuredData\(resolvedStructuredData\)/);
+  assert.match(lifecycleSource, /buildPublicRouteStructuredData\(route, \{ head: resolvedHead \}\)/);
+  assert.match(lifecycleSource, /removePublicStructuredData\(\)/);
+  assert.match(lifecycleSource, /resetPublicHead\(\)/);
+});
+
+test('公开壳层的 head DOM 写入应只由 lifecycle owner 调用 helper', () => {
+  const sources = readTypeScriptSources(resolve(clientRoot, 'src/public'));
+  const titleWriters = sources
+    .filter(({ source }) => /(?:globalThis\.)?document\.title\s*=/.test(source))
+    .map(({ path }) => path);
+  const headAppliers = sources
+    .filter(({ source }) => /applyPublicHead/.test(source))
+    .map(({ path }) => path)
+    .sort();
+  const structuredDataAppliers = sources
+    .filter(({ source }) => /applyPublicStructuredData/.test(source))
+    .map(({ path }) => path)
+    .sort();
+
+  assert.deepEqual(titleWriters, ['publicHead.ts']);
+  assert.deepEqual(headAppliers, ['PublicHeadLifecycle.tsx', 'publicHead.ts']);
+  assert.deepEqual(structuredDataAppliers, ['PublicHeadLifecycle.tsx', 'publicStructuredData.ts']);
+});
+
+test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
+  const detailSources = [
+    'src/public/forum/PublicForumDetail.tsx',
+    'src/public/docs/PublicDocsApp.tsx',
+    'src/public/profile/PublicProfileApp.tsx',
+    'src/public/shop/PublicShopApp.tsx',
+  ].map((path) => readFileSync(resolve(clientRoot, path), 'utf8'));
+
+  for (const source of detailSources) {
+    assert.match(source, /usePublicHeadSnapshot\(publicHeadSnapshot\)/);
+    assert.doesNotMatch(source, /applyPublicHead|applyPublicStructuredData|removePublicStructuredData/);
+    assert.doesNotMatch(source, /(?:globalThis\.)?document\.title/);
+  }
+});
+
+test('Docs 与 Forum 详情应以 keyed remount 和实体身份校验形成 head 双保险', () => {
+  const docsSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const forumAppSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
+  const forumDetailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+
+  assert.equal(docsSource.includes("key={`docs-${route.slug}-${route.anchor ?? 'root'}`}"), true);
+  assert.match(docsSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
+  assert.match(docsSource, /buildLocalizedPublicRouteHead\(\{ app: 'docs', route: canonicalRoute \}, t\)/);
+  assert.match(docsSource, /buildPublicDocsHeadSnapshot\(documentDetail, route\.anchor, \{/);
+  assert.equal(forumAppSource.includes("key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.intent ?? 'read'}`}"), true);
+  assert.match(forumDetailSource, /isCurrentForumPostHeadSource\(postId, post\)/);
+  assert.match(forumDetailSource, /buildLocalizedPublicRouteHead\(\{/);
+});
+
+test('公开集合页应由唯一 owner 应用本地化基线并保留数据原文快照', () => {
+  const lifecycleSource = readFileSync(resolve(clientRoot, 'src/public/PublicHeadLifecycle.tsx'), 'utf8');
+  const forumListSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumList.tsx'), 'utf8');
+  const forumTagSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumTag.tsx'), 'utf8');
+  const leaderboardSource = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
+  const shopSource = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
+
+  assert.match(lifecycleSource, /buildLocalizedPublicRouteHead\(route, t\)/);
+  assert.match(forumListSource, /title: `\$\{selectedCategory\.voName\} · \$\{t\('desktop\.apps\.forum\.name'\)\}`/);
+  assert.match(forumTagSource, /title: `\$\{selectedTag\.voName\} · \$\{t\('desktop\.apps\.forum\.name'\)\}`/);
+  assert.match(leaderboardSource, /title: `\$\{activeTypeConfig\.voName\} · \$\{t\('desktop\.apps\.leaderboard\.name'\)\}`/);
+  assert.match(shopSource, /title: `\$\{selectedCategory\.voName\} · \$\{t\('desktop\.apps\.shop\.name'\)\}`/);
+
+  for (const source of [forumListSource, forumTagSource, leaderboardSource, shopSource]) {
+    assert.match(source, /usePublicHeadSnapshot\(publicHeadSnapshot\)/);
+    assert.doesNotMatch(source, /(?:globalThis\.)?document\.title|applyPublicHead/);
+  }
+});
+
+test('Browser React 根应只挂载一个 ToastContainer', () => {
+  const toastOwners = readTypeScriptSources(resolve(clientRoot, 'src'))
+    .filter(({ source }) => /<ToastContainer\s*\/>/.test(source))
+    .map(({ path }) => path);
+
+  assert.deepEqual(toastOwners, ['main.tsx']);
 });
 
 test('公开用户承诺页应进入公共壳层并归属工作台入口', () => {
@@ -469,22 +563,27 @@ test('公开用户承诺页应进入公共壳层并归属工作台入口', () =>
   const publicShellSource = readFileSync(resolve(clientRoot, 'src/public/components/PublicShellHeader.tsx'), 'utf8');
   const webShellSource = readFileSync(resolve(clientRoot, 'src/components/web-shell/WebShellHeader.tsx'), 'utf8');
   const headSource = readFileSync(resolve(clientRoot, 'src/public/publicHead.ts'), 'utf8');
+  const workbenchSource = readFileSync(resolve(clientRoot, 'src/workbench/WorkbenchApp.tsx'), 'utf8');
 
   assert.match(entryRouteSource, /isPublicLegalPathname\(pathname\)/);
   assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname\)/);
   assert.match(publicEntrySource, /<PublicCommitmentsApp/);
   assert.doesNotMatch(publicShellSource, /href: '\/legal'/);
   assert.match(webShellSource, /pathname === '\/legal'[\s\S]*return 'more';/);
+  assert.match(workbenchSource, /titleKey: 'workbench\.item\.legal\.title'[\s\S]*href: '\/legal'/);
   assert.match(headSource, /用户承诺与社区边界/);
 });
 
-test('公开论坛详情加载后应刷新详情 head 并复用同一个 canonical', () => {
+test('公开论坛详情加载后应向唯一 head owner 提交共用 canonical 快照', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
 
-  assert.match(source, /applyPublicHead/);
+  assert.match(source, /usePublicHeadSnapshot\(publicHeadSnapshot\)/);
   assert.match(source, /buildForumPostPublicHead/);
-  assert.match(source, /const postHead = buildForumPostPublicHead\(post, commentId, coverImageUrl\);/);
-  assert.match(source, /applyPublicHead\(postHead\);/);
+  assert.match(source, /const postHead = buildForumPostPublicHead\(post, commentId, coverImageUrl, \{/);
+  assert.match(source, /appName: t\('desktop\.apps\.forum\.name'\)/);
+  assert.match(source, /fallbackDescription: routeHead\.description/);
+  assert.doesNotMatch(source, /applyPublicHead/);
+  assert.doesNotMatch(source, /document\.title/);
   assert.match(source, /canonicalPath: postHead\.canonicalPath/);
 });
 

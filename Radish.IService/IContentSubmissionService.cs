@@ -12,8 +12,19 @@ public interface IContentSubmissionService
     Task<ContentSubmissionBeginResult> BeginAsync(ContentSubmissionBeginRequest request);
 
     Task CompleteSuccessAsync(ContentSubmissionCompletionRequest request);
+}
 
-    Task CompleteFailureAsync(long recordId, string? errorCode, string? errorMessage);
+/// <summary>
+/// 内容提交台账无法持久化时抛出的内部一致性异常。
+/// </summary>
+/// <remarks>
+/// 该异常不能被控制器当作普通参数或权限错误降级；事务边界应据此回滚业务写入。
+/// </remarks>
+public sealed class ContentSubmissionConsistencyException : Exception
+{
+    public ContentSubmissionConsistencyException(string message) : base(message)
+    {
+    }
 }
 
 public sealed class ContentSubmissionRequestSnapshot

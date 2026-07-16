@@ -18,7 +18,9 @@ export function setupApiInterceptors() {
       return tokenService.getAccessToken();
     },
     getLanguage: () => getIntlLocale(i18n.resolvedLanguage ?? i18n.language),
-    translateMessage: (key) => i18n.exists(key) ? i18n.t(key) : undefined,
+    translateMessage: (key, messageArguments) => i18n.exists(key)
+      ? i18n.t(key, Object.fromEntries((messageArguments ?? []).map((value, index) => [index, value])))
+      : undefined,
 
     // 请求拦截器
     onRequest: async (url: string, options: RequestInit) => {

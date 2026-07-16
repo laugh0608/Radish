@@ -11,6 +11,8 @@ import {
   Tag,
   message,
   type TableColumnsType,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import {
   batchAddStickersWithDetails,
@@ -563,12 +565,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           />
           <Upload.Dragger
             multiple
-            accept="image/*"
+            accept={attachmentImageAccept}
             fileList={selectedFiles}
             beforeUpload={(file) => {
-              const isImage = file.type
-                ? file.type.startsWith('image/')
-                : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+              const isImage = isSupportedAttachmentImageFile(file);
 
               if (!isImage) {
                 message.error('仅支持上传图片文件');

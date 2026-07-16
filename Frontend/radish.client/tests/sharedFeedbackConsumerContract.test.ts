@@ -203,7 +203,8 @@ test('富文本编辑器与 Markdown 编辑器遵循同一宿主反馈契约', (
   assert.match(editorSource, /labels\.upload\.formatError\('image', error\)/);
   assert.match(editorSource, /labels\.upload\.formatError\('document', error\)/);
   assert.match(editorSource, /title=\{labels\.toolbar\.link\}[\s\S]*?disabled=\{disabled \|\| uploading\}/);
-  assert.match(editorSource, /accept="image\/\*"[\s\S]*?disabled=\{disabled \|\| uploading\}/);
+  assert.match(editorSource, /accept=\{attachmentImageAccept\}[\s\S]*?disabled=\{disabled \|\| uploading\}/);
+  assert.doesNotMatch(editorSource, /accept="image\/\*"/);
   assert.doesNotMatch(editorSource, /error instanceof Error && error\.message/);
   assert.match(labelsSource, /resolveAttachmentUploadErrorMessage\(error, fallback\)/);
   assert.doesNotMatch(

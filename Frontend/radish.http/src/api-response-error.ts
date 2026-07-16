@@ -3,6 +3,7 @@ import type { ParsedApiResponse } from './types';
 export class ApiResponseError extends Error {
   readonly code?: string;
   readonly messageKey?: string;
+  readonly messageArguments?: unknown[];
   readonly messageInfo?: string;
   readonly statusCode?: number;
   readonly httpStatus?: number;
@@ -13,6 +14,7 @@ export class ApiResponseError extends Error {
     this.name = 'ApiResponseError';
     this.code = response.code;
     this.messageKey = response.messageKey;
+    this.messageArguments = response.messageArguments;
     this.messageInfo = response.messageInfo;
     this.statusCode = response.statusCode;
     this.httpStatus = response.httpStatus;

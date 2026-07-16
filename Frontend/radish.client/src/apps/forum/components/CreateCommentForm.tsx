@@ -2,7 +2,12 @@ import { type ClipboardEvent, useState, useRef, useCallback, useEffect } from 'r
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
-import { buildAttachmentMarkdownUrl, escapeMarkdownLabel } from '@radish/ui';
+import {
+  attachmentImageAccept,
+  buildAttachmentMarkdownUrl,
+  escapeMarkdownLabel,
+  isSupportedAttachmentImageMimeType,
+} from '@radish/ui';
 import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
 import type { CommentReplyTarget } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
@@ -562,7 +567,7 @@ export const CreateCommentForm = ({
     }
 
     const clipboardItems = Array.from(event.clipboardData.items);
-    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const imageItem = clipboardItems.find((item) => isSupportedAttachmentImageMimeType(item.type));
     const pastedImage = imageItem?.getAsFile();
 
     if (!pastedImage) {
@@ -723,7 +728,7 @@ export const CreateCommentForm = ({
           <input
             ref={imageInputRef}
             type="file"
-            accept="image/*"
+            accept={attachmentImageAccept}
             onChange={handleImageUpload}
             style={{ display: 'none' }}
             disabled={isEditingDisabled}

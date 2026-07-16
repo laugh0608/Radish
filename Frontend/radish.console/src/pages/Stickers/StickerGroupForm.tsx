@@ -9,6 +9,8 @@ import {
   Switch,
   AntSelect as Select,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
@@ -56,9 +58,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
       const error = new Error('仅支持上传图片文件');
       message.error(error.message);
@@ -270,7 +270,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
             <Space>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={handleCoverUpload}
                 disabled={coverUploading || loading}

@@ -598,7 +598,7 @@ npm run check:repo-hygiene:changed
 ### 现状判断
 
 - 当前 `Frontend/radish.client/public/sitemap.xml` 是静态 seed，只覆盖 `/discover`、forum / docs / shop 公开入口和少量列表页。
-- Gateway 当前通过 YARP 将 `/api/{**catch-all}`、`/uploads/{**catch-all}`、`/_assets/attachments/{**catch-all}` 等路由转到 API，并用最低优先级 `/{**catch-all}` 转前端；动态 sitemap 若对外暴露为顶层 `/sitemap.xml`，必须在 Gateway 中显式声明高于前端 catch-all 的路由。
+- Gateway 当前通过 YARP 将 `/api/{**catch-all}`、`/uploads/DefaultIco/{**catch-all}`、`/_assets/attachments/{**catch-all}` 等路由转到 API，并用最低优先级 `/{**catch-all}` 转前端；用户上传根目录不得直接代理。动态 sitemap 若对外暴露为顶层 `/sitemap.xml`，必须在 Gateway 中显式声明高于前端 catch-all 的路由。
 - forum 已具备 `Post.PublicId` canonical，docs 已以 `slug` 作为公开详情主路由，shop 仍以 `productId` 作为兼容公开详情路由。三类详情都能由后端根据公开状态筛出可索引 URL。
 
 ### 路线评估

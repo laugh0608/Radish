@@ -79,12 +79,7 @@ import {
   type PublicRouteDescriptor,
   type PublicRouteSourceState,
 } from './publicRouteNavigation';
-import { applyPublicHead, buildPublicRouteHead } from './publicHead';
-import {
-  applyPublicStructuredData,
-  buildPublicRouteStructuredData,
-  removePublicStructuredData,
-} from './publicStructuredData';
+import { PublicHeadLifecycleOwner } from './PublicHeadLifecycle';
 export type {
   PublicListSort,
 } from './forumRouteState';
@@ -306,15 +301,6 @@ export const PublicEntry = () => {
     }
 
     window.history.replaceState(window.history.state, '', canonicalPath);
-  }, [route]);
-
-  useEffect(() => {
-    applyPublicHead(buildPublicRouteHead(route));
-  }, [route]);
-
-  useEffect(() => {
-    applyPublicStructuredData(buildPublicRouteStructuredData(route));
-    return removePublicStructuredData;
   }, [route]);
 
   useEffect(() => {
@@ -558,7 +544,7 @@ export const PublicEntry = () => {
     };
   }, [navigateToRoute, routeSourceState.shopDetailSourceRoute]);
 
-  return route.app === 'discover' ? (
+  const page = route.app === 'discover' ? (
     <PublicDiscoverApp
       route={route.route}
       onNavigate={navigateToDiscoverRoute}
@@ -615,5 +601,11 @@ export const PublicEntry = () => {
       onNavigateToPoll={navigateToForumPoll}
       onNavigateToLottery={navigateToForumLottery}
     />
+  );
+
+  return (
+    <PublicHeadLifecycleOwner route={route} routeKey={buildPublicPath(route)}>
+      {page}
+    </PublicHeadLifecycleOwner>
   );
 };

@@ -23,11 +23,6 @@ export interface ChunkedUploadOptions {
   businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
 
   /**
-   * 业务 ID
-   */
-  businessId?: number | string;
-
-  /**
    * 是否生成缩略图
    */
   generateThumbnail?: boolean;
@@ -60,16 +55,12 @@ export interface ChunkedUploadResult {
   /**
    * 附件 ID
    */
-  attachmentId: number;
+  attachmentId: string;
 
   /**
    * 文件名
-   */  fileName: string;
-
-  /**
-   * 文件路径
    */
-  filePath: string;
+  fileName: string;
 
   /**
    * 文件大小
@@ -120,6 +111,11 @@ export interface UploadProgress {
    * 总分片数
    */
   totalChunks: number;
+
+  /**
+   * 是否已进入服务端最终合并阶段；该阶段不能再可靠取消。
+   */
+  isFinalizing?: boolean;
 }
 
 /**
@@ -158,7 +154,7 @@ export interface ChunkedFileUploadProps {
   /**
    * 取消上传回调
    */
-  onCancel?: () => void;
+  onCancel?: () => boolean | void;
 
   /**
    * 是否自动开始上传
@@ -199,7 +195,8 @@ function formatTime(seconds: number): string {
 /**
  * 分片文件上传组件
  *
- * 支持大文件分片上传、并发控制、暂停/恢复、进度显示
+ * 支持大文件分片上传、进度显示、取消和显式重试。
+ * 跨请求暂停 / 恢复尚未形成服务端会话恢复契约，不在当前组件中伪装提供。
  */
 export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
   file,
@@ -211,7 +208,7 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
   autoStart = false,
   showDetailedProgress = true
 }) => {
-  const [status, setStatus] = useState<'idle' | 'uploading' | 'paused' | 'completed' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'uploading' | 'completed' | 'error'>('idle');
   const [progress, setProgress] = useState<UploadProgress>({
     uploadedBytes: 0,
     totalBytes: file.size,
@@ -219,12 +216,13 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
     speed: 0,
     remainingTime: 0,
     uploadedChunks: 0,
-    totalChunks: Math.ceil(file.size / (options.chunkSize || 2 * 1024 * 1024))
+    totalChunks: Math.ceil(file.size / (options.chunkSize || 2 * 1024 * 1024)),
+    isFinalizing: false
   });
   const [error, setError] = useState<string | null>(null);
 
-  const abortControllerRef = useRef<AbortController | null>(null);
-  const isPausedRef = useRef(false);
+  const attemptIdRef = useRef(0);
+  const autoStartedFileRef = useRef<File | null>(null);
 
   /**
    * 开始上传
@@ -234,19 +232,20 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
 
     setStatus('uploading');
     setError(null);
-    isPausedRef.current = false;
-    abortControllerRef.current = new AbortController();
+    const attemptId = ++attemptIdRef.current;
 
     try {
       const uploadResult = await onUpload(file, options, (prog) => {
-        if (!isPausedRef.current) {
+        if (attemptIdRef.current === attemptId) {
           setProgress(prog);
         }
       });
 
+      if (attemptIdRef.current !== attemptId) return;
       setStatus('completed');
       onComplete?.(uploadResult);
     } catch (err) {
+      if (attemptIdRef.current !== attemptId) return;
       const errorMessage = err instanceof Error ? err.message : '上传失败';
       setError(errorMessage);
       setStatus('error');
@@ -255,29 +254,16 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
   }, [file, options, onUpload, onComplete, onError, status]);
 
   /**
-   * 暂停上传
-   */
-  const handlePause = useCallback(() => {
-    if (status !== 'uploading') return;
-    isPausedRef.current = true;
-    abortControllerRef.current?.abort();
-    setStatus('paused');
-  }, [status]);
-
-  /**
-   * 恢复上传
-   */
-  const handleResume = useCallback(() => {
-    if (status !== 'paused') return;
-    handleStart();
-  }, [status, handleStart]);
-
-  /**
    * 取消上传
    */
   const handleCancel = useCallback(() => {
-    isPausedRef.current = true;
-    abortControllerRef.current?.abort();
+    if (status === 'uploading') {
+      if (!onCancel || onCancel() === false) return;
+    } else {
+      onCancel?.();
+    }
+
+    attemptIdRef.current += 1;
     setStatus('idle');
     setProgress({
       uploadedBytes: 0,
@@ -286,11 +272,11 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
       speed: 0,
       remainingTime: 0,
       uploadedChunks: 0,
-      totalChunks: Math.ceil(file.size / (options.chunkSize || 2 * 1024 * 1024))
+      totalChunks: Math.ceil(file.size / (options.chunkSize || 2 * 1024 * 1024)),
+      isFinalizing: false
     });
     setError(null);
-    onCancel?.();
-  }, [file.size, options.chunkSize, onCancel]);
+  }, [file.size, options.chunkSize, onCancel, status]);
 
   /**
    * 重试上传
@@ -302,10 +288,11 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
 
   // 自动开始上传
   React.useEffect(() => {
-    if (autoStart && status === 'idle') {
-      handleStart();
+    if (autoStart && status === 'idle' && autoStartedFileRef.current !== file) {
+      autoStartedFileRef.current = file;
+      void handleStart();
     }
-  }, [autoStart, status, handleStart]);
+  }, [autoStart, file, status, handleStart]);
 
   return (
     <div className="radish-chunked-upload">
@@ -361,13 +348,6 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
         </div>
       )}
 
-      {status === 'paused' && (
-        <div className="radish-chunked-upload__paused">
-          <Icon icon="mdi:pause-circle" color="orange" />
-          <span>已暂停</span>
-        </div>
-      )}
-
       {/* 操作按钮 */}
       <div className="radish-chunked-upload__actions">
         {status === 'idle' && (
@@ -375,26 +355,6 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
             <Icon icon="mdi:upload" size={16} />
             开始上传
           </Button>
-        )}
-
-        {status === 'uploading' && (
-          <Button onClick={handlePause} variant="secondary">
-            <Icon icon="mdi:pause" size={16} />
-            暂停
-          </Button>
-        )}
-
-        {status === 'paused' && (
-          <>
-            <Button onClick={handleResume} variant="primary">
-              <Icon icon="mdi:play" size={16} />
-              继续
-            </Button>
-            <Button onClick={handleCancel} variant="secondary">
-              <Icon icon="mdi:close" size={16} />
-              取消
-            </Button>
-          </>
         )}
 
         {status === 'error' && (
@@ -410,7 +370,7 @@ export const ChunkedFileUpload: React.FC<ChunkedFileUploadProps> = ({
           </>
         )}
 
-        {(status === 'uploading' || status === 'paused') && (
+        {status === 'uploading' && onCancel && !progress.isFinalizing && (
           <Button onClick={handleCancel} variant="danger">
             <Icon icon="mdi:close" size={16} />
             取消上传

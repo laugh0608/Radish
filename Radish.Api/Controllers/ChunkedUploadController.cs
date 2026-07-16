@@ -1,13 +1,16 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.Authorization;
 using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.OptionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Constants;
 
 namespace Radish.Api.Controllers;
 
@@ -24,13 +27,16 @@ public class ChunkedUploadController : ControllerBase
 {
     private readonly IChunkedUploadService _chunkedUploadService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IUserService _userService;
 
     public ChunkedUploadController(
         IChunkedUploadService chunkedUploadService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IUserService userService)
     {
         _chunkedUploadService = chunkedUploadService;
         _currentUserAccessor = currentUserAccessor;
+        _userService = userService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -44,12 +50,39 @@ public class ChunkedUploadController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status415UnsupportedMediaType)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status503ServiceUnavailable)]
     public async Task<MessageModel> CreateSession([FromBody] CreateUploadSessionDto dto)
     {
         try
         {
             var userId = Current.UserId;
             var userName = Current.UserName;
+            var accessResult = await AttachmentUploadAuthorization.EvaluateAsync(
+                Current,
+                _userService,
+                dto.BusinessType);
+            if (!accessResult.IsSupported)
+            {
+                throw UploadBusinessError(
+                    "不支持该附件业务类型",
+                    StatusCodes.Status400BadRequest,
+                    AttachmentErrorCodes.BusinessTypeUnsupported);
+            }
+
+            if (!accessResult.IsAuthorized)
+            {
+                throw UploadBusinessError(
+                    "当前账号暂无该附件上传权限",
+                    StatusCodes.Status403Forbidden,
+                    AttachmentErrorCodes.UploadForbidden);
+            }
+
+            dto.BusinessType = accessResult.NormalizedBusinessType!;
 
             var session = await _chunkedUploadService.CreateSessionAsync(dto, userId, userName);
 
@@ -60,6 +93,10 @@ public class ChunkedUploadController : ControllerBase
                 MessageInfo = "创建上传会话成功",
                 ResponseData = session
             };
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -78,7 +115,13 @@ public class ChunkedUploadController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
-    [RequestSizeLimit(10_485_760)] // 10MB 单个分片限制
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status503ServiceUnavailable)]
+    [RequestSizeLimit(ChunkedUploadOptions.MultipartRequestSizeLimit)]
     public async Task<MessageModel> UploadChunk(
         [FromForm] string sessionId,
         [FromForm] int chunkIndex,
@@ -88,12 +131,10 @@ public class ChunkedUploadController : ControllerBase
         {
             if (chunkData == null || chunkData.Length == 0)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "分片数据不能为空"
-                };
+                throw UploadBusinessError(
+                    "分片数据不能为空",
+                    StatusCodes.Status400BadRequest,
+                    AttachmentErrorCodes.UploadChunkInvalid);
             }
 
             var userId = Current.UserId;
@@ -106,6 +147,10 @@ public class ChunkedUploadController : ControllerBase
                 MessageInfo = "上传分片成功",
                 ResponseData = session
             };
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -122,6 +167,12 @@ public class ChunkedUploadController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status410Gone)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status415UnsupportedMediaType)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status503ServiceUnavailable)]
     public async Task<MessageModel> MergeChunks([FromBody] MergeChunksDto dto)
     {
         try
@@ -149,6 +200,10 @@ public class ChunkedUploadController : ControllerBase
                 ResponseData = attachment
             };
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw BuildUnexpectedError("合并上传分片失败，请稍后重试", ex);
@@ -163,7 +218,10 @@ public class ChunkedUploadController : ControllerBase
     [HttpGet]
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status503ServiceUnavailable)]
     public async Task<MessageModel> GetSession([FromQuery] string sessionId)
     {
         try
@@ -173,12 +231,10 @@ public class ChunkedUploadController : ControllerBase
 
             if (session == null)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                    MessageInfo = "上传会话不存在"
-                };
+                throw UploadBusinessError(
+                    "上传会话不存在或无权访问",
+                    StatusCodes.Status404NotFound,
+                    AttachmentErrorCodes.UploadSessionNotFound);
             }
 
             return new MessageModel
@@ -188,6 +244,10 @@ public class ChunkedUploadController : ControllerBase
                 MessageInfo = "获取成功",
                 ResponseData = session
             };
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -204,6 +264,10 @@ public class ChunkedUploadController : ControllerBase
     [Authorize]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status503ServiceUnavailable)]
     public async Task<MessageModel> CancelSession([FromBody] string sessionId)
     {
         try
@@ -217,6 +281,10 @@ public class ChunkedUploadController : ControllerBase
                 StatusCode = (int)HttpStatusCodeEnum.Success,
                 MessageInfo = "取消上传成功"
             };
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -232,5 +300,14 @@ public class ChunkedUploadController : ControllerBase
             StatusCodes.Status500InternalServerError,
             "System.UnexpectedError",
             "error.system.unexpected_error");
+    }
+
+    private static BusinessException UploadBusinessError(string message, int statusCode, string errorCode)
+    {
+        return new BusinessException(
+            message,
+            statusCode,
+            errorCode,
+            AttachmentErrorCodes.ResolveMessageKey(errorCode));
     }
 }

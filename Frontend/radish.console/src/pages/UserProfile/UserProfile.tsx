@@ -7,6 +7,7 @@ import {
   Space,
   message,
   Tag,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Form, Upload, Button } from 'antd';
 import type { UploadProps } from 'antd';
@@ -139,7 +140,7 @@ export const UserProfile = () => {
       generateThumbnail: true,
     },
     beforeUpload: (file) => {
-      const isImage = file.type.startsWith('image/');
+      const isImage = isSupportedAttachmentImageFile(file);
       if (!isImage) {
         message.error('只能上传图片文件！');
         return false;

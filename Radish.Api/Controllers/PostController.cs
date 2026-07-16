@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Radish.Api.ErrorHandling;
 using Radish.Api.Filters;
 using Radish.Api.Resources;
 using Radish.Api.Routing;
@@ -385,7 +386,8 @@ public class PostController : ControllerBase
                 ex.StatusCode,
                 ex.Message,
                 ex.ErrorCode,
-                ex.MessageKey);
+                ex.MessageKey,
+                ex.MessageArguments);
         }
     }
 
@@ -405,11 +407,15 @@ public class PostController : ControllerBase
         int statusCode,
         string fallbackMessage,
         string? errorCode,
-        string? messageKey)
+        string? messageKey,
+        IReadOnlyCollection<object>? messageArguments = null)
     {
+        var resolvedArguments = ApiMessageArgumentNormalizer.Normalize(messageArguments);
         var localizedMessage = string.IsNullOrWhiteSpace(messageKey)
             ? null
-            : _errorsLocalizer[messageKey];
+            : resolvedArguments.Length > 0
+                ? _errorsLocalizer[messageKey, resolvedArguments]
+                : _errorsLocalizer[messageKey];
         return new MessageModel
         {
             IsSuccess = false,
@@ -418,7 +424,8 @@ public class PostController : ControllerBase
                 ? fallbackMessage
                 : localizedMessage.Value,
             Code = errorCode,
-            MessageKey = messageKey
+            MessageKey = messageKey,
+            MessageArguments = resolvedArguments.Length > 0 ? resolvedArguments : null
         };
     }
 

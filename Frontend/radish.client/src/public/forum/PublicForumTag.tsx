@@ -20,6 +20,8 @@ import type {
   PublicListSort,
 } from '../forumRouteState';
 import { buildPublicForumPath, createDefaultListRoute, createDefaultSearchRoute } from '../forumRouteState';
+import { buildLocalizedPublicRouteHead } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
@@ -276,15 +278,29 @@ export const PublicForumTag = ({
     || (tagState.kind === 'notFound'
       ? t('forum.public.tagUnavailableDescription')
       : t('forum.public.tagDescriptionFallback'));
+  const publicHeadSnapshot = useMemo(() => {
+    if (
+      !selectedTag
+      || selectedTag.voSlug.trim().toLowerCase() !== routeState.tagSlug.trim().toLowerCase()
+    ) {
+      return null;
+    }
+
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'forum', route: routeState }, t);
+    return {
+      head: {
+        ...routeHead,
+        title: `${selectedTag.voName} · ${t('desktop.apps.forum.name')}`,
+        description: selectedTag.voDescription?.trim() || routeHead.description,
+      },
+    };
+  }, [routeState, selectedTag, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
   const tagPostCount = useMemo(() => formatTagPostCount(selectedTag, t), [selectedTag, t]);
   const readingGuide = useMemo(
     () => createForumReadingGuide(t, tagGuideDefinition),
     [t]
   );
-
-  useEffect(() => {
-    document.title = `${t('desktop.apps.forum.name')} · ${pageTitle}`;
-  }, [pageTitle, t]);
 
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);

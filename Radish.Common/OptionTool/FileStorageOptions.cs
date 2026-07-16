@@ -67,7 +67,7 @@ public sealed class MaxFileSizeOptions
 public sealed class AllowedExtensionsOptions
 {
     /// <summary>允许的图片类型</summary>
-    public List<string> Image { get; set; } = new() { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".svg", ".ico" };
+    public List<string> Image { get; set; } = new() { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".ico" };
 
     /// <summary>允许的文档类型</summary>
     public List<string> Document { get; set; } = new() { ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt", ".md" };
@@ -86,8 +86,8 @@ public sealed class LocalStorageOptions
     /// <remarks>相对于项目根目录，例如：DataBases/Uploads</remarks>
     public string BasePath { get; set; } = "DataBases/Uploads";
 
-    /// <summary>访问 URL 前缀</summary>
-    /// <remarks>例如：/uploads</remarks>
+    /// <summary>版本内置可信静态资产的兼容 URL 前缀</summary>
+    /// <remarks>例如：/uploads；用户附件不得通过该前缀直接暴露。</remarks>
     public string BaseUrl { get; set; } = "/uploads";
 }
 
@@ -304,12 +304,4 @@ public sealed class DeduplicationOptions
 {
     /// <summary>是否启用去重</summary>
     public bool Enable { get; set; } = true;
-
-    /// <summary>哈希算法</summary>
-    /// <remarks>MD5 / SHA256</remarks>
-    public string HashAlgorithm { get; set; } = "SHA256";
-
-    /// <summary>哈希计算是否使用 Rust 扩展</summary>
-    /// <remarks>性能优化，计算密集型操作可使用 Rust</remarks>
-    public bool UseRustExtension { get; set; } = false;
 }

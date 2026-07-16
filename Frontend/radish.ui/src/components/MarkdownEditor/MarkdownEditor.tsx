@@ -13,7 +13,10 @@ import { UserMention } from '../UserMention/UserMention';
 import type { UserMentionLabels, UserMentionOption } from '../UserMention/UserMention';
 import {
   buildAttachmentMarkdownUrl,
+  attachmentImageAccept,
   escapeMarkdownLabel,
+  isSupportedAttachmentImageFile,
+  isSupportedAttachmentImageMimeType,
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '../../utils';
@@ -504,7 +507,7 @@ export const MarkdownEditor = ({
   // 处理文件选择
   const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && isSupportedAttachmentImageFile(file)) {
       await handleImageUpload(file);
     }
     // 清空文件输入，允许重复选择同一个文件
@@ -534,10 +537,10 @@ export const MarkdownEditor = ({
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.type.startsWith('image/')) {
+      if (isSupportedAttachmentImageMimeType(item.type)) {
         e.preventDefault();
         const file = item.getAsFile();
-        if (file) {
+        if (file && isSupportedAttachmentImageFile(file)) {
           await handleImageUpload(file);
         }
         break;
@@ -556,7 +559,7 @@ export const MarkdownEditor = ({
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.type.startsWith('image/')) {
+    if (isSupportedAttachmentImageFile(file)) {
       await handleImageUpload(file);
     }
   };
@@ -741,7 +744,7 @@ export const MarkdownEditor = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={attachmentImageAccept}
         style={{ display: 'none' }}
         disabled={editingDisabled}
         onChange={handleFileInputChange}

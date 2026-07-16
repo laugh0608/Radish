@@ -1,6 +1,6 @@
 # 文件上传与附件管理（Radish.Api）
 
-> **最后更新**：2026-07-12
+> **最后更新**：2026-07-16
 
 本文档描述当前附件系统的真实实现口径，重点覆盖“附件如何落库、如何在正文中引用、如何在运行时解析 URL，以及更换域名时哪些数据不需要再人工修补”。
 
@@ -13,7 +13,7 @@
 - **`AttachmentVo.VoUrl` / `VoThumbnailUrl` 是运行时派生字段**。后端通过 `IAttachmentUrlResolver` 把附件 Id 解析成相对资源路径：
   - 原图：`/_assets/attachments/{id}`
   - 缩略图：`/_assets/attachments/{id}/thumbnail`
-- **正文中的图片 / 文档引用统一保存为 `attachment://{id}` 协议**。论坛帖子、评论、Wiki 等场景不再把上传后的完整 URL 直接写入 Markdown / 富文本正文。
+- **正文中的图片 / 文档引用统一保存为 `attachment://{id}` 协议**。论坛帖子、评论、Wiki 等场景不再把上传后的完整 URL 直接写入 Markdown / 富文本正文；孤立清理会扫描当前正文，Wiki 历史版本因支持回滚也持续视为有效引用。
 - **更换域名时不再需要更新附件类数据库字段**。只要公开入口、反向代理和运行时配置切到新域名，媒体资源 URL 会自然跟随切换。
 
 ---
@@ -22,9 +22,10 @@
 
 - 普通上传：图片 / 文档上传、查询、下载、删除
 - 图片处理：缩略图、多尺寸、文字水印、EXIF 移除（按请求参数控制）
-- 文件去重：基于 SHA256 的内容哈希
-- 上传限流：并发上传数、每分钟上传次数、每日上传总大小
-- 分片上传：会话创建、分片上传、会话查询、合并、取消（支持断点续传）
+- 文件去重：使用固定 SHA-256 内容哈希；只在租户、上传者、业务类型、预期业务归属均一致且不需要图片处理时复用
+- 上传安全：业务类型使用固定白名单；本地存储路径必须位于配置根目录；MIME 只由服务端在扩展名与内容签名校验后确定
+- 上传限流：普通上传与分片会话共用原子预留，统一约束并发上传数、每分钟上传尝试次数和每日上传总大小
+- 分片上传：会话创建、分片上传、会话查询、合并、取消，并提供合并前的服务端续传基础
 - 临时访问令牌：为附件生成临时访问链接，支持过期、次数、用户、IP 限制
 - 清理任务：Hangfire 定时清理软删除文件、临时文件、回收站、孤立附件、过期分片会话、过期令牌
 
@@ -35,8 +36,10 @@
 - 默认所有管理型接口需要登录（`Authorization: Bearer <access_token>`）。
 - `GET /api/v1/Attachment/DownloadByToken` 允许匿名访问，但必须携带有效 `token`。
 - `GET /_assets/attachments/{id}` 与 `GET /_assets/attachments/{id}/thumbnail` 会根据附件启用状态、公开性与当前用户权限决定是否允许访问；`IsEnabled = false` 或 `IsDeleted = true` 的附件必须统一阻断。
-- 临时访问令牌的创建 / 撤销 / 列表当前按“附件上传者”做权限判断（管理员判定仍待补充）。
+- 临时访问令牌的创建 / 撤销 / 列表允许附件上传者或 `System / Admin`；审计展示与管理界面仍待补充。
 - `GET /api/v1/Attachment/DownloadByToken` 也必须复用同一条附件访问判定链，不能因为携带了临时令牌就绕过 disabled 附件的阻断。
+- 普通上传与分片会话创建共用稳定的 `BusinessType` 白名单和资源权限判定；分片会话的查询、上传、合并与取消还必须匹配创建用户。
+- 当前 `IsPublic` 尚未按业务域派生：`Chat` 未接入频道成员访问判定，`Document / Wiki` 未接入文档公开性或访问名单。专属 ACL 与历史迁移完成前，这些类型不具备完整私有附件语义，不应用于敏感文件。
 
 获取 `access_token`：参考 `Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http`。
 
@@ -57,11 +60,15 @@
     - `watermarkText`：水印文本（默认 `Radish`）
     - `removeExif`：是否移除 EXIF（默认 `true`）
 
+  公开上传暂不接受 SVG；只有在接入可靠 sanitizer 并补齐处理、展示与回归边界后才可重新开放。内置文档静态资产属于随版本发布的可信资源，不适用这条用户上传停止线。
+
 - `POST /api/v1/Attachment/UploadDocument`
   - `multipart/form-data`
   - 表单字段：
     - `file`：文档文件
     - `businessType`：业务类型（默认 `Document`）
+
+  `Avatar`、`Sticker`、`StickerCover`、`SiteFavicon`、`CategoryIcon`、`CategoryCover`、`ProductIcon`、`ProductCover` 只接受服务端可识别的栅格图片；`UploadDocument` 或分片会话使用这些业务类型上传文档时稳定返回 `415`。
 
 - 查询与下载
   - `GET /api/v1/Attachment/GetById/{id}`：获取附件元数据（含运行时派生的 `voUrl` / `voThumbnailUrl`）
@@ -71,7 +78,7 @@
 - 删除与关联
   - `DELETE /api/v1/Attachment/Delete/{id}`
   - `POST /api/v1/Attachment/DeleteBatch`
-  - `PUT /api/v1/Attachment/UpdateBusinessAssociation/{id}?businessType=...&businessId=...`
+- 上传接口只创建 `BusinessId = null` 的未绑定附件，不接受调用方指定业务对象；通用附件控制器不再开放任意 `BusinessType / BusinessId` 改挂入口。帖子、评论、聊天等关联由对应业务服务完成，头像只通过 `User/SetMyAvatar` 在事务内设置或清空；favicon 的引用真值为启用中的 `Site.Branding.FaviconUrl`，孤立清理会解析其 `/_assets/attachments/{id}` 并保护对应附件
 
 ### 2) 公开资源访问口径
 
@@ -82,16 +89,19 @@
   - 返回缩略图文件流
   - 适合作为列表预览、卡片缩略图和富文本缩略显示地址
 
-> 业务侧统一推荐使用 `/_assets/attachments/*` 作为公开媒体访问口径；`FileStorage:Local:BaseUrl=/uploads` 仅表示底层本地静态文件暴露前缀，不再作为业务真值。
+> 所有业务附件读取只允许通过 `/_assets/attachments/*`、`Attachment/Download/{id}` 与 `DownloadByToken` 的受控链路。用户上传根目录不再通过 `/uploads/**` 直接静态暴露；`/uploads/DefaultIco/**` 只保留版本内置的可信默认图标。
 
 ### 3) 上传限流（UploadRateLimit）
 
-- 触发位置：`UploadImage` / `UploadDocument`
+- 触发位置：`UploadImage`、`UploadDocument` 与 `ChunkedUpload/CreateSession`
 - 返回码：触发限流时返回 `429`
 - 限流维度：
   - 并发上传数（默认 5）
   - 每分钟上传次数（默认 20）
   - 每日上传总大小（默认 100MB）
+- 限流采用“取得预留 -> 成功结算 / 失败释放”契约：取得预留时即占用并发槽与当日容量，并计入本分钟上传尝试；完成后把预留容量结算为当日已用，失败、取消或过期只释放并发与容量预留，不回滚已经发生的分钟尝试。
+- Redis 模式由 Lua 脚本原子更新同一用户的预留与计数；内存模式由按用户异步锁保护同一组缓存状态，不再存在独立 `check -> start` 的并发穿透窗口。
+- 普通上传在附件已持久化但配额结算失败时只记录诊断并返回成功，目前没有持久化重放记录；缓存预留过期后可能少计当日用量。分片上传会每 15 分钟跨租户扫描近期终态会话并限 `2000` 条重放成功结算或失败释放，但只覆盖缓存预留仍存在的窗口；两条链路最终都需要持久化 settlement ledger / outbox。
 
 ### 4) 分片上传（ChunkedUpload）
 
@@ -99,7 +109,10 @@
 
 - `POST /api/v1/ChunkedUpload/CreateSession`
   - `application/json`
-  - body：`CreateUploadSessionDto`
+  - body：`CreateUploadSessionDto`，由服务端根据 `TotalSize / ChunkSize` 计算总分片数
+  - `FileName`、`TotalSize`、`ChunkSize`、扩展名、业务类型与单文件大小必须同时满足 `FileStorage` 和 `ChunkedUpload` 配置
+  - `BusinessType` 使用与普通上传相同的白名单和权限；创建阶段不接受 `BusinessId`，业务关联必须在附件创建成功后走正式关联入口
+  - `ChunkedUpload:Enable = false` 时稳定返回服务不可用错误，不创建会话、临时目录或限流预留
 
 - `POST /api/v1/ChunkedUpload/UploadChunk`
   - `multipart/form-data`
@@ -107,19 +120,23 @@
     - `sessionId`：会话 ID
     - `chunkIndex`：分片索引（从 0 开始）
     - `chunkData`：分片文件
-  - 单分片请求大小限制：10MB（控制器 `RequestSizeLimit`）
+  - 业务分片上限为 10 MiB，multipart 请求上限额外包含表单边界开销
+  - 每个分片必须与会话推导的精确长度一致，最后一片按剩余字节校验；同索引重复提交只在既有临时文件完整时按幂等成功处理
 
 - `GET /api/v1/ChunkedUpload/GetSession?sessionId=...`
 
 - `POST /api/v1/ChunkedUpload/MergeChunks`
   - `application/json`
   - body：`MergeChunksDto`
+  - 只有 `0..TotalChunks-1` 全部分片及物理文件长度均完整时才允许合并；合并后仍进入普通附件服务的扩展名、文件签名、MIME、图片处理和持久化链路
 
 - `POST /api/v1/ChunkedUpload/CancelSession`
   - `application/json`
   - body：JSON 字符串（示例：`"{sessionId}"`）
 
-断点续传方式：通过 `GetSession` 返回的 `uploadedChunkIndexes` 识别已上传分片，只补传缺失分片。
+后端续传基础：通过 `GetSession` 返回的 `uploadedChunkIndexes` 识别已上传分片，只补传缺失分片；当前前端公开入口尚未提供跨请求复用既有会话的恢复流程，失败时会主动取消并回收会话。上传、合并、取消和过期清理在当前进程内按会话串行化；当前本地临时目录方案只保证单实例部署，粘性路由仍无法覆盖后台任务调度与节点故障转移，横向扩容前必须补共享临时存储和分布式会话锁。
+
+`GetSession` 的恢复只覆盖附件合并落库前。若附件已落库、会话完成状态持续回写失败且成功响应又丢失，当前后续请求无法由会话稳定找回既有附件；需通过附件侧 session correlation、唯一约束与事务恢复专题解决。
 
 ### 5) 临时访问令牌（FileAccessToken）
 
@@ -188,13 +205,15 @@
 - `FileStorage:Local:BaseUrl`：默认 `/uploads`
 - `FileStorage:MaxFileSize`：按业务类型控制单文件大小（当前默认 `Document=30MB`）
 - `FileStorage:AllowedExtensions`：按业务类型控制扩展名白名单
-- `FileStorage:Deduplication:Enable`：是否启用去重
-- `FileStorage:Deduplication:HashAlgorithm`：默认 `SHA256`
+- `FileStorage:Deduplication:Enable`：是否启用安全范围内的内容去重；哈希算法固定为 SHA-256，不提供可漂移的配置项
 
 补充说明：
 
 - `Local.BasePath` 是物理存储目录。
-- `Local.BaseUrl` 是底层本地静态文件暴露前缀，不再是业务对外引用的推荐口径。
+- 客户端声明的 `Content-Type` 不作为 MIME 真值；服务端会先校验扩展名与文件签名（文本文件校验 UTF-8，OOXML 校验容器结构），未识别或不匹配的内容直接拒绝。
+- `BusinessType` 只允许代码声明的稳定值；`LocalFileStorage` 会对所有读写路径执行根目录包含校验，禁止绝对路径和 `..` 越界。
+- 去重只复用同租户、同上传者、同业务类型、同预期 `BusinessId` 且启用、未删除的记录；缩略图、多尺寸、水印或 EXIF 清理等处理语义没有持久化指纹，因此任何处理请求都跳过去重，避免复用不符合本次处理契约的历史产物。
+- `Local.BaseUrl` 只用于版本内置 `DefaultIco` 的兼容路由前缀；用户附件不得经该前缀直出，业务访问统一走受控附件路由。
 - 业务层、前端编辑器、ViewModel 与部署文档统一推荐理解为：**展示用 URL 由 `attachmentId` 在运行时解析**。
 
 ### 2) UploadRateLimit
@@ -213,7 +232,7 @@
 - `ChunkedUpload:SessionExpirationHours`
 - `ChunkedUpload:TempChunkPath`
 
-备注：当前后端实现的默认临时目录为 `DataBases/Temp/Chunks`，会话默认过期为 24 小时。
+备注：当前后端实现的默认临时目录为 `DataBases/Temp/Chunks`，会话默认过期为 24 小时；请求省略 `ChunkSize` 或传 `0` 时，服务端使用 `DefaultChunkSize`，客户端当前也独立默认发送 2 MiB。服务端实际接受范围由 `MinChunkSize / MaxChunkSize` 决定，且 `MaxChunkSize` 不得超过 HTTP 传输层 10 MiB 上限。
 
 ### 4) Hangfire（清理任务）
 
@@ -221,7 +240,7 @@
 - 文件清理：`Hangfire:FileCleanup:*`
   - 软删除文件、临时文件、回收站、孤立附件
 
-分片会话与令牌清理任务：在 `Radish.Api/Program.cs` 注册为 RecurringJob（按天执行）。
+分片会话与令牌清理任务在 `Radish.Api/Program.cs` 注册为 RecurringJob；分片会话每 15 分钟跨租户查询过期会话，并限批次幂等重放近期终态会话的配额结算，确保重试周期短于会话接近到期时剩余的 30 分钟预留宽限，令牌仍按天清理。该重放只覆盖预留仍存在的窗口，持久化 settlement/outbox 仍是最终可靠边界。
 
 ---
 
@@ -273,6 +292,9 @@
 ## 未完成事项（TODO）
 
 - 前端分片上传交互完善（暂停 / 恢复、断点续传 UI、失败重试策略可视化）
-- 分片上传服务接入配置项并做参数校验（`MinChunkSize` / `MaxChunkSize` / `TempChunkPath` / `SessionExpirationHours`）
-- 临时令牌权限：管理员判定、审计与管理界面
-- 分片上传与临时令牌的单元 / 集成测试覆盖（服务层 + 控制器）
+- 分片上传横向扩容前补共享临时存储、分布式会话互斥与跨实例回归；当前部署边界为单实例
+- 为附件持久化增加稳定的上传会话 correlation / 唯一约束，使“附件已落库但会话完成状态持续回写失败且响应丢失”的极端路径可在后续请求中找回既有附件
+- 为普通上传和分片上传增加持久化配额结算记录及可重放 outbox，避免缓存结算失败造成当日用量漏记或预留滞留
+- 建立按业务域派生的附件可见性契约及历史数据迁移，至少覆盖 `Chat`、`Document` 和受限 `Wiki`
+- 临时令牌审计与管理界面
+- 临时令牌管理界面与端到端验收覆盖

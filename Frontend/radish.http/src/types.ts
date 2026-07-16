@@ -16,6 +16,8 @@ export interface ApiResponse<T = unknown> {
   code?: string;
   /** 国际化消息键（可选，用于 i18n） */
   messageKey?: string;
+  /** 国际化消息格式参数（仅允许服务端公开的非敏感标量） */
+  messageArguments?: unknown[];
   /** 服务端诊断关联标识（可选） */
   traceId?: string;
 }
@@ -62,6 +64,8 @@ export interface ParsedApiResponse<T> {
   messageInfo?: string;
   /** 国际化消息键 */
   messageKey?: string;
+  /** 国际化消息格式参数 */
+  messageArguments?: unknown[];
   /** 错误码 */
   code?: string;
   /** HTTP 状态码 */

@@ -245,7 +245,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
             "请求参数验证失败",
             ApiErrorCodes.ValidationFailed,
             "error.common.validation_failed",
-            fieldErrors);
+            responseData: fieldErrors);
     };
 });
 builder.Services.AddSingleton<ApiExceptionHandler>();
@@ -549,20 +549,25 @@ app.UseDefaultFiles();
 app.MapStaticAssets();
 app.UseStaticFiles();
 
-// 配置上传文件的静态文件服务
+// 用户附件只允许通过 /_assets/attachments/* 的受控下载链访问。
+// /uploads 仅保留版本内置的可信默认图标，不再暴露整个用户上传根目录。
 var uploadsPath = builder.Configuration.GetSection("FileStorage:Local:BasePath").Value ?? "DataBases/Uploads";
 var uploadsUrl = builder.Configuration.GetSection("FileStorage:Local:BaseUrl").Value ?? "/uploads";
 var uploadsFullPath = Path.IsPathRooted(uploadsPath)
     ? Path.GetFullPath(uploadsPath)
     : Path.GetFullPath(Path.Combine(Radish.Common.CoreTool.AppPathTool.GetSolutionRootOrBasePath(), uploadsPath));
+var trustedDefaultIconPath = Path.Combine(uploadsFullPath, "DefaultIco");
+var normalizedUploadsUrl = uploadsUrl.Trim().Trim('/');
+var trustedDefaultIconRequestPath = string.IsNullOrWhiteSpace(normalizedUploadsUrl)
+    ? "/DefaultIco"
+    : $"/{normalizedUploadsUrl}/DefaultIco";
 
-// 确保 uploads 目录存在
-Directory.CreateDirectory(uploadsFullPath);
+Directory.CreateDirectory(trustedDefaultIconPath);
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsFullPath),
-    RequestPath = uploadsUrl
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(trustedDefaultIconPath),
+    RequestPath = trustedDefaultIconRequestPath
 });
 
 var documentOptions = app.Services.GetRequiredService<IOptions<DocumentOptions>>().Value;
@@ -756,9 +761,11 @@ if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
     Log.Information("[Hangfire] 已注册定时任务: cleanup-orphan-attachments (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
 }
 
-// 注册分片上传会话清理任务
+// 注册分片上传会话清理任务；即使禁用新上传，也要继续回收历史会话。
 {
-    var schedule = "0 6 * * *"; // 每天凌晨 6 点
+    // 必须短于会话接近到期时仍可剩余的 30 分钟配额宽限，
+    // 让终态会话的幂等配额结算在预留自然过期前获得重试机会并保留调度抖动余量。
+    var schedule = "*/15 * * * *"; // 每 15 分钟
 
     RecurringJob.AddOrUpdate<IChunkedUploadService>(
         "cleanup-expired-upload-sessions",

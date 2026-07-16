@@ -22,7 +22,7 @@ export interface ApiClientConfig {
   /** 获取当前请求语言；宿主负责返回服务端可识别的语言标签 */
   getLanguage?: () => string | null | undefined;
   /** 根据服务端 messageKey 解析用户可见消息 */
-  translateMessage?: (key: string) => string | undefined;
+  translateMessage?: (key: string, messageArguments?: readonly unknown[]) => string | undefined;
   /** 请求拦截器 */
   onRequest?: (url: string, options: RequestInit) => void | Promise<void>;
   /** 响应拦截器 */

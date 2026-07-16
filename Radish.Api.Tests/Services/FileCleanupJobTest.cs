@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -16,6 +17,64 @@ namespace Radish.Api.Tests.Services;
 
 public class FileCleanupJobTest
 {
+    [Fact]
+    public async Task CleanupTempFilesAsync_Should_Preserve_Chunk_Files_And_Empty_Session_Directories()
+    {
+        var now = new DateTime(2026, 7, 16, 8, 0, 0, DateTimeKind.Utc);
+        var dataBasesPath = Path.Combine(
+            Path.GetTempPath(),
+            $"radish-file-cleanup-{Guid.NewGuid():N}");
+        var tempPath = Path.Combine(dataBasesPath, "Temp");
+        var chunkPath = Path.Combine(tempPath, "Chunks");
+        var chunkSessionPath = Path.Combine(chunkPath, Guid.NewGuid().ToString("N"));
+        var emptySessionPath = Path.Combine(chunkPath, Guid.NewGuid().ToString("N"));
+        var oldChunkPath = Path.Combine(chunkSessionPath, "chunk_0");
+        var ordinaryDirectory = Path.Combine(tempPath, "ordinary");
+        var oldOrdinaryPath = Path.Combine(ordinaryDirectory, "old.tmp");
+
+        try
+        {
+            Directory.CreateDirectory(chunkSessionPath);
+            Directory.CreateDirectory(emptySessionPath);
+            Directory.CreateDirectory(ordinaryDirectory);
+            await File.WriteAllTextAsync(
+                oldChunkPath,
+                "chunk",
+                TestContext.Current.CancellationToken);
+            await File.WriteAllTextAsync(
+                oldOrdinaryPath,
+                "ordinary",
+                TestContext.Current.CancellationToken);
+            File.SetLastWriteTimeUtc(oldChunkPath, now.AddHours(-3));
+            File.SetLastWriteTimeUtc(oldOrdinaryPath, now.AddHours(-3));
+
+            var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Loose);
+            var attachmentReferenceInspector = new Mock<IAttachmentReferenceInspector>(MockBehavior.Loose);
+            var fileStorage = new Mock<IFileStorage>(MockBehavior.Loose);
+            var job = CreateJob(
+                attachmentRepository,
+                attachmentReferenceInspector,
+                fileStorage,
+                now,
+                dataBasesPath,
+                chunkPath);
+
+            var cleanedCount = await job.CleanupTempFilesAsync(2);
+
+            Assert.Equal(1, cleanedCount);
+            Assert.True(File.Exists(oldChunkPath));
+            Assert.True(Directory.Exists(emptySessionPath));
+            Assert.False(File.Exists(oldOrdinaryPath));
+        }
+        finally
+        {
+            if (Directory.Exists(dataBasesPath))
+            {
+                Directory.Delete(dataBasesPath, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public async Task CleanupOrphanAttachmentsAsync_Should_Skip_Attachments_Referenced_By_Sticker()
     {
@@ -102,18 +161,34 @@ public class FileCleanupJobTest
         Mock<IBaseRepository<Attachment>> attachmentRepository,
         Mock<IAttachmentReferenceInspector> attachmentReferenceInspector,
         Mock<IFileStorage> fileStorage,
-        DateTime nowUtc)
+        DateTime nowUtc,
+        string? dataBasesPath = null,
+        string? chunkPath = null)
     {
         var timeProvider = new FixedTimeProvider(new DateTimeOffset(nowUtc));
         var calendar = new BusinessCalendar(
             timeProvider,
             Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
-        return new FileCleanupJob(
+        var chunkedUploadOptions = Options.Create(new ChunkedUploadOptions
+        {
+            TempChunkPath = chunkPath ?? "DataBases/Temp/Chunks"
+        });
+        return dataBasesPath == null
+            ? new FileCleanupJob(
+                attachmentRepository.Object,
+                attachmentReferenceInspector.Object,
+                fileStorage.Object,
+                timeProvider,
+                calendar,
+                chunkedUploadOptions)
+            : new FileCleanupJob(
             attachmentRepository.Object,
             attachmentReferenceInspector.Object,
             fileStorage.Object,
             timeProvider,
-            calendar);
+            calendar,
+            chunkedUploadOptions,
+            dataBasesPath);
     }
 
     private sealed class FixedTimeProvider(DateTimeOffset utcNow) : TimeProvider
