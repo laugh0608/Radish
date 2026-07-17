@@ -153,20 +153,27 @@ export function clearRememberedClientBackTo(
   }
 }
 
-export function resolveClientBackLabel(backTo: string): string {
+export type ClientBackLabelKey =
+  | 'console.clientBack.forum'
+  | 'console.clientBack.shop'
+  | 'console.clientBack.messages'
+  | 'console.clientBack.workbench'
+  | 'console.clientBack.community';
+
+export function resolveClientBackLabelKey(backTo: string): ClientBackLabelKey {
   const pathname = new URL(backTo, 'https://radish.local').pathname;
   if (pathname.startsWith('/forum')) {
-    return '返回论坛';
+    return 'console.clientBack.forum';
   }
   if (pathname.startsWith('/shop')) {
-    return '返回商城';
+    return 'console.clientBack.shop';
   }
   if (pathname.startsWith('/messages')) {
-    return '返回消息';
+    return 'console.clientBack.messages';
   }
   if (pathname.startsWith('/workbench')) {
-    return '返回功能地图';
+    return 'console.clientBack.workbench';
   }
 
-  return '返回社区';
+  return 'console.clientBack.community';
 }

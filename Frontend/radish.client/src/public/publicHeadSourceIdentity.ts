@@ -5,13 +5,13 @@ import type { PublicDocsRoute } from './docsRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
 import type { PublicShopRoute } from './shopRouteState';
 
-function normalizeRouteIdentity(value: string | number | null | undefined): string {
+function normalizeRouteIdentity(value: string | null | undefined): string {
   return String(value ?? '').trim().toLowerCase();
 }
 
 export function isCurrentShopProductHeadSource(
   route: PublicShopRoute,
-  productId: string | number | null | undefined,
+  productId: string | null | undefined,
 ): boolean {
   return route.kind === 'detail'
     && normalizeRouteIdentity(productId) === normalizeRouteIdentity(route.productId);

@@ -7,10 +7,13 @@
 @{
     ViewData["Title"] = Localizer["auth.consent.title"];
 
-    var displayClientName = string.IsNullOrWhiteSpace(Model.ClientName) ? Model.ClientId : Model.ClientName;
-    var hasClientDescription = !string.IsNullOrWhiteSpace(Model.ClientDescription);
-    var applicationDescription = hasClientDescription ? Model.ClientDescription : string.Empty;
-    var developerName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
+    var fallbackClientName = string.IsNullOrWhiteSpace(Model.ClientName) ? Model.ClientId : Model.ClientName;
+    var fallbackClientDescription = Model.ClientDescription ?? string.Empty;
+    var fallbackDeveloperName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
+    var displayClientName = AuthClientText.Resolve(Localizer, Model.ClientId, "displayName", fallbackClientName);
+    var applicationDescription = AuthClientText.Resolve(Localizer, Model.ClientId, "description", fallbackClientDescription);
+    var developerName = AuthClientText.Resolve(Localizer, Model.ClientId, "developerName", fallbackDeveloperName);
+    var hasClientDescription = !string.IsNullOrWhiteSpace(applicationDescription);
     var redirectTarget = string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost;
     var redirectDisplay = string.IsNullOrWhiteSpace(redirectTarget)
         ? Localizer["auth.consent.requestingApp"].Value

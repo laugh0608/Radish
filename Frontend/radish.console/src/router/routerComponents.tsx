@@ -8,6 +8,20 @@ import { tokenService } from '../services/tokenService';
 import { canEnterConsole, consoleRouteMetaMap } from './routeMeta';
 import './routerComponents.css';
 import { useTranslation } from 'react-i18next';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
+function ConsoleAccessDenied() {
+  const { t } = useTranslation();
+  useDocumentTitle(t('console.auth.deniedTitle'));
+
+  return (
+    <div className="console-route-state console-route-state--permission">
+      <h2>{t('console.auth.deniedTitle')}</h2>
+      <p>{t('console.auth.deniedDescription')}</p>
+      <ClientBackLink />
+    </div>
+  );
+}
 
 export function AuthenticatedLayout() {
   const { t } = useTranslation();
@@ -41,13 +55,7 @@ export function AuthenticatedLayout() {
   }
 
   if (!canEnterConsole(user)) {
-    return (
-      <div className="console-route-state console-route-state--permission">
-        <h2>{t('console.auth.deniedTitle')}</h2>
-        <p>{t('console.auth.deniedDescription')}</p>
-        <ClientBackLink />
-      </div>
-    );
+    return <ConsoleAccessDenied />;
   }
 
   return (

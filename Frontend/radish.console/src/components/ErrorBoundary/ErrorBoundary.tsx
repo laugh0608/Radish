@@ -1,6 +1,7 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { log } from '@/utils/logger';
 import { AntButton, Result } from '@radish/ui';
+import i18n from '@/i18n';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -36,13 +37,13 @@ function getCurrentRouteSnapshot(): string {
 
 function buildDiagnosticText(error: Error, errorInfo: ErrorInfo, diagnosticId: string): string {
   return [
-    `诊断编号：${diagnosticId}`,
-    `发生时间：${new Date().toISOString()}`,
-    `当前路径：${getCurrentRouteSnapshot()}`,
-    `错误名称：${error.name}`,
-    `错误信息：${error.message}`,
-    '组件堆栈：',
-    errorInfo.componentStack || '未提供组件堆栈',
+    i18n.t('console.errorBoundary.diagnosticId', { value: diagnosticId }),
+    i18n.t('console.errorBoundary.occurredAt', { value: new Date().toISOString() }),
+    i18n.t('console.errorBoundary.currentPath', { value: getCurrentRouteSnapshot() }),
+    i18n.t('console.errorBoundary.errorName', { value: error.name }),
+    i18n.t('console.errorBoundary.errorMessageLine', { value: error.message }),
+    i18n.t('console.errorBoundary.componentStackLine'),
+    errorInfo.componentStack || i18n.t('console.errorBoundary.componentStackMissing'),
   ].join('\n');
 }
 
@@ -136,22 +137,24 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         <div style={{ padding: '48px', maxWidth: '600px', margin: '0 auto' }}>
           <Result
             status="error"
-            title="页面出错了"
+            title={i18n.t('console.errorBoundary.title')}
             subTitle={diagnosticId
-              ? `页面遇到异常。请先尝试重试或刷新；如需反馈，请附上诊断编号 ${diagnosticId}。`
-              : '页面遇到异常。请先尝试重试或刷新；如需反馈，请附上当前路径与操作时间。'}
+              ? i18n.t('console.errorBoundary.descriptionWithId', { diagnosticId })
+              : i18n.t('console.errorBoundary.description')}
             extra={[
               <AntButton type="primary" key="home" onClick={() => window.location.href = '/console/'}>
-                返回首页
+                {i18n.t('console.errorBoundary.home')}
               </AntButton>,
               <AntButton key="reload" onClick={() => window.location.reload()}>
-                刷新页面
+                {i18n.t('console.errorBoundary.reload')}
               </AntButton>,
               <AntButton key="reset" onClick={this.handleReset}>
-                重试
+                {i18n.t('console.errorBoundary.retry')}
               </AntButton>,
               <AntButton key="copy" onClick={() => void this.handleCopyDiagnostic()}>
-                {diagnosticCopied ? '诊断信息已复制' : '复制诊断信息'}
+                {diagnosticCopied
+                  ? i18n.t('console.errorBoundary.copied')
+                  : i18n.t('console.errorBoundary.copy')}
               </AntButton>,
             ]}
           />
@@ -160,7 +163,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           {import.meta.env.DEV && (
             <details style={{ marginTop: '24px', whiteSpace: 'pre-wrap' }}>
               <summary style={{ cursor: 'pointer', fontWeight: 'bold', marginBottom: '8px' }}>
-                错误详情 (仅开发环境显示)
+                {i18n.t('console.errorBoundary.devDetails')}
               </summary>
               <div style={{
                 background: '#f5f5f5',
@@ -170,11 +173,11 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 fontFamily: 'monospace',
               }}>
                 <div style={{ marginBottom: '12px' }}>
-                  <strong>错误信息:</strong>
+                  <strong>{i18n.t('console.errorBoundary.errorMessage')}</strong>
                   <div style={{ color: '#ff4d4f' }}>{error.toString()}</div>
                 </div>
                 <div>
-                  <strong>组件堆栈:</strong>
+                  <strong>{i18n.t('console.errorBoundary.componentStack')}</strong>
                   <div style={{ color: '#666' }}>{errorInfo.componentStack}</div>
                 </div>
               </div>

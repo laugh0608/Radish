@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useUser } from '@/hooks/useUser';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -22,6 +23,7 @@ import { log } from '@/utils/logger';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { userApi, type MyProfileInfo } from '@/api/user';
 import { tokenService } from '@/services/tokenService';
+import { formatConsoleDateTime } from '@/utils/localeFormatters';
 import '../adminFeature.css';
 import './UserProfile.css';
 
@@ -30,7 +32,8 @@ interface UserProfileData extends MyProfileInfo {
 }
 
 export const UserProfile = () => {
-  useDocumentTitle('个人信息');
+  const { t, i18n } = useTranslation();
+  useDocumentTitle(t('profile.documentTitle'));
   const { user, loading: userLoading, refreshUser } = useUser();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -53,7 +56,7 @@ export const UserProfile = () => {
       setLoading(true);
       const response = await userApi.getMyProfile();
       if (!response.ok || !response.data) {
-        throw new Error(response.message || '加载个人信息失败');
+        throw new Error(response.message || t('profile.feedback.loadFailed'));
       }
 
       const nextProfile: UserProfileData = {
@@ -64,12 +67,12 @@ export const UserProfile = () => {
       setProfileFormValues(nextProfile);
     } catch (error) {
       log.error('UserProfile', '加载个人信息失败:', error);
-      message.error(error instanceof Error ? error.message : '加载个人信息失败');
+      message.error(error instanceof Error ? error.message : t('profile.feedback.loadFailed'));
       setProfileData(null);
     } finally {
       setLoading(false);
     }
-  }, [user, setProfileFormValues]);
+  }, [user, setProfileFormValues, t]);
 
   useEffect(() => {
     if (user) {
@@ -96,7 +99,7 @@ export const UserProfile = () => {
       });
 
       if (!response.ok) {
-        throw new Error(response.message || '更新个人信息失败');
+        throw new Error(response.message || t('profile.feedback.updateFailed'));
       }
 
       setProfileData(prev => prev ? {
@@ -110,11 +113,11 @@ export const UserProfile = () => {
 
       await refreshUser();
       await loadProfile();
-      message.success('个人信息更新成功');
+      message.success(t('profile.feedback.updated'));
       setEditing(false);
     } catch (error) {
       log.error('UserProfile', '更新个人信息失败:', error);
-      message.error(error instanceof Error ? error.message : '更新个人信息失败');
+      message.error(error instanceof Error ? error.message : t('profile.feedback.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -142,12 +145,12 @@ export const UserProfile = () => {
     beforeUpload: (file) => {
       const isImage = isSupportedAttachmentImageFile(file);
       if (!isImage) {
-        message.error('只能上传图片文件！');
+        message.error(t('profile.feedback.imageOnly'));
         return false;
       }
       const isLt2M = file.size / 1024 / 1024 < 2;
       if (!isLt2M) {
-        message.error('图片大小不能超过 2MB！');
+        message.error(t('profile.feedback.imageTooLarge'));
         return false;
       }
       return true;
@@ -180,26 +183,26 @@ export const UserProfile = () => {
                   // 刷新UserContext中的用户信息，更新右上角导航栏头像
                   void refreshUser();
 
-                  message.success('头像更新成功');
+                  message.success(t('profile.feedback.avatarUpdated'));
                   log.debug('UserProfile', '头像已保存到数据库');
                 } else {
-                  message.error(setAvatarResponse.message || '保存头像失败');
+                  message.error(setAvatarResponse.message || t('profile.feedback.avatarSaveFailed'));
                   log.error('UserProfile', '保存头像失败:', setAvatarResponse.message);
                 }
               })
               .catch(error => {
-                message.error('保存头像失败');
+                message.error(t('profile.feedback.avatarSaveFailed'));
                 log.error('UserProfile', '保存头像异常:', error);
               });
           } else {
-            message.error('头像上传失败：未获取到文件信息');
+            message.error(t('profile.feedback.avatarMissingFile'));
           }
         } else {
-          message.error(response?.messageInfo || '头像上传失败');
+          message.error(response?.messageInfo || t('profile.feedback.avatarUploadFailed'));
         }
       } else if (info.file.status === 'error') {
         log.error('UserProfile', '头像上传失败:', info.file.error);
-        message.error('头像上传失败');
+        message.error(t('profile.feedback.avatarUploadFailed'));
       }
     },
   };
@@ -211,11 +214,11 @@ export const UserProfile = () => {
           <div className="admin-feature-header">
             <div>
               <h2>
-                <UserOutlined /> 个人信息
+                <UserOutlined /> {t('profile.title')}
               </h2>
-              <p className="admin-feature-subtle">正在加载当前登录用户资料。</p>
+              <p className="admin-feature-subtle">{t('profile.loading.user')}</p>
             </div>
-            <Tag color="processing">加载中</Tag>
+            <Tag color="processing">{t('profile.loading.tag')}</Tag>
           </div>
         </section>
       </div>
@@ -227,9 +230,9 @@ export const UserProfile = () => {
       <div className="admin-feature-page user-profile-page">
         <section className="admin-feature-card">
           <div className="user-profile-empty">
-            <p>无法获取用户信息，请重新登录</p>
+            <p>{t('profile.empty.message')}</p>
             <Button onClick={() => window.location.reload()}>
-              刷新页面
+              {t('profile.empty.refresh')}
             </Button>
           </div>
         </section>
@@ -244,18 +247,21 @@ export const UserProfile = () => {
           <div className="admin-feature-header">
             <div>
               <h2>
-                <UserOutlined /> 个人信息
+                <UserOutlined /> {t('profile.title')}
               </h2>
-              <p className="admin-feature-subtle">正在加载个人资料表单。</p>
+              <p className="admin-feature-subtle">{t('profile.loading.form')}</p>
             </div>
-            <Tag color="processing">加载中</Tag>
+            <Tag color="processing">{t('profile.loading.tag')}</Tag>
           </div>
         </section>
       </div>
     );
   }
 
-  const profileDisplayName = resolveVisibleUserDisplayName(profileData, profileData.voUserId ? `用户 ${profileData.voUserId}` : '--');
+  const profileDisplayName = resolveVisibleUserDisplayName(
+    profileData,
+    profileData.voUserId ? t('profile.userFallback', { id: profileData.voUserId }) : '--',
+  );
   const profileDisplayHandle = resolveVisibleUserHandle(profileData, profileDisplayName);
 
   return (
@@ -271,9 +277,9 @@ export const UserProfile = () => {
             />
             <div>
               <h2>
-                <UserOutlined /> 个人信息
+                <UserOutlined /> {t('profile.title')}
               </h2>
-              <p className="admin-feature-subtle">维护当前登录账号的基础资料和头像。</p>
+              <p className="admin-feature-subtle">{t('profile.description')}</p>
             </div>
           </div>
           <div className="profile-actions">
@@ -282,12 +288,12 @@ export const UserProfile = () => {
                 icon={<EditOutlined />}
                 onClick={() => setEditing(true)}
               >
-                编辑信息
+                {t('profile.action.edit')}
               </Button>
             ) : (
               <Space>
                 <Button onClick={handleCancel}>
-                  取消
+                  {t('profile.action.cancel')}
                 </Button>
                 <Button
                   type="primary"
@@ -295,7 +301,7 @@ export const UserProfile = () => {
                   loading={loading}
                   onClick={handleSave}
                 >
-                  保存
+                  {t('profile.action.save')}
                 </Button>
               </Space>
             )}
@@ -303,29 +309,29 @@ export const UserProfile = () => {
         </div>
       </section>
 
-      <section className="admin-feature-metrics" aria-label="个人资料指标">
+      <section className="admin-feature-metrics" aria-label={t('profile.metrics.label')}>
         <div className="admin-feature-metric">
-          展示名称
+          {t('profile.metrics.displayName')}
           <strong>{profileDisplayName}</strong>
         </div>
         <div className="admin-feature-metric">
-          公开句柄
+          {t('profile.metrics.handle')}
           <strong>{profileDisplayHandle || '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          角色数量
+          {t('profile.metrics.roles')}
           <strong>{profileData.voRoles.length}</strong>
         </div>
         <div className="admin-feature-metric">
-          用户 ID
+          {t('profile.metrics.userId')}
           <strong>{profileData.voUserId}</strong>
         </div>
       </section>
 
       <div className="admin-settings-layout user-profile-layout">
         <aside className="admin-settings-nav">
-          <h3>资料摘要</h3>
-          <p className="admin-feature-subtle">当前登录账号的身份和头像状态。</p>
+          <h3>{t('profile.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('profile.summary.description')}</p>
           <div className="avatar-section">
             <Avatar
               size={80}
@@ -339,7 +345,7 @@ export const UserProfile = () => {
                 size="small"
                 className="avatar-upload-btn"
               >
-                更换头像
+                {t('profile.summary.changeAvatar')}
               </Button>
             </Upload>
           </div>
@@ -350,9 +356,9 @@ export const UserProfile = () => {
             <div className="admin-setting-section__title">
               <div className="admin-setting-section__title-main">
                 <SettingOutlined />
-                <h3>基础资料</h3>
+                <h3>{t('profile.basic.title')}</h3>
               </div>
-              <Tag>{editing ? '编辑中' : '只读'}</Tag>
+              <Tag>{editing ? t('profile.basic.editing') : t('profile.basic.readOnly')}</Tag>
             </div>
 
             <Form
@@ -362,29 +368,29 @@ export const UserProfile = () => {
             >
               <Form.Item
                 name="voUserName"
-                label="展示名称"
+                label={t('profile.form.displayName')}
                 rules={[
-                  { required: true, message: '请输入展示名称' },
-                  { min: 2, max: 50, message: '展示名称长度为2-50个字符' },
+                  { required: true, message: t('profile.form.displayNameRequired') },
+                  { min: 2, max: 50, message: t('profile.form.displayNameLength') },
                 ]}
               >
-                <Input placeholder="请输入展示名称" />
+                <Input placeholder={t('profile.form.displayNamePlaceholder')} />
               </Form.Item>
 
               <Form.Item
                 name="voUserEmail"
-                label="邮箱"
+                label={t('profile.form.email')}
                 rules={[
-                  { required: true, message: '请输入邮箱' },
-                  { type: 'email', message: '请输入有效的邮箱地址' },
+                  { required: true, message: t('profile.form.emailRequired') },
+                  { type: 'email', message: t('profile.form.emailInvalid') },
                 ]}
               >
-                <Input placeholder="请输入邮箱" />
+                <Input placeholder={t('profile.form.emailPlaceholder')} />
               </Form.Item>
 
               <Form.Item
                 name="voAge"
-                label="年龄"
+                label={t('profile.form.age')}
                 rules={[
                   {
                     validator(_, value) {
@@ -397,46 +403,46 @@ export const UserProfile = () => {
                         return Promise.resolve();
                       }
 
-                      return Promise.reject(new Error('年龄必须是非负整数'));
+                      return Promise.reject(new Error(t('profile.form.ageInvalid')));
                     },
                   },
                 ]}
               >
-                <Input placeholder="请输入年龄" />
+                <Input placeholder={t('profile.form.agePlaceholder')} />
               </Form.Item>
 
               <Form.Item
                 name="voAddress"
-                label="地址"
-                rules={[{ max: 2000, message: '地址长度不能超过2000个字符' }]}
+                label={t('profile.form.address')}
+                rules={[{ max: 2000, message: t('profile.form.addressLength') }]}
               >
-                <Input.TextArea rows={3} placeholder="请输入地址" />
+                <Input.TextArea rows={3} placeholder={t('profile.form.addressPlaceholder')} />
               </Form.Item>
             </Form>
           </section>
         </main>
 
         <aside className="admin-settings-aside">
-          <h3>账号摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前登录账号的角色和注册信息。</p>
+          <h3>{t('profile.account.title')}</h3>
+          <p className="admin-feature-subtle">{t('profile.account.description')}</p>
           <div className="admin-settings-aside__list">
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">用户 ID</span>
+              <span className="admin-settings-aside__label">{t('profile.account.userId')}</span>
               <span className="admin-settings-aside__value">{profileData.voUserId}</span>
             </div>
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">角色</span>
-              <span className="admin-settings-aside__value">{profileData.voRoles.join(', ') || '无角色'}</span>
+              <span className="admin-settings-aside__label">{t('profile.account.roles')}</span>
+              <span className="admin-settings-aside__value">{profileData.voRoles.join(', ') || t('profile.account.noRoles')}</span>
             </div>
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">注册时间</span>
+              <span className="admin-settings-aside__label">{t('profile.account.registered')}</span>
               <span className="admin-settings-aside__value">
-                {new Date(profileData.voCreateTime).toLocaleString('zh-CN')}
+                {formatConsoleDateTime(profileData.voCreateTime, i18n.resolvedLanguage ?? i18n.language)}
               </span>
             </div>
             <div className="admin-settings-aside__item">
-              <span className="admin-settings-aside__label">最后登录</span>
-              <span className="admin-settings-aside__value">暂无记录</span>
+              <span className="admin-settings-aside__label">{t('profile.account.lastLogin')}</span>
+              <span className="admin-settings-aside__value">{t('profile.account.noLoginRecord')}</span>
             </div>
           </div>
         </aside>

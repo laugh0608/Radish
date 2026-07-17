@@ -151,4 +151,13 @@
   <data name="auth.consent.scope.radishApi.description" xml:space="preserve"><value>Completes the protected task you opened in the requesting app.</value></data>
   <data name="auth.consent.scope.additional.title" xml:space="preserve"><value>Additional access</value></data>
   <data name="auth.consent.scope.additional.description" xml:space="preserve"><value>An extra scope declared by the requesting app. Review it before continuing.</value></data>
+  <data name="auth.client.radish-client.displayName" xml:space="preserve"><value>Radish Official Client</value></data>
+  <data name="auth.client.radish-client.description" xml:space="preserve"><value>The official Radish client for the community web app, WebOS compatibility entry, and Flutter native shell.</value></data>
+  <data name="auth.client.radish-client.developerName" xml:space="preserve"><value>Radish Official</value></data>
+  <data name="auth.client.radish-console.displayName" xml:space="preserve"><value>Radish Management Console</value></data>
+  <data name="auth.client.radish-console.description" xml:space="preserve"><value>The official Radish console for community operations and system administration.</value></data>
+  <data name="auth.client.radish-console.developerName" xml:space="preserve"><value>Radish Official</value></data>
+  <data name="auth.client.radish-scalar.displayName" xml:space="preserve"><value>Radish API Documentation</value></data>
+  <data name="auth.client.radish-scalar.description" xml:space="preserve"><value>The official Radish API documentation and debugging entry.</value></data>
+  <data name="auth.client.radish-scalar.developerName" xml:space="preserve"><value>Radish Official</value></data>
 </root>

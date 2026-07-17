@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders', 'products', 'settings', 'documents', 'roles', 'taxonomy', 'stickers', 'coins', 'experience'];
+const domainNames = ['core', 'shell', 'dashboard', 'applications', 'profile', 'systemTools', 'users', 'moderation', 'orders', 'products', 'settings', 'documents', 'roles', 'taxonomy', 'stickers', 'coins', 'experience'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   return domainNames.flatMap((domain) => {

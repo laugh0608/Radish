@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.Json;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Routing;
 
 namespace Radish.Auth.Controllers;
 
@@ -99,7 +101,7 @@ public class AccountController : Controller
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
         {
-            return LocalRedirect(returnUrl);
+            return LocalRedirect(RewriteLocalReturnUrlCulture(returnUrl, normalizedCulture));
         }
 
         return RedirectToAction(nameof(Login))!;
@@ -116,7 +118,7 @@ public class AccountController : Controller
         if (normalizedEmail == null || string.IsNullOrWhiteSpace(password))
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl, email });
+            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, email));
         }
 
         var logEmail = MaskEmailForLog(normalizedEmail);
@@ -139,7 +141,7 @@ public class AccountController : Controller
                 logEmail,
                 totalStopwatch.ElapsedMilliseconds);
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl, email = normalizedEmail });
+            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
         }
 
         // 2. 使用 Argon2id 验证密码
@@ -155,7 +157,7 @@ public class AccountController : Controller
         if (!isPasswordValid)
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl, email = normalizedEmail });
+            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
         }
 
         await _coinService.GrantRegistrationRewardAsync(user.Uuid);
@@ -260,7 +262,7 @@ public class AccountController : Controller
                 .SelectMany(v => v.Errors)
                 .Select(e => e.ErrorMessage));
             TempData["RegisterError"] = errors;
-            return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
         }
 
         try
@@ -271,19 +273,19 @@ public class AccountController : Controller
             if (!IsDisplayNameValid(displayName, displayNameLengthRule.MinLength, displayNameLengthRule.MaxLength, out var displayNameError))
             {
                 TempData["RegisterError"] = displayNameError;
-                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+                return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
             }
 
             if (ReservedDisplayNames.Contains(displayName))
             {
                 TempData["RegisterError"] = _errorsLocalizer["auth.register.error.displayNameReserved"].Value;
-                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+                return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
             }
 
             if (email == null)
             {
                 TempData["RegisterError"] = _errorsLocalizer["auth.register.error.emailInvalid"].Value;
-                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+                return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
             }
 
             // 2. 检查邮箱是否已存在
@@ -291,7 +293,7 @@ public class AccountController : Controller
             if (existingEmails.Any())
             {
                 TempData["RegisterError"] = _errorsLocalizer["auth.register.error.emailRegistered"].Value;
-                return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+                return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
             }
 
             // 4. 创建用户（使用 Argon2id 哈希密码）
@@ -323,7 +325,7 @@ public class AccountController : Controller
 
             // 6. 注册成功，跳转到登录页
             TempData["RegisterSuccess"] = _errorsLocalizer["auth.register.success"].Value;
-            return RedirectToAction(nameof(Login), new { returnUrl = model.ReturnUrl, email });
+            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(model.ReturnUrl, email));
         }
         catch (Exception ex)
         {
@@ -335,7 +337,7 @@ public class AccountController : Controller
             TempData["RegisterError"] = _errorsLocalizer[
                 "auth.register.error.unexpected",
                 HttpContext.TraceIdentifier].Value;
-            return RedirectToAction(nameof(Register), new { returnUrl = model.ReturnUrl });
+            return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
         }
     }
 
@@ -421,6 +423,54 @@ public class AccountController : Controller
         return culture?.Trim().StartsWith("en", StringComparison.OrdinalIgnoreCase) == true
             ? "en"
             : "zh";
+    }
+
+    private static RouteValueDictionary CreateAccountFlowRouteValues(string? returnUrl, string? email = null)
+    {
+        var values = new RouteValueDictionary
+        {
+            ["returnUrl"] = returnUrl,
+            ["culture"] = NormalizeSupportedCulture(CultureInfo.CurrentUICulture.Name)
+        };
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            values["email"] = email;
+        }
+
+        return values;
+    }
+
+    private string RewriteLocalReturnUrlCulture(string returnUrl, string culture, int depth = 0)
+    {
+        if (depth >= 3 || !Url.IsLocalUrl(returnUrl))
+        {
+            return returnUrl;
+        }
+
+        if (!Uri.TryCreate(new Uri("https://radish.local"), returnUrl, out var parsedUrl))
+        {
+            return returnUrl;
+        }
+
+        var queryValues = QueryHelpers.ParseQuery(parsedUrl.Query)
+            .ToDictionary(
+                pair => pair.Key,
+                pair => pair.Value.Where(value => value is not null).Select(value => value!).ToList(),
+                StringComparer.OrdinalIgnoreCase);
+
+        if (queryValues.TryGetValue("returnUrl", out var nestedValues) && nestedValues.Count == 1)
+        {
+            nestedValues[0] = RewriteLocalReturnUrlCulture(nestedValues[0], culture, depth + 1);
+        }
+
+        queryValues["culture"] = [culture];
+        queryValues["ui-culture"] = [culture];
+
+        var queryString = QueryString.Create(queryValues.SelectMany(pair =>
+            pair.Value.Select(value => new KeyValuePair<string, string?>(pair.Key, value))));
+
+        return $"{parsedUrl.AbsolutePath}{queryString}{parsedUrl.Fragment}";
     }
 
     private async Task<ClientSummaryViewModel> ResolveClientAsync(string? returnUrl)

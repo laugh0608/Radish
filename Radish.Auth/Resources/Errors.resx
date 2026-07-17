@@ -165,4 +165,13 @@
   <data name="auth.consent.scope.radishApi.description" xml:space="preserve"><value>用于完成你刚才在请求应用里打开的受保护任务。</value></data>
   <data name="auth.consent.scope.additional.title" xml:space="preserve"><value>附加访问权限</value></data>
   <data name="auth.consent.scope.additional.description" xml:space="preserve"><value>这是请求应用声明的额外访问范围，请确认符合预期。</value></data>
+  <data name="auth.client.radish-client.displayName" xml:space="preserve"><value>Radish 官方客户端</value></data>
+  <data name="auth.client.radish-client.description" xml:space="preserve"><value>Radish 官方客户端，承载社区主站、WebOS 兼容入口与 Flutter 原生壳层。</value></data>
+  <data name="auth.client.radish-client.developerName" xml:space="preserve"><value>Radish 官方</value></data>
+  <data name="auth.client.radish-console.displayName" xml:space="preserve"><value>Radish 管理控制台</value></data>
+  <data name="auth.client.radish-console.description" xml:space="preserve"><value>Radish 官方管理控制台，面向后台运营与系统管理。</value></data>
+  <data name="auth.client.radish-console.developerName" xml:space="preserve"><value>Radish 官方</value></data>
+  <data name="auth.client.radish-scalar.displayName" xml:space="preserve"><value>Radish API 文档</value></data>
+  <data name="auth.client.radish-scalar.description" xml:space="preserve"><value>Radish 官方 API 文档与调试入口。</value></data>
+  <data name="auth.client.radish-scalar.developerName" xml:space="preserve"><value>Radish 官方</value></data>
 </root>

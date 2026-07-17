@@ -5,7 +5,7 @@ import {
   getRememberedClientBackTo,
   normalizeClientBackTo,
   rememberClientBackTo,
-  resolveClientBackLabel,
+  resolveClientBackLabelKey,
 } from '../src/utils/clientNavigation.ts';
 
 function createMemoryStorage() {
@@ -62,9 +62,9 @@ test('sessionStorage 不可用时不应阻断 Console 导航', () => {
 });
 
 test('返回入口根据产品来源提供稳定文案', () => {
-  assert.equal(resolveClientBackLabel('/forum/post/1'), '返回论坛');
-  assert.equal(resolveClientBackLabel('/shop/orders'), '返回商城');
-  assert.equal(resolveClientBackLabel('/messages?channelId=1'), '返回消息');
-  assert.equal(resolveClientBackLabel('/workbench'), '返回功能地图');
-  assert.equal(resolveClientBackLabel('/me'), '返回社区');
+  assert.equal(resolveClientBackLabelKey('/forum/post/1'), 'console.clientBack.forum');
+  assert.equal(resolveClientBackLabelKey('/shop/orders'), 'console.clientBack.shop');
+  assert.equal(resolveClientBackLabelKey('/messages?channelId=1'), 'console.clientBack.messages');
+  assert.equal(resolveClientBackLabelKey('/workbench'), 'console.clientBack.workbench');
+  assert.equal(resolveClientBackLabelKey('/me'), 'console.clientBack.community');
 });

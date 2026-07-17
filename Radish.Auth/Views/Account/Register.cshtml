@@ -12,8 +12,11 @@
     var description = Localizer["auth.register.description"];
     var rewardTitle = Localizer["auth.register.rewardTitle"];
     var rewardDescription = Localizer["auth.register.rewardDescription"];
-    var serviceDescription = string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.register.defaultServiceDescription"].Value : client.Description;
-    var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.register.defaultClientName"].Value : client.DisplayName;
+    var fallbackServiceDescription = string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.register.defaultServiceDescription"].Value : client.Description;
+    var fallbackClientName = string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.register.defaultClientName"].Value : client.DisplayName;
+    var serviceDescription = AuthClientText.Resolve(Localizer, client.ClientId, "description", fallbackServiceDescription);
+    var clientName = AuthClientText.Resolve(Localizer, client.ClientId, "displayName", fallbackClientName);
+    var developerName = AuthClientText.Resolve(Localizer, client.ClientId, "developerName", client.DeveloperName ?? string.Empty);
     var developerLabel = Localizer["auth.register.developerLabel"];
     var displayNameLabel = Localizer["auth.register.displayNameLabel"];
     var displayNamePlaceholder = Localizer["auth.register.displayNamePlaceholder", Model.DisplayNameMinLength, Model.DisplayNameMaxLength];
@@ -541,11 +544,11 @@
                         <div class="client-meta-value">@(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)</div>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
+                    @if (!string.IsNullOrWhiteSpace(developerName))
                     {
                         <div class="client-meta-item">
                             <span class="client-meta-label">@developerLabel</span>
-                            <div class="client-meta-value">@client.DeveloperName</div>
+                            <div class="client-meta-value">@developerName</div>
                         </div>
                     }
                 </div>
@@ -634,7 +637,7 @@
                     </div>
 
                     <div class="login-link">
-                        @loginPrompt <a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl })">@loginAction</a>
+                        @loginPrompt <a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl, culture = CultureInfo.CurrentUICulture.Name })">@loginAction</a>
                     </div>
                 </form>
             </section>

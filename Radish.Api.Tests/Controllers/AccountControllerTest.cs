@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -35,8 +36,9 @@ public class AccountControllerTest
         var httpContext = new DefaultHttpContext();
         httpContext.Request.Scheme = "https";
         var urlHelper = new Mock<IUrlHelper>();
-        urlHelper.Setup(helper => helper.IsLocalUrl("/Account/Login?returnUrl=%2Fconsole"))
-            .Returns(true);
+        urlHelper
+            .Setup(helper => helper.IsLocalUrl(It.IsAny<string>()))
+            .Returns((string url) => url.StartsWith("/", StringComparison.Ordinal) && !url.StartsWith("//", StringComparison.Ordinal));
         var controller = new AccountController(
             CreateErrorsLocalizer().Object,
             Mock.Of<IUserService>(),
@@ -48,10 +50,21 @@ public class AccountControllerTest
             Url = urlHelper.Object
         };
 
-        var result = controller.SetLanguage("en-US", "/Account/Login?returnUrl=%2Fconsole");
+        var result = controller.SetLanguage(
+            "en-US",
+            "/Account/Login?returnUrl=%2Fconnect%2Fauthorize%3Fclient_id%3Dradish-console%26culture%3Dzh");
 
         var redirect = Assert.IsType<LocalRedirectResult>(result);
-        Assert.Equal("/Account/Login?returnUrl=%2Fconsole", redirect.Url);
+        var redirectUri = new Uri(new Uri("https://radish.test"), redirect.Url);
+        var redirectQuery = QueryHelpers.ParseQuery(redirectUri.Query);
+        Assert.Equal("en", redirectQuery["culture"]);
+        Assert.Equal("en", redirectQuery["ui-culture"]);
+
+        var nestedUri = new Uri(new Uri("https://radish.test"), redirectQuery["returnUrl"].ToString());
+        var nestedQuery = QueryHelpers.ParseQuery(nestedUri.Query);
+        Assert.Equal("radish-console", nestedQuery["client_id"]);
+        Assert.Equal("en", nestedQuery["culture"]);
+        Assert.Equal("en", nestedQuery["ui-culture"]);
         var cultureCookie = Assert.Single(
             httpContext.Response.Headers.SetCookie,
             value => value!.StartsWith($"{CookieRequestCultureProvider.DefaultCookieName}=", StringComparison.Ordinal));

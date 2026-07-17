@@ -95,7 +95,7 @@ interface UploadSessionVoResponse {
   voUploadedChunkIndexes: number[];
   voProgress: number;
   voStatus: string;
-  voAttachmentId?: string | number | null;
+  voAttachmentId?: string | null;
   voExpiresAt: string;
   voCreateTime: string;
 }

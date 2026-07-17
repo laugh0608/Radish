@@ -1,15 +1,19 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { Result, AntButton } from '@radish/ui';
 import { HomeOutlined, SearchOutlined } from '@radish/ui';
 import { GlobalSearch } from '../GlobalSearch';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 /**
  * 404 页面组件
  */
 export function NotFound() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchVisible, setSearchVisible] = useState(false);
+  useDocumentTitle(t('console.notFound.title'));
 
   const handleBackHome = () => {
     navigate('/', { replace: true });
@@ -32,8 +36,8 @@ export function NotFound() {
       }}>
         <Result
           status="404"
-          title="页面未找到"
-          subTitle="抱歉，您访问的页面不存在。可能是链接错误、权限入口已调整，或页面已被移除。"
+          title={t('console.notFound.title')}
+          subTitle={t('console.notFound.description')}
           extra={[
             <AntButton
               type="primary"
@@ -41,20 +45,20 @@ export function NotFound() {
               icon={<HomeOutlined />}
               onClick={handleBackHome}
             >
-              返回首页
+              {t('console.notFound.home')}
             </AntButton>,
             <AntButton
               key="back"
               onClick={handleGoBack}
             >
-              返回上页
+              {t('console.notFound.back')}
             </AntButton>,
             <AntButton
               key="search"
               icon={<SearchOutlined />}
               onClick={() => setSearchVisible(true)}
             >
-              搜索菜单
+              {t('console.notFound.search')}
             </AntButton>,
           ]}
         />

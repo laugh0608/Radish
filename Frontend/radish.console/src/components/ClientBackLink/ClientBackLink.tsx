@@ -1,16 +1,18 @@
 import { useState, type MouseEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LeftOutlined } from '@radish/ui';
 import {
   clearRememberedClientBackTo,
   getRememberedClientBackTo,
-  resolveClientBackLabel,
+  resolveClientBackLabelKey,
 } from '@/utils/clientNavigation';
 import './ClientBackLink.css';
 
 export function ClientBackLink() {
+  const { t } = useTranslation();
   const [isReturning, setIsReturning] = useState(false);
   const clientBackTo = getRememberedClientBackTo() ?? '/workbench';
-  const label = resolveClientBackLabel(clientBackTo);
+  const label = t(resolveClientBackLabelKey(clientBackTo));
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     if (
@@ -42,7 +44,7 @@ export function ClientBackLink() {
       onClick={handleClick}
     >
       <LeftOutlined />
-      <span>{isReturning ? '正在返回…' : label}</span>
+      <span>{isReturning ? t('console.clientBack.returning') : label}</span>
     </a>
   );
 }

@@ -7,8 +7,11 @@
 @{
     ViewData["Title"] = Localizer["auth.login.title"];
     var client = Model.Client;
-    var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.login.client.unknown"].Value : client.DisplayName;
-    var clientDescription = string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.login.client.defaultDescription"].Value : client.Description;
+    var fallbackClientName = string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.login.client.unknown"].Value : client.DisplayName;
+    var fallbackClientDescription = string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.login.client.defaultDescription"].Value : client.Description;
+    var clientName = AuthClientText.Resolve(Localizer, client.ClientId, "displayName", fallbackClientName);
+    var clientDescription = AuthClientText.Resolve(Localizer, client.ClientId, "description", fallbackClientDescription);
+    var developerName = AuthClientText.Resolve(Localizer, client.ClientId, "developerName", client.DeveloperName ?? string.Empty);
     var developerLabel = Localizer["auth.login.developerLabel"];
     var registerPrompt = Localizer["auth.login.registerPrompt"];
     var registerAction = Localizer["auth.login.registerAction"];
@@ -457,11 +460,11 @@
                         <div class="client-meta-value">@(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)</div>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
+                    @if (!string.IsNullOrWhiteSpace(developerName))
                     {
                         <div class="client-meta-item">
                             <span class="client-meta-label">@developerLabel</span>
-                            <div class="client-meta-value">@client.DeveloperName</div>
+                            <div class="client-meta-value">@developerName</div>
                         </div>
                     }
                 </div>
@@ -521,7 +524,7 @@
                     </div>
 
                     <div class="register-link">
-                        @registerPrompt <a href="@Url.Action("Register", "Account", new { returnUrl = Model.ReturnUrl })">@registerAction</a>
+                        @registerPrompt <a href="@Url.Action("Register", "Account", new { returnUrl = Model.ReturnUrl, culture = CultureInfo.CurrentUICulture.Name })">@registerAction</a>
                     </div>
                 </form>
             </section>
