@@ -1,4 +1,4 @@
-import { apiDelete, apiFetch, apiGet, apiPost, apiPut } from '@radish/http';
+import { apiDelete, apiGet, apiPost, apiPut, createApiResponseError } from '@radish/http';
 
 export interface StickerGroupVo {
   voId: string;
@@ -125,51 +125,20 @@ export interface StickerBatchUpdateSortResultVo {
 export interface BatchAddStickersSubmitResponse {
   ok: boolean;
   statusCode?: number;
+  httpStatus?: number;
   code?: string;
   message?: string;
+  messageKey?: string;
+  messageArguments?: unknown[];
+  traceId?: string;
   data?: StickerBatchAddResultVo;
-}
-
-interface RawMessageModel<T> {
-  isSuccess?: boolean;
-  IsSuccess?: boolean;
-  statusCode?: number;
-  StatusCode?: number;
-  code?: string;
-  Code?: string;
-  messageInfo?: string;
-  MessageInfo?: string;
-  responseData?: T;
-  ResponseData?: T;
-}
-
-function throwRequestError(message: string, fallback: string): never {
-  throw new Error(message || fallback);
-}
-
-function readRawField<T>(payload: RawMessageModel<unknown> | null, camelKey: string, pascalKey: string): T | undefined {
-  if (!payload) {
-    return undefined;
-  }
-
-  const camelValue = (payload as Record<string, unknown>)[camelKey];
-  if (camelValue !== undefined) {
-    return camelValue as T;
-  }
-
-  const pascalValue = (payload as Record<string, unknown>)[pascalKey];
-  if (pascalValue !== undefined) {
-    return pascalValue as T;
-  }
-
-  return undefined;
 }
 
 export async function getAdminStickerGroups(): Promise<StickerGroupVo[]> {
   const response = await apiGet<StickerGroupVo[]>('/api/v1/Sticker/GetAdminGroups', { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throwRequestError(response.message, '获取表情包分组失败');
+    throw createApiResponseError(response, '获取表情包分组失败');
   }
 
   return response.data;
@@ -179,7 +148,7 @@ export async function createStickerGroup(request: StickerGroupUpsertRequest): Pr
   const response = await apiPost<string>('/api/v1/Sticker/CreateGroup', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
-    throwRequestError(response.message, '创建表情包分组失败');
+    throw createApiResponseError(response, '创建表情包分组失败');
   }
 
   return response.data;
@@ -189,7 +158,7 @@ export async function updateStickerGroup(id: string, request: StickerGroupUpsert
   const response = await apiPut<boolean>(`/api/v1/Sticker/UpdateGroup/${id}`, request, { withAuth: true });
 
   if (!response.ok) {
-    throwRequestError(response.message, '更新表情包分组失败');
+    throw createApiResponseError(response, '更新表情包分组失败');
   }
 }
 
@@ -197,7 +166,7 @@ export async function deleteStickerGroup(id: string): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Sticker/DeleteGroup/${id}`, { withAuth: true });
 
   if (!response.ok) {
-    throwRequestError(response.message, '删除表情包分组失败');
+    throw createApiResponseError(response, '删除表情包分组失败');
   }
 }
 
@@ -207,8 +176,8 @@ export async function checkGroupCode(code: string): Promise<StickerCodeCheckVo> 
     { withAuth: true }
   );
 
-  if (!response.data) {
-    throwRequestError(response.message, '分组编码校验失败');
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '分组编码校验失败');
   }
 
   return response.data;
@@ -220,8 +189,8 @@ export async function checkStickerCode(groupId: string, code: string): Promise<S
     { withAuth: true }
   );
 
-  if (!response.data) {
-    throwRequestError(response.message, '表情编码校验失败');
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '表情编码校验失败');
   }
 
   return response.data;
@@ -234,7 +203,7 @@ export async function normalizeStickerCode(filename: string): Promise<StickerNor
   );
 
   if (!response.ok || !response.data) {
-    throwRequestError(response.message, '编码清洗预览失败');
+    throw createApiResponseError(response, '编码清洗预览失败');
   }
 
   return response.data;
@@ -244,7 +213,7 @@ export async function getGroupStickers(groupId: string): Promise<StickerVo[]> {
   const response = await apiGet<StickerVo[]>(`/api/v1/Sticker/GetGroupStickers/${groupId}`, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throwRequestError(response.message, '获取分组表情失败');
+    throw createApiResponseError(response, '获取分组表情失败');
   }
 
   return response.data;
@@ -254,7 +223,7 @@ export async function addSticker(request: CreateStickerRequest): Promise<string>
   const response = await apiPost<string>('/api/v1/Sticker/AddSticker', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
-    throwRequestError(response.message, '新增表情失败');
+    throw createApiResponseError(response, '新增表情失败');
   }
 
   return response.data;
@@ -264,7 +233,7 @@ export async function updateSticker(id: string, request: UpdateStickerRequest): 
   const response = await apiPut<boolean>(`/api/v1/Sticker/UpdateSticker/${id}`, request, { withAuth: true });
 
   if (!response.ok) {
-    throwRequestError(response.message, '更新表情失败');
+    throw createApiResponseError(response, '更新表情失败');
   }
 }
 
@@ -272,54 +241,36 @@ export async function deleteSticker(id: string): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Sticker/DeleteSticker/${id}`, { withAuth: true });
 
   if (!response.ok) {
-    throwRequestError(response.message, '删除表情失败');
+    throw createApiResponseError(response, '删除表情失败');
   }
 }
 
 export async function batchAddStickers(request: BatchAddStickersRequest): Promise<StickerBatchAddResultVo> {
   const response = await apiPost<StickerBatchAddResultVo>('/api/v1/Sticker/BatchAddStickers', request, { withAuth: true });
 
-  if (!response.data) {
-    throwRequestError(response.message, '批量新增表情失败');
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '批量新增表情失败');
   }
 
   return response.data;
 }
 
 export async function batchAddStickersWithDetails(request: BatchAddStickersRequest): Promise<BatchAddStickersSubmitResponse> {
-  const response = await apiFetch('/api/v1/Sticker/BatchAddStickers', {
-    method: 'POST',
-    withAuth: true,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-
-  let payload: RawMessageModel<StickerBatchAddResultVo> | null = null;
-  try {
-    payload = (await response.json()) as RawMessageModel<StickerBatchAddResultVo>;
-  } catch {
-    return {
-      ok: false,
-      statusCode: response.status,
-      message: `HTTP ${response.status} ${response.statusText}`,
-    };
-  }
-
-  const ok = Boolean(readRawField<boolean>(payload, 'isSuccess', 'IsSuccess'));
-  const data = readRawField<StickerBatchAddResultVo>(payload, 'responseData', 'ResponseData');
-  const code = readRawField<string>(payload, 'code', 'Code');
-  const message = readRawField<string>(payload, 'messageInfo', 'MessageInfo')
-    || `HTTP ${response.status} ${response.statusText}`;
-  const statusCode = readRawField<number>(payload, 'statusCode', 'StatusCode') ?? response.status;
-
+  const response = await apiPost<StickerBatchAddResultVo>(
+    '/api/v1/Sticker/BatchAddStickers',
+    request,
+    { withAuth: true },
+  );
   return {
-    ok,
-    statusCode,
-    code,
-    message,
-    data,
+    ok: response.ok,
+    statusCode: response.statusCode,
+    httpStatus: response.httpStatus,
+    code: response.code,
+    message: response.message,
+    messageKey: response.messageKey,
+    messageArguments: response.messageArguments,
+    traceId: response.traceId,
+    data: response.data,
   };
 }
 
@@ -327,7 +278,7 @@ export async function batchUpdateStickerSort(request: BatchUpdateStickerSortRequ
   const response = await apiPut<StickerBatchUpdateSortResultVo>('/api/v1/Sticker/BatchUpdateSort', request, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throwRequestError(response.message, '批量更新排序失败');
+    throw createApiResponseError(response, '批量更新排序失败');
   }
 
   return response.data;

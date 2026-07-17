@@ -2,6 +2,7 @@ import { AntInput as Input, Button, DatePicker, Form, InputNumber } from '@radis
 import type { FormInstance } from 'antd';
 import type { RefObject } from 'react';
 import type { UserExperienceVo } from '@/api/experienceAdminApi';
+import { useTranslation } from 'react-i18next';
 import type { AdjustFormValues, FreezeFormValues } from './experienceAdminHelpers';
 
 type ExperienceGovernanceActionFormsProps = {
@@ -33,23 +34,25 @@ export const ExperienceGovernanceActionForms = ({
   onFreeze,
   onUnfreeze,
 }: ExperienceGovernanceActionFormsProps) => {
+  const { t } = useTranslation();
+
   return (
     <>
       <section className="admin-feature-card">
         <div className="admin-feature-header">
           <div>
-            <h3>管理员调经验</h3>
-            <p className="admin-feature-subtle">正数表示补发经验，负数表示扣减经验。</p>
+            <h3>{t('experience.adjust.title')}</h3>
+            <p className="admin-feature-subtle">{t('experience.adjust.description')}</p>
           </div>
         </div>
 
         <Form form={adjustForm} layout="vertical" className="admin-feature-form">
           <Form.Item
             name="userId"
-            label="用户 ID"
+            label={t('experience.form.userId')}
             rules={[
-              { required: true, message: '请输入用户 ID' },
-              { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' },
+              { required: true, message: t('experience.form.userIdRequired') },
+              { pattern: /^[1-9]\d*$/, message: t('experience.form.userIdInvalid') },
             ]}
           >
             <Input className="experience-filter-control" />
@@ -57,14 +60,14 @@ export const ExperienceGovernanceActionForms = ({
 
           <Form.Item
             name="deltaExp"
-            label="经验变动量"
-            rules={[{ required: true, message: '请输入经验变动量' }]}
+            label={t('experience.form.delta')}
+            rules={[{ required: true, message: t('experience.form.deltaRequired') }]}
           >
             <InputNumber className="experience-filter-control" />
           </Form.Item>
 
-          <Form.Item name="reason" label="调整原因">
-            <Input.TextArea rows={4} maxLength={500} showCount placeholder="例如：补偿、回收、活动奖励" />
+          <Form.Item name="reason" label={t('experience.form.adjustReason')}>
+            <Input.TextArea rows={4} maxLength={500} showCount placeholder={t('experience.form.adjustReasonPlaceholder')} />
           </Form.Item>
 
           <div>
@@ -75,7 +78,7 @@ export const ExperienceGovernanceActionForms = ({
                 void onAdjust();
               }}
             >
-              {submitting ? '提交中...' : '提交调整'}
+              {submitting ? t('experience.actions.submitting') : t('experience.actions.submitAdjust')}
             </Button>
           </div>
         </Form>
@@ -84,38 +87,38 @@ export const ExperienceGovernanceActionForms = ({
       <section className="admin-feature-card" ref={freezeSectionRef}>
         <div className="admin-feature-header">
           <div>
-            <h3>冻结 / 解冻经验</h3>
-            <p className="admin-feature-subtle">可设置临时冻结或永久冻结；冻结中的用户不会继续累计经验，也不会参与经验排行榜。</p>
+            <h3>{t('experience.freeze.title')}</h3>
+            <p className="admin-feature-subtle">{t('experience.freeze.description')}</p>
           </div>
         </div>
 
         <Form form={freezeForm} layout="vertical" className="admin-feature-form">
           <Form.Item
             name="userId"
-            label="用户 ID"
+            label={t('experience.form.userId')}
             rules={[
-              { required: true, message: '请输入用户 ID' },
-              { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' },
+              { required: true, message: t('experience.form.userIdRequired') },
+              { pattern: /^[1-9]\d*$/, message: t('experience.form.userIdInvalid') },
             ]}
           >
             <Input className="experience-filter-control" />
           </Form.Item>
 
-          <Form.Item name="frozenUntil" label="冻结到期时间">
+          <Form.Item name="frozenUntil" label={t('experience.form.frozenUntil')}>
             <DatePicker
               showTime
               allowClear
               className="experience-filter-control"
-              placeholder="留空表示永久冻结"
+              placeholder={t('experience.form.frozenUntilPlaceholder')}
             />
           </Form.Item>
 
           <Form.Item
             name="reason"
-            label="冻结原因"
-            rules={[{ required: true, message: '请输入冻结原因' }]}
+            label={t('experience.form.freezeReason')}
+            rules={[{ required: true, message: t('experience.form.freezeReasonRequired') }]}
           >
-            <Input.TextArea rows={4} maxLength={500} showCount placeholder="例如：异常刷经验、待人工复核" />
+            <Input.TextArea rows={4} maxLength={500} showCount placeholder={t('experience.form.freezeReasonPlaceholder')} />
           </Form.Item>
 
           <div className="experience-inline-actions">
@@ -126,7 +129,7 @@ export const ExperienceGovernanceActionForms = ({
                 void onFreeze();
               }}
             >
-              {freezing ? '冻结中...' : '提交冻结'}
+              {freezing ? t('experience.actions.freezing') : t('experience.actions.submitFreeze')}
             </Button>
             <Button
               disabled={!canFreeze || unfreezing || !experience?.voExpFrozen}
@@ -134,7 +137,7 @@ export const ExperienceGovernanceActionForms = ({
                 void onUnfreeze();
               }}
             >
-              {unfreezing ? '解冻中...' : '解除冻结'}
+              {unfreezing ? t('experience.actions.unfreezing') : t('experience.actions.unfreeze')}
             </Button>
           </div>
         </Form>

@@ -10,6 +10,7 @@ import {
   type GovernanceReviewDraftContext,
   type GovernanceReviewFormValues,
 } from './experienceAdminHelpers';
+import { useTranslation } from 'react-i18next';
 
 type ExperienceGovernanceReviewSectionProps = {
   reviewSectionRef: RefObject<HTMLElement | null>;
@@ -38,21 +39,22 @@ export const ExperienceGovernanceReviewSection = ({
   onRecordGovernanceReview,
   onClearReviewDraft,
 }: ExperienceGovernanceReviewSectionProps) => {
-  const governanceActionColumns = createGovernanceActionColumns();
+  const { t, i18n } = useTranslation();
+  const governanceActionColumns = createGovernanceActionColumns(t, i18n.resolvedLanguage);
 
   return (
     <section className="admin-feature-card" ref={reviewSectionRef}>
       <div className="admin-feature-header">
         <div>
-          <h3>复核结论与留痕</h3>
-          <p className="admin-feature-subtle">记录人工复核结论；冻结 / 解冻动作会自动写入治理留痕，便于后续回看。</p>
+          <h3>{t('experience.review.title')}</h3>
+          <p className="admin-feature-subtle">{t('experience.review.description')}</p>
         </div>
       </div>
 
       {loadedUserId ? (
         <>
           <div className="experience-review-target experience-section-gap-sm">
-            当前目标：{experience?.voUserName || '未命名用户'}（ID: {loadedUserId}）
+            {t('experience.review.target', { name: experience?.voUserName || t('experience.common.unnamedUser'), userId: loadedUserId })}
           </div>
 
           <div className="admin-feature-banner experience-section-gap-sm">
@@ -61,25 +63,25 @@ export const ExperienceGovernanceReviewSection = ({
                 <div>{reviewContextDraft.hint}</div>
                 {reviewContextDraft.recommendationReason && (
                   <div className="experience-review-draft-reason">
-                    建议原因快照：{reviewContextDraft.recommendationReason}
+                    {t('experience.review.reasonSnapshot', { value: reviewContextDraft.recommendationReason })}
                   </div>
                 )}
               </>
-            ) : '可从上方治理建议、规则摘要或每日异常一键带入复核草稿，也可直接手动填写结论。'}
+            ) : t('experience.review.draftHint')}
           </div>
 
           <Form form={reviewForm} layout="vertical" className="admin-feature-form experience-form-spaced">
             <Form.Item
               name="reviewResult"
-              label="复核结论"
-              rules={[{ required: true, message: '请选择复核结论' }]}
+              label={t('experience.review.result')}
+              rules={[{ required: true, message: t('experience.review.resultRequired') }]}
             >
               <Select
-                placeholder="选择复核结论"
+                placeholder={t('experience.review.resultPlaceholder')}
                 options={[
-                  { label: '已复核，未见异常', value: 'NoIssue' },
-                  { label: '已复核，继续观察', value: 'Observe' },
-                  { label: '已复核，可考虑冻结', value: 'FreezeSuggest' },
+                  { label: t('experience.review.noIssue'), value: 'NoIssue' },
+                  { label: t('experience.review.observe'), value: 'Observe' },
+                  { label: t('experience.review.freezeSuggest'), value: 'FreezeSuggest' },
                 ]}
                 disabled={!canFreeze || reviewing}
               />
@@ -87,17 +89,17 @@ export const ExperienceGovernanceReviewSection = ({
 
             <Form.Item
               name="remark"
-              label="复核备注"
+              label={t('experience.review.remark')}
               rules={[
-                { required: true, message: '请输入复核备注' },
-                { max: 500, message: '复核备注不能超过500个字符' },
+                { required: true, message: t('experience.review.remarkRequired') },
+                { max: 500, message: t('experience.review.remarkMax') },
               ]}
             >
               <Input.TextArea
                 rows={4}
                 maxLength={500}
                 showCount
-                placeholder="例如：已回看对应日期经验流水与目标内容，暂未发现异常；继续观察。"
+                placeholder={t('experience.review.remarkPlaceholder')}
                 disabled={!canFreeze || reviewing}
               />
             </Form.Item>
@@ -110,15 +112,15 @@ export const ExperienceGovernanceReviewSection = ({
                   void onRecordGovernanceReview();
                 }}
               >
-                {reviewing ? '记录中...' : '记录复核结论'}
+                {reviewing ? t('experience.actions.recording') : t('experience.actions.recordReview')}
               </Button>
               <Button disabled={reviewing} onClick={onClearReviewDraft}>
-                清空复核草稿
+                {t('experience.actions.clearReview')}
               </Button>
             </div>
           </Form>
 
-          <div className="experience-section-title experience-section-gap-lg">最近治理留痕</div>
+          <div className="experience-section-title experience-section-gap-lg">{t('experience.review.recentActions')}</div>
           <Table<UserExperienceGovernanceActionVo>
             rowKey="voActionId"
             columns={governanceActionColumns}
@@ -128,13 +130,13 @@ export const ExperienceGovernanceReviewSection = ({
             scroll={{ x: 1280 }}
             className="experience-section-gap-sm"
             locale={{
-              emptyText: loadingGovernanceActions ? '治理留痕加载中...' : '该用户暂无治理留痕',
+              emptyText: loadingGovernanceActions ? t('experience.review.loading') : t('experience.review.empty'),
             }}
           />
         </>
       ) : (
         <div className="experience-empty-hint">
-          请先查询用户经验，再记录复核结论或查看治理留痕。
+          {t('experience.review.queryFirst')}
         </div>
       )}
     </section>

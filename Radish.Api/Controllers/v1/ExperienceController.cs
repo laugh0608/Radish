@@ -94,13 +94,21 @@ public class ExperienceController : ControllerBase
     {
         if (userId <= 0)
         {
-            return MessageModel<UserExperienceVo>.Message(false, "用户ID无效", default!);
+            return BuildError<UserExperienceVo>(
+                HttpStatusCodeEnum.BadRequest,
+                "用户 ID 无效",
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
 
         var result = await _experienceService.GetUserExperienceAsync(userId);
         if (result == null)
         {
-            return MessageModel<UserExperienceVo>.Message(false, "用户经验值信息不存在", default!);
+            return BuildError<UserExperienceVo>(
+                HttpStatusCodeEnum.NotFound,
+                "用户经验值信息不存在",
+                "Experience.NotFound",
+                "error.experience.not_found");
         }
 
         return MessageModel<UserExperienceVo>.Success("查询成功", result);
@@ -115,7 +123,11 @@ public class ExperienceController : ControllerBase
     {
         if (userId <= 0)
         {
-            return MessageModel<UserExpDailyStatsWindowVo>.Message(false, "用户ID无效", default!);
+            return BuildError<UserExpDailyStatsWindowVo>(
+                HttpStatusCodeEnum.BadRequest,
+                "用户 ID 无效",
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
 
         var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
@@ -134,7 +146,11 @@ public class ExperienceController : ControllerBase
     {
         if (userId <= 0)
         {
-            return MessageModel<List<UserExperienceGovernanceActionVo>>.Message(false, "用户ID无效", default!);
+            return BuildError<List<UserExperienceGovernanceActionVo>>(
+                HttpStatusCodeEnum.BadRequest,
+                "用户 ID 无效",
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
 
         var result = await _experienceService.GetGovernanceActionsAsync(userId, take);
@@ -225,7 +241,11 @@ public class ExperienceController : ControllerBase
     {
         if (userId <= 0)
         {
-            return MessageModel<PageModel<ExpTransactionVo>>.Message(false, "用户ID无效", default!);
+            return BuildError<PageModel<ExpTransactionVo>>(
+                HttpStatusCodeEnum.BadRequest,
+                "用户 ID 无效",
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
 
         var result = await _experienceService.GetTransactionsAsync(userId, pageIndex, pageSize, expType, startDate, endDate);
@@ -286,7 +306,11 @@ public class ExperienceController : ControllerBase
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return BuildError<bool>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         var result = await _experienceService.AdminAdjustExperienceAsync(
@@ -298,7 +322,11 @@ public class ExperienceController : ControllerBase
 
         return result
             ? MessageModel<bool>.Success("调整成功", true)
-            : MessageModel<bool>.Message(false, "调整失败", false);
+            : BuildError<bool>(
+                HttpStatusCodeEnum.BadRequest,
+                "经验调整失败",
+                "Experience.AdminAdjustRejected",
+                "error.experience.admin_adjust_rejected");
     }
 
     /// <summary>
@@ -313,12 +341,20 @@ public class ExperienceController : ControllerBase
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return BuildError<bool>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         if (request.FrozenUntil.HasValue && request.FrozenUntil.Value <= DateTime.Now)
         {
-            return MessageModel<bool>.Message(false, "冻结到期时间必须晚于当前时间", false);
+            return BuildError<bool>(
+                HttpStatusCodeEnum.BadRequest,
+                "冻结到期时间必须晚于当前时间",
+                "Experience.FreezeUntilInvalid",
+                "error.experience.freeze_until_invalid");
         }
 
         var result = await _experienceService.FreezeExperienceAsync(
@@ -329,7 +365,11 @@ public class ExperienceController : ControllerBase
             GetCurrentOperatorName());
         return result
             ? MessageModel<bool>.Success("冻结成功", true)
-            : MessageModel<bool>.Message(false, "冻结失败", false);
+            : BuildError<bool>(
+                HttpStatusCodeEnum.BadRequest,
+                "经验冻结失败",
+                "Experience.FreezeRejected",
+                "error.experience.freeze_rejected");
     }
 
     /// <summary>
@@ -344,7 +384,11 @@ public class ExperienceController : ControllerBase
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return BuildError<bool>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         var result = await _experienceService.UnfreezeExperienceAsync(
@@ -353,7 +397,11 @@ public class ExperienceController : ControllerBase
             GetCurrentOperatorName());
         return result
             ? MessageModel<bool>.Success("解冻成功", true)
-            : MessageModel<bool>.Message(false, "解冻失败", false);
+            : BuildError<bool>(
+                HttpStatusCodeEnum.BadRequest,
+                "经验解冻失败",
+                "Experience.UnfreezeRejected",
+                "error.experience.unfreeze_rejected");
     }
 
     /// <summary>
@@ -366,7 +414,11 @@ public class ExperienceController : ControllerBase
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return BuildError<bool>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         var result = await _experienceService.RecordGovernanceReviewAsync(
@@ -376,7 +428,11 @@ public class ExperienceController : ControllerBase
 
         return result
             ? MessageModel<bool>.Success("复核结论记录成功", true)
-            : MessageModel<bool>.Message(false, "复核结论记录失败", false);
+            : BuildError<bool>(
+                HttpStatusCodeEnum.BadRequest,
+                "复核结论记录失败",
+                "Experience.ReviewRejected",
+                "error.experience.review_rejected");
     }
 
     /// <summary>
@@ -394,7 +450,11 @@ public class ExperienceController : ControllerBase
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return MessageModel<List<LevelConfigVo>>.Message(false, "未登录", default!);
+            return BuildError<List<LevelConfigVo>>(
+                HttpStatusCodeEnum.Unauthorized,
+                "请先登录后再继续操作",
+                ApiErrorCodes.Unauthorized,
+                "error.auth.unauthorized");
         }
 
         try

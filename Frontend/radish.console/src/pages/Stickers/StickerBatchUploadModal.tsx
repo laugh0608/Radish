@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Upload, Alert, Steps, Progress } from 'antd';
 import type { RcFile, UploadChangeParam, UploadFile } from 'antd/es/upload/interface';
 import {
@@ -73,6 +74,7 @@ function uploadImageWithProgress(file: RcFile, onProgress: (percent: number) => 
 }
 
 export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess }: StickerBatchUploadModalProps) => {
+  const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
   const [rows, setRows] = useState<BatchUploadRow[]>([]);
@@ -112,7 +114,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
 
   const handleSafeCancel = () => {
     if (uploading || submitting) {
-      message.warning('正在处理请求，请稍候');
+      message.warning(t('stickers.batch.processing'));
       return;
     }
 
@@ -121,7 +123,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
 
   const handleFilesChange = (info: UploadChangeParam<UploadFile>) => {
     if (info.fileList.length > MAX_BATCH_COUNT) {
-      message.warning(`单次最多选择 ${MAX_BATCH_COUNT} 张图片`);
+      message.warning(t('stickers.batch.maxSelect', { count: MAX_BATCH_COUNT }));
     }
 
     setSelectedFiles(info.fileList.slice(0, MAX_BATCH_COUNT));
@@ -205,7 +207,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           }));
           successCount += 1;
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : '上传失败';
+          const errorMessage = error instanceof Error ? error.message : t('stickers.batch.uploadFailed');
           updateRow(row.rowId, (item) => ({
             ...item,
             uploadStatus: 'failed',
@@ -220,12 +222,12 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     await Promise.all(workers);
     setUploading(false);
     setCurrentStep(2);
-    message.info(`上传完成：成功 ${successCount}，失败 ${failedCount}`);
+    message.info(t('stickers.batch.uploadComplete', { success: successCount, failed: failedCount }));
   };
 
   const handleStartUpload = async () => {
     if (!/^[1-9]\d*$/.test(groupId)) {
-      message.error('分组 ID 无效');
+      message.error(t('stickers.batch.invalidGroup'));
       return;
     }
 
@@ -234,12 +236,12 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       .filter((item): item is RcFile => !!item);
 
     if (files.length === 0) {
-      message.warning('请先选择图片文件');
+      message.warning(t('stickers.batch.selectFirst'));
       return;
     }
 
     if (files.length > MAX_BATCH_COUNT) {
-      message.warning(`单次最多上传 ${MAX_BATCH_COUNT} 张图片`);
+      message.warning(t('stickers.batch.maxUpload', { count: MAX_BATCH_COUNT }));
       return;
     }
 
@@ -249,7 +251,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       await uploadRows(initializedRows);
     } catch (error) {
       log.error('StickerBatchUpload', '初始化批量上传失败:', error);
-      message.error('初始化批量上传失败');
+      message.error(t('stickers.batch.initializeFailed'));
       setUploading(false);
     }
   };
@@ -257,7 +259,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
   const handleRetryUploadFailed = async () => {
     const targets = rows.filter((row) => row.uploadStatus === 'failed');
     if (targets.length === 0) {
-      message.info('没有可重传的失败项');
+      message.info(t('stickers.batch.noRetryUploads'));
       return;
     }
 
@@ -268,19 +270,19 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     for (const row of targets) {
       const normalizedCode = row.code.trim().toLowerCase();
       if (!normalizedCode) {
-        return `第 ${row.originalIndex + 1} 行缺少表情标识符`;
+        return t('stickers.batch.validation.codeMissing', { row: row.originalIndex + 1 });
       }
 
       if (!CODE_PATTERN.test(normalizedCode)) {
-        return `第 ${row.originalIndex + 1} 行标识符格式不合法（仅允许小写字母、数字、下划线）`;
+        return t('stickers.batch.validation.codeInvalid', { row: row.originalIndex + 1 });
       }
 
       if (!row.name.trim()) {
-        return `第 ${row.originalIndex + 1} 行缺少显示名称`;
+        return t('stickers.batch.validation.nameMissing', { row: row.originalIndex + 1 });
       }
 
       if (!row.attachmentId) {
-        return `第 ${row.originalIndex + 1} 行缺少附件 ID，请先完成上传`;
+        return t('stickers.batch.validation.attachmentMissing', { row: row.originalIndex + 1 });
       }
     }
 
@@ -289,7 +291,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
 
   const submitRows = async (targets: BatchUploadRow[]) => {
     if (targets.length === 0) {
-      message.warning('没有可提交的数据');
+      message.warning(t('stickers.batch.noData'));
       return;
     }
 
@@ -336,13 +338,13 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       const hasIssues = conflicts.length > 0 || failedItems.length > 0;
 
       if (response.ok && !hasIssues) {
-        message.success(`批量新增成功，共创建 ${responseData?.voCreatedCount ?? requestItems.length} 条表情`);
+        message.success(t('stickers.batch.created', { count: responseData?.voCreatedCount ?? requestItems.length }));
         onSuccess();
         return;
       }
 
       if (!responseData) {
-        message.error(response.message || '批量提交失败');
+        message.error(response.message || t('stickers.batch.submitFailed'));
         return;
       }
 
@@ -350,13 +352,13 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       conflicts.forEach((item) => {
         const rowId = requestIndexToRowId[item.voRowIndex];
         if (rowId) {
-          issueMap.set(rowId, item.voMessage || '存在标识符冲突');
+          issueMap.set(rowId, item.voMessage || t('stickers.batch.conflictFallback'));
         }
       });
       failedItems.forEach((item) => {
         const rowId = requestIndexToRowId[item.voRowIndex];
         if (rowId) {
-          issueMap.set(rowId, item.voMessage || '服务端处理失败');
+          issueMap.set(rowId, item.voMessage || t('stickers.batch.failedFallback'));
         }
       });
 
@@ -374,16 +376,14 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           };
         }));
         setCurrentStep(3);
-        message.warning(
-          `存在待修复项：冲突 ${conflicts.length}，失败 ${failedItems.length}。请在第 4 步修复后重提。`
-        );
+        message.warning(t('stickers.batch.issues', { conflicts: conflicts.length, failed: failedItems.length }));
         return;
       }
 
-      message.error(response.message || '批量提交失败');
+      message.error(response.message || t('stickers.batch.submitFailed'));
     } catch (error) {
       log.error('StickerBatchUpload', '批量提交失败:', error);
-      message.error('批量提交失败');
+      message.error(t('stickers.batch.submitFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -396,7 +396,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
 
   const handleSubmitRetryRows = async () => {
     if (retryRows.length === 0) {
-      message.info('没有需要重提的冲突项');
+      message.info(t('stickers.batch.noRetryConflicts'));
       return;
     }
 
@@ -411,7 +411,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       render: (_, record) => record.originalIndex + 1,
     },
     {
-      title: '文件名',
+      title: t('stickers.batch.table.fileName'),
       dataIndex: 'fileName',
       key: 'fileName',
       width: 260,
@@ -435,7 +435,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       ),
     },
     {
-      title: '显示名',
+      title: t('stickers.batch.table.displayName'),
       key: 'name',
       width: 220,
       render: (_, record) => (
@@ -452,7 +452,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       ),
     },
     {
-      title: '允许内嵌',
+      title: t('stickers.batch.table.inline'),
       key: 'allowInline',
       width: 120,
       render: (_, record) => (
@@ -469,27 +469,27 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       ),
     },
     {
-      title: '上传状态',
+      title: t('stickers.batch.table.uploadStatus'),
       key: 'uploadStatus',
       width: 140,
       render: (_, record) => {
         if (record.uploadStatus === 'uploaded') {
-          return <Tag color="success">已上传</Tag>;
+          return <Tag color="success">{t('stickers.batch.status.uploaded')}</Tag>;
         }
 
         if (record.uploadStatus === 'uploading') {
-          return <Tag color="processing">上传中</Tag>;
+          return <Tag color="processing">{t('stickers.batch.status.uploading')}</Tag>;
         }
 
         if (record.uploadStatus === 'failed') {
-          return <Tag color="error">上传失败</Tag>;
+          return <Tag color="error">{t('stickers.batch.status.failed')}</Tag>;
         }
 
-        return <Tag>待上传</Tag>;
+        return <Tag>{t('stickers.batch.status.pending')}</Tag>;
       },
     },
     {
-      title: '处理结果',
+      title: t('stickers.batch.table.result'),
       key: 'issue',
       width: 260,
       render: (_, record) => {
@@ -514,12 +514,12 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       render: (_, record) => record.originalIndex + 1,
     },
     {
-      title: '文件名',
+      title: t('stickers.batch.table.fileName'),
       dataIndex: 'fileName',
       key: 'fileName',
     },
     {
-      title: '进度',
+      title: t('stickers.batch.table.progress'),
       key: 'progress',
       width: 280,
       render: (_, record) => {
@@ -535,21 +535,21 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
       },
     },
     {
-      title: '状态',
+      title: t('stickers.batch.table.status'),
       key: 'status',
       width: 140,
       render: (_, record) => {
         if (record.uploadStatus === 'uploaded') {
-          return <Tag color="success">已上传</Tag>;
+          return <Tag color="success">{t('stickers.batch.status.uploaded')}</Tag>;
         }
         if (record.uploadStatus === 'failed') {
-          return <Tag color="error">失败</Tag>;
+          return <Tag color="error">{t('stickers.batch.status.failure')}</Tag>;
         }
         if (record.uploadStatus === 'uploading') {
-          return <Tag color="processing">上传中</Tag>;
+          return <Tag color="processing">{t('stickers.batch.status.uploading')}</Tag>;
         }
 
-        return <Tag>待上传</Tag>;
+        return <Tag>{t('stickers.batch.status.pending')}</Tag>;
       },
     },
   ];
@@ -561,7 +561,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Alert
             type="info"
             showIcon
-            title={`单次最多上传 ${MAX_BATCH_COUNT} 张，建议保持图片名称语义化，系统会自动清洗 code。`}
+            title={t('stickers.batch.selectInfo', { count: MAX_BATCH_COUNT })}
           />
           <Upload.Dragger
             multiple
@@ -571,7 +571,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
               const isImage = isSupportedAttachmentImageFile(file);
 
               if (!isImage) {
-                message.error('仅支持上传图片文件');
+                message.error(t('stickers.common.imageOnly'));
                 return Upload.LIST_IGNORE;
               }
 
@@ -583,10 +583,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
               return true;
             }}
           >
-            <p className="ant-upload-text">点击或拖拽图片到此区域</p>
-            <p className="ant-upload-hint">支持多选，上传后可在下一步确认 code 和显示名</p>
+            <p className="ant-upload-text">{t('stickers.batch.dropTitle')}</p>
+            <p className="ant-upload-hint">{t('stickers.batch.dropHint')}</p>
           </Upload.Dragger>
-          <div className="sticker-batch-summary">已选择 {selectedFiles.length} 张</div>
+          <div className="sticker-batch-summary">{t('stickers.batch.selected', { count: selectedFiles.length })}</div>
         </div>
       );
     }
@@ -602,7 +602,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Alert
             type={uploading ? 'info' : 'warning'}
             showIcon
-            title={uploading ? '正在上传附件，请勿关闭弹窗' : `上传完成：成功 ${successCount}，失败 ${failCount}`}
+            title={uploading ? t('stickers.batch.uploadingNotice') : t('stickers.batch.uploadComplete', { success: successCount, failed: failCount })}
           />
           <Progress percent={overallPercent} status={uploading ? 'active' : 'normal'} />
           <div className="sticker-batch-table-region">
@@ -625,8 +625,8 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Alert
             type={failedUploadRows.length > 0 ? 'warning' : 'success'}
             showIcon
-            title={`已上传 ${uploadedRows.length} / ${rows.length}，失败 ${failedUploadRows.length}`}
-            description="确认 code、显示名和允许内嵌开关后提交。上传失败项可先重传。"
+            title={t('stickers.batch.reviewSummary', { uploaded: uploadedRows.length, total: rows.length, failed: failedUploadRows.length })}
+            description={t('stickers.batch.reviewDescription')}
           />
           <div className="sticker-batch-table-region">
             <Table<BatchUploadRow>
@@ -648,8 +648,8 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
         <Alert
           type="error"
           showIcon
-          title={`待修复 ${retryRows.length} 项`}
-          description="请修改冲突项后重提。"
+          title={t('stickers.batch.retrySummary', { count: retryRows.length })}
+          description={t('stickers.batch.retryDescription')}
         />
         <div className="sticker-batch-table-region">
           <Table<BatchUploadRow>
@@ -670,7 +670,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     if (currentStep === 0) {
       return (
         <Space>
-          <Button onClick={handleSafeCancel}>取消</Button>
+          <Button onClick={handleSafeCancel}>{t('stickers.batch.actions.cancel')}</Button>
           <Button
             variant="primary"
             disabled={uploading || submitting}
@@ -678,7 +678,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
               void handleStartUpload();
             }}
           >
-            开始上传
+            {t('stickers.batch.actions.start')}
           </Button>
         </Space>
       );
@@ -690,13 +690,13 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Button
             onClick={() => {
               if (uploading) {
-                message.warning('正在上传中，请稍候');
+                message.warning(t('stickers.batch.actions.wait'));
                 return;
               }
               setCurrentStep(2);
             }}
           >
-            {uploading ? '上传中...' : '进入确认'}
+            {t(uploading ? 'stickers.common.uploading' : 'stickers.batch.actions.review')}
           </Button>
         </Space>
       );
@@ -705,14 +705,14 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     if (currentStep === 2) {
       return (
         <Space>
-          <Button onClick={handleSafeCancel}>关闭</Button>
+          <Button onClick={handleSafeCancel}>{t('stickers.batch.actions.close')}</Button>
           <Button
             disabled={failedUploadRows.length === 0 || uploading || submitting}
             onClick={() => {
               void handleRetryUploadFailed();
             }}
           >
-            重传失败项
+            {t('stickers.batch.actions.retryUploads')}
           </Button>
           <Button
             variant="primary"
@@ -721,7 +721,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
               void handleSubmitAllUploaded();
             }}
           >
-            {submitting ? '提交中...' : '提交批量新增'}
+            {t(submitting ? 'stickers.batch.actions.submitting' : 'stickers.batch.actions.submit')}
           </Button>
         </Space>
       );
@@ -735,7 +735,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
             setCurrentStep(2);
           }}
         >
-          返回确认
+          {t('stickers.batch.actions.back')}
         </Button>
         <Button
           variant="primary"
@@ -744,7 +744,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
             void handleSubmitRetryRows();
           }}
         >
-          {submitting ? '提交中...' : '重新提交冲突项'}
+          {t(submitting ? 'stickers.batch.actions.submitting' : 'stickers.batch.actions.retryConflicts')}
         </Button>
       </Space>
     );
@@ -752,7 +752,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
 
   return (
     <Modal
-      title="批量上传表情"
+      title={t('stickers.batch.title')}
       open={visible}
       width={1200}
       onCancel={() => {
@@ -766,10 +766,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
         <Steps
           current={currentStep}
           items={[
-            { title: '选择文件' },
-            { title: '上传进度' },
-            { title: '确认表格' },
-            { title: '冲突修复' },
+            { title: t('stickers.batch.steps.select') },
+            { title: t('stickers.batch.steps.upload') },
+            { title: t('stickers.batch.steps.review') },
+            { title: t('stickers.batch.steps.resolve') },
           ]}
         />
         {renderStepBody()}

@@ -426,4 +426,43 @@
   <data name="error.payment_password.upgrade_required" xml:space="preserve">
     <value>旧支付口令已停用，请前往安全设置重置新的 6 位数字支付口令。</value>
   </data>
+  <data name="error.common.validation_failed" xml:space="preserve">
+    <value>请检查提交内容后重试。</value>
+  </data>
+  <data name="error.common.not_found" xml:space="preserve">
+    <value>未找到请求的资源。</value>
+  </data>
+  <data name="error.common.conflict" xml:space="preserve">
+    <value>资源状态已发生变化，请刷新后重试。</value>
+  </data>
+  <data name="error.sticker.batch_code_conflict" xml:space="preserve">
+    <value>存在重复的表情标识符，请修正冲突行后重试。</value>
+  </data>
+  <data name="error.sticker.image_processing_failed" xml:space="preserve">
+    <value>部分表情图片处理失败，请稍后重试。</value>
+  </data>
+  <data name="error.sticker.group_not_found" xml:space="preserve">
+    <value>表情包分组不存在或已不可用。</value>
+  </data>
+  <data name="error.coin.balance_query_rejected" xml:space="preserve">
+    <value>无法读取用户余额，请核对账号后重试。</value>
+  </data>
+  <data name="error.coin.admin_adjust_rejected" xml:space="preserve">
+    <value>余额调整无法完成，请核对余额和提交内容。</value>
+  </data>
+  <data name="error.experience.admin_adjust_rejected" xml:space="preserve">
+    <value>经验调整无法完成，请核对账号和提交内容。</value>
+  </data>
+  <data name="error.experience.freeze_until_invalid" xml:space="preserve">
+    <value>冻结到期时间必须晚于当前时间。</value>
+  </data>
+  <data name="error.experience.freeze_rejected" xml:space="preserve">
+    <value>经验冻结无法完成，请核对账号状态后重试。</value>
+  </data>
+  <data name="error.experience.unfreeze_rejected" xml:space="preserve">
+    <value>经验解冻无法完成，请核对账号状态后重试。</value>
+  </data>
+  <data name="error.experience.review_rejected" xml:space="preserve">
+    <value>经验治理复核结论无法记录，请核对提交内容。</value>
+  </data>
 </root>

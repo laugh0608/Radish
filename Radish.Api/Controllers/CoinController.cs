@@ -97,6 +97,15 @@ public class CoinController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     public async Task<MessageModel> GetBalanceByUserId(long userId)
     {
+        if (userId <= 0)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "用户 ID 无效",
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
+        }
+
         try
         {
             var balance = await _coinService.GetBalanceAsync(userId);
@@ -111,21 +120,19 @@ public class CoinController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Coin.BalanceQueryRejected",
+                "error.coin.balance_query_rejected");
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
     }
 
@@ -253,12 +260,11 @@ public class CoinController : ControllerBase
     {
         if (userId <= 0)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "用户 ID 无效"
-            };
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "用户 ID 无效",
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
 
         var transactions = await _coinService.GetTransactionsAsync(
@@ -493,21 +499,19 @@ public class CoinController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Coin.AdminAdjustRejected",
+                "error.coin.admin_adjust_rejected");
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
     }
 

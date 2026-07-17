@@ -3,6 +3,7 @@ import { hasPermission } from '@/hooks/usePermission';
 import type { UserInfo } from '@/types/user';
 import type { TFunction } from 'i18next';
 import i18n from '@/i18n';
+import { matchesRoutePattern } from './routePath';
 
 export interface ConsoleRouteMeta {
   key: string;
@@ -296,6 +297,27 @@ function localizeConsoleRoute(route: ConsoleRouteMeta, t?: TFunction): ConsoleRo
   };
 }
 
+export function findConsoleRouteMeta(pathname: string): ConsoleRouteMeta | undefined {
+  return consoleRouteMeta.find((route) => matchesRoutePattern(route.path, pathname));
+}
+
+export function getConsoleBreadcrumbRoutes(pathname: string): ConsoleRouteMeta[] {
+  const currentRoute = findConsoleRouteMeta(pathname);
+  if (!currentRoute || currentRoute.path === '/') {
+    return [];
+  }
+
+  const firstSegment = pathname.split('/').filter(Boolean)[0];
+  const parentPath = firstSegment ? `/${firstSegment}` : undefined;
+  const parentRoute = parentPath
+    ? consoleRouteMeta.find((route) => route.path === parentPath)
+    : undefined;
+
+  return parentRoute && parentRoute.key !== currentRoute.key
+    ? [parentRoute, currentRoute]
+    : [currentRoute];
+}
+
 export function getConsoleRouteTitle(pathname: string, t?: TFunction): string {
   if (pathname === '/login') {
     return translateRouteText('console.route.login', '登录', t);
@@ -304,7 +326,7 @@ export function getConsoleRouteTitle(pathname: string, t?: TFunction): string {
     return translateRouteText('console.route.callback', 'OIDC 回调', t);
   }
 
-  const route = consoleRouteMeta.find((item) => item.path === pathname);
+  const route = findConsoleRouteMeta(pathname);
   return route
     ? translateRouteText(`console.route.${route.key}`, route.title, t)
     : translateRouteText('console.route.page', '页面', t);

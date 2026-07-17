@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useTranslation } from 'react-i18next';
 import {
   Table,
   Button,
@@ -40,11 +41,14 @@ import {
 import { usePermission } from '@/hooks/usePermission';
 import { TagForm } from './TagForm';
 import { log } from '@/utils/logger';
+import { formatConsoleNumber } from '@/utils/localeFormatters';
 import '../adminFeature.css';
 import './TagList.css';
 
 export const TagList = () => {
-  useDocumentTitle('标签管理');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('tags.documentTitle'));
 
   const [loading, setLoading] = useState(false);
   const [tags, setTags] = useState<TagVo[]>([]);
@@ -94,11 +98,11 @@ export const TagList = () => {
       setPageSize(response.pageSize);
     } catch (error) {
       log.error('TagList', '加载标签失败:', error);
-      message.error('加载标签失败');
+      message.error(t('tags.feedback.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [includeDeleted, isEnabled, isFixed, keyword, pageIndex, pageSize]);
+  }, [includeDeleted, isEnabled, isFixed, keyword, pageIndex, pageSize, t]);
 
   useEffect(() => {
     if (!canViewTags) {
@@ -123,40 +127,40 @@ export const TagList = () => {
   const handleDelete = async (id: number) => {
     try {
       await deleteTag(id);
-      message.success('删除标签成功');
+      message.success(t('tags.feedback.deleted'));
       await loadTags();
     } catch (error) {
       log.error('TagList', '删除标签失败:', error);
-      message.error('删除标签失败');
+      message.error(t('tags.feedback.deleteFailed'));
     }
   };
 
   const handleRestore = async (id: number) => {
     try {
       await restoreTag(id);
-      message.success('恢复标签成功');
+      message.success(t('tags.feedback.restored'));
       await loadTags();
     } catch (error) {
       log.error('TagList', '恢复标签失败:', error);
-      message.error('恢复标签失败');
+      message.error(t('tags.feedback.restoreFailed'));
     }
   };
 
   const handleToggleStatus = async (record: TagVo, enabled: boolean) => {
     try {
       await toggleTagStatus(record.voId, enabled);
-      message.success(enabled ? '启用成功' : '禁用成功');
+      message.success(t(enabled ? 'tags.feedback.enabled' : 'tags.feedback.disabled'));
       await loadTags();
     } catch (error) {
       log.error('TagList', '更新标签状态失败:', error);
-      message.error('更新标签状态失败');
+      message.error(t('tags.feedback.toggleFailed'));
     }
   };
 
   const handleSortChange = async (record: TagVo, value: string) => {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed < 0) {
-      message.error('排序值必须是大于等于0的数字');
+      message.error(t('taxonomy.common.sortInvalid'));
       return;
     }
 
@@ -166,11 +170,11 @@ export const TagList = () => {
 
     try {
       await updateTagSort(record.voId, parsed);
-      message.success('排序更新成功');
+      message.success(t('taxonomy.common.sortUpdated'));
       await loadTags();
     } catch (error) {
       log.error('TagList', '更新排序失败:', error);
-      message.error('更新排序失败');
+      message.error(t('tags.feedback.sortFailed'));
     }
   };
 
@@ -182,49 +186,50 @@ export const TagList = () => {
       width: 100,
     },
     {
-      title: '标签名称',
+      title: t('tags.table.name'),
       dataIndex: 'voName',
       key: 'voName',
       width: 200,
     },
     {
-      title: 'Slug',
+      title: t('taxonomy.common.slug'),
       dataIndex: 'voSlug',
       key: 'voSlug',
       width: 220,
     },
     {
-      title: '标签类型',
+      title: t('tags.table.type'),
       key: 'voIsFixed',
       width: 120,
       render: (_, record) => (
         <Tag color={record.voIsFixed ? 'blue' : 'default'}>
-          {record.voIsFixed ? '固定标签' : '普通标签'}
+          {t(record.voIsFixed ? 'tags.type.fixed' : 'tags.type.normal')}
         </Tag>
       ),
     },
     {
-      title: '状态',
+      title: t('taxonomy.common.status'),
       key: 'voIsEnabled',
       width: 100,
       render: (_, record) => (
         record.voIsDeleted
-          ? <Tag color="default">已删除</Tag>
+          ? <Tag color="default">{t('taxonomy.common.deleted')}</Tag>
           : (
               <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-                {record.voIsEnabled ? '启用' : '禁用'}
+                {t(record.voIsEnabled ? 'taxonomy.common.enabled' : 'taxonomy.common.disabled')}
               </Tag>
             )
       ),
     },
     {
-      title: '帖子数',
+      title: t('taxonomy.common.posts'),
       dataIndex: 'voPostCount',
       key: 'voPostCount',
       width: 100,
+      render: (value: number) => formatConsoleNumber(value, language),
     },
     {
-      title: '排序',
+      title: t('taxonomy.common.sort'),
       key: 'voSortOrder',
       width: 140,
       render: (_, record) => (
@@ -238,13 +243,13 @@ export const TagList = () => {
       ),
     },
     {
-      title: '描述',
+      title: t('taxonomy.common.description'),
       dataIndex: 'voDescription',
       key: 'voDescription',
       ellipsis: true,
     },
     {
-      title: '操作',
+      title: t('taxonomy.common.actions'),
       key: 'actions',
       width: 300,
       fixed: 'right',
@@ -258,7 +263,7 @@ export const TagList = () => {
                 void handleRestore(record.voId);
               }}
             >
-              恢复
+              {t('taxonomy.common.restore')}
             </Button>
           )}
 
@@ -266,7 +271,7 @@ export const TagList = () => {
             <>
               {canEditTag ? (
                 <Button variant="ghost" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-                  编辑
+                  {t('taxonomy.common.edit')}
                 </Button>
               ) : null}
 
@@ -279,7 +284,7 @@ export const TagList = () => {
                     void handleToggleStatus(record, false);
                   }}
                 >
-                  禁用
+                  {t('taxonomy.common.disabled')}
                 </Button>
               ) : (
                 <Button
@@ -290,22 +295,22 @@ export const TagList = () => {
                     void handleToggleStatus(record, true);
                   }}
                 >
-                  启用
+                  {t('taxonomy.common.enabled')}
                 </Button>
               )) : null}
 
               {canDeleteTagPermission ? (
                 <Popconfirm
-                  title="确认删除"
-                  description="确定要删除这个标签吗？"
+                  title={t('tags.delete.title')}
+                  description={t('tags.delete.description')}
                   onConfirm={() => {
                     void handleDelete(record.voId);
                   }}
-                  okText="确认"
-                  cancelText="取消"
+                  okText={t('taxonomy.common.confirm')}
+                  cancelText={t('taxonomy.common.cancel')}
                 >
                   <Button variant="danger" size="small" icon={<DeleteOutlined />}>
-                    删除
+                    {t('taxonomy.common.delete')}
                   </Button>
                 </Popconfirm>
               ) : null}
@@ -318,13 +323,13 @@ export const TagList = () => {
   return (
     <div className="admin-feature-page tag-list-page">
       <ConsolePageHeader
-        eyebrow="内容标签"
-        title="标签管理"
-        description="维护社区内容标签、固定标签和排序权重。"
+        eyebrow={t('tags.page.eyebrow')}
+        title={t('tags.page.title')}
+        description={t('tags.page.description')}
         icon={<TagsOutlined />}
         status={(
           <ConsoleStatusChip tone={canCreateTag ? 'success' : 'neutral'}>
-            {canCreateTag ? '可新增' : '只读'}
+            {t(canCreateTag ? 'taxonomy.common.createWritable' : 'taxonomy.common.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={(
@@ -332,32 +337,32 @@ export const TagList = () => {
             <Button icon={<ReloadOutlined />} onClick={() => {
               void loadTags();
             }}>
-              刷新
+              {t('taxonomy.common.refresh')}
             </Button>
             {canCreateTag ? (
               <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                新增标签
+                {t('tags.actions.create')}
               </Button>
             ) : null}
           </>
         )}
       />
 
-      <ConsoleMetricGrid label="标签列表指标">
-        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的标签数量" tone="info" />
-        <ConsoleMetricCard label="本页标签" value={tags.length} description="当前页可见标签" />
-        <ConsoleMetricCard label="本页启用" value={enabledTags} description="当前页启用标签" tone="success" />
-        <ConsoleMetricCard label="固定标签" value={fixedTags} description="固定标签数量" tone="warning" />
+      <ConsoleMetricGrid label={t('tags.metrics.ariaLabel')}>
+        <ConsoleMetricCard label={t('tags.metrics.result')} value={formatConsoleNumber(total, language)} description={t('tags.metrics.resultDescription')} tone="info" />
+        <ConsoleMetricCard label={t('tags.metrics.page')} value={formatConsoleNumber(tags.length, language)} description={t('tags.metrics.pageDescription')} />
+        <ConsoleMetricCard label={t('tags.metrics.enabled')} value={formatConsoleNumber(enabledTags, language)} description={t('tags.metrics.enabledDescription')} tone="success" />
+        <ConsoleMetricCard label={t('tags.metrics.fixed')} value={formatConsoleNumber(fixedTags, language)} description={t('tags.metrics.fixedDescription')} tone="warning" />
       </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选标签"
-            description="按标签名称、描述、类型、启用状态和软删除范围定位标签。"
+            title={t('tags.filter.title')}
+            description={t('tags.filter.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('taxonomy.common.filterCount', { count: activeFilterCount }) : t('taxonomy.common.notFiltered')}
               </ConsoleStatusChip>
             )}
           >
@@ -365,7 +370,7 @@ export const TagList = () => {
               <Input
                 className="tag-list-filter-input"
                 allowClear
-                placeholder="搜索标签名称/描述"
+                placeholder={t('tags.filter.placeholder')}
                 prefix={<SearchOutlined />}
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
@@ -376,9 +381,9 @@ export const TagList = () => {
                 value={isFixed}
                 onChange={(value) => setIsFixed(value)}
                 options={[
-                  { label: '全部类型', value: 'all' },
-                  { label: '固定标签', value: 'fixed' },
-                  { label: '普通标签', value: 'normal' },
+                  { label: t('tags.type.all'), value: 'all' },
+                  { label: t('tags.type.fixed'), value: 'fixed' },
+                  { label: t('tags.type.normal'), value: 'normal' },
                 ]}
               />
 
@@ -387,9 +392,9 @@ export const TagList = () => {
                 value={isEnabled}
                 onChange={(value) => setIsEnabled(value)}
                 options={[
-                  { label: '全部状态', value: 'all' },
-                  { label: '启用', value: 'enabled' },
-                  { label: '禁用', value: 'disabled' },
+                  { label: t('taxonomy.common.allStatus'), value: 'all' },
+                  { label: t('taxonomy.common.enabled'), value: 'enabled' },
+                  { label: t('taxonomy.common.disabled'), value: 'disabled' },
                 ]}
               />
 
@@ -398,8 +403,8 @@ export const TagList = () => {
                 value={includeDeleted ? 'yes' : 'no'}
                 onChange={(value) => setIncludeDeleted(value === 'yes')}
                 options={[
-                  { label: '隐藏已删除', value: 'no' },
-                  { label: '显示已删除', value: 'yes' },
+                  { label: t('taxonomy.common.hideDeleted'), value: 'no' },
+                  { label: t('taxonomy.common.showDeleted'), value: 'yes' },
                 ]}
               />
             </div>
@@ -417,7 +422,7 @@ export const TagList = () => {
                 total,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (count) => `共 ${count} 条`,
+                showTotal: (count) => t('taxonomy.common.total', { count }),
                 onChange: (current, size) => {
                   void loadTags(current, size);
                 },
@@ -428,27 +433,27 @@ export const TagList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>列表摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前标签范围、排序权限和软删除可见性。</p>
+          <h3>{t('tags.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('tags.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__label">{t('tags.summary.scope')}</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部标签'}
+                {activeFilterCount > 0 ? t('taxonomy.common.filterSummary', { count: activeFilterCount }) : t('tags.summary.all')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">软删除记录</span>
-              <span className="admin-table-summary__value">{includeDeleted ? '已显示' : '已隐藏'}</span>
+              <span className="admin-table-summary__label">{t('tags.summary.deleted')}</span>
+              <span className="admin-table-summary__value">{t(includeDeleted ? 'taxonomy.common.recordsShown' : 'taxonomy.common.recordsHidden')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">分页规模</span>
-              <span className="admin-table-summary__value">{pageSize} 条 / 页</span>
+              <span className="admin-table-summary__label">{t('tags.summary.pageSize')}</span>
+              <span className="admin-table-summary__value">{t('taxonomy.common.pageSize', { count: pageSize })}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">排序权限</span>
+              <span className="admin-table-summary__label">{t('tags.summary.sort')}</span>
               <span className="admin-table-summary__value">
-                {canSortTag ? '可调整排序' : '仅可查看排序'}
+                {t(canSortTag ? 'taxonomy.common.sortWritable' : 'taxonomy.common.sortReadOnly')}
               </span>
             </div>
           </div>

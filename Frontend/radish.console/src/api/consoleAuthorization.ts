@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@radish/http';
+import { apiGet, apiPost, createApiResponseError } from '@radish/http';
 
 export interface ResourceApiBindingVo {
   voResourceId: string;
@@ -44,7 +44,7 @@ export async function getResourceTree(): Promise<ConsoleResourceTreeNodeVo[]> {
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取资源树失败');
+    throw createApiResponseError(response, '获取资源树失败');
   }
 
   return response.data;
@@ -57,7 +57,7 @@ export async function getRoleAuthorization(roleId: string): Promise<RoleAuthoriz
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取角色授权失败');
+    throw createApiResponseError(response, '获取角色授权失败');
   }
 
   return response.data;
@@ -70,7 +70,7 @@ export async function getRolePermissionPreview(roleId: string): Promise<Resource
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取权限预览失败');
+    throw createApiResponseError(response, '获取权限预览失败');
   }
 
   return response.data;
@@ -84,6 +84,6 @@ export async function saveRoleAuthorization(payload: SaveRoleAuthorizationReques
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '保存角色授权失败');
+    throw createApiResponseError(response, '保存角色授权失败');
   }
 }

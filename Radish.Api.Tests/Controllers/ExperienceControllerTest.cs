@@ -11,6 +11,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
@@ -122,7 +123,9 @@ public class ExperienceControllerTest
         var result = await controller.GetUserTransactions(0);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal("用户ID无效", result.MessageInfo);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(ApiErrorCodes.ValidationFailed, result.Code);
+        Assert.Equal("error.common.validation_failed", result.MessageKey);
     }
 
     [Fact]

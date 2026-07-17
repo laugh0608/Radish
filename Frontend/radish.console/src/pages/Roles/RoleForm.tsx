@@ -10,6 +10,7 @@ import {
 } from '@radish/ui';
 import { createRole, updateRole, getRoleById, type CreateRoleRequest } from '@/api/roleApi';
 import { log } from '@/utils/logger';
+import { useTranslation } from 'react-i18next';
 
 interface RoleFormProps {
   visible: boolean;
@@ -20,18 +21,19 @@ interface RoleFormProps {
 }
 
 export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFormProps) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
 
   // 权限范围选项
   const authorityScopeOptions = [
-    { label: '无任何权限', value: -1 },
-    { label: '自定义权限', value: 1 },
-    { label: '本部门', value: 2 },
-    { label: '本部门及以下', value: 3 },
-    { label: '仅自己', value: 4 },
-    { label: '全部', value: 9 },
+    { label: t('roles.scope.none'), value: -1 },
+    { label: t('roles.scope.custom'), value: 1 },
+    { label: t('roles.scope.department'), value: 2 },
+    { label: t('roles.scope.departmentAndChildren'), value: 3 },
+    { label: t('roles.scope.self'), value: 4 },
+    { label: t('roles.scope.all'), value: 9 },
   ];
 
   // 加载角色详情（编辑模式）
@@ -50,11 +52,11 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
       });
     } catch (error) {
       log.error('RoleForm', '加载角色详情失败:', error);
-      message.error('加载角色详情失败');
+      message.error(t('roles.feedback.detailLoadFailed'));
     } finally {
       setInitialLoading(false);
     }
-  }, [form]);
+  }, [form, t]);
 
   // 提交表单
   const handleSubmit = async () => {
@@ -74,16 +76,16 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
 
       if (mode === 'create') {
         await createRole(roleData);
-        message.success('创建角色成功');
+        message.success(t('roles.feedback.created'));
       } else if (mode === 'edit' && roleId) {
         await updateRole(roleId, roleData);
-        message.success('更新角色成功');
+        message.success(t('roles.feedback.updated'));
       }
 
       onSuccess();
     } catch (error) {
       log.error('RoleForm', '提交表单失败:', error);
-      message.error(mode === 'create' ? '创建角色失败' : '更新角色失败');
+      message.error(t(mode === 'create' ? 'roles.feedback.createFailed' : 'roles.feedback.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -115,7 +117,7 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
 
   return (
     <Modal
-      title={mode === 'create' ? '新增角色' : '编辑角色'}
+      title={t(mode === 'create' ? 'roles.form.createTitle' : 'roles.form.editTitle')}
       open={visible}
       onOk={handleSubmit}
       onCancel={handleCancel}
@@ -131,24 +133,24 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
       >
         <Form.Item
           name="voRoleName"
-          label="角色名称"
+          label={t('roles.form.name')}
           rules={[
-            { required: true, message: '请输入角色名称' },
-            { max: 50, message: '角色名称不能超过50个字符' },
+            { required: true, message: t('roles.form.nameRequired') },
+            { max: 50, message: t('roles.form.nameMax') },
           ]}
         >
-          <Input placeholder="请输入角色名称" />
+          <Input placeholder={t('roles.form.namePlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="voRoleDescription"
-          label="角色描述"
+          label={t('roles.form.description')}
           rules={[
-            { max: 500, message: '角色描述不能超过500个字符' },
+            { max: 500, message: t('roles.form.descriptionMax') },
           ]}
         >
           <Input.TextArea
-            placeholder="请输入角色描述"
+            placeholder={t('roles.form.descriptionPlaceholder')}
             rows={3}
             showCount
             maxLength={500}
@@ -157,14 +159,14 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
 
         <Form.Item
           name="voOrderSort"
-          label="排序"
+          label={t('roles.form.sort')}
           rules={[
-            { required: true, message: '请输入排序值' },
-            { type: 'number', min: 0, message: '排序值不能小于0' },
+            { required: true, message: t('roles.form.sortRequired') },
+            { type: 'number', min: 0, message: t('roles.form.sortMin') },
           ]}
         >
           <InputNumber
-            placeholder="请输入排序值"
+            placeholder={t('roles.form.sortPlaceholder')}
             min={0}
             className="role-form-full-width"
           />
@@ -172,31 +174,31 @@ export const RoleForm = ({ visible, mode, roleId, onCancel, onSuccess }: RoleFor
 
         <Form.Item
           name="voAuthorityScope"
-          label="权限范围"
+          label={t('roles.form.scope')}
           rules={[
-            { required: true, message: '请选择权限范围' },
+            { required: true, message: t('roles.form.scopeRequired') },
           ]}
         >
           <Select
-            placeholder="请选择权限范围"
+            placeholder={t('roles.form.scopePlaceholder')}
             options={authorityScopeOptions}
           />
         </Form.Item>
 
         <Form.Item
           name="voDepartmentIds"
-          label="部门ID"
-          tooltip="自定义权限时使用，多个部门ID用逗号分隔"
+          label={t('roles.form.departmentIds')}
+          tooltip={t('roles.form.departmentIdsTooltip')}
         >
-          <Input placeholder="请输入部门ID，多个用逗号分隔" />
+          <Input placeholder={t('roles.form.departmentIdsPlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="voIsEnabled"
-          label="启用状态"
+          label={t('roles.form.enabled')}
           valuePropName="checked"
         >
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+          <Switch checkedChildren={t('roles.status.enabled')} unCheckedChildren={t('roles.status.disabled')} />
         </Form.Item>
       </Form>
     </Modal>

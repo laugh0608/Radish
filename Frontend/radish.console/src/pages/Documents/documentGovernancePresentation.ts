@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
-import { getIntlLocale } from '../../locales/language.ts';
 import type { WikiDocumentDetailVo, WikiDocumentVo } from '../../api/wikiGovernanceApi.ts';
+import { formatConsoleDateTime, formatConsoleNumber } from '../../utils/localeFormatters.ts';
 
 export const DOCUMENT_STATUS = {
   draft: 0,
@@ -45,28 +45,11 @@ export function getDocumentSourceTypeText(sourceType: string, t: TFunction): str
 }
 
 export function formatDocumentDateTime(value: string | null | undefined, language?: string): string {
-  if (!value) {
-    return '-';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return new Intl.DateTimeFormat(getIntlLocale(language), {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(parsed);
+  return formatConsoleDateTime(value, language);
 }
 
 export function formatDocumentNumber(value: number, language?: string): string {
-  return new Intl.NumberFormat(getIntlLocale(language)).format(value);
+  return formatConsoleNumber(value, language);
 }
 
 export function getDocumentSummary(record: WikiDocumentVo | WikiDocumentDetailVo, t: TFunction): string {

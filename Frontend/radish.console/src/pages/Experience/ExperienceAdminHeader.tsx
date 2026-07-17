@@ -3,6 +3,7 @@ import {
   ConsolePageHeader,
   ConsoleStatusChip,
 } from '@/components/ConsolePage';
+import { useTranslation } from 'react-i18next';
 
 type ExperienceAdminHeaderProps = {
   onRefresh: () => void;
@@ -11,20 +12,22 @@ type ExperienceAdminHeaderProps = {
 };
 
 export const ExperienceAdminHeader = ({ onRefresh, canAdjust, canFreeze }: ExperienceAdminHeaderProps) => {
+  const { t } = useTranslation();
+
   return (
     <ConsolePageHeader
-      eyebrow="经验台账"
-      title="经验等级"
-      description="支持按用户查看经验等级、调经验、冻结复核，并回看当前等级配置。"
+      eyebrow={t('experience.header.eyebrow')}
+      title={t('experience.header.title')}
+      description={t('experience.header.description')}
       icon={<TrophyOutlined />}
       status={(
         <ConsoleStatusChip tone={canFreeze ? 'success' : (canAdjust ? 'info' : 'neutral')}>
-          {canFreeze ? '可复核冻结' : (canAdjust ? '可调经验' : '只读查看')}
+          {canFreeze ? t('experience.header.canFreeze') : (canAdjust ? t('experience.header.canAdjust') : t('experience.header.readOnly'))}
         </ConsoleStatusChip>
       )}
       actions={(
         <Button icon={<ReloadOutlined />} onClick={onRefresh}>
-          刷新
+          {t('experience.actions.refresh')}
         </Button>
       )}
     />

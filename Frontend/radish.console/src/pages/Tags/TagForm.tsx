@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AntModal as Modal,
   Form,
@@ -19,6 +20,7 @@ interface TagFormProps {
 }
 
 export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProps) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
 
@@ -39,16 +41,16 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
 
       if (mode === 'create') {
         await createTag(request);
-        message.success('创建标签成功');
+        message.success(t('tags.feedback.created'));
       } else if (mode === 'edit' && tag) {
         await updateTag(tag.voId, request);
-        message.success('更新标签成功');
+        message.success(t('tags.feedback.updated'));
       }
 
       onSuccess();
     } catch (error) {
       log.error('TagForm', '提交标签表单失败:', error);
-      message.error(mode === 'create' ? '创建标签失败' : '更新标签失败');
+      message.error(t(mode === 'create' ? 'tags.feedback.createFailed' : 'tags.feedback.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,7 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
 
   return (
     <Modal
-      title={mode === 'create' ? '新增标签' : '编辑标签'}
+      title={t(mode === 'create' ? 'tags.form.createTitle' : 'tags.form.editTitle')}
       open={visible}
       onOk={handleSubmit}
       onCancel={onCancel}
@@ -98,56 +100,56 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
       <Form form={form} layout="vertical">
         <Form.Item
           name="name"
-          label="标签名称"
+          label={t('tags.form.name')}
           rules={[
-            { required: true, message: '请输入标签名称' },
-            { max: 50, message: '标签名称不能超过50个字符' },
+            { required: true, message: t('tags.form.nameRequired') },
+            { max: 50, message: t('tags.form.nameMax') },
           ]}
         >
-          <Input placeholder="请输入标签名称" />
+          <Input placeholder={t('tags.form.namePlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="slug"
           label="Slug"
-          rules={[{ max: 50, message: 'Slug 不能超过50个字符' }]}
+          rules={[{ max: 50, message: t('tags.form.slugMax') }]}
         >
-          <Input placeholder="可选，不填则按名称自动生成" />
+          <Input placeholder={t('taxonomy.common.slugOptional')} />
         </Form.Item>
 
         <Form.Item
           name="description"
-          label="描述"
-          rules={[{ max: 500, message: '描述不能超过500个字符' }]}
+          label={t('tags.form.description')}
+          rules={[{ max: 500, message: t('tags.form.descriptionMax') }]}
         >
-          <Input.TextArea placeholder="请输入标签描述" rows={3} maxLength={500} showCount />
+          <Input.TextArea placeholder={t('tags.form.descriptionPlaceholder')} rows={3} maxLength={500} showCount />
         </Form.Item>
 
         <Form.Item
           name="color"
-          label="颜色"
-          rules={[{ max: 20, message: '颜色值不能超过20个字符' }]}
+          label={t('tags.form.color')}
+          rules={[{ max: 20, message: t('tags.form.colorMax') }]}
         >
-          <Input placeholder="如 #1677FF" />
+          <Input placeholder={t('tags.form.colorPlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="sortOrder"
-          label="排序"
+          label={t('tags.form.sort')}
           rules={[
-            { required: true, message: '请输入排序值' },
-            { type: 'number', min: 0, message: '排序值不能为负数' },
+            { required: true, message: t('taxonomy.common.sortRequired') },
+            { type: 'number', min: 0, message: t('taxonomy.common.sortMin') },
           ]}
         >
           <InputNumber min={0} style={{ width: '100%' }} />
         </Form.Item>
 
-        <Form.Item name="isFixed" label="固定标签" valuePropName="checked">
-          <Switch checkedChildren="固定" unCheckedChildren="普通" />
+        <Form.Item name="isFixed" label={t('tags.form.fixed')} valuePropName="checked">
+          <Switch checkedChildren={t('tags.type.fixed')} unCheckedChildren={t('tags.type.normal')} />
         </Form.Item>
 
-        <Form.Item name="isEnabled" label="启用状态" valuePropName="checked">
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+        <Form.Item name="isEnabled" label={t('taxonomy.common.enabledField')} valuePropName="checked">
+          <Switch checkedChildren={t('taxonomy.common.enabled')} unCheckedChildren={t('taxonomy.common.disabled')} />
         </Form.Item>
       </Form>
     </Modal>

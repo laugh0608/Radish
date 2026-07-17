@@ -3,7 +3,8 @@ import type { RefObject } from 'react';
 import type { Dayjs } from 'dayjs';
 import type { ExpTransactionVo } from '@/api/experienceAdminApi';
 import { createTransactionColumns } from './experienceAdminColumns';
-import { EXPERIENCE_TRANSACTION_TYPE_OPTIONS } from './experienceAdminHelpers';
+import { EXPERIENCE_TRANSACTION_TYPES } from './experienceAdminHelpers';
+import { useTranslation } from 'react-i18next';
 
 type ExperienceTransactionSectionProps = {
   transactionSectionRef: RefObject<HTMLElement | null>;
@@ -42,22 +43,27 @@ export const ExperienceTransactionSection = ({
   onClearTransactionFilters,
   onPageChange,
 }: ExperienceTransactionSectionProps) => {
-  const transactionColumns = createTransactionColumns();
+  const { t, i18n } = useTranslation();
+  const transactionColumns = createTransactionColumns(t, i18n.resolvedLanguage);
+  const transactionTypeOptions = EXPERIENCE_TRANSACTION_TYPES.map((value) => ({
+    value,
+    label: t(`experience.transactionType.${value}`),
+  }));
 
   return (
     <section className="admin-feature-card" ref={transactionSectionRef}>
       <div className="admin-feature-header">
         <div>
-          <h3>经验流水</h3>
-          <p className="admin-feature-subtle">回看该用户最近的经验变动、管理员操作痕迹与升级轨迹，并支持按异常日期 / 类型快速复核。</p>
+          <h3>{t('experience.transactions.title')}</h3>
+          <p className="admin-feature-subtle">{t('experience.transactions.description')}</p>
         </div>
         <div className="experience-transaction-filters">
           <Select
             value={transactionTypeFilter}
             className="experience-filter-control"
-            options={EXPERIENCE_TRANSACTION_TYPE_OPTIONS}
+            options={transactionTypeOptions}
             allowClear
-            placeholder="筛选经验类型"
+            placeholder={t('experience.transactions.typePlaceholder')}
             onChange={(value) => {
               onTransactionTypeFilterChange(typeof value === 'string' && value.length > 0 ? value : undefined);
             }}
@@ -66,7 +72,7 @@ export const ExperienceTransactionSection = ({
           <DatePicker
             value={transactionStartDate}
             allowClear
-            placeholder="开始日期"
+            placeholder={t('experience.transactions.startDate')}
             className="experience-filter-control"
             disabled={!loadedUserId}
             onChange={onTransactionStartDateChange}
@@ -74,13 +80,13 @@ export const ExperienceTransactionSection = ({
           <DatePicker
             value={transactionEndDate}
             allowClear
-            placeholder="结束日期"
+            placeholder={t('experience.transactions.endDate')}
             className="experience-filter-control"
             disabled={!loadedUserId}
             onChange={onTransactionEndDateChange}
           />
           <Button disabled={!loadedUserId} onClick={onClearTransactionFilters}>
-            清空筛选
+            {t('experience.actions.clearFilters')}
           </Button>
         </div>
       </div>
@@ -105,17 +111,17 @@ export const ExperienceTransactionSection = ({
               total: transactionTotal,
               showSizeChanger: true,
               showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
+              showTotal: (total) => t('experience.transactions.total', { count: total }),
               onChange: onPageChange,
             }}
             locale={{
-              emptyText: loadingTransactions ? '经验流水加载中...' : '该用户暂无经验流水记录',
+              emptyText: loadingTransactions ? t('experience.transactions.loading') : t('experience.transactions.empty'),
             }}
           />
         </>
       ) : (
         <div className="experience-empty-hint">
-          请先查询用户经验，再查看经验流水。
+          {t('experience.transactions.queryFirst')}
         </div>
       )}
     </section>

@@ -1,15 +1,15 @@
-import { apiGet, apiPost, type PagedResponse } from '@radish/http';
+import { apiGet, apiPost, createApiResponseError, type PagedResponse } from '@radish/http';
 
 export interface UserBalanceVo {
   voUserId: string;
-  voBalance: number;
+  voBalance: string;
   voBalanceDisplay: string;
-  voFrozenBalance: number;
+  voFrozenBalance: string;
   voFrozenBalanceDisplay: string;
-  voTotalEarned: number;
-  voTotalSpent: number;
-  voTotalTransferredIn: number;
-  voTotalTransferredOut: number;
+  voTotalEarned: string;
+  voTotalSpent: string;
+  voTotalTransferredIn: string;
+  voTotalTransferredOut: string;
   voCreateTime: string;
   voModifyTime?: string | null;
 }
@@ -21,9 +21,9 @@ export interface CoinTransactionVo {
   voFromUserName?: string | null;
   voToUserId?: string | null;
   voToUserName?: string | null;
-  voAmount: number;
+  voAmount: string;
   voAmountDisplay: string;
-  voFee: number;
+  voFee: string;
   voFeeDisplay: string;
   voTransactionType: string;
   voTransactionTypeDisplay: string;
@@ -39,7 +39,7 @@ export interface CoinTransactionVo {
 
 export interface AdminAdjustBalanceRequest {
   userId: string;
-  deltaAmount: number;
+  deltaAmount: string;
   reason: string;
 }
 
@@ -49,7 +49,7 @@ export async function getBalanceByUserId(userId: string): Promise<UserBalanceVo>
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户余额失败');
+    throw createApiResponseError(response, 'coins.feedback.loadBalanceFailed');
   }
 
   return response.data;
@@ -92,7 +92,7 @@ export async function getTransactionsByUserId(params: {
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户萝卜币流水失败');
+    throw createApiResponseError(response, 'coins.feedback.loadTransactionsFailed');
   }
 
   return response.data;
@@ -101,6 +101,6 @@ export async function getTransactionsByUserId(params: {
 export async function adminAdjustBalance(request: AdminAdjustBalanceRequest): Promise<void> {
   const response = await apiPost('/api/v1/Coin/AdminAdjustBalance', request, { withAuth: true });
   if (!response.ok) {
-    throw new Error(response.message || '调整胡萝卜余额失败');
+    throw createApiResponseError(response, 'coins.feedback.adjustFailed');
   }
 }

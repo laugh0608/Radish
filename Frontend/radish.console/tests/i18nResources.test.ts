@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders', 'products', 'settings', 'documents'];
+const domainNames = ['core', 'shell', 'dashboard', 'users', 'moderation', 'orders', 'products', 'settings', 'documents', 'roles', 'taxonomy', 'stickers', 'coins', 'experience'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   return domainNames.flatMap((domain) => {
@@ -52,6 +52,12 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
           'documents.count.roles_other': '{{count}} roles',
           'documents.count.permissions_one': '{{count}} permission',
           'documents.count.permissions_other': '{{count}} permissions',
+          'coins.transactions.total_one': '{{count}} transaction',
+          'coins.transactions.total_other': '{{count}} transactions',
+          'experience.transactions.total_one': '{{count}} transaction',
+          'experience.transactions.total_other': '{{count}} transactions',
+          'experience.observation.hitDays_one': 'Window hits: {{count}} day',
+          'experience.observation.hitDays_other': 'Window hits: {{count}} days',
         },
       },
     },
@@ -81,4 +87,12 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
   assert.equal(instance.t('documents.count.roles', { count: 0 }), '0 roles');
   assert.equal(instance.t('documents.count.roles', { count: 1 }), '1 role');
   assert.equal(instance.t('documents.count.permissions', { count: 2 }), '2 permissions');
+  assert.equal(instance.t('coins.transactions.total', { count: 0 }), '0 transactions');
+  assert.equal(instance.t('coins.transactions.total', { count: 1 }), '1 transaction');
+  assert.equal(instance.t('coins.transactions.total', { count: 2 }), '2 transactions');
+  assert.equal(instance.t('experience.transactions.total', { count: 0 }), '0 transactions');
+  assert.equal(instance.t('experience.transactions.total', { count: 1 }), '1 transaction');
+  assert.equal(instance.t('experience.transactions.total', { count: 2 }), '2 transactions');
+  assert.equal(instance.t('experience.observation.hitDays', { count: 1 }), 'Window hits: 1 day');
+  assert.equal(instance.t('experience.observation.hitDays', { count: 2 }), 'Window hits: 2 days');
 });

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AntInput as Input,
   AntSelect as Select,
@@ -39,6 +40,7 @@ interface CategoryFormProps {
 }
 
 export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: CategoryFormProps) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [parentOptions, setParentOptions] = useState<CategoryVo[]>([]);
@@ -65,13 +67,13 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
   ): UploadProps['customRequest'] => async (options) => {
     const file = options.file;
     if (!(file instanceof File)) {
-      options.onError?.(new Error('无效文件'));
+      options.onError?.(new Error(t('taxonomy.common.invalidFile')));
       return;
     }
 
     const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
-      const error = new Error('仅支持上传图片文件');
+      const error = new Error(t('taxonomy.common.imageOnly'));
       message.error(error.message);
       options.onError?.(error);
       return;
@@ -86,9 +88,9 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       form.setFieldValue(fieldName, uploaded.attachmentId);
       setPreview(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
       options.onSuccess?.(uploaded);
-      message.success('图片上传成功，已回填附件 ID');
+      message.success(t('taxonomy.common.imageUploaded'));
     } catch (error) {
-      const uploadError = error instanceof Error ? error : new Error('图片上传失败');
+      const uploadError = error instanceof Error ? error : new Error(t('taxonomy.common.imageUploadFailed'));
       log.error('CategoryForm', '上传分类图片失败:', error);
       message.error(uploadError.message);
       options.onError?.(uploadError);
@@ -154,7 +156,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
 
   const handleSubmit = async () => {
     if (iconUploading || coverUploading) {
-      message.warning('图片仍在上传中，请稍候提交');
+      message.warning(t('taxonomy.common.uploadInProgress'));
       return;
     }
 
@@ -175,16 +177,16 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
 
       if (mode === 'create') {
         await createCategory(request);
-        message.success('创建分类成功');
+        message.success(t('categories.feedback.created'));
       } else if (mode === 'edit' && category) {
         await updateCategory(category.voId, request);
-        message.success('更新分类成功');
+        message.success(t('categories.feedback.updated'));
       }
 
       onSuccess();
     } catch (error) {
       log.error('CategoryForm', '提交分类表单失败:', error);
-      message.error(mode === 'create' ? '创建分类失败' : '更新分类失败');
+      message.error(t(mode === 'create' ? 'categories.feedback.createFailed' : 'categories.feedback.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -192,7 +194,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
 
   return (
     <Modal
-      title={mode === 'create' ? '新增分类' : '编辑分类'}
+      title={t(mode === 'create' ? 'categories.form.createTitle' : 'categories.form.editTitle')}
       open={visible}
       onOk={handleSubmit}
       onCancel={onCancel}
@@ -204,36 +206,36 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       <Form form={form} layout="vertical">
         <Form.Item
           name="name"
-          label="分类名称"
+          label={t('categories.form.name')}
           rules={[
-            { required: true, message: '请输入分类名称' },
-            { max: 100, message: '分类名称不能超过100个字符' },
+            { required: true, message: t('categories.form.nameRequired') },
+            { max: 100, message: t('categories.form.nameMax') },
           ]}
         >
-          <Input placeholder="请输入分类名称" />
+          <Input placeholder={t('categories.form.namePlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="slug"
           label="Slug"
-          rules={[{ max: 100, message: 'Slug 不能超过100个字符' }]}
+          rules={[{ max: 100, message: t('categories.form.slugMax') }]}
         >
-          <Input placeholder="可选，不填则按分类名称自动生成" />
+          <Input placeholder={t('categories.form.slugPlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="description"
-          label="描述"
-          rules={[{ max: 1000, message: '描述不能超过1000个字符' }]}
+          label={t('categories.form.description')}
+          rules={[{ max: 1000, message: t('categories.form.descriptionMax') }]}
         >
-          <Input.TextArea placeholder="请输入分类描述" rows={3} maxLength={1000} showCount />
+          <Input.TextArea placeholder={t('categories.form.descriptionPlaceholder')} rows={3} maxLength={1000} showCount />
         </Form.Item>
 
-        <Form.Item label="分类图标">
+        <Form.Item label={t('categories.form.icon')}>
           <Form.Item
             name="iconAttachmentId"
             noStyle
-            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+            rules={[{ pattern: /^[1-9]\d*$/, message: t('taxonomy.common.attachmentIdInvalid') }]}
           >
             <Input className="admin-form-hidden-input" />
           </Form.Item>
@@ -242,11 +244,11 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
               {iconPreviewUrl ? (
                 <img
                   src={iconPreviewUrl}
-                  alt="分类图标预览"
+                  alt={t('categories.form.iconAlt')}
                   className="admin-form-upload-preview__image"
                 />
               ) : (
-                <span>暂无图标</span>
+                <span>{t('categories.form.noIcon')}</span>
               )}
             </div>
 
@@ -258,7 +260,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
                 disabled={iconUploading || loading}
               >
                 <Button icon={<PlusOutlined />} disabled={iconUploading || loading}>
-                  {iconUploading ? '上传中...' : '上传图标'}
+                  {t(iconUploading ? 'taxonomy.common.uploading' : 'categories.form.uploadIcon')}
                 </Button>
               </Upload>
               <Button
@@ -268,23 +270,23 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
                   setIconPreviewUrl(undefined);
                 }}
               >
-                清空图标
+                {t('categories.form.clearIcon')}
               </Button>
             </Space>
 
             <Input
-              placeholder="上传后自动回填附件 ID"
+              placeholder={t('taxonomy.common.attachmentIdPlaceholder')}
               value={iconAttachmentId ? String(iconAttachmentId) : ''}
               readOnly
             />
           </Space>
         </Form.Item>
 
-        <Form.Item label="封面图">
+        <Form.Item label={t('categories.form.cover')}>
           <Form.Item
             name="coverAttachmentId"
             noStyle
-            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+            rules={[{ pattern: /^[1-9]\d*$/, message: t('taxonomy.common.attachmentIdInvalid') }]}
           >
             <Input className="admin-form-hidden-input" />
           </Form.Item>
@@ -293,11 +295,11 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
               {coverPreviewUrl ? (
                 <img
                   src={coverPreviewUrl}
-                  alt="分类封面预览"
+                  alt={t('categories.form.coverAlt')}
                   className="admin-form-upload-preview__image"
                 />
               ) : (
-                <span>暂无封面</span>
+                <span>{t('categories.form.noCover')}</span>
               )}
             </div>
 
@@ -309,7 +311,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
                 disabled={coverUploading || loading}
               >
                 <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
-                  {coverUploading ? '上传中...' : '上传封面'}
+                  {t(coverUploading ? 'taxonomy.common.uploading' : 'categories.form.uploadCover')}
                 </Button>
               </Upload>
               <Button
@@ -319,22 +321,22 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
                   setCoverPreviewUrl(undefined);
                 }}
               >
-                清空封面
+                {t('categories.form.clearCover')}
               </Button>
             </Space>
 
             <Input
-              placeholder="上传后自动回填附件 ID"
+              placeholder={t('taxonomy.common.attachmentIdPlaceholder')}
               value={coverAttachmentId ? String(coverAttachmentId) : ''}
               readOnly
             />
           </Space>
         </Form.Item>
 
-        <Form.Item name="parentId" label="父级分类">
+        <Form.Item name="parentId" label={t('categories.form.parent')}>
           <Select
             allowClear
-            placeholder="留空表示顶级分类"
+            placeholder={t('categories.form.parentPlaceholder')}
             options={parentOptions.map((item) => ({
               label: `${'— '.repeat(item.voLevel)}${item.voName}`,
               value: item.voId,
@@ -344,17 +346,17 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
 
         <Form.Item
           name="orderSort"
-          label="排序"
+          label={t('categories.form.sort')}
           rules={[
-            { required: true, message: '请输入排序值' },
-            { type: 'number', min: 0, message: '排序值不能为负数' },
+            { required: true, message: t('taxonomy.common.sortRequired') },
+            { type: 'number', min: 0, message: t('taxonomy.common.sortMin') },
           ]}
         >
           <InputNumber min={0} className="admin-form-control-full" />
         </Form.Item>
 
-        <Form.Item name="isEnabled" label="启用状态" valuePropName="checked">
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+        <Form.Item name="isEnabled" label={t('taxonomy.common.enabledField')} valuePropName="checked">
+          <Switch checkedChildren={t('taxonomy.common.enabled')} unCheckedChildren={t('taxonomy.common.disabled')} />
         </Form.Item>
       </Form>
     </Modal>

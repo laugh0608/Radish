@@ -3,23 +3,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { Breadcrumb, HomeOutlined } from '@radish/ui';
 import type { BreadcrumbProps } from '@radish/ui';
 import { useTranslation } from 'react-i18next';
-import { getConsoleRouteTitle } from '@/router/routeMeta';
-
-/**
- * 路由到面包屑映射
- */
-const routeBreadcrumbMap: Record<string, string> = {
-  '/': '仪表盘',
-  '/applications': '应用管理',
-  '/products': '商品管理',
-  '/orders': '订单管理',
-  '/users': '用户管理',
-  '/roles': '角色管理',
-  '/tags': '标签管理',
-  '/stickers': '表情包管理',
-  '/hangfire': '定时任务',
-  '/theme-test': '主题测试',
-};
+import { getConsoleBreadcrumbRoutes, getConsoleRouteTitle } from '@/router/routeMeta';
 
 /**
  * 面包屑导航组件
@@ -29,8 +13,6 @@ export function AppBreadcrumb() {
   const { t } = useTranslation();
 
   const breadcrumbItems: BreadcrumbProps['items'] = useMemo(() => {
-    const pathSegments = location.pathname.split('/').filter(Boolean);
-
     // 首页面包屑
     const items: BreadcrumbProps['items'] = [
       {
@@ -43,30 +25,22 @@ export function AppBreadcrumb() {
       },
     ];
 
-    // 如果不是首页，添加当前页面的面包屑
-    if (pathSegments.length > 0) {
-      let currentPath = '';
+    const routes = getConsoleBreadcrumbRoutes(location.pathname);
+    routes.forEach((route, index) => {
+      const isLast = index === routes.length - 1;
+      const breadcrumbName = getConsoleRouteTitle(
+        route.path.includes(':') ? location.pathname : route.path,
+        t,
+      );
 
-      pathSegments.forEach((segment, index) => {
-        currentPath += `/${segment}`;
-        const breadcrumbName = routeBreadcrumbMap[currentPath]
-          ? getConsoleRouteTitle(currentPath, t)
-          : undefined;
-
-        if (breadcrumbName) {
-          const isLast = index === pathSegments.length - 1;
-
-          items.push({
-            title: isLast ? (
-              // 最后一个面包屑不需要链接
-              <span>{breadcrumbName}</span>
-            ) : (
-              <Link to={currentPath}>{breadcrumbName}</Link>
-            ),
-          });
-        }
+      items.push({
+        title: isLast ? (
+          <span>{breadcrumbName}</span>
+        ) : (
+          <Link to={route.path}>{breadcrumbName}</Link>
+        ),
       });
-    }
+    });
 
     return items;
   }, [location.pathname, t]);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useTranslation } from 'react-i18next';
 import {
   Table,
   Button,
@@ -39,20 +40,23 @@ import {
 } from '@/components/ConsolePage';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import { formatConsoleNumber } from '@/utils/localeFormatters';
 import { CategoryForm } from './CategoryForm';
 import '../adminFeature.css';
 import './CategoryList.css';
 
-const renderLevelText = (level: number) => {
+const renderLevelText = (level: number, rootLabel: string) => {
   if (level <= 0) {
-    return '顶级';
+    return rootLabel;
   }
 
   return `L${level}`;
 };
 
 export const CategoryList = () => {
-  useDocumentTitle('分类管理');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('categories.documentTitle'));
 
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState<CategoryVo[]>([]);
@@ -98,11 +102,11 @@ export const CategoryList = () => {
       setPageSize(response.pageSize);
     } catch (error) {
       log.error('CategoryList', '加载分类失败:', error);
-      message.error('加载分类失败');
+      message.error(t('categories.feedback.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [includeDeleted, isEnabled, keyword, pageIndex, pageSize]);
+  }, [includeDeleted, isEnabled, keyword, pageIndex, pageSize, t]);
 
   useEffect(() => {
     if (!canViewCategories) {
@@ -127,40 +131,40 @@ export const CategoryList = () => {
   const handleDelete = async (id: number) => {
     try {
       await deleteCategory(id);
-      message.success('删除分类成功');
+      message.success(t('categories.feedback.deleted'));
       await loadCategories();
     } catch (error) {
       log.error('CategoryList', '删除分类失败:', error);
-      message.error('删除分类失败');
+      message.error(t('categories.feedback.deleteFailed'));
     }
   };
 
   const handleRestore = async (id: number) => {
     try {
       await restoreCategory(id);
-      message.success('恢复分类成功');
+      message.success(t('categories.feedback.restored'));
       await loadCategories();
     } catch (error) {
       log.error('CategoryList', '恢复分类失败:', error);
-      message.error('恢复分类失败');
+      message.error(t('categories.feedback.restoreFailed'));
     }
   };
 
   const handleToggleStatus = async (record: CategoryVo, enabled: boolean) => {
     try {
       await toggleCategoryStatus(record.voId, enabled);
-      message.success(enabled ? '启用成功' : '禁用成功');
+      message.success(t(enabled ? 'categories.feedback.enabled' : 'categories.feedback.disabled'));
       await loadCategories();
     } catch (error) {
       log.error('CategoryList', '更新分类状态失败:', error);
-      message.error('更新分类状态失败');
+      message.error(t('categories.feedback.toggleFailed'));
     }
   };
 
   const handleSortChange = async (record: CategoryVo, value: string) => {
     const parsed = Number(value);
     if (!Number.isFinite(parsed) || parsed < 0) {
-      message.error('排序值必须是大于等于0的数字');
+      message.error(t('taxonomy.common.sortInvalid'));
       return;
     }
 
@@ -170,11 +174,11 @@ export const CategoryList = () => {
 
     try {
       await updateCategorySort(record.voId, parsed);
-      message.success('排序更新成功');
+      message.success(t('taxonomy.common.sortUpdated'));
       await loadCategories();
     } catch (error) {
       log.error('CategoryList', '更新分类排序失败:', error);
-      message.error('更新分类排序失败');
+      message.error(t('categories.feedback.sortFailed'));
     }
   };
 
@@ -186,51 +190,52 @@ export const CategoryList = () => {
       width: 100,
     },
     {
-      title: '分类名称',
+      title: t('categories.table.name'),
       dataIndex: 'voName',
       key: 'voName',
       width: 220,
     },
     {
-      title: 'Slug',
+      title: t('taxonomy.common.slug'),
       dataIndex: 'voSlug',
       key: 'voSlug',
       width: 220,
     },
     {
-      title: '层级',
+      title: t('categories.table.level'),
       key: 'voLevel',
       width: 100,
-      render: (_, record) => <Tag>{renderLevelText(record.voLevel)}</Tag>,
+      render: (_, record) => <Tag>{renderLevelText(record.voLevel, t('categories.level.root'))}</Tag>,
     },
     {
-      title: '父级 ID',
+      title: t('categories.table.parentId'),
       key: 'voParentId',
       width: 120,
       render: (_, record) => record.voParentId ?? '-',
     },
     {
-      title: '状态',
+      title: t('taxonomy.common.status'),
       key: 'voIsEnabled',
       width: 100,
       render: (_, record) => (
         record.voIsDeleted
-          ? <Tag color="default">已删除</Tag>
+          ? <Tag color="default">{t('taxonomy.common.deleted')}</Tag>
           : (
               <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-                {record.voIsEnabled ? '启用' : '禁用'}
+                {t(record.voIsEnabled ? 'taxonomy.common.enabled' : 'taxonomy.common.disabled')}
               </Tag>
             )
       ),
     },
     {
-      title: '帖子数',
+      title: t('taxonomy.common.posts'),
       dataIndex: 'voPostCount',
       key: 'voPostCount',
       width: 100,
+      render: (value: number) => formatConsoleNumber(value, language),
     },
     {
-      title: '排序',
+      title: t('taxonomy.common.sort'),
       key: 'voOrderSort',
       width: 140,
       render: (_, record) => (
@@ -244,13 +249,13 @@ export const CategoryList = () => {
       ),
     },
     {
-      title: '描述',
+      title: t('taxonomy.common.description'),
       dataIndex: 'voDescription',
       key: 'voDescription',
       ellipsis: true,
     },
     {
-      title: '操作',
+      title: t('taxonomy.common.actions'),
       key: 'actions',
       width: 300,
       fixed: 'right',
@@ -264,7 +269,7 @@ export const CategoryList = () => {
                 void handleRestore(record.voId);
               }}
             >
-              恢复
+              {t('taxonomy.common.restore')}
             </Button>
           )}
 
@@ -272,7 +277,7 @@ export const CategoryList = () => {
             <>
               {canEditCategory ? (
                 <Button variant="ghost" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-                  编辑
+                  {t('taxonomy.common.edit')}
                 </Button>
               ) : null}
 
@@ -285,7 +290,7 @@ export const CategoryList = () => {
                     void handleToggleStatus(record, false);
                   }}
                 >
-                  禁用
+                  {t('taxonomy.common.disabled')}
                 </Button>
               ) : (
                 <Button
@@ -296,22 +301,22 @@ export const CategoryList = () => {
                     void handleToggleStatus(record, true);
                   }}
                 >
-                  启用
+                  {t('taxonomy.common.enabled')}
                 </Button>
               )) : null}
 
               {canDeleteCategoryPermission ? (
                 <Popconfirm
-                  title="确认删除"
-                  description="确定要删除这个分类吗？"
+                  title={t('categories.delete.title')}
+                  description={t('categories.delete.description')}
                   onConfirm={() => {
                     void handleDelete(record.voId);
                   }}
-                  okText="确认"
-                  cancelText="取消"
+                  okText={t('taxonomy.common.confirm')}
+                  cancelText={t('taxonomy.common.cancel')}
                 >
                   <Button variant="danger" size="small" icon={<DeleteOutlined />}>
-                    删除
+                    {t('taxonomy.common.delete')}
                   </Button>
                 </Popconfirm>
               ) : null}
@@ -325,13 +330,13 @@ export const CategoryList = () => {
   return (
     <div className="admin-feature-page category-list-page">
       <ConsolePageHeader
-        eyebrow="内容分类"
-        title="分类管理"
-        description="维护社区内容分类、层级关系和排序权重。"
+        eyebrow={t('categories.page.eyebrow')}
+        title={t('categories.page.title')}
+        description={t('categories.page.description')}
         icon={<AppstoreOutlined />}
         status={(
           <ConsoleStatusChip tone={canCreateCategory ? 'success' : 'neutral'}>
-            {canCreateCategory ? '可新增' : '只读'}
+            {t(canCreateCategory ? 'taxonomy.common.createWritable' : 'taxonomy.common.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={(
@@ -339,32 +344,32 @@ export const CategoryList = () => {
             <Button icon={<ReloadOutlined />} onClick={() => {
               void loadCategories();
             }}>
-              刷新
+              {t('taxonomy.common.refresh')}
             </Button>
             {canCreateCategory ? (
               <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                新增分类
+                {t('categories.actions.create')}
               </Button>
             ) : null}
           </>
         )}
       />
 
-      <ConsoleMetricGrid label="分类列表指标">
-        <ConsoleMetricCard label="当前结果" value={total} description="当前筛选后的分类数量" tone="info" />
-        <ConsoleMetricCard label="本页分类" value={categories.length} description="当前页可见分类" />
-        <ConsoleMetricCard label="本页启用" value={enabledCategories} description="当前页启用分类" tone="success" />
-        <ConsoleMetricCard label="顶级分类" value={rootCategories} description="当前页顶级分类" tone="warning" />
+      <ConsoleMetricGrid label={t('categories.metrics.ariaLabel')}>
+        <ConsoleMetricCard label={t('categories.metrics.result')} value={formatConsoleNumber(total, language)} description={t('categories.metrics.resultDescription')} tone="info" />
+        <ConsoleMetricCard label={t('categories.metrics.page')} value={formatConsoleNumber(categories.length, language)} description={t('categories.metrics.pageDescription')} />
+        <ConsoleMetricCard label={t('categories.metrics.enabled')} value={formatConsoleNumber(enabledCategories, language)} description={t('categories.metrics.enabledDescription')} tone="success" />
+        <ConsoleMetricCard label={t('categories.metrics.root')} value={formatConsoleNumber(rootCategories, language)} description={t('categories.metrics.rootDescription')} tone="warning" />
       </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选分类"
-            description="按分类名称、描述、Slug、启用状态和软删除范围定位分类。"
+            title={t('categories.filter.title')}
+            description={t('categories.filter.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('taxonomy.common.filterCount', { count: activeFilterCount }) : t('taxonomy.common.notFiltered')}
               </ConsoleStatusChip>
             )}
           >
@@ -372,7 +377,7 @@ export const CategoryList = () => {
               <Input
                 className="category-list-filter-input"
                 allowClear
-                placeholder="搜索分类名称/描述/Slug"
+                placeholder={t('categories.filter.placeholder')}
                 prefix={<SearchOutlined />}
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
@@ -383,9 +388,9 @@ export const CategoryList = () => {
                 value={isEnabled}
                 onChange={(value) => setIsEnabled(value)}
                 options={[
-                  { label: '全部状态', value: 'all' },
-                  { label: '启用', value: 'enabled' },
-                  { label: '禁用', value: 'disabled' },
+                  { label: t('taxonomy.common.allStatus'), value: 'all' },
+                  { label: t('taxonomy.common.enabled'), value: 'enabled' },
+                  { label: t('taxonomy.common.disabled'), value: 'disabled' },
                 ]}
               />
 
@@ -394,8 +399,8 @@ export const CategoryList = () => {
                 value={includeDeleted ? 'yes' : 'no'}
                 onChange={(value) => setIncludeDeleted(value === 'yes')}
                 options={[
-                  { label: '隐藏已删除', value: 'no' },
-                  { label: '显示已删除', value: 'yes' },
+                  { label: t('taxonomy.common.hideDeleted'), value: 'no' },
+                  { label: t('taxonomy.common.showDeleted'), value: 'yes' },
                 ]}
               />
             </div>
@@ -413,7 +418,7 @@ export const CategoryList = () => {
                 total,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (count) => `共 ${count} 条`,
+                showTotal: (count) => t('taxonomy.common.total', { count }),
                 onChange: (current, size) => {
                   void loadCategories(current, size);
                 },
@@ -424,27 +429,27 @@ export const CategoryList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>列表摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前分类范围、层级入口和排序权限。</p>
+          <h3>{t('categories.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('categories.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__label">{t('categories.summary.scope')}</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部分类'}
+                {activeFilterCount > 0 ? t('taxonomy.common.filterSummary', { count: activeFilterCount }) : t('categories.summary.all')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">软删除记录</span>
-              <span className="admin-table-summary__value">{includeDeleted ? '已显示' : '已隐藏'}</span>
+              <span className="admin-table-summary__label">{t('categories.summary.deleted')}</span>
+              <span className="admin-table-summary__value">{t(includeDeleted ? 'taxonomy.common.recordsShown' : 'taxonomy.common.recordsHidden')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">分页规模</span>
-              <span className="admin-table-summary__value">{pageSize} 条 / 页</span>
+              <span className="admin-table-summary__label">{t('categories.summary.pageSize')}</span>
+              <span className="admin-table-summary__value">{t('taxonomy.common.pageSize', { count: pageSize })}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">排序权限</span>
+              <span className="admin-table-summary__label">{t('categories.summary.sort')}</span>
               <span className="admin-table-summary__value">
-                {canSortCategory ? '可调整排序' : '仅可查看排序'}
+                {t(canSortCategory ? 'taxonomy.common.sortWritable' : 'taxonomy.common.sortReadOnly')}
               </span>
             </div>
           </div>

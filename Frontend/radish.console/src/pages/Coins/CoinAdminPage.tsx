@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   AntInput as Input,
   AntSelect as Select,
@@ -23,6 +24,12 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
+import { getLocalizedApiErrorMessage } from '@/utils/apiErrorMessage';
+import {
+  formatConsoleDateTime,
+  formatConsoleInteger,
+  formatConsoleSignedInteger,
+} from '@/utils/localeFormatters';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import '../adminFeature.css';
@@ -38,60 +45,35 @@ function normalizeTextFilterInput(value: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function formatDisplayTime(time?: string | null): string {
-  if (!time) return '-';
-
-  const date = new Date(time);
-  if (Number.isNaN(date.getTime())) {
-    return time;
-  }
-
-  return date.toLocaleString('zh-CN');
-}
-
 interface CoinAdjustFormValues {
   userId: string;
-  deltaAmount: number;
+  deltaAmount: string;
   reason: string;
 }
 
-const TRANSACTION_TYPE_OPTIONS = [
-  { value: 'SYSTEM_GRANT', label: '系统赠送' },
-  { value: 'LIKE_REWARD', label: '点赞奖励' },
-  { value: 'COMMENT_REWARD', label: '评论奖励' },
-  { value: 'TRANSFER', label: '用户转账' },
-  { value: 'TIP', label: '打赏' },
-  { value: 'CONSUME', label: '消费' },
-  { value: 'REFUND', label: '退款' },
-  { value: 'PENALTY', label: '惩罚扣除' },
-  { value: 'ADMIN_ADJUST', label: '管理员调整' },
-];
-
-const TRANSACTION_STATUS_OPTIONS = [
-  { value: 'PENDING', label: '待处理' },
-  { value: 'SUCCESS', label: '成功' },
-  { value: 'FAILED', label: '失败' },
-];
+const TRANSACTION_TYPES = ['SYSTEM_GRANT', 'LIKE_REWARD', 'COMMENT_REWARD', 'TRANSFER', 'TIP', 'CONSUME', 'REFUND', 'PENALTY', 'ADMIN_ADJUST'] as const;
+const TRANSACTION_STATUSES = ['PENDING', 'SUCCESS', 'FAILED'] as const;
 
 function normalizeOptionQuery(
   value: string | null,
-  options: Array<{ value: string; label: string }>
+  options: readonly string[]
 ): string | undefined {
   if (!value) {
     return undefined;
   }
 
-  return options.some((option) => option.value === value) ? value : undefined;
+  return options.includes(value) ? value : undefined;
 }
 
 export const CoinAdminPage = () => {
-  useDocumentTitle('胡萝卜管理');
+  const { t, i18n } = useTranslation();
+  useDocumentTitle(t('coins.documentTitle'));
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const queryUserIdFromUrl = normalizePositiveLongIdInput(searchParams.get('userId') ?? '');
-  const queryTransactionType = normalizeOptionQuery(searchParams.get('transactionType'), TRANSACTION_TYPE_OPTIONS);
-  const queryTransactionStatus = normalizeOptionQuery(searchParams.get('status'), TRANSACTION_STATUS_OPTIONS);
+  const queryTransactionType = normalizeOptionQuery(searchParams.get('transactionType'), TRANSACTION_TYPES);
+  const queryTransactionStatus = normalizeOptionQuery(searchParams.get('status'), TRANSACTION_STATUSES);
   const queryBusinessType = normalizeTextFilterInput(searchParams.get('businessType') ?? '');
   const queryBusinessId = normalizePositiveLongIdInput(searchParams.get('businessId') ?? '');
   const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
@@ -113,17 +95,26 @@ export const CoinAdminPage = () => {
   const [form] = Form.useForm<CoinAdjustFormValues>();
   const initialQueryUserLoadedRef = useRef(false);
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.coinsAdjust);
+  const transactionTypeOptions = TRANSACTION_TYPES.map((value) => ({
+    value,
+    label: t(`coins.type.${value}`),
+  }));
+  const transactionStatusOptions = TRANSACTION_STATUSES.map((value) => ({
+    value,
+    label: t(`coins.status.${value}`),
+  }));
 
   const getSignedCoinAmount = (transaction: CoinTransactionVo, userId: string) => {
+    const amount = BigInt(transaction.voAmount);
     if (String(transaction.voFromUserId ?? '') === userId) {
-      return -transaction.voAmount;
+      return -amount;
     }
 
-    return transaction.voAmount;
+    return amount;
   };
 
-  const getSignedAmountClassName = (amount: number) => (
-    amount >= 0
+  const getSignedAmountClassName = (amount: bigint) => (
+    amount >= 0n
       ? 'coin-admin-signed-amount coin-admin-signed-amount--positive'
       : 'coin-admin-signed-amount coin-admin-signed-amount--negative'
   );
@@ -181,7 +172,7 @@ export const CoinAdminPage = () => {
       setTransactionPageSize(result.pageSize);
     } catch (error) {
       log.error('CoinAdminPage', '加载胡萝卜流水失败:', error);
-      message.error('加载胡萝卜流水失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'coins.feedback.loadTransactionsFailed'));
       setTransactions([]);
       setTransactionTotal(0);
     } finally {
@@ -194,12 +185,13 @@ export const CoinAdminPage = () => {
     transactionPageSize,
     transactionStatusFilter,
     transactionTypeFilter,
+    t,
   ]);
 
   const loadBalance = useCallback(async (targetUserId?: string) => {
     const userId = targetUserId ?? normalizePositiveLongIdInput(queryUserId);
     if (!userId) {
-      message.error('请输入有效的用户 ID');
+      message.error(t('coins.form.userIdInvalid'));
       return;
     }
 
@@ -212,7 +204,7 @@ export const CoinAdminPage = () => {
       form.setFieldValue('userId', userId);
     } catch (error) {
       log.error('CoinAdminPage', '加载用户余额失败:', error);
-      message.error('加载用户余额失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'coins.feedback.loadBalanceFailed'));
       setBalance(null);
       setLoadedUserId(null);
       setTransactions([]);
@@ -223,7 +215,7 @@ export const CoinAdminPage = () => {
     }
 
     await loadTransactions(userId, 1, transactionPageSize);
-  }, [form, loadTransactions, queryUserId, transactionPageSize]);
+  }, [form, loadTransactions, queryUserId, t, transactionPageSize]);
 
   useEffect(() => {
     if (initialQueryUserLoadedRef.current || !queryUserIdFromUrl) {
@@ -240,24 +232,24 @@ export const CoinAdminPage = () => {
       const values = await form.validateFields();
       const normalizedUserId = normalizePositiveLongIdInput(values.userId);
       if (!normalizedUserId) {
-        message.error('请输入有效的用户 ID');
+        message.error(t('coins.form.userIdInvalid'));
         return;
       }
 
       setSubmitting(true);
       await adminAdjustBalance({
         userId: normalizedUserId,
-        deltaAmount: values.deltaAmount,
+        deltaAmount: String(values.deltaAmount),
         reason: values.reason,
       });
 
-      message.success('胡萝卜余额调整成功');
+      message.success(t('coins.feedback.adjusted'));
       setQueryUserId(normalizedUserId);
       await loadBalance(normalizedUserId);
-      form.setFieldsValue({ deltaAmount: 0, reason: '' });
+      form.setFieldsValue({ deltaAmount: '0', reason: '' });
     } catch (error) {
       log.error('CoinAdminPage', '调整胡萝卜余额失败:', error);
-      message.error('调整胡萝卜余额失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'coins.feedback.adjustFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -302,7 +294,7 @@ export const CoinAdminPage = () => {
     setBusinessIdFilter(nextBusinessId);
 
     if (businessIdFilter && !nextBusinessId) {
-      message.error('请输入有效的业务 ID');
+      message.error(t('coins.transactions.businessIdInvalid'));
       return;
     }
 
@@ -331,46 +323,47 @@ export const CoinAdminPage = () => {
 
   const transactionColumns: TableColumnsType<CoinTransactionVo> = [
     {
-      title: '时间',
+      title: t('coins.table.time'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
-      render: (time: string) => formatDisplayTime(time),
+      render: (time: string) => formatConsoleDateTime(time, i18n.resolvedLanguage),
     },
     {
-      title: '金额',
+      title: t('coins.table.amount'),
       dataIndex: 'voAmount',
       key: 'voAmount',
       width: 120,
-      render: (_amount: number, record) => {
+      render: (_amount: string, record) => {
         const signedAmount = getSignedCoinAmount(record, loadedUserId ?? '');
 
         return (
           <span className={getSignedAmountClassName(signedAmount)}>
-            {signedAmount >= 0 ? '+' : ''}{signedAmount}
+            {formatConsoleSignedInteger(signedAmount, i18n.resolvedLanguage)}
           </span>
         );
       },
     },
     {
-      title: '类型',
-      dataIndex: 'voTransactionTypeDisplay',
-      key: 'voTransactionTypeDisplay',
+      title: t('coins.table.type'),
+      dataIndex: 'voTransactionType',
+      key: 'voTransactionType',
       width: 130,
+      render: (type: string) => t(`coins.type.${type}`, { defaultValue: type }),
     },
     {
-      title: '状态',
+      title: t('coins.table.status'),
       dataIndex: 'voStatus',
       key: 'voStatus',
       width: 100,
       render: (status: string, record) => (
         <Tag color={getStatusColor(status)}>
-          {record.voStatusDisplay || status}
+          {t(`coins.status.${status}`, { defaultValue: record.voStatusDisplay || status })}
         </Tag>
       ),
     },
     {
-      title: '操作人',
+      title: t('coins.table.operator'),
       dataIndex: 'voCreateBy',
       key: 'voCreateBy',
       width: 150,
@@ -379,7 +372,7 @@ export const CoinAdminPage = () => {
       ),
     },
     {
-      title: '业务',
+      title: t('coins.table.business'),
       dataIndex: 'voBusinessType',
       key: 'voBusinessType',
       width: 140,
@@ -390,25 +383,25 @@ export const CoinAdminPage = () => {
       },
     },
     {
-      title: '操作',
+      title: t('coins.table.actions'),
       key: 'action',
       width: 120,
       render: (_: unknown, record) => (
         record.voBusinessType === 'Order' && record.voBusinessId ? (
           <Button onClick={() => handleViewOrderFromTransaction(record)}>
-            查看订单
+            {t('coins.actions.viewOrder')}
           </Button>
         ) : '-'
       ),
     },
     {
-      title: '流水号',
+      title: t('coins.table.transactionNo'),
       dataIndex: 'voTransactionNo',
       key: 'voTransactionNo',
       width: 220,
     },
     {
-      title: '备注',
+      title: t('coins.table.remark'),
       dataIndex: 'voRemark',
       key: 'voRemark',
       render: (remark?: string | null) => remark || '-',
@@ -421,56 +414,56 @@ export const CoinAdminPage = () => {
         <div className="admin-feature-header">
           <div>
             <h2>
-              <WalletOutlined /> 胡萝卜管理
+              <WalletOutlined /> {t('coins.page.title')}
             </h2>
-            <p className="admin-feature-subtle">支持按用户查询余额、回看交易流水，并执行正负向调账。</p>
+            <p className="admin-feature-subtle">{t('coins.page.description')}</p>
           </div>
           <div className="coin-admin-header-actions">
             {returnTo ? (
               <Button onClick={() => navigate(returnTo)}>
-                返回来源
+                {t('coins.actions.back')}
               </Button>
             ) : null}
             <Button icon={<ReloadOutlined />} onClick={() => {
               void loadBalance(loadedUserId ?? undefined);
             }}>
-              刷新当前用户
+              {t('coins.actions.refresh')}
             </Button>
           </div>
         </div>
       </section>
 
-      <section className="admin-feature-metrics" aria-label="胡萝卜余额指标">
+      <section className="admin-feature-metrics" aria-label={t('coins.metrics.ariaLabel')}>
         <div className="admin-feature-metric">
-          <span>可用余额</span>
-          <strong>{balance ? `${balance.voBalance} 胡萝卜` : '--'}</strong>
+          <span>{t('coins.metrics.available')}</span>
+          <strong>{balance ? t('coins.unit', { value: formatConsoleInteger(balance.voBalance, i18n.resolvedLanguage) }) : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span>冻结余额</span>
-          <strong>{balance ? `${balance.voFrozenBalance} 胡萝卜` : '--'}</strong>
+          <span>{t('coins.metrics.frozen')}</span>
+          <strong>{balance ? t('coins.unit', { value: formatConsoleInteger(balance.voFrozenBalance, i18n.resolvedLanguage) }) : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span>累计获得</span>
-          <strong>{balance ? balance.voTotalEarned : '--'}</strong>
+          <span>{t('coins.metrics.earned')}</span>
+          <strong>{balance ? formatConsoleInteger(balance.voTotalEarned, i18n.resolvedLanguage) : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span>累计消费</span>
-          <strong>{balance ? balance.voTotalSpent : '--'}</strong>
+          <span>{t('coins.metrics.spent')}</span>
+          <strong>{balance ? formatConsoleInteger(balance.voTotalSpent, i18n.resolvedLanguage) : '--'}</strong>
         </div>
       </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="用户余额查询">
+          <section className="admin-table-toolbar" aria-label={t('coins.query.ariaLabel')}>
             <div className="admin-table-toolbar__title">
-              <span>用户余额查询</span>
-              <Tag>{balance ? `用户 ${balance.voUserId}` : '未查询'}</Tag>
+              <span>{t('coins.query.title')}</span>
+              <Tag>{balance ? t('coins.query.user', { userId: balance.voUserId }) : t('coins.query.notQueried')}</Tag>
             </div>
-            <p className="admin-feature-subtle">输入用户 ID 查询当前胡萝卜余额、冻结额、累计收支和最近交易流水。</p>
+            <p className="admin-feature-subtle">{t('coins.query.description')}</p>
             <div className="admin-table-toolbar__filters">
               <Input
                 className="coin-admin-query-input"
-                placeholder="用户 ID"
+                placeholder={t('coins.form.userIdPlaceholder')}
                 value={queryUserId}
                 onChange={(event) => setQueryUserId(event.target.value)}
                 onPressEnter={() => {
@@ -485,7 +478,7 @@ export const CoinAdminPage = () => {
                 }}
                 disabled={loading}
               >
-                {loading ? '查询中...' : '查询'}
+                {loading ? t('coins.actions.searching') : t('coins.actions.search')}
               </Button>
             </div>
           </section>
@@ -493,19 +486,19 @@ export const CoinAdminPage = () => {
           <section className="admin-table-panel">
             <div className="coin-admin-section-title">
               <div>
-                <h3>管理员调账</h3>
-                <p className="admin-feature-subtle">正数表示发放胡萝卜，负数表示扣减胡萝卜。</p>
+                <h3>{t('coins.adjust.title')}</h3>
+                <p className="admin-feature-subtle">{t('coins.adjust.description')}</p>
               </div>
-              <Tag>{canAdjust ? '可调账' : '无调账权限'}</Tag>
+              <Tag>{canAdjust ? t('coins.adjust.allowed') : t('coins.adjust.denied')}</Tag>
             </div>
 
             <Form form={form} layout="vertical" className="admin-feature-form">
               <Form.Item
                 name="userId"
-                label="用户 ID"
+                label={t('coins.form.userId')}
                 rules={[
-                  { required: true, message: '请输入用户 ID' },
-                  { pattern: /^[1-9]\d*$/, message: '请输入有效的用户 ID' },
+                  { required: true, message: t('coins.form.userIdRequired') },
+                  { pattern: /^[1-9]\d*$/, message: t('coins.form.userIdInvalid') },
                 ]}
               >
                 <Input />
@@ -513,25 +506,25 @@ export const CoinAdminPage = () => {
 
               <Form.Item
                 name="deltaAmount"
-                label="变动金额（胡萝卜）"
-                rules={[{ required: true, message: '请输入变动金额' }]}
+                label={t('coins.form.amount')}
+                rules={[{ required: true, message: t('coins.form.amountRequired') }]}
               >
-                <InputNumber className="coin-admin-full-width" />
+                <InputNumber className="coin-admin-full-width" stringMode />
               </Form.Item>
 
               <Form.Item
                 name="reason"
-                label="调整原因"
-                rules={[{ required: true, message: '请输入调整原因' }]}
+                label={t('coins.form.reason')}
+                rules={[{ required: true, message: t('coins.form.reasonRequired') }]}
               >
-                <Input.TextArea rows={4} maxLength={200} showCount placeholder="例如：运营补发、违规扣减" />
+                <Input.TextArea rows={4} maxLength={200} showCount placeholder={t('coins.form.reasonPlaceholder')} />
               </Form.Item>
 
               <div>
                 <Button variant="primary" disabled={!canAdjust || submitting} onClick={() => {
                   void handleAdjust();
                 }}>
-                  {submitting ? '提交中...' : '提交调账'}
+                  {submitting ? t('coins.actions.submitting') : t('coins.actions.submit')}
                 </Button>
               </div>
             </Form>
@@ -540,48 +533,48 @@ export const CoinAdminPage = () => {
           <section className="admin-table-panel">
             <div className="coin-admin-section-title">
               <div>
-                <h3>交易流水</h3>
-                <p className="admin-feature-subtle">回看用户胡萝卜收支、管理员调账和关联业务，调账成功后会自动刷新。</p>
+                <h3>{t('coins.transactions.title')}</h3>
+                <p className="admin-feature-subtle">{t('coins.transactions.description')}</p>
               </div>
-              <Tag>{loadedUserId ? `用户 ${loadedUserId}` : '未查询'}</Tag>
+              <Tag>{loadedUserId ? t('coins.query.user', { userId: loadedUserId }) : t('coins.query.notQueried')}</Tag>
             </div>
 
             <div className="coin-admin-transaction-filters">
               <Select
                 value={transactionTypeFilter}
                 allowClear
-                placeholder="筛选交易类型"
-                options={TRANSACTION_TYPE_OPTIONS}
+                placeholder={t('coins.transactions.typePlaceholder')}
+                options={transactionTypeOptions}
                 disabled={!loadedUserId}
                 onChange={handleTransactionTypeChange}
               />
               <Select
                 value={transactionStatusFilter}
                 allowClear
-                placeholder="筛选状态"
-                options={TRANSACTION_STATUS_OPTIONS}
+                placeholder={t('coins.transactions.statusPlaceholder')}
+                options={transactionStatusOptions}
                 disabled={!loadedUserId}
                 onChange={handleTransactionStatusChange}
               />
               <Input
                 value={businessTypeFilter ?? ''}
-                placeholder="业务类型"
+                placeholder={t('coins.transactions.businessTypePlaceholder')}
                 disabled={!loadedUserId}
                 onChange={(event) => setBusinessTypeFilter(event.target.value)}
                 onPressEnter={handleBusinessFilterSearch}
               />
               <Input
                 value={businessIdFilter ?? ''}
-                placeholder="业务 ID"
+                placeholder={t('coins.transactions.businessIdPlaceholder')}
                 disabled={!loadedUserId}
                 onChange={(event) => setBusinessIdFilter(event.target.value.trim())}
                 onPressEnter={handleBusinessFilterSearch}
               />
               <Button disabled={!loadedUserId} onClick={handleBusinessFilterSearch}>
-                筛选业务
+                {t('coins.actions.filterBusiness')}
               </Button>
               <Button disabled={!loadedUserId} onClick={clearTransactionFilters}>
-                清空筛选
+                {t('coins.actions.clearFilters')}
               </Button>
             </div>
 
@@ -598,7 +591,7 @@ export const CoinAdminPage = () => {
                 total: transactionTotal,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total) => `共 ${total} 条`,
+                showTotal: (total) => t('coins.transactions.total', { count: total }),
                 onChange: (page, size) => {
                   if (loadedUserId) {
                     void loadTransactions(loadedUserId, page, size);
@@ -607,33 +600,33 @@ export const CoinAdminPage = () => {
               }}
               locale={{
                 emptyText: loadedUserId
-                  ? (transactionLoading ? '胡萝卜流水加载中...' : '该用户暂无胡萝卜流水')
-                  : '请先查询用户余额，再查看胡萝卜流水',
+                  ? (transactionLoading ? t('coins.transactions.loading') : t('coins.transactions.empty'))
+                  : t('coins.transactions.queryFirst'),
               }}
             />
           </section>
         </main>
 
         <aside className="admin-table-aside">
-          <h3>调账摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前查询对象和管理员调账权限。</p>
+          <h3>{t('coins.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('coins.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">当前用户</span>
-              <span className="admin-table-summary__value">{balance ? balance.voUserId : '未查询'}</span>
+              <span className="admin-table-summary__label">{t('coins.summary.currentUser')}</span>
+              <span className="admin-table-summary__value">{balance ? balance.voUserId : t('coins.query.notQueried')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">累计转入</span>
-              <span className="admin-table-summary__value">{balance ? balance.voTotalTransferredIn : '--'}</span>
+              <span className="admin-table-summary__label">{t('coins.summary.transferredIn')}</span>
+              <span className="admin-table-summary__value">{balance ? formatConsoleInteger(balance.voTotalTransferredIn, i18n.resolvedLanguage) : '--'}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">累计转出</span>
-              <span className="admin-table-summary__value">{balance ? balance.voTotalTransferredOut : '--'}</span>
+              <span className="admin-table-summary__label">{t('coins.summary.transferredOut')}</span>
+              <span className="admin-table-summary__value">{balance ? formatConsoleInteger(balance.voTotalTransferredOut, i18n.resolvedLanguage) : '--'}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">调账权限</span>
+              <span className="admin-table-summary__label">{t('coins.summary.permission')}</span>
               <span className="admin-table-summary__value">
-                {canAdjust ? '可提交管理员调账' : '仅可查看余额'}
+                {canAdjust ? t('coins.summary.canAdjust') : t('coins.summary.readOnly')}
               </span>
             </div>
           </div>

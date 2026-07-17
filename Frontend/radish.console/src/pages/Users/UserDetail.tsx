@@ -26,6 +26,7 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
+import { formatConsoleInteger, formatConsoleSignedInteger } from '@/utils/localeFormatters';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
@@ -121,15 +122,16 @@ export const UserDetail = () => {
   };
 
   const getSignedCoinAmount = (transaction: CoinTransactionVo) => {
+    const amount = BigInt(transaction.voAmount);
     if (userId && String(transaction.voFromUserId ?? '') === userId) {
-      return -transaction.voAmount;
+      return -amount;
     }
 
-    return transaction.voAmount;
+    return amount;
   };
 
-  const getSignedAmountClassName = (amount: number) => (
-    amount >= 0
+  const getSignedAmountClassName = (amount: bigint) => (
+    amount >= 0n
       ? 'user-detail-signed-amount user-detail-signed-amount--positive'
       : 'user-detail-signed-amount user-detail-signed-amount--negative'
   );
@@ -365,12 +367,12 @@ export const UserDetail = () => {
       dataIndex: 'voAmount',
       key: 'voAmount',
       width: 120,
-      render: (_amount: number, record) => {
+      render: (_amount: string, record) => {
         const signedAmount = getSignedCoinAmount(record);
 
         return (
           <span className={getSignedAmountClassName(signedAmount)}>
-            {signedAmount >= 0 ? '+' : ''}{formatLocalizedNumber(signedAmount, language)}
+            {formatConsoleSignedInteger(signedAmount, language)}
           </span>
         );
       },
@@ -671,7 +673,7 @@ export const UserDetail = () => {
         </div>
         <div className="admin-feature-metric">
           <span><WalletOutlined /> {t('users.detail.metric.balance')}</span>
-          <strong>{balance ? formatLocalizedNumber(balance.voBalance, language) : '--'}</strong>
+          <strong>{balance ? formatConsoleInteger(balance.voBalance, language) : '--'}</strong>
         </div>
       </section>
 

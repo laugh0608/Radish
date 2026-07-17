@@ -1,4 +1,4 @@
-import { apiGet, apiPost, type PagedResponse } from '@radish/http';
+import { apiGet, apiPost, createApiResponseError, type PagedResponse } from '@radish/http';
 
 export interface UserExperienceVo {
   voUserId: string;
@@ -175,7 +175,7 @@ export async function getUserExperience(userId: string): Promise<UserExperienceV
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户经验失败');
+    throw createApiResponseError(response, 'experience.feedback.loadUserFailed');
   }
 
   return response.data;
@@ -184,7 +184,7 @@ export async function getUserExperience(userId: string): Promise<UserExperienceV
 export async function getLevelConfigs(): Promise<LevelConfigVo[]> {
   const response = await apiGet<LevelConfigVo[]>('/api/v1/Experience/GetLevelConfigs', { withAuth: true });
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取等级配置失败');
+    throw createApiResponseError(response, 'experience.feedback.loadLevelsFailed');
   }
 
   return response.data;
@@ -202,7 +202,7 @@ export async function getUserDailyStats(
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户经验统计失败');
+    throw createApiResponseError(response, 'experience.feedback.loadStatsFailed');
   }
 
   return response.data;
@@ -220,7 +220,7 @@ export async function getUserGovernanceActions(
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取经验治理留痕失败');
+    throw createApiResponseError(response, 'experience.feedback.loadActionsFailed');
   }
 
   return response.data;
@@ -256,7 +256,7 @@ export async function getUserTransactions(params: {
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户经验流水失败');
+    throw createApiResponseError(response, 'experience.feedback.loadTransactionsFailed');
   }
 
   return response.data;
@@ -265,14 +265,14 @@ export async function getUserTransactions(params: {
 export async function adminAdjustExperience(request: AdminAdjustExperienceRequest): Promise<void> {
   const response = await apiPost('/api/v1/Experience/AdminAdjustExperience', request, { withAuth: true });
   if (!response.ok) {
-    throw new Error(response.message || '调整经验失败');
+    throw createApiResponseError(response, 'experience.feedback.adjustFailed');
   }
 }
 
 export async function adminFreezeExperience(request: AdminFreezeExperienceRequest): Promise<void> {
   const response = await apiPost('/api/v1/Experience/AdminFreezeExperience', request, { withAuth: true });
   if (!response.ok) {
-    throw new Error(response.message || '冻结经验失败');
+    throw createApiResponseError(response, 'experience.feedback.freezeFailed');
   }
 }
 
@@ -283,7 +283,7 @@ export async function adminUnfreezeExperience(userId: string): Promise<void> {
     { withAuth: true }
   );
   if (!response.ok) {
-    throw new Error(response.message || '解冻经验失败');
+    throw createApiResponseError(response, 'experience.feedback.unfreezeFailed');
   }
 }
 
@@ -292,14 +292,14 @@ export async function adminRecordGovernanceReview(
 ): Promise<void> {
   const response = await apiPost('/api/v1/Experience/AdminRecordGovernanceReview', request, { withAuth: true });
   if (!response.ok) {
-    throw new Error(response.message || '记录复核结论失败');
+    throw createApiResponseError(response, 'experience.feedback.reviewFailed');
   }
 }
 
 export async function recalculateLevelConfigs(): Promise<LevelConfigVo[]> {
   const response = await apiPost<LevelConfigVo[]>('/api/v1/Experience/RecalculateLevelConfigs', {}, { withAuth: true });
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '重算等级配置失败');
+    throw createApiResponseError(response, 'experience.feedback.recalculateFailed');
   }
 
   return response.data;

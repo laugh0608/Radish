@@ -426,4 +426,43 @@
   <data name="error.payment_password.upgrade_required" xml:space="preserve">
     <value>The legacy payment passcode is disabled. Reset a new six-digit passcode in Security settings.</value>
   </data>
+  <data name="error.common.validation_failed" xml:space="preserve">
+    <value>Check the submitted information and try again.</value>
+  </data>
+  <data name="error.common.not_found" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+  <data name="error.common.conflict" xml:space="preserve">
+    <value>The resource has changed. Refresh and try again.</value>
+  </data>
+  <data name="error.sticker.batch_code_conflict" xml:space="preserve">
+    <value>One or more sticker codes already exist. Update the conflicting rows and try again.</value>
+  </data>
+  <data name="error.sticker.image_processing_failed" xml:space="preserve">
+    <value>One or more sticker images could not be processed. Try again later.</value>
+  </data>
+  <data name="error.sticker.group_not_found" xml:space="preserve">
+    <value>The sticker group does not exist or is no longer available.</value>
+  </data>
+  <data name="error.coin.balance_query_rejected" xml:space="preserve">
+    <value>The user balance could not be loaded. Verify the account and try again.</value>
+  </data>
+  <data name="error.coin.admin_adjust_rejected" xml:space="preserve">
+    <value>The balance adjustment could not be completed. Verify the balance and submitted details.</value>
+  </data>
+  <data name="error.experience.admin_adjust_rejected" xml:space="preserve">
+    <value>The experience adjustment could not be completed. Verify the account and submitted details.</value>
+  </data>
+  <data name="error.experience.freeze_until_invalid" xml:space="preserve">
+    <value>The freeze expiration must be later than the current time.</value>
+  </data>
+  <data name="error.experience.freeze_rejected" xml:space="preserve">
+    <value>The experience freeze could not be completed. Verify the account state and try again.</value>
+  </data>
+  <data name="error.experience.unfreeze_rejected" xml:space="preserve">
+    <value>The experience freeze could not be removed. Verify the account state and try again.</value>
+  </data>
+  <data name="error.experience.review_rejected" xml:space="preserve">
+    <value>The governance review result could not be recorded. Verify the submitted details.</value>
+  </data>
 </root>

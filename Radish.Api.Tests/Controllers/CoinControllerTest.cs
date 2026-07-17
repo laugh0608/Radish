@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.Localization;
 using System.Threading.Tasks;
 using Moq;
@@ -16,6 +17,43 @@ namespace Radish.Api.Tests.Controllers;
 
 public class CoinControllerTest
 {
+    [Fact]
+    public async Task AdminGetTransactions_ShouldReturnStableValidationContractForInvalidUser()
+    {
+        var service = new Mock<ICoinService>(MockBehavior.Strict);
+        var controller = CreateController(service.Object);
+
+        var result = await controller.AdminGetTransactions(0);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(ApiErrorCodes.ValidationFailed, result.Code);
+        Assert.Equal("error.common.validation_failed", result.MessageKey);
+    }
+
+    [Fact]
+    public async Task AdminAdjustBalance_ShouldReturnStableRejectedContract()
+    {
+        var service = new Mock<ICoinService>(MockBehavior.Strict);
+        service
+            .Setup(item => item.AdminAdjustBalanceAsync(20002, -100, "review", 10001, "Tester"))
+            .ThrowsAsync(new InvalidOperationException("余额不足"));
+
+        var controller = CreateController(service.Object);
+        var result = await controller.AdminAdjustBalance(new AdminAdjustBalanceDto
+        {
+            UserId = 20002,
+            DeltaAmount = -100,
+            Reason = "review"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Coin.AdminAdjustRejected", result.Code);
+        Assert.Equal("error.coin.admin_adjust_rejected", result.MessageKey);
+        service.VerifyAll();
+    }
+
     [Fact]
     public async Task GetTransactionByNo_ShouldReturnStableNotFoundContract()
     {

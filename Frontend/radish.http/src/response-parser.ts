@@ -18,6 +18,7 @@ export function parseApiResponse<T>(response: ApiResponse<T>): ParsedApiResponse
 
   return {
     ok: false,
+    ...(response.responseData !== undefined ? { data: response.responseData } : {}),
     message: response.messageInfo || '请求失败',
     messageInfo: response.messageInfo,
     messageKey: response.messageKey,
