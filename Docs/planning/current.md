@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F3-D Console 管理态验收与专题收口`
-- **产品下一顺位**：`F4 反馈驱动的新功能（待 F3 完成后按真实使用证据选题）`
+- **工程第一顺位**：`F4-A 首批真实使用证据整理与反馈归因`
+- **产品下一顺位**：`依据真实证据确认一个完整功能专题`
 - **复核日期**：`2026-07-17`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -65,7 +65,7 @@
   - 2026-07-15 F3-C7 client 萝卜资产域已完成本地实现与静态回归：萝卜坑五个标签、`/me` 资产摘要、Profile 钱包 / 流水、资料余额与桌面余额统一使用宿主双语词元、locale formatter 和 long 字符串安全金额；交易类型、状态、统计分类和安全日志只按稳定字段解析，未知词元保留原值，人工及审计内容保持原文。Coin / PaymentPassword API 改用结构化 `ApiResponseError`，高频失败具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源，模拟通知入口已删除并继续由 `/notifications` 承接。client 370 项、共享 UI 8 项、后端 674 项测试通过，11 项环境用例按配置跳过，client production build、解决方案构建与 Baseline Quick 通过；未改资产、转移、奖励、统计、口令锁定等业务规则，未改数据库、迁移或 Console，未启动服务或执行 Gateway smoke。
   - 2026-07-16 F3-C8 已完成本地实现与静态收口：client 低频页面、公开承诺、统一公开 head、共享反馈 / 上传 labels 与结构化错误已覆盖真实消费者；上传边界同步固定业务类型、权限、路径、服务端 MIME / 文件签名、禁用 SVG、单次提交和失败清理，头像裁切具备处理期关闭锁与失效任务隔离。实际链路复核中暴露的论坛发布原子性、PostgreSQL 唯一冲突恢复和动态错误参数也已按事务保存点与安全标量参数契约治理。两个功能提交为 `d5341095 / 762e32ac`；最终静态基线为 client 415 项、共享 UI 21 项、Console 52 项、`@radish/http` 13 项、后端 814 项通过，12 项 PostgreSQL 环境用例跳过，解决方案构建 0 warning / 0 error，两端 production build 与 Baseline Quick 通过。未启动服务或执行 Gateway smoke，详见 [F3-C8 静态收口记录](/records/f3-c8-shared-feedback-upload-shell-static-closure-2026-07-16)。
   - 2026-07-17 F3-C9 已完成本地实现与静态收口：Console 角色授权、分类 / 标签、表情、经验和萝卜管理的正式路由与真实消费者进入宿主双语资源，日期、数字、英文数量和 LongId / long 金额使用统一 locale formatter 与字符串安全口径；动态详情面包屑、稳定枚举、权限动作、附件上传和结构化错误形成闭环。表情失败响应迁入真实 HTTP 契约并保留批量冲突数据，经验 / 萝卜高频管理失败补齐稳定 `Code / MessageKey`，`withAuth` 刷新只允许复用原请求配置单次重放。Console 56 项、`@radish/http` 16 项、后端 817 项测试通过，12 项 PostgreSQL 环境用例跳过；Console lint / production build、解决方案构建、Baseline Quick 与仓库卫生检查通过。未启动服务或执行 Gateway smoke，下一顺位进入 F3-D 专题验收。
-  - 2026-07-17 F3-D 已完成 Public / Private / Auth 与 Console 认证、无权限边界的 `zh / en × PC / mobile` 运行态矩阵，并修复 Auth 官方客户端元数据、嵌套 OIDC 语言往返、Console 回调 / 反馈 / 低频正式路由词元与 LongId 字符串门禁。`validate:ci`、两端 production build、宿主健康探针和真实 Gateway 旅程通过。当前本机 Chrome 不存在可复用的本地管理员会话，未通过改角色或数据库绕过权限；Console Dashboard、用户、治理、订单等受权内页仍需在管理员会话下完成 PC / mobile 双语补验，F3 在此证据补齐前不转入 F4。详见 [F3-D i18n 专题验收记录](/records/f3-d-i18n-stage-acceptance-2026-07-17)。
+  - 2026-07-17 F3-D 已完整关闭：Public / Private / Auth、Console 认证 / 无权限与管理员受权内页均通过 `zh / en × PC / mobile` 代表运行态矩阵；Dashboard、用户、治理、订单、应用、个人资料、Hangfire、not-found 和移动功能抽屉均正常，根级宽度稳定。验收修复了 Auth 官方客户端元数据、嵌套 OIDC 语言往返、Console 低频正式路由词元、LongId 字符串门禁及个人资料 Form 挂载时序警告；未修改管理员账号、角色、权限或 Main 业务数据。详见 [F3-D i18n 专题验收记录](/records/f3-d-i18n-stage-acceptance-2026-07-17)，工程第一顺位进入 F4-A。
 
 ## V1 产品与发布范围
 
@@ -135,8 +135,8 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 在用户提供本地管理员登录态后完成 `F3-D` Console 受权内页矩阵：PC / mobile 下分别复核 Dashboard、用户、内容治理、订单、应用、个人资料与 Hangfire 的中英文壳层、长文本、表格 / 抽屉、日期数字、无权限和 not-found；只做只读验收，不调整角色或业务数据。
-2. 上述证据通过后正式关闭 F3，进入 `F4` 首批真实使用观察与反馈归因：按登录、内容参与、聊天、通知和 Console 管理链路收集问题，P0/P1 进入维护线，P2/P3 按同类问题成组排期，再选择一个具备明确用户路径和长期维护价值的完整功能专题。
+1. 进入 `F4-A`，按登录、首次内容参与、回应后回流、聊天、通知和 Console 管理链路盘点可用的真实使用证据、用户反馈与失败记录，明确影响面、复现条件和责任模块。
+2. `P0/P1` 直接进入维护线，`P2/P3` 按同类成因形成批次；再从证据支持的候选中确认一个具备明确用户路径、长期价值、数据 / 接口 / 页面边界、停止线和验证口径的完整功能专题，先完成专题设计再进入代码。
 3. 当前 `dev` 成果达到完整功能、成组维护或主动发版边界后，再统一创建 `dev -> master` PR；不为连续开发中的单独文档或小提交频繁开 PR。
 
 ## 今日事项（2026-07-17）
@@ -145,7 +145,8 @@ Radish V1 的产品定位固定为：
 2. 已修复 Login / Register / Consent 对官方 OIDC 客户端的稳定双语元数据，并让外层账号路由与内层 authorize returnUrl 同步改写 `culture / ui-culture`；登录、注册、授权确认往返保持当前语言。
 3. 已收口 Console OIDC callback、无权限、not-found、错误边界、应用、个人资料和 Hangfire 页面资源；普通用户真实完成授权后得到英文无权限页，未绕过 Console 权限。
 4. `validate:ci` 已通过：四个前端 workspace 共 508 项测试、后端 818 项测试通过，12 项 PostgreSQL 环境用例按配置跳过，Identity 定向 31 项通过；两端 production build、宿主健康探针、仓库卫生和差异检查通过。
-5. 本地验收创建了一个无管理权限的普通测试账号，未修改角色、余额或业务数据；该账号保留供后续回归。Console 受权内页因没有管理员会话仍待补验，服务在验收结束后停止。
+5. 已确认本地开发种子仍包含既有管理员，并在用户授权下通过标准 OIDC 登录完成 Console Dashboard、用户、治理、订单、应用、个人资料、Hangfire 与 not-found 的双语 PC / mobile 补验；未修改账号、角色、权限或 Main 业务数据。
+6. 管理态页面根宽在 PC / mobile 分别稳定为 `1920 / 390`，移动“更多”功能抽屉与 Hangfire 实际内容正常；验收发现并修复个人资料异步数据早于 Form 挂载写值的浏览器警告，Console 56 项测试、type-check、lint 与 production build 通过。F3 正式关闭，服务在验收结束后停止。
 
 ## 并行维护线
 

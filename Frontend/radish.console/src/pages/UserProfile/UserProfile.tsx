@@ -64,7 +64,6 @@ export const UserProfile = () => {
         voRoles: user.roles || [],
       };
       setProfileData(nextProfile);
-      setProfileFormValues(nextProfile);
     } catch (error) {
       log.error('UserProfile', '加载个人信息失败:', error);
       message.error(error instanceof Error ? error.message : t('profile.feedback.loadFailed'));
@@ -72,7 +71,7 @@ export const UserProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, setProfileFormValues, t]);
+  }, [user, t]);
 
   useEffect(() => {
     if (user) {
@@ -81,6 +80,12 @@ export const UserProfile = () => {
       setProfileData(null);
     }
   }, [user, userLoading, loadProfile]);
+
+  useEffect(() => {
+    if (profileData) {
+      setProfileFormValues(profileData);
+    }
+  }, [profileData, setProfileFormValues]);
 
   // 保存个人信息
   const handleSave = async () => {
