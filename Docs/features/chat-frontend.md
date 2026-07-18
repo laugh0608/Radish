@@ -2,13 +2,14 @@
 
 > Radish 聊天室前端实现设计文档
 >
-> **版本**: v26.3.8
+> **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.08
+> **最后更新**: 2026.07.18
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [系统总览与后端设计](./chat-system.md) ·
+> [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
 > [表情包 UI 规范](./emoji-sticker-ui-spec.md)
 
 ---
@@ -19,6 +20,7 @@
 > 当前聊天室已在 `ChatApp.tsx + chatStore.ts + chatHub.ts + api/chat.ts` 落地到 P1 核心交互，包括 `@mention`、引用回复、图片消息、草稿恢复、成员面板、重连补拉与状态条、乐观发送 + 失败重试。
 > 本文中的 `components/*` 与 `hooks/*` 拆分方案仍是后续可选重构方向，不影响当前已交付契约。
 > `2026-07-08` 起，普通浏览器 `/messages` 收敛为正式 Web “聊天”工作区。它复用 `ChatApp`、聊天 API 与 `ChatHub`，支持 `channelId/messageId` 定位、公开个人页返回“聊天”、会话分区和移动端输入区适配；WebOS `/desktop?app=chat&channelId=...&messageId=...` 仍作为历史工作台深链保留。
+> `2026-07-18` 已完成一对一私聊专题设计。后续实现先补服务端成员 ACL、请求状态、消息幂等和私聊附件访问，再增加公开个人页入口与 `/messages` 请求交互，不新增平行消息组件。
 
 在 `AppRegistry.tsx` 中新增：
 
@@ -571,7 +573,8 @@ export async function recallMessage(messageId: number): Promise<void> {
 | 阶段 | 后端 | 前端 |
 |------|------|------|
 | **Phase 1** 核心 | 4 个实体（ChannelCategory/Channel/ChannelMessage/ChannelMember）、3 个 Service、2 个 Controller、ChatHub、在线状态 Redis | ChatApp 全套（布局 + 侧边栏 + 消息历史 + 输入区）、chatHub.ts、chatStore.ts、Dock 气泡集成 |
-| **Phase 2** 扩展 | PrivateConversation + PrivateMessage 实体、Reaction 接入（无需改表） | 私信 UI（复用消息组件）、ReactionBar 集成、消息搜索 |
+| **Phase 2** 一对一私聊 | `DirectConversation` 元数据、频道成员 ACL、消息幂等、私聊附件访问 | 公开个人页入口、请求处理、会话分区与归档；复用现有消息组件 |
+| **Phase 2** 后续增强 | Reaction 接入、置顶、搜索与阅读回执 | `ReactionBar`、搜索结果定位、置顶条与轻量回执 |
 | **Phase 3** 语音 | MessageType.Voice、音频 Attachment 处理 | 录音组件、音频播放条 |
 
 ---
