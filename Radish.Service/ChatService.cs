@@ -386,7 +386,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 userId,
                 normalizedUserName,
                 senderAvatarUrl,
-                normalizedContent);
+                normalizedContent,
+                occurredAtUtc);
         if (mentionNotification != null)
         {
             outboxDrafts.Add(new ReliableOutboxDraft(
@@ -410,7 +411,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 userId,
                 normalizedUserName,
                 senderAvatarUrl,
-                access.DirectPeerUserId.Value);
+                access.DirectPeerUserId.Value,
+                occurredAtUtc);
             outboxDrafts.Add(new ReliableOutboxDraft(
                 ReliableOutboxSources.Chat,
                 tenantId,
@@ -712,7 +714,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         long senderUserId,
         string senderUserName,
         string? senderAvatarUrl,
-        long receiverUserId)
+        long receiverUserId,
+        DateTime occurredAtUtc)
     {
         return new CreateNotificationDto
         {
@@ -729,7 +732,17 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             TriggerAvatar = senderAvatarUrl,
             ReceiverUserIds = [receiverUserId],
             TenantId = tenantId,
-            ExtData = NotificationNavigationHelper.BuildChatNavigationExtData(channelId, messageId)
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["actorName"] = senderUserName
+            },
+            TargetKind = NotificationTargetKind.ChatConversation,
+            Target = new NotificationTargetData
+            {
+                ChannelId = channelId,
+                MessageId = messageId
+            },
+            OccurredAtUtc = occurredAtUtc
         };
     }
 
@@ -1142,7 +1155,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         long senderUserId,
         string senderUserName,
         string? senderAvatarUrl,
-        string? content)
+        string? content,
+        DateTime occurredAtUtc)
     {
         var mentionedUserIds = ParseMentionedUserIds(content)
             .Where(userId => userId > 0 && userId != senderUserId)
@@ -1179,27 +1193,34 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
-        var preview = BuildMentionPreview(content);
-        var notificationContent = string.IsNullOrWhiteSpace(preview)
-            ? $"{senderUserName} 在频道「{channelName}」中提到了你"
-            : $"{senderUserName} 在频道「{channelName}」中提到了你：{preview}";
-
         var notificationId = SnowFlakeSingle.Instance.NextId();
         return new CreateNotificationDto
         {
             NotificationId = notificationId,
             BusinessKey = $"notification:chat-mention:message:{messageId}",
-            Type = NotificationType.Mentioned,
+            Type = NotificationType.ChatMentioned,
             Title = "聊天室提及",
-            Content = notificationContent,
+            Content = $"{senderUserName} 在频道「{channelName}」中提到了你",
             Priority = (int)NotificationPriority.High,
+            BusinessType = "ChannelMessage",
             BusinessId = messageId,
             TriggerId = senderUserId,
             TriggerName = senderUserName,
             TriggerAvatar = senderAvatarUrl,
             ReceiverUserIds = visibleReceiverUserIds,
             TenantId = tenantId,
-            ExtData = NotificationNavigationHelper.BuildChatNavigationExtData(channelId, messageId)
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["actorName"] = senderUserName,
+                ["channelName"] = channelName
+            },
+            TargetKind = NotificationTargetKind.ChatConversation,
+            Target = new NotificationTargetData
+            {
+                ChannelId = channelId,
+                MessageId = messageId
+            },
+            OccurredAtUtc = occurredAtUtc
         };
     }
 
@@ -1215,19 +1236,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .Where(userId => userId > 0)
             .Distinct()
             .ToList();
-    }
-
-    private static string BuildMentionPreview(string? content)
-    {
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return string.Empty;
-        }
-
-        var normalized = Regex.Replace(content, @"@\[(?<name>[^\]]+)\]\((\d+)\)", "@${name}");
-        normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
-
-        return normalized.Length > 80 ? $"{normalized[..80]}..." : normalized;
     }
 
     private ChannelMessageVo MapMessageVo(

@@ -119,6 +119,7 @@ public class ReliableOutboxServiceTest
             attemptCount,
             6,
             DateTime.UtcNow,
+            DateTime.UtcNow,
             null,
             null);
     }

@@ -405,8 +405,19 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 TriggerName = quickReply.AuthorName,
                 TriggerAvatar = triggerAvatar,
                 ReceiverUserIds = new List<long> { post.AuthorId },
-                ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(post.Id, postPublicId: post.PublicId),
-                TenantId = quickReply.TenantId
+                TenantId = quickReply.TenantId,
+                TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+                {
+                    ["actorName"] = quickReply.AuthorName,
+                    ["targetTitle"] = post.Title
+                },
+                TargetKind = NotificationTargetKind.ForumPost,
+                Target = new NotificationTargetData
+                {
+                    PostId = post.Id,
+                    PostPublicId = post.PublicId
+                },
+                OccurredAtUtc = quickReply.CreateTime
             };
             var reliableOutboxService = _reliableOutboxService
                 ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
@@ -418,7 +429,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 "PostQuickReply",
                 quickReply.Id.ToString(),
                 new NotificationRequestedTaskPayload(notification),
-                DateTime.UtcNow);
+                quickReply.CreateTime);
         }
         catch (Exception ex)
         {

@@ -305,8 +305,6 @@ test('notificationActionQueue 应把后端通知 VO 映射为可回跳预览', (
     voNotificationId: '2042219067430928401',
     voIsRead: false,
     voReadAt: null,
-    voDeliveryStatus: 'Delivered',
-    voDeliveredAt: '2026-07-05T12:00:00Z',
     voCreateTime: '2026-07-05T12:00:00Z',
     voNotification: {
       voId: '2042219067430928401',

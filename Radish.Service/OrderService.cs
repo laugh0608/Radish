@@ -276,13 +276,20 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 {
                     NotificationId = SnowFlakeSingle.Instance.NextId(),
                     BusinessKey = $"notification:purchase-success:order:{orderId}",
-                    Type = "PURCHASE_SUCCESS",
+                    Type = NotificationType.PurchaseSucceeded,
                     Title = "购买成功",
                     Content = $"您已成功购买 {product.Name}",
                     BusinessType = "Order",
                     BusinessId = orderId,
                     ReceiverUserIds = [userId],
-                    TenantId = order.TenantId
+                    TenantId = order.TenantId,
+                    TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+                    {
+                        ["productName"] = product.Name
+                    },
+                    TargetKind = NotificationTargetKind.ShopOrder,
+                    Target = new NotificationTargetData { OrderId = orderId },
+                    OccurredAtUtc = order.CompletedTime
                 };
                 await reliableOutboxService.AddAsync(
                     ReliableOutboxSources.Main,
@@ -292,7 +299,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                     "Order",
                     orderId.ToString(),
                     new NotificationRequestedTaskPayload(notification),
-                    GetUtcNow());
+                    order.CompletedTime!.Value);
             }
 
             Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",

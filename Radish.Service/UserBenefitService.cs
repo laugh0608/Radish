@@ -511,13 +511,20 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         {
             NotificationId = SnowFlakeSingle.Instance.NextId(),
             BusinessKey = $"notification:benefit-expired:{benefitId}",
-            Type = "BENEFIT_EXPIRED",
+            Type = NotificationType.BenefitExpired,
             Title = "权益已到期",
             Content = $"您的权益“{result.Benefit.BenefitName ?? result.Benefit.BenefitValue}”已到期",
             BusinessType = "UserBenefit",
             BusinessId = benefitId,
             ReceiverUserIds = [result.Benefit.UserId],
-            TenantId = result.Benefit.TenantId
+            TenantId = result.Benefit.TenantId,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["benefitName"] = result.Benefit.BenefitName ?? result.Benefit.BenefitValue
+            },
+            TargetKind = NotificationTargetKind.Inventory,
+            Target = new NotificationTargetData { BenefitId = benefitId },
+            OccurredAtUtc = now
         };
         await reliableOutboxService.AddAsync(
             ReliableOutboxSources.Main,

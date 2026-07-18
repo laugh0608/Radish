@@ -16,6 +16,19 @@ export type {
   ParsedApiResponse,
 } from './types';
 
+export type {
+  NotificationCategory,
+  NotificationTargetKind,
+  NotificationTargetVo,
+  NotificationInboxSummaryVo,
+  NotificationInboxGroupVo,
+  NotificationInboxPageVo,
+  NotificationInboxMutationVo,
+  NotificationPreferenceVo,
+  UpdateNotificationPreferenceDto,
+  NotificationInboxChangedVo,
+} from './notification-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

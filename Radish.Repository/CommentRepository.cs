@@ -12,12 +12,15 @@ namespace Radish.Repository;
 public class CommentRepository : BaseRepository<Comment>, ICommentRepository
 {
     private readonly IReliableOutboxRepository? _reliableOutboxRepository;
+    private readonly TimeProvider _timeProvider;
 
     public CommentRepository(
         IUnitOfWorkManage unitOfWorkManage,
-        IReliableOutboxRepository? reliableOutboxRepository = null) : base(unitOfWorkManage)
+        IReliableOutboxRepository? reliableOutboxRepository = null,
+        TimeProvider? timeProvider = null) : base(unitOfWorkManage)
     {
         _reliableOutboxRepository = reliableOutboxRepository;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, long commentId)
@@ -196,9 +199,9 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
     {
         var repository = _reliableOutboxRepository
             ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
-        var now = DateTime.Now;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var notificationId = SnowFlakeSingle.Instance.NextId();
-        var notificationWindowKey = $"notification:comment-like:{result.CommentId}:receiver:{result.AuthorId}:window:{now.Ticks / (TimeSpan.TicksPerMinute * 5)}";
+        var notificationBusinessKey = $"notification:comment-like:{result.CommentId}:liker:{likerId}:event:{notificationId}";
         var payload = new LikeEffectsTaskPayload(
             notificationId,
             result.CommentId,
@@ -208,7 +211,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             result.Content,
             null,
             now.ToString("yyyyMMdd"),
-            notificationWindowKey);
+            notificationBusinessKey);
         await repository.AddAsync(new ReliableOutboxDraft(
             ReliableOutboxSources.Main,
             result.TenantId,
@@ -218,7 +221,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             "Comment",
             result.CommentId.ToString(),
             JsonSerializer.Serialize(payload),
-            now.ToUniversalTime()));
+            now));
     }
 
     public async Task<List<Comment>> QueryLatestInteractorCommentsByPostIdsAsync(

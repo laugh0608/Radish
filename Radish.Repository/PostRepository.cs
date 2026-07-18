@@ -11,12 +11,15 @@ namespace Radish.Repository;
 public class PostRepository : BaseRepository<Post>, IPostRepository
 {
     private readonly IReliableOutboxRepository? _reliableOutboxRepository;
+    private readonly TimeProvider _timeProvider;
 
     public PostRepository(
         IUnitOfWorkManage unitOfWorkManage,
-        IReliableOutboxRepository? reliableOutboxRepository = null) : base(unitOfWorkManage)
+        IReliableOutboxRepository? reliableOutboxRepository = null,
+        TimeProvider? timeProvider = null) : base(unitOfWorkManage)
     {
         _reliableOutboxRepository = reliableOutboxRepository;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId)
@@ -193,9 +196,9 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
     {
         var repository = _reliableOutboxRepository
             ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
-        var now = DateTime.Now;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var notificationId = SnowFlakeSingle.Instance.NextId();
-        var notificationWindowKey = $"notification:post-like:{result.PostId}:receiver:{result.AuthorId}:window:{now.Ticks / (TimeSpan.TicksPerMinute * 5)}";
+        var notificationBusinessKey = $"notification:post-like:{result.PostId}:liker:{likerId}:event:{notificationId}";
         var payload = new LikeEffectsTaskPayload(
             notificationId,
             result.PostId,
@@ -205,7 +208,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             result.Title,
             result.PublicId,
             now.ToString("yyyyMMdd"),
-            notificationWindowKey);
+            notificationBusinessKey);
         await repository.AddAsync(new ReliableOutboxDraft(
             ReliableOutboxSources.Main,
             result.TenantId,
@@ -215,7 +218,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             "Post",
             result.PostId.ToString(),
             JsonSerializer.Serialize(payload),
-            now.ToUniversalTime()));
+            now));
     }
 
     public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(

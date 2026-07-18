@@ -33,6 +33,7 @@ internal static class SchemaMigrationRegistry
         ShopEntitlementOperationSubjectNullabilityMigration.Instance,
         ChatDirectConversationSchemaMigration.Instance,
         ChatAttachmentPrivacySchemaMigration.Instance,
-        ChatReliableMessageSchemaMigration.Instance
+        ChatReliableMessageSchemaMigration.Instance,
+        NotificationInboxSchemaMigration.Instance
     ];
 }

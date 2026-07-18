@@ -1,85 +1,14 @@
 import * as signalR from '@microsoft/signalr';
-import { createElement } from 'react';
-import { toast } from '@radish/ui/toast';
-import type { LongId } from '@/api/user';
-import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import type { NotificationInboxChangedVo } from '@radish/http';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
 
-const NOTIFICATION_TOAST_DURATION = 5000;
-
 function getHubUrl(): string {
   // 使用统一的 SignalR Hub URL 配置
   return `${getSignalrHubUrl()}/hub/notification`;
-}
-
-function getNotificationToastType(type: NotificationItem['type']): 'success' | 'error' | 'info' | 'warning' {
-  switch (type) {
-    case 'like':
-    case 'follow':
-      return 'success';
-    case 'lottery':
-      return 'warning';
-    case 'reply':
-    case 'mention':
-      return 'info';
-    default:
-      return 'info';
-  }
-}
-
-function getNotificationToastIcon(type: NotificationItem['type']): string {
-  switch (type) {
-    case 'like':
-      return '👍';
-    case 'reply':
-      return '💬';
-    case 'mention':
-      return '@';
-    case 'follow':
-      return '👤';
-    case 'lottery':
-      return '🎁';
-    default:
-      return '📢';
-  }
-}
-
-function showNotificationToast(notification: NotificationItem): void {
-  const title = notification.title?.trim();
-  const content = notification.content?.trim();
-
-  if (!title && !content) {
-    return;
-  }
-
-  const message = createElement(
-    'div',
-    { style: { display: 'grid', gap: '4px' } },
-    title
-      ? createElement(
-          'span',
-          { style: { fontSize: '14px', fontWeight: 600, lineHeight: 1.4 } },
-          title
-        )
-      : null,
-    content && content !== title
-      ? createElement(
-          'span',
-          { style: { fontSize: '13px', lineHeight: 1.5, opacity: 0.82 } },
-          content
-        )
-      : null
-  );
-
-  toast.custom({
-    message,
-    type: getNotificationToastType(notification.type),
-    icon: getNotificationToastIcon(notification.type),
-    duration: NOTIFICATION_TOAST_DURATION
-  });
 }
 
 /** SignalR Hub 连接管理器 */
@@ -245,58 +174,21 @@ class NotificationHubService {
     });
 
     // 服务端推送事件
-    this.connection.on('UnreadCountChanged', (data: { unreadCount: number }) => {
+    this.connection.on('UnreadCountChanged', (data: { unreadCount: string }) => {
       log.debug('[NotificationHub] 未读数更新:', data.unreadCount);
-      useNotificationStore.getState().setUnreadCount(data.unreadCount);
+      const unreadCount = Number(data.unreadCount);
+      if (Number.isSafeInteger(unreadCount) && unreadCount >= 0) {
+        useNotificationStore.getState().setUnreadCount(unreadCount);
+      }
     });
 
-    this.connection.on('NewNotification', (notification: NotificationItem) => {
-      log.debug('[NotificationHub] 新通知:', notification);
-      useNotificationStore.getState().addNotification(notification);
-      showNotificationToast(notification);
+    this.connection.on('NotificationInboxChanged', (change: NotificationInboxChangedVo) => {
+      log.debug('[NotificationHub] 收件箱 revision 更新:', change.voRevision);
+      const unreadGroupCount = Number(change.voUnreadGroupCount);
+      if (Number.isSafeInteger(unreadGroupCount) && unreadGroupCount >= 0) {
+        useNotificationStore.getState().setUnreadCount(unreadGroupCount);
+      }
     });
-
-    this.connection.on('NotificationRead', (data: { notificationIds: LongId[] }) => {
-      log.debug('[NotificationHub] 通知已读（其他端）:', data.notificationIds);
-      useNotificationStore.getState().markAsRead(data.notificationIds);
-    });
-
-    this.connection.on('AllNotificationsRead', () => {
-      log.debug('[NotificationHub] 全部已读（其他端）');
-      useNotificationStore.getState().markAllAsRead();
-    });
-  }
-
-  /** 客户端调用：标记通知已读 */
-  async markAsRead(notificationId: LongId): Promise<void> {
-    if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      log.warn('[NotificationHub] 未连接，无法标记已读');
-      return;
-    }
-
-    try {
-      await this.connection.invoke('MarkAsRead', notificationId);
-      // 本地也更新状态
-      useNotificationStore.getState().markAsRead([notificationId]);
-    } catch (error) {
-      log.error('[NotificationHub] 标记已读失败:', error);
-    }
-  }
-
-  /** 客户端调用：标记全部已读 */
-  async markAllAsRead(): Promise<void> {
-    if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      log.warn('[NotificationHub] 未连接，无法标记全部已读');
-      return;
-    }
-
-    try {
-      await this.connection.invoke('MarkAllAsRead');
-      // 本地也更新状态
-      useNotificationStore.getState().markAllAsRead();
-    } catch (error) {
-      log.error('[NotificationHub] 标记全部已读失败:', error);
-    }
   }
 }
 
@@ -307,8 +199,6 @@ export const notificationHub = new NotificationHubService();
 export function useNotificationHub() {
   return {
     start: () => notificationHub.start(),
-    stop: () => notificationHub.stop(),
-    markAsRead: (id: LongId) => notificationHub.markAsRead(id),
-    markAllAsRead: () => notificationHub.markAllAsRead()
+    stop: () => notificationHub.stop()
   };
 }

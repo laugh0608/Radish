@@ -80,6 +80,7 @@ public class ReliableOutboxJobTest
             0,
             6,
             DateTime.UtcNow,
+            DateTime.UtcNow,
             null,
             null);
     }

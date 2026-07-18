@@ -531,6 +531,7 @@ builder.Services.AddScoped<RetentionRewardJob>();
 builder.Services.AddScoped<ShopJob>();
 builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxDispatcherJob>();
 builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxExecutionJob>();
+builder.Services.AddScoped<NotificationInboxCleanupJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -686,6 +687,28 @@ RecurringJob.AddOrUpdate<Radish.Api.Services.ReliableOutboxDispatcherJob>(
     });
 
 Log.Information("[Hangfire] 已注册可靠 Outbox 分派任务: reliable-outbox-dispatch");
+
+var notificationCleanupConfig = builder.Configuration.GetSection("Hangfire:NotificationInboxCleanup");
+if (notificationCleanupConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = notificationCleanupConfig["Schedule"] ?? "30 3 * * *";
+    var batchSize = notificationCleanupConfig.GetValue<int>("BatchSize", 200);
+    var softRelationLimitPerUser = notificationCleanupConfig.GetValue<int>("SoftRelationLimitPerUser", 5000);
+    RecurringJob.AddOrUpdate<NotificationInboxCleanupJob>(
+        "cleanup-notification-inbox",
+        job => job.ExecuteAsync(batchSize, softRelationLimitPerUser),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Utc
+        });
+
+    Log.Information(
+        "[Hangfire] 已注册通知收件箱清理任务: cleanup-notification-inbox (批次: {BatchSize}, 软上限: {SoftLimit}, 计划: {Schedule})",
+        batchSize,
+        softRelationLimitPerUser,
+        schedule);
+}
 
 var fileCleanupConfig = builder.Configuration.GetSection("Hangfire:FileCleanup");
 

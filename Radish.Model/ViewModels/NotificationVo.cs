@@ -108,17 +108,6 @@ public class UserNotificationVo
     public DateTime? VoReadAt { get; set; }
 
     /// <summary>
-    /// 推送状态
-    /// </summary>
-    /// <example>Created, Delivered, Failed, Abandoned</example>
-    public string VoDeliveryStatus { get; set; } = "Created";
-
-    /// <summary>
-    /// 推送时间
-    /// </summary>
-    public DateTime? VoDeliveredAt { get; set; }
-
-    /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime VoCreateTime { get; set; }
@@ -128,55 +117,4 @@ public class UserNotificationVo
     /// </summary>
     /// <remarks>关联的通知对象</remarks>
     public NotificationVo? VoNotification { get; set; }
-}
-
-/// <summary>
-/// 通知设置视图模型
-/// </summary>
-public class NotificationSettingVo
-{
-    /// <summary>
-    /// 设置 Id
-    /// </summary>
-    public long VoId { get; set; }
-
-    /// <summary>
-    /// 用户 Id
-    /// </summary>
-    public long VoUserId { get; set; }
-
-    /// <summary>
-    /// 通知类型
-    /// </summary>
-    public string VoNotificationType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 是否启用
-    /// </summary>
-    public bool VoIsEnabled { get; set; }
-
-    /// <summary>
-    /// 是否启用站内推送
-    /// </summary>
-    public bool VoEnableInApp { get; set; }
-
-    /// <summary>
-    /// 是否启用邮件推送
-    /// </summary>
-    public bool VoEnableEmail { get; set; }
-
-    /// <summary>
-    /// 是否启用声音提示
-    /// </summary>
-    public bool VoEnableSound { get; set; }
-
-    /// <summary>
-    /// 创建时间
-    /// </summary>
-    public DateTime VoCreateTime { get; set; }
-
-    /// <summary>
-    /// 修改时间
-    /// </summary>
-    public DateTime? VoModifyTime { get; set; }
 }

@@ -3,7 +3,19 @@
  * 直接使用后端 Vo 字段名，无需映射
  */
 
-import { apiGet, apiPost, apiPut, configureApiClient, type PagedResponse } from '@radish/http';
+import {
+  apiDelete,
+  apiGet,
+  apiPut,
+  configureApiClient,
+  type NotificationCategory,
+  type NotificationInboxMutationVo,
+  type NotificationInboxPageVo,
+  type NotificationInboxSummaryVo,
+  type NotificationPreferenceVo,
+  type PagedResponse,
+  type UpdateNotificationPreferenceDto,
+} from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import type { LongId } from '@/api/user';
 
@@ -42,8 +54,6 @@ export interface UserNotificationVo {
   voNotificationId: LongId;
   voIsRead: boolean;
   voReadAt: string | null;
-  voDeliveryStatus: string;
-  voDeliveredAt: string | null;
   voCreateTime: string;
   voNotification: NotificationVo | null;
 }
@@ -76,13 +86,84 @@ export interface Notification {
  * 未读数量响应
  */
 interface UnreadCountResponse {
-  unreadCount: number;
+  unreadCount: string;
 }
 
 /**
  * 通知 API
  */
 export const notificationApi = {
+  async getInbox(params: {
+    category?: NotificationCategory;
+    onlyUnread?: boolean;
+    cursor?: string;
+    pageSize?: number;
+  } = {}): Promise<NotificationInboxPageVo | null> {
+    const search = new URLSearchParams();
+    if (params.category) search.set('category', params.category);
+    if (params.onlyUnread !== undefined) search.set('onlyUnread', String(params.onlyUnread));
+    if (params.cursor) search.set('cursor', params.cursor);
+    search.set('pageSize', String(params.pageSize ?? 20));
+    const response = await apiGet<NotificationInboxPageVo>(
+      `/api/v1/Notification/GetInbox?${search.toString()}`,
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
+  async getInboxSummary(): Promise<NotificationInboxSummaryVo | null> {
+    const response = await apiGet<NotificationInboxSummaryVo>(
+      '/api/v1/Notification/GetInboxSummary',
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
+  async markInboxGroupsAsRead(groupIds: LongId[]): Promise<NotificationInboxMutationVo | null> {
+    const response = await apiPut<NotificationInboxMutationVo>(
+      '/api/v1/Notification/MarkInboxGroupsAsRead',
+      { groupIds },
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
+  async markAllInboxAsRead(category?: NotificationCategory): Promise<NotificationInboxMutationVo | null> {
+    const response = await apiPut<NotificationInboxMutationVo>(
+      '/api/v1/Notification/MarkAllAsRead',
+      category ? { category } : {},
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
+  async deleteInboxGroup(groupId: LongId): Promise<NotificationInboxMutationVo | null> {
+    const response = await apiDelete<NotificationInboxMutationVo>(
+      `/api/v1/Notification/DeleteInboxGroup/${encodeURIComponent(String(groupId))}`,
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
+  async getPreferences(): Promise<NotificationPreferenceVo[] | null> {
+    const response = await apiGet<NotificationPreferenceVo[]>(
+      '/api/v1/Notification/GetPreferences',
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
+  async updatePreferences(
+    preferences: UpdateNotificationPreferenceDto[],
+  ): Promise<NotificationPreferenceVo[] | null> {
+    const response = await apiPut<NotificationPreferenceVo[]>(
+      '/api/v1/Notification/UpdatePreferences',
+      { preferences },
+      { withAuth: true },
+    );
+    return response.ok ? response.data ?? null : null;
+  },
+
   /**
    * 获取我的通知列表
    * 返回 UserNotificationVo 结构，通知详情在 voNotification 字段中
@@ -146,19 +227,21 @@ export const notificationApi = {
       withAuth: true,
     });
 
-    return response.ok && response.data ? response.data.unreadCount : 0;
+    if (!response.ok || !response.data) {
+      return 0;
+    }
+
+    const unreadCount = Number(response.data.unreadCount);
+    return Number.isSafeInteger(unreadCount) && unreadCount >= 0 ? unreadCount : 0;
   },
 
   /**
    * 删除通知
    */
   async deleteNotification(notificationId: LongId): Promise<boolean> {
-    const response = await apiPost<void>(
-      `/api/v1/Notification/Delete/${encodeURIComponent(String(notificationId))}`,
-      undefined,
-      {
-        withAuth: true,
-      }
+    const response = await apiDelete<void>(
+      `/api/v1/Notification/DeleteNotification/${encodeURIComponent(String(notificationId))}`,
+      { withAuth: true }
     );
 
     return response.ok;

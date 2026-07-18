@@ -1,3 +1,5 @@
+using Radish.Model;
+
 namespace Radish.Model.DtoModels;
 
 /// <summary>
@@ -19,6 +21,18 @@ public class CreateNotificationDto
     /// </summary>
     /// <example>CommentReplied, PostLiked, CommentLiked, Mentioned</example>
     public string Type { get; set; } = string.Empty;
+
+    /// <summary>模板结构化参数；写入时序列化，不接受任意导航 URL。</summary>
+    public Dictionary<string, string?> TemplateArguments { get; set; } = new(StringComparer.Ordinal);
+
+    /// <summary>结构化业务目标。</summary>
+    public NotificationTargetData? Target { get; set; }
+
+    /// <summary>结构化业务目标类型。</summary>
+    public string? TargetKind { get; set; }
+
+    /// <summary>源事件发生 UTC 时间；可靠任务必须固定并随重放复用。</summary>
+    public DateTime? OccurredAtUtc { get; set; }
 
     /// <summary>
     /// 通知标题（必填）
@@ -79,6 +93,41 @@ public class CreateNotificationDto
     /// </summary>
     /// <remarks>不填则使用当前用户的租户 ID</remarks>
     public long? TenantId { get; set; }
+}
+
+/// <summary>通知收件箱分组查询。</summary>
+public sealed class NotificationInboxQueryDto
+{
+    public string? Category { get; set; }
+    public bool OnlyUnread { get; set; }
+    public string? Cursor { get; set; }
+    public int PageSize { get; set; } = 20;
+}
+
+/// <summary>批量标记收件箱分组已读。</summary>
+public sealed class MarkInboxGroupsAsReadDto
+{
+    public List<long> GroupIds { get; set; } = [];
+}
+
+/// <summary>全部或按分类标记已读。</summary>
+public sealed class MarkAllInboxAsReadDto
+{
+    public string? Category { get; set; }
+}
+
+/// <summary>单项通知分类偏好。</summary>
+public sealed class UpdateNotificationPreferenceDto
+{
+    public string Category { get; set; } = string.Empty;
+    public bool InAppEnabled { get; set; }
+    public bool RealtimePreviewEnabled { get; set; }
+}
+
+/// <summary>批量更新通知分类偏好。</summary>
+public sealed class UpdateNotificationPreferencesDto
+{
+    public List<UpdateNotificationPreferenceDto> Preferences { get; set; } = [];
 }
 
 /// <summary>
@@ -158,46 +207,4 @@ public class UnreadCountDto
     /// </summary>
     /// <remarks>Key: 通知类型，Value: 未读数量</remarks>
     public Dictionary<string, long>? UnreadCountByType { get; set; }
-}
-
-/// <summary>
-/// 更新通知设置 DTO
-/// </summary>
-public class UpdateNotificationSettingDto
-{
-    /// <summary>
-    /// 通知类型
-    /// </summary>
-    public string NotificationType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// 是否启用
-    /// </summary>
-    public bool IsEnabled { get; set; }
-
-    /// <summary>
-    /// 是否启用站内推送
-    /// </summary>
-    public bool EnableInApp { get; set; }
-
-    /// <summary>
-    /// 是否启用邮件推送
-    /// </summary>
-    public bool EnableEmail { get; set; }
-
-    /// <summary>
-    /// 是否启用声音提示
-    /// </summary>
-    public bool EnableSound { get; set; }
-}
-
-/// <summary>
-/// 批量更新通知设置 DTO
-/// </summary>
-public class BatchUpdateNotificationSettingDto
-{
-    /// <summary>
-    /// 设置列表
-    /// </summary>
-    public List<UpdateNotificationSettingDto> Settings { get; set; } = new();
 }

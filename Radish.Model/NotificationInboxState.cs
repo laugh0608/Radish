@@ -4,26 +4,29 @@ using SqlSugar;
 
 namespace Radish.Model;
 
-/// <summary>用户按通知分类维护的入箱与实时预览偏好。</summary>
+/// <summary>用户通知收件箱的权威未读摘要与版本。</summary>
 [Tenant(configId: "Message")]
-[SugarTable("NotificationSetting")]
-[SugarIndex("idx_notification_setting_user_category", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(Category), OrderByType.Asc, IsUnique = true)]
-public sealed class NotificationSetting : RootEntityTKey<long>, ITenantEntity
+[SugarTable("NotificationInboxState")]
+[SugarIndex("idx_notification_inbox_state_user", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, IsUnique = true)]
+public sealed class NotificationInboxState : RootEntityTKey<long>, ITenantEntity
 {
+    [SugarColumn(IsNullable = false)]
+    public long TenantId { get; set; }
+
     [SugarColumn(IsNullable = false)]
     public long UserId { get; set; }
 
-    [SugarColumn(Length = 32, IsNullable = false)]
-    public string Category { get; set; } = string.Empty;
+    [SugarColumn(IsNullable = false)]
+    public long Revision { get; set; }
 
     [SugarColumn(IsNullable = false)]
-    public bool InAppEnabled { get; set; } = true;
+    public long UnreadGroupCount { get; set; }
 
     [SugarColumn(IsNullable = false)]
-    public bool RealtimePreviewEnabled { get; set; } = true;
+    public long UnreadOccurrenceCount { get; set; }
 
     [SugarColumn(IsNullable = false)]
-    public long TenantId { get; set; }
+    public DateTime LastChangedAtUtc { get; set; }
 
     [SugarColumn(IsNullable = false, IsOnlyIgnoreUpdate = true)]
     public DateTime CreateTime { get; set; }
