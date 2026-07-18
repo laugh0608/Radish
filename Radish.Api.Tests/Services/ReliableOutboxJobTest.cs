@@ -64,6 +64,37 @@ public class ReliableOutboxJobTest
         processor.VerifyAll();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_ShouldMarkFailedWhenProcessorThrows()
+    {
+        var message = CreateSnapshot(ReliableOutboxStatuses.Processing);
+        var failure = new InvalidOperationException("通知持久化失败");
+        var outboxService = new Mock<IReliableOutboxService>(MockBehavior.Strict);
+        outboxService
+            .Setup(item => item.QueryByIdAsync(ReliableOutboxSources.Main, 10))
+            .ReturnsAsync(message);
+        outboxService
+            .Setup(item => item.MarkFailedAsync(
+                ReliableOutboxSources.Main,
+                10,
+                failure,
+                It.IsAny<DateTime>()))
+            .Returns(Task.CompletedTask);
+        var processor = new Mock<IReliableTaskProcessor>(MockBehavior.Strict);
+        processor
+            .Setup(item => item.ProcessAsync(message, CancellationToken.None))
+            .ThrowsAsync(failure);
+        var job = new ReliableOutboxExecutionJob(
+            outboxService.Object,
+            processor.Object,
+            Mock.Of<ILogger<ReliableOutboxExecutionJob>>());
+
+        await job.ExecuteAsync(ReliableOutboxSources.Main, 10, CancellationToken.None);
+
+        outboxService.VerifyAll();
+        processor.VerifyAll();
+    }
+
     private static ReliableOutboxSnapshot CreateSnapshot(string status)
     {
         return new ReliableOutboxSnapshot(

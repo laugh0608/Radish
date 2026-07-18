@@ -64,7 +64,9 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                 var eventCreated = storedNotification == null;
                 if (storedNotification == null)
                 {
-                    await DbProtectedClient.Insertable(notification).SplitTable().ExecuteCommandAsync();
+                    EnsureSingleRowAffected(
+                        await DbProtectedClient.Insertable(notification).SplitTable().ExecuteCommandAsync(),
+                        "写入通知事件");
                     storedNotification = notification;
                 }
 
@@ -92,7 +94,9 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                     if (group == null)
                     {
                         group = CreateEmptyGroup(storedNotification, recipient.UserId, groupKey, nowUtc);
-                        await DbProtectedClient.Insertable(group).ExecuteCommandAsync();
+                        EnsureSingleRowAffected(
+                            await DbProtectedClient.Insertable(group).ExecuteCommandAsync(),
+                            "创建通知分组");
                     }
 
                     var isNewTrigger = await IsNewTriggerAsync(group, storedNotification);
@@ -108,10 +112,14 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                         Id = SnowFlakeSingle.Instance.NextId(),
                         CreateTime = nowUtc
                     };
-                    await DbProtectedClient.Insertable(relation).ExecuteCommandAsync();
+                    EnsureSingleRowAffected(
+                        await DbProtectedClient.Insertable(relation).ExecuteCommandAsync(),
+                        "写入用户通知关系");
 
                     ApplyIncomingEvent(group, storedNotification, isNewTrigger, nowUtc);
-                    await DbProtectedClient.Updateable(group).ExecuteCommandAsync();
+                    EnsureSingleRowAffected(
+                        await DbProtectedClient.Updateable(group).ExecuteCommandAsync(),
+                        "更新通知分组");
                     var summary = await RebuildStateAsync(
                         storedNotification.TenantId,
                         recipient.UserId,
@@ -692,7 +700,9 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                 LastChangedAtUtc = nowUtc
             };
             ApplyCounts(state, unreadGroups, nowUtc);
-            await DbProtectedClient.Insertable(state).ExecuteCommandAsync();
+            EnsureSingleRowAffected(
+                await DbProtectedClient.Insertable(state).ExecuteCommandAsync(),
+                "创建通知摘要状态");
         }
         else
         {
@@ -702,7 +712,9 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
             }
 
             ApplyCounts(state, unreadGroups, nowUtc);
-            await DbProtectedClient.Updateable(state).ExecuteCommandAsync();
+            EnsureSingleRowAffected(
+                await DbProtectedClient.Updateable(state).ExecuteCommandAsync(),
+                "更新通知摘要状态");
         }
 
         return ToSummary(state, unreadGroups);
@@ -745,6 +757,14 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
         await DbProtectedClient.Ado.ExecuteCommandAsync(
             "SELECT pg_advisory_xact_lock(@LockKey)",
             new SugarParameter("@LockKey", lockKey));
+    }
+
+    private static void EnsureSingleRowAffected(int affectedRows, string operation)
+    {
+        if (affectedRows != 1)
+        {
+            throw new InvalidOperationException($"{operation}失败，数据库影响行数为 {affectedRows}。");
+        }
     }
 
     private static NotificationInboxGroup CreateEmptyGroup(

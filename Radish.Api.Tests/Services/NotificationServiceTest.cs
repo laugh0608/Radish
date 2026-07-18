@@ -283,7 +283,21 @@ public sealed class NotificationServiceTest
     {
         var repository = new Mock<INotificationInboxRepository>(MockBehavior.Strict);
         var userRepository = new Mock<IUserRepository>(MockBehavior.Strict);
+        var targetResolver = new Mock<INotificationTargetResolver>();
         var pushService = new Mock<INotificationPushService>(MockBehavior.Strict);
+        targetResolver
+            .Setup(item => item.ResolveAsync(
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<IReadOnlyCollection<Notification>>()))
+            .ReturnsAsync((long _, long _, IReadOnlyCollection<Notification> notifications) =>
+                notifications.ToDictionary(
+                    notification => notification.Id,
+                    _ => new NotificationTargetVo
+                    {
+                        VoKind = NotificationTargetKind.ForumPost,
+                        VoPostId = "5001"
+                    }));
         userRepository
             .Setup(item => item.GetActiveUserIdsAsync(
                 It.IsAny<long>(),
@@ -293,6 +307,7 @@ public sealed class NotificationServiceTest
         var service = new NotificationService(
             repository.Object,
             userRepository.Object,
+            targetResolver.Object,
             pushService.Object,
             new FixedTimeProvider(new DateTimeOffset(NowUtc)),
             Mock.Of<ILogger<NotificationService>>());

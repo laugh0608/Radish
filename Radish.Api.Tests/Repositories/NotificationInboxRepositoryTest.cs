@@ -77,6 +77,39 @@ public sealed class NotificationInboxRepositoryTest
     }
 
     [Fact]
+    public async Task PersistAsync_ShouldRollbackAndThrowWhenCurrentRelationCannotBeWritten()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-notification-write-failure-{Guid.NewGuid():N}.db");
+        using var scope = CreateScope(path);
+        try
+        {
+            var db = scope.GetConnectionScope("message");
+            InitializeSchema(db);
+            db.Ado.ExecuteCommand(
+                "ALTER TABLE \"UserNotification\" ADD COLUMN \"DeliveryStatus\" TEXT NOT NULL");
+            db.Aop.OnError = _ => { };
+            var repository = CreateRepository(scope);
+
+            await Assert.ThrowsAnyAsync<Exception>(() => repository.PersistAsync(
+                CreatePostLikedNotification(1051, "event:like:write-failure", 5051, NowUtc),
+                [new NotificationInboxRecipient(3051, true)],
+                NowUtc));
+
+            Assert.Empty(db.Queryable<Notification>().SplitTable().ToList());
+            Assert.Empty(db.Queryable<UserNotification>().ToList());
+            Assert.Empty(db.Queryable<NotificationInboxGroup>().ToList());
+            Assert.Empty(db.Queryable<NotificationInboxState>().ToList());
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ReadAndDelete_ShouldUseGroupCutoffAndRebuildAuthoritativeState()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-notification-mutation-{Guid.NewGuid():N}.db");

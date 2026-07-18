@@ -53,6 +53,24 @@ public sealed class ReliableTaskProcessorNotificationTest
         notificationService.VerifyAll();
     }
 
+    [Fact]
+    public async Task ProcessAsync_ShouldPropagateNotificationPersistenceFailureForRetry()
+    {
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        notificationService
+            .Setup(service => service.CreateNotificationAsync(It.IsAny<CreateNotificationDto>()))
+            .ThrowsAsync(new InvalidOperationException("用户通知关系写入失败"));
+        var processor = CreateProcessor(notificationService.Object);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            processor.ProcessAsync(
+                CreateSnapshot(CreateDto()),
+                TestContext.Current.CancellationToken));
+
+        Assert.Contains("用户通知关系写入失败", exception.Message, StringComparison.Ordinal);
+        notificationService.VerifyAll();
+    }
+
     private static ReliableTaskProcessor CreateProcessor(INotificationService notificationService)
     {
         return new ReliableTaskProcessor(

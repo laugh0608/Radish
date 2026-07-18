@@ -22,7 +22,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId)
+    public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, string userName, long postId)
     {
         try
         {
@@ -34,7 +34,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
                     var result = await TogglePostLikeCoreAsync(userId, postId);
                     if (result.Delta > 0)
                     {
-                        await AddLikeOutboxAsync(result, userId);
+            await AddLikeOutboxAsync(result, userId, userName);
                     }
                     DbProtectedClient.Ado.CommitTran();
                     return result;
@@ -192,7 +192,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             delta);
     }
 
-    private async Task AddLikeOutboxAsync(PostLikePersistenceResult result, long likerId)
+    private async Task AddLikeOutboxAsync(PostLikePersistenceResult result, long likerId, string likerName)
     {
         var repository = _reliableOutboxRepository
             ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
@@ -205,6 +205,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             result.PostId,
             result.AuthorId,
             likerId,
+            NormalizeActorName(likerName, likerId),
             result.Title,
             result.PublicId,
             now.ToString("yyyyMMdd"),
@@ -219,6 +220,11 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             result.PostId.ToString(),
             JsonSerializer.Serialize(payload),
             now));
+    }
+
+    private static string NormalizeActorName(string actorName, long actorId)
+    {
+        return string.IsNullOrWhiteSpace(actorName) ? $"User-{actorId}" : actorName.Trim();
     }
 
     public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(

@@ -23,7 +23,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public async Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, long commentId)
+    public async Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, string userName, long commentId)
     {
         try
         {
@@ -35,7 +35,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
                     var result = await ToggleCommentLikeCoreAsync(userId, commentId);
                     if (result.Delta > 0)
                     {
-                        await AddLikeOutboxAsync(result, userId);
+            await AddLikeOutboxAsync(result, userId, userName);
                     }
                     DbProtectedClient.Ado.CommitTran();
                     return result;
@@ -195,7 +195,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             delta);
     }
 
-    private async Task AddLikeOutboxAsync(CommentLikePersistenceResult result, long likerId)
+    private async Task AddLikeOutboxAsync(CommentLikePersistenceResult result, long likerId, string likerName)
     {
         var repository = _reliableOutboxRepository
             ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
@@ -208,6 +208,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             result.PostId,
             result.AuthorId,
             likerId,
+            NormalizeActorName(likerName, likerId),
             result.Content,
             null,
             now.ToString("yyyyMMdd"),
@@ -222,6 +223,11 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             result.CommentId.ToString(),
             JsonSerializer.Serialize(payload),
             now));
+    }
+
+    private static string NormalizeActorName(string actorName, long actorId)
+    {
+        return string.IsNullOrWhiteSpace(actorName) ? $"User-{actorId}" : actorName.Trim();
     }
 
     public async Task<List<Comment>> QueryLatestInteractorCommentsByPostIdsAsync(

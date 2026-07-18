@@ -440,7 +440,7 @@ public class PostController : ControllerBase
     public async Task<MessageModel> Like(long postId, bool isLike = true)
     {
         var userId = Current.UserId;
-        var result = await _postService.ToggleLikeAsync(userId, postId);
+        var result = await _postService.ToggleLikeAsync(userId, Current.UserName, postId);
 
         return new MessageModel
         {

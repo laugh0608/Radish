@@ -18,6 +18,7 @@ public sealed class NotificationService : INotificationService
 {
     private readonly INotificationInboxRepository _inboxRepository;
     private readonly IUserRepository _userRepository;
+    private readonly INotificationTargetResolver _targetResolver;
     private readonly INotificationPushService _pushService;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<NotificationService> _logger;
@@ -25,12 +26,14 @@ public sealed class NotificationService : INotificationService
     public NotificationService(
         INotificationInboxRepository inboxRepository,
         IUserRepository userRepository,
+        INotificationTargetResolver targetResolver,
         INotificationPushService pushService,
         TimeProvider timeProvider,
         ILogger<NotificationService> logger)
     {
         _inboxRepository = inboxRepository;
         _userRepository = userRepository;
+        _targetResolver = targetResolver;
         _pushService = pushService;
         _timeProvider = timeProvider;
         _logger = logger;
@@ -168,7 +171,13 @@ public sealed class NotificationService : INotificationService
             throw CursorExpired();
         }
 
-        var items = result.Groups.Select(MapGroup).ToList();
+        var targets = await _targetResolver.ResolveAsync(
+            tenantId,
+            userId,
+            result.Groups.Select(item => item.LatestNotification).ToList());
+        var items = result.Groups.Select(snapshot => MapGroup(
+            snapshot,
+            targets[snapshot.LatestNotification.Id])).ToList();
         string? nextCursor = null;
         if (result.HasMore && result.Groups.Count > 0)
         {
@@ -395,7 +404,9 @@ public sealed class NotificationService : INotificationService
         });
     }
 
-    private static NotificationInboxGroupVo MapGroup(NotificationInboxGroupSnapshot snapshot)
+    private static NotificationInboxGroupVo MapGroup(
+        NotificationInboxGroupSnapshot snapshot,
+        NotificationTargetVo target)
     {
         var displayCount = snapshot.LatestNotification.Type is NotificationType.PostLiked or NotificationType.CommentLiked
             ? snapshot.Group.DistinctTriggerCount
@@ -418,7 +429,7 @@ public sealed class NotificationService : INotificationService
             VoTriggerId = snapshot.LatestNotification.TriggerId?.ToString(CultureInfo.InvariantCulture),
             VoTriggerName = snapshot.LatestNotification.TriggerName,
             VoTriggerAvatar = snapshot.LatestNotification.TriggerAvatar,
-            VoTarget = MapTarget(snapshot.LatestNotification)
+            VoTarget = target
         };
     }
 
@@ -440,37 +451,6 @@ public sealed class NotificationService : INotificationService
             VoExtData = notification.ExtData,
             VoCreateTime = notification.OccurredAtUtc
         };
-    }
-
-    private static NotificationTargetVo MapTarget(Notification notification)
-    {
-        try
-        {
-            var target = NotificationTargetData.FromJson(notification.TargetDataJson);
-            return new NotificationTargetVo
-            {
-                VoKind = notification.TargetKind,
-                VoPostId = ToId(target.PostId),
-                VoPostPublicId = target.PostPublicId,
-                VoCommentId = ToId(target.CommentId),
-                VoChannelId = ToId(target.ChannelId),
-                VoMessageId = ToId(target.MessageId),
-                VoUserId = ToId(target.UserId),
-                VoUserPublicId = target.UserPublicId,
-                VoOrderId = ToId(target.OrderId),
-                VoBenefitId = ToId(target.BenefitId),
-                VoDocumentSlug = target.DocumentSlug,
-                VoGovernanceCaseId = ToId(target.GovernanceCaseId)
-            };
-        }
-        catch (JsonException)
-        {
-            return new NotificationTargetVo
-            {
-                VoKind = NotificationTargetKind.None,
-                VoUnavailableReason = "Notification.Target.Invalid"
-            };
-        }
     }
 
     private static NotificationInboxSummaryVo MapSummary(NotificationInboxSummarySnapshot summary)
@@ -722,8 +702,6 @@ public sealed class NotificationService : INotificationService
 
         return value.Trim();
     }
-
-    private static string? ToId(long? value) => value?.ToString(CultureInfo.InvariantCulture);
 
     private sealed record InboxCursor(long Revision, DateTime LastOccurredAtUtc, long GroupId);
 }

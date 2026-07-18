@@ -185,6 +185,9 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         {
             postPublicId = (await _postRepository.QueryByIdAsync(payload.PostId.Value))?.PublicId;
         }
+        var likerName = string.IsNullOrWhiteSpace(payload.LikerName)
+            ? $"User-{payload.LikerId}"
+            : payload.LikerName.Trim();
 
         await _notificationService.CreateNotificationAsync(new CreateNotificationDto
         {
@@ -197,11 +200,13 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             BusinessType = businessType,
             BusinessId = payload.TargetId,
             TriggerId = payload.LikerId,
+            TriggerName = likerName,
             ReceiverUserIds = [payload.AuthorId],
             TenantId = tenantId,
             OccurredAtUtc = occurredAtUtc,
             TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
             {
+                ["actorName"] = likerName,
                 ["targetTitle"] = payload.TargetTitleOrContent
             },
             TargetKind = NotificationTargetKind.ForumPost,

@@ -44,6 +44,10 @@ public sealed class NotificationInboxSchemaMigrationTest
             var migration = NotificationInboxSchemaMigration.Instance;
             Assert.Empty(migration.Diagnose(db, services));
             migration.Apply(db, services);
+            var deliveryCleanup = NotificationDeliveryCleanupSchemaMigration.Instance;
+            Assert.Empty(deliveryCleanup.Diagnose(db, services));
+            deliveryCleanup.Apply(db, services);
+            deliveryCleanup.Apply(db, services);
             var currentNotification = new Notification(new NotificationInitializationOptions(
                 NotificationType.PostLiked,
                 "新通知")
@@ -65,6 +69,7 @@ public sealed class NotificationInboxSchemaMigrationTest
             migration.Apply(db, services);
 
             Assert.Empty(migration.Verify(db, services));
+            Assert.Empty(deliveryCleanup.Verify(db, services));
             var relation = Assert.Single(db.Queryable<UserNotification>().ToList());
             var group = Assert.Single(db.Queryable<NotificationInboxGroup>().ToList());
             var state = Assert.Single(db.Queryable<NotificationInboxState>().ToList());
@@ -91,6 +96,38 @@ public sealed class NotificationInboxSchemaMigrationTest
             Assert.Equal(
                 new DateTime(2026, 7, 17, 8, 0, 0, DateTimeKind.Utc),
                 DateTime.SpecifyKind(notification.OccurredAtUtc, DateTimeKind.Utc));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    public void DeliveryCleanup_ShouldRejectNonDefaultLegacyState()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-notification-delivery-cleanup-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path);
+        using var services = CreateServices();
+        try
+        {
+            CreateLegacySchema(db);
+            db.Ado.ExecuteCommand(
+                "INSERT INTO \"UserNotification\" " +
+                "(\"Id\", \"UserId\", \"NotificationId\", \"IsRead\", \"ReadAt\", " +
+                "\"DeliveryStatus\", \"DeliveredAt\", \"RetryCount\", \"LastRetryAt\", " +
+                "\"IsDeleted\", \"DeletedAt\", \"TenantId\", \"CreateTime\", \"CreateBy\", \"CreateId\") " +
+                "VALUES (2001, 3001, 1001, 0, NULL, 'Delivered', NULL, 0, NULL, 0, NULL, 9, " +
+                "'2026-07-17 08:00:00', 'System', 0)");
+
+            var migration = NotificationDeliveryCleanupSchemaMigration.Instance;
+            Assert.Contains(
+                migration.Diagnose(db, services),
+                issue => issue.Contains("非默认 delivery", StringComparison.Ordinal));
+            Assert.Throws<InvalidOperationException>(() => migration.Apply(db, services));
         }
         finally
         {
@@ -198,8 +235,12 @@ public sealed class NotificationInboxSchemaMigrationTest
             var migration = NotificationInboxSchemaMigration.Instance;
             migration.Apply(db, services);
             migration.Apply(db, services);
+            var deliveryCleanup = NotificationDeliveryCleanupSchemaMigration.Instance;
+            deliveryCleanup.Apply(db, services);
+            deliveryCleanup.Apply(db, services);
 
             Assert.Empty(migration.Verify(db, services));
+            Assert.Empty(deliveryCleanup.Verify(db, services));
             Assert.Single(db.Queryable<NotificationInboxGroup>().ToList());
             Assert.Single(db.Queryable<NotificationInboxState>().ToList());
 

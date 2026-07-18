@@ -34,6 +34,7 @@ internal static class SchemaMigrationRegistry
         ChatDirectConversationSchemaMigration.Instance,
         ChatAttachmentPrivacySchemaMigration.Instance,
         ChatReliableMessageSchemaMigration.Instance,
-        NotificationInboxSchemaMigration.Instance
+        NotificationInboxSchemaMigration.Instance,
+        NotificationDeliveryCleanupSchemaMigration.Instance
     ];
 }

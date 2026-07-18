@@ -110,7 +110,9 @@
 
 已经被动收到的明确生产故障、可追溯用户反馈或 `P0/P1` 仍直接进入维护线；处理具体问题不扩展为主动全链路采集，也不改变当前功能专题的长期边界。
 
-当前选定专题为 [F4-B 通知中心深化与通知治理](/features/notification-center-deepening)。2026-07-18 已完成 A 批现状审计与设计，下一批先实现稳定通知定义、结构化目标、偏好、用户通知分组 / 权威摘要、SQLite / PostgreSQL migration、专属仓储事务、HTTP API 与 revision SignalR 事件；随后再进入正式 Web 页面和双账号成组验收。聊天搜索、Reaction、置顶和移动系统通知不与本专题并行。
+[F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 已于 2026-07-18 完成 A-D 批：稳定定义、结构化目标、偏好、权威分组 / 摘要、SQLite / PostgreSQL migration、正式 Web 工作区和三普通账号 `zh / en × PC / mobile` 成组验收均已通过，专题关闭。
+
+当前选定专题为 F4-C 聊天历史搜索与消息定位。首批只做现状审计和专题设计，明确 Chat 数据与索引、成员 ACL、结果分页 / 排序、消息定位、删除 / 阻断语义、Web PC / mobile 入口、失败恢复与验收口径；设计确认后再依次进入服务端检索契约、正式 Web 页面和双账号成组验收。消息 Reaction、置顶和移动系统通知继续分别后置。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

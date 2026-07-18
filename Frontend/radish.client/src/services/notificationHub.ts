@@ -37,27 +37,30 @@ class NotificationHubService {
       return;
     }
 
-    // 1. 检查认证状态
-    const { isAuthenticated } = useAuthStore.getState();
-    if (!isAuthenticated) {
-      log.warn('[NotificationHub] 未登录，跳过连接');
-      return;
-    }
-
-    // 2. 检查 Token 有效性
-    const token = await tokenService.getValidAccessToken();
-    if (!token) {
-      log.warn('[NotificationHub] Token 无效，跳过连接');
-      return;
-    }
-
-    const requestId = ++this.startRequestId;
-
+    // 必须在首次 await 前占有启动锁，避免多个壳层同时通过认证检查后互相 stop 正在协商的连接。
     this.isStarting = true;
     const store = useNotificationStore.getState();
-    store.setConnectionState('connecting');
 
     try {
+      // 1. 检查认证状态
+      const { isAuthenticated } = useAuthStore.getState();
+      if (!isAuthenticated) {
+        log.warn('[NotificationHub] 未登录，跳过连接');
+        store.setConnectionState('disconnected');
+        return;
+      }
+
+      // 2. 检查 Token 有效性
+      const token = await tokenService.getValidAccessToken();
+      if (!token) {
+        log.warn('[NotificationHub] Token 无效，跳过连接');
+        store.setConnectionState('disconnected');
+        return;
+      }
+
+      const requestId = ++this.startRequestId;
+      store.setConnectionState('connecting');
+
       // 如果已有连接实例，先停止（避免并发/残留连接）
       if (this.connection) {
         try {
@@ -115,9 +118,14 @@ class NotificationHubService {
       const message = error instanceof Error ? error.message : String(error);
 
       // React StrictMode / 生命周期竞态：start 尚未完成就 stop() 会触发 AbortError
-      if (message.includes('Failed to start the HttpConnection before stop() was called')) {
+      const isLifecycleCancellation = message.includes('Failed to start the HttpConnection before stop() was called')
+        || message.includes('connection was stopped during negotiation');
+      if (isLifecycleCancellation) {
         log.warn('[NotificationHub] 连接启动被取消（start/stop 竞态）');
         store.setConnectionState('disconnected');
+        if (useAuthStore.getState().isAuthenticated) {
+          setTimeout(() => this.start(), 250);
+        }
         return;
       }
 
@@ -183,6 +191,13 @@ class NotificationHubService {
     this.connection.on('NotificationInboxChanged', (change: NotificationInboxChangedVo) => {
       log.debug('[NotificationHub] 收件箱 revision 更新:', change.voRevision);
       notificationInboxSync.handleInboxChanged(change);
+    });
+
+    // 旧 Hub 事件在 F4-B-D 完成前继续兼容，但只触发权威摘要对账，不消费本地计数。
+    this.connection.on('UnreadCountChanged', () => {
+      void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+        log.warn('[NotificationHub] 旧未读事件的权威状态对账失败', error);
+      });
     });
   }
 }

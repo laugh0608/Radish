@@ -23,6 +23,7 @@ public sealed record LikeEffectsTaskPayload(
     long? PostId,
     long AuthorId,
     long LikerId,
+    string LikerName,
     string TargetTitleOrContent,
     string? PostPublicId,
     string RewardDateKey,

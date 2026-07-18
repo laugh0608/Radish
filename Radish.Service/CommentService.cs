@@ -340,10 +340,10 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// <summary>
     /// 切换评论点赞状态（点赞/取消点赞）
     /// </summary>
-    public async Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId)
+    public async Task<CommentLikeResultDto> ToggleLikeAsync(long userId, string userName, long commentId)
     {
         var likeResult = await (_commentCustomRepository ?? throw new InvalidOperationException("评论专属仓储未注册"))
-            .ToggleCommentLikeAsync(userId, commentId);
+            .ToggleCommentLikeAsync(userId, userName, commentId);
 
         // 触发神评/沙发检查并把结果返回给 API 层广播；重复请求没有真实变化时不重算。
         var highlightRecheckResult = likeResult.Delta != 0
