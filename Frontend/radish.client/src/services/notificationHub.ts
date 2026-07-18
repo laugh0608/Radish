@@ -151,7 +151,7 @@ class NotificationHubService {
             return delays[Math.min(retryContext.previousRetryCount, delays.length - 1)];
           }
         })
-        .configureLogging(signalR.LogLevel.Information)
+        .configureLogging(signalR.LogLevel.Warning)
         .build();
 
       // 适度放宽服务端超时，降低弱网/代理抖动下的误断开概率

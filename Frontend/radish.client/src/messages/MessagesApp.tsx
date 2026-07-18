@@ -36,7 +36,7 @@ export const MessagesApp = () => {
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const hasStartedHubRef = useRef(false);
+  const chatHubOwnerRef = useRef(Symbol('messages-page-chat'));
 
   const routeDescriptor = useMemo<PublicRouteDescriptor>(() => ({
     app: 'messages',
@@ -102,21 +102,15 @@ export const MessagesApp = () => {
   }, [authReady, loggedIn, redirecting, route]);
 
   useEffect(() => {
-    if (loggedIn && !hasStartedHubRef.current) {
-      hasStartedHubRef.current = true;
-      void chatHub.start();
-    } else if (!loggedIn && hasStartedHubRef.current) {
-      hasStartedHubRef.current = false;
-      void chatHub.stop();
+    const owner = chatHubOwnerRef.current;
+    if (!loggedIn) {
+      void chatHub.release(owner);
+      return;
     }
 
+    void chatHub.acquire(owner);
     return () => {
-      hasStartedHubRef.current = false;
-      setTimeout(() => {
-        if (!hasStartedHubRef.current) {
-          void chatHub.stop();
-        }
-      }, 100);
+      void chatHub.release(owner);
     };
   }, [loggedIn]);
 

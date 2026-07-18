@@ -1060,10 +1060,6 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
   }, [activeChannelId, channels, clearMessageHighlight, setActiveChannel, windowParams.channelId, windowParams.messageId, windowParams.navigationKey]);
 
   useEffect(() => {
-    void chatHub.start();
-  }, []);
-
-  useEffect(() => {
     const previousChannelId = previousChannelIdRef.current;
     if (previousChannelId && !areEntityIdsEqual(previousChannelId, activeChannelId)) {
       persistChannelDraft(
@@ -1163,6 +1159,7 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
       requestAnimationFrame(() => {
         scrollToBottom();
       });
+      void chatHub.markChannelAsRead(activeChannelId);
     }
   }, [activeChannelId, activeChannelKey, activeMessages, hasMoreNewerHistory, messageFocusTarget, messageNavigationTarget, scrollToBottom]);
 

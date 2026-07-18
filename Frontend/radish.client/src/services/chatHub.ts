@@ -19,7 +19,10 @@ function getHubUrl(): string {
 
 class ChatHubService {
   private connection: signalR.HubConnection | null = null;
+  private connectionOwners = new Set<symbol>();
+  private isConnectionDesired = false;
   private isStarting = false;
+  private shouldRestartAfterStart = false;
   private startRequestId = 0;
   private typingTimers = new Map<string, number>();
 
@@ -44,26 +47,48 @@ class ChatHubService {
     return this.connection;
   }
 
+  async acquire(owner: symbol): Promise<void> {
+    this.connectionOwners.add(owner);
+    await this.start();
+  }
+
+  async release(owner: symbol): Promise<void> {
+    this.connectionOwners.delete(owner);
+    if (this.connectionOwners.size === 0) {
+      await this.stopConnection();
+    }
+  }
+
   async start(): Promise<void> {
-    if (this.connection?.state === signalR.HubConnectionState.Connected || this.isStarting) {
+    this.isConnectionDesired = true;
+
+    if (this.connection?.state === signalR.HubConnectionState.Connected) {
+      return;
+    }
+
+    if (this.isStarting) {
+      this.shouldRestartAfterStart = true;
       return;
     }
 
     const { isAuthenticated } = useAuthStore.getState();
     if (!isAuthenticated) {
-      return;
-    }
-
-    const token = await tokenService.getValidAccessToken();
-    if (!token) {
+      this.isConnectionDesired = false;
       return;
     }
 
     const requestId = ++this.startRequestId;
     this.isStarting = true;
+    this.shouldRestartAfterStart = false;
     useChatStore.getState().setConnectionState('connecting');
+    let startingConnection: signalR.HubConnection | null = null;
 
     try {
+      const token = await tokenService.getValidAccessToken();
+      if (!token || requestId !== this.startRequestId || !this.isConnectionDesired) {
+        return;
+      }
+
       if (this.connection) {
         try {
           await this.connection.stop();
@@ -72,22 +97,26 @@ class ChatHubService {
         }
       }
 
-      this.connection = new signalR.HubConnectionBuilder()
+      startingConnection = new signalR.HubConnectionBuilder()
         .withUrl(getHubUrl(), {
           accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
-        .configureLogging(signalR.LogLevel.Information)
+        .configureLogging(signalR.LogLevel.Warning)
         .build();
+      this.connection = startingConnection;
 
-      this.connection.serverTimeoutInMilliseconds = 60_000;
-      this.connection.keepAliveIntervalInMilliseconds = 15_000;
+      startingConnection.serverTimeoutInMilliseconds = 60_000;
+      startingConnection.keepAliveIntervalInMilliseconds = 15_000;
 
       this.registerEventHandlers();
-      await this.connection.start();
+      await startingConnection.start();
 
-      if (requestId !== this.startRequestId) {
-        await this.connection.stop();
+      if (requestId !== this.startRequestId || !this.isConnectionDesired) {
+        await startingConnection.stop();
+        if (this.connection === startingConnection) {
+          this.connection = null;
+        }
         useChatStore.getState().setConnectionState('disconnected');
         return;
       }
@@ -97,7 +126,17 @@ class ChatHubService {
       log.debug('ChatHub', '连接成功');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      if (message.includes('Failed to start the HttpConnection before stop() was called')) {
+      const wasLifecycleCancellation = requestId !== this.startRequestId ||
+        !this.isConnectionDesired ||
+        message.includes('Failed to start the HttpConnection before stop() was called') ||
+        message.includes('stopped during negotiation') ||
+        message.includes('stopped before the hub handshake could complete');
+
+      if (this.connection === startingConnection) {
+        this.connection = null;
+      }
+
+      if (wasLifecycleCancellation) {
         useChatStore.getState().setConnectionState('disconnected');
         return;
       }
@@ -106,10 +145,25 @@ class ChatHubService {
       log.error('ChatHub', '连接失败:', error);
     } finally {
       this.isStarting = false;
+      const shouldRestart = this.isConnectionDesired &&
+        this.connection?.state !== signalR.HubConnectionState.Connected &&
+        (this.shouldRestartAfterStart || requestId !== this.startRequestId);
+      this.shouldRestartAfterStart = false;
+
+      if (shouldRestart) {
+        queueMicrotask(() => void this.start());
+      }
     }
   }
 
   async stop(): Promise<void> {
+    this.connectionOwners.clear();
+    await this.stopConnection();
+  }
+
+  private async stopConnection(): Promise<void> {
+    this.isConnectionDesired = false;
+    this.shouldRestartAfterStart = false;
     this.startRequestId++;
 
     for (const timer of this.typingTimers.values()) {
@@ -117,13 +171,14 @@ class ChatHubService {
     }
     this.typingTimers.clear();
 
-    if (this.connection) {
+    const connection = this.connection;
+    this.connection = null;
+    if (connection) {
       try {
-        await this.connection.stop();
+        await connection.stop();
       } catch (error) {
         log.warn('ChatHub', '关闭连接失败:', error);
       }
-      this.connection = null;
     }
 
     useChatStore.getState().setConnectionState('disconnected');

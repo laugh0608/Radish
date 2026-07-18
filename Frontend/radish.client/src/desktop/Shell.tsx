@@ -27,6 +27,7 @@ import styles from './Shell.module.css';
 export const Shell = () => {
   // 使用 ref 防止 React StrictMode 双重挂载导致重复连接
   const hasStartedRef = useRef(false);
+  const chatHubOwnerRef = useRef(Symbol('desktop-shell-chat'));
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
   // 升级事件监听
@@ -128,11 +129,9 @@ export const Shell = () => {
     if (isAuthenticated && !hasStartedRef.current) {
       hasStartedRef.current = true;
       void notificationHub.start();
-      void chatHub.start();
     } else if (!isAuthenticated && hasStartedRef.current) {
       hasStartedRef.current = false;
       void notificationHub.stop();
-      void chatHub.stop();
     }
 
     // cleanup 函数：仅在组件真正卸载时执行
@@ -141,9 +140,21 @@ export const Shell = () => {
       setTimeout(() => {
         if (!hasStartedRef.current) {
           void notificationHub.stop();
-          void chatHub.stop();
         }
       }, 100);
+    };
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const owner = chatHubOwnerRef.current;
+    if (!isAuthenticated) {
+      void chatHub.release(owner);
+      return;
+    }
+
+    void chatHub.acquire(owner);
+    return () => {
+      void chatHub.release(owner);
     };
   }, [isAuthenticated]);
 
