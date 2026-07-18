@@ -172,6 +172,15 @@ Radish V1 的产品定位固定为：
 15. 已完成 F4-B-D 三普通账号真实生产链路、偏好、聚合竞态、写操作、目标失效、多标签 / 断线 / cursor、`zh / en × PC / mobile` 与 WebOS 成组验收；共同根因修复、定向回归、数据清理和数据库完整性检查均通过，F4-B 正式关闭。下一顺位进入 F4-C 聊天历史搜索与消息定位的现状审计和专题设计。
 16. 已完成 F4-C-A Chat 数据、索引、ACL、搜索文本、跨库查询、cursor、消息定位、PC / mobile 页面和恢复边界审计与专题设计；下一批固定为 F4-C-B 服务端权威检索契约，不提前修改 Pencil 或正式 Web 页面。
 
+## 明日事项（2026-07-19）
+
+1. 推进 F4-C-B 完整服务端权威检索批次：在 `ChannelMessage` 增加派生 `SearchText` 和搜索顺序索引，建立 `20260718_003_chat_message_search` ledger migration、历史分批回填、doctor / apply / verify / 重入与备份恢复测试，不修改原消息正文。
+2. 在 `Radish.Model` 建立写入、migration 和测试共用的搜索文本规范化器，固定 mention 可见名、空白 / 控制字符、资源协议、大小写、Unicode 与 4000 字符边界；规则变化必须通过新 migration 重建历史值。
+3. 扩展 `IChatChannelAccessService` 的批量可见频道快照，并实现专属搜索 Repository：当前会话与全部可见会话共用既有成员 ACL，管理员不穿透私聊；SQLite / PostgreSQL 使用参数化 `instr / strpos` 字面量包含，`% / _ / \\ / 引号` 不成为通配符。
+4. 实现 `IChatMessageSearchService`、POST `ChannelMessage/Search`、DTO / Vo、稳定双语错误和 `@radish/http` 契约；cursor 绑定查询指纹、首批消息快照、可见频道集合哈希与 `(CreateTime, Id)`，条件、账号、权限集合或版本变化时显式返回 `Chat.SearchCursorInvalid`。
+5. 成组补齐 normalizer、migration、ACL、跨租户、归档 / 拒绝 / 阻断、同时间排序、特殊字符、cursor、新消息插入、权限变化、LongId 和隐私日志测试；完成解决方案构建、后端定向与必要全量测试、相关 workspace type-check、Baseline Quick、repo hygiene 和 `git diff --check`。
+6. F4-C-B 按专题停止线不修改 Pencil、`/messages` 页面或 WebOS 布局，不新增 Flutter 搜索页，不启动服务或执行浏览器 smoke；页面与设计源统一留给 F4-C-C，真实双账号矩阵留给 F4-C-D。
+
 ## 并行维护线
 
 - 公开 head、动态 sitemap、head snapshot 与生产公开域名配置。

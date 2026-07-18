@@ -4,7 +4,9 @@
 >
 > **最后更新**：2026-07-18
 
-当前通知实现由 Message 库通知月表、`UserNotification`、`NotificationService`、可靠 Outbox、HTTP Controller、SignalR Hub 和 client 通知 Store 组成。现有实现可提供持久通知、列表、未读、已读、删除入口和部分目标回流，但偏好、服务端聚合、权威分类、容量与 revision 对账尚未实施。
+当前通知实现由 Message 库通知月表、`UserNotification`、`NotificationInboxGroup`、`NotificationInboxState`、`NotificationSetting`、稳定定义注册表、可靠 Outbox、专属仓储事务、HTTP Controller、revision SignalR Hub 和 client 通知 Store 组成。偏好在入箱前生效，聚合、分类、未读、容量和 cursor 均以数据库权威状态为准。
+
+正式消费者使用 `GetInbox / GetInboxSummary / GetPreferences / UpdatePreferences`、分组写操作和 `NotificationInboxChanged`；缓存读改写、客户端关键字分类、泛化目标回退和虚假 delivery 状态已经退出正确性链路。旧 API 暂时保留给兼容消费者，不能用于新增页面。
 
 当前开发与设计入口：
 

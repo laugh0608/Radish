@@ -76,6 +76,7 @@
 ## 七、专题清单与一次性观察
 
 - [通知系统历史方案索引](/records/notification-legacy/)
+- [f4-day-end-doc-review-2026-07-18](/records/f4-day-end-doc-review-2026-07-18)
 - [f4-a-first-real-usage-evidence-attribution-2026-07-18](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)
 - [f3-d-i18n-stage-acceptance-2026-07-17](/records/f3-d-i18n-stage-acceptance-2026-07-17)
 - [f3-i18n-day-end-doc-review-2026-07-16](/records/f3-i18n-day-end-doc-review-2026-07-16)

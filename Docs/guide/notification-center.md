@@ -1,189 +1,112 @@
 # 通知中心使用说明
 
-> **文档版本**：v1.7
+> **文档版本**：v1.8
+>
 > **最后更新**：2026-07-18
 >
-> **当前状态**：现有通知中心可提供列表、未读、已读、删除入口、部分目标回流和 SignalR 提示；F4-B-A 已完成现状审计与深化设计，尚未实施新的分类、偏好、聚合和 revision 契约。后续实现以 [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 为准。
+> **当前状态**：F4-B 已完成并关闭。正式 Web、Workbench、导航角标与 WebOS 复用面均使用服务端权威收件箱、摘要、偏好、结构化目标和 revision 对账；Flutter 继续只维护既有 MVP。
 
 ## 架构定位
 
-通知中心当前有三个承载面：
+通知中心是社区事件的复访与处理入口，不是第二套私信箱。当前承载面：
 
 | 承载面 | 入口 | 定位 |
 | --- | --- | --- |
-| 纯 Web | `/notifications` | 普通浏览器登录态通知复访入口，承接通知列表、已读、删除和目标分流 |
-| WebOS | `/desktop` 内的通知中心应用 | 历史兼容入口，保留窗口应用和 Dock 未读角标，不承接新增功能设计 |
-| Flutter | 移动原生“通知”相关入口 | 承接移动端快速查看、单条已读和 forum 回流，不复刻完整通知中心 |
+| 正式 Web | `/notifications` | PC / mobile 默认入口，承接权威分组、筛选、偏好、写操作和目标回流 |
+| WebOS | `/desktop` 通知应用与 Dock | 复用同一 Store、summary 和结构化目标，只做历史兼容 |
+| Flutter | 既有通知入口 | 继续使用旧兼容 API 提供最近通知、单条已读和 forum 回流，不扩完整通知页 |
 
-纯 Web `/notifications` 是当前浏览器默认推荐入口；WebOS 通知中心只复用正式 Web 的通知能力并处理阻断级兼容。
+匿名访问 `/notifications` 时进入 OIDC 登录，成功后返回原路径。未读角标以 `GetInboxSummary.voUnreadGroupCount` 为准，任何壳层都不得本地模拟增减。
 
-### 访问入口
+## 正式 Web 功能
 
-通知中心提供以下主要访问入口：
+### 权威分组与筛选
 
-1. **纯 Web 路由**：访问 `/notifications`，未登录时进入 OIDC 登录并在登录后回到通知列表。
-2. **桌面图标**：在 `/desktop` 中打开"通知中心"窗口应用。
-3. **Dock 固定入口**：在 Dock 中点击通知图标快速打开通知中心，并显示未读角标。
+- 通知按服务端 `NotificationCategory` 和稳定 `Kind` 展示，不扫描标题、正文、`businessType` 或 `ExtData` 猜分类。
+- 页面支持全部分类、具体分类和仅未读筛选。
+- 点赞等高频事件由服务端形成一个通知分组，展示事件数、去重触发者数和安全摘要。
+- 列表 cursor 绑定筛选条件和 revision；cursor 过期时刷新权威第一页并明确提示，不静默拼接旧页。
+- 页面不展示昂贵或容易漂移的客户端推导总数。
 
-## 位置与外观
+### 已读与删除
 
-### 桌面图标
-- **图标**: `mdi:bell` (铃铛图标)
-- **名称**: "通知中心"
-- **位置**: 在桌面应用图标网格中显示
+- 单个或多个分组已读使用 `MarkInboxGroupsAsRead`。
+- 当前分类或全部已读统一使用 `MarkAllAsRead`；请求体可携带服务端分类。
+- 删除使用 `DeleteInboxGroup/{groupId}`，只软删除当前用户分组。
+- 每个写操作都返回最新 summary；Store 应用返回值，不自行减少角标。
+- 聚合组已读与新事件并发时，新事件必须保持未读，最终以服务端事务和 revision 为准。
 
-### Dock 固定入口
-- **图标**: 铃铛图标，固定在 Dock 第一个位置
-- **未读徽章**: 红色圆点或数字，显示在铃铛右上角
-- **行为**: 点击打开通知中心应用窗口
-- **固定特性**: 始终显示在 Dock 中，无论应用是否运行
+### 通知偏好
 
-### 纯 Web 页面
-- **路由**: `/notifications`
-- **头部**: 使用公共壳层头部，保留“社区发现 / 我的圈子 / 工作台”动作
-- **登录恢复**: 匿名访问保存 `/notifications` 作为返回路径
-- **目标分流**: 点击通知后优先进入纯 Web 目标；只有历史 WebOS 载荷或尚未迁移能力才回到 `/desktop` 深链
-- **行动队列**: 以社区复访为主轴，把通知按可处理目标分组展示，帮助用户优先回到帖子、评论、回答、聊天、关注、治理、订单和文档上下文
-- **恢复提示**: 实时连接异常时保留当前列表可读性，并提示正在恢复或稍后刷新；不把 SignalR 断连渲染成通知数据丢失
+- `/notifications` 可读取和更新当前注册表实际支持的分类偏好。
+- `InAppEnabled` 控制后续事件是否入箱，`RealtimePreviewEnabled` 控制实时预览资格；历史通知不会因关闭偏好被追删。
+- 强制分类由服务端返回 `VoCanDisableInApp / VoCanDisableRealtimePreview`，客户端不能伪造可关闭能力。
+- 本专题不承诺邮件、短信、Web Push、声音或移动系统通知。
 
-## Flutter 移动端轻量承接
+### 结构化目标
 
-Flutter 登录态壳层会读取当前用户最近站内通知，展示标题、内容、类型、已读状态和时间。
+客户端只根据 `NotificationTargetVo.voKind` 和结构化 ID 构造站内路径：
 
-- forum 通知可根据通知载荷中的帖子和评论标识打开原生 forum detail，并在返回时回到打开通知前的 tab。
-- 系统通知等不可跳通知保持只读展示，不伪造详情目标。
-- 未读通知支持单条显式标记已读；成功后只更新本地该条状态，失败时在通知 sheet 内提示并保留原状态。
-- Flutter 当前不提供全部已读、删除、通知设置、SignalR 实时同步或系统通知栏推送入口。
-- WebOS 通知中心和纯 Web `/notifications` 仍是浏览器里的通知管理入口；Flutter 只承担移动端快速查看、单条已读和 forum 回流。
-
-## 应用窗口
-
-打开通知中心后，会在 WebOS 中显示一个独立窗口：
-
-- **默认尺寸**: 800x700px
-- **窗口类型**: 可拖拽、可调整大小的标准窗口
-- **背景**: 浅灰色 (#f8f9fa)
-- **顶部栏**: 显示"通知中心"标题和未读数统计
-
-## 功能
-
-### 1. 查看通知
-- 显示最近 20 条通知
-- 每条通知显示：
-  - 类型图标（👍点赞、💬评论、⭐收藏等）
-  - 标题和内容
-  - 触发者头像和名称
-  - 相对时间（如"5分钟前"）
-  - 未读状态（蓝色左边框）
-
-### 2. 标记已读
-- **单条已读**: 点击通知右侧的"标记已读"按钮
-- **全部已读**: 点击面板头部的"全部已读"按钮
-- 已读通知会移除蓝色边框，未读数量会相应减少
-
-### 3. 删除通知
-- 点击通知右侧的"删除"按钮
-- 删除后通知会从列表中移除
-
-### 4. 查看更多
-- 纯 Web 用户直接访问 `/notifications` 查看通知列表。
-- WebOS Dock 或通知预览需要进入完整列表时，应打开通知中心窗口或跳转到 `/notifications`，不要再指向未实现页面。
-
-## 通知目标跳转
-
-纯 Web `/notifications` 的通知点击规则：
-
-| 通知目标 | 跳转 |
+| `voKind` | 正式目标 |
 | --- | --- |
-| 聊天消息 / 提及，`extData` 带 `channelId/messageId` | `/messages?channelId=...&messageId=...` |
-| forum 帖子 / 评论，`extData` 带 `postPublicId/postId/commentId` | `/forum/post/:id`，并记录“返回通知中心”来源 |
-| 用户关注或用户目标 | `/u/:id`，并记录“返回通知中心”来源 |
-| 订单目标 | `/shop/order/:orderId`；缺少合法订单 ID 时回 `/shop/orders` |
-| 文档目标 | `/docs/:slug`、`/docs/mine` 或当前可解析的 Docs 正式 Web 目标 |
-| 治理 / 审核目标 | 可定位时进入对应公开 / 私域上下文；不可定位时保留人工回看提示 |
-| 暂无可定位详情的互动通知 | `/forum` |
+| `ForumPost` | `/forum/post/:publicId-or-id`，可附评论定位 |
+| `ChatConversation` | `/messages?channelId=...&messageId=...` |
+| `UserProfile` | `/u/:publicId-or-id` |
+| `ShopOrder` | `/shop/order/:orderId` |
+| `Inventory` | `/shop/inventory` |
+| `Experience` | `/me/experience` |
+| `DocsDocument` | `/docs/:slug` |
+| `GovernanceCase` | 仅在存在正式受权目标时打开 |
+| `None` | 保留摘要和失效原因，不渲染伪造链接 |
 
-跳转来源状态保存在当前标签页的一次性来源转交中，不写入公开 URL、canonical、分享链接或 sitemap。完整规则见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)。
+服务端返回目标前重新检查实体状态、所有权和 ACL；目标页面仍独立鉴权。历史 `ExtData` 只承担旧记录兼容，不是新消费者的导航依据。
 
-当通知缺少可跳转目标时，纯 Web 页面不再把它渲染成 `#` 链接或伪造目标页。行动队列会保留原通知摘要、业务类型、业务 ID、目标缺失原因，并提供“复制上下文”动作。复制内容只用于支持排障，包含通知 ID、类型、业务对象、创建时间、是否已读、当前路径和目标缺失提示，不包含 token、隐私正文或后端堆栈。
+## 实时与恢复
 
-## 当前通知行动队列
+- `NotificationHub` 位于 `/hub/notification`，正式消费者只处理 `NotificationInboxChanged` revision 提示。
+- 连接、重连、窗口重新聚焦、恢复在线和跨标签 revision 都触发 `GetInboxSummary` 对账；summary 领先当前列表时刷新当前筛选第一页。
+- 重复或乱序 revision 被忽略；跨标签只传当前账号 ID 与 revision，不广播正文、目标或列表。
+- 离线时保留已加载列表，恢复后回源；SignalR 失败不会把未读归零。
+- 旧 `UnreadCountChanged` 仅作为兼容提示触发权威刷新，不直接修改 Store。
+- 多 API 实例尚未配置 SignalR Backplane；这可能影响即时提示覆盖，但不影响 HTTP / revision 最终正确性。
 
-纯 Web `/notifications` 会在列表上方生成行动队列，而不是只展示时间倒序列表。队列来源为当前已加载通知映射后的 `NotificationPreview`，每条预览都会附带可跳转目标或目标缺失原因。
+## 页面状态与可访问性
 
-队列分组顺序：
+- PC / mobile 均覆盖加载、空态、错误、离线、新通知提示、cursor 过期、长文本和目标失效。
+- 固定界面文案使用 client 中英文资源；用户名称和用户内容保持原文，日期和数字按当前 locale 格式化。
+- 分类、未读筛选、分组动作、偏好开关和恢复按钮均支持键盘与清晰焦点。
+- 状态变化通过 `aria-live` 提示；未读、失效和禁用状态不只依赖颜色。
+- 所有样式消费现有语义主题 token，不破坏正式 Web 或 WebOS 壳层布局。
 
-1. 评论
-2. 回答 / 问答
-3. 消息 / 聊天
-4. 关注 / 关系
-5. 治理 / 举报 / 审核
-6. 订单 / 背包 / 权益
-7. Docs / 文档
-8. 帖子 / 主题
-9. 宠物
-10. 经验 / 等级
-11. 点赞 / 轻互动
-12. 系统
+## 代码与 API 入口
 
-每个分组展示当前已加载切片内的总数、未读数、可跳转数和需要人工回看的数量；它们不是完整收件箱统计。单组默认只展示前 3 条，避免行动区挤压通知列表。缺少可跳目标时，不伪造链接，显示“需要人工回看 / 回通知列表处理”的提示，并允许复制支持上下文。
+前端：
 
-当前分类仍依赖类型、业务类型和文本关键字推断。F4-B 后续批次会改为服务端稳定分类、权威摘要和结构化目标；在完成前不得把当前行动队列指标解释为完整业务统计。
+- `Frontend/radish.client/src/notifications/NotificationsApp.tsx`
+- `Frontend/radish.client/src/notifications/notificationInbox.ts`
+- `Frontend/radish.client/src/apps/notification/NotificationCenter.tsx`
+- `Frontend/radish.client/src/services/notificationInboxSync.ts`
+- `Frontend/radish.client/src/services/notificationHub.ts`
+- `Frontend/radish.client/src/stores/notificationStore.ts`
+- `Frontend/radish.client/src/utils/notificationNavigation.ts`
 
-`/workbench` 复用同一批通知预览和分组逻辑，只展示继续处理队列摘要；真正处理仍回到 `/notifications` 或对应正式 Web 路由。
+正式 API：
 
-## 实时更新
-- 当有新通知时，未读数量会自动增加
-- 通过 SignalR WebSocket 实现实时推送
-- 多端同步：在其他设备标记已读后，当前设备也会同步更新
-- 所有访问入口（桌面图标、Dock、灵动岛）的未读数都会同步显示
+- `GET GetInbox / GetInboxSummary / GetPreferences`
+- `PUT MarkInboxGroupsAsRead / MarkAllAsRead / UpdatePreferences`
+- `DELETE DeleteInboxGroup/{groupId}`
 
-当前 SignalR 是 best-effort 提示：连接成功时会发送数据库未读总数，但重连不会自动对账完整列表；Hub 的已读命令也只广播、不写数据库。正式已读 / 删除操作必须走 HTTP。F4-B 后续会改为数据库 revision + HTTP 对账，不能把当前连接状态等同于用户送达状态。
+旧 `GetNotificationList / GetUnreadCount / MarkAsRead / DeleteNotification` 暂时保留给兼容消费者。删除前必须单独审计 Flutter 和其他调用方，不与 F4-C 聊天搜索混合处理。
 
-## 触发通知的操作
-以下操作会触发通知：
-1. **论坛互动**：帖子 / 评论点赞、帖子评论、评论回复、轻回应和抽奖中奖。
-2. **关系与聊天**：新增关注、陌生人私信请求和有权频道中的聊天提及。
-3. **成长与交易**：等级提升、购买成功和权益到期。
+## 验证结论与剩余风险
 
-`GodComment / Sofa / CoinBalanceChanged / SystemAnnouncement / AccountSecurity` 当前只有部分常量或预留定义，不能据此认为已经存在完整生产者。
+2026-07-18 的 F4-B-D 已使用三个普通账号完成关注、评论 / 回复、点赞聚合、私信请求、商城购买、偏好、已读竞态、多标签、离线、cursor 和目标失效验收；`zh / en × 1920x1080 PC / 390x844 @ DPR 3 mobile` 与 WebOS 复用面通过。详细矩阵、migration、测试与清理结果见 [F4-B 通知中心深化与通知治理](/features/notification-center-deepening)。
 
-## 调试信息
-如果通知中心不显示，请检查：
-1. 是否已登录（只有登录用户才能看到通知中心）
-2. 浏览器控制台是否有错误信息
-3. SignalR 连接状态（控制台会显示连接日志）
-4. 网络请求是否成功（检查 Network 标签）
+剩余边界：
 
-## 技术实现
+- 旧 API 尚未完成消费者删除审计。
+- 历史 `ExtData` 不能保证全部转换为可用结构化目标，无法解析时保持 `None`。
+- 多实例实时全覆盖需要依据部署拓扑另立 Backplane 专题。
+- Flutter 不具备偏好、聚合管理、全部已读、删除或系统通知栏能力。
 
-### 组件位置
-- **纯 Web 页面**: `Frontend/radish.client/src/notifications/NotificationsApp.tsx`
-- **行动队列分组**: `Frontend/radish.client/src/notifications/notificationActionQueue.ts`
-- **WebOS 应用组件**: `Frontend/radish.client/src/apps/notification/NotificationApp.tsx`
-- **共享通知列表组件**: `Frontend/radish.client/src/apps/notification/NotificationCenter.tsx`
-- **通知目标分流**: `Frontend/radish.client/src/utils/notificationNavigation.ts`
-- **注册位置**: `Frontend/radish.client/src/desktop/AppRegistry.tsx`
-- **Dock 集成**: `Frontend/radish.client/src/desktop/Dock.tsx`
-
-### 状态管理
-- 使用 `useNotificationStore` 管理通知列表和未读数
-- 使用 `useNotificationHub` 管理 SignalR 实时连接
-- 通知状态在所有访问入口间共享
-
-### API 集成
-- 初始加载：`GET /api/v1/Notification/GetNotificationList`
-- 未读总数：`GET /api/v1/Notification/GetUnreadCount`
-- 标记已读：`PUT /api/v1/Notification/MarkAsRead`
-- 全部已读：`PUT /api/v1/Notification/MarkAllAsRead`
-- 删除通知：Controller 当前契约为 `DELETE /api/v1/Notification/DeleteNotification/{id}`
-
-当前 client 的删除调用与 Controller 方法 / 路由不一致，该问题已登记在 F4-B 审计中，待服务端契约与客户端批次成组修复并补真实 HTTP 测试。
-
-### SignalR 实时推送
-- Hub URL: `/hub/notification`
-- 事件监听：
-  - `UnreadCountChanged`: 未读数变化
-  - `NewNotification`: 接收新通知
-  - `NotificationRead`: 通知已读同步
-  - `AllNotificationsRead`: 全部已读同步
+旧通知方案、安装步骤和早期代码片段只在 [通知历史方案索引](/records/notification-legacy/) 中保留，不作为当前实现依据。
