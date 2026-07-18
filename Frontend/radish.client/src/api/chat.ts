@@ -1,10 +1,20 @@
-import { apiDelete, apiGet, apiPost, configureApiClient } from '@radish/http';
+import {
+  apiDelete,
+  apiGet,
+  apiPost,
+  apiPut,
+  configureApiClient,
+  createApiResponseError,
+  type ParsedApiResponse,
+} from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import type {
   ChannelMemberVo,
   ChannelMessageVo,
   ChannelMessageWindowVo,
   ChannelVo,
+  ChatChannelListView,
+  DirectConversationVo,
   EntityIdValue,
   SendChannelMessageRequest,
 } from '@/types/chat';
@@ -16,20 +26,109 @@ configureApiClient({
 
 const CHAT_READ_TIMEOUT_MS = 30_000;
 
+function createChatApiError<T>(response: ParsedApiResponse<T>, fallbackMessage: string): Error {
+  return createApiResponseError(
+    response.messageKey ? response : { ...response, message: undefined },
+    fallbackMessage
+  );
+}
+
 export interface ChannelHistoryQuery {
   beforeMessageId?: EntityIdValue;
   afterMessageId?: EntityIdValue;
   pageSize?: number;
 }
 
-export async function getChannelList(): Promise<ChannelVo[]> {
-  const response = await apiGet<ChannelVo[]>('/api/v1/Channel/GetList', {
+export async function getChannelList(view: ChatChannelListView = 'active'): Promise<ChannelVo[]> {
+  const response = await apiGet<ChannelVo[]>(`/api/v1/Channel/GetList?view=${view}`, {
     withAuth: true,
     timeout: CHAT_READ_TIMEOUT_MS,
   });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载频道列表失败');
+    throw createChatApiError(response, '加载频道列表失败');
+  }
+
+  return response.data;
+}
+
+export async function getChannelDetail(channelId: EntityIdValue): Promise<ChannelVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('频道 Id 无效');
+  }
+
+  const response = await apiGet<ChannelVo>(`/api/v1/Channel/GetDetail/${normalizedChannelId}`, {
+    withAuth: true,
+    timeout: CHAT_READ_TIMEOUT_MS,
+  });
+
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '加载频道详情失败');
+  }
+
+  return response.data;
+}
+
+export async function getOrCreateDirectConversation(targetUserId: EntityIdValue): Promise<DirectConversationVo> {
+  const normalizedTargetUserId = normalizeEntityId(targetUserId);
+  if (!normalizedTargetUserId) {
+    throw new Error('目标用户 Id 无效');
+  }
+
+  const response = await apiPost<DirectConversationVo>('/api/v1/DirectConversation/GetOrCreate', {
+    targetUserId: normalizedTargetUserId,
+  }, { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '创建私聊失败');
+  }
+
+  return response.data;
+}
+
+async function mutateDirectConversation(
+  action: 'Accept' | 'Decline' | 'Block' | 'Unblock',
+  channelId: EntityIdValue
+): Promise<DirectConversationVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('频道 Id 无效');
+  }
+
+  const response = await apiPost<DirectConversationVo>(
+    `/api/v1/DirectConversation/${action}/${normalizedChannelId}`,
+    undefined,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '更新私聊状态失败');
+  }
+
+  return response.data;
+}
+
+export const acceptDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Accept', channelId);
+export const declineDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Decline', channelId);
+export const blockDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Block', channelId);
+export const unblockDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Unblock', channelId);
+
+export async function setDirectConversationArchived(
+  channelId: EntityIdValue,
+  archived: boolean
+): Promise<DirectConversationVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('频道 Id 无效');
+  }
+
+  const response = await apiPut<DirectConversationVo>(
+    `/api/v1/DirectConversation/SetArchived/${normalizedChannelId}`,
+    { archived },
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '更新归档状态失败');
   }
 
   return response.data;
@@ -66,7 +165,7 @@ export async function getChannelHistory(
   });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载历史消息失败');
+    throw createChatApiError(response, '加载历史消息失败');
   }
 
   return response.data;
@@ -100,7 +199,7 @@ export async function getChannelMessageWindow(
   });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载目标消息窗口失败');
+    throw createChatApiError(response, '加载目标消息窗口失败');
   }
 
   return response.data;
@@ -110,7 +209,7 @@ export async function sendChannelMessage(request: SendChannelMessageRequest): Pr
   const response = await apiPost<ChannelMessageVo>('/api/v1/ChannelMessage/Send', request, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '发送消息失败');
+    throw createChatApiError(response, '发送消息失败');
   }
 
   return response.data;
@@ -125,7 +224,7 @@ export async function recallChannelMessage(messageId: EntityIdValue): Promise<bo
   const response = await apiDelete<boolean>(`/api/v1/ChannelMessage/Recall/${normalizedMessageId}`, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '撤回消息失败');
+    throw createChatApiError(response, '撤回消息失败');
   }
 
   return response.data ?? true;
@@ -143,7 +242,7 @@ export async function getChannelOnlineMembers(channelId: EntityIdValue): Promise
   });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载在线成员失败');
+    throw createChatApiError(response, '加载在线成员失败');
   }
 
   return response.data;

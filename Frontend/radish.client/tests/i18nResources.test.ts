@@ -7,7 +7,7 @@ import i18next from 'i18next';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'discover', 'community', 'account', 'commerce', 'docs'];
+const domainNames = ['core', 'shell', 'discover', 'community', 'chat', 'account', 'commerce', 'docs'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   const domainFiles = domainNames.map((domain) => path.join(localesDirectory, language, `${domain}.ts`));

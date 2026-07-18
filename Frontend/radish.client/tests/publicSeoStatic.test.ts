@@ -8,7 +8,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(testDir, '..');
 
 function readLocaleResources(): string {
-  const domainNames = ['core', 'shell', 'discover', 'community', 'account', 'commerce', 'docs'];
+  const domainNames = ['core', 'shell', 'discover', 'community', 'chat', 'account', 'commerce', 'docs'];
   return ['en', 'zh']
     .flatMap((language) => domainNames.map((domain) =>
       readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
@@ -324,7 +324,9 @@ test('聊天正式 Web 页面应把聊天窗口作为主体而不是仪表盘卡
   assert.match(chatSource, /chatAppFocused/);
   assert.match(chatSidebarSource, /key: 'mutual'[\s\S]*key: 'stranger'[\s\S]*key: 'group'[\s\S]*key: 'public'/);
   assert.match(chatSidebarSource, /voConversationKind/);
-  assert.match(chatTypesSource, /voConversationKind\?: 'public' \| 'mutual' \| 'stranger' \| 'group' \| null;/);
+  assert.match(chatTypesSource, /export type ChatConversationKind = 'public' \| 'mutual' \| 'stranger' \| 'group';/);
+  assert.match(chatTypesSource, /voConversationKind\?: ChatConversationKind \| null;/);
+  assert.match(chatTypesSource, /voCanSend: boolean;[\s\S]*voCanAccept: boolean;[\s\S]*voIsArchived: boolean;/);
 });
 
 test('正式 Web 页头登录态账号应展示用户名而不是公开句柄', () => {

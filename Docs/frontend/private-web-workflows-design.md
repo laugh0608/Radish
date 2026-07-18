@@ -26,6 +26,8 @@
 >
 > 更新：2026-07-06（Asia/Shanghai）：E5-A 已补私域可恢复错误反馈：Workbench 活动同步失败进入继续处理队列，资产 / 订单 / 背包加载失败提供重试与复制诊断，聊天失败消息保留本地并可复制诊断，通知目标缺失不伪跳转并可复制上下文。
 >
+> 更新：2026-07-18（Asia/Shanghai）：一对一私聊批次 C 已把 `P13 / P27` 扩展为 PC 请求、归档 / 阻断与移动列表 / 请求详情状态，正式 Web 由公开个人页进入 `/messages`，移动端保持列表与详情两级任务流。
+>
 > 更新：2026-07-08（Asia/Shanghai）：E8 首日已把 `radish.client` public / private 主导航统一为 PC `发现 / 论坛 / 聊天 / 更多` + 右侧 `通知 / 账号`，移动底栏统一为 `发现 / 论坛 / 聊天 / 更多 / 我的`；私域 / 作者态页面不再维护独立全局底栏。
 >
 > 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批、D54 Pencil / Gateway 真实页面对齐、D62 页面族首批实现、E3/E4/E5 首批产品硬化和 E8 主导航收敛已完成，后续继续按成熟度矩阵处理正式 UI、信息密度、文案成熟度和旅程级验证
@@ -52,7 +54,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P10 - Order Detail` | `/shop/order/:orderId` 支付、权益发放、商品回看和背包回流 |
 | `P11 - Inventory Benefits` | `/shop/inventory` 背包权益、来源订单、激活 / 停用 / 使用入口 |
 | `P12 - Notifications Center` | `/notifications` 未读通知、频道筛选和正式 Web 目标分流 |
-| `P13 - Messages Workspace` | `/messages` 会话列表、聊天正文、回复输入和订单 / 用户上下文 |
+| `P13 / P13B - Messages Workspace` | `/messages` 当前 / 已归档列表、请求动作、阻断状态、聊天正文和用户上下文 |
 | `P14 - Circle Feed` | `/circle` 关注动态、正在关注、关注者和公开详情来源返回 |
 | `P15 - Pet Care` | `/pet` 宠物档案、基础照护动作、状态条和变化流水 |
 | `P16 - Forum Compose` | `/forum/compose` 论坛发帖编辑器、分类 / 标签、发布检查和提交反馈 |
@@ -66,7 +68,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P24 - Mobile Assets Ledger` | 移动端 `/me/assets`、`/me/assets/transactions`，余额和近期流水 |
 | `P25 - Mobile Orders Inventory` | 移动端 `/shop/orders`、`/shop/order/:id`、`/shop/inventory` 订单背包任务 |
 | `P26 - Mobile Notifications` | 移动端 `/notifications`，未读通知和目标跳转 |
-| `P27 - Mobile Messages` | 移动端 `/messages`，会话正文和回复输入 |
+| `P27 / P27B - Mobile Messages` | 移动端 `/messages` 会话列表与独立请求详情、返回和受限输入 |
 | `P28 - Mobile Circle` | 移动端 `/circle`，关注动态和关系链 |
 | `P29 - Mobile Pet` | 移动端 `/pet`，宠物状态、照护动作和状态流水 |
 | `P30 - Mobile Author` | 移动端 `/forum/compose`、`/docs/mine`、`/docs/edit/:id` 的继续创作入口 |

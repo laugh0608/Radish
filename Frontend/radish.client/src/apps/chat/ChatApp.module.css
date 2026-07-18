@@ -63,6 +63,34 @@
   white-space: nowrap;
 }
 
+.sidebarViews {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--theme-bg-muted);
+}
+
+.sidebarViewButton {
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sidebarViewButtonActive {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 48%, var(--theme-border-soft) 52%);
+  background: var(--theme-brand-soft);
+  color: var(--theme-brand-primary);
+}
+
 .sidebarEmpty {
   color: var(--theme-text-muted);
   font-size: 13px;
@@ -136,6 +164,13 @@
   justify-content: center;
   background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
   font-size: 13px;
+  overflow: hidden;
+}
+
+.channelAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .channelText {
@@ -171,6 +206,18 @@
   min-height: 24px;
 }
 
+.channelStatus {
+  max-width: 62px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%);
+  color: var(--theme-text-secondary);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
+}
+
 .mentionDot {
   width: 8px;
   height: 8px;
@@ -202,9 +249,158 @@
 }
 
 .mainHeader {
+  position: relative;
+  z-index: 4;
   border-bottom: 1px solid var(--theme-border-soft);
   padding: 12px 18px;
   background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
+}
+
+.headerIdentity,
+.conversationHeaderActions,
+.conversationNoticeActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.conversationHeaderActions {
+  justify-content: flex-end;
+  flex: 0 0 auto;
+}
+
+.conversationProfileButton,
+.conversationNotice button,
+.conversationMenuPanel button {
+  border: 1px solid var(--theme-border-soft);
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.conversationProfileButton {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border-radius: 999px;
+}
+
+.conversationMenu {
+  position: relative;
+}
+
+.conversationMenu summary {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: var(--theme-bg-muted);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+  list-style: none;
+}
+
+.conversationMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.conversationMenuPanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 180px;
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  background: var(--theme-bg-surface);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.conversationMenuPanel button {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-color: transparent;
+  border-radius: 7px;
+  text-align: left;
+}
+
+.conversationMenuPanel button:hover:not(:disabled) {
+  border-color: var(--theme-border-soft);
+  background: var(--theme-bg-muted);
+}
+
+.conversationNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  background: var(--theme-bg-muted);
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.conversationNotice > div:first-child {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.conversationNotice strong {
+  color: var(--theme-text-primary);
+}
+
+.conversationNotice[data-tone='request'] {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 46%, var(--theme-border-soft) 54%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, var(--theme-bg-surface) 30%);
+}
+
+.conversationNotice[data-tone='danger'] {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 44%, var(--theme-border-soft) 56%);
+  background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
+}
+
+.conversationNotice button {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.conversationNotice button[data-primary='true'] {
+  border-color: var(--theme-brand-primary);
+  background: var(--theme-brand-primary);
+  color: var(--theme-text-inverse);
+}
+
+.conversationNotice button:disabled,
+.conversationMenuPanel button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.conversationActionError {
+  margin-top: 8px;
+  color: var(--theme-state-danger);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .headerMain {
@@ -216,6 +412,11 @@
 
 .mobileBackLink {
   display: none;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 
 .channelTitle {
@@ -771,6 +972,17 @@
   min-width: 0;
 }
 
+.composerRestriction {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: var(--theme-bg-muted);
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .typingHint {
   min-height: 18px;
   font-size: 12px;
@@ -1146,10 +1358,14 @@
     display: none;
   }
 
+  .chatApp:not(.chatAppFocused) .main {
+    display: none;
+  }
+
   .sidebar {
     border-right: 0;
-    border-bottom: 1px solid var(--theme-border-soft);
-    max-height: 168px;
+    border-bottom: 0;
+    max-height: none;
   }
 
   .mainHeader {
@@ -1195,6 +1411,37 @@
   .headerMain {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .headerIdentity {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .conversationHeaderActions {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+  }
+
+  .conversationProfileButton span {
+    display: none;
+  }
+
+  .conversationProfileButton {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .conversationNotice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .conversationNoticeActions button {
+    flex: 1 1 0;
   }
 
   .mobileBackLink {

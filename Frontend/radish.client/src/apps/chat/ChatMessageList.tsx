@@ -24,6 +24,7 @@ interface ChatMessageListProps {
   highlightedMessageId: string | null;
   currentUserIdKey: string;
   apiBaseUrl: string;
+  canSendMessages: boolean;
   hasMoreNewerHistory: Record<string, boolean>;
   messageScrollRef: RefObject<HTMLDivElement | null>;
   setMessageElementRef: (messageId: string, element: HTMLDivElement | null) => void;
@@ -48,6 +49,7 @@ export const ChatMessageList = ({
   highlightedMessageId,
   currentUserIdKey,
   apiBaseUrl,
+  canSendMessages,
   hasMoreNewerHistory,
   messageScrollRef,
   setMessageElementRef,
@@ -125,7 +127,7 @@ export const ChatMessageList = ({
                       <span className={styles.userName}>{messageUserName}</span>
                     </button>
                     <span className={styles.time}>{formatChatTime(message.voCreateTime, locale)}</span>
-                    {!message.voIsRecalled && messageStatus === 'sent' && (
+                    {canSendMessages && !message.voIsRecalled && messageStatus === 'sent' && (
                       <button
                         type="button"
                         className={styles.replyButton}
@@ -189,13 +191,15 @@ export const ChatMessageList = ({
                           {isFailedMessage && (
                             <>
                               <span className={styles.deliveryRecoveryHint}>{t('chat.failedRecoverableHint')}</span>
-                              <button
-                                type="button"
-                                className={styles.deliveryActionButton}
-                                onClick={() => onRetryMessage(message)}
-                              >
-                                {t('chat.retry')}
-                              </button>
+                              {canSendMessages && (
+                                <button
+                                  type="button"
+                                  className={styles.deliveryActionButton}
+                                  onClick={() => onRetryMessage(message)}
+                                >
+                                  {t('chat.retry')}
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className={styles.deliveryActionButton}

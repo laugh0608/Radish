@@ -7,6 +7,7 @@ import type { WindowState } from '@/desktop/types';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { buildPublicProfilePath } from '@/public/profileRouteState';
+import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { rememberPublicRouteSourceTransfer, type PublicRouteDescriptor } from '@/public/publicRouteNavigation';
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
@@ -14,7 +15,6 @@ import { buildMessagesReturnPath } from '@/services/authReturnPath';
 import { chatHub } from '@/services/chatHub';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
-import { normalizeEntityId } from '@/types/chat';
 import { log } from '@/utils/logger';
 import { buildMessagesPath, createDefaultMessagesRoute, parseMessagesRoute } from './messagesRouteState';
 import styles from './MessagesApp.module.css';
@@ -121,8 +121,11 @@ export const MessagesApp = () => {
   }, [loggedIn]);
 
   const handleOpenUserProfile = useCallback((target: ChatAppProfileNavigationTarget) => {
-    const targetUserId = normalizeEntityId(target.userId);
-    if (!targetUserId || !/^[1-9]\d*$/.test(targetUserId)) {
+    const targetUserId = resolvePublicUserRouteIdentifier({
+      voUserId: String(target.userId),
+      voPublicId: target.publicId,
+    });
+    if (!targetUserId) {
       return;
     }
 
@@ -157,7 +160,12 @@ export const MessagesApp = () => {
       <div className={styles.messagesWorkspace}>
         <section className={styles.chatShell} aria-label={t('messages.web.chatWorkspaceLabel')}>
           <CurrentWindowProvider value={virtualWindow}>
-            <ChatApp onOpenUserProfile={handleOpenUserProfile} />
+            <ChatApp
+              onOpenUserProfile={handleOpenUserProfile}
+              onOpenFocusedChannel={(channelId) => {
+                window.location.href = buildMessagesPath({ channelId });
+              }}
+            />
           </CurrentWindowProvider>
         </section>
       </div>

@@ -223,6 +223,10 @@ class ChatHubService {
       useChatStore.getState().updateUnread(payload);
     });
 
+    this.connection.on('ConversationStateChanged', () => {
+      useChatStore.getState().notifyConversationStateChanged();
+    });
+
     this.connection.on('UserTyping', (payload: UserTypingPayload) => {
       useChatStore.getState().setTypingUser(payload.channelId, payload.userId, payload.userName);
 

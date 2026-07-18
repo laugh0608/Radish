@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
+import { getOrCreateDirectConversation } from '@/api/chat';
 import {
   getPublicProfile,
   getPublicUserComments,
@@ -15,10 +16,15 @@ import {
 } from '@/api/user';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { redirectToLogin } from '@/services/auth';
-import { buildPublicProfileFollowReturnPath } from '@/services/authReturnPath';
+import {
+  buildPublicProfileFollowReturnPath,
+  buildPublicProfileMessageReturnPath,
+} from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import { buildMessagesPath } from '@/messages/messagesRouteState';
+import { normalizeEntityId } from '@/types/chat';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { buildPublicLeaderboardPath, createDefaultPublicLeaderboardRoute } from '../leaderboardRouteState';
@@ -228,6 +234,7 @@ export const PublicProfileApp = ({
   const pageRef = useRef<HTMLDivElement>(null);
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
+  const messageIntentHandledRef = useRef<string | null>(null);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const currentUserId = useUserStore((state) => state.userId);
@@ -247,10 +254,17 @@ export const PublicProfileApp = ({
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
+  const [messageLoading, setMessageLoading] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [route.page, route.tab, route.userId]);
+
+  useEffect(() => {
+    messageIntentHandledRef.current = null;
+    setMessageError(null);
+  }, [route.userId]);
 
   useEffect(() => {
     const requestId = ++profileRequestIdRef.current;
@@ -498,6 +512,54 @@ export const PublicProfileApp = ({
   });
   const leaderboardHref = buildPublicLeaderboardPath(createDefaultPublicLeaderboardRoute());
 
+  const handleStartMessage = useCallback(async () => {
+    if (!profile || messageLoading || isOwnProfile) {
+      return;
+    }
+
+    if (!loggedIn) {
+      const returnPath = buildPublicProfileMessageReturnPath(profileRouteIdentifier);
+      if (returnPath) {
+        redirectToLogin({ returnPath });
+      } else {
+        setMessageError(t('profile.public.messageInvalidTarget'));
+      }
+      return;
+    }
+
+    setMessageLoading(true);
+    setMessageError(null);
+    try {
+      const conversation = await getOrCreateDirectConversation(profile.voUserId);
+      const channelId = normalizeEntityId(conversation.voChannelId);
+      if (!channelId) {
+        throw new Error(t('profile.public.messageStartFailed'));
+      }
+
+      window.location.href = buildMessagesPath({ channelId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('profile.public.messageStartFailed');
+      setMessageError(message);
+      log.warn('PublicProfileApp', '从公开个人页发起私聊失败', message);
+    } finally {
+      setMessageLoading(false);
+    }
+  }, [isOwnProfile, loggedIn, messageLoading, profile, profileRouteIdentifier, t]);
+
+  useEffect(() => {
+    if (route.intent !== 'message' || !profile || !loggedIn || isOwnProfile) {
+      return;
+    }
+
+    const signature = `${profileRouteIdentifier}:${route.intent}`;
+    if (messageIntentHandledRef.current === signature) {
+      return;
+    }
+
+    messageIntentHandledRef.current = signature;
+    void handleStartMessage();
+  }, [handleStartMessage, isOwnProfile, loggedIn, profile, profileRouteIdentifier, route.intent]);
+
   const handleTabChange = (tab: PublicProfileTab) => {
     if (tab === route.tab && route.page === 1) {
       return;
@@ -625,6 +687,23 @@ export const PublicProfileApp = ({
                       <button
                         type="button"
                         className={styles.primaryButton}
+                        onClick={() => void handleStartMessage()}
+                        disabled={messageLoading}
+                      >
+                        <Icon icon={messageLoading ? 'mdi:progress-clock' : 'mdi:message-text-outline'} size={16} />
+                        <span>
+                          {messageLoading
+                            ? t('profile.public.messageStarting')
+                            : loggedIn
+                              ? t('profile.public.messageAction')
+                              : t('profile.public.messageLoginAction')}
+                        </span>
+                      </button>
+                    )}
+                    {!isOwnProfile && (
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
                         onClick={() => void handleToggleFollow()}
                         disabled={followLoading}
                         aria-pressed={loggedIn ? followStatus?.voIsFollowing === true : undefined}
@@ -657,6 +736,11 @@ export const PublicProfileApp = ({
                 )}
                 {followError && (
                   <p className={styles.followFeedback} role="status">{followError}</p>
+                )}
+                {messageError && (
+                  <p className={styles.messageFeedback} role="alert">
+                    {messageError} {t('profile.public.messageRetryHint')}
+                  </p>
                 )}
                 <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 

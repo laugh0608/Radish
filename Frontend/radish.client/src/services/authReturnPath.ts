@@ -107,7 +107,7 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
     }
 
     if (pathname.startsWith('/u/')) {
-      return normalizePublicProfileFollowReturnPath(url, pathname);
+      return normalizePublicProfileIntentReturnPath(url, pathname);
     }
 
     if (pathname.startsWith('/shop/')) {
@@ -147,12 +147,13 @@ function normalizePublicProfileIdentifier(value: string | null | undefined): str
   return POSITIVE_LONG_ID_PATTERN.test(normalized) ? normalized : null;
 }
 
-function normalizePublicProfileFollowReturnPath(url: URL, normalizedPathname: string): string | null {
+function normalizePublicProfileIntentReturnPath(url: URL, normalizedPathname: string): string | null {
   if (url.hash || !hasOnlySearchParams(url, new Set(['intent']))) {
     return null;
   }
 
-  if (url.searchParams.getAll('intent').length !== 1 || url.searchParams.get('intent') !== 'follow') {
+  const intent = url.searchParams.get('intent');
+  if (url.searchParams.getAll('intent').length !== 1 || (intent !== 'follow' && intent !== 'message')) {
     return null;
   }
 
@@ -169,7 +170,7 @@ function normalizePublicProfileFollowReturnPath(url: URL, normalizedPathname: st
   }
 
   const userIdentifier = normalizePublicProfileIdentifier(rawUserIdentifier);
-  return userIdentifier ? `/u/${encodeURIComponent(userIdentifier)}?intent=follow` : null;
+  return userIdentifier ? `/u/${encodeURIComponent(userIdentifier)}?intent=${intent}` : null;
 }
 
 function normalizeForumPostIdentifier(value: string | null | undefined): string | null {
@@ -619,6 +620,10 @@ export function buildNotificationsReturnPath(): string {
 
 export function buildPublicProfileFollowReturnPath(userIdentifier: string | number): string | null {
   return normalizeAuthReturnPath(`/u/${encodeURIComponent(String(userIdentifier))}?intent=follow`);
+}
+
+export function buildPublicProfileMessageReturnPath(userIdentifier: string | number): string | null {
+  return normalizeAuthReturnPath(`/u/${encodeURIComponent(String(userIdentifier))}?intent=message`);
 }
 
 export function buildMessagesReturnPath(route: MessagesRoute = {}): string | null {

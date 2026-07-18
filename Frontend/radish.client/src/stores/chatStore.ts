@@ -26,10 +26,12 @@ interface ChatStore {
   messageMap: Record<string, ChannelMessageVo[]>;
   typingMap: Record<string, TypingUser[]>;
   connectionState: ChatConnectionState;
+  conversationRevision: number;
 
   setChannels: (channels: ChannelVo[]) => void;
   setActiveChannel: (channelId: EntityIdValue | null) => void;
   setConnectionState: (state: ChatConnectionState) => void;
+  notifyConversationStateChanged: () => void;
   setChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   prependChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   appendChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
@@ -155,6 +157,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messageMap: {},
   typingMap: {},
   connectionState: 'disconnected',
+  conversationRevision: 0,
 
   setChannels: (channels: ChannelVo[]) => {
     set({ channels });
@@ -166,6 +169,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   setConnectionState: (connectionState: ChatConnectionState) => {
     set({ connectionState });
+  },
+
+  notifyConversationStateChanged: () => {
+    set((state) => ({ conversationRevision: state.conversationRevision + 1 }));
   },
 
   setChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => {
@@ -342,6 +349,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       messageMap: {},
       typingMap: {},
       connectionState: 'disconnected',
+      conversationRevision: 0,
     });
   },
 }));

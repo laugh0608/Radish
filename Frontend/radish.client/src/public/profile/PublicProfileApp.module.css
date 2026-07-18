@@ -234,7 +234,8 @@
   color: var(--theme-state-danger);
 }
 
-.followFeedback {
+.followFeedback,
+.messageFeedback {
   margin: -0.2rem 0 0.8rem;
   color: var(--theme-state-danger);
   font-size: 0.86rem;
