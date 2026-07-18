@@ -139,6 +139,9 @@ const harness = {
     translateMessage,
   },
   apiGet: async (): Promise<ParsedResponse> => ({ ok: true, data: {} }),
+  apiFetch: async (): Promise<Response> => (
+    new Response(new Blob(['image']), { status: 200 })
+  ),
   apiDelete: async (): Promise<ParsedResponse> => ({ ok: true }),
   apiPost: async (): Promise<ParsedResponse> => ({ ok: true }),
   apiPut: async (): Promise<ParsedResponse> => ({ ok: true }),
@@ -208,6 +211,7 @@ const bundle = await rolldown({
           const harness = globalThis.__RADISH_ATTACHMENT_TEST_HARNESS__;
           export const ApiResponseError = harness.ApiResponseError;
           export const apiDelete = (...args) => harness.apiDelete(...args);
+          export const apiFetch = (...args) => harness.apiFetch(...args);
           export const apiGet = (...args) => harness.apiGet(...args);
           export const apiPost = (...args) => harness.apiPost(...args);
           export const apiPut = (...args) => harness.apiPut(...args);
@@ -238,6 +242,11 @@ assert.ok(chunk && chunk.type === 'chunk');
 const attachmentApi = await import(`data:text/javascript;base64,${Buffer.from(chunk.code).toString('base64')}`) as {
   uploadImage: (options: { file: File; signal?: AbortSignal }, t: (key: string) => string) => Promise<unknown>;
   getMyAttachments: () => Promise<unknown>;
+  loadAttachmentObjectUrl: (
+    id: string,
+    variant?: 'original' | 'thumbnail',
+    signal?: AbortSignal,
+  ) => Promise<string>;
   deleteAttachment: (id: string, t: (key: string) => string) => Promise<void>;
   setMyAvatar: (
     id: string | null,
@@ -283,9 +292,28 @@ beforeEach(() => {
     translateMessage,
   });
   harness.apiGet = async () => ({ ok: true, data: {} });
+  harness.apiFetch = async () => new Response(new Blob(['image']), { status: 200 });
   harness.apiDelete = async () => ({ ok: true });
   harness.apiPost = async () => ({ ok: true });
   harness.apiPut = async () => ({ ok: true });
+});
+
+test('受保护附件读取应通过统一客户端携带认证并返回可回收 object URL', async () => {
+  let capturedInput: string | null = null;
+  let capturedOptions: { withAuth?: boolean; method?: string } | null = null;
+  harness.apiFetch = async (input: string, options?: unknown) => {
+    capturedInput = input;
+    capturedOptions = (options as { withAuth?: boolean; method?: string } | undefined) ?? null;
+    return new Response(new Blob(['image'], { type: 'image/png' }), { status: 200 });
+  };
+
+  const objectUrl = await attachmentApi.loadAttachmentObjectUrl('42', 'thumbnail');
+
+  assert.equal(capturedInput, '/_assets/attachments/42/thumbnail');
+  assert.equal(capturedOptions?.withAuth, true);
+  assert.equal(capturedOptions?.method, 'GET');
+  assert.match(objectUrl, /^blob:/);
+  URL.revokeObjectURL(objectUrl);
 });
 
 after(() => {

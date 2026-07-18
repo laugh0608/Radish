@@ -496,7 +496,8 @@ public class AttachmentControllerTest
                 42,
                 10001,
                 It.Is<List<string>>(roles => roles.SequenceEqual(new[] { "Operator" })),
-                AttachmentUrlVariant.Original))
+                AttachmentUrlVariant.Original,
+                0))
             .ReturnsAsync(((Stream?)null, (AttachmentAssetDto?)null));
         var tokenService = new Mock<IFileAccessTokenService>(MockBehavior.Strict);
         tokenService

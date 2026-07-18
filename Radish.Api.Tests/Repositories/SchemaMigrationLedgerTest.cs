@@ -181,7 +181,10 @@ public sealed class SchemaMigrationLedgerTest
             Assert.True(status.Applied);
             Assert.True(status.ChecksumMatches);
             Assert.All(statuses, item => Assert.True(item.Applied));
-            Assert.Equal(6, mainDb.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(
+                1 + SchemaMigrationRegistry.All.Count(migration =>
+                    string.Equals(migration.Scope, "Main", StringComparison.OrdinalIgnoreCase)),
+                mainDb.Queryable<SchemaMigrationRecord>().Count());
             Assert.True(SchemaMigrationLedger.HasAppliedBaseline(db, "Main"));
 
             mainDb.Updateable<SchemaMigrationRecord>()

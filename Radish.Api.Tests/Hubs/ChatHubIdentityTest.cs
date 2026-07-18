@@ -32,6 +32,7 @@ public class ChatHubIdentityTest
         var hub = new ChatHub(
             Mock.Of<IChatService>(),
             Mock.Of<IChatPresenceService>(),
+            Mock.Of<IChatChannelAccessService>(),
             new ClaimsPrincipalNormalizer(),
             NullLogger<ChatHub>.Instance)
         {

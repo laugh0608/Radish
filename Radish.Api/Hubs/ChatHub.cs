@@ -11,17 +11,20 @@ public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly IChatPresenceService _chatPresenceService;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
     private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
     private readonly ILogger<ChatHub> _logger;
 
     public ChatHub(
         IChatService chatService,
         IChatPresenceService chatPresenceService,
+        IChatChannelAccessService chatChannelAccessService,
         IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
         ILogger<ChatHub> logger)
     {
         _chatService = chatService;
         _chatPresenceService = chatPresenceService;
+        _chatChannelAccessService = chatChannelAccessService;
         _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
         _logger = logger;
     }
@@ -104,9 +107,19 @@ public class ChatHub : Hub
             return;
         }
 
-        var tenantId = GetTenantId();
-        var userId = GetUserId();
-        var userName = GetUserName();
+        var currentUser = GetCurrentUser();
+        var tenantId = currentUser.TenantId;
+        var userId = currentUser.UserId;
+        var userName = string.IsNullOrWhiteSpace(currentUser.UserName) ? "Unknown" : currentUser.UserName;
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            tenantId,
+            userId,
+            channelId,
+            currentUser.IsSystemOrAdmin());
+        if (!access.CanSend)
+        {
+            throw new HubException("频道不存在或无权发言");
+        }
 
         var channelGroup = BuildChannelGroup(tenantId, channelId);
         await Clients.OthersInGroup(channelGroup)

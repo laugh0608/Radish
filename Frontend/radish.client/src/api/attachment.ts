@@ -5,6 +5,7 @@
 import {
   ApiResponseError,
   apiDelete,
+  apiFetch,
   apiGet,
   apiPost,
   configureApiClient,
@@ -576,7 +577,7 @@ export async function getAttachmentById(
 ): Promise<AttachmentInfo> {
   const response = await apiGet<AttachmentInfo>(
     `/api/v1/Attachment/GetById/${encodeURIComponent(id)}`,
-    { withAuth: false },
+    { withAuth: true },
   );
   return requireResponseData(response, 'attachment.api.loadFailed', t);
 }
@@ -595,9 +596,40 @@ export async function getAttachmentsByBusiness(
 ): Promise<AttachmentInfo[]> {
   const response = await apiGet<AttachmentInfo[]>(
     `/api/v1/Attachment/GetByBusiness?businessType=${encodeURIComponent(businessType)}&businessId=${encodeURIComponent(businessId)}`,
-    { withAuth: false },
+    { withAuth: true },
   );
   return requireResponseData(response, 'attachment.api.listLoadFailed', t);
+}
+
+/**
+ * 通过统一认证客户端读取附件二进制并创建浏览器 object URL。
+ * 调用方在不再使用时必须执行 URL.revokeObjectURL。
+ */
+export async function loadAttachmentObjectUrl(
+  id: string,
+  variant: 'original' | 'thumbnail' = 'original',
+  signal?: AbortSignal,
+): Promise<string> {
+  const suffix = variant === 'thumbnail' ? '/thumbnail' : '';
+  const response = await apiFetch(
+    `/_assets/attachments/${encodeURIComponent(id)}${suffix}`,
+    {
+      method: 'GET',
+      withAuth: true,
+      headers: { Accept: 'image/*' },
+      signal,
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Attachment asset request failed with status ${response.status}`);
+  }
+
+  const blob = await response.blob();
+  if (blob.size === 0) {
+    throw new Error('Attachment asset response was empty');
+  }
+
+  return URL.createObjectURL(blob);
 }
 
 export async function getMyAttachments(options: {

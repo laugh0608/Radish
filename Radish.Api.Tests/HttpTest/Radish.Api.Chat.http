@@ -18,6 +18,7 @@
 @AfterMessageId = 0
 @MessageId = 1
 @ImageAttachmentId = 0
+@ClientRequestId = chat-http-20260718-001
 
 ###############################################################################
 # 频道接口
@@ -68,6 +69,7 @@ Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
 
 {
+  "clientRequestId": "{{ClientRequestId}}",
   "channelId": {{ChannelId}},
   "type": 1,
   "content": "hello from http test"
@@ -79,12 +81,11 @@ Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
 
 {
+  "clientRequestId": "{{ClientRequestId}}-image",
   "channelId": {{ChannelId}},
   "type": 2,
   "content": "图片消息示例",
-  "attachmentId": {{ImageAttachmentId}},
-  "imageUrl": "https://example.com/chat/image.png",
-  "imageThumbnailUrl": "https://example.com/chat/image-thumb.png"
+  "attachmentId": {{ImageAttachmentId}}
 }
 
 ### 10. 撤回消息

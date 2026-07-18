@@ -472,7 +472,11 @@ public class AttachmentController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> GetById(long id)
     {
-        var attachment = await _attachmentService.QueryByIdAsync(id);
+        var attachment = await _attachmentService.GetAccessibleByIdAsync(
+            id,
+            Current.TenantId,
+            Current.UserId > 0 ? Current.UserId : null,
+            Current.UserId > 0 ? Current.Roles.ToList() : null);
 
         if (attachment == null)
         {
@@ -504,7 +508,12 @@ public class AttachmentController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetByBusiness(string businessType, long businessId)
     {
-        var attachments = await _attachmentService.GetByBusinessAsync(businessType, businessId);
+        var attachments = await _attachmentService.GetAccessibleByBusinessAsync(
+            businessType,
+            businessId,
+            Current.TenantId,
+            Current.UserId > 0 ? Current.UserId : null,
+            Current.UserId > 0 ? Current.Roles.ToList() : null);
 
         return new MessageModel
         {
@@ -632,7 +641,8 @@ public class AttachmentController : ControllerBase
             id,
             userId,
             roles,
-            AttachmentUrlVariant.Original);
+            AttachmentUrlVariant.Original,
+            Current.TenantId);
 
         if (stream == null || attachment == null)
         {
@@ -666,7 +676,8 @@ public class AttachmentController : ControllerBase
             id,
             userId,
             roles,
-            AttachmentUrlVariant.Thumbnail);
+            AttachmentUrlVariant.Thumbnail,
+            Current.TenantId);
 
         if (stream == null || attachment == null)
         {
@@ -706,7 +717,8 @@ public class AttachmentController : ControllerBase
             id,
             userId,
             roles,
-            AttachmentUrlVariant.Original);
+            AttachmentUrlVariant.Original,
+            Current.TenantId);
 
         if (stream == null || attachment == null)
         {
@@ -808,7 +820,8 @@ public class AttachmentController : ControllerBase
                 attachmentId.Value,
                 downloadUserId,
                 downloadRoles,
-                AttachmentUrlVariant.Original);
+                AttachmentUrlVariant.Original,
+                Current.TenantId);
             if (stream == null || attachment == null)
             {
                 return NotFound(new MessageModel

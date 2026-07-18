@@ -465,4 +465,19 @@
   <data name="error.experience.review_rejected" xml:space="preserve">
     <value>经验治理复核结论无法记录，请核对提交内容。</value>
   </data>
+  <data name="error.chat.channel_unavailable" xml:space="preserve">
+    <value>会话不存在或当前账号无权访问。</value>
+  </data>
+  <data name="error.chat.send_forbidden" xml:space="preserve">
+    <value>当前账号无权在该会话中发言。</value>
+  </data>
+  <data name="error.chat.message_idempotency_conflict" xml:space="preserve">
+    <value>该消息请求标识已用于其他内容，请刷新会话后重试。</value>
+  </data>
+  <data name="error.chat.attachment_unavailable" xml:space="preserve">
+    <value>聊天附件不存在、无权使用或已绑定到其他消息。</value>
+  </data>
+  <data name="error.chat.attachment_binding_conflict" xml:space="preserve">
+    <value>聊天附件绑定状态已变化，请刷新会话后重试。</value>
+  </data>
 </root>

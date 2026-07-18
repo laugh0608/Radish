@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`一对一私聊与会话管理批次 A：数据、成员 ACL、消息幂等与 Chat 附件访问`
-- **产品下一顺位**：`会话请求生命周期、正式 Web 页面与成组验收`
+- **工程第一顺位**：`一对一私聊与会话管理批次 B：请求生命周期、权威会话分区与可靠附件绑定`
+- **产品下一顺位**：`批次 C 正式 Web 页面与批次 D 成组验收`
 - **复核日期**：`2026-07-18`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -67,6 +67,7 @@
   - 2026-07-17 F3-C9 已完成本地实现与静态收口：Console 角色授权、分类 / 标签、表情、经验和萝卜管理的正式路由与真实消费者进入宿主双语资源，日期、数字、英文数量和 LongId / long 金额使用统一 locale formatter 与字符串安全口径；动态详情面包屑、稳定枚举、权限动作、附件上传和结构化错误形成闭环。表情失败响应迁入真实 HTTP 契约并保留批量冲突数据，经验 / 萝卜高频管理失败补齐稳定 `Code / MessageKey`，`withAuth` 刷新只允许复用原请求配置单次重放。Console 56 项、`@radish/http` 16 项、后端 817 项测试通过，12 项 PostgreSQL 环境用例跳过；Console lint / production build、解决方案构建、Baseline Quick 与仓库卫生检查通过。未启动服务或执行 Gateway smoke，下一顺位进入 F3-D 专题验收。
   - 2026-07-17 F3-D 已完整关闭：Public / Private / Auth、Console 认证 / 无权限与管理员受权内页均通过 `zh / en × PC / mobile` 代表运行态矩阵；Dashboard、用户、治理、订单、应用、个人资料、Hangfire、not-found 和移动功能抽屉均正常，根级宽度稳定。验收修复了 Auth 官方客户端元数据、嵌套 OIDC 语言往返、Console 低频正式路由词元、LongId 字符串门禁及个人资料 Form 挂载时序警告；未修改管理员账号、角色、权限或 Main 业务数据。详见 [F3-D i18n 专题验收记录](/records/f3-d-i18n-stage-acceptance-2026-07-17)，工程第一顺位进入 F4-A。
   - 2026-07-18 一对一私聊与会话管理已确认为下一完整功能专题并完成设计：复用 `Channel / ChannelMember / ChannelMessage / ChatHub / ChatApp`，新增 `DirectConversation` 会话元数据；批次 A 先治理私有频道成员 ACL、持久化发送幂等和 Chat 附件访问，不提前开放页面入口。
+  - 2026-07-18 一对一私聊批次 A 已完成本地实现：两项 schema ledger migration、`DirectConversation` / 归档 / 消息幂等约束、REST / Hub / 附件共用 ACL、Chat 私有附件与正式 Web 认证图片加载均已落地；公开个人页入口、请求动作和权威会话分区继续留在批次 B / C。
   - 2026-07-18 F4-A 首轮证据归因已完成：仓库内唯一明确的发布后生产 UX 证据是首次管理员入口门禁不一致，该 `P2` 已由 `54852c73` 在 `dev` 修复并等待正常批次发布复核；其余六链路数据均来自本地种子、受控 smoke、自动化或发布前设计反馈，不能证明真实使用价值。F4-A 的采集说明与模板已经形成，但按个人开发者节奏冻结为最终收尾资产，不再作为当前顺位或功能选题前置。详见 [F4-A 首批真实使用证据整理与反馈归因记录](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)。
 
 ## V1 产品与发布范围
@@ -139,9 +140,9 @@ Radish V1 的产品定位固定为：
 
 ## 下一顺位
 
-1. 按 [一对一私聊与会话管理设计](/features/chat-direct-conversation-design) 实现批次 A：新增 `DirectConversation` 与 Chat ledger migration，补齐 REST / Hub / 附件共用的成员 ACL，并持久化 `clientRequestId` 发送幂等。
-2. 批次 A 通过 SQLite / PostgreSQL、并发建会话和未授权访问测试后，推进会话请求生命周期、服务端权威分区与可靠附件绑定。
-3. 后端边界稳定后先更新 `private-web-workflows.pen`，再实现公开个人页“发消息”和 `/messages` 的 PC / mobile 请求、归档与阻断交互。
+1. 按 [一对一私聊与会话管理设计](/features/chat-direct-conversation-design) 推进批次 B：实现幂等建会话、接受、拒绝、阻断、解除和归档，建立陌生请求首条消息与通知状态机。
+2. 服务端返回权威 `VoConversationKind`、对方资料、请求状态和可用动作，并以可靠任务完成附件绑定与新消息取消接收方归档；不得让前端继续按频道名称猜测分区。
+3. 后端生命周期和接口稳定后先更新 `private-web-workflows.pen`，再进入批次 C，实现公开个人页“发消息”和 `/messages` 的 PC / mobile 请求、归档与阻断交互。
 
 ## 今日事项（2026-07-18）
 
@@ -152,11 +153,12 @@ Radish V1 的产品定位固定为：
 5. 已校准生产五库、宿主日志和时间分表边界，建立长期采集说明与批次模板；本轮没有生产数据访问或脱敏导出，未新增真实使用结论。
 6. 已按个人开发者节奏将主动生产证据采集冻结为项目最终收尾事项；当前顺位回到下一项完整功能专题的选择与设计。
 7. 已确认一对一私聊与会话管理为下一专题并完成设计说明；下一开发批次固定为数据、成员 ACL、消息幂等和 Chat 附件访问，不并行展开搜索、Reaction、置顶或逐条阅读回执。
+8. 已完成一对一私聊批次 A 的数据与访问边界实现；下一批固定进入请求生命周期、权威会话分区、可靠附件绑定与归档恢复，不提前开发公开主页和 `/messages` 新交互。
 
 ## 并行维护线
 
 - 公开 head、动态 sitemap、head snapshot 与生产公开域名配置。
-- 附件持久化与访问边界：补 `Chat / Document / Wiki` 业务域 ACL 与历史迁移、分片 attachment correlation、durable quota settlement，以及多实例共享临时存储 / 分布式锁。
+- 附件持久化与访问边界：继续补 `Document / Wiki` 业务域 ACL 与历史迁移、分片 attachment correlation、durable quota settlement，以及多实例共享临时存储 / 分布式锁；Chat 可靠绑定归属私聊批次 B。
 - HTTP 认证恢复边界：关键非幂等写入需要幂等 / 去重保护，client 附件 XHR 的 URL 配置来源需收敛到 `getApiClientConfig()`。
 - 镜像漏洞门禁分层：Critical 与可修复 High / Critical 保持阻断，无修复 High 转为可追溯维护项与定期复核。
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`。

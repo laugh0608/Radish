@@ -4,11 +4,14 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
 using Shouldly;
@@ -198,10 +201,119 @@ public class ChatServiceTest
         result.ShouldBe(1);
     }
 
+    [Fact]
+    public async Task SendMessageAsync_ShouldReturnPersistedMessageWithoutReinsertingOnIdempotentReplay()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var memberRepository = new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
+        var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        var existingMessage = new ChannelMessage
+        {
+            Id = 90001,
+            ChannelId = 1,
+            UserId = 10001,
+            UserName = "tester",
+            ClientRequestId = "request-1",
+            Type = MessageType.Text,
+            Content = "hello",
+            TenantId = 0,
+            CreateTime = DateTime.UtcNow
+        };
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(new Channel
+            {
+                Id = 1,
+                Name = "General",
+                Type = ChannelType.Public,
+                IsEnabled = true,
+                LastMessageId = existingMessage.Id,
+                LastMessageTime = existingMessage.CreateTime
+            });
+        messageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync(existingMessage);
+        memberRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMember, bool>>?>()))
+            .ReturnsAsync(new ChannelMember { ChannelId = 1, UserId = 10001 });
+        memberRepository
+            .Setup(repository => repository.UpdateAsync(It.IsAny<ChannelMember>()))
+            .ReturnsAsync(true);
+        attachmentRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync(new List<Attachment>());
+        var service = CreateService(
+            channelRepository,
+            messageRepository,
+            attachmentRepository,
+            memberRepository);
+
+        var result = await service.SendMessageAsync(0, 10001, "tester", new SendChannelMessageDto
+        {
+            ChannelId = 1,
+            Type = MessageType.Text,
+            Content = " hello ",
+            ClientRequestId = " request-1 "
+        });
+
+        Assert.False(result.WasCreated);
+        Assert.Equal(existingMessage.Id, result.Message.VoId);
+        Assert.Equal("request-1", result.Message.VoClientRequestId);
+        messageRepository.Verify(
+            repository => repository.AddWithOutboxAsync(It.IsAny<ChannelMessage>(), It.IsAny<ReliableOutboxDraft?>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_ShouldRejectIdempotencyKeyReusedForDifferentPayload()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(new Channel
+            {
+                Id = 1,
+                Name = "General",
+                Type = ChannelType.Public,
+                IsEnabled = true
+            });
+        messageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync(new ChannelMessage
+            {
+                Id = 90001,
+                ChannelId = 1,
+                UserId = 10001,
+                ClientRequestId = "request-1",
+                Type = MessageType.Text,
+                Content = "original",
+                TenantId = 0
+            });
+        var service = CreateService(channelRepository, messageRepository);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.SendMessageAsync(
+            0,
+            10001,
+            "tester",
+            new SendChannelMessageDto
+            {
+                ChannelId = 1,
+                Type = MessageType.Text,
+                Content = "different",
+                ClientRequestId = "request-1"
+            }));
+
+        Assert.Equal(StatusCodes.Status409Conflict, exception.StatusCode);
+        Assert.Equal("Chat.MessageIdempotencyConflict", exception.ErrorCode);
+    }
+
     private static ChatService CreateService(
         Mock<IBaseRepository<Channel>>? channelRepository = null,
         Mock<IChannelMessageRepository>? messageRepository = null,
-        Mock<IBaseRepository<Attachment>>? attachmentRepository = null)
+        Mock<IBaseRepository<Attachment>>? attachmentRepository = null,
+        Mock<IBaseRepository<ChannelMember>>? memberRepository = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         mapper
@@ -209,6 +321,7 @@ public class ChatServiceTest
             .Returns((ChannelMessage message) => new ChannelMessageVo
             {
                 VoId = message.Id,
+                VoClientRequestId = message.ClientRequestId,
                 VoChannelId = message.ChannelId,
                 VoUserId = message.UserId,
                 VoUserName = message.UserName,
@@ -222,12 +335,28 @@ public class ChatServiceTest
 
         var baseChannelRepository = channelRepository ?? new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
         var baseMessageRepository = messageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict);
-        var memberRepository = new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
+        var baseMemberRepository = memberRepository ?? new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
         var baseAttachmentRepository = attachmentRepository ?? new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
         var chatPresenceService = new Mock<IChatPresenceService>(MockBehavior.Strict);
         var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        var chatChannelAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        chatChannelAccessService
+            .Setup(service => service.GetAccessAsync(
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<bool>()))
+            .ReturnsAsync(new ChatChannelAccessResult(
+                true,
+                ChannelType.Public,
+                true,
+                true,
+                true,
+                true,
+                false));
 
         attachmentUrlResolver
             .Setup(resolver => resolver.ResolveAttachmentUrl(It.IsAny<long>()))
@@ -240,11 +369,12 @@ public class ChatServiceTest
             mapper.Object,
             baseChannelRepository.Object,
             baseMessageRepository.Object,
-            memberRepository.Object,
+            baseMemberRepository.Object,
             baseAttachmentRepository.Object,
             userRepository.Object,
             chatPresenceService.Object,
             notificationService.Object,
+            chatChannelAccessService.Object,
             attachmentUrlResolver.Object);
     }
 }

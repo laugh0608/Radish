@@ -13,6 +13,7 @@ import {
 } from './chatApp.helpers';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { getIntlLocale } from '@/locales/language';
+import { ChatProtectedImage } from './ChatProtectedImage';
 import styles from './ChatApp.module.css';
 
 interface ChatMessageListProps {
@@ -172,7 +173,13 @@ export const ChatMessageList = ({
                       )}
                       {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
                       {message.voType === 2 && messageImageUrl && (
-                        <img className={styles.imageMessage} src={messageImageUrl} alt={t('chat.imageMessage')} loading="lazy" />
+                        <ChatProtectedImage
+                          attachmentId={message.voAttachmentId}
+                          fallbackUrl={messageImageUrl}
+                          variant="thumbnail"
+                          className={styles.imageMessage}
+                          alt={t('chat.imageMessage')}
+                        />
                       )}
                       {isMine && !message.voIsRecalled && messageStatus !== 'sent' && (
                         <div className={styles.deliveryState}>

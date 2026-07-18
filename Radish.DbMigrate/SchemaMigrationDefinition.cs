@@ -30,6 +30,8 @@ internal static class SchemaMigrationRegistry
         ShopOrderFulfillmentSafetyMigration.Instance,
         ShopEntitlementOperationSchemaMigration.Instance,
         UserActiveBenefitSchemaMigration.Instance,
-        ShopEntitlementOperationSubjectNullabilityMigration.Instance
+        ShopEntitlementOperationSubjectNullabilityMigration.Instance,
+        ChatDirectConversationSchemaMigration.Instance,
+        ChatAttachmentPrivacySchemaMigration.Instance
     ];
 }

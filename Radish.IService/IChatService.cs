@@ -5,6 +5,9 @@ using Radish.Model.ViewModels;
 
 namespace Radish.IService;
 
+/// <summary>消息发送结果；控制器据此避免幂等重放再次推送实时事件</summary>
+public sealed record ChatMessageSendResult(ChannelMessageVo Message, bool WasCreated);
+
 /// <summary>聊天室服务接口</summary>
 public interface IChatService : IBaseService<Channel, ChannelVo>
 {
@@ -27,7 +30,12 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
         int afterCount = 25);
 
     /// <summary>发送消息</summary>
-    Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, SendChannelMessageDto request);
+    Task<ChatMessageSendResult> SendMessageAsync(
+        long tenantId,
+        long userId,
+        string userName,
+        SendChannelMessageDto request,
+        bool canManageChannel = false);
 
     /// <summary>撤回消息，成功返回所属频道 Id</summary>
     Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers);
@@ -48,5 +56,5 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
     Task<List<long>> GetChannelAudienceUserIdsAsync(long tenantId, long channelId);
 
     /// <summary>获取频道在线成员列表</summary>
-    Task<List<ChannelMemberVo>> GetOnlineMembersAsync(long tenantId, long channelId);
+    Task<List<ChannelMemberVo>> GetOnlineMembersAsync(long tenantId, long userId, long channelId);
 }

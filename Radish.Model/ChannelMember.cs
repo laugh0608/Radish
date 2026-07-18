@@ -32,6 +32,11 @@ public class ChannelMember : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
     public DateTime JoinedAt { get; set; } = DateTime.Now;
 
+    /// <summary>用户归档该会话的时间；归档不退出频道、不删除消息</summary>
+    [SugarColumn(IsNullable = true)]
+    [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
+    public DateTime? ArchivedAt { get; set; }
+
     /// <summary>租户 Id</summary>
     [SugarColumn(IsNullable = false)]
     public long TenantId { get; set; }

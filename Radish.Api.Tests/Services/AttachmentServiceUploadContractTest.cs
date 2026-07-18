@@ -579,6 +579,85 @@ public class AttachmentServiceUploadContractTest
     }
 
     [Fact]
+    public async Task UploadFileAsync_ShouldCreateChatAttachmentAsPrivateDraft()
+    {
+        var repository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        repository
+            .Setup(item => item.AddAsync(It.Is<Attachment>(attachment =>
+                attachment.BusinessType == AttachmentBusinessTypes.Chat &&
+                attachment.BusinessId == null &&
+                !attachment.IsPublic &&
+                attachment.UploaderId == 10001)))
+            .ReturnsAsync(43);
+        var fileStorage = new Mock<IFileStorage>(MockBehavior.Strict);
+        fileStorage
+            .Setup(storage => storage.UploadAsync(
+                It.IsAny<Stream>(),
+                "test.png",
+                It.Is<FileUploadOptionsDto>(options =>
+                    options.BusinessType == AttachmentBusinessTypes.Chat)))
+            .ReturnsAsync(FileUploadResult.Ok(
+                "stored.png",
+                "Chat/stored.png",
+                4,
+                "image/png"));
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper
+            .Setup(item => item.Map<AttachmentVo>(It.Is<Attachment>(attachment =>
+                attachment.Id == 43 && !attachment.IsPublic)))
+            .Returns(new AttachmentVo { VoId = 43, VoIsPublic = false });
+        var service = CreateService(
+            fileStorage.Object,
+            attachmentRepository: repository.Object,
+            mapper: mapper.Object);
+        var options = CreateUploadOptions();
+        options.BusinessType = AttachmentBusinessTypes.Chat;
+
+        var result = await service.UploadFileAsync(
+            CreateImageFormFile(),
+            options,
+            10001,
+            "Tester");
+
+        Assert.NotNull(result);
+        Assert.Equal(43, result.VoId);
+        Assert.False(result.VoIsPublic);
+        repository.VerifyAll();
+        fileStorage.VerifyAll();
+        mapper.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetAccessibleByIdAsync_ShouldNotAllowAdminToBypassBoundChatAttachmentPolicy()
+    {
+        var attachment = CreateAvatarAttachment(id: 44, uploaderId: 10001, businessId: 90001);
+        attachment.BusinessType = AttachmentBusinessTypes.Chat;
+        attachment.IsPublic = false;
+        var repository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        repository
+            .Setup(item => item.QueryFirstAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync(attachment);
+        var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        chatAccessService
+            .Setup(service => service.CanAccessMessageAttachmentAsync(30000, 20002, 90001))
+            .ReturnsAsync(false);
+        var service = CreateService(
+            Mock.Of<IFileStorage>(),
+            attachmentRepository: repository.Object,
+            chatChannelAccessService: chatAccessService.Object);
+
+        var result = await service.GetAccessibleByIdAsync(
+            attachment.Id,
+            30000,
+            20002,
+            ["Admin"]);
+
+        Assert.Null(result);
+        repository.VerifyAll();
+        chatAccessService.VerifyAll();
+    }
+
+    [Fact]
     public void SetCurrentAvatarAsync_Should_Keep_Transactional_Boundary()
     {
         var method = typeof(AttachmentService).GetMethod(
@@ -752,7 +831,8 @@ public class AttachmentServiceUploadContractTest
         IImageProcessor? imageProcessor = null,
         IBaseRepository<Attachment>? attachmentRepository = null,
         IMapper? mapper = null,
-        FileStorageOptions? fileStorageOptions = null)
+        FileStorageOptions? fileStorageOptions = null,
+        IChatChannelAccessService? chatChannelAccessService = null)
     {
         new ServiceCollection().ConfigureApplication();
 
@@ -762,6 +842,7 @@ public class AttachmentServiceUploadContractTest
             fileStorage,
             imageProcessor ?? Mock.Of<IImageProcessor>(),
             Mock.Of<IAttachmentUrlResolver>(),
+            chatChannelAccessService ?? Mock.Of<IChatChannelAccessService>(),
             Options.Create(fileStorageOptions ?? new FileStorageOptions()));
     }
 

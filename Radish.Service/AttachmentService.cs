@@ -28,6 +28,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
     private readonly FileStorageOptions _fileStorageOptions;
     private readonly string _tempPath;
 
@@ -37,6 +38,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
         IAttachmentUrlResolver attachmentUrlResolver,
+        IChatChannelAccessService chatChannelAccessService,
         IOptions<FileStorageOptions> fileStorageOptions)
         : base(mapper, baseRepository)
     {
@@ -44,6 +46,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _chatChannelAccessService = chatChannelAccessService;
         _fileStorageOptions = fileStorageOptions.Value;
         _tempPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp");
 
@@ -243,7 +246,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 // 上传只创建未绑定附件；业务归属必须由对应域服务在目标对象校验后设置。
                 BusinessId = null,
                 TenantId = normalizedTenantId,
-                IsPublic = true,
+                IsPublic = normalizedBusinessType != AttachmentBusinessTypes.Chat,
                 DownloadCount = 0
             };
 
@@ -367,6 +370,54 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         );
 
         return Mapper.Map<List<AttachmentVo>>(attachments);
+    }
+
+    public async Task<AttachmentVo?> GetAccessibleByIdAsync(
+        long attachmentId,
+        long tenantId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null)
+    {
+        if (attachmentId <= 0)
+        {
+            return null;
+        }
+
+        var attachment = await _attachmentRepository.QueryFirstAsync(candidate =>
+            candidate.Id == attachmentId && candidate.IsEnabled && !candidate.IsDeleted);
+        if (attachment == null ||
+            !await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
+        {
+            return null;
+        }
+
+        return Mapper.Map<AttachmentVo>(attachment);
+    }
+
+    public async Task<List<AttachmentVo>> GetAccessibleByBusinessAsync(
+        string businessType,
+        long businessId,
+        long tenantId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null)
+    {
+        var normalizedTenantId = NormalizeTenantId(tenantId);
+        var attachments = await _attachmentRepository.QueryAsync(candidate =>
+            candidate.BusinessType == businessType &&
+            candidate.BusinessId == businessId &&
+            candidate.TenantId == normalizedTenantId &&
+            candidate.IsEnabled &&
+            !candidate.IsDeleted);
+        var accessibleAttachments = new List<Attachment>(attachments.Count);
+        foreach (var attachment in attachments)
+        {
+            if (await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
+            {
+                accessibleAttachments.Add(attachment);
+            }
+        }
+
+        return Mapper.Map<List<AttachmentVo>>(accessibleAttachments);
     }
 
     public async Task<AttachmentAssetDto?> GetAttachmentAssetAsync(long attachmentId)
@@ -564,7 +615,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         long attachmentId,
         long? requestUserId = null,
         List<string>? requestUserRoles = null,
-        AttachmentUrlVariant variant = AttachmentUrlVariant.Original)
+        AttachmentUrlVariant variant = AttachmentUrlVariant.Original,
+        long? requestTenantId = null)
     {
         try
         {
@@ -580,21 +632,12 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 return (null, null);
             }
 
-            // 2. 检查权限（如果不是公开文件，需要权限检查）
-            if (!attachment.IsPublic)
+            // 2. Chat 资源始终按频道权限判定；其他非公开资源保留上传者与管理角色规则。
+            var tenantId = requestTenantId ?? App.CurrentUser.TenantId;
+            if (!await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
             {
-                // 权限规则：
-                // - 上传者本人可下载
-                // - Admin/System 角色可下载
-                // - 其他用户无权下载
-                var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
-                var isAdmin = UserRoleHelper.IsSystemOrAdmin(requestUserRoles);
-
-                if (!isUploader && !isAdmin)
-                {
-                    Log.Warning("用户 {UserId} 尝试下载非公开文件：{AttachmentId}（上传者：{UploaderId}）", requestUserId, attachmentId, attachment.UploaderId);
-                    return (null, null);
-                }
+                Log.Warning("用户 {UserId} 尝试访问无权限附件：{AttachmentId}（业务类型：{BusinessType}）", requestUserId, attachmentId, attachment.BusinessType);
+                return (null, null);
             }
 
             // 3. 获取文件流
@@ -616,6 +659,30 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             Log.Error(ex, "获取下载流时发生异常：{AttachmentId}", attachmentId);
             return (null, null);
         }
+    }
+
+    private async Task<bool> CanReadAttachmentAsync(
+        Attachment attachment,
+        long tenantId,
+        long? requestUserId,
+        List<string>? requestUserRoles)
+    {
+        var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
+        if (attachment.BusinessType == AttachmentBusinessTypes.Chat)
+        {
+            if (!attachment.BusinessId.HasValue)
+            {
+                return isUploader;
+            }
+
+            return requestUserId.HasValue &&
+                   await _chatChannelAccessService.CanAccessMessageAttachmentAsync(
+                       NormalizeTenantId(tenantId),
+                       requestUserId.Value,
+                       attachment.BusinessId.Value);
+        }
+
+        return attachment.IsPublic || isUploader || UserRoleHelper.IsSystemOrAdmin(requestUserRoles);
     }
 
     #endregion

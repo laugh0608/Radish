@@ -93,7 +93,7 @@ public class ChannelController : ControllerBase
             };
         }
 
-        var members = await _chatService.GetOnlineMembersAsync(Current.TenantId, id);
+        var members = await _chatService.GetOnlineMembersAsync(Current.TenantId, Current.UserId, id);
         return new MessageModel
         {
             IsSuccess = true,

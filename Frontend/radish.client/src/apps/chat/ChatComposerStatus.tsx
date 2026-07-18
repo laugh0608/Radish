@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import type { ChannelMessageVo, EntityIdValue } from '@/types/chat';
 import { getMessagePreviewText, type PendingImageDraft } from './chatApp.helpers';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
+import { ChatProtectedImage } from './ChatProtectedImage';
 import styles from './ChatApp.module.css';
 
 interface ComposerTypingUser {
@@ -82,11 +83,12 @@ export const ChatComposerStatus = ({
       {pendingImage && (
         <div className={styles.pendingImagePreview}>
           {pendingImagePreviewUrl && (
-            <img
-              src={pendingImagePreviewUrl}
-              alt={t('chat.pendingImage')}
+            <ChatProtectedImage
+              attachmentId={pendingImage.attachmentId}
+              fallbackUrl={pendingImagePreviewUrl}
+              variant="thumbnail"
               className={styles.pendingImageThumbnail}
-              loading="lazy"
+              alt={t('chat.pendingImage')}
             />
           )}
           <div className={styles.pendingImageMeta}>

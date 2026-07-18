@@ -9,6 +9,7 @@ namespace Radish.Model;
 [Tenant(configId: "Chat")]
 [SugarIndex("idx_channel_message_channel_id", nameof(ChannelId), OrderByType.Asc, nameof(Id), OrderByType.Desc)]
 [SugarIndex("idx_channel_message_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_channel_message_client_request", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(ClientRequestId), OrderByType.Asc, IsUnique = true)]
 public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>频道 Id</summary>
@@ -22,6 +23,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>发送者用户名（冗余）</summary>
     [SugarColumn(Length = 100, IsNullable = false)]
     public string UserName { get; set; } = string.Empty;
+
+    /// <summary>客户端请求 Id；同一租户、发送者内用于消息发送幂等</summary>
+    [SugarColumn(Length = 100, IsNullable = true)]
+    public string? ClientRequestId { get; set; }
 
     /// <summary>发送者头像附件快照 Id</summary>
     [SugarColumn(IsNullable = true)]

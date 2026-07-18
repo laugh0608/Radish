@@ -465,4 +465,19 @@
   <data name="error.experience.review_rejected" xml:space="preserve">
     <value>The governance review result could not be recorded. Verify the submitted details.</value>
   </data>
+  <data name="error.chat.channel_unavailable" xml:space="preserve">
+    <value>The conversation does not exist or this account cannot access it.</value>
+  </data>
+  <data name="error.chat.send_forbidden" xml:space="preserve">
+    <value>This account cannot send messages in the conversation.</value>
+  </data>
+  <data name="error.chat.message_idempotency_conflict" xml:space="preserve">
+    <value>This message request identifier was already used for different content. Refresh the conversation and try again.</value>
+  </data>
+  <data name="error.chat.attachment_unavailable" xml:space="preserve">
+    <value>The chat attachment is unavailable, not permitted, or already bound to another message.</value>
+  </data>
+  <data name="error.chat.attachment_binding_conflict" xml:space="preserve">
+    <value>The chat attachment binding has changed. Refresh the conversation and try again.</value>
+  </data>
 </root>

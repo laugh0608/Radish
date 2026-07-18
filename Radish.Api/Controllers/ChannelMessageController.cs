@@ -157,33 +157,35 @@ public class ChannelMessageController : ControllerBase
 
         try
         {
-            var messageVo = await _chatService.SendMessageAsync(
+            var sendResult = await _chatService.SendMessageAsync(
                 Current.TenantId,
                 Current.UserId,
                 Current.UserName,
-                request);
-            messageVo.VoClientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId)
-                ? null
-                : request.ClientRequestId.Trim();
+                request,
+                Current.IsSystemOrAdmin());
+            var messageVo = sendResult.Message;
 
-            var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, request.ChannelId);
-            await _chatHubContext.Clients.Group(channelGroup).SendAsync("MessageReceived", messageVo);
-
-            var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(Current.TenantId, request.ChannelId))
-                .Where(userId => userId != Current.UserId)
-                .Distinct()
-                .ToList();
-
-            foreach (var targetUserId in audienceUserIds)
+            if (sendResult.WasCreated)
             {
-                var unreadState = await _chatService.GetChannelUnreadStateAsync(Current.TenantId, targetUserId, request.ChannelId);
-                await _chatHubContext.Clients.Group($"user:{targetUserId}")
-                    .SendAsync("ChannelUnreadChanged", new
-                    {
-                        channelId = unreadState.VoChannelId,
-                        unreadCount = unreadState.VoUnreadCount,
-                        hasMention = unreadState.VoHasMention
-                    });
+                var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, request.ChannelId);
+                await _chatHubContext.Clients.Group(channelGroup).SendAsync("MessageReceived", messageVo);
+
+                var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(Current.TenantId, request.ChannelId))
+                    .Where(userId => userId != Current.UserId)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var targetUserId in audienceUserIds)
+                {
+                    var unreadState = await _chatService.GetChannelUnreadStateAsync(Current.TenantId, targetUserId, request.ChannelId);
+                    await _chatHubContext.Clients.Group($"user:{targetUserId}")
+                        .SendAsync("ChannelUnreadChanged", new
+                        {
+                            channelId = unreadState.VoChannelId,
+                            unreadCount = unreadState.VoUnreadCount,
+                            hasMention = unreadState.VoHasMention
+                        });
+                }
             }
 
             return new MessageModel
