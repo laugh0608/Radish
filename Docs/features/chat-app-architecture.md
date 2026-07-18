@@ -126,7 +126,7 @@ Frontend/radish.client/src/types/
 1. 首次进入 ChatApp
 - 拉取频道列表（含未读）。
 - 选择默认频道并拉取最新历史。
-- 调用 `chatHub.start()` 建立连接。
+- 正式 Web `/messages` 或 WebOS `Shell` 使用稳定 owner 调用 `chatHub.acquire(owner)`；最后一个 owner 释放后才关闭共用连接。
 
 2. 发送消息（当前流程）
 - 前端先生成负数临时消息与 `clientRequestId`，立即插入本地列表。
@@ -143,11 +143,12 @@ Frontend/radish.client/src/types/
 
 ---
 
-## 与 WebOS 集成点
+## 与正式 Web / WebOS 集成点
 
-- Shell 登录后启动 `chatHub`，登出时统一停止并清空状态。
+- `/messages` 与 WebOS `Shell` 登录后分别取得 `chatHub` 所有权，普通卸载只释放自身 owner；登出时统一停止连接，新账号进入工作区后先以服务端列表替换账号相关 store 快照。
 - `chatHub` 连接成功与重连成功后会自动尝试加入当前激活频道。
 - 当前频道在重连恢复后会清空本地缓存并重新拉取最新 50 条，优先保证状态一致。
+- `ConversationStateChanged` 只推动 `chatStore` 会话修订号变化，工作区随后重读服务端会话摘要，不用本地事件载荷推导请求、阻断或归档状态。
 - Dock 未读气泡由 `chatStore.channels` 聚合计算，不额外轮询。
 - 窗口最小化/恢复不重建连接，避免短时频繁重连。
 

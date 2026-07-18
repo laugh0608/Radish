@@ -431,41 +431,37 @@ const totalUnread = useChatStore(s =>
 ## Shell.tsx 集成
 
 ```typescript
-// 在现有 notificationHub 连接管理代码旁添加：
+const chatHubOwnerRef = useRef(Symbol('webos-shell'));
+
 useEffect(() => {
-  if (isAuthenticated && !chatStartedRef.current) {
-    chatStartedRef.current = true;
-    void chatHub.start();
-    // 启动后加载频道列表（含未读数）
-    void loadChannelList();
-  } else if (!isAuthenticated && chatStartedRef.current) {
-    chatStartedRef.current = false;
-    void chatHub.stop();
-    useChatStore.getState().reset();
+  const owner = chatHubOwnerRef.current;
+  if (!isAuthenticated) {
+    void chatHub.release(owner);
+    return;
   }
+
+  void chatHub.acquire(owner);
+  return () => {
+    void chatHub.release(owner);
+  };
 }, [isAuthenticated]);
 ```
 
-频道列表在 Shell 层预加载，这样 Dock 图标气泡和 ChatApp 内部都能直接读取已有数据。
+WebOS `Shell` 与正式 Web `/messages` 必须使用各自稳定的 owner。任一壳层卸载只释放自己的所有权，最后一个 owner 离开时才关闭账号级连接；真实登出再由统一认证流程执行 `chatHub.stop()`。Hub 停止不等于业务 store 已清空，账号边界上的页面必须先读取服务端频道 / 会话列表再展示摘要，不能沿用上一账号的未读或会话状态。
 
 ---
 
-## Dock 图标未读气泡
+## 共享未读与提及摘要
 
 ```typescript
-// Dock.tsx 中
-const chatUnread = useChatStore(s =>
-  s.channels.reduce((sum, c) => sum + c.voUnreadCount, 0)
+const messageUnreadTotal = channels.reduce(
+  (total, channel) => total + Math.max(0, channel.voUnreadCount),
+  0,
 );
-const chatHasMention = useChatStore(s =>
-  s.channels.some(c => c.voHasMention)
-);
-
-// Dock 图标渲染：
-// - 有未读且有 @mention：红色气泡（高优先级）
-// - 有未读无 @mention：主题色气泡
-// - 无未读：无气泡
+const mentionChannelCount = channels.filter(channel => channel.voHasMention).length;
 ```
+
+频道侧栏展示每个频道的服务端未读与提及状态，Workbench 从同一 `channels` 快照聚合总未读、提及频道数和首个可继续处理的会话。当前 WebOS Dock 角标用于通知收件箱，不再声明聊天专属气泡；若未来新增聊天全局角标，也必须继续读取服务端频道摘要，不能建立本地加减计数。
 
 ---
 

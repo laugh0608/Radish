@@ -64,7 +64,8 @@
 - 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息定位、通知回流和公开个人页返回“聊天”；私聊批次 A-D 已完成并关闭，F4-C-A 搜索专题设计已完成
 - 已完成：
   - 频道列表、历史消息分页、文本发送、撤回、基础未读同步
-  - `ChatHub` 事件对齐：`MessageReceived`、`MessageRecalled`、`UserTyping`、`ChannelUnreadChanged`
+  - `ChatHub` 事件对齐：`MessageReceived`、`MessageRecalled`、`UserTyping`、`ChannelUnreadChanged`、`ConversationStateChanged`
+  - WebOS `Shell` 与正式 Web `/messages` 通过 owner 共享同一 ChatHub 生命周期，避免组件卸载互相停止连接
   - 连接成功/重连后自动加入当前激活频道（降低首次进入漏订阅风险）
   - 重连状态条 + 重连成功后自动补拉最新 50 条消息
   - `@mention`、引用回复、图片消息、按频道草稿恢复、成员面板、成员头像来源

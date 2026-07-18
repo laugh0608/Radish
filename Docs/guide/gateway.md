@@ -160,7 +160,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 - `Radish.Gateway/appsettings.json` 当前已内建 `/_assets/attachments/** -> Radish.Api` 路由，避免该路径落到前端兜底路由。
 - 如果系统前面还有 `Nginx / Traefik / Caddy`，仍需确保该路径被继续放行到 Gateway，而不是被前端静态站点或默认首页吞掉。
 - Gateway 与 API 均不得代理或静态暴露整个 `/uploads/**` 用户存储根目录；只保留 `/uploads/DefaultIco/**` 可信内置资产。业务附件必须经过 `/_assets/attachments/**` 的状态与访问权限判定。
-- `/_assets/attachments/**` 是受控附件路由：Gateway 只负责转发；API 当前检查启用 / 删除状态，`IsPublic = false` 时只允许上传者或 `System / Admin` 读取。临时 token 使用独立的 `DownloadByToken` 入口，`Chat / Document / Wiki` 领域 ACL 仍是后续治理项。`/uploads/DefaultIco/**` 只从 `${FileStorage:Local:BasePath}/DefaultIco`（默认 `DataBases/Uploads/DefaultIco`）提供版本内置图标。
+- `/_assets/attachments/**` 是受控附件路由：Gateway 只负责转发，API 统一检查启用 / 删除状态和业务域授权。普通私有附件允许上传者或 `System / Admin` 读取；Chat 附件默认私有并按频道 / 消息访问权判定，管理员角色不自动穿透私聊。临时 token 使用独立的 `DownloadByToken` 入口，但消费时仍复用同一附件访问判定；`Document / Wiki` 领域 ACL 仍是后续治理项。`/uploads/DefaultIco/**` 只从 `${FileStorage:Local:BasePath}/DefaultIco`（默认 `DataBases/Uploads/DefaultIco`）提供版本内置图标。
 
 #### 配置真相源
 

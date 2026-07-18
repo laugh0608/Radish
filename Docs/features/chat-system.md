@@ -395,6 +395,7 @@ public class ChatHub : Hub
 | `MessageRecalled` | 消息被撤回 | `{ channelId, messageId }` | `channel:{channelId}` 组 |
 | `UserTyping` | 用户输入中 | `{ channelId, userId, userName }` | `channel:{channelId}` 组其他连接 |
 | `ChannelUnreadChanged` | 频道未读数变化 | `{ channelId, unreadCount, hasMention }` | `user:{userId}` 组（多端同步） |
+| `ConversationStateChanged` | 请求、阻断或归档等会话状态变化 | `{ channelId }` | 相关参与者的 `user:{userId}` 组；客户端收到后重读权威会话摘要 |
 | `MemberOnline` | 用户进入频道 | `{ channelId, userId, userName }` | `channel:{channelId}` 组 |
 | `MemberOffline` | 用户离开频道 | `{ channelId, userId }` | `channel:{channelId}` 组 |
 | `MessagePinned` | 消息被置顶/取消置顶（Phase 2） | `{ channelId, pinnedMessage: ChannelMessageVo or null }` | `channel:{channelId}` 组 |
@@ -417,16 +418,17 @@ public class ChatHub : Hub
 Shell.tsx 中同时管理两个 Hub 连接：
 
 ```typescript
-// 登录后同时启动两个 Hub
+// NotificationHub 仍按账号级单例管理；ChatHub 由各壳层取得连接所有权
 void notificationHub.start();
-void chatHub.start();
+void chatHub.acquire(chatHubOwner);
 
-// 登出时同时停止
+// 普通卸载只释放当前 ChatHub owner；真实登出才统一停止账号级连接
+void chatHub.release(chatHubOwner);
 void notificationHub.stop();
 void chatHub.stop();
 ```
 
-两个 Hub 独立连接，互不影响。ChatHub URL：`${getSignalrHubUrl()}/hub/chat`
+两个 Hub 独立连接，互不影响。WebOS `Shell` 与正式 Web `/messages` 可能同时需要 ChatHub，因此不得由某个组件直接 `stop()` 另一入口仍在使用的连接。ChatHub URL：`${getSignalrHubUrl()}/hub/chat`
 
 ---
 
