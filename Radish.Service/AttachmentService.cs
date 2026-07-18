@@ -672,13 +672,19 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             if (!attachment.BusinessId.HasValue)
             {
-                return isUploader;
+                return isUploader ||
+                       requestUserId.HasValue &&
+                       await _chatChannelAccessService.CanAccessChatAttachmentAsync(
+                           NormalizeTenantId(tenantId),
+                           requestUserId.Value,
+                           attachment.Id);
             }
 
             return requestUserId.HasValue &&
-                   await _chatChannelAccessService.CanAccessMessageAttachmentAsync(
+                   await _chatChannelAccessService.CanAccessChatAttachmentAsync(
                        NormalizeTenantId(tenantId),
                        requestUserId.Value,
+                       attachment.Id,
                        attachment.BusinessId.Value);
         }
 

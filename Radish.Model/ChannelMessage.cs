@@ -10,6 +10,7 @@ namespace Radish.Model;
 [SugarIndex("idx_channel_message_channel_id", nameof(ChannelId), OrderByType.Asc, nameof(Id), OrderByType.Desc)]
 [SugarIndex("idx_channel_message_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_channel_message_client_request", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(ClientRequestId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_channel_message_attachment", nameof(TenantId), OrderByType.Asc, nameof(AttachmentId), OrderByType.Asc, IsUnique = true)]
 public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>频道 Id</summary>

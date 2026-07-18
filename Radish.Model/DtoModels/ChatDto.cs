@@ -2,6 +2,31 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Radish.Model.DtoModels;
 
+/// <summary>获取或创建一对一私聊请求</summary>
+public sealed class GetOrCreateDirectConversationDto
+{
+    /// <summary>目标用户 Id</summary>
+    [Range(1, long.MaxValue, ErrorMessage = "targetUserId 必须大于 0")]
+    public long TargetUserId { get; set; }
+}
+
+/// <summary>设置一对一私聊归档状态请求</summary>
+public sealed class SetDirectConversationArchivedDto
+{
+    /// <summary>是否归档</summary>
+    public bool Archived { get; set; }
+}
+
+/// <summary>频道列表视图</summary>
+public enum ChatChannelListView
+{
+    /// <summary>当前会话</summary>
+    Active = 1,
+
+    /// <summary>已归档的一对一会话</summary>
+    Archived = 2
+}
+
 /// <summary>发送频道消息 DTO</summary>
 public class SendChannelMessageDto
 {

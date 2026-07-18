@@ -1,9 +1,11 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
@@ -31,9 +33,19 @@ public class ChannelController : ControllerBase
     /// <summary>获取可见频道列表</summary>
     [HttpGet]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> GetList()
+    public async Task<MessageModel> GetList([FromQuery] string view = "active")
     {
-        var channels = await _chatService.GetChannelListAsync(Current.TenantId, Current.UserId);
+        var normalizedView = view.Trim().ToLowerInvariant() switch
+        {
+            "active" => ChatChannelListView.Active,
+            "archived" => ChatChannelListView.Archived,
+            _ => throw new BusinessException(
+                "view 只允许 active 或 archived",
+                StatusCodes.Status400BadRequest,
+                "Chat.ChannelListViewInvalid",
+                "error.chat.channel_list_view_invalid")
+        };
+        var channels = await _chatService.GetChannelListAsync(Current.TenantId, Current.UserId, normalizedView);
         return new MessageModel
         {
             IsSuccess = true,

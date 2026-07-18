@@ -480,4 +480,52 @@
   <data name="error.chat.attachment_binding_conflict" xml:space="preserve">
     <value>聊天附件绑定状态已变化，请刷新会话后重试。</value>
   </data>
+  <data name="error.chat.channel_list_view_invalid" xml:space="preserve">
+    <value>会话列表视图只允许 active 或 archived。</value>
+  </data>
+  <data name="error.chat.direct_target_invalid" xml:space="preserve">
+    <value>目标用户标识无效。</value>
+  </data>
+  <data name="error.chat.direct_self_not_allowed" xml:space="preserve">
+    <value>不能与自己建立私聊。</value>
+  </data>
+  <data name="error.chat.direct_target_unavailable" xml:space="preserve">
+    <value>目标用户不存在或当前不可用。</value>
+  </data>
+  <data name="error.chat.direct_peer_unavailable" xml:space="preserve">
+    <value>对方账号当前不可用，无法继续会话。</value>
+  </data>
+  <data name="error.chat.direct_receiver_required" xml:space="preserve">
+    <value>只有私聊请求接收人可以执行此操作。</value>
+  </data>
+  <data name="error.chat.direct_action_conflict" xml:space="preserve">
+    <value>当前私聊请求状态不支持该操作。</value>
+  </data>
+  <data name="error.chat.direct_blocked_by_peer" xml:space="preserve">
+    <value>会话已被对方阻断。</value>
+  </data>
+  <data name="error.chat.direct_unblock_forbidden" xml:space="preserve">
+    <value>只有执行阻断的一方可以解除。</value>
+  </data>
+  <data name="error.chat.direct_blocked" xml:space="preserve">
+    <value>会话已被阻断。</value>
+  </data>
+  <data name="error.chat.direct_not_accepted" xml:space="preserve">
+    <value>接受私聊请求后才能发送消息。</value>
+  </data>
+  <data name="error.chat.direct_request_already_sent" xml:space="preserve">
+    <value>该陌生私聊请求已发送过首条消息。</value>
+  </data>
+  <data name="error.chat.direct_request_text_only" xml:space="preserve">
+    <value>陌生私聊请求只允许发送一条不含图片、引用或提及的纯文本消息。</value>
+  </data>
+  <data name="error.chat.direct_request_declined" xml:space="preserve">
+    <value>私聊请求已被拒绝，无法继续发送。</value>
+  </data>
+  <data name="error.chat.message_type_unavailable" xml:space="preserve">
+    <value>当前接口只允许发送文本或图片消息。</value>
+  </data>
+  <data name="error.chat.reply_unavailable" xml:space="preserve">
+    <value>引用消息不存在或不属于当前会话。</value>
+  </data>
 </root>

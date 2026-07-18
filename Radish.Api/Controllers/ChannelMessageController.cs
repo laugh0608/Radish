@@ -186,6 +186,12 @@ public class ChannelMessageController : ControllerBase
                             hasMention = unreadState.VoHasMention
                         });
                 }
+
+                foreach (var targetUserId in sendResult.ConversationChangedUserIds ?? [])
+                {
+                    await _chatHubContext.Clients.Group($"user:{targetUserId}")
+                        .SendAsync("ConversationStateChanged", new { channelId = request.ChannelId });
+                }
             }
 
             return new MessageModel

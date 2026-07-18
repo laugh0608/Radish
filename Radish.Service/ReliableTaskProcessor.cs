@@ -14,6 +14,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
     private readonly ICoinService _coinService;
     private readonly IExperienceService _experienceService;
     private readonly INotificationService _notificationService;
+    private readonly IChatAttachmentBindingService _chatAttachmentBindingService;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
 
@@ -22,6 +23,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         ICoinService coinService,
         IExperienceService experienceService,
         INotificationService notificationService,
+        IChatAttachmentBindingService chatAttachmentBindingService,
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository)
     {
@@ -29,6 +31,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         _coinService = coinService;
         _experienceService = experienceService;
         _notificationService = notificationService;
+        _chatAttachmentBindingService = chatAttachmentBindingService;
         _postRepository = postRepository;
         _commentRepository = commentRepository;
     }
@@ -68,6 +71,10 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             case ReliableTaskTypes.NotificationRequested:
                 await _notificationService.CreateNotificationAsync(
                     Deserialize<NotificationRequestedTaskPayload>(message).Notification);
+                break;
+            case ReliableTaskTypes.ChatAttachmentBinding:
+                await _chatAttachmentBindingService.BindAsync(
+                    Deserialize<ChatAttachmentBindingTaskPayload>(message));
                 break;
             default:
                 throw new PermanentReliableTaskException($"未知可靠任务类型：{message.TaskType}");

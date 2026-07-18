@@ -480,4 +480,52 @@
   <data name="error.chat.attachment_binding_conflict" xml:space="preserve">
     <value>The chat attachment binding has changed. Refresh the conversation and try again.</value>
   </data>
+  <data name="error.chat.channel_list_view_invalid" xml:space="preserve">
+    <value>The conversation list view must be active or archived.</value>
+  </data>
+  <data name="error.chat.direct_target_invalid" xml:space="preserve">
+    <value>The target user identifier is invalid.</value>
+  </data>
+  <data name="error.chat.direct_self_not_allowed" xml:space="preserve">
+    <value>You cannot start a direct conversation with yourself.</value>
+  </data>
+  <data name="error.chat.direct_target_unavailable" xml:space="preserve">
+    <value>The target user does not exist or is unavailable.</value>
+  </data>
+  <data name="error.chat.direct_peer_unavailable" xml:space="preserve">
+    <value>The other account is unavailable, so this conversation cannot continue.</value>
+  </data>
+  <data name="error.chat.direct_receiver_required" xml:space="preserve">
+    <value>Only the recipient of the direct-message request can perform this action.</value>
+  </data>
+  <data name="error.chat.direct_action_conflict" xml:space="preserve">
+    <value>The current direct-message request state does not allow this action.</value>
+  </data>
+  <data name="error.chat.direct_blocked_by_peer" xml:space="preserve">
+    <value>The conversation was blocked by the other participant.</value>
+  </data>
+  <data name="error.chat.direct_unblock_forbidden" xml:space="preserve">
+    <value>Only the participant who blocked the conversation can unblock it.</value>
+  </data>
+  <data name="error.chat.direct_blocked" xml:space="preserve">
+    <value>The conversation is blocked.</value>
+  </data>
+  <data name="error.chat.direct_not_accepted" xml:space="preserve">
+    <value>Accept the direct-message request before sending messages.</value>
+  </data>
+  <data name="error.chat.direct_request_already_sent" xml:space="preserve">
+    <value>The first message for this direct-message request has already been sent.</value>
+  </data>
+  <data name="error.chat.direct_request_text_only" xml:space="preserve">
+    <value>A direct-message request allows one plain text message without images, replies, or mentions.</value>
+  </data>
+  <data name="error.chat.direct_request_declined" xml:space="preserve">
+    <value>The direct-message request was declined and cannot receive more messages.</value>
+  </data>
+  <data name="error.chat.message_type_unavailable" xml:space="preserve">
+    <value>This endpoint only accepts text or image messages.</value>
+  </data>
+  <data name="error.chat.reply_unavailable" xml:space="preserve">
+    <value>The replied-to message does not exist or belongs to another conversation.</value>
+  </data>
 </root>

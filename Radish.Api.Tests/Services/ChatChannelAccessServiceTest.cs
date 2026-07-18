@@ -59,7 +59,13 @@ public sealed class ChatChannelAccessServiceTest
             RequestStatus = DirectConversationRequestStatus.Accepted,
             TenantId = 30000
         });
-        var service = CreateService(channelRepository, memberRepository, directRepository);
+        var userRepository = CreateRepository(new User
+        {
+            Id = 20002,
+            TenantId = 30000,
+            IsEnable = true
+        });
+        var service = CreateService(channelRepository, memberRepository, directRepository, userRepository);
 
         var result = await service.GetAccessAsync(30000, 20001, 100);
 
@@ -105,8 +111,63 @@ public sealed class ChatChannelAccessServiceTest
         Assert.False(result.CanViewMembers);
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    public async Task GetAccessAsync_ShouldExposePendingConversationToReceiverOnlyAfterFirstMessage(
+        bool hasMessages,
+        bool expectedCanView)
+    {
+        var channelRepository = CreateRepository(new Channel
+        {
+            Id = 100,
+            TenantId = 30000,
+            Type = ChannelType.Private,
+            IsEnabled = true
+        });
+        var memberRepository = CreateRepository(new ChannelMember
+        {
+            ChannelId = 100,
+            UserId = 20002,
+            TenantId = 30000
+        });
+        var directRepository = CreateRepository(new DirectConversation
+        {
+            Id = 700,
+            ChannelId = 100,
+            ParticipantLowUserId = 20001,
+            ParticipantHighUserId = 20002,
+            RequestedByUserId = 20001,
+            RequestStatus = DirectConversationRequestStatus.Pending,
+            TenantId = 30000
+        });
+        var userRepository = CreateRepository(new User
+        {
+            Id = 20001,
+            TenantId = 30000,
+            IsEnable = true
+        });
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryExistsAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>() ))
+            .ReturnsAsync(hasMessages);
+        var service = CreateService(
+            channelRepository,
+            memberRepository,
+            directRepository,
+            userRepository,
+            messageRepository.Object);
+
+        var result = await service.GetAccessAsync(30000, 20002, 100);
+
+        Assert.Equal(expectedCanView, result.CanView);
+        Assert.Equal(expectedCanView, result.CanJoinRealtime);
+        Assert.False(result.CanSend);
+        Assert.False(result.CanViewMembers);
+    }
+
     [Fact]
-    public async Task CanAccessMessageAttachmentAsync_ShouldReuseChannelPolicy()
+    public async Task CanAccessChatAttachmentAsync_ShouldReuseChannelPolicy()
     {
         var channelRepository = CreateRepository(new Channel
         {
@@ -136,15 +197,26 @@ public sealed class ChatChannelAccessServiceTest
             {
                 Id = 500,
                 ChannelId = 100,
+                AttachmentId = 600,
                 TenantId = 30000
             });
+        messageRepository
+            .Setup(repository => repository.QueryExistsAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>() ))
+            .ReturnsAsync(true);
+        var userRepository = CreateRepository(new User
+        {
+            Id = 20002,
+            TenantId = 30000,
+            IsEnable = true
+        });
         var service = CreateService(
             channelRepository,
             memberRepository,
             directRepository,
+            userRepository,
             messageRepository.Object);
 
-        var result = await service.CanAccessMessageAttachmentAsync(30000, 20001, 500);
+        var result = await service.CanAccessChatAttachmentAsync(30000, 20001, 600, 500);
 
         Assert.True(result);
     }
@@ -153,12 +225,14 @@ public sealed class ChatChannelAccessServiceTest
         Mock<IBaseRepository<Channel>> channelRepository,
         Mock<IBaseRepository<ChannelMember>> memberRepository,
         Mock<IBaseRepository<DirectConversation>> directRepository,
+        Mock<IBaseRepository<User>>? userRepository = null,
         IChannelMessageRepository? messageRepository = null)
     {
         return new ChatChannelAccessService(
             channelRepository.Object,
             memberRepository.Object,
             directRepository.Object,
+            userRepository?.Object ?? Mock.Of<IBaseRepository<User>>(),
             messageRepository ?? Mock.Of<IChannelMessageRepository>());
     }
 

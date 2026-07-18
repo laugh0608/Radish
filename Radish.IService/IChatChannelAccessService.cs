@@ -10,7 +10,14 @@ public sealed record ChatChannelAccessResult(
     bool CanSend,
     bool CanJoinRealtime,
     bool CanViewMembers,
-    bool IsDirectConversation)
+    bool IsDirectConversation,
+    DirectConversationRequestStatus? DirectRequestStatus = null,
+    long? DirectRequestedByUserId = null,
+    long? DirectBlockedByUserId = null,
+    long? DirectPeerUserId = null,
+    long? DirectConversationId = null,
+    bool HasMessages = false,
+    bool IsPeerAvailable = true)
 {
     public static ChatChannelAccessResult Unavailable { get; } =
         new(false, null, false, false, false, false, false);
@@ -26,6 +33,10 @@ public interface IChatChannelAccessService
         long channelId,
         bool canManageChannel = false);
 
-    /// <summary>判断用户能否访问指定 Chat 消息绑定的附件。</summary>
-    Task<bool> CanAccessMessageAttachmentAsync(long tenantId, long userId, long messageId);
+    /// <summary>判断用户能否访问指定 Chat 附件引用；未完成可靠绑定时按消息引用恢复访问。</summary>
+    Task<bool> CanAccessChatAttachmentAsync(
+        long tenantId,
+        long userId,
+        long attachmentId,
+        long? messageId = null);
 }

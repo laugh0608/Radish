@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
@@ -14,6 +15,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Shouldly;
 using SqlSugar;
 using Xunit;
@@ -309,11 +311,343 @@ public class ChatServiceTest
         Assert.Equal("Chat.MessageIdempotencyConflict", exception.ErrorCode);
     }
 
+    [Fact]
+    public async Task SendMessageAsync_ShouldAtomicallyPersistPendingDirectRequestWithoutBodyPreview()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        var memberRepository = new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var channel = new Channel
+        {
+            Id = 7000,
+            Name = "Direct conversation",
+            Type = ChannelType.Private,
+            IsEnabled = true,
+            TenantId = 30000
+        };
+        var member = new ChannelMember { Id = 7100, ChannelId = channel.Id, UserId = 20001 };
+        IReadOnlyCollection<ReliableOutboxDraft>? capturedOutboxes = null;
+        long? capturedUnarchiveUserId = null;
+        long? capturedConversationId = null;
+
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(channel);
+        channelRepository
+            .Setup(repository => repository.UpdateAsync(channel))
+            .ReturnsAsync(true);
+        messageRepository
+            .Setup(repository => repository.AddWithEffectsAsync(
+                It.IsAny<ChannelMessage>(),
+                It.IsAny<IReadOnlyCollection<ReliableOutboxDraft>>(),
+                It.IsAny<long?>(),
+                It.IsAny<long?>()))
+            .Callback<ChannelMessage, IReadOnlyCollection<ReliableOutboxDraft>, long?, long?>((message, outboxes, unarchiveUserId, conversationId) =>
+            {
+                capturedOutboxes = outboxes;
+                capturedUnarchiveUserId = unarchiveUserId;
+                capturedConversationId = conversationId;
+            })
+            .ReturnsAsync((ChannelMessage message, IReadOnlyCollection<ReliableOutboxDraft> _, long? _, long? _) =>
+                new ChannelMessageWriteResult(message.Id, false));
+        memberRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMember, bool>>?>()))
+            .ReturnsAsync(member);
+        memberRepository
+            .Setup(repository => repository.UpdateAsync(member))
+            .ReturnsAsync(true);
+        userRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new User { Id = 20001, UserName = "Requester", PublicIndex = 1 });
+        attachmentRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync([]);
+        var access = new ChatChannelAccessResult(
+            true,
+            ChannelType.Private,
+            true,
+            true,
+            true,
+            false,
+            true,
+            DirectConversationRequestStatus.Pending,
+            20001,
+            null,
+            20002,
+            7200,
+            false,
+            true);
+        var service = CreateService(
+            channelRepository,
+            messageRepository,
+            attachmentRepository,
+            memberRepository,
+            userRepository,
+            access);
+        const string privateBody = "这段正文不能进入通知预览";
+
+        var result = await service.SendMessageAsync(30000, 20001, "Requester", new SendChannelMessageDto
+        {
+            ChannelId = channel.Id,
+            Type = MessageType.Text,
+            Content = privateBody
+        });
+
+        Assert.True(result.WasCreated);
+        Assert.Equal(new long[] { 20002 }, result.ConversationChangedUserIds);
+        Assert.Equal(20002, capturedUnarchiveUserId);
+        Assert.Equal(7200, capturedConversationId);
+        var requestOutbox = Assert.Single(capturedOutboxes!);
+        Assert.Equal(ReliableTaskTypes.NotificationRequested, requestOutbox.TaskType);
+        Assert.DoesNotContain(privateBody, requestOutbox.PayloadJson, StringComparison.Ordinal);
+        var payload = JsonSerializer.Deserialize<NotificationRequestedTaskPayload>(requestOutbox.PayloadJson);
+        Assert.NotNull(payload);
+        Assert.Equal(NotificationType.DirectMessageRequested, payload.Notification.Type);
+        Assert.Equal(new long[] { 20002 }, payload.Notification.ReceiverUserIds);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_ShouldRejectImageForPendingDirectRequest()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(new Channel
+            {
+                Id = 7000,
+                Name = "Direct conversation",
+                Type = ChannelType.Private,
+                IsEnabled = true,
+                TenantId = 30000
+            });
+        var access = new ChatChannelAccessResult(
+            true,
+            ChannelType.Private,
+            true,
+            true,
+            true,
+            false,
+            true,
+            DirectConversationRequestStatus.Pending,
+            20001,
+            null,
+            20002,
+            7200,
+            false,
+            true);
+        var service = CreateService(channelRepository, accessResult: access);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.SendMessageAsync(
+            30000,
+            20001,
+            "Requester",
+            new SendChannelMessageDto
+            {
+                ChannelId = 7000,
+                Type = MessageType.Image,
+                AttachmentId = 8000
+            }));
+
+        Assert.Equal(StatusCodes.Status400BadRequest, exception.StatusCode);
+        Assert.Equal("Chat.DirectRequestTextOnly", exception.ErrorCode);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_ShouldResolveConcurrentPendingClaimAsIdempotentReplay()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        var memberRepository = new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var existingMessage = new ChannelMessage
+        {
+            Id = 7300,
+            ChannelId = 7000,
+            UserId = 20001,
+            UserName = "Requester",
+            ClientRequestId = "pending-request-1",
+            Type = MessageType.Text,
+            Content = "hello",
+            TenantId = 30000,
+            CreateTime = DateTime.UtcNow
+        };
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(new Channel
+            {
+                Id = 7000,
+                Name = "Direct conversation",
+                Type = ChannelType.Private,
+                IsEnabled = true,
+                LastMessageId = existingMessage.Id,
+                TenantId = 30000
+            });
+        messageRepository
+            .SetupSequence(repository => repository.QueryFirstIncludingDeletedAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>>() ))
+            .ReturnsAsync((ChannelMessage?)null)
+            .ReturnsAsync(existingMessage);
+        messageRepository
+            .Setup(repository => repository.AddWithEffectsAsync(
+                It.IsAny<ChannelMessage>(),
+                It.IsAny<IReadOnlyCollection<ReliableOutboxDraft>>(),
+                It.IsAny<long?>(),
+                It.IsAny<long?>()))
+            .ThrowsAsync(new DirectConversationRequestClaimException());
+        memberRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMember, bool>>?>()))
+            .ReturnsAsync(new ChannelMember { Id = 7100, ChannelId = 7000, UserId = 20001 });
+        memberRepository
+            .Setup(repository => repository.UpdateAsync(It.IsAny<ChannelMember>()))
+            .ReturnsAsync(true);
+        attachmentRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync([]);
+        userRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new User { Id = 20001, UserName = "Requester", PublicIndex = 1 });
+        var access = new ChatChannelAccessResult(
+            true,
+            ChannelType.Private,
+            true,
+            true,
+            true,
+            false,
+            true,
+            DirectConversationRequestStatus.Pending,
+            20001,
+            null,
+            20002,
+            7200,
+            false,
+            true);
+        var service = CreateService(
+            channelRepository,
+            messageRepository,
+            attachmentRepository,
+            memberRepository,
+            userRepository,
+            accessResult: access);
+
+        var result = await service.SendMessageAsync(30000, 20001, "Requester", new SendChannelMessageDto
+        {
+            ChannelId = 7000,
+            Type = MessageType.Text,
+            Content = "hello",
+            ClientRequestId = "pending-request-1"
+        });
+
+        Assert.False(result.WasCreated);
+        Assert.Equal(existingMessage.Id, result.Message.VoId);
+    }
+
+    [Fact]
+    public async Task SendMessageAsync_ShouldEnqueueReliableAttachmentBinding()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        var memberRepository = new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
+        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var channel = new Channel
+        {
+            Id = 7000,
+            Name = "Direct conversation",
+            Type = ChannelType.Private,
+            IsEnabled = true,
+            TenantId = 30000
+        };
+        var member = new ChannelMember { Id = 7100, ChannelId = channel.Id, UserId = 20001 };
+        ReliableOutboxDraft? capturedOutbox = null;
+
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(channel);
+        channelRepository
+            .Setup(repository => repository.UpdateAsync(channel))
+            .ReturnsAsync(true);
+        messageRepository
+            .Setup(repository => repository.AddWithEffectsAsync(
+                It.IsAny<ChannelMessage>(),
+                It.IsAny<IReadOnlyCollection<ReliableOutboxDraft>>(),
+                It.IsAny<long?>(),
+                It.IsAny<long?>()))
+            .Callback<ChannelMessage, IReadOnlyCollection<ReliableOutboxDraft>, long?, long?>((_, outboxes, _, _) =>
+                capturedOutbox = Assert.Single(outboxes))
+            .ReturnsAsync((ChannelMessage message, IReadOnlyCollection<ReliableOutboxDraft> _, long? _, long? _) =>
+                new ChannelMessageWriteResult(message.Id, false));
+        memberRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMember, bool>>?>()))
+            .ReturnsAsync(member);
+        memberRepository
+            .Setup(repository => repository.UpdateAsync(member))
+            .ReturnsAsync(true);
+        userRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(new User { Id = 20001, UserName = "Sender", PublicIndex = 1 });
+        attachmentRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync(new Attachment
+            {
+                Id = 8000,
+                UploaderId = 20001,
+                BusinessType = AttachmentBusinessTypes.Chat,
+                MimeType = "image/png",
+                IsEnabled = true,
+                TenantId = 30000
+            });
+        attachmentRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync([]);
+        var access = new ChatChannelAccessResult(
+            true,
+            ChannelType.Private,
+            true,
+            true,
+            true,
+            true,
+            true,
+            DirectConversationRequestStatus.Accepted,
+            20001,
+            null,
+            20002,
+            7200,
+            true,
+            true);
+        var service = CreateService(
+            channelRepository,
+            messageRepository,
+            attachmentRepository,
+            memberRepository,
+            userRepository,
+            access);
+
+        var result = await service.SendMessageAsync(30000, 20001, "Sender", new SendChannelMessageDto
+        {
+            ChannelId = channel.Id,
+            Type = MessageType.Image,
+            AttachmentId = 8000
+        });
+
+        Assert.True(result.WasCreated);
+        Assert.NotNull(capturedOutbox);
+        Assert.Equal(ReliableTaskTypes.ChatAttachmentBinding, capturedOutbox.TaskType);
+        var payload = JsonSerializer.Deserialize<ChatAttachmentBindingTaskPayload>(capturedOutbox.PayloadJson);
+        Assert.NotNull(payload);
+        Assert.Equal(result.Message.VoId, payload.MessageId);
+        Assert.Equal(8000, payload.AttachmentId);
+    }
+
     private static ChatService CreateService(
         Mock<IBaseRepository<Channel>>? channelRepository = null,
         Mock<IChannelMessageRepository>? messageRepository = null,
         Mock<IBaseRepository<Attachment>>? attachmentRepository = null,
-        Mock<IBaseRepository<ChannelMember>>? memberRepository = null)
+        Mock<IBaseRepository<ChannelMember>>? memberRepository = null,
+        Mock<IBaseRepository<User>>? userRepository = null,
+        ChatChannelAccessResult? accessResult = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         mapper
@@ -337,10 +671,11 @@ public class ChatServiceTest
         var baseMessageRepository = messageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict);
         var baseMemberRepository = memberRepository ?? new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
         var baseAttachmentRepository = attachmentRepository ?? new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
-        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var baseUserRepository = userRepository ?? new Mock<IBaseRepository<User>>(MockBehavior.Strict);
         var chatPresenceService = new Mock<IChatPresenceService>(MockBehavior.Strict);
         var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
         var chatChannelAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        var directConversationService = new Mock<IDirectConversationService>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         chatChannelAccessService
@@ -349,14 +684,14 @@ public class ChatServiceTest
                 It.IsAny<long>(),
                 It.IsAny<long>(),
                 It.IsAny<bool>()))
-            .ReturnsAsync(new ChatChannelAccessResult(
-                true,
-                ChannelType.Public,
-                true,
-                true,
-                true,
-                true,
-                false));
+            .ReturnsAsync(accessResult ?? new ChatChannelAccessResult(
+                    true,
+                    ChannelType.Public,
+                    true,
+                    true,
+                    true,
+                    true,
+                    false));
 
         attachmentUrlResolver
             .Setup(resolver => resolver.ResolveAttachmentUrl(It.IsAny<long>()))
@@ -371,10 +706,11 @@ public class ChatServiceTest
             baseMessageRepository.Object,
             baseMemberRepository.Object,
             baseAttachmentRepository.Object,
-            userRepository.Object,
+            baseUserRepository.Object,
             chatPresenceService.Object,
             notificationService.Object,
             chatChannelAccessService.Object,
+            directConversationService.Object,
             attachmentUrlResolver.Object);
     }
 }

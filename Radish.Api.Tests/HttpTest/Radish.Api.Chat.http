@@ -18,6 +18,7 @@
 @AfterMessageId = 0
 @MessageId = 1
 @ImageAttachmentId = 0
+@TargetUserId = 1
 @ClientRequestId = chat-http-20260718-001
 
 ###############################################################################
@@ -25,45 +26,88 @@
 ###############################################################################
 
 ### 1. 获取频道列表
-GET {{Gateway_HostAddress}}/api/v1/Channel/GetList
+GET {{Gateway_HostAddress}}/api/v1/Channel/GetList?view=active
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 2. 获取频道详情
+### 2. 获取已归档的一对一会话
+GET {{Gateway_HostAddress}}/api/v1/Channel/GetList?view=archived
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+### 3. 获取频道详情
 GET {{Gateway_HostAddress}}/api/v1/Channel/GetDetail/{{ChannelId}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 3. 获取频道在线成员
+### 4. 获取频道在线成员
 GET {{Gateway_HostAddress}}/api/v1/Channel/GetOnlineMembers/{{ChannelId}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
 ###############################################################################
+# 一对一会话生命周期
+###############################################################################
+
+### 5. 幂等获取或创建一对一会话
+POST {{Gateway_HostAddress}}/api/v1/DirectConversation/GetOrCreate
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "targetUserId": {{TargetUserId}}
+}
+
+### 6. 接受私聊请求
+POST {{Gateway_HostAddress}}/api/v1/DirectConversation/Accept/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+
+### 7. 拒绝私聊请求
+POST {{Gateway_HostAddress}}/api/v1/DirectConversation/Decline/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+
+### 8. 阻断会话
+POST {{Gateway_HostAddress}}/api/v1/DirectConversation/Block/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+
+### 9. 解除当前用户发起的阻断
+POST {{Gateway_HostAddress}}/api/v1/DirectConversation/Unblock/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+
+### 10. 归档会话
+PUT {{Gateway_HostAddress}}/api/v1/DirectConversation/SetArchived/{{ChannelId}}
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "archived": true
+}
+
+###############################################################################
 # 消息接口
 ###############################################################################
 
-### 4. 获取历史消息（最新 50 条）
+### 11. 获取历史消息（最新 50 条）
 GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{ChannelId}}&pageSize=50
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 5. 获取历史消息（向上分页）
+### 12. 获取历史消息（向上分页）
 GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{ChannelId}}&beforeMessageId={{BeforeMessageId}}&pageSize=20
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 6. 获取历史消息（向下分页）
+### 13. 获取历史消息（向下分页）
 GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetHistory?channelId={{ChannelId}}&afterMessageId={{AfterMessageId}}&pageSize=20
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 7. 获取目标消息窗口（用于消息级定位）
+### 14. 获取目标消息窗口（用于消息级定位）
 GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetMessageWindow?channelId={{ChannelId}}&messageId={{MessageId}}&beforeCount=25&afterCount=25
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 8. 发送文本消息
+### 15. 发送文本消息
 POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
@@ -75,7 +119,7 @@ Content-Type: application/json
   "content": "hello from http test"
 }
 
-### 9. 发送图片消息（可选）
+### 16. 发送图片消息（可选）
 POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
@@ -88,7 +132,7 @@ Content-Type: application/json
   "attachmentId": {{ImageAttachmentId}}
 }
 
-### 10. 撤回消息
+### 17. 撤回消息
 DELETE {{Gateway_HostAddress}}/api/v1/ChannelMessage/Recall/{{MessageId}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json

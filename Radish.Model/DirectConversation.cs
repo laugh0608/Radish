@@ -31,6 +31,10 @@ public class DirectConversation : RootEntityTKey<long>, ITenantEntity, IDeleteFi
     [SugarColumn(IsNullable = false)]
     public DirectConversationRequestStatus RequestStatus { get; set; } = DirectConversationRequestStatus.Pending;
 
+    /// <summary>陌生请求首条消息 Id；用于原子限制只能发送一条请求消息</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? RequestMessageId { get; set; }
+
     /// <summary>接受时间</summary>
     [SugarColumn(IsNullable = true)]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]

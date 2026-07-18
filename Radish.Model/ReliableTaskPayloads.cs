@@ -12,6 +12,7 @@ public static class ReliableTaskTypes
     public const string HighlightBaseReward = "CommentHighlightRewardQualified";
     public const string HighlightBonusReward = "CommentHighlightBonusQualified";
     public const string NotificationRequested = "NotificationRequested";
+    public const string ChatAttachmentBinding = "ChatAttachmentBinding";
 }
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
@@ -63,3 +64,10 @@ public sealed record HighlightBonusRewardTaskPayload(
     int LikeCountAfter);
 
 public sealed record NotificationRequestedTaskPayload(CreateNotificationDto Notification);
+
+public sealed record ChatAttachmentBindingTaskPayload(
+    long TenantId,
+    long MessageId,
+    long AttachmentId,
+    long UploaderId,
+    string UploaderName);

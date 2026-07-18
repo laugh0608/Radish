@@ -6,13 +6,19 @@ using Radish.Model.ViewModels;
 namespace Radish.IService;
 
 /// <summary>消息发送结果；控制器据此避免幂等重放再次推送实时事件</summary>
-public sealed record ChatMessageSendResult(ChannelMessageVo Message, bool WasCreated);
+public sealed record ChatMessageSendResult(
+    ChannelMessageVo Message,
+    bool WasCreated,
+    IReadOnlyList<long>? ConversationChangedUserIds = null);
 
 /// <summary>聊天室服务接口</summary>
 public interface IChatService : IBaseService<Channel, ChannelVo>
 {
     /// <summary>获取频道列表（含当前用户未读状态）</summary>
-    Task<List<ChannelVo>> GetChannelListAsync(long tenantId, long userId);
+    Task<List<ChannelVo>> GetChannelListAsync(
+        long tenantId,
+        long userId,
+        ChatChannelListView view = ChatChannelListView.Active);
 
     /// <summary>获取频道详情（含当前用户未读状态）</summary>
     Task<ChannelVo?> GetChannelDetailAsync(long tenantId, long userId, long channelId);

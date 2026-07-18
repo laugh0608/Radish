@@ -639,7 +639,7 @@ public class AttachmentServiceUploadContractTest
             .ReturnsAsync(attachment);
         var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
         chatAccessService
-            .Setup(service => service.CanAccessMessageAttachmentAsync(30000, 20002, 90001))
+            .Setup(service => service.CanAccessChatAttachmentAsync(30000, 20002, 44, 90001))
             .ReturnsAsync(false);
         var service = CreateService(
             Mock.Of<IFileStorage>(),

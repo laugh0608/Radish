@@ -96,6 +96,112 @@ public sealed class ChatSchemaMigrationTest
     }
 
     [Fact]
+    public void ChatReliableMessageMigration_ShouldAddClaimAndUniqueAttachmentReference()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-reliable-message-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<Channel>();
+            db.CodeFirst.InitTables<ChannelMember>();
+            db.CodeFirst.InitTables<DirectConversation>();
+            db.CodeFirst.InitTables<ChannelMessage>();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_attachment\"");
+            db.Ado.ExecuteCommand("ALTER TABLE \"DirectConversation\" DROP COLUMN \"RequestMessageId\"");
+
+            var migration = ChatReliableMessageSchemaMigration.Instance;
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            var conversation = CreateDirectConversation(4001, 8001);
+            var requestMessage = CreateMessage(5001, "request-message");
+            requestMessage.ChannelId = conversation.ChannelId;
+            requestMessage.AttachmentId = 6001;
+            db.Insertable(conversation).ExecuteCommand();
+            db.Insertable(requestMessage).ExecuteCommand();
+            db.Updateable<DirectConversation>()
+                .SetColumns(item => item.RequestMessageId == requestMessage.Id)
+                .Where(item => item.Id == conversation.Id)
+                .ExecuteCommand();
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.True(db.DbMaintenance.IsAnyColumn("DirectConversation", "RequestMessageId", false));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_channel_message_attachment"));
+
+            var duplicateAttachmentMessage = CreateMessage(5002, "another-request");
+            duplicateAttachmentMessage.ChannelId = conversation.ChannelId;
+            duplicateAttachmentMessage.AttachmentId = requestMessage.AttachmentId;
+            Assert.ThrowsAny<Exception>(() => db.Insertable(duplicateAttachmentMessage).ExecuteCommand());
+
+            db.Updateable<DirectConversation>()
+                .SetColumns(item => item.RequestMessageId == 999999L)
+                .Where(item => item.Id == conversation.Id)
+                .ExecuteCommand();
+            Assert.Contains(
+                migration.Verify(db, services),
+                issue => issue.Contains("首条请求消息声明与消息事实不一致", StringComparison.Ordinal));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Database", "PostgreSQL")]
+    public async Task ChatReliableMessageMigration_ShouldSupportPostgreSql()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable(PostgreSqlConnectionStringEnvironmentVariable);
+        Assert.SkipWhen(
+            string.IsNullOrWhiteSpace(adminConnectionString),
+            $"未配置 {PostgreSqlConnectionStringEnvironmentVariable}，跳过 Chat 可靠消息 PostgreSQL 迁移测试");
+
+        var schema = $"chat_reliable_{Guid.NewGuid():N}";
+        using var adminDb = CreatePostgreSqlClient(adminConnectionString!);
+        await adminDb.Ado.ExecuteCommandAsync($"CREATE SCHEMA {QuoteIdentifier(schema)}");
+        try
+        {
+            var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
+            using var db = CreatePostgreSqlClient(connectionString);
+            using var services = new ServiceCollection().BuildServiceProvider();
+            db.CodeFirst.InitTables<DirectConversation>();
+            db.CodeFirst.InitTables<ChannelMessage>();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_attachment\"");
+            DropColumn(db, "DirectConversation", "RequestMessageId");
+
+            var migration = ChatReliableMessageSchemaMigration.Instance;
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            var conversation = CreateDirectConversation(6001, 9001);
+            var requestMessage = CreateMessage(7001, "postgres-request");
+            requestMessage.ChannelId = conversation.ChannelId;
+            requestMessage.AttachmentId = 8001;
+            db.Insertable(conversation).ExecuteCommand();
+            db.Insertable(requestMessage).ExecuteCommand();
+            db.Updateable<DirectConversation>()
+                .SetColumns(item => item.RequestMessageId == requestMessage.Id)
+                .Where(item => item.Id == conversation.Id)
+                .ExecuteCommand();
+
+            Assert.Empty(migration.Verify(db, services));
+            var duplicateAttachmentMessage = CreateMessage(7002, "postgres-duplicate");
+            duplicateAttachmentMessage.ChannelId = conversation.ChannelId;
+            duplicateAttachmentMessage.AttachmentId = requestMessage.AttachmentId;
+            Assert.ThrowsAny<Exception>(() => db.Insertable(duplicateAttachmentMessage).ExecuteCommand());
+        }
+        finally
+        {
+            await adminDb.Ado.ExecuteCommandAsync($"DROP SCHEMA IF EXISTS {QuoteIdentifier(schema)} CASCADE");
+        }
+    }
+
+    [Fact]
     public void ChatAttachmentPrivacyMigration_ShouldOnlyMakeChatAttachmentsPrivate()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-attachment-migration-{Guid.NewGuid():N}.db");

@@ -21,6 +21,18 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
 
     public async Task<long> AddWithOutboxAsync(ChannelMessage message, ReliableOutboxDraft? outboxDraft)
     {
+        var result = await AddWithEffectsAsync(
+            message,
+            outboxDraft == null ? [] : [outboxDraft]);
+        return result.MessageId;
+    }
+
+    public async Task<ChannelMessageWriteResult> AddWithEffectsAsync(
+        ChannelMessage message,
+        IReadOnlyCollection<ReliableOutboxDraft> outboxDrafts,
+        long? unarchiveUserId = null,
+        long? claimPendingConversationId = null)
+    {
         if (message.Id <= 0)
         {
             throw new ArgumentException("聊天室消息必须预先分配 ID", nameof(message));
@@ -29,16 +41,62 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
         DbProtectedClient.Ado.BeginTran();
         try
         {
+            if (claimPendingConversationId > 0)
+            {
+                var claimed = await DbProtectedClient.Updateable<DirectConversation>()
+                    .SetColumns(conversation => new DirectConversation
+                    {
+                        RequestMessageId = message.Id,
+                        ModifyTime = message.CreateTime,
+                        ModifyBy = message.UserName,
+                        ModifyId = message.UserId
+                    })
+                    .Where(conversation =>
+                        conversation.Id == claimPendingConversationId.Value &&
+                        conversation.RequestStatus == DirectConversationRequestStatus.Pending &&
+                        conversation.RequestMessageId == null &&
+                        conversation.BlockedByUserId == null &&
+                        !conversation.IsDeleted)
+                    .ExecuteCommandAsync();
+                if (claimed == 0)
+                {
+                    throw new DirectConversationRequestClaimException();
+                }
+            }
+
             await DbProtectedClient.Insertable(message).ExecuteCommandAsync();
-            if (outboxDraft != null)
+            if (outboxDrafts.Count > 0)
             {
                 var outboxRepository = _reliableOutboxRepository
                     ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
-                await outboxRepository.AddAsync(outboxDraft);
+                foreach (var outboxDraft in outboxDrafts)
+                {
+                    await outboxRepository.AddAsync(outboxDraft);
+                }
+            }
+
+            var peerWasUnarchived = false;
+            if (unarchiveUserId > 0)
+            {
+                var affected = await DbProtectedClient.Updateable<ChannelMember>()
+                    .SetColumns(member => new ChannelMember
+                    {
+                        ArchivedAt = null,
+                        ModifyTime = message.CreateTime,
+                        ModifyBy = message.UserName,
+                        ModifyId = message.UserId
+                    })
+                    .Where(member =>
+                        member.ChannelId == message.ChannelId &&
+                        member.UserId == unarchiveUserId.Value &&
+                        member.ArchivedAt != null &&
+                        !member.IsDeleted)
+                    .ExecuteCommandAsync();
+                peerWasUnarchived = affected > 0;
             }
 
             DbProtectedClient.Ado.CommitTran();
-            return message.Id;
+            return new ChannelMessageWriteResult(message.Id, peerWasUnarchived);
         }
         catch
         {

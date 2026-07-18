@@ -33,6 +33,10 @@ public static class NotificationType
     /// <remarks>优先级：普通（2）</remarks>
     public const string PostQuickReplied = "PostQuickReplied";
 
+    /// <summary>收到陌生人私信请求</summary>
+    /// <remarks>优先级：普通（2）</remarks>
+    public const string DirectMessageRequested = "DirectMessageRequested";
+
     #endregion
 
     #region 成就类通知（P2 后续实现）
