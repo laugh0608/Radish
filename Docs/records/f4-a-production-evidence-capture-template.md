@@ -1,6 +1,8 @@
 # F4-A 生产六链路证据采集记录模板
 
-> 用途：按 [F4 真实使用证据采集与反馈归因](/guide/real-usage-evidence-collection) 记录一次生产观察批次。
+> 状态：**冻结的最终收尾模板**。不得因观察周期、历史记录或新会话自动启用；只有产品达到最终完成体、没有其他明确任务且用户确认重启后使用。
+>
+> 用途：最终阶段按 [F4 真实使用证据采集与反馈归因](/guide/real-usage-evidence-collection) 记录一次生产观察批次，不作为功能开发前置。
 >
 > 复制本模板时建议命名为 `f4-a-production-evidence-capture-YYYY-MM-DD.md`。
 
