@@ -1,5 +1,6 @@
 import * as signalR from '@microsoft/signalr';
 import type { NotificationInboxChangedVo } from '@radish/http';
+import { notificationInboxSync } from '@/services/notificationInboxSync';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
@@ -107,6 +108,9 @@ class NotificationHubService {
       log.debug('[NotificationHub] 连接成功');
       store.setConnectionState('connected');
       this.retryCount = 0;
+      void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+        log.warn('[NotificationHub] 连接成功后的权威状态对账失败', error);
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
@@ -166,6 +170,9 @@ class NotificationHubService {
     this.connection.onreconnected(() => {
       log.debug('[NotificationHub] 重连成功');
       useNotificationStore.getState().setConnectionState('connected');
+      void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+        log.warn('[NotificationHub] 重连后的权威状态对账失败', error);
+      });
     });
 
     this.connection.onclose((error) => {
@@ -173,21 +180,9 @@ class NotificationHubService {
       useNotificationStore.getState().setConnectionState('disconnected');
     });
 
-    // 服务端推送事件
-    this.connection.on('UnreadCountChanged', (data: { unreadCount: string }) => {
-      log.debug('[NotificationHub] 未读数更新:', data.unreadCount);
-      const unreadCount = Number(data.unreadCount);
-      if (Number.isSafeInteger(unreadCount) && unreadCount >= 0) {
-        useNotificationStore.getState().setUnreadCount(unreadCount);
-      }
-    });
-
     this.connection.on('NotificationInboxChanged', (change: NotificationInboxChangedVo) => {
       log.debug('[NotificationHub] 收件箱 revision 更新:', change.voRevision);
-      const unreadGroupCount = Number(change.voUnreadGroupCount);
-      if (Number.isSafeInteger(unreadGroupCount) && unreadGroupCount >= 0) {
-        useNotificationStore.getState().setUnreadCount(unreadGroupCount);
-      }
+      notificationInboxSync.handleInboxChanged(change);
     });
   }
 }

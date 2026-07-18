@@ -57,9 +57,7 @@ export const Shell = () => {
       clearUser();
 
       // 清除通知
-      const notificationStore = useNotificationStore.getState();
-      notificationStore.clearRecentNotifications();
-      notificationStore.setUnreadCount(0);
+      useNotificationStore.getState().reset();
       resetChatStore();
     }
   }, [isAuthenticated, currentUser, clearUser, resetChatStore]);

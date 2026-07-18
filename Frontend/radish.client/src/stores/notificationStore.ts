@@ -1,220 +1,148 @@
 import { create } from 'zustand';
-import type { LongId } from '@/api/user';
-import { normalizePositiveLongIdKey } from '@/utils/longId';
+import type {
+  NotificationCategory,
+  NotificationInboxChangedVo,
+  NotificationInboxPageVo,
+  NotificationInboxSummaryVo,
+  NotificationPreferenceVo,
+} from '@radish/http';
+import {
+  canApplyNotificationInboxPage,
+  canApplyNotificationSummary,
+  compareNotificationRevisions,
+  getUnreadGroupCount,
+  getUnreadOccurrenceCount,
+  mergeNotificationGroups,
+  parseNotificationCount,
+} from '@/notifications/notificationInbox';
 
-/** 通知类型 */
-export type NotificationType = 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery';
-
-/**
- * 通知项（Store 内部使用，与后端 VO 字段对应）
- * 注意：这是 Store 内部的数据结构，UI 组件使用 NotificationItemData
- */
-export interface NotificationItem {
-  /** 列表项唯一 ID（优先使用用户通知关系 ID） */
-  id: LongId;
-  /** 后端通知 ID（用于已读/删除等接口） */
-  notificationId?: LongId;
-  /** 通知类型 */
-  type: NotificationType;
-  /** 通知标题 */
-  title: string;
-  /** 通知内容 */
-  content: string;
-  /** 是否已读 */
-  isRead: boolean;
-  /** 创建时间 */
-  createdAt: string;
-  /** 业务 ID */
-  businessId?: LongId | null;
-  /** 业务类型 */
-  businessType?: string | null;
-  /** 触发者 ID */
-  triggerId?: LongId | null;
-  /** 触发者名称 */
-  triggerName?: string | null;
-  /** 触发者头像 */
-  triggerAvatar?: string | null;
-  /** 扩展数据（JSON 字符串） */
-  extData?: string | null;
-}
-
-/** 连接状态 */
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
+export type NotificationLoadState = 'idle' | 'loading' | 'ready' | 'error';
 
 interface NotificationStore {
-  /** 未读数量 */
+  summary: NotificationInboxSummaryVo | null;
+  groups: NotificationInboxPageVo['voItems'];
+  nextCursor: string | null;
+  listRevision: string | null;
+  preferences: NotificationPreferenceVo[];
+  activeCategory: NotificationCategory | null;
+  onlyUnread: boolean;
   unreadCount: number;
-
-  /** 连接状态 */
+  unreadOccurrenceCount: number;
   connectionState: ConnectionState;
-
-  /** 最近通知列表（用于弹窗预览） */
-  recentNotifications: NotificationItem[];
-
-  /** 设置未读数量 */
-  setUnreadCount: (count: number) => void;
-
-  /** 增加未读数量 */
-  incrementUnreadCount: (delta?: number) => void;
-
-  /** 设置连接状态 */
+  loadState: NotificationLoadState;
+  loadingMore: boolean;
+  preferencesLoading: boolean;
+  preferencesSaving: boolean;
+  errorMessage: string | null;
+  pendingRevision: string | null;
+  hasNewerRevision: boolean;
+  applySummary: (summary: NotificationInboxSummaryVo) => boolean;
+  applyInboxPage: (page: NotificationInboxPageVo, append: boolean) => boolean;
+  noteInboxChanged: (change: NotificationInboxChangedVo) => boolean;
+  setPreferences: (preferences: NotificationPreferenceVo[]) => void;
+  setFilters: (category: NotificationCategory | null, onlyUnread: boolean) => void;
   setConnectionState: (state: ConnectionState) => void;
-
-  /** 设置最近通知（覆盖） */
-  setRecentNotifications: (notifications: NotificationItem[]) => void;
-
-  /** 添加新通知 */
-  addNotification: (notification: NotificationItem) => void;
-
-  /** 移除通知（按通知 ID） */
-  removeNotification: (notificationId: LongId) => void;
-
-  /** 标记通知已读 */
-  markAsRead: (notificationIds: LongId[]) => void;
-
-  /** 标记全部已读 */
-  markAllAsRead: () => void;
-
-  /** 清空最近通知 */
-  clearRecentNotifications: () => void;
+  setLoadState: (state: NotificationLoadState, errorMessage?: string | null) => void;
+  setLoadingMore: (loading: boolean) => void;
+  setPreferencesLoading: (loading: boolean) => void;
+  setPreferencesSaving: (saving: boolean) => void;
+  reset: () => void;
 }
 
-function isSameNotificationList(a: NotificationItem[], b: NotificationItem[]): boolean {
-  return a.length === b.length && a.every((item, index) => item === b[index]);
-}
-
-function getNotificationPrimaryKey(item: Pick<NotificationItem, 'id' | 'notificationId' | 'createdAt' | 'type'>): string {
-  return normalizePositiveLongIdKey(item.notificationId)
-    ?? normalizePositiveLongIdKey(item.id)
-    ?? `${String(item.notificationId ?? item.id)}|${item.createdAt}|${item.type}`;
-}
-
-function matchesNotificationId(
-  item: Pick<NotificationItem, 'id' | 'notificationId'>,
-  notificationIdKey: string
-): boolean {
-  return normalizePositiveLongIdKey(item.id) === notificationIdKey
-    || normalizePositiveLongIdKey(item.notificationId) === notificationIdKey;
-}
-
-export const useNotificationStore = create<NotificationStore>((set) => ({
+const initialState = {
+  summary: null,
+  groups: [],
+  nextCursor: null,
+  listRevision: null,
+  preferences: [],
+  activeCategory: null,
+  onlyUnread: false,
   unreadCount: 0,
-  connectionState: 'disconnected',
-  recentNotifications: [],
+  unreadOccurrenceCount: 0,
+  connectionState: 'disconnected' as ConnectionState,
+  loadState: 'idle' as NotificationLoadState,
+  loadingMore: false,
+  preferencesLoading: false,
+  preferencesSaving: false,
+  errorMessage: null,
+  pendingRevision: null,
+  hasNewerRevision: false,
+};
 
-  setUnreadCount: (count: number) => {
-    set({ unreadCount: Math.max(0, count) });
-  },
+export const useNotificationStore = create<NotificationStore>((set, get) => ({
+  ...initialState,
 
-  incrementUnreadCount: (delta = 1) => {
-    set(state => ({ unreadCount: Math.max(0, state.unreadCount + delta) }));
-  },
-
-  setConnectionState: (connectionState: ConnectionState) => {
-    set({ connectionState });
-  },
-
-  setRecentNotifications: (notifications: NotificationItem[]) => {
-    const unique: NotificationItem[] = [];
-    const seen = new Set<string>();
-
-    for (const item of notifications) {
-      const key = getNotificationPrimaryKey(item);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      unique.push(item);
+  applySummary: (summary) => {
+    const current = get();
+    if (!canApplyNotificationSummary(summary.voRevision, current.summary?.voRevision)) {
+      return false;
     }
 
-    const trimmed = unique.slice(0, 20);
+    const listIsBehind = current.listRevision !== null
+      && compareNotificationRevisions(summary.voRevision, current.listRevision) > 0;
+    const pendingResolved = current.pendingRevision === null
+      || compareNotificationRevisions(summary.voRevision, current.pendingRevision) >= 0;
 
-    // 仅维护最近通知列表，不用本地切片覆盖全局未读数。
-    // 全局未读数由服务端事件/接口同步，避免列表页与 Dock 角标口径不一致。
-    set((state) => {
-      if (isSameNotificationList(state.recentNotifications, trimmed)) {
-        return state;
-      }
-
-      return {
-        recentNotifications: trimmed
-      };
+    set({
+      summary,
+      unreadCount: getUnreadGroupCount(summary),
+      unreadOccurrenceCount: getUnreadOccurrenceCount(summary),
+      pendingRevision: pendingResolved ? null : current.pendingRevision,
+      hasNewerRevision: current.hasNewerRevision || listIsBehind,
     });
+    return true;
   },
 
-  addNotification: (notification: NotificationItem) => {
-    set(state => ({
-      recentNotifications: (() => {
-        const notificationKey = getNotificationPrimaryKey(notification);
-        const existingIndex = state.recentNotifications.findIndex(
-          (item) => getNotificationPrimaryKey(item) === notificationKey
-        );
-        if (existingIndex === -1) {
-          return [notification, ...state.recentNotifications].slice(0, 20);
-        }
-
-        const next = state.recentNotifications.slice();
-        next[existingIndex] = { ...next[existingIndex], ...notification };
-        return next;
-      })()
-    }));
-  },
-
-  removeNotification: (notificationId: LongId) => {
-    const notificationIdKey = normalizePositiveLongIdKey(notificationId);
-    if (!notificationIdKey) {
-      return;
+  applyInboxPage: (page, append) => {
+    const current = get();
+    if (!canApplyNotificationInboxPage(
+      page.voSummary.voRevision,
+      current.summary?.voRevision,
+      current.listRevision,
+      append,
+    )) {
+      return false;
     }
 
-    set(state => {
-      const removedUnread = state.recentNotifications.filter(
-        (item) => matchesNotificationId(item, notificationIdKey) && !item.isRead
-      ).length;
-      return {
-        recentNotifications: state.recentNotifications.filter(
-          (item) => !matchesNotificationId(item, notificationIdKey)
-        ),
-        unreadCount: Math.max(0, state.unreadCount - removedUnread)
-      };
+    set({
+      summary: page.voSummary,
+      groups: append ? mergeNotificationGroups(current.groups, page.voItems) : page.voItems,
+      nextCursor: page.voNextCursor,
+      listRevision: page.voSummary.voRevision,
+      unreadCount: getUnreadGroupCount(page.voSummary),
+      unreadOccurrenceCount: getUnreadOccurrenceCount(page.voSummary),
+      pendingRevision: null,
+      hasNewerRevision: false,
+      loadState: 'ready',
+      loadingMore: false,
+      errorMessage: null,
     });
+    return true;
   },
 
-  markAsRead: (notificationIds: LongId[]) => {
-    const idSet = new Set(
-      notificationIds
-        .map((id) => normalizePositiveLongIdKey(id))
-        .filter((id): id is string => id !== null)
-    );
-
-    if (idSet.size === 0) {
-      return;
+  noteInboxChanged: (change) => {
+    const current = get();
+    const knownRevision = current.pendingRevision ?? current.summary?.voRevision ?? '0';
+    if (compareNotificationRevisions(change.voRevision, knownRevision) <= 0) {
+      return false;
     }
 
-    set(state => {
-      const shouldMarkItem = (item: Pick<NotificationItem, 'id' | 'notificationId'>) => (
-        Array.from(idSet).some((id) => matchesNotificationId(item, id))
-      );
-      const updated = state.recentNotifications.map(n =>
-        shouldMarkItem(n)
-          ? { ...n, isRead: true }
-          : n
-      );
-      const markedUnreadCount = state.recentNotifications.filter(
-        (item) => !item.isRead && shouldMarkItem(item)
-      ).length;
-      return {
-        recentNotifications: updated,
-        unreadCount: Math.max(0, state.unreadCount - markedUnreadCount)
-      };
+    set({
+      pendingRevision: change.voRevision,
+      hasNewerRevision: current.listRevision !== null,
+      unreadCount: parseNotificationCount(change.voUnreadGroupCount),
+      unreadOccurrenceCount: parseNotificationCount(change.voUnreadOccurrenceCount),
     });
+    return true;
   },
 
-  markAllAsRead: () => {
-    set(state => ({
-      recentNotifications: state.recentNotifications.map(n => ({ ...n, isRead: true })),
-      unreadCount: 0
-    }));
-  },
-
-  clearRecentNotifications: () => {
-    set({ recentNotifications: [] });
-  }
+  setPreferences: (preferences) => set({ preferences }),
+  setFilters: (activeCategory, onlyUnread) => set({ activeCategory, onlyUnread }),
+  setConnectionState: (connectionState) => set({ connectionState }),
+  setLoadState: (loadState, errorMessage = null) => set({ loadState, errorMessage }),
+  setLoadingMore: (loadingMore) => set({ loadingMore }),
+  setPreferencesLoading: (preferencesLoading) => set({ preferencesLoading }),
+  setPreferencesSaving: (preferencesSaving) => set({ preferencesSaving }),
+  reset: () => set({ ...initialState }),
 }));

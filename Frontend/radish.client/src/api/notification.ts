@@ -8,6 +8,8 @@ import {
   apiGet,
   apiPut,
   configureApiClient,
+  createApiResponseError,
+  type ParsedApiResponse,
   type NotificationCategory,
   type NotificationInboxMutationVo,
   type NotificationInboxPageVo,
@@ -23,6 +25,17 @@ import type { LongId } from '@/api/user';
 configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
+
+function requireResponseData<T>(
+  response: ParsedApiResponse<T>,
+  fallbackMessage: string,
+): T {
+  if (!response.ok || response.data === undefined) {
+    throw createApiResponseError(response, fallbackMessage);
+  }
+
+  return response.data;
+}
 
 /**
  * 通知详情 Vo（嵌套在 UserNotificationVo 中）
@@ -98,7 +111,7 @@ export const notificationApi = {
     onlyUnread?: boolean;
     cursor?: string;
     pageSize?: number;
-  } = {}): Promise<NotificationInboxPageVo | null> {
+  } = {}): Promise<NotificationInboxPageVo> {
     const search = new URLSearchParams();
     if (params.category) search.set('category', params.category);
     if (params.onlyUnread !== undefined) search.set('onlyUnread', String(params.onlyUnread));
@@ -108,60 +121,60 @@ export const notificationApi = {
       `/api/v1/Notification/GetInbox?${search.toString()}`,
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '加载通知收件箱失败');
   },
 
-  async getInboxSummary(): Promise<NotificationInboxSummaryVo | null> {
+  async getInboxSummary(): Promise<NotificationInboxSummaryVo> {
     const response = await apiGet<NotificationInboxSummaryVo>(
       '/api/v1/Notification/GetInboxSummary',
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '加载通知摘要失败');
   },
 
-  async markInboxGroupsAsRead(groupIds: LongId[]): Promise<NotificationInboxMutationVo | null> {
+  async markInboxGroupsAsRead(groupIds: LongId[]): Promise<NotificationInboxMutationVo> {
     const response = await apiPut<NotificationInboxMutationVo>(
       '/api/v1/Notification/MarkInboxGroupsAsRead',
       { groupIds },
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '标记通知分组已读失败');
   },
 
-  async markAllInboxAsRead(category?: NotificationCategory): Promise<NotificationInboxMutationVo | null> {
+  async markAllInboxAsRead(category?: NotificationCategory): Promise<NotificationInboxMutationVo> {
     const response = await apiPut<NotificationInboxMutationVo>(
       '/api/v1/Notification/MarkAllAsRead',
       category ? { category } : {},
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '标记分类通知已读失败');
   },
 
-  async deleteInboxGroup(groupId: LongId): Promise<NotificationInboxMutationVo | null> {
+  async deleteInboxGroup(groupId: LongId): Promise<NotificationInboxMutationVo> {
     const response = await apiDelete<NotificationInboxMutationVo>(
       `/api/v1/Notification/DeleteInboxGroup/${encodeURIComponent(String(groupId))}`,
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '删除通知分组失败');
   },
 
-  async getPreferences(): Promise<NotificationPreferenceVo[] | null> {
+  async getPreferences(): Promise<NotificationPreferenceVo[]> {
     const response = await apiGet<NotificationPreferenceVo[]>(
       '/api/v1/Notification/GetPreferences',
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '加载通知偏好失败');
   },
 
   async updatePreferences(
     preferences: UpdateNotificationPreferenceDto[],
-  ): Promise<NotificationPreferenceVo[] | null> {
+  ): Promise<NotificationPreferenceVo[]> {
     const response = await apiPut<NotificationPreferenceVo[]>(
       '/api/v1/Notification/UpdatePreferences',
       { preferences },
       { withAuth: true },
     );
-    return response.ok ? response.data ?? null : null;
+    return requireResponseData(response, '保存通知偏好失败');
   },
 
   /**

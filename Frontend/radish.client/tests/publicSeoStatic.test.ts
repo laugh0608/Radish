@@ -224,8 +224,9 @@ test('纯 Web 壳层应使用统一产品级导航而不是 public / private 两
   assert.match(shellSource, /event\.preventDefault\(\);/);
   assert.match(shellSource, /item\.onClick\(\);/);
   assert.match(shellSource, /if \(navigateToShellPath\(item\.href\)\) \{/);
-  assert.match(source, /function buildShellActionItems\(authAction: WebShellNavItem, notificationsLabel: string\): WebShellNavItem\[\]/);
+  assert.match(source, /function buildShellActionItems\([\s\S]*notificationCount: number,[\s\S]*\): WebShellNavItem\[\]/);
   assert.match(source, /key: 'notifications'[\s\S]*href: '\/notifications'/);
+  assert.match(source, /badgeCount: notificationCount/);
   assert.match(source, /key: 'me'[\s\S]*href: '\/me'/);
   assert.match(source, /avatarUrl: resolveMediaUrl\(avatarUrl\)/);
   assert.doesNotMatch(shellSource, /publicNavItems|privateNavItems|publicMobileNavItems|privateMobileNavItems/);
@@ -268,7 +269,7 @@ test('正式 Web 壳层切换应复用当前 React 入口而不是整页重载',
   assert.match(mainSource, /<BrowserAppRouter \/>/);
   assert.match(shellSource, /window\.history\.pushState\(\{\}, '', nextPath\);/);
   assert.match(shellSource, /window\.dispatchEvent\(new PopStateEvent\('popstate'/);
-  assert.match(publicShellSource, /buildShellActionItems\(authAction, t\('public\.shell\.nav\.notifications'\)\)/);
+  assert.match(publicShellSource, /buildShellActionItems\([\s\S]*t\('public\.shell\.nav\.notifications'\),[\s\S]*loggedIn \? notificationCount : 0,[\s\S]*\)/);
   assert.doesNotMatch(publicShellSource, /window\.location\.href = href/);
 });
 

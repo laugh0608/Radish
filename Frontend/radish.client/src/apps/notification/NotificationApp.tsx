@@ -1,84 +1,66 @@
 import { useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import type { NotificationItemData } from '@radish/ui/notification';
+import type { NotificationInboxGroupVo } from '@radish/http';
+import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
 import { useWindowStore } from '@/stores/windowStore';
-import { useUserStore } from '@/stores/userStore';
-import { buildChatAppParams, parseChatNotificationNavigation } from '@/utils/chatNavigation';
-import { buildForumAppParams, parseForumNotificationNavigation } from '@/utils/forumNavigation';
-import { isSameLongId, normalizePositiveLongIdKey } from '@/utils/longId';
+import { buildChatAppParams } from '@/utils/chatNavigation';
+import { buildForumAppParams } from '@/utils/forumNavigation';
+import type { NotificationWebNavigationTarget } from '@/utils/notificationNavigation';
 import { NotificationCenter } from './NotificationCenter';
 
 export const NotificationApp = () => {
-  const { t } = useTranslation();
-  const { openApp, openOrReuseApp } = useWindowStore();
-  const currentUserId = useUserStore((state) => state.userId);
+  const openOrReuseApp = useWindowStore((state) => state.openOrReuseApp);
 
-  const handleNavigateNotification = useCallback((notification: NotificationItemData) => {
-    const businessType = notification.businessType?.trim();
-    const chatNavigation = parseChatNotificationNavigation(notification.extData);
-    const forumNavigation = parseForumNotificationNavigation(notification.extData);
-
-    if (chatNavigation) {
-      openOrReuseApp('chat', buildChatAppParams(chatNavigation));
-      return true;
-    }
-
-    if (forumNavigation) {
-      openOrReuseApp('forum', buildForumAppParams(forumNavigation));
-      return true;
-    }
-
-    if (businessType === 'Post' && notification.businessId != null) {
-      const forumParams = buildForumAppParams({ postId: notification.businessId });
-      if ('postId' in forumParams) {
-        openOrReuseApp('forum', forumParams);
-        return true;
-      }
-    }
-
-    if (businessType === 'Comment') {
-      openOrReuseApp('forum');
-      return true;
-    }
-
-    if (businessType === 'User' || notification.type === 'follow') {
-      const targetUserId = normalizePositiveLongIdKey(
-        notification.type === 'follow'
-          ? (notification.triggerId ?? notification.businessId)
-          : (notification.businessId ?? notification.triggerId)
-      );
-
-      if (targetUserId) {
-        if (isSameLongId(targetUserId, currentUserId)) {
-          openApp('profile');
-        } else {
-          openApp('profile', {
-            userId: targetUserId,
-            userName: notification.triggerName?.trim() || t('common.userFallback', { id: targetUserId }),
-            avatarUrl: notification.triggerAvatar ?? null,
-          });
+  const handleNavigateTarget = useCallback((
+    group: NotificationInboxGroupVo,
+    target: NotificationWebNavigationTarget,
+  ) => {
+    switch (group.voTarget.voKind) {
+      case 'ForumPost': {
+        const params = buildForumAppParams({
+          postId: group.voTarget.voPostId ?? undefined,
+          postPublicId: group.voTarget.voPostPublicId ?? undefined,
+          commentId: group.voTarget.voCommentId ?? undefined,
+        });
+        if (Object.keys(params).length > 0) {
+          openOrReuseApp('forum', params);
+          return true;
         }
+        break;
+      }
+      case 'ChatConversation': {
+        const channelId = group.voTarget.voChannelId?.trim();
+        if (channelId) {
+          const params = buildChatAppParams({
+            channelId,
+            messageId: group.voTarget.voMessageId ?? undefined,
+          });
+          if (Object.keys(params).length > 0) {
+            openOrReuseApp('chat', params);
+            return true;
+          }
+        }
+        break;
+      }
+      case 'ShopOrder': {
+        const orderId = group.voTarget.voOrderId?.trim();
+        if (orderId) {
+          openOrReuseApp('shop', { orderId });
+          return true;
+        }
+        break;
+      }
+      case 'Inventory':
+        openOrReuseApp('shop', { initialView: 'inventory' });
         return true;
-      }
+      default:
+        break;
     }
 
-    if (businessType === 'Order') {
-      const targetOrderId = normalizePositiveLongIdKey(notification.businessId);
-      if (targetOrderId) {
-        openOrReuseApp('shop', { orderId: targetOrderId });
-      } else {
-        openApp('shop');
-      }
-      return true;
-    }
+    window.location.href = target.surface === 'console'
+      ? resolveConsoleExternalUrl(target.href)
+      : target.href;
+    return true;
+  }, [openOrReuseApp]);
 
-    if (notification.type === 'reply' || notification.type === 'mention' || notification.type === 'like') {
-      openOrReuseApp('forum');
-      return true;
-    }
-
-    return false;
-  }, [currentUserId, openApp, openOrReuseApp, t]);
-
-  return <NotificationCenter onNavigateNotification={handleNavigateNotification} />;
+  return <NotificationCenter onNavigateTarget={handleNavigateTarget} />;
 };

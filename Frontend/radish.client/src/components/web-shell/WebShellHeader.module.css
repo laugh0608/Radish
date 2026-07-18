@@ -142,11 +142,26 @@
   color: var(--rx-text-primary);
 }
 
-.actionItem span:last-child {
+.linkLabel {
   max-width: 128px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.linkBadge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--rx-radius-pill);
+  background: var(--rx-brand-primary);
+  color: var(--theme-text-inverse);
+  font-size: 10px;
+  font-weight: 850;
+  line-height: 1;
 }
 
 .linkAvatar,
@@ -222,7 +237,7 @@
   text-decoration: none;
 }
 
-.mobileTab span {
+.mobileTab .linkLabel {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;

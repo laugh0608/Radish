@@ -2,25 +2,22 @@ import { useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getChannelList } from '@/api/chat';
-import { notificationApi } from '@/api/notification';
 import { readDraftMap, type ChannelDraft } from '@/apps/chat/chatApp.helpers';
 import { getApiBaseUrl } from '@/config/env';
 import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import { getUnreadCategoryCount } from '@/notifications/notificationInbox';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
+import { notificationInboxSync } from '@/services/notificationInboxSync';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
-import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from '@/stores/userStore';
 import type { ChannelVo } from '@/types/chat';
 import { normalizeEntityId } from '@/types/chat';
 import { log } from '@/utils/logger';
-import {
-  getNotificationActionScope,
-  resolveNotificationPreview,
-  toNotificationStoreItem,
-} from '@/notifications/notificationActionQueue';
+import { resolveWebNotificationNavigation } from '@/utils/notificationNavigation';
 import styles from './WorkbenchApp.module.css';
 
 type WorkbenchAccess = 'public' | 'private' | 'admin' | 'legacy';
@@ -362,7 +359,8 @@ export const WorkbenchApp = () => {
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
   const unreadCount = useNotificationStore(state => state.unreadCount);
-  const recentNotifications = useNotificationStore(state => state.recentNotifications);
+  const notificationSummary = useNotificationStore(state => state.summary);
+  const notificationGroups = useNotificationStore(state => state.groups);
   const channels = useChatStore(state => state.channels);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
@@ -391,22 +389,9 @@ export const WorkbenchApp = () => {
       window.location.assign(href);
     });
   };
-  const notificationPreviews = useMemo(() => (
-    recentNotifications.map(resolveNotificationPreview)
-  ), [recentNotifications]);
-  const unreadNotificationCount = Math.max(
-    unreadCount,
-    notificationPreviews.filter((item) => !item.isRead).length,
-  );
+  const unreadNotificationCount = unreadCount;
   const hasActivitySyncIssue = activityState.notificationError || activityState.messageError;
   const activitySyncIssueHref = activityState.notificationError ? '/notifications' : '/messages';
-  const notificationScopeCounts = useMemo(() => (
-    notificationPreviews.reduce<Record<string, number>>((counts, item) => {
-      const scope = getNotificationActionScope(item, item.target);
-      counts[scope] = (counts[scope] ?? 0) + 1;
-      return counts;
-    }, {})
-  ), [notificationPreviews]);
   const messageUnreadTotal = useMemo(() => (
     channels.reduce((total, channel) => total + Math.max(0, channel.voUnreadCount), 0)
   ), [channels]);
@@ -416,12 +401,13 @@ export const WorkbenchApp = () => {
   const queueItems = useMemo(() => {
     const items: WorkbenchQueueItem[] = [];
     const fallbackItems = buildFallbackQueue(t);
-    const latestRoutedNotification = notificationPreviews.find((item) => item.target !== null);
-    const orderCount = notificationScopeCounts.orders ?? 0;
-    const petCount = notificationScopeCounts.pet ?? 0;
-    const experienceCount = notificationScopeCounts.experience ?? 0;
-    const followCount = notificationScopeCounts.follow ?? 0;
-    const governanceCount = notificationScopeCounts.governance ?? 0;
+    const latestRoutedNotification = notificationGroups
+      .map((group) => resolveWebNotificationNavigation(group.voTarget))
+      .find((target) => target?.surface === 'web');
+    const orderCount = getUnreadCategoryCount(notificationSummary, 'Commerce');
+    const experienceCount = getUnreadCategoryCount(notificationSummary, 'Growth');
+    const followCount = getUnreadCategoryCount(notificationSummary, 'Relationship');
+    const governanceCount = getUnreadCategoryCount(notificationSummary, 'Governance');
 
     if (!authReady) {
       appendUniqueQueueItem(items, {
@@ -452,7 +438,7 @@ export const WorkbenchApp = () => {
         id: 'notifications',
         title: t('workbench.continue.notifications.title'),
         description: t('workbench.continue.notifications.descriptionActive'),
-        href: latestRoutedNotification?.target?.href ?? '/notifications',
+        href: latestRoutedNotification?.href ?? '/notifications',
         icon: 'mdi:bell-badge-outline',
         meta: t('workbench.continue.notifications.metaUnread', { count: unreadNotificationCount }),
         tone: 'attention',
@@ -511,18 +497,6 @@ export const WorkbenchApp = () => {
       });
     }
 
-    if (loggedIn && petCount > 0) {
-      appendUniqueQueueItem(items, {
-        id: 'pet',
-        title: t('workbench.continue.pet.title'),
-        description: t('workbench.continue.pet.descriptionActive'),
-        href: '/pet',
-        icon: 'mdi:sprout-outline',
-        meta: t('workbench.continue.pet.metaCount', { count: petCount }),
-        tone: 'attention',
-      });
-    }
-
     if (loggedIn && experienceCount > 0) {
       appendUniqueQueueItem(items, {
         id: 'experience',
@@ -565,8 +539,8 @@ export const WorkbenchApp = () => {
     loggedIn,
     mentionChannelCount,
     messageUnreadTotal,
-    notificationPreviews,
-    notificationScopeCounts,
+    notificationGroups,
+    notificationSummary,
     t,
     unreadNotificationCount,
   ]);
@@ -679,15 +653,14 @@ export const WorkbenchApp = () => {
     }));
 
     Promise.allSettled([
-      notificationApi.getUnreadCount(),
-      notificationApi.getMyNotifications({ pageIndex: 1, pageSize: 12 }),
+      notificationInboxSync.refreshFirstPage({ showLoading: false }),
       getChannelList(),
     ]).then((results) => {
       if (cancelled) {
         return;
       }
 
-      const [unreadResult, notificationResult, channelResult] = results;
+      const [notificationResult, channelResult] = results;
       const nextState: Partial<WorkbenchActivityState> = {
         loading: false,
         notificationError: false,
@@ -696,23 +669,9 @@ export const WorkbenchApp = () => {
         hasForumDraft: hasMeaningfulForumDraft(),
       };
 
-      if (unreadResult.status === 'fulfilled') {
-        useNotificationStore.getState().setUnreadCount(unreadResult.value);
-      } else {
+      if (notificationResult.status === 'rejected') {
         nextState.notificationError = true;
-        log.warn('WorkbenchApp', '加载工作台未读通知数量失败', unreadResult.reason);
-      }
-
-      if (notificationResult.status === 'fulfilled' && notificationResult.value) {
-        const notifications = notificationResult.value.data
-          .map(toNotificationStoreItem)
-          .filter((item): item is NotificationItem => item !== null);
-        useNotificationStore.getState().setRecentNotifications(notifications);
-      } else {
-        nextState.notificationError = true;
-        if (notificationResult.status === 'rejected') {
-          log.warn('WorkbenchApp', '加载工作台近期通知失败', notificationResult.reason);
-        }
+        log.warn('WorkbenchApp', '加载工作台权威通知摘要失败', notificationResult.reason);
       }
 
       if (channelResult.status === 'fulfilled') {

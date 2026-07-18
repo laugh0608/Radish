@@ -1,557 +1,327 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { log } from '@/utils/logger';
-import { NotificationList } from '@radish/ui/notification-list';
+import type { NotificationCategory, NotificationInboxGroupVo } from '@radish/http';
 import { formatLocalizedRelativeTime } from '@radish/ui';
-import type { NotificationItemData } from '@radish/ui/notification';
-import { notificationApi, type UserNotificationVo } from '@/api/notification';
-import { getPublicProfile, type LongId } from '@/api/user';
-import { getApiBaseUrl } from '@/config/env';
-import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
-import { tokenService } from '@/services/tokenService';
+import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
-import { normalizePositiveLongIdKey } from '@/utils/longId';
+import { getApiBaseUrl } from '@/config/env';
+import {
+  getNotificationCategoryDefinition,
+  getNotificationTargetUnavailableKey,
+  getUnreadCategoryCount,
+  notificationCategoryDefinitions,
+  parseNotificationCount,
+} from '@/notifications/notificationInbox';
+import { notificationInboxSync } from '@/services/notificationInboxSync';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { resolveMediaUrl } from '@/utils/media';
+import { log } from '@/utils/logger';
+import {
+  resolveWebNotificationNavigation,
+  type NotificationWebNavigationTarget,
+} from '@/utils/notificationNavigation';
 import styles from './NotificationCenter.module.css';
 
 interface NotificationCenterProps {
-  onNavigateNotification?: (notification: NotificationItemData) => boolean;
   headingLevel?: 'h1' | 'h2';
+  onNavigateTarget?: (
+    group: NotificationInboxGroupVo,
+    target: NotificationWebNavigationTarget,
+  ) => boolean;
 }
 
-/**
- * 通知中心核心视图
- *
- * SignalR 连接由外层入口统一管理，此组件只负责读取状态和调用方法。
- */
-export const NotificationCenter = ({ onNavigateNotification, headingLevel = 'h1' }: NotificationCenterProps) => {
+export const NotificationCenter = ({
+  headingLevel = 'h1',
+  onNavigateTarget,
+}: NotificationCenterProps) => {
   const { t, i18n } = useTranslation();
-  const { unreadCount, recentNotifications } = useNotificationStore();
+  const Heading = headingLevel;
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const triggerAvatarCacheRef = useRef(new Map<string, string | null>());
+  const {
+    summary,
+    groups,
+    nextCursor,
+    activeCategory,
+    onlyUnread,
+    connectionState,
+    loadState,
+    loadingMore,
+    hasNewerRevision,
+    setFilters,
+  } = useNotificationStore();
+  const initialShowLoading = useRef(groups.length === 0);
 
-  interface NotificationListItem extends NotificationItemData {
-    notificationId?: LongId;
-  }
-
-  const resolveNotificationAvatar = useCallback((avatarUrl?: string | null) => {
-    return resolveMediaUrl(avatarUrl, apiBaseUrl);
-  }, [apiBaseUrl]);
-
-  const [notifications, setNotifications] = useState<NotificationListItem[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [pageIndex, setPageIndex] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'mention' | 'comment' | 'like'>('all');
-  const pageSize = 20;
-  const getNotificationKey = useCallback((item: Pick<NotificationListItem, 'id' | 'notificationId'>) => (
-    normalizePositiveLongIdKey(item.notificationId)
-    ?? normalizePositiveLongIdKey(item.id)
-    ?? String(item.notificationId ?? item.id)
-  ), []);
-  const notificationListLabels = useMemo(() => ({
-    loading: t('notification.shared.loading'),
-    loadingMore: t('notification.shared.loadingMore'),
-    loadMore: t('notification.shared.loadMore'),
-    loadedAll: t('notification.shared.loadedAll'),
-    emptyTitle: t('notification.shared.emptyTitle'),
-    emptyHint: t('notification.shared.emptyHint'),
-    markAsRead: t('notification.shared.markAsRead'),
-    delete: t('notification.shared.delete'),
-  }), [t]);
-  const formatRelativeTime = useCallback((createdAt: string) => {
-    return formatLocalizedRelativeTime(createdAt, i18n.resolvedLanguage ?? i18n.language);
-  }, [i18n.language, i18n.resolvedLanguage]);
-
-  const mapApiNotificationToStore = useCallback((n: UserNotificationVo): NotificationItem => {
-    const notification = n.voNotification;
-    return {
-      id: n.voId,
-      notificationId: n.voNotificationId,
-      type: mapNotificationTypeToStore(notification?.voType || 'System'),
-      title: notification?.voTitle || '',
-      content: notification?.voContent || '',
-      isRead: n.voIsRead,
-      createdAt: n.voCreateTime,
-      businessId: notification?.voBusinessId,
-      businessType: notification?.voBusinessType,
-      triggerId: notification?.voTriggerId,
-      triggerName: notification?.voTriggerName,
-      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
-      extData: notification?.voExtData
-    };
-  }, [resolveNotificationAvatar]);
-
-  const mapApiNotificationToUi = useCallback((n: UserNotificationVo): NotificationListItem => {
-    const notification = n.voNotification;
-    return {
-      id: n.voId,
-      notificationId: n.voNotificationId,
-      type: mapNotificationTypeToStore(notification?.voType || 'System'),
-      title: notification?.voTitle || '',
-      content: notification?.voContent || '',
-      priority: notification?.voPriority ?? 1,
-      businessType: notification?.voBusinessType,
-      businessId: notification?.voBusinessId,
-      triggerId: notification?.voTriggerId,
-      triggerName: notification?.voTriggerName,
-      triggerAvatar: resolveNotificationAvatar(notification?.voTriggerAvatar),
-      extData: notification?.voExtData,
-      isRead: n.voIsRead,
-      createdAt: n.voCreateTime
-    };
-  }, [resolveNotificationAvatar]);
-
-  const mapStoreToUi = useCallback((items: NotificationItem[]): NotificationListItem[] => {
-    return items.map((n) => ({
-      id: n.id,
-      notificationId: n.notificationId ?? n.id,
-      type: n.type,
-      title: n.title,
-      content: n.content,
-      priority: 1,
-      businessType: n.businessType,
-      businessId: n.businessId,
-      triggerId: n.triggerId,
-      triggerName: n.triggerName,
-      triggerAvatar: resolveNotificationAvatar(n.triggerAvatar),
-      extData: n.extData,
-      isRead: n.isRead,
-      createdAt: n.createdAt
-    }));
-  }, [resolveNotificationAvatar]);
-
-  const patchNotificationsWithResolvedAvatars = useCallback((avatarMap: Map<string, string | null>) => {
-    if (avatarMap.size === 0) {
-      return;
-    }
-
-    const store = useNotificationStore.getState();
-    let hasUiChanges = false;
-
-    setNotifications((prev) => {
-      const next = prev.map((item) => {
-        const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
-        if (item.triggerAvatar || !triggerIdKey) {
-          return item;
-        }
-
-        const resolvedAvatar = avatarMap.get(triggerIdKey);
-        if (!resolvedAvatar) {
-          return item;
-        }
-
-        hasUiChanges = true;
-        return { ...item, triggerAvatar: resolvedAvatar };
-      });
-
-      return hasUiChanges ? next : prev;
-    });
-
-    const nextStoreItems = store.recentNotifications.map((item) => {
-      const triggerIdKey = normalizePositiveLongIdKey(item.triggerId);
-      if (item.triggerAvatar || !triggerIdKey) {
-        return item;
-      }
-
-      const resolvedAvatar = avatarMap.get(triggerIdKey);
-      return resolvedAvatar ? { ...item, triggerAvatar: resolvedAvatar } : item;
-    });
-
-    if (nextStoreItems.some((item, index) => item !== store.recentNotifications[index])) {
-      store.setRecentNotifications(nextStoreItems);
-    }
-  }, []);
-
-  const backfillTriggerAvatars = useCallback(async (items: NotificationListItem[]) => {
-    const missingTriggerIds = Array.from(new Set(
-      items
-        .filter((item) => !item.triggerAvatar)
-        .map((item) => normalizePositiveLongIdKey(item.triggerId))
-        .filter((triggerId): triggerId is string => Boolean(triggerId))
-    ));
-
-    if (missingTriggerIds.length === 0) {
-      return;
-    }
-
-    const unresolvedTriggerIds = missingTriggerIds.filter((triggerId) => !triggerAvatarCacheRef.current.has(triggerId));
-    if (unresolvedTriggerIds.length > 0) {
-      const profileResults = await Promise.allSettled(
-        unresolvedTriggerIds.map(async (triggerId) => {
-          const profile = await getPublicProfile(triggerId);
-          return {
-            triggerId,
-            avatar: resolveNotificationAvatar(profile.voAvatarThumbnailUrl || profile.voAvatarUrl)
-          };
-        })
-      );
-
-      for (const result of profileResults) {
-        if (result.status === 'fulfilled') {
-          triggerAvatarCacheRef.current.set(result.value.triggerId, result.value.avatar);
-        }
-      }
-    }
-
-    const resolvedAvatarMap = new Map<string, string | null>();
-    for (const triggerId of missingTriggerIds) {
-      resolvedAvatarMap.set(triggerId, triggerAvatarCacheRef.current.get(triggerId) ?? null);
-    }
-
-    patchNotificationsWithResolvedAvatars(resolvedAvatarMap);
-  }, [patchNotificationsWithResolvedAvatars, resolveNotificationAvatar]);
-
-  const mergeNotifications = useCallback((
-    base: NotificationListItem[],
-    incoming: NotificationListItem[]
-  ) => {
-    if (incoming.length === 0) return base;
-    const baseMap = new Map<string, NotificationListItem>();
-    for (const item of base) {
-      baseMap.set(getNotificationKey(item), item);
-    }
-    const result: NotificationListItem[] = [];
-    const seen = new Set<string>();
-    for (const item of incoming) {
-      const mergeKey = getNotificationKey(item);
-      const existing = baseMap.get(mergeKey);
-      result.push(existing ? { ...existing, ...item } : item);
-      seen.add(mergeKey);
-    }
-    for (const item of base) {
-      if (!seen.has(getNotificationKey(item))) {
-        result.push(item);
-      }
-    }
-    return result;
-  }, [getNotificationKey]);
-
-  const resolveBackendNotificationId = useCallback((uiId: LongId): LongId | null => {
-    const uiIdKey = normalizePositiveLongIdKey(uiId);
-    if (!uiIdKey) {
-      return null;
-    }
-
-    const current = notifications.find((item) => normalizePositiveLongIdKey(item.id) === uiIdKey);
-    if (current?.notificationId !== undefined) {
-      return current.notificationId;
-    }
-
-    const fromStore = recentNotifications.find((item) => normalizePositiveLongIdKey(item.id) === uiIdKey);
-    if (fromStore?.notificationId !== undefined) {
-      return fromStore.notificationId;
-    }
-
-    return uiId;
-  }, [notifications, recentNotifications]);
-
-  const syncUnreadCountFromServer = useCallback(async () => {
+  const refresh = useCallback(async (showLoading = true) => {
     try {
-      const unreadCountFromServer = await notificationApi.getUnreadCount();
-      useNotificationStore.getState().setUnreadCount(unreadCountFromServer);
+      await notificationInboxSync.refreshFirstPage({ showLoading });
     } catch (error) {
-      log.warn('同步未读数量失败:', error);
+      log.warn('NotificationCenter', '加载权威通知列表失败', error);
+      toast.error(t('notification.loadFailed'));
     }
-  }, []);
+  }, [t]);
 
-  // 将 Store 中的通知转换为 UI 组件需要的格式
   useEffect(() => {
-    const converted = mapStoreToUi(recentNotifications);
-    setNotifications(prev => mergeNotifications(prev, converted));
-    void backfillTriggerAvatars(converted);
-  }, [backfillTriggerAvatars, mapStoreToUi, mergeNotifications, recentNotifications]);
+    void refresh(initialShowLoading.current);
+  }, [refresh]);
 
-  // 初始加载通知列表
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (typeof window === 'undefined') return;
-      const token = tokenService.getAccessToken();
-      if (!token) return;
+  const changeFilters = useCallback((category: NotificationCategory | null, unread: boolean) => {
+    setFilters(category, unread);
+    void refresh(true);
+  }, [refresh, setFilters]);
 
-      setLoading(true);
-      try {
-        const result = await notificationApi.getMyNotifications({
-          pageIndex: 1,
-          pageSize
-        });
-
-        if (result && result.data) {
-          const store = useNotificationStore.getState();
-          // 从嵌套的 UserNotificationVo 结构转换为 NotificationItem
-          // 这是业务层的职责：将后端 VO 转换为内部数据结构
-          store.setRecentNotifications(
-            result.data.map(mapApiNotificationToStore)
-          );
-          const firstPage = result.data.map(mapApiNotificationToUi);
-          setNotifications(firstPage);
-          void backfillTriggerAvatars(firstPage);
-          setPageIndex(result.page);
-          setHasMore(result.page < result.pageCount);
-          await syncUnreadCountFromServer();
-        } else {
-          setHasMore(false);
-        }
-      } catch (error) {
-        log.error('加载通知列表失败:', error);
-        toast.error(t('notification.loadFailed'));
-        setHasMore(false);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadNotifications();
-  }, [backfillTriggerAvatars, mapApiNotificationToStore, mapApiNotificationToUi, syncUnreadCountFromServer, t]);
-
-  const handleLoadMore = useCallback(async () => {
-    if (loadingMore || loading || !hasMore) return;
-    const nextPage = pageIndex + 1;
-    setLoadingMore(true);
-    try {
-      const result = await notificationApi.getMyNotifications({
-        pageIndex: nextPage,
-        pageSize
-      });
-      if (result && result.data) {
-        const nextItems = result.data.map(mapApiNotificationToUi);
-        void backfillTriggerAvatars(nextItems);
-        setNotifications(prev => {
-          const indexMap = new Map<string, number>();
-          const merged = prev.slice();
-          merged.forEach((item, idx) => indexMap.set(getNotificationKey(item), idx));
-          for (const item of nextItems) {
-            const itemKey = getNotificationKey(item);
-            const existingIndex = indexMap.get(itemKey);
-            if (existingIndex !== undefined) {
-              merged[existingIndex] = { ...merged[existingIndex], ...item };
-            } else {
-              indexMap.set(itemKey, merged.length);
-              merged.push(item);
-            }
-          }
-          return merged;
-        });
-        setPageIndex(result.page);
-        setHasMore(result.page < result.pageCount);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      log.error('加载更多通知失败:', error);
-      toast.error(t('notification.loadMoreFailed'));
-    } finally {
-      setLoadingMore(false);
-    }
-  }, [backfillTriggerAvatars, getNotificationKey, hasMore, loading, loadingMore, mapApiNotificationToUi, pageIndex, pageSize, t]);
-
-  const filteredNotifications = useMemo(() => {
-    switch (activeFilter) {
-      case 'unread':
-        return notifications.filter(n => !n.isRead);
-      case 'mention':
-        return notifications.filter(n => n.type === 'mention');
-      case 'comment':
-        return notifications.filter(n => n.type === 'reply');
-      case 'like':
-        return notifications.filter(n => n.type === 'like');
-      default:
-        return notifications;
-    }
-  }, [activeFilter, notifications]);
-  const HeadingTag = headingLevel;
-
-  // 标记已读
-  const handleMarkAsRead = useCallback(async (
-    id: LongId,
-    options?: { silent?: boolean }
-  ) => {
-    try {
-      const backendNotificationId = resolveBackendNotificationId(id);
-      if (!backendNotificationId) {
-        throw new Error(`无法解析通知 ID，UiId: ${String(id)}`);
-      }
-      const targetIdKey = normalizePositiveLongIdKey(id);
-
-      const success = await notificationApi.markAsRead(backendNotificationId);
-      if (!success) {
-        throw new Error(`标记通知已读失败，NotificationId: ${String(backendNotificationId)}`);
-      }
-
-      const store = useNotificationStore.getState();
-      store.markAsRead([backendNotificationId]);
-      setNotifications(prev => prev.map((item) => (
-        targetIdKey !== null && normalizePositiveLongIdKey(item.id) === targetIdKey
-          ? { ...item, isRead: true }
-          : item
-      )));
-      await syncUnreadCountFromServer();
-
-      if (!options?.silent) {
-        toast.success(t('notification.markReadSuccess'));
-      }
-    } catch (error) {
-      log.error('标记已读失败:', error);
-      if (!options?.silent) {
-        toast.error(t('notification.markReadFailed'));
-      }
-    }
-  }, [resolveBackendNotificationId, syncUnreadCountFromServer, t]);
-
-  // 点击通知
-  const handleNotificationClick = useCallback((notification: NotificationItemData) => {
-    log.debug('点击通知:', notification);
-
-    // 如果未读，标记为已读
-    if (!notification.isRead) {
-      void handleMarkAsRead(notification.id, { silent: true });
-    }
-
-    if (onNavigateNotification?.(notification)) {
+  const markGroupAsRead = useCallback(async (group: NotificationInboxGroupVo) => {
+    if (group.voIsRead) {
       return;
     }
 
-    toast.info(t('notification.unsupportedNavigation'));
-  }, [handleMarkAsRead, onNavigateNotification, t]);
-
-  // 标记全部已读
-  const handleMarkAllAsRead = useCallback(async () => {
     try {
-      const success = await notificationApi.markAllAsRead();
-      if (!success) {
-        throw new Error('标记全部已读失败');
-      }
+      await notificationInboxSync.markGroupsAsRead([group.voGroupId]);
+      toast.success(t('notification.markReadSuccess'));
+    } catch (error) {
+      log.warn('NotificationCenter', '标记通知分组已读失败', error);
+      toast.error(t('notification.markReadFailed'));
+    }
+  }, [t]);
 
-      const store = useNotificationStore.getState();
-      store.markAllAsRead();
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-      await syncUnreadCountFromServer();
-
+  const markAllAsRead = useCallback(async () => {
+    try {
+      await notificationInboxSync.markAllAsRead(activeCategory ?? undefined);
       toast.success(t('notification.markAllReadSuccess'));
     } catch (error) {
-      log.error('标记全部已读失败:', error);
+      log.warn('NotificationCenter', '标记分类通知已读失败', error);
       toast.error(t('notification.markAllReadFailed'));
     }
-  }, [syncUnreadCountFromServer, t]);
+  }, [activeCategory, t]);
 
-  // 删除通知
-  const handleDelete = useCallback(async (id: LongId) => {
+  const deleteGroup = useCallback(async (group: NotificationInboxGroupVo) => {
+    if (!window.confirm(t('notification.deleteConfirm'))) {
+      return;
+    }
+
     try {
-      const backendNotificationId = resolveBackendNotificationId(id);
-      if (!backendNotificationId) {
-        throw new Error(`无法解析通知 ID，UiId: ${String(id)}`);
-      }
-      const backendNotificationIdKey = normalizePositiveLongIdKey(backendNotificationId);
-      if (!backendNotificationIdKey) {
-        throw new Error(`通知 ID 非法，NotificationId: ${String(backendNotificationId)}`);
-      }
-      await notificationApi.deleteNotification(backendNotificationId);
-
-      // 更新 Store：从列表中移除该通知（兼容 id/notificationId）
-      const store = useNotificationStore.getState();
-      store.removeNotification(backendNotificationId);
-      setNotifications((prev) => prev.filter((item) => (
-        normalizePositiveLongIdKey(item.notificationId ?? item.id) !== backendNotificationIdKey
-      )));
-      await syncUnreadCountFromServer();
-
+      await notificationInboxSync.deleteGroup(group.voGroupId);
       toast.success(t('notification.deleteSuccess'));
     } catch (error) {
-      log.error('删除通知失败:', error);
+      log.warn('NotificationCenter', '删除通知分组失败', error);
       toast.error(t('notification.deleteFailed'));
     }
-  }, [resolveBackendNotificationId, syncUnreadCountFromServer, t]);
+  }, [t]);
+
+  const openTarget = useCallback((group: NotificationInboxGroupVo) => {
+    const target = resolveWebNotificationNavigation(group.voTarget);
+    if (!target) {
+      return;
+    }
+
+    if (!group.voIsRead) {
+      void notificationInboxSync.markGroupsAsRead([group.voGroupId]).catch((error) => {
+        log.warn('NotificationCenter', '打开目标时标记通知分组已读失败', error);
+      });
+    }
+
+    if (onNavigateTarget?.(group, target)) {
+      return;
+    }
+
+    if (target.sourceState) {
+      window.history.replaceState(target.sourceState, '', window.location.href);
+    }
+    window.location.href = target.href;
+  }, [onNavigateTarget]);
+
+  const loadMore = useCallback(async () => {
+    try {
+      const result = await notificationInboxSync.loadMore();
+      if (result === 'cursor-expired') {
+        toast.info(t('notification.cursorExpiredRecovered'));
+      }
+    } catch (error) {
+      log.warn('NotificationCenter', '加载更多权威通知失败', error);
+      toast.error(t('notification.loadMoreFailed'));
+    }
+  }, [t]);
+
+  const reconcile = useCallback(async () => {
+    try {
+      await notificationInboxSync.reconcile({ refreshListWhenChanged: true });
+    } catch (error) {
+      log.warn('NotificationCenter', '手动恢复通知权威状态失败', error);
+      toast.error(t('notification.loadFailed'));
+    }
+  }, [t]);
+
+  const locale = i18n.resolvedLanguage ?? i18n.language;
+  const currentUnread = activeCategory
+    ? getUnreadCategoryCount(summary, activeCategory)
+    : parseNotificationCount(summary?.voUnreadGroupCount);
+  const isOffline = connectionState === 'disconnected' || connectionState === 'reconnecting';
 
   return (
-    <div className={styles.notificationApp}>
-      <div className={styles.header}>
-        <div className={styles.headerTop}>
-          <HeadingTag className={styles.title}>{t('notification.title')}</HeadingTag>
-          <div className={styles.actions}>
-            <span className={styles.count}>
-              {unreadCount > 0 ? t('notification.unreadCount', { count: unreadCount }) : t('notification.allRead')}
-            </span>
-            {unreadCount > 0 && (
-              <button className={styles.markAllBtn} onClick={handleMarkAllAsRead}>
-                {t('notification.markAllRead')}
-              </button>
-            )}
+    <section className={styles.center} aria-labelledby="notification-center-title">
+      <header className={styles.header}>
+        <div>
+          <Heading id="notification-center-title">{t('notification.title')}</Heading>
+          <p>{t('notification.inboxRevision', { revision: summary?.voRevision ?? '—' })}</p>
+        </div>
+        <button
+          className={styles.markAllButton}
+          disabled={currentUnread === 0}
+          onClick={() => void markAllAsRead()}
+          type="button"
+        >
+          <Icon icon="mdi:check-all" size={18} />
+          {activeCategory ? t('notification.markCategoryRead') : t('notification.markAllRead')}
+        </button>
+      </header>
+
+      <div className={styles.filters} aria-label={t('notification.categoryFilterLabel')}>
+        <button
+          aria-pressed={activeCategory === null}
+          className={activeCategory === null ? styles.filterActive : styles.filter}
+          onClick={() => changeFilters(null, onlyUnread)}
+          type="button"
+        >
+          {t('notification.filter.all')}
+          <span>{parseNotificationCount(summary?.voUnreadGroupCount)}</span>
+        </button>
+        {notificationCategoryDefinitions.map((definition) => (
+          <button
+            aria-pressed={activeCategory === definition.category}
+            className={activeCategory === definition.category ? styles.filterActive : styles.filter}
+            key={definition.category}
+            onClick={() => changeFilters(definition.category, onlyUnread)}
+            type="button"
+          >
+            {t(definition.labelKey)}
+            <span>{getUnreadCategoryCount(summary, definition.category)}</span>
+          </button>
+        ))}
+      </div>
+
+      <div className={styles.controls}>
+        <button
+          aria-pressed={onlyUnread}
+          className={onlyUnread ? styles.unreadToggleActive : styles.unreadToggle}
+          onClick={() => changeFilters(activeCategory, !onlyUnread)}
+          type="button"
+        >
+          <Icon icon="mdi:circle-medium" size={18} />
+          {t('notification.filter.onlyUnread')}
+        </button>
+        <span aria-live="polite">{t('notification.resultCount', { count: groups.length })}</span>
+      </div>
+
+      {isOffline && (
+        <div className={styles.notice} role="status">
+          <Icon icon="mdi:cloud-off-outline" size={19} />
+          <span>{t('notification.offlineHint')}</span>
+          <button onClick={() => void reconcile()} type="button">
+            {t('notification.retry')}
+          </button>
+        </div>
+      )}
+
+      {hasNewerRevision && (
+        <button className={styles.newerPrompt} onClick={() => void refresh(false)} type="button">
+          <Icon icon="mdi:arrow-up-circle-outline" size={20} />
+          {t('notification.newerPrompt')}
+        </button>
+      )}
+
+      <div className={styles.list} aria-busy={loadState === 'loading'}>
+        {loadState === 'loading' && groups.length === 0 && (
+          <div className={styles.state} role="status">
+            <Icon icon="mdi:loading" size={28} className={styles.spin} />
+            <strong>{t('notification.shared.loading')}</strong>
+            <span>{t('notification.loadingHint')}</span>
           </div>
-        </div>
-        <div className={styles.filters}>
-          <button
-            type="button"
-            className={`${styles.filterTab} ${activeFilter === 'all' ? styles.filterActive : ''}`}
-            onClick={() => setActiveFilter('all')}
-          >
-            {t('notification.filter.all')}
-          </button>
-          <button
-            type="button"
-            className={`${styles.filterTab} ${activeFilter === 'unread' ? styles.filterActive : ''}`}
-            onClick={() => setActiveFilter('unread')}
-          >
-            {t('notification.filter.unread')}
-          </button>
-          <button
-            type="button"
-            className={`${styles.filterTab} ${activeFilter === 'mention' ? styles.filterActive : ''}`}
-            onClick={() => setActiveFilter('mention')}
-          >
-            {t('notification.filter.mention')}
-          </button>
-          <button
-            type="button"
-            className={`${styles.filterTab} ${activeFilter === 'comment' ? styles.filterActive : ''}`}
-            onClick={() => setActiveFilter('comment')}
-          >
-            {t('notification.filter.comment')}
-          </button>
-          <button
-            type="button"
-            className={`${styles.filterTab} ${activeFilter === 'like' ? styles.filterActive : ''}`}
-            onClick={() => setActiveFilter('like')}
-          >
-            {t('notification.filter.like')}
-          </button>
-        </div>
+        )}
+
+        {loadState === 'error' && groups.length === 0 && (
+          <div className={styles.state} role="alert">
+            <Icon icon="mdi:alert-circle-outline" size={30} />
+            <strong>{t('notification.loadFailed')}</strong>
+            <span>{t('notification.loadFailedHint')}</span>
+            <button onClick={() => void refresh(true)} type="button">{t('notification.retry')}</button>
+          </div>
+        )}
+
+        {loadState === 'ready' && groups.length === 0 && (
+          <div className={styles.state}>
+            <Icon icon="mdi:bell-sleep-outline" size={34} />
+            <strong>{t('notification.shared.emptyTitle')}</strong>
+            <span>{onlyUnread ? t('notification.emptyUnreadHint') : t('notification.shared.emptyHint')}</span>
+          </div>
+        )}
+
+        {groups.map((group) => {
+          const category = getNotificationCategoryDefinition(group.voCategory);
+          const target = resolveWebNotificationNavigation(group.voTarget);
+          const occurrenceCount = parseNotificationCount(group.voOccurrenceCount);
+          const distinctTriggerCount = parseNotificationCount(group.voDistinctTriggerCount);
+          const triggerAvatar = resolveMediaUrl(group.voTriggerAvatar, apiBaseUrl);
+          return (
+            <article className={`${styles.group} ${group.voIsRead ? '' : styles.groupUnread}`} key={group.voGroupId}>
+              <div className={styles.groupIcon} aria-hidden="true">
+                <Icon icon={category.icon} size={21} />
+              </div>
+              <div className={styles.groupBody}>
+                <div className={styles.groupMeta}>
+                  <span>{t(category.labelKey)}</span>
+                  <time dateTime={group.voLastOccurredAtUtc}>
+                    {formatLocalizedRelativeTime(group.voLastOccurredAtUtc, locale)}
+                  </time>
+                  {!group.voIsRead && <em>{t('notification.unreadDot')}</em>}
+                </div>
+                <h3>{group.voTitle}</h3>
+                <p>{group.voContent || t('notification.web.emptyContent')}</p>
+                <div className={styles.aggregation}>
+                  {triggerAvatar ? <img alt="" src={triggerAvatar} /> : <Icon icon="mdi:account-circle-outline" size={24} />}
+                  <span>
+                    {group.voTriggerName || t('common.userFallback', { id: group.voTriggerId ?? '—' })}
+                  </span>
+                  {occurrenceCount > 1 && (
+                    <strong>{t('notification.aggregationMeta', { count: occurrenceCount, triggers: distinctTriggerCount })}</strong>
+                  )}
+                </div>
+                {!target && (
+                  <div className={styles.unavailable} role="status">
+                    <Icon icon="mdi:link-off" size={17} />
+                    {t(getNotificationTargetUnavailableKey(group))}
+                  </div>
+                )}
+              </div>
+              <div className={styles.actions}>
+                {target && (
+                  <button className={styles.primaryAction} onClick={() => openTarget(group)} type="button">
+                    {t('notification.openTarget')}
+                  </button>
+                )}
+                {!group.voIsRead && (
+                  <button onClick={() => void markGroupAsRead(group)} type="button">
+                    {t('notification.shared.markAsRead')}
+                  </button>
+                )}
+                <button onClick={() => void deleteGroup(group)} type="button">
+                  {t('notification.shared.delete')}
+                </button>
+              </div>
+            </article>
+          );
+        })}
       </div>
-      <div className={styles.content}>
-        <NotificationList
-          notifications={filteredNotifications}
-          loading={loading}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
-          onEndReached={handleLoadMore}
-          onNotificationClick={handleNotificationClick}
-          onMarkAsRead={handleMarkAsRead}
-          onDelete={handleDelete}
-          labels={notificationListLabels}
-          formatRelativeTime={formatRelativeTime}
-        />
-      </div>
-    </div>
+
+      {groups.length > 0 && (
+        <footer className={styles.footer}>
+          {nextCursor ? (
+            <button disabled={loadingMore} onClick={() => void loadMore()} type="button">
+              {loadingMore ? t('notification.shared.loadingMore') : t('notification.shared.loadMore')}
+            </button>
+          ) : (
+            <span>{t('notification.shared.loadedAll')}</span>
+          )}
+        </footer>
+      )}
+    </section>
   );
 };
-
-/**
- * 将 API 返回的通知类型映射到 Store 的类型
- * 注意：这是类型枚举映射，不是字段名映射
- */
-function mapNotificationTypeToStore(type: string): 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery' {
-  const typeMap: Record<string, 'system' | 'reply' | 'mention' | 'like' | 'follow' | 'lottery'> = {
-    'System': 'system',
-    'CommentReply': 'reply',
-    'CommentReplied': 'reply',
-    'PostQuickReplied': 'reply',
-    'Mention': 'mention',
-    'Mentioned': 'mention',
-    'PostLiked': 'like',
-    'CommentLiked': 'like',
-    'Follow': 'follow',
-    'Followed': 'follow',
-    'LotteryWon': 'lottery'
-  };
-  return typeMap[type] || 'system';
-}

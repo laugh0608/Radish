@@ -1,111 +1,52 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { toast } from '@radish/ui/toast';
-import type { NotificationItemData } from '@radish/ui/notification';
-import { Icon } from '@radish/ui/icon';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { WebStateSlot } from '@/components/web-shell';
+import type {
+  NotificationCategory,
+  NotificationInboxGroupVo,
+  UpdateNotificationPreferenceDto,
+} from '@radish/http';
+import { Icon } from '@radish/ui/icon';
+import { toast } from '@radish/ui/toast';
 import { NotificationCenter } from '@/apps/notification/NotificationCenter';
+import { WebStateSlot } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
+import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
+import {
+  buildNotificationPreferenceUpdates,
+  getNotificationCategoryDefinition,
+  getUnreadCategoryCount,
+  notificationCategoryDefinitions,
+} from '@/notifications/notificationInbox';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
-import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
-import { redirectToLogin } from '@/services/auth';
-import { buildNotificationsReturnPath } from '@/services/authReturnPath';
 import { rememberPublicRouteSourceTransfer } from '@/public/publicRouteNavigation';
-import { notificationHub } from '@/services/notificationHub';
+import { redirectToLogin } from '@/services/auth';
+import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
+import { buildNotificationsReturnPath } from '@/services/authReturnPath';
+import { notificationInboxSync } from '@/services/notificationInboxSync';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from '@/stores/userStore';
-import { copyToClipboard } from '@/utils/clipboard';
 import { log } from '@/utils/logger';
-import { resolveWebNotificationNavigation } from '@/utils/notificationNavigation';
-import {
-  buildNotificationActionGroups,
-  getNotificationActionScope,
-  getNotificationKindIcon,
-  getNotificationKindLabelKey,
-  getNotificationScopeDefinition,
-  getNotificationTargetHintKey,
-  getTargetLabel,
-  resolveNotificationPreview,
-  type NotificationActionScope,
-  type NotificationPreview,
-} from './notificationActionQueue';
+import type { NotificationWebNavigationTarget } from '@/utils/notificationNavigation';
 import styles from './NotificationsApp.module.css';
-
-const notificationScopeChipOrder: NotificationActionScope[] = [
-  'all',
-  'posts',
-  'comments',
-  'answers',
-  'messages',
-  'follow',
-  'governance',
-  'orders',
-  'docs',
-  'pet',
-  'experience',
-  'likes',
-  'system',
-];
 
 export const NotificationsApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const isAuthenticated = useAuthStore(state => state.isAuthenticated);
-  const userId = useUserStore(state => state.userId);
-  const unreadCount = useNotificationStore(state => state.unreadCount);
-  const connectionState = useNotificationStore(state => state.connectionState);
-  const recentNotifications = useNotificationStore(state => state.recentNotifications);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const userId = useUserStore((state) => state.userId);
+  const summary = useNotificationStore((state) => state.summary);
+  const unreadCount = useNotificationStore((state) => state.unreadCount);
+  const unreadOccurrenceCount = useNotificationStore((state) => state.unreadOccurrenceCount);
+  const connectionState = useNotificationStore((state) => state.connectionState);
+  const preferences = useNotificationStore((state) => state.preferences);
+  const preferencesLoading = useNotificationStore((state) => state.preferencesLoading);
+  const preferencesSaving = useNotificationStore((state) => state.preferencesSaving);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const hasStartedHubRef = useRef(false);
-  const notificationPreviews = useMemo<NotificationPreview[]>(() => (
-    recentNotifications.map(resolveNotificationPreview)
-  ), [recentNotifications]);
-  const routedNotificationCount = useMemo(() => (
-    notificationPreviews.filter((item) => item.target !== null).length
-  ), [notificationPreviews]);
-  const unsupportedNotificationCount = Math.max(0, notificationPreviews.length - routedNotificationCount);
-  const unreadPreviewCount = useMemo(() => (
-    notificationPreviews.filter((item) => !item.isRead).length
-  ), [notificationPreviews]);
-  const queueSourcePreviews = useMemo(() => {
-    const unreadItems = notificationPreviews.filter((item) => !item.isRead);
-    return unreadItems.length > 0 ? unreadItems : notificationPreviews;
-  }, [notificationPreviews]);
-  const queueGroups = useMemo(() => (
-    buildNotificationActionGroups(queueSourcePreviews)
-  ), [queueSourcePreviews]);
-  const scopeChips = useMemo(() => {
-    const scopeCounts = new Map<NotificationActionScope, number>([
-      ['all', notificationPreviews.length],
-    ]);
-
-    for (const item of notificationPreviews) {
-      const scope = getNotificationActionScope(item, item.target);
-      scopeCounts.set(scope, (scopeCounts.get(scope) ?? 0) + 1);
-    }
-
-    return notificationScopeChipOrder.map((scope) => {
-      const definition = getNotificationScopeDefinition(scope);
-      return {
-        key: scope,
-        label: t(definition.labelKey),
-        count: scopeCounts.get(scope) ?? 0,
-      };
-    });
-  }, [notificationPreviews, t]);
-  const connectionLabel = connectionState === 'connected'
-    ? t('notification.web.connected')
-    : t(connectionState === 'connecting' || connectionState === 'reconnecting'
-      ? 'notification.web.connecting'
-      : 'notification.web.disconnected');
-  const connectionHint = connectionState === 'connected'
-    ? t('notification.web.connectionSyncedHint')
-    : t(connectionState === 'connecting' || connectionState === 'reconnecting'
-      ? 'notification.web.connectionRecoveringHint'
-      : 'notification.web.connectionOfflineHint');
+  const [preferenceError, setPreferenceError] = useState<string | null>(null);
+  const [preferenceDraft, setPreferenceDraft] = useState<UpdateNotificationPreferenceDto[]>([]);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -130,15 +71,10 @@ export const NotificationsApp = () => {
 
   useEffect(() => {
     document.title = `${t('notification.title')} · Radish`;
-  }, [t]);
-
-  useEffect(() => {
-    const canonicalPath = '/notifications';
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (currentPath !== canonicalPath) {
-      window.history.replaceState(window.history.state, '', canonicalPath);
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== '/notifications') {
+      window.history.replaceState(window.history.state, '', '/notifications');
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authReady || loggedIn || redirecting) {
@@ -146,257 +82,200 @@ export const NotificationsApp = () => {
     }
 
     setRedirecting(true);
-    redirectToLogin({
-      returnPath: buildNotificationsReturnPath()
-    });
+    redirectToLogin({ returnPath: buildNotificationsReturnPath() });
   }, [authReady, loggedIn, redirecting]);
 
-  useEffect(() => {
-    if (loggedIn && !hasStartedHubRef.current) {
-      hasStartedHubRef.current = true;
-      void notificationHub.start();
-    } else if (!loggedIn && hasStartedHubRef.current) {
-      hasStartedHubRef.current = false;
-      void notificationHub.stop();
-    }
-
-    return () => {
-      hasStartedHubRef.current = false;
-      setTimeout(() => {
-        if (!hasStartedHubRef.current) {
-          void notificationHub.stop();
-        }
-      }, 100);
-    };
-  }, [loggedIn]);
-
-  const handleNavigateNotification = useCallback((notification: NotificationItemData) => {
-    const target = resolveWebNotificationNavigation(notification);
-    if (!target || typeof window === 'undefined') {
-      return false;
-    }
-
-    if (target.surface === 'web' && target.sourceState) {
-      rememberPublicRouteSourceTransfer(target.href, target.sourceState);
-    }
-
-    window.location.href = target.href;
-    return true;
-  }, []);
-
-  const handlePreviewTargetClick = useCallback((
-    event: MouseEvent<HTMLAnchorElement>,
-    notification: NotificationPreview
-  ) => {
-    if (!notification.target) {
-      return;
-    }
-
-    event.preventDefault();
-    handleNavigateNotification(notification);
-  }, [handleNavigateNotification]);
-
-  const handleCopyNotificationDiagnostics = useCallback(async (
-    notification: NotificationPreview,
-    targetText: string
-  ) => {
-    const diagnosticLines = [
-      'Radish notification support context',
-      `id: ${notification.id || 'unknown'}`,
-      `type: ${notification.type || 'unknown'}`,
-      `businessType: ${notification.businessType || 'unknown'}`,
-      `businessId: ${notification.businessId || 'unknown'}`,
-      `createdAt: ${notification.createdAt || 'unknown'}`,
-      `isRead: ${notification.isRead ? 'yes' : 'no'}`,
-      `target: ${notification.target?.href ?? 'missing'}`,
-      `targetHint: ${targetText}`,
-      `path: ${window.location.pathname}${window.location.search}${window.location.hash}`,
-    ];
-
+  const loadPreferences = useCallback(async () => {
+    setPreferenceError(null);
     try {
-      await copyToClipboard(diagnosticLines.join('\n'));
-      toast.success(t('notification.web.diagnosticsCopied'));
+      await notificationInboxSync.loadPreferences();
     } catch (error) {
-      log.warn('NotificationsApp', '复制通知诊断上下文失败', error);
-      toast.error(t('notification.web.diagnosticsCopyFailed'));
+      setPreferenceError(t('notification.preferences.loadFailed'));
+      log.warn('NotificationsApp', '通知偏好加载失败', error);
     }
   }, [t]);
 
-  const renderContent = () => {
-    if (!authReady || !loggedIn) {
-      return (
-        <section className={styles.stateShell}>
-          <WebStateSlot
-            tone="auth"
-            icon="mdi:bell-ring-outline"
-            title={t('notification.title')}
-            description={t(redirecting ? 'notification.web.redirecting' : 'notification.web.loading')}
-          />
-        </section>
-      );
+  useEffect(() => {
+    if (loggedIn) {
+      void loadPreferences();
     }
+  }, [loadPreferences, loggedIn]);
 
-    return (
+  useEffect(() => {
+    setPreferenceDraft(buildNotificationPreferenceUpdates(preferences));
+  }, [preferences]);
+
+  const updatePreference = useCallback((
+    category: NotificationCategory,
+    field: 'inAppEnabled' | 'realtimePreviewEnabled',
+    enabled: boolean,
+  ) => {
+    setPreferenceDraft((current) => current.map((item) => (
+      item.category === category ? { ...item, [field]: enabled } : item
+    )));
+  }, []);
+
+  const savePreferences = useCallback(async () => {
+    setPreferenceError(null);
+    try {
+      await notificationInboxSync.updatePreferences(preferenceDraft);
+      toast.success(t('notification.preferences.saved'));
+    } catch (error) {
+      setPreferenceError(t('notification.preferences.saveFailed'));
+      log.warn('NotificationsApp', '通知偏好保存失败', error);
+      toast.error(t('notification.preferences.saveFailed'));
+    }
+  }, [preferenceDraft, t]);
+
+  const handleNavigateTarget = useCallback((
+    _group: NotificationInboxGroupVo,
+    target: NotificationWebNavigationTarget,
+  ) => {
+    if (target.surface === 'web' && target.sourceState) {
+      rememberPublicRouteSourceTransfer(target.href, target.sourceState);
+    }
+    if (target.surface === 'web') {
+      window.history.pushState({}, '', target.href);
+      window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
+    } else {
+      window.location.href = resolveConsoleExternalUrl(target.href);
+    }
+    return true;
+  }, []);
+
+  const connectionLabel = connectionState === 'connected'
+    ? t('notification.web.connected')
+    : t(connectionState === 'connecting' || connectionState === 'reconnecting'
+      ? 'notification.web.connecting'
+      : 'notification.web.disconnected');
+  const preferencesDirty = JSON.stringify(preferenceDraft) !== JSON.stringify(
+    buildNotificationPreferenceUpdates(preferences),
+  );
+
+  let content;
+  if (!authReady || redirecting || !loggedIn) {
+    content = (
+      <WebStateSlot
+        tone={!authReady ? 'loading' : 'auth'}
+        title={!authReady ? t('notification.web.loading') : t('notification.web.redirecting')}
+        description={t('notification.web.authHint')}
+      />
+    );
+  } else {
+    content = (
       <div className={styles.contentGrid}>
-        <section className={styles.summaryPanel} aria-label={t('notification.web.summaryLabel')}>
+        <section className={styles.summaryPanel} aria-labelledby="notifications-heading">
           <div className={styles.summaryHeader}>
             <span className={styles.kicker}>{t('notification.web.kicker')}</span>
-            <h1>{t('notification.web.heading')}</h1>
+            <h1 id="notifications-heading">{t('notification.web.heading')}</h1>
             <p>{t('notification.web.description')}</p>
-            <div className={styles.scopeChips} aria-label={t('notification.web.scopeLabel')}>
-              {scopeChips.map((scope) => (
-                <span className={styles.scopeChip} key={scope.key}>
-                  <strong>{scope.count}</strong>
-                  {scope.label}
-                </span>
-              ))}
-            </div>
           </div>
-          <div className={styles.summaryCards}>
+          <div className={styles.summaryCards} aria-label={t('notification.web.summaryLabel')}>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryIcon}>
-                <Icon icon="mdi:bell-badge-outline" size={22} />
-              </span>
+              <Icon icon="mdi:bell-badge-outline" size={23} />
               <strong>{unreadCount}</strong>
               <span>{t('notification.web.unreadMetric')}</span>
             </div>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryIcon}>
-                <Icon icon="mdi:history" size={22} />
-              </span>
-              <strong>{unreadPreviewCount}</strong>
-              <span>{t('notification.web.recentMetric')}</span>
+              <Icon icon="mdi:layers-triple-outline" size={23} />
+              <strong>{unreadOccurrenceCount}</strong>
+              <span>{t('notification.web.occurrenceMetric')}</span>
             </div>
             <div className={styles.summaryCard}>
-              <span className={styles.summaryIcon}>
-                <Icon icon="mdi:link-variant" size={22} />
-              </span>
-              <strong>{routedNotificationCount}</strong>
-              <span>{t('notification.web.routeMetric')}</span>
+              <Icon icon="mdi:sync-circle" size={23} />
+              <strong>{summary?.voRevision ?? '—'}</strong>
+              <span>{t('notification.web.revisionMetric')}</span>
             </div>
           </div>
         </section>
+
         <div className={styles.notificationWorkspace}>
-          <section className={styles.centerShell} id="notification-center">
-            <NotificationCenter headingLevel="h2" onNavigateNotification={handleNavigateNotification} />
-          </section>
+          <div className={styles.centerShell}>
+            <NotificationCenter headingLevel="h2" onNavigateTarget={handleNavigateTarget} />
+          </div>
+
           <aside className={styles.notificationRail} aria-label={t('notification.web.railLabel')}>
             <section className={styles.railCard}>
               <div className={styles.railTitleRow}>
-                <span>{t('notification.web.railStatusTitle')}</span>
+                <span>{t('notification.web.categorySummary')}</span>
                 <strong>{connectionLabel}</strong>
               </div>
-              <div className={styles.railMetrics}>
-                <div>
-                  <strong>{routedNotificationCount}</strong>
-                  <span>{t('notification.web.routedMetric')}</span>
-                </div>
-                <div>
-                  <strong>{unsupportedNotificationCount}</strong>
-                  <span>{t('notification.web.unsupportedMetric')}</span>
-                </div>
+              <div className={styles.categorySummary}>
+                {notificationCategoryDefinitions.map((definition) => (
+                  <div key={definition.category}>
+                    <span>
+                      <Icon icon={definition.icon} size={17} />
+                      {t(definition.labelKey)}
+                    </span>
+                    <strong>{getUnreadCategoryCount(summary, definition.category)}</strong>
+                  </div>
+                ))}
               </div>
-              <p className={styles.connectionHint}>{connectionHint}</p>
+              <p className={styles.connectionHint}>
+                {connectionState === 'connected'
+                  ? t('notification.web.connectionSyncedHint')
+                  : t('notification.web.connectionRecoveringHint')}
+              </p>
             </section>
-            <section className={styles.railCard}>
-              <div className={styles.railTitleRow}>
-                <span>{t('notification.web.queueTitle')}</span>
-                <strong>{queueSourcePreviews.length}</strong>
-              </div>
-              <div className={styles.notificationQueue}>
-                {queueGroups.length > 0 ? queueGroups.map((group) => (
-                  <div className={styles.queueGroup} key={group.scope}>
-                    <div className={styles.queueGroupHeader}>
-                      <span className={styles.queueGroupTitle}>
-                        <Icon icon={group.definition.icon} size={17} />
-                        {t(group.definition.labelKey)}
-                      </span>
-                      <span className={styles.queueGroupMeta}>
-                        {t('notification.web.queueGroupMeta', {
-                          total: group.totalCount,
-                          unread: group.unreadCount,
-                          routed: group.routedCount,
-                          manual: group.manualCount,
-                        })}
-                      </span>
-                    </div>
-                    <div className={styles.queueGroupList}>
-                      {group.items.map((item) => {
-                        const targetLabel = getTargetLabel(item.target);
-                        const hasTarget = item.target !== null;
-                        const targetHintKey = getNotificationTargetHintKey(item, item.target);
-                        const targetText = hasTarget
-                          ? t(targetHintKey, { target: targetLabel })
-                          : t(targetHintKey);
-                        const queueItemContent = (
-                          <>
-                            <span className={styles.queueIcon}>
-                              <Icon icon={getNotificationKindIcon(item, item.target)} size={18} />
-                            </span>
-                            <span className={styles.queueBody}>
-                              <strong>{item.title || t(getNotificationKindLabelKey(item, item.target))}</strong>
-                              <span>{item.content || t('notification.web.emptyContent')}</span>
-                              <em>{targetText}</em>
-                            </span>
-                            {!item.isRead && <span className={styles.queueUnread} aria-label={t('notification.web.unreadDot')} />}
-                          </>
-                        );
 
-                        return hasTarget ? (
-                          <a
-                            className={styles.queueItem}
-                            href={item.target?.href ?? '#notification-center'}
-                            key={item.id}
-                            onClick={(event) => handlePreviewTargetClick(event, item)}
-                          >
-                            {queueItemContent}
-                            <span className={styles.queueAction}>
-                              {t('notification.web.queueActionOpen')}
-                            </span>
-                          </a>
-                        ) : (
-                          <div className={`${styles.queueItem} ${styles.queueItemManual}`} key={item.id}>
-                            {queueItemContent}
-                            <button
-                              type="button"
-                              className={`${styles.queueAction} ${styles.queueActionButton}`}
-                              onClick={() => {
-                                void handleCopyNotificationDiagnostics(item, targetText);
-                              }}
-                            >
-                              {t('notification.web.queueActionCopyDiagnostics')}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )) : (
-                  <div className={styles.railEmpty}>
-                    <Icon icon="mdi:check-circle-outline" size={20} />
-                    <span>{t('notification.web.queueEmpty')}</span>
-                  </div>
-                )}
-              </div>
-            </section>
             <section className={styles.railCard}>
               <div className={styles.railTitleRow}>
-                <span>{t('notification.web.targetTitle')}</span>
+                <span>{t('notification.preferences.title')}</span>
+                {preferencesLoading && <strong>{t('notification.shared.loading')}</strong>}
               </div>
-              <div className={styles.targetRules}>
-                <span>{t('notification.web.targetForum')}</span>
-                <span>{t('notification.web.targetMessages')}</span>
-                <span>{t('notification.web.targetFollow')}</span>
-                <span>{t('notification.web.targetGovernance')}</span>
-                <span>{t('notification.web.targetOrder')}</span>
-                <span>{t('notification.web.targetDocs')}</span>
+              <p className={styles.preferenceHint}>{t('notification.preferences.description')}</p>
+              {preferenceError && (
+                <div className={styles.preferenceError} role="alert">
+                  <span>{preferenceError}</span>
+                  <button onClick={() => void loadPreferences()} type="button">{t('notification.retry')}</button>
+                </div>
+              )}
+              <div className={styles.preferences}>
+                {preferences.map((preference) => {
+                  const draft = preferenceDraft.find((item) => item.category === preference.voCategory);
+                  const definition = getNotificationCategoryDefinition(preference.voCategory);
+                  return (
+                    <fieldset key={preference.voCategory}>
+                      <legend>
+                        <Icon icon={definition.icon} size={17} />
+                        {t(definition.labelKey)}
+                      </legend>
+                      <label>
+                        <span>{t('notification.preferences.inApp')}</span>
+                        <input
+                          checked={draft?.inAppEnabled ?? preference.voInAppEnabled}
+                          disabled={!preference.voCanDisableInApp}
+                          onChange={(event) => updatePreference(preference.voCategory, 'inAppEnabled', event.target.checked)}
+                          type="checkbox"
+                        />
+                      </label>
+                      <label>
+                        <span>{t('notification.preferences.realtime')}</span>
+                        <input
+                          checked={draft?.realtimePreviewEnabled ?? preference.voRealtimePreviewEnabled}
+                          disabled={!preference.voCanDisableRealtimePreview}
+                          onChange={(event) => updatePreference(preference.voCategory, 'realtimePreviewEnabled', event.target.checked)}
+                          type="checkbox"
+                        />
+                      </label>
+                    </fieldset>
+                  );
+                })}
               </div>
+              <button
+                className={styles.savePreferences}
+                disabled={!preferencesDirty || preferencesSaving || preferences.length === 0}
+                onClick={() => void savePreferences()}
+                type="button"
+              >
+                {preferencesSaving ? t('notification.preferences.saving') : t('notification.preferences.save')}
+              </button>
             </section>
           </aside>
         </div>
       </div>
     );
-  };
+  }
 
   return (
     <div className={styles.page}>
@@ -406,14 +285,9 @@ export const NotificationsApp = () => {
         brandMark="萝"
         brandName={t('notification.title')}
         brandSubline={t('notification.web.shellSubline')}
-        onBrandClick={() => {
-          window.location.href = '/notifications';
-        }}
+        onBrandClick={() => { window.location.href = '/notifications'; }}
       />
-
-      <main className={styles.main}>
-        {renderContent()}
-      </main>
+      <main className={styles.main}>{content}</main>
     </div>
   );
 };

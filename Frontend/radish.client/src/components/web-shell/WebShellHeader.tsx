@@ -12,6 +12,7 @@ export interface WebShellNavItem {
   icon: string;
   avatarUrl?: string | null;
   avatarText?: string;
+  badgeCount?: number;
   onClick?: () => void;
 }
 
@@ -179,13 +180,15 @@ interface WebShellLinkProps {
 }
 
 function WebShellLink({ item, className, activeClassName, isActive, navigationLocked }: WebShellLinkProps) {
+  const badgeCount = Math.max(0, item.badgeCount ?? 0);
+  const badgeLabel = badgeCount > 99 ? '99+' : String(badgeCount);
   return (
     <a
       className={`${className} ${isActive ? activeClassName : ''}`}
       href={item.href}
       aria-current={isActive ? 'page' : undefined}
       aria-disabled={navigationLocked || undefined}
-      title={item.label}
+      title={badgeCount > 0 ? `${item.label} (${badgeLabel})` : item.label}
       onClick={(event) => {
         if (!shouldHandleShellLinkClick(event)) {
           return;
@@ -214,7 +217,12 @@ function WebShellLink({ item, className, activeClassName, isActive, navigationLo
       ) : (
         <Icon icon={item.icon} size={18} />
       )}
-      <span>{item.label}</span>
+      <span className={styles.linkLabel}>{item.label}</span>
+      {badgeCount > 0 && (
+        <span className={styles.linkBadge} aria-label={`${item.label} ${badgeLabel}`}>
+          {badgeLabel}
+        </span>
+      )}
     </a>
   );
 }
