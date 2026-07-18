@@ -10,6 +10,7 @@
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [系统总览与后端设计](./chat-system.md) ·
 > [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
+> [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
 > [表情包 UI 规范](./emoji-sticker-ui-spec.md)
 
 ---
@@ -20,7 +21,7 @@
 > 当前聊天室已在 `ChatApp.tsx + chatStore.ts + chatHub.ts + api/chat.ts` 落地到 P1 核心交互，包括 `@mention`、引用回复、图片消息、草稿恢复、成员面板、重连补拉与状态条、乐观发送 + 失败重试。
 > 本文中的 `components/*` 与 `hooks/*` 拆分方案仍是后续可选重构方向，不影响当前已交付契约。
 > `2026-07-08` 起，普通浏览器 `/messages` 收敛为正式 Web “聊天”工作区。它复用 `ChatApp`、聊天 API 与 `ChatHub`，支持 `channelId/messageId` 定位、公开个人页返回“聊天”、会话分区和移动端输入区适配；WebOS `/desktop?app=chat&channelId=...&messageId=...` 仍作为历史工作台深链保留。
-> `2026-07-18` 已完成一对一私聊专题设计。后续实现先补服务端成员 ACL、请求状态、消息幂等和私聊附件访问，再增加公开个人页入口与 `/messages` 请求交互，不新增平行消息组件。
+> `2026-07-18` 一对一私聊批次 A-D 已完成并关闭。F4-C-A 已完成聊天历史搜索专题设计，下一批先补服务端 `SearchText`、成员 ACL、cursor 和搜索契约，再由独立搜索组件接入 `/messages`，不把跨频道结果写入现有消息 Store。
 
 在 `AppRegistry.tsx` 中新增：
 
@@ -49,9 +50,9 @@
 │ │ 频道侧边栏   │  消息主区域              │ 成员列表（可收起）│ │
 │ │  240px      │  flex-grow               │  200px         │ │
 │ │             │                          │                │ │
-│ │ [搜索频道]  │ ┌──────────────────────┐ │ 在线 (3)       │ │
+│ │ 会话分区     │ ┌──────────────────────┐ │ 在线 (3)       │ │
 │ │             │ │  消息历史             │ │ • 小萝卜       │ │
-│ │ 综合         │ │  (虚拟滚动)           │ │ • 管理员       │ │
+│ │ 综合         │ │  (历史分页)           │ │ • 管理员       │ │
 │ │  # 闲聊 ●3  │ │                      │ │               │ │
 │ │  # 公告     │ │  [消息气泡...]        │ │ 离线 (12)      │ │
 │ │             │ │                      │ │ • ...          │ │
@@ -93,7 +94,7 @@ Frontend/radish.client/src/apps/chat/
 │   │   └── ChannelSidebar.module.css
 │   │
 │   ├── MessageArea/
-│   │   ├── MessageArea.tsx        # 消息历史区（虚拟滚动容器）
+│   │   ├── MessageArea.tsx        # 消息历史区（分页与普通 DOM）
 │   │   ├── MessageGroup.tsx       # 同一用户连续消息分组
 │   │   ├── MessageBubble.tsx      # 单条消息气泡
 │   │   ├── MessageBubble.module.css
@@ -412,16 +413,18 @@ const totalUnread = useChatStore(s =>
 
 ---
 
-## 虚拟滚动
+## 消息历史分页与滚动
 
-消息历史区使用虚拟滚动，防止长时间在线积累大量 DOM：
+当前消息历史区使用服务端分页和普通 DOM 渲染，尚未接入虚拟列表：
 
-- 使用 `react-virtual`（`useVirtualizer`）
-- 消息高度可变（文字消息约 40–80px，图片消息约 200–350px）：使用动态测量模式（`measureElement`）
+- 每次通过 `GetHistory` 加载一页，向上到达边界时继续请求更早消息；
 - 初始化时滚动到底部，新消息到达时：
   - 若用户当前在底部（距底 100px 内）：自动滚动到底部
   - 若用户正在查看历史：不自动滚动，显示"X 条新消息 ↓"提示条
-- 向上滚动到顶部时触发 `loadMore()`（加载历史）
+- 定位消息复用 `GetMessageWindow`，替换当前窗口后高亮目标，不尝试按未加载全量消息计算虚拟索引；
+- F4-C 搜索结果使用独立 cursor 列表，只有点击结果时才载入目标消息窗口。
+
+若成组回归证明长会话普通 DOM 已产生持续性能问题，再单独设计虚拟列表、动态高度和焦点恢复；当前不把未落地方案记作实现事实。
 
 ---
 
@@ -470,7 +473,7 @@ const chatHasMention = useChatStore(s =>
 
 ```
 ┌─────────────────────────┐
-│ [搜索频道...]            │  ← 过滤本地已加载的频道列表
+│ [搜索消息]               │  ← 打开 F4-C 服务端权威搜索
 ├─────────────────────────┤
 │ ▼ 综合                  │  ← 分类折叠（可点击折叠/展开）
 │   # 闲聊           ●3   │  ← 3 条未读，圆形数字气泡
@@ -484,7 +487,7 @@ const chatHasMention = useChatStore(s =>
 - 未读数 > 99 显示 "99+"
 - 当前激活频道：左侧 `3px` 主题色竖线 + 背景高亮
 - 频道类型图标：`Public = #`，`Announcement = 📢`
-- 分类折叠状态存储在 `localStorage`（刷新后保持）
+- 搜索关键字、结果和 cursor 不写入 `localStorage`，也不进入跨标签消息 Store。
 
 ---
 
@@ -573,8 +576,9 @@ export async function recallMessage(messageId: number): Promise<void> {
 | 阶段 | 后端 | 前端 |
 |------|------|------|
 | **Phase 1** 核心 | 4 个实体（ChannelCategory/Channel/ChannelMessage/ChannelMember）、3 个 Service、2 个 Controller、ChatHub、在线状态 Redis | ChatApp 全套（布局 + 侧边栏 + 消息历史 + 输入区）、chatHub.ts、chatStore.ts、Dock 气泡集成 |
-| **Phase 2** 一对一私聊 | `DirectConversation` 元数据、频道成员 ACL、消息幂等、私聊附件访问 | 公开个人页入口、请求处理、会话分区与归档；复用现有消息组件 |
-| **Phase 2** 后续增强 | Reaction 接入、置顶、搜索与阅读回执 | `ReactionBar`、搜索结果定位、置顶条与轻量回执 |
+| **Phase 2** 一对一私聊 | `DirectConversation` 元数据、频道成员 ACL、消息幂等、私聊附件访问 | 已完成公开个人页入口、请求处理、会话分区、归档与成组验收 |
+| **Phase 2 / F4-C** 消息搜索 | `SearchText`、成员 ACL、跨库查询、快照 cursor | PC 右侧面板、mobile 单列视图、结果定位与恢复状态 |
+| **Phase 2** 后续增强 | Reaction 接入、置顶与阅读回执 | `ReactionBar`、置顶条与轻量回执 |
 | **Phase 3** 语音 | MessageType.Voice、音频 Attachment 处理 | 录音组件、音频播放条 |
 
 ---

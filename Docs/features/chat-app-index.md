@@ -12,12 +12,13 @@
 
 本组文档聚焦聊天室在 `radish.client` 中作为独立应用的前端架构与交互实现，按“架构/实时/模块/里程碑”拆分，避免单文档持续膨胀。
 
-当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、会话分区和移动端输入区适配；它仍不新增消息搜索、Reaction、置顶、阅读回执或移动系统通知。
+当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期和移动端列表 / 详情切换。F4-C-A 已完成聊天历史搜索与消息定位设计，下一批在服务端建立权威检索契约；Reaction、置顶、阅读回执和移动系统通知继续后置。
 
 后台数据模型与 API 细节请优先参考：
 - [聊天室系统设计](./chat-system.md)
 - [聊天室系统 - 前端架构与组件设计](./chat-frontend.md)
 - [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md)
+- [聊天历史搜索与消息定位设计](./chat-message-search-design.md)
 - [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 
 ---
@@ -31,6 +32,7 @@
 | [聊天室 App UI 模块设计](./chat-app-ui-modules.md) | 定义三栏布局、核心组件职责、交互状态 | 实现页面与组件、做体验优化 |
 | [聊天室 App 实施路线图](./chat-app-roadmap.md) | 定义 P0/P1/P2 交付节奏、验收清单、风险 | 拆解任务、排期与验收 |
 | [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) | 定义私聊用户路径、模型、权限、接口、页面与停止线 | 实现一对一私聊及其安全边界 |
+| [聊天历史搜索与消息定位设计](./chat-message-search-design.md) | 定义检索文本、ACL、cursor、定位、PC / mobile 页面与停止线 | 实现 F4-C 权威消息搜索 |
 
 ---
 
@@ -59,7 +61,7 @@
 ## 当前状态
 
 - 状态：M12 聊天室 `P1` 核心交互已补齐并完成本轮短回归修复；`2026-03-28` 已补“图片先入草稿、点击发送再统一发出”交互，当前继续按收口观察态维护
-- 正式 Web 聊天：`/messages` 已承接登录后频道列表、会话分区、消息定位、通知回流和公开个人页返回“聊天”；一对一私聊设计已完成，下一顺位进入数据、ACL 与接口实现
+- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息定位、通知回流和公开个人页返回“聊天”；私聊批次 A-D 已完成并关闭，F4-C-A 搜索专题设计已完成
 - 已完成：
   - 频道列表、历史消息分页、文本发送、撤回、基础未读同步
   - `ChatHub` 事件对齐：`MessageReceived`、`MessageRecalled`、`UserTyping`、`ChannelUnreadChanged`
@@ -75,6 +77,7 @@
   - 移动端输入占位文案不展示桌面快捷键，桌面端仍保留 `Enter / Shift+Enter / Esc` 操作提示
   - 联调资产已补齐：`Radish.Api.Tests/HttpTest/Radish.Api.Chat.http` 可覆盖 REST 主链路验收
 - 当前推进原则：
-  - 一对一私聊按专题设计分批实现，批次 A 先完成数据、成员 ACL、消息幂等与 Chat 附件访问
+  - F4-C-B 先完成 `SearchText` migration、成员 ACL、跨库一致查询、快照 cursor 和搜索接口，不提前改页面
+  - 搜索只返回当前账号有权读取的频道结果，点击后继续复用现有 `GetMessageWindow` 定位，不建立平行消息窗口协议
   - 文档、代码、联调资产三者口径保持一致，避免把设计项误记为已交付能力
   - 聊天室 `P1` 继续维护图片草稿发送、切频道恢复与失败重试等既有边界；新功能以正式 Web 为主，WebOS 只保持共用组件兼容

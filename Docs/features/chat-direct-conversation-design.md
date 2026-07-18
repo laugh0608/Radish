@@ -4,7 +4,7 @@
 >
 > 最后更新：2026-07-18（Asia/Shanghai）
 >
-> 本文是一对一私聊专题的实现依据。聊天室公共能力继续以 [聊天室系统设计](./chat-system.md) 为准，正式 Web 路由与壳层边界继续以 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 为准。
+> 本文是一对一私聊专题的实现与验收依据。聊天室公共能力继续以 [聊天室系统设计](./chat-system.md) 为准，正式 Web 路由与壳层边界继续以 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 为准；私聊完成后的消息搜索由 [聊天历史搜索与消息定位设计](./chat-message-search-design.md) 独立约束。
 
 ## 摘要
 

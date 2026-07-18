@@ -10,7 +10,8 @@
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室 App 架构设计](./chat-app-architecture.md) ·
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
-> [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md)
+> [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
+> [聊天历史搜索与消息定位设计](./chat-message-search-design.md)
 
 ---
 
@@ -20,7 +21,7 @@
 |------|------|----------|------|
 | P0 | 基础可演示能力 | 频道列表、历史消息、发送、撤回、基础未读 | 双端实时互发与撤回同步 |
 | P1 | 体验增强 | @mention、输入中、引用回复、图片消息、成员列表、草稿持久化 | 常用交互流畅且状态一致 |
-| P2 | 能力扩展 | 先交付一对一私聊；搜索、Reaction、置顶、阅读回执后续独立推进 | 私聊按正式 Web 专题矩阵验收，增强项分别验收 |
+| P2 | 能力扩展 | 一对一私聊已完成；当前推进消息搜索，Reaction、置顶、阅读回执后续独立推进 | 每项按独立专题矩阵验收 |
 
 ---
 
@@ -41,7 +42,7 @@
   - 联调脚本：`Radish.Api.Tests/HttpTest/Radish.Api.Chat.http`
 - P1 当前状态：
   - 核心交互项已补齐，短回归问题已完成修复；图片草稿发送与误发规避已经收口
-  - 2026-07-18 已确认下一聊天专题为正式 Web 一对一私聊与会话管理，先执行数据、成员 ACL、消息幂等和 Chat 附件访问，再开放页面入口
+  - 2026-07-18 一对一私聊批次 A-D 已完成并关闭；F4-C-A 已完成消息搜索现状审计和专题设计，下一批进入服务端权威检索契约
 
 ---
 
@@ -147,13 +148,12 @@
 
 ## P2 任务清单
 
-- 一对一私聊与会话管理按 [专题设计](./chat-direct-conversation-design.md) 分四批推进：数据与访问边界、会话生命周期、正式 Web 页面、成组验收。
-- 私聊复用 `Channel / ChannelMember / ChannelMessage`，新增 `DirectConversation` 元数据，不建立 `PrivateMessage` 平行体系。
-- 私聊专题必须先完成成员 ACL、陌生人请求、阻断、持久化发送幂等和 Chat 附件访问，再开放公开个人页入口。
+- 一对一私聊与会话管理已按 [专题设计](./chat-direct-conversation-design.md) 完成数据与访问边界、会话生命周期、正式 Web 页面和成组验收。
+- 消息搜索按 [F4-C 专题设计](./chat-message-search-design.md) 分四批推进：设计、服务端权威检索、正式 Web 工作区、成组验收。
+- F4-C-B 先完成派生 `SearchText`、SQLite / PostgreSQL migration、批量成员 ACL、快照 cursor 与 API，不提前开放页面入口。
 
-以下能力保留为私聊专题后的聊天增强，不并入本次交付：
+以下能力继续作为独立后续专题，不并入 F4-C：
 
-- 频道内消息搜索（关键字 + 时间范围）。
 - Reaction 集成（复用表情系统）。
 - 消息置顶（Pin）：Moderator/Owner 可置顶单条消息，频道顶部展示 `PinnedMessageBar`，Hub `MessagePinned` 实时同步。
 - 消息阅读回执（轻量版）：消息气泡底部展示已读在线成员头像（至多 3 个），Hub `MemberReadUpdated` 实时推送，基于 `ChannelMember.LastReadMessageId`。
@@ -161,7 +161,7 @@
 
 验收标准：
 - 一对一私聊按专题设计的权限、请求、恢复和 PC / mobile 矩阵验收，且不破坏公开频道消息链路。
-- 搜索结果可跳转到消息上下文。
+- 搜索同时覆盖当前会话和全部当前可见会话，结果可复用现有消息窗口协议跳转到上下文；权限、cursor、删除 / 阻断和跨库行为符合 F4-C 专题设计。
 - 置顶消息在多端实时同步，点击可跳转至原始消息位置，无置顶时预览条自动收起。
 - 阅读回执头像仅显示在线成员的已读状态，离线成员不占位。
 - 权限变更在前后端均可生效并可审计。
@@ -175,7 +175,8 @@
 - P1 乐观更新阶段：临时消息使用负数 ID，REST 成功后以真实 ID 替换。
 
 2. 长列表性能波动
-- 默认启用虚拟滚动与动态高度测量。
+- 当前使用服务端历史分页和普通 DOM 渲染；F4-C 搜索结果采用独立 cursor 分页，不把全量命中灌入 `messageMap`。
+- 若真实长会话回归暴露 DOM 压力，再单独评估虚拟列表，不把尚未落地的方案写成现状。
 
 3. 多端未读不一致
 - 以服务端 `LastReadMessageId` 为权威来源，不使用纯前端累计。
