@@ -26,6 +26,7 @@
 - [本地运行与排障手册](/guide/operations-runbook)
 - [验证基线说明](/guide/validation-baseline)
 - [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)
+- [F4 真实使用证据采集与反馈归因](/guide/real-usage-evidence-collection)
 - [专题回归索引](/guide/regression-index)
 - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 - [产品版本与发布标识治理](/guide/version-governance)

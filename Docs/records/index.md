@@ -16,6 +16,7 @@
 - [人工验收模板](/records/manual-acceptance-template)
 - [回归结论记录模板](/records/regression-result-template)
 - [变更回归记录模板](/records/change-regression-record-template)
+- [F4-A 生产六链路证据采集记录模板](/records/f4-a-production-evidence-capture-template)
 - [`PR -> master` 最小执行清单](/records/master-pr-minimal-checklist)
 
 ## 二、公开壳层与内容阅读验收
