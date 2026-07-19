@@ -528,4 +528,19 @@
   <data name="error.chat.reply_unavailable" xml:space="preserve">
     <value>The replied-to message does not exist or belongs to another conversation.</value>
   </data>
+  <data name="error.chat.search_keyword_invalid" xml:space="preserve">
+    <value>The normalized search keyword must contain 2 to 100 characters.</value>
+  </data>
+  <data name="error.chat.search_scope_invalid" xml:space="preserve">
+    <value>The search scope and conversation parameters are invalid.</value>
+  </data>
+  <data name="error.chat.search_page_size_invalid" xml:space="preserve">
+    <value>The search page size must be between 1 and 50.</value>
+  </data>
+  <data name="error.chat.search_time_range_invalid" xml:space="preserve">
+    <value>The search start time must be earlier than the end time.</value>
+  </data>
+  <data name="error.chat.search_cursor_invalid" xml:space="preserve">
+    <value>The search conditions, account, or conversation access changed. Run the search again.</value>
+  </data>
 </root>

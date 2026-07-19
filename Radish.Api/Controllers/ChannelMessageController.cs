@@ -23,20 +23,44 @@ namespace Radish.Api.Controllers;
 public class ChannelMessageController : ControllerBase
 {
     private readonly IChatService _chatService;
+    private readonly IChatMessageSearchService _chatMessageSearchService;
     private readonly IHubContext<ChatHub> _chatHubContext;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ChannelMessageController(
         IChatService chatService,
+        IChatMessageSearchService chatMessageSearchService,
         IHubContext<ChatHub> chatHubContext,
         ICurrentUserAccessor currentUserAccessor)
     {
         _chatService = chatService;
+        _chatMessageSearchService = chatMessageSearchService;
         _chatHubContext = chatHubContext;
         _currentUserAccessor = currentUserAccessor;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
+
+    /// <summary>搜索当前会话或全部当前可见会话的历史消息</summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    public async Task<MessageModel> Search([FromBody] SearchChannelMessagesDto request)
+    {
+        var page = await _chatMessageSearchService.SearchAsync(
+            Current.TenantId,
+            Current.UserId,
+            request);
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "搜索成功",
+            ResponseData = page
+        };
+    }
 
     /// <summary>获取频道历史消息</summary>
     [HttpGet]

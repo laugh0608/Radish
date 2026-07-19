@@ -29,6 +29,14 @@ export type {
   NotificationInboxChangedVo,
 } from './notification-contract';
 
+export type {
+  ChatMessageSearchScope,
+  SearchChannelMessagesDto,
+  ChannelMessageSearchItemVo,
+  ChannelMessageSearchPageVo,
+} from './chat-search-contract';
+export { ChatMessageSearchScopes } from './chat-search-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

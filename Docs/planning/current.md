@@ -8,9 +8,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-C-B 聊天历史搜索：服务端权威检索契约`
-- **产品下一顺位**：`完成服务端后推进 Pencil + 正式 Web 搜索工作区，再执行成组验收；消息 Reaction / 置顶继续后置`
-- **复核日期**：`2026-07-18`
+- **工程第一顺位**：`F4-C-C 聊天历史搜索：Pencil + 正式 Web 搜索工作区`
+- **产品下一顺位**：`先完成 Pencil PC / mobile 搜索设计源，再实现正式 Web；随后执行 F4-C-D 双账号成组验收`
+- **复核日期**：`2026-07-19`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
@@ -77,6 +77,7 @@
   - 2026-07-18 F4-B-C 正式 Web 通知工作区已完成：Pencil `P12 / P12B / P26 / P26B / P26C` 覆盖 PC / mobile 权威列表、偏好与恢复状态；`/notifications`、共享 Store、导航角标、Workbench 和 WebOS 复用面已迁移到分组 / 摘要 / 偏好 / 结构化 target / revision 契约。跨标签只传账号隔离 revision，未读不再本地增减，关键字分类与泛化目标回退已删除；client `425` 项、后端通知定向 `25` 项、type-check、lint、production build、Baseline Quick 和仓库卫生通过，`1` 项 PostgreSQL 环境用例按配置跳过。未启动服务或执行浏览器 smoke；F4-B 仍待 F4-B-D 真实成组验收。
   - 2026-07-18 F4-B-D 已完成并关闭通知中心深化专题：三个普通账号在 Gateway 正式路径完成关注、评论 / 回复、点赞聚合、私信请求、商城购买、偏好抑制、已读竞态、多标签 / 离线 / cursor 恢复和目标失效，`zh / en × PC / mobile` 与 WebOS 复用面均通过。验收按共同根因补齐历史 delivery schema 前滚、仓储写入行数门禁、关注软删恢复、触发者名称、结构化目标可用性和 NotificationHub 生命周期；临时业务数据、凭据、容器与备份均已清理，六库完整性与精确残留正常。F4-B 正式关闭，工程第一顺位进入 F4-C 聊天历史搜索与消息定位的现状审计和专题设计。
   - 2026-07-18 F4-C-A 已完成现状审计和专题设计：搜索范围固定为当前会话 / 全部当前可见会话，使用派生 `SearchText`、服务端成员 ACL、SQLite / PostgreSQL 字面量包含、快照 cursor 和现有 `GetMessageWindow` 定位；PC / mobile 页面、隐私、恢复、停止线和 A-D 批次已明确。下一顺位进入 F4-C-B 服务端权威检索契约，不提前改页面。
+  - 2026-07-19 F4-C-B 已完成：`SearchText` 共用规范化器、`20260718_003_chat_message_search` migration、历史分批回填与备份恢复、批量成员 ACL、专属 Repository / Service、POST API、查询指纹 / 消息快照 / 可见频道集合 cursor、稳定双语错误和 `@radish/http` 契约已落地。后端全量 `896` 项通过、`18` 项环境用例按配置跳过；本专题 PostgreSQL 17 migration 与 `strpos` 字面查询 `2` 项另行实跑通过，解决方案构建、Baseline Quick 与相关 workspace 检查通过。按停止线未改 Pencil 或正式 Web 页面，下一顺位进入 F4-C-C。
 
 ## V1 产品与发布范围
 
@@ -121,6 +122,7 @@ Radish V1 的产品定位固定为：
 - [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)
 - [F3-D i18n 专题验收记录](/records/f3-d-i18n-stage-acceptance-2026-07-17)
 - [F4-A 首批真实使用证据整理与反馈归因记录](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)
+- [F4-C-B 聊天历史搜索服务端权威检索完成记录](/records/f4-c-b-chat-message-search-server-contract-2026-07-19)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -151,9 +153,9 @@ Radish V1 的产品定位固定为：
 1. 一对一私聊专题已经完成批次 A-D 并关闭；详细矩阵、修复、临时数据清理与未覆盖风险见 [一对一私聊与会话管理设计](/features/chat-direct-conversation-design)。
 2. [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 的 A-D 批已经完成，真实生产链路、偏好、聚合竞态、写操作、恢复、目标失效和清理矩阵全部通过，专题已关闭。
 3. F4-C-A 现状审计和 [聊天历史搜索与消息定位设计](/features/chat-message-search-design) 已完成；搜索文本、ACL、索引、跨库语义、cursor、定位、PC / mobile、失败恢复和停止线已经固定。
-4. 下一批 F4-C-B 完成 migration、回填、仓储 / Service / API / `@radish/http` 契约和 SQLite / PostgreSQL 定向测试；随后依次推进 F4-C-C Pencil + 正式 Web 搜索工作区、F4-C-D `zh / en × PC / mobile` 双账号成组验收。消息 Reaction、置顶和移动系统通知不并行展开，主动生产证据采集保持最终收尾冻结。
+4. F4-C-B 服务端权威检索已经完成；下一批 F4-C-C 先更新 Pencil `P13C / P13D / P27C / P27D`，再实现正式 Web 搜索工作区和权威消息窗口定位。随后进入 F4-C-D `zh / en × PC / mobile` 双账号成组验收。消息 Reaction、置顶和移动系统通知不并行展开，主动生产证据采集保持最终收尾冻结。
 
-## 今日事项（2026-07-18）
+## 昨日事项（2026-07-18）
 
 1. 已按六条链路盘点生产发布记录、明确用户反馈、本地日志、SQLite 数据、审计配置和相关数据模型；没有启动服务、安装依赖或读取无关历史归档。
 2. 已确认本地样本只包含 `System / Admin / TestUser / F3DTester717`、受控帖子 / 评论 / 聊天 / 通知 / 举报和 Development 日志，不将其写成真实使用价值证据。
@@ -172,14 +174,21 @@ Radish V1 的产品定位固定为：
 15. 已完成 F4-B-D 三普通账号真实生产链路、偏好、聚合竞态、写操作、目标失效、多标签 / 断线 / cursor、`zh / en × PC / mobile` 与 WebOS 成组验收；共同根因修复、定向回归、数据清理和数据库完整性检查均通过，F4-B 正式关闭。下一顺位进入 F4-C 聊天历史搜索与消息定位的现状审计和专题设计。
 16. 已完成 F4-C-A Chat 数据、索引、ACL、搜索文本、跨库查询、cursor、消息定位、PC / mobile 页面和恢复边界审计与专题设计；下一批固定为 F4-C-B 服务端权威检索契约，不提前修改 Pencil 或正式 Web 页面。
 
-## 明日事项（2026-07-19）
+## 今日事项（2026-07-19）
 
-1. 推进 F4-C-B 完整服务端权威检索批次：在 `ChannelMessage` 增加派生 `SearchText` 和搜索顺序索引，建立 `20260718_003_chat_message_search` ledger migration、历史分批回填、doctor / apply / verify / 重入与备份恢复测试，不修改原消息正文。
-2. 在 `Radish.Model` 建立写入、migration 和测试共用的搜索文本规范化器，固定 mention 可见名、空白 / 控制字符、资源协议、大小写、Unicode 与 4000 字符边界；规则变化必须通过新 migration 重建历史值。
-3. 扩展 `IChatChannelAccessService` 的批量可见频道快照，并实现专属搜索 Repository：当前会话与全部可见会话共用既有成员 ACL，管理员不穿透私聊；SQLite / PostgreSQL 使用参数化 `instr / strpos` 字面量包含，`% / _ / \\ / 引号` 不成为通配符。
-4. 实现 `IChatMessageSearchService`、POST `ChannelMessage/Search`、DTO / Vo、稳定双语错误和 `@radish/http` 契约；cursor 绑定查询指纹、首批消息快照、可见频道集合哈希与 `(CreateTime, Id)`，条件、账号、权限集合或版本变化时显式返回 `Chat.SearchCursorInvalid`。
-5. 成组补齐 normalizer、migration、ACL、跨租户、归档 / 拒绝 / 阻断、同时间排序、特殊字符、cursor、新消息插入、权限变化、LongId 和隐私日志测试；完成解决方案构建、后端定向与必要全量测试、相关 workspace type-check、Baseline Quick、repo hygiene 和 `git diff --check`。
-6. F4-C-B 按专题停止线不修改 Pencil、`/messages` 页面或 WebOS 布局，不新增 Flutter 搜索页，不启动服务或执行浏览器 smoke；页面与设计源统一留给 F4-C-C，真实双账号矩阵留给 F4-C-D。
+1. 已完成 `SearchText`、顺序索引、`20260718_003_chat_message_search` ledger migration、历史分批回填、doctor / apply / verify / 重入与 SQLite 备份恢复，不修改原消息正文；撤回同步清除派生搜索文本。
+2. 已建立写入、migration 和测试共用的搜索文本规范化器，固定 mention 可见名、空白 / 控制字符、内部资源协议、Form C Unicode、invariant 大小写与 4000 字符边界。
+3. 已扩展批量可见频道快照并实现专属搜索 Repository；当前 / 全部会话共用既有成员 ACL，管理员不穿透私聊，SQLite `instr` 与 PostgreSQL `strpos` 对 `% / _ / \\ / 引号` 执行参数化字面匹配。
+4. 已实现 `IChatMessageSearchService`、POST `ChannelMessage/Search`、DTO / Vo、稳定双语错误和 `@radish/http` 契约；cursor 绑定账号与查询指纹、消息快照、可见频道集合和 `(CreateTime, Id)`，条件或权限变化显式返回 `Chat.SearchCursorInvalid`。
+5. 后端全量 `896` 项通过、`18` 项环境用例按配置跳过；本专题 PostgreSQL 17 migration / Repository `2` 项另行实跑通过，解决方案构建为 `0 warning / 0 error`，`@radish/http` type-check / lint 与 Baseline Quick 通过。
+6. 已遵守停止线：未修改 Pencil、`/messages` 页面、WebOS 布局或 Flutter，未启动 Radish 服务或执行浏览器 smoke；下一顺位进入 F4-C-C。
+
+## 明日事项（2026-07-20）
+
+1. 先更新 Pencil `P13C / P13D / P27C / P27D`，固定 PC 搜索侧栏、mobile 单列搜索结果、范围 / 时间筛选和结果定位状态，不绕过设计源直接改页面。
+2. 抽出消息导航 Hook，接入正式 `/messages` 搜索工作区、cursor 继续加载和 `GetMessageWindow` 权威定位；搜索失败不得清空当前会话、历史或草稿。
+3. 完成中英文、键盘 / 焦点、加载 / 空态 / 错误 / 离线、长文本、目标撤回 / 失效和账号切换清理；WebOS 只做同组件阻断级兼容。
+4. 开发中执行 client 与 `@radish/http` 定向测试、type-check、lint、production build、Baseline Quick 和仓库卫生；真实双账号 PC / mobile 矩阵留给 F4-C-D。
 
 ## 并行维护线
 

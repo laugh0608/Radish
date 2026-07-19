@@ -75,6 +75,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-c-b-chat-message-search-server-contract-2026-07-19](/records/f4-c-b-chat-message-search-server-contract-2026-07-19)
 - [通知系统历史方案索引](/records/notification-legacy/)
 - [f4-day-end-doc-review-2026-07-18](/records/f4-day-end-doc-review-2026-07-18)
 - [f4-a-first-real-usage-evidence-attribution-2026-07-18](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)

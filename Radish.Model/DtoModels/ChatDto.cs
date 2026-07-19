@@ -27,6 +27,34 @@ public enum ChatChannelListView
     Archived = 2
 }
 
+/// <summary>Chat 历史消息搜索范围。</summary>
+public enum ChatMessageSearchScope
+{
+    /// <summary>只搜索指定当前会话。</summary>
+    CurrentChannel = 1,
+
+    /// <summary>搜索当前账号全部可读取会话。</summary>
+    AllVisibleChannels = 2
+}
+
+/// <summary>服务端权威 Chat 历史消息搜索请求。</summary>
+public sealed class SearchChannelMessagesDto
+{
+    public ChatMessageSearchScope Scope { get; set; }
+
+    public long? ChannelId { get; set; }
+
+    public string Keyword { get; set; } = string.Empty;
+
+    public DateTime? FromUtc { get; set; }
+
+    public DateTime? ToUtc { get; set; }
+
+    public string? Cursor { get; set; }
+
+    public int PageSize { get; set; } = 20;
+}
+
 /// <summary>发送频道消息 DTO</summary>
 public class SendChannelMessageDto
 {

@@ -528,4 +528,19 @@
   <data name="error.chat.reply_unavailable" xml:space="preserve">
     <value>引用消息不存在或不属于当前会话。</value>
   </data>
+  <data name="error.chat.search_keyword_invalid" xml:space="preserve">
+    <value>搜索关键词规范化后长度必须为 2-100 个字符。</value>
+  </data>
+  <data name="error.chat.search_scope_invalid" xml:space="preserve">
+    <value>搜索范围与频道参数组合无效。</value>
+  </data>
+  <data name="error.chat.search_page_size_invalid" xml:space="preserve">
+    <value>每页结果数量必须为 1-50。</value>
+  </data>
+  <data name="error.chat.search_time_range_invalid" xml:space="preserve">
+    <value>搜索开始时间必须早于结束时间。</value>
+  </data>
+  <data name="error.chat.search_cursor_invalid" xml:space="preserve">
+    <value>搜索条件、账号或会话权限已经变化，请重新搜索。</value>
+  </data>
 </root>

@@ -20,6 +20,7 @@
 @ImageAttachmentId = 0
 @TargetUserId = 1
 @ClientRequestId = chat-http-20260718-001
+@SearchCursor = 在这里粘贴上一页返回的 voNextCursor
 
 ###############################################################################
 # 频道接口
@@ -107,7 +108,31 @@ GET {{Gateway_HostAddress}}/api/v1/ChannelMessage/GetMessageWindow?channelId={{C
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 15. 发送文本消息
+### 15. 搜索当前会话历史消息
+POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Search
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "scope": 1,
+  "channelId": {{ChannelId}},
+  "keyword": "hello",
+  "pageSize": 20
+}
+
+### 16. 搜索全部当前可见会话并继续 cursor 分页
+POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Search
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "scope": 2,
+  "keyword": "hello",
+  "cursor": "{{SearchCursor}}",
+  "pageSize": 20
+}
+
+### 17. 发送文本消息
 POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
@@ -119,7 +144,7 @@ Content-Type: application/json
   "content": "hello from http test"
 }
 
-### 16. 发送图片消息（可选）
+### 18. 发送图片消息（可选）
 POST {{Gateway_HostAddress}}/api/v1/ChannelMessage/Send
 Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
@@ -132,7 +157,7 @@ Content-Type: application/json
   "attachmentId": {{ImageAttachmentId}}
 }
 
-### 17. 撤回消息
+### 19. 撤回消息
 DELETE {{Gateway_HostAddress}}/api/v1/ChannelMessage/Recall/{{MessageId}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json

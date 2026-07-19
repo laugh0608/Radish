@@ -120,7 +120,50 @@ public class ChannelMessageControllerTest
         Assert.Single(payload.VoMessages);
     }
 
-    private static ChannelMessageController CreateController(IChatService chatService)
+    [Fact]
+    public async Task Search_Should_Return_Authoritative_Search_Page()
+    {
+        var chatService = CreateChatServiceMock();
+        var searchService = new Mock<IChatMessageSearchService>(MockBehavior.Strict);
+        var request = new SearchChannelMessagesDto
+        {
+            Scope = ChatMessageSearchScope.CurrentChannel,
+            ChannelId = 1,
+            Keyword = "hello"
+        };
+        searchService
+            .Setup(service => service.SearchAsync(0, 10001, request))
+            .ReturnsAsync(new ChannelMessageSearchPageVo
+            {
+                VoItems =
+                [
+                    new ChannelMessageSearchItemVo
+                    {
+                        VoChannelId = 1,
+                        VoMessageId = 90001,
+                        VoChannelDisplayName = "General",
+                        VoSenderUserId = 10002,
+                        VoSenderDisplayName = "Peer",
+                        VoSnippet = "hello",
+                        VoCreateTime = System.DateTime.UtcNow,
+                        VoMessageType = Radish.Model.MessageType.Text
+                    }
+                ]
+            });
+        var controller = CreateController(chatService.Object, searchService.Object);
+
+        var result = await controller.Search(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var page = Assert.IsType<ChannelMessageSearchPageVo>(result.ResponseData);
+        Assert.Single(page.VoItems);
+        Assert.Equal(90001, page.VoItems[0].VoMessageId);
+    }
+
+    private static ChannelMessageController CreateController(
+        IChatService chatService,
+        IChatMessageSearchService? searchService = null)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
@@ -132,6 +175,7 @@ public class ChannelMessageControllerTest
 
         return new ChannelMessageController(
             chatService,
+            searchService ?? Mock.Of<IChatMessageSearchService>(),
             CreateHubContextMock().Object,
             currentUserAccessorMock.Object);
     }

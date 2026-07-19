@@ -11,6 +11,8 @@ namespace Radish.Model;
 [SugarIndex("idx_channel_message_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_channel_message_client_request", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(ClientRequestId), OrderByType.Asc, IsUnique = true)]
 [SugarIndex("idx_channel_message_attachment", nameof(TenantId), OrderByType.Asc, nameof(AttachmentId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_channel_message_channel_search_order", nameof(ChannelId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc, nameof(Id), OrderByType.Desc)]
+[SugarIndex("idx_channel_message_tenant_search_order", nameof(TenantId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc, nameof(Id), OrderByType.Desc)]
 public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>频道 Id</summary>
@@ -40,6 +42,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>消息内容</summary>
     [SugarColumn(Length = 4000, IsNullable = true)]
     public string? Content { get; set; }
+
+    /// <summary>由当前可见正文派生的规范化搜索文本；可重建且不对客户端暴露</summary>
+    [SugarColumn(Length = 4000, IsNullable = true)]
+    public string? SearchText { get; set; }
 
     /// <summary>回复消息 Id</summary>
     [SugarColumn(IsNullable = true)]

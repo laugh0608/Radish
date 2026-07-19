@@ -329,6 +329,7 @@ public class ChatServiceTest
         };
         var member = new ChannelMember { Id = 7100, ChannelId = channel.Id, UserId = 20001 };
         IReadOnlyCollection<ReliableOutboxDraft>? capturedOutboxes = null;
+        ChannelMessage? capturedMessage = null;
         long? capturedUnarchiveUserId = null;
         long? capturedConversationId = null;
 
@@ -346,6 +347,7 @@ public class ChatServiceTest
                 It.IsAny<long?>()))
             .Callback<ChannelMessage, IReadOnlyCollection<ReliableOutboxDraft>, long?, long?>((message, outboxes, unarchiveUserId, conversationId) =>
             {
+                capturedMessage = message;
                 capturedOutboxes = outboxes;
                 capturedUnarchiveUserId = unarchiveUserId;
                 capturedConversationId = conversationId;
@@ -399,6 +401,7 @@ public class ChatServiceTest
         Assert.Equal(new long[] { 20002 }, result.ConversationChangedUserIds);
         Assert.Equal(20002, capturedUnarchiveUserId);
         Assert.Equal(7200, capturedConversationId);
+        Assert.Equal(ChatMessageSearchTextNormalizer.Normalize(privateBody), capturedMessage?.SearchText);
         var requestOutbox = Assert.Single(capturedOutboxes!);
         Assert.Equal(ReliableTaskTypes.NotificationRequested, requestOutbox.TaskType);
         Assert.DoesNotContain(privateBody, requestOutbox.PayloadJson, StringComparison.Ordinal);

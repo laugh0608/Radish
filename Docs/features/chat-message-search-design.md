@@ -1,8 +1,8 @@
 # F4-C 聊天历史搜索与消息定位
 
-> **状态**：F4-C-A 现状审计与专题设计已完成；下一批为 F4-C-B 服务端权威检索
+> **状态**：F4-C-A / F4-C-B 已完成；下一批为 F4-C-C Pencil 与正式 Web 搜索工作区
 >
-> **复核日期**：2026-07-18
+> **复核日期**：2026-07-19
 >
 > **适用主线**：正式 Web `/messages`；WebOS `/desktop` 复用同一 Chat App，Flutter 仅处理既有兼容阻断
 >
@@ -363,13 +363,15 @@ Mobile：
 
 本批只修改文档，不修改代码、数据库或 Pencil，不启动服务或执行浏览器 smoke。
 
-### F4-C-B：服务端权威检索
+### F4-C-B：服务端权威检索（已完成）
 
 - 增加 `SearchText`、搜索顺序索引和 `20260718_003_chat_message_search` migration。
 - 实现批量可见频道快照、专属 Repository / Service、POST API、cursor 和稳定错误。
 - 补 SQLite / PostgreSQL migration、查询语义、ACL、分页快照、特殊字符和 LongId 测试。
 
 本批不改正式 Web 页面结构，只允许增加 `@radish/http` / client 类型与静态契约测试。
+
+2026-07-19 已完成实现与回归：派生文本、Chat ledger migration、批量 ACL、SQLite / PostgreSQL 字面检索、查询指纹与权限集合 cursor、POST API、稳定双语错误和 `@radish/http` 契约均已落地。详细证据见 [F4-C-B 服务端权威检索完成记录](../records/f4-c-b-chat-message-search-server-contract-2026-07-19.md)。
 
 ### F4-C-C：Pencil 与正式 Web
 

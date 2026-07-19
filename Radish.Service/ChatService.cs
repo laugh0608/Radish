@@ -363,6 +363,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             UserAvatarAttachmentIdSnapshot = userAvatarAttachmentId,
             Type = request.Type,
             Content = normalizedContent,
+            SearchText = ChatMessageSearchTextNormalizer.Normalize(normalizedContent),
             ReplyToId = normalizedReplyToId,
             AttachmentId = normalizedAttachmentId,
             TenantId = tenantId,
@@ -871,6 +872,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             m => new ChannelMessage
             {
                 IsDeleted = true,
+                SearchText = null,
                 DeletedAt = DateTime.UtcNow,
                 DeletedBy = normalizedOperator
             },

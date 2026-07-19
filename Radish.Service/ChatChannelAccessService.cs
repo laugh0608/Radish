@@ -51,78 +51,125 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
 
         if (channel.Type == ChannelType.Public)
         {
-            return new ChatChannelAccessResult(true, channel.Type, true, true, true, true, false);
+            return BuildAccessResult(channel, member, null, userId, canManageChannel, false, true);
         }
 
         if (channel.Type == ChannelType.Announcement)
         {
-            var announcementCanSend = canManageChannel || member?.Role is MemberRole.Moderator or MemberRole.Owner;
-            return new ChatChannelAccessResult(true, channel.Type, true, announcementCanSend, true, true, false);
+            return BuildAccessResult(channel, member, null, userId, canManageChannel, false, true);
         }
 
-        if (member == null)
-        {
-            return new ChatChannelAccessResult(true, channel.Type, false, false, false, false, false);
-        }
-
-        var directConversation = await _directConversationRepository.QueryFirstAsync(candidate =>
+        var directConversation = member == null
+            ? null
+            : await _directConversationRepository.QueryFirstAsync(candidate =>
+                candidate.ChannelId == channelId && !candidate.IsDeleted);
+        var hasMessages = directConversation != null && await _messageRepository.QueryExistsAsync(candidate =>
             candidate.ChannelId == channelId && !candidate.IsDeleted);
-        if (directConversation == null)
+        var peerAvailable = true;
+        if (directConversation != null)
         {
-            // 既有 Private 频道没有一对一关系元数据时，继续按私有群组成员语义处理。
-            return new ChatChannelAccessResult(true, channel.Type, true, true, true, true, false);
+            var peerUserId = directConversation.ParticipantLowUserId == userId
+                ? directConversation.ParticipantHighUserId
+                : directConversation.ParticipantLowUserId;
+            peerAvailable = await _userRepository.QueryFirstAsync(candidate =>
+                candidate.Id == peerUserId &&
+                candidate.TenantId == directConversation.TenantId &&
+                candidate.IsEnable &&
+                !candidate.IsDeleted) != null;
         }
 
-        var isParticipant = directConversation.ParticipantLowUserId == userId ||
-                            directConversation.ParticipantHighUserId == userId;
-        if (!isParticipant || !IsTenantVisible(directConversation.TenantId, tenantId))
-        {
-            return new ChatChannelAccessResult(true, channel.Type, false, false, false, false, true);
-        }
-
-        var peerUserId = directConversation.ParticipantLowUserId == userId
-            ? directConversation.ParticipantHighUserId
-            : directConversation.ParticipantLowUserId;
-        var peerUser = await _userRepository.QueryFirstAsync(candidate =>
-            candidate.Id == peerUserId &&
-            candidate.TenantId == directConversation.TenantId &&
-            candidate.IsEnable &&
-            !candidate.IsDeleted);
-        var isPeerAvailable = peerUser != null;
-        var hasMessages = await _messageRepository.QueryExistsAsync(candidate =>
-            candidate.ChannelId == channelId && !candidate.IsDeleted);
-        var isRequester = directConversation.RequestedByUserId == userId;
-        var isBlocked = directConversation.BlockedByUserId.HasValue;
-        var canView = directConversation.RequestStatus switch
-        {
-            DirectConversationRequestStatus.Pending => isRequester || hasMessages,
-            DirectConversationRequestStatus.Accepted => true,
-            DirectConversationRequestStatus.Declined => true,
-            _ => false
-        };
-        var canSend = directConversation.RequestStatus switch
-        {
-            DirectConversationRequestStatus.Pending => isRequester && !hasMessages,
-            DirectConversationRequestStatus.Accepted => true,
-            DirectConversationRequestStatus.Declined => false,
-            _ => false
-        };
-        canSend = canSend && !isBlocked && isPeerAvailable;
-        return new ChatChannelAccessResult(
-            true,
-            channel.Type,
-            canView,
-            canSend,
-            canView,
-            directConversation.RequestStatus == DirectConversationRequestStatus.Accepted && !isBlocked,
-            true,
-            directConversation.RequestStatus,
-            directConversation.RequestedByUserId,
-            directConversation.BlockedByUserId,
-            peerUserId,
-            directConversation.Id,
+        return BuildAccessResult(
+            channel,
+            member,
+            directConversation,
+            userId,
+            canManageChannel,
             hasMessages,
-            isPeerAvailable);
+            peerAvailable,
+            tenantId);
+    }
+
+    public async Task<IReadOnlyList<ReadableChatChannelSnapshotItem>> GetReadableChannelSnapshotAsync(
+        long tenantId,
+        long userId)
+    {
+        if (userId <= 0)
+        {
+            return [];
+        }
+
+        var channels = await _channelRepository.QueryAsync(channel =>
+            channel.IsEnabled && !channel.IsDeleted &&
+            (channel.TenantId == tenantId || channel.TenantId == 0));
+        if (channels.Count == 0)
+        {
+            return [];
+        }
+
+        var channelIds = channels.Select(channel => channel.Id).Distinct().ToList();
+        var members = await _memberRepository.QueryAsync(member =>
+            channelIds.Contains(member.ChannelId) && member.UserId == userId && !member.IsDeleted);
+        var memberMap = members.ToDictionary(member => member.ChannelId);
+        var directConversations = await _directConversationRepository.QueryAsync(conversation =>
+            channelIds.Contains(conversation.ChannelId) && !conversation.IsDeleted);
+        var directMap = directConversations
+            .GroupBy(conversation => conversation.ChannelId)
+            .ToDictionary(group => group.Key, group => group.First());
+        var directChannelIds = directConversations.Select(conversation => conversation.ChannelId).Distinct().ToList();
+        var messageChannelIds = directChannelIds.Count == 0
+            ? []
+            : await _messageRepository.QueryDistinctAsync(
+                message => message.ChannelId,
+                message => directChannelIds.Contains(message.ChannelId) && !message.IsDeleted);
+        var channelIdsWithMessages = messageChannelIds.ToHashSet();
+        var peerUserIds = directConversations
+            .Where(conversation =>
+                conversation.ParticipantLowUserId == userId || conversation.ParticipantHighUserId == userId)
+            .Select(conversation => conversation.ParticipantLowUserId == userId
+                ? conversation.ParticipantHighUserId
+                : conversation.ParticipantLowUserId)
+            .Distinct()
+            .ToList();
+        var activePeerUserIds = peerUserIds.Count == 0
+            ? []
+            : (await _userRepository.QueryAsync(user =>
+                peerUserIds.Contains(user.Id) &&
+                user.TenantId == tenantId &&
+                user.IsEnable &&
+                !user.IsDeleted))
+            .Select(user => user.Id)
+            .ToHashSet();
+        var result = new List<ReadableChatChannelSnapshotItem>(channels.Count);
+
+        foreach (var channel in channels)
+        {
+            memberMap.TryGetValue(channel.Id, out var member);
+            directMap.TryGetValue(channel.Id, out var conversation);
+            var peerAvailable = conversation == null ||
+                                (conversation.ParticipantLowUserId == userId
+                                    ? activePeerUserIds.Contains(conversation.ParticipantHighUserId)
+                                    : activePeerUserIds.Contains(conversation.ParticipantLowUserId));
+            var access = BuildAccessResult(
+                channel,
+                member,
+                conversation,
+                userId,
+                false,
+                channelIdsWithMessages.Contains(channel.Id),
+                peerAvailable,
+                tenantId);
+            if (access.CanView)
+            {
+                result.Add(new ReadableChatChannelSnapshotItem(
+                    channel.Id,
+                    channel.Name,
+                    channel.IconEmoji,
+                    channel.Type,
+                    access));
+            }
+        }
+
+        return result;
     }
 
     public async Task<bool> CanAccessChatAttachmentAsync(
@@ -152,5 +199,80 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
     private static bool IsTenantVisible(long resourceTenantId, long requestTenantId)
     {
         return resourceTenantId == 0 || resourceTenantId == requestTenantId;
+    }
+
+    private static ChatChannelAccessResult BuildAccessResult(
+        Channel channel,
+        ChannelMember? member,
+        DirectConversation? directConversation,
+        long userId,
+        bool canManageChannel,
+        bool hasMessages,
+        bool peerAvailable,
+        long? tenantId = null)
+    {
+        if (channel.Type == ChannelType.Public)
+        {
+            return new ChatChannelAccessResult(true, channel.Type, true, true, true, true, false);
+        }
+
+        if (channel.Type == ChannelType.Announcement)
+        {
+            var announcementCanSend = canManageChannel || member?.Role is MemberRole.Moderator or MemberRole.Owner;
+            return new ChatChannelAccessResult(true, channel.Type, true, announcementCanSend, true, true, false);
+        }
+
+        if (member == null)
+        {
+            return new ChatChannelAccessResult(true, channel.Type, false, false, false, false, directConversation != null);
+        }
+
+        if (directConversation == null)
+        {
+            return new ChatChannelAccessResult(true, channel.Type, true, true, true, true, false);
+        }
+
+        var isParticipant = directConversation.ParticipantLowUserId == userId ||
+                            directConversation.ParticipantHighUserId == userId;
+        if (!isParticipant || tenantId.HasValue && !IsTenantVisible(directConversation.TenantId, tenantId.Value))
+        {
+            return new ChatChannelAccessResult(true, channel.Type, false, false, false, false, true);
+        }
+
+        var peerUserId = directConversation.ParticipantLowUserId == userId
+            ? directConversation.ParticipantHighUserId
+            : directConversation.ParticipantLowUserId;
+        var isRequester = directConversation.RequestedByUserId == userId;
+        var isBlocked = directConversation.BlockedByUserId.HasValue;
+        var canView = directConversation.RequestStatus switch
+        {
+            DirectConversationRequestStatus.Pending => isRequester || hasMessages,
+            DirectConversationRequestStatus.Accepted => true,
+            DirectConversationRequestStatus.Declined => true,
+            _ => false
+        };
+        var canSend = directConversation.RequestStatus switch
+        {
+            DirectConversationRequestStatus.Pending => isRequester && !hasMessages,
+            DirectConversationRequestStatus.Accepted => true,
+            DirectConversationRequestStatus.Declined => false,
+            _ => false
+        };
+        canSend = canSend && !isBlocked && peerAvailable;
+        return new ChatChannelAccessResult(
+            true,
+            channel.Type,
+            canView,
+            canSend,
+            canView,
+            directConversation.RequestStatus == DirectConversationRequestStatus.Accepted && !isBlocked,
+            true,
+            directConversation.RequestStatus,
+            directConversation.RequestedByUserId,
+            directConversation.BlockedByUserId,
+            peerUserId,
+            directConversation.Id,
+            hasMessages,
+            peerAvailable);
     }
 }

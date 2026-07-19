@@ -77,6 +77,13 @@ internal sealed class ChatReliableMessageSchemaMigration : ISchemaMigration
                 .ToList();
             var requestMessages = db.Queryable<ChannelMessage>()
                 .Where(message => requestMessageIds.Contains(message.Id))
+                .Select(message => new ChannelMessage
+                {
+                    Id = message.Id,
+                    ChannelId = message.ChannelId,
+                    UserId = message.UserId,
+                    TenantId = message.TenantId
+                })
                 .ToList()
                 .ToDictionary(message => message.Id);
             foreach (var conversation in claimedConversations)

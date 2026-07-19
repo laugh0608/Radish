@@ -153,6 +153,43 @@ public sealed class ChatSchemaMigrationTest
     }
 
     [Fact]
+    public void ChatReliableMessageVerify_ShouldRemainCompatibleBeforeSearchColumnMigration()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-before-search-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<DirectConversation>();
+            db.CodeFirst.InitTables<ChannelMessage>();
+            var conversation = CreateDirectConversation(8301, 8401);
+            var requestMessage = CreateMessage(8501, "before-search");
+            requestMessage.ChannelId = conversation.ChannelId;
+            db.Insertable(conversation).ExecuteCommand();
+            db.Insertable(requestMessage).ExecuteCommand();
+            db.Updateable<DirectConversation>()
+                .SetColumns(item => item.RequestMessageId == requestMessage.Id)
+                .Where(item => item.Id == conversation.Id)
+                .ExecuteCommand();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_channel_search_order\"");
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_tenant_search_order\"");
+            db.Ado.ExecuteCommand("ALTER TABLE \"ChannelMessage\" DROP COLUMN \"SearchText\"");
+
+            var issues = ChatReliableMessageSchemaMigration.Instance.Verify(db, services);
+
+            Assert.Empty(issues);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     [Trait("Database", "PostgreSQL")]
     public async Task ChatReliableMessageMigration_ShouldSupportPostgreSql()
     {
@@ -194,6 +231,130 @@ public sealed class ChatSchemaMigrationTest
             duplicateAttachmentMessage.ChannelId = conversation.ChannelId;
             duplicateAttachmentMessage.AttachmentId = requestMessage.AttachmentId;
             Assert.ThrowsAny<Exception>(() => db.Insertable(duplicateAttachmentMessage).ExecuteCommand());
+        }
+        finally
+        {
+            await adminDb.Ado.ExecuteCommandAsync($"DROP SCHEMA IF EXISTS {QuoteIdentifier(schema)} CASCADE");
+        }
+    }
+
+    [Fact]
+    public void ChatMessageSearchMigration_ShouldBackfillVisibleTextAndRemainRepeatable()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-search-migration-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<ChannelMessage>();
+            var searchable = CreateMessage(8001, "searchable");
+            searchable.Content = "Hello @[萝卜](12345)";
+            var resourceOnly = CreateMessage(8002, "resource");
+            resourceOnly.Content = "sticker://radish/hello";
+            var recalled = CreateMessage(8003, "recalled");
+            recalled.Content = "private text";
+            recalled.IsDeleted = true;
+            db.Insertable(new[] { searchable, resourceOnly, recalled }).ExecuteCommand();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_channel_search_order\"");
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_tenant_search_order\"");
+            db.Ado.ExecuteCommand("ALTER TABLE \"ChannelMessage\" DROP COLUMN \"SearchText\"");
+
+            var migration = ChatMessageSearchSchemaMigration.Instance;
+            Assert.Contains(migration.Diagnose(db, services), warning => warning.Contains("3 条历史", StringComparison.Ordinal));
+
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_channel_message_channel_search_order"));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_channel_message_tenant_search_order"));
+            var messages = db.Queryable<ChannelMessage>().OrderBy(message => message.Id).ToList();
+            Assert.Equal("hello @萝卜", messages[0].SearchText);
+            Assert.Equal("Hello @[萝卜](12345)", messages[0].Content);
+            Assert.Null(messages[1].SearchText);
+            Assert.Null(messages[2].SearchText);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    public void ChatMessageSearchMigration_ShouldReapplyAfterSqliteBackupRestore()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-search-restore-{Guid.NewGuid():N}.db");
+        var backupPath = $"{path}.before-search";
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            using (var legacyDb = CreateClient(path, "Chat"))
+            {
+                legacyDb.CodeFirst.InitTables<ChannelMessage>();
+                var message = CreateMessage(8201, "restore-search");
+                message.Content = "Restore @[Tester](20001)";
+                legacyDb.Insertable(message).ExecuteCommand();
+                legacyDb.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_channel_search_order\"");
+                legacyDb.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_tenant_search_order\"");
+                legacyDb.Ado.ExecuteCommand("ALTER TABLE \"ChannelMessage\" DROP COLUMN \"SearchText\"");
+            }
+
+            File.Copy(path, backupPath, overwrite: false);
+            ApplyAndVerifySearchMigration(path, services, 8201, "restore @tester");
+
+            File.Copy(backupPath, path, overwrite: true);
+            ApplyAndVerifySearchMigration(path, services, 8201, "restore @tester");
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+
+            if (File.Exists(backupPath))
+            {
+                File.Delete(backupPath);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Database", "PostgreSQL")]
+    public async Task ChatMessageSearchMigration_ShouldSupportPostgreSql()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable(PostgreSqlConnectionStringEnvironmentVariable);
+        Assert.SkipWhen(
+            string.IsNullOrWhiteSpace(adminConnectionString),
+            $"未配置 {PostgreSqlConnectionStringEnvironmentVariable}，跳过 Chat 搜索 PostgreSQL 迁移测试");
+
+        var schema = $"chat_search_{Guid.NewGuid():N}";
+        using var adminDb = CreatePostgreSqlClient(adminConnectionString!);
+        await adminDb.Ado.ExecuteCommandAsync($"CREATE SCHEMA {QuoteIdentifier(schema)}");
+        try
+        {
+            var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
+            using var db = CreatePostgreSqlClient(connectionString);
+            using var services = new ServiceCollection().BuildServiceProvider();
+            db.CodeFirst.InitTables<ChannelMessage>();
+            var message = CreateMessage(8101, "postgres-search");
+            message.Content = "PostgreSQL %_ literal";
+            db.Insertable(message).ExecuteCommand();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_channel_search_order\"");
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_message_tenant_search_order\"");
+            DropColumn(db, "ChannelMessage", "SearchText");
+
+            var migration = ChatMessageSearchSchemaMigration.Instance;
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.Equal("postgresql %_ literal", db.Queryable<ChannelMessage>().InSingle(8101).SearchText);
         }
         finally
         {
@@ -258,6 +419,19 @@ public sealed class ChatSchemaMigrationTest
             CreateBy = "Tester",
             CreateId = 20001
         };
+    }
+
+    private static void ApplyAndVerifySearchMigration(
+        string path,
+        IServiceProvider services,
+        long messageId,
+        string expectedSearchText)
+    {
+        using var db = CreateClient(path, "Chat");
+        var migration = ChatMessageSearchSchemaMigration.Instance;
+        migration.Apply(db, services);
+        Assert.Empty(migration.Verify(db, services));
+        Assert.Equal(expectedSearchText, db.Queryable<ChannelMessage>().InSingle(messageId).SearchText);
     }
 
     private static DirectConversation CreateDirectConversation(long id, long channelId)

@@ -23,6 +23,14 @@ public sealed record ChatChannelAccessResult(
         new(false, null, false, false, false, false, false);
 }
 
+/// <summary>本次请求中当前用户可读取的频道及必要展示元数据。</summary>
+public sealed record ReadableChatChannelSnapshotItem(
+    long ChannelId,
+    string ChannelName,
+    string? ChannelIcon,
+    ChannelType ChannelType,
+    ChatChannelAccessResult Access);
+
 /// <summary>集中判定 REST、Hub 与 Chat 附件共享的频道访问边界</summary>
 public interface IChatChannelAccessService
 {
@@ -32,6 +40,11 @@ public interface IChatChannelAccessService
         long userId,
         long channelId,
         bool canManageChannel = false);
+
+    /// <summary>批量计算当前用户可读取频道；与单频道访问复用同一规则。</summary>
+    Task<IReadOnlyList<ReadableChatChannelSnapshotItem>> GetReadableChannelSnapshotAsync(
+        long tenantId,
+        long userId);
 
     /// <summary>判断用户能否访问指定 Chat 附件引用；未完成可靠绑定时按消息引用恢复访问。</summary>
     Task<bool> CanAccessChatAttachmentAsync(

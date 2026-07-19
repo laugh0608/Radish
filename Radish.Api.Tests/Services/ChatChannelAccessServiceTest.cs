@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Linq;
 using System.Threading.Tasks;
@@ -221,6 +222,55 @@ public sealed class ChatChannelAccessServiceTest
         Assert.True(result);
     }
 
+    [Fact]
+    public async Task GetReadableChannelSnapshotAsync_ShouldReuseAclAndNeverExposePrivateNonMember()
+    {
+        var channelRepository = CreateRepository(
+            new Channel { Id = 100, Name = "Public", TenantId = 30000, Type = ChannelType.Public, IsEnabled = true },
+            new Channel { Id = 101, Name = "Private", TenantId = 30000, Type = ChannelType.Private, IsEnabled = true },
+            new Channel { Id = 102, Name = "Request", TenantId = 30000, Type = ChannelType.Private, IsEnabled = true });
+        var memberRepository = CreateRepository(new ChannelMember
+        {
+            ChannelId = 102,
+            UserId = 20002,
+            TenantId = 30000
+        });
+        var directRepository = CreateRepository(new DirectConversation
+        {
+            Id = 700,
+            ChannelId = 102,
+            ParticipantLowUserId = 20001,
+            ParticipantHighUserId = 20002,
+            RequestedByUserId = 20001,
+            RequestStatus = DirectConversationRequestStatus.Pending,
+            TenantId = 30000
+        });
+        var userRepository = CreateRepository(new User
+        {
+            Id = 20001,
+            TenantId = 30000,
+            IsEnable = true
+        });
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryDistinctAsync(
+                It.IsAny<Expression<Func<ChannelMessage, long>>>(),
+                It.IsAny<Expression<Func<ChannelMessage, bool>>?>()))
+            .ReturnsAsync(new List<long> { 102 });
+        var service = CreateService(
+            channelRepository,
+            memberRepository,
+            directRepository,
+            userRepository,
+            messageRepository.Object);
+
+        var result = await service.GetReadableChannelSnapshotAsync(30000, 20002);
+
+        Assert.Equal(new long[] { 100, 102 }, result.Select(item => item.ChannelId).OrderBy(id => id));
+        Assert.DoesNotContain(result, item => item.ChannelId == 101);
+        Assert.True(result.Single(item => item.ChannelId == 102).Access.CanView);
+    }
+
     private static ChatChannelAccessService CreateService(
         Mock<IBaseRepository<Channel>> channelRepository,
         Mock<IBaseRepository<ChannelMember>> memberRepository,
@@ -244,6 +294,10 @@ public sealed class ChatChannelAccessServiceTest
             .Setup(item => item.QueryFirstAsync(It.IsAny<Expression<Func<TEntity, bool>>?>()))
             .ReturnsAsync((Expression<Func<TEntity, bool>>? predicate) =>
                 predicate == null ? entities.FirstOrDefault() : entities.FirstOrDefault(predicate.Compile()));
+        repository
+            .Setup(item => item.QueryAsync(It.IsAny<Expression<Func<TEntity, bool>>?>()))
+            .ReturnsAsync((Expression<Func<TEntity, bool>>? predicate) =>
+                predicate == null ? entities.ToList() : entities.Where(predicate.Compile()).ToList());
         return repository;
     }
 }
