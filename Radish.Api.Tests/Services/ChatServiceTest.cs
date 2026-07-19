@@ -742,7 +742,8 @@ public class ChatServiceTest
         Mock<IBaseRepository<Attachment>>? attachmentRepository = null,
         Mock<IBaseRepository<ChannelMember>>? memberRepository = null,
         Mock<IBaseRepository<User>>? userRepository = null,
-        ChatChannelAccessResult? accessResult = null)
+        ChatChannelAccessResult? accessResult = null,
+        Mock<IChatReadReceiptRepository>? readReceiptRepository = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         mapper
@@ -772,6 +773,7 @@ public class ChatServiceTest
 
         var baseChannelRepository = channelRepository ?? new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
         var baseMessageRepository = messageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var baseReadReceiptRepository = readReceiptRepository ?? new Mock<IChatReadReceiptRepository>(MockBehavior.Strict);
         var baseMemberRepository = memberRepository ?? new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
         var baseAttachmentRepository = attachmentRepository ?? new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
         var baseUserRepository = userRepository ?? new Mock<IBaseRepository<User>>(MockBehavior.Strict);
@@ -780,6 +782,11 @@ public class ChatServiceTest
         var chatChannelAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
         var directConversationService = new Mock<IDirectConversationService>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
+
+        baseReadReceiptRepository
+            .Setup(repository => repository.AdvanceAsync(It.IsAny<AdvanceChatReadStateCommand>()))
+            .ReturnsAsync((AdvanceChatReadStateCommand command) =>
+                new AdvanceChatReadStateResult(command.ReadThroughMessageId, true));
 
         chatChannelAccessService
             .Setup(service => service.GetAccessAsync(
@@ -813,6 +820,7 @@ public class ChatServiceTest
             mapper.Object,
             baseChannelRepository.Object,
             baseMessageRepository.Object,
+            baseReadReceiptRepository.Object,
             baseMemberRepository.Object,
             baseAttachmentRepository.Object,
             baseUserRepository.Object,

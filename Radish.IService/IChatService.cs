@@ -66,8 +66,8 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
         long messageId,
         bool canRecallOthers);
 
-    /// <summary>频道加入（确保成员关系存在）</summary>
-    Task JoinChannelAsync(long tenantId, long userId, long channelId, string operatorName);
+    /// <summary>校验频道实时订阅权限；成员关系由会话生命周期或已读游标写入独立维护。</summary>
+    Task JoinChannelAsync(long tenantId, long userId, long channelId);
 
     /// <summary>频道离开（P0 仅处理在线态，不修改成员记录）</summary>
     Task LeaveChannelAsync(long tenantId, long userId, long channelId);

@@ -2,7 +2,7 @@
 
 > 本文是 Radish 聊天阅读回执的权威专题，固定用户价值、隐私矩阵、游标语义、数据与接口边界、正式 Web / WebOS 页面、失败恢复、开发批次和完成标准。
 >
-> **状态**：`F4-F-A 现状审计与专题设计已完成，下一批为 F4-F-B 服务端权威契约`
+> **状态**：`F4-F-A / B 已完成，下一批为 F4-F-C 正式 Web 与 WebOS 共用页面`
 >
 > **版本**：v26.7.2
 >
@@ -146,13 +146,13 @@ ChannelMember.LastReadMessageId
 
 ### 5.2 索引
 
-F4-F-B 为 `ChannelMember` 增加面向回执聚合的覆盖索引，目标列顺序为：
+F4-F-B 已由 Chat ledger migration `20260719_006_chat_read_receipt` 增加面向回执聚合的覆盖索引，列顺序为：
 
 ```text
 ChannelId, IsDeleted, LastReadMessageId, UserId
 ```
 
-迁移必须进入 Chat schema ledger，并覆盖 SQLite、PostgreSQL、首次应用、重入、严格 verify 与 SQLite 备份恢复。
+PostgreSQL 实跑同时确认 `ChannelMember` 的历史 `[SugarIndex]` 没有被 Code First 物化，因此该 migration 还显式补齐并验证既有 `(ChannelId, UserId)` 唯一索引和 `UserId` 索引；发现重复成员或负数游标时拒绝静默修复。迁移覆盖 SQLite、PostgreSQL、首次应用、重入和严格 verify，SQLite 备份恢复继续复用 Chat ledger 通用门禁。
 
 ### 5.3 成员周期
 
@@ -238,7 +238,7 @@ Content-Type: application/json
 GET /api/v1/ChannelReadReceipt/GetReaders
     ?channelId=...
     &messageId=...
-    &afterUserId=...
+    &cursor=...
     &pageSize=50
 ```
 
@@ -383,7 +383,7 @@ ReadReceiptsChanged
 - Hub 只广播频道级失效提示，不推送全成员或全消息快照。
 - 前端对连续失效提示去抖合并，不为每个游标推进立即发起多轮重复请求。
 
-F4-F-B 需要使用大规模普通 Private 测试夹具检查查询次数、返回上限和索引使用；不以易波动的墙钟耗时作为唯一 CI 断言。
+F4-F-B 已使用大规模普通 Private 测试夹具覆盖数据库聚合、返回上限与 keyset 分页，并由 migration 用例验证覆盖索引；不以易波动的墙钟耗时作为唯一 CI 断言。
 
 ### 10.2 并发与幂等
 
@@ -423,7 +423,7 @@ F4-F 不改变：
 
 停止线：不修改模型、Repository、Service、Controller、Hub、HTTP 客户端、Store、Pencil 或页面代码。
 
-### F4-F-B：服务端权威契约
+### F4-F-B：服务端权威契约（已完成）
 
 - 增加 Chat ledger migration 和回执聚合索引。
 - 建立专属 Repository 的原子游标推进、摘要聚合和读者 keyset 分页。
@@ -431,6 +431,8 @@ F4-F 不改变：
 - 将个人已读写入迁移到 REST，拆开 `JoinChannel`、成员恢复、归档与游标职责。
 - 增加 `ReadReceiptsChanged` 失效提示和 `@radish/http` 契约；删除 Hub 写命令需等 F4-F-C 消费者迁移完成。
 - 覆盖 SQLite / PostgreSQL、四类频道、Direct 全状态、撤回、成员周期、单调并发、幂等和大频道查询。
+
+完成事实见 [F4-F-B 服务端权威契约记录](/records/f4-f-b-chat-message-read-receipt-server-contract-2026-07-19)。
 
 停止线：不提前修改 Pencil、正式 Web 页面、通知、Presence、Flutter 或 Tauri。
 

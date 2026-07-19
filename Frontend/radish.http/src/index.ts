@@ -54,6 +54,20 @@ export type {
   ChatMessagePinMutationVo,
 } from './chat-pin-contract';
 
+export type {
+  ChatReadReceiptMode,
+  AdvanceChannelReadStateDto,
+  ChannelReadStateVo,
+  GetChatReadReceiptSummariesDto,
+  ChatReadReceiptSummaryItemVo,
+  ChatReadReceiptSummariesVo,
+  ChatReadReceiptReaderVo,
+  GetChatReadReceiptReadersQuery,
+  ChatReadReceiptReaderPageVo,
+  ReadReceiptsChangedVo,
+} from './chat-read-receipt-contract';
+export { ChatReadReceiptModes } from './chat-read-receipt-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

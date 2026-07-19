@@ -21,6 +21,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 {
     private readonly IBaseRepository<Channel> _channelRepository;
     private readonly IChannelMessageRepository _messageRepository;
+    private readonly IChatReadReceiptRepository _readReceiptRepository;
     private readonly IBaseRepository<ChannelMember> _memberRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IBaseRepository<User> _userRepository;
@@ -33,6 +34,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         IMapper mapper,
         IBaseRepository<Channel> baseRepository,
         IChannelMessageRepository messageRepository,
+        IChatReadReceiptRepository readReceiptRepository,
         IBaseRepository<ChannelMember> memberRepository,
         IBaseRepository<Attachment> attachmentRepository,
         IBaseRepository<User> userRepository,
@@ -45,6 +47,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     {
         _channelRepository = baseRepository;
         _messageRepository = messageRepository;
+        _readReceiptRepository = readReceiptRepository;
         _memberRepository = memberRepository;
         _attachmentRepository = attachmentRepository;
         _userRepository = userRepository;
@@ -358,7 +361,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                     normalizedContent,
                     normalizedReplyToId,
                     normalizedAttachmentId);
-                await CompletePersistedMessageStateAsync(channel, existingMessage, userId, userName);
+                await CompletePersistedMessageStateAsync(channel, existingMessage, tenantId, userId, userName);
                 return new ChatMessageSendResult(await MapSingleMessageAsync(existingMessage), false);
             }
         }
@@ -516,7 +519,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                         normalizedContent,
                         normalizedReplyToId,
                         normalizedAttachmentId);
-                    await CompletePersistedMessageStateAsync(channel, existingMessage, userId, normalizedUserName);
+                    await CompletePersistedMessageStateAsync(channel, existingMessage, tenantId, userId, normalizedUserName);
                     return new ChatMessageSendResult(await MapSingleMessageAsync(existingMessage), false);
                 }
             }
@@ -544,7 +547,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             throw;
         }
 
-        await CompletePersistedMessageStateAsync(channel, message, userId, normalizedUserName);
+        await CompletePersistedMessageStateAsync(channel, message, tenantId, userId, normalizedUserName);
         var changedUserIds = access.DirectPeerUserId.HasValue
             ? new[] { access.DirectPeerUserId.Value }
             : Array.Empty<long>();
@@ -613,6 +616,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private async Task CompletePersistedMessageStateAsync(
         Channel channel,
         ChannelMessage message,
+        long tenantId,
         long userId,
         string userName)
     {
@@ -627,12 +631,14 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             await _channelRepository.UpdateAsync(channel);
         }
 
-        await EnsureMemberAndUpdateReadStateAsync(
+        await _readReceiptRepository.AdvanceAsync(new AdvanceChatReadStateCommand(
             channel.Id,
             userId,
-            message.TenantId,
+            tenantId,
+            message.Id,
+            channel.Type is ChannelType.Public or ChannelType.Announcement,
             normalizedUserName,
-            message.Id);
+            DateTime.UtcNow));
     }
 
     private async Task<ChannelMessageVo> MapSingleMessageAsync(
@@ -935,7 +941,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             : null;
     }
 
-    public async Task JoinChannelAsync(long tenantId, long userId, long channelId, string operatorName)
+    public async Task JoinChannelAsync(long tenantId, long userId, long channelId)
     {
         var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
         if (!access.CanJoinRealtime)
@@ -946,8 +952,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 "Chat.ChannelUnavailable",
                 "error.chat.channel_unavailable");
         }
-
-        await EnsureMemberAndUpdateReadStateAsync(channelId, userId, tenantId, operatorName, null);
     }
 
     public Task LeaveChannelAsync(long tenantId, long userId, long channelId)
@@ -979,7 +983,29 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             OrderByType.Desc);
 
         var latestMessageId = latestMessages.FirstOrDefault()?.Id;
-        await EnsureMemberAndUpdateReadStateAsync(channelId, userId, tenantId, operatorName, latestMessageId);
+        if (latestMessageId.HasValue)
+        {
+            try
+            {
+                await _readReceiptRepository.AdvanceAsync(new AdvanceChatReadStateCommand(
+                    channelId,
+                    userId,
+                    tenantId,
+                    latestMessageId.Value,
+                    access.ChannelType is ChannelType.Public or ChannelType.Announcement,
+                    string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim(),
+                    DateTime.UtcNow));
+            }
+            catch (ChatReadMemberUnavailableException)
+            {
+                return new ChannelUnreadStateVo
+                {
+                    VoChannelId = channelId,
+                    VoUnreadCount = 0,
+                    VoHasMention = false
+                };
+            }
+        }
 
         return await GetChannelUnreadStateAsync(tenantId, userId, channelId);
     }
@@ -1115,51 +1141,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             VoUnreadCount = unreadCount,
             VoHasMention = hasMention
         };
-    }
-
-    private async Task EnsureMemberAndUpdateReadStateAsync(long channelId, long userId, long tenantId, string operatorName, long? lastReadMessageId)
-    {
-        var normalizedOperator = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
-
-        var member = await _memberRepository.QueryFirstAsync(m => m.ChannelId == channelId && m.UserId == userId);
-        if (member == null)
-        {
-            await _memberRepository.AddAsync(new ChannelMember
-            {
-                ChannelId = channelId,
-                UserId = userId,
-                Role = MemberRole.Member,
-                LastReadMessageId = lastReadMessageId,
-                JoinedAt = DateTime.UtcNow,
-                ArchivedAt = null,
-                TenantId = tenantId,
-                CreateTime = DateTime.UtcNow,
-                CreateBy = normalizedOperator,
-                CreateId = userId,
-                IsDeleted = false
-            });
-
-            return;
-        }
-
-        if (lastReadMessageId.HasValue)
-        {
-            member.LastReadMessageId = lastReadMessageId;
-        }
-
-        if (member.IsDeleted)
-        {
-            member.IsDeleted = false;
-            member.DeletedAt = null;
-            member.DeletedBy = null;
-        }
-
-        member.ArchivedAt = null;
-        member.ModifyTime = DateTime.UtcNow;
-        member.ModifyBy = normalizedOperator;
-        member.ModifyId = userId;
-
-        await _memberRepository.UpdateAsync(member);
     }
 
     private async Task<Dictionary<long, long>> GetUserAvatarAttachmentMapAsync(IEnumerable<long> userIds)

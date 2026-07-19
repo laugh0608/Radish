@@ -37,6 +37,7 @@ internal static class SchemaMigrationRegistry
         ChatMessageSearchSchemaMigration.Instance,
         ChatMessageReactionSchemaMigration.Instance,
         ChatMessagePinSchemaMigration.Instance,
+        ChatReadReceiptSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance
     ];

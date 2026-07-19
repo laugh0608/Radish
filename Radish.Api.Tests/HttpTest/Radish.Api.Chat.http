@@ -4,7 +4,8 @@
 # 说明：
 # 1. 聊天室接口均需登录 Token（Policy: Client）
 # 2. 推荐通过 Gateway 测试：统一鉴权、路由与 CORS 行为
-# 3. ChatHub 实时事件（MessageReceived / MessageRecalled / ChannelUnreadChanged）
+# 3. ChatHub 实时事件（MessageReceived / MessageRecalled / ChannelUnreadChanged /
+#    ReadReceiptsChanged）
 #    需配合前端或 SignalR 客户端联调，本文件仅覆盖 REST 主链路
 ###############################################################################
 
@@ -17,10 +18,12 @@
 @BeforeMessageId = 0
 @AfterMessageId = 0
 @MessageId = 1
+@SecondMessageId = 2
 @ImageAttachmentId = 0
 @TargetUserId = 1
 @ClientRequestId = chat-http-20260718-001
 @SearchCursor = 在这里粘贴上一页返回的 voNextCursor
+@ReaderCursor = 在这里粘贴上一页返回的 voNextCursor
 
 ###############################################################################
 # 频道接口
@@ -159,5 +162,34 @@ Content-Type: application/json
 
 ### 19. 撤回消息
 DELETE {{Gateway_HostAddress}}/api/v1/ChannelMessage/Recall/{{MessageId}}
+Authorization: Bearer {{Access_Token}}
+Accept: application/json
+
+###############################################################################
+# 阅读回执接口
+###############################################################################
+
+### 20. 把个人已读游标推进到实际展示过的精确消息
+PUT {{Gateway_HostAddress}}/api/v1/ChannelReadState/Advance
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "channelId": {{ChannelId}},
+  "readThroughMessageId": {{MessageId}}
+}
+
+### 21. 批量读取自己所发消息的回执摘要（去重后最多 20 条）
+POST {{Gateway_HostAddress}}/api/v1/ChannelReadReceipt/GetSummaries
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "channelId": {{ChannelId}},
+  "messageIds": [{{MessageId}}, {{SecondMessageId}}]
+}
+
+### 22. 普通 Private 消息读者详情（每页最多 50 人）
+GET {{Gateway_HostAddress}}/api/v1/ChannelReadReceipt/GetReaders?channelId={{ChannelId}}&messageId={{MessageId}}&cursor={{ReaderCursor}}&pageSize=50
 Authorization: Bearer {{Access_Token}}
 Accept: application/json

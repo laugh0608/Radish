@@ -68,9 +68,7 @@ public class ChatHub : Hub
 
         var userId = GetUserId();
         var tenantId = GetTenantId();
-        var userName = GetUserName();
-
-        await _chatService.JoinChannelAsync(tenantId, userId, channelId, userName);
+        await _chatService.JoinChannelAsync(tenantId, userId, channelId);
 
         var channelGroup = BuildChannelGroup(tenantId, channelId);
         await Groups.AddToGroupAsync(Context.ConnectionId, channelGroup);

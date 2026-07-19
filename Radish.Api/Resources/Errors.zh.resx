@@ -579,4 +579,25 @@
   <data name="error.chat.pin_limit_exceeded" xml:space="preserve">
     <value>每个会话最多保留 20 条置顶消息。</value>
   </data>
+  <data name="error.chat.read_state_invalid_argument" xml:space="preserve">
+    <value>频道已读游标请求参数无效。</value>
+  </data>
+  <data name="error.chat.read_target_unavailable" xml:space="preserve">
+    <value>消息不存在或当前不可访问。</value>
+  </data>
+  <data name="error.chat.receipt_invalid_argument" xml:space="preserve">
+    <value>消息阅读回执请求参数无效。</value>
+  </data>
+  <data name="error.chat.receipt_target_unavailable" xml:space="preserve">
+    <value>消息不存在、已撤回或当前不可访问。</value>
+  </data>
+  <data name="error.chat.receipt_message_not_owned" xml:space="preserve">
+    <value>只能查看当前账号自己所发消息的阅读回执。</value>
+  </data>
+  <data name="error.chat.receipt_not_supported" xml:space="preserve">
+    <value>当前频道类型不提供读者详情。</value>
+  </data>
+  <data name="error.chat.receipt_cursor_invalid" xml:space="preserve">
+    <value>读者分页条件、账号或会话权限已经变化，请重新打开读者列表。</value>
+  </data>
 </root>

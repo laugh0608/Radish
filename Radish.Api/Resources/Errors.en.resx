@@ -579,4 +579,25 @@
   <data name="error.chat.pin_limit_exceeded" xml:space="preserve">
     <value>Each conversation can keep at most 20 pinned messages.</value>
   </data>
+  <data name="error.chat.read_state_invalid_argument" xml:space="preserve">
+    <value>The channel read-state request is invalid.</value>
+  </data>
+  <data name="error.chat.read_target_unavailable" xml:space="preserve">
+    <value>The message is missing or unavailable to this account.</value>
+  </data>
+  <data name="error.chat.receipt_invalid_argument" xml:space="preserve">
+    <value>The message read-receipt request is invalid.</value>
+  </data>
+  <data name="error.chat.receipt_target_unavailable" xml:space="preserve">
+    <value>The message is missing, recalled, or unavailable to this account.</value>
+  </data>
+  <data name="error.chat.receipt_message_not_owned" xml:space="preserve">
+    <value>You can only view read receipts for messages sent by this account.</value>
+  </data>
+  <data name="error.chat.receipt_not_supported" xml:space="preserve">
+    <value>Reader details are not available for this conversation type.</value>
+  </data>
+  <data name="error.chat.receipt_cursor_invalid" xml:space="preserve">
+    <value>The reader page, account, or conversation permissions changed. Reopen the reader list.</value>
+  </data>
 </root>
