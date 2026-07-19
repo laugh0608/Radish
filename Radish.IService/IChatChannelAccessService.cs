@@ -21,6 +21,19 @@ public sealed record ChatChannelAccessResult(
 {
     public static ChatChannelAccessResult Unavailable { get; } =
         new(false, null, false, false, false, false, false);
+
+    /// <summary>是否允许在当前频道状态下新增或取消消息回应。</summary>
+    public bool CanReact => CanView && ChannelType switch
+    {
+        Model.ChannelType.Public => true,
+        Model.ChannelType.Announcement => true,
+        Model.ChannelType.Private when !IsDirectConversation => true,
+        Model.ChannelType.Private =>
+            DirectRequestStatus == DirectConversationRequestStatus.Accepted &&
+            DirectBlockedByUserId == null &&
+            IsPeerAvailable,
+        _ => false
+    };
 }
 
 /// <summary>本次请求中当前用户可读取的频道及必要展示元数据。</summary>

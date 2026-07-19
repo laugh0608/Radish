@@ -363,6 +363,87 @@ public sealed class ChatSchemaMigrationTest
     }
 
     [Fact]
+    public void ChatMessageReactionMigration_ShouldUpgradeLegacyMessagesAndRemainRepeatable()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-reaction-migration-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<ChannelMessage>();
+            db.Insertable(CreateMessage(8601, "reaction-legacy")).ExecuteCommand();
+            db.Ado.ExecuteCommand("ALTER TABLE \"ChannelMessage\" DROP COLUMN \"ReactionRevision\"");
+
+            var migration = ChatMessageReactionSchemaMigration.Instance;
+            Assert.Contains(
+                migration.Diagnose(db, services),
+                warning => warning.Contains("1 条历史 Chat 消息", StringComparison.Ordinal));
+
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.Equal(0, db.Queryable<ChannelMessage>().InSingle(8601).ReactionRevision);
+            Assert.True(db.DbMaintenance.IsAnyTable("ChatMessageReaction", false));
+            Assert.True(db.DbMaintenance.IsAnyTable("ChatMessageReactionOperation", false));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_chat_reaction_unique"));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_chat_reaction_operation_unique"));
+
+            db.Insertable(CreateReaction(8701, 8601)).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() =>
+                db.Insertable(CreateReaction(8702, 8601)).ExecuteCommand());
+            db.Insertable(CreateReactionOperation(8801, "reaction-operation")).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() =>
+                db.Insertable(CreateReactionOperation(8802, "reaction-operation")).ExecuteCommand());
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Database", "PostgreSQL")]
+    public async Task ChatMessageReactionMigration_ShouldSupportPostgreSql()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable(PostgreSqlConnectionStringEnvironmentVariable);
+        Assert.SkipWhen(
+            string.IsNullOrWhiteSpace(adminConnectionString),
+            $"未配置 {PostgreSqlConnectionStringEnvironmentVariable}，跳过 Chat Reaction PostgreSQL 迁移测试");
+
+        var schema = $"chat_reaction_{Guid.NewGuid():N}";
+        using var adminDb = CreatePostgreSqlClient(adminConnectionString!);
+        await adminDb.Ado.ExecuteCommandAsync($"CREATE SCHEMA {QuoteIdentifier(schema)}");
+        try
+        {
+            var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
+            using var db = CreatePostgreSqlClient(connectionString);
+            using var services = new ServiceCollection().BuildServiceProvider();
+            db.CodeFirst.InitTables<ChannelMessage>();
+            db.Insertable(CreateMessage(8901, "reaction-postgres")).ExecuteCommand();
+            DropColumn(db, "ChannelMessage", "ReactionRevision");
+
+            var migration = ChatMessageReactionSchemaMigration.Instance;
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.Equal(0, db.Queryable<ChannelMessage>().InSingle(8901).ReactionRevision);
+            db.Insertable(CreateReaction(9001, 8901)).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() =>
+                db.Insertable(CreateReaction(9002, 8901)).ExecuteCommand());
+        }
+        finally
+        {
+            await adminDb.Ado.ExecuteCommandAsync($"DROP SCHEMA IF EXISTS {QuoteIdentifier(schema)} CASCADE");
+        }
+    }
+
+    [Fact]
     public void ChatAttachmentPrivacyMigration_ShouldOnlyMakeChatAttachmentsPrivate()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-attachment-migration-{Guid.NewGuid():N}.db");
@@ -464,6 +545,45 @@ public sealed class ChatSchemaMigrationTest
             Content = "hello",
             TenantId = 30000,
             CreateTime = DateTime.UtcNow
+        };
+    }
+
+    private static ChatMessageReaction CreateReaction(long id, long messageId)
+    {
+        return new ChatMessageReaction
+        {
+            Id = id,
+            TenantId = 30000,
+            ChannelId = 5001,
+            MessageId = messageId,
+            UserId = 20001,
+            UserName = "Tester",
+            EmojiType = "unicode",
+            EmojiValue = "👍",
+            CreateTime = DateTime.UtcNow,
+            CreateBy = "Tester",
+            CreateId = 20001
+        };
+    }
+
+    private static ChatMessageReactionOperation CreateReactionOperation(long id, string operationId)
+    {
+        return new ChatMessageReactionOperation
+        {
+            Id = id,
+            TenantId = 30000,
+            UserId = 20001,
+            ClientOperationId = operationId,
+            ChannelId = 5001,
+            MessageId = 8601,
+            EmojiType = "unicode",
+            EmojiValue = "👍",
+            IsActive = true,
+            ResultRevision = 1,
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(30),
+            CreateTime = DateTime.UtcNow,
+            CreateBy = "Tester",
+            CreateId = 20001
         };
     }
 

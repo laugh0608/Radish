@@ -29,6 +29,13 @@ public interface IChannelMessageRepository : IBaseRepository<ChannelMessage>
         long? unarchiveUserId = null,
         long? claimPendingConversationId = null);
 
+    /// <summary>在 Chat 单事务内撤回消息并软删除其全部活跃回应。</summary>
+    Task<int> RecallWithReactionsAsync(
+        long messageId,
+        long operatorId,
+        string operatorName,
+        DateTime nowUtc);
+
     /// <summary>查询单条消息（包含已撤回消息）</summary>
     Task<ChannelMessage?> QueryFirstIncludingDeletedAsync(Expression<Func<ChannelMessage, bool>> whereExpression);
 

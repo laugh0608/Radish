@@ -12,13 +12,14 @@
 
 本组文档聚焦聊天室在 `radish.client` 中作为独立应用的前端架构与交互实现，按“架构/实时/模块/里程碑”拆分，避免单文档持续膨胀。
 
-当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索与移动端列表 / 详情切换。F4-C 搜索专题已经完成并关闭，下一顺位进入 F4-D-A 聊天消息 Reaction 现状审计与专题设计；置顶、阅读回执和移动系统通知继续后置。
+当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索与移动端列表 / 详情切换。F4-C 搜索已经关闭，F4-D-A / B 已完成消息 Reaction 设计与服务端权威契约，下一顺位进入 Pencil 与正式 Web；置顶、阅读回执和移动系统通知继续后置。
 
 后台数据模型与 API 细节请优先参考：
 - [聊天室系统设计](./chat-system.md)
 - [聊天室系统 - 前端架构与组件设计](./chat-frontend.md)
 - [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md)
 - [聊天历史搜索与消息定位设计](./chat-message-search-design.md)
+- [聊天消息 Reaction 设计](./chat-message-reaction-design.md)
 - [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit)
 
 ---
@@ -33,6 +34,7 @@
 | [聊天室 App 实施路线图](./chat-app-roadmap.md) | 定义 P0/P1/P2 交付节奏、验收清单、风险 | 拆解任务、排期与验收 |
 | [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) | 定义私聊用户路径、模型、权限、接口、页面与停止线 | 实现一对一私聊及其安全边界 |
 | [聊天历史搜索与消息定位设计](./chat-message-search-design.md) | 定义检索文本、ACL、cursor、定位、PC / mobile 页面与停止线 | 实现 F4-C 权威消息搜索 |
+| [聊天消息 Reaction 设计](./chat-message-reaction-design.md) | 定义 Chat 专属持久化、`CanReact`、幂等、revision、Hub 与 PC / mobile 停止线 | 实现 F4-D 消息回应 |
 
 ---
 
@@ -61,7 +63,7 @@
 ## 当前状态
 
 - 状态：M12 聊天室 `P1` 核心交互已补齐并完成本轮短回归修复；`2026-03-28` 已补“图片先入草稿、点击发送再统一发出”交互，当前继续按收口观察态维护
-- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息搜索与定位、通知回流和公开个人页返回“聊天”；私聊批次 A-D 与 F4-C 搜索批次 A-D 均已完成并关闭
+- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息搜索与定位、通知回流和公开个人页返回“聊天”；私聊与 F4-C 已关闭，F4-D-A / B 已完成 Reaction 设计和服务端权威契约
 - 已完成：
   - 频道列表、历史消息分页、文本发送、撤回、基础未读同步
   - `ChatHub` 事件对齐：`MessageReceived`、`MessageRecalled`、`UserTyping`、`ChannelUnreadChanged`、`ConversationStateChanged`
@@ -79,6 +81,6 @@
   - 联调资产已补齐：`Radish.Api.Tests/HttpTest/Radish.Api.Chat.http` 可覆盖 REST 主链路验收
 - 当前推进原则：
   - F4-C 搜索继续以 `SearchText`、成员 ACL、跨库一致查询、快照 cursor 和 `GetMessageWindow` 作为已完成维护基线
-  - F4-D-A 先审计通用 Reaction 与 Chat 的数据、权限、通知、实时和页面边界，专题设计获批前不进入代码
+  - F4-D-C 先更新 PC / mobile Pencil，再实现正式 Web / WebOS 共用的 Reaction 展示、picker、revision Store 与重连追平
   - 文档、代码、联调资产三者口径保持一致，避免把设计项误记为已交付能力
   - 聊天室 `P1` 继续维护图片草稿发送、切频道恢复与失败重试等既有边界；新功能以正式 Web 为主，WebOS 只保持共用组件兼容

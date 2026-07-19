@@ -37,6 +37,15 @@ export type {
 } from './chat-search-contract';
 export { ChatMessageSearchScopes } from './chat-search-contract';
 
+export type {
+  ChatReactionEmojiType,
+  ChatReactionSummaryVo,
+  ChatMessageReactionStateVo,
+  GetChatMessageReactionStatesDto,
+  SetChatMessageReactionDto,
+  ChatMessageReactionMutationVo,
+} from './chat-reaction-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

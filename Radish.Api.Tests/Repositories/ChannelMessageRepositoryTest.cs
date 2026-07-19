@@ -14,6 +14,64 @@ namespace Radish.Api.Tests.Repositories;
 public sealed class ChannelMessageRepositoryTest
 {
     [Fact]
+    public async Task RecallWithReactionsAsync_ShouldSoftDeleteMessageAndActiveReactionsTogether()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-message-recall-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path);
+
+        try
+        {
+            var chatDb = db.GetConnectionScope("chat");
+            chatDb.CodeFirst.InitTables<ChannelMessage>();
+            chatDb.CodeFirst.InitTables<ChatMessageReaction>();
+            var message = CreateMessage(73010, "recall me");
+            message.SearchText = "recall me";
+            chatDb.Insertable(message).ExecuteCommand();
+            chatDb.Insertable(new ChatMessageReaction
+            {
+                Id = 74010,
+                TenantId = message.TenantId,
+                ChannelId = message.ChannelId,
+                MessageId = message.Id,
+                UserId = 20002,
+                UserName = "Receiver",
+                EmojiType = "unicode",
+                EmojiValue = "👍",
+                CreateTime = message.CreateTime,
+                CreateBy = "Receiver",
+                CreateId = 20002
+            }).ExecuteCommand();
+
+            var unitOfWork = new UnitOfWorkManage(db, NullLogger<UnitOfWorkManage>.Instance);
+            var repository = new ChannelMessageRepository(unitOfWork);
+            var recalledAt = message.CreateTime.AddMinutes(1);
+
+            var affected = await repository.RecallWithReactionsAsync(
+                message.Id,
+                20001,
+                "Requester",
+                recalledAt);
+
+            Assert.Equal(1, affected);
+            var recalledMessage = chatDb.Queryable<ChannelMessage>().InSingle(message.Id);
+            var recalledReaction = chatDb.Queryable<ChatMessageReaction>().InSingle(74010);
+            Assert.True(recalledMessage.IsDeleted);
+            Assert.Null(recalledMessage.SearchText);
+            Assert.Equal(recalledAt, recalledMessage.DeletedAt);
+            Assert.True(recalledReaction.IsDeleted);
+            Assert.Equal(recalledAt, recalledReaction.DeletedAt);
+            Assert.Equal(20001, recalledReaction.ModifyId);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public async Task AddWithEffectsAsync_ShouldCommitClaimMessageOutboxesAndPeerUnarchiveTogether()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-message-effects-{Guid.NewGuid():N}.db");

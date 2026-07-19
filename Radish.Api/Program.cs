@@ -532,6 +532,7 @@ builder.Services.AddScoped<ShopJob>();
 builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxDispatcherJob>();
 builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxExecutionJob>();
 builder.Services.AddScoped<NotificationInboxCleanupJob>();
+builder.Services.AddScoped<ChatMessageReactionOperationCleanupJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -687,6 +688,17 @@ RecurringJob.AddOrUpdate<Radish.Api.Services.ReliableOutboxDispatcherJob>(
     });
 
 Log.Information("[Hangfire] 已注册可靠 Outbox 分派任务: reliable-outbox-dispatch");
+
+RecurringJob.AddOrUpdate<ChatMessageReactionOperationCleanupJob>(
+    "cleanup-chat-reaction-operations",
+    job => job.ExecuteAsync(500),
+    "15 4 * * *",
+    new RecurringJobOptions
+    {
+        TimeZone = TimeZoneInfo.Utc
+    });
+
+Log.Information("[Hangfire] 已注册 Chat 消息回应幂等事实清理任务: cleanup-chat-reaction-operations");
 
 var notificationCleanupConfig = builder.Configuration.GetSection("Hangfire:NotificationInboxCleanup");
 if (notificationCleanupConfig.GetValue<bool>("Enable", true))

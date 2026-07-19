@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-D-A 聊天消息 Reaction：现状审计与专题设计`
-- **产品下一顺位**：`先固定消息 Reaction 的用户价值、数据与权限边界、通知语义和正式 Web 路径，再决定实现批次；置顶继续后置`
+- **工程第一顺位**：`F4-D-C 聊天消息 Reaction：Pencil 与正式 Web`
+- **产品下一顺位**：`先更新 PC / mobile Pencil，再实现消息气泡回应、picker、revision Store 与重连追平；成组运行态验收留给 F4-D-D`
 - **复核日期**：`2026-07-19`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -80,6 +80,7 @@
   - 2026-07-19 F4-C-B 已完成：`SearchText` 共用规范化器、`20260718_003_chat_message_search` migration、历史分批回填与备份恢复、批量成员 ACL、专属 Repository / Service、POST API、查询指纹 / 消息快照 / 可见频道集合 cursor、稳定双语错误和 `@radish/http` 契约已落地。后端全量 `896` 项通过、`18` 项环境用例按配置跳过；本专题 PostgreSQL 17 migration 与 `strpos` 字面查询 `2` 项另行实跑通过，解决方案构建、Baseline Quick 与相关 workspace 检查通过。按停止线未改 Pencil 或正式 Web 页面，下一顺位进入 F4-C-C。
   - 2026-07-19 F4-C-C 已完成：Pencil `P13C / P13D / P27C / P27D`、正式 `/messages` 搜索工作区、独立搜索与消息导航 Hook、PC 侧栏、mobile 单列状态、cursor 继续加载、`GetMessageWindow` 权威定位、Back / Forward 恢复、中英文和完整页面状态已落地。Client `430` 项、type-check、lint、production build、Baseline Quick 与仓库卫生通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-C-D。
   - 2026-07-19 F4-C-D 已完成并关闭专题：Gateway 正式路径与 WebOS 复用面完成双账号 `zh / en × PC / mobile` 的当前 / 全部会话、分页、定位、历史、撤回和权限矩阵；验收修复 Enter 提交、PC Forward 侧栏状态和撤回摘要残留。临时账号及关联数据精确残留为 `0`，六库完整性和迁移 verify 通过。详见 [F4-C-D 成组验收记录](/records/f4-c-d-chat-message-search-stage-acceptance-2026-07-19)，工程第一顺位进入 F4-D-A 聊天消息 Reaction 现状审计与专题设计。
+  - 2026-07-19 F4-D-A / B 已完成：专题设计固定 Chat 专属持久化、`CanReact`、目标状态幂等、消息 revision、完整 Hub 快照与首批不通知边界；服务端已落地 migration、原子仓储、30 天 operation 清理、撤回同步软删除、Service / API / `@radish/http` 与稳定双语错误。下一顺位进入 F4-D-C Pencil 与正式 Web。
 
 ## V1 产品与发布范围
 
@@ -127,6 +128,8 @@ Radish V1 的产品定位固定为：
 - [F4-C-B 聊天历史搜索服务端权威检索完成记录](/records/f4-c-b-chat-message-search-server-contract-2026-07-19)
 - [F4-C-C 聊天历史搜索正式 Web 工作区完成记录](/records/f4-c-c-chat-message-search-web-workspace-2026-07-19)
 - [F4-C-D 聊天历史搜索成组验收记录](/records/f4-c-d-chat-message-search-stage-acceptance-2026-07-19)
+- [F4-D 聊天消息 Reaction 设计](/features/chat-message-reaction-design)
+- [F4-D-B 聊天消息 Reaction 服务端权威契约完成记录](/records/f4-d-b-chat-message-reaction-server-contract-2026-07-19)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -157,7 +160,7 @@ Radish V1 的产品定位固定为：
 1. 一对一私聊专题已经完成批次 A-D 并关闭；详细矩阵、修复、临时数据清理与未覆盖风险见 [一对一私聊与会话管理设计](/features/chat-direct-conversation-design)。
 2. [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 的 A-D 批已经完成，真实生产链路、偏好、聚合竞态、写操作、恢复、目标失效和清理矩阵全部通过，专题已关闭。
 3. [F4-C 聊天历史搜索与消息定位](/features/chat-message-search-design) 的 A-D 批已经完成；权威检索、跨库迁移、正式 Web / WebOS、双账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
-4. 下一顺位进入 F4-D-A 聊天消息 Reaction 现状审计与专题设计，先交叉确认现有 Reaction 模型、Chat 数据与 ACL、通知聚合、Pencil / 正式 Web 入口和停止线，不提前实现。消息置顶、逐条已读和移动系统通知继续分别后置，主动生产证据采集保持最终收尾冻结。
+4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A / B 批已经完成设计与服务端权威契约；下一顺位进入 F4-D-C，先更新 PC / mobile Pencil，再实现正式 Web / WebOS 共用的消息回应 UI、picker、revision Store 与重连追平。消息置顶、逐条已读和移动系统通知继续分别后置，主动生产证据采集保持最终收尾冻结。
 
 ## 昨日事项（2026-07-18）
 
@@ -190,12 +193,14 @@ Radish V1 的产品定位固定为：
 8. Client `430` 项、type-check、lint、production build、`@radish/http` 检查、Baseline Quick、仓库卫生与 `git diff --check` 均通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-C-D。
 9. 已完成 F4-C-D 双账号运行态矩阵，覆盖中英文、PC / mobile、当前 / 全部会话、日期、分页、消息定位、Back / Forward、撤回、互关私聊、陌生请求、拒绝 / 阻断、无权频道与 WebOS；三个共同根因已修复并补测试。
 10. 两批临时账号、会话、消息、关注、通知、授权、余额、Outbox、日志和备份均已清理；精确残留为 `0`，六库完整性与 DbMigrate verify 通过，F4-C 正式关闭。
+11. 已完成 F4-D-A 现状审计与专题设计，固定 Chat 专属 Reaction 表与 operation ledger、独立 `CanReact`、目标状态幂等、消息 revision、完整 Hub 快照、撤回一致性和首批不产生通知中心事件的边界。
+12. 已完成 F4-D-B 服务端权威契约：实体与 `20260719_004_chat_message_reaction` migration、原子设置 / 回放 / 10 种上限、30 天小批次清理、消息撤回同步软删除、Service / API / Hub / `@radish/http`、LongId 和双语稳定错误均已落地；下一顺位进入 F4-D-C。
 
 ## 明日事项（2026-07-20）
 
-1. 执行 F4-D-A 只读现状审计：交叉确认现有通用 `Reaction` 模型、Chat 消息数据与访问策略、通知生产 / 聚合、实时事件、LongId 和 SQLite / PostgreSQL 边界。
-2. 明确消息 Reaction 的用户路径、emoji 集合与聚合语义、添加 / 切换 / 撤销幂等、撤回与失效处理、公开 / 私聊 ACL，以及与论坛 Reaction、轻回应墙和消息正文的边界。
-3. 建立专题设计，固定数据模型、Service / Repository / API / Hub、Pencil 与正式 Web / WebOS、mobile、中英文、验证矩阵和停止线；设计获批前不进入代码实现。
+1. 进入 F4-D-C，先更新 PC / mobile Pencil 的消息回应展示、已有回应操作、picker、加载 / 错误 / 长聚合与键盘状态。
+2. 实现正式 `/messages` 与 WebOS 共用的 Reaction Store，以 `messageId + revision` 合并 HTTP / Hub 完整快照，并在历史、定位窗口、新消息、重连和账号 reset 时正确追平或清空。
+3. 接入 Unicode / sticker picker、目标状态 operation ID、公开 / 公告 / 私有 / Direct 状态禁用、撤回移除、中英文与四主题语义 token；本批优先静态和组件回归，真实双账号矩阵留给 F4-D-D。
 4. 消息置顶、逐条已读、移动系统通知和主动生产证据采集继续后置，不与 F4-D 并行展开。
 
 ## 并行维护线

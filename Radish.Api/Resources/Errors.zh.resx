@@ -543,4 +543,25 @@
   <data name="error.chat.search_cursor_invalid" xml:space="preserve">
     <value>搜索条件、账号或会话权限已经变化，请重新搜索。</value>
   </data>
+  <data name="error.chat.reaction_invalid_argument" xml:space="preserve">
+    <value>消息回应请求参数无效。</value>
+  </data>
+  <data name="error.chat.reaction_not_allowed" xml:space="preserve">
+    <value>当前会话状态不允许回应消息。</value>
+  </data>
+  <data name="error.chat.reaction_target_unavailable" xml:space="preserve">
+    <value>消息不存在、已撤回或当前不可访问。</value>
+  </data>
+  <data name="error.chat.reaction_idempotency_conflict" xml:space="preserve">
+    <value>该回应请求标识已用于其他操作，请刷新会话后重试。</value>
+  </data>
+  <data name="error.chat.reaction_concurrent_conflict" xml:space="preserve">
+    <value>回应状态已被其他操作更新，请刷新后重试。</value>
+  </data>
+  <data name="error.chat.reaction_limit_exceeded" xml:space="preserve">
+    <value>单条消息最多保留 10 种回应。</value>
+  </data>
+  <data name="error.chat.reaction_sticker_unavailable" xml:space="preserve">
+    <value>所选表情不存在、已禁用或当前租户不可用。</value>
+  </data>
 </root>

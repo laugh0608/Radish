@@ -204,6 +204,38 @@ public class ChatServiceTest
     }
 
     [Fact]
+    public async Task RecallMessageAsync_ShouldUseAtomicReactionAwareRepositoryOperation()
+    {
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync(new ChannelMessage
+            {
+                Id = 90003,
+                ChannelId = 1,
+                UserId = 10001,
+                UserName = "tester",
+                Type = MessageType.Text,
+                Content = "recall",
+                CreateTime = DateTime.UtcNow
+            });
+        messageRepository
+            .Setup(repository => repository.RecallWithReactionsAsync(
+                90003,
+                10001,
+                "tester",
+                It.IsAny<DateTime>()))
+            .ReturnsAsync(1);
+        var service = CreateService(messageRepository: messageRepository);
+
+        var result = await service.RecallMessageAsync(0, 10001, "tester", 90003, false);
+
+        result.ShouldBe(1);
+        messageRepository.VerifyAll();
+    }
+
+    [Fact]
     public async Task SendMessageAsync_ShouldReturnPersistedMessageWithoutReinsertingOnIdempotentReplay()
     {
         var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);

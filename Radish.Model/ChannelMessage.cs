@@ -55,6 +55,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = true)]
     public long? AttachmentId { get; set; }
 
+    /// <summary>消息回应聚合修订号；仅在实际回应状态变化时递增。</summary>
+    [SugarColumn(IsNullable = false, DefaultValue = "0")]
+    public long ReactionRevision { get; set; }
+
     /// <summary>租户 Id</summary>
     [SugarColumn(IsNullable = false)]
     public long TenantId { get; set; }

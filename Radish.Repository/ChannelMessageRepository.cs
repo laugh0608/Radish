@@ -105,6 +105,51 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
         }
     }
 
+    public async Task<int> RecallWithReactionsAsync(
+        long messageId,
+        long operatorId,
+        string operatorName,
+        DateTime nowUtc)
+    {
+        DbProtectedClient.Ado.BeginTran();
+        try
+        {
+            var affected = await DbProtectedClient.Updateable<ChannelMessage>()
+                .SetColumns(message => new ChannelMessage
+                {
+                    IsDeleted = true,
+                    SearchText = null,
+                    DeletedAt = nowUtc,
+                    DeletedBy = operatorName
+                })
+                .Where(message => message.Id == messageId && !message.IsDeleted)
+                .ExecuteCommandAsync();
+            if (affected > 0)
+            {
+                await DbProtectedClient.Updateable<ChatMessageReaction>()
+                    .SetColumns(reaction => new ChatMessageReaction
+                    {
+                        IsDeleted = true,
+                        DeletedAt = nowUtc,
+                        DeletedBy = operatorName,
+                        ModifyTime = nowUtc,
+                        ModifyBy = operatorName,
+                        ModifyId = operatorId
+                    })
+                    .Where(reaction => reaction.MessageId == messageId && !reaction.IsDeleted)
+                    .ExecuteCommandAsync();
+            }
+
+            DbProtectedClient.Ado.CommitTran();
+            return affected;
+        }
+        catch
+        {
+            DbProtectedClient.Ado.RollbackTran();
+            throw;
+        }
+    }
+
     public async Task<ChannelMessage?> QueryFirstIncludingDeletedAsync(Expression<Func<ChannelMessage, bool>> whereExpression)
     {
         return await ExecuteDbOperationAsync(

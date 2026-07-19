@@ -75,6 +75,7 @@ public sealed class ChatChannelAccessServiceTest
         Assert.True(result.CanSend);
         Assert.True(result.CanJoinRealtime);
         Assert.True(result.CanViewMembers);
+        Assert.True(result.CanReact);
     }
 
     [Fact]
@@ -110,6 +111,7 @@ public sealed class ChatChannelAccessServiceTest
         Assert.False(result.CanSend);
         Assert.True(result.CanJoinRealtime);
         Assert.False(result.CanViewMembers);
+        Assert.False(result.CanReact);
     }
 
     [Theory]
@@ -165,6 +167,7 @@ public sealed class ChatChannelAccessServiceTest
         Assert.Equal(expectedCanView, result.CanJoinRealtime);
         Assert.False(result.CanSend);
         Assert.False(result.CanViewMembers);
+        Assert.False(result.CanReact);
     }
 
     [Fact]

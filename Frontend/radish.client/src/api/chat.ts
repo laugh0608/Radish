@@ -8,6 +8,9 @@ import {
   type ParsedApiResponse,
   type ChannelMessageSearchPageVo,
   type SearchChannelMessagesDto,
+  type ChatMessageReactionMutationVo,
+  type ChatMessageReactionStateVo,
+  type SetChatMessageReactionDto,
 } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import type {
@@ -221,6 +224,45 @@ export async function searchChannelMessages(
 
   if (!response.ok || !response.data) {
     throw createChatApiError(response, '搜索消息失败');
+  }
+
+  return response.data;
+}
+
+export async function getChatMessageReactionStates(
+  channelId: EntityIdValue,
+  messageIds: EntityIdValue[]
+): Promise<ChatMessageReactionStateVo[]> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  const normalizedMessageIds = messageIds
+    .map((messageId) => normalizeEntityId(messageId))
+    .filter((messageId): messageId is string => Boolean(messageId && !messageId.startsWith('-')));
+  if (!normalizedChannelId || normalizedMessageIds.length === 0 || normalizedMessageIds.length !== messageIds.length) {
+    throw new Error('消息回应目标无效');
+  }
+
+  const response = await apiPost<ChatMessageReactionStateVo[]>(
+    '/api/v1/ChannelMessageReaction/GetStates',
+    { channelId: normalizedChannelId, messageIds: normalizedMessageIds },
+    { withAuth: true, timeout: CHAT_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '加载消息回应失败');
+  }
+
+  return response.data;
+}
+
+export async function setChatMessageReaction(
+  request: SetChatMessageReactionDto
+): Promise<ChatMessageReactionMutationVo> {
+  const response = await apiPost<ChatMessageReactionMutationVo>(
+    '/api/v1/ChannelMessageReaction/Set',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '更新消息回应失败');
   }
 
   return response.data;

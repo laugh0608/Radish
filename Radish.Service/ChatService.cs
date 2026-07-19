@@ -868,15 +868,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         var normalizedOperator = string.IsNullOrWhiteSpace(userName) ? "System" : userName.Trim();
-        var affected = await _messageRepository.UpdateColumnsAsync(
-            m => new ChannelMessage
-            {
-                IsDeleted = true,
-                SearchText = null,
-                DeletedAt = DateTime.UtcNow,
-                DeletedBy = normalizedOperator
-            },
-            m => m.Id == messageId && !m.IsDeleted);
+        var affected = await _messageRepository.RecallWithReactionsAsync(
+            messageId,
+            userId,
+            normalizedOperator,
+            DateTime.UtcNow);
 
         return affected > 0 ? message.ChannelId : null;
     }
