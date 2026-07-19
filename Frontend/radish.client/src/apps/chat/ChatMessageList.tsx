@@ -1,5 +1,11 @@
-import type { ReactNode, RefObject } from 'react';
+import { useMemo, type ReactNode, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ChatMessageReactionStateVo } from '@radish/http';
+import {
+  ReactionBar,
+  type ReactionTogglePayload,
+} from '@radish/ui/reaction-bar';
+import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import type { ChannelMessageVo, EntityIdValue } from '@/types/chat';
 import { isPersistedEntityId } from '@/types/chat';
@@ -14,6 +20,7 @@ import {
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { getIntlLocale } from '@/locales/language';
 import { ChatProtectedImage } from './ChatProtectedImage';
+import { createChatReactionBarLabels } from './chatReactionBarLabels';
 import styles from './ChatApp.module.css';
 
 interface ChatMessageListProps {
@@ -25,6 +32,11 @@ interface ChatMessageListProps {
   currentUserIdKey: string;
   apiBaseUrl: string;
   canSendMessages: boolean;
+  canReact: boolean;
+  reactionStateMap: Record<string, ChatMessageReactionStateVo>;
+  reactionLoading: boolean;
+  reactionLoadError: string | null;
+  stickerGroups: StickerPickerGroup[];
   hasMoreNewerHistory: Record<string, boolean>;
   messageScrollRef: RefObject<HTMLDivElement | null>;
   setMessageElementRef: (messageId: string, element: HTMLDivElement | null) => void;
@@ -38,6 +50,8 @@ interface ChatMessageListProps {
   onRetryMessage: (message: ChannelMessageVo) => void;
   onCopyFailedMessageDiagnostics: (message: ChannelMessageVo) => void;
   onDismissFailedMessage: (message: ChannelMessageVo) => void;
+  onToggleReaction: (messageId: EntityIdValue, payload: ReactionTogglePayload) => Promise<void>;
+  onRetryReactionLoad: () => void;
   onLoadNewerHistory: () => void;
 }
 
@@ -50,6 +64,11 @@ export const ChatMessageList = ({
   currentUserIdKey,
   apiBaseUrl,
   canSendMessages,
+  canReact,
+  reactionStateMap,
+  reactionLoading,
+  reactionLoadError,
+  stickerGroups,
   hasMoreNewerHistory,
   messageScrollRef,
   setMessageElementRef,
@@ -63,13 +82,24 @@ export const ChatMessageList = ({
   onRetryMessage,
   onCopyFailedMessageDiagnostics,
   onDismissFailedMessage,
+  onToggleReaction,
+  onRetryReactionLoad,
   onLoadNewerHistory,
 }: ChatMessageListProps) => {
   const { t, i18n } = useTranslation();
   const locale = getIntlLocale(i18n.resolvedLanguage ?? i18n.language);
+  const reactionLabels = useMemo(() => createChatReactionBarLabels(t), [t]);
 
   return (
     <div className={styles.messageViewport} ref={messageScrollRef} onScroll={onScroll}>
+      {activeChannelId !== null && reactionLoadError && (
+        <div className={styles.reactionLoadError} role="alert">
+          <span>{reactionLoadError}</span>
+          <button type="button" onClick={onRetryReactionLoad}>
+            {t('chat.reaction.retry')}
+          </button>
+        </div>
+      )}
       {activeChannelId === null ? (
         <div className={styles.placeholder}>{t('chat.inputSelectChannel')}</div>
       ) : messages.length === 0 && loadingHistory ? (
@@ -87,6 +117,14 @@ export const ChatMessageList = ({
           const isSendingMessage = messageStatus === 'sending';
           const isFailedMessage = messageStatus === 'failed';
           const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo, t) : null;
+          const reactionState = messageIdKey ? reactionStateMap[messageIdKey] : undefined;
+          const canShowReactionBar = Boolean(
+            messageIdKey
+            && isPersistedEntityId(message.voId)
+            && !message.voIsRecalled
+            && messageStatus === 'sent'
+            && (canReact || (reactionState?.voItems.length ?? 0) > 0)
+          );
           const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
           const canReportMessage = !isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId);
           const messageUserName = resolveVisibleUserDisplayName(
@@ -217,6 +255,21 @@ export const ChatMessageList = ({
                             </>
                           )}
                         </div>
+                      )}
+                      {canShowReactionBar && messageIdKey && (
+                        <ReactionBar
+                          targetType="ChatMessage"
+                          targetId={messageIdKey}
+                          items={reactionState?.voItems ?? []}
+                          isLoggedIn
+                          loading={reactionLoading}
+                          readOnly={!canReact}
+                          showAddReactionLabel
+                          stickerGroups={stickerGroups}
+                          className={styles.chatReactionBar}
+                          labels={reactionLabels}
+                          onToggle={(payload) => onToggleReaction(message.voId, payload)}
+                        />
                       )}
                     </div>
                   )}

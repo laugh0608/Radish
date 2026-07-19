@@ -483,6 +483,38 @@
   text-align: center;
 }
 
+.reactionLoadError {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--chat-warning) 38%, var(--theme-border-strong) 62%);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 88%, var(--chat-warning) 12%);
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.reactionLoadError button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  color: var(--chat-link-hover);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reactionLoadError button:hover {
+  color: var(--chat-link);
+  text-decoration: underline;
+}
+
 @keyframes messageTargetGlow {
   0% {
     outline-color: transparent;
@@ -693,6 +725,14 @@
   align-items: flex-start;
   min-width: 0;
   max-width: 100%;
+}
+
+.chatReactionBar {
+  max-width: min(720px, 100%);
+}
+
+.mine .chatReactionBar {
+  align-items: flex-end;
 }
 
 .mine .messageStack {
@@ -1374,6 +1414,14 @@
 
   .messageViewport {
     padding: 14px 12px;
+  }
+
+  .chatReactionBar {
+    max-width: 100%;
+  }
+
+  .reactionLoadError {
+    align-items: flex-start;
   }
 
   .inputArea {

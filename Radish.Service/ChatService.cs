@@ -753,6 +753,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         DirectConversationVo? directConversation)
     {
         channel.VoCanSend = access.CanSend;
+        channel.VoCanReact = access.CanReact;
         if (directConversation == null)
         {
             channel.VoConversationKind = channel.VoType == ChannelType.Private ? "group" : "public";

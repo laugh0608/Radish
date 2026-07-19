@@ -25,6 +25,60 @@ namespace Radish.Api.Tests.Services;
 public class ChatServiceTest
 {
     [Fact]
+    public async Task GetChannelDetailAsync_ShouldExposeIndependentReactionCapability()
+    {
+        var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var memberRepository = new Mock<IBaseRepository<ChannelMember>>(MockBehavior.Strict);
+        var access = new ChatChannelAccessResult(
+            true,
+            ChannelType.Announcement,
+            true,
+            false,
+            true,
+            false,
+            false);
+        var service = CreateService(
+            channelRepository,
+            messageRepository,
+            memberRepository: memberRepository,
+            accessResult: access);
+
+        channelRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Channel, bool>>?>()))
+            .ReturnsAsync(new Channel
+            {
+                Id = 101,
+                Name = "Announcements",
+                Type = ChannelType.Announcement,
+                IsEnabled = true,
+                IsDeleted = false
+            });
+        messageRepository
+            .Setup(repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>?>(),
+                1,
+                1,
+                It.IsAny<Expression<Func<ChannelMessage, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((new List<ChannelMessage>(), 0));
+        messageRepository
+            .Setup(repository => repository.QueryCountAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>?>()))
+            .ReturnsAsync(0);
+        memberRepository
+            .Setup(repository => repository.QueryFirstAsync(
+                It.IsAny<Expression<Func<ChannelMember, bool>>?>()))
+            .ReturnsAsync((ChannelMember?)null);
+
+        var result = await service.GetChannelDetailAsync(0, 20001, 101);
+
+        result.ShouldNotBeNull();
+        result.VoCanSend.ShouldBeFalse();
+        result.VoCanReact.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task GetHistoryAsync_Should_Return_Recalled_Placeholder_Message()
     {
         var channelRepository = new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
@@ -701,6 +755,14 @@ public class ChatServiceTest
                 VoAttachmentId = message.AttachmentId,
                 VoCreateTime = message.CreateTime
             });
+        mapper
+            .Setup(instance => instance.Map<ChannelVo>(It.IsAny<Channel>()))
+            .Returns((Channel channel) => new ChannelVo
+            {
+                VoId = channel.Id,
+                VoName = channel.Name,
+                VoType = channel.Type
+            });
 
         var baseChannelRepository = channelRepository ?? new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
         var baseMessageRepository = messageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict);
@@ -727,6 +789,12 @@ public class ChatServiceTest
                     true,
                     true,
                     false));
+        directConversationService
+            .Setup(service => service.GetChannelSummariesAsync(
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<IReadOnlyCollection<long>>()))
+            .ReturnsAsync(new Dictionary<long, DirectConversationVo>());
 
         attachmentUrlResolver
             .Setup(resolver => resolver.ResolveAttachmentUrl(It.IsAny<long>()))

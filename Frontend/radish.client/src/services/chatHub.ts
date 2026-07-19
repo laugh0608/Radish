@@ -1,4 +1,5 @@
 import * as signalR from '@microsoft/signalr';
+import type { ChatMessageReactionStateVo } from '@radish/http';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from './tokenService';
@@ -272,6 +273,10 @@ class ChatHubService {
 
     this.connection.on('MessageRecalled', (payload: MessageRecalledPayload) => {
       useChatStore.getState().recallMessage(payload.channelId, payload.messageId);
+    });
+
+    this.connection.on('MessageReactionsChanged', (state: ChatMessageReactionStateVo) => {
+      useChatStore.getState().applyReactionBroadcast(state);
     });
 
     this.connection.on('ChannelUnreadChanged', (payload: ChannelUnreadChangedPayload) => {

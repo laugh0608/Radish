@@ -46,6 +46,8 @@ export interface ReactionBarProps {
   items: ReactionSummaryItem[];
   isLoggedIn: boolean;
   loading?: boolean;
+  readOnly?: boolean;
+  showAddReactionLabel?: boolean;
   stickerGroups?: StickerPickerGroup[];
   className?: string;
   onToggle: (payload: ReactionTogglePayload) => Promise<void>;
@@ -90,6 +92,8 @@ export const ReactionBar = ({
   items,
   isLoggedIn,
   loading = false,
+  readOnly = false,
+  showAddReactionLabel = false,
   stickerGroups = [],
   className = '',
   onToggle,
@@ -124,6 +128,12 @@ export const ReactionBar = ({
   const hiddenCount = Math.max(0, normalizedItems.length - MAX_VISIBLE_BUBBLES);
 
   useEffect(() => {
+    if (readOnly) {
+      setPickerOpen(false);
+    }
+  }, [readOnly]);
+
+  useEffect(() => {
     if (!pickerOpen) {
       return;
     }
@@ -152,7 +162,7 @@ export const ReactionBar = ({
   }, [pickerOpen]);
 
   const runToggle = async (payload: ReactionTogglePayload, isAlreadyReacted: boolean) => {
-    if (loading) {
+    if (readOnly || loading) {
       return;
     }
 
@@ -267,7 +277,7 @@ export const ReactionBar = ({
       <div className={styles.bubbles}>
         {displayItems.map((item) => {
           const isPending = pendingKey === buildKey(item);
-          const isDisabled = loading || isPending || (!item.voIsReacted && reachedReactionLimit) || !isLoggedIn;
+          const isDisabled = readOnly || loading || isPending || (!item.voIsReacted && reachedReactionLimit) || !isLoggedIn;
           const label = labels.reactionLabel(item.voEmojiValue, item.voCount, item.voIsReacted);
 
           return (
@@ -322,31 +332,34 @@ export const ReactionBar = ({
           </button>
         )}
 
-        <button
-          type="button"
-          className={styles.plusButton}
-          onClick={() => {
-            if (!isLoggedIn) {
-              onRequireLogin?.();
-              return;
-            }
-            setPickerOpen((prev) => !prev);
-          }}
-          title={!isLoggedIn ? loginHint : reachedReactionLimit ? limitHint : labels.addReaction}
-          aria-label={labels.addReaction}
-          disabled={loading}
-        >
-          <span className={styles.plusText}>+</span>
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            className={`${styles.plusButton} ${showAddReactionLabel ? styles.plusButtonLabeled : ''}`}
+            onClick={() => {
+              if (!isLoggedIn) {
+                onRequireLogin?.();
+                return;
+              }
+              setPickerOpen((prev) => !prev);
+            }}
+            title={!isLoggedIn ? loginHint : reachedReactionLimit ? limitHint : labels.addReaction}
+            aria-label={labels.addReaction}
+            disabled={loading}
+          >
+            <span className={styles.plusText}>+</span>
+            {showAddReactionLabel && <span className={styles.plusLabel}>{labels.addReaction}</span>}
+          </button>
+        )}
       </div>
 
-      {pickerOpen && isLoggedIn && (
+      {pickerOpen && isLoggedIn && !readOnly && (
         <div className={styles.quickPanel}>
           {QUICK_EMOJIS.map((emoji) => {
             const existing = normalizedItems.find(
               (item) => item.voEmojiType === 'unicode' && item.voEmojiValue === emoji
             );
-            const disabled = loading || (!existing?.voIsReacted && reachedReactionLimit);
+            const disabled = readOnly || loading || (!existing?.voIsReacted && reachedReactionLimit);
             return (
               <button
                 key={emoji}
@@ -373,7 +386,7 @@ export const ReactionBar = ({
               theme="light"
               triggerTitle={labels.moreEmoji}
               labels={labels.stickerPicker}
-              disabled={loading || reachedReactionLimit}
+              disabled={readOnly || loading || reachedReactionLimit}
               panelPlacement="left"
               className={styles.pickerTrigger}
             />

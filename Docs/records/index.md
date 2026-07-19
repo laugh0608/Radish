@@ -75,6 +75,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-d-c-chat-message-reaction-web-workspace-2026-07-19](/records/f4-d-c-chat-message-reaction-web-workspace-2026-07-19)
 - [f4-d-b-chat-message-reaction-server-contract-2026-07-19](/records/f4-d-b-chat-message-reaction-server-contract-2026-07-19)
 - [f4-c-d-chat-message-search-stage-acceptance-2026-07-19](/records/f4-c-d-chat-message-search-stage-acceptance-2026-07-19)
 - [f4-c-c-chat-message-search-web-workspace-2026-07-19](/records/f4-c-c-chat-message-search-web-workspace-2026-07-19)

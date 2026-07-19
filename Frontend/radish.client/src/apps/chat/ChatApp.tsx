@@ -22,6 +22,7 @@ import { searchUsersForMention, type UserMentionOption } from '@/api/user';
 import { getApiBaseUrl } from '@/config/env';
 import { chatHub } from '@/services/chatHub';
 import { useChatStore } from '@/stores/chatStore';
+import { useStickerCatalog } from '@/hooks/useStickerCatalog';
 import { useWindowStore } from '@/stores/windowStore';
 import { useUserStore } from '@/stores/userStore';
 import { parseChatWindowParams } from '@/utils/chatNavigation';
@@ -66,6 +67,7 @@ import { ChatMessageSearchPanel } from './ChatMessageSearchPanel';
 import { canSendConversationAttachment, resolveConversationNoticeKey } from './chatConversationPresentation';
 import { useChatConversationWorkspace } from './useChatConversationWorkspace';
 import { useChatMessageNavigation } from './useChatMessageNavigation';
+import { useChatMessageReactions } from './useChatMessageReactions';
 import styles from './ChatApp.module.css';
 import searchStyles from './ChatSearchControls.module.css';
 
@@ -197,6 +199,7 @@ export const ChatApp = ({
     [channels, activeChannelId]
   );
   const canSendInActiveChannel = Boolean(activeChannel?.voCanSend);
+  const canReactInActiveChannel = Boolean(activeChannel?.voCanReact);
   const canSendAttachment = canSendConversationAttachment(activeChannel);
   const conversationNoticeKey = resolveConversationNoticeKey(activeChannel);
   const isDirectRequestFirstMessage = activeChannel?.voDirectRequestStatus === 'pending' && activeChannel.voCanSend;
@@ -209,6 +212,19 @@ export const ChatApp = ({
     return messageMap[getEntityKey(activeChannelId)] || [];
   }, [activeChannelId, messageMap]);
   const activeChannelKey = useMemo(() => getEntityKey(activeChannelId), [activeChannelId]);
+  const { stickerGroups } = useStickerCatalog();
+  const {
+    reactionStateMap,
+    loading: reactionLoading,
+    loadError: reactionLoadError,
+    retry: retryReactionLoad,
+    toggleReaction,
+  } = useChatMessageReactions({
+    activeChannelId,
+    messages: activeMessages,
+    connectionState,
+    canReact: canReactInActiveChannel,
+  });
   const {
     navigationTarget: messageNavigationTarget,
     navigationTargetRef: messageNavigationTargetRef,
@@ -1293,6 +1309,11 @@ export const ChatApp = ({
               currentUserIdKey={currentUserIdKey}
               apiBaseUrl={apiBaseUrl}
               canSendMessages={canSendInActiveChannel}
+              canReact={canReactInActiveChannel}
+              reactionStateMap={reactionStateMap}
+              reactionLoading={reactionLoading}
+              reactionLoadError={reactionLoadError}
+              stickerGroups={stickerGroups}
               hasMoreNewerHistory={hasMoreNewerHistory}
               messageScrollRef={messageScrollRef}
               setMessageElementRef={setMessageElementRef}
@@ -1306,6 +1327,8 @@ export const ChatApp = ({
               onRetryMessage={handleRetryMessage}
               onCopyFailedMessageDiagnostics={handleCopyFailedMessageDiagnostics}
               onDismissFailedMessage={handleDismissFailedMessage}
+              onToggleReaction={(messageId, payload) => toggleReaction({ messageId, ...payload })}
+              onRetryReactionLoad={retryReactionLoad}
               onLoadNewerHistory={() => { void loadNewerHistory({ scrollToBottomWhenDone: true }); }}
             />
 

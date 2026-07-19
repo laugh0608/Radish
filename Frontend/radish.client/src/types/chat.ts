@@ -110,6 +110,7 @@ export interface ChannelVo {
   voPeerAvatarUrl?: string | null;
   voDirectRequestStatus?: DirectConversationRequestStatus | null;
   voCanSend: boolean;
+  voCanReact: boolean;
   voCanAccept: boolean;
   voCanDecline: boolean;
   voCanBlock: boolean;

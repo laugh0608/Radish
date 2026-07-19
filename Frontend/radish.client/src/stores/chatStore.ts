@@ -1,10 +1,12 @@
 import { create } from 'zustand';
+import type { ChatMessageReactionStateVo } from '@radish/http';
 import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
   ChannelVo,
   EntityIdValue,
 } from '@/types/chat';
+import { mergeChatReactionState } from '@/utils/chatMessageReactions';
 import {
   areEntityIdsEqual,
   compareEntityIds,
@@ -24,6 +26,7 @@ interface ChatStore {
   channels: ChannelVo[];
   activeChannelId: EntityIdValue | null;
   messageMap: Record<string, ChannelMessageVo[]>;
+  reactionStateMap: Record<string, ChatMessageReactionStateVo>;
   recalledMessageIds: Record<string, true>;
   typingMap: Record<string, TypingUser[]>;
   connectionState: ChatConnectionState;
@@ -39,6 +42,8 @@ interface ChatStore {
   addMessage: (message: ChannelMessageVo) => void;
   removeMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
+  setReactionStates: (states: ChatMessageReactionStateVo[]) => void;
+  applyReactionBroadcast: (state: ChatMessageReactionStateVo) => void;
   updateUnread: (payload: ChannelUnreadChangedPayload) => void;
   setTypingUser: (channelId: EntityIdValue, userId: EntityIdValue, userName: string) => void;
   removeTypingUser: (channelId: EntityIdValue, userId: EntityIdValue) => void;
@@ -156,6 +161,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   channels: [],
   activeChannelId: null,
   messageMap: {},
+  reactionStateMap: {},
   recalledMessageIds: {},
   typingMap: {},
   connectionState: 'disconnected',
@@ -290,8 +296,43 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 };
               }),
             },
+        reactionStateMap: Object.hasOwn(state.reactionStateMap, messageKey)
+          ? Object.fromEntries(
+              Object.entries(state.reactionStateMap).filter(([key]) => key !== messageKey)
+            )
+          : state.reactionStateMap,
       };
     });
+  },
+
+  setReactionStates: (states: ChatMessageReactionStateVo[]) => {
+    if (states.length === 0) {
+      return;
+    }
+
+    set((state) => ({
+      reactionStateMap: states.reduce<Record<string, ChatMessageReactionStateVo>>((map, incoming) => {
+        map[incoming.voMessageId] = mergeChatReactionState(
+          map[incoming.voMessageId],
+          incoming,
+          'authoritative'
+        );
+        return map;
+      }, { ...state.reactionStateMap }),
+    }));
+  },
+
+  applyReactionBroadcast: (incoming: ChatMessageReactionStateVo) => {
+    set((state) => ({
+      reactionStateMap: {
+        ...state.reactionStateMap,
+        [incoming.voMessageId]: mergeChatReactionState(
+          state.reactionStateMap[incoming.voMessageId],
+          incoming,
+          'broadcast'
+        ),
+      },
+    }));
   },
 
   updateUnread: (payload: ChannelUnreadChangedPayload) => {
@@ -351,6 +392,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       channels: [],
       activeChannelId: null,
       messageMap: {},
+      reactionStateMap: {},
       recalledMessageIds: {},
       typingMap: {},
       connectionState: 'disconnected',
