@@ -1,8 +1,6 @@
 # 记录与验收索引
 
-本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。
-
-如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
+本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 
 ## 一、通用模板与总索引
 
@@ -69,6 +67,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-day-end-doc-review-2026-07-19](/records/f4-day-end-doc-review-2026-07-19)
 - [f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)
 - [f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)
 - [f4-f-b-chat-message-read-receipt-server-contract-2026-07-19](/records/f4-f-b-chat-message-read-receipt-server-contract-2026-07-19)

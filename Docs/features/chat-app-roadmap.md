@@ -12,6 +12,7 @@
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
 > [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息 Reaction 设计](./chat-message-reaction-design.md) ·
 > [聊天消息置顶设计](./chat-message-pin-design.md) ·
 > [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
@@ -23,7 +24,7 @@
 |------|------|----------|------|
 | P0 | 基础可演示能力 | 频道列表、历史消息、发送、撤回、基础未读 | 双端实时互发与撤回同步 |
 | P1 | 体验增强 | @mention、输入中、引用回复、图片消息、成员列表、草稿持久化 | 常用交互流畅且状态一致 |
-| P2 | 能力扩展 | 一对一私聊、消息搜索、Reaction 与置顶已完成；轻量阅读回执已完成 A / B / C 批 | 每项按独立专题矩阵验收 |
+| P2 | 能力扩展 | 一对一私聊、消息搜索、Reaction、置顶与轻量阅读回执均已完成 | 各专题 A-D 批与成组验收均已关闭 |
 
 ---
 
@@ -44,7 +45,7 @@
   - 联调脚本：`Radish.Api.Tests/HttpTest/Radish.Api.Chat.http`
 - P1 当前状态：
   - 核心交互项已补齐，短回归问题已完成修复；图片草稿发送与误发规避已经收口
-  - 2026-07-19 一对一私聊、消息搜索、Reaction 与置顶均已完成独立 A-D 批并关闭；F4-F-A / B / C 已完成轻量阅读回执设计、服务端契约和正式 Web / WebOS 共用页面，下一批进入成组验收
+  - 2026-07-19 一对一私聊、消息搜索、Reaction、置顶与轻量阅读回执均已完成独立 A-D 批并关闭；正式 `/messages` 与 WebOS 共用页面进入维护基线
 
 ---
 
@@ -154,12 +155,9 @@
 - 消息搜索已按 [F4-C 专题设计](./chat-message-search-design.md) 完成 A-D 批并关闭。
 - 消息 Reaction 已按 [F4-D 专题设计](./chat-message-reaction-design.md) 完成 A-D 批并关闭。
 - 消息置顶已按 [F4-E 专题](./chat-message-pin-design.md) 完成 A-D 批并关闭。
-- 消息阅读回执已按 [F4-F 专题](./chat-message-read-receipt-design.md) 完成 A / B / C 批审计、权威设计、服务端契约和正式 Web / WebOS 共用页面；下一批进入定向回归与成组验收。
+- 消息阅读回执已按 [F4-F 专题](./chat-message-read-receipt-design.md) 完成 A-D 批并关闭。
 
-以下能力继续按独立专题推进，不并入其他聊天能力：
-
-- 消息阅读回执（轻量版）：复用 `ChannelMember.LastReadMessageId` 的服务端单调游标；Public / Announcement 不对外展示，普通 Private 仅发送者查看人数与读者分页，Accepted Direct 展示对端已读边界；REST 写入和读取权威状态，Hub 只广播失效提示。
-- 菜单/按钮级权限细化（只读频道、禁言等）。
+后续聊天能力不从历史 Phase 2 清单直接启动。菜单 / 按钮级权限细化等候选必须重新完成真实代码审计、用户价值裁决和独立专题设计，再决定是否进入功能完成线。
 
 验收标准：
 - 一对一私聊按专题设计的权限、请求、恢复和 PC / mobile 矩阵验收，且不破坏公开频道消息链路。

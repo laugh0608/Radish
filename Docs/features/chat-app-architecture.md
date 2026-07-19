@@ -11,7 +11,9 @@
 > [聊天室系统设计](./chat-system.md) ·
 > [聊天室系统 - 前端架构与组件设计](./chat-frontend.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
-> [聊天消息置顶设计](./chat-message-pin-design.md)
+> [聊天消息 Reaction 设计](./chat-message-reaction-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md) ·
+> [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
 ---
 
@@ -21,8 +23,8 @@
 
 设计目标：
 - 与现有 `notificationHub` 并行运行，互不干扰。
-- 页面与数据解耦；一对一私聊已经完成，搜索、Reaction、置顶等能力按独立专题扩展。
-- F4-C 权威消息搜索、F4-D 消息 Reaction 与 F4-E-A / B / C 消息置顶已成为维护基线；下一批只做 F4-E-D 成组验收与共同根因修复，不随手改动已稳定搜索和 Reaction 链路。
+- 页面与数据解耦；一对一私聊、搜索、Reaction、置顶与轻量阅读回执均通过独立专题完成权威契约和正式 Web 页面。
+- F4-C 至 F4-F 已完成 A-D 批并成为维护基线；后续功能完成线不在 Chat 内继续堆叠临时状态，也不改动已经稳定的 Store、REST / Hub 权威边界和隐私契约。
 
 ---
 
@@ -55,7 +57,9 @@ Frontend/radish.client/src/apps/chat/
 ├── ChatConversationHeader.tsx
 ├── ChatMessageList.tsx
 ├── ChatMessageContent.tsx
+├── ChatMessageSearchPanel.tsx
 ├── ChatPinnedMessages.tsx
+├── ChatReadReceiptIndicator.tsx
 ├── ChatMemberPanel.tsx
 ├── ChatMentionMenu.tsx
 ├── ChatComposerStatus.tsx
@@ -63,7 +67,14 @@ Frontend/radish.client/src/apps/chat/
 ├── chatApp.helpers.ts
 ├── chatApp.types.ts
 ├── chatConversationPresentation.ts
+├── chatMessageSearch.ts
+├── chatReadReceipts.ts
+├── useActiveChatReadSurface.ts
+├── useChatMessageNavigation.ts
 ├── useChatMessagePins.ts
+├── useChatMessageReactions.ts
+├── useChatMessageSearch.ts
+├── useChatReadReceipts.ts
 └── useChatConversationWorkspace.ts
 Frontend/radish.client/src/messages/
 ├── MessagesApp.tsx

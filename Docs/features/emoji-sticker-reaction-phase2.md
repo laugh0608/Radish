@@ -4,11 +4,12 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.03.29
+> **最后更新**: 2026.07.19
 >
 > **关联文档**：
 > [表情包与 Reaction 系统设计](./emoji-sticker-system.md) ·
 > [UI 视觉与交互规范](./emoji-sticker-ui-spec.md) ·
+> [聊天消息 Reaction 设计](./chat-message-reaction-design.md) ·
 > [Console 管理后台实现](./emoji-sticker-console.md)
 
 ---
@@ -26,7 +27,7 @@
 
 ### 1.2 Out of Scope（本阶段不做）
 
-- ChatMessage Reaction（Phase 3）
+- ChatMessage Reaction；该能力已在 F4-D 通过 Chat 库专属模型独立完成，不扩展本文的通用 `Reaction` 表和 API
 - 表情商店（Premium 购买链路，Phase 3）
 - 个性化常用表情配置
 
@@ -42,7 +43,7 @@
 
 ### 2.1 枚举与约束
 
-- `TargetType`: `Post` | `Comment` | `ChatMessage`
+- `TargetType`: `Post` | `Comment`
 - `EmojiType`: `unicode` | `sticker`
 - `EmojiValue`:
   - `unicode`: 直接字符，如 `😀`
@@ -79,7 +80,7 @@ public class ReactionSummaryVo
 
 请求参数：
 
-- `targetType`: `Post | Comment | ChatMessage`
+- `targetType`: `Post | Comment`
 - `targetId`: `long`
 
 响应体：

@@ -4,13 +4,16 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.18
+> **最后更新**: 2026.07.19
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [系统总览与后端设计](./chat-system.md) ·
 > [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息 Reaction 设计](./chat-message-reaction-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md) ·
+> [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md) ·
 > [表情包 UI 规范](./emoji-sticker-ui-spec.md)
 
 ---
@@ -21,7 +24,7 @@
 > 当前聊天室已在 `ChatApp.tsx + chatStore.ts + chatHub.ts + api/chat.ts` 落地到 P1 核心交互，包括 `@mention`、引用回复、图片消息、草稿恢复、成员面板、重连补拉与状态条、乐观发送 + 失败重试。
 > 本文中的 `components/*` 与 `hooks/*` 拆分方案仍是后续可选重构方向，不影响当前已交付契约。
 > `2026-07-08` 起，普通浏览器 `/messages` 收敛为正式 Web “聊天”工作区。它复用 `ChatApp`、聊天 API 与 `ChatHub`，支持 `channelId/messageId` 定位、公开个人页返回“聊天”、会话分区和移动端输入区适配；WebOS `/desktop?app=chat&channelId=...&messageId=...` 仍作为历史工作台深链保留。
-> `2026-07-18` 一对一私聊批次 A-D 已完成并关闭。F4-C-A 已完成聊天历史搜索专题设计，下一批先补服务端 `SearchText`、成员 ACL、cursor 和搜索契约，再由独立搜索组件接入 `/messages`，不把跨频道结果写入现有消息 Store。
+> `2026-07-19` 一对一私聊与 F4-C 搜索、F4-D Reaction、F4-E 置顶、F4-F 轻量阅读回执均已完成 A-D 批并关闭。正式 `/messages` 与 WebOS 共用同一 `ChatApp`、API、Store 和 Hub 生命周期；搜索结果保持独立分页状态，Reaction / 置顶使用带 revision 的权威状态，回执使用服务端单调游标与受限摘要，不建立页面级重复真相源。
 
 在 `AppRegistry.tsx` 中新增：
 
