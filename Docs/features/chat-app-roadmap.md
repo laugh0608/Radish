@@ -12,7 +12,8 @@
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
 > [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
-> [聊天消息置顶设计](./chat-message-pin-design.md)
+> [聊天消息置顶设计](./chat-message-pin-design.md) ·
+> [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
 ---
 
@@ -22,7 +23,7 @@
 |------|------|----------|------|
 | P0 | 基础可演示能力 | 频道列表、历史消息、发送、撤回、基础未读 | 双端实时互发与撤回同步 |
 | P1 | 体验增强 | @mention、输入中、引用回复、图片消息、成员列表、草稿持久化 | 常用交互流畅且状态一致 |
-| P2 | 能力扩展 | 一对一私聊、消息搜索、Reaction 与置顶已完成；下一项为轻量阅读回执 | 每项按独立专题矩阵验收 |
+| P2 | 能力扩展 | 一对一私聊、消息搜索、Reaction 与置顶已完成；轻量阅读回执已完成 A 批设计 | 每项按独立专题矩阵验收 |
 
 ---
 
@@ -43,7 +44,7 @@
   - 联调脚本：`Radish.Api.Tests/HttpTest/Radish.Api.Chat.http`
 - P1 当前状态：
   - 核心交互项已补齐，短回归问题已完成修复；图片草稿发送与误发规避已经收口
-  - 2026-07-19 一对一私聊、消息搜索、Reaction 与置顶均已完成独立 A-D 批并关闭；下一批进入 F4-F-A 轻量阅读回执现状审计与专题设计
+  - 2026-07-19 一对一私聊、消息搜索、Reaction 与置顶均已完成独立 A-D 批并关闭；F4-F-A 已完成轻量阅读回执现状审计与权威设计，下一批进入服务端权威契约
 
 ---
 
@@ -152,19 +153,19 @@
 - 一对一私聊与会话管理已按 [专题设计](./chat-direct-conversation-design.md) 完成数据与访问边界、会话生命周期、正式 Web 页面和成组验收。
 - 消息搜索已按 [F4-C 专题设计](./chat-message-search-design.md) 完成 A-D 批并关闭。
 - 消息 Reaction 已按 [F4-D 专题设计](./chat-message-reaction-design.md) 完成 A-D 批并关闭。
-- 消息置顶进入 [F4-E 专题](./chat-message-pin-design.md)，采用独立状态表、频道 revision 和最多 20 条共享置顶。
+- 消息置顶已按 [F4-E 专题](./chat-message-pin-design.md) 完成 A-D 批并关闭。
+- 消息阅读回执已按 [F4-F 专题](./chat-message-read-receipt-design.md) 完成 A 批审计与权威设计。
 
-以下能力继续作为独立后续专题，不并入 F4-C：
+以下能力继续按独立专题推进，不并入其他聊天能力：
 
-- 消息置顶（Pin）：按 F4-E 权威专题分 A-D 批推进；管理权限同时覆盖频道角色和 Accepted Direct，不采用旧单条覆盖草案。
-- 消息阅读回执（轻量版）：消息气泡底部展示已读在线成员头像（至多 3 个），Hub `MemberReadUpdated` 实时推送，基于 `ChannelMember.LastReadMessageId`。
+- 消息阅读回执（轻量版）：复用 `ChannelMember.LastReadMessageId` 的服务端单调游标；Public / Announcement 不对外展示，普通 Private 仅发送者查看人数与读者分页，Accepted Direct 展示对端已读边界；REST 写入和读取权威状态，Hub 只广播失效提示。
 - 菜单/按钮级权限细化（只读频道、禁言等）。
 
 验收标准：
 - 一对一私聊按专题设计的权限、请求、恢复和 PC / mobile 矩阵验收，且不破坏公开频道消息链路。
 - 搜索同时覆盖当前会话和全部当前可见会话，结果可复用现有消息窗口协议跳转到上下文；权限、cursor、删除 / 阻断和跨库行为符合 F4-C 专题设计。
-- 置顶集合以带 revision 的完整快照多端同步，点击可跳转至原始消息位置，无置顶时预览条自动收起。
-- 阅读回执头像仅显示在线成员的已读状态，离线成员不占位。
+- 置顶集合以带 revision 的完整快照多端同步，点击可跳转至原始消息位置，无置顶时预览条自动收起。`已完成`
+- 阅读回执不依赖在线状态；游标在撤回、乱序、重试和多标签下只能前进，且不泄露 Public / Announcement 阅读行为。
 - 权限变更在前后端均可生效并可审计。
 
 ---
@@ -181,6 +182,7 @@
 
 3. 多端未读不一致
 - 以服务端 `LastReadMessageId` 为权威来源，不使用纯前端累计。
+- F4-F 进一步要求客户端提交实际展示到的精确消息 ID，服务端原子单调推进；回执摘要同样只读取服务端状态。
 
 4. messageMap 内存增长
 - 切换频道时裁剪非活跃频道消息至最新 50 条。

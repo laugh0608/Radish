@@ -12,7 +12,8 @@
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
 > [社区讨论与聊天室侧栏 UI 治理方案](./community-discussion-and-chat-ui-governance.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
-> [聊天消息置顶设计](./chat-message-pin-design.md)
+> [聊天消息置顶设计](./chat-message-pin-design.md) ·
+> [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
 ---
 
@@ -74,7 +75,7 @@
 - 提供 hover 操作（引用、撤回、Reaction）。
 - 当前基础布局为“头像在侧边、元信息在上方、消息内容在下方”；自己消息采用左右镜像排布。
 - Phase 2：hover 菜单增加"📌 置顶"选项（仅 Moderator/Owner 可见）。
-- Phase 2：气泡右下角展示阅读回执区，最多 3 个已读在线成员头像（18×18），超出显示 `+N`。
+- F4-F：Direct 只在对端已读到的最后一条自己消息下展示一次文字边界；普通 Private 在自己消息下展示已读人数入口。Public / Announcement 不渲染回执。
 
 `MessageGroup`：
 - 将同一用户短时间连续消息合并显示。
@@ -88,10 +89,11 @@
 - 输入 `@` 后触发用户搜索。
 - 键盘上下选择 + Enter 确认。
 
-`ReadReceipt`（Phase 2）：
-- 位于消息气泡右下角。
-- 展示 `lastReadMessageId ≥ messageId` 的在线成员头像，至多 3 个，按已读时间倒序排列。
-- 离线成员不展示，避免历史消息出现大量僵尸头像。
+`ReadReceipt`（F4-F）：
+- 只消费服务端权威摘要，不根据在线成员或本地消息累计推导。
+- Direct 显示单个 `已读 / Read` 边界；普通 Private 显示 `N 人已读 / Read by N people` 按钮。
+- 普通 Private 的读者详情在 PC 使用紧凑 Popover / 侧浮层，在 mobile 使用 Bottom Sheet，并按 50 人 keyset 分页。
+- 头像只作辅助，必须同时显示姓名；Public / Announcement、撤回消息和不允许的 Direct 状态不占位。
 
 ---
 
@@ -131,10 +133,11 @@
 - 消息动作与列表取消入口只消费服务端 `VoCanPinMessages`，不在前端自行猜角色。
 - 置顶/取消后 Hub 广播带频道 revision 的 `MessagePinsChanged` 完整快照，Store 只接受更高 revision。
 
-7. 阅读回执（Phase 2）
-- 仅展示在线成员且 `lastReadMessageId ≥ messageId` 的已读头像。
-- 仅对最新 5 条消息渲染回执区，更早的消息不渲染（减少 DOM 负担）。
-- 自己发的消息不展示自己的已读头像。
+7. 阅读回执（F4-F）
+- 只为当前用户自己发送、未撤回且当前加载的最近最多 20 条持久化消息批量读取摘要。
+- 普通 Private 仅在 `readCount > 0` 时展示人数入口；Direct 只显示对端已读边界，不展示在线头像。
+- 正式 Web 与 WebOS 共用活跃阅读面判定；后台标签、失焦页面、被遮挡或最小化的 WebOS 窗口不能推进游标。
+- 回执摘要使用真实按钮，支持 `Enter / Space` 打开、`Escape` 关闭并恢复焦点；英文人数使用 i18n 复数规则。
 
 ---
 

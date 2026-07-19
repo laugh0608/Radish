@@ -116,7 +116,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-E 聊天消息置顶](/features/chat-message-pin-design) 已完成 A-D 批并关闭：独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条、目标状态、完整 Hub 快照、权限矩阵、撤回原子联动、SQLite / PostgreSQL migration、正式 Web / WebOS 和三普通账号 `zh / en × PC / mobile` 成组验收均已通过。
 
-当前选定专题切换为 `F4-F 聊天轻量阅读回执`。首批 F4-F-A 只做现状审计与权威专题设计，先核实现有 `ChannelMember.LastReadMessageId`、在线成员、未读游标、Hub 和历史草案，再固定隐私、频道类型、聚合性能、页面、失败恢复、停止线与验收口径；设计确认前不进入代码。移动系统通知继续后置。
+[F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A 批现状审计与权威专题设计：`ChannelMember.LastReadMessageId` 保持唯一持久游标，Public / Announcement 不对外展示，普通 Private 仅发送者查看人数与读者分页，Accepted Direct 展示对端已读边界；在线状态与阅读事实解耦，REST 写入、Hub 失效提示、性能、页面、失败恢复和停止线已经固定。下一批进入 F4-F-B 服务端权威契约，不提前修改 Pencil 或页面；移动系统通知继续后置。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

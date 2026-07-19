@@ -10,7 +10,8 @@
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室系统设计](./chat-system.md) ·
 > [聊天室 App 架构设计](./chat-app-architecture.md) ·
-> [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md)
+> [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
+> [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
 ---
 
@@ -64,6 +65,8 @@
 
 `JoinChannel`、`StartTyping` 与已读写入都在服务端复用 `ChatChannelAccessService`。公开频道按租户与频道策略授权；私有频道只允许有效成员，管理员身份不自动穿透一对一私聊。前端隐藏入口不能替代 Hub 方法自身的授权。
 
+> 上表记录 F4-F-A 审计时的当前实现。F4-F-B/C 将把已读写入迁移为 REST `ChannelReadState/Advance(channelId, readThroughMessageId)`，消费者迁移完成后删除 Hub 写命令；`JoinChannel` 只保留实时加组和 Presence 职责。
+
 ---
 
 ## REST 与 Hub 协同
@@ -107,6 +110,13 @@ ID 约束（当前实现）：
 - `ChannelUnreadChanged` 推送给 `user:{userId}` 组，实现多端同步。
 - 会话侧栏和 Workbench 需要总未读 / 提及摘要时直接从服务端频道列表 `channels` 聚合，不另建可自行增减的计数缓存；WebOS Dock 当前角标保留给通知收件箱，不复用为聊天未读。
 - 正式 Web 与 WebOS 共用 `chatStore`；Hub 事件按服务端 ID 合并，不能在某个入口本地清零另一个入口的权威未读。
+
+F4-F 阅读回执以[权威专题](./chat-message-read-receipt-design.md)为准：
+
+- 客户端提交真实展示到的精确消息 ID，服务端原子单调推进 `LastReadMessageId`。
+- Public / Announcement 不对外展示回执；普通 Private 仅发送者读取自己消息的摘要和读者分页；Accepted Direct 展示对端已读边界。
+- `ReadReceiptsChanged` 只作为频道级失效提示，不携带读者、头像、计数或游标快照；客户端去抖重读 HTTP 权威摘要。
+- 回执不依赖在线状态，断线重连后通过服务端重读恢复。
 
 ---
 
