@@ -1,5 +1,14 @@
-import { type ReactNode, type MouseEvent, useEffect } from 'react';
+import { type ReactNode, type MouseEvent, useEffect, useId, useRef } from 'react';
 import './BottomSheet.css';
+
+const FOCUSABLE_SELECTOR = [
+  'button:not([disabled])',
+  'a[href]',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',');
 
 export interface BottomSheetProps {
   isOpen: boolean;
@@ -32,18 +41,68 @@ export const BottomSheet = ({
   footerClassName = '',
   overlayClassName = ''
 }: BottomSheetProps) => {
-  useEffect(() => {
-    if (!isOpen || !closeOnEscape) return;
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  const titleId = useId();
 
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const focusFrame = window.requestAnimationFrame(() => {
+      const focusable = sheetRef.current?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+      (focusable ?? sheetRef.current)?.focus();
+    });
+
+    const handleDialogKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && closeOnEscape) {
+        e.preventDefault();
+        onCloseRef.current();
+        return;
+      }
+
+      if (e.key !== 'Tab' || !sheetRef.current) {
+        return;
+      }
+
+      const focusable = Array.from(
+        sheetRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)
+      ).filter((element) => element.getClientRects().length > 0);
+      if (focusable.length === 0) {
+        e.preventDefault();
+        sheetRef.current.focus();
+        return;
+      }
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (!sheetRef.current.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, closeOnEscape, onClose]);
+    document.addEventListener('keydown', handleDialogKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener('keydown', handleDialogKeyDown);
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+    };
+  }, [isOpen, closeOnEscape]);
 
   useEffect(() => {
     if (isOpen) {
@@ -67,11 +126,20 @@ export const BottomSheet = ({
 
   return (
     <div className={`radish-bottom-sheet-overlay ${overlayClassName}`.trim()} onClick={handleOverlayClick}>
-      <div className={`radish-bottom-sheet ${className}`.trim()} style={{ height }}>
+      <div
+        ref={sheetRef}
+        className={`radish-bottom-sheet ${className}`.trim()}
+        style={{ height }}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-label={title ? undefined : closeLabel}
+        tabIndex={-1}
+      >
         <div className="radish-bottom-sheet-handle" aria-hidden="true" />
         {title && (
           <div className="radish-bottom-sheet-header">
-            <h2 className="radish-bottom-sheet-title">{title}</h2>
+            <h2 id={titleId} className="radish-bottom-sheet-title">{title}</h2>
             <button
               type="button"
               className="radish-bottom-sheet-close"

@@ -1,0 +1,207 @@
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.summaryButton,
+.directBoundary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  color: var(--theme-text-tertiary);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
+
+.summaryButton {
+  padding: 0.12rem 0.35rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.summaryButton:hover,
+.summaryButton:focus-visible {
+  color: var(--theme-brand-primary);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-primary) 8%, transparent);
+  outline: none;
+}
+
+.directBoundary {
+  padding: 0.1rem 0.2rem;
+  color: var(--theme-brand-primary);
+}
+
+.desktopBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1190;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.45rem);
+  z-index: 1200;
+  width: min(19rem, 72vw);
+  max-height: 23rem;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 0.75rem;
+  background: var(--theme-bg-surface);
+  box-shadow: var(--theme-shadow-strong);
+}
+
+.popoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.72rem 0.8rem;
+  border-bottom: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-primary);
+}
+
+.popoverHeader button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 50%;
+  color: var(--theme-text-secondary);
+  background: transparent;
+  cursor: pointer;
+}
+
+.popoverHeader button:hover,
+.popoverHeader button:focus-visible {
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-hover);
+  outline: none;
+}
+
+.readerContent {
+  min-height: 5rem;
+  max-height: 19rem;
+  overflow-y: auto;
+}
+
+.readerState {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  padding: 1.25rem 0.85rem;
+  color: var(--theme-text-secondary);
+  text-align: center;
+}
+
+.readerState button,
+.pageFooter button {
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 999px;
+  padding: 0.3rem 0.72rem;
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-muted);
+  cursor: pointer;
+}
+
+.readerList {
+  display: grid;
+  gap: 0.12rem;
+  margin: 0;
+  padding: 0.38rem;
+  list-style: none;
+}
+
+.readerButton {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.58rem;
+  width: 100%;
+  padding: 0.44rem 0.5rem;
+  border: 0;
+  border-radius: 0.55rem;
+  color: var(--theme-text-primary);
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.readerButton:hover,
+.readerButton:focus-visible {
+  background: var(--theme-bg-hover);
+  outline: none;
+}
+
+.readerButton > span:nth-child(2) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readerAvatar,
+.readerAvatarFallback {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.readerAvatar {
+  object-fit: cover;
+}
+
+.readerAvatarFallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--theme-text-inverse);
+  font-weight: 650;
+}
+
+.pageFooter {
+  display: grid;
+  justify-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 0.8rem 0.8rem;
+  color: var(--theme-text-secondary);
+  font-size: 0.78rem;
+}
+
+.pageFooter button:disabled {
+  cursor: default;
+  opacity: 0.62;
+}
+
+.mobileDialog {
+  min-height: 100%;
+  outline: none;
+}
+
+.mobileSheetBody {
+  padding: 0;
+}
+
+.mobileSheet .readerContent {
+  max-height: none;
+}
+
+@media (max-width: 760px) {
+  .summaryButton,
+  .directBoundary {
+    font-size: 0.75rem;
+  }
+
+  .readerButton {
+    min-height: 3rem;
+    padding: 0.52rem 0.65rem;
+  }
+}

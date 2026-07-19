@@ -1,6 +1,10 @@
 import { useMemo, type ReactNode, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { ChatMessageReactionStateVo } from '@radish/http';
+import type {
+  ChatMessageReactionStateVo,
+  ChatReadReceiptMode,
+  ChatReadReceiptSummaryItemVo,
+} from '@radish/http';
 import {
   ReactionBar,
   type ReactionTogglePayload,
@@ -23,6 +27,7 @@ import { getIntlLocale } from '@/locales/language';
 import { ChatProtectedImage } from './ChatProtectedImage';
 import { createChatReactionBarLabels } from './chatReactionBarLabels';
 import { ChatPinnedMessages } from './ChatPinnedMessages';
+import { ChatReadReceiptIndicator } from './ChatReadReceiptIndicator';
 import { useChatMessagePins } from './useChatMessagePins';
 import styles from './ChatApp.module.css';
 
@@ -42,6 +47,11 @@ interface ChatMessageListProps {
   reactionStateMap: Record<string, ChatMessageReactionStateVo>;
   reactionLoading: boolean;
   reactionLoadError: string | null;
+  readReceiptMode: ChatReadReceiptMode;
+  readReceiptItemMap: Record<string, ChatReadReceiptSummaryItemVo>;
+  directReadBoundaryMessageId: string | null;
+  readReceiptLoadError: string | null;
+  compact: boolean;
   stickerGroups: StickerPickerGroup[];
   hasMoreNewerHistory: Record<string, boolean>;
   messageScrollRef: RefObject<HTMLDivElement | null>;
@@ -49,7 +59,12 @@ interface ChatMessageListProps {
   renderAvatarButton: (userId: EntityIdValue, userName?: string | null, avatarUrl?: string | null) => ReactNode;
   renderMessageContent: (content: string | null | undefined) => ReactNode;
   onScroll: () => void;
-  onOpenUserProfile: (targetUserId: EntityIdValue, targetUserName?: string | null, avatarUrl?: string | null) => void;
+  onOpenUserProfile: (
+    targetUserId: EntityIdValue,
+    targetUserName?: string | null,
+    avatarUrl?: string | null,
+    publicId?: string | null
+  ) => void;
   onReply: (message: ChannelMessageVo) => void;
   onRecall: (messageId: EntityIdValue) => void;
   onOpenReport: (targetType: ContentReportTargetType, targetId: number) => void;
@@ -59,6 +74,7 @@ interface ChatMessageListProps {
   onToggleReaction: (messageId: EntityIdValue, payload: ReactionTogglePayload) => Promise<void>;
   onNavigateToMessage: (messageId: string) => void;
   onRetryReactionLoad: () => void;
+  onRetryReadReceiptLoad: () => void;
   onLoadNewerHistory: () => void;
 }
 
@@ -78,6 +94,11 @@ export const ChatMessageList = ({
   reactionStateMap,
   reactionLoading,
   reactionLoadError,
+  readReceiptMode,
+  readReceiptItemMap,
+  directReadBoundaryMessageId,
+  readReceiptLoadError,
+  compact,
   stickerGroups,
   hasMoreNewerHistory,
   messageScrollRef,
@@ -95,6 +116,7 @@ export const ChatMessageList = ({
   onToggleReaction,
   onNavigateToMessage,
   onRetryReactionLoad,
+  onRetryReadReceiptLoad,
   onLoadNewerHistory,
 }: ChatMessageListProps) => {
   const { t, i18n } = useTranslation();
@@ -135,6 +157,14 @@ export const ChatMessageList = ({
           <span>{reactionLoadError}</span>
           <button type="button" onClick={onRetryReactionLoad}>
             {t('chat.reaction.retry')}
+          </button>
+        </div>
+      )}
+      {activeChannelId !== null && readReceiptLoadError && (
+        <div className={styles.reactionLoadError} role="alert">
+          <span>{readReceiptLoadError}</span>
+          <button type="button" onClick={onRetryReadReceiptLoad}>
+            {t('chat.receipt.retry')}
           </button>
         </div>
       )}
@@ -188,6 +218,7 @@ export const ChatMessageList = ({
             <div
               key={messageIdKey || message.voClientRequestId || message.voCreateTime}
               ref={messageIdKey ? (element) => setMessageElementRef(messageIdKey, element) : undefined}
+              data-chat-message-id={isPersistedEntityId(message.voId) ? messageIdKey : undefined}
               className={`${styles.messageRow} ${isMine ? styles.mine : ''} ${isHighlightedMessage ? styles.messageRowTargeted : ''}`.trim()}
             >
               <div className={styles.messageMain}>
@@ -327,6 +358,18 @@ export const ChatMessageList = ({
                           className={styles.chatReactionBar}
                           labels={reactionLabels}
                           onToggle={(payload) => onToggleReaction(message.voId, payload)}
+                        />
+                      )}
+                      {isMine && messageIdKey && isPersistedEntityId(message.voId) && !message.voIsRecalled && messageStatus === 'sent' && (
+                        <ChatReadReceiptIndicator
+                          apiBaseUrl={apiBaseUrl}
+                          channelId={activeChannelId}
+                          messageId={message.voId}
+                          mode={readReceiptMode}
+                          summary={readReceiptItemMap[messageIdKey]}
+                          isDirectBoundary={messageIdKey === directReadBoundaryMessageId}
+                          compact={compact}
+                          onOpenUserProfile={onOpenUserProfile}
                         />
                       )}
                     </div>

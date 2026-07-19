@@ -12,7 +12,7 @@
 
 本组文档聚焦聊天室在 `radish.client` 中作为独立应用的前端架构与交互实现，按“架构/实时/模块/里程碑”拆分，避免单文档持续膨胀。
 
-当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction、消息置顶与移动端列表 / 详情切换。F4-C 搜索、F4-D Reaction 与 [F4-E 消息置顶](/features/chat-message-pin-design) 均已完成 A-D 批并关闭；[F4-F 轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A / B 批审计、设计和服务端权威契约，下一顺位进入正式 Web 与 WebOS 共用页面，移动系统通知继续后置。
+当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction、消息置顶、轻量阅读回执与移动端列表 / 详情切换。F4-C 搜索、F4-D Reaction 与 [F4-E 消息置顶](/features/chat-message-pin-design) 均已完成 A-D 批并关闭；[F4-F 轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A / B / C 批，下一顺位进入定向回归与成组验收，移动系统通知继续后置。
 
 后台数据模型与 API 细节请优先参考：
 - [聊天室系统设计](./chat-system.md)
@@ -67,11 +67,11 @@
 ## 当前状态
 
 - 状态：M12 聊天室 `P1` 核心交互已补齐并完成本轮短回归修复；`2026-03-28` 已补“图片先入草稿、点击发送再统一发出”交互，当前继续按收口观察态维护
-- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息搜索与定位、消息 Reaction、消息置顶、通知回流和公开个人页返回“聊天”；私聊与 F4-C / D / E 已关闭，F4-F-A / B 已完成审计、权威设计和服务端契约，下一顺位进入 F4-F-C 正式 Web 与 WebOS 共用页面
+- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息搜索与定位、消息 Reaction、消息置顶、轻量阅读回执、通知回流和公开个人页返回“聊天”；私聊与 F4-C / D / E 已关闭，F4-F-A / B / C 已完成，下一顺位进入 F4-F-D 定向回归与成组验收
 - 已完成：
   - 频道列表、历史消息分页、文本发送、撤回、基础未读同步
   - `ChatHub` 事件对齐：`MessageReceived`、`MessageRecalled`、`UserTyping`、`ChannelUnreadChanged`、`ConversationStateChanged`
-  - F4-F 服务端已提供原子单调精确游标、发送者受限回执摘要 / 读者 cursor 和 `ReadReceiptsChanged` 失效提示；页面尚未消费，留给 F4-F-C
+  - F4-F 已接入原子单调精确游标、发送者受限回执摘要 / 读者 cursor、`ReadReceiptsChanged` 失效重读、活跃阅读面、Direct 单一边界和普通 Private PC / mobile 详情；旧 Hub 写命令已退役
   - WebOS `Shell` 与正式 Web `/messages` 通过 owner 共享同一 ChatHub 生命周期，避免组件卸载互相停止连接
   - 连接成功/重连后自动加入当前激活频道（降低首次进入漏订阅风险）
   - 重连状态条 + 重连成功后自动补拉最新 50 条消息

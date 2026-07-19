@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-F-C 聊天轻量阅读回执：正式 Web 与 WebOS 共用页面`
-- **产品下一顺位**：`Pencil PC / mobile、活跃阅读面、精确 REST 游标、Store、Direct 边界与 Private 读者详情`
+- **工程第一顺位**：`F4-F-D 聊天轻量阅读回执：定向回归与成组验收`
+- **产品下一顺位**：`三普通账号 × zh / en × PC / mobile × 正式 Web / WebOS 阅读回执矩阵`
 - **复核日期**：`2026-07-19`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -88,7 +88,8 @@
   - 2026-07-19 F4-E-C 已完成：Pencil `P13F / P27F`、正式 `/messages` 与 WebOS 共用的紧凑置顶条、完整列表、消息动作、定位、mobile Bottom Sheet、按频道 revision Store、Hub 乱序保护、HTTP 初始 / 重连追平、撤回清理、账号 reset、中英文、键盘和四主题均已落地。Client `442` 项、相关 type-check / lint、client production build 与 Baseline Quick 通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-E-D 成组验收。
   - 2026-07-19 F4-E-D 已完成并关闭专题：三个普通账号在 Gateway 正式路径与 WebOS 复用面覆盖 `zh / en × PC / mobile`、Public / Announcement / 普通 Private / Direct 全状态、撤回 / 失权、多标签、真实离线重连、并发目标状态、20 条上限和定位；没有发现新的共同根因。临时账号、频道、会话、消息、通知、凭据和备份已清理，精确残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-E-D 成组验收记录](/records/f4-e-d-chat-message-pin-stage-acceptance-2026-07-19)。
   - 2026-07-19 F4-F-A 已完成现状审计与权威专题设计：裁决 `LastReadMessageId` 为唯一持久游标，Public / Announcement 不对外展示，普通 Private 仅发送者查看人数与读者分页，Accepted Direct 展示对端已读边界；REST 写入、Hub 失效提示、活跃阅读面和 A-D 停止线已固定，旧在线头像方案失效。工程第一顺位进入 F4-F-B 服务端权威契约。
-  - 2026-07-19 F4-F-B 已完成：`20260719_006_chat_read_receipt` migration 显式补齐成员唯一 / 用户 / 回执覆盖索引，专属 Repository 原子单调推进，Public / Announcement 隐私抑制、普通 Private 发送者人数 / 读者 cursor、Accepted Direct 对端边界、REST、无个人数据 Hub 失效提示、稳定双语错误与 `@radish/http` 均已落地；SQLite 与 PostgreSQL 17 并发 / 迁移验证、后端全量和 Baseline Quick 通过。下一顺位进入 F4-F-C Pencil 与正式 Web / WebOS 共用页面。
+  - 2026-07-19 F4-F-B 已完成：`20260719_006_chat_read_receipt` migration 显式补齐成员唯一 / 用户 / 回执覆盖索引，专属 Repository 原子单调推进，Public / Announcement 隐私抑制、普通 Private 发送者人数 / 读者 cursor、Accepted Direct 对端边界、REST、无个人数据 Hub 失效提示、稳定双语错误与 `@radish/http` 均已落地；SQLite 与 PostgreSQL 17 并发 / 迁移验证、后端全量和 Baseline Quick 通过。
+  - 2026-07-19 F4-F-C 已完成：Pencil `P13G / P27G`、正式 `/messages` 与 WebOS 共用活跃阅读面、精确 REST 游标、会话内存重试、权威 Store / Hub 失效去抖、Direct 单一已读边界、普通 Private PC Popover / mobile Bottom Sheet、双语复数、键盘、焦点约束、账号隔离与旧 Hub 写命令退役均已落地；后端全量、client / `@radish/ui` 静态门禁和 production build 通过，未启动服务或执行浏览器 smoke。下一顺位进入 F4-F-D 成组验收。
 
 ## V1 产品与发布范围
 
@@ -143,6 +144,7 @@ Radish V1 的产品定位固定为：
 - [F4-E-C 聊天消息置顶正式 Web 完成记录](/records/f4-e-c-chat-message-pin-web-workspace-2026-07-19)
 - [F4-F 聊天轻量阅读回执设计](/features/chat-message-read-receipt-design)
 - [F4-F-B 聊天轻量阅读回执服务端权威契约完成记录](/records/f4-f-b-chat-message-read-receipt-server-contract-2026-07-19)
+- [F4-F-C 聊天轻量阅读回执正式 Web 完成记录](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -175,7 +177,7 @@ Radish V1 的产品定位固定为：
 3. [F4-C 聊天历史搜索与消息定位](/features/chat-message-search-design) 的 A-D 批已经完成；权威检索、跨库迁移、正式 Web / WebOS、双账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
 4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A-D 批已经完成；权威 ACL、目标状态幂等、revision 实时快照、正式 Web / WebOS、三普通账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
 5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A-D 批已完成并关闭，权威 ACL、目标状态幂等、20 条上限、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过。
-6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A / B 批审计、权威设计和服务端契约；下一顺位进入 C 批，先更新 Pencil PC / mobile，再实现正式 Web / WebOS 共用的活跃阅读面、精确 REST 游标、Store、Direct 边界和普通 Private 读者详情。移动系统通知继续后置，主动生产证据采集保持最终收尾冻结。
+6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A / B / C 批审计、权威设计、服务端契约和正式 Web / WebOS 共用页面；下一顺位进入 D 批三普通账号 `zh / en × PC / mobile` 定向回归与成组验收。移动系统通知继续后置，主动生产证据采集保持最终收尾冻结。
 
 ## 昨日事项（2026-07-18）
 
@@ -217,13 +219,14 @@ Radish V1 的产品定位固定为：
 17. 已完成 F4-E-C PC / mobile Pencil、正式 Web / WebOS 置顶条、完整列表、消息动作、定位、revision Store、Hub 合并、重连追平、撤回清理、账号 reset、中英文、键盘和四主题适配；下一顺位进入 F4-E-D。
 18. 已完成 F4-E-D 三普通账号成组验收，覆盖 Public、Announcement、普通 Private、Direct 全状态、中英文、PC / mobile、多标签、真实离线重连、并发目标状态、20 条上限、撤回、失权、定位和 WebOS；本批没有发现新的共同根因，临时数据、凭据与备份已清理，六库完整性和严格 verify 通过，F4-E 正式关闭。
 19. 已完成 F4-F-A 只读交叉审计与权威专题设计，确认当前 Hub 只按服务端最新未撤回消息无条件覆盖游标、前端存在后台 / 失焦误报、Presence 为进程内状态且旧 Redis 文档失真、加组与归档职责耦合；新专题固定精确消息游标、原子单调推进、发送者受限隐私矩阵、REST / Hub 边界、分页性能、正式 Web / WebOS 活跃阅读面、A-D 批次和停止线。
-20. 已完成 F4-F-B 服务端权威契约：Chat ledger 显式补齐成员唯一 / 用户 / 回执覆盖索引，原子单调游标、Private / Direct 发送者受限查询、50 人绑定 cursor、REST、无个人数据 Hub 失效提示、稳定双语错误和 `@radish/http` 已落地；PostgreSQL 17 实跑发现并修正历史 ChannelMember 索引未物化根因，下一顺位进入 F4-F-C。
+20. 已完成 F4-F-B 服务端权威契约：Chat ledger 显式补齐成员唯一 / 用户 / 回执覆盖索引，原子单调游标、Private / Direct 发送者受限查询、50 人绑定 cursor、REST、无个人数据 Hub 失效提示、稳定双语错误和 `@radish/http` 已落地；PostgreSQL 17 实跑发现并修正历史 ChannelMember 索引未物化根因。
+21. 已完成 F4-F-C Pencil 与共用页面：活跃阅读面要求可见、聚焦、会话尾部和 WebOS 前台窗口，REST 只提交实际可见最高持久消息；网络 / 5xx 只保留当前会话内存重试，4xx 丢弃；回执摘要只认 HTTP 权威结果，Hub 仅触发失效，Direct / Private 页面、中英文、共享 Bottom Sheet 无障碍和账号卸载隔离已收口，旧 Hub 写命令删除。
 
 ## 明日事项（2026-07-20）
 
-1. 进入 F4-F-C，先更新 Pencil PC / mobile 权威设计源，固定 Direct 单一已读边界、普通 Private 人数入口、PC Popover 与 mobile Bottom Sheet。
-2. 在正式 `/messages` 与 WebOS 共用 `ChatApp` 中实现活跃阅读面、精确 REST 游标提交、断线内存重试、回执 Store、Hub 失效去抖和重连 HTTP 追平；消费者迁移验证后删除 Hub 写命令。
-3. 覆盖 Public / Announcement 隐藏、Direct 全状态、普通 Private 分页、中英文复数、键盘、无障碍、四主题、账号 reset、撤回和失权；本批不启动服务或执行浏览器 smoke，运行态成组矩阵留给获授权的 F4-F-D。
+1. 进入 F4-F-D，按当轮授权启动前后端后，以三个普通账号覆盖 Public、Announcement、普通 Private 与 Direct Pending / Accepted / Declined / Blocked / 对端不可用。
+2. 覆盖 `zh / en × PC / mobile × 正式 Web / WebOS`、键盘、焦点恢复、四主题、多标签乱序、后台标签、WebOS 遮挡 / 最小化、真实断线重连、撤回、成员加入 / 退出和失权。
+3. 复核未读、通知、最后消息、搜索、Reaction、置顶和频道排序没有污染；共同根因成组修复并补自动化，完成临时数据、凭据和备份清理、六库完整性与严格 migration verify。
 4. 移动系统通知和主动生产证据采集继续保持后置 / 最终收尾冻结。
 
 ## 并行维护线

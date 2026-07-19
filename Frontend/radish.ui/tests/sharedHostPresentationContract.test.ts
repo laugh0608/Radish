@@ -70,6 +70,14 @@ test('Modal、BottomSheet 与 ConfirmDialog 不持有宿主语言默认值', () 
   assert.doesNotMatch(confirmDialogSource, /confirmText =|cancelText =/);
 });
 
+test('BottomSheet 应提供模态语义、焦点约束和关闭后焦点恢复', () => {
+  assert.match(bottomSheetSource, /role="dialog"/);
+  assert.match(bottomSheetSource, /aria-modal="true"/);
+  assert.match(bottomSheetSource, /aria-labelledby=\{title \? titleId : undefined\}/);
+  assert.match(bottomSheetSource, /e\.key !== 'Tab'/);
+  assert.match(bottomSheetSource, /restoreFocusRef\.current\?\.focus\(\)/);
+});
+
 test('ImageCropper 使用宿主词元并把裁切错误交还宿主', () => {
   assert.match(imageCropperSource, /labels: ImageCropperLabels;/);
   assert.match(imageCropperSource, /onError\?: \(error: unknown\) => void;/);

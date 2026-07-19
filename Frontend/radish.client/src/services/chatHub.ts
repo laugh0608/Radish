@@ -1,5 +1,9 @@
 import * as signalR from '@microsoft/signalr';
-import type { ChatMessagePinStateVo, ChatMessageReactionStateVo } from '@radish/http';
+import type {
+  ChatMessagePinStateVo,
+  ChatMessageReactionStateVo,
+  ReadReceiptsChangedVo,
+} from '@radish/http';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from './tokenService';
@@ -8,6 +12,7 @@ import { getSignalrHubUrl } from '@/config/env';
 import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
+  ConversationStateChangedPayload,
   EntityIdValue,
   MessageRecalledPayload,
   UserTypingPayload,
@@ -233,22 +238,6 @@ class ChatHubService {
     }
   }
 
-  async markChannelAsRead(channelId: EntityIdValue): Promise<void> {
-    if (!isPersistedEntityId(channelId)) {
-      return;
-    }
-
-    if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      return;
-    }
-
-    try {
-      await this.connection.invoke('MarkChannelAsRead', channelId);
-    } catch (error) {
-      log.warn('ChatHub', '标记频道已读失败:', error);
-    }
-  }
-
   private registerEventHandlers(): void {
     if (!this.connection) {
       return;
@@ -283,12 +272,17 @@ class ChatHubService {
       useChatStore.getState().applyPinBroadcast(state);
     });
 
+    this.connection.on('ReadReceiptsChanged', (payload: ReadReceiptsChangedVo) => {
+      useChatStore.getState().invalidateReadReceipts(payload.channelId);
+    });
+
     this.connection.on('ChannelUnreadChanged', (payload: ChannelUnreadChangedPayload) => {
       useChatStore.getState().updateUnread(payload);
     });
 
-    this.connection.on('ConversationStateChanged', () => {
+    this.connection.on('ConversationStateChanged', (payload: ConversationStateChangedPayload) => {
       useChatStore.getState().notifyConversationStateChanged();
+      useChatStore.getState().invalidateReadReceipts(payload.channelId);
     });
 
     this.connection.on('UserTyping', (payload: UserTypingPayload) => {

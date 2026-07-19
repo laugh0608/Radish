@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import type { ChatMessagePinStateVo, ChatMessageReactionStateVo } from '@radish/http';
+import type {
+  ChatMessagePinStateVo,
+  ChatMessageReactionStateVo,
+  ChatReadReceiptSummariesVo,
+} from '@radish/http';
 import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
@@ -29,6 +33,8 @@ interface ChatStore {
   messageMap: Record<string, ChannelMessageVo[]>;
   reactionStateMap: Record<string, ChatMessageReactionStateVo>;
   pinStateMap: Record<string, ChatMessagePinStateVo>;
+  readReceiptSummaryMap: Record<string, ChatReadReceiptSummariesVo>;
+  readReceiptInvalidationMap: Record<string, number>;
   recalledMessageIds: Record<string, true>;
   typingMap: Record<string, TypingUser[]>;
   connectionState: ChatConnectionState;
@@ -48,6 +54,9 @@ interface ChatStore {
   applyReactionBroadcast: (state: ChatMessageReactionStateVo) => void;
   setPinState: (state: ChatMessagePinStateVo) => void;
   applyPinBroadcast: (state: ChatMessagePinStateVo) => void;
+  setReadReceiptSummaries: (summaries: ChatReadReceiptSummariesVo) => void;
+  invalidateReadReceipts: (channelId: EntityIdValue) => void;
+  clearChannelReadReceipts: (channelId: EntityIdValue) => void;
   updateUnread: (payload: ChannelUnreadChangedPayload) => void;
   setTypingUser: (channelId: EntityIdValue, userId: EntityIdValue, userName: string) => void;
   removeTypingUser: (channelId: EntityIdValue, userId: EntityIdValue) => void;
@@ -167,6 +176,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   messageMap: {},
   reactionStateMap: {},
   pinStateMap: {},
+  readReceiptSummaryMap: {},
+  readReceiptInvalidationMap: {},
   recalledMessageIds: {},
   typingMap: {},
   connectionState: 'disconnected',
@@ -315,8 +326,19 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                   (item) => !areEntityIdsEqual(item.voMessageId, messageId)
                 ),
               },
-            }
+          }
           : state.pinStateMap,
+        readReceiptSummaryMap: Object.hasOwn(state.readReceiptSummaryMap, channelKey)
+          ? {
+              ...state.readReceiptSummaryMap,
+              [channelKey]: {
+                ...state.readReceiptSummaryMap[channelKey],
+                voItems: state.readReceiptSummaryMap[channelKey].voItems.filter(
+                  (item) => !areEntityIdsEqual(item.voMessageId, messageId)
+                ),
+              },
+            }
+          : state.readReceiptSummaryMap,
       };
     });
   },
@@ -379,6 +401,49 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     }));
   },
 
+  setReadReceiptSummaries: (incoming: ChatReadReceiptSummariesVo) => {
+    const channelKey = getChannelKey(incoming.voChannelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      readReceiptSummaryMap: {
+        ...state.readReceiptSummaryMap,
+        [channelKey]: incoming,
+      },
+    }));
+  },
+
+  invalidateReadReceipts: (channelId: EntityIdValue) => {
+    const channelKey = getChannelKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      readReceiptInvalidationMap: {
+        ...state.readReceiptInvalidationMap,
+        [channelKey]: (state.readReceiptInvalidationMap[channelKey] ?? 0) + 1,
+      },
+    }));
+  },
+
+  clearChannelReadReceipts: (channelId: EntityIdValue) => {
+    const channelKey = getChannelKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      readReceiptSummaryMap: Object.hasOwn(state.readReceiptSummaryMap, channelKey)
+        ? Object.fromEntries(
+            Object.entries(state.readReceiptSummaryMap).filter(([key]) => key !== channelKey)
+          )
+        : state.readReceiptSummaryMap,
+    }));
+  },
+
   updateUnread: (payload: ChannelUnreadChangedPayload) => {
     set((state) => ({
       channels: state.channels.map((channel) => {
@@ -438,6 +503,8 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       messageMap: {},
       reactionStateMap: {},
       pinStateMap: {},
+      readReceiptSummaryMap: {},
+      readReceiptInvalidationMap: {},
       recalledMessageIds: {},
       typingMap: {},
       connectionState: 'disconnected',

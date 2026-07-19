@@ -129,29 +129,6 @@ public class ChatHub : Hub
             });
     }
 
-    /// <summary>标记频道已读</summary>
-    public async Task MarkChannelAsRead(long channelId)
-    {
-        if (channelId <= 0)
-        {
-            return;
-        }
-
-        var tenantId = GetTenantId();
-        var userId = GetUserId();
-        var userName = GetUserName();
-
-        var unreadState = await _chatService.MarkChannelAsReadAsync(tenantId, userId, channelId, userName);
-
-        await Clients.Group($"user:{userId}")
-            .SendAsync("ChannelUnreadChanged", new
-            {
-                channelId = unreadState.VoChannelId,
-                unreadCount = unreadState.VoUnreadCount,
-                hasMention = unreadState.VoHasMention
-            });
-    }
-
     private long GetUserId()
     {
         var currentUser = GetCurrentUser();
@@ -166,12 +143,6 @@ public class ChatHub : Hub
     private long GetTenantId()
     {
         return GetCurrentUser().TenantId;
-    }
-
-    private string GetUserName()
-    {
-        var currentUser = GetCurrentUser();
-        return string.IsNullOrWhiteSpace(currentUser.UserName) ? "Unknown" : currentUser.UserName;
     }
 
     private CurrentUser GetCurrentUser()

@@ -200,6 +200,7 @@ export const MessagesApp = () => {
         <section className={styles.chatShell} aria-label={t('messages.web.chatWorkspaceLabel')}>
           <CurrentWindowProvider value={virtualWindow}>
             <ChatApp
+              readSurfaceMode="page"
               onOpenUserProfile={handleOpenUserProfile}
               onOpenFocusedChannel={(channelId) => {
                 navigateToMessagesRoute({ channelId });

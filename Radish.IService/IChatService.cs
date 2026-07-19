@@ -72,9 +72,6 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
     /// <summary>频道离开（P0 仅处理在线态，不修改成员记录）</summary>
     Task LeaveChannelAsync(long tenantId, long userId, long channelId);
 
-    /// <summary>标记频道已读并返回未读状态</summary>
-    Task<ChannelUnreadStateVo> MarkChannelAsReadAsync(long tenantId, long userId, long channelId, string operatorName);
-
     /// <summary>获取频道未读状态</summary>
     Task<ChannelUnreadStateVo> GetChannelUnreadStateAsync(long tenantId, long userId, long channelId);
 

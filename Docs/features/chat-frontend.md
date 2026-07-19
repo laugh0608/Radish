@@ -184,15 +184,13 @@ class ChatHubService {
   async startTyping(channelId: number) {
     await this.connection?.invoke('StartTyping', channelId);
   }
-
-  async markChannelAsRead(channelId: number) {
-    await this.connection?.invoke('MarkChannelAsRead', channelId);
-  }
 }
 
 export const chatHub = new ChatHubService();
 export function useChatHub() { /* 返回连接状态 */ }
 ```
+
+个人已读不再由 `ChatHub` 写入。正式 Web 与 WebOS 共用活跃阅读面 Hook，向 `PUT /api/v1/ChannelReadState/Advance` 提交实际展示到的 `readThroughMessageId`；Hub 只消费 `ReadReceiptsChanged` 并触发 HTTP 权威摘要重读。
 
 ### useChannelMessages.ts
 

@@ -165,6 +165,6 @@ Frontend/radish.client/src/types/
 - Phase 2：私聊分区已完成；F4-C 搜索采用独立搜索状态和服务端 cursor，不把跨频道命中写入 `messageMap`。
 - 搜索结果点击统一进入 `useChatMessageNavigation`，继续调用现有 `GetMessageWindow(channelId, messageId)`；通知深链和搜索定位共用这一条导航链路。
 - 搜索面板与成员面板在 PC 右栏互斥；移动端由 `MessagesApp` URL 状态切换单列搜索视图，浏览器返回可恢复会话。
-- Reaction 与置顶已按独立专题落地；阅读回执继续独立立项，不随现有能力顺手实现。
+- Reaction 与置顶已按独立专题落地；F4-F 阅读回执同样保持独立契约，已完成服务端与共用页面实现，运行态验收按 F4-F-D 单独执行。
 - Phase 3：语音消息、频道权限细分、跨设备同步增强。
 - 所有扩展保持“先补契约文档，再落代码”的流程。

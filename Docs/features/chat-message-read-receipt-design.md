@@ -2,7 +2,7 @@
 
 > 本文是 Radish 聊天阅读回执的权威专题，固定用户价值、隐私矩阵、游标语义、数据与接口边界、正式 Web / WebOS 页面、失败恢复、开发批次和完成标准。
 >
-> **状态**：`F4-F-A / B 已完成，下一批为 F4-F-C 正式 Web 与 WebOS 共用页面`
+> **状态**：`F4-F-A / B / C 已完成，下一批为 F4-F-D 定向回归与成组验收`
 >
 > **版本**：v26.7.2
 >
@@ -268,7 +268,7 @@ GET /api/v1/ChannelReadReceipt/GetReaders
 
 ### 7.1 Hub 方法
 
-F4-F-C 迁移完成后删除：
+F4-F-C 已删除：
 
 ```text
 ChatHub.MarkChannelAsRead
@@ -436,7 +436,7 @@ F4-F 不改变：
 
 停止线：不提前修改 Pencil、正式 Web 页面、通知、Presence、Flutter 或 Tauri。
 
-### F4-F-C：正式 Web 与 WebOS 共用页面
+### F4-F-C：正式 Web 与 WebOS 共用页面（已完成）
 
 - 先更新 Pencil PC / mobile 权威设计源。
 - 实现活跃阅读面共用 Hook、精确游标提交、断线内存重试、回执 API 和 Store 失效重读。
@@ -444,6 +444,8 @@ F4-F 不改变：
 - 完成中英文复数、键盘、无障碍、四主题和账号 reset。
 - 正式 `/messages` 与 WebOS 只复用同一 `ChatApp`，不建立壳层分叉。
 - 消费者迁移并验证后删除 `ChatHub.MarkChannelAsRead`。
+
+完成事实见 [F4-F-C 正式 Web 与 WebOS 共用页面记录](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)。
 
 停止线：不实现公告分析、在线状态重构、移动系统通知、Flutter 或 Tauri。
 

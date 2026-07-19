@@ -962,54 +962,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return Task.CompletedTask;
     }
 
-    public async Task<ChannelUnreadStateVo> MarkChannelAsReadAsync(long tenantId, long userId, long channelId, string operatorName)
-    {
-        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
-        if (!access.CanView)
-        {
-            return new ChannelUnreadStateVo
-            {
-                VoChannelId = channelId,
-                VoUnreadCount = 0,
-                VoHasMention = false
-            };
-        }
-
-        var (latestMessages, _) = await _messageRepository.QueryPageAsync(
-            m => m.ChannelId == channelId && !m.IsDeleted,
-            1,
-            1,
-            m => m.Id,
-            OrderByType.Desc);
-
-        var latestMessageId = latestMessages.FirstOrDefault()?.Id;
-        if (latestMessageId.HasValue)
-        {
-            try
-            {
-                await _readReceiptRepository.AdvanceAsync(new AdvanceChatReadStateCommand(
-                    channelId,
-                    userId,
-                    tenantId,
-                    latestMessageId.Value,
-                    access.ChannelType is ChannelType.Public or ChannelType.Announcement,
-                    string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim(),
-                    DateTime.UtcNow));
-            }
-            catch (ChatReadMemberUnavailableException)
-            {
-                return new ChannelUnreadStateVo
-                {
-                    VoChannelId = channelId,
-                    VoUnreadCount = 0,
-                    VoHasMention = false
-                };
-            }
-        }
-
-        return await GetChannelUnreadStateAsync(tenantId, userId, channelId);
-    }
-
     public async Task<ChannelUnreadStateVo> GetChannelUnreadStateAsync(long tenantId, long userId, long channelId)
     {
         var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);

@@ -69,6 +69,8 @@ import { canSendConversationAttachment, resolveConversationNoticeKey } from './c
 import { useChatConversationWorkspace } from './useChatConversationWorkspace';
 import { useChatMessageNavigation } from './useChatMessageNavigation';
 import { useChatMessageReactions } from './useChatMessageReactions';
+import { useActiveChatReadSurface } from './useActiveChatReadSurface';
+import { useChatReadReceipts } from './useChatReadReceipts';
 import type { ChatAppProps } from './chatApp.types';
 import styles from './ChatApp.module.css';
 import searchStyles from './ChatSearchControls.module.css';
@@ -79,6 +81,7 @@ const MEMBER_REFRESH_INTERVAL_MS = 15_000;
 export type { ChatAppProfileNavigationTarget } from './chatApp.types';
 
 export const ChatApp = ({
+  readSurfaceMode = 'webos-window',
   onOpenUserProfile,
   onOpenFocusedChannel,
   onOpenMessageResult,
@@ -229,6 +232,16 @@ export const ChatApp = ({
     activeChannelId,
     activeMessages,
     setActiveChannel,
+  });
+  const readReceipts = useChatReadReceipts({
+    accountKey: currentUserIdKey, activeChannelId, messages: activeMessages, connectionState,
+    loadErrorMessage: t('chat.receipt.loadFailed'),
+  });
+  const { evaluateReadSurface } = useActiveChatReadSurface({
+    accountKey: currentUserIdKey, activeChannelId, currentWindow, readSurfaceMode,
+    messages: activeMessages, messageScrollRef,
+    hasMoreNewerHistory: Boolean(activeChannelKey && hasMoreNewerHistory[activeChannelKey]),
+    loadingHistory, connectionState, navigatingHistory: Boolean(messageNavigationTarget || messageFocusTarget),
   });
 
   const typingUsers = useMemo(() => {
@@ -499,8 +512,6 @@ export const ChatApp = ({
       requestAnimationFrame(() => {
         scrollToBottom();
       });
-
-      await chatHub.markChannelAsRead(channelId);
     } catch (error) {
       log.error('ChatApp', '加载历史消息失败:', error);
       toast.error(t('chat.loadHistoryFailed'));
@@ -523,9 +534,6 @@ export const ChatApp = ({
       updateHistoryAvailability(channelId, windowData.voHasMoreBefore, windowData.voHasMoreAfter);
       completeMessageWindow(target, getEntityKey(windowData.voAnchorMessageId));
 
-      if (!windowData.voHasMoreAfter) {
-        await chatHub.markChannelAsRead(channelId);
-      }
     } catch (error) {
       failMessageWindow(target);
       log.error('ChatApp', '加载目标消息窗口失败:', error);
@@ -621,10 +629,6 @@ export const ChatApp = ({
         requestAnimationFrame(() => {
           scrollToBottom();
         });
-      }
-
-      if (!hasMoreAfter) {
-        await chatHub.markChannelAsRead(activeChannelId);
       }
 
       return newer.length > 0 ? ('loaded' as const) : ('exhausted' as const);
@@ -736,8 +740,6 @@ export const ChatApp = ({
         voLocalStatus: 'sent',
         voLocalError: null,
       });
-
-      await chatHub.markChannelAsRead(request.channelId);
 
       if (options?.refreshConversationAfterSuccess) {
         await reloadConversations();
@@ -1025,11 +1027,7 @@ export const ChatApp = ({
       await loadOlderHistory();
     }
 
-    const distanceToBottom = scrollEl.scrollHeight - (scrollEl.scrollTop + scrollEl.clientHeight);
-    if (distanceToBottom <= 24 && !hasMoreNewerHistory[activeChannelKey]) {
-      await chatHub.markChannelAsRead(activeChannelId);
-    }
-  }, [activeChannelId, activeChannelKey, hasMoreNewerHistory, loadOlderHistory, loadingHistory]);
+  }, [activeChannelId, activeChannelKey, loadOlderHistory, loadingHistory]);
 
   useEffect(() => {
     composerStateRef.current = {
@@ -1142,10 +1140,10 @@ export const ChatApp = ({
     if (distanceToBottom <= 120) {
       requestAnimationFrame(() => {
         scrollToBottom();
+        evaluateReadSurface();
       });
-      void chatHub.markChannelAsRead(activeChannelId);
     }
-  }, [activeChannelId, activeChannelKey, activeMessages, hasMoreNewerHistory, messageFocusTarget, messageNavigationTarget, scrollToBottom]);
+  }, [activeChannelId, activeChannelKey, activeMessages, evaluateReadSurface, hasMoreNewerHistory, messageFocusTarget, messageNavigationTarget, scrollToBottom]);
 
   useEffect(() => {
     if (!messageNavigationTarget || !activeChannelId || loadingHistory) {
@@ -1300,13 +1298,21 @@ export const ChatApp = ({
               reactionStateMap={reactionStateMap}
               reactionLoading={reactionLoading}
               reactionLoadError={reactionLoadError}
+              readReceiptMode={readReceipts.summary?.voMode ?? 'none'}
+              readReceiptItemMap={readReceipts.itemMap}
+              directReadBoundaryMessageId={readReceipts.directBoundaryMessageId}
+              readReceiptLoadError={readReceipts.loadError}
+              compact={isCompactViewport}
               stickerGroups={stickerGroups}
               hasMoreNewerHistory={hasMoreNewerHistory}
               messageScrollRef={messageScrollRef}
               setMessageElementRef={setMessageElementRef}
               renderAvatarButton={renderAvatarButton}
               renderMessageContent={renderMessageContent}
-              onScroll={() => { void handleScroll(); }}
+              onScroll={() => {
+                void handleScroll();
+                evaluateReadSurface();
+              }}
               onOpenUserProfile={handleOpenUserProfile}
               onReply={setReplyTarget}
               onRecall={(messageId) => { void handleRecall(messageId); }}
@@ -1317,6 +1323,7 @@ export const ChatApp = ({
               onToggleReaction={(messageId, payload) => toggleReaction({ messageId, ...payload })}
               onNavigateToMessage={(messageId) => navigateToMessage(activeChannelKey, messageId)}
               onRetryReactionLoad={retryReactionLoad}
+              onRetryReadReceiptLoad={readReceipts.retry}
               onLoadNewerHistory={() => { void loadNewerHistory({ scrollToBottomWhenDone: true }); }}
             />
 

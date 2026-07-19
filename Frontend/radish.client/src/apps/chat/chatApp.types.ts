@@ -8,6 +8,7 @@ export interface ChatAppProfileNavigationTarget {
 }
 
 export interface ChatAppProps {
+  readSurfaceMode?: 'page' | 'webos-window';
   onOpenUserProfile?: (target: ChatAppProfileNavigationTarget) => void;
   onOpenFocusedChannel?: (channelId: string) => void;
   onOpenMessageResult?: (target: { channelId: string; messageId: string }) => void;

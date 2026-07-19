@@ -12,6 +12,9 @@ import {
   type ChatMessageReactionStateVo,
   type ChatMessagePinMutationVo,
   type ChatMessagePinStateVo,
+  type ChannelReadStateVo,
+  type ChatReadReceiptReaderPageVo,
+  type ChatReadReceiptSummariesVo,
   type SetChatMessagePinDto,
   type SetChatMessageReactionDto,
 } from '@radish/http';
@@ -300,6 +303,87 @@ export async function setChatMessagePin(
   );
   if (!response.ok || !response.data) {
     throw createChatApiError(response, '更新消息置顶失败');
+  }
+
+  return response.data;
+}
+
+export async function advanceChannelReadState(
+  channelId: EntityIdValue,
+  readThroughMessageId: EntityIdValue
+): Promise<ChannelReadStateVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  const normalizedMessageId = normalizeEntityId(readThroughMessageId);
+  if (!normalizedChannelId || !normalizedMessageId || normalizedMessageId.startsWith('-')) {
+    throw new Error('频道已读游标目标无效');
+  }
+
+  const response = await apiPut<ChannelReadStateVo>(
+    '/api/v1/ChannelReadState/Advance',
+    {
+      channelId: normalizedChannelId,
+      readThroughMessageId: normalizedMessageId,
+    },
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '更新频道已读状态失败');
+  }
+
+  return response.data;
+}
+
+export async function getChatReadReceiptSummaries(
+  channelId: EntityIdValue,
+  messageIds: EntityIdValue[]
+): Promise<ChatReadReceiptSummariesVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  const normalizedMessageIds = messageIds
+    .map((messageId) => normalizeEntityId(messageId))
+    .filter((messageId): messageId is string => Boolean(messageId && !messageId.startsWith('-')));
+  if (!normalizedChannelId || normalizedMessageIds.length === 0 || normalizedMessageIds.length !== messageIds.length) {
+    throw new Error('消息阅读回执目标无效');
+  }
+
+  const response = await apiPost<ChatReadReceiptSummariesVo>(
+    '/api/v1/ChannelReadReceipt/GetSummaries',
+    { channelId: normalizedChannelId, messageIds: normalizedMessageIds },
+    { withAuth: true, timeout: CHAT_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '加载消息阅读回执失败');
+  }
+
+  return response.data;
+}
+
+export async function getChatReadReceiptReaders(
+  channelId: EntityIdValue,
+  messageId: EntityIdValue,
+  cursor: string | null = null,
+  pageSize: number = 50
+): Promise<ChatReadReceiptReaderPageVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  const normalizedMessageId = normalizeEntityId(messageId);
+  if (!normalizedChannelId || !normalizedMessageId || normalizedMessageId.startsWith('-')) {
+    throw new Error('消息读者目标无效');
+  }
+
+  const params = new URLSearchParams({
+    channelId: normalizedChannelId,
+    messageId: normalizedMessageId,
+    pageSize: String(pageSize),
+  });
+  if (cursor?.trim()) {
+    params.set('cursor', cursor.trim());
+  }
+
+  const response = await apiGet<ChatReadReceiptReaderPageVo>(
+    `/api/v1/ChannelReadReceipt/GetReaders?${params.toString()}`,
+    { withAuth: true, timeout: CHAT_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '加载消息读者失败');
   }
 
   return response.data;
