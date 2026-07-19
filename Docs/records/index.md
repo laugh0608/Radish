@@ -75,6 +75,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-c-d-chat-message-search-stage-acceptance-2026-07-19](/records/f4-c-d-chat-message-search-stage-acceptance-2026-07-19)
 - [f4-c-c-chat-message-search-web-workspace-2026-07-19](/records/f4-c-c-chat-message-search-web-workspace-2026-07-19)
 - [f4-c-b-chat-message-search-server-contract-2026-07-19](/records/f4-c-b-chat-message-search-server-contract-2026-07-19)
 - [通知系统历史方案索引](/records/notification-legacy/)

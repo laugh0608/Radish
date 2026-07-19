@@ -108,6 +108,7 @@ export const ChatApp = ({
   const { openApp } = useWindowStore();
   const {
     messageMap,
+    recalledMessageIds,
     typingMap,
     connectionState,
     setActiveChannel,
@@ -170,6 +171,7 @@ export const ChatApp = ({
   const activeChannelIdRef = useRef<EntityIdValue | null>(null);
   const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
   const handledMessageWindowLoadRef = useRef<string | null>(null);
+  const handledSearchHideRevisionRef = useRef(0);
   const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null; pendingImage: PendingImageDraft | null }>({
     messageInput: '',
@@ -269,10 +271,15 @@ export const ChatApp = ({
   }, [searchRestoreRevision]);
 
   useEffect(() => {
-    if (searchHideRevision > 0) {
+    if (searchHideRevision <= handledSearchHideRevisionRef.current) {
+      return;
+    }
+
+    handledSearchHideRevisionRef.current = searchHideRevision;
+    if (isCompactViewport) {
       setSearchOpen(false);
     }
-  }, [searchHideRevision]);
+  }, [isCompactViewport, searchHideRevision]);
 
   useEffect(() => {
     onSearchVisibilityChange?.(searchOpen);
@@ -1440,6 +1447,7 @@ export const ChatApp = ({
             <ChatMessageSearchPanel
               activeChannelId={activeChannelKey || null}
               accountKey={currentUserIdKey}
+              recalledMessageIds={recalledMessageIds}
               hidden={!searchOpen}
               onClose={() => setSearchOpen(false)}
               onOpenResult={handleOpenSearchResult}

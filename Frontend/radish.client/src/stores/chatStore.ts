@@ -24,6 +24,7 @@ interface ChatStore {
   channels: ChannelVo[];
   activeChannelId: EntityIdValue | null;
   messageMap: Record<string, ChannelMessageVo[]>;
+  recalledMessageIds: Record<string, true>;
   typingMap: Record<string, TypingUser[]>;
   connectionState: ChatConnectionState;
   conversationRevision: number;
@@ -155,6 +156,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   channels: [],
   activeChannelId: null,
   messageMap: {},
+  recalledMessageIds: {},
   typingMap: {},
   connectionState: 'disconnected',
   conversationRevision: 0,
@@ -259,33 +261,35 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => {
     const channelKey = getChannelKey(channelId);
-    if (!channelKey) {
+    const messageKey = normalizeEntityId(messageId);
+    if (!channelKey || !messageKey) {
       return;
     }
 
     set((state) => {
       const current = state.messageMap[channelKey] || [];
-      if (current.length === 0) {
-        return state;
-      }
-
       return {
-        messageMap: {
-          ...state.messageMap,
-          [channelKey]: current.map((item) => {
-            if (!areEntityIdsEqual(item.voId, messageId)) {
-              return item;
-            }
+        recalledMessageIds: state.recalledMessageIds[messageKey]
+          ? state.recalledMessageIds
+          : { ...state.recalledMessageIds, [messageKey]: true },
+        messageMap: current.length === 0
+          ? state.messageMap
+          : {
+              ...state.messageMap,
+              [channelKey]: current.map((item) => {
+                if (!areEntityIdsEqual(item.voId, messageId)) {
+                  return item;
+                }
 
-            return {
-              ...item,
-              voIsRecalled: true,
-              voContent: null,
-              voImageUrl: null,
-              voImageThumbnailUrl: null,
-            };
-          }),
-        },
+                return {
+                  ...item,
+                  voIsRecalled: true,
+                  voContent: null,
+                  voImageUrl: null,
+                  voImageThumbnailUrl: null,
+                };
+              }),
+            },
       };
     });
   },
@@ -347,6 +351,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       channels: [],
       activeChannelId: null,
       messageMap: {},
+      recalledMessageIds: {},
       typingMap: {},
       connectionState: 'disconnected',
       conversationRevision: 0,

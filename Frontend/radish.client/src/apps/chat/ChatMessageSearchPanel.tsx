@@ -8,6 +8,7 @@ import styles from './ChatMessageSearchPanel.module.css';
 interface ChatMessageSearchPanelProps {
   activeChannelId: string | null;
   accountKey: string;
+  recalledMessageIds: Readonly<Record<string, true>>;
   hidden?: boolean;
   onClose: () => void;
   onOpenResult: (item: ChannelMessageSearchItemVo) => void;
@@ -56,6 +57,7 @@ function renderHighlightedSnippet(snippet: string, keyword: string) {
 export function ChatMessageSearchPanel({
   activeChannelId,
   accountKey,
+  recalledMessageIds,
   hidden = false,
   onClose,
   onOpenResult,
@@ -63,15 +65,30 @@ export function ChatMessageSearchPanel({
   const { t, i18n } = useTranslation();
   const search = useChatMessageSearch({ activeChannelId, accountKey });
   const currentScopeUnavailable = search.scope === ChatMessageSearchScopes.CurrentChannel && !activeChannelId;
+  const visibleItems = useMemo(
+    () => search.items.filter((item) => !recalledMessageIds[item.voMessageId]),
+    [recalledMessageIds, search.items]
+  );
   const canSubmit = search.keyword.trim().length >= 2
     && !currentScopeUnavailable
     && search.status !== 'loading'
     && search.status !== 'offline';
   const resultCountLabel = useMemo(() => t('chat.search.resultCount', {
-    count: search.items.length,
-  }), [search.items.length, t]);
+    count: visibleItems.length,
+  }), [t, visibleItems.length]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (canSubmit) {
+      void search.search();
+    }
+  };
+
+  const handleKeywordKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key !== 'Enter' || event.nativeEvent.isComposing) {
+      return;
+    }
+
     event.preventDefault();
     if (canSubmit) {
       void search.search();
@@ -114,6 +131,7 @@ export function ChatMessageSearchPanel({
             autoFocus
             value={search.keyword}
             onChange={(event) => search.setKeyword(event.target.value)}
+            onKeyDown={handleKeywordKeyDown}
             placeholder={t('chat.search.placeholder')}
             autoComplete="off"
             maxLength={100}
@@ -167,7 +185,7 @@ export function ChatMessageSearchPanel({
 
       <div className={styles.resultsHeader}>
         <strong>{t('chat.search.results')}</strong>
-        {search.items.length > 0 && <span>{resultCountLabel}</span>}
+        {visibleItems.length > 0 && <span>{resultCountLabel}</span>}
       </div>
 
       <div className={styles.statusRegion} aria-live="polite" aria-atomic="true">
@@ -185,7 +203,7 @@ export function ChatMessageSearchPanel({
             <span>{t('chat.search.loadingDescription')}</span>
           </div>
         )}
-        {search.status === 'empty' && (
+        {(search.status === 'empty' || (search.status === 'success' && visibleItems.length === 0)) && (
           <div className={styles.stateSlot}>
             <Icon icon="mdi:magnify-close" size={25} />
             <strong>{t('chat.search.emptyTitle')}</strong>
@@ -223,9 +241,9 @@ export function ChatMessageSearchPanel({
         )}
       </div>
 
-      {search.items.length > 0 && (
+      {visibleItems.length > 0 && (
         <ol className={styles.resultList} aria-label={t('chat.search.results')}>
-          {search.items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.voMessageId}>
               <button type="button" onClick={() => onOpenResult(item)}>
                 <span className={styles.resultMeta}>
