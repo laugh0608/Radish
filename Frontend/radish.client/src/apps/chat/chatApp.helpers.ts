@@ -9,6 +9,10 @@ export const CHAT_DRAFT_STORAGE_KEY = 'radish.chat.drafts.v1';
 export const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
+export function isCompactChatViewport(): boolean {
+  return typeof window !== 'undefined' && window.innerWidth <= 720;
+}
+
 export interface MentionContext {
   start: number;
   end: number;

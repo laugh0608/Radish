@@ -10,7 +10,8 @@
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室系统设计](./chat-system.md) ·
 > [聊天室系统 - 前端架构与组件设计](./chat-frontend.md) ·
-> [聊天历史搜索与消息定位设计](./chat-message-search-design.md)
+> [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md)
 
 ---
 
@@ -20,8 +21,8 @@
 
 设计目标：
 - 与现有 `notificationHub` 并行运行，互不干扰。
-- 页面与数据解耦；一对一私聊已经完成，搜索、Reaction 等后续能力按独立专题扩展。
-- F4-C 权威消息搜索与 F4-D-A / B / C 消息 Reaction 已成为维护基线；下一批只做 F4-D-D 成组验收与共同根因修复，不随手改动已稳定搜索链路。
+- 页面与数据解耦；一对一私聊已经完成，搜索、Reaction、置顶等能力按独立专题扩展。
+- F4-C 权威消息搜索、F4-D 消息 Reaction 与 F4-E-A / B / C 消息置顶已成为维护基线；下一批只做 F4-E-D 成组验收与共同根因修复，不随手改动已稳定搜索和 Reaction 链路。
 
 ---
 
@@ -54,12 +55,15 @@ Frontend/radish.client/src/apps/chat/
 ├── ChatConversationHeader.tsx
 ├── ChatMessageList.tsx
 ├── ChatMessageContent.tsx
+├── ChatPinnedMessages.tsx
 ├── ChatMemberPanel.tsx
 ├── ChatMentionMenu.tsx
 ├── ChatComposerStatus.tsx
 ├── ChatProtectedImage.tsx
 ├── chatApp.helpers.ts
+├── chatApp.types.ts
 ├── chatConversationPresentation.ts
+├── useChatMessagePins.ts
 └── useChatConversationWorkspace.ts
 Frontend/radish.client/src/messages/
 ├── MessagesApp.tsx
@@ -74,7 +78,7 @@ Frontend/radish.client/src/types/
 └── chat.ts
 ```
 
-> 注：`ChatApp.tsx` 仍承担页面编排，但消息列表、频道侧栏、会话头、成员面板和会话动作已经按真实职责拆分。F4-C 新增搜索面板、搜索 Hook 和导航 Hook，不回退为新的单文件集中实现。
+> 注：`ChatApp.tsx` 仍承担页面编排，但消息列表、频道侧栏、会话头、成员面板、置顶列表和会话动作已经按真实职责拆分。F4-C 搜索与 F4-E 置顶使用独立 Hook 和组件，不回退为新的单文件集中实现。
 
 ---
 
@@ -100,6 +104,7 @@ Frontend/radish.client/src/types/
 `chatStore` 最小字段：
 - `channels: ChannelVo[]`
 - `messageMap: Record<string, ChannelMessageVo[]>`
+- `pinStateMap: Record<string, ChatMessagePinStateVo>`
 - `activeChannelId: string | null`
 - `connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting'`
 
@@ -116,6 +121,7 @@ Frontend/radish.client/src/types/
 - `addMessage`（按 `messageId / clientRequestId` 合并，兼容替换 `status: 'sending'` 临时消息）
 - `removeMessage`（撤销失败临时消息）
 - `recallMessage`
+- `setPinState` / `applyPinBroadcast`（按频道 revision 替换权威完整快照）
 - `updateUnread`（对象载荷：`{ channelId, unreadCount, hasMention }`）
 - `reset`
 
@@ -159,6 +165,6 @@ Frontend/radish.client/src/types/
 - Phase 2：私聊分区已完成；F4-C 搜索采用独立搜索状态和服务端 cursor，不把跨频道命中写入 `messageMap`。
 - 搜索结果点击统一进入 `useChatMessageNavigation`，继续调用现有 `GetMessageWindow(channelId, messageId)`；通知深链和搜索定位共用这一条导航链路。
 - 搜索面板与成员面板在 PC 右栏互斥；移动端由 `MessagesApp` URL 状态切换单列搜索视图，浏览器返回可恢复会话。
-- Reaction、置顶与阅读回执继续独立立项，不随搜索顺手实现。
+- Reaction 与置顶已按独立专题落地；阅读回执继续独立立项，不随现有能力顺手实现。
 - Phase 3：语音消息、频道权限细分、跨设备同步增强。
 - 所有扩展保持“先补契约文档，再落代码”的流程。

@@ -69,6 +69,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-e-c-chat-message-pin-web-workspace-2026-07-19](/records/f4-e-c-chat-message-pin-web-workspace-2026-07-19)
 - [f4-e-b-chat-message-pin-server-contract-2026-07-19](/records/f4-e-b-chat-message-pin-server-contract-2026-07-19)
 - [f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19](/records/f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19)
 - [f4-d-c-chat-message-reaction-web-workspace-2026-07-19](/records/f4-d-c-chat-message-reaction-web-workspace-2026-07-19)

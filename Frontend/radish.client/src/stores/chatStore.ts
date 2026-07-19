@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ChatMessageReactionStateVo } from '@radish/http';
+import type { ChatMessagePinStateVo, ChatMessageReactionStateVo } from '@radish/http';
 import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
@@ -7,6 +7,7 @@ import type {
   EntityIdValue,
 } from '@/types/chat';
 import { mergeChatReactionState } from '@/utils/chatMessageReactions';
+import { mergeChatPinState } from '@/utils/chatMessagePins';
 import {
   areEntityIdsEqual,
   compareEntityIds,
@@ -27,6 +28,7 @@ interface ChatStore {
   activeChannelId: EntityIdValue | null;
   messageMap: Record<string, ChannelMessageVo[]>;
   reactionStateMap: Record<string, ChatMessageReactionStateVo>;
+  pinStateMap: Record<string, ChatMessagePinStateVo>;
   recalledMessageIds: Record<string, true>;
   typingMap: Record<string, TypingUser[]>;
   connectionState: ChatConnectionState;
@@ -44,6 +46,8 @@ interface ChatStore {
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
   setReactionStates: (states: ChatMessageReactionStateVo[]) => void;
   applyReactionBroadcast: (state: ChatMessageReactionStateVo) => void;
+  setPinState: (state: ChatMessagePinStateVo) => void;
+  applyPinBroadcast: (state: ChatMessagePinStateVo) => void;
   updateUnread: (payload: ChannelUnreadChangedPayload) => void;
   setTypingUser: (channelId: EntityIdValue, userId: EntityIdValue, userName: string) => void;
   removeTypingUser: (channelId: EntityIdValue, userId: EntityIdValue) => void;
@@ -162,6 +166,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   activeChannelId: null,
   messageMap: {},
   reactionStateMap: {},
+  pinStateMap: {},
   recalledMessageIds: {},
   typingMap: {},
   connectionState: 'disconnected',
@@ -301,6 +306,17 @@ export const useChatStore = create<ChatStore>((set, get) => ({
               Object.entries(state.reactionStateMap).filter(([key]) => key !== messageKey)
             )
           : state.reactionStateMap,
+        pinStateMap: Object.hasOwn(state.pinStateMap, channelKey)
+          ? {
+              ...state.pinStateMap,
+              [channelKey]: {
+                ...state.pinStateMap[channelKey],
+                voItems: state.pinStateMap[channelKey].voItems.filter(
+                  (item) => !areEntityIdsEqual(item.voMessageId, messageId)
+                ),
+              },
+            }
+          : state.pinStateMap,
       };
     });
   },
@@ -331,6 +347,34 @@ export const useChatStore = create<ChatStore>((set, get) => ({
           incoming,
           'broadcast'
         ),
+      },
+    }));
+  },
+
+  setPinState: (incoming: ChatMessagePinStateVo) => {
+    const channelKey = getChannelKey(incoming.voChannelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      pinStateMap: {
+        ...state.pinStateMap,
+        [channelKey]: mergeChatPinState(state.pinStateMap[channelKey], incoming, 'authoritative'),
+      },
+    }));
+  },
+
+  applyPinBroadcast: (incoming: ChatMessagePinStateVo) => {
+    const channelKey = getChannelKey(incoming.voChannelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      pinStateMap: {
+        ...state.pinStateMap,
+        [channelKey]: mergeChatPinState(state.pinStateMap[channelKey], incoming, 'broadcast'),
       },
     }));
   },
@@ -393,6 +437,7 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       activeChannelId: null,
       messageMap: {},
       reactionStateMap: {},
+      pinStateMap: {},
       recalledMessageIds: {},
       typingMap: {},
       connectionState: 'disconnected',

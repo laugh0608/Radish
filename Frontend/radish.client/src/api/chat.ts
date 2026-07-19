@@ -10,6 +10,9 @@ import {
   type SearchChannelMessagesDto,
   type ChatMessageReactionMutationVo,
   type ChatMessageReactionStateVo,
+  type ChatMessagePinMutationVo,
+  type ChatMessagePinStateVo,
+  type SetChatMessagePinDto,
   type SetChatMessageReactionDto,
 } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
@@ -263,6 +266,40 @@ export async function setChatMessageReaction(
   );
   if (!response.ok || !response.data) {
     throw createChatApiError(response, '更新消息回应失败');
+  }
+
+  return response.data;
+}
+
+export async function getChatMessagePinState(
+  channelId: EntityIdValue
+): Promise<ChatMessagePinStateVo> {
+  const normalizedChannelId = normalizeEntityId(channelId);
+  if (!normalizedChannelId) {
+    throw new Error('消息置顶频道无效');
+  }
+
+  const response = await apiGet<ChatMessagePinStateVo>(
+    `/api/v1/ChannelMessagePin/GetState?channelId=${encodeURIComponent(normalizedChannelId)}`,
+    { withAuth: true, timeout: CHAT_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '加载消息置顶失败');
+  }
+
+  return response.data;
+}
+
+export async function setChatMessagePin(
+  request: SetChatMessagePinDto
+): Promise<ChatMessagePinMutationVo> {
+  const response = await apiPost<ChatMessagePinMutationVo>(
+    '/api/v1/ChannelMessagePin/Set',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '更新消息置顶失败');
   }
 
   return response.data;

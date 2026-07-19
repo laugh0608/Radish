@@ -1,6 +1,6 @@
 # F4-E 聊天消息置顶
 
-> **状态**：F4-E-A / B 已完成；下一批为 F4-E-C Pencil 与正式 Web
+> **状态**：F4-E-A / B / C 已完成；下一批为 F4-E-D 成组验收
 >
 > **复核日期**：2026-07-19
 >
@@ -208,7 +208,7 @@ items 按 `PinnedAt DESC, Id DESC` 排序，最多 20 条。无置顶也返回 r
 - 新增访问能力、Service、Controller、Hub payload、`@radish/http` 契约、稳定双语错误和 LongId 测试。
 - 覆盖 SQLite / PostgreSQL、ACL、重复目标状态、并发、20 条上限和撤回定向回归。
 
-### F4-E-C：Pencil 与正式 Web
+### F4-E-C：Pencil 与正式 Web（已完成）
 
 - 先更新 PC / mobile Pencil，再实现置顶条、完整列表、消息动作、定位、加载 / 空态 / 错误和 mobile Bottom Sheet。
 - 接入 Store revision、Hub、重连追平、中英文、键盘、焦点、长内容和四主题。

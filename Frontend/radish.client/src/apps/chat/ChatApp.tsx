@@ -48,6 +48,7 @@ import {
   getErrorMessage,
   getFallbackUserName,
   getReplyTargetMessageId,
+  isCompactChatViewport,
   loadChannelDraft,
   persistChannelDraft,
   resolveAttachmentAssetUrl,
@@ -68,32 +69,14 @@ import { canSendConversationAttachment, resolveConversationNoticeKey } from './c
 import { useChatConversationWorkspace } from './useChatConversationWorkspace';
 import { useChatMessageNavigation } from './useChatMessageNavigation';
 import { useChatMessageReactions } from './useChatMessageReactions';
+import type { ChatAppProps } from './chatApp.types';
 import styles from './ChatApp.module.css';
 import searchStyles from './ChatSearchControls.module.css';
 
 const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
 
-function isCompactChatViewport(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth <= 720;
-}
-
-export interface ChatAppProfileNavigationTarget {
-  userId: EntityIdValue;
-  publicId?: string | null;
-  userName?: string | null;
-  avatarUrl?: string | null;
-}
-
-interface ChatAppProps {
-  onOpenUserProfile?: (target: ChatAppProfileNavigationTarget) => void;
-  onOpenFocusedChannel?: (channelId: string) => void;
-  onOpenMessageResult?: (target: { channelId: string; messageId: string }) => void;
-  onBackToConversationList?: () => void;
-  searchRestoreRevision?: number;
-  searchHideRevision?: number;
-  onSearchVisibilityChange?: (visible: boolean) => void;
-}
+export type { ChatAppProfileNavigationTarget } from './chatApp.types';
 
 export const ChatApp = ({
   onOpenUserProfile,
@@ -200,6 +183,7 @@ export const ChatApp = ({
   );
   const canSendInActiveChannel = Boolean(activeChannel?.voCanSend);
   const canReactInActiveChannel = Boolean(activeChannel?.voCanReact);
+  const canPinInActiveChannel = Boolean(activeChannel?.voCanPinMessages);
   const canSendAttachment = canSendConversationAttachment(activeChannel);
   const conversationNoticeKey = resolveConversationNoticeKey(activeChannel);
   const isDirectRequestFirstMessage = activeChannel?.voDirectRequestStatus === 'pending' && activeChannel.voCanSend;
@@ -1310,6 +1294,9 @@ export const ChatApp = ({
               apiBaseUrl={apiBaseUrl}
               canSendMessages={canSendInActiveChannel}
               canReact={canReactInActiveChannel}
+              canPinMessages={canPinInActiveChannel}
+              connectionState={connectionState}
+              messageTargetUnavailable={messageTargetUnavailable}
               reactionStateMap={reactionStateMap}
               reactionLoading={reactionLoading}
               reactionLoadError={reactionLoadError}
@@ -1328,6 +1315,7 @@ export const ChatApp = ({
               onCopyFailedMessageDiagnostics={handleCopyFailedMessageDiagnostics}
               onDismissFailedMessage={handleDismissFailedMessage}
               onToggleReaction={(messageId, payload) => toggleReaction({ messageId, ...payload })}
+              onNavigateToMessage={(messageId) => navigateToMessage(activeChannelKey, messageId)}
               onRetryReactionLoad={retryReactionLoad}
               onLoadNewerHistory={() => { void loadNewerHistory({ scrollToBottomWhenDone: true }); }}
             />

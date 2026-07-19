@@ -8,8 +8,8 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-E-C 聊天消息置顶：Pencil 与正式 Web`
-- **产品下一顺位**：`先更新 PC / mobile Pencil，再实现置顶条、完整列表、消息动作、revision Store、Hub 合并与重连追平`
+- **工程第一顺位**：`F4-E-D 聊天消息置顶：成组验收`
+- **产品下一顺位**：`完成三普通账号、zh / en × PC / mobile、多标签、真实离线重连、并发、20 条上限、定位与 WebOS 矩阵`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
 - **复核日期**：`2026-07-19`
 - **当前结论**：
@@ -25,7 +25,7 @@
   - F4-B-A-D 已完成稳定定义、结构化目标、偏好、分组 / 摘要 revision、正式 Web 通知工作区和三普通账号 `zh / en × PC / mobile` 成组验收；SQLite / PostgreSQL、离线 / 多标签、cursor、目标失效与临时数据清理均通过，通知中心深化专题已关闭。
   - F4-C-A-D 已完成 Chat 权威检索、跨库 migration、正式 Web / WebOS 搜索工作区和双账号 `zh / en × PC / mobile` 成组验收；共同根因修复、临时数据清理、六库完整性与迁移 verify 均通过，专题关闭。
   - F4-D-A-D 已完成 Chat 专属 Reaction 设计、服务端权威契约、PC / mobile Pencil、正式 Web 与三普通账号成组验收：`CanReact`、目标状态 operation ledger、消息 revision、完整 Hub 快照、撤回一致性、真实离线重连和首批不通知边界均通过；临时数据清理、六库完整性与 migration verify 完成，专题关闭。
-  - F4-E-A / B 已完成设计与服务端权威契约：独立 `ChatMessagePin`、频道 `PinRevision`、20 条上限、目标状态、完整 Hub 快照、权限矩阵、撤回一致性、SQLite / PostgreSQL migration 和前端 HTTP 契约均已落地，下一批进入 Pencil 与正式 Web。
+  - F4-E-A / B / C 已完成设计、服务端权威契约与正式 Web：独立 `ChatMessagePin`、频道 `PinRevision`、20 条上限、目标状态、完整 Hub 快照、权限矩阵、撤回一致性、SQLite / PostgreSQL migration、PC / mobile Pencil、置顶条 / 列表 / 定位和前端 revision 合并均已落地，下一批进入成组验收。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -45,9 +45,9 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 通知中心深化、F4-C 聊天历史搜索和 F4-D 消息 Reaction 均已关闭，当前只推进 F4-E 消息置顶，不并行展开其他候选功能。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 通知中心深化、F4-C 聊天历史搜索和 F4-D 消息 Reaction 均已关闭，当前只推进 F4-E-D 消息置顶成组验收，不并行展开其他候选功能。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
-- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B / C / D 已关闭，功能完成线当前进入 F4-E-C 消息置顶 Pencil 与正式 Web。
+- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B / C / D 已关闭，功能完成线当前进入 F4-E-D 消息置顶成组验收。
 - Q4、公开 head、WebOS 和 Flutter 继续按触达范围或真实问题维护，不与正式 Web 功能主线争夺顺位。
 - 主动生产使用数据采集只在计划内功能全部完成、没有其他明确任务、产品进入最终完成体复核且用户确认后重启；不得因旧记录、观察周期或新会话频繁重新排期。
 
@@ -104,7 +104,7 @@ Radish V1 固定为：
 2. [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 已完成 A-D 批服务端契约、正式 Web 页面和三普通账号成组验收，专题关闭。
 3. [F4-C 聊天历史搜索与消息定位](/features/chat-message-search-design) 已完成 A-D 批并关闭，权威 ACL、跨库迁移、快照 cursor、正式 Web / WebOS 与双账号成组验收均通过。
 4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A-D 批已完成，权威 ACL、目标状态幂等、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过，专题关闭。
-5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A / B 批已完成设计与服务端权威契约；下一批进入 F4-E-C，先更新 PC / mobile Pencil，再实现正式 Web / WebOS 置顶交互、revision Store、Hub 合并与重连追平。逐条已读和移动系统通知继续后置。
+5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A / B / C 批已完成设计、服务端权威契约、PC / mobile Pencil 与正式 Web / WebOS 共用实现；下一批进入 F4-E-D，完成三普通账号、`zh / en × PC / mobile`、多标签、真实离线重连、并发目标状态、20 条上限、定位和 WebOS 成组验收。逐条已读和移动系统通知继续后置。
 
 ## P3-12-F 门禁分层
 

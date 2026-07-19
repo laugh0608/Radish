@@ -9,6 +9,7 @@ import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import type { ChannelMessageVo, EntityIdValue } from '@/types/chat';
 import { isPersistedEntityId } from '@/types/chat';
+import type { ChatConnectionState } from '@/stores/chatStore';
 import {
   formatChatTime,
   getEntityKey,
@@ -21,6 +22,8 @@ import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { getIntlLocale } from '@/locales/language';
 import { ChatProtectedImage } from './ChatProtectedImage';
 import { createChatReactionBarLabels } from './chatReactionBarLabels';
+import { ChatPinnedMessages } from './ChatPinnedMessages';
+import { useChatMessagePins } from './useChatMessagePins';
 import styles from './ChatApp.module.css';
 
 interface ChatMessageListProps {
@@ -33,6 +36,9 @@ interface ChatMessageListProps {
   apiBaseUrl: string;
   canSendMessages: boolean;
   canReact: boolean;
+  canPinMessages: boolean;
+  connectionState: ChatConnectionState;
+  messageTargetUnavailable: boolean;
   reactionStateMap: Record<string, ChatMessageReactionStateVo>;
   reactionLoading: boolean;
   reactionLoadError: string | null;
@@ -51,6 +57,7 @@ interface ChatMessageListProps {
   onCopyFailedMessageDiagnostics: (message: ChannelMessageVo) => void;
   onDismissFailedMessage: (message: ChannelMessageVo) => void;
   onToggleReaction: (messageId: EntityIdValue, payload: ReactionTogglePayload) => Promise<void>;
+  onNavigateToMessage: (messageId: string) => void;
   onRetryReactionLoad: () => void;
   onLoadNewerHistory: () => void;
 }
@@ -65,6 +72,9 @@ export const ChatMessageList = ({
   apiBaseUrl,
   canSendMessages,
   canReact,
+  canPinMessages,
+  connectionState,
+  messageTargetUnavailable,
   reactionStateMap,
   reactionLoading,
   reactionLoadError,
@@ -83,15 +93,43 @@ export const ChatMessageList = ({
   onCopyFailedMessageDiagnostics,
   onDismissFailedMessage,
   onToggleReaction,
+  onNavigateToMessage,
   onRetryReactionLoad,
   onLoadNewerHistory,
 }: ChatMessageListProps) => {
   const { t, i18n } = useTranslation();
   const locale = getIntlLocale(i18n.resolvedLanguage ?? i18n.language);
   const reactionLabels = useMemo(() => createChatReactionBarLabels(t), [t]);
+  const {
+    state: pinState,
+    pinnedMessageIds,
+    loading: pinLoading,
+    loadError: pinLoadError,
+    pendingMessageId: pinPendingMessageId,
+    retry: retryPinLoad,
+    setPinned,
+  } = useChatMessagePins({
+    activeChannelId,
+    connectionState,
+    canPinMessages,
+    refreshAfterTargetUnavailable: messageTargetUnavailable,
+  });
 
   return (
-    <div className={styles.messageViewport} ref={messageScrollRef} onScroll={onScroll}>
+    <>
+      <div className={styles.pinRegion}>
+        <ChatPinnedMessages
+          state={pinState}
+          loading={pinLoading}
+          loadError={pinLoadError}
+          canManage={canPinMessages}
+          pendingMessageId={pinPendingMessageId}
+          onRetry={retryPinLoad}
+          onNavigate={onNavigateToMessage}
+          onSetPinned={setPinned}
+        />
+      </div>
+      <div className={styles.messageViewport} ref={messageScrollRef} onScroll={onScroll}>
       {activeChannelId !== null && reactionLoadError && (
         <div className={styles.reactionLoadError} role="alert">
           <span>{reactionLoadError}</span>
@@ -118,6 +156,14 @@ export const ChatMessageList = ({
           const isFailedMessage = messageStatus === 'failed';
           const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo, t) : null;
           const reactionState = messageIdKey ? reactionStateMap[messageIdKey] : undefined;
+          const isPinned = Boolean(messageIdKey && pinnedMessageIds.has(messageIdKey));
+          const canManagePin = Boolean(
+            canPinMessages
+            && messageIdKey
+            && isPersistedEntityId(message.voId)
+            && !message.voIsRecalled
+            && messageStatus === 'sent'
+          );
           const canShowReactionBar = Boolean(
             messageIdKey
             && isPersistedEntityId(message.voId)
@@ -172,6 +218,18 @@ export const ChatMessageList = ({
                         onClick={() => onReply(message)}
                       >
                         {t('chat.reply')}
+                      </button>
+                    )}
+                    {canManagePin && (
+                      <button
+                        type="button"
+                        className={styles.pinButton}
+                        onClick={() => { void setPinned(message.voId, !isPinned); }}
+                        disabled={pinPendingMessageId === messageIdKey}
+                      >
+                        {pinPendingMessageId === messageIdKey
+                          ? t('chat.pin.updating')
+                          : t(isPinned ? 'chat.pin.unpin' : 'chat.pin.pin')}
                       </button>
                     )}
                     {isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId) && (
@@ -291,6 +349,7 @@ export const ChatMessageList = ({
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };

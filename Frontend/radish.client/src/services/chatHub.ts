@@ -1,5 +1,5 @@
 import * as signalR from '@microsoft/signalr';
-import type { ChatMessageReactionStateVo } from '@radish/http';
+import type { ChatMessagePinStateVo, ChatMessageReactionStateVo } from '@radish/http';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from './tokenService';
@@ -277,6 +277,10 @@ class ChatHubService {
 
     this.connection.on('MessageReactionsChanged', (state: ChatMessageReactionStateVo) => {
       useChatStore.getState().applyReactionBroadcast(state);
+    });
+
+    this.connection.on('MessagePinsChanged', (state: ChatMessagePinStateVo) => {
+      useChatStore.getState().applyPinBroadcast(state);
     });
 
     this.connection.on('ChannelUnreadChanged', (payload: ChannelUnreadChangedPayload) => {

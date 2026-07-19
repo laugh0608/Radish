@@ -169,3 +169,21 @@ test('聊天回应无障碍文案应按数量解析中英文单复数', async ()
     '👍，2 人回应，未选择'
   );
 });
+
+test('聊天置顶数量文案应按数量解析中英文单复数', async () => {
+  const instance = i18next.createInstance();
+  await instance.init({
+    lng: 'en',
+    resources: {
+      en: { translation: enChat },
+      zh: { translation: zhChat },
+    },
+  });
+
+  assert.equal(instance.t('chat.pin.count', { count: 1 }), '1 pinned message');
+  assert.equal(instance.t('chat.pin.count', { count: 2 }), '2 pinned messages');
+
+  await instance.changeLanguage('zh');
+  assert.equal(instance.t('chat.pin.count', { count: 1 }), '1 条置顶');
+  assert.equal(instance.t('chat.pin.count', { count: 2 }), '2 条置顶');
+});
