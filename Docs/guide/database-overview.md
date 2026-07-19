@@ -17,7 +17,7 @@
 | `Main` | SQLite | `Radish.db` | 核心业务数据 |
 | `Log` | SQLite | `Radish.Log.db` | 应用与 SQL 日志落库 |
 | `Message` | SQLite | `Radish.Message.db` | 通知 / 消息相关数据隔离 |
-| `Chat` | SQLite | `Radish.Chat.db` | 聊天室消息数据隔离 |
+| `Chat` | SQLite | `Radish.Chat.db` | 频道 / 私聊、消息搜索、消息回应、置顶、成员已读游标与可靠 Chat 任务 |
 
 除此之外，部署态还包含两个独立 PostgreSQL 数据库：
 

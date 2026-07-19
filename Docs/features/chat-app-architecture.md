@@ -102,7 +102,7 @@ Frontend/radish.client/src/types/
 - 负责频道切换、分页触发、输入上报、滚动已读与 Hub 生命周期联动。
 
 3. 状态层 `stores/chatStore.ts`
-- 维护频道列表、未读数、消息 Map、当前激活频道，以及本地发送状态替换逻辑。
+- 维护频道列表、未读、消息 Map、当前激活频道、回应 / 置顶 / 回执权威状态，以及本地发送状态替换逻辑。
 
 4. 基础设施层 `api/* + services/chatHub.ts`
 - REST 负责持久化操作。
@@ -115,7 +115,10 @@ Frontend/radish.client/src/types/
 `chatStore` 最小字段：
 - `channels: ChannelVo[]`
 - `messageMap: Record<string, ChannelMessageVo[]>`
+- `reactionStateMap: Record<string, ChatMessageReactionStateVo>`
 - `pinStateMap: Record<string, ChatMessagePinStateVo>`
+- `readReceiptSummaryMap: Record<string, ChatReadReceiptSummariesVo>`
+- `readReceiptInvalidationMap: Record<string, number>`
 - `activeChannelId: string | null`
 - `connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting'`
 
@@ -132,7 +135,9 @@ Frontend/radish.client/src/types/
 - `addMessage`（按 `messageId / clientRequestId` 合并，兼容替换 `status: 'sending'` 临时消息）
 - `removeMessage`（撤销失败临时消息）
 - `recallMessage`
+- `setReactionStates` / `applyReactionBroadcast`（按消息 revision 合并权威完整状态）
 - `setPinState` / `applyPinBroadcast`（按频道 revision 替换权威完整快照）
+- `setReadReceiptSummaries` / `invalidateReadReceipts` / `clearChannelReadReceipts`
 - `updateUnread`（对象载荷：`{ channelId, unreadCount, hasMention }`）
 - `reset`
 
@@ -166,7 +171,7 @@ Frontend/radish.client/src/types/
 - `chatHub` 连接成功与重连成功后会自动尝试加入当前激活频道。
 - 当前频道在重连恢复后会清空本地缓存并重新拉取最新 50 条，优先保证状态一致。
 - `ConversationStateChanged` 只推动 `chatStore` 会话修订号变化，工作区随后重读服务端会话摘要，不用本地事件载荷推导请求、阻断或归档状态。
-- Dock 未读气泡由 `chatStore.channels` 聚合计算，不额外轮询。
+- 会话侧栏的未读直接使用服务端频道 Vo；WebOS Dock 当前角标归通知收件箱，不复制聊天未读真相源。
 - 窗口最小化/恢复不重建连接，避免短时频繁重连。
 
 ---
@@ -176,6 +181,6 @@ Frontend/radish.client/src/types/
 - Phase 2：私聊分区已完成；F4-C 搜索采用独立搜索状态和服务端 cursor，不把跨频道命中写入 `messageMap`。
 - 搜索结果点击统一进入 `useChatMessageNavigation`，继续调用现有 `GetMessageWindow(channelId, messageId)`；通知深链和搜索定位共用这一条导航链路。
 - 搜索面板与成员面板在 PC 右栏互斥；移动端由 `MessagesApp` URL 状态切换单列搜索视图，浏览器返回可恢复会话。
-- Reaction 与置顶已按独立专题落地；F4-F 阅读回执同样保持独立契约，已完成服务端与共用页面实现，运行态验收按 F4-F-D 单独执行。
+- Reaction、置顶与阅读回执均已按独立专题完成 A-D 批；后续维护继续保持各自 revision / 失效协议、权限和账号 reset 边界。
 - Phase 3：语音消息、频道权限细分、跨设备同步增强。
 - 所有扩展保持“先补契约文档，再落代码”的流程。

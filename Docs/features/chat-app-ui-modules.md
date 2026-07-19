@@ -12,6 +12,7 @@
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
 > [社区讨论与聊天室侧栏 UI 治理方案](./community-discussion-and-chat-ui-governance.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息 Reaction 设计](./chat-message-reaction-design.md) ·
 > [聊天消息置顶设计](./chat-message-pin-design.md) ·
 > [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
@@ -21,7 +22,7 @@
 
 标准三栏：
 - 左栏：频道导航（分类、频道、未读）
-- 中栏：消息主区（置顶预览条 [Phase 2] · 消息历史 · 输入框）
+- 中栏：消息主区（置顶预览条 · 消息历史 · 输入框）
 - 右栏：成员列表（在线/离线，可折叠）
 
 响应式策略：
@@ -43,7 +44,7 @@
 
 3. `MessageInput`
 - 负责输入、发送、快捷键、图片上传草稿、@mention 下拉。
-- 复用 `StickerPicker` 插入 `sticker://`。
+- 消息正文不提供贴纸插入；`StickerPicker` 只由消息下方的 `ReactionBar` 打开。
 - 图片选择后会先调用现有上传接口，上传成功再进入输入区的待发送附件区，等待用户点击发送。
 - 支持直接粘贴剪贴板图片，并将结果写回当前频道草稿。
 - `@mention` 下拉会跟随输入光标定位，确保插入反馈与候选列表位置一致。
@@ -66,15 +67,21 @@
 - 结果只使用服务端结构化频道 / 消息 / 发送者元数据，不根据正文猜频道或目标。
 - 点击结果交给共用消息导航 Hook，并复用现有消息窗口和高亮能力。
 
+7. `ReactionBar`（F4-D）
+- 复用 `@radish/ui` 的展示和选择器，只由 `useChatMessageReactions` 提供 Chat 专属状态与写入动作。
+- 单条消息按 `ReactionRevision` 合并完整权威状态；加载失败不清空消息、草稿或其他消息的回应。
+- 撤回消息、失权会话和不允许写入的 Direct 状态不保留可操作入口。
+
 ---
 
 ## 核心组件职责
 
 `MessageBubble`：
-- 渲染文本、贴纸、图片、撤回占位。
+- 渲染文本、可点击 mention、认证图片和撤回占位；贴纸用于 Reaction 选择，不把 `sticker://` 误写成当前消息正文能力。
 - 提供 hover 操作（引用、撤回、Reaction）。
 - 当前基础布局为“头像在侧边、元信息在上方、消息内容在下方”；自己消息采用左右镜像排布。
-- Phase 2：hover 菜单增加"📌 置顶"选项（仅 Moderator/Owner 可见）。
+- F4-D：消息下方展示回应气泡和“回应”入口；默认紧凑展示 8 种，其余可展开，同一用户在单条消息最多保留 10 种回应。
+- F4-E：消息操作按服务端 `VoCanPinMessages` 展示置顶 / 取消置顶，不在前端按角色名猜权限。
 - F4-F：Direct 只在对端已读到的最后一条自己消息下展示一次文字边界；普通 Private 在自己消息下展示已读人数入口。Public / Announcement 不渲染回执。
 
 `MessageGroup`：
@@ -128,12 +135,17 @@
 - 若图片上传完成时用户已切到其他频道，上传结果会回写到原频道草稿，避免误发。
 - 发送成功后清除对应草稿。
 
-6. 消息置顶（F4-E）
+6. 消息回应（F4-D）
+- 回应气泡直接显示 emoji / sticker 和聚合人数；选择当前账号已使用的回应会提交取消目标状态。
+- 写入携带唯一 operation ID；多标签、重试和乱序广播最终按服务端 revision 收敛。
+- Public / Announcement 可读消息可回应；普通 Private 仅有效成员可回应；Direct 仅 Accepted、未阻断且对端可用时允许写入。
+
+7. 消息置顶（F4-E）
 - 置顶条位于消息历史与频道标题之间；最近项显示 `📌 [发送者]: [内容摘要]` 与总数。
 - 消息动作与列表取消入口只消费服务端 `VoCanPinMessages`，不在前端自行猜角色。
 - 置顶/取消后 Hub 广播带频道 revision 的 `MessagePinsChanged` 完整快照，Store 只接受更高 revision。
 
-7. 阅读回执（F4-F）
+8. 阅读回执（F4-F）
 - 只为当前用户自己发送、未撤回且当前加载的最近最多 20 条持久化消息批量读取摘要。
 - 普通 Private 仅在 `readCount > 0` 时展示人数入口；Direct 只显示对端已读边界，不展示在线头像。
 - 正式 Web 与 WebOS 共用活跃阅读面判定；后台标签、失焦页面、被遮挡或最小化的 WebOS 窗口不能推进游标。

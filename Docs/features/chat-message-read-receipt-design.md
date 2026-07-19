@@ -476,7 +476,7 @@ F4-F 不改变：
 | UI | Direct 边界、Private 人数与分页、中英文复数、键盘、焦点恢复、四主题 |
 | 不污染 | 未读、通知、最后消息、搜索、Reaction、置顶、频道排序 |
 
-开发中先执行定向测试、type-check、lint、build、repo hygiene 与 `git diff --check`；F4-F-D 再执行获授权的真实运行态矩阵。
+开发中先执行定向测试、type-check、lint、build、repo hygiene 与 `git diff --check`；F4-F-D 已在获授权后完成真实运行态矩阵，后续维护按触及风险复用本表。
 
 ---
 

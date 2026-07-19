@@ -154,7 +154,9 @@ function MyComponent() {
 - **ExperienceBar** - 经验值进度条组件
 - **LevelUpModal** - 升级弹窗组件
 - **ReactionBar** - 反应条组件
-  - 数量、查看用户、取消 / 添加回应等文案通过 `ReactionBarLabels` 由宿主注入
+  - 支持 `Post / Comment / ChatMessage` 展示目标、只读状态、展开 / 收起、快捷 emoji 与 StickerPicker
+  - 数量、选择状态、展开、取消 / 添加回应和表情选择器文案通过 `ReactionBarLabels` 由宿主注入
+  - 组件只负责展示与交互，不请求通用 Reaction API；Forum 与 Chat 分别提供自己的权威状态和写入回调
 
 #### 反馈与通知
 - **Toast** - 轻量临时提示

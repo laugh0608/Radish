@@ -237,6 +237,19 @@ Pet 高频失败使用稳定 `Pet.*` Code 与 `error.pet.*` MessageKey；Client 
 
 管理端购买排障当前依赖订单与胡萝卜流水的业务上下文关联：商城购买扣款流水使用 `transactionType=CONSUME`、`businessType=Order`、`businessId=OrderId`，Console 可从订单详情跳转到上述筛选结果。
 
+### 聊天
+
+聊天接口以 `Radish.Api.Chat.http`、Scalar 和 [聊天室系统设计](/features/chat-system) 为准，主要分为：
+
+- 频道与会话：`Channel/GetList`、`Channel/GetDetail`、`DirectConversation/*`；
+- 历史与定位：`ChannelMessage/GetHistory`、`ChannelMessage/GetMessageWindow`、`ChannelMessage/Search`；
+- 消息写入：`ChannelMessage/Send`、`ChannelMessage/Recall/{id}`；
+- 消息回应：`ChannelMessageReaction/GetStates`、`ChannelMessageReaction/Set`；
+- 消息置顶：`ChannelMessagePin/GetState`、`ChannelMessagePin/Set`；
+- 已读与回执：`ChannelReadState/Advance`、`ChannelReadReceipt/GetSummaries`、`ChannelReadReceipt/GetReaders`。
+
+所有 Chat `long / long?` 标识在 HTTP 与 Hub 边界按字符串消费。搜索、回应、置顶和回执类型由 `@radish/http` 导出；正式前端不得自行封装 fetch，也不得用客户端频道白名单、角色名称或在线状态替代服务端 ACL。
+
 ### 其他专题
 
 - `Radish.Api.Chat.http`

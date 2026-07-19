@@ -66,6 +66,7 @@
 ### 文档、通知与控制台
 
 - [文档系统方案](/guide/document-system)
+- [正式 Web 聊天工作区使用说明](/guide/chat-workspace)
 - [通知系统 API 文档](/guide/notification-api)
 - [通知中心设计说明](/guide/notification-center)
 - [通知系统前端说明](/guide/notification-frontend)

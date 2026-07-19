@@ -150,6 +150,8 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - 电子宠物入口与展示派生：`authReturnPath.test.ts`、`entryRoute.test.ts`、`petPresentation.test.ts`。
 - 通知权威状态与分流：`notificationInbox.test.ts`、`notificationNavigation.test.ts`。
 - 正式 Web 私聊与 Hub 生命周期：`chatDirectConversationStatic.test.ts`、`messagesRouteState.test.ts`。
+- 正式 Web 消息搜索：`chatMessageSearch.test.ts`，并复核搜索结果不写入普通历史消息 Store。
+- 消息回应、置顶与阅读回执：`chatMessageReaction.test.ts`、`chatMessagePin.test.ts`、`chatReadReceipt.test.ts`、`chatStore.test.ts`，覆盖 revision、账号 reset、失效重读与最后消息投影边界。
 - 来源返回：`publicRouteNavigation.test.ts`、`realUsagePathContracts.test.ts`。
 - 前端类型与构建：`npm run type-check --workspace=radish.client`、`npm run build --workspace=radish.client`。
 - 真实页面 smoke：Gateway 下覆盖 PC `1920x1080` 与移动 `390x844 @ DPR 3`；涉及点击时结合直接导航和来源状态校验，不把 Chrome 插件事件派发不稳定直接判定为页面缺陷。

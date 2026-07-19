@@ -15,6 +15,7 @@
 当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction、消息置顶、轻量阅读回执与移动端列表 / 详情切换。F4-C 搜索、F4-D Reaction、[F4-E 消息置顶](/features/chat-message-pin-design) 与 [F4-F 轻量阅读回执](/features/chat-message-read-receipt-design) 均已完成 A-D 批并关闭；Chat 新增能力转入维护基线，工程顺位进入 F4-G-A 功能完成线候选审计，移动系统通知继续后置。
 
 后台数据模型与 API 细节请优先参考：
+- [正式 Web 聊天工作区使用说明](/guide/chat-workspace)
 - [聊天室系统设计](./chat-system.md)
 - [聊天室系统 - 前端架构与组件设计](./chat-frontend.md)
 - [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md)
@@ -30,6 +31,7 @@
 
 | 文档 | 作用 | 适用场景 |
 |------|------|----------|
+| [正式 Web 聊天工作区使用说明](/guide/chat-workspace) | 说明用户入口、搜索、回应、置顶、回执、恢复和隐私边界 | 使用 `/messages` 或排查用户可见行为 |
 | [聊天室 App 架构设计](./chat-app-architecture.md) | 定义应用注册、目录结构、分层边界、状态模型 | 新建 `apps/chat` 或做大规模重构前 |
 | [聊天室 App 实时与同步设计](./chat-app-realtime.md) | 定义 ChatHub 连接、事件流、未读同步、异常恢复 | 联调 Hub、排查实时消息问题 |
 | [聊天室 App UI 模块设计](./chat-app-ui-modules.md) | 定义三栏布局、核心组件职责、交互状态 | 实现页面与组件、做体验优化 |

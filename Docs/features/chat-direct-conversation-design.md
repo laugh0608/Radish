@@ -2,9 +2,9 @@
 
 > 状态：批次 A / B / C / D 已完成，专题已关闭
 >
-> 最后更新：2026-07-18（Asia/Shanghai）
+> 最后更新：2026-07-19（Asia/Shanghai）
 >
-> 本文是一对一私聊专题的实现与验收依据。聊天室公共能力继续以 [聊天室系统设计](./chat-system.md) 为准，正式 Web 路由与壳层边界继续以 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 为准；私聊完成后的消息搜索由 [聊天历史搜索与消息定位设计](./chat-message-search-design.md) 独立约束。
+> 本文是一对一私聊专题的实现与验收依据。聊天室公共能力继续以 [聊天室系统设计](./chat-system.md) 为准，正式 Web 路由与壳层边界继续以 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 为准；私聊完成后的 [消息搜索](./chat-message-search-design.md)、[消息 Reaction](./chat-message-reaction-design.md)、[消息置顶](./chat-message-pin-design.md) 与 [轻量阅读回执](./chat-message-read-receipt-design.md) 分别由独立权威专题约束。
 
 ## 摘要
 
@@ -13,6 +13,7 @@
 - 陌生人不能直接连续发送消息：非互关用户创建的是待处理请求，发起人只能发送一条纯文本请求；接收人接受后才能正常互发，也可以拒绝或阻断。
 - 私聊成员授权必须覆盖列表、详情、历史、发送、撤回、已读、在线成员、Hub 加组、消息定位、举报和附件访问。不能只在页面隐藏入口。
 - `/messages` 和公开个人页是正式 Web 唯一新增产品入口；WebOS 只保持兼容，Flutter、Tauri 和公开聊天室不在本专题范围。
+- F4-C 至 F4-F 后续专题已经完成，但没有改变本专题的 `DirectConversation`、成员 ACL、请求 / 阻断和附件隐私真相源；搜索、回应、置顶和回执只在既有会话状态允许时工作。
 
 ## 1. 专题定位
 
