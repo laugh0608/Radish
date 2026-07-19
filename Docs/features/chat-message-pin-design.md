@@ -1,6 +1,6 @@
 # F4-E 聊天消息置顶
 
-> **状态**：F4-E-A / B / C 已完成；下一批为 F4-E-D 成组验收
+> **状态**：F4-E-A / B / C / D 已完成，专题关闭
 >
 > **复核日期**：2026-07-19
 >
@@ -213,7 +213,7 @@ items 按 `PinnedAt DESC, Id DESC` 排序，最多 20 条。无置顶也返回 r
 - 先更新 PC / mobile Pencil，再实现置顶条、完整列表、消息动作、定位、加载 / 空态 / 错误和 mobile Bottom Sheet。
 - 接入 Store revision、Hub、重连追平、中英文、键盘、焦点、长内容和四主题。
 
-### F4-E-D：成组验收
+### F4-E-D：成组验收（已完成）
 
 - 使用至少三个普通账号覆盖 Public、Announcement、普通 Private、Accepted / Pending / Declined / Blocked Direct、撤回与权限变化。
 - 执行 `zh / en × PC / mobile`、多标签、真实离线重连、并发目标状态、20 条上限、定位和 WebOS 矩阵。
@@ -241,3 +241,5 @@ items 按 `PinnedAt DESC, Id DESC` 排序，最多 20 条。无置顶也返回 r
 5. 正式 Web / WebOS 的 PC / mobile、中英文、键盘、多标签和重连矩阵通过。
 6. 置顶不污染未读、最后消息、搜索、通知、正文或频道排序。
 7. 临时数据清理、六库完整性、migration verify、定向验证和文档留痕全部通过。
+
+2026-07-19 的 F4-E-D 已满足以上七项条件，F4-E 正式关闭。三普通账号已覆盖 Public、Announcement、普通 Private、Direct 全状态、撤回与失权；中英文、PC / mobile、多标签、真实离线重连、并发目标状态、20 条上限、定位和 WebOS 均通过。验收没有发现新的共同根因，临时数据、凭据和备份已清理，六库完整性与严格 migration verify 通过。详细证据见 [F4-E-D 成组验收记录](/records/f4-e-d-chat-message-pin-stage-acceptance-2026-07-19)。

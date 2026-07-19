@@ -114,7 +114,9 @@
 
 F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成 A-D 批并关闭。权威 ACL、SQLite / PostgreSQL migration、正式 Web / WebOS、双账号 / 三账号 `zh / en × PC / mobile` 成组验收、共同根因修复和临时数据清理均已通过。
 
-当前选定专题为 [F4-E 聊天消息置顶](/features/chat-message-pin-design)。F4-E-A / B / C 已完成设计、服务端权威契约与正式 Web：独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条、目标状态、完整 Hub 快照、权限矩阵、撤回原子联动、SQLite / PostgreSQL migration、PC / mobile Pencil、置顶条 / 列表 / 定位、revision Store 与重连追平均已落地；下一批 F4-E-D 进入三普通账号成组验收。逐条已读和移动系统通知继续分别后置。
+[F4-E 聊天消息置顶](/features/chat-message-pin-design) 已完成 A-D 批并关闭：独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条、目标状态、完整 Hub 快照、权限矩阵、撤回原子联动、SQLite / PostgreSQL migration、正式 Web / WebOS 和三普通账号 `zh / en × PC / mobile` 成组验收均已通过。
+
+当前选定专题切换为 `F4-F 聊天轻量阅读回执`。首批 F4-F-A 只做现状审计与权威专题设计，先核实现有 `ChannelMember.LastReadMessageId`、在线成员、未读游标、Hub 和历史草案，再固定隐私、频道类型、聚合性能、页面、失败恢复、停止线与验收口径；设计确认前不进入代码。移动系统通知继续后置。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

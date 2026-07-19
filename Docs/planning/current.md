@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-E-D 聊天消息置顶：成组验收`
-- **产品下一顺位**：`完成三普通账号、zh / en × PC / mobile、多标签、真实离线重连、并发、20 条上限、定位与 WebOS 矩阵`
+- **工程第一顺位**：`F4-F-A 聊天轻量阅读回执：现状审计与专题设计`
+- **产品下一顺位**：`核实现有已读游标、在线成员、Hub 与历史草案，固定隐私、频道类型、性能、页面和停止线`
 - **复核日期**：`2026-07-19`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -86,6 +86,7 @@
   - 2026-07-19 F4-E-A 已完成：真实代码确认旧 Phase 2 所称 `PinnedMessageId / IsPinned` 预留字段并不存在；[权威专题设计](/features/chat-message-pin-design) 改用独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条活跃置顶、目标状态与完整 Hub 快照，并固定 Public / Announcement / 普通 Private / Direct 权限、撤回一致性、不污染边界和 A-D 验收口径。下一顺位进入 F4-E-B 服务端权威契约。
   - 2026-07-19 F4-E-B 已完成：`ChatMessagePin` 与 `20260719_005_chat_message_pin` migration、频道级原子目标状态 / revision、20 条上限、独立 `CanPinMessages`、撤回联动、Service / API / Hub 全量快照、稳定双语错误和 `@radish/http` 契约均已落地；SQLite / PostgreSQL 并发与迁移用例、后端全量和 Baseline Quick 通过。下一顺位进入 F4-E-C Pencil 与正式 Web。
   - 2026-07-19 F4-E-C 已完成：Pencil `P13F / P27F`、正式 `/messages` 与 WebOS 共用的紧凑置顶条、完整列表、消息动作、定位、mobile Bottom Sheet、按频道 revision Store、Hub 乱序保护、HTTP 初始 / 重连追平、撤回清理、账号 reset、中英文、键盘和四主题均已落地。Client `442` 项、相关 type-check / lint、client production build 与 Baseline Quick 通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-E-D 成组验收。
+  - 2026-07-19 F4-E-D 已完成并关闭专题：三个普通账号在 Gateway 正式路径与 WebOS 复用面覆盖 `zh / en × PC / mobile`、Public / Announcement / 普通 Private / Direct 全状态、撤回 / 失权、多标签、真实离线重连、并发目标状态、20 条上限和定位；没有发现新的共同根因。临时账号、频道、会话、消息、通知、凭据和备份已清理，精确残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-E-D 成组验收记录](/records/f4-e-d-chat-message-pin-stage-acceptance-2026-07-19)，工程第一顺位进入 F4-F-A 轻量阅读回执现状审计与专题设计。
 
 ## V1 产品与发布范围
 
@@ -169,7 +170,8 @@ Radish V1 的产品定位固定为：
 2. [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 的 A-D 批已经完成，真实生产链路、偏好、聚合竞态、写操作、恢复、目标失效和清理矩阵全部通过，专题已关闭。
 3. [F4-C 聊天历史搜索与消息定位](/features/chat-message-search-design) 的 A-D 批已经完成；权威检索、跨库迁移、正式 Web / WebOS、双账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
 4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A-D 批已经完成；权威 ACL、目标状态幂等、revision 实时快照、正式 Web / WebOS、三普通账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
-5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A / B / C 批已完成设计、服务端权威契约、PC / mobile Pencil 与正式 Web / WebOS 共用实现；下一顺位进入 F4-E-D，完成三普通账号、`zh / en × PC / mobile`、多标签、真实离线重连、并发目标状态、20 条上限、定位和 WebOS 成组验收。逐条已读和移动系统通知继续分别后置，主动生产证据采集保持最终收尾冻结。
+5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A-D 批已完成并关闭，权威 ACL、目标状态幂等、20 条上限、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过。
+6. 下一顺位进入 `F4-F-A 聊天轻量阅读回执` 的现状审计与专题设计；先核实现有 `ChannelMember.LastReadMessageId`、在线成员、未读游标、Hub 和历史草案，不直接沿用旧头像回执方案。移动系统通知继续后置，主动生产证据采集保持最终收尾冻结。
 
 ## 昨日事项（2026-07-18）
 
@@ -209,13 +211,14 @@ Radish V1 的产品定位固定为：
 15. 已完成 F4-E-A 真实实体、迁移、ACL、Direct、Hub、定位、Store 与旧文档交叉审计，裁决独立置顶表、频道 revision、20 条上限、目标状态、权限矩阵、撤回一致性、正式 Web 边界和 A-D 验收口径；旧单条覆盖与虚假预留口径不再作为实现依据。
 16. 已完成 F4-E-B 服务端权威契约：独立置顶实体与 ledger migration、SQLite / PostgreSQL 频道级事务锁、目标状态 / 20 条上限 / revision、Public / Announcement / Private / Direct 权限矩阵、撤回原子移除、HTTP / Hub 全量快照、LongId 与稳定双语错误均已落地；后端全量 `922` 项、Baseline Quick 与 PostgreSQL 专项 `2/2` 通过，下一顺位进入 F4-E-C。
 17. 已完成 F4-E-C PC / mobile Pencil、正式 Web / WebOS 置顶条、完整列表、消息动作、定位、revision Store、Hub 合并、重连追平、撤回清理、账号 reset、中英文、键盘和四主题适配；下一顺位进入 F4-E-D。
+18. 已完成 F4-E-D 三普通账号成组验收，覆盖 Public、Announcement、普通 Private、Direct 全状态、中英文、PC / mobile、多标签、真实离线重连、并发目标状态、20 条上限、撤回、失权、定位和 WebOS；本批没有发现新的共同根因，临时数据、凭据与备份已清理，六库完整性和严格 verify 通过，F4-E 正式关闭。
 
 ## 明日事项（2026-07-20）
 
-1. 进入 F4-E-D，使用至少三个普通账号覆盖 Public、Announcement、普通 Private、Accepted / Pending / Declined / Blocked Direct、撤回与权限变化。
-2. 执行 `zh / en × PC / mobile`、多标签、真实离线重连、并发目标状态、20 条上限、定位、键盘和 WebOS 矩阵，按共同根因成组修复并补定向测试。
-3. 清理临时 pin、账号、频道、消息、通知、凭据与备份，复核六库完整性、migration verify、静态门禁与专题完成标准。
-4. 主动生产证据采集继续保持最终收尾冻结，不随 F4-E-D 重启。
+1. 进入 F4-F-A，只读交叉审计 `ChannelMember.LastReadMessageId`、未读清零、在线成员、ChatHub、消息历史与旧阅读回执草案，确认真实能力和缺口。
+2. 建立权威专题设计，明确用户价值、Public / Announcement / Private / Direct 隐私边界、在线 / 离线语义、聚合与性能、正式 Web / WebOS 页面、失败恢复、停止线和 A-D 验收口径。
+3. 设计确认前不新增表、接口、Hub 事件或页面，不把旧草案中的“最多 3 个在线成员头像”直接视为现行长期方案。
+4. 移动系统通知和主动生产证据采集继续保持后置 / 最终收尾冻结。
 
 ## 并行维护线
 
