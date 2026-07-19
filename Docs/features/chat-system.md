@@ -4,13 +4,14 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.18
+> **最后更新**: 2026.07.19
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [前端架构与组件设计](./chat-frontend.md) ·
 > [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
 > [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md) ·
 > [表情包与 Reaction 系统](./emoji-sticker-system.md) ·
 > [文件上传设计](./file-upload-design.md)
 
@@ -126,8 +127,8 @@ public class Channel : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>最后一条消息时间（冗余，用于频道列表排序）</summary>
     public DateTime? LastMessageTime { get; set; }
 
-    /// <summary>当前置顶消息 ID（Phase 2，冗余，快速展示置顶预览条）</summary>
-    public long? PinnedMessageId { get; set; }
+    /// <summary>置顶集合 revision（F4-E，实际状态位于 ChatMessagePin）</summary>
+    public long PinRevision { get; set; }
 
     public long TenantId { get; set; }
     public bool IsDeleted { get; set; } = false;
@@ -179,11 +180,6 @@ public class ChannelMessage : RootEntityTKey<long>, IDeleteFilter
     public long? AttachmentId { get; set; }
 
     public DateTime CreateTime { get; set; }
-
-    // Phase 2：消息置顶
-    public bool IsPinned { get; set; } = false;
-    public DateTime? PinnedAt { get; set; }
-    public string? PinnedBy { get; set; }
 
     // IDeleteFilter（软删除 = 撤回）
     // DeletedAt 即为撤回时间，DeletedBy 即为撤回人
@@ -256,7 +252,7 @@ public class ChannelVo
     public int VoUnreadCount { get; set; }     // Service 层按当前用户填充
     public bool VoHasMention { get; set; }     // 未读中是否含 @我（红点高亮）
     public ChannelMessageVo? VoLastMessage { get; set; } // 最后一条消息预览
-    public ChannelMessageVo? VoPinnedMessage { get; set; } // Phase 2：当前置顶消息预览
+    public bool VoCanPinMessages { get; set; } // F4-E：服务端权威治理能力
 }
 ```
 
@@ -279,12 +275,11 @@ public class ChannelMessageVo
     public string? VoImageThumbnailUrl { get; set; }  // 运行时由 attachmentId 派生
     public bool VoIsRecalled { get; set; }            // IsDeleted=true 时为 true，内容置空
     public DateTime VoCreateTime { get; set; }
-    public bool VoIsPinned { get; set; }              // Phase 2：消息是否被置顶
 }
 ```
 
 **AutoMapper 策略**：
-- `Channel → ChannelVo`：自动映射（Vo 前缀），`VoUnreadCount`/`VoHasMention`/`VoLastMessage`/`VoPinnedMessage` 由 Service 手动填充
+- `Channel → ChannelVo`：自动映射（Vo 前缀），`VoUnreadCount`/`VoHasMention`/`VoLastMessage`/`VoCanPinMessages` 由 Service 手动填充
 - `ChannelMessage → ChannelMessageVo`：自动映射，`VoIsRecalled` 映射自 `IsDeleted`；`VoContent` 在 `IsDeleted=true` 时映射为 `null`（AutoMapper 条件映射）
 
 ---
@@ -398,7 +393,7 @@ public class ChatHub : Hub
 | `ConversationStateChanged` | 请求、阻断或归档等会话状态变化 | `{ channelId }` | 相关参与者的 `user:{userId}` 组；客户端收到后重读权威会话摘要 |
 | `MemberOnline` | 用户进入频道 | `{ channelId, userId, userName }` | `channel:{channelId}` 组 |
 | `MemberOffline` | 用户离开频道 | `{ channelId, userId }` | `channel:{channelId}` 组 |
-| `MessagePinned` | 消息被置顶/取消置顶（Phase 2） | `{ channelId, pinnedMessage: ChannelMessageVo or null }` | `channel:{channelId}` 组 |
+| `MessagePinsChanged` | 置顶集合发生实际变化（F4-E） | 完整 `ChatMessagePinStateVo`，包含 `channelId + revision + items` | `channel:{tenantId}:{channelId}` 组 |
 | `MemberReadUpdated` | 成员已读位置变化（Phase 2） | `{ channelId, userId, lastReadMessageId, userAvatarUrl }` | `channel:{channelId}` 组 |
 
 ### 客户端 → 服务端调用
@@ -449,8 +444,8 @@ void chatHub.stop();
 | GET | `/api/v1/ChannelMessage/GetHistory` | 登录 | 分页获取历史消息（`channelId + beforeMessageId + pageSize=50`） |
 | POST | `/api/v1/ChannelMessage/Send` | 登录 | 发送消息（文字或图片），成功后 Hub 广播 `MessageReceived` |
 | DELETE | `/api/v1/ChannelMessage/Recall/{id}` | 登录 | 撤回消息（软删除），Hub 广播 `MessageRecalled` |
-| PUT | `/api/v1/ChannelMessage/Pin/{id}` | Moderator | 置顶消息（同频道自动覆盖旧置顶），Hub 广播 `MessagePinned`（Phase 2） |
-| PUT | `/api/v1/ChannelMessage/Unpin/{id}` | Moderator | 取消置顶，Hub 广播 `MessagePinned`（pinnedMessage 为 null）（Phase 2） |
+| GET | `/api/v1/ChannelMessagePin/GetState?channelId=...` | `CanView` | 获取最多 20 条置顶与频道 revision（F4-E） |
+| POST | `/api/v1/ChannelMessagePin/Set` | `CanPinMessages` | 按目标状态置顶 / 取消，实际变化后广播完整 `MessagePinsChanged`（F4-E） |
 
 ### 发送消息请求体
 
@@ -544,12 +539,12 @@ GET /api/v1/ChannelMessage/GetHistory?channelId=1&beforeMessageId=&pageSize=50
 
 ## 未来规划
 
-### Phase 2：消息置顶与阅读回执
+### F4-E：消息置顶；Phase 2 后置项：阅读回执
 
 消息置顶：
-- 数据模型已预留 `Channel.PinnedMessageId`、`ChannelMessage.IsPinned/PinnedAt/PinnedBy`，Phase 2 直接启用。
-- 新增 REST API：`Pin`/`Unpin`（Service 层保证同频道只有一条置顶）。
-- Hub 推送 `MessagePinned`，payload 包含完整 `ChannelMessageVo`（取消时为 null）。
+- 旧草案所称 `Channel.PinnedMessageId`、`ChannelMessage.IsPinned/PinnedAt/PinnedBy` 预留字段在真实代码中不存在，不再作为实现依据。
+- 权威方案见 [F4-E 聊天消息置顶](./chat-message-pin-design.md)：独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条、目标状态和完整 Hub 快照。
+- Public / Announcement、普通 Private 与 Direct 使用不同的服务端 `CanPinMessages` 规则；消息撤回在同一事务中移除活跃置顶。
 
 消息阅读回执：
 - 无需改表，`ChannelMember.LastReadMessageId` 已有。

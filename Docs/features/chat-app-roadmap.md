@@ -4,14 +4,15 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.18
+> **最后更新**: 2026.07.19
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室 App 架构设计](./chat-app-architecture.md) ·
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
 > [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) ·
-> [聊天历史搜索与消息定位设计](./chat-message-search-design.md)
+> [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md)
 
 ---
 
@@ -149,20 +150,20 @@
 ## P2 任务清单
 
 - 一对一私聊与会话管理已按 [专题设计](./chat-direct-conversation-design.md) 完成数据与访问边界、会话生命周期、正式 Web 页面和成组验收。
-- 消息搜索按 [F4-C 专题设计](./chat-message-search-design.md) 分四批推进：设计、服务端权威检索、正式 Web 工作区、成组验收。
-- F4-C-B 先完成派生 `SearchText`、SQLite / PostgreSQL migration、批量成员 ACL、快照 cursor 与 API，不提前开放页面入口。
+- 消息搜索已按 [F4-C 专题设计](./chat-message-search-design.md) 完成 A-D 批并关闭。
+- 消息 Reaction 已按 [F4-D 专题设计](./chat-message-reaction-design.md) 完成 A-D 批并关闭。
+- 消息置顶进入 [F4-E 专题](./chat-message-pin-design.md)，采用独立状态表、频道 revision 和最多 20 条共享置顶。
 
 以下能力继续作为独立后续专题，不并入 F4-C：
 
-- Reaction 集成（复用表情系统）。
-- 消息置顶（Pin）：Moderator/Owner 可置顶单条消息，频道顶部展示 `PinnedMessageBar`，Hub `MessagePinned` 实时同步。
+- 消息置顶（Pin）：按 F4-E 权威专题分 A-D 批推进；管理权限同时覆盖频道角色和 Accepted Direct，不采用旧单条覆盖草案。
 - 消息阅读回执（轻量版）：消息气泡底部展示已读在线成员头像（至多 3 个），Hub `MemberReadUpdated` 实时推送，基于 `ChannelMember.LastReadMessageId`。
 - 菜单/按钮级权限细化（只读频道、禁言等）。
 
 验收标准：
 - 一对一私聊按专题设计的权限、请求、恢复和 PC / mobile 矩阵验收，且不破坏公开频道消息链路。
 - 搜索同时覆盖当前会话和全部当前可见会话，结果可复用现有消息窗口协议跳转到上下文；权限、cursor、删除 / 阻断和跨库行为符合 F4-C 专题设计。
-- 置顶消息在多端实时同步，点击可跳转至原始消息位置，无置顶时预览条自动收起。
+- 置顶集合以带 revision 的完整快照多端同步，点击可跳转至原始消息位置，无置顶时预览条自动收起。
 - 阅读回执头像仅显示在线成员的已读状态，离线成员不占位。
 - 权限变更在前后端均可生效并可审计。
 

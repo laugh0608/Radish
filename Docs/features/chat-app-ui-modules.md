@@ -4,14 +4,15 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.18
+> **最后更新**: 2026.07.19
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室系统 - 前端架构与组件设计](./chat-frontend.md) ·
 > [聊天室 App 实时与同步设计](./chat-app-realtime.md) ·
 > [社区讨论与聊天室侧栏 UI 治理方案](./community-discussion-and-chat-ui-governance.md) ·
-> [聊天历史搜索与消息定位设计](./chat-message-search-design.md)
+> [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md)
 
 ---
 
@@ -51,11 +52,11 @@
 - 支持收起/展开，移动端默认隐藏。
 - 当前按“单入口收口”治理：右栏只保留成员栏标题行这一个展开 / 收起入口，不再在频道头部重复放置“收起成员”按钮。
 
-5. `PinnedMessageBar`（Phase 2）
+5. `PinnedMessageBar`（F4-E）
 - 展示在消息区顶部（消息历史上方，频道标题下方）。
-- 显示置顶消息的发送者名称与内容截断（50 字符）。
-- 点击跳转至消息历史列表中的原始消息位置。
-- Moderator/Owner 可点击"×"取消置顶；普通成员只读。
+- 显示最近一条置顶的发送者、摘要和当前总数，完整列表 PC 使用紧凑面板 / 抽屉，mobile 使用 Bottom Sheet。
+- 点击条目复用权威消息窗口定位；列表最多展示服务端返回的 20 条完整快照。
+- `VoCanPinMessages` 为 true 时可置顶或取消；普通成员和只读 Direct 状态只读。
 - 无置顶消息时完全收起，不占位。
 
 6. `ChatMessageSearchPanel`（F4-C）
@@ -125,10 +126,10 @@
 - 若图片上传完成时用户已切到其他频道，上传结果会回写到原频道草稿，避免误发。
 - 发送成功后清除对应草稿。
 
-6. 消息置顶（Phase 2）
-- 置顶条位于消息历史与频道标题之间；格式：`📌 [发送者]: [内容截断 50 字]`。
-- 右侧有"×"按钮（仅 Moderator/Owner 可见）；点击条目时复用消息窗口定位能力。
-- 置顶/取消后 Hub 广播 `MessagePinned`，置顶条实时更新或收起。
+6. 消息置顶（F4-E）
+- 置顶条位于消息历史与频道标题之间；最近项显示 `📌 [发送者]: [内容摘要]` 与总数。
+- 消息动作与列表取消入口只消费服务端 `VoCanPinMessages`，不在前端自行猜角色。
+- 置顶/取消后 Hub 广播带频道 revision 的 `MessagePinsChanged` 完整快照，Store 只接受更高 revision。
 
 7. 阅读回执（Phase 2）
 - 仅展示在线成员且 `lastReadMessageId ≥ messageId` 的已读头像。
