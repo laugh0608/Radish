@@ -112,7 +112,9 @@
 
 [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 已于 2026-07-18 完成 A-D 批：稳定定义、结构化目标、偏好、权威分组 / 摘要、SQLite / PostgreSQL migration、正式 Web 工作区和三普通账号 `zh / en × PC / mobile` 成组验收均已通过，专题关闭。
 
-当前选定专题为 F4-C 聊天历史搜索与消息定位。F4-C-A 现状审计和 [专题设计](/features/chat-message-search-design) 已完成，固定采用派生 `SearchText`、服务端成员 ACL、SQLite / PostgreSQL 字面量包含、快照 cursor 和现有消息窗口定位协议。下一批 F4-C-B 完成 migration、回填、仓储 / Service / API / `@radish/http` 契约和定向测试；随后依次进入 F4-C-C Pencil + 正式 Web 页面、F4-C-D 双账号 `zh / en × PC / mobile` 成组验收。消息 Reaction、置顶和移动系统通知继续分别后置。
+F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成 A-D 批并关闭。权威 ACL、SQLite / PostgreSQL migration、正式 Web / WebOS、双账号 / 三账号 `zh / en × PC / mobile` 成组验收、共同根因修复和临时数据清理均已通过。
+
+当前选定专题为 F4-E 聊天消息置顶。F4-E-A 先审计既有 `ChannelMessage.IsPinned`、Chat 权限、Hub、消息定位和 PC / mobile 入口，建立专题设计并固定治理权限、置顶状态真值、实时同步、撤回 / 删除 / 失权恢复、停止线和验证口径；专题边界确认前不进入接口或页面实现。逐条已读和移动系统通知继续分别后置。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

@@ -12,7 +12,7 @@
 
 本组文档聚焦聊天室在 `radish.client` 中作为独立应用的前端架构与交互实现，按“架构/实时/模块/里程碑”拆分，避免单文档持续膨胀。
 
-当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction 与移动端列表 / 详情切换。F4-C 搜索已经关闭，F4-D-A / B / C 已完成消息 Reaction 设计、服务端权威契约、Pencil 与正式 Web，下一顺位进入成组验收；置顶、阅读回执和移动系统通知继续后置。
+当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction 与移动端列表 / 详情切换。F4-C 搜索与 F4-D Reaction 均已完成 A-D 批并关闭；下一顺位进入 F4-E-A 消息置顶的现状审计与专题设计，逐条已读和移动系统通知继续后置。
 
 后台数据模型与 API 细节请优先参考：
 - [聊天室系统设计](./chat-system.md)

@@ -81,11 +81,7 @@ internal sealed class ChatMessageSearchSchemaMigration : ISchemaMigration
         var lastId = 0L;
         while (true)
         {
-            var messages = db.Queryable<ChannelMessage>()
-                .Where(message => message.Id > lastId)
-                .OrderBy(message => message.Id)
-                .Take(BackfillBatchSize)
-                .ToList();
+            var messages = LoadMessageBatch(db, lastId);
             if (messages.Count == 0)
             {
                 break;
@@ -116,11 +112,7 @@ internal sealed class ChatMessageSearchSchemaMigration : ISchemaMigration
         var lastId = 0L;
         while (true)
         {
-            var messages = db.Queryable<ChannelMessage>()
-                .Where(message => message.Id > lastId)
-                .OrderBy(message => message.Id)
-                .Take(BackfillBatchSize)
-                .ToList();
+            var messages = LoadMessageBatch(db, lastId);
             if (messages.Count == 0)
             {
                 return;
@@ -142,6 +134,23 @@ internal sealed class ChatMessageSearchSchemaMigration : ISchemaMigration
 
             lastId = messages[^1].Id;
         }
+    }
+
+    private static List<ChannelMessage> LoadMessageBatch(ISqlSugarClient db, long lastId)
+    {
+        return db.Queryable<ChannelMessage>()
+            .Where(message => message.Id > lastId)
+            .OrderBy(message => message.Id)
+            .Take(BackfillBatchSize)
+            .Select(message => new ChannelMessage
+            {
+                Id = message.Id,
+                Type = message.Type,
+                Content = message.Content,
+                SearchText = message.SearchText,
+                IsDeleted = message.IsDeleted
+            })
+            .ToList();
     }
 
     private static string? DeriveSearchText(ChannelMessage message)

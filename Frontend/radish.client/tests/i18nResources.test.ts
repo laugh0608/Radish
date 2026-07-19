@@ -4,6 +4,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import i18next from 'i18next';
+import { enChat } from '../src/locales/en/chat.ts';
+import { zhChat } from '../src/locales/zh/chat.ts';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
@@ -136,4 +138,34 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
 
   await instance.changeLanguage('zh');
   assert.equal(instance.t('shop.productCount', { count: 2 }), '2 件商品');
+});
+
+test('聊天回应无障碍文案应按数量解析中英文单复数', async () => {
+  const instance = i18next.createInstance();
+  await instance.init({
+    lng: 'en',
+    resources: {
+      en: { translation: enChat },
+      zh: { translation: zhChat },
+    },
+  });
+
+  assert.equal(
+    instance.t('chat.reaction.label.selected', { emoji: '👍', count: 1 }),
+    '👍, 1 person reacted, selected'
+  );
+  assert.equal(
+    instance.t('chat.reaction.label.unselected', { emoji: '👍', count: 2 }),
+    '👍, 2 people reacted, not selected'
+  );
+
+  await instance.changeLanguage('zh');
+  assert.equal(
+    instance.t('chat.reaction.label.selected', { emoji: '👍', count: 1 }),
+    '👍，1 人回应，已选择'
+  );
+  assert.equal(
+    instance.t('chat.reaction.label.unselected', { emoji: '👍', count: 2 }),
+    '👍，2 人回应，未选择'
+  );
 });

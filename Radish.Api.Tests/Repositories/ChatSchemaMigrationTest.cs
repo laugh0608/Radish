@@ -325,6 +325,35 @@ public sealed class ChatSchemaMigrationTest
     }
 
     [Fact]
+    public void ChatMessageSearchVerify_ShouldRemainCompatibleBeforeReactionColumnMigration()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-before-reaction-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<ChannelMessage>();
+            var message = CreateMessage(8251, "before-reaction");
+            message.Content = "Search remains verifiable";
+            message.SearchText = "search remains verifiable";
+            db.Insertable(message).ExecuteCommand();
+            db.Ado.ExecuteCommand("ALTER TABLE \"ChannelMessage\" DROP COLUMN \"ReactionRevision\"");
+
+            var issues = ChatMessageSearchSchemaMigration.Instance.Verify(db, services);
+
+            Assert.Empty(issues);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     [Trait("Database", "PostgreSQL")]
     public async Task ChatMessageSearchMigration_ShouldSupportPostgreSql()
     {
