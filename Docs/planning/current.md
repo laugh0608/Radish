@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-C-C 聊天历史搜索：Pencil + 正式 Web 搜索工作区`
-- **产品下一顺位**：`先完成 Pencil PC / mobile 搜索设计源，再实现正式 Web；随后执行 F4-C-D 双账号成组验收`
+- **工程第一顺位**：`F4-C-D 聊天历史搜索：双账号 PC / mobile 成组验收`
+- **产品下一顺位**：`完成正式 Web、WebOS 复用面与权威消息定位的真实运行态矩阵，修复同类根因并关闭 F4-C`
 - **复核日期**：`2026-07-19`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -78,6 +78,7 @@
   - 2026-07-18 F4-B-D 已完成并关闭通知中心深化专题：三个普通账号在 Gateway 正式路径完成关注、评论 / 回复、点赞聚合、私信请求、商城购买、偏好抑制、已读竞态、多标签 / 离线 / cursor 恢复和目标失效，`zh / en × PC / mobile` 与 WebOS 复用面均通过。验收按共同根因补齐历史 delivery schema 前滚、仓储写入行数门禁、关注软删恢复、触发者名称、结构化目标可用性和 NotificationHub 生命周期；临时业务数据、凭据、容器与备份均已清理，六库完整性与精确残留正常。F4-B 正式关闭，工程第一顺位进入 F4-C 聊天历史搜索与消息定位的现状审计和专题设计。
   - 2026-07-18 F4-C-A 已完成现状审计和专题设计：搜索范围固定为当前会话 / 全部当前可见会话，使用派生 `SearchText`、服务端成员 ACL、SQLite / PostgreSQL 字面量包含、快照 cursor 和现有 `GetMessageWindow` 定位；PC / mobile 页面、隐私、恢复、停止线和 A-D 批次已明确。下一顺位进入 F4-C-B 服务端权威检索契约，不提前改页面。
   - 2026-07-19 F4-C-B 已完成：`SearchText` 共用规范化器、`20260718_003_chat_message_search` migration、历史分批回填与备份恢复、批量成员 ACL、专属 Repository / Service、POST API、查询指纹 / 消息快照 / 可见频道集合 cursor、稳定双语错误和 `@radish/http` 契约已落地。后端全量 `896` 项通过、`18` 项环境用例按配置跳过；本专题 PostgreSQL 17 migration 与 `strpos` 字面查询 `2` 项另行实跑通过，解决方案构建、Baseline Quick 与相关 workspace 检查通过。按停止线未改 Pencil 或正式 Web 页面，下一顺位进入 F4-C-C。
+  - 2026-07-19 F4-C-C 已完成：Pencil `P13C / P13D / P27C / P27D`、正式 `/messages` 搜索工作区、独立搜索与消息导航 Hook、PC 侧栏、mobile 单列状态、cursor 继续加载、`GetMessageWindow` 权威定位、Back / Forward 恢复、中英文和完整页面状态已落地。Client `430` 项、type-check、lint、production build、Baseline Quick 与仓库卫生通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-C-D。
 
 ## V1 产品与发布范围
 
@@ -123,6 +124,7 @@ Radish V1 的产品定位固定为：
 - [F3-D i18n 专题验收记录](/records/f3-d-i18n-stage-acceptance-2026-07-17)
 - [F4-A 首批真实使用证据整理与反馈归因记录](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)
 - [F4-C-B 聊天历史搜索服务端权威检索完成记录](/records/f4-c-b-chat-message-search-server-contract-2026-07-19)
+- [F4-C-C 聊天历史搜索正式 Web 工作区完成记录](/records/f4-c-c-chat-message-search-web-workspace-2026-07-19)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -153,7 +155,7 @@ Radish V1 的产品定位固定为：
 1. 一对一私聊专题已经完成批次 A-D 并关闭；详细矩阵、修复、临时数据清理与未覆盖风险见 [一对一私聊与会话管理设计](/features/chat-direct-conversation-design)。
 2. [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 的 A-D 批已经完成，真实生产链路、偏好、聚合竞态、写操作、恢复、目标失效和清理矩阵全部通过，专题已关闭。
 3. F4-C-A 现状审计和 [聊天历史搜索与消息定位设计](/features/chat-message-search-design) 已完成；搜索文本、ACL、索引、跨库语义、cursor、定位、PC / mobile、失败恢复和停止线已经固定。
-4. F4-C-B 服务端权威检索已经完成；下一批 F4-C-C 先更新 Pencil `P13C / P13D / P27C / P27D`，再实现正式 Web 搜索工作区和权威消息窗口定位。随后进入 F4-C-D `zh / en × PC / mobile` 双账号成组验收。消息 Reaction、置顶和移动系统通知不并行展开，主动生产证据采集保持最终收尾冻结。
+4. F4-C-B 服务端权威检索与 F4-C-C Pencil / 正式 Web 工作区已经完成；下一批 F4-C-D 执行 `zh / en × PC / mobile` 双账号搜索、分页、定位、权限变化与恢复成组验收。消息 Reaction、置顶和移动系统通知不并行展开，主动生产证据采集保持最终收尾冻结。
 
 ## 昨日事项（2026-07-18）
 
@@ -181,14 +183,16 @@ Radish V1 的产品定位固定为：
 3. 已扩展批量可见频道快照并实现专属搜索 Repository；当前 / 全部会话共用既有成员 ACL，管理员不穿透私聊，SQLite `instr` 与 PostgreSQL `strpos` 对 `% / _ / \\ / 引号` 执行参数化字面匹配。
 4. 已实现 `IChatMessageSearchService`、POST `ChannelMessage/Search`、DTO / Vo、稳定双语错误和 `@radish/http` 契约；cursor 绑定账号与查询指纹、消息快照、可见频道集合和 `(CreateTime, Id)`，条件或权限变化显式返回 `Chat.SearchCursorInvalid`。
 5. 后端全量 `896` 项通过、`18` 项环境用例按配置跳过；本专题 PostgreSQL 17 migration / Repository `2` 项另行实跑通过，解决方案构建为 `0 warning / 0 error`，`@radish/http` type-check / lint 与 Baseline Quick 通过。
-6. 已遵守停止线：未修改 Pencil、`/messages` 页面、WebOS 布局或 Flutter，未启动 Radish 服务或执行浏览器 smoke；下一顺位进入 F4-C-C。
+6. 已更新 Pencil `P13C / P13D / P27C / P27D`，四个 PC / mobile 搜索与状态画板均通过布局检查。
+7. 已完成正式 `/messages` 搜索工作区、内存搜索状态、cursor 继续加载、消息导航 Hook、`GetMessageWindow` 权威定位、Back / Forward 恢复和 WebOS 同组件兼容；关键词不进入 URL、持久化或日志。
+8. Client `430` 项、type-check、lint、production build、`@radish/http` 检查、Baseline Quick、仓库卫生与 `git diff --check` 均通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-C-D。
 
 ## 明日事项（2026-07-20）
 
-1. 先更新 Pencil `P13C / P13D / P27C / P27D`，固定 PC 搜索侧栏、mobile 单列搜索结果、范围 / 时间筛选和结果定位状态，不绕过设计源直接改页面。
-2. 抽出消息导航 Hook，接入正式 `/messages` 搜索工作区、cursor 继续加载和 `GetMessageWindow` 权威定位；搜索失败不得清空当前会话、历史或草稿。
-3. 完成中英文、键盘 / 焦点、加载 / 空态 / 错误 / 离线、长文本、目标撤回 / 失效和账号切换清理；WebOS 只做同组件阻断级兼容。
-4. 开发中执行 client 与 `@radish/http` 定向测试、type-check、lint、production build、Baseline Quick 和仓库卫生；真实双账号 PC / mobile 矩阵留给 F4-C-D。
+1. 在当前任务明确授权启动前后端后，按 F4-C-D 使用至少两个普通账号准备公开频道、互关私聊、陌生请求、拒绝 / 阻断和无权私有频道样本。
+2. 执行 `zh / en × 1920 × 1080 PC / 390 × 844 mobile` 的当前 / 全部会话搜索、日期筛选、cursor 继续加载、消息定位、Back / Forward、撤回和权限变化矩阵。
+3. 复核离线 / 重连、目标失效、长文本、键盘 / 焦点、四主题 token 与 WebOS 阻断级复用面；按共同根因成组修复并扩大定向回归。
+4. 验收完成后清理临时账号、频道、消息、会话、搜索样本、浏览器凭据、容器和备份，补正式记录并关闭 F4-C。
 
 ## 并行维护线
 

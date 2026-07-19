@@ -14,6 +14,7 @@ import { normalizeEntityId } from '@/types/chat';
 import { getErrorMessage } from './chatApp.helpers';
 import { isDirectConversationChannel, resolveConversationNoticeKey } from './chatConversationPresentation';
 import styles from './ChatApp.module.css';
+import searchStyles from './ChatSearchControls.module.css';
 
 interface ChatConversationHeaderProps {
   activeChannel: ChannelVo | null;
@@ -28,6 +29,8 @@ interface ChatConversationHeaderProps {
     avatarUrl?: string | null;
   }) => void;
   onConversationChanged: (action: DirectConversationAction) => Promise<void>;
+  searchOpen: boolean;
+  onOpenSearch: () => void;
 }
 
 export function ChatConversationHeader({
@@ -38,6 +41,8 @@ export function ChatConversationHeader({
   routeUnavailable,
   onOpenUserProfile,
   onConversationChanged,
+  searchOpen,
+  onOpenSearch,
 }: ChatConversationHeaderProps) {
   const { t } = useTranslation();
   const [pendingAction, setPendingAction] = useState<DirectConversationAction | null>(null);
@@ -125,8 +130,18 @@ export function ChatConversationHeader({
           </div>
         </div>
 
-        {isDirect && activeChannel && (
-          <div className={styles.conversationHeaderActions}>
+        <div className={styles.conversationHeaderActions}>
+          <button
+            type="button"
+            className={searchStyles.conversationSearchButton}
+            aria-pressed={searchOpen}
+            onClick={onOpenSearch}
+          >
+            <Icon icon="mdi:magnify" size={17} />
+            <span>{t('chat.search.open')}</span>
+          </button>
+          {isDirect && activeChannel && (
+            <>
             {peerUserId && activeChannel.voIsPeerAvailable && (
               <button type="button" className={styles.conversationProfileButton} onClick={openPeerProfile}>
                 <Icon icon="mdi:account-outline" size={17} />
@@ -154,8 +169,9 @@ export function ChatConversationHeader({
                 )}
               </div>
             </details>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {routeUnavailable && (

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import type { ChannelVo, ChatChannelListView, EntityIdValue } from '@/types/chat';
 import {
   areEntityIdsEqual,
@@ -8,6 +9,7 @@ import {
 import { getMessagePreviewText } from './chatApp.helpers';
 import { resolveMediaUrl } from '@/utils/media';
 import styles from './ChatApp.module.css';
+import searchStyles from './ChatSearchControls.module.css';
 
 type ChatChannelSectionKey = 'mutual' | 'stranger' | 'group' | 'public' | 'archived';
 
@@ -54,6 +56,7 @@ interface ChatChannelSidebarProps {
   listError: string | null;
   onSelectChannel: (channelId: string) => void;
   onChangeListView: (view: ChatChannelListView) => void;
+  onOpenSearch: () => void;
 }
 
 function resolveChannelSectionKey(channel: ChannelVo): ChatChannelSectionKey {
@@ -105,6 +108,7 @@ export const ChatChannelSidebar = ({
   listError,
   onSelectChannel,
   onChangeListView,
+  onOpenSearch,
 }: ChatChannelSidebarProps) => {
   const { t } = useTranslation();
   const channelSections = useMemo(() => {
@@ -129,7 +133,12 @@ export const ChatChannelSidebar = ({
     <aside className={styles.sidebar}>
       <div className={styles.sidebarHeader}>
         <span className={styles.sidebarTitle}>{t('desktop.apps.chat.name')}</span>
-        <span className={styles.sidebarCount}>{t('chat.sidebar.total', { count: channels.length })}</span>
+        <span className={searchStyles.sidebarHeaderActions}>
+          <span className={styles.sidebarCount}>{t('chat.sidebar.total', { count: channels.length })}</span>
+          <button type="button" className={searchStyles.sidebarSearchButton} onClick={onOpenSearch} aria-label={t('chat.search.open')}>
+            <Icon icon="mdi:magnify" size={17} />
+          </button>
+        </span>
       </div>
       <div className={styles.sidebarViews} aria-label={t('chat.sidebar.viewsLabel')}>
         <button

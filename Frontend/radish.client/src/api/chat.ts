@@ -6,6 +6,8 @@ import {
   configureApiClient,
   createApiResponseError,
   type ParsedApiResponse,
+  type ChannelMessageSearchPageVo,
+  type SearchChannelMessagesDto,
 } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import type {
@@ -200,6 +202,25 @@ export async function getChannelMessageWindow(
 
   if (!response.ok || !response.data) {
     throw createChatApiError(response, '加载目标消息窗口失败');
+  }
+
+  return response.data;
+}
+
+export async function searchChannelMessages(
+  request: SearchChannelMessagesDto
+): Promise<ChannelMessageSearchPageVo> {
+  const response = await apiPost<ChannelMessageSearchPageVo>(
+    '/api/v1/ChannelMessage/Search',
+    request,
+    {
+      withAuth: true,
+      timeout: CHAT_READ_TIMEOUT_MS,
+    }
+  );
+
+  if (!response.ok || !response.data) {
+    throw createChatApiError(response, '搜索消息失败');
   }
 
   return response.data;

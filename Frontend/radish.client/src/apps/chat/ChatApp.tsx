@@ -1,6 +1,8 @@
 import { type ChangeEvent, type ClipboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ChannelMessageSearchItemVo } from '@radish/http';
 import { toast } from '@radish/ui/toast';
+import { Icon } from '@radish/ui/icon';
 import {
   attachmentImageAccept,
   isSupportedAttachmentImageFile,
@@ -50,7 +52,6 @@ import {
   resolveAttachmentAssetUrl,
   resolveMediaUrl,
   type MentionContext,
-  type MessageFocusTarget,
   type MessageNavigationTarget,
   type PendingImageDraft,
 } from './chatApp.helpers';
@@ -61,13 +62,15 @@ import { ChatMemberPanel } from './ChatMemberPanel';
 import { ChatMentionMenu } from './ChatMentionMenu';
 import { ChatMessageContent } from './ChatMessageContent';
 import { ChatMessageList } from './ChatMessageList';
+import { ChatMessageSearchPanel } from './ChatMessageSearchPanel';
 import { canSendConversationAttachment, resolveConversationNoticeKey } from './chatConversationPresentation';
 import { useChatConversationWorkspace } from './useChatConversationWorkspace';
+import { useChatMessageNavigation } from './useChatMessageNavigation';
 import styles from './ChatApp.module.css';
+import searchStyles from './ChatSearchControls.module.css';
 
 const PAGE_SIZE = 50;
 const MEMBER_REFRESH_INTERVAL_MS = 15_000;
-const MESSAGE_HIGHLIGHT_DURATION_MS = 2_600;
 
 function isCompactChatViewport(): boolean {
   return typeof window !== 'undefined' && window.innerWidth <= 720;
@@ -83,9 +86,22 @@ export interface ChatAppProfileNavigationTarget {
 interface ChatAppProps {
   onOpenUserProfile?: (target: ChatAppProfileNavigationTarget) => void;
   onOpenFocusedChannel?: (channelId: string) => void;
+  onOpenMessageResult?: (target: { channelId: string; messageId: string }) => void;
+  onBackToConversationList?: () => void;
+  searchRestoreRevision?: number;
+  searchHideRevision?: number;
+  onSearchVisibilityChange?: (visible: boolean) => void;
 }
 
-export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProps = {}) => {
+export const ChatApp = ({
+  onOpenUserProfile,
+  onOpenFocusedChannel,
+  onOpenMessageResult,
+  onBackToConversationList,
+  searchRestoreRevision = 0,
+  searchHideRevision = 0,
+  onSearchVisibilityChange,
+}: ChatAppProps = {}) => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const currentWindow = useCurrentWindow();
@@ -141,24 +157,19 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
   const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchMounted, setSearchMounted] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
-  const [messageNavigationTarget, setMessageNavigationTarget] = useState<MessageNavigationTarget | null>(null);
-  const [messageFocusTarget, setMessageFocusTarget] = useState<MessageFocusTarget | null>(null);
-  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactChatViewport());
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement | null>(null);
-  const messageElementMapRef = useRef(new Map<string, HTMLDivElement>());
   const previousConnectionStateRef = useRef(connectionState);
   const previousChannelIdRef = useRef<EntityIdValue | null>(null);
   const activeChannelIdRef = useRef<EntityIdValue | null>(null);
   const loadedDraftChannelRef = useRef<EntityIdValue | null>(null);
-  const handledWindowNavigationRef = useRef<string | null>(null);
   const handledMessageWindowLoadRef = useRef<string | null>(null);
-  const messageNavigationTargetRef = useRef<MessageNavigationTarget | null>(null);
-  const messageHighlightTimerRef = useRef<number | null>(null);
   const tempMessageIdRef = useRef(-1);
   const composerStateRef = useRef<{ messageInput: string; replyTarget: ChannelMessageVo | null; pendingImage: PendingImageDraft | null }>({
     messageInput: '',
@@ -196,6 +207,27 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
     return messageMap[getEntityKey(activeChannelId)] || [];
   }, [activeChannelId, messageMap]);
   const activeChannelKey = useMemo(() => getEntityKey(activeChannelId), [activeChannelId]);
+  const {
+    navigationTarget: messageNavigationTarget,
+    navigationTargetRef: messageNavigationTargetRef,
+    focusTarget: messageFocusTarget,
+    highlightedMessageId,
+    targetUnavailable: messageTargetUnavailable,
+    setMessageElementRef,
+    clearMessageHighlight,
+    clearNavigation: clearMessageNavigation,
+    completeMessageWindow,
+    failMessageWindow,
+    navigateToMessage,
+  } = useChatMessageNavigation({
+    routedChannelId: windowParams.channelId,
+    routedMessageId: windowParams.messageId,
+    navigationKey: windowParams.navigationKey,
+    channels,
+    activeChannelId,
+    activeMessages,
+    setActiveChannel,
+  });
 
   const typingUsers = useMemo(() => {
     if (!activeChannelId) {
@@ -228,6 +260,54 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
     };
   }, []);
 
+  useEffect(() => {
+    if (searchRestoreRevision > 0) {
+      setMemberPanelCollapsed(true);
+      setSearchMounted(true);
+      setSearchOpen(true);
+    }
+  }, [searchRestoreRevision]);
+
+  useEffect(() => {
+    if (searchHideRevision > 0) {
+      setSearchOpen(false);
+    }
+  }, [searchHideRevision]);
+
+  useEffect(() => {
+    onSearchVisibilityChange?.(searchOpen);
+  }, [onSearchVisibilityChange, searchOpen]);
+
+  useEffect(() => () => {
+    onSearchVisibilityChange?.(false);
+  }, [onSearchVisibilityChange]);
+
+  const openMessageSearch = useCallback(() => {
+    setMemberPanelCollapsed(true);
+    setSearchMounted(true);
+    setSearchOpen(true);
+  }, []);
+
+  const handleOpenSearchResult = useCallback((item: ChannelMessageSearchItemVo) => {
+    const target = {
+      channelId: item.voChannelId,
+      messageId: item.voMessageId,
+    };
+    if (onOpenMessageResult) {
+      onOpenMessageResult(target);
+    } else {
+      openApp('chat', {
+        ...target,
+        __navigationKey: `search:${target.channelId}:${target.messageId}:${Date.now()}`,
+      });
+      navigateToMessage(target.channelId, target.messageId);
+    }
+
+    if (isCompactViewport) {
+      setSearchOpen(false);
+    }
+  }, [isCompactViewport, navigateToMessage, onOpenMessageResult, openApp]);
+
   const scrollToBottom = useCallback(() => {
     const scrollEl = messageScrollRef.current;
     if (!scrollEl) {
@@ -242,37 +322,6 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
     setMentionOptions([]);
     setMentionSelectedIndex(0);
     setMentionLoading(false);
-  }, []);
-
-  const clearMessageHighlight = useCallback(() => {
-    if (messageHighlightTimerRef.current !== null) {
-      window.clearTimeout(messageHighlightTimerRef.current);
-      messageHighlightTimerRef.current = null;
-    }
-
-    setHighlightedMessageId(null);
-  }, []);
-
-  const highlightMessage = useCallback((messageId: string) => {
-    clearMessageHighlight();
-    setHighlightedMessageId(messageId);
-    messageHighlightTimerRef.current = window.setTimeout(() => {
-      setHighlightedMessageId((current) => (current === messageId ? null : current));
-      messageHighlightTimerRef.current = null;
-    }, MESSAGE_HIGHLIGHT_DURATION_MS);
-  }, [clearMessageHighlight]);
-
-  const setMessageElementRef = useCallback((messageId: string, element: HTMLDivElement | null) => {
-    if (!messageId) {
-      return;
-    }
-
-    if (element) {
-      messageElementMapRef.current.set(messageId, element);
-      return;
-    }
-
-    messageElementMapRef.current.delete(messageId);
   }, []);
 
   const updateHistoryAvailability = useCallback((
@@ -459,42 +508,25 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
       return;
     }
 
-    let shouldFallbackToLatest = false;
     setLoadingHistory(true);
 
     try {
       const windowData = await getChannelMessageWindow(channelId, target.messageId);
       setChannelMessages(channelId, windowData.voMessages);
       updateHistoryAvailability(channelId, windowData.voHasMoreBefore, windowData.voHasMoreAfter);
-      setMessageFocusTarget({
-        channelId,
-        messageId: getEntityKey(windowData.voAnchorMessageId),
-        signature: target.signature,
-      });
-      if (messageNavigationTargetRef.current?.signature === target.signature) {
-        messageNavigationTargetRef.current = null;
-      }
-      setMessageNavigationTarget((current) => (current?.signature === target.signature ? null : current));
+      completeMessageWindow(target, getEntityKey(windowData.voAnchorMessageId));
 
       if (!windowData.voHasMoreAfter) {
         await chatHub.markChannelAsRead(channelId);
       }
     } catch (error) {
-      shouldFallbackToLatest = true;
-      if (messageNavigationTargetRef.current?.signature === target.signature) {
-        messageNavigationTargetRef.current = null;
-      }
-      setMessageNavigationTarget((current) => (current?.signature === target.signature ? null : current));
+      failMessageWindow(target);
       log.error('ChatApp', '加载目标消息窗口失败:', error);
       toast.error(error instanceof Error ? error.message : t('chat.messageNavigationNotFound'));
     } finally {
       setLoadingHistory(false);
     }
-
-    if (shouldFallbackToLatest) {
-      await loadInitialHistory(channelId);
-    }
-  }, [loadInitialHistory, setChannelMessages, t, updateHistoryAvailability]);
+  }, [completeMessageWindow, failMessageWindow, setChannelMessages, t, updateHistoryAvailability]);
 
   const loadOnlineMembers = useCallback(async (channelId: EntityIdValue) => {
     if (!isPersistedEntityId(channelId)) {
@@ -1001,63 +1033,8 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
   }, [messageInput, pendingImage, replyTarget]);
 
   useEffect(() => {
-    messageNavigationTargetRef.current = messageNavigationTarget;
-  }, [messageNavigationTarget]);
-
-  useEffect(() => (
-    () => {
-      if (messageHighlightTimerRef.current !== null) {
-        window.clearTimeout(messageHighlightTimerRef.current);
-      }
-    }
-  ), []);
-
-  useEffect(() => {
     activeChannelIdRef.current = activeChannelId;
   }, [activeChannelId]);
-
-  useEffect(() => {
-    if (!windowParams.channelId) {
-      messageNavigationTargetRef.current = null;
-      setMessageNavigationTarget(null);
-      setMessageFocusTarget(null);
-      return;
-    }
-
-    if (channels.length === 0) {
-      return;
-    }
-
-    if (!channels.some((channel) => areEntityIdsEqual(channel.voId, windowParams.channelId))) {
-      messageNavigationTargetRef.current = null;
-      setMessageNavigationTarget(null);
-      setMessageFocusTarget(null);
-      return;
-    }
-
-    const navigationSignature = `${windowParams.channelId}:${windowParams.messageId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
-    if (handledWindowNavigationRef.current === navigationSignature) {
-      return;
-    }
-
-    handledWindowNavigationRef.current = navigationSignature;
-    clearMessageHighlight();
-    setMessageFocusTarget(null);
-
-    const nextNavigationTarget = windowParams.messageId
-      ? {
-          channelId: windowParams.channelId,
-          messageId: windowParams.messageId,
-          signature: navigationSignature,
-        }
-      : null;
-    messageNavigationTargetRef.current = nextNavigationTarget;
-    setMessageNavigationTarget(nextNavigationTarget);
-
-    if (!areEntityIdsEqual(activeChannelId, windowParams.channelId)) {
-      setActiveChannel(windowParams.channelId);
-    }
-  }, [activeChannelId, channels, clearMessageHighlight, setActiveChannel, windowParams.channelId, windowParams.messageId, windowParams.navigationKey]);
 
   useEffect(() => {
     const previousChannelId = previousChannelIdRef.current;
@@ -1079,7 +1056,7 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
       setPendingImage(null);
       setOnlineMembers([]);
       loadedDraftChannelRef.current = null;
-      setMessageFocusTarget(null);
+      clearMessageNavigation();
       closeMentionDropdown();
       clearMessageHighlight();
       return;
@@ -1109,7 +1086,7 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
       window.clearTimeout(initialMemberTimer);
       void chatHub.leaveChannel(activeChannelId);
     };
-  }, [activeChannelId, clearMessageHighlight, closeMentionDropdown, currentUserIdKey, loadInitialHistory, loadMessageWindow, loadOnlineMembers]);
+  }, [activeChannelId, clearMessageHighlight, clearMessageNavigation, closeMentionDropdown, currentUserIdKey, loadInitialHistory, loadMessageWindow, loadOnlineMembers, messageNavigationTargetRef]);
 
   useEffect(() => {
     if (!activeChannelId || !areEntityIdsEqual(loadedDraftChannelRef.current, activeChannelId)) {
@@ -1181,30 +1158,6 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
   }, [activeChannelId, loadMessageWindow, loadingHistory, messageNavigationTarget]);
 
   useEffect(() => {
-    if (!messageFocusTarget || !activeChannelId) {
-      return;
-    }
-
-    if (!areEntityIdsEqual(activeChannelId, messageFocusTarget.channelId)) {
-      return;
-    }
-
-    const targetElement = messageElementMapRef.current.get(messageFocusTarget.messageId);
-    if (!targetElement) {
-      return;
-    }
-
-    setMessageFocusTarget((current) => (current?.signature === messageFocusTarget.signature ? null : current));
-    requestAnimationFrame(() => {
-      targetElement.scrollIntoView({
-        block: 'center',
-        behavior: 'smooth',
-      });
-      highlightMessage(messageFocusTarget.messageId);
-    });
-  }, [activeChannelId, activeMessages, highlightMessage, messageFocusTarget]);
-
-  useEffect(() => {
     if (!replyTarget) {
       return;
     }
@@ -1237,7 +1190,7 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
     }
 
     previousConnectionStateRef.current = connectionState;
-  }, [activeChannelId, connectionState, loadInitialHistory, loadMessageWindow, loadOnlineMembers, setChannelMessages, updateHistoryAvailability]);
+  }, [activeChannelId, connectionState, loadInitialHistory, loadMessageWindow, loadOnlineMembers, messageNavigationTargetRef, setChannelMessages, updateHistoryAvailability]);
 
   useEffect(() => {
     if (!mentionContext || !mentionContext.keyword.trim()) {
@@ -1282,6 +1235,7 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
   const hasPendingImage = !!pendingImage;
   const hasComposerContent = !!messageInput.trim() || hasPendingImage;
   const isConversationFocused = hasRoutedChannel
+    || searchOpen
     || (isCompactViewport && Boolean(activeChannelId) && !onOpenFocusedChannel);
 
   return (
@@ -1294,21 +1248,35 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
         listError={listError}
         onSelectChannel={selectChannel}
         onChangeListView={changeListView}
+        onOpenSearch={openMessageSearch}
       />
 
-      <section className={styles.main}>
-        <ChatConversationHeader
-          activeChannel={activeChannel}
-          showBackToList={hasRoutedChannel || (isCompactViewport && Boolean(activeChannelId))}
-          onBackToList={!hasRoutedChannel ? () => setActiveChannel(null) : undefined}
-          connectionHint={connectionHint}
-          routeUnavailable={routeUnavailable}
-          onOpenUserProfile={(target) => handleOpenUserProfile(target.userId, target.userName, target.avatarUrl, target.publicId)}
-          onConversationChanged={handleConversationChanged}
-        />
+      <section className={`${styles.main} ${searchOpen && isCompactViewport ? searchStyles.mainSearchMode : ''}`}>
+        {(!searchOpen || !isCompactViewport) && (
+          <ChatConversationHeader
+            activeChannel={activeChannel}
+            showBackToList={hasRoutedChannel || (isCompactViewport && Boolean(activeChannelId))}
+            onBackToList={hasRoutedChannel ? onBackToConversationList : () => setActiveChannel(null)}
+            connectionHint={connectionHint}
+            routeUnavailable={routeUnavailable}
+            searchOpen={searchOpen}
+            onOpenSearch={openMessageSearch}
+            onOpenUserProfile={(target) => handleOpenUserProfile(target.userId, target.userName, target.avatarUrl, target.publicId)}
+            onConversationChanged={handleConversationChanged}
+          />
+        )}
 
-        <div className={styles.contentArea}>
-          <div className={styles.messageColumn}>
+        <div className={`${styles.contentArea} ${searchOpen ? searchStyles.contentAreaSearch : ''}`}>
+          {(!searchOpen || !isCompactViewport) && <div className={styles.messageColumn}>
+            {messageTargetUnavailable && (
+              <div className={searchStyles.messageTargetUnavailable} role="alert">
+                <Icon icon="mdi:message-off-outline" size={20} />
+                <span>
+                  <strong>{t('chat.search.targetUnavailableTitle')}</strong>
+                  {t('chat.search.targetUnavailableDescription')}
+                </span>
+              </div>
+            )}
             <ChatMessageList
               activeChannelId={activeChannelId}
               activeChannelKey={activeChannelKey}
@@ -1466,14 +1434,26 @@ export const ChatApp = ({ onOpenUserProfile, onOpenFocusedChannel }: ChatAppProp
                 </div>
               </div>
             </footer>
-          </div>
+          </div>}
 
-          {activeChannelId !== null && (
+          {searchMounted && (
+            <ChatMessageSearchPanel
+              activeChannelId={activeChannelKey || null}
+              accountKey={currentUserIdKey}
+              hidden={!searchOpen}
+              onClose={() => setSearchOpen(false)}
+              onOpenResult={handleOpenSearchResult}
+            />
+          )}
+          {!searchOpen && activeChannelId !== null && (
             <ChatMemberPanel
               collapsed={memberPanelCollapsed}
               members={onlineMembers}
               loading={loadingMembers}
-              onToggleCollapsed={() => setMemberPanelCollapsed((current) => !current)}
+              onToggleCollapsed={() => {
+                setSearchOpen(false);
+                setMemberPanelCollapsed((current) => !current);
+              }}
               onOpenUserProfile={handleOpenUserProfile}
               renderAvatarVisual={renderAvatarVisual}
             />

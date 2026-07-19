@@ -30,13 +30,36 @@ function parseInitialRoute() {
 export const MessagesApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
-  const route = useMemo(() => parseInitialRoute(), []);
+  const [route, setRoute] = useState(parseInitialRoute);
+  const [navigationRevision, setNavigationRevision] = useState(0);
+  const [searchRestoreRevision, setSearchRestoreRevision] = useState(0);
+  const [searchHideRevision, setSearchHideRevision] = useState(0);
+  const [searchVisible, setSearchVisible] = useState(false);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const chatHubOwnerRef = useRef(Symbol('messages-page-chat'));
+
+  const navigateToMessagesRoute = useCallback((
+    nextRoute: ReturnType<typeof createDefaultMessagesRoute>,
+    options: { restoreSearchOnBack?: boolean } = {}
+  ) => {
+    if (options.restoreSearchOnBack) {
+      window.history.replaceState({
+        ...window.history.state,
+        __radishMessagesSearchRestore: true,
+      }, '', `${window.location.pathname}${window.location.search}`);
+    }
+
+    const nextPath = buildMessagesPath(nextRoute);
+    window.history.pushState(options.restoreSearchOnBack
+      ? { __radishMessagesSearchTarget: true }
+      : {}, '', nextPath);
+    setRoute(nextRoute);
+    setNavigationRevision((current) => current + 1);
+  }, []);
 
   const routeDescriptor = useMemo<PublicRouteDescriptor>(() => ({
     app: 'messages',
@@ -50,13 +73,35 @@ export const MessagesApp = () => {
       ? {
           channelId: route.channelId,
           ...(route.messageId ? { messageId: route.messageId } : {}),
-          __navigationKey: `messages:${route.channelId}:${route.messageId ?? 'latest'}`,
+          __navigationKey: `messages:${route.channelId}:${route.messageId ?? 'latest'}:${navigationRevision}`,
         }
       : undefined,
     zIndex: 0,
     isMinimized: false,
     isMaximized: true,
-  }), [route]);
+  }), [navigationRevision, route]);
+
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const nextRoute = parseMessagesRoute(window.location.pathname, window.location.search);
+      if (!nextRoute) {
+        return;
+      }
+
+      setRoute(nextRoute);
+      setNavigationRevision((current) => current + 1);
+      if ((event.state as { __radishMessagesSearchRestore?: unknown } | null)?.__radishMessagesSearchRestore === true) {
+        setSearchRestoreRevision((current) => current + 1);
+      } else if ((event.state as { __radishMessagesSearchTarget?: unknown } | null)?.__radishMessagesSearchTarget === true) {
+        setSearchHideRevision((current) => current + 1);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, []);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -157,8 +202,22 @@ export const MessagesApp = () => {
             <ChatApp
               onOpenUserProfile={handleOpenUserProfile}
               onOpenFocusedChannel={(channelId) => {
-                window.location.href = buildMessagesPath({ channelId });
+                navigateToMessagesRoute({ channelId });
               }}
+              onOpenMessageResult={(target) => {
+                navigateToMessagesRoute(target, { restoreSearchOnBack: true });
+              }}
+              onBackToConversationList={() => {
+                if ((window.history.state as { __radishMessagesSearchTarget?: unknown } | null)?.__radishMessagesSearchTarget === true) {
+                  window.history.back();
+                  return;
+                }
+
+                navigateToMessagesRoute(createDefaultMessagesRoute());
+              }}
+              searchRestoreRevision={searchRestoreRevision}
+              searchHideRevision={searchHideRevision}
+              onSearchVisibilityChange={setSearchVisible}
             />
           </CurrentWindowProvider>
         </section>
@@ -174,7 +233,7 @@ export const MessagesApp = () => {
         brandMark={t('messages.brandMark')}
         brandName={t('messages.title')}
         brandSubline={t('messages.shellSubline')}
-        hideMobileNav={route.channelId !== undefined}
+        hideMobileNav={route.channelId !== undefined || searchVisible}
         onBrandClick={() => {
           window.location.href = buildMessagesPath();
         }}

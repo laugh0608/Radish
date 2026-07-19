@@ -316,7 +316,7 @@ test('聊天正式 Web 页面应把聊天窗口作为主体而不是仪表盘卡
   const chatTypesSource = readFileSync(resolve(clientRoot, 'src/types/chat.ts'), 'utf8');
 
   assert.match(messagesSource, /activeKey="chat"/);
-  assert.match(messagesSource, /hideMobileNav=\{route\.channelId !== undefined\}/);
+  assert.match(messagesSource, /hideMobileNav=\{route\.channelId !== undefined \|\| searchVisible\}/);
   assert.match(messagesSource, /messages\.web\.chatWorkspaceLabel/);
   assert.doesNotMatch(messagesSource, /summaryPanel|messageRail|summaryCards|channelQueue/);
   assert.match(messagesStylesSource, /width: min\(1560px, calc\(100vw - 32px\)\)/);
