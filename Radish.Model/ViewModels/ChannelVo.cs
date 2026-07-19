@@ -41,6 +41,8 @@ public class ChannelVo
 
     public bool VoCanReact { get; set; }
 
+    public bool VoCanPinMessages { get; set; }
+
     public bool VoCanAccept { get; set; }
 
     public bool VoCanDecline { get; set; }

@@ -111,6 +111,7 @@ export interface ChannelVo {
   voDirectRequestStatus?: DirectConversationRequestStatus | null;
   voCanSend: boolean;
   voCanReact: boolean;
+  voCanPinMessages: boolean;
   voCanAccept: boolean;
   voCanDecline: boolean;
   voCanBlock: boolean;

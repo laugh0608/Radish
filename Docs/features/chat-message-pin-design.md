@@ -1,6 +1,6 @@
 # F4-E 聊天消息置顶
 
-> **状态**：F4-E-A 现状审计与专题设计已完成；下一批为 F4-E-B 服务端权威契约
+> **状态**：F4-E-A / B 已完成；下一批为 F4-E-C Pencil 与正式 Web
 >
 > **复核日期**：2026-07-19
 >
@@ -202,7 +202,7 @@ items 按 `PinnedAt DESC, Id DESC` 排序，最多 20 条。无置顶也返回 r
 - 交叉审计真实实体、migration、ACL、Direct 状态、Hub、消息窗口、前端 Store 和旧 Phase 2 文档。
 - 固定多条置顶、独立状态表、频道 revision、权限矩阵、目标状态、撤回一致性、UI 边界和 A-D 验收口径。
 
-### F4-E-B：服务端权威契约
+### F4-E-B：服务端权威契约（已完成）
 
 - 新增实体、Chat ledger migration、Repository 原子设置 / 容量 / revision 与撤回联动。
 - 新增访问能力、Service、Controller、Hub payload、`@radish/http` 契约、稳定双语错误和 LongId 测试。

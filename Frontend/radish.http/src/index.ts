@@ -46,6 +46,14 @@ export type {
   ChatMessageReactionMutationVo,
 } from './chat-reaction-contract';
 
+export type {
+  ChatPinnedMessageVo,
+  ChatMessagePinVo,
+  ChatMessagePinStateVo,
+  SetChatMessagePinDto,
+  ChatMessagePinMutationVo,
+} from './chat-pin-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

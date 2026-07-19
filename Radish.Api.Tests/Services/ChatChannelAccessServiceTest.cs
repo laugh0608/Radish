@@ -34,6 +34,7 @@ public sealed class ChatChannelAccessServiceTest
         Assert.False(result.CanView);
         Assert.False(result.CanSend);
         Assert.False(result.CanJoinRealtime);
+        Assert.False(result.CanPinMessages);
     }
 
     [Fact]
@@ -76,6 +77,7 @@ public sealed class ChatChannelAccessServiceTest
         Assert.True(result.CanJoinRealtime);
         Assert.True(result.CanViewMembers);
         Assert.True(result.CanReact);
+        Assert.True(result.CanPinMessages);
     }
 
     [Fact]
@@ -112,6 +114,7 @@ public sealed class ChatChannelAccessServiceTest
         Assert.True(result.CanJoinRealtime);
         Assert.False(result.CanViewMembers);
         Assert.False(result.CanReact);
+        Assert.False(result.CanPinMessages);
     }
 
     [Theory]
@@ -168,6 +171,60 @@ public sealed class ChatChannelAccessServiceTest
         Assert.False(result.CanSend);
         Assert.False(result.CanViewMembers);
         Assert.False(result.CanReact);
+        Assert.False(result.CanPinMessages);
+    }
+
+    [Theory]
+    [InlineData(MemberRole.Member, false)]
+    [InlineData(MemberRole.Moderator, true)]
+    [InlineData(MemberRole.Owner, true)]
+    public async Task GetAccessAsync_ShouldDerivePrivateGroupPinCapabilityFromMembershipRole(
+        MemberRole role,
+        bool expected)
+    {
+        var channelRepository = CreateRepository(new Channel
+        {
+            Id = 100,
+            TenantId = 30000,
+            Type = ChannelType.Private,
+            IsEnabled = true
+        });
+        var memberRepository = CreateRepository(new ChannelMember
+        {
+            ChannelId = 100,
+            UserId = 20001,
+            Role = role,
+            TenantId = 30000
+        });
+        var service = CreateService(
+            channelRepository,
+            memberRepository,
+            CreateRepository<DirectConversation>());
+
+        var result = await service.GetAccessAsync(30000, 20001, 100, canManageChannel: true);
+
+        Assert.True(result.CanView);
+        Assert.Equal(expected, result.CanPinMessages);
+    }
+
+    [Fact]
+    public async Task GetAccessAsync_ShouldAllowAdministratorToPinInPublicChannel()
+    {
+        var channelRepository = CreateRepository(new Channel
+        {
+            Id = 100,
+            TenantId = 30000,
+            Type = ChannelType.Public,
+            IsEnabled = true
+        });
+        var service = CreateService(
+            channelRepository,
+            CreateRepository<ChannelMember>(),
+            CreateRepository<DirectConversation>());
+
+        var result = await service.GetAccessAsync(30000, 20001, 100, canManageChannel: true);
+
+        Assert.True(result.CanPinMessages);
     }
 
     [Fact]

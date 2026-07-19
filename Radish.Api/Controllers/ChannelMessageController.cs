@@ -24,17 +24,20 @@ public class ChannelMessageController : ControllerBase
 {
     private readonly IChatService _chatService;
     private readonly IChatMessageSearchService _chatMessageSearchService;
+    private readonly IChatMessagePinService _chatMessagePinService;
     private readonly IHubContext<ChatHub> _chatHubContext;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
     public ChannelMessageController(
         IChatService chatService,
         IChatMessageSearchService chatMessageSearchService,
+        IChatMessagePinService chatMessagePinService,
         IHubContext<ChatHub> chatHubContext,
         ICurrentUserAccessor currentUserAccessor)
     {
         _chatService = chatService;
         _chatMessageSearchService = chatMessageSearchService;
+        _chatMessagePinService = chatMessagePinService;
         _chatHubContext = chatHubContext;
         _currentUserAccessor = currentUserAccessor;
     }
@@ -262,14 +265,14 @@ public class ChannelMessageController : ControllerBase
         }
 
         var canRecallOthers = Current.IsSystemOrAdmin();
-        var channelId = await _chatService.RecallMessageAsync(
+        var recallResult = await _chatService.RecallMessageAsync(
             Current.TenantId,
             Current.UserId,
             Current.UserName,
             id,
             canRecallOthers);
 
-        if (!channelId.HasValue)
+        if (recallResult == null)
         {
             return new MessageModel
             {
@@ -279,17 +282,28 @@ public class ChannelMessageController : ControllerBase
             };
         }
 
-        var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, channelId.Value);
+        var channelId = recallResult.ChannelId;
+        var channelGroup = ChatHub.BuildChannelGroup(Current.TenantId, channelId);
         await _chatHubContext.Clients.Group(channelGroup)
-            .SendAsync("MessageRecalled", new { channelId = channelId.Value, messageId = id });
+            .SendAsync("MessageRecalled", new { channelId, messageId = id });
 
-        var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(Current.TenantId, channelId.Value))
+        if (recallResult.PinsChanged)
+        {
+            var pinState = await _chatMessagePinService.GetStateAsync(
+                Current.TenantId,
+                Current.UserId,
+                channelId);
+            await _chatHubContext.Clients.Group(channelGroup)
+                .SendAsync("MessagePinsChanged", pinState);
+        }
+
+        var audienceUserIds = (await _chatService.GetChannelAudienceUserIdsAsync(Current.TenantId, channelId))
             .Distinct()
             .ToList();
 
         foreach (var targetUserId in audienceUserIds)
         {
-            var unreadState = await _chatService.GetChannelUnreadStateAsync(Current.TenantId, targetUserId, channelId.Value);
+            var unreadState = await _chatService.GetChannelUnreadStateAsync(Current.TenantId, targetUserId, channelId);
             await _chatHubContext.Clients.Group($"user:{targetUserId}")
                 .SendAsync("ChannelUnreadChanged", new
                 {

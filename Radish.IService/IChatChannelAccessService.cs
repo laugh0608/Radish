@@ -17,7 +17,9 @@ public sealed record ChatChannelAccessResult(
     long? DirectPeerUserId = null,
     long? DirectConversationId = null,
     bool HasMessages = false,
-    bool IsPeerAvailable = true)
+    bool IsPeerAvailable = true,
+    MemberRole? ChannelMemberRole = null,
+    bool CanManageChannel = false)
 {
     public static ChatChannelAccessResult Unavailable { get; } =
         new(false, null, false, false, false, false, false);
@@ -28,6 +30,20 @@ public sealed record ChatChannelAccessResult(
         Model.ChannelType.Public => true,
         Model.ChannelType.Announcement => true,
         Model.ChannelType.Private when !IsDirectConversation => true,
+        Model.ChannelType.Private =>
+            DirectRequestStatus == DirectConversationRequestStatus.Accepted &&
+            DirectBlockedByUserId == null &&
+            IsPeerAvailable,
+        _ => false
+    };
+
+    /// <summary>是否允许管理当前频道的共享消息置顶。</summary>
+    public bool CanPinMessages => CanView && ChannelType switch
+    {
+        Model.ChannelType.Public or Model.ChannelType.Announcement =>
+            CanManageChannel || ChannelMemberRole is MemberRole.Moderator or MemberRole.Owner,
+        Model.ChannelType.Private when !IsDirectConversation =>
+            ChannelMemberRole is MemberRole.Moderator or MemberRole.Owner,
         Model.ChannelType.Private =>
             DirectRequestStatus == DirectConversationRequestStatus.Accepted &&
             DirectBlockedByUserId == null &&

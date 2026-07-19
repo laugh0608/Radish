@@ -161,9 +161,61 @@ public class ChannelMessageControllerTest
         Assert.Equal(90001, page.VoItems[0].VoMessageId);
     }
 
+    [Fact]
+    public async Task Recall_ShouldBroadcastLatestPinStateWhenPinnedMessageIsRemoved()
+    {
+        var chatService = CreateChatServiceMock();
+        chatService
+            .Setup(service => service.RecallMessageAsync(0, 10001, "Tester", 90001, false))
+            .ReturnsAsync(new ChatMessageRecallResult(1, true));
+        chatService
+            .Setup(service => service.GetChannelAudienceUserIdsAsync(0, 1))
+            .ReturnsAsync([]);
+        var pinState = new ChatMessagePinStateVo
+        {
+            VoChannelId = 1,
+            VoRevision = 4
+        };
+        var pinService = new Mock<IChatMessagePinService>(MockBehavior.Strict);
+        pinService
+            .Setup(service => service.GetStateAsync(0, 10001, 1))
+            .ReturnsAsync(pinState);
+        var clientProxy = new Mock<IClientProxy>(MockBehavior.Strict);
+        clientProxy
+            .Setup(proxy => proxy.SendCoreAsync(
+                "MessageRecalled",
+                It.IsAny<object?[]>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        clientProxy
+            .Setup(proxy => proxy.SendCoreAsync(
+                "MessagePinsChanged",
+                It.Is<object?[]>(arguments => arguments.Length == 1 && ReferenceEquals(arguments[0], pinState)),
+                It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var hubClients = new Mock<IHubClients>(MockBehavior.Strict);
+        hubClients
+            .Setup(clients => clients.Group("channel:0:1"))
+            .Returns(clientProxy.Object);
+        var hubContext = new Mock<IHubContext<ChatHub>>(MockBehavior.Strict);
+        hubContext.SetupGet(context => context.Clients).Returns(hubClients.Object);
+        var controller = CreateController(
+            chatService.Object,
+            pinService: pinService.Object,
+            hubContext: hubContext.Object);
+
+        var result = await controller.Recall(90001);
+
+        Assert.True(result.IsSuccess);
+        clientProxy.VerifyAll();
+        pinService.VerifyAll();
+    }
+
     private static ChannelMessageController CreateController(
         IChatService chatService,
-        IChatMessageSearchService? searchService = null)
+        IChatMessageSearchService? searchService = null,
+        IChatMessagePinService? pinService = null,
+        IHubContext<ChatHub>? hubContext = null)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
@@ -176,7 +228,8 @@ public class ChannelMessageControllerTest
         return new ChannelMessageController(
             chatService,
             searchService ?? Mock.Of<IChatMessageSearchService>(),
-            CreateHubContextMock().Object,
+            pinService ?? Mock.Of<IChatMessagePinService>(),
+            hubContext ?? CreateHubContextMock().Object,
             currentUserAccessorMock.Object);
     }
 

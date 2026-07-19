@@ -1,12 +1,6 @@
 # 记录与验收索引
 
-本页是 `Docs/records/` 的统一入口，专门收纳以下非说明书型文档：
-
-- 批次级回归记录
-- 人工验收清单
-- 发布 / 回滚记录
-- checklist / template
-- spike / 评估观察记录
+本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。
 
 如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 
@@ -75,6 +69,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-e-b-chat-message-pin-server-contract-2026-07-19](/records/f4-e-b-chat-message-pin-server-contract-2026-07-19)
 - [f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19](/records/f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19)
 - [f4-d-c-chat-message-reaction-web-workspace-2026-07-19](/records/f4-d-c-chat-message-reaction-web-workspace-2026-07-19)
 - [f4-d-b-chat-message-reaction-server-contract-2026-07-19](/records/f4-d-b-chat-message-reaction-server-contract-2026-07-19)

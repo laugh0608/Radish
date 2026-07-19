@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-E-B 聊天消息置顶：服务端权威契约`
-- **产品下一顺位**：`实现多条置顶 migration、原子状态、独立权限、revision 快照、撤回一致性与前端 HTTP 契约`
+- **工程第一顺位**：`F4-E-C 聊天消息置顶：Pencil 与正式 Web`
+- **产品下一顺位**：`先更新 PC / mobile Pencil，再实现置顶条、完整列表、消息动作、revision Store、Hub 合并与重连追平`
 - **复核日期**：`2026-07-19`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -84,6 +84,7 @@
   - 2026-07-19 F4-D-C 已完成：Pencil `P13E / P27E`、正式 `/messages` 与 WebOS 共用的消息气泡 Reaction、Unicode / sticker picker、独立 `voCanReact`、批量追平、Store revision 合并、Hub 乱序保护、撤回清理、加载 / 错误、中英文和四主题 token 已落地。后端全量 `907` 项、client `436` 项、相关 type-check / lint、client production build 与 Baseline Quick 通过；未启动服务或执行浏览器 smoke，下一顺位进入 F4-D-D 成组验收。
   - 2026-07-19 F4-D-D 已完成并关闭专题：三个普通账号在 Gateway 正式路径与 WebOS 复用面覆盖 `zh / en × PC / mobile`、公开 / 公告 / 普通私有 / Direct 状态、Unicode / sticker、多标签、真实离线重连、10 种上限、撤回和不污染边界；验收修复历史搜索 migration 对未来 Reaction 列的耦合及英文无障碍计数复数。临时数据精确残留为 `0`，六库完整性和迁移 verify 通过。详见 [F4-D-D 成组验收记录](/records/f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19)，工程第一顺位进入 F4-E-A 消息置顶现状审计与专题设计。
   - 2026-07-19 F4-E-A 已完成：真实代码确认旧 Phase 2 所称 `PinnedMessageId / IsPinned` 预留字段并不存在；[权威专题设计](/features/chat-message-pin-design) 改用独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条活跃置顶、目标状态与完整 Hub 快照，并固定 Public / Announcement / 普通 Private / Direct 权限、撤回一致性、不污染边界和 A-D 验收口径。下一顺位进入 F4-E-B 服务端权威契约。
+  - 2026-07-19 F4-E-B 已完成：`ChatMessagePin` 与 `20260719_005_chat_message_pin` migration、频道级原子目标状态 / revision、20 条上限、独立 `CanPinMessages`、撤回联动、Service / API / Hub 全量快照、稳定双语错误和 `@radish/http` 契约均已落地；SQLite / PostgreSQL 并发与迁移用例、后端全量和 Baseline Quick 通过。下一顺位进入 F4-E-C Pencil 与正式 Web。
 
 ## V1 产品与发布范围
 
@@ -133,6 +134,8 @@ Radish V1 的产品定位固定为：
 - [F4-C-D 聊天历史搜索成组验收记录](/records/f4-c-d-chat-message-search-stage-acceptance-2026-07-19)
 - [F4-D 聊天消息 Reaction 设计](/features/chat-message-reaction-design)
 - [F4-D-B 聊天消息 Reaction 服务端权威契约完成记录](/records/f4-d-b-chat-message-reaction-server-contract-2026-07-19)
+- [F4-E 聊天消息置顶设计](/features/chat-message-pin-design)
+- [F4-E-B 聊天消息置顶服务端权威契约完成记录](/records/f4-e-b-chat-message-pin-server-contract-2026-07-19)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -164,7 +167,7 @@ Radish V1 的产品定位固定为：
 2. [F4-B 通知中心深化与通知治理](/features/notification-center-deepening) 的 A-D 批已经完成，真实生产链路、偏好、聚合竞态、写操作、恢复、目标失效和清理矩阵全部通过，专题已关闭。
 3. [F4-C 聊天历史搜索与消息定位](/features/chat-message-search-design) 的 A-D 批已经完成；权威检索、跨库迁移、正式 Web / WebOS、双账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
 4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A-D 批已经完成；权威 ACL、目标状态幂等、revision 实时快照、正式 Web / WebOS、三普通账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
-5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A 批已完成现状审计与专题设计；下一顺位进入 F4-E-B，实现多条置顶 migration、原子目标状态、独立 `CanPinMessages`、频道 revision、完整 Hub 快照、撤回联动和 `@radish/http` 契约。逐条已读和移动系统通知继续分别后置，主动生产证据采集保持最终收尾冻结。
+5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A / B 批已完成设计与服务端权威契约；下一顺位进入 F4-E-C，先更新 PC / mobile Pencil，再实现置顶条、完整列表、消息动作、revision Store、Hub 合并、重连追平和定位。逐条已读和移动系统通知继续分别后置，主动生产证据采集保持最终收尾冻结。
 
 ## 昨日事项（2026-07-18）
 
@@ -202,13 +205,14 @@ Radish V1 的产品定位固定为：
 13. 已完成 F4-D-C PC / mobile Pencil、正式 Web / WebOS 消息回应、picker、独立能力字段、批量读取、revision Store、Hub 合并、重连追平、撤回清理、中英文与主题适配；下一顺位进入 F4-D-D。
 14. 已完成 F4-D-D 三普通账号成组验收，覆盖中英文、PC / mobile、公开 / 公告 / 普通私有 / Direct 全状态、Unicode / sticker、多标签、真实离线重连、并发目标状态、10 种上限、撤回、WebOS 与不污染边界；历史 migration 兼容和英文单复数共同根因已修复，临时数据、凭据与备份已清理，六库完整性和严格 verify 通过，F4-D 正式关闭。
 15. 已完成 F4-E-A 真实实体、迁移、ACL、Direct、Hub、定位、Store 与旧文档交叉审计，裁决独立置顶表、频道 revision、20 条上限、目标状态、权限矩阵、撤回一致性、正式 Web 边界和 A-D 验收口径；旧单条覆盖与虚假预留口径不再作为实现依据。
+16. 已完成 F4-E-B 服务端权威契约：独立置顶实体与 ledger migration、SQLite / PostgreSQL 频道级事务锁、目标状态 / 20 条上限 / revision、Public / Announcement / Private / Direct 权限矩阵、撤回原子移除、HTTP / Hub 全量快照、LongId 与稳定双语错误均已落地；后端全量 `922` 项、Baseline Quick 与 PostgreSQL 专项 `2/2` 通过，下一顺位进入 F4-E-C。
 
 ## 明日事项（2026-07-20）
 
-1. 进入 F4-E-B，新增 `ChatMessagePin`、`Channel.PinRevision` 与 Chat ledger migration，覆盖 SQLite / PostgreSQL 历史库、重入、索引、非负 revision 和 verifier 前后兼容。
-2. 实现仓储原子设置、恢复、取消、20 条上限、并发收敛和消息撤回联动；统一访问结果增加 `CanPinMessages`，保持普通 Private / Direct 不被管理员穿透。
-3. 实现 Service、Controller、稳定双语错误、完整 `MessagePinsChanged` Hub 快照、LongId 字符串和 `@radish/http` 契约，并补 migration / Repository / ACL / API 定向测试。
-4. 主动生产证据采集继续保持最终收尾冻结，不以缺少生产样本阻断 F4-E 设计。
+1. 进入 F4-E-C，先更新消息置顶 PC / mobile Pencil，固定紧凑置顶条、完整列表、长内容、20 条容量与 Bottom Sheet 边界。
+2. 实现正式 `/messages` 与 WebOS 共用的置顶条、消息动作、列表、定位、加载 / 空态 / 错误和受权取消入口。
+3. 接入按频道保存的 revision Store、HTTP 初始追平、Hub 乱序合并、断线重读、撤回清理、账号 reset、中英文、键盘与四主题。
+4. 主动生产证据采集继续保持最终收尾冻结；运行态矩阵留给 F4-E-D，不在连续开发轮次提前启动服务。
 
 ## 并行维护线
 

@@ -213,30 +213,45 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
     {
         if (channel.Type == ChannelType.Public)
         {
-            return new ChatChannelAccessResult(true, channel.Type, true, true, true, true, false);
+            return new ChatChannelAccessResult(
+                true, channel.Type, true, true, true, true, false,
+                ChannelMemberRole: member?.Role,
+                CanManageChannel: canManageChannel);
         }
 
         if (channel.Type == ChannelType.Announcement)
         {
             var announcementCanSend = canManageChannel || member?.Role is MemberRole.Moderator or MemberRole.Owner;
-            return new ChatChannelAccessResult(true, channel.Type, true, announcementCanSend, true, true, false);
+            return new ChatChannelAccessResult(
+                true, channel.Type, true, announcementCanSend, true, true, false,
+                ChannelMemberRole: member?.Role,
+                CanManageChannel: canManageChannel);
         }
 
         if (member == null)
         {
-            return new ChatChannelAccessResult(true, channel.Type, false, false, false, false, directConversation != null);
+            return new ChatChannelAccessResult(
+                true, channel.Type, false, false, false, false, directConversation != null,
+                ChannelMemberRole: null,
+                CanManageChannel: false);
         }
 
         if (directConversation == null)
         {
-            return new ChatChannelAccessResult(true, channel.Type, true, true, true, true, false);
+            return new ChatChannelAccessResult(
+                true, channel.Type, true, true, true, true, false,
+                ChannelMemberRole: member.Role,
+                CanManageChannel: false);
         }
 
         var isParticipant = directConversation.ParticipantLowUserId == userId ||
                             directConversation.ParticipantHighUserId == userId;
         if (!isParticipant || tenantId.HasValue && !IsTenantVisible(directConversation.TenantId, tenantId.Value))
         {
-            return new ChatChannelAccessResult(true, channel.Type, false, false, false, false, true);
+            return new ChatChannelAccessResult(
+                true, channel.Type, false, false, false, false, true,
+                ChannelMemberRole: member.Role,
+                CanManageChannel: false);
         }
 
         var peerUserId = directConversation.ParticipantLowUserId == userId
@@ -273,6 +288,8 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
             peerUserId,
             directConversation.Id,
             hasMessages,
-            peerAvailable);
+            peerAvailable,
+            member.Role,
+            false);
     }
 }

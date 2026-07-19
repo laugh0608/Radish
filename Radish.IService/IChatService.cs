@@ -11,6 +11,9 @@ public sealed record ChatMessageSendResult(
     bool WasCreated,
     IReadOnlyList<long>? ConversationChangedUserIds = null);
 
+/// <summary>消息撤回结果；置顶集合变化时由 Controller 追加完整快照广播。</summary>
+public sealed record ChatMessageRecallResult(long ChannelId, bool PinsChanged);
+
 /// <summary>聊天室服务接口</summary>
 public interface IChatService : IBaseService<Channel, ChannelVo>
 {
@@ -18,10 +21,22 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
     Task<List<ChannelVo>> GetChannelListAsync(
         long tenantId,
         long userId,
-        ChatChannelListView view = ChatChannelListView.Active);
+        ChatChannelListView view = ChatChannelListView.Active,
+        bool canManageChannel = false);
 
     /// <summary>获取频道详情（含当前用户未读状态）</summary>
-    Task<ChannelVo?> GetChannelDetailAsync(long tenantId, long userId, long channelId);
+    Task<ChannelVo?> GetChannelDetailAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        bool canManageChannel = false);
+
+    /// <summary>按 Id 批量读取当前频道消息并映射为权威展示模型。</summary>
+    Task<List<ChannelMessageVo>> GetMessagesByIdsAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        IReadOnlyCollection<long> messageIds);
 
     /// <summary>获取频道历史消息（支持按锚点向前或向后分页）</summary>
     Task<List<ChannelMessageVo>> GetHistoryAsync(long tenantId, long userId, long channelId, long? beforeMessageId, long? afterMessageId, int pageSize = 50);
@@ -43,8 +58,13 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
         SendChannelMessageDto request,
         bool canManageChannel = false);
 
-    /// <summary>撤回消息，成功返回所属频道 Id</summary>
-    Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers);
+    /// <summary>撤回消息，成功返回所属频道与置顶集合是否变化。</summary>
+    Task<ChatMessageRecallResult?> RecallMessageAsync(
+        long tenantId,
+        long userId,
+        string userName,
+        long messageId,
+        bool canRecallOthers);
 
     /// <summary>频道加入（确保成员关系存在）</summary>
     Task JoinChannelAsync(long tenantId, long userId, long channelId, string operatorName);

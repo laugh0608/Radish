@@ -57,7 +57,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     public async Task<List<ChannelVo>> GetChannelListAsync(
         long tenantId,
         long userId,
-        ChatChannelListView view = ChatChannelListView.Active)
+        ChatChannelListView view = ChatChannelListView.Active,
+        bool canManageChannel = false)
     {
         var channels = await _channelRepository.QueryWithOrderAsync(
             c => c.IsEnabled && !c.IsDeleted,
@@ -77,7 +78,11 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         var result = new List<ChannelVo>(channels.Count);
         foreach (var channel in channels)
         {
-            var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channel.Id);
+            var access = await _chatChannelAccessService.GetAccessAsync(
+                tenantId,
+                userId,
+                channel.Id,
+                canManageChannel);
             if (!access.CanView)
             {
                 continue;
@@ -111,9 +116,17 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return result;
     }
 
-    public async Task<ChannelVo?> GetChannelDetailAsync(long tenantId, long userId, long channelId)
+    public async Task<ChannelVo?> GetChannelDetailAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        bool canManageChannel = false)
     {
-        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            tenantId,
+            userId,
+            channelId,
+            canManageChannel);
         if (!access.CanView)
         {
             return null;
@@ -140,6 +153,42 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         channelVo.VoHasMention = unreadState.VoHasMention;
 
         return channelVo;
+    }
+
+    public async Task<List<ChannelMessageVo>> GetMessagesByIdsAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        IReadOnlyCollection<long> messageIds)
+    {
+        if (channelId <= 0 || messageIds.Count == 0 || messageIds.Count > 20)
+        {
+            return [];
+        }
+
+        var normalizedIds = messageIds.Where(id => id > 0).Distinct().ToList();
+        if (normalizedIds.Count != messageIds.Count)
+        {
+            return [];
+        }
+
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanView)
+        {
+            return [];
+        }
+
+        var messages = await _messageRepository.QueryByIdsIncludingDeletedAsync(normalizedIds);
+        if (messages.Count != normalizedIds.Count || messages.Any(message =>
+                message.ChannelId != channelId ||
+                message.IsDeleted ||
+                message.TenantId != 0 && message.TenantId != tenantId))
+        {
+            return [];
+        }
+
+        var messageMap = messages.ToDictionary(message => message.Id);
+        return await MapChannelMessagesAsync(normalizedIds.Select(id => messageMap[id]).ToList());
     }
 
     public async Task<List<ChannelMessageVo>> GetHistoryAsync(
@@ -754,6 +803,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     {
         channel.VoCanSend = access.CanSend;
         channel.VoCanReact = access.CanReact;
+        channel.VoCanPinMessages = access.CanPinMessages;
         if (directConversation == null)
         {
             channel.VoConversationKind = channel.VoType == ChannelType.Private ? "group" : "public";
@@ -829,7 +879,12 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .ToList();
     }
 
-    public async Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers)
+    public async Task<ChatMessageRecallResult?> RecallMessageAsync(
+        long tenantId,
+        long userId,
+        string userName,
+        long messageId,
+        bool canRecallOthers)
     {
         if (messageId <= 0)
         {
@@ -854,7 +909,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         if (message.IsDeleted)
         {
-            return message.ChannelId;
+            return new ChatMessageRecallResult(message.ChannelId, false);
         }
 
         var isOwner = message.UserId == userId;
@@ -869,13 +924,15 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         var normalizedOperator = string.IsNullOrWhiteSpace(userName) ? "System" : userName.Trim();
-        var affected = await _messageRepository.RecallWithReactionsAsync(
+        var writeResult = await _messageRepository.RecallWithEffectsAsync(
             messageId,
             userId,
             normalizedOperator,
             DateTime.UtcNow);
 
-        return affected > 0 ? message.ChannelId : null;
+        return writeResult.AffectedRows > 0
+            ? new ChatMessageRecallResult(writeResult.ChannelId, writeResult.PinsChanged)
+            : null;
     }
 
     public async Task JoinChannelAsync(long tenantId, long userId, long channelId, string operatorName)

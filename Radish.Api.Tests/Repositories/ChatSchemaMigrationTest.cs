@@ -473,6 +473,84 @@ public sealed class ChatSchemaMigrationTest
     }
 
     [Fact]
+    public void ChatMessagePinMigration_ShouldUpgradeLegacyChannelsAndRemainRepeatable()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-pin-migration-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<Channel, ChannelMessage>();
+            db.Insertable(CreateChannel(5001)).ExecuteCommand();
+            db.Insertable(CreateMessage(9101, "pin-legacy")).ExecuteCommand();
+            db.Ado.ExecuteCommand("ALTER TABLE \"Channel\" DROP COLUMN \"PinRevision\"");
+
+            var migration = ChatMessagePinSchemaMigration.Instance;
+            Assert.Contains(
+                migration.Diagnose(db, services),
+                warning => warning.Contains("1 个历史 Chat 频道", StringComparison.Ordinal));
+
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.Equal(0, db.Queryable<Channel>().InSingle(5001).PinRevision);
+            Assert.True(db.DbMaintenance.IsAnyTable("ChatMessagePin", false));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_chat_message_pin_channel"));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_chat_message_pin_unique"));
+
+            db.Insertable(CreatePin(9201, 9101)).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() => db.Insertable(CreatePin(9202, 9101)).ExecuteCommand());
+            Assert.Empty(migration.Verify(db, services));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Database", "PostgreSQL")]
+    public async Task ChatMessagePinMigration_ShouldSupportPostgreSql()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable(PostgreSqlConnectionStringEnvironmentVariable);
+        Assert.SkipWhen(
+            string.IsNullOrWhiteSpace(adminConnectionString),
+            $"未配置 {PostgreSqlConnectionStringEnvironmentVariable}，跳过 Chat Pin PostgreSQL 迁移测试");
+
+        var schema = $"chat_pin_{Guid.NewGuid():N}";
+        using var adminDb = CreatePostgreSqlClient(adminConnectionString!);
+        await adminDb.Ado.ExecuteCommandAsync($"CREATE SCHEMA {QuoteIdentifier(schema)}");
+        try
+        {
+            var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
+            using var db = CreatePostgreSqlClient(connectionString);
+            using var services = new ServiceCollection().BuildServiceProvider();
+            db.CodeFirst.InitTables<Channel, ChannelMessage>();
+            db.Insertable(CreateChannel(5001)).ExecuteCommand();
+            db.Insertable(CreateMessage(9301, "pin-postgres")).ExecuteCommand();
+            DropColumn(db, "Channel", "PinRevision");
+
+            var migration = ChatMessagePinSchemaMigration.Instance;
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            Assert.Equal(0, db.Queryable<Channel>().InSingle(5001).PinRevision);
+            db.Insertable(CreatePin(9401, 9301)).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() => db.Insertable(CreatePin(9402, 9301)).ExecuteCommand());
+        }
+        finally
+        {
+            await adminDb.Ado.ExecuteCommandAsync($"DROP SCHEMA IF EXISTS {QuoteIdentifier(schema)} CASCADE");
+        }
+    }
+
+    [Fact]
     public void ChatAttachmentPrivacyMigration_ShouldOnlyMakeChatAttachmentsPrivate()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-attachment-migration-{Guid.NewGuid():N}.db");
@@ -574,6 +652,39 @@ public sealed class ChatSchemaMigrationTest
             Content = "hello",
             TenantId = 30000,
             CreateTime = DateTime.UtcNow
+        };
+    }
+
+    private static Channel CreateChannel(long id)
+    {
+        return new Channel
+        {
+            Id = id,
+            Name = "General",
+            Slug = $"general-{id}",
+            Type = ChannelType.Public,
+            IsEnabled = true,
+            TenantId = 30000,
+            CreateTime = DateTime.UtcNow,
+            CreateBy = "Tester",
+            CreateId = 20001
+        };
+    }
+
+    private static ChatMessagePin CreatePin(long id, long messageId)
+    {
+        return new ChatMessagePin
+        {
+            Id = id,
+            TenantId = 30000,
+            ChannelId = 5001,
+            MessageId = messageId,
+            PinnedByUserId = 20001,
+            PinnedByName = "Tester",
+            PinnedAt = DateTime.UtcNow,
+            CreateTime = DateTime.UtcNow,
+            CreateBy = "Tester",
+            CreateId = 20001
         };
     }
 

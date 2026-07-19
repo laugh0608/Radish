@@ -564,4 +564,19 @@
   <data name="error.chat.reaction_sticker_unavailable" xml:space="preserve">
     <value>所选表情不存在、已禁用或当前租户不可用。</value>
   </data>
+  <data name="error.chat.pin_invalid_argument" xml:space="preserve">
+    <value>消息置顶请求参数无效。</value>
+  </data>
+  <data name="error.chat.pin_not_allowed" xml:space="preserve">
+    <value>当前账号无权管理该会话的消息置顶。</value>
+  </data>
+  <data name="error.chat.pin_target_unavailable" xml:space="preserve">
+    <value>消息不存在、已撤回或当前不可访问。</value>
+  </data>
+  <data name="error.chat.pin_concurrent_conflict" xml:space="preserve">
+    <value>置顶状态已被其他操作更新，请刷新后重试。</value>
+  </data>
+  <data name="error.chat.pin_limit_exceeded" xml:space="preserve">
+    <value>每个会话最多保留 20 条置顶消息。</value>
+  </data>
 </root>

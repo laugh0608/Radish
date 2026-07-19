@@ -45,7 +45,11 @@ public class ChannelController : ControllerBase
                 "Chat.ChannelListViewInvalid",
                 "error.chat.channel_list_view_invalid")
         };
-        var channels = await _chatService.GetChannelListAsync(Current.TenantId, Current.UserId, normalizedView);
+        var channels = await _chatService.GetChannelListAsync(
+            Current.TenantId,
+            Current.UserId,
+            normalizedView,
+            Current.IsSystemOrAdmin());
         return new MessageModel
         {
             IsSuccess = true,
@@ -70,7 +74,11 @@ public class ChannelController : ControllerBase
             };
         }
 
-        var channel = await _chatService.GetChannelDetailAsync(Current.TenantId, Current.UserId, id);
+        var channel = await _chatService.GetChannelDetailAsync(
+            Current.TenantId,
+            Current.UserId,
+            id,
+            Current.IsSystemOrAdmin());
         if (channel == null)
         {
             return new MessageModel

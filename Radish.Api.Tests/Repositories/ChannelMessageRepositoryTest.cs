@@ -14,7 +14,7 @@ namespace Radish.Api.Tests.Repositories;
 public sealed class ChannelMessageRepositoryTest
 {
     [Fact]
-    public async Task RecallWithReactionsAsync_ShouldSoftDeleteMessageAndActiveReactionsTogether()
+    public async Task RecallWithEffectsAsync_ShouldSoftDeleteMessageReactionsAndPinTogether()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-message-recall-{Guid.NewGuid():N}.db");
         using var db = CreateClient(path);
@@ -22,8 +22,10 @@ public sealed class ChannelMessageRepositoryTest
         try
         {
             var chatDb = db.GetConnectionScope("chat");
-            chatDb.CodeFirst.InitTables<ChannelMessage>();
-            chatDb.CodeFirst.InitTables<ChatMessageReaction>();
+            chatDb.CodeFirst.InitTables<Channel, ChannelMessage, ChatMessageReaction, ChatMessagePin>();
+            var channel = CreateChannel();
+            channel.PinRevision = 4;
+            chatDb.Insertable(channel).ExecuteCommand();
             var message = CreateMessage(73010, "recall me");
             message.SearchText = "recall me";
             chatDb.Insertable(message).ExecuteCommand();
@@ -41,26 +43,47 @@ public sealed class ChannelMessageRepositoryTest
                 CreateBy = "Receiver",
                 CreateId = 20002
             }).ExecuteCommand();
+            chatDb.Insertable(new ChatMessagePin
+            {
+                Id = 75010,
+                TenantId = message.TenantId,
+                ChannelId = message.ChannelId,
+                MessageId = message.Id,
+                PinnedByUserId = 20002,
+                PinnedByName = "Receiver",
+                PinnedAt = message.CreateTime,
+                CreateTime = message.CreateTime,
+                CreateBy = "Receiver",
+                CreateId = 20002
+            }).ExecuteCommand();
 
             var unitOfWork = new UnitOfWorkManage(db, NullLogger<UnitOfWorkManage>.Instance);
             var repository = new ChannelMessageRepository(unitOfWork);
             var recalledAt = message.CreateTime.AddMinutes(1);
 
-            var affected = await repository.RecallWithReactionsAsync(
+            var result = await repository.RecallWithEffectsAsync(
                 message.Id,
                 20001,
                 "Requester",
                 recalledAt);
 
-            Assert.Equal(1, affected);
+            Assert.Equal(1, result.AffectedRows);
+            Assert.Equal(message.ChannelId, result.ChannelId);
+            Assert.True(result.PinsChanged);
+            Assert.Equal(5, result.PinRevision);
             var recalledMessage = chatDb.Queryable<ChannelMessage>().InSingle(message.Id);
             var recalledReaction = chatDb.Queryable<ChatMessageReaction>().InSingle(74010);
+            var recalledPin = chatDb.Queryable<ChatMessagePin>().InSingle(75010);
             Assert.True(recalledMessage.IsDeleted);
             Assert.Null(recalledMessage.SearchText);
             Assert.Equal(recalledAt, recalledMessage.DeletedAt);
             Assert.True(recalledReaction.IsDeleted);
             Assert.Equal(recalledAt, recalledReaction.DeletedAt);
             Assert.Equal(20001, recalledReaction.ModifyId);
+            Assert.True(recalledPin.IsDeleted);
+            Assert.Equal(recalledAt, recalledPin.DeletedAt);
+            Assert.Equal(20001, recalledPin.DeletedByUserId);
+            Assert.Equal(5, chatDb.Queryable<Channel>().InSingle(channel.Id).PinRevision);
         }
         finally
         {

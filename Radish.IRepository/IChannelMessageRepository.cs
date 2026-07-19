@@ -8,6 +8,13 @@ namespace Radish.IRepository;
 /// <summary>Chat 消息事务写入结果</summary>
 public sealed record ChannelMessageWriteResult(long MessageId, bool PeerWasUnarchived);
 
+/// <summary>聊天室消息撤回事务结果。</summary>
+public sealed record ChannelMessageRecallWriteResult(
+    int AffectedRows,
+    long ChannelId,
+    bool PinsChanged,
+    long PinRevision);
+
 /// <summary>陌生私聊请求首条消息已被其他写入占用。</summary>
 public sealed class DirectConversationRequestClaimException : Exception
 {
@@ -29,8 +36,8 @@ public interface IChannelMessageRepository : IBaseRepository<ChannelMessage>
         long? unarchiveUserId = null,
         long? claimPendingConversationId = null);
 
-    /// <summary>在 Chat 单事务内撤回消息并软删除其全部活跃回应。</summary>
-    Task<int> RecallWithReactionsAsync(
+    /// <summary>在 Chat 单事务内撤回消息并软删除其全部活跃回应与置顶。</summary>
+    Task<ChannelMessageRecallWriteResult> RecallWithEffectsAsync(
         long messageId,
         long operatorId,
         string operatorName,

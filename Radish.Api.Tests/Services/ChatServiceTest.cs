@@ -37,7 +37,8 @@ public class ChatServiceTest
             false,
             true,
             false,
-            false);
+            false,
+            ChannelMemberRole: MemberRole.Moderator);
         var service = CreateService(
             channelRepository,
             messageRepository,
@@ -76,6 +77,7 @@ public class ChatServiceTest
         result.ShouldNotBeNull();
         result.VoCanSend.ShouldBeFalse();
         result.VoCanReact.ShouldBeTrue();
+        result.VoCanPinMessages.ShouldBeTrue();
     }
 
     [Fact]
@@ -254,11 +256,13 @@ public class ChatServiceTest
 
         var result = await service.RecallMessageAsync(0, 10001, "tester", 90002, false);
 
-        result.ShouldBe(1);
+        result.ShouldNotBeNull();
+        result.ChannelId.ShouldBe(1);
+        result.PinsChanged.ShouldBeFalse();
     }
 
     [Fact]
-    public async Task RecallMessageAsync_ShouldUseAtomicReactionAwareRepositoryOperation()
+    public async Task RecallMessageAsync_ShouldUseAtomicEffectAwareRepositoryOperation()
     {
         var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
         messageRepository
@@ -275,17 +279,19 @@ public class ChatServiceTest
                 CreateTime = DateTime.UtcNow
             });
         messageRepository
-            .Setup(repository => repository.RecallWithReactionsAsync(
+            .Setup(repository => repository.RecallWithEffectsAsync(
                 90003,
                 10001,
                 "tester",
                 It.IsAny<DateTime>()))
-            .ReturnsAsync(1);
+            .ReturnsAsync(new ChannelMessageRecallWriteResult(1, 1, true, 3));
         var service = CreateService(messageRepository: messageRepository);
 
         var result = await service.RecallMessageAsync(0, 10001, "tester", 90003, false);
 
-        result.ShouldBe(1);
+        result.ShouldNotBeNull();
+        result.ChannelId.ShouldBe(1);
+        result.PinsChanged.ShouldBeTrue();
         messageRepository.VerifyAll();
     }
 
