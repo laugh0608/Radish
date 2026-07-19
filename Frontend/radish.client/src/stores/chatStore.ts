@@ -19,6 +19,7 @@ import {
   isTemporaryEntityId,
   normalizeEntityId,
 } from '@/types/chat';
+import { mergeChannelLastMessage } from '@/utils/chatChannelProjection';
 
 export type ChatConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -251,8 +252,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     const current = get().messageMap[channelKey] || [];
     const merged = mergeMessages(current, [message]);
+    const persistedMessage = isPersistedEntityId(message.voId) && message.voLocalStatus !== 'failed'
+      ? merged.find((item) => areEntityIdsEqual(item.voId, message.voId)) ?? normalizeMessage(message)
+      : null;
 
     set((state) => ({
+      channels: persistedMessage
+        ? state.channels.map((channel) => mergeChannelLastMessage(channel, persistedMessage))
+        : state.channels,
       messageMap: {
         ...state.messageMap,
         [channelKey]: merged,

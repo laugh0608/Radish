@@ -116,7 +116,9 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-E 聊天消息置顶](/features/chat-message-pin-design) 已完成 A-D 批并关闭：独立 `ChatMessagePin`、频道 `PinRevision`、最多 20 条、目标状态、完整 Hub 快照、权限矩阵、撤回原子联动、SQLite / PostgreSQL migration、正式 Web / WebOS 和三普通账号 `zh / en × PC / mobile` 成组验收均已通过。
 
-[F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A / B / C 批：`ChannelMember.LastReadMessageId` 保持唯一持久游标，原子单调写入、隐私裁剪聚合、读者 cursor、REST、无个人数据 Hub 失效、活跃阅读面、Direct 单一边界和普通 Private PC / mobile 详情均已建立；旧 Hub 写命令已退役。下一批进入 F4-F-D 定向回归与成组验收；移动系统通知继续后置。
+[F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭：`ChannelMember.LastReadMessageId` 保持唯一持久游标，原子单调写入、隐私裁剪聚合、读者 cursor、REST、无个人数据 Hub 失效、活跃阅读面、Direct 单一边界、普通 Private PC / mobile 详情和三普通账号运行态矩阵均已通过。
+
+下一顺位进入 `F4-G-A 功能完成线候选审计与专题裁决`。先从既有业务域只读比较真实能力缺口、长期用户价值、数据 / 权限 / 页面边界和维护成本，只选择一个专题推进；移动系统通知继续后置。
 
 ### 最终收尾：生产使用证据采集（冻结）
 
