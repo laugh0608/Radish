@@ -83,6 +83,7 @@ features:
 - [国际化指南](/architecture/i18n)
 - [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)
 - [文档系统方案](/guide/document-system)
+- [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)
 - [Radish 电子宠物系统](/guide/radish-pet-system)

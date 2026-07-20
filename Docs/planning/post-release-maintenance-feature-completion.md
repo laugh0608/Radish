@@ -118,7 +118,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭：`ChannelMember.LastReadMessageId` 保持唯一持久游标，原子单调写入、隐私裁剪聚合、读者 cursor、REST、无个人数据 Hub 失效、活跃阅读面、Direct 单一边界、普通 Private PC / mobile 详情和三普通账号运行态矩阵均已通过。
 
-下一顺位进入 `F4-G-A 功能完成线候选审计与专题裁决`。先从既有业务域只读比较真实能力缺口、长期用户价值、数据 / 权限 / 页面边界和维护成本，只选择一个专题推进；移动系统通知继续后置。
+`F4-G-A 功能完成线候选审计与专题裁决` 已完成：在 Docs / Wiki、圈子、治理和宠物四个既有业务域中，裁决优先推进 [Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design)。专题固定“已批准正文 + 独立工作草稿”、显式所有者 / 协作者、审核应用、乐观并发和 A-D 停止线；下一顺位进入 `F4-G-B` 服务端权威契约，移动系统通知继续后置。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

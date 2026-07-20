@@ -8,9 +8,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-G-A 功能完成线候选审计与专题裁决`
-- **产品下一顺位**：`从既有业务域选择一个长期价值与权威边界清楚的完整专题`
-- **复核日期**：`2026-07-19`
+- **工程第一顺位**：`F4-G-B Docs / Wiki 普通作者贡献与协作服务端权威契约`
+- **产品下一顺位**：`完成普通作者草稿、协作者邀请、审核应用与并发安全的服务端闭环`
+- **复核日期**：`2026-07-20`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
@@ -91,6 +91,8 @@
   - 2026-07-19 F4-F-B 已完成：`20260719_006_chat_read_receipt` migration 显式补齐成员唯一 / 用户 / 回执覆盖索引，专属 Repository 原子单调推进，Public / Announcement 隐私抑制、普通 Private 发送者人数 / 读者 cursor、Accepted Direct 对端边界、REST、无个人数据 Hub 失效提示、稳定双语错误与 `@radish/http` 均已落地；SQLite 与 PostgreSQL 17 并发 / 迁移验证、后端全量和 Baseline Quick 通过。
   - 2026-07-19 F4-F-C 已完成：Pencil `P13G / P27G`、正式 `/messages` 与 WebOS 共用活跃阅读面、精确 REST 游标、会话内存重试、权威 Store / Hub 失效去抖、Direct 单一已读边界、普通 Private PC Popover / mobile Bottom Sheet、双语复数、键盘、焦点约束、账号隔离与旧 Hub 写命令退役均已落地；后端全量、client / `@radish/ui` 静态门禁和 production build 通过，未启动服务或执行浏览器 smoke。下一顺位进入 F4-F-D 成组验收。
   - 2026-07-19 F4-F-D 已完成并关闭专题：三个普通账号在 Gateway 正式 `/messages` 与 WebOS 共用面覆盖 Public / Announcement / 普通 Private / Direct 全状态、`zh / en × PC / mobile`、多标签、隐藏态、真实离线重连、WebOS 最小化 / 遮挡、撤回、成员 / 角色 / 权限变化、键盘、无障碍和四主题；验收修复实时持久消息未同步频道最后消息投影的共同根因。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-F-D 成组验收记录](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)。
+  - 2026-07-20 PR `#64` 已通过全部 required checks 并以 merge commit 合并到 `master`，合并提交为 `8f8fc6e2`；`master / dev / origin` 已完成 fast-forward 回灌并统一到同一提交。本批只完成代码集成，未创建 tag、镜像或生产部署。
+  - 2026-07-20 F4-G-A 已完成：Docs / Wiki、圈子、治理和宠物四候选交叉审计后，裁决 [Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 为唯一当前专题；设计固定正式正文与独立工作草稿分离、显式所有者 / 协作者、审核应用、双版本乐观并发、可靠通知、保留策略、A-D 批次和停止线。下一顺位进入 F4-G-B，不并行启动其他候选。
 
 ## V1 产品与发布范围
 
@@ -163,7 +165,7 @@ Radish V1 的产品定位固定为：
 - 已建立[商城商品效力与权益履约专题](/features/shop-product-effect-entitlement-fulfillment)，明确订单履约、消耗品使用、权益选择、过期、撤销、审计和商品开放矩阵。
 - `F1-A / F1-B / F1-C / F1-D / F1-E` 已完成本地实现、静态回归与批次级运行态验收。Badge / Title 仅开放服务端能力，不自动恢复任何历史商品销售；其余权益类型继续关闭。
 - `F2` 已完成四主题统一运行时、正式 Web 入口、Theme 权益资源契约和 PC / mobile 页面族验收；暗夜 / 樱花商品仍保持下架，是否销售继续由管理员显式决定。
-- 首次管理员门禁与既有文档提交继续保留在 `dev`，待形成完整功能或成组维护批次后统一集成。
+- 首次管理员门禁、F1-F3 功能完成批次及 F4-B-F 专题已通过 PR `#64` 集成到 `master`，并完成 `master -> dev` 回灌。
 
 ### 2. 进入发布后常态开发
 
@@ -225,15 +227,16 @@ Radish V1 的产品定位固定为：
 20. 已完成 F4-F-B 服务端权威契约：Chat ledger 显式补齐成员唯一 / 用户 / 回执覆盖索引，原子单调游标、Private / Direct 发送者受限查询、50 人绑定 cursor、REST、无个人数据 Hub 失效提示、稳定双语错误和 `@radish/http` 已落地；PostgreSQL 17 实跑发现并修正历史 ChannelMember 索引未物化根因。
 21. 已完成 F4-F-C Pencil 与共用页面：活跃阅读面要求可见、聚焦、会话尾部和 WebOS 前台窗口，REST 只提交实际可见最高持久消息；网络 / 5xx 只保留当前会话内存重试，4xx 丢弃；回执摘要只认 HTTP 权威结果，Hub 仅触发失效，Direct / Private 页面、中英文、共享 Bottom Sheet 无障碍和账号卸载隔离已收口，旧 Hub 写命令删除。
 22. 已完成 F4-F-D 三普通账号运行态矩阵，覆盖四类频道 / 会话、Direct 全状态、中英文、PC / mobile、多标签、隐藏态、真实断线重连、WebOS 最小化 / 遮挡、撤回、成员 / 角色 / 权限变化、键盘、无障碍、四主题和不污染边界；实时消息最后消息投影共同根因已修复并补测试，临时数据、凭据与备份已清理，六库完整性与严格 verify 通过，F4-F 正式关闭。
+23. 已完成 F4-G-A 四候选域交叉审计与权威专题设计，确认 Docs / Wiki 普通作者路径和并发保存是真实核心缺口；新专题固定 `WikiDocument` 已批准正文、独立 Draft、显式 Owner / Collaborator、Review Event、草稿 / 正文双版本 CAS、正式 Author / Console 页面、可靠通知、90 天终态草稿正文保留和 A-D 验收口径。
 
-## 明日事项（2026-07-20）
+## 下一步事项（2026-07-20）
 
-1. 启动 `F4-G-A 功能完成线候选审计与专题裁决`。按规划读取顺序先复核本页与 [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)，仅在阶段边界仍不足时读取总开发路线；不先从历史 backlog 或归档反推当前优先级。
-2. 将候选池限定在已有代码、数据与正式 Web 入口的业务域，优先比较 Docs / Wiki 作者协作与权限、圈子关系与复访、治理案件 / 证据 / 动作、宠物既有成长与复访；Chat 与通知只审计尚未覆盖的真实用户路径，不因历史 Phase 2 清单继续叠加功能。
-3. 对每个候选交叉核对实体与 migration、Repository / Service、Controller / Hub、`@radish/http`、Store、正式 PC / mobile 页面、WebOS 复用面、测试和现有专题文档，记录用户价值、已具备能力、真实缺口、重复真相源、权限 / 隐私 / 数据一致性、性能与长期维护成本。
-4. 使用统一比较矩阵给出一个推荐专题，并说明其余候选后置理由；推荐结论必须覆盖明确语义、数据与 API 权威边界、正式 Web 页面归属、中英文 / 键盘 / 无障碍、并发 / 幂等 / 保留策略、与既有能力的不污染边界，以及预计修改文件与风险。
-5. 汇报推荐方案、主要取舍、A-D 开发批次、验证矩阵、停止线和完成标准，等待用户明确批准。获批前不修改业务架构、接口、migration、Pencil 或专题设计，不并行启动多个候选。
-6. 纯 Web 保持唯一正式主线，WebOS 只复用同一应用；Flutter 条件维护、Tauri 冻结，移动系统通知继续后置，主动生产证据采集继续保持最终收尾冻结。明日审计默认不启动服务或执行浏览器 smoke。
+1. 启动 `F4-G-B Docs / Wiki 普通作者贡献与协作服务端权威契约`，严格按 [权威专题设计](/features/wiki-author-contribution-collaboration-design) 实施，不先改正式页面。
+2. 使用显式 ledger migration 增加 `OwnerUserId / ActiveDraftId`、Draft、Collaborator 和 Review Event；迁移安全回填可确认归属的历史 Custom 文档，不改变既有公开读取结果。
+3. 在专属 Repository 内实现草稿 `ExpectedDraftVersion` 条件更新和审核应用的 `BaseDocumentVersion` CAS；正文、Revision、审核事件、ActiveDraft 和可靠通知必须保持事务一致。
+4. 落地 Author / Console API、所有者 / Accepted Editor / Reviewer 权限矩阵、目标状态幂等、稳定中英文错误与 LongId / PublicId 边界；普通作者不得获得发布、访问策略、归档、删除或恢复权限。
+5. 完成 SQLite / PostgreSQL migration 首次执行、重入、严格 verify、并发保存、并发审核、跨租户、BuiltIn 只读和通知幂等测试；执行后端全量、相关 workspace 静态检查、Baseline Quick 与仓库卫生检查。
+6. 本批不启动服务、不执行浏览器 smoke、不改 Pencil / Author / Console 页面；纯 Web 保持唯一正式主线，WebOS 只复用同一应用，Flutter / Tauri 与主动生产证据采集继续保持既有停止线。
 
 ## 并行维护线
 
