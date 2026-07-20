@@ -10,6 +10,8 @@ namespace Radish.Model;
 [SugarIndex("idx_wikidoc_tenant_slug", nameof(TenantId), OrderByType.Asc, nameof(Slug), OrderByType.Asc, IsUnique = true)]
 [SugarIndex("idx_wikidoc_parent_sort", nameof(TenantId), OrderByType.Asc, nameof(ParentId), OrderByType.Asc, nameof(Sort), OrderByType.Asc)]
 [SugarIndex("idx_wikidoc_status_time", nameof(TenantId), OrderByType.Asc, nameof(Status), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_wikidoc_owner_time", nameof(TenantId), OrderByType.Asc, nameof(OwnerUserId), OrderByType.Asc, nameof(ModifyTime), OrderByType.Desc)]
+[SugarIndex("idx_wikidoc_active_draft", nameof(TenantId), OrderByType.Asc, nameof(ActiveDraftId), OrderByType.Asc, IsUnique = true)]
 public class WikiDocument : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     [SugarColumn(IsNullable = false)]
@@ -56,6 +58,12 @@ public class WikiDocument : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 
     [SugarColumn(IsNullable = false)]
     public int Version { get; set; } = 1;
+
+    [SugarColumn(IsNullable = true)]
+    public long? OwnerUserId { get; set; }
+
+    [SugarColumn(IsNullable = true)]
+    public long? ActiveDraftId { get; set; }
 
     [SugarColumn(IsNullable = true)]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]

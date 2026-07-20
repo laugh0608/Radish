@@ -8,6 +8,21 @@ namespace Radish.IService;
 /// <summary>Wiki 文档服务接口</summary>
 public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentVo>
 {
+    Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(long userId, int pageIndex, int pageSize);
+    Task<WikiAuthorDraftDetailVo?> AuthorGetByIdAsync(long documentId, long userId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorDraftDetailVo> AuthorCreateAsync(CreateWikiAuthorDraftDto dto, long userId, string userName, long tenantId);
+    Task<WikiAuthorDraftDetailVo> AuthorStartDraftAsync(long documentId, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorDraftDetailVo> AuthorSaveDraftAsync(long draftId, SaveWikiAuthorDraftDto dto, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorDraftDetailVo> AuthorSubmitDraftAsync(long draftId, SubmitWikiDraftDto dto, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorDraftDetailVo> AuthorWithdrawDraftAsync(long draftId, int expectedDraftVersion, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
+    Task<IReadOnlyList<WikiDocumentCollaboratorVo>> AuthorGetCollaboratorsAsync(long documentId, long userId, bool isSystemOrAdmin = false);
+    Task<WikiDocumentCollaboratorVo> AuthorInviteCollaboratorAsync(long documentId, InviteWikiCollaboratorDto dto, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
+    Task<WikiDocumentCollaboratorVo> AuthorRespondInvitationAsync(long collaboratorId, RespondWikiCollaboratorInvitationDto dto, long userId, string userName, long tenantId);
+    Task<bool> AuthorRemoveCollaboratorAsync(long collaboratorId, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
+    Task<PageModel<WikiReviewQueueItemVo>> AdminGetReviewQueueAsync(int pageIndex, int pageSize);
+    Task<WikiAuthorDraftDetailVo?> AdminGetDraftByIdAsync(long draftId);
+    Task<WikiAuthorDraftDetailVo> AdminReviewDraftAsync(long draftId, ReviewWikiDraftDto dto, long reviewerId, string reviewerName, long tenantId);
+
     Task<PageModel<WikiDocumentVo>> GetPublicListAsync(
         int pageIndex = 1,
         int pageSize = 20,

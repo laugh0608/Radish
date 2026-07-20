@@ -15,6 +15,8 @@ public sealed class NotificationTargetData
     public long? OrderId { get; set; }
     public long? BenefitId { get; set; }
     public string? DocumentSlug { get; set; }
+    public long? DocumentId { get; set; }
+    public long? DraftId { get; set; }
     public long? GovernanceCaseId { get; set; }
 
     public string ToJson() => JsonSerializer.Serialize(this);
@@ -41,6 +43,7 @@ public sealed class NotificationTargetData
             NotificationTargetKind.Inventory => $"benefit:{BenefitId}",
             NotificationTargetKind.Experience => $"user:{UserId}",
             NotificationTargetKind.DocsDocument => $"doc:{DocumentSlug}",
+            NotificationTargetKind.DocsAuthorDraft => $"doc:{DocumentId}:draft:{DraftId}",
             NotificationTargetKind.GovernanceCase => $"case:{GovernanceCaseId}",
             _ => NotificationTargetKind.None
         };

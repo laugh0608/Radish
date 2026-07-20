@@ -42,6 +42,7 @@ public static class ConsolePermissions
     public const string TagsSort = "console.tags.sort";
     public const string DocsView = "console.docs.view";
     public const string DocsPublish = "console.docs.publish";
+    public const string DocsReview = "console.docs.review";
     public const string DocsArchive = "console.docs.archive";
     public const string DocsDelete = "console.docs.delete";
     public const string DocsRestore = "console.docs.restore";
@@ -124,6 +125,9 @@ public static class ConsolePermissions
             ["/api/v1/Wiki/AdminGetList"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetTree"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetById/\\d+"] = new[] { DocsView },
+            ["/api/v1/Wiki/AdminGetReviewQueue"] = new[] { DocsReview },
+            ["/api/v1/Wiki/AdminGetDraftById/\\d+"] = new[] { DocsReview },
+            ["/api/v1/Wiki/AdminReviewDraft/\\d+"] = new[] { DocsReview },
             ["/api/v1/Wiki/GetRevisionList/\\d+"] = new[] { DocsView },
             ["/api/v1/Wiki/GetRevisionDetail/\\d+"] = new[] { DocsView },
             ["/api/v1/Wiki/Publish/\\d+"] = new[] { DocsPublish },
@@ -222,6 +226,7 @@ public static class ConsolePermissions
         TagsSort,
         DocsView,
         DocsPublish,
+        DocsReview,
         DocsArchive,
         DocsDelete,
         DocsRestore,

@@ -22,6 +22,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IBaseRepository<UserBenefit> _benefitRepository;
     private readonly IBaseRepository<WikiDocument> _documentRepository;
+    private readonly IBaseRepository<WikiDocumentDraft> _wikiDraftRepository;
+    private readonly IBaseRepository<WikiDocumentCollaborator> _wikiCollaboratorRepository;
     private readonly IChannelMessageRepository _messageRepository;
     private readonly IChatChannelAccessService _chatAccessService;
 
@@ -32,6 +34,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         IBaseRepository<Order> orderRepository,
         IBaseRepository<UserBenefit> benefitRepository,
         IBaseRepository<WikiDocument> documentRepository,
+        IBaseRepository<WikiDocumentDraft> wikiDraftRepository,
+        IBaseRepository<WikiDocumentCollaborator> wikiCollaboratorRepository,
         IChannelMessageRepository messageRepository,
         IChatChannelAccessService chatAccessService)
     {
@@ -41,6 +45,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         _orderRepository = orderRepository;
         _benefitRepository = benefitRepository;
         _documentRepository = documentRepository;
+        _wikiDraftRepository = wikiDraftRepository;
+        _wikiCollaboratorRepository = wikiCollaboratorRepository;
         _messageRepository = messageRepository;
         _chatAccessService = chatAccessService;
     }
@@ -126,6 +132,37 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
             ? []
             : await _documentRepository.QueryAsync(item => documentSlugs.Contains(item.Slug));
         documents = documents.Where(item => !item.IsDeleted).ToList();
+        var authorDraftIds = notifications
+            .Where(item => item.TargetKind == NotificationTargetKind.DocsAuthorDraft && parsedTargets.ContainsKey(item.Id))
+            .Select(item => parsedTargets[item.Id].DraftId)
+            .Where(item => item.HasValue)
+            .Select(item => item!.Value)
+            .Distinct()
+            .ToList();
+        var authorDrafts = authorDraftIds.Count == 0
+            ? []
+            : await _wikiDraftRepository.QueryByIdsAsync(authorDraftIds);
+        authorDrafts = authorDrafts.Where(item => !item.IsDeleted).ToList();
+        var authorDocumentIds = authorDrafts.Select(item => item.DocumentId)
+            .Concat(notifications
+                .Where(item => item.TargetKind == NotificationTargetKind.DocsAuthorDraft && parsedTargets.ContainsKey(item.Id))
+                .Select(item => parsedTargets[item.Id].DocumentId)
+                .Where(item => item.HasValue)
+                .Select(item => item!.Value))
+            .Distinct()
+            .ToList();
+        var authorDocuments = authorDocumentIds.Count == 0
+            ? []
+            : await _documentRepository.QueryByIdsAsync(authorDocumentIds);
+        authorDocuments = authorDocuments.Where(item => !item.IsDeleted).ToList();
+        var authorCollaborators = authorDocumentIds.Count == 0
+            ? []
+            : await _wikiCollaboratorRepository.QueryAsync(item =>
+                authorDocumentIds.Contains(item.DocumentId) &&
+                item.UserId == userId &&
+                (item.InviteState == (int)WikiDocumentCollaboratorState.Pending ||
+                 item.InviteState == (int)WikiDocumentCollaboratorState.Accepted) &&
+                !item.IsDeleted);
 
         var postById = posts.DistinctBy(item => item.Id).ToDictionary(item => item.Id);
         var postByPublicId = posts
@@ -142,6 +179,9 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         var benefitById = benefits.ToDictionary(item => item.Id);
         var messageById = messages.ToDictionary(item => item.Id);
         var documentBySlug = documents.ToDictionary(item => item.Slug, StringComparer.Ordinal);
+        var authorDraftById = authorDrafts.ToDictionary(item => item.Id);
+        var authorDocumentById = authorDocuments.ToDictionary(item => item.Id);
+        var accessibleAuthorDocumentIds = authorCollaborators.Select(item => item.DocumentId).ToHashSet();
         var chatAccessByChannel = new Dictionary<long, ChatChannelAccessResult>();
 
         foreach (var notification in notifications)
@@ -170,6 +210,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
                 NotificationTargetKind.Inventory => ResolveBenefitTarget(target, tenantId, userId, benefitById),
                 NotificationTargetKind.Experience => ResolveExperienceTarget(target, tenantId, userId, userById),
                 NotificationTargetKind.DocsDocument => ResolveDocumentTarget(target, tenantId, documentBySlug),
+                NotificationTargetKind.DocsAuthorDraft => ResolveAuthorDraftTarget(
+                    target, tenantId, userId, authorDraftById, authorDocumentById, accessibleAuthorDocumentIds),
                 NotificationTargetKind.GovernanceCase => Unavailable(ForbiddenReason),
                 NotificationTargetKind.ChatConversation => await ResolveChatTargetAsync(
                     target,
@@ -364,6 +406,32 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         return Map(target, NotificationTargetKind.DocsDocument);
     }
 
+    private static NotificationTargetVo ResolveAuthorDraftTarget(
+        NotificationTargetData target,
+        long tenantId,
+        long userId,
+        IReadOnlyDictionary<long, WikiDocumentDraft> draftById,
+        IReadOnlyDictionary<long, WikiDocument> documentById,
+        IReadOnlySet<long> acceptedDocumentIds)
+    {
+        if (!target.DocumentId.HasValue ||
+            !documentById.TryGetValue(target.DocumentId.Value, out var document))
+        {
+            return Unavailable(DeletedReason);
+        }
+        if (target.DraftId.HasValue &&
+            (!draftById.TryGetValue(target.DraftId.Value, out var draft) || draft.DocumentId != document.Id))
+        {
+            return Unavailable(DeletedReason);
+        }
+        if (!IsTenantVisible(document.TenantId, tenantId) ||
+            (document.OwnerUserId != userId && !acceptedDocumentIds.Contains(document.Id)))
+        {
+            return Unavailable(ForbiddenReason);
+        }
+        return Map(target, NotificationTargetKind.DocsAuthorDraft);
+    }
+
     private static NotificationTargetVo Map(NotificationTargetData target, string kind)
     {
         return new NotificationTargetVo
@@ -379,6 +447,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
             VoOrderId = ToId(target.OrderId),
             VoBenefitId = ToId(target.BenefitId),
             VoDocumentSlug = target.DocumentSlug,
+            VoDocumentId = ToId(target.DocumentId),
+            VoDraftId = ToId(target.DraftId),
             VoGovernanceCaseId = ToId(target.GovernanceCaseId)
         };
     }

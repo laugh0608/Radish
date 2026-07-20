@@ -226,6 +226,152 @@ public class WikiController : ControllerBase
         return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
     }
 
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<PageModel<WikiAuthorDocumentVo>>> AuthorGetList(
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var result = await _wikiDocumentService.AuthorGetListAsync(Current.UserId, pageIndex, pageSize);
+        return MessageModel<PageModel<WikiAuthorDocumentVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet("{documentId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorGetById(long documentId)
+    {
+        var result = await _wikiDocumentService.AuthorGetByIdAsync(
+            documentId, Current.UserId, Current.IsSystemOrAdmin());
+        return result == null
+            ? BuildFailure(StatusCodes.Status404NotFound, "文档或草稿不存在", default(WikiAuthorDraftDetailVo)!,
+                "Wiki.DraftNotFound", "error.wiki.draft_not_found")
+            : MessageModel<WikiAuthorDraftDetailVo>.Success("查询成功", result);
+    }
+
+    [HttpPost]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorCreate([FromBody] CreateWikiAuthorDraftDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorCreateAsync(dto, Current.UserId, Current.UserName, Current.TenantId),
+            "草稿创建成功", default(WikiAuthorDraftDetailVo)!);
+
+    [HttpPost("{documentId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorStartDraft(long documentId) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorStartDraftAsync(
+                documentId, Current.UserId, Current.UserName, Current.TenantId, Current.IsSystemOrAdmin()),
+            "草稿创建成功", default(WikiAuthorDraftDetailVo)!);
+
+    [HttpPut("{draftId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorSaveDraft(
+        long draftId,
+        [FromBody] SaveWikiAuthorDraftDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorSaveDraftAsync(
+                draftId, dto, Current.UserId, Current.UserName, Current.TenantId, Current.IsSystemOrAdmin()),
+            "草稿保存成功", default(WikiAuthorDraftDetailVo)!);
+
+    [HttpPost("{draftId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorSubmitDraft(
+        long draftId,
+        [FromBody] SubmitWikiDraftDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorSubmitDraftAsync(
+                draftId, dto, Current.UserId, Current.UserName, Current.TenantId, Current.IsSystemOrAdmin()),
+            "草稿已提交审核", default(WikiAuthorDraftDetailVo)!);
+
+    [HttpPost("{draftId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorWithdrawDraft(
+        long draftId,
+        [FromBody] SubmitWikiDraftDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorWithdrawDraftAsync(
+                draftId, dto.ExpectedDraftVersion, Current.UserId, Current.UserName,
+                Current.TenantId, Current.IsSystemOrAdmin()),
+            "草稿已撤回", default(WikiAuthorDraftDetailVo)!);
+
+    [HttpGet("{documentId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<IReadOnlyList<WikiDocumentCollaboratorVo>>> AuthorGetCollaborators(long documentId)
+    {
+        try
+        {
+            var result = await _wikiDocumentService.AuthorGetCollaboratorsAsync(
+                documentId, Current.UserId, Current.IsSystemOrAdmin());
+            return MessageModel<IReadOnlyList<WikiDocumentCollaboratorVo>>.Success("查询成功", result);
+        }
+        catch (BusinessException exception)
+        {
+            return BuildFailure(exception, (IReadOnlyList<WikiDocumentCollaboratorVo>)Array.Empty<WikiDocumentCollaboratorVo>());
+        }
+    }
+
+    [HttpPost("{documentId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiDocumentCollaboratorVo>> AuthorInviteCollaborator(
+        long documentId,
+        [FromBody] InviteWikiCollaboratorDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorInviteCollaboratorAsync(
+                documentId, dto, Current.UserId, Current.UserName, Current.TenantId, Current.IsSystemOrAdmin()),
+            "协作者邀请已发送", default(WikiDocumentCollaboratorVo)!);
+
+    [HttpPost("{collaboratorId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<WikiDocumentCollaboratorVo>> AuthorRespondInvitation(
+        long collaboratorId,
+        [FromBody] RespondWikiCollaboratorInvitationDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorRespondInvitationAsync(
+                collaboratorId, dto, Current.UserId, Current.UserName, Current.TenantId),
+            "邀请状态已更新", default(WikiDocumentCollaboratorVo)!);
+
+    [HttpPost("{collaboratorId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public Task<MessageModel<bool>> AuthorRemoveCollaborator(long collaboratorId) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AuthorRemoveCollaboratorAsync(
+                collaboratorId, Current.UserId, Current.UserName, Current.TenantId, Current.IsSystemOrAdmin()),
+            "协作者已移除", false);
+
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsReview)]
+    public async Task<MessageModel<PageModel<WikiReviewQueueItemVo>>> AdminGetReviewQueue(
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var result = await _wikiDocumentService.AdminGetReviewQueueAsync(pageIndex, pageSize);
+        return MessageModel<PageModel<WikiReviewQueueItemVo>>.Success("查询成功", result);
+    }
+
+    [HttpGet("{draftId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsReview)]
+    public async Task<MessageModel<WikiAuthorDraftDetailVo>> AdminGetDraftById(long draftId)
+    {
+        var result = await _wikiDocumentService.AdminGetDraftByIdAsync(draftId);
+        return result == null
+            ? BuildFailure(StatusCodes.Status404NotFound, "草稿不存在", default(WikiAuthorDraftDetailVo)!,
+                "Wiki.DraftNotFound", "error.wiki.draft_not_found")
+            : MessageModel<WikiAuthorDraftDetailVo>.Success("查询成功", result);
+    }
+
+    [HttpPost("{draftId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.DocsReview)]
+    public Task<MessageModel<WikiAuthorDraftDetailVo>> AdminReviewDraft(
+        long draftId,
+        [FromBody] ReviewWikiDraftDto dto) =>
+        ExecuteWikiActionAsync(
+            () => _wikiDocumentService.AdminReviewDraftAsync(
+                draftId, dto, Current.UserId, Current.UserName, Current.TenantId),
+            "审核状态已更新", default(WikiAuthorDraftDetailVo)!);
+
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
     public async Task<MessageModel<long>> Create([FromBody] CreateWikiDocumentDto createDto)
@@ -471,6 +617,27 @@ public class WikiController : ControllerBase
             MessageKey = messageKey,
             ResponseData = responseData
         };
+    }
+
+    private static async Task<MessageModel<T>> ExecuteWikiActionAsync<T>(
+        Func<Task<T>> action,
+        string successMessage,
+        T failureData)
+    {
+        try
+        {
+            return MessageModel<T>.Success(successMessage, await action());
+        }
+        catch (Exception exception) when (exception is ArgumentException or BusinessException)
+        {
+            var businessException = exception as BusinessException;
+            return BuildFailure(
+                businessException?.StatusCode ?? StatusCodes.Status400BadRequest,
+                exception.Message,
+                failureData,
+                businessException?.ErrorCode ?? "Wiki.ValidationFailed",
+                businessException?.MessageKey ?? "error.wiki.validation_failed");
+        }
     }
 
     [HttpGet("{id:long}")]

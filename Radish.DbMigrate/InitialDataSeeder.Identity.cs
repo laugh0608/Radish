@@ -1155,6 +1155,33 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Wiki",
                 ActionName = "ExportMarkdown",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50164L,
+                ApiModuleName = "Admin get wiki review queue",
+                LinkUrl = "/api/v1/Wiki/AdminGetReviewQueue",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetReviewQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50165L,
+                ApiModuleName = "Admin get wiki draft evidence",
+                LinkUrl = "/api/v1/Wiki/AdminGetDraftById/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetDraftById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50166L,
+                ApiModuleName = "Admin review wiki draft",
+                LinkUrl = "/api/v1/Wiki/AdminReviewDraft/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminReviewDraft",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 

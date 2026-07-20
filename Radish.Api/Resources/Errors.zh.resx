@@ -297,6 +297,45 @@
   <data name="error.wiki.document_not_accessible" xml:space="preserve">
     <value>文档不存在或当前账号无权访问。</value>
   </data>
+  <data name="error.wiki.draft_not_found" xml:space="preserve">
+    <value>文档草稿不存在或当前账号无权访问。</value>
+  </data>
+  <data name="error.wiki.draft_version_conflict" xml:space="preserve">
+    <value>草稿已被其他操作更新，请重新载入后再继续。</value>
+  </data>
+  <data name="error.wiki.document_version_conflict" xml:space="preserve">
+    <value>正式文档版本已变化，请重新核对草稿与当前正文。</value>
+  </data>
+  <data name="error.wiki.draft_state_conflict" xml:space="preserve">
+    <value>草稿或邀请状态已变化，请刷新后重试。</value>
+  </data>
+  <data name="error.wiki.active_draft_exists" xml:space="preserve">
+    <value>该文档已有活跃草稿。</value>
+  </data>
+  <data name="error.wiki.active_draft_limit" xml:space="preserve">
+    <value>当前账号的活跃草稿数量已达到上限。</value>
+  </data>
+  <data name="error.wiki.collaborator_exists" xml:space="preserve">
+    <value>该用户已经是文档所有者或有效协作者。</value>
+  </data>
+  <data name="error.wiki.collaborator_limit" xml:space="preserve">
+    <value>该文档的协作者数量已达到上限。</value>
+  </data>
+  <data name="error.wiki.markdown_too_large" xml:space="preserve">
+    <value>Markdown 正文超过允许的大小上限。</value>
+  </data>
+  <data name="error.wiki.review_comment_required" xml:space="preserve">
+    <value>请求修改或驳回时必须填写审核意见。</value>
+  </data>
+  <data name="error.wiki.author_publishing_blocked" xml:space="preserve">
+    <value>当前账号暂时不能新建或提交文档贡献。</value>
+  </data>
+  <data name="error.wiki.invalid_review_action" xml:space="preserve">
+    <value>不支持该文档审核动作。</value>
+  </data>
+  <data name="error.wiki.read_only_source" xml:space="preserve">
+    <value>固定来源文档为只读内容，不能创建普通作者草稿。</value>
+  </data>
   <data name="error.wiki.restore_rejected" xml:space="preserve">
     <value>文档不存在或当前状态无法恢复。</value>
   </data>

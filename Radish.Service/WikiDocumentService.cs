@@ -29,13 +29,25 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
     private readonly IConsoleAuthorizationService _consoleAuthorizationService;
     private readonly IMapper _mapper;
     private readonly DocumentOptions _documentOptions;
+    private readonly IBaseRepository<WikiDocumentDraft>? _wikiDraftRepository;
+    private readonly IBaseRepository<WikiDocumentCollaborator>? _wikiCollaboratorRepository;
+    private readonly IBaseRepository<WikiDocumentReviewEvent>? _wikiReviewEventRepository;
+    private readonly IBaseRepository<User>? _userRepository;
+    private readonly IContentModerationService? _contentModerationService;
+    private readonly IReliableOutboxService? _reliableOutboxService;
 
     public WikiDocumentService(
         IMapper mapper,
         IWikiDocumentRepository wikiDocumentRepository,
         IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
         IConsoleAuthorizationService consoleAuthorizationService,
-        IOptions<DocumentOptions> documentOptions)
+        IOptions<DocumentOptions> documentOptions,
+        IBaseRepository<WikiDocumentDraft>? wikiDraftRepository = null,
+        IBaseRepository<WikiDocumentCollaborator>? wikiCollaboratorRepository = null,
+        IBaseRepository<WikiDocumentReviewEvent>? wikiReviewEventRepository = null,
+        IBaseRepository<User>? userRepository = null,
+        IContentModerationService? contentModerationService = null,
+        IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, wikiDocumentRepository)
     {
         _mapper = mapper;
@@ -43,6 +55,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         _wikiDocumentRevisionRepository = wikiDocumentRevisionRepository;
         _consoleAuthorizationService = consoleAuthorizationService;
         _documentOptions = documentOptions.Value;
+        _wikiDraftRepository = wikiDraftRepository;
+        _wikiCollaboratorRepository = wikiCollaboratorRepository;
+        _wikiReviewEventRepository = wikiReviewEventRepository;
+        _userRepository = userRepository;
+        _contentModerationService = contentModerationService;
+        _reliableOutboxService = reliableOutboxService;
     }
 
     public async Task<PageModel<WikiDocumentVo>> GetPublicListAsync(

@@ -38,6 +38,7 @@ export const CONSOLE_PERMISSIONS = {
   tagsSort: 'console.tags.sort',
   docsView: 'console.docs.view',
   docsPublish: 'console.docs.publish',
+  docsReview: 'console.docs.review',
   docsArchive: 'console.docs.archive',
   docsDelete: 'console.docs.delete',
   docsRestore: 'console.docs.restore',
