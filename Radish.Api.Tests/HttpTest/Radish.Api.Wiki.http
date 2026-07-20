@@ -13,6 +13,8 @@
 @WikiDocumentId = 1
 @WikiDocumentSlug = wiki-sample
 @WikiRevisionId = 1
+@WikiDraftId = 1
+@WikiDraftVersion = 1
 
 ### 1. 获取公开文档列表（匿名，只返回 Published + Public）
 GET {{Gateway_HostAddress}}/api/v1/Wiki/PublicGetList?pageIndex=1&pageSize=20
@@ -46,9 +48,9 @@ GET {{Gateway_HostAddress}}/api/v1/Wiki/GetBySlug/{{WikiDocumentSlug}}
 Authorization: Bearer {{Access_Token}}
 Accept: application/json
 
-### 8. 创建文档
-POST {{Gateway_HostAddress}}/api/v1/Wiki/Create
-Authorization: Bearer {{Admin_Access_Token}}
+### 8. 创建作者草稿（登录用户）
+POST {{Gateway_HostAddress}}/api/v1/Wiki/AuthorCreate
+Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
 
 {
@@ -56,12 +58,12 @@ Content-Type: application/json
   "slug": "wiki-sample",
   "summary": "用于验证 Wiki MVP 主链路",
   "markdownContent": "# Wiki 示例文档\n\n这是第一篇 Wiki 文档。",
-  "sort": 0
+  "changeSummary": "创建文档草稿"
 }
 
-### 9. 更新文档
-PUT {{Gateway_HostAddress}}/api/v1/Wiki/Update/{{WikiDocumentId}}
-Authorization: Bearer {{Admin_Access_Token}}
+### 9. 保存作者草稿（ExpectedDraftVersion 为 CAS 版本）
+PUT {{Gateway_HostAddress}}/api/v1/Wiki/AuthorSaveDraft/{{WikiDraftId}}
+Authorization: Bearer {{Access_Token}}
 Content-Type: application/json
 
 {
@@ -69,26 +71,36 @@ Content-Type: application/json
   "slug": "wiki-sample",
   "summary": "用于验证 Wiki MVP 更新链路",
   "markdownContent": "# Wiki 示例文档\n\n这是更新后的内容。",
-  "sort": 1,
-  "changeSummary": "补充说明"
+  "changeSummary": "补充说明",
+  "expectedDraftVersion": {{WikiDraftVersion}}
 }
 
-### 10. 发布文档
+### 10. 提交作者草稿审核
+POST {{Gateway_HostAddress}}/api/v1/Wiki/AuthorSubmitDraft/{{WikiDraftId}}
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "expectedDraftVersion": {{WikiDraftVersion}},
+  "changeSummary": "提交审核"
+}
+
+### 11. 发布文档（审核批准应用后独立执行）
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Publish/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 11. 转为草稿
+### 12. 转为草稿
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Unpublish/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 12. 归档文档
+### 13. 归档文档
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Archive/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 13. 导入 Markdown
+### 14. 导入 Markdown
 POST {{Gateway_HostAddress}}/api/v1/Wiki/ImportMarkdown
 Authorization: Bearer {{Admin_Access_Token}}
 Content-Type: multipart/form-data; boundary=RadishWikiBoundary
@@ -110,22 +122,22 @@ Content-Type: text/markdown
 这是通过 http 文件导入的 Markdown 文档。
 --RadishWikiBoundary--
 
-### 14. 导出 Markdown
+### 15. 导出 Markdown
 GET {{Gateway_HostAddress}}/api/v1/Wiki/ExportMarkdown/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: text/markdown
 
-### 15. 获取版本历史列表
+### 16. 获取版本历史列表
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetRevisionList/{{WikiDocumentId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 16. 获取版本详情
+### 17. 获取版本详情
 GET {{Gateway_HostAddress}}/api/v1/Wiki/GetRevisionDetail/{{WikiRevisionId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
 
-### 17. 按版本回滚
+### 18. 按版本回滚
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Rollback/{{WikiRevisionId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json

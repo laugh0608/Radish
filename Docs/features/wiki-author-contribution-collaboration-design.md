@@ -1,6 +1,6 @@
 # Docs / Wiki 普通作者贡献与协作设计
 
-> 状态：`F4-G-A / B` 已完成，下一顺位进入 `F4-G-C` Author / Console 正式页面。
+> 状态：`F4-G-A / B / C` 已完成，下一顺位进入 `F4-G-D` 成组验收与关闭。
 >
 > 最后更新：2026-07-20
 >
@@ -22,12 +22,12 @@ F4-G 将现有“管理员可以维护文档”补成“登录用户可以贡献
 
 ## 二、为什么现在推进
 
-现有系统已经具备公开 `/docs`、正式作者页面 `/docs/mine|compose|edit|revisions`、版本历史、Markdown 导入导出和 Console `/documents` 治理，但仍存在两个相互关联的真实缺口：
+F4-G-A 审计时，系统已经具备公开 `/docs`、正式作者页面 `/docs/mine|compose|edit|revisions`、版本历史、Markdown 导入导出和 Console `/documents` 治理，但存在两个相互关联的真实缺口：
 
-- `WikiController.Create / Update` 仍使用 `SystemOrAdmin`，前端作者入口也只识别 `Admin/System`；普通用户没有贡献路径。
+- `WikiController.Create / Update` 当时仍使用 `SystemOrAdmin`，前端作者入口也只识别 `Admin/System`；普通用户没有贡献路径。
 - `UpdateWikiDocumentDto` 不提交期望版本，服务端读取后直接更新并递增 `Version`；两个编辑者并发保存时，后写可能覆盖先写。
 
-仅把 Controller 策略改为登录用户会制造越权和未审核内容外泄；仅补 `ExpectedVersion` 又不能完成普通作者路径。因此本专题必须同时治理所有权、协作者、工作草稿、审核与乐观并发。
+仅把 Controller 策略改为登录用户会制造越权和未审核内容外泄；仅补 `ExpectedVersion` 又不能完成普通作者路径。因此本专题同时治理所有权、协作者、工作草稿、审核与乐观并发。F4-G-C 已完成消费者迁移并删除旧 `Create / Update` HTTP 写入口，正式页面只使用 Author / Review 契约。
 
 ## 三、目标与非目标
 

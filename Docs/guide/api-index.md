@@ -154,12 +154,22 @@
   - `Wiki/GetList`
   - `Wiki/GetBySlug/{slug}`
   - `Wiki/GetById/{id}`
-- 正式 Web 作者入口当前沿用 `Admin/System` 写权限，使用：
-  - `Wiki/Create`
-  - `Wiki/Update/{id}`
-  - `Wiki/GetRevisionList/{id}`
-  - `Wiki/GetRevisionDetail/{revisionId}`
+- 正式 Web 作者入口面向登录用户，所有写入统一经过作者草稿、协作与审核契约：
+  - `Wiki/AuthorGetList`
+  - `Wiki/AuthorGetById/{documentId}`
+  - `Wiki/AuthorCreate`
+  - `Wiki/AuthorStartDraft/{documentId}`
+  - `Wiki/AuthorSaveDraft/{draftId}`
+  - `Wiki/AuthorSubmitDraft/{draftId}`
+  - `Wiki/AuthorWithdrawDraft/{draftId}`
+  - `Wiki/AuthorGetCollaborators/{documentId}`
+  - `Wiki/AuthorInviteCollaborator/{documentId}`
+  - `Wiki/AuthorRespondInvitation/{collaboratorId}`
+  - `Wiki/AuthorRemoveCollaborator/{collaboratorId}`
 - Console `/documents` 使用治理接口：
+  - `Wiki/AdminGetReviewQueue`
+  - `Wiki/AdminGetDraftById/{draftId}`
+  - `Wiki/AdminReviewDraft/{draftId}`
   - `Wiki/AdminGetList`
   - `Wiki/AdminGetTree`
   - `Wiki/AdminGetById/{id}`
@@ -176,7 +186,7 @@
 权限边界：
 
 - 公开读取接口允许匿名进入，但服务端按文档状态、删除状态、可见性、登录态和角色过滤结果。
-- 作者入口不新增 `console.docs.create` 或 `console.docs.edit`，当前由 `SystemOrAdmin` 后端策略和前端 `Admin/System` 入口可见性共同限制。
+- 作者入口不依赖 `console.docs.create` 或 `console.docs.edit`；登录用户可创建自己的草稿，所有者与已接受协作者按作者契约编辑，正式版本只能由具备 `console.docs.review` 的审核者批准应用。
 - Console 治理接口必须走 `console.docs.*` 权限映射，权限覆盖见 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
 - 固定文档 `SourceType=builtin` 只读，不允许通过作者入口或 Console 回写仓库 `Docs/` 源文件。
 

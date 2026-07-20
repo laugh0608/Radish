@@ -372,48 +372,6 @@ public class WikiController : ControllerBase
                 draftId, dto, Current.UserId, Current.UserName, Current.TenantId),
             "审核状态已更新", default(WikiAuthorDraftDetailVo)!);
 
-    [HttpPost]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
-    public async Task<MessageModel<long>> Create([FromBody] CreateWikiDocumentDto createDto)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", 0L, "Wiki.ValidationFailed", "error.wiki.validation_failed");
-        }
-
-        try
-        {
-            var id = await _wikiDocumentService.CreateDocumentAsync(createDto, Current.UserId, Current.UserName, Current.TenantId);
-            return MessageModel<long>.Success("创建成功", id);
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure<long>(ex, 0);
-        }
-    }
-
-    [HttpPut("{id:long}")]
-    [Authorize(Policy = AuthorizationPolicies.SystemOrAdmin)]
-    public async Task<MessageModel<bool>> Update(long id, [FromBody] UpdateWikiDocumentDto updateDto)
-    {
-        if (!ModelState.IsValid)
-        {
-            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", false, "Wiki.ValidationFailed", "error.wiki.validation_failed");
-        }
-
-        try
-        {
-            var updated = await _wikiDocumentService.UpdateDocumentAsync(id, updateDto, Current.UserId, Current.UserName);
-            return updated
-                ? MessageModel<bool>.Success("更新成功", true)
-                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
-    }
-
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsDelete)]

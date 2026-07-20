@@ -68,6 +68,27 @@ export type {
 } from './chat-read-receipt-contract';
 export { ChatReadReceiptModes } from './chat-read-receipt-contract';
 
+export type {
+  WikiLongId,
+  WikiDraftReviewStateValue,
+  WikiCollaboratorStateValue,
+  WikiReviewActionValue,
+  WikiAuthorDocumentVo,
+  WikiDocumentCollaboratorVo,
+  WikiDocumentReviewEventVo,
+  WikiAuthorDraftDetailVo,
+  WikiReviewQueueItemVo,
+  CreateWikiAuthorDraftRequest,
+  SaveWikiAuthorDraftRequest,
+  SubmitWikiDraftRequest,
+  ReviewWikiDraftRequest,
+} from './wiki-authoring-contract';
+export {
+  WikiDraftReviewState,
+  WikiCollaboratorState,
+  WikiReviewAction,
+} from './wiki-authoring-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

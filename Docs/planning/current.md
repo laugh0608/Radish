@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-G-C Docs / Wiki Author / Console 正式页面`
-- **产品下一顺位**：`把正式作者工作区与 Console 审核台迁移到服务端权威草稿、协作与审核契约`
+- **工程第一顺位**：`F4-G-D Docs / Wiki 成组验收与关闭`
+- **产品下一顺位**：`在 Gateway 正式路径完成所有者、协作者、无权用户与 Console 审核者的 PC / mobile 成组验收`
 - **复核日期**：`2026-07-20`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -94,6 +94,7 @@
   - 2026-07-20 PR `#64` 已通过全部 required checks 并以 merge commit 合并到 `master`，合并提交为 `8f8fc6e2`；`master / dev / origin` 已完成 fast-forward 回灌并统一到同一提交。本批只完成代码集成，未创建 tag、镜像或生产部署。
   - 2026-07-20 F4-G-A 已完成：Docs / Wiki、圈子、治理和宠物四候选交叉审计后，裁决 [Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 为唯一当前专题；设计固定正式正文与独立工作草稿分离、显式所有者 / 协作者、审核应用、双版本乐观并发、可靠通知、保留策略、A-D 批次和停止线。下一顺位进入 F4-G-B，不并行启动其他候选。
   - 2026-07-20 F4-G-B 已完成：显式 Main ledger migration、Owner / Draft / Collaborator / Review Event、草稿与正式正文 CAS、协作者条件状态转换、Author / Console API、`console.docs.review`、可靠通知、证据详情与 90 天终态正文清理已落地；后端全量 `954` 项通过、`25` 项环境用例按配置跳过，详细见 [服务端权威契约完成记录](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20)。下一顺位进入 F4-G-C。
+  - 2026-07-20 F4-G-C 已完成：Author PC / mobile 画板与正式 `/docs/mine|compose|edit|revisions` 已迁移到 Owner / Collaborator、草稿 CAS、提交 / 撤回、冲突恢复和审核时间线；Console 现有 `/documents` 增加待审队列、双栏正文证据和 RequestChanges / Reject / Apply，Apply 与 Publish 保持分离。WebOS 兼容写入复用同一 Author API，旧作者直写 HTTP 入口已删除；前端 `548` 项、Wiki 后端定向 `47` 项、两端生产构建、解决方案构建、Baseline Quick 和仓库卫生通过。详见 [F4-G-C 正式页面完成记录](/records/f4-g-c-wiki-author-console-pages-2026-07-20)，下一顺位进入 F4-G-D。
 
 ## V1 产品与发布范围
 
@@ -183,7 +184,7 @@ Radish V1 的产品定位固定为：
 4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A-D 批已经完成；权威 ACL、目标状态幂等、revision 实时快照、正式 Web / WebOS、三普通账号 PC / mobile 矩阵、共同根因修复和临时数据清理均通过，专题关闭。
 5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A-D 批已完成并关闭，权威 ACL、目标状态幂等、20 条上限、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过。
 6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭，唯一持久游标、隐私裁剪、发送者受限读取、活跃阅读面、正式 Web / WebOS 与三普通账号成组验收全部通过。
-7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A / B 批已完成；下一顺位进入 C 批，先更新 PC / mobile Pencil，再迁移正式 Author 工作区与现有 Console `/documents` 审核工作台，不建立第二套页面或状态真相源。
+7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A / B / C 批已完成；下一顺位进入 D 批，在 Gateway 正式路径成组验证 Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply 与独立 Publish，不并行启动新专题。
 
 ## 昨日事项（2026-07-18）
 
@@ -230,15 +231,16 @@ Radish V1 的产品定位固定为：
 22. 已完成 F4-F-D 三普通账号运行态矩阵，覆盖四类频道 / 会话、Direct 全状态、中英文、PC / mobile、多标签、隐藏态、真实断线重连、WebOS 最小化 / 遮挡、撤回、成员 / 角色 / 权限变化、键盘、无障碍、四主题和不污染边界；实时消息最后消息投影共同根因已修复并补测试，临时数据、凭据与备份已清理，六库完整性与严格 verify 通过，F4-F 正式关闭。
 23. 已完成 F4-G-A 四候选域交叉审计与权威专题设计，确认 Docs / Wiki 普通作者路径和并发保存是真实核心缺口；新专题固定 `WikiDocument` 已批准正文、独立 Draft、显式 Owner / Collaborator、Review Event、草稿 / 正文双版本 CAS、正式 Author / Console 页面、可靠通知、90 天终态草稿正文保留和 A-D 验收口径。
 24. 已完成 F4-G-B 服务端权威契约：显式 migration、草稿 / 协作者 / 审核实体、CAS 与目标状态幂等、事务应用、Author / Console API、独立审核权限、可靠通知、证据时间线和终态正文清理已落地；后端全量 `954` 项通过、`25` 项环境用例按配置跳过，本批没有启动服务或执行浏览器 smoke。
+25. 已完成 F4-G-C Author / Console 正式页面：两份 Pencil 设计源覆盖 PC / mobile 作者协作、冲突恢复和审核证据；正式 Author 页面只认服务端 `VoCan*`、Draft / Review 状态与 CAS 版本，Console 在既有 `/documents` 内完成审核闭环，WebOS 写入经同一 Author API 兼容转发，旧 `Create / Update` HTTP 入口删除。前端 `548` 项、Wiki 后端定向 `47` 项、lint、type-check、两端生产构建、解决方案构建、Baseline Quick 与仓库卫生通过；未启动服务或执行浏览器 smoke。
 
 ## 下一步事项（2026-07-20）
 
-1. 启动 `F4-G-C Docs / Wiki Author / Console 正式页面`，严格复用已完成的服务端权威契约，不在前端建立第二份正文、权限或审核状态真相源。
-2. 先更新 PC / mobile Pencil：Author 覆盖草稿列表、创建 / 编辑、协作者、审核时间线和版本冲突恢复；Console 复用现有 `/documents` 增加待审核队列、正文证据与审核动作。
-3. 更新 `@radish/http` LongId 字符串契约，再迁移 `/docs/mine|compose|edit|revisions`；页面只认服务端 `VoCan*` 能力和稳定错误码，冲突时保留本地 Markdown 并提供复制、下载与重新载入。
-4. 完成协作者 PublicId 邀请 / 响应 / 撤销、审核 RequestChanges / Reject / Apply 与既有 Publish 分离、中英文、PC / mobile、键盘、无障碍、四主题和账号 reset。
-5. 消费者迁移并验证后，删除或收敛旧 `Create / Update` 作者写入口，确保普通作者不能绕过 Draft / Review；WebOS 只复用同一 Wiki 应用，不增加专属状态模型。
-6. C 批执行相关 workspace test / type-check / lint / build、后端定向回归、Baseline Quick、仓库卫生与 `git diff --check`；不启动服务、不执行浏览器 smoke，运行态成组验收留给 F4-G-D。
+1. 启动 `F4-G-D Docs / Wiki 成组验收与关闭`；执行真实 smoke 前按当轮要求说明并获得服务启动授权。
+2. 使用普通所有者、普通协作者、普通无权用户和 Console 审核者，在 Gateway 正式路径覆盖 `zh / en × PC / mobile`。
+3. 验证创建、PublicId 邀请 / 接受 / 拒绝 / 撤销、CAS 并发保存、提交、撤回、请求修改、拒绝、批准应用、独立发布、深链恢复与账号切换隔离。
+4. 验证未审核正文不进入公开读取、失权后下一次读写被服务端拒绝、Apply 冲突不产生正式版本 / Revision / 通知污染。
+5. 完成六库完整性、migration verify 与临时账号、邀请、草稿、审核事件、通知、凭据和备份清理；只在发现共同根因时回到代码修复。
+6. 更新验收记录与专题状态，满足完成标准后关闭 F4-G；在关闭前不启动下一功能专题。
 
 ## 并行维护线
 

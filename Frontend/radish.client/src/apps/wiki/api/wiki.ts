@@ -5,9 +5,16 @@ import {
   apiPut,
   configureApiClient,
   createApiResponseError,
+  isApiResponseNotFoundError,
   parseApiResponseWithI18n,
   type ApiResponse,
+  type CreateWikiAuthorDraftRequest,
   type ParsedApiResponse,
+  type SaveWikiAuthorDraftRequest,
+  type SubmitWikiDraftRequest,
+  type WikiAuthorDocumentVo,
+  type WikiAuthorDraftDetailVo,
+  type WikiDocumentCollaboratorVo,
 } from '@radish/http';
 import type { TFunction } from 'i18next';
 import type { LongId } from '@/api/user';
@@ -65,12 +72,152 @@ export async function getWikiDocumentBySlug(slug: string, t: TFunction): Promise
   return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }), t('wiki.toast.loadDetailFailed'));
 }
 
+export async function getWikiAuthorList(t: TFunction): Promise<WikiPageModel<WikiAuthorDocumentVo>> {
+  return await ensureOk(
+    apiGet<WikiPageModel<WikiAuthorDocumentVo>>('/api/v1/Wiki/AuthorGetList?pageIndex=1&pageSize=100', { withAuth: true }),
+    t('wiki.author.feedback.loadListFailed'),
+  );
+}
+
+export async function getWikiAuthorDraft(documentId: LongId, t: TFunction): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiGet<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorGetById/${encodeURIComponent(String(documentId))}`, { withAuth: true }),
+    t('wiki.author.feedback.loadDetailFailed'),
+  );
+}
+
+export async function createWikiAuthorDraft(
+  request: CreateWikiAuthorDraftRequest,
+  t: TFunction,
+): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiPost<WikiAuthorDraftDetailVo>('/api/v1/Wiki/AuthorCreate', request, { withAuth: true }),
+    t('wiki.author.feedback.saveFailed'),
+  );
+}
+
+export async function startWikiAuthorDraft(documentId: LongId, t: TFunction): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiPost<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorStartDraft/${encodeURIComponent(String(documentId))}`, undefined, { withAuth: true }),
+    t('wiki.author.feedback.saveFailed'),
+  );
+}
+
+export async function saveWikiAuthorDraft(
+  draftId: LongId,
+  request: SaveWikiAuthorDraftRequest,
+  t: TFunction,
+): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiPut<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorSaveDraft/${encodeURIComponent(String(draftId))}`, request, { withAuth: true }),
+    t('wiki.author.feedback.saveFailed'),
+  );
+}
+
+export async function submitWikiAuthorDraft(
+  draftId: LongId,
+  request: SubmitWikiDraftRequest,
+  t: TFunction,
+): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiPost<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorSubmitDraft/${encodeURIComponent(String(draftId))}`, request, { withAuth: true }),
+    t('wiki.author.feedback.submitFailed'),
+  );
+}
+
+export async function withdrawWikiAuthorDraft(
+  draftId: LongId,
+  request: SubmitWikiDraftRequest,
+  t: TFunction,
+): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiPost<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorWithdrawDraft/${encodeURIComponent(String(draftId))}`, request, { withAuth: true }),
+    t('wiki.author.feedback.withdrawFailed'),
+  );
+}
+
+export async function getWikiAuthorCollaborators(documentId: LongId, t: TFunction): Promise<WikiDocumentCollaboratorVo[]> {
+  return await ensureOk(
+    apiGet<WikiDocumentCollaboratorVo[]>(`/api/v1/Wiki/AuthorGetCollaborators/${encodeURIComponent(String(documentId))}`, { withAuth: true }),
+    t('wiki.author.feedback.loadCollaboratorsFailed'),
+  );
+}
+
+export async function inviteWikiAuthorCollaborator(
+  documentId: LongId,
+  userPublicId: string,
+  t: TFunction,
+): Promise<WikiDocumentCollaboratorVo> {
+  return await ensureOk(
+    apiPost<WikiDocumentCollaboratorVo>(
+      `/api/v1/Wiki/AuthorInviteCollaborator/${encodeURIComponent(String(documentId))}`,
+      { userPublicId },
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.inviteFailed'),
+  );
+}
+
+export async function respondWikiAuthorInvitation(
+  collaboratorId: LongId,
+  accept: boolean,
+  t: TFunction,
+): Promise<WikiDocumentCollaboratorVo> {
+  return await ensureOk(
+    apiPost<WikiDocumentCollaboratorVo>(
+      `/api/v1/Wiki/AuthorRespondInvitation/${encodeURIComponent(String(collaboratorId))}`,
+      { accept },
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.invitationResponseFailed'),
+  );
+}
+
+export async function removeWikiAuthorCollaborator(collaboratorId: LongId, t: TFunction): Promise<boolean> {
+  return await ensureOk(
+    apiPost<boolean>(
+      `/api/v1/Wiki/AuthorRemoveCollaborator/${encodeURIComponent(String(collaboratorId))}`,
+      undefined,
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.removeCollaboratorFailed'),
+  );
+}
+
 export async function createWikiDocument(request: CreateWikiDocumentRequest, t: TFunction): Promise<LongId> {
-  return await ensureOk(apiPost<LongId>('/api/v1/Wiki/Create', request, { withAuth: true }), t('wiki.toast.saveFailed'));
+  const detail = await createWikiAuthorDraft({
+    title: request.title,
+    slug: request.slug,
+    summary: request.summary,
+    markdownContent: request.markdownContent,
+    coverAttachmentId: request.coverAttachmentId,
+    proposedParentId: request.parentId,
+  }, t);
+  return detail.voDocumentId;
 }
 
 export async function updateWikiDocument(id: LongId, request: UpdateWikiDocumentRequest, t: TFunction): Promise<boolean> {
-  return await ensureOk(apiPut<boolean>(`/api/v1/Wiki/Update/${encodeURIComponent(String(id))}`, request, { withAuth: true }), t('wiki.toast.saveFailed'));
+  let detail: WikiAuthorDraftDetailVo;
+  try {
+    detail = await getWikiAuthorDraft(id, t);
+  } catch (error) {
+    if (!isApiResponseNotFoundError(error)) {
+      throw error;
+    }
+    detail = await startWikiAuthorDraft(id, t);
+  }
+
+  await saveWikiAuthorDraft(detail.voDraftId, {
+    title: request.title,
+    slug: request.slug,
+    summary: request.summary,
+    markdownContent: request.markdownContent,
+    coverAttachmentId: request.coverAttachmentId,
+    proposedParentId: request.parentId,
+    changeSummary: request.changeSummary,
+    expectedDraftVersion: detail.voDraftVersion,
+  }, t);
+  return true;
 }
 
 export async function deleteWikiDocument(id: LongId, t: TFunction): Promise<boolean> {

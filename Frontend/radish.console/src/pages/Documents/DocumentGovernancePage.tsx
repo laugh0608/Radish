@@ -27,16 +27,26 @@ import {
   UnlockOutlined,
 } from '@radish/ui';
 import {
+  WikiDraftReviewState,
+  WikiReviewAction,
+  type WikiAuthorDraftDetailVo,
+  type WikiReviewActionValue,
+  type WikiReviewQueueItemVo,
+} from '@radish/http';
+import {
   archiveWikiDocument,
   deleteWikiDocument,
   exportWikiMarkdown,
   getWikiGovernanceDetail,
   getWikiGovernancePage,
+  getWikiReviewDraft,
+  getWikiReviewQueue,
   getWikiRevisionDetail,
   getWikiRevisionList,
   importWikiMarkdown,
   publishWikiDocument,
   restoreWikiDocument,
+  reviewWikiDraft,
   rollbackWikiRevision,
   unpublishWikiDocument,
   updateWikiAccessPolicy,
@@ -56,6 +66,7 @@ import {
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
+import { useUser } from '@/hooks/useUser';
 import { log } from '@/utils/logger';
 import {
   DOCUMENT_STATUS,
@@ -122,8 +133,21 @@ function canMaintainDocument(record: WikiDocumentVo | WikiDocumentDetailVo | nul
   return Boolean(record) && !record?.voIsDeleted && !isBuiltInDocument(record);
 }
 
+function getReviewStateTag(state: number, t: TFunction) {
+  if (state === WikiDraftReviewState.Submitted) {
+    return <Tag color="processing">{t('documents.review.state.submitted')}</Tag>;
+  }
+
+  if (state === WikiDraftReviewState.ChangesRequested) {
+    return <Tag color="warning">{t('documents.review.state.changesRequested')}</Tag>;
+  }
+
+  return <Tag>{t('documents.review.state.other')}</Tag>;
+}
+
 export const DocumentGovernancePage = () => {
   const { t, i18n } = useTranslation();
+  const { user } = useUser();
   useDocumentTitle(t('documents.documentTitle'));
 
   const statusOptions = useMemo(() => [
@@ -174,6 +198,14 @@ export const DocumentGovernancePage = () => {
   const [revisionDetail, setRevisionDetail] = useState<WikiDocumentRevisionDetailVo | null>(null);
   const [revisionDetailLoading, setRevisionDetailLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [reviewQueueLoading, setReviewQueueLoading] = useState(false);
+  const [reviewQueue, setReviewQueue] = useState<WikiReviewQueueItemVo[]>([]);
+  const [reviewDraftLoading, setReviewDraftLoading] = useState(false);
+  const [reviewDraft, setReviewDraft] = useState<WikiAuthorDraftDetailVo | null>(null);
+  const [reviewOfficialDocument, setReviewOfficialDocument] = useState<WikiDocumentDetailVo | null>(null);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewActionLoading, setReviewActionLoading] = useState(false);
+  const reviewAccountEpochRef = useRef(0);
 
   const canView = usePermission(CONSOLE_PERMISSIONS.docsView);
   const canPublish = usePermission(CONSOLE_PERMISSIONS.docsPublish);
@@ -184,6 +216,8 @@ export const DocumentGovernancePage = () => {
   const canRollback = usePermission(CONSOLE_PERMISSIONS.docsRollback);
   const canImport = usePermission(CONSOLE_PERMISSIONS.docsImport);
   const canExport = usePermission(CONSOLE_PERMISSIONS.docsExport);
+  const canReview = usePermission(CONSOLE_PERMISSIONS.docsReview);
+  const reviewAccountKey = user?.voUserId ?? '';
 
   const includeDeleted = deletedFilter === 'all' || deletedFilter === 'deleted';
   const deletedOnly = deletedFilter === 'deleted';
@@ -237,6 +271,33 @@ export const DocumentGovernancePage = () => {
     }
   };
 
+  const loadReviewQueue = async () => {
+    const accountEpoch = reviewAccountEpochRef.current;
+    if (!canReview) {
+      setReviewQueue([]);
+      return;
+    }
+
+    try {
+      setReviewQueueLoading(true);
+      const page = await getWikiReviewQueue(t);
+      if (accountEpoch !== reviewAccountEpochRef.current) {
+        return;
+      }
+      setReviewQueue(page.data);
+    } catch (error) {
+      if (accountEpoch !== reviewAccountEpochRef.current) {
+        return;
+      }
+      log.error('DocumentGovernancePage', '加载文档审核队列失败:', error);
+      message.error(error instanceof Error ? error.message : t('documents.review.feedback.loadQueueFailed'));
+    } finally {
+      if (accountEpoch === reviewAccountEpochRef.current) {
+        setReviewQueueLoading(false);
+      }
+    }
+  };
+
   useEffect(() => {
     if (!canView) {
       return;
@@ -246,6 +307,94 @@ export const DocumentGovernancePage = () => {
     // Document governance reloads from filter state; loadDocuments also preserves current pagination entry points.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canView, keyword, statusFilter, visibilityFilter, sourceTypeFilter, deletedFilter, pageSize]);
+
+  useEffect(() => {
+    reviewAccountEpochRef.current += 1;
+    setReviewQueue([]);
+    setReviewDraft(null);
+    setReviewOfficialDocument(null);
+    setReviewComment('');
+    setReviewActionLoading(false);
+  }, [reviewAccountKey]);
+
+  useEffect(() => {
+    void loadReviewQueue();
+    // Review permission is the queue boundary; language changes are handled by rendered translation keys.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canReview, reviewAccountKey]);
+
+  const openReviewDraft = async (record: WikiReviewQueueItemVo) => {
+    const accountEpoch = reviewAccountEpochRef.current;
+    setReviewDraft(null);
+    setReviewOfficialDocument(null);
+    setReviewComment('');
+    setReviewDraftLoading(true);
+    try {
+      const [draft, officialDocument] = await Promise.all([
+        getWikiReviewDraft(record.voDraftId, t),
+        getWikiGovernanceDetail(record.voDocumentId, false, t),
+      ]);
+      if (accountEpoch !== reviewAccountEpochRef.current) {
+        return;
+      }
+      setReviewDraft(draft);
+      setReviewOfficialDocument(officialDocument);
+    } catch (error) {
+      if (accountEpoch !== reviewAccountEpochRef.current) {
+        return;
+      }
+      log.error('DocumentGovernancePage', '加载文档审核证据失败:', error);
+      message.error(error instanceof Error ? error.message : t('documents.review.feedback.loadDraftFailed'));
+    } finally {
+      if (accountEpoch === reviewAccountEpochRef.current) {
+        setReviewDraftLoading(false);
+      }
+    }
+  };
+
+  const handleReviewAction = async (action: WikiReviewActionValue) => {
+    if (!reviewDraft || !canReview) {
+      return;
+    }
+
+    const accountEpoch = reviewAccountEpochRef.current;
+    const comment = reviewComment.trim();
+    if (action !== WikiReviewAction.Apply && !comment) {
+      message.error(t('documents.review.feedback.commentRequired'));
+      return;
+    }
+
+    try {
+      setReviewActionLoading(true);
+      await reviewWikiDraft(reviewDraft.voDraftId, {
+        action,
+        expectedDraftVersion: reviewDraft.voDraftVersion,
+        expectedDocumentVersion: reviewDraft.voDocumentVersion,
+        comment: comment || undefined,
+        finalParentId: reviewDraft.voProposedParentId,
+      }, t);
+      if (accountEpoch !== reviewAccountEpochRef.current) {
+        return;
+      }
+      message.success(action === WikiReviewAction.Apply
+        ? t('documents.review.feedback.applied')
+        : t('documents.review.feedback.returned'));
+      setReviewDraft(null);
+      setReviewOfficialDocument(null);
+      setReviewComment('');
+      await Promise.all([loadReviewQueue(), loadDocuments()]);
+    } catch (error) {
+      if (accountEpoch !== reviewAccountEpochRef.current) {
+        return;
+      }
+      log.error('DocumentGovernancePage', '处理文档审核动作失败:', error);
+      message.error(error instanceof Error ? error.message : t('documents.review.feedback.actionFailed'));
+    } finally {
+      if (accountEpoch === reviewAccountEpochRef.current) {
+        setReviewActionLoading(false);
+      }
+    }
+  };
 
   const handleViewDetail = async (record: WikiDocumentVo) => {
     setDetailDocument(null);
@@ -637,6 +786,86 @@ export const DocumentGovernancePage = () => {
         <ConsoleMetricCard label={t('documents.metrics.builtIn')} value={formatDocumentNumber(builtInCount, i18n.resolvedLanguage)} description={t('documents.metrics.builtInDescription')} />
       </ConsoleMetricGrid>
 
+      {canReview ? (
+        <section className="document-review-workbench" aria-labelledby="document-review-title">
+          <div className="document-review-workbench__header">
+            <div>
+              <span className="admin-feature-rail__eyebrow">{t('documents.review.eyebrow')}</span>
+              <h2 id="document-review-title">{t('documents.review.title')}</h2>
+              <p>{t('documents.review.description')}</p>
+            </div>
+            <Space wrap>
+              <ConsoleStatusChip tone={reviewQueue.length > 0 ? 'warning' : 'success'}>
+                {t('documents.review.queueCount', { count: reviewQueue.length })}
+              </ConsoleStatusChip>
+              <Button variant="ghost" size="small" icon={<ReloadOutlined />} onClick={() => { void loadReviewQueue(); }}>
+                {t('documents.actions.refresh')}
+              </Button>
+            </Space>
+          </div>
+          <Table
+            rowKey="voDraftId"
+            size="small"
+            loading={reviewQueueLoading}
+            dataSource={reviewQueue}
+            pagination={false}
+            scroll={{ x: 900 }}
+            columns={[
+              {
+                title: t('documents.review.table.document'),
+                key: 'document',
+                width: 260,
+                render: (_, record) => (
+                  <Space orientation="vertical" size={2}>
+                    <strong>{record.voTitle}</strong>
+                    <span className="admin-feature-subtle">{record.voSlug}</span>
+                  </Space>
+                ),
+              },
+              {
+                title: t('documents.review.table.owner'),
+                key: 'owner',
+                width: 180,
+                render: (_, record) => (
+                  <Space orientation="vertical" size={2}>
+                    <span>{record.voOwnerUserName}</span>
+                    <span className="admin-feature-subtle">{record.voOwnerUserPublicId}</span>
+                  </Space>
+                ),
+              },
+              {
+                title: t('documents.review.table.version'),
+                key: 'version',
+                width: 140,
+                render: (_, record) => `v${record.voBaseDocumentVersion} → d${record.voDraftVersion}`,
+              },
+              {
+                title: t('documents.review.table.state'),
+                key: 'state',
+                width: 120,
+                render: (_, record) => getReviewStateTag(record.voReviewState, t),
+              },
+              {
+                title: t('documents.review.table.submittedAt'),
+                key: 'submittedAt',
+                width: 180,
+                render: (_, record) => formatDocumentDateTime(record.voSubmittedAt, i18n.resolvedLanguage),
+              },
+              {
+                title: t('documents.review.table.actions'),
+                key: 'actions',
+                width: 120,
+                render: (_, record) => (
+                  <Button variant="primary" size="small" onClick={() => { void openReviewDraft(record); }}>
+                    {t('documents.review.actions.evidence')}
+                  </Button>
+                ),
+              },
+            ]}
+          />
+        </section>
+      ) : null}
+
       <section className="governance-task-flow" aria-label={t('documents.page.flowAriaLabel')}>
         <div className="governance-task-flow__item">
           <span>1</span>
@@ -869,6 +1098,119 @@ export const DocumentGovernancePage = () => {
             </div>
             <Input.TextArea value={detailDocument.voMarkdownContent} readOnly rows={12} />
           </Space>
+        ) : null}
+      </Modal>
+
+      <Modal
+        title={reviewDraft ? t('documents.review.modalTitleWithDocument', { title: reviewDraft.voTitle }) : t('documents.review.modalTitle')}
+        open={reviewDraftLoading || Boolean(reviewDraft)}
+        width={1120}
+        footer={null}
+        onCancel={() => {
+          if (reviewActionLoading) {
+            return;
+          }
+          setReviewDraft(null);
+          setReviewOfficialDocument(null);
+          setReviewComment('');
+          setReviewDraftLoading(false);
+        }}
+      >
+        {reviewDraftLoading ? (
+          <p className="admin-feature-subtle" aria-live="polite">{t('documents.review.loadingEvidence')}</p>
+        ) : reviewDraft ? (
+          <div className="document-review-evidence">
+            <section className="document-review-evidence__summary" aria-label={t('documents.review.summaryAriaLabel')}>
+              <div>
+                <span>{t('documents.review.owner')}</span>
+                <strong>{reviewDraft.voOwnerUserName}</strong>
+                <small>{reviewDraft.voOwnerUserPublicId}</small>
+              </div>
+              <div>
+                <span>{t('documents.review.versionEvidence')}</span>
+                <strong>v{reviewDraft.voBaseDocumentVersion} → d{reviewDraft.voDraftVersion}</strong>
+                <small>{t('documents.review.currentVersion', { version: reviewDraft.voDocumentVersion })}</small>
+              </div>
+              <div>
+                <span>{t('documents.review.collaborators')}</span>
+                <strong>{reviewDraft.voCollaborators.length}</strong>
+                <small>{reviewDraft.voCollaborators.map((collaborator) => collaborator.voUserName).join('、') || t('documents.review.none')}</small>
+              </div>
+              <div>
+                <span>{t('documents.review.parentProposal')}</span>
+                <strong>{reviewDraft.voProposedParentId || t('documents.review.root')}</strong>
+                <small>{reviewDraft.voChangeSummary || t('documents.review.noSummary')}</small>
+              </div>
+            </section>
+
+            <section className="document-review-evidence__comparison" aria-label={t('documents.review.comparisonAriaLabel')}>
+              <article>
+                <div className="document-review-evidence__panel-title">
+                  <strong>{t('documents.review.officialContent')}</strong>
+                  <Tag>v{reviewOfficialDocument?.voVersion ?? reviewDraft.voDocumentVersion}</Tag>
+                </div>
+                <pre>{reviewOfficialDocument?.voMarkdownContent || t('documents.review.noOfficialContent')}</pre>
+              </article>
+              <article>
+                <div className="document-review-evidence__panel-title">
+                  <strong>{t('documents.review.draftContent')}</strong>
+                  {getReviewStateTag(reviewDraft.voReviewState, t)}
+                </div>
+                <pre>{reviewDraft.voMarkdownContent}</pre>
+              </article>
+            </section>
+
+            <section className="document-review-evidence__decision" aria-labelledby="document-review-decision-title">
+              <div>
+                <h3 id="document-review-decision-title">{t('documents.review.decisionTitle')}</h3>
+                <p>{t('documents.review.decisionDescription')}</p>
+              </div>
+              <Input.TextArea
+                rows={4}
+                value={reviewComment}
+                placeholder={t('documents.review.commentPlaceholder')}
+                disabled={reviewActionLoading}
+                onChange={(event) => setReviewComment(event.target.value)}
+              />
+              <Space wrap>
+                <Button
+                  variant="ghost"
+                  disabled={reviewActionLoading}
+                  onClick={() => { void handleReviewAction(WikiReviewAction.RequestChanges); }}
+                >
+                  {t('documents.review.actions.requestChanges')}
+                </Button>
+                <Button
+                  variant="danger"
+                  disabled={reviewActionLoading}
+                  onClick={() => { void handleReviewAction(WikiReviewAction.Reject); }}
+                >
+                  {t('documents.review.actions.reject')}
+                </Button>
+                <Button
+                  variant="primary"
+                  disabled={reviewActionLoading}
+                  onClick={() => { void handleReviewAction(WikiReviewAction.Apply); }}
+                >
+                  {reviewActionLoading ? t('documents.review.actions.processing') : t('documents.review.actions.apply')}
+                </Button>
+              </Space>
+            </section>
+
+            <section className="document-review-evidence__timeline" aria-label={t('documents.review.timelineAriaLabel')}>
+              <h3>{t('documents.review.timelineTitle')}</h3>
+              {reviewDraft.voReviewEvents.length > 0 ? reviewDraft.voReviewEvents.map((event) => (
+                <div key={event.voId} className="document-review-evidence__timeline-item">
+                  <div>
+                    <strong>{event.voActorName}</strong>
+                    <Tag>{event.voAction}</Tag>
+                  </div>
+                  <p>{event.voComment || t('documents.review.noComment')}</p>
+                  <small>d{event.voDraftVersion} / v{event.voDocumentVersion} · {formatDocumentDateTime(event.voCreateTime, i18n.resolvedLanguage)}</small>
+                </div>
+              )) : <p className="admin-feature-subtle">{t('documents.review.timelineEmpty')}</p>}
+            </section>
+          </div>
         ) : null}
       </Modal>
 

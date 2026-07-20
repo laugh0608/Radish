@@ -674,6 +674,110 @@
   --code-border: var(--theme-border-soft);
 }
 
+.conflictPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 46%, var(--theme-border-soft));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface));
+  color: var(--theme-text-primary);
+}
+
+.conflictPanel p {
+  margin: 4px 0 0;
+  color: var(--theme-text-secondary);
+}
+
+.conflictActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.collaboratorList,
+.timelineList {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.collaboratorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  background: var(--theme-bg-surface);
+}
+
+.collaboratorRow div,
+.timelineList li {
+  display: grid;
+  gap: 3px;
+}
+
+.collaboratorRow span,
+.timelineList span,
+.timelineList p {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.collaboratorRow button,
+.inviteForm button,
+.conflictActions button {
+  min-height: 34px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+  cursor: pointer;
+}
+
+.inviteForm {
+  display: flex;
+  gap: 8px;
+}
+
+.inviteForm input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+}
+
+.timelineList li {
+  padding-left: 12px;
+  border-left: 2px solid var(--theme-border-soft);
+}
+
+.timelineList p {
+  margin: 0;
+}
+
+.railCard summary {
+  cursor: pointer;
+}
+
+.collaboratorRow button:focus-visible,
+.inviteForm input:focus-visible,
+.inviteForm button:focus-visible,
+.conflictActions button:focus-visible,
+.railCard summary:focus-visible {
+  outline: 2px solid var(--theme-brand-primary);
+  outline-offset: 2px;
+}
+
 @media (max-width: 1080px) {
   .main {
     width: min(960px, calc(100vw - 24px));
@@ -801,5 +905,11 @@
   .documentActions .secondaryButton,
   .documentActions .readOnlyButton {
     flex: 1 1 128px;
+  }
+
+  .conflictPanel,
+  .inviteForm {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
