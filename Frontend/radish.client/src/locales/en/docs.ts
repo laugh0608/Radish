@@ -300,6 +300,7 @@ export const enDocs = {
   'wiki.author.actions.publicDocs': 'Back to public Docs',
   'wiki.author.actions.publicReading': 'Public reading',
   'wiki.author.actions.edit': 'Edit document',
+  'wiki.author.actions.respondInvitation': 'Respond to invitation',
   'wiki.author.actions.revisions': 'Revisions',
   'wiki.author.actions.read': 'Read',
   'wiki.author.actions.backToList': 'Back to list',

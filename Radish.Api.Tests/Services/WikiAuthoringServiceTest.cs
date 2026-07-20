@@ -20,6 +20,72 @@ namespace Radish.Api.Tests.Services;
 public sealed class WikiAuthoringServiceTest
 {
     [Fact]
+    public async Task AuthorCreate_ShouldUseRepositoryGeneratedIdsForDocumentDraftRelation()
+    {
+        const long documentId = 2079205135170404353;
+        const long draftId = 2079205135199764480;
+        var fixture = CreateFixture();
+        WikiDocument? insertedDocument = null;
+        WikiDocumentDraft? insertedDraft = null;
+        fixture.Documents.Setup(item => item.QueryCountAsync(
+                It.IsAny<Expression<Func<WikiDocument, bool>>?>()))
+            .ReturnsAsync(0);
+        fixture.Documents.Setup(item => item.QueryExistsAsync(
+                It.IsAny<Expression<Func<WikiDocument, bool>>>()))
+            .ReturnsAsync(false);
+        fixture.Documents.Setup(item => item.AddAsync(It.IsAny<WikiDocument>()))
+            .Callback<WikiDocument>(document => insertedDocument = document)
+            .ReturnsAsync(documentId);
+        fixture.Drafts.Setup(item => item.AddAsync(It.IsAny<WikiDocumentDraft>()))
+            .Callback<WikiDocumentDraft>(draft => insertedDraft = draft)
+            .ReturnsAsync(draftId);
+        fixture.Documents.Setup(item => item.SetActiveDraftAsync(
+                documentId, 0, null, draftId, 10001, "Owner", It.IsAny<DateTime>()))
+            .ReturnsAsync(1);
+
+        var result = await fixture.Service.AuthorCreateAsync(
+            new CreateWikiAuthorDraftDto
+            {
+                Title = "Draft",
+                Slug = "draft",
+                MarkdownContent = "body"
+            },
+            10001,
+            "Owner",
+            0);
+
+        Assert.NotNull(insertedDocument);
+        Assert.NotNull(insertedDraft);
+        Assert.Equal(documentId, insertedDocument.Id);
+        Assert.Equal(documentId, insertedDraft.DocumentId);
+        Assert.Equal(draftId, insertedDraft.Id);
+        Assert.Equal(draftId, insertedDocument.ActiveDraftId);
+        Assert.Equal(documentId, result.VoDocumentId);
+        Assert.Equal(draftId, result.VoDraftId);
+    }
+
+    [Fact]
+    public async Task AuthorStartDraft_ShouldUseRepositoryGeneratedDraftIdForActiveDraftRelation()
+    {
+        const long draftId = 2079205135199764480;
+        var fixture = CreateFixture(activeDraftId: null);
+        fixture.Documents.Setup(item => item.QueryCountAsync(
+                It.IsAny<Expression<Func<WikiDocument, bool>>?>()))
+            .ReturnsAsync(0);
+        fixture.Drafts.Setup(item => item.AddAsync(It.IsAny<WikiDocumentDraft>()))
+            .ReturnsAsync(draftId);
+        fixture.Documents.Setup(item => item.SetActiveDraftAsync(
+                20001, 0, null, draftId, 10001, "Owner", It.IsAny<DateTime>()))
+            .ReturnsAsync(1);
+
+        var result = await fixture.Service.AuthorStartDraftAsync(20001, 10001, "Owner", 0);
+
+        Assert.Equal(draftId, result.VoDraftId);
+        fixture.Documents.Verify(item => item.SetActiveDraftAsync(
+            20001, 0, null, draftId, 10001, "Owner", It.IsAny<DateTime>()), Times.Once);
+    }
+
+    [Fact]
     public async Task AuthorGetById_ShouldRejectUserWithoutOwnerOrAcceptedCollaboratorRelation()
     {
         var fixture = CreateFixture();
@@ -50,6 +116,28 @@ public sealed class WikiAuthoringServiceTest
         Assert.NotNull(result);
         Assert.Equal("Editor", result.VoAuthorRole);
         Assert.True(result.VoCanEdit);
+        Assert.False(result.VoCanSubmit);
+        Assert.False(result.VoCanManageCollaborators);
+    }
+
+    [Fact]
+    public async Task AuthorGetById_ShouldAllowPendingInviteeToRespondWithoutEditCapability()
+    {
+        var fixture = CreateFixture();
+        fixture.Collaborators.Setup(item => item.QueryFirstAsync(
+                It.IsAny<Expression<Func<WikiDocumentCollaborator, bool>>?>()))
+            .ReturnsAsync(new WikiDocumentCollaborator
+            {
+                DocumentId = 20001,
+                UserId = 10002,
+                InviteState = (int)WikiDocumentCollaboratorState.Pending
+            });
+
+        var result = await fixture.Service.AuthorGetByIdAsync(20001, 10002);
+
+        Assert.NotNull(result);
+        Assert.Equal("Invitee", result.VoAuthorRole);
+        Assert.False(result.VoCanEdit);
         Assert.False(result.VoCanSubmit);
         Assert.False(result.VoCanManageCollaborators);
     }
@@ -124,7 +212,8 @@ public sealed class WikiAuthoringServiceTest
         long ownerUserId = 10001,
         WikiDocumentDraftState draftState = WikiDocumentDraftState.Editing,
         int draftVersion = 1,
-        int documentVersion = 1)
+        int documentVersion = 1,
+        long? activeDraftId = 30001)
     {
         var mapper = Mock.Of<IMapper>();
         var documents = new Mock<IWikiDocumentRepository>(MockBehavior.Strict);
@@ -139,7 +228,7 @@ public sealed class WikiAuthoringServiceTest
             Id = 20001,
             TenantId = 0,
             OwnerUserId = ownerUserId,
-            ActiveDraftId = 30001,
+            ActiveDraftId = activeDraftId,
             Title = "Document",
             Slug = "document",
             MarkdownContent = "formal",
@@ -182,12 +271,13 @@ public sealed class WikiAuthoringServiceTest
             collaborators.Object,
             reviewEvents.Object,
             users.Object);
-        return new Fixture(service, documents, collaborators, reviewEvents);
+        return new Fixture(service, documents, drafts, collaborators, reviewEvents);
     }
 
     private sealed record Fixture(
         WikiDocumentService Service,
         Mock<IWikiDocumentRepository> Documents,
+        Mock<IBaseRepository<WikiDocumentDraft>> Drafts,
         Mock<IBaseRepository<WikiDocumentCollaborator>> Collaborators,
         Mock<IBaseRepository<WikiDocumentReviewEvent>> ReviewEvents);
 }

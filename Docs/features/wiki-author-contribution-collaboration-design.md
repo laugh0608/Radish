@@ -1,6 +1,6 @@
 # Docs / Wiki 普通作者贡献与协作设计
 
-> 状态：`F4-G-A / B / C` 已完成，下一顺位进入 `F4-G-D` 成组验收与关闭。
+> 状态：`F4-G-A-D` 已完成，专题关闭；验收结论见 [F4-G-D 成组验收记录](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20)。
 >
 > 最后更新：2026-07-20
 >
@@ -344,6 +344,8 @@ F4-G-B 使用显式 ledger migration，建议标识为 `20260720_007_wiki_author
 - 在 Gateway 正式路径复核 PC / mobile、中英文、邀请接受、并发保存、提交、请求修改、批准应用、发布和失权。
 - 清理临时账号、邀请、草稿、审核事件和通知，复核六库与 migration verify。
 - 更新规划、专题状态和批次记录，关闭 F4-G。
+
+完成事实：上述矩阵已于 2026-07-20 通过。验收按共同根因修正 Repository 生成 ID 回传、待接受邀请只读访问、终态草稿后开启下一稿和 `DocsAuthorDraft` 通知目标校验；临时数据残留为 `0`，六库完整性与严格 verify 通过。
 
 ## 十三、验证矩阵
 

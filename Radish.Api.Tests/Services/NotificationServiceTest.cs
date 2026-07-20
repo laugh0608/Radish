@@ -132,6 +132,57 @@ public sealed class NotificationServiceTest
         harness.PushService.VerifyNoOtherCalls();
     }
 
+    [Fact(DisplayName = "Wiki 作者草稿通知应接受文档与草稿结构化目标")]
+    public async Task CreateNotificationAsync_ShouldAcceptDocsAuthorDraftTarget()
+    {
+        var harness = CreateHarness();
+        harness.Repository
+            .Setup(repository => repository.GetPreferencesAsync(9, 1001))
+            .ReturnsAsync(new Dictionary<string, NotificationSetting>());
+        harness.Repository
+            .Setup(repository => repository.PersistAsync(
+                It.Is<Notification>(notification =>
+                    notification.Id == 7012 &&
+                    notification.Type == NotificationType.WikiReviewUpdated &&
+                    notification.TargetKind == NotificationTargetKind.DocsAuthorDraft &&
+                    notification.TargetDataJson == new NotificationTargetData
+                    {
+                        DocumentId = 5001,
+                        DraftId = 6001
+                    }.ToJson()),
+                It.Is<IReadOnlyList<NotificationInboxRecipient>>(recipients =>
+                    recipients.Count == 1 && recipients[0].UserId == 1001),
+                NowUtc))
+            .ReturnsAsync(new NotificationInboxPersistResult(7012, true, []));
+
+        var notificationId = await harness.Service.CreateNotificationAsync(new CreateNotificationDto
+        {
+            NotificationId = 7012,
+            BusinessKey = "notification:wiki:review:7012",
+            Type = NotificationType.WikiReviewUpdated,
+            Title = "文档审核状态更新",
+            ReceiverUserIds = [1001],
+            TenantId = 9,
+            OccurredAtUtc = NowUtc,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["targetTitle"] = "测试文档",
+                ["reviewAction"] = "RequestChanges"
+            },
+            TargetKind = NotificationTargetKind.DocsAuthorDraft,
+            Target = new NotificationTargetData
+            {
+                DocumentId = 5001,
+                DraftId = 6001
+            }
+        });
+
+        notificationId.ShouldBe(7012);
+        harness.Repository.VerifyAll();
+        harness.UserRepository.VerifyAll();
+        harness.PushService.VerifyNoOtherCalls();
+    }
+
     [Fact(DisplayName = "账号安全通知必须绕过关闭入箱偏好")]
     public async Task CreateNotificationAsync_ShouldKeepMandatoryAccountSecurityInbox()
     {

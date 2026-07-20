@@ -300,6 +300,7 @@ export const zhDocs = {
   'wiki.author.actions.publicDocs': '返回公开文档',
   'wiki.author.actions.publicReading': '公开阅读',
   'wiki.author.actions.edit': '编辑文档',
+  'wiki.author.actions.respondInvitation': '响应邀请',
   'wiki.author.actions.revisions': '修订记录',
   'wiki.author.actions.read': '阅读',
   'wiki.author.actions.backToList': '返回列表',

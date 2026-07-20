@@ -544,6 +544,7 @@ public sealed class NotificationService : INotificationService
             NotificationTargetKind.Inventory => target is { BenefitId: > 0 },
             NotificationTargetKind.Experience => target is { UserId: > 0 },
             NotificationTargetKind.DocsDocument => !string.IsNullOrWhiteSpace(target?.DocumentSlug),
+            NotificationTargetKind.DocsAuthorDraft => target is { DocumentId: > 0 },
             NotificationTargetKind.GovernanceCase => target is { GovernanceCaseId: > 0 },
             _ => false
         };

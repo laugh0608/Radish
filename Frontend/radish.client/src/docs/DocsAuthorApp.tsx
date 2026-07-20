@@ -1187,6 +1187,8 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
   const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voDocumentId };
   const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voDocumentId };
   const publicHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
+  const isPendingInvitee = document.voAuthorRole === 'Invitee';
+  const canStartDraft = !document.voDraftId && document.voAuthorRole === 'Owner';
 
   return (
     <article className={styles.documentRow}>
@@ -1207,15 +1209,15 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
         </div>
       </div>
       <div className={styles.documentActions}>
-        {document.voDraftId && document.voCanEdit ? (
+        {document.voDraftId && (document.voCanEdit || isPendingInvitee) ? (
           <a
             className={styles.primaryButton}
             href={buildDocsAuthorPath(editRoute)}
             onClick={(event) => onNavigate(event, editRoute)}
           >
-            {t('wiki.author.actions.edit')}
+            {t(isPendingInvitee ? 'wiki.author.actions.respondInvitation' : 'wiki.author.actions.edit')}
           </a>
-        ) : document.voCanEdit ? (
+        ) : canStartDraft ? (
           <button type="button" className={styles.primaryButton} onClick={() => onStartDraft(document.voDocumentId)}>
             {t('wiki.author.actions.startDraft')}
           </button>

@@ -66,6 +66,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20)
 - [f4-g-c-wiki-author-console-pages-2026-07-20](/records/f4-g-c-wiki-author-console-pages-2026-07-20)
 - [f4-g-b-wiki-author-collaboration-server-contract-2026-07-20](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20)
 - [f4-day-end-doc-review-2026-07-19](/records/f4-day-end-doc-review-2026-07-19)

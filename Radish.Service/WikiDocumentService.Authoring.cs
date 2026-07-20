@@ -19,13 +19,15 @@ public partial class WikiDocumentService
         EnsureAuthoringAvailable();
         pageIndex = Math.Max(1, pageIndex);
         pageSize = pageSize is > 0 and <= 100 ? pageSize : 20;
-        var collaboratorDocumentIds = (await _wikiCollaboratorRepository!.QueryAsync(item =>
+        var collaboratorRelations = await _wikiCollaboratorRepository!.QueryAsync(item =>
                 item.UserId == userId &&
-                item.InviteState == (int)WikiDocumentCollaboratorState.Accepted &&
-                !item.IsDeleted))
-            .Select(item => item.DocumentId)
-            .Distinct()
-            .ToList();
+                (item.InviteState == (int)WikiDocumentCollaboratorState.Pending ||
+                 item.InviteState == (int)WikiDocumentCollaboratorState.Accepted) &&
+                !item.IsDeleted);
+        var collaboratorStateByDocumentId = collaboratorRelations
+            .GroupBy(item => item.DocumentId)
+            .ToDictionary(group => group.Key, group => group.First().InviteState);
+        var collaboratorDocumentIds = collaboratorStateByDocumentId.Keys.ToList();
         var (documents, total) = await _wikiDocumentRepository.QueryPageAsync(
             document =>
                 !document.IsDeleted &&
@@ -52,6 +54,8 @@ public partial class WikiDocumentService
             {
                 draftMap.TryGetValue(document.ActiveDraftId.GetValueOrDefault(), out var draft);
                 var isOwner = document.OwnerUserId == userId;
+                collaboratorStateByDocumentId.TryGetValue(document.Id, out var collaboratorState);
+                var isAcceptedEditor = collaboratorState == (int)WikiDocumentCollaboratorState.Accepted;
                 return new WikiAuthorDocumentVo
                 {
                     VoDocumentId = document.Id,
@@ -63,8 +67,9 @@ public partial class WikiDocumentService
                     VoDraftVersion = draft?.DraftVersion,
                     VoReviewState = draft?.ReviewState,
                     VoStatus = document.Status,
-                    VoAuthorRole = isOwner ? "Owner" : "Editor",
-                    VoCanEdit = draft != null && IsEditableDraftState(draft.ReviewState),
+                    VoAuthorRole = isOwner ? "Owner" : isAcceptedEditor ? "Editor" : "Invitee",
+                    VoCanEdit = draft != null && IsEditableDraftState(draft.ReviewState) &&
+                                (isOwner || isAcceptedEditor),
                     VoCanSubmit = isOwner && draft != null && IsEditableDraftState(draft.ReviewState),
                     VoCanManageCollaborators = isOwner,
                     VoCreateTime = document.CreateTime,
@@ -113,10 +118,8 @@ public partial class WikiDocumentService
         var title = NormalizeRequired(dto.Title, nameof(dto.Title));
         var slug = await EnsureUniqueSlugForCreateAsync(dto.Slug, title);
         await ValidateParentDocumentAsync(dto.ProposedParentId, null);
-        var draftId = SnowFlakeSingle.Instance.NextId();
         var document = new WikiDocument
         {
-            Id = SnowFlakeSingle.Instance.NextId(),
             TenantId = tenantId,
             Title = title,
             Slug = slug,
@@ -129,16 +132,14 @@ public partial class WikiDocumentService
             SourceType = "Custom",
             Version = 0,
             OwnerUserId = userId,
-            ActiveDraftId = draftId,
+            ActiveDraftId = null,
             CreateId = userId,
             CreateBy = ResolveOperatorName(userName),
             CreateTime = now
         };
         var draft = new WikiDocumentDraft
         {
-            Id = draftId,
             TenantId = tenantId,
-            DocumentId = document.Id,
             BaseDocumentVersion = 0,
             DraftVersion = 1,
             Title = title,
@@ -153,8 +154,15 @@ public partial class WikiDocumentService
             CreateBy = ResolveOperatorName(userName),
             CreateTime = now
         };
-        await _wikiDocumentRepository.AddAsync(document);
-        await _wikiDraftRepository!.AddAsync(draft);
+        document.Id = await _wikiDocumentRepository.AddAsync(document);
+        draft.DocumentId = document.Id;
+        draft.Id = await _wikiDraftRepository!.AddAsync(draft);
+        if (await _wikiDocumentRepository.SetActiveDraftAsync(
+                document.Id, tenantId, null, draft.Id, userId, ResolveOperatorName(userName), now) != 1)
+        {
+            throw Conflict("文档草稿状态已变化", "Wiki.DraftStateConflict", "error.wiki.draft_state_conflict");
+        }
+        document.ActiveDraftId = draft.Id;
         return BuildDraftDetail(document, draft, "Owner");
     }
 
@@ -182,7 +190,6 @@ public partial class WikiDocumentService
         var now = DateTime.UtcNow;
         var draft = new WikiDocumentDraft
         {
-            Id = SnowFlakeSingle.Instance.NextId(),
             TenantId = tenantId,
             DocumentId = document.Id,
             BaseDocumentVersion = document.Version,
@@ -198,7 +205,7 @@ public partial class WikiDocumentService
             CreateBy = ResolveOperatorName(userName),
             CreateTime = now
         };
-        await _wikiDraftRepository!.AddAsync(draft);
+        draft.Id = await _wikiDraftRepository!.AddAsync(draft);
         if (await _wikiDocumentRepository.SetActiveDraftAsync(
                 document.Id, tenantId, null, draft.Id, userId, ResolveOperatorName(userName), now) != 1)
         {
@@ -853,8 +860,14 @@ public partial class WikiDocumentService
         }
         var collaborator = await _wikiCollaboratorRepository!.QueryFirstAsync(item =>
             item.DocumentId == document.Id && item.UserId == userId && !item.IsDeleted &&
-            item.InviteState == (int)WikiDocumentCollaboratorState.Accepted);
-        return collaborator == null ? null : "Editor";
+            (item.InviteState == (int)WikiDocumentCollaboratorState.Pending ||
+             item.InviteState == (int)WikiDocumentCollaboratorState.Accepted));
+        return collaborator?.InviteState switch
+        {
+            (int)WikiDocumentCollaboratorState.Accepted => "Editor",
+            (int)WikiDocumentCollaboratorState.Pending => "Invitee",
+            _ => null
+        };
     }
 
     private static bool IsEditableDraftState(int state) =>
@@ -870,7 +883,8 @@ public partial class WikiDocumentService
         WikiDocumentDraft draft,
         string role)
     {
-        var editable = IsEditableDraftState(draft.ReviewState) && role is not "Reviewer";
+        var editable = IsEditableDraftState(draft.ReviewState) &&
+                       role is "Owner" or "Editor" or "Administrator";
         return new WikiAuthorDraftDetailVo
         {
             VoDocumentId = document.Id,
