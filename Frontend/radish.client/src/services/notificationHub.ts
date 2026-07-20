@@ -1,85 +1,15 @@
 import * as signalR from '@microsoft/signalr';
-import { createElement } from 'react';
-import { toast } from '@radish/ui/toast';
-import type { LongId } from '@/api/user';
-import { useNotificationStore, type NotificationItem } from '@/stores/notificationStore';
+import type { NotificationInboxChangedVo } from '@radish/http';
+import { notificationInboxSync } from '@/services/notificationInboxSync';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
 
-const NOTIFICATION_TOAST_DURATION = 5000;
-
 function getHubUrl(): string {
   // 使用统一的 SignalR Hub URL 配置
   return `${getSignalrHubUrl()}/hub/notification`;
-}
-
-function getNotificationToastType(type: NotificationItem['type']): 'success' | 'error' | 'info' | 'warning' {
-  switch (type) {
-    case 'like':
-    case 'follow':
-      return 'success';
-    case 'lottery':
-      return 'warning';
-    case 'reply':
-    case 'mention':
-      return 'info';
-    default:
-      return 'info';
-  }
-}
-
-function getNotificationToastIcon(type: NotificationItem['type']): string {
-  switch (type) {
-    case 'like':
-      return '👍';
-    case 'reply':
-      return '💬';
-    case 'mention':
-      return '@';
-    case 'follow':
-      return '👤';
-    case 'lottery':
-      return '🎁';
-    default:
-      return '📢';
-  }
-}
-
-function showNotificationToast(notification: NotificationItem): void {
-  const title = notification.title?.trim();
-  const content = notification.content?.trim();
-
-  if (!title && !content) {
-    return;
-  }
-
-  const message = createElement(
-    'div',
-    { style: { display: 'grid', gap: '4px' } },
-    title
-      ? createElement(
-          'span',
-          { style: { fontSize: '14px', fontWeight: 600, lineHeight: 1.4 } },
-          title
-        )
-      : null,
-    content && content !== title
-      ? createElement(
-          'span',
-          { style: { fontSize: '13px', lineHeight: 1.5, opacity: 0.82 } },
-          content
-        )
-      : null
-  );
-
-  toast.custom({
-    message,
-    type: getNotificationToastType(notification.type),
-    icon: getNotificationToastIcon(notification.type),
-    duration: NOTIFICATION_TOAST_DURATION
-  });
 }
 
 /** SignalR Hub 连接管理器 */
@@ -107,27 +37,30 @@ class NotificationHubService {
       return;
     }
 
-    // 1. 检查认证状态
-    const { isAuthenticated } = useAuthStore.getState();
-    if (!isAuthenticated) {
-      log.warn('[NotificationHub] 未登录，跳过连接');
-      return;
-    }
-
-    // 2. 检查 Token 有效性
-    const token = await tokenService.getValidAccessToken();
-    if (!token) {
-      log.warn('[NotificationHub] Token 无效，跳过连接');
-      return;
-    }
-
-    const requestId = ++this.startRequestId;
-
+    // 必须在首次 await 前占有启动锁，避免多个壳层同时通过认证检查后互相 stop 正在协商的连接。
     this.isStarting = true;
     const store = useNotificationStore.getState();
-    store.setConnectionState('connecting');
 
     try {
+      // 1. 检查认证状态
+      const { isAuthenticated } = useAuthStore.getState();
+      if (!isAuthenticated) {
+        log.warn('[NotificationHub] 未登录，跳过连接');
+        store.setConnectionState('disconnected');
+        return;
+      }
+
+      // 2. 检查 Token 有效性
+      const token = await tokenService.getValidAccessToken();
+      if (!token) {
+        log.warn('[NotificationHub] Token 无效，跳过连接');
+        store.setConnectionState('disconnected');
+        return;
+      }
+
+      const requestId = ++this.startRequestId;
+      store.setConnectionState('connecting');
+
       // 如果已有连接实例，先停止（避免并发/残留连接）
       if (this.connection) {
         try {
@@ -151,7 +84,7 @@ class NotificationHubService {
             return delays[Math.min(retryContext.previousRetryCount, delays.length - 1)];
           }
         })
-        .configureLogging(signalR.LogLevel.Information)
+        .configureLogging(signalR.LogLevel.Warning)
         .build();
 
       // 适度放宽服务端超时，降低弱网/代理抖动下的误断开概率
@@ -178,13 +111,21 @@ class NotificationHubService {
       log.debug('[NotificationHub] 连接成功');
       store.setConnectionState('connected');
       this.retryCount = 0;
+      void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+        log.warn('[NotificationHub] 连接成功后的权威状态对账失败', error);
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
 
       // React StrictMode / 生命周期竞态：start 尚未完成就 stop() 会触发 AbortError
-      if (message.includes('Failed to start the HttpConnection before stop() was called')) {
+      const isLifecycleCancellation = message.includes('Failed to start the HttpConnection before stop() was called')
+        || message.includes('connection was stopped during negotiation');
+      if (isLifecycleCancellation) {
         log.warn('[NotificationHub] 连接启动被取消（start/stop 竞态）');
         store.setConnectionState('disconnected');
+        if (useAuthStore.getState().isAuthenticated) {
+          setTimeout(() => this.start(), 250);
+        }
         return;
       }
 
@@ -237,6 +178,9 @@ class NotificationHubService {
     this.connection.onreconnected(() => {
       log.debug('[NotificationHub] 重连成功');
       useNotificationStore.getState().setConnectionState('connected');
+      void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+        log.warn('[NotificationHub] 重连后的权威状态对账失败', error);
+      });
     });
 
     this.connection.onclose((error) => {
@@ -244,59 +188,17 @@ class NotificationHubService {
       useNotificationStore.getState().setConnectionState('disconnected');
     });
 
-    // 服务端推送事件
-    this.connection.on('UnreadCountChanged', (data: { unreadCount: number }) => {
-      log.debug('[NotificationHub] 未读数更新:', data.unreadCount);
-      useNotificationStore.getState().setUnreadCount(data.unreadCount);
+    this.connection.on('NotificationInboxChanged', (change: NotificationInboxChangedVo) => {
+      log.debug('[NotificationHub] 收件箱 revision 更新:', change.voRevision);
+      notificationInboxSync.handleInboxChanged(change);
     });
 
-    this.connection.on('NewNotification', (notification: NotificationItem) => {
-      log.debug('[NotificationHub] 新通知:', notification);
-      useNotificationStore.getState().addNotification(notification);
-      showNotificationToast(notification);
+    // 旧 Hub 事件在 F4-B-D 完成前继续兼容，但只触发权威摘要对账，不消费本地计数。
+    this.connection.on('UnreadCountChanged', () => {
+      void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+        log.warn('[NotificationHub] 旧未读事件的权威状态对账失败', error);
+      });
     });
-
-    this.connection.on('NotificationRead', (data: { notificationIds: LongId[] }) => {
-      log.debug('[NotificationHub] 通知已读（其他端）:', data.notificationIds);
-      useNotificationStore.getState().markAsRead(data.notificationIds);
-    });
-
-    this.connection.on('AllNotificationsRead', () => {
-      log.debug('[NotificationHub] 全部已读（其他端）');
-      useNotificationStore.getState().markAllAsRead();
-    });
-  }
-
-  /** 客户端调用：标记通知已读 */
-  async markAsRead(notificationId: LongId): Promise<void> {
-    if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      log.warn('[NotificationHub] 未连接，无法标记已读');
-      return;
-    }
-
-    try {
-      await this.connection.invoke('MarkAsRead', notificationId);
-      // 本地也更新状态
-      useNotificationStore.getState().markAsRead([notificationId]);
-    } catch (error) {
-      log.error('[NotificationHub] 标记已读失败:', error);
-    }
-  }
-
-  /** 客户端调用：标记全部已读 */
-  async markAllAsRead(): Promise<void> {
-    if (this.connection?.state !== signalR.HubConnectionState.Connected) {
-      log.warn('[NotificationHub] 未连接，无法标记全部已读');
-      return;
-    }
-
-    try {
-      await this.connection.invoke('MarkAllAsRead');
-      // 本地也更新状态
-      useNotificationStore.getState().markAllAsRead();
-    } catch (error) {
-      log.error('[NotificationHub] 标记全部已读失败:', error);
-    }
   }
 }
 
@@ -307,8 +209,6 @@ export const notificationHub = new NotificationHubService();
 export function useNotificationHub() {
   return {
     start: () => notificationHub.start(),
-    stop: () => notificationHub.stop(),
-    markAsRead: (id: LongId) => notificationHub.markAsRead(id),
-    markAllAsRead: () => notificationHub.markAllAsRead()
+    stop: () => notificationHub.stop()
   };
 }

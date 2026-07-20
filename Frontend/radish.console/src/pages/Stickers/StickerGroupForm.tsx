@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AntModal as Modal,
   Form,
@@ -9,6 +10,8 @@ import {
   Switch,
   AntSelect as Select,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
@@ -34,6 +37,7 @@ interface StickerGroupFormProps {
 }
 
 export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: StickerGroupFormProps) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
@@ -52,15 +56,13 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   const handleCoverUpload: UploadProps['customRequest'] = async (options) => {
     const file = options.file;
     if (!(file instanceof File)) {
-      options.onError?.(new Error('无效文件'));
+      options.onError?.(new Error(t('stickers.common.invalidFile')));
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
-      const error = new Error('仅支持上传图片文件');
+      const error = new Error(t('stickers.common.imageOnly'));
       message.error(error.message);
       options.onError?.(error);
       return;
@@ -68,7 +70,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
     const isLt5M = file.size / 1024 / 1024 <= 5;
     if (!isLt5M) {
-      const error = new Error('封面图大小不能超过 5MB');
+      const error = new Error(t('stickers.groupForm.coverTooLarge'));
       message.error(error.message);
       options.onError?.(error);
       return;
@@ -82,9 +84,9 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       form.setFieldValue('coverAttachmentId', uploaded.attachmentId);
       setCoverPreviewUrl(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
       options.onSuccess?.(uploaded);
-      message.success('封面图上传成功，已回填附件 ID');
+      message.success(t('stickers.groupForm.coverUploaded'));
     } catch (error) {
-      const uploadError = error instanceof Error ? error : new Error('封面图上传失败');
+      const uploadError = error instanceof Error ? error : new Error(t('stickers.groupForm.coverUploadFailed'));
       options.onError?.(uploadError);
       message.error(uploadError.message);
       log.error('StickerGroupForm', '上传封面图失败:', error);
@@ -107,7 +109,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       setCodeChecking(true);
       const result = await checkGroupCode(code);
       if (!result.voAvailable) {
-        form.setFields([{ name: 'code', errors: ['分组标识符已存在'] }]);
+        form.setFields([{ name: 'code', errors: [t('stickers.groupForm.codeExists')] }]);
       } else {
         form.setFields([{ name: 'code', errors: [] }]);
       }
@@ -120,7 +122,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
   const handleSubmit = async () => {
     if (coverUploading) {
-      message.warning('封面图仍在上传中，请稍候提交');
+      message.warning(t('stickers.groupForm.coverUploading'));
       return;
     }
 
@@ -141,21 +143,21 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       if (mode === 'create') {
         const availability = await checkGroupCode(request.code || '');
         if (!availability.voAvailable) {
-          form.setFields([{ name: 'code', errors: ['分组标识符已存在'] }]);
+          form.setFields([{ name: 'code', errors: [t('stickers.groupForm.codeExists')] }]);
           return;
         }
 
         await createStickerGroup(request);
-        message.success('创建表情包分组成功');
+        message.success(t('stickers.groupForm.feedback.created'));
       } else if (mode === 'edit' && group) {
         await updateStickerGroup(group.voId, request);
-        message.success('更新表情包分组成功');
+        message.success(t('stickers.groupForm.feedback.updated'));
       }
 
       onSuccess();
     } catch (error) {
       log.error('StickerGroupForm', '提交表情包分组失败:', error);
-      message.error(mode === 'create' ? '创建表情包分组失败' : '更新表情包分组失败');
+      message.error(t(mode === 'create' ? 'stickers.groupForm.feedback.createFailed' : 'stickers.groupForm.feedback.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -196,7 +198,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
   return (
     <Modal
-      title={mode === 'create' ? '新增表情包分组' : '编辑表情包分组'}
+      title={t(mode === 'create' ? 'stickers.groupForm.createTitle' : 'stickers.groupForm.editTitle')}
       open={visible}
       onOk={() => {
         void handleSubmit();
@@ -210,48 +212,48 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       <Form form={form} layout="vertical">
         <Form.Item
           name="name"
-          label="分组名称"
+          label={t('stickers.groupForm.name')}
           rules={[
-            { required: true, message: '请输入分组名称' },
-            { max: 100, message: '分组名称不能超过100个字符' },
+            { required: true, message: t('stickers.groupForm.nameRequired') },
+            { max: 100, message: t('stickers.groupForm.nameMax') },
           ]}
         >
-          <Input placeholder="请输入分组名称" />
+          <Input placeholder={t('stickers.groupForm.namePlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="code"
-          label="分组标识符"
-          tooltip={mode === 'edit' ? '分组标识符创建后不可修改' : '仅允许小写字母、数字和下划线'}
+          label={t('stickers.groupForm.code')}
+          tooltip={t(mode === 'edit' ? 'stickers.groupForm.codeImmutable' : 'stickers.common.codePattern')}
           rules={[
-            { required: true, message: '请输入分组标识符' },
-            { max: 100, message: '分组标识符不能超过100个字符' },
-            { pattern: /^[a-z0-9_]+$/, message: '仅允许小写字母、数字和下划线' },
+            { required: true, message: t('stickers.groupForm.codeRequired') },
+            { max: 100, message: t('stickers.groupForm.codeMax') },
+            { pattern: /^[a-z0-9_]+$/, message: t('stickers.common.codePattern') },
           ]}
         >
           <Input
-            placeholder="例如：radish_default"
+            placeholder={t('stickers.groupForm.codePlaceholder')}
             disabled={mode === 'edit'}
             onBlur={() => {
               void handleCodeBlur();
             }}
-            suffix={codeChecking ? '校验中...' : undefined}
+            suffix={codeChecking ? t('stickers.common.codeChecking') : undefined}
           />
         </Form.Item>
 
         <Form.Item
           name="description"
-          label="描述"
-          rules={[{ max: 500, message: '描述不能超过500个字符' }]}
+          label={t('stickers.groupForm.description')}
+          rules={[{ max: 500, message: t('stickers.groupForm.descriptionMax') }]}
         >
-          <Input.TextArea rows={3} maxLength={500} showCount placeholder="请输入分组描述（可选）" />
+          <Input.TextArea rows={3} maxLength={500} showCount placeholder={t('stickers.groupForm.descriptionPlaceholder')} />
         </Form.Item>
 
-        <Form.Item label="封面图">
+        <Form.Item label={t('stickers.groupForm.cover')}>
           <Form.Item
             name="coverAttachmentId"
             noStyle
-            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+            rules={[{ pattern: /^[1-9]\d*$/, message: t('stickers.common.attachmentIdInvalid') }]}
           >
             <Input className="admin-form-hidden-input" />
           </Form.Item>
@@ -260,23 +262,23 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
               {coverPreviewUrl ? (
                 <img
                   src={coverPreviewUrl}
-                  alt="分组封面预览"
+                  alt={t('stickers.groupForm.coverAlt')}
                   className="admin-form-upload-preview__image"
                 />
               ) : (
-                <span>暂无封面</span>
+                <span>{t('stickers.groupForm.noCover')}</span>
               )}
             </div>
 
             <Space>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={handleCoverUpload}
                 disabled={coverUploading || loading}
               >
                 <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
-                  {coverUploading ? '上传中...' : '上传封面图'}
+                  {t(coverUploading ? 'stickers.common.uploading' : 'stickers.groupForm.uploadCover')}
                 </Button>
               </Upload>
               <Button
@@ -286,12 +288,12 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
                   setCoverPreviewUrl(undefined);
                 }}
               >
-                清空封面
+                {t('stickers.groupForm.clearCover')}
               </Button>
             </Space>
 
             <Input
-              placeholder="上传后自动回填附件 ID"
+              placeholder={t('stickers.common.attachmentIdPlaceholder')}
               value={coverAttachmentId ? String(coverAttachmentId) : ''}
               readOnly
             />
@@ -300,30 +302,30 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
 
         <Form.Item
           name="groupType"
-          label="分组类型"
-          rules={[{ required: true, message: '请选择分组类型' }]}
+          label={t('stickers.groupForm.type')}
+          rules={[{ required: true, message: t('stickers.groupForm.typeRequired') }]}
         >
           <Select
             options={[
-              { value: 1, label: '官方表情包' },
-              { value: 2, label: '付费表情包' },
+              { value: 1, label: t('stickers.group.type.officialFull') },
+              { value: 2, label: t('stickers.group.type.paidFull') },
             ]}
           />
         </Form.Item>
 
         <Form.Item
           name="sort"
-          label="排序"
+          label={t('stickers.common.sort')}
           rules={[
-            { required: true, message: '请输入排序值' },
-            { type: 'number', min: 0, message: '排序值不能为负数' },
+            { required: true, message: t('stickers.common.sortRequired') },
+            { type: 'number', min: 0, message: t('stickers.common.sortMin') },
           ]}
         >
           <InputNumber min={0} className="admin-form-control-full" />
         </Form.Item>
 
-        <Form.Item name="isEnabled" label="启用状态" valuePropName="checked">
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+        <Form.Item name="isEnabled" label={t('stickers.groupForm.enabled')} valuePropName="checked">
+          <Switch checkedChildren={t('stickers.common.enabled')} unCheckedChildren={t('stickers.common.disabled')} />
         </Form.Item>
       </Form>
     </Modal>

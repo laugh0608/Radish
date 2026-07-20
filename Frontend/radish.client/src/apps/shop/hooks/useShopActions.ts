@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from '@radish/ui/toast';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import type { TFunction } from 'i18next';
@@ -6,6 +7,7 @@ import type { LongId } from '@/api/user';
 import type { Product, ProductBuyCheckResult } from '@/types/shop';
 import * as shopApi from '@/api/shop';
 import { isPaymentPasscodeUpgradeRequiredError } from '@/utils/paymentPasscode';
+import { reconcileThemeBenefitActionResult } from '@/theme/themeEntitlements';
 import type { ShopAppState } from '../ShopApp';
 
 interface UseShopActionsProps {
@@ -133,8 +135,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
       } else {
         const errorMessage = result.data?.errorMessage || result.message || t('shop.error.purchaseFailed');
         const requiresPasscodeUpgrade = Boolean(result.data?.requiresPasscodeUpgrade) || isPaymentPasscodeUpgradeRequiredError({
-          code: result.data?.errorCode,
-          message: errorMessage
+          code: result.data?.errorCode
         });
 
         if (requiresPasscodeUpgrade) {
@@ -175,6 +176,9 @@ export const useShopActions = (props: UseShopActionsProps) => {
     try {
       const result = await shopApi.activateBenefit(benefitId, t);
       if (result.ok) {
+        if (result.data) {
+          reconcileThemeBenefitActionResult(result.data);
+        }
         setError(null);
         // 刷新背包数据
         await loadInventory();
@@ -192,6 +196,9 @@ export const useShopActions = (props: UseShopActionsProps) => {
     try {
       const result = await shopApi.deactivateBenefit(benefitId, t);
       if (result.ok) {
+        if (result.data) {
+          reconcileThemeBenefitActionResult(result.data);
+        }
         setError(null);
         // 刷新背包数据
         await loadInventory();
@@ -205,12 +212,18 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 使用道具
-  const handleUseItem = useCallback(async (inventoryId: LongId, quantity: number = 1, targetId?: LongId) => {
+  const handleUseItem = useCallback(async (
+    inventoryId: LongId,
+    quantity: number = 1,
+    targetId: LongId | undefined,
+    idempotencyKey: string
+  ) => {
     try {
       const result = await shopApi.useItem({
         inventoryId,
         quantity,
-        targetId
+        targetId,
+        idempotencyKey
       }, t);
 
       if (result.ok && result.data?.success) {
@@ -219,6 +232,10 @@ export const useShopActions = (props: UseShopActionsProps) => {
         if (result.data.effectDescription) {
           log.debug(t('shop.inventory.useEffect'), result.data.effectDescription);
         }
+        toast.success(t('shop.inventory.useSuccess', {
+          effect: result.data.effectDescription || result.data.effectValue || t('shop.inventory.useEffect'),
+          remaining: result.data.remainingQuantity
+        }));
 
         // 刷新背包数据
         await loadInventory();
@@ -234,18 +251,27 @@ export const useShopActions = (props: UseShopActionsProps) => {
   }, [t, loadInventory, setError]);
 
   // 使用改名卡
-  const handleUseRenameCard = useCallback(async (inventoryId: LongId, newNickname: string) => {
+  const handleUseRenameCard = useCallback(async (
+    inventoryId: LongId,
+    newDisplayName: string,
+    idempotencyKey: string
+  ) => {
     try {
-      const result = await shopApi.useRenameCard(inventoryId, newNickname, t);
+      const result = await shopApi.useRenameCard({
+        inventoryId,
+        newDisplayName,
+        idempotencyKey
+      }, t);
       if (result.ok && result.data?.success) {
         setError(null);
 
         const currentUser = useUserStore.getState();
+        const displayName = result.data.effectValue?.trim() || newDisplayName.trim();
         currentUser.setUser({
           userId: currentUser.userId,
-          displayName: newNickname.trim(),
-          userName: newNickname.trim(),
-          nickname: newNickname.trim(),
+          displayName,
+          userName: displayName,
+          nickname: displayName,
           tenantId: currentUser.tenantId,
           roles: currentUser.roles,
           permissions: currentUser.permissions,
@@ -256,6 +282,10 @@ export const useShopActions = (props: UseShopActionsProps) => {
         if (result.data.effectDescription) {
           log.debug(t('shop.inventory.renameSuccess'), result.data.effectDescription);
         }
+        toast.success(t('shop.inventory.useSuccess', {
+          effect: result.data.effectDescription || displayName,
+          remaining: result.data.remainingQuantity
+        }));
 
         // 刷新背包数据
         await loadInventory();

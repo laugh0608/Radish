@@ -1,4 +1,5 @@
 using System.Linq.Expressions;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -22,10 +23,12 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
     private readonly IBaseRepository<StickerGroup> _stickerGroupRepository;
     private readonly IBaseRepository<Reaction> _reactionRepository;
     private readonly IBaseRepository<WikiDocument> _wikiDocumentRepository;
+    private readonly IBaseRepository<WikiDocumentRevision> _wikiDocumentRevisionRepository;
     private readonly IBaseRepository<UserBrowseHistory> _userBrowseHistoryRepository;
     private readonly IBaseRepository<UserBenefit> _userBenefitRepository;
     private readonly IBaseRepository<UserInventory> _userInventoryRepository;
     private readonly IBaseRepository<Order> _orderRepository;
+    private readonly ISystemConfigRepository _systemConfigRepository;
 
     public AttachmentReferenceInspector(
         IBaseRepository<Sticker> stickerRepository,
@@ -40,10 +43,12 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         IBaseRepository<StickerGroup> stickerGroupRepository,
         IBaseRepository<Reaction> reactionRepository,
         IBaseRepository<WikiDocument> wikiDocumentRepository,
+        IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
         IBaseRepository<UserBrowseHistory> userBrowseHistoryRepository,
         IBaseRepository<UserBenefit> userBenefitRepository,
         IBaseRepository<UserInventory> userInventoryRepository,
-        IBaseRepository<Order> orderRepository)
+        IBaseRepository<Order> orderRepository,
+        ISystemConfigRepository systemConfigRepository)
     {
         _stickerRepository = stickerRepository;
         _postRepository = postRepository;
@@ -57,10 +62,12 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         _stickerGroupRepository = stickerGroupRepository;
         _reactionRepository = reactionRepository;
         _wikiDocumentRepository = wikiDocumentRepository;
+        _wikiDocumentRevisionRepository = wikiDocumentRevisionRepository;
         _userBrowseHistoryRepository = userBrowseHistoryRepository;
         _userBenefitRepository = userBenefitRepository;
         _userInventoryRepository = userInventoryRepository;
         _orderRepository = orderRepository;
+        _systemConfigRepository = systemConfigRepository;
     }
 
     public async Task<HashSet<long>> GetReferencedAttachmentIdsAsync(IReadOnlyCollection<long> attachmentIds)
@@ -78,6 +85,7 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         var referencedAttachmentIds = new HashSet<long>();
 
         await UnionStructuredReferencesAsync(referencedAttachmentIds, candidateIds);
+        await UnionSystemConfigReferencesAsync(referencedAttachmentIds, candidateIds);
 
         await UnionReferencedAttachmentIdsFromContentAsync(
             referencedAttachmentIds,
@@ -96,6 +104,19 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
             _postAnswerRepository,
             static answer => answer.Content,
             static answer => !answer.IsDeleted && answer.Content != null && answer.Content != string.Empty);
+
+        await UnionReferencedAttachmentIdsFromContentAsync(
+            referencedAttachmentIds,
+            _wikiDocumentRepository,
+            static document => document.MarkdownContent,
+            static document => !document.IsDeleted && document.MarkdownContent != string.Empty);
+
+        // Wiki 版本支持回滚；历史版本正文仍是可恢复业务真值，不能按临时附件清理。
+        await UnionReferencedAttachmentIdsFromContentAsync(
+            referencedAttachmentIds,
+            _wikiDocumentRevisionRepository,
+            static revision => revision.MarkdownContent,
+            static revision => revision.MarkdownContent != string.Empty);
 
         return referencedAttachmentIds;
     }
@@ -198,6 +219,29 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
             order.ProductIconAttachmentId.HasValue &&
             candidateIds.Contains(order.ProductIconAttachmentId.Value));
         UnionNullableIds(referencedAttachmentIds, orders.Select(order => order.ProductIconAttachmentId));
+    }
+
+    private async Task UnionSystemConfigReferencesAsync(
+        ISet<long> referencedAttachmentIds,
+        IReadOnlyCollection<long> candidateIds)
+    {
+        var faviconDefinition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey);
+        if (faviconDefinition == null)
+        {
+            return;
+        }
+
+        var faviconRecord = await _systemConfigRepository.GetByKeyAsync(faviconDefinition.Key);
+        if (!SystemConfigValueNormalizer.HasEnabledOverride(faviconDefinition, faviconRecord))
+        {
+            return;
+        }
+
+        var faviconAttachmentId = AttachmentReferenceHelper.ExtractAttachmentIdFromAssetUrl(faviconRecord!.Value);
+        if (faviconAttachmentId.HasValue && candidateIds.Contains(faviconAttachmentId.Value))
+        {
+            referencedAttachmentIds.Add(faviconAttachmentId.Value);
+        }
     }
 
     private static void UnionNullableIds(ISet<long> target, IEnumerable<long?> source)

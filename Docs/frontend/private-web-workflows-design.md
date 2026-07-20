@@ -26,6 +26,12 @@
 >
 > 更新：2026-07-06（Asia/Shanghai）：E5-A 已补私域可恢复错误反馈：Workbench 活动同步失败进入继续处理队列，资产 / 订单 / 背包加载失败提供重试与复制诊断，聊天失败消息保留本地并可复制诊断，通知目标缺失不伪跳转并可复制上下文。
 >
+> 更新：2026-07-18（Asia/Shanghai）：一对一私聊批次 C 已把 `P13 / P27` 扩展为 PC 请求、归档 / 阻断与移动列表 / 请求详情状态，正式 Web 由公开个人页进入 `/messages`，移动端保持列表与详情两级任务流。
+>
+> 更新：2026-07-18（Asia/Shanghai）：F4-B-C 已把 `P12 / P26` 更新为权威通知分组、分类摘要、触发者、聚合、未读筛选和新通知提示，并新增 `P12B / P26B / P26C` 覆盖偏好、空态、加载、错误、cursor 过期、离线恢复、长文本与目标失效。
+>
+> 更新：2026-07-18（Asia/Shanghai）：一对一私聊与通知中心深化均已完成 A-D 批次成组验收；当前下一专题为 F4-C 聊天历史搜索，F4-C-A 只固定数据、ACL、cursor、定位和 PC / mobile 页面边界，搜索画板留到 F4-C-C 在现有 `P13 / P27` 族上扩展。
+>
 > 更新：2026-07-08（Asia/Shanghai）：E8 首日已把 `radish.client` public / private 主导航统一为 PC `发现 / 论坛 / 聊天 / 更多` + 右侧 `通知 / 账号`，移动底栏统一为 `发现 / 论坛 / 聊天 / 更多 / 我的`；私域 / 作者态页面不再维护独立全局底栏。
 >
 > 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批、D54 Pencil / Gateway 真实页面对齐、D62 页面族首批实现、E3/E4/E5 首批产品硬化和 E8 主导航收敛已完成，后续继续按成熟度矩阵处理正式 UI、信息密度、文案成熟度和旅程级验证
@@ -51,8 +57,8 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P09 - Orders List` | `/shop/orders` 订单状态分组、购买后回流和订单详情入口 |
 | `P10 - Order Detail` | `/shop/order/:orderId` 支付、权益发放、商品回看和背包回流 |
 | `P11 - Inventory Benefits` | `/shop/inventory` 背包权益、来源订单、激活 / 停用 / 使用入口 |
-| `P12 - Notifications Center` | `/notifications` 未读通知、频道筛选和正式 Web 目标分流 |
-| `P13 - Messages Workspace` | `/messages` 会话列表、聊天正文、回复输入和订单 / 用户上下文 |
+| `P12 / P12B - Notifications Center` | `/notifications` 权威分组、分类 / 未读筛选、聚合触发者、偏好与恢复状态 |
+| `P13 / P13B - Messages Workspace` | `/messages` 当前 / 已归档列表、请求动作、阻断状态、聊天正文和用户上下文 |
 | `P14 - Circle Feed` | `/circle` 关注动态、正在关注、关注者和公开详情来源返回 |
 | `P15 - Pet Care` | `/pet` 宠物档案、基础照护动作、状态条和变化流水 |
 | `P16 - Forum Compose` | `/forum/compose` 论坛发帖编辑器、分类 / 标签、发布检查和提交反馈 |
@@ -65,8 +71,8 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P23 - Mobile Content History` | 移动端 `/me/content`、`/me/history`、`/me/attachments` 的复访任务 |
 | `P24 - Mobile Assets Ledger` | 移动端 `/me/assets`、`/me/assets/transactions`，余额和近期流水 |
 | `P25 - Mobile Orders Inventory` | 移动端 `/shop/orders`、`/shop/order/:id`、`/shop/inventory` 订单背包任务 |
-| `P26 - Mobile Notifications` | 移动端 `/notifications`，未读通知和目标跳转 |
-| `P27 - Mobile Messages` | 移动端 `/messages`，会话正文和回复输入 |
+| `P26 / P26B / P26C - Mobile Notifications` | 移动端 `/notifications`，权威摘要、分组目标、恢复状态和通知偏好 |
+| `P27 / P27B - Mobile Messages` | 移动端 `/messages` 会话列表与独立请求详情、返回和受限输入 |
 | `P28 - Mobile Circle` | 移动端 `/circle`，关注动态和关系链 |
 | `P29 - Mobile Pet` | 移动端 `/pet`，宠物状态、照护动作和状态流水 |
 | `P30 - Mobile Author` | 移动端 `/forum/compose`、`/docs/mine`、`/docs/edit/:id` 的继续创作入口 |
@@ -79,6 +85,15 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - 在进入视觉代码前，先固定桌面密度、移动单列顺序、状态槽和停止线。
 
 ## 统一契约
+
+### 多语言与内容边界
+
+- `/workbench`、`/me`、资产、消息、通知、圈子、宠物、经验和 Docs 作者态的固定界面文案由 `radish.client` 对应业务域资源提供；共享组件通过 labels、formatter 或显式 locale 接收宿主文案。
+- 系统类型、状态、筛选和动作资格只按稳定字段解析；`vo*Display`、当前语言下的服务端文案和错误消息不得参与控制流。已知词元显示本地文案，未知值使用业务域明确的 `Unknown` 策略；没有登记策略时保留稳定原值。
+- 用户名称、帖子 / 消息内容、文档标题与正文、商品内容、等级名称、备注、冻结 / 撤销原因等配置型或人工内容没有稳定本地化标识时保持原文，不创建客户端猜测翻译表。
+- 日期、相对时间、数字、分页、图表刻度和英文数量规则使用当前 locale；LongId 与后端 `long` 金额保持字符串安全，图表只在适配边界投影数值。
+- 私域 API 失败统一保留 `ApiResponseError` 的 `httpStatus / code / messageKey / traceId`。页面按稳定字段决定重试、not-found、权限或冲突分支，复制诊断继续排除 token、支付口令、完整请求体和隐私正文。
+- `/workbench` 与 `/me` 的摘要卡属于实际消费者，必须复用各业务域 presentation / formatter，不能重新引入硬编码文案或从 display 字段反推状态。
 
 ### 私域壳层
 
@@ -127,8 +142,10 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 - `P3-12-D10` 已将通知 / 消息入口接入私域任务摘要、入口级状态槽容器、Web 宽高约束和移动单列布局。
 - `P3-12-D11` 已将圈子 / 宠物入口接入私域摘要、状态指标和移动单列任务流；关注关系、公开来源返回、宠物动作幂等和后端契约保持不变。
-- E3-C 后 `/notifications` 增加行动队列分组：评论、回答、消息、关注、治理、订单、Docs、帖子、宠物、经验、点赞和系统通知按目标可达性分组展示；缺少可跳目标的通知必须给出人工回看提示。
-- E5-A 后缺少可跳目标的通知不伪造链接，提供复制上下文动作；聊天发送失败消息保留在本地，可重试、撤销或复制频道 / 消息 / 请求诊断。
+- 一对一私聊 A-D 完成后，`/messages` 已承接陌生请求、接受 / 拒绝、阻断 / 解除、归档 / 恢复、未读和消息深链；PC 与 mobile 复用同一服务端会话与成员 ACL。
+- F4-B-C 后 `/notifications` 只消费服务端 `NotificationCategory`、权威分组 / 摘要和结构化 target；分类、计数、聚合与打开目标不得再扫描标题、正文、`businessType` 或 `ExtData` 猜测。
+- F4-B-D 已验证偏好抑制、聚合竞态、分类 / 全部已读、删除、cursor、离线、多标签和目标失效；导航、Workbench 与 WebOS 继续只消费服务端 summary / revision，不在本地增减权威未读。
+- 缺少或失效 target 的通知不伪造链接，保留可解释状态；聊天发送失败消息仍保留在本地，可重试、撤销或复制频道 / 消息 / 请求诊断。
 - D62 后 `/messages`、`/circle` 和 `/pet` 已补会话 / 关系 / 照护任务提示和 mobile rail，继续服务社区复访、互动关系和状态反馈。
 
 ### 作者入口

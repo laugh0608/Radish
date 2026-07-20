@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import {
   getCategoryById,
@@ -18,6 +19,8 @@ import type {
   PublicListSort,
 } from '../forumRouteState';
 import { buildPublicForumPath, createDefaultSearchRoute } from '../forumRouteState';
+import { buildLocalizedPublicRouteHead } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
 import {
@@ -84,6 +87,7 @@ export const PublicForumList = ({
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [categoryError, setCategoryError] = useState<string | null>(null);
   const [selectedCategoryError, setSelectedCategoryError] = useState<string | null>(null);
+  const [selectedCategoryNotFound, setSelectedCategoryNotFound] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
@@ -91,6 +95,25 @@ export const PublicForumList = ({
   );
   const selectedCategoryRequestIdRef = useRef(0);
   const postsRequestIdRef = useRef(0);
+  const publicHeadSnapshot = useMemo(() => {
+    if (
+      !routeState.categoryId
+      || !selectedCategory
+      || String(selectedCategory.voId) !== routeState.categoryId
+    ) {
+      return null;
+    }
+
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'forum', route: routeState }, t);
+    return {
+      head: {
+        ...routeHead,
+        title: `${selectedCategory.voName} · ${t('desktop.apps.forum.name')}`,
+        description: buildCategoryIntro(selectedCategory, routeHead.description),
+      },
+    };
+  }, [routeState, selectedCategory, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,6 +159,7 @@ export const PublicForumList = ({
       selectedCategoryRequestIdRef.current += 1;
       setSelectedCategory(null);
       setSelectedCategoryError(null);
+      setSelectedCategoryNotFound(false);
       setLoadingSelectedCategory(false);
       return;
     }
@@ -151,6 +175,7 @@ export const PublicForumList = ({
     const loadSelectedCategory = async () => {
       setLoadingSelectedCategory(true);
       setSelectedCategoryError(null);
+      setSelectedCategoryNotFound(false);
       try {
         const category = await getCategoryById(selectedCategoryId, t);
         if (requestId !== selectedCategoryRequestIdRef.current) {
@@ -165,6 +190,7 @@ export const PublicForumList = ({
 
         const message = err instanceof Error ? err.message : String(err);
         setSelectedCategory((current) => current && current.voId === selectedCategoryId ? current : null);
+        setSelectedCategoryNotFound(isApiResponseNotFoundError(err));
         setSelectedCategoryError(message);
       } finally {
         if (requestId === selectedCategoryRequestIdRef.current) {
@@ -220,11 +246,6 @@ export const PublicForumList = ({
       window.cancelAnimationFrame(frameId);
     };
   }, [loadingPosts, onScrollRestored, restoreScrollTop, scrollContainerRef]);
-
-  useEffect(() => {
-    const title = selectedCategory?.voName || buildActiveSectionTitle(categories, selectedCategoryId, t('forum.allPosts'));
-    document.title = `${t('desktop.apps.forum.name')} · ${title}`;
-  }, [categories, selectedCategory, selectedCategoryId, t]);
 
   useEffect(() => {
     const requestId = ++postsRequestIdRef.current;
@@ -299,7 +320,8 @@ export const PublicForumList = ({
     categoryId: selectedCategoryId,
     loadingCategory: loadingSelectedCategory,
     hasCategory: !!selectedCategory,
-    categoryError: selectedCategoryError
+    categoryError: selectedCategoryError,
+    categoryNotFound: selectedCategoryNotFound
   });
   const activeCategory = selectedCategory
     || (selectedCategoryId ? categories.find((item) => item.voId === selectedCategoryId) ?? null : null);

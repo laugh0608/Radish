@@ -29,6 +29,17 @@ export interface UserMentionProps {
   position: { top: number; left: number };
   /** 定位模式 */
   positionMode?: 'fixed' | 'absolute';
+  /** 由宿主注入的展示词元 */
+  labels: UserMentionLabels;
+}
+
+export interface UserMentionLabels {
+  title: string;
+  loading: string;
+  inputHint: string;
+  empty: string;
+  searchFailed: string;
+  selectHint: string;
 }
 
 export const UserMention = ({
@@ -38,33 +49,41 @@ export const UserMention = ({
   onClose,
   position,
   positionMode = 'fixed',
+  labels,
 }: UserMentionProps) => {
   const [users, setUsers] = useState<UserMentionOption[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 搜索用户
   useEffect(() => {
     let cancelled = false;
+    const normalizedKeyword = keyword.trim();
+
+    setUsers([]);
+    setSelectedIndex(0);
+    setSearchFailed(false);
+
+    if (!normalizedKeyword) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
 
     const searchUsers = async () => {
-      if (!keyword.trim()) {
-        setUsers([]);
-        return;
-      }
-
-      setLoading(true);
       try {
-        const results = await onSearch(keyword);
+        const results = await onSearch(normalizedKeyword);
         if (!cancelled) {
           setUsers(results);
           setSelectedIndex(0);
         }
-      } catch (error) {
-        console.error('搜索用户失败:', error);
+      } catch {
         if (!cancelled) {
           setUsers([]);
+          setSearchFailed(true);
         }
       } finally {
         if (!cancelled) {
@@ -85,6 +104,13 @@ export const UserMention = ({
   // 键盘事件处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        onClose();
+        return;
+      }
+
       if (users.length === 0) return;
 
       switch (e.key) {
@@ -102,15 +128,11 @@ export const UserMention = ({
             onSelect(users[selectedIndex]);
           }
           break;
-        case 'Escape':
-          e.preventDefault();
-          onClose();
-          break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [users, selectedIndex, onSelect, onClose]);
 
   // 点击外部关闭
@@ -133,8 +155,8 @@ export const UserMention = ({
         style={{ position: positionMode, top: position.top, left: position.left }}
       >
         <div className={styles.statePanel}>
-          <div className={styles.panelTitle}>匹配用户</div>
-          <div className={styles.loading}>搜索中...</div>
+          <div className={styles.panelTitle}>{labels.title}</div>
+          <div className={styles.loading}>{labels.loading}</div>
         </div>
       </div>
     );
@@ -148,8 +170,23 @@ export const UserMention = ({
         style={{ position: positionMode, top: position.top, left: position.left }}
       >
         <div className={styles.statePanel}>
-          <div className={styles.panelTitle}>匹配用户</div>
-          <div className={styles.empty}>继续输入用户名进行匹配</div>
+          <div className={styles.panelTitle}>{labels.title}</div>
+          <div className={styles.empty}>{labels.inputHint}</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (searchFailed) {
+    return (
+      <div
+        ref={containerRef}
+        className={styles.container}
+        style={{ position: positionMode, top: position.top, left: position.left }}
+      >
+        <div className={styles.statePanel}>
+          <div className={styles.panelTitle}>{labels.title}</div>
+          <div className={styles.empty}>{labels.searchFailed}</div>
         </div>
       </div>
     );
@@ -163,8 +200,8 @@ export const UserMention = ({
         style={{ position: positionMode, top: position.top, left: position.left }}
       >
         <div className={styles.statePanel}>
-          <div className={styles.panelTitle}>匹配用户</div>
-          <div className={styles.empty}>未找到匹配的用户</div>
+          <div className={styles.panelTitle}>{labels.title}</div>
+          <div className={styles.empty}>{labels.empty}</div>
         </div>
       </div>
     );
@@ -177,8 +214,8 @@ export const UserMention = ({
       style={{ position: positionMode, top: position.top, left: position.left }}
     >
       <div className={styles.panelHeader}>
-        <span className={styles.panelTitle}>匹配用户</span>
-        <span className={styles.panelHint}>Enter 选择</span>
+        <span className={styles.panelTitle}>{labels.title}</span>
+        <span className={styles.panelHint}>{labels.selectHint}</span>
       </div>
       <ul className={styles.list}>
         {users.map((user, index) => (

@@ -68,6 +68,7 @@ public class UploadSession : RootEntityTKey<long>, ITenantEntity
     /// <summary>
     /// 业务ID（可选）
     /// </summary>
+    [SugarColumn(IsNullable = true)]
     public long? BusinessId { get; set; }
 
     /// <summary>
@@ -90,6 +91,7 @@ public class UploadSession : RootEntityTKey<long>, ITenantEntity
     /// <summary>
     /// 最终附件ID（完成后）
     /// </summary>
+    [SugarColumn(IsNullable = true)]
     public long? AttachmentId { get; set; }
 
     /// <summary>

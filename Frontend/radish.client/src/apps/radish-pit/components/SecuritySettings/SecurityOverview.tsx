@@ -1,4 +1,6 @@
-import { formatDateTime } from '../../utils';
+import { useTranslation } from 'react-i18next';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { formatCoinDateTime, formatCoinNumber } from '../../utils';
 import type { SecurityStatus } from '../../types';
 import styles from './SecurityOverview.module.css';
 
@@ -14,12 +16,15 @@ interface SecurityOverviewProps {
  * 安全概览组件
  */
 export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate }: SecurityOverviewProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
   if (loading) {
     return (
       <div className={styles.container}>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载安全状态中...</p>
+          <p>{t('pit.security.loading')}</p>
         </div>
       </div>
     );
@@ -30,10 +35,10 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
       <div className={styles.container}>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
-          <h3>加载失败</h3>
+          <h3>{t('pit.common.loadFailed')}</h3>
           <p>{error}</p>
           <button className={styles.retryButton} onClick={onRefresh}>
-            重试
+            {t('pit.common.retry')}
           </button>
         </div>
       </div>
@@ -64,6 +69,7 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
 
   const securityScore = getSecurityScore();
   const scoreColor = getSecurityScoreColor(securityScore);
+  const failedAttempts = status?.failedAttempts || 0;
 
   return (
     <div className={styles.container}>
@@ -72,9 +78,9 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
         <div className={styles.scoreHeader}>
           <h3 className={styles.scoreTitle}>
             <span className={styles.scoreIcon}>🛡️</span>
-            安全评分
+            {t('pit.security.score.title')}
           </h3>
-          <button className={styles.refreshButton} onClick={onRefresh} title="刷新状态">
+          <button className={styles.refreshButton} onClick={onRefresh} title={t('pit.common.refresh')}>
             🔄
           </button>
         </div>
@@ -89,17 +95,17 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
 
           <div className={styles.scoreDescription}>
             <div className={`${styles.scoreLevel} ${styles[scoreColor]}`}>
-              {requiresPasscodeUpgrade ? '需重置' :
-               securityScore >= 80 ? '安全' :
-               securityScore >= 60 ? '良好' :
-               securityScore >= 40 ? '一般' : '需要改进'}
+              {t(requiresPasscodeUpgrade ? 'pit.security.state.resetRequired' :
+               securityScore >= 80 ? 'pit.security.score.secure' :
+               securityScore >= 60 ? 'pit.security.score.good' :
+               securityScore >= 40 ? 'pit.security.score.fair' : 'pit.security.score.improve')}
             </div>
             <p className={styles.scoreText}>
-              {requiresPasscodeUpgrade ? '检测到您仍在使用已废弃的旧支付口令，请先重置为新的6位数字支付口令后再进行购买和转移。' :
-               securityScore >= 80 ? '您的账户安全设置完善' :
-               securityScore >= 60 ? '您的账户安全设置良好，建议进一步完善' :
-               securityScore >= 40 ? '您的账户安全设置一般，建议加强防护' :
-               '您的账户安全设置需要改进，请尽快完善'}
+              {t(requiresPasscodeUpgrade ? 'pit.security.score.upgradeDescription' :
+               securityScore >= 80 ? 'pit.security.score.secureDescription' :
+               securityScore >= 60 ? 'pit.security.score.goodDescription' :
+               securityScore >= 40 ? 'pit.security.score.fairDescription' :
+               'pit.security.score.improveDescription')}
             </p>
           </div>
         </div>
@@ -115,21 +121,29 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
             {requiresPasscodeUpgrade ? '♻️' : status?.hasPaymentPassword ? '🔑' : '⚠️'}
           </div>
           <div className={styles.cardContent}>
-            <div className={styles.cardTitle}>支付口令</div>
+            <div className={styles.cardTitle}>{t('pit.security.passcode.title')}</div>
             <div className={styles.cardStatus}>
-              {requiresPasscodeUpgrade ? '旧口令已废弃' : status?.hasPaymentPassword ? '已设置' : '未设置'}
+              {t(requiresPasscodeUpgrade
+                ? 'pit.security.passcode.legacy'
+                : status?.hasPaymentPassword
+                  ? 'pit.security.passcode.configured'
+                  : 'pit.security.passcode.notConfigured')}
             </div>
             <div className={styles.cardDescription}>
-              {requiresPasscodeUpgrade
-                ? '旧支付口令不再支持商城购买和萝卜转移，请尽快重置为新的6位数字支付口令'
+              {t(requiresPasscodeUpgrade
+                ? 'pit.security.passcode.legacyDescription'
                 : status?.hasPaymentPassword
-                ? '您已设置支付口令，转移和购买操作更安全'
-                : '建议设置支付口令以保护您的萝卜资产'}
+                  ? 'pit.security.passcode.configuredDescription'
+                  : 'pit.security.passcode.notConfiguredDescription')}
             </div>
           </div>
           <div className={styles.cardAction}>
             <button className={styles.actionButton} onClick={() => onNavigate('password')}>
-              {requiresPasscodeUpgrade ? '立即重置' : status?.hasPaymentPassword ? '修改' : '设置'}
+              {t(requiresPasscodeUpgrade
+                ? 'pit.security.passcode.resetNow'
+                : status?.hasPaymentPassword
+                  ? 'pit.security.passcode.change'
+                  : 'pit.security.passcode.set')}
             </button>
           </div>
         </div>
@@ -142,20 +156,25 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
             {status?.isLocked ? '🔒' : '🔓'}
           </div>
           <div className={styles.cardContent}>
-            <div className={styles.cardTitle}>账户状态</div>
+            <div className={styles.cardTitle}>{t('pit.security.account.title')}</div>
             <div className={styles.cardStatus}>
-              {status?.isLocked ? '已锁定' : '正常'}
+              {t(status?.isLocked ? 'pit.security.state.locked' : 'pit.security.account.normal')}
             </div>
             <div className={styles.cardDescription}>
               {status?.isLocked
-                ? `账户已锁定，${status.lockedUntil ? `${Math.ceil((new Date(status.lockedUntil).getTime() - Date.now()) / 60000)}分钟后解锁` : '请联系客服'}`
-                : '账户状态正常，可以正常使用'}
+                ? status.lockedRemainingMinutes
+                  ? t('pit.security.account.unlockRemaining', {
+                    count: status.lockedRemainingMinutes,
+                    value: formatCoinNumber(status.lockedRemainingMinutes, language),
+                  })
+                  : t('pit.security.account.lockedSupport')
+                : t('pit.security.account.normalDescription')}
             </div>
           </div>
           {status?.isLocked && (
             <div className={styles.cardAction}>
               <button className={styles.actionButton} disabled>
-                等待解锁
+                {t('pit.security.account.waitUnlock')}
               </button>
             </div>
           )}
@@ -163,20 +182,26 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
 
         {/* 失败尝试次数 */}
         <div className={`${styles.securityCard} ${
-          (status?.failedAttempts || 0) > 0 ? styles.warning : styles.secure
+          failedAttempts > 0 ? styles.warning : styles.secure
         }`}>
           <div className={styles.cardIcon}>
-            {(status?.failedAttempts || 0) > 0 ? '⚠️' : '✅'}
+            {failedAttempts > 0 ? '⚠️' : '✅'}
           </div>
           <div className={styles.cardContent}>
-            <div className={styles.cardTitle}>口令尝试</div>
+            <div className={styles.cardTitle}>{t('pit.security.attempts.title')}</div>
             <div className={styles.cardStatus}>
-              {status?.failedAttempts || 0} 次失败
+              {t('pit.security.attempts.failedCount', {
+                count: failedAttempts,
+                value: formatCoinNumber(failedAttempts, language),
+              })}
             </div>
             <div className={styles.cardDescription}>
-              {(status?.failedAttempts || 0) > 0
-                ? `最近有${status?.failedAttempts}次口令输入错误`
-                : '最近没有口令输入错误记录'}
+              {t(failedAttempts > 0
+                ? 'pit.security.attempts.failedDescription'
+                : 'pit.security.attempts.cleanDescription', {
+                count: failedAttempts,
+                value: formatCoinNumber(failedAttempts, language),
+              })}
             </div>
           </div>
         </div>
@@ -185,14 +210,14 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
         <div className={styles.securityCard}>
           <div className={styles.cardIcon}>⏰</div>
           <div className={styles.cardContent}>
-            <div className={styles.cardTitle}>最后使用</div>
+            <div className={styles.cardTitle}>{t('pit.security.lastUsed.title')}</div>
             <div className={styles.cardStatus}>
               {status?.lastPasswordUsedTime
-                ? formatDateTime(status.lastPasswordUsedTime)
-                : '从未使用'}
+                ? formatCoinDateTime(status.lastPasswordUsedTime, displayTimeZone, language)
+                : t('pit.security.lastUsed.never')}
             </div>
             <div className={styles.cardDescription}>
-              支付口令最后使用时间
+              {t('pit.security.lastUsed.description')}
             </div>
           </div>
         </div>
@@ -200,21 +225,25 @@ export const SecurityOverview = ({ status, loading, error, onRefresh, onNavigate
 
       {/* 快速操作 */}
       <div className={styles.quickActions}>
-        <h4 className={styles.actionsTitle}>快速操作</h4>
+        <h4 className={styles.actionsTitle}>{t('pit.overview.quickActions')}</h4>
         <div className={styles.actionsList}>
           <button className={styles.quickActionButton} onClick={() => onNavigate('password')}>
             <span className={styles.actionIcon}>🔑</span>
             <span className={styles.actionText}>
-              {requiresPasscodeUpgrade ? '重置支付口令' : status?.hasPaymentPassword ? '修改支付口令' : '设置支付口令'}
+              {t(requiresPasscodeUpgrade
+                ? 'pit.security.passcode.reset'
+                : status?.hasPaymentPassword
+                  ? 'pit.security.passcode.changeFull'
+                  : 'pit.security.passcode.setFull')}
             </span>
           </button>
           <button className={styles.quickActionButton} onClick={() => onNavigate('log')}>
             <span className={styles.actionIcon}>📋</span>
-            <span className={styles.actionText}>查看安全日志</span>
+            <span className={styles.actionText}>{t('pit.security.action.logs')}</span>
           </button>
           <button className={styles.quickActionButton} onClick={() => onNavigate('tips')}>
             <span className={styles.actionIcon}>💡</span>
-            <span className={styles.actionText}>查看安全建议</span>
+            <span className={styles.actionText}>{t('pit.security.action.tips')}</span>
           </button>
         </div>
       </div>

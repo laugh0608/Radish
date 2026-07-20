@@ -5,10 +5,43 @@ using SqlSugar;
 
 namespace Radish.IRepository;
 
+/// <summary>Chat 消息事务写入结果</summary>
+public sealed record ChannelMessageWriteResult(long MessageId, bool PeerWasUnarchived);
+
+/// <summary>聊天室消息撤回事务结果。</summary>
+public sealed record ChannelMessageRecallWriteResult(
+    int AffectedRows,
+    long ChannelId,
+    bool PinsChanged,
+    long PinRevision);
+
+/// <summary>陌生私聊请求首条消息已被其他写入占用。</summary>
+public sealed class DirectConversationRequestClaimException : Exception
+{
+    public DirectConversationRequestClaimException()
+        : base("陌生私聊请求已存在首条消息。")
+    {
+    }
+}
+
 /// <summary>聊天室消息仓储接口</summary>
 public interface IChannelMessageRepository : IBaseRepository<ChannelMessage>
 {
     Task<long> AddWithOutboxAsync(ChannelMessage message, ReliableOutboxDraft? outboxDraft);
+
+    /// <summary>在 Chat 单事务内写入消息、多个可靠任务并清除接收方归档。</summary>
+    Task<ChannelMessageWriteResult> AddWithEffectsAsync(
+        ChannelMessage message,
+        IReadOnlyCollection<ReliableOutboxDraft> outboxDrafts,
+        long? unarchiveUserId = null,
+        long? claimPendingConversationId = null);
+
+    /// <summary>在 Chat 单事务内撤回消息并软删除其全部活跃回应与置顶。</summary>
+    Task<ChannelMessageRecallWriteResult> RecallWithEffectsAsync(
+        long messageId,
+        long operatorId,
+        string operatorName,
+        DateTime nowUtc);
 
     /// <summary>查询单条消息（包含已撤回消息）</summary>
     Task<ChannelMessage?> QueryFirstIncludingDeletedAsync(Expression<Func<ChannelMessage, bool>> whereExpression);

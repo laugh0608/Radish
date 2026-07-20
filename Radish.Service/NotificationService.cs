@@ -1,8 +1,10 @@
-using AutoMapper;
+using System.Globalization;
+using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Radish.Common;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
-using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -11,438 +13,695 @@ using SqlSugar;
 
 namespace Radish.Service;
 
-/// <summary>
-/// 通知服务实现
-/// </summary>
-public class NotificationService : INotificationService
+/// <summary>以 Message 库分组与 revision 为真相源的通知中心服务。</summary>
+public sealed class NotificationService : INotificationService
 {
-    private readonly IBaseRepository<Notification> _notificationRepository;
-    private readonly IBaseRepository<UserNotification> _userNotificationRepository;
-    private readonly INotificationRepository _notificationCustomRepository;
+    private readonly INotificationInboxRepository _inboxRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly INotificationTargetResolver _targetResolver;
     private readonly INotificationPushService _pushService;
-    private readonly INotificationCacheService _cacheService;
-    private readonly IMapper _mapper;
+    private readonly TimeProvider _timeProvider;
     private readonly ILogger<NotificationService> _logger;
 
     public NotificationService(
-        IBaseRepository<Notification> notificationRepository,
-        IBaseRepository<UserNotification> userNotificationRepository,
-        INotificationRepository notificationCustomRepository,
+        INotificationInboxRepository inboxRepository,
+        IUserRepository userRepository,
+        INotificationTargetResolver targetResolver,
         INotificationPushService pushService,
-        INotificationCacheService cacheService,
-        IMapper mapper,
+        TimeProvider timeProvider,
         ILogger<NotificationService> logger)
     {
-        _notificationRepository = notificationRepository;
-        _userNotificationRepository = userNotificationRepository;
-        _notificationCustomRepository = notificationCustomRepository;
+        _inboxRepository = inboxRepository;
+        _userRepository = userRepository;
+        _targetResolver = targetResolver;
         _pushService = pushService;
-        _cacheService = cacheService;
-        _mapper = mapper;
+        _timeProvider = timeProvider;
         _logger = logger;
     }
 
-    /// <summary>
-    /// 创建通知并发送给指定用户
-    /// </summary>
     public async Task<long> CreateNotificationAsync(CreateNotificationDto dto)
     {
-        if (dto == null || dto.ReceiverUserIds == null || dto.ReceiverUserIds.Count == 0)
+        ArgumentNullException.ThrowIfNull(dto);
+        var receiverIds = dto.ReceiverUserIds
+            .Where(userId => userId > 0)
+            .Distinct()
+            .OrderBy(userId => userId)
+            .ToList();
+        if (receiverIds.Count == 0)
         {
-            throw new ArgumentException("接收者用户 ID 列表不能为空");
+            throw new ArgumentException("接收者用户 ID 列表不能为空。", nameof(dto));
         }
 
-        try
+        var definition = NotificationDefinitionRegistry.GetRequired(dto.Type);
+        var targetKind = string.IsNullOrWhiteSpace(dto.TargetKind)
+            ? definition.AllowedTargetKinds.Single()
+            : dto.TargetKind.Trim();
+        ValidateTarget(definition, targetKind, dto.Target);
+        ValidateTemplateArguments(definition, dto.TemplateArguments);
+
+        var nowUtc = GetUtcNow();
+        var occurredAtUtc = NormalizeUtc(dto.OccurredAtUtc ?? nowUtc);
+        if (dto.NotificationId.HasValue && !dto.OccurredAtUtc.HasValue)
         {
-            // 1. 创建通知实体
-            var notification = new Notification(
-                new NotificationInitializationOptions(dto.Type, dto.Title)
-                {
-                    Content = dto.Content,
-                    Priority = dto.Priority,
-                    BusinessType = dto.BusinessType,
-                    BusinessId = dto.BusinessId,
-                    TriggerId = dto.TriggerId,
-                    TriggerName = dto.TriggerName,
-                    TriggerAvatar = dto.TriggerAvatar,
-                    ExtData = dto.ExtData,
-                    TenantId = dto.TenantId ?? 0
-                });
+            throw new ArgumentException("可靠通知必须携带固定的 OccurredAtUtc。", nameof(dto));
+        }
 
-            // 使用雪花 ID
-            notification.Id = dto.NotificationId ?? SnowFlakeSingle.Instance.NextId();
-            notification.BusinessKey = string.IsNullOrWhiteSpace(dto.BusinessKey)
-                ? $"notification:{notification.Id}"
-                : dto.BusinessKey.Trim();
+        var tenantId = dto.TenantId ?? 0;
+        if (tenantId < 0)
+        {
+            throw new ArgumentException("租户 ID 不能小于 0。", nameof(dto));
+        }
 
+        var activeRecipientIds = await _userRepository.GetActiveUserIdsAsync(tenantId, receiverIds);
+        if (activeRecipientIds.Count != receiverIds.Count)
+        {
+            throw new ArgumentException("通知接收者不存在、已停用或不属于指定租户。", nameof(dto));
+        }
+
+        var notificationId = dto.NotificationId ?? SnowFlakeSingle.Instance.NextId();
+        var recipients = new List<NotificationInboxRecipient>(receiverIds.Count);
+        foreach (var userId in receiverIds)
+        {
+            var preferences = await _inboxRepository.GetPreferencesAsync(tenantId, userId);
+            preferences.TryGetValue(definition.Category, out var preference);
+            var inAppEnabled = !definition.CanDisableInApp || preference?.InAppEnabled != false;
+            if (!inAppEnabled)
+            {
+                continue;
+            }
+
+            var realtimePreviewAllowed = !definition.CanDisableRealtimePreview ||
+                                         preference?.RealtimePreviewEnabled != false;
+            recipients.Add(new NotificationInboxRecipient(userId, realtimePreviewAllowed));
+        }
+
+        if (recipients.Count == 0)
+        {
             _logger.LogInformation(
-                "[NotificationService] 创建通知成功，NotificationId: {NotificationId}, Type: {Type}",
-                notification.Id, notification.Type);
-
-            // 3. 为每个接收者创建用户通知关联
-            var userNotifications = dto.ReceiverUserIds.Select(userId =>
-            {
-                var userNotification = new UserNotification(
-                    new UserNotificationInitializationOptions(userId, notification.Id)
-                    {
-                        TenantId = dto.TenantId ?? 0
-                    });
-                userNotification.Id = SnowFlakeSingle.Instance.NextId();
-                return userNotification;
-            }).ToList();
-
-            // 通知及全部接收关系在 Message 库内原子写入；重复任务复用确定的 NotificationId。
-            var created = await _notificationCustomRepository.PersistAsync(notification, userNotifications);
-
-            _logger.LogInformation(
-                "[NotificationService] 创建用户通知关联成功，接收者数量: {Count}",
-                userNotifications.Count);
-
-            if (!created)
-            {
-                return notification.Id;
-            }
-
-            // 4. 按数据库事实刷新未读缓存，并 best-effort 推送通知。
-            try
-            {
-                var storeType = MapToStoreType(notification.Type);
-                foreach (var userNotification in userNotifications)
-                {
-                    var userId = userNotification.UserId;
-
-                    var unreadCount = await _cacheService.RefreshUnreadCountAsync(userId);
-                    await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
-
-                    var payload = new
-                    {
-                        id = notification.Id,
-                        type = storeType,
-                        title = notification.Title,
-                        content = notification.Content,
-                        isRead = userNotification.IsRead,
-                        createdAt = userNotification.CreateTime,
-                        businessId = notification.BusinessId,
-                        businessType = notification.BusinessType,
-                        triggerId = notification.TriggerId,
-                        triggerName = notification.TriggerName,
-                        triggerAvatar = notification.TriggerAvatar,
-                        extData = notification.ExtData
-                    };
-
-                    await _pushService.PushNotificationAsync(userId, payload);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex,
-                    "[NotificationService] 刷新未读缓存或实时推送失败，NotificationId: {NotificationId}",
-                    notification.Id);
-            }
-
-            return notification.Id;
+                "通知 {NotificationId} 已按 {Category} 偏好抑制全部接收者",
+                notificationId,
+                definition.Category);
+            return notificationId;
         }
-        catch (Exception ex)
+
+        var target = dto.Target ?? new NotificationTargetData();
+        var notification = new Notification(new NotificationInitializationOptions(
+            definition.Kind,
+            RequireSnapshot(dto.Title, "通知标题"))
         {
-            _logger.LogError(ex,
-                "[NotificationService] 创建通知失败，Type: {Type}, Title: {Title}",
-                dto.Type, dto.Title);
-            throw;
+            Category = definition.Category,
+            TemplateKey = definition.TemplateKey,
+            TemplateArgumentsJson = JsonSerializer.Serialize(dto.TemplateArguments),
+            TargetKind = targetKind,
+            TargetDataJson = targetKind == NotificationTargetKind.None ? null : target.ToJson(),
+            TargetSchemaVersion = 1,
+            OccurredAtUtc = occurredAtUtc,
+            Content = dto.Content,
+            Priority = (int)definition.DefaultPriority,
+            BusinessType = dto.BusinessType,
+            BusinessId = dto.BusinessId,
+            TriggerId = dto.TriggerId,
+            TriggerName = dto.TriggerName,
+            TriggerAvatar = dto.TriggerAvatar,
+            ExtData = dto.ExtData,
+            TenantId = tenantId
+        })
+        {
+            Id = notificationId,
+            BusinessKey = string.IsNullOrWhiteSpace(dto.BusinessKey)
+                ? $"notification:{notificationId}"
+                : dto.BusinessKey.Trim(),
+            CreateTime = nowUtc
+        };
+
+        var persisted = await _inboxRepository.PersistAsync(notification, recipients, nowUtc);
+        foreach (var change in persisted.RecipientChanges)
+        {
+            await PushChangedAsync(change, "Created");
         }
+
+        return persisted.NotificationId;
     }
 
-    private static string MapToStoreType(string type)
+    public async Task<NotificationInboxPageVo> GetInboxAsync(
+        long tenantId,
+        long userId,
+        NotificationInboxQueryDto query)
     {
-        return type switch
+        ArgumentNullException.ThrowIfNull(query);
+        ValidateCategory(query.Category, allowEmpty: true);
+        var currentSummary = await _inboxRepository.GetSummaryAsync(tenantId, userId);
+        var cursor = DecodeCursor(query.Cursor);
+        if (cursor != null && cursor.Revision != currentSummary.Revision)
         {
-            "CommentReply" => "reply",
-            NotificationType.CommentReplied => "reply",
-            NotificationType.PostQuickReplied => "reply",
-            NotificationType.CommentLiked => "like",
-            NotificationType.PostLiked => "like",
-            "Mention" => "mention",
-            NotificationType.Mentioned => "mention",
-            "Follow" => "follow",
-            "Followed" => "follow",
-            NotificationType.SystemAnnouncement => "system",
-            NotificationType.AccountSecurity => "system",
-            NotificationType.LevelUp => "system",
-            NotificationType.LotteryWon => "system",
-            NotificationType.GodComment => "system",
-            NotificationType.Sofa => "system",
-            NotificationType.CoinBalanceChanged => "system",
-            _ => "system"
+            throw CursorExpired();
+        }
+
+        var result = await _inboxRepository.QueryAsync(
+            tenantId,
+            userId,
+            query.Category,
+            query.OnlyUnread,
+            cursor?.LastOccurredAtUtc,
+            cursor?.GroupId,
+            0,
+            Math.Clamp(query.PageSize, 1, 50));
+        if (result.Summary.Revision != currentSummary.Revision)
+        {
+            throw CursorExpired();
+        }
+
+        var targets = await _targetResolver.ResolveAsync(
+            tenantId,
+            userId,
+            result.Groups.Select(item => item.LatestNotification).ToList());
+        var items = result.Groups.Select(snapshot => MapGroup(
+            snapshot,
+            targets[snapshot.LatestNotification.Id])).ToList();
+        string? nextCursor = null;
+        if (result.HasMore && result.Groups.Count > 0)
+        {
+            var last = result.Groups[^1].Group;
+            nextCursor = EncodeCursor(new InboxCursor(
+                result.Summary.Revision,
+                last.LastOccurredAtUtc,
+                last.Id));
+        }
+
+        return new NotificationInboxPageVo
+        {
+            VoItems = items,
+            VoNextCursor = nextCursor,
+            VoSummary = MapSummary(result.Summary)
         };
     }
 
-    /// <summary>
-    /// 获取用户的通知列表（分页）
-    /// </summary>
+    public async Task<NotificationInboxSummaryVo> GetInboxSummaryAsync(long tenantId, long userId)
+    {
+        return MapSummary(await _inboxRepository.GetSummaryAsync(tenantId, userId));
+    }
+
+    public async Task<NotificationInboxMutationVo> MarkInboxGroupsAsReadAsync(
+        long tenantId,
+        long userId,
+        IReadOnlyCollection<long> groupIds)
+    {
+        var result = await _inboxRepository.MarkGroupsAsReadAsync(
+            tenantId,
+            userId,
+            groupIds,
+            GetUtcNow());
+        await PushMutationAsync(userId, result, "Read");
+        return MapMutation(result);
+    }
+
+    public async Task<NotificationInboxMutationVo> MarkAllInboxAsReadAsync(
+        long tenantId,
+        long userId,
+        string? category = null)
+    {
+        ValidateCategory(category, allowEmpty: true);
+        var result = await _inboxRepository.MarkAllAsReadAsync(
+            tenantId,
+            userId,
+            category,
+            GetUtcNow());
+        await PushMutationAsync(userId, result, "ReadAll");
+        return MapMutation(result);
+    }
+
+    public async Task<NotificationInboxMutationVo> DeleteInboxGroupAsync(
+        long tenantId,
+        long userId,
+        long groupId)
+    {
+        var result = await _inboxRepository.DeleteGroupAsync(
+            tenantId,
+            userId,
+            groupId,
+            GetUtcNow());
+        await PushMutationAsync(userId, result, "Deleted");
+        return MapMutation(result);
+    }
+
+    public async Task<IReadOnlyList<NotificationPreferenceVo>> GetPreferencesAsync(long tenantId, long userId)
+    {
+        var stored = await _inboxRepository.GetPreferencesAsync(tenantId, userId);
+        return BuildPreferenceVos(stored);
+    }
+
+    public async Task<IReadOnlyList<NotificationPreferenceVo>> UpdatePreferencesAsync(
+        long tenantId,
+        long userId,
+        UpdateNotificationPreferencesDto dto,
+        long operatorId,
+        string operatorName)
+    {
+        ArgumentNullException.ThrowIfNull(dto);
+        var duplicatedCategories = dto.Preferences
+            .GroupBy(preference => preference.Category?.Trim(), StringComparer.Ordinal)
+            .Where(group => string.IsNullOrWhiteSpace(group.Key) || group.Count() > 1)
+            .Select(group => group.Key)
+            .ToList();
+        if (duplicatedCategories.Count > 0)
+        {
+            throw new ArgumentException("通知偏好分类不能为空或重复。", nameof(dto));
+        }
+
+        var nowUtc = GetUtcNow();
+        var preferences = dto.Preferences.Select(preference =>
+        {
+            var category = preference.Category.Trim();
+            ValidateCategory(category, allowEmpty: false);
+            var definitions = GetActiveDefinitions(category);
+            var canDisableInApp = definitions.All(definition => definition.CanDisableInApp);
+            var canDisablePreview = definitions.All(definition => definition.CanDisableRealtimePreview);
+            return new NotificationSetting
+            {
+                TenantId = tenantId,
+                UserId = userId,
+                Category = category,
+                InAppEnabled = canDisableInApp ? preference.InAppEnabled : true,
+                RealtimePreviewEnabled = canDisablePreview ? preference.RealtimePreviewEnabled : true,
+                CreateBy = operatorName,
+                CreateId = operatorId,
+                ModifyBy = operatorName,
+                ModifyId = operatorId,
+                CreateTime = nowUtc
+            };
+        }).ToList();
+        var stored = await _inboxRepository.UpsertPreferencesAsync(
+            tenantId,
+            userId,
+            preferences,
+            nowUtc);
+        return BuildPreferenceVos(stored.ToDictionary(item => item.Category, StringComparer.Ordinal));
+    }
+
     public async Task<(List<UserNotificationVo> notifications, int total)> GetUserNotificationsAsync(
+        long tenantId,
         long userId,
         NotificationListQueryDto query)
     {
-        try
+        var category = ResolveLegacyCategory(query.Type);
+        var result = await _inboxRepository.QueryAsync(
+            tenantId,
+            userId,
+            category,
+            query.OnlyUnread == true,
+            null,
+            null,
+            Math.Max(0, query.PageIndex - 1) * Math.Clamp(query.PageSize, 1, 50),
+            Math.Clamp(query.PageSize, 1, 50));
+        var notifications = result.Groups.Select(snapshot => new UserNotificationVo
         {
-            var onlyUnread = query.OnlyUnread == true;
-            List<long>? typeNotificationIds = null;
-
-            if (!string.IsNullOrWhiteSpace(query.Type))
-            {
-                var types = query.Type
-                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .Select(t => t.Trim())
-                    .Where(t => !string.IsNullOrWhiteSpace(t))
-                    .Distinct()
-                    .ToList();
-
-                if (types.Count > 0)
-                {
-                    var typeNotifications = await _notificationRepository.QueryAsync(n => types.Contains(n.Type));
-                    typeNotificationIds = typeNotifications.Select(n => n.Id).ToList();
-                }
-            }
-
-            if (typeNotificationIds != null && typeNotificationIds.Count == 0)
-            {
-                return (new List<UserNotificationVo>(), 0);
-            }
-
-            // 查询用户的通知关系（分页）
-            var result = await _userNotificationRepository.QueryPageAsync(
-                un => un.UserId == userId
-                      && !un.IsDeleted
-                      && (!onlyUnread || !un.IsRead)
-                      && (typeNotificationIds == null || typeNotificationIds.Contains(un.NotificationId)),
-                query.PageIndex,
-                query.PageSize,
-                un => un.CreateTime,
-                OrderByType.Desc); // 按创建时间倒序
-
-            if (result.data == null || result.data.Count == 0)
-            {
-                return (new List<UserNotificationVo>(), result.totalCount);
-            }
-
-            // 获取所有通知 ID
-            var notificationIds = result.data.Select(un => un.NotificationId).ToList();
-
-            // 批量查询关联的通知详情（使用分表查询）
-            var notifications = await _notificationRepository.QuerySplitAsync(
-                n => notificationIds.Contains(n.Id),
-                "Id");
-            var notificationDict = notifications.ToDictionary(n => n.Id);
-
-            // 映射为 ViewModel 并填充通知详情
-            var voList = result.data.Select(un =>
-            {
-                var vo = _mapper.Map<UserNotificationVo>(un);
-
-                // 填充关联的通知详情
-                if (notificationDict.TryGetValue(un.NotificationId, out var notification))
-                {
-                    vo.VoNotification = _mapper.Map<NotificationVo>(notification);
-                }
-
-                return vo;
-            }).ToList();
-
-            _logger.LogDebug(
-                "[NotificationService] 查询用户通知列表，UserId: {UserId}, Total: {Total}",
-                userId, result.totalCount);
-
-            return (voList, result.totalCount);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "[NotificationService] 查询用户通知列表失败，UserId: {UserId}",
-                userId);
-            throw;
-        }
+            VoId = snapshot.Group.Id,
+            VoUserId = userId,
+            VoNotificationId = snapshot.LatestNotification.Id,
+            VoIsRead = snapshot.Group.UnreadOccurrenceCount == 0,
+            VoReadAt = snapshot.Group.ReadAtUtc,
+            VoCreateTime = snapshot.Group.LastOccurredAtUtc,
+            VoNotification = MapLegacyNotification(snapshot.LatestNotification)
+        }).ToList();
+        return (notifications, checked((int)result.TotalCount));
     }
 
-    /// <summary>
-    /// 获取用户的未读通知数量
-    /// </summary>
-    public async Task<long> GetUnreadCountAsync(long userId)
+    public async Task<long> GetUnreadCountAsync(long tenantId, long userId)
     {
-        try
-        {
-            // 使用缓存服务（优先从缓存读取）
-            var count = await _cacheService.GetUnreadCountAsync(userId);
-            return count;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "[NotificationService] 查询未读数失败，UserId: {UserId}",
-                userId);
-            return 0;
-        }
+        return (await _inboxRepository.GetSummaryAsync(tenantId, userId)).UnreadGroupCount;
     }
 
-    /// <summary>
-    /// 标记通知为已读
-    /// </summary>
-    public async Task<int> MarkAsReadAsync(long userId, List<long> notificationIds)
+    public async Task<int> MarkAsReadAsync(long tenantId, long userId, List<long> notificationIds)
     {
-        if (notificationIds == null || notificationIds.Count == 0)
-        {
-            return 0;
-        }
-
-        try
-        {
-            // 更新指定通知为已读
-            var affectedRows = await _userNotificationRepository.UpdateColumnsAsync(
-                un => new UserNotification
-                {
-                    IsRead = true,
-                    ReadAt = DateTime.Now
-                },
-                un => un.UserId == userId && notificationIds.Contains(un.NotificationId) && !un.IsRead);
-
-            if (affectedRows > 0)
-            {
-                _logger.LogInformation(
-                    "[NotificationService] 标记已读成功，UserId: {UserId}, Count: {Count}",
-                    userId, affectedRows);
-
-                // 使用缓存服务减量更新未读数
-                var unreadCount = await _cacheService.DecrementUnreadCountAsync(userId, affectedRows);
-                await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
-
-                // 推送已读状态变更（多端同步）
-                await _pushService.PushNotificationReadAsync(userId, notificationIds.ToArray());
-            }
-
-            return affectedRows;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "[NotificationService] 标记已读失败，UserId: {UserId}",
-                userId);
-            throw;
-        }
+        var groupIds = await _inboxRepository.GetGroupIdsByNotificationIdsAsync(
+            tenantId,
+            userId,
+            notificationIds);
+        return (await MarkInboxGroupsAsReadAsync(tenantId, userId, groupIds)).VoAffectedRows;
     }
 
-    /// <summary>
-    /// 标记用户的所有通知为已读
-    /// </summary>
-    public async Task<int> MarkAllAsReadAsync(long userId)
+    public async Task<int> MarkAllAsReadAsync(long tenantId, long userId)
     {
-        try
-        {
-            var affectedRows = await _userNotificationRepository.UpdateColumnsAsync(
-                un => new UserNotification
-                {
-                    IsRead = true,
-                    ReadAt = DateTime.Now
-                },
-                un => un.UserId == userId && !un.IsRead && !un.IsDeleted);
-
-            if (affectedRows > 0)
-            {
-                _logger.LogInformation(
-                    "[NotificationService] 标记全部已读成功，UserId: {UserId}, Count: {Count}",
-                    userId, affectedRows);
-            }
-
-            // “全部已读”是收敛命令：即使数据库没有新更新行，也要修正可能残留的未读数缓存。
-            await _cacheService.SetUnreadCountAsync(userId, 0);
-            await _pushService.PushUnreadCountAsync(userId, 0);
-
-            return affectedRows;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "[NotificationService] 标记全部已读失败，UserId: {UserId}",
-                userId);
-            throw;
-        }
+        return (await MarkAllInboxAsReadAsync(tenantId, userId)).VoAffectedRows;
     }
 
-    /// <summary>
-    /// 删除通知（软删除）
-    /// </summary>
-    public async Task<bool> DeleteNotificationAsync(long userId, long notificationId)
+    public async Task<bool> DeleteNotificationAsync(long tenantId, long userId, long notificationId)
     {
-        try
+        var groupIds = await _inboxRepository.GetGroupIdsByNotificationIdsAsync(
+            tenantId,
+            userId,
+            [notificationId]);
+        if (groupIds.Count == 0)
         {
-            // 先查询通知是否未读
-            var userNotification = await _userNotificationRepository.QueryFirstAsync(
-                un => un.UserId == userId && un.NotificationId == notificationId && !un.IsDeleted);
-
-            if (userNotification == null)
-            {
-                return false;
-            }
-
-            var wasUnread = !userNotification.IsRead;
-
-            // 删除通知
-            var affectedRows = await _userNotificationRepository.UpdateColumnsAsync(
-                un => new UserNotification
-                {
-                    IsDeleted = true,
-                    DeletedAt = DateTime.Now
-                },
-                un => un.UserId == userId && un.NotificationId == notificationId && !un.IsDeleted);
-
-            if (affectedRows > 0)
-            {
-                _logger.LogInformation(
-                    "[NotificationService] 删除通知成功，UserId: {UserId}, NotificationId: {NotificationId}",
-                    userId, notificationId);
-
-                // 如果删除的是未读通知，减量更新未读数
-                if (wasUnread)
-                {
-                    var unreadCount = await _cacheService.DecrementUnreadCountAsync(userId, 1);
-                    await _pushService.PushUnreadCountAsync(userId, (int)unreadCount);
-                }
-            }
-
-            return affectedRows > 0;
+            return false;
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex,
-                "[NotificationService] 删除通知失败，UserId: {UserId}, NotificationId: {NotificationId}",
-                userId, notificationId);
-            throw;
-        }
+
+        var result = await DeleteInboxGroupAsync(tenantId, userId, groupIds[0]);
+        return result.VoAffectedRows > 0;
     }
 
-    /// <summary>
-    /// 获取用户的未读数量（按类型分组）
-    /// </summary>
-    public async Task<UnreadCountDto> GetUnreadCountDetailAsync(long userId)
+    public async Task<UnreadCountDto> GetUnreadCountDetailAsync(long tenantId, long userId)
     {
-        try
+        var summary = await _inboxRepository.GetSummaryAsync(tenantId, userId);
+        return new UnreadCountDto
         {
-            var totalCount = await GetUnreadCountAsync(userId);
+            UserId = userId,
+            UnreadCount = summary.UnreadGroupCount,
+            UnreadCountByType = summary.UnreadGroupCountByCategory.ToDictionary(item => item.Key, item => item.Value)
+        };
+    }
 
-            // TODO: 实现按类型分组的未读数统计
-            // 需要联表查询 UserNotification 和 Notification
-            // 由于 BaseRepository 没有提供联表查询方法，这里暂时返回总数
+    private async Task PushChangedAsync(NotificationInboxRecipientChange change, string reason)
+    {
+        await _pushService.PushInboxChangedAsync(change.UserId, new NotificationInboxChangedVo
+        {
+            VoRevision = change.Summary.Revision,
+            VoUnreadGroupCount = change.Summary.UnreadGroupCount,
+            VoUnreadOccurrenceCount = change.Summary.UnreadOccurrenceCount,
+            VoReason = reason,
+            VoLatestGroupId = change.GroupId,
+            VoRealtimePreviewAllowed = change.RealtimePreviewAllowed
+        });
+    }
 
-            return new UnreadCountDto
+    private async Task PushMutationAsync(
+        long userId,
+        NotificationInboxMutationResult result,
+        string reason)
+    {
+        if (result.AffectedRows <= 0)
+        {
+            return;
+        }
+
+        await _pushService.PushInboxChangedAsync(userId, new NotificationInboxChangedVo
+        {
+            VoRevision = result.Summary.Revision,
+            VoUnreadGroupCount = result.Summary.UnreadGroupCount,
+            VoUnreadOccurrenceCount = result.Summary.UnreadOccurrenceCount,
+            VoReason = reason,
+            VoRealtimePreviewAllowed = false
+        });
+    }
+
+    private static NotificationInboxGroupVo MapGroup(
+        NotificationInboxGroupSnapshot snapshot,
+        NotificationTargetVo target)
+    {
+        var displayCount = snapshot.LatestNotification.Type is NotificationType.PostLiked or NotificationType.CommentLiked
+            ? snapshot.Group.DistinctTriggerCount
+            : snapshot.Group.OccurrenceCount;
+        var (title, content) = Render(snapshot.LatestNotification, displayCount);
+        return new NotificationInboxGroupVo
+        {
+            VoGroupId = snapshot.Group.Id,
+            VoLatestNotificationId = snapshot.LatestNotification.Id,
+            VoCategory = snapshot.Group.Category,
+            VoKind = snapshot.Group.Kind,
+            VoTitle = title,
+            VoContent = content,
+            VoPriority = snapshot.LatestNotification.Priority,
+            VoOccurrenceCount = snapshot.Group.OccurrenceCount,
+            VoUnreadOccurrenceCount = snapshot.Group.UnreadOccurrenceCount,
+            VoDistinctTriggerCount = snapshot.Group.DistinctTriggerCount,
+            VoFirstOccurredAtUtc = snapshot.Group.FirstOccurredAtUtc,
+            VoLastOccurredAtUtc = snapshot.Group.LastOccurredAtUtc,
+            VoTriggerId = snapshot.LatestNotification.TriggerId?.ToString(CultureInfo.InvariantCulture),
+            VoTriggerName = snapshot.LatestNotification.TriggerName,
+            VoTriggerAvatar = snapshot.LatestNotification.TriggerAvatar,
+            VoTarget = target
+        };
+    }
+
+    private static NotificationVo MapLegacyNotification(Notification notification)
+    {
+        var (title, content) = Render(notification, 1);
+        return new NotificationVo
+        {
+            VoId = notification.Id,
+            VoType = notification.Type,
+            VoPriority = notification.Priority,
+            VoTitle = title,
+            VoContent = content,
+            VoBusinessType = notification.BusinessType,
+            VoBusinessId = notification.BusinessId,
+            VoTriggerId = notification.TriggerId,
+            VoTriggerName = notification.TriggerName,
+            VoTriggerAvatar = notification.TriggerAvatar,
+            VoExtData = notification.ExtData,
+            VoCreateTime = notification.OccurredAtUtc
+        };
+    }
+
+    private static NotificationInboxSummaryVo MapSummary(NotificationInboxSummarySnapshot summary)
+    {
+        return new NotificationInboxSummaryVo
+        {
+            VoRevision = summary.Revision,
+            VoUnreadGroupCount = summary.UnreadGroupCount,
+            VoUnreadOccurrenceCount = summary.UnreadOccurrenceCount,
+            VoUnreadGroupCountByCategory = summary.UnreadGroupCountByCategory
+                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
+            VoLastChangedAtUtc = summary.LastChangedAtUtc
+        };
+    }
+
+    private static NotificationInboxMutationVo MapMutation(NotificationInboxMutationResult result)
+    {
+        return new NotificationInboxMutationVo
+        {
+            VoAffectedRows = result.AffectedRows,
+            VoSummary = MapSummary(result.Summary)
+        };
+    }
+
+    private static IReadOnlyList<NotificationPreferenceVo> BuildPreferenceVos(
+        IReadOnlyDictionary<string, NotificationSetting> stored)
+    {
+        return NotificationDefinitionRegistry.ActiveCategories.Select(category =>
+        {
+            var definitions = GetActiveDefinitions(category);
+            stored.TryGetValue(category, out var preference);
+            return new NotificationPreferenceVo
             {
-                UserId = userId,
-                UnreadCount = totalCount,
-                UnreadCountByType = null // 后续实现
+                VoCategory = category,
+                VoInAppEnabled = preference?.InAppEnabled ?? true,
+                VoRealtimePreviewEnabled = preference?.RealtimePreviewEnabled ?? true,
+                VoCanDisableInApp = definitions.All(definition => definition.CanDisableInApp),
+                VoCanDisableRealtimePreview = definitions.All(definition => definition.CanDisableRealtimePreview),
+                VoSupportedKinds = definitions.Select(definition => definition.Kind).Order().ToList()
             };
-        }
-        catch (Exception ex)
+        }).ToList();
+    }
+
+    private static IReadOnlyList<NotificationDefinition> GetActiveDefinitions(string category)
+    {
+        var definitions = NotificationDefinitionRegistry.All
+            .Where(definition => definition.IsProducerActive && definition.Category == category)
+            .ToList();
+        if (definitions.Count == 0)
         {
-            _logger.LogError(ex,
-                "[NotificationService] 查询未读数详情失败，UserId: {UserId}",
-                userId);
-            throw;
+            throw new ArgumentException($"通知分类当前不可配置：{category}", nameof(category));
+        }
+
+        return definitions;
+    }
+
+    private static void ValidateCategory(string? category, bool allowEmpty)
+    {
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            if (allowEmpty)
+            {
+                return;
+            }
+
+            throw new ArgumentException("通知分类不能为空。", nameof(category));
+        }
+
+        _ = GetActiveDefinitions(category.Trim());
+    }
+
+    private static void ValidateTarget(
+        NotificationDefinition definition,
+        string targetKind,
+        NotificationTargetData? target)
+    {
+        if (!definition.AllowedTargetKinds.Contains(targetKind))
+        {
+            throw new ArgumentException($"通知 {definition.Kind} 不允许目标类型 {targetKind}。", nameof(targetKind));
+        }
+
+        var isValid = targetKind switch
+        {
+            NotificationTargetKind.None => target == null,
+            NotificationTargetKind.ForumPost => target is { PostId: > 0 } ||
+                                                !string.IsNullOrWhiteSpace(target?.PostPublicId),
+            NotificationTargetKind.ChatConversation => target is { ChannelId: > 0 },
+            NotificationTargetKind.UserProfile => target is { UserId: > 0 } ||
+                                                  !string.IsNullOrWhiteSpace(target?.UserPublicId),
+            NotificationTargetKind.ShopOrder => target is { OrderId: > 0 },
+            NotificationTargetKind.Inventory => target is { BenefitId: > 0 },
+            NotificationTargetKind.Experience => target is { UserId: > 0 },
+            NotificationTargetKind.DocsDocument => !string.IsNullOrWhiteSpace(target?.DocumentSlug),
+            NotificationTargetKind.GovernanceCase => target is { GovernanceCaseId: > 0 },
+            _ => false
+        };
+        if (!isValid)
+        {
+            throw new ArgumentException($"通知 {definition.Kind} 的结构化目标不完整。", nameof(target));
         }
     }
+
+    private static void ValidateTemplateArguments(
+        NotificationDefinition definition,
+        IReadOnlyDictionary<string, string?> arguments)
+    {
+        var missingArguments = definition.RequiredTemplateArguments
+            .Where(name => !arguments.TryGetValue(name, out var value) || string.IsNullOrWhiteSpace(value))
+            .Order()
+            .ToList();
+        if (missingArguments.Count > 0)
+        {
+            throw new ArgumentException(
+                $"通知 {definition.Kind} 缺少模板参数：{string.Join(", ", missingArguments)}。",
+                nameof(arguments));
+        }
+    }
+
+    private static string? ResolveLegacyCategory(string? types)
+    {
+        if (string.IsNullOrWhiteSpace(types))
+        {
+            return null;
+        }
+
+        var categories = types.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(type => NotificationDefinitionRegistry.TryGet(type.Trim(), out var definition)
+                ? definition!.Category
+                : null)
+            .Where(category => category != null)
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        return categories.Count == 1 ? categories[0] : null;
+    }
+
+    private static (string Title, string Content) Render(Notification notification, long occurrenceCount)
+    {
+        if (notification.TemplateKey == "notification.legacy")
+        {
+            return (notification.Title, notification.Content);
+        }
+
+        Dictionary<string, string?> arguments;
+        try
+        {
+            arguments = JsonSerializer.Deserialize<Dictionary<string, string?>>(
+                            notification.TemplateArgumentsJson ?? "{}")
+                        ?? new Dictionary<string, string?>(StringComparer.Ordinal);
+        }
+        catch (JsonException)
+        {
+            return (notification.Title, notification.Content);
+        }
+
+        string Arg(string name, string fallback = "") =>
+            arguments.TryGetValue(name, out var value) && !string.IsNullOrWhiteSpace(value)
+                ? value!
+                : fallback;
+
+        var english = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en";
+        var actor = Arg("actorName", english ? "Someone" : "有人");
+        var target = Arg("targetTitle", english ? "your content" : "你的内容");
+        return (notification.Type, english) switch
+        {
+            (NotificationType.PostLiked, true) => ("Post liked", $"{target} received {occurrenceCount} like(s)."),
+            (NotificationType.PostLiked, false) => ("帖子被点赞", $"《{target}》收到了 {occurrenceCount} 个赞"),
+            (NotificationType.CommentLiked, true) => ("Comment liked", $"Your comment received {occurrenceCount} like(s)."),
+            (NotificationType.CommentLiked, false) => ("评论被点赞", $"你的评论收到了 {occurrenceCount} 个赞"),
+            (NotificationType.CommentReplied, true) => ("New reply", $"{actor} replied to your comment."),
+            (NotificationType.CommentReplied, false) => ("评论回复", $"{actor} 回复了你的评论"),
+            (NotificationType.PostCommented, true) => ("New comment", $"{actor} commented on {target}."),
+            (NotificationType.PostCommented, false) => ("帖子被评论", $"{actor} 评论了《{target}》"),
+            (NotificationType.PostQuickReplied, true) => ("New quick reply", $"{target} received {occurrenceCount} quick response(s)."),
+            (NotificationType.PostQuickReplied, false) => ("收到轻回应", $"《{target}》收到了 {occurrenceCount} 个轻回应"),
+            (NotificationType.ChatMentioned, true) => ("Mentioned in chat", $"{actor} mentioned you in {Arg("channelName", "a channel")}."),
+            (NotificationType.ChatMentioned, false) => ("聊天室提及", $"{actor} 在频道「{Arg("channelName", "聊天") }」中提到了你"),
+            (NotificationType.DirectMessageRequested, true) => ("New message request", $"{actor} sent you a message request."),
+            (NotificationType.DirectMessageRequested, false) => ("新的私信请求", $"{actor} 向你发送了私信请求"),
+            (NotificationType.Followed, true) => ("New follower", $"{actor} followed you."),
+            (NotificationType.Followed, false) => ("新增关注", $"{actor} 关注了你"),
+            (NotificationType.PurchaseSucceeded, true) => ("Purchase complete", $"You purchased {Arg("productName", "an item")}."),
+            (NotificationType.PurchaseSucceeded, false) => ("购买成功", $"你已成功购买 {Arg("productName", "商品")}"),
+            (NotificationType.BenefitExpired, true) => ("Benefit expired", $"Your benefit {Arg("benefitName", "") } has expired."),
+            (NotificationType.BenefitExpired, false) => ("权益已到期", $"你的权益“{Arg("benefitName", "") }”已到期"),
+            (NotificationType.LevelUp, true) => ("Level up", $"You advanced from Lv.{Arg("oldLevel")} to Lv.{Arg("newLevel")}."),
+            (NotificationType.LevelUp, false) => ("等级提升", $"你已从 Lv.{Arg("oldLevel")} 升级到 Lv.{Arg("newLevel")}"),
+            (NotificationType.LotteryWon, true) => ("Lottery result", $"You won {Arg("prizeName", "a prize")} in {target}."),
+            (NotificationType.LotteryWon, false) => ("抽奖开奖结果", $"你在《{target}》中赢得了“{Arg("prizeName", "奖品") }”"),
+            _ => (notification.Title, notification.Content)
+        };
+    }
+
+    private static string EncodeCursor(InboxCursor cursor)
+    {
+        return Convert.ToBase64String(JsonSerializer.SerializeToUtf8Bytes(cursor))
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+    }
+
+    private static InboxCursor? DecodeCursor(string? cursor)
+    {
+        if (string.IsNullOrWhiteSpace(cursor))
+        {
+            return null;
+        }
+
+        try
+        {
+            var normalized = cursor.Replace('-', '+').Replace('_', '/');
+            normalized = normalized.PadRight(normalized.Length + ((4 - normalized.Length % 4) % 4), '=');
+            return JsonSerializer.Deserialize<InboxCursor>(Convert.FromBase64String(normalized))
+                   ?? throw new FormatException();
+        }
+        catch (Exception exception) when (exception is FormatException or JsonException)
+        {
+            throw new BusinessException(
+                "通知分页游标无效",
+                StatusCodes.Status400BadRequest,
+                "Notification.CursorInvalid",
+                "error.notification.cursor_invalid");
+        }
+    }
+
+    private static BusinessException CursorExpired() => new(
+        "通知列表已更新，请刷新第一页",
+        StatusCodes.Status409Conflict,
+        "Notification.CursorExpired",
+        "error.notification.cursor_expired");
+
+    private DateTime GetUtcNow() => _timeProvider.GetUtcNow().UtcDateTime;
+
+    private static DateTime NormalizeUtc(DateTime value)
+    {
+        return value.Kind switch
+        {
+            DateTimeKind.Utc => value,
+            DateTimeKind.Local => value.ToUniversalTime(),
+            _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+        };
+    }
+
+    private static string RequireSnapshot(string? value, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException($"{fieldName}不能为空。", fieldName);
+        }
+
+        return value.Trim();
+    }
+
+    private sealed record InboxCursor(long Revision, DateTime LastOccurredAtUtc, long GroupId);
 }

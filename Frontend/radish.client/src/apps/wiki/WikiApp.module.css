@@ -10,7 +10,7 @@
   background:
     radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--theme-brand-primary) 14%, transparent), transparent 28%),
     radial-gradient(circle at 86% 12%, color-mix(in srgb, var(--theme-accent-jade) 14%, transparent), transparent 24%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 82%, white 18%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 82%, var(--theme-surface-highlight) 18%) 0%, var(--theme-bg-app) 100%);
 }
 
 .containerCompact {
@@ -65,7 +65,7 @@
   border-bottom: 1px solid var(--theme-border-soft);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%),
+    color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%),
     color-mix(in srgb, var(--theme-bg-overlay) 86%, var(--theme-bg-muted) 14%)
   );
 }
@@ -124,7 +124,7 @@
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-bg-muted) 34%, var(--theme-bg-surface) 66%) 100%
   );
 }
@@ -238,7 +238,7 @@
 .primaryButton {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-primary) 88%, white 12%),
+    color-mix(in srgb, var(--theme-brand-primary) 88%, var(--theme-surface-highlight) 12%),
     color-mix(in srgb, var(--theme-brand-primary) 72%, var(--theme-accent-ink) 28%)
   );
   color: var(--theme-bg-surface);
@@ -375,7 +375,7 @@
   border-radius: 999px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 76%, white 24%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 76%, var(--theme-surface-highlight) 24%) 0%,
     color-mix(in srgb, var(--theme-bg-muted) 52%, var(--theme-bg-surface) 48%) 100%
   );
 }
@@ -612,7 +612,7 @@
   border-bottom: 1px solid var(--theme-border-soft);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%),
+    color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%),
     color-mix(in srgb, var(--theme-bg-overlay) 84%, var(--theme-bg-muted) 16%)
   );
 }
@@ -1168,13 +1168,13 @@
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-bg-surface) 80%, white 20%),
+    color-mix(in srgb, var(--theme-bg-surface) 80%, var(--theme-surface-highlight) 20%),
     color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%)
   );
   color: var(--theme-brand-primary);
   box-shadow:
     0 14px 28px color-mix(in srgb, var(--theme-brand-primary) 16%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, white 32%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-surface-highlight) 32%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   font-size: 12px;
@@ -1188,7 +1188,7 @@
   transform: translateY(-1px);
   box-shadow:
     0 18px 32px color-mix(in srgb, var(--theme-brand-primary) 20%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, white 38%, transparent);
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-surface-highlight) 38%, transparent);
 }
 
 .sidebarSheetBody {

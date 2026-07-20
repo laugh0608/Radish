@@ -87,4 +87,91 @@
   <data name="auth.consent.deny" xml:space="preserve">
     <value>取消授权</value>
   </data>
+  <data name="auth.login.developerLabel" xml:space="preserve"><value>开发者</value></data>
+  <data name="auth.login.registerPrompt" xml:space="preserve"><value>没有账号？</value></data>
+  <data name="auth.login.registerAction" xml:space="preserve"><value>立即注册</value></data>
+  <data name="auth.login.submitting" xml:space="preserve"><value>登录中...</value></data>
+  <data name="auth.register.title" xml:space="preserve"><value>创建新账号</value></data>
+  <data name="auth.register.heroTitle" xml:space="preserve"><value>新用户注册</value></data>
+  <data name="auth.register.heading" xml:space="preserve"><value>创建新账号</value></data>
+  <data name="auth.register.description" xml:space="preserve"><value>加入 Radish 社区，完成注册后即可继续当前流程。</value></data>
+  <data name="auth.register.rewardTitle" xml:space="preserve"><value>新用户福利</value></data>
+  <data name="auth.register.rewardDescription" xml:space="preserve"><value>注册即送 50 胡萝卜，完成账号创建后自动到账。</value></data>
+  <data name="auth.register.defaultServiceDescription" xml:space="preserve"><value>Radish 统一身份认证服务</value></data>
+  <data name="auth.register.defaultClientName" xml:space="preserve"><value>Radish 社区</value></data>
+  <data name="auth.register.developerLabel" xml:space="preserve"><value>开发者</value></data>
+  <data name="auth.register.displayNameLabel" xml:space="preserve"><value>展示名</value></data>
+  <data name="auth.register.displayNamePlaceholder" xml:space="preserve"><value>{0}-{1} 位中文、英文字母或数字</value></data>
+  <data name="auth.register.displayNameHint" xml:space="preserve"><value>展示名会作为公开身份展示，后续修改有次数和频率限制，请慎重设置。</value></data>
+  <data name="auth.register.passwordLabel" xml:space="preserve"><value>密码</value></data>
+  <data name="auth.register.passwordPlaceholder" xml:space="preserve"><value>至少 6 个字符</value></data>
+  <data name="auth.register.confirmPasswordLabel" xml:space="preserve"><value>确认密码</value></data>
+  <data name="auth.register.confirmPasswordPlaceholder" xml:space="preserve"><value>再次输入密码</value></data>
+  <data name="auth.register.emailLabel" xml:space="preserve"><value>电子邮箱</value></data>
+  <data name="auth.register.emailPlaceholder" xml:space="preserve"><value>用于找回密码和接收通知</value></data>
+  <data name="auth.register.submit" xml:space="preserve"><value>立即注册</value></data>
+  <data name="auth.register.loginPrompt" xml:space="preserve"><value>已有账号？</value></data>
+  <data name="auth.register.loginAction" xml:space="preserve"><value>立即登录</value></data>
+  <data name="auth.register.password.show" xml:space="preserve"><value>显示</value></data>
+  <data name="auth.register.password.hide" xml:space="preserve"><value>隐藏</value></data>
+  <data name="auth.register.client.logoAlt" xml:space="preserve"><value>客户端图标</value></data>
+  <data name="auth.register.error.displayNameRequired" xml:space="preserve"><value>展示名不能为空</value></data>
+  <data name="auth.register.error.displayNameCharacters" xml:space="preserve"><value>展示名只能包含中文、英文字母和数字</value></data>
+  <data name="auth.register.error.displayNameLength" xml:space="preserve"><value>展示名长度必须在 {0}-{1} 个字符之间</value></data>
+  <data name="auth.register.error.displayNameReserved" xml:space="preserve"><value>该展示名为系统保留名称，请更换</value></data>
+  <data name="auth.register.error.passwordRequired" xml:space="preserve"><value>密码不能为空</value></data>
+  <data name="auth.register.error.passwordLength" xml:space="preserve"><value>密码长度必须在 6-100 个字符之间</value></data>
+  <data name="auth.register.error.confirmPasswordRequired" xml:space="preserve"><value>确认密码不能为空</value></data>
+  <data name="auth.register.error.passwordMismatch" xml:space="preserve"><value>两次输入的密码不一致</value></data>
+  <data name="auth.register.error.emailRequired" xml:space="preserve"><value>电子邮箱不能为空</value></data>
+  <data name="auth.register.error.emailInvalid" xml:space="preserve"><value>请填写有效的电子邮箱</value></data>
+  <data name="auth.register.error.emailLength" xml:space="preserve"><value>邮箱长度不能超过 254 个字符</value></data>
+  <data name="auth.register.error.emailRegistered" xml:space="preserve"><value>邮箱已被注册</value></data>
+  <data name="auth.register.error.unexpected" xml:space="preserve"><value>注册失败，请稍后重试（诊断标识：{0}）</value></data>
+  <data name="auth.register.success" xml:space="preserve"><value>注册成功！已赠送 50 胡萝卜，请登录。</value></data>
+  <data name="auth.consent.requestingApp" xml:space="preserve"><value>请求应用</value></data>
+  <data name="auth.consent.currentAccount" xml:space="preserve"><value>当前登录账号</value></data>
+  <data name="auth.consent.permissionCount.one" xml:space="preserve"><value>{0} 项权限</value></data>
+  <data name="auth.consent.permissionCount.other" xml:space="preserve"><value>{0} 项权限</value></data>
+  <data name="auth.consent.pageEyebrow" xml:space="preserve"><value>Radish 安全授权</value></data>
+  <data name="auth.consent.targetLabel" xml:space="preserve"><value>授权请求</value></data>
+  <data name="auth.consent.headingText" xml:space="preserve"><value>允许 {0} 访问你的 Radish 账号？</value></data>
+  <data name="auth.consent.heroCopy" xml:space="preserve"><value>你正在以 {0} 授权，确认后会回到 {1} 继续刚才的操作。</value></data>
+  <data name="auth.consent.identityTitle" xml:space="preserve"><value>账号与应用</value></data>
+  <data name="auth.consent.identityHint" xml:space="preserve"><value>请核对账号、应用和返回位置，三项都符合预期时再允许。</value></data>
+  <data name="auth.consent.accountLabel" xml:space="preserve"><value>当前账号</value></data>
+  <data name="auth.consent.appLabel" xml:space="preserve"><value>应用</value></data>
+  <data name="auth.consent.developerLabel" xml:space="preserve"><value>开发方</value></data>
+  <data name="auth.consent.redirectLabel" xml:space="preserve"><value>返回到</value></data>
+  <data name="auth.consent.permissionTitle" xml:space="preserve"><value>允许后它可以</value></data>
+  <data name="auth.consent.permissionHint" xml:space="preserve"><value>只授予本次请求包含的访问范围，原始 scope 可在技术信息里核对。</value></data>
+  <data name="auth.consent.safetyTitle" xml:space="preserve"><value>它不会获得</value></data>
+  <data name="auth.consent.safetyPoint1" xml:space="preserve"><value>你的密码、支付口令、验证码或浏览器保存的登录凭据。</value></data>
+  <data name="auth.consent.safetyPoint2" xml:space="preserve"><value>自动修改账号资料、资产或授予新的管理权限。</value></data>
+  <data name="auth.consent.riskHint" xml:space="preserve"><value>不认识应用、账号不对或返回位置异常时，请取消授权。取消不会退出 Radish。</value></data>
+  <data name="auth.consent.decisionHint" xml:space="preserve"><value>请只在应用、账号和返回位置都符合预期时允许。</value></data>
+  <data name="auth.consent.technicalTitle" xml:space="preserve"><value>查看技术信息</value></data>
+  <data name="auth.consent.technicalHint" xml:space="preserve"><value>用于排障和安全核对，普通确认时无需优先阅读。</value></data>
+  <data name="auth.consent.clientIdLabel" xml:space="preserve"><value>Client ID</value></data>
+  <data name="auth.consent.redirectUriLabel" xml:space="preserve"><value>完整回调地址</value></data>
+  <data name="auth.consent.rawScopeLabel" xml:space="preserve"><value>原始 scope</value></data>
+  <data name="auth.consent.scope.openid.title" xml:space="preserve"><value>确认登录身份</value></data>
+  <data name="auth.consent.scope.openid.description" xml:space="preserve"><value>让应用知道当前是哪个 Radish 账号在操作。</value></data>
+  <data name="auth.consent.scope.profile.title" xml:space="preserve"><value>读取昵称与头像</value></data>
+  <data name="auth.consent.scope.profile.description" xml:space="preserve"><value>用于在应用里显示你的基础资料。</value></data>
+  <data name="auth.consent.scope.offlineAccess.title" xml:space="preserve"><value>保持本次登录</value></data>
+  <data name="auth.consent.scope.offlineAccess.description" xml:space="preserve"><value>减少短时间内重复登录或重复授权。</value></data>
+  <data name="auth.consent.scope.radishApi.title" xml:space="preserve"><value>继续当前服务操作</value></data>
+  <data name="auth.consent.scope.radishApi.description" xml:space="preserve"><value>用于完成你刚才在请求应用里打开的受保护任务。</value></data>
+  <data name="auth.consent.scope.additional.title" xml:space="preserve"><value>附加访问权限</value></data>
+  <data name="auth.consent.scope.additional.description" xml:space="preserve"><value>这是请求应用声明的额外访问范围，请确认符合预期。</value></data>
+  <data name="auth.client.radish-client.displayName" xml:space="preserve"><value>Radish 官方客户端</value></data>
+  <data name="auth.client.radish-client.description" xml:space="preserve"><value>Radish 官方客户端，承载社区主站、WebOS 兼容入口与 Flutter 原生壳层。</value></data>
+  <data name="auth.client.radish-client.developerName" xml:space="preserve"><value>Radish 官方</value></data>
+  <data name="auth.client.radish-console.displayName" xml:space="preserve"><value>Radish 管理控制台</value></data>
+  <data name="auth.client.radish-console.description" xml:space="preserve"><value>Radish 官方管理控制台，面向后台运营与系统管理。</value></data>
+  <data name="auth.client.radish-console.developerName" xml:space="preserve"><value>Radish 官方</value></data>
+  <data name="auth.client.radish-scalar.displayName" xml:space="preserve"><value>Radish API 文档</value></data>
+  <data name="auth.client.radish-scalar.description" xml:space="preserve"><value>Radish 官方 API 文档与调试入口。</value></data>
+  <data name="auth.client.radish-scalar.developerName" xml:space="preserve"><value>Radish 官方</value></data>
 </root>

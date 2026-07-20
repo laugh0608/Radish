@@ -77,6 +77,9 @@ public class WikiControllerTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal("公开文档不存在", result.MessageInfo);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("Wiki.DocumentNotFound", result.Code);
+        Assert.Equal("error.wiki.document_not_found", result.MessageKey);
         serviceMock.VerifyAll();
     }
 
@@ -92,8 +95,10 @@ public class WikiControllerTest
         var result = await controller.GetById(1001);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(404, result.StatusCode);
         Assert.Equal("文档不存在或无权访问", result.MessageInfo);
+        Assert.Equal("Wiki.DocumentNotAccessible", result.Code);
+        Assert.Equal("error.wiki.document_not_accessible", result.MessageKey);
     }
 
     [Fact]
@@ -164,8 +169,10 @@ public class WikiControllerTest
         var result = await controller.Publish(404);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(404, result.StatusCode);
         Assert.False(result.ResponseData);
+        Assert.Equal("Wiki.DocumentNotFound", result.Code);
+        Assert.Equal("error.wiki.document_not_found", result.MessageKey);
     }
 
     [Fact]
@@ -264,8 +271,10 @@ public class WikiControllerTest
         var result = await controller.GetRevisionDetail(404);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(404, result.StatusCode);
         Assert.Equal("版本不存在", result.MessageInfo);
+        Assert.Equal("Wiki.RevisionNotFound", result.Code);
+        Assert.Equal("error.wiki.revision_not_found", result.MessageKey);
     }
 
     [Fact]

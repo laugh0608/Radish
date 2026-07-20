@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   Modal,
   AntModal,
@@ -13,20 +15,32 @@ import {
   Space,
   PlusOutlined,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
-import { getCategories, createProduct, updateProduct } from '../../api/shopApi';
+import { getCategories, getProductCapabilities, createProduct, updateProduct } from '../../api/shopApi';
 import type {
   Product,
   ProductCategory,
+  ShopProductCapability,
   CreateProductDto,
   UpdateProductDto,
 } from '../../api/types';
-import { uploadAttachmentImage } from '../../api/attachmentApi';
+import {
+  uploadAttachmentImage,
+  type ConsoleAttachmentBusinessType,
+} from '../../api/attachmentApi';
 import { getAvatarUrl } from '../../config/env';
 import { log } from '../../utils/logger';
 import dayjs, { type Dayjs } from 'dayjs';
+import {
+  findProductCapability,
+  getBenefitTypeDisplay,
+  getCapabilityDescription,
+  normalizeEnumNumber,
+} from './productDisplay';
 import '../adminForm.css';
 
 interface ProductFormProps {
@@ -40,20 +54,6 @@ type ProductFormValues = Omit<CreateProductDto, 'expiresAt'> & {
   id?: string;
   expiresAt?: Dayjs;
 };
-
-function isUnsupportedSaleSelection(productType?: unknown, benefitType?: unknown, consumableType?: unknown): boolean {
-  const normalizedProductType = Number(productType);
-
-  if (normalizedProductType === 1) {
-    return [1, 2, 3, 4, 5, 6, 7].includes(Number(benefitType));
-  }
-
-  if (normalizedProductType === 2) {
-    return [2, 3, 6, 99].includes(Number(consumableType));
-  }
-
-  return false;
-}
 
 const benefitCategoryMap: Record<number, string> = {
   1: 'badge',
@@ -86,27 +86,6 @@ interface BenefitValueFieldMeta {
   positiveInteger?: boolean;
 }
 
-function getBenefitTypeDisplayName(benefitType?: unknown): string {
-  switch (Number(benefitType)) {
-    case 1:
-      return '徽章';
-    case 2:
-      return '头像框';
-    case 3:
-      return '称号';
-    case 4:
-      return '主题';
-    case 5:
-      return '签名档';
-    case 6:
-      return '用户名颜色';
-    case 7:
-      return '点赞特效';
-    default:
-      return '权益';
-  }
-}
-
 function resolveRecommendedCategoryId(productType?: unknown, benefitType?: unknown, consumableType?: unknown): string | undefined {
   const normalizedProductType = Number(productType);
 
@@ -136,16 +115,24 @@ function getAllowedCategoryIds(productType?: unknown, benefitType?: unknown): st
   return undefined;
 }
 
-function getBenefitValueFieldMeta(productType?: unknown, benefitType?: unknown, consumableType?: unknown): BenefitValueFieldMeta | null {
+function getBenefitValueFieldMeta(
+  productType: unknown,
+  benefitType: unknown,
+  consumableType: unknown,
+  t: TFunction,
+): BenefitValueFieldMeta | null {
   const normalizedProductType = Number(productType);
 
   if (normalizedProductType === 1) {
-    const benefitTypeName = getBenefitTypeDisplayName(benefitType);
+    const normalizedBenefitType = Number(benefitType);
+    const benefitTypeName = Number.isFinite(normalizedBenefitType) && normalizedBenefitType > 0
+      ? getBenefitTypeDisplay(benefitType as string | number | null | undefined, t)
+      : t('products.type.benefit');
     return {
-      label: `${benefitTypeName}资源值`,
-      placeholder: `请输入${benefitTypeName}资源标识或展示值`,
-      tooltip: '用于权益发放和展示，例如 badge-veteran、theme-sakura。',
-      help: '权益类商品需要可被客户端或运行时识别的资源值。',
+      label: t('products.form.field.benefitValueLabel', { type: benefitTypeName }),
+      placeholder: t('products.form.field.benefitValuePlaceholder', { type: benefitTypeName }),
+      tooltip: t('products.form.field.benefitValueTooltip'),
+      help: t('products.form.field.benefitValueHelp'),
       required: true,
     };
   }
@@ -157,19 +144,19 @@ function getBenefitValueFieldMeta(productType?: unknown, benefitType?: unknown, 
   switch (Number(consumableType)) {
     case 4:
       return {
-        label: '经验值',
-        placeholder: '请输入经验值，例如 100',
-        tooltip: '购买后发放到背包，使用时按这里的数值增加经验。',
-        help: '仅支持正整数。',
+        label: t('products.form.field.expValue'),
+        placeholder: t('products.form.field.expValuePlaceholder'),
+        tooltip: t('products.form.field.expValueTooltip'),
+        help: t('products.form.field.positiveIntegerHelp'),
         required: true,
         positiveInteger: true,
       };
     case 5:
       return {
-        label: '红包面额',
-        placeholder: '请输入胡萝卜数量，例如 50',
-        tooltip: '购买后发放到背包，使用时按这里的数值发放胡萝卜。',
-        help: '仅支持正整数。',
+        label: t('products.form.field.coinValue'),
+        placeholder: t('products.form.field.coinValuePlaceholder'),
+        tooltip: t('products.form.field.coinValueTooltip'),
+        help: t('products.form.field.positiveIntegerHelp'),
         required: true,
         positiveInteger: true,
       };
@@ -177,9 +164,9 @@ function getBenefitValueFieldMeta(productType?: unknown, benefitType?: unknown, 
       return null;
     default:
       return {
-        label: '道具配置值',
-        placeholder: '如有需要请输入道具配置值',
-        tooltip: '当前道具类型如需额外数值配置，可在这里填写。',
+        label: t('products.form.field.itemValue'),
+        placeholder: t('products.form.field.itemValuePlaceholder'),
+        tooltip: t('products.form.field.itemValueTooltip'),
       };
   }
 }
@@ -194,8 +181,11 @@ function normalizeBenefitValue(value: unknown): string | undefined {
 }
 
 export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFormProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [form] = Form.useForm<ProductFormValues>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [capabilities, setCapabilities] = useState<ShopProductCapability[]>([]);
   const [loading, setLoading] = useState(false);
   const [iconUploading, setIconUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -212,7 +202,8 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const consumableType = Form.useWatch('consumableType', form);
   const stockType = Form.useWatch('stockType', form);
   const durationType = Form.useWatch('durationType', form);
-  const unsupportedSaleSelection = isUnsupportedSaleSelection(productType, benefitType, consumableType);
+  const selectedCapability = findProductCapability(capabilities, productType, benefitType, consumableType);
+  const unsupportedSaleSelection = selectedCapability?.voCanSell !== true;
   const recommendedCategoryId = resolveRecommendedCategoryId(productType, benefitType, consumableType);
   const allowedCategoryIds = getAllowedCategoryIds(productType, benefitType);
   const filteredCategories = allowedCategoryIds
@@ -221,11 +212,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   const categoryOptions = filteredCategories.length > 0 ? filteredCategories : categories;
   const isCategoryLocked = Boolean(recommendedCategoryId) && categoryOptions.length === 1;
   const recommendedCategoryName = categories.find((cat) => cat.voId === recommendedCategoryId)?.voName;
-  const benefitValueFieldMeta = getBenefitValueFieldMeta(productType, benefitType, consumableType);
+  const benefitValueFieldMeta = getBenefitValueFieldMeta(productType, benefitType, consumableType, t);
   const benefitValueRules = benefitValueFieldMeta
     ? [
         ...(benefitValueFieldMeta.required
-          ? [{ required: true, whitespace: true, message: `请输入${benefitValueFieldMeta.label}` }]
+          ? [{ required: true, whitespace: true, message: t('products.form.validation.required', { field: benefitValueFieldMeta.label }) }]
           : []),
         ...(benefitValueFieldMeta.positiveInteger
           ? [{
@@ -236,25 +227,12 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
                 return /^[1-9]\d*$/.test(String(value).trim())
                   ? Promise.resolve()
-                  : Promise.reject(new Error(`${benefitValueFieldMeta.label}必须为正整数`));
+                  : Promise.reject(new Error(t('products.form.validation.positiveInteger', { field: benefitValueFieldMeta.label })));
               }
             }]
           : [])
       ]
     : [];
-
-  const normalizeEnumNumber = (value: unknown, mapping: Record<string, number>): number | undefined => {
-    const normalized = String(value ?? '').trim();
-    if (!normalized) {
-      return undefined;
-    }
-
-    if (/^\d+$/.test(normalized)) {
-      return Number.parseInt(normalized, 10);
-    }
-
-    return mapping[normalized];
-  };
 
   const normalizeOptionalAttachmentId = (value: unknown): string | null | undefined => {
     if (typeof value === 'string' && /^[1-9]\d*$/.test(value.trim())) {
@@ -266,7 +244,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
   const handleRequestClose = () => {
     if (loading || iconUploading || coverUploading) {
-      message.warning('当前仍有保存或上传任务，请稍候');
+      message.warning(t('products.form.closeBusy'));
       return;
     }
 
@@ -276,10 +254,10 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
     }
 
     AntModal.confirm({
-      title: '放弃未保存的商品资料？',
-      content: '当前表单内容尚未保存，关闭后会丢失已填写的资料。',
-      okText: '放弃并关闭',
-      cancelText: '继续编辑',
+      title: t('products.form.discardTitle'),
+      content: t('products.form.discardContent'),
+      okText: t('products.form.discardConfirm'),
+      cancelText: t('products.form.continueEditing'),
       okButtonProps: { danger: true },
       onOk: () => {
         setIsDirty(false);
@@ -289,22 +267,20 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   };
 
   const createUploadHandler = (
-    businessType: string,
+    businessType: ConsoleAttachmentBusinessType,
     setUploading: (value: boolean) => void,
     setPreview: (value: string | undefined) => void,
     fieldName: 'iconAttachmentId' | 'coverAttachmentId'
   ): UploadProps['customRequest'] => async (options) => {
     const file = options.file;
     if (!(file instanceof File)) {
-      options.onError?.(new Error('无效文件'));
+      options.onError?.(new Error(t('products.form.upload.invalidFile')));
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
-      const error = new Error('仅支持上传图片文件');
+      const error = new Error(t('products.form.upload.imageOnly'));
       options.onError?.(error);
       message.error(error.message);
       return;
@@ -320,9 +296,9 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       setIsDirty(true);
       setPreview(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
       options.onSuccess?.(uploaded);
-      message.success('图片上传成功，已回填附件 ID');
+      message.success(t('products.form.upload.success'));
     } catch (error) {
-      const uploadError = error instanceof Error ? error : new Error('图片上传失败');
+      const uploadError = error instanceof Error ? error : new Error(t('products.form.upload.failed'));
       log.error('ProductForm', '上传商品图片失败:', error);
       options.onError?.(uploadError);
       message.error(uploadError.message);
@@ -334,9 +310,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   // 加载分类列表
   useEffect(() => {
     if (visible) {
-      loadCategories();
+      loadFormMetadata();
     }
-  }, [visible]);
+    // Metadata follows the current language so service fallbacks honor Accept-Language.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [language, visible]);
 
   // 初始化表单数据
   useEffect(() => {
@@ -461,18 +439,24 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
     form.setFieldValue('categoryId', recommendedCategoryId);
   }, [categoryId, form, recommendedCategoryId, visible]);
 
-  const loadCategories = async () => {
+  const loadFormMetadata = async () => {
     try {
-      const data = await getCategories();
-      setCategories(data);
+      const [categoryData, capabilityData] = await Promise.all([
+        getCategories(t),
+        getProductCapabilities(t),
+      ]);
+      setCategories(categoryData);
+      setCapabilities(capabilityData);
     } catch (error) {
-      log.error('ProductForm', '加载分类列表失败:', error);
+      log.error('ProductForm', '加载商品表单元数据失败:', error);
+      setCapabilities([]);
+      message.error(error instanceof Error ? error.message : t('products.form.metadataLoadFailed'));
     }
   };
 
   const handleSubmit = async () => {
     if (iconUploading || coverUploading) {
-      message.warning('图片仍在上传中，请稍候提交');
+      message.warning(t('products.form.uploadInProgress'));
       return;
     }
 
@@ -490,7 +474,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         ?? values.categoryId;
 
       if ((normalizedConsumableType === 4 || normalizedConsumableType === 5) && !normalizedBenefitValue) {
-        message.error(`${normalizedConsumableType === 4 ? '经验卡' : '萝卜币红包'}必须配置正整数数值`);
+        message.error(t('products.form.validation.consumableValue', {
+          type: normalizedConsumableType === 4
+            ? t('products.consumableType.expCard')
+            : t('products.consumableType.coinCard'),
+        }));
         return;
       }
 
@@ -514,12 +502,15 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
       if (product) {
         // 更新
-        await updateProduct({ ...dto, id: product.voId, expectedVersion: product.voVersion } as UpdateProductDto);
-        message.success('更新成功');
+        await updateProduct(
+          { ...dto, id: product.voId, expectedVersion: product.voVersion } as UpdateProductDto,
+          t,
+        );
+        message.success(t('products.form.updateSuccess'));
       } else {
         // 创建
-        await createProduct(dto as CreateProductDto);
-        message.success('创建成功');
+        await createProduct(dto as CreateProductDto, t);
+        message.success(t('products.form.createSuccess'));
       }
 
       setIsDirty(false);
@@ -530,7 +521,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       if (error instanceof Error) {
         message.error(error.message);
       } else {
-        message.error('操作失败');
+        message.error(t('products.form.submitFailed'));
       }
     } finally {
       setLoading(false);
@@ -539,17 +530,20 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
   return (
     <Modal
-      title={product ? '编辑商品' : '新建商品'}
+      title={product ? t('products.form.editTitle') : t('products.form.createTitle')}
       isOpen={visible}
       onClose={handleRequestClose}
+      closeLabel={t('products.form.cancel')}
       size="large"
       closeOnOverlayClick={false}
       closeOnEscape={false}
       footer={
         <div className="admin-form-modal-actions">
-          <Button onClick={handleRequestClose}>取消</Button>
+          <Button onClick={handleRequestClose}>{t('products.form.cancel')}</Button>
           <Button variant="primary" onClick={handleSubmit} disabled={loading || iconUploading || coverUploading}>
-            {loading || iconUploading || coverUploading ? '保存中...' : '保存'}
+            {loading || iconUploading || coverUploading
+              ? t('products.form.saving')
+              : t('products.form.save')}
           </Button>
         </div>
       }
@@ -561,31 +555,33 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         onValuesChange={() => setIsDirty(true)}
       >
         <Form.Item
-          label="商品名称"
+          label={t('products.form.field.name')}
           name="name"
-          rules={[{ required: true, message: '请输入商品名称' }]}
+          rules={[{ required: true, message: t('products.form.field.namePlaceholder') }]}
         >
-          <Input placeholder="请输入商品名称" maxLength={50} />
+          <Input placeholder={t('products.form.field.namePlaceholder')} maxLength={50} />
         </Form.Item>
 
         <Form.Item
-          label="商品描述"
+          label={t('products.form.field.description')}
           name="description"
         >
           <Input.TextArea
-            placeholder="请输入商品描述"
+            placeholder={t('products.form.field.descriptionPlaceholder')}
             rows={3}
             maxLength={500}
           />
         </Form.Item>
 
         <Form.Item
-          label="商品分类"
+          label={t('products.form.field.category')}
           name="categoryId"
-          rules={[{ required: true, message: '请选择商品分类' }]}
+          rules={[{ required: true, message: t('products.form.field.categoryPlaceholder') }]}
         >
           <Select
-            placeholder={isCategoryLocked ? '分类将按当前商品类型自动匹配' : '请选择商品分类'}
+            placeholder={isCategoryLocked
+              ? t('products.form.field.categoryLocked')
+              : t('products.form.field.categoryPlaceholder')}
             disabled={isCategoryLocked}
           >
             {categoryOptions.map((cat) => (
@@ -597,41 +593,43 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         </Form.Item>
         {recommendedCategoryName && (
           <div className="admin-form-help-text">
-            当前商品会归入「{recommendedCategoryName}」分类，保存时将自动保持一致。
+            {t('products.form.field.categoryHelp', { name: recommendedCategoryName })}
           </div>
         )}
 
         <Form.Item
-          label="商品类型"
+          label={t('products.form.field.productType')}
           name="productType"
-          rules={[{ required: true, message: '请选择商品类型' }]}
+          rules={[{ required: true, message: t('products.form.validation.selectRequired', { field: t('products.form.field.productType') }) }]}
         >
           <Radio.Group>
-            <Radio value={1}>权益</Radio>
-            <Radio value={2}>消耗品</Radio>
-            <Radio value={99}>实物</Radio>
+            <Radio value={1}>{t('products.type.benefit')}</Radio>
+            <Radio value={2}>{t('products.type.consumable')}</Radio>
+            <Radio value={99}>{t('products.type.physical')}</Radio>
           </Radio.Group>
         </Form.Item>
 
         {productType === 1 && (
           <>
             <Form.Item
-              label="权益类型"
+              label={t('products.form.field.benefitType')}
               name="benefitType"
-              rules={[{ required: true, message: '请选择权益类型' }]}
+              rules={[{ required: true, message: t('products.form.field.benefitTypePlaceholder') }]}
             >
-              <Select placeholder="请选择权益类型">
-                <Select.Option value={1} disabled>徽章（暂未开放）</Select.Option>
-                <Select.Option value={2} disabled>头像框（暂未开放）</Select.Option>
-                <Select.Option value={3} disabled>称号（暂未开放）</Select.Option>
-                <Select.Option value={4} disabled>主题（暂未开放）</Select.Option>
-                <Select.Option value={5} disabled>签名档（暂未开放）</Select.Option>
-                <Select.Option value={6} disabled>用户名颜色（暂未开放）</Select.Option>
-                <Select.Option value={7} disabled>点赞特效（暂未开放）</Select.Option>
+              <Select placeholder={t('products.form.field.benefitTypePlaceholder')}>
+                <Select.Option value={1} disabled={findProductCapability(capabilities, 1, 1)?.voCanSell !== true}>{t('products.benefitType.badge')}</Select.Option>
+                <Select.Option value={2} disabled={findProductCapability(capabilities, 1, 2)?.voCanSell !== true}>{t('products.benefitType.avatarFrame')}</Select.Option>
+                <Select.Option value={3} disabled={findProductCapability(capabilities, 1, 3)?.voCanSell !== true}>{t('products.benefitType.title')}</Select.Option>
+                <Select.Option value={4} disabled={findProductCapability(capabilities, 1, 4)?.voCanSell !== true}>{t('products.benefitType.theme')}</Select.Option>
+                <Select.Option value={5} disabled={findProductCapability(capabilities, 1, 5)?.voCanSell !== true}>{t('products.benefitType.signature')}</Select.Option>
+                <Select.Option value={6} disabled={findProductCapability(capabilities, 1, 6)?.voCanSell !== true}>{t('products.benefitType.nameColor')}</Select.Option>
+                <Select.Option value={7} disabled={findProductCapability(capabilities, 1, 7)?.voCanSell !== true}>{t('products.benefitType.likeEffect')}</Select.Option>
               </Select>
             </Form.Item>
             <div className="admin-form-help-text">
-              当前权益效果尚未接入真实消费链路，不能上架销售。
+              {selectedCapability
+                ? getCapabilityDescription(selectedCapability, t)
+                : t('products.form.field.benefitCapabilityHint')}
             </div>
           </>
         )}
@@ -639,22 +637,24 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         {productType === 2 && (
           <>
             <Form.Item
-              label="消耗品类型"
+              label={t('products.form.field.consumableType')}
               name="consumableType"
-              rules={[{ required: true, message: '请选择消耗品类型' }]}
+              rules={[{ required: true, message: t('products.form.field.consumableTypePlaceholder') }]}
             >
-              <Select placeholder="请选择消耗品类型">
-                <Select.Option value={1}>改名卡</Select.Option>
-                <Select.Option value={2} disabled>置顶卡（暂未开放）</Select.Option>
-                <Select.Option value={3} disabled>高亮卡（暂未开放）</Select.Option>
-                <Select.Option value={4}>经验卡</Select.Option>
-                <Select.Option value={5}>萝卜币红包</Select.Option>
-                <Select.Option value={6} disabled>双倍经验卡（暂未开放）</Select.Option>
-                <Select.Option value={99} disabled>抽奖券（暂未开放）</Select.Option>
+              <Select placeholder={t('products.form.field.consumableTypePlaceholder')}>
+                <Select.Option value={1} disabled={findProductCapability(capabilities, 2, undefined, 1)?.voCanSell !== true}>{t('products.consumableType.renameCard')}</Select.Option>
+                <Select.Option value={2} disabled={findProductCapability(capabilities, 2, undefined, 2)?.voCanSell !== true}>{t('products.consumableType.postPinCard')}</Select.Option>
+                <Select.Option value={3} disabled={findProductCapability(capabilities, 2, undefined, 3)?.voCanSell !== true}>{t('products.consumableType.postHighlightCard')}</Select.Option>
+                <Select.Option value={4} disabled={findProductCapability(capabilities, 2, undefined, 4)?.voCanSell !== true}>{t('products.consumableType.expCard')}</Select.Option>
+                <Select.Option value={5} disabled={findProductCapability(capabilities, 2, undefined, 5)?.voCanSell !== true}>{t('products.consumableType.coinCard')}</Select.Option>
+                <Select.Option value={6} disabled={findProductCapability(capabilities, 2, undefined, 6)?.voCanSell !== true}>{t('products.consumableType.doubleExpCard')}</Select.Option>
+                <Select.Option value={99} disabled={findProductCapability(capabilities, 2, undefined, 99)?.voCanSell !== true}>{t('products.consumableType.lotteryTicket')}</Select.Option>
               </Select>
             </Form.Item>
             <div className="admin-form-help-text">
-              帖子置顶卡、帖子高亮卡、双倍经验卡、抽奖券当前未开放，不能上架销售。
+              {selectedCapability
+                ? getCapabilityDescription(selectedCapability, t)
+                : t('products.form.field.consumableCapabilityHint')}
             </div>
           </>
         )}
@@ -676,12 +676,12 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         )}
 
         <Form.Item
-          label="商品图标"
+          label={t('products.form.field.icon')}
         >
           <Form.Item
             name="iconAttachmentId"
             noStyle
-            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+            rules={[{ pattern: /^[1-9]\d*$/, message: t('products.form.validation.attachmentId') }]}
           >
             <Input className="admin-form-hidden-input" />
           </Form.Item>
@@ -690,23 +690,25 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               {iconPreviewUrl ? (
                 <img
                   src={iconPreviewUrl}
-                  alt="商品图标预览"
+                  alt={t('products.form.field.iconPreview')}
                   className="admin-form-upload-preview__image"
                 />
               ) : (
-                <span>暂无图标</span>
+                <span>{t('products.form.field.noIcon')}</span>
               )}
             </div>
 
             <Space wrap>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('ProductIcon', setIconUploading, setIconPreviewUrl, 'iconAttachmentId')}
                 disabled={iconUploading || loading}
               >
                 <Button icon={<PlusOutlined />} disabled={iconUploading || loading}>
-                  {iconUploading ? '上传中...' : '上传图标'}
+                  {iconUploading
+                    ? t('products.form.field.uploading')
+                    : t('products.form.field.uploadIcon')}
                 </Button>
               </Upload>
               <Button
@@ -717,12 +719,12 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                   setIconPreviewUrl(undefined);
                 }}
               >
-                清空图标
+                {t('products.form.field.clearIcon')}
               </Button>
             </Space>
 
             <Input
-              placeholder="上传后自动回填附件 ID"
+              placeholder={t('products.form.field.attachmentPlaceholder')}
               value={iconAttachmentId ? String(iconAttachmentId) : ''}
               readOnly
             />
@@ -730,12 +732,12 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         </Form.Item>
 
         <Form.Item
-          label="商品封面图"
+          label={t('products.form.field.cover')}
         >
           <Form.Item
             name="coverAttachmentId"
             noStyle
-            rules={[{ pattern: /^[1-9]\d*$/, message: '附件 ID 必须为正整数' }]}
+            rules={[{ pattern: /^[1-9]\d*$/, message: t('products.form.validation.attachmentId') }]}
           >
             <Input className="admin-form-hidden-input" />
           </Form.Item>
@@ -744,23 +746,25 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               {coverPreviewUrl ? (
                 <img
                   src={coverPreviewUrl}
-                  alt="商品封面预览"
+                  alt={t('products.form.field.coverPreview')}
                   className="admin-form-upload-preview__image"
                 />
               ) : (
-                <span>暂无封面</span>
+                <span>{t('products.form.field.noCover')}</span>
               )}
             </div>
 
             <Space wrap>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('ProductCover', setCoverUploading, setCoverPreviewUrl, 'coverAttachmentId')}
                 disabled={coverUploading || loading}
               >
                 <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
-                  {coverUploading ? '上传中...' : '上传封面'}
+                  {coverUploading
+                    ? t('products.form.field.uploading')
+                    : t('products.form.field.uploadCover')}
                 </Button>
               </Upload>
               <Button
@@ -771,30 +775,30 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                   setCoverPreviewUrl(undefined);
                 }}
               >
-                清空封面
+                {t('products.form.field.clearCover')}
               </Button>
             </Space>
 
             <Input
-              placeholder="上传后自动回填附件 ID"
+              placeholder={t('products.form.field.attachmentPlaceholder')}
               value={coverAttachmentId ? String(coverAttachmentId) : ''}
               readOnly
             />
           </Space>
         </Form.Item>
 
-        <Form.Item label="价格设置">
+        <Form.Item label={t('products.form.field.price')}>
           <Input.Group compact>
             <Form.Item
               name="price"
               noStyle
-              rules={[{ required: true, message: '请输入售价' }]}
+              rules={[{ required: true, message: t('products.form.validation.required', { field: t('products.form.field.salePrice') }) }]}
             >
               <InputNumber
-                placeholder="售价"
+                placeholder={t('products.form.field.salePrice')}
                 min={0}
                 className="admin-form-control-half"
-                addonAfter="胡萝卜"
+                addonAfter={t('console.unit.carrot')}
               />
             </Form.Item>
             <Form.Item
@@ -802,71 +806,71 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
               noStyle
             >
               <InputNumber
-                placeholder="原价（可选）"
+                placeholder={t('products.form.field.originalPrice')}
                 min={0}
                 className="admin-form-control-half"
-                addonAfter="胡萝卜"
+                addonAfter={t('console.unit.carrot')}
               />
             </Form.Item>
           </Input.Group>
         </Form.Item>
 
         <Form.Item
-          label="库存类型"
+          label={t('products.form.field.stockType')}
           name="stockType"
-          rules={[{ required: true, message: '请选择库存类型' }]}
+          rules={[{ required: true, message: t('products.form.validation.selectRequired', { field: t('products.form.field.stockType') }) }]}
         >
           <Radio.Group>
-            <Radio value={0}>无限库存</Radio>
-            <Radio value={1}>限量库存</Radio>
+            <Radio value={0}>{t('products.stock.unlimited')}</Radio>
+            <Radio value={1}>{t('products.form.field.stockLimited')}</Radio>
           </Radio.Group>
         </Form.Item>
 
         {stockType === 1 && (
           <Form.Item
-            label="库存数量"
+            label={t('products.form.field.stockQuantity')}
             name="stock"
-            rules={[{ required: true, message: '请输入库存数量' }]}
+            rules={[{ required: true, message: t('products.form.field.stockQuantityPlaceholder') }]}
           >
-            <InputNumber placeholder="请输入库存数量" min={0} className="admin-form-control-full" />
+            <InputNumber placeholder={t('products.form.field.stockQuantityPlaceholder')} min={0} className="admin-form-control-full" />
           </Form.Item>
         )}
 
         <Form.Item
-          label="每人限购数量"
+          label={t('products.form.field.limitPerUser')}
           name="limitPerUser"
-          tooltip="0表示不限购"
+          tooltip={t('products.form.field.limitPerUserTooltip')}
         >
-          <InputNumber placeholder="每人限购数量" min={0} className="admin-form-control-full" />
+          <InputNumber placeholder={t('products.form.field.limitPerUser')} min={0} className="admin-form-control-full" />
         </Form.Item>
 
         <Form.Item
-          label="有效期类型"
+          label={t('products.form.field.durationType')}
           name="durationType"
-          rules={[{ required: true, message: '请选择有效期类型' }]}
+          rules={[{ required: true, message: t('products.form.validation.selectRequired', { field: t('products.form.field.durationType') }) }]}
         >
           <Radio.Group>
-            <Radio value={0}>永久有效</Radio>
-            <Radio value={1}>固定天数</Radio>
-            <Radio value={2}>固定到期时间</Radio>
+            <Radio value={0}>{t('products.form.field.durationPermanent')}</Radio>
+            <Radio value={1}>{t('products.form.field.durationDays')}</Radio>
+            <Radio value={2}>{t('products.form.field.durationFixed')}</Radio>
           </Radio.Group>
         </Form.Item>
 
         {durationType === 1 && (
           <Form.Item
-            label="有效期天数"
+            label={t('products.form.field.durationDaysLabel')}
             name="durationDays"
-            rules={[{ required: true, message: '请输入有效期天数' }]}
+            rules={[{ required: true, message: t('products.form.field.durationDaysPlaceholder') }]}
           >
-            <InputNumber placeholder="请输入有效期天数" min={1} className="admin-form-control-full" />
+            <InputNumber placeholder={t('products.form.field.durationDaysPlaceholder')} min={1} className="admin-form-control-full" />
           </Form.Item>
         )}
 
         {durationType === 2 && (
           <Form.Item
-            label="到期时间"
+            label={t('products.form.field.expiresAt')}
             name="expiresAt"
-            rules={[{ required: true, message: '请选择到期时间' }]}
+            rules={[{ required: true, message: t('products.form.validation.selectRequired', { field: t('products.form.field.expiresAt') }) }]}
           >
             <DatePicker
               showTime
@@ -877,15 +881,15 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         )}
 
         <Form.Item
-          label="排序权重"
+          label={t('products.form.field.sortOrder')}
           name="sortOrder"
-          tooltip="数值越大越靠前"
+          tooltip={t('products.form.field.sortOrderTooltip')}
         >
-          <InputNumber placeholder="排序权重" className="admin-form-control-full" />
+          <InputNumber placeholder={t('products.form.field.sortOrder')} className="admin-form-control-full" />
         </Form.Item>
 
         <Form.Item
-          label="是否上架"
+          label={t('products.form.field.onSale')}
           name="isOnSale"
           valuePropName="checked"
         >
@@ -894,7 +898,7 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
         {unsupportedSaleSelection && (
           <div className="admin-form-help-text">
-            当前商品类型未开放，保存时将保持下架状态。
+            {t('products.form.field.unavailableHelp')}
           </div>
         )}
       </Form>

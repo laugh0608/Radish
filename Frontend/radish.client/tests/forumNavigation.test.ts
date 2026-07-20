@@ -15,7 +15,6 @@ import {
   parsePublicForumRoute,
 } from '../src/public/forumRouteState.ts';
 import {
-  isPublicForumPostNotFoundError,
   resolvePublicForumDetailLoadState,
   resolvePublicForumReadSectionState,
 } from '../src/public/forum/publicForumViewState.ts';
@@ -362,32 +361,26 @@ test('getForumCommentHighlight 应按字符串键读取 number 型帖子 ID', ()
   assert.equal(getForumCommentHighlight(highlights, 123)?.voAuthorName, 'Tester');
 });
 
-test('isPublicForumPostNotFoundError 应识别帖子不存在或已删除提示', () => {
-  assert.equal(isPublicForumPostNotFoundError('帖子不存在或已被删除'), true);
-  assert.equal(isPublicForumPostNotFoundError('404 Not Found'), true);
-  assert.equal(isPublicForumPostNotFoundError('加载帖子详情失败'), false);
-});
-
 test('resolvePublicForumDetailLoadState 应区分 loading、notFound、error 和 ready', () => {
   assert.deepEqual(resolvePublicForumDetailLoadState({
     loadingPost: true,
     hasPost: false,
-    postError: null
+    postError: null,
+    postNotFound: false,
   }), { kind: 'loading' });
 
   assert.deepEqual(resolvePublicForumDetailLoadState({
     loadingPost: false,
     hasPost: false,
-    postError: '帖子不存在或已被删除'
-  }), {
-    kind: 'notFound',
-    message: '帖子不存在或已被删除'
-  });
+    postError: 'The post is unavailable.',
+    postNotFound: true,
+  }), { kind: 'notFound' });
 
   assert.deepEqual(resolvePublicForumDetailLoadState({
     loadingPost: false,
     hasPost: false,
-    postError: '网络波动，请稍后重试'
+    postError: '网络波动，请稍后重试',
+    postNotFound: false,
   }), {
     kind: 'error',
     message: '网络波动，请稍后重试'
@@ -396,7 +389,8 @@ test('resolvePublicForumDetailLoadState 应区分 loading、notFound、error 和
   assert.deepEqual(resolvePublicForumDetailLoadState({
     loadingPost: false,
     hasPost: true,
-    postError: '帖子不存在或已被删除'
+    postError: '帖子不存在或已被删除',
+    postNotFound: true,
   }), { kind: 'ready' });
 });
 

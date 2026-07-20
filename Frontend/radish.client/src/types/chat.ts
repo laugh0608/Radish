@@ -1,6 +1,10 @@
 export type ChatMessageStatus = 'sending' | 'sent' | 'failed';
 export type EntityIdValue = string | number;
 export type PersistedEntityId = string;
+export type ChatChannelListView = 'active' | 'archived';
+export type ChatConversationKind = 'public' | 'mutual' | 'stranger' | 'group';
+export type DirectConversationRequestStatus = 'pending' | 'accepted' | 'declined';
+export type DirectConversationAction = 'accept' | 'decline' | 'block' | 'unblock' | 'archive' | 'unarchive';
 
 export function normalizeEntityId(value: EntityIdValue | null | undefined): string | null {
   if (typeof value === 'string') {
@@ -99,11 +103,45 @@ export interface ChannelVo {
   voDescription?: string | null;
   voIconEmoji?: string | null;
   voType: 1 | 2 | 3;
-  voConversationKind?: 'public' | 'mutual' | 'stranger' | 'group' | null;
+  voConversationKind?: ChatConversationKind | null;
+  voPeerUserId?: EntityIdValue | null;
+  voPeerPublicId?: string | null;
+  voPeerDisplayName?: string | null;
+  voPeerAvatarUrl?: string | null;
+  voDirectRequestStatus?: DirectConversationRequestStatus | null;
+  voCanSend: boolean;
+  voCanReact: boolean;
+  voCanPinMessages: boolean;
+  voCanAccept: boolean;
+  voCanDecline: boolean;
+  voCanBlock: boolean;
+  voCanUnblock: boolean;
+  voIsBlockedByCurrentUser: boolean;
+  voIsArchived: boolean;
+  voIsPeerAvailable: boolean;
   voSort: number;
   voUnreadCount: number;
   voHasMention: boolean;
   voLastMessage?: ChannelMessageVo | null;
+}
+
+export interface DirectConversationVo {
+  voChannelId: EntityIdValue;
+  voConversationKind: Extract<ChatConversationKind, 'mutual' | 'stranger'>;
+  voPeerUserId: EntityIdValue;
+  voPeerPublicId?: string | null;
+  voPeerDisplayName: string;
+  voPeerAvatarUrl?: string | null;
+  voDirectRequestStatus: DirectConversationRequestStatus;
+  voCanSend: boolean;
+  voCanAccept: boolean;
+  voCanDecline: boolean;
+  voCanBlock: boolean;
+  voCanUnblock: boolean;
+  voIsBlockedByCurrentUser: boolean;
+  voIsArchived: boolean;
+  voIsPeerAvailable: boolean;
+  voWasCreated: boolean;
 }
 
 export interface ChannelMemberVo {
@@ -137,4 +175,8 @@ export interface UserTypingPayload {
   channelId: EntityIdValue;
   userId: EntityIdValue;
   userName: string;
+}
+
+export interface ConversationStateChangedPayload {
+  channelId: EntityIdValue;
 }

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
+import { getOrCreateDirectConversation } from '@/api/chat';
 import {
   getPublicProfile,
   getPublicUserComments,
@@ -14,10 +16,15 @@ import {
 } from '@/api/user';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { redirectToLogin } from '@/services/auth';
-import { buildPublicProfileFollowReturnPath } from '@/services/authReturnPath';
+import {
+  buildPublicProfileFollowReturnPath,
+  buildPublicProfileMessageReturnPath,
+} from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import { buildMessagesPath } from '@/messages/messagesRouteState';
+import { normalizeEntityId } from '@/types/chat';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { buildPublicLeaderboardPath, createDefaultPublicLeaderboardRoute } from '../leaderboardRouteState';
@@ -28,11 +35,11 @@ import {
   type PublicDetailBackMode,
 } from '../publicRouteNavigation';
 import {
-  applyPublicStructuredData,
   buildProfilePageStructuredData,
-  removePublicStructuredData,
 } from '../publicStructuredData';
-import { buildPublicShareUrl } from '../publicHead';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
+import { isCurrentProfileHeadSource } from '../publicHeadSourceIdentity';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import {
@@ -41,6 +48,7 @@ import {
   resolvePublicProfileRouteIdentifier,
 } from './publicProfileNavigation';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { UserAdornment } from '@/components/UserAdornment';
 import styles from './PublicProfileApp.module.css';
 
 interface PublicProfileAppProps {
@@ -226,6 +234,7 @@ export const PublicProfileApp = ({
   const pageRef = useRef<HTMLDivElement>(null);
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
+  const messageIntentHandledRef = useRef<string | null>(null);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const currentUserId = useUserStore((state) => state.userId);
@@ -234,6 +243,7 @@ export const PublicProfileApp = ({
   const [stats, setStats] = useState<PublicUserStats | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileNotFound, setProfileNotFound] = useState(false);
   const [posts, setPosts] = useState<PublicUserPost[]>([]);
   const [comments, setComments] = useState<PublicUserComment[]>([]);
   const [loadingContent, setLoadingContent] = useState(true);
@@ -244,10 +254,17 @@ export const PublicProfileApp = ({
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
+  const [messageLoading, setMessageLoading] = useState(false);
+  const [messageError, setMessageError] = useState<string | null>(null);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
   }, [route.page, route.tab, route.userId]);
+
+  useEffect(() => {
+    messageIntentHandledRef.current = null;
+    setMessageError(null);
+  }, [route.userId]);
 
   useEffect(() => {
     const requestId = ++profileRequestIdRef.current;
@@ -255,6 +272,7 @@ export const PublicProfileApp = ({
     const loadProfile = async () => {
       setLoadingProfile(true);
       setProfileError(null);
+      setProfileNotFound(false);
       setProfile(null);
       setStats(null);
 
@@ -278,6 +296,7 @@ export const PublicProfileApp = ({
         const message = error instanceof Error ? error.message : String(error);
         setProfile(null);
         setStats(null);
+        setProfileNotFound(isApiResponseNotFoundError(error));
         setProfileError(message);
       } finally {
         if (requestId === profileRequestIdRef.current) {
@@ -323,7 +342,7 @@ export const PublicProfileApp = ({
     }
 
     setFollowLoading(true);
-    getFollowStatus(profile.voUserId)
+    getFollowStatus(profile.voUserId, t)
       .then((status) => {
         if (!cancelled) {
           setFollowStatus(status);
@@ -345,7 +364,7 @@ export const PublicProfileApp = ({
     return () => {
       cancelled = true;
     };
-  }, [isOwnProfile, loggedIn, profile]);
+  }, [isOwnProfile, loggedIn, profile, t]);
 
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
@@ -425,49 +444,47 @@ export const PublicProfileApp = ({
     void loadContent();
   }, [contentReloadToken, onNavigate, profile, profileRouteIdentifier, route.page, route.tab]);
 
-  useEffect(() => {
-    if (loadingProfile) {
-      return;
-    }
-
-    const titleName = profile
-      ? resolveVisibleUserHandle(
-          profile,
-          resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
-        ) || resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
-      : null;
-    const nextTitle = titleName
-      ? `${titleName} · ${t('profile.public.title')}`
-      : t('profile.public.title');
-
-    document.title = nextTitle;
-  }, [loadingProfile, profile, route.userId, t]);
-
   const avatarUrl = useMemo(
     () => resolveMediaUrl(profile?.voAvatarThumbnailUrl || profile?.voAvatarUrl),
     [profile?.voAvatarThumbnailUrl, profile?.voAvatarUrl]
   );
 
-  useEffect(() => {
-    if (!profile) {
-      removePublicStructuredData();
-      return;
+  const publicHeadSnapshot = useMemo(() => {
+    if (!profile || !isCurrentProfileHeadSource(route, profile)) {
+      return null;
     }
 
-    applyPublicStructuredData(buildProfilePageStructuredData({
+    const canonicalRoute: PublicProfileRoute = {
+      kind: 'detail',
+      userId: profileRouteIdentifier,
+      tab: route.tab,
+      page: route.page,
+    };
+    const canonicalPath = buildPublicProfilePath(canonicalRoute);
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'profile', route: canonicalRoute }, t);
+    const visibleName = resolveVisibleUserDisplayName(
       profile,
-      stats,
-      imageUrl: avatarUrl,
-      canonicalPath: buildPublicProfilePath({
-        kind: 'detail',
-        userId: profileRouteIdentifier,
-        tab: route.tab,
-        page: route.page,
-      }),
-    }));
+      t('common.userFallback', { id: route.userId }),
+    );
+    const titleName = resolveVisibleUserHandle(profile, visibleName) || visibleName;
+    const head = {
+      ...routeHead,
+      title: `${titleName} · ${t('profile.public.title')}`,
+      description: routeHead.description,
+      imageUrl: avatarUrl || undefined,
+    };
 
-    return removePublicStructuredData;
-  }, [avatarUrl, profile, profileRouteIdentifier, route.page, route.tab, stats]);
+    return {
+      head,
+      structuredData: buildProfilePageStructuredData({
+        profile,
+        stats,
+        imageUrl: avatarUrl,
+        canonicalPath,
+      }),
+    };
+  }, [avatarUrl, profile, profileRouteIdentifier, route, stats, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   const displayName = profile
     ? resolveVisibleUserDisplayName(profile, t('common.userFallback', { id: route.userId }))
@@ -494,6 +511,54 @@ export const PublicProfileApp = ({
     buildShareUrl: buildProfileShareUrl,
   });
   const leaderboardHref = buildPublicLeaderboardPath(createDefaultPublicLeaderboardRoute());
+
+  const handleStartMessage = useCallback(async () => {
+    if (!profile || messageLoading || isOwnProfile) {
+      return;
+    }
+
+    if (!loggedIn) {
+      const returnPath = buildPublicProfileMessageReturnPath(profileRouteIdentifier);
+      if (returnPath) {
+        redirectToLogin({ returnPath });
+      } else {
+        setMessageError(t('profile.public.messageInvalidTarget'));
+      }
+      return;
+    }
+
+    setMessageLoading(true);
+    setMessageError(null);
+    try {
+      const conversation = await getOrCreateDirectConversation(profile.voUserId);
+      const channelId = normalizeEntityId(conversation.voChannelId);
+      if (!channelId) {
+        throw new Error(t('profile.public.messageStartFailed'));
+      }
+
+      window.location.href = buildMessagesPath({ channelId });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : t('profile.public.messageStartFailed');
+      setMessageError(message);
+      log.warn('PublicProfileApp', '从公开个人页发起私聊失败', message);
+    } finally {
+      setMessageLoading(false);
+    }
+  }, [isOwnProfile, loggedIn, messageLoading, profile, profileRouteIdentifier, t]);
+
+  useEffect(() => {
+    if (route.intent !== 'message' || !profile || !loggedIn || isOwnProfile) {
+      return;
+    }
+
+    const signature = `${profileRouteIdentifier}:${route.intent}`;
+    if (messageIntentHandledRef.current === signature) {
+      return;
+    }
+
+    messageIntentHandledRef.current = signature;
+    void handleStartMessage();
+  }, [handleStartMessage, isOwnProfile, loggedIn, profile, profileRouteIdentifier, route.intent]);
 
   const handleTabChange = (tab: PublicProfileTab) => {
     if (tab === route.tab && route.page === 1) {
@@ -534,8 +599,8 @@ export const PublicProfileApp = ({
     setFollowError(null);
     try {
       const nextStatus = followStatus?.voIsFollowing
-        ? await unfollowUser(profile.voUserId)
-        : await followUser(profile.voUserId);
+        ? await unfollowUser(profile.voUserId, t)
+        : await followUser(profile.voUserId, t);
       setFollowStatus(nextStatus);
 
       if (route.intent === 'follow') {
@@ -596,10 +661,10 @@ export const PublicProfileApp = ({
           />
         ) : profileError ? (
           <PublicStatusCard
-            tone={profileError.includes('不存在') ? 'notFound' : 'error'}
-            title={profileError.includes('不存在') ? t('profile.public.notFoundTitle') : t('profile.public.loadFailedTitle')}
-            description={profileError.includes('不存在') ? t('profile.public.notFoundDescription') : profileError}
-            primaryAction={profileError.includes('不存在')
+            tone={profileNotFound ? 'notFound' : 'error'}
+            title={profileNotFound ? t('profile.public.notFoundTitle') : t('profile.public.loadFailedTitle')}
+            description={profileNotFound ? t('profile.public.notFoundDescription') : profileError}
+            primaryAction={profileNotFound
               ? undefined
               : {
                   label: t('common.retry'),
@@ -622,6 +687,23 @@ export const PublicProfileApp = ({
                       <button
                         type="button"
                         className={styles.primaryButton}
+                        onClick={() => void handleStartMessage()}
+                        disabled={messageLoading}
+                      >
+                        <Icon icon={messageLoading ? 'mdi:progress-clock' : 'mdi:message-text-outline'} size={16} />
+                        <span>
+                          {messageLoading
+                            ? t('profile.public.messageStarting')
+                            : loggedIn
+                              ? t('profile.public.messageAction')
+                              : t('profile.public.messageLoginAction')}
+                        </span>
+                      </button>
+                    )}
+                    {!isOwnProfile && (
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
                         onClick={() => void handleToggleFollow()}
                         disabled={followLoading}
                         aria-pressed={loggedIn ? followStatus?.voIsFollowing === true : undefined}
@@ -655,6 +737,11 @@ export const PublicProfileApp = ({
                 {followError && (
                   <p className={styles.followFeedback} role="status">{followError}</p>
                 )}
+                {messageError && (
+                  <p className={styles.messageFeedback} role="alert">
+                    {messageError} {t('profile.public.messageRetryHint')}
+                  </p>
+                )}
                 <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
 
                 <div className={styles.identityRow}>
@@ -673,6 +760,7 @@ export const PublicProfileApp = ({
                   <div className={styles.identityBody}>
                     <div className={styles.identityText}>
                       <h1 className={styles.userName}>{displayName}</h1>
+                      <UserAdornment adornment={profile?.voAdornment} density="regular" />
                       {displayHandle && (
                         <p className={styles.displayName}>{displayHandle}</p>
                       )}

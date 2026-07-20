@@ -80,7 +80,7 @@
 
 .featureCard:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--theme-border-strong) 78%, white 22%);
+  border-color: color-mix(in srgb, var(--theme-border-strong) 78%, var(--theme-surface-highlight) 22%);
   box-shadow: 0 16px 28px color-mix(in srgb, var(--theme-accent-earth) 10%, transparent 90%);
 }
 
@@ -135,7 +135,7 @@
   padding: 0.95rem 1rem;
   border-radius: 16px;
   background: color-mix(in srgb, var(--theme-bg-muted) 42%, var(--theme-bg-surface) 58%);
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, white 28%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .techInfo h4 {

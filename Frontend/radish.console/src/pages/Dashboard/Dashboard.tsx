@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -7,7 +7,9 @@ import {
   Tag,
   message,
   type TableColumnsType,
+  formatLocalizedNumber,
 } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
 import {
   ShoppingOutlined,
   TeamOutlined,
@@ -30,9 +32,10 @@ import {
   ConsoleStatusChip,
   ConsoleToolbar,
 } from '@/components/ConsolePage';
-import { adminGetOrders, getOrderStatusColor } from '@/api/shopApi';
+import { adminGetOrders } from '@/api/shopApi';
 import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
+import { getOrderStatusColor, getOrderStatusLabel } from '@/pages/Orders/orderPresentation';
 import type { Order } from '@/api/types';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
@@ -60,7 +63,9 @@ const routeIconMap: Record<ConsoleRouteIconKey, ReactNode> = {
 };
 
 export const Dashboard = () => {
-  useDocumentTitle('Console 调度台');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('dashboard.title'));
   const navigate = useNavigate();
   const { user } = useUser();
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
@@ -85,23 +90,26 @@ export const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [statsLoading, setStatsLoading] = useState(false);
 
-  const routeGroups = useMemo(() => getSidebarRouteGroups(user), [user]);
+  const routeGroups = useMemo(
+    () => getSidebarRouteGroups(user, t),
+    [t, user]
+  );
   const visibleRouteCount = routeGroups.reduce((total, group) => total + group.routes.length, 0);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       setStatsLoading(true);
       const data = await getDashboardStats();
       setStats(data);
     } catch (error) {
       log.error('Dashboard', '加载统计数据失败:', error);
-      message.error('加载统计数据失败');
+      message.error(t('dashboard.loadStatsFailed'));
     } finally {
       setStatsLoading(false);
     }
-  };
+  }, [t]);
 
-  const loadRecentOrders = async () => {
+  const loadRecentOrders = useCallback(async () => {
     try {
       setLoading(true);
       const response = await adminGetOrders({
@@ -111,15 +119,15 @@ export const Dashboard = () => {
       setRecentOrders(response.data);
     } catch (error) {
       log.error('Dashboard', '加载最近订单失败:', error);
-      message.error('加载最近订单失败');
+      message.error(t('dashboard.loadOrdersFailed'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     void loadStats();
-  }, []);
+  }, [loadStats]);
 
   useEffect(() => {
     if (!canViewOrders) {
@@ -129,7 +137,7 @@ export const Dashboard = () => {
     }
 
     void loadRecentOrders();
-  }, [canViewOrders]);
+  }, [canViewOrders, loadRecentOrders]);
 
   const handleOpenOrderDetail = (order: Order) => {
     navigate(buildOrderDetailPath({
@@ -140,42 +148,42 @@ export const Dashboard = () => {
 
   const orderColumns: TableColumnsType<Order> = [
     {
-      title: '订单号',
+      title: t('dashboard.table.orderNo'),
       dataIndex: 'voOrderNo',
       key: 'voOrderNo',
       width: 180,
     },
     {
-      title: '用户',
+      title: t('dashboard.table.user'),
       dataIndex: 'voUserName',
       key: 'voUserName',
       width: 120,
     },
     {
-      title: '商品',
+      title: t('dashboard.table.product'),
       dataIndex: 'voProductName',
       key: 'voProductName',
       width: 150,
     },
     {
-      title: '金额',
+      title: t('dashboard.table.amount'),
       dataIndex: 'voTotalPrice',
       key: 'voTotalPrice',
       width: 100,
-      render: (price: number) => `${price} 胡萝卜`,
+      render: (price: number) => `${formatLocalizedNumber(price, language)} ${t('console.unit.carrot')}`,
     },
     {
-      title: '状态',
+      title: t('dashboard.table.status'),
       key: 'status',
       width: 100,
       render: (_, record) => (
         <Tag color={getOrderStatusColor(record.voStatus)}>
-          {record.voStatusDisplay}
+          {getOrderStatusLabel(record, t)}
         </Tag>
       ),
     },
     {
-      title: '操作',
+      title: t('dashboard.table.action'),
       key: 'action',
       width: 80,
       render: (_, record) => (
@@ -185,7 +193,7 @@ export const Dashboard = () => {
           icon={<EyeOutlined />}
           onClick={() => handleOpenOrderDetail(record)}
         >
-          查看
+          {t('dashboard.table.view')}
         </Button>
       ),
     },
@@ -193,49 +201,49 @@ export const Dashboard = () => {
 
   const dispatchItems = [
     {
-      title: '内容治理',
-      description: '处理举报、审核和内容回看',
-      status: '社区信任',
+      title: t('dashboard.dispatch.moderation.title'),
+      description: t('dashboard.dispatch.moderation.description'),
+      status: t('dashboard.dispatch.moderation.status'),
       enabled: canViewModeration,
       path: '/moderation',
       icon: <SafetyOutlined />,
     },
     {
-      title: '经验等级',
-      description: '复核经验台账、冻结和人工调整',
-      status: '贡献激励',
+      title: t('dashboard.dispatch.experience.title'),
+      description: t('dashboard.dispatch.experience.description'),
+      status: t('dashboard.dispatch.experience.status'),
       enabled: canViewExperience,
       path: '/experience',
       icon: <TrophyOutlined />,
     },
     {
-      title: '订单复核',
-      description: '回看最近交易、履约和权益状态',
-      status: '交易保障',
+      title: t('dashboard.dispatch.orders.title'),
+      description: t('dashboard.dispatch.orders.description'),
+      status: t('dashboard.dispatch.orders.status'),
       enabled: canViewOrders,
       path: '/orders',
       icon: <FileTextOutlined />,
     },
     {
-      title: '文档治理',
-      description: '检查文档状态、权限和发布边界',
-      status: '内容资产',
+      title: t('dashboard.dispatch.documents.title'),
+      description: t('dashboard.dispatch.documents.description'),
+      status: t('dashboard.dispatch.documents.status'),
       enabled: canViewDocs,
       path: '/documents',
       icon: <FileTextOutlined />,
     },
     {
-      title: '用户风险',
-      description: '定位用户、角色和治理上下文',
-      status: '账号治理',
+      title: t('dashboard.dispatch.users.title'),
+      description: t('dashboard.dispatch.users.description'),
+      status: t('dashboard.dispatch.users.status'),
       enabled: canViewUsers,
       path: '/users',
       icon: <TeamOutlined />,
     },
     {
-      title: '权限配置',
-      description: '复核角色权限和高风险开关',
-      status: '访问边界',
+      title: t('dashboard.dispatch.roles.title'),
+      description: t('dashboard.dispatch.roles.description'),
+      status: t('dashboard.dispatch.roles.status'),
       enabled: canViewRoles,
       path: '/roles',
       icon: <SafetyOutlined />,
@@ -245,31 +253,31 @@ export const Dashboard = () => {
 
   const commandItems = [
     {
-      title: '新建商品',
+      title: t('dashboard.command.createProduct'),
       enabled: canCreateProduct,
       path: '/products',
       icon: <PlusOutlined />,
     },
     {
-      title: '商品管理',
+      title: t('dashboard.command.products'),
       enabled: canViewProducts,
       path: '/products',
       icon: <ShoppingOutlined />,
     },
     {
-      title: '胡萝卜台账',
+      title: t('dashboard.command.coins'),
       enabled: canViewCoins,
       path: '/coins',
       icon: <WalletOutlined />,
     },
     {
-      title: '应用管理',
+      title: t('dashboard.command.applications'),
       enabled: canViewApplications,
       path: '/applications',
       icon: <AppstoreOutlined />,
     },
     {
-      title: '系统设置',
+      title: t('dashboard.command.system'),
       enabled: canViewSystemConfig,
       path: '/system-config',
       icon: <SettingOutlined />,
@@ -280,49 +288,49 @@ export const Dashboard = () => {
   return (
     <div className="admin-feature-page dashboard-page">
       <ConsolePageHeader
-        eyebrow="治理总览"
+        eyebrow={t('dashboard.eyebrow')}
         icon={<DashboardOutlined />}
-        title="Console 调度台"
-        description="聚合社区治理、交易复核、权限边界和全部功能入口，按当前账号权限组织可处理任务。"
-        status={<ConsoleStatusChip tone={enabledDispatchCount > 0 ? 'success' : 'warning'}>{enabledDispatchCount} 个高频入口</ConsoleStatusChip>}
+        title={t('dashboard.title')}
+        description={t('dashboard.description')}
+        status={<ConsoleStatusChip tone={enabledDispatchCount > 0 ? 'success' : 'warning'}>{t('dashboard.highFrequencyCount', { count: enabledDispatchCount })}</ConsoleStatusChip>}
         actions={(
           <>
             {canViewModeration ? (
               <Button icon={<SafetyOutlined />} onClick={() => navigate('/moderation')}>
-                内容治理
+                {t('dashboard.dispatch.moderation.title')}
               </Button>
             ) : null}
             {canViewOrders ? (
               <Button icon={<FileTextOutlined />} onClick={() => navigate('/orders')}>
-                订单复核
+                {t('dashboard.dispatch.orders.title')}
               </Button>
             ) : null}
           </>
         )}
       />
 
-      <ConsoleMetricGrid label="Console 调度指标">
+      <ConsoleMetricGrid label={t('dashboard.metrics.label')}>
         <ConsoleMetricCard
-          label="用户"
-          value={statsLoading ? '加载中' : stats.voTotalUsers}
-          description="账号与用户风险排查基数"
+          label={t('dashboard.metrics.users')}
+          value={statsLoading ? t('common.loading') : formatLocalizedNumber(stats.voTotalUsers, language)}
+          description={t('dashboard.metrics.usersDescription')}
           tone="info"
         />
         <ConsoleMetricCard
-          label="订单"
-          value={statsLoading ? '加载中' : stats.voTotalOrders}
-          description="交易复核与权益回看基数"
+          label={t('dashboard.metrics.orders')}
+          value={statsLoading ? t('common.loading') : formatLocalizedNumber(stats.voTotalOrders, language)}
+          description={t('dashboard.metrics.ordersDescription')}
           tone="warning"
         />
         <ConsoleMetricCard
-          label="商品"
-          value={statsLoading ? '加载中' : stats.voTotalProducts}
-          description="商城运营与上架状态基数"
+          label={t('dashboard.metrics.products')}
+          value={statsLoading ? t('common.loading') : formatLocalizedNumber(stats.voTotalProducts, language)}
+          description={t('dashboard.metrics.productsDescription')}
         />
         <ConsoleMetricCard
-          label="收入"
-          value={statsLoading ? '加载中' : `${stats.voTotalRevenue} 胡萝卜`}
-          description="当前统计口径下的交易收入"
+          label={t('dashboard.metrics.revenue')}
+          value={statsLoading ? t('common.loading') : `${formatLocalizedNumber(stats.voTotalRevenue, language)} ${t('console.unit.carrot')}`}
+          description={t('dashboard.metrics.revenueDescription')}
           tone="success"
         />
       </ConsoleMetricGrid>
@@ -331,10 +339,10 @@ export const Dashboard = () => {
         <section className="dashboard-dispatch-board">
           <div className="dashboard-section-header">
             <div>
-              <h2>优先处理队列</h2>
-              <p>把社区治理、交易保障和权限边界放在首页首屏，减少后台高频操作跳转成本。</p>
+              <h2>{t('dashboard.priority.title')}</h2>
+              <p>{t('dashboard.priority.description')}</p>
             </div>
-            <Tag>{enabledDispatchCount > 0 ? `${enabledDispatchCount} 项可进入` : '暂无权限'}</Tag>
+            <Tag>{enabledDispatchCount > 0 ? t('dashboard.availableCount', { count: enabledDispatchCount }) : t('dashboard.noPermission')}</Tag>
           </div>
           <div className="dashboard-dispatch-grid">
             {dispatchItems.map((item) => (
@@ -350,7 +358,7 @@ export const Dashboard = () => {
                   <strong>{item.title}</strong>
                   <span>{item.description}</span>
                 </span>
-                <Tag>{item.enabled ? item.status : '无权限'}</Tag>
+                <Tag>{item.enabled ? item.status : t('dashboard.noPermission')}</Tag>
               </button>
             ))}
           </div>
@@ -359,8 +367,8 @@ export const Dashboard = () => {
         <aside className="dashboard-command-panel">
           <div className="dashboard-section-header dashboard-section-header--compact">
             <div>
-              <h2>命令组</h2>
-              <p>保留少量高频动作，不再让快速操作占据首页主体。</p>
+              <h2>{t('dashboard.commands.title')}</h2>
+              <p>{t('dashboard.commands.description')}</p>
             </div>
           </div>
           {enabledCommandItems.length > 0 ? (
@@ -376,15 +384,15 @@ export const Dashboard = () => {
               ))}
             </div>
           ) : (
-            <p className="dashboard-empty-copy">当前账号暂无可用命令。</p>
+            <p className="dashboard-empty-copy">{t('dashboard.commands.empty')}</p>
           )}
         </aside>
       </div>
 
       <ConsoleToolbar
-        title="全部功能"
-        description="移动端总览和更多入口都会承接这组完整功能面板；桌面端仍保留左侧全量导航。"
-        meta={<Tag>{visibleRouteCount} 个入口</Tag>}
+        title={t('dashboard.functions.title')}
+        description={t('dashboard.functions.description')}
+        meta={<Tag>{t('dashboard.entryCount', { count: visibleRouteCount })}</Tag>}
       >
         {routeGroups.length > 0 ? (
           <div className="dashboard-function-grid">
@@ -410,7 +418,7 @@ export const Dashboard = () => {
             ))}
           </div>
         ) : (
-          <p className="dashboard-empty-copy">当前账号暂无可访问的 Console 功能。</p>
+          <p className="dashboard-empty-copy">{t('dashboard.functions.empty')}</p>
         )}
       </ConsoleToolbar>
 
@@ -418,15 +426,15 @@ export const Dashboard = () => {
         <section className="dashboard-orders-panel">
           <div className="dashboard-section-header">
             <div>
-              <h2>最近订单</h2>
-              <p>保留交易状态回看能力，辅助处理支付反馈、权益到账和用户咨询。</p>
+              <h2>{t('dashboard.recentOrders.title')}</h2>
+              <p>{t('dashboard.recentOrders.description')}</p>
             </div>
             <Button
               variant="ghost"
               size="small"
               onClick={() => navigate('/orders')}
             >
-              查看全部
+              {t('dashboard.recentOrders.viewAll')}
             </Button>
           </div>
           <div className="admin-table-scroll-region">

@@ -2,7 +2,12 @@ import { type ClipboardEvent, useState, useRef, useCallback, useEffect } from 'r
 import { log } from '@/utils/logger';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
-import { buildAttachmentMarkdownUrl } from '@radish/ui';
+import {
+  attachmentImageAccept,
+  buildAttachmentMarkdownUrl,
+  escapeMarkdownLabel,
+  isSupportedAttachmentImageMimeType,
+} from '@radish/ui';
 import { StickerPicker, type StickerPickerGroup, type StickerPickerSelection } from '@radish/ui/sticker-picker';
 import type { CommentReplyTarget } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
@@ -11,6 +16,8 @@ import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils
 import { UserMention, type UserMentionOption as UiUserMentionOption } from '@radish/ui/user-mention';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { uploadImage, uploadDocument } from '@/api/attachment';
+import { getIntlLocale } from '@/locales/language';
+import { resolveAttachmentUploadErrorMessage } from '@/attachments/attachmentPresentation';
 import styles from './CreateCommentForm.module.css';
 
 interface CreateCommentFormProps {
@@ -38,18 +45,6 @@ const MENTION_PANEL_WIDTH = 320;
 const MENTION_PANEL_HEIGHT = 220;
 const MENTION_PANEL_GAP = 10;
 const VIEWPORT_PADDING = 12;
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message.trim();
-  }
-
-  if (typeof error === 'string' && error.trim()) {
-    return error.trim();
-  }
-
-  return fallback;
-}
 
 function appendRecoveryHint(message: string, hint: string): string {
   const trimmedMessage = message.trim();
@@ -164,13 +159,14 @@ export const CreateCommentForm = ({
   onTyping,
   autoFocusKey = null,
 }: CreateCommentFormProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [content, setContent] = useState('');
   const contentRef = useRef('');
   const textareaWrapperRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const uploadInFlightRef = useRef(false);
   const lastTypingSentAtRef = useRef(0);
   const handledAutoFocusKeyRef = useRef<string | null>(null);
 
@@ -182,6 +178,7 @@ export const CreateCommentForm = ({
 
   // 上传状态
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [mode, setMode] = useState<'edit' | 'preview'>('edit');
   const [uploadError, setUploadError] = useState<string | null>(null);
   const resolvedTitle = title ?? t('forum.comment.title');
@@ -190,6 +187,21 @@ export const CreateCommentForm = ({
   const resolvedLoginPromptText = loginPromptText ?? t('forum.comment.loginPrompt');
   const resolvedLoginButtonText = loginButtonText ?? t('forum.comment.loginButton');
   const isEditorDisabled = !isAuthenticated || !hasPost || disabled || uploading;
+  const isEditingDisabled = isEditorDisabled || mode === 'preview';
+  const intlLocale = getIntlLocale(i18n.resolvedLanguage ?? i18n.language);
+  const formattedContentLength = new Intl.NumberFormat(intlLocale).format(content.length);
+  const contentLengthLabel = t('forum.comment.length', {
+    count: content.length,
+    value: formattedContentLength,
+  });
+  const uploadProgressLabel = uploadProgress === null
+    ? t('forum.comment.uploading')
+    : t('markdownEditor.upload.uploadingProgress', {
+        progress: new Intl.NumberFormat(
+          intlLocale,
+          { style: 'percent', maximumFractionDigits: 0 },
+        ).format(uploadProgress / 100),
+      });
 
   useEffect(() => {
     contentRef.current = content;
@@ -350,7 +362,7 @@ export const CreateCommentForm = ({
       }));
     } catch (error) {
       log.error(t('forum.comment.searchUsersFailed'), error);
-      return [];
+      throw error;
     }
   }, [t]);
 
@@ -373,9 +385,15 @@ export const CreateCommentForm = ({
     };
   }, [showMention, updateMentionPosition]);
 
+  useEffect(() => {
+    if (isEditorDisabled) {
+      setShowMention(false);
+    }
+  }, [isEditorDisabled]);
+
   // 选择用户
   const handleSelectUser = (user: UiUserMentionOption) => {
-    if (!textareaRef.current) return;
+    if (isEditorDisabled || !textareaRef.current) return;
 
     // 替换@和关键词为@用户名
     const beforeMention = content.substring(0, mentionStartPos);
@@ -426,7 +444,13 @@ export const CreateCommentForm = ({
   };
 
   const uploadImageFile = useCallback(async (file: File, selectionStart: number, selectionEnd: number) => {
+    if (uploadInFlightRef.current) {
+      return;
+    }
+
+    uploadInFlightRef.current = true;
     setUploading(true);
+    setUploadProgress(null);
     setUploadError(null);
 
     try {
@@ -435,31 +459,38 @@ export const CreateCommentForm = ({
         businessType: 'Comment',
         generateThumbnail: true,
         generateMultipleSizes: false,
-        removeExif: true
+        removeExif: true,
+        onProgress: setUploadProgress,
       }, t);
 
       // 评论区默认插入缩略图，点开查看原图
       const markdownUrl = buildAttachmentMarkdownUrl(result.voId, {
         displayVariant: result.voThumbnailUrl ? 'thumbnail' : 'original',
       });
-      const imageMarkdown = `![${file.name}](${markdownUrl})`;
+      const imageLabel = escapeMarkdownLabel(file.name) || t('markdownEditor.insert.imageDescription');
+      const imageMarkdown = `![${imageLabel}](${markdownUrl})`;
       insertTextAtRange(imageMarkdown, selectionStart, selectionEnd);
     } catch (error) {
       const errorMessage = appendRecoveryHint(
-        getErrorMessage(error, t('forum.comment.imageUploadFailed')),
+        resolveAttachmentUploadErrorMessage(error, t('forum.comment.imageUploadFailed')),
         t('forum.comment.uploadRecoverableHint')
       );
       setUploadError(errorMessage);
       log.error(t('forum.comment.imageUploadFailed'), error);
     } finally {
+      uploadInFlightRef.current = false;
       setUploading(false);
+      setUploadProgress(null);
     }
   }, [insertTextAtRange, t]);
 
   // 处理图片上传
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !textareaRef.current) return;
+    if (!file || !textareaRef.current || isEditingDisabled || uploadInFlightRef.current) {
+      e.currentTarget.value = '';
+      return;
+    }
 
     const selectionStart = textareaRef.current.selectionStart;
     const selectionEnd = textareaRef.current.selectionEnd;
@@ -477,30 +508,43 @@ export const CreateCommentForm = ({
   // 处理文档上传
   const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    const textarea = textareaRef.current;
+    if (!file || !textarea || isEditingDisabled || uploadInFlightRef.current) {
+      e.currentTarget.value = '';
+      return;
+    }
 
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+
+    uploadInFlightRef.current = true;
     setUploading(true);
+    setUploadProgress(null);
     setUploadError(null);
 
     try {
       const result = await uploadDocument({
         file,
-        businessType: 'Comment'
+        businessType: 'Comment',
+        onProgress: setUploadProgress,
       }, t);
 
       // 插入 Markdown 链接语法
       const documentMarkdownUrl = buildAttachmentMarkdownUrl(result.voId);
-      const linkMarkdown = `[${result.voOriginalName || file.name}](${documentMarkdownUrl})`;
-      insertTextAtCursor(linkMarkdown);
+      const documentLabel = escapeMarkdownLabel(result.voOriginalName || file.name) || t('markdownEditor.toolbar.document');
+      const linkMarkdown = `[${documentLabel}](${documentMarkdownUrl})`;
+      insertTextAtRange(linkMarkdown, selectionStart, selectionEnd);
     } catch (error) {
       const errorMessage = appendRecoveryHint(
-        getErrorMessage(error, t('forum.comment.documentUploadFailed')),
+        resolveAttachmentUploadErrorMessage(error, t('forum.comment.documentUploadFailed')),
         t('forum.comment.uploadRecoverableHint')
       );
       setUploadError(errorMessage);
       log.error(t('forum.comment.documentUploadFailed'), error);
     } finally {
+      uploadInFlightRef.current = false;
       setUploading(false);
+      setUploadProgress(null);
       // 清空 input 以允许重复上传同一文件
       if (documentInputRef.current) {
         documentInputRef.current.value = '';
@@ -523,7 +567,7 @@ export const CreateCommentForm = ({
     }
 
     const clipboardItems = Array.from(event.clipboardData.items);
-    const imageItem = clipboardItems.find((item) => item.type.startsWith('image/'));
+    const imageItem = clipboardItems.find((item) => isSupportedAttachmentImageMimeType(item.type));
     const pastedImage = imageItem?.getAsFile();
 
     if (!pastedImage) {
@@ -599,13 +643,15 @@ export const CreateCommentForm = ({
                 )}
               </div>
             ) : (
-              <span className={styles.editorHint}>支持 Markdown、@ 提及、图片和附件</span>
+              <span className={styles.editorHint}>{t('forum.comment.editorHint')}</span>
             )}
           </div>
 
           <div className={styles.editorStatus}>
-            <span className={styles.modeBadge}>{mode === 'preview' ? '预览' : '编辑'}</span>
-            <span className={styles.lengthHint}>{content.length} 字</span>
+            <span className={styles.modeBadge}>
+              {mode === 'preview' ? t('forum.comment.mode.preview') : t('forum.comment.mode.edit')}
+            </span>
+            <span className={styles.lengthHint}>{contentLengthLabel}</span>
           </div>
         </div>
 
@@ -623,7 +669,9 @@ export const CreateCommentForm = ({
         <div ref={textareaWrapperRef} className={styles.textareaWrapper}>
           {mode === 'preview' ? (
             <div className={styles.previewContainer}>
-              {content ? <MarkdownRenderer content={content} /> : <div className={styles.previewEmpty}>没有任何内容</div>}
+              {content
+                ? <MarkdownRenderer content={content} />
+                : <div className={styles.previewEmpty}>{t('forum.comment.previewEmpty')}</div>}
             </div>
           ) : (
             <>
@@ -654,7 +702,7 @@ export const CreateCommentForm = ({
                 className={styles.textarea}
                 disabled={isEditorDisabled}
               />
-              {showMention && (
+              {!isEditorDisabled && showMention && (
                 <UserMention
                   keyword={mentionKeyword}
                   onSearch={handleSearchUsers}
@@ -662,6 +710,14 @@ export const CreateCommentForm = ({
                   onClose={() => setShowMention(false)}
                   position={mentionPosition}
                   positionMode="absolute"
+                  labels={{
+                    title: t('forum.mention.title'),
+                    loading: t('forum.mention.loading'),
+                    inputHint: t('forum.mention.inputHint'),
+                    empty: t('forum.mention.empty'),
+                    searchFailed: t('forum.mention.searchFailed'),
+                    selectHint: t('forum.mention.selectHint'),
+                  }}
                 />
               )}
             </>
@@ -672,9 +728,10 @@ export const CreateCommentForm = ({
           <input
             ref={imageInputRef}
             type="file"
-            accept="image/*"
+            accept={attachmentImageAccept}
             onChange={handleImageUpload}
             style={{ display: 'none' }}
+            disabled={isEditingDisabled}
           />
           <input
             ref={documentInputRef}
@@ -682,6 +739,7 @@ export const CreateCommentForm = ({
             accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
             onChange={handleDocumentUpload}
             style={{ display: 'none' }}
+            disabled={isEditingDisabled}
           />
 
           <div className={styles.toolbarLeft}>
@@ -691,15 +749,22 @@ export const CreateCommentForm = ({
               theme="light"
               panelPlacement="left"
               onSelect={handlePickerSelect}
-              disabled={isEditorDisabled}
+              disabled={isEditingDisabled}
               className={styles.stickerPicker}
               triggerTitle={t('forum.comment.insertSticker')}
+              labels={{
+                searchPlaceholder: t('forum.reaction.searchPlaceholder'),
+                clearSearch: t('forum.reaction.clearSearch'),
+                reactionOnly: (name) => t('forum.reaction.reactionOnly', { name }),
+                noEmoji: t('forum.reaction.noEmoji'),
+                noSticker: t('forum.reaction.noSticker'),
+              }}
             />
 
             <button
               type="button"
               onClick={handleImageButtonClick}
-              disabled={isEditorDisabled}
+              disabled={isEditingDisabled}
               className={styles.toolbarButtonIcon}
               title={t('forum.comment.uploadImage')}
             >
@@ -709,7 +774,7 @@ export const CreateCommentForm = ({
             <button
               type="button"
               onClick={handleDocumentButtonClick}
-              disabled={isEditorDisabled}
+              disabled={isEditingDisabled}
               className={styles.toolbarButtonIcon}
               title={t('forum.comment.uploadDocument')}
             >
@@ -722,15 +787,20 @@ export const CreateCommentForm = ({
               type="button"
               className={`${styles.modeToggleButton} ${mode === 'preview' ? styles.activeIcon : ''}`}
               onClick={() => setMode(mode === 'edit' ? 'preview' : 'edit')}
-              title={mode === 'edit' ? '预览' : '继续编辑'}
+              title={mode === 'edit'
+                ? t('markdownEditor.toolbar.preview')
+                : t('markdownEditor.toolbar.edit')}
               aria-pressed={mode === 'preview'}
+              disabled={uploading}
             >
               <Icon icon={mode === 'edit' ? 'mdi:eye-outline' : 'mdi:pencil-outline'} size={18} />
-              <span>{mode === 'edit' ? '预览' : '编辑'}</span>
+              <span>{mode === 'edit'
+                ? t('markdownEditor.toolbar.preview')
+                : t('markdownEditor.toolbar.edit')}</span>
             </button>
 
             {uploading && (
-              <span className={styles.uploadingHint}>{t('forum.comment.uploading')}</span>
+              <span className={styles.uploadingHint}>{uploadProgressLabel}</span>
             )}
 
             <button

@@ -191,7 +191,7 @@ public class CommentController : ControllerBase
     {
         try
         {
-            var result = await _commentService.ToggleLikeAsync(Current.UserId, commentId);
+            var result = await _commentService.ToggleLikeAsync(Current.UserId, Current.UserName, commentId);
             var comment = await _commentService.GetCommentDetailAsync(commentId, Current.UserId);
             if (comment != null)
             {

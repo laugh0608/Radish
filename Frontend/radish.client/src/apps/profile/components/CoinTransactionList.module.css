@@ -96,32 +96,32 @@
 }
 
 .type.SYSTEM_GRANT {
-  background: color-mix(in srgb, var(--theme-accent-ink) 14%, white 86%);
+  background: color-mix(in srgb, var(--theme-accent-ink) 14%, var(--theme-surface-highlight) 86%);
   color: var(--theme-accent-ink);
 }
 
 .type.LIKE_REWARD {
-  background: color-mix(in srgb, var(--theme-accent-earth) 14%, white 86%);
+  background: color-mix(in srgb, var(--theme-accent-earth) 14%, var(--theme-surface-highlight) 86%);
   color: var(--theme-accent-earth);
 }
 
 .type.COMMENT_REWARD {
-  background: color-mix(in srgb, var(--theme-brand-primary) 12%, white 88%);
+  background: color-mix(in srgb, var(--theme-brand-primary) 12%, var(--theme-surface-highlight) 88%);
   color: var(--theme-brand-primary);
 }
 
 .type.HIGHLIGHT_REWARD {
-  background: color-mix(in srgb, var(--theme-accent-earth) 18%, white 82%);
+  background: color-mix(in srgb, var(--theme-accent-earth) 18%, var(--theme-surface-highlight) 82%);
   color: var(--theme-accent-earth);
 }
 
 .type.TRANSFER {
-  background: color-mix(in srgb, var(--theme-state-success) 14%, white 86%);
+  background: color-mix(in srgb, var(--theme-state-success) 14%, var(--theme-surface-highlight) 86%);
   color: var(--theme-state-success);
 }
 
 .type.ADMIN_ADJUST {
-  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, var(--theme-surface-highlight) 88%);
   color: var(--theme-state-danger);
 }
 
@@ -134,17 +134,17 @@
 }
 
 .status.SUCCESS {
-  background: color-mix(in srgb, var(--theme-state-success) 14%, white 86%);
+  background: color-mix(in srgb, var(--theme-state-success) 14%, var(--theme-surface-highlight) 86%);
   color: var(--theme-state-success);
 }
 
 .status.PENDING {
-  background: color-mix(in srgb, var(--theme-accent-earth) 14%, white 86%);
+  background: color-mix(in srgb, var(--theme-accent-earth) 14%, var(--theme-surface-highlight) 86%);
   color: var(--theme-accent-earth);
 }
 
 .status.FAILED {
-  background: color-mix(in srgb, var(--theme-state-danger) 12%, white 88%);
+  background: color-mix(in srgb, var(--theme-state-danger) 12%, var(--theme-surface-highlight) 88%);
   color: var(--theme-state-danger);
 }
 

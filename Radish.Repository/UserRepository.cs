@@ -1,4 +1,4 @@
-﻿using Radish.IRepository;
+using Radish.IRepository;
 using Radish.Model;
 using Radish.Repository.Base;
 using Radish.Repository.UnitOfWorks;
@@ -12,7 +12,26 @@ public class UserRepository : BaseRepository<User>, IUserRepository
     public UserRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
     {
     }
-    
+
+    public async Task<IReadOnlyList<long>> GetActiveUserIdsAsync(
+        long tenantId,
+        IReadOnlyCollection<long> userIds)
+    {
+        var normalizedIds = userIds.Where(userId => userId > 0).Distinct().ToList();
+        if (normalizedIds.Count == 0)
+        {
+            return [];
+        }
+
+        return await QueryDistinctAsync(
+            user => user.Id,
+            user =>
+                user.TenantId == tenantId &&
+                normalizedIds.Contains(user.Id) &&
+                user.IsEnable &&
+                !user.IsDeleted);
+    }
+
     // /// <summary>
     // /// 获取所有的 角色-API 关系
     // /// </summary>

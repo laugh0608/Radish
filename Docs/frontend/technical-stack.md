@@ -24,22 +24,35 @@
 **统一的 API 请求封装**，从 `@radish/ui` 中独立出来，专注于 HTTP 通信。
 
 **核心特性**：
-- 统一配置管理（baseUrl、timeout、token）
+- 统一配置管理（baseUrl、timeout、token、language、message translator）
 - 类型安全的 TypeScript 定义
 - 自动添加 Bearer Token 认证
+- 自动发送 `Accept-Language`，并在失败响应存在 `MessageKey` 时优先使用本地翻译
+- 保留 HTTP status、`Code / MessageKey / MessageArguments / MessageInfo / TraceId` 的结构化错误
 - 请求/响应/错误拦截器
 - 超时控制和错误处理
 
 **使用示例**：
 
 ```typescript
-import { apiGet, apiPost, configureApiClient } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  configureApiClient,
+  createApiResponseError,
+} from '@radish/http';
+import i18n from './i18n';
+import { tokenService } from './services/tokenService';
 
 // 配置 API 客户端
 configureApiClient({
   baseUrl: 'https://localhost:5000',
   timeout: 30000,
-  getToken: () => localStorage.getItem('access_token'),
+  getToken: () => tokenService.getAccessToken(),
+  getLanguage: () => i18n.resolvedLanguage ?? i18n.language,
+  translateMessage: (key, args) => i18n.exists(key)
+    ? i18n.t(key, Object.fromEntries((args ?? []).map((value, index) => [index, value])))
+    : undefined,
 });
 
 // 发送请求
@@ -47,10 +60,12 @@ const response = await apiGet<Product[]>('/api/v1/Shop/GetProducts', {
   withAuth: true,
 });
 
-if (response.ok && response.data) {
-  console.log('商品列表:', response.data);
+if (!response.ok || !response.data) {
+  throw createApiResponseError(response, i18n.t('shop.loadFailed'));
 }
 ```
+
+业务控制流只读取真实 HTTP status、稳定 `Code` 或明确数据状态，不匹配 `response.message` 的中英文文本。client / Console 日志统一使用各自 `log` 工具。
 
 **详细文档**：参见 [@radish/http 包文档](./http-client.md)
 
@@ -72,7 +87,9 @@ if (response.ok && response.data) {
                 ↓
         API 请求自动添加 Token (withAuth: true)
                 ↓
-        Token 过期 → 401 错误 → redirectToLogin()
+        Token 临近过期 → 认证边界尝试续期
+                ↓
+        续期确认失效或最终 401 → 清理会话并回到登录入口
 ```
 
 OIDC 回调页由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` 承接，成功换取 Token 并恢复用户状态后回到根入口。普通浏览器根路径 `/` 当前进入 `/discover` 公开分发页；Tauri 或显式工作台场景才进入 `/desktop`。
@@ -97,13 +114,13 @@ const handleLogout = () => {
 
 ```typescript
 import { hasAccessToken } from '@/services/auth';
+import { tokenService } from '@/services/tokenService';
 
 // 仅在已登录时建立 WebSocket 连接
 if (hasAccessToken()) {
-  const token = localStorage.getItem('access_token');
   const connection = new HubConnectionBuilder()
-    .withUrl('/hubs/notification', {
-      accessTokenFactory: () => token || '',
+    .withUrl('/hub/notification', {
+      accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
     })
     .build();
 }
@@ -115,7 +132,7 @@ if (hasAccessToken()) {
 
 前端当前已经统一采用“`attachmentId` 为真值、URL 运行时解析”的媒体口径：
 
-- 帖子、评论、Wiki 正文中的图片 / 文档链接统一保存为 `attachment://{id}`，而不是完整 URL。
+- 新写入的帖子、评论、Wiki 正文图片 / 文档链接统一保存为 `attachment://{id}`，而不是完整 URL；历史 `/uploads/...` 直链仍需在关闭兼容入口前完成数据盘点与迁移。
 - `MarkdownEditor` 与 `RichTextMarkdownEditor` 在上传成功后统一调用 `buildAttachmentMarkdownUrl()` 写回正文。
 - `MarkdownRenderer`、论坛富文本工作区、聊天室图片预览等展示链路统一通过 `buildAttachmentAssetUrl()` / `resolveConfiguredMediaUrl()` 解析当前环境下的真实访问地址。
 - `AttachmentVo.voUrl` / `voThumbnailUrl`、`StickerVo.voImageUrl` / `voThumbnailUrl`、`ProductVo.voIcon` / `voCoverImage`、`ChannelMessageVo.voImageUrl` / `voImageThumbnailUrl` 都属于运行时派生展示字段，不是前端回写数据库的依据。

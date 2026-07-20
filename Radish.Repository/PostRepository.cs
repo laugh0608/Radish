@@ -11,15 +11,18 @@ namespace Radish.Repository;
 public class PostRepository : BaseRepository<Post>, IPostRepository
 {
     private readonly IReliableOutboxRepository? _reliableOutboxRepository;
+    private readonly TimeProvider _timeProvider;
 
     public PostRepository(
         IUnitOfWorkManage unitOfWorkManage,
-        IReliableOutboxRepository? reliableOutboxRepository = null) : base(unitOfWorkManage)
+        IReliableOutboxRepository? reliableOutboxRepository = null,
+        TimeProvider? timeProvider = null) : base(unitOfWorkManage)
     {
         _reliableOutboxRepository = reliableOutboxRepository;
+        _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
-    public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId)
+    public async Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, string userName, long postId)
     {
         try
         {
@@ -31,7 +34,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
                     var result = await TogglePostLikeCoreAsync(userId, postId);
                     if (result.Delta > 0)
                     {
-                        await AddLikeOutboxAsync(result, userId);
+            await AddLikeOutboxAsync(result, userId, userName);
                     }
                     DbProtectedClient.Ado.CommitTran();
                     return result;
@@ -189,23 +192,24 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             delta);
     }
 
-    private async Task AddLikeOutboxAsync(PostLikePersistenceResult result, long likerId)
+    private async Task AddLikeOutboxAsync(PostLikePersistenceResult result, long likerId, string likerName)
     {
         var repository = _reliableOutboxRepository
             ?? throw new InvalidOperationException("可靠 Outbox 仓储未注册");
-        var now = DateTime.Now;
+        var now = _timeProvider.GetUtcNow().UtcDateTime;
         var notificationId = SnowFlakeSingle.Instance.NextId();
-        var notificationWindowKey = $"notification:post-like:{result.PostId}:receiver:{result.AuthorId}:window:{now.Ticks / (TimeSpan.TicksPerMinute * 5)}";
+        var notificationBusinessKey = $"notification:post-like:{result.PostId}:liker:{likerId}:event:{notificationId}";
         var payload = new LikeEffectsTaskPayload(
             notificationId,
             result.PostId,
             result.PostId,
             result.AuthorId,
             likerId,
+            NormalizeActorName(likerName, likerId),
             result.Title,
             result.PublicId,
             now.ToString("yyyyMMdd"),
-            notificationWindowKey);
+            notificationBusinessKey);
         await repository.AddAsync(new ReliableOutboxDraft(
             ReliableOutboxSources.Main,
             result.TenantId,
@@ -215,7 +219,12 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             "Post",
             result.PostId.ToString(),
             JsonSerializer.Serialize(payload),
-            now.ToUniversalTime()));
+            now));
+    }
+
+    private static string NormalizeActorName(string actorName, long actorId)
+    {
+        return string.IsNullOrWhiteSpace(actorName) ? $"User-{actorId}" : actorName.Trim();
     }
 
     public async Task<(List<Post> data, int totalCount)> QueryForumPostPageAsync(

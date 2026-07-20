@@ -67,8 +67,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
     // 3. 清除通知
     const notificationStore = useNotificationStore.getState();
-    notificationStore.clearRecentNotifications();
-    notificationStore.setUnreadCount(0);
+    notificationStore.reset();
 
     // 4. 更新认证状态
     set({ isAuthenticated: false });

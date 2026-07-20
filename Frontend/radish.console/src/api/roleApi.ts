@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
+import { apiGet, apiPost, apiPut, apiDelete, createApiResponseError } from '@radish/http';
 
 /**
  * 角色数据类型（使用 vo 前缀，与后端 VO 保持一致）
@@ -51,7 +51,7 @@ export async function getRoleList(): Promise<RoleVo[]> {
   const response = await apiGet<RoleVo[]>('/api/v1/Role/GetRoleList', { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取角色列表失败');
+    throw createApiResponseError(response, '获取角色列表失败');
   }
 
   return response.data;
@@ -67,7 +67,7 @@ export async function getRoleById(id: string): Promise<RoleVo> {
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取角色详情失败');
+    throw createApiResponseError(response, '获取角色详情失败');
   }
 
   return response.data;
@@ -80,7 +80,7 @@ export async function createRole(roleData: CreateRoleRequest): Promise<RoleVo> {
   const response = await apiPost<RoleVo>('/api/v1/Role/CreateRole', roleData, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '创建角色失败');
+    throw createApiResponseError(response, '创建角色失败');
   }
 
   return response.data;
@@ -102,7 +102,7 @@ export async function updateRole(id: string, roleData: CreateRoleRequest): Promi
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '更新角色失败');
+    throw createApiResponseError(response, '更新角色失败');
   }
 
   return response.data;
@@ -118,7 +118,7 @@ export async function deleteRole(id: string): Promise<boolean> {
   );
 
   if (!response.ok) {
-    throw new Error(response.message || '删除角色失败');
+    throw createApiResponseError(response, '删除角色失败');
   }
 
   return true;
@@ -135,7 +135,7 @@ export async function toggleRoleStatus(id: string, enabled: boolean): Promise<Ro
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '操作失败');
+    throw createApiResponseError(response, '更新角色状态失败');
   }
 
   return response.data;

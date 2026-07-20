@@ -2,6 +2,8 @@ import { configureApiClient } from '@radish/http';
 import { tokenService } from '../services/tokenService';
 import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
+import i18n from '@/i18n';
+import { getIntlLocale } from '@/locales/language';
 
 /**
  * 配置 API 客户端的 Token 自动刷新
@@ -15,24 +17,30 @@ export function setupApiInterceptors() {
     getToken: () => {
       return tokenService.getAccessToken();
     },
+    getLanguage: () => getIntlLocale(i18n.resolvedLanguage ?? i18n.language),
+    translateMessage: (key, messageArguments) => i18n.exists(key)
+      ? i18n.t(key, Object.fromEntries((messageArguments ?? []).map((value, index) => [index, value])))
+      : undefined,
 
     // 请求拦截器
     onRequest: async (url: string, options: RequestInit) => {
       // 如果请求需要认证，确保使用有效的 Token
-      const authHeader = (options.headers as Record<string, string>)?.Authorization;
+      const requestHeaders = new Headers(options.headers);
+      const authHeader = requestHeaders.get('Authorization');
       if (authHeader && authHeader.startsWith('Bearer ')) {
         log.debug('ApiInterceptor', '认证请求 Token 状态', tokenService.getTokenDebugInfo());
         try {
           const validToken = await tokenService.getValidAccessToken();
           if (validToken) {
-            (options.headers as Record<string, string>).Authorization = `Bearer ${validToken}`;
+            requestHeaders.set('Authorization', `Bearer ${validToken}`);
           } else {
-            delete (options.headers as Record<string, string>).Authorization;
+            requestHeaders.delete('Authorization');
           }
         } catch (error) {
           log.error('ApiInterceptor', '获取有效 Token 失败', error);
         }
       }
+      options.headers = requestHeaders;
 
       log.debug('ApiInterceptor', '发送请求', {
         url,

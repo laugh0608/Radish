@@ -51,6 +51,10 @@ public class Channel : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = true)]
     public DateTime? LastMessageTime { get; set; }
 
+    /// <summary>消息置顶集合修订号；仅在活跃置顶集合实际变化时递增。</summary>
+    [SugarColumn(IsNullable = false, DefaultValue = "0")]
+    public long PinRevision { get; set; }
+
     /// <summary>租户 Id</summary>
     [SugarColumn(IsNullable = false)]
     public long TenantId { get; set; }

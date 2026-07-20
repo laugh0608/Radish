@@ -777,19 +777,23 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             // 1. 参数校验
             if (fromUserId == toUserId)
             {
-                throw new ArgumentException("不能向自己转账");
+                throw new BusinessException(
+                    "不能向自己转账",
+                    400,
+                    CoinErrorCodes.TransferSelfRejected,
+                    "error.coin.transfer_self_rejected");
             }
 
             if (amount <= 0)
             {
-                throw new ArgumentException("转账金额必须大于0");
+                throw new BusinessException(
+                    "转账金额必须大于0",
+                    400,
+                    CoinErrorCodes.TransferAmountInvalid,
+                    "error.coin.transfer_amount_invalid");
             }
 
-            var paymentPasscodeError = PaymentPasscodeRules.GetValidationMessage(paymentPassword);
-            if (!string.IsNullOrWhiteSpace(paymentPasscodeError))
-            {
-                throw new ArgumentException(paymentPasscodeError);
-            }
+            EnsureTransferPaymentPasscodeIsValid(paymentPassword);
 
             Log.Information("用户转账：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
                 fromUserId, toUserId, amount);
@@ -807,7 +811,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             {
                 Log.Warning("转账失败：支付口令验证失败，用户={FromUserId}, 原因={Reason}",
                     fromUserId, verifyResult.ErrorMessage);
-                throw new InvalidOperationException(verifyResult.ErrorMessage ?? "支付口令验证失败");
+                throw CreatePaymentVerificationException(verifyResult);
             }
 
             var tenantId = GetCurrentTenantId();
@@ -840,7 +844,8 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "用户转账失败：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
+            var transferException = NormalizeTransferException(ex);
+            Log.Error(transferException, "用户转账失败：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
                 fromUserId, toUserId, amount);
 
             if (idempotencyResult?.Status == OperationIdempotencyBeginStatus.Started &&
@@ -855,18 +860,23 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
                 if (assetWriteStarted)
                 {
-                    await CompleteTransferTerminalFailureIdempotencyAsync(idempotencyResult, ex.Message);
+                    await CompleteTransferTerminalFailureIdempotencyAsync(idempotencyResult, transferException);
                 }
                 else
                 {
                     await _operationIdempotencyService.CompleteFailureAsync(
                         idempotencyResult.RecordId.Value,
-                        errorCode: null,
-                        errorMessage: ex.Message);
+                        errorCode: (transferException as BusinessException)?.ErrorCode,
+                        errorMessage: transferException.Message);
                 }
             }
 
-            throw;
+            if (ReferenceEquals(transferException, ex))
+            {
+                throw;
+            }
+
+            throw transferException;
         }
     }
 
@@ -885,13 +895,21 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             b => b.UserId == fromUserId && !b.IsDeleted);
         if (fromUserBalance == null)
         {
-            throw new InvalidOperationException("转出用户余额记录不存在");
+            throw new BusinessException(
+                "转出用户余额记录不存在",
+                409,
+                CoinErrorCodes.TransferAccountUnavailable,
+                "error.coin.transfer_account_unavailable");
         }
 
         // 2. 检查转出用户余额是否充足
         if (fromUserBalance.Balance < amount)
         {
-            throw new InvalidOperationException($"余额不足：当前余额={fromUserBalance.Balance}, 转账金额={amount}");
+            throw new BusinessException(
+                $"余额不足：当前余额={fromUserBalance.Balance}, 转账金额={amount}",
+                409,
+                CoinErrorCodes.TransferInsufficientBalance,
+                "error.coin.transfer_insufficient_balance");
         }
 
         // 3. 确保转入用户余额记录存在
@@ -1126,14 +1144,15 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         {
             return transaction.TransactionType switch
             {
-                "SYSTEM_GRANT" => "系统赠送",
-                "LIKE_REWARD" => "点赞奖励",
-                "COMMENT_REWARD" => "评论奖励",
-                "GODCOMMENT_REWARD" => "神评奖励",
-                "SOFA_REWARD" => "沙发奖励",
-                "TRANSFER" => "转账收入",
-                "REFUND" => "退款",
-                _ => "其他收入"
+                "SYSTEM_GRANT" => "IN_SYSTEM_GRANT",
+                "LIKE_REWARD" => "IN_LIKE_REWARD",
+                "COMMENT_REWARD" => "IN_COMMENT_REWARD",
+                "GODCOMMENT_REWARD" => "IN_GOD_COMMENT_REWARD",
+                "GODLIKE_REWARD" => "IN_GOD_COMMENT_REWARD",
+                "SOFA_REWARD" => "IN_SOFA_REWARD",
+                "TRANSFER" => "IN_TRANSFER",
+                "REFUND" => "IN_REFUND",
+                _ => "IN_OTHER"
             };
         }
         // 如果是转出
@@ -1141,10 +1160,10 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         {
             return transaction.TransactionType switch
             {
-                "TRANSFER" => "转账支出",
-                "CONSUME" => "消费支出",
-                "PENALTY" => "惩罚扣除",
-                _ => "其他支出"
+                "TRANSFER" => "OUT_TRANSFER",
+                "CONSUME" => "OUT_CONSUME",
+                "PENALTY" => "OUT_PENALTY",
+                _ => "OUT_OTHER"
             };
         }
     }
@@ -1489,11 +1508,23 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
             case OperationIdempotencyBeginStatus.Succeeded:
                 return ResolveTransferReplayResult(idempotencyResult);
             case OperationIdempotencyBeginStatus.Processing:
-                throw new InvalidOperationException(idempotencyResult.Message ?? "请求处理中，请稍后查询结果或重试");
+                throw new BusinessException(
+                    idempotencyResult.Message ?? "请求处理中，请稍后查询结果或重试",
+                    409,
+                    CoinErrorCodes.TransferProcessing,
+                    "error.coin.transfer_processing");
             case OperationIdempotencyBeginStatus.Conflict:
-                throw new ArgumentException(idempotencyResult.Message ?? "幂等键已被不同请求使用");
+                throw new BusinessException(
+                    idempotencyResult.Message ?? "幂等键已被不同请求使用",
+                    409,
+                    CoinErrorCodes.TransferIdempotencyConflict,
+                    "error.coin.transfer_idempotency_conflict");
             case OperationIdempotencyBeginStatus.InvalidKey:
-                throw new ArgumentException(idempotencyResult.Message ?? "幂等键格式无效");
+                throw new BusinessException(
+                    idempotencyResult.Message ?? "幂等键格式无效",
+                    400,
+                    CoinErrorCodes.TransferIdempotencyInvalid,
+                    "error.coin.transfer_idempotency_invalid");
             default:
                 throw new InvalidOperationException("幂等记录状态无效");
         }
@@ -1501,16 +1532,58 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
     private string ResolveTransferReplayResult(OperationIdempotencyBeginResult idempotencyResult)
     {
+        if (!string.IsNullOrWhiteSpace(idempotencyResult.ErrorCode))
+        {
+            throw CreateTransferReplayException(
+                idempotencyResult.ErrorCode,
+                idempotencyResult.ErrorMessage ?? "先前的转账请求未成功");
+        }
+
         var replayResult = _operationIdempotencyService?.DeserializeResponse<TransactionResultVo>(
             idempotencyResult.ResponsePayload);
 
         if (string.IsNullOrWhiteSpace(replayResult?.VoTransactionNo))
         {
-            throw new InvalidOperationException(
-                idempotencyResult.ErrorMessage ?? "幂等记录缺少响应，请稍后重试");
+            throw new BusinessException(
+                idempotencyResult.ErrorMessage ?? "幂等记录缺少响应，请稍后重试",
+                409,
+                CoinErrorCodes.TransferReplayUnavailable,
+                "error.coin.transfer_replay_unavailable");
         }
 
         return replayResult.VoTransactionNo;
+    }
+
+    private static BusinessException CreateTransferReplayException(string errorCode, string message)
+    {
+        return errorCode switch
+        {
+            CoinErrorCodes.TransferInsufficientBalance => new BusinessException(
+                message, 409, errorCode, "error.coin.transfer_insufficient_balance"),
+            CoinErrorCodes.TransferAccountUnavailable => new BusinessException(
+                message, 409, errorCode, "error.coin.transfer_account_unavailable"),
+            CoinErrorCodes.TransferConcurrencyConflict => new BusinessException(
+                message, 409, errorCode, "error.coin.transfer_concurrency_conflict"),
+            PaymentPasscodeErrorCodes.Locked => new BusinessException(
+                message, 429, errorCode, "error.payment_password.locked"),
+            PaymentPasscodeErrorCodes.NotConfigured => new BusinessException(
+                message, 409, errorCode, "error.payment_password.not_configured"),
+            PaymentPasscodeErrorCodes.UpgradeRequired => new BusinessException(
+                message, 409, errorCode, "error.payment_password.upgrade_required"),
+            PaymentPasscodeErrorCodes.Required => new BusinessException(
+                message, 400, errorCode, "error.payment_password.required"),
+            PaymentPasscodeErrorCodes.FormatInvalid => new BusinessException(
+                message, 400, errorCode, "error.payment_password.format_invalid"),
+            PaymentPasscodeErrorCodes.RepeatedDigits => new BusinessException(
+                message, 400, errorCode, "error.payment_password.repeated_digits"),
+            PaymentPasscodeErrorCodes.Invalid => new BusinessException(
+                message, 400, errorCode, "error.payment_password.invalid"),
+            _ => new BusinessException(
+                message,
+                409,
+                CoinErrorCodes.TransferReplayUnavailable,
+                "error.coin.transfer_replay_unavailable")
+        };
     }
 
     private async Task CompleteTransferIdempotencyAsync(
@@ -1538,7 +1611,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
     private async Task CompleteTransferTerminalFailureIdempotencyAsync(
         OperationIdempotencyBeginResult idempotencyResult,
-        string errorMessage)
+        Exception exception)
     {
         if (_operationIdempotencyService == null || !idempotencyResult.RecordId.HasValue)
         {
@@ -1548,9 +1621,75 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
         await _operationIdempotencyService.CompleteSuccessAsync(new OperationIdempotencyCompletionRequest
         {
             RecordId = idempotencyResult.RecordId.Value,
-            ErrorMessage = errorMessage,
+            ErrorCode = (exception as BusinessException)?.ErrorCode,
+            ErrorMessage = exception.Message,
             ResponsePayload = _operationIdempotencyService.SerializeResponse(new TransactionResultVo())
         });
+    }
+
+    private static void EnsureTransferPaymentPasscodeIsValid(string? paymentPasscode)
+    {
+        if (string.IsNullOrWhiteSpace(paymentPasscode))
+        {
+            throw new BusinessException(
+                PaymentPasscodeRules.EmptyErrorMessage,
+                400,
+                PaymentPasscodeErrorCodes.Required,
+                "error.payment_password.required");
+        }
+
+        if (!PaymentPasscodeRules.IsFormatValid(paymentPasscode))
+        {
+            throw new BusinessException(
+                PaymentPasscodeRules.FormatErrorMessage,
+                400,
+                PaymentPasscodeErrorCodes.FormatInvalid,
+                "error.payment_password.format_invalid");
+        }
+
+        if (PaymentPasscodeRules.IsRepeatedDigits(paymentPasscode))
+        {
+            throw new BusinessException(
+                PaymentPasscodeRules.RepeatedDigitErrorMessage,
+                400,
+                PaymentPasscodeErrorCodes.RepeatedDigits,
+                "error.payment_password.repeated_digits");
+        }
+    }
+
+    private static BusinessException CreatePaymentVerificationException(PaymentPasswordVerifyResult result)
+    {
+        var statusCode = result.IsLocked
+            ? 429
+            : result.ErrorCode is PaymentPasscodeErrorCodes.NotConfigured or PaymentPasscodeErrorCodes.UpgradeRequired
+                ? 409
+                : 400;
+
+        return new BusinessException(
+            result.ErrorMessage ?? "支付口令验证失败",
+            statusCode,
+            result.ErrorCode ?? PaymentPasscodeErrorCodes.Invalid,
+            result.MessageKey ?? PaymentPasscodeErrorCodes.ResolveMessageKey(result.ErrorCode));
+    }
+
+    private static Exception NormalizeTransferException(Exception exception)
+    {
+        if (exception is BusinessException)
+        {
+            return exception;
+        }
+
+        if (exception is ConcurrencyException)
+        {
+            return new BusinessException(
+                "转账遇到并发冲突，请稍后重试",
+                exception,
+                409,
+                CoinErrorCodes.TransferConcurrencyConflict,
+                "error.coin.transfer_concurrency_conflict");
+        }
+
+        return exception;
     }
 
     private static long NormalizeTenantId(long tenantId)

@@ -1,8 +1,19 @@
-import type { ReactNode, RefObject } from 'react';
+import { useMemo, type ReactNode, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import type {
+  ChatMessageReactionStateVo,
+  ChatReadReceiptMode,
+  ChatReadReceiptSummaryItemVo,
+} from '@radish/http';
+import {
+  ReactionBar,
+  type ReactionTogglePayload,
+} from '@radish/ui/reaction-bar';
+import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import type { ChannelMessageVo, EntityIdValue } from '@/types/chat';
 import { isPersistedEntityId } from '@/types/chat';
+import type { ChatConnectionState } from '@/stores/chatStore';
 import {
   formatChatTime,
   getEntityKey,
@@ -12,6 +23,12 @@ import {
   toNumericId,
 } from './chatApp.helpers';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
+import { getIntlLocale } from '@/locales/language';
+import { ChatProtectedImage } from './ChatProtectedImage';
+import { createChatReactionBarLabels } from './chatReactionBarLabels';
+import { ChatPinnedMessages } from './ChatPinnedMessages';
+import { ChatReadReceiptIndicator } from './ChatReadReceiptIndicator';
+import { useChatMessagePins } from './useChatMessagePins';
 import styles from './ChatApp.module.css';
 
 interface ChatMessageListProps {
@@ -22,19 +39,42 @@ interface ChatMessageListProps {
   highlightedMessageId: string | null;
   currentUserIdKey: string;
   apiBaseUrl: string;
+  canSendMessages: boolean;
+  canReact: boolean;
+  canPinMessages: boolean;
+  connectionState: ChatConnectionState;
+  messageTargetUnavailable: boolean;
+  reactionStateMap: Record<string, ChatMessageReactionStateVo>;
+  reactionLoading: boolean;
+  reactionLoadError: string | null;
+  readReceiptMode: ChatReadReceiptMode;
+  readReceiptItemMap: Record<string, ChatReadReceiptSummaryItemVo>;
+  directReadBoundaryMessageId: string | null;
+  readReceiptLoadError: string | null;
+  compact: boolean;
+  stickerGroups: StickerPickerGroup[];
   hasMoreNewerHistory: Record<string, boolean>;
   messageScrollRef: RefObject<HTMLDivElement | null>;
   setMessageElementRef: (messageId: string, element: HTMLDivElement | null) => void;
   renderAvatarButton: (userId: EntityIdValue, userName?: string | null, avatarUrl?: string | null) => ReactNode;
   renderMessageContent: (content: string | null | undefined) => ReactNode;
   onScroll: () => void;
-  onOpenUserProfile: (targetUserId: EntityIdValue, targetUserName?: string | null, avatarUrl?: string | null) => void;
+  onOpenUserProfile: (
+    targetUserId: EntityIdValue,
+    targetUserName?: string | null,
+    avatarUrl?: string | null,
+    publicId?: string | null
+  ) => void;
   onReply: (message: ChannelMessageVo) => void;
   onRecall: (messageId: EntityIdValue) => void;
   onOpenReport: (targetType: ContentReportTargetType, targetId: number) => void;
   onRetryMessage: (message: ChannelMessageVo) => void;
   onCopyFailedMessageDiagnostics: (message: ChannelMessageVo) => void;
   onDismissFailedMessage: (message: ChannelMessageVo) => void;
+  onToggleReaction: (messageId: EntityIdValue, payload: ReactionTogglePayload) => Promise<void>;
+  onNavigateToMessage: (messageId: string) => void;
+  onRetryReactionLoad: () => void;
+  onRetryReadReceiptLoad: () => void;
   onLoadNewerHistory: () => void;
 }
 
@@ -46,6 +86,20 @@ export const ChatMessageList = ({
   highlightedMessageId,
   currentUserIdKey,
   apiBaseUrl,
+  canSendMessages,
+  canReact,
+  canPinMessages,
+  connectionState,
+  messageTargetUnavailable,
+  reactionStateMap,
+  reactionLoading,
+  reactionLoadError,
+  readReceiptMode,
+  readReceiptItemMap,
+  directReadBoundaryMessageId,
+  readReceiptLoadError,
+  compact,
+  stickerGroups,
   hasMoreNewerHistory,
   messageScrollRef,
   setMessageElementRef,
@@ -59,12 +113,61 @@ export const ChatMessageList = ({
   onRetryMessage,
   onCopyFailedMessageDiagnostics,
   onDismissFailedMessage,
+  onToggleReaction,
+  onNavigateToMessage,
+  onRetryReactionLoad,
+  onRetryReadReceiptLoad,
   onLoadNewerHistory,
 }: ChatMessageListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = getIntlLocale(i18n.resolvedLanguage ?? i18n.language);
+  const reactionLabels = useMemo(() => createChatReactionBarLabels(t), [t]);
+  const {
+    state: pinState,
+    pinnedMessageIds,
+    loading: pinLoading,
+    loadError: pinLoadError,
+    pendingMessageId: pinPendingMessageId,
+    retry: retryPinLoad,
+    setPinned,
+  } = useChatMessagePins({
+    activeChannelId,
+    connectionState,
+    canPinMessages,
+    refreshAfterTargetUnavailable: messageTargetUnavailable,
+  });
 
   return (
-    <div className={styles.messageViewport} ref={messageScrollRef} onScroll={onScroll}>
+    <>
+      <div className={styles.pinRegion}>
+        <ChatPinnedMessages
+          state={pinState}
+          loading={pinLoading}
+          loadError={pinLoadError}
+          canManage={canPinMessages}
+          pendingMessageId={pinPendingMessageId}
+          onRetry={retryPinLoad}
+          onNavigate={onNavigateToMessage}
+          onSetPinned={setPinned}
+        />
+      </div>
+      <div className={styles.messageViewport} ref={messageScrollRef} onScroll={onScroll}>
+      {activeChannelId !== null && reactionLoadError && (
+        <div className={styles.reactionLoadError} role="alert">
+          <span>{reactionLoadError}</span>
+          <button type="button" onClick={onRetryReactionLoad}>
+            {t('chat.reaction.retry')}
+          </button>
+        </div>
+      )}
+      {activeChannelId !== null && readReceiptLoadError && (
+        <div className={styles.reactionLoadError} role="alert">
+          <span>{readReceiptLoadError}</span>
+          <button type="button" onClick={onRetryReadReceiptLoad}>
+            {t('chat.receipt.retry')}
+          </button>
+        </div>
+      )}
       {activeChannelId === null ? (
         <div className={styles.placeholder}>{t('chat.inputSelectChannel')}</div>
       ) : messages.length === 0 && loadingHistory ? (
@@ -82,6 +185,22 @@ export const ChatMessageList = ({
           const isSendingMessage = messageStatus === 'sending';
           const isFailedMessage = messageStatus === 'failed';
           const replyText = message.voReplyTo ? getMessagePreviewText(message.voReplyTo, t) : null;
+          const reactionState = messageIdKey ? reactionStateMap[messageIdKey] : undefined;
+          const isPinned = Boolean(messageIdKey && pinnedMessageIds.has(messageIdKey));
+          const canManagePin = Boolean(
+            canPinMessages
+            && messageIdKey
+            && isPersistedEntityId(message.voId)
+            && !message.voIsRecalled
+            && messageStatus === 'sent'
+          );
+          const canShowReactionBar = Boolean(
+            messageIdKey
+            && isPersistedEntityId(message.voId)
+            && !message.voIsRecalled
+            && messageStatus === 'sent'
+            && (canReact || (reactionState?.voItems.length ?? 0) > 0)
+          );
           const messageImageUrl = resolveMediaUrl(apiBaseUrl, message.voImageUrl);
           const canReportMessage = !isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId);
           const messageUserName = resolveVisibleUserDisplayName(
@@ -99,6 +218,7 @@ export const ChatMessageList = ({
             <div
               key={messageIdKey || message.voClientRequestId || message.voCreateTime}
               ref={messageIdKey ? (element) => setMessageElementRef(messageIdKey, element) : undefined}
+              data-chat-message-id={isPersistedEntityId(message.voId) ? messageIdKey : undefined}
               className={`${styles.messageRow} ${isMine ? styles.mine : ''} ${isHighlightedMessage ? styles.messageRowTargeted : ''}`.trim()}
             >
               <div className={styles.messageMain}>
@@ -121,14 +241,26 @@ export const ChatMessageList = ({
                     >
                       <span className={styles.userName}>{messageUserName}</span>
                     </button>
-                    <span className={styles.time}>{formatChatTime(message.voCreateTime)}</span>
-                    {!message.voIsRecalled && messageStatus === 'sent' && (
+                    <span className={styles.time}>{formatChatTime(message.voCreateTime, locale)}</span>
+                    {canSendMessages && !message.voIsRecalled && messageStatus === 'sent' && (
                       <button
                         type="button"
                         className={styles.replyButton}
                         onClick={() => onReply(message)}
                       >
                         {t('chat.reply')}
+                      </button>
+                    )}
+                    {canManagePin && (
+                      <button
+                        type="button"
+                        className={styles.pinButton}
+                        onClick={() => { void setPinned(message.voId, !isPinned); }}
+                        disabled={pinPendingMessageId === messageIdKey}
+                      >
+                        {pinPendingMessageId === messageIdKey
+                          ? t('chat.pin.updating')
+                          : t(isPinned ? 'chat.pin.unpin' : 'chat.pin.pin')}
                       </button>
                     )}
                     {isMine && !message.voIsRecalled && messageStatus === 'sent' && isPersistedEntityId(message.voId) && (
@@ -170,7 +302,13 @@ export const ChatMessageList = ({
                       )}
                       {message.voContent && <div className={styles.bubble}>{renderMessageContent(message.voContent)}</div>}
                       {message.voType === 2 && messageImageUrl && (
-                        <img className={styles.imageMessage} src={messageImageUrl} alt={t('chat.imageMessage')} loading="lazy" />
+                        <ChatProtectedImage
+                          attachmentId={message.voAttachmentId}
+                          fallbackUrl={messageImageUrl}
+                          variant="thumbnail"
+                          className={styles.imageMessage}
+                          alt={t('chat.imageMessage')}
+                        />
                       )}
                       {isMine && !message.voIsRecalled && messageStatus !== 'sent' && (
                         <div className={styles.deliveryState}>
@@ -180,13 +318,15 @@ export const ChatMessageList = ({
                           {isFailedMessage && (
                             <>
                               <span className={styles.deliveryRecoveryHint}>{t('chat.failedRecoverableHint')}</span>
-                              <button
-                                type="button"
-                                className={styles.deliveryActionButton}
-                                onClick={() => onRetryMessage(message)}
-                              >
-                                {t('chat.retry')}
-                              </button>
+                              {canSendMessages && (
+                                <button
+                                  type="button"
+                                  className={styles.deliveryActionButton}
+                                  onClick={() => onRetryMessage(message)}
+                                >
+                                  {t('chat.retry')}
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className={styles.deliveryActionButton}
@@ -204,6 +344,33 @@ export const ChatMessageList = ({
                             </>
                           )}
                         </div>
+                      )}
+                      {canShowReactionBar && messageIdKey && (
+                        <ReactionBar
+                          targetType="ChatMessage"
+                          targetId={messageIdKey}
+                          items={reactionState?.voItems ?? []}
+                          isLoggedIn
+                          loading={reactionLoading}
+                          readOnly={!canReact}
+                          showAddReactionLabel
+                          stickerGroups={stickerGroups}
+                          className={styles.chatReactionBar}
+                          labels={reactionLabels}
+                          onToggle={(payload) => onToggleReaction(message.voId, payload)}
+                        />
+                      )}
+                      {isMine && messageIdKey && isPersistedEntityId(message.voId) && !message.voIsRecalled && messageStatus === 'sent' && (
+                        <ChatReadReceiptIndicator
+                          apiBaseUrl={apiBaseUrl}
+                          channelId={activeChannelId}
+                          messageId={message.voId}
+                          mode={readReceiptMode}
+                          summary={readReceiptItemMap[messageIdKey]}
+                          isDirectBoundary={messageIdKey === directReadBoundaryMessageId}
+                          compact={compact}
+                          onOpenUserProfile={onOpenUserProfile}
+                        />
                       )}
                     </div>
                   )}
@@ -225,6 +392,7 @@ export const ChatMessageList = ({
           </button>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };

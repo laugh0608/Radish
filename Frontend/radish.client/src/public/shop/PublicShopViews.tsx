@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { formatLocalizedNumber } from '@radish/ui';
 import { getProductTypeDisplay, isUnlimitedStockType } from '@/api/shop';
 import type { LongId } from '@/api/user';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
@@ -96,8 +97,8 @@ function handlePublicShopLinkClick(event: MouseEvent<HTMLAnchorElement>, action:
   action();
 }
 
-function formatProductPrice(value: number): string {
-  return value.toLocaleString();
+function formatProductPrice(value: number, language: string): string {
+  return formatLocalizedNumber(value, language);
 }
 
 function toGuideItems(
@@ -216,7 +217,7 @@ function ProductRow({
   categoryName?: string;
   onOpen: (productId: LongId) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <a
@@ -234,7 +235,7 @@ function ProductRow({
       </div>
       <div className={styles.productRowMeta}>
         <span className={styles.productRowPrice}>
-          {formatProductPrice(product.voPrice)} {t('shop.currency.carrot')}
+          {formatProductPrice(product.voPrice, i18n.resolvedLanguage ?? i18n.language)} {t('shop.currency.carrot')}
         </span>
         <span className={styles.productRowSold}>{t('shop.soldCount', { count: product.voSoldCount ?? 0 })}</span>
         <span className={styles.productRowAction}>{actionLabel}</span>
@@ -415,7 +416,7 @@ export function PublicShopHomeView({
   onProductClick,
   onViewAllProducts
 }: PublicShopHomeViewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const featuredProduct = featuredProducts[0] ?? null;
   const rowProducts = featuredProduct ? featuredProducts.slice(1, 6) : featuredProducts.slice(0, 5);
   const actionLabel = loggedIn ? t('shop.public.rowDetailActionSignedIn') : t('shop.public.rowDetailActionGuest');
@@ -477,7 +478,7 @@ export function PublicShopHomeView({
               </div>
               <div className={styles.featuredProductMeta}>
                 <span className={styles.featuredProductPrice}>
-                  {formatProductPrice(featuredProduct.voPrice)} {t('shop.currency.carrot')}
+                  {formatProductPrice(featuredProduct.voPrice, i18n.resolvedLanguage ?? i18n.language)} {t('shop.currency.carrot')}
                 </span>
                 <span className={styles.metaChip}>{t('shop.soldCount', { count: featuredProduct.voSoldCount ?? 0 })}</span>
                 <span className={styles.primaryButton}>{actionLabel}</span>
@@ -677,7 +678,7 @@ export function PublicShopDetailView({
   onCopyShare,
   onPurchaseLinkClick
 }: PublicShopDetailViewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const stockText = useMemo(() => toStockText(t, product), [product, t]);
   const limitText = useMemo(() => toLimitText(t, product), [product, t]);
   const statusText = useMemo(() => toProductStatusText(t, product), [product, t]);
@@ -735,11 +736,11 @@ export function PublicShopDetailView({
 
             <div className={styles.priceBlock}>
               <span className={styles.priceValue}>
-                {formatProductPrice(product.voPrice)} {t('shop.currency.carrot')}
+                {formatProductPrice(product.voPrice, i18n.resolvedLanguage ?? i18n.language)} {t('shop.currency.carrot')}
               </span>
               {product.voOriginalPrice && product.voOriginalPrice > product.voPrice ? (
                 <span className={styles.priceOriginal}>
-                  {t('shop.originalPrice', { price: product.voOriginalPrice.toLocaleString() })}
+                  {t('shop.originalPrice', { price: formatProductPrice(product.voOriginalPrice, i18n.resolvedLanguage ?? i18n.language) })}
                 </span>
               ) : null}
             </div>

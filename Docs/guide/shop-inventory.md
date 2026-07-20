@@ -1,604 +1,233 @@
-# 5. 权益系统
+# 5. 商城权益与背包
 
+> 版本：v2.1 | 最后更新：2026-07-14
+>
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
-## 5.1 权益数据模型
+商城将持续权益、当前选择和消耗品数量拆成不同真相源。页面状态、业务授权、定时过期和 Console 排障都必须遵循同一套服务端 UTC 规则。
 
-### 5.1.1 当前实现口径（UserBenefit / UserInventory）
+## 5.1 数据模型
 
-当前商城权益与背包已经拆成两个运行时概念：
-
-| 模型 | 职责 | 来源字段口径 |
+| 模型 | 职责 | 关键唯一约束 |
 |------|------|--------------|
-| `UserBenefit` | 自动生效或持续生效的权益记录，例如会员、徽章、头像框等 | `SourceOrderId`、`SourceProductId` |
-| `UserInventory` | 可持有 / 可使用的消耗品背包记录，例如改名卡、经验卡等 | `SourceProductId` |
-| `UserBenefitVo` | 前端“我的背包”权益卡片使用的展示契约 | `VoSourceOrderId`、`VoSourceProductId` |
-| `UserInventoryVo` | 前端“我的背包”消耗品卡片使用的展示契约 | `VoSourceProductId`，不承载统一订单来源 |
+| `UserBenefit` | 用户拥有的一份持续权益 | `(TenantId, SourceOrderId)` 防止订单重复发放 |
+| `UserActiveBenefit` | 用户每种权益类型的当前选择 | `(TenantId, UserId, BenefitType)` |
+| `UserInventory` | 同类型、同值消耗品的当前聚合数量 | `(TenantId, UserId, ConsumableType, ItemValue)` |
+| `UserInventoryGrantRecord` | 每张订单的消耗品发放事实 | `(TenantId, SourceOrderId)` |
+| `ShopEntitlementOperation` | 使用、启用、停用、过期、撤销的成功业务流水 | 使用动作按租户、用户、类型和幂等键唯一 |
 
-正式 Web 和 WebOS 商城当前都在权益卡片上展示购买来源回访。当 `UserBenefitVo.VoSourceOrderId` 或 `UserBenefitVo.VoSourceProductId` 有效时，前端分别展示“查看订单”和“查看商品”动作；正式 Web 优先打开 `/shop/order/:orderId` 与 `/shop/product/:productId`，WebOS 历史入口继续打开商城窗口内订单详情 / 商品详情。
+`UserBenefit.IsActive / ActivatedAt / IsExpired` 只保留迁移兼容和查询优化用途，不再是当前选择或授权真相。
 
-消耗品卡片只展示商品维度的相关回访。当 `UserInventoryVo.VoSourceProductId` 有效时，前端展示“相关商品”动作并打开商城商品详情；它不表示消耗品具备订单级来源追溯。
+## 5.2 来源与回访
 
-不要把 `UserBenefitVo` 的订单来源字段误迁移为 `UserInventory` 的统一订单来源契约；消耗品订单级追溯应单独评估契约与前端展示。
+持续权益保存：
 
-来源字段虽然在后端实体中仍是 long 主键，但前端和移动端只按规范字符串 LongId 处理：
+- `SourceOrderId`
+- `SourceProductId`
+- `SourceType`
+- 商品名称和图标附件快照
 
-- `VoSourceOrderId / VoSourceProductId` 进入正式 Web、WebOS、Flutter 或 Console 回访入口时不得通过 `Number(...)`、`parseInt(...)`、`int.tryParse` 等路径数值化。
-- 来源 ID 应先按正整数 LongId 字符串做格式校验；不规范来源应禁用来源入口或展示明确错误，不应被数值化后误打开订单 / 商品。
-- 消耗品只承接 `VoSourceProductId` 的相关商品回访，不因前端需要返回状态而扩展出统一订单来源字段。
+`UserBenefitVo` 通过 `VoSourceOrderId / VoSourceProductId` 支持从背包回到订单和商品。
 
-### 5.1.2 背包物品模型补充
+消耗品聚合行只公开 `VoSourceProductId` 作为“相关商品”。一条聚合行可能来自多张订单，因此不能把最后一次订单误写成完整来源；订单级历史由 `UserInventoryGrantRecord` 保存。
 
-> **2026-03 对齐说明**：背包道具图标同样已经收口为“附件快照 Id + 运行时 URL 派生”。实体层以 `ItemIconAttachmentId` 为真值，列表 / 详情展示时再解析 `ItemIcon`。
+所有来源 ID 在前端按字符串 LongId 传递，不进入 JavaScript 或 Dart 数值域。
 
-`UserInventory` 当前用于消耗品持有、数量、状态、使用目标、使用备注、有效期和商品来源记录。它不再作为权益与消耗品的统一大模型说明；权益来源、有效期和装备态以 `UserBenefit` / `UserBenefitVo` 为准。
+## 5.3 持续权益状态
 
-### 5.1.3 相关枚举
+服务端在每次读取时使用 `TimeProvider` 的 UTC 当前时间计算：
 
-```csharp
-/// <summary>
-/// 背包物品类型
-/// </summary>
-public enum InventoryItemType
+```text
+RevokedAt != null                        -> Revoked
+ExpiresAt != null && ExpiresAt <= nowUtc -> Expired
+有效 UserActiveBenefit 指针指向该权益    -> Active
+否则                                      -> Available
+```
+
+对应 `UserBenefitVo`：
+
+| 字段 | 用途 |
+|------|------|
+| `VoStatus / VoStatusDisplay` | 服务端派生的正式状态 |
+| `VoCanActivate` | 当前是否允许选择 |
+| `VoCanDeactivate` | 当前是否允许停用 |
+| `VoUnavailableReason` | 未开放、尚未生效、过期或撤销原因 |
+| `VoEffectiveAt / VoExpiresAt` | UTC 生效和到期时间 |
+| `VoRevokedAt / VoRevocationReason` | 管理员撤销事实 |
+
+Client 不得根据本机时间重新判定有效状态，也不得用 `VoIsActive / VoIsExpired` 覆盖 `VoStatus`。
+
+`UserBenefitStatus` 当前没有单独的“等待生效”枚举；`EffectiveAt > nowUtc` 的记录保持 `Available`，同时由 `VoCanActivate=false` 和 `VoUnavailableReason=权益尚未生效` 表达操作边界。业务授权仍必须显式检查 `EffectiveAt`。
+
+## 5.4 唯一选择
+
+启用入口：
+
+```http
+POST /api/v1/Shop/ActivateBenefit/{benefitId}
+```
+
+启用前检查：
+
+- 权益属于当前用户和租户。
+- 权益未删除、未撤销、未到期且已经生效。
+- 权益类型已被服务端能力策略开放。
+
+仓储通过原子 upsert 将 `(TenantId, UserId, BenefitType)` 指针切换到目标权益。重复启用同一权益返回成功但 `VoChanged=false`，不生成重复操作事实。
+
+停用入口：
+
+```http
+POST /api/v1/Shop/DeactivateBenefit/{benefitId}
+```
+
+停用只删除仍指向目标权益的当前指针。重复停用返回 `VoChanged=false`；并发切换后，旧请求不能误删后来选择的新权益。
+
+两类接口都返回 `UserBenefitActionResultVo`，其中包含操作类型、目标权益状态、该类型当前权益 ID 和当前权益对象，Client 不需要猜测切换结果。
+
+当前允许启用的权益类型为 Badge、Title、Theme：
+
+- Badge / Title 的当前选择由 `UserAdornmentService` 批量装配为公开 `UserAdornmentVo`。
+- Theme 的当前选择由 client 主题运行时读取；切回内置主题时先停用当前 Theme 权益。
+- 其他权益即使存在历史拥有记录，也必须保持 `VoCanActivate=false`。
+
+## 5.5 到期与撤销
+
+### 实时失效
+
+当 `ExpiresAt <= nowUtc` 时，查询和实际效果必须立即视为失效，即使定时任务尚未运行。业务正确性不能依赖任务调度及时性。
+
+### 过期任务
+
+`ShopJob` 分批读取到期权益 ID，并逐份委托 `UserBenefitService.ExpireBenefitAsync`：
+
+- 条件物化 `IsExpired` 兼容标记。
+- 清除仍指向该权益的 `UserActiveBenefit`。
+- 写入 `Expire` 操作流水。
+- 通过可靠 Outbox 请求到期通知。
+- 重复执行不产生第二条过期事实或通知业务键。
+
+### 管理员撤销
+
+Console 使用 `console.benefits.revoke` 权限调用：
+
+```http
+POST /api/v1/Shop/AdminRevokeBenefit/{benefitId}
+```
+
+撤销原因必须为 2–500 个字符。撤销会记录操作者、UTC 时间和原因，清理当前指针并写入 `Revoke` 流水。撤销不是退款，撤销后的权益不能重新启用。
+
+## 5.6 消耗品使用
+
+当前真正支持使用的消耗品只有：
+
+| 类型 | 效果 |
+|------|------|
+| `RenameCard` | 复用统一展示名格式、保留字、唯一性和频率规则 |
+| `ExpCard` | 使用服务端操作 ID 作为业务键，原子增加经验 |
+| `CoinCard` | 使用服务端操作 ID 作为业务键，原子增加胡萝卜并生成资产流水 |
+
+帖子置顶卡、帖子高亮卡、双倍经验卡和抽奖券保持不可用。历史背包记录可以展示，但不能使用。
+
+通用入口：
+
+```http
+POST /api/v1/Shop/UseItem
+```
+
+```json
 {
-    /// <summary>
-    /// 权益类（自动生效）
-    /// </summary>
-    Benefit = 1,
-
-    /// <summary>
-    /// 消耗品（手动使用）
-    /// </summary>
-    Consumable = 2
-}
-
-/// <summary>
-/// 背包物品状态
-/// </summary>
-public enum InventoryStatus
-{
-    /// <summary>
-    /// 有效（权益生效中/消耗品可用）
-    /// </summary>
-    Active = 1,
-
-    /// <summary>
-    /// 已使用（消耗品）
-    /// </summary>
-    Used = 2,
-
-    /// <summary>
-    /// 已过期
-    /// </summary>
-    Expired = 3,
-
-    /// <summary>
-    /// 已失效（被替换或取消）
-    /// </summary>
-    Invalid = 4
-}
-
-/// <summary>
-/// 来源类型
-/// </summary>
-public enum InventorySourceType
-{
-    /// <summary>
-    /// 商城购买
-    /// </summary>
-    Purchase = 1,
-
-    /// <summary>
-    /// 系统赠送
-    /// </summary>
-    SystemGift = 2,
-
-    /// <summary>
-    /// 活动奖励
-    /// </summary>
-    ActivityReward = 3,
-
-    /// <summary>
-    /// 管理员发放
-    /// </summary>
-    AdminGrant = 4,
-
-    /// <summary>
-    /// 升级奖励
-    /// </summary>
-    LevelUpReward = 5
+  "inventoryId": "2060964941900283904",
+  "quantity": 1,
+  "targetId": null,
+  "idempotencyKey": "inventory-use:550e8400-e29b-41d4-a716-446655440000"
 }
 ```
+
+改名卡正式入口：
+
+```http
+POST /api/v1/Shop/UseRenameCard
+```
+
+```json
+{
+  "inventoryId": "2060964941900283904",
+  "newDisplayName": "新的展示名",
+  "idempotencyKey": "inventory-use:550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+旧 query string 改名入口只保留迁移兼容，已从 API 文档隐藏，正式 Web 不再调用。
+
+## 5.7 使用幂等与事务
+
+一次用户意图只生成一个 `inventory-use:{uuid}`：
+
+- 同一键和同一请求返回第一次成功结果，并设置 `IsIdempotentReplay=true`。
+- 同一键绑定不同背包项、数量、目标或改名内容时返回冲突。
+- 请求摘要只保存新展示名的 SHA-256，不在幂等记录中保存敏感明文。
+- 处理中请求不会再次扣减。
+
+条件扣减、真实效果、`ShopEntitlementOperation` 和幂等终态在同一 Main 数据库事务内完成。任何效果失败都会回滚数量和操作流水。
+
+成功结果 `UseItemResultDto` 返回：
+
+- `OperationId`
+- `IsIdempotentReplay`
+- `RemainingQuantity`
+- `EffectDescription / EffectType / EffectValue`
+- `EffectResourceType / EffectResourceId / EffectResourceNo`
+
+经验和胡萝卜效果还会以 `OperationId` 形成下游业务防重键，服务重试不能重复发放。
+
+## 5.8 正式 Web 背包
+
+正式路径为 `/shop/inventory`：
+
+- 权益卡片展示 `Available / Active / Expired / Revoked`、来源、有效期和不可用原因。
+- 操作按钮完全消费 `VoCanActivate / VoCanDeactivate`。
+- 任一权益操作期间禁用重复点击，成功后刷新权益列表。
+- 消耗品确认弹层在同一用户意图内稳定复用幂等键；修改数量或改名内容后生成新键。
+- 成功后展示真实效果和剩余数量，只刷新背包及直接受影响的用户、经验或资产状态。
+
+WebOS `/desktop` 复用同一 API、类型和业务 Hook，只负责历史窗口导航。Flutter 当前只读展示权益和背包，不提供使用或启停动作。
+
+## 5.9 Console 排障
+
+Console 用户详情按权限展示：
+
+- `console.benefits.view`：持续权益、服务端状态、来源、有效期、撤销信息和通用操作流水。
+- `console.benefits.revoke`：带原因确认的高风险撤销动作。
+- 操作流水可按操作类型、权益类型和消耗品类型筛选。
+
+操作流水类型包括 `Use / Activate / Deactivate / Expire / Revoke`。Console 只提供受控业务动作，不提供直接编辑数量、`IsActive`、`IsExpired` 或 `RevokedAt` 的万能表单。
+
+## 5.10 数据库迁移
+
+相关 schema ledger：
+
+- `20260713_002_shop_entitlement_operation`：建立消耗品成功操作流水和使用幂等结果。
+- `20260713_003_user_active_benefit`：建立唯一选择表、撤销字段并扩展通用权益流水。
+- `20260714_001_shop_entitlement_operation_subject_nullability`：放宽 `InventoryId / ConsumableType / Quantity / ItemValue`，使非消耗品的启用、停用、过期和撤销流水不再受历史 `NOT NULL` 约束阻断。
+
+F1-C 迁移会从合法历史 `IsActive` 数据选择每种类型最近的有效记录；多激活、无效激活和无法判断的数据进入 doctor 报告。后续字段可空迁移对 SQLite 重建表并恢复索引 / trigger，对 PostgreSQL 精确移除目标列 `NOT NULL`；verify 同时检查可空性、必要索引、唯一指针归属、实时有效性和兼容镜像。
+
+禁止绕过 ledger 用运行时 Code First 修补正式 schema。
+
+## 5.11 排障顺序
+
+权益或背包异常时依次检查：
+
+1. 当前租户、用户和资源归属。
+2. 订单发放资源 ID 与来源订单唯一记录。
+3. `UserBenefit` 的生效、到期和撤销字段。
+4. `UserActiveBenefit` 是否指向同租户、同用户、同类型权益。
+5. `ShopEntitlementOperation` 是否已有相同业务事实。
+6. 使用幂等记录和效果资源流水是否一致。
+
+不要通过直接改布尔字段、删除流水或增加背包数量掩盖根因。
 
 ---
 
-## 5.2 权益发放服务
-
-### 5.2.1 权益发放入口
-
-```csharp
-public class InventoryService : IInventoryService
-{
-    /// <summary>
-    /// 根据订单发放权益
-    /// </summary>
-    public async Task<long> GrantAsync(Order order)
-    {
-        return order.ProductType switch
-        {
-            ProductType.Benefit => await GrantBenefitAsync(order),
-            ProductType.Consumable => await GrantConsumableAsync(order),
-            _ => throw new BusinessException($"不支持的商品类型：{order.ProductType}")
-        };
-    }
-}
-```
-
-### 5.2.2 发放权益类商品
-
-权益类商品由 `UserBenefitService.GrantBenefitAsync` 发放：
-
-- 先校验商品权益类型、有效期和数量配置。
-- 购买来源权益按订单维度去重；`TenantId + SourceOrderId` 是数据库唯一约束，重复发放同一订单时返回既有 `UserBenefit`。
-- 同类有效权益不再依赖“再查同类权益后叠加”作为订单发放真值；订单来源是购买链路追溯和重试保护的主键。
-- 新权益写入 `UserBenefit`，并记录 `SourceOrderId`、`SourceProductId` 与商品图标附件快照。
-- 订单记录保存发放后的 `UserBenefitId`，供订单详情与治理链路追溯。
-- 前端通过 `UserBenefitVo.VoSourceOrderId` / `VoSourceProductId` 展示来源回访入口。
-
-### 5.2.3 发放消耗品商品
-
-消耗品仍写入 `UserInventory`：
-
-- `UserInventory` 是用户当前持有数量的聚合行；`TenantId + UserId + ConsumableType + ItemValue` 是数据库唯一约束。
-- 每次订单发放先写 `UserInventoryGrantRecord`，`TenantId + SourceOrderId` 是数据库唯一约束；同一订单重复发放时返回既有发放记录对应的背包项，不再次增加数量。
-- 新消耗品记录持有名称、图标附件快照、效果参数、当前数量和商品来源；再次购买相同道具时更新聚合数量、名称 / 图标快照和最后来源商品。
-- 前端可通过 `UserInventoryVo.VoSourceProductId` 展示“相关商品”回访入口。
-- 当前 `UserInventory` 不承载统一订单来源；如果后续需要消耗品订单级追溯，应单独扩展契约与前端展示。
-
-### 5.2.4 发放与扣减可靠性
-
-当前商城购买是一次用户确认后的资产写入：订单、扣款、库存扣减和权益 / 背包发放必须在服务端最终保护重复提交和并发问题。
-
-已落地的运行时规则：
-
-- 权益类商品以 `UserBenefit.SourceOrderId` 作为订单级去重真值，同一订单重复发放不会创建第二条权益。
-- 消耗品类商品以 `UserInventoryGrantRecord.SourceOrderId` 作为订单级发放流水真值，`UserInventory` 只保存当前聚合数量。
-- 背包聚合行按 `TenantId + UserId + ConsumableType + ItemValue` 唯一；并发插入冲突时读取既有聚合行后继续发放流水与数量更新。
-- 道具使用通过 `TryDeductItemAsync` 条件更新扣减数量，条件包含用户、背包项、未删除和 `Quantity >= quantity`；扣减失败时返回数量不足，不先读后无条件写。
-- 订单购买的 `OperationIdempotencyRecord` 负责同一次购买请求的终态重放；权益 / 背包自身的唯一约束负责订单发放阶段的最终保护，两者不能互相替代。
-
----
-
-## 5.3 权益查询
-
-### 5.3.1 获取用户背包
-
-```csharp
-public async Task<UserInventoryVo> GetUserInventoryAsync(long userId)
-{
-    var items = await _inventoryRepository.QueryAsync(
-        i => i.UserId == userId &&
-             i.Status == InventoryStatus.Active &&
-             !i.IsDeleted
-    );
-
-    // 检查并更新过期状态
-    var now = DateTime.Now;
-    var expiredItems = items.Where(i =>
-        (i.ExpiresAt.HasValue && i.ExpiresAt < now) ||
-        (i.UseDeadline.HasValue && i.UseDeadline < now)
-    ).ToList();
-
-    foreach (var item in expiredItems)
-    {
-        item.Status = InventoryStatus.Expired;
-        item.UpdateTime = now;
-        await _inventoryRepository.UpdateAsync(item);
-    }
-
-    // 过滤掉刚过期的
-    items = items.Except(expiredItems).ToList();
-
-    return new UserInventoryVo
-    {
-        Benefits = items
-            .Where(i => i.ItemType == InventoryItemType.Benefit)
-            .Select(i => _mapper.Map<BenefitItemVo>(i))
-            .ToList(),
-        Consumables = items
-            .Where(i => i.ItemType == InventoryItemType.Consumable)
-            .Select(i => _mapper.Map<ConsumableItemVo>(i))
-            .ToList()
-    };
-}
-```
-
-### 5.3.2 检查用户是否拥有权益
-
-```csharp
-public async Task<bool> HasBenefitAsync(long userId, BenefitType benefitType)
-{
-    var benefit = await _inventoryRepository.QueryFirstAsync(
-        i => i.UserId == userId &&
-             i.ItemType == InventoryItemType.Benefit &&
-             i.BenefitType == benefitType &&
-             i.Status == InventoryStatus.Active &&
-             (i.ExpiresAt == null || i.ExpiresAt > DateTime.Now)
-    );
-
-    return benefit != null;
-}
-
-public async Task<BenefitItemVo?> GetActiveBenefitAsync(long userId, BenefitType benefitType)
-{
-    var benefit = await _inventoryRepository.QueryFirstAsync(
-        i => i.UserId == userId &&
-             i.ItemType == InventoryItemType.Benefit &&
-             i.BenefitType == benefitType &&
-             i.Status == InventoryStatus.Active &&
-             (i.ExpiresAt == null || i.ExpiresAt > DateTime.Now)
-    );
-
-    return benefit == null ? null : _mapper.Map<BenefitItemVo>(benefit);
-}
-```
-
----
-
-## 5.4 消耗品使用
-
-### 5.4.1 使用消耗品
-
-```csharp
-public async Task<UseConsumableResultVo> UseConsumableAsync(
-    long userId,
-    long inventoryId,
-    UseConsumableVo input)
-{
-    var item = await _inventoryRepository.QueryFirstAsync(
-        i => i.Id == inventoryId &&
-             i.UserId == userId &&
-             i.ItemType == InventoryItemType.Consumable &&
-             i.Status == InventoryStatus.Active
-    );
-
-    if (item == null)
-        throw new BusinessException("物品不存在或已使用");
-
-    if (item.UseDeadline.HasValue && item.UseDeadline < DateTime.Now)
-    {
-        item.Status = InventoryStatus.Expired;
-        await _inventoryRepository.UpdateAsync(item);
-        throw new BusinessException("物品已过期");
-    }
-
-    if (item.Quantity < 1)
-        throw new BusinessException("物品数量不足");
-
-    // 根据消耗品类型执行不同的效果
-    var result = await ExecuteConsumableEffectAsync(userId, item, input);
-
-    // 扣减数量
-    item.Quantity--;
-    item.UpdateTime = DateTime.Now;
-
-    if (item.Quantity <= 0)
-    {
-        item.Status = InventoryStatus.Used;
-        item.UsedTime = DateTime.Now;
-        item.UsedTarget = input.TargetId;
-        item.UsedRemark = input.Remark;
-    }
-
-    await _inventoryRepository.UpdateAsync(item);
-
-    Log.Information("用户 {UserId} 使用消耗品 {ConsumableType}，剩余 {Quantity}",
-        userId, item.ConsumableType, item.Quantity);
-
-    return result;
-}
-```
-
-### 5.4.2 执行消耗品效果
-
-```csharp
-private async Task<UseConsumableResultVo> ExecuteConsumableEffectAsync(
-    long userId,
-    UserInventory item,
-    UseConsumableVo input)
-{
-    var result = new UseConsumableResultVo { Success = true };
-
-    switch (item.ConsumableType)
-    {
-        case ConsumableType.RenameCard:
-            // 改名卡：修改用户昵称
-            if (string.IsNullOrEmpty(input.NewName))
-                throw new BusinessException("请输入新昵称");
-
-            await _userService.UpdateNicknameAsync(userId, input.NewName);
-            result.Message = $"昵称已修改为「{input.NewName}」";
-            break;
-
-        case ConsumableType.PostPinCard:
-            // 帖子置顶卡
-            if (!input.TargetId.HasValue)
-                throw new BusinessException("请选择要置顶的帖子");
-
-            var pinParams = ParseEffectParams<PostPinParams>(item.EffectParams);
-            await _postService.PinPostAsync(input.TargetId.Value, userId, pinParams.Hours);
-            result.Message = $"帖子已置顶 {pinParams.Hours} 小时";
-            break;
-
-        case ConsumableType.PostHighlightCard:
-            // 帖子高亮卡
-            if (!input.TargetId.HasValue)
-                throw new BusinessException("请选择要高亮的帖子");
-
-            var highlightParams = ParseEffectParams<PostHighlightParams>(item.EffectParams);
-            await _postService.HighlightPostAsync(input.TargetId.Value, userId, highlightParams.Hours);
-            result.Message = $"帖子已高亮 {highlightParams.Hours} 小时";
-            break;
-
-        case ConsumableType.ExpCard:
-            // 经验卡：立即获得经验值
-            var expParams = ParseEffectParams<ExpCardParams>(item.EffectParams);
-            await _experienceService.GrantExperienceAsync(
-                userId: userId,
-                amount: expParams.Exp,
-                expType: ExpType.ITEM_USE,
-                businessType: "ExpCard",
-                businessId: item.Id.ToString()
-            );
-            result.Message = $"获得 {expParams.Exp} 点经验值";
-            break;
-
-        case ConsumableType.CoinCard:
-            // 萝卜币红包
-            var coinParams = ParseEffectParams<CoinCardParams>(item.EffectParams);
-            await _coinService.GrantAsync(
-                userId: userId,
-                amount: coinParams.Coins,
-                reason: "使用萝卜币红包",
-                businessType: "CoinCard",
-                businessId: item.Id.ToString()
-            );
-            result.Message = $"获得 {coinParams.Coins} 萝卜币";
-            break;
-
-        case ConsumableType.DoubleExpCard:
-            // 双倍经验卡：创建临时权益
-            var doubleExpParams = ParseEffectParams<DoubleExpParams>(item.EffectParams);
-            await GrantTemporaryBenefitAsync(
-                userId: userId,
-                benefitType: BenefitType.ExpBoost,
-                effectParams: $"{{\"multiplier\": {doubleExpParams.Multiplier}}}",
-                hours: doubleExpParams.Hours,
-                sourceDescription: "使用双倍经验卡"
-            );
-            result.Message = $"双倍经验已激活，持续 {doubleExpParams.Hours} 小时";
-            break;
-
-        default:
-            throw new BusinessException($"不支持的消耗品类型：{item.ConsumableType}");
-    }
-
-    return result;
-}
-```
-
----
-
-## 5.5 权益过期处理
-
-### 5.5.1 过期检查定时任务
-
-```csharp
-public class InventoryExpirationJob : IJob
-{
-    public async Task Execute(IJobExecutionContext context)
-    {
-        var now = DateTime.Now;
-
-        // 查询即将过期的权益（24 小时内）
-        var expiringItems = await _inventoryRepository.QueryAsync(
-            i => i.Status == InventoryStatus.Active &&
-                 i.ExpiresAt != null &&
-                 i.ExpiresAt > now &&
-                 i.ExpiresAt <= now.AddHours(24)
-        );
-
-        // 发送到期提醒
-        foreach (var item in expiringItems)
-        {
-            await _notificationService.SendNotificationAsync(
-                userId: item.UserId,
-                type: NotificationType.System,
-                title: "权益即将到期",
-                content: $"您的「{item.ItemName}」将于 {item.ExpiresAt:MM-dd HH:mm} 到期",
-                relatedType: "Inventory",
-                relatedId: item.Id.ToString()
-            );
-        }
-
-        // 处理已过期的权益
-        var expiredItems = await _inventoryRepository.QueryAsync(
-            i => i.Status == InventoryStatus.Active &&
-                 ((i.ExpiresAt != null && i.ExpiresAt <= now) ||
-                  (i.UseDeadline != null && i.UseDeadline <= now))
-        );
-
-        foreach (var item in expiredItems)
-        {
-            item.Status = InventoryStatus.Expired;
-            item.UpdateTime = now;
-            await _inventoryRepository.UpdateAsync(item);
-
-            Log.Information("用户 {UserId} 的 {ItemName} 已过期", item.UserId, item.ItemName);
-        }
-    }
-}
-```
-
----
-
-## 5.6 装备系统
-
-### 5.6.1 装备/卸下物品
-
-```csharp
-/// <summary>
-/// 装备物品（徽章、头像框、称号等）
-/// </summary>
-public async Task<bool> EquipItemAsync(long userId, long inventoryId)
-{
-    var item = await _inventoryRepository.QueryFirstAsync(
-        i => i.Id == inventoryId &&
-             i.UserId == userId &&
-             i.Status == InventoryStatus.Active
-    );
-
-    if (item == null)
-        throw new BusinessException("物品不存在");
-
-    // 只有特定类型的权益可以装备
-    var equippableTypes = new[] {
-        BenefitType.Badge,
-        BenefitType.AvatarFrame,
-        BenefitType.Title,
-        BenefitType.Theme
-    };
-
-    if (item.ItemType != InventoryItemType.Benefit ||
-        !item.BenefitType.HasValue ||
-        !equippableTypes.Contains(item.BenefitType.Value))
-    {
-        throw new BusinessException("该物品不可装备");
-    }
-
-    // 卸下同类型的其他装备
-    var sameTypeItems = await _inventoryRepository.QueryAsync(
-        i => i.UserId == userId &&
-             i.BenefitType == item.BenefitType &&
-             i.IsEquipped &&
-             i.Id != inventoryId
-    );
-
-    foreach (var sameItem in sameTypeItems)
-    {
-        sameItem.IsEquipped = false;
-        sameItem.UpdateTime = DateTime.Now;
-        await _inventoryRepository.UpdateAsync(sameItem);
-    }
-
-    // 装备当前物品
-    item.IsEquipped = true;
-    item.UpdateTime = DateTime.Now;
-    await _inventoryRepository.UpdateAsync(item);
-
-    Log.Information("用户 {UserId} 装备了 {ItemName}", userId, item.ItemName);
-
-    return true;
-}
-
-/// <summary>
-/// 卸下物品
-/// </summary>
-public async Task<bool> UnequipItemAsync(long userId, long inventoryId)
-{
-    var item = await _inventoryRepository.QueryFirstAsync(
-        i => i.Id == inventoryId &&
-             i.UserId == userId &&
-             i.IsEquipped
-    );
-
-    if (item == null)
-        throw new BusinessException("物品未装备");
-
-    item.IsEquipped = false;
-    item.UpdateTime = DateTime.Now;
-    await _inventoryRepository.UpdateAsync(item);
-
-    Log.Information("用户 {UserId} 卸下了 {ItemName}", userId, item.ItemName);
-
-    return true;
-}
-```
-
-### 5.6.2 获取用户装备信息
-
-```csharp
-public async Task<UserEquipmentVo> GetUserEquipmentAsync(long userId)
-{
-    var equippedItems = await _inventoryRepository.QueryAsync(
-        i => i.UserId == userId &&
-             i.IsEquipped &&
-             i.Status == InventoryStatus.Active
-    );
-
-    return new UserEquipmentVo
-    {
-        Badge = equippedItems.FirstOrDefault(i => i.BenefitType == BenefitType.Badge),
-        AvatarFrame = equippedItems.FirstOrDefault(i => i.BenefitType == BenefitType.AvatarFrame),
-        Title = equippedItems.FirstOrDefault(i => i.BenefitType == BenefitType.Title),
-        Theme = equippedItems.FirstOrDefault(i => i.BenefitType == BenefitType.Theme)
-    };
-}
-```
-
----
-
-## 5.7 加成系统集成
-
-### 5.7.1 经验加成计算
-
-```csharp
-// 在 ExperienceService 中集成
-public async Task<int> CalculateExpWithBoostAsync(long userId, int baseExp)
-{
-    // 检查是否有经验加成权益
-    var expBoost = await _inventoryService.GetActiveBenefitAsync(userId, BenefitType.ExpBoost);
-    if (expBoost == null)
-    {
-        return baseExp;
-    }
-
-    var boostParams = ParseEffectParams<ExpBoostParams>(expBoost.EffectParams);
-    var boostedExp = (int)(baseExp * boostParams.Multiplier);
-
-    return boostedExp;
-}
-```
-
-### 5.7.2 萝卜币加成计算
-
-```csharp
-// 在 CoinService 中集成
-public async Task<int> CalculateCoinWithBoostAsync(long userId, int baseCoins)
-{
-    // 检查是否有萝卜币加成权益
-    var coinBoost = await _inventoryService.GetActiveBenefitAsync(userId, BenefitType.CoinBoost);
-    if (coinBoost == null)
-    {
-        return baseCoins;
-    }
-
-    var boostParams = ParseEffectParams<CoinBoostParams>(coinBoost.EffectParams);
-    var boostedCoins = (int)(baseCoins * boostParams.Multiplier);
-
-    return boostedCoins;
-}
-```
-
-### 5.7.3 加成权益叠加规则
-
-**多个加成同时生效**：
-- 加成效果取最高值，不累加
-- 按到期时间叠加时长
-- 示例：已有 1.5 倍经验加成（还剩 10 小时），再购买 1.2 倍经验加成（24 小时）
-  - 前 10 小时：使用 1.5 倍
-  - 后 24 小时：使用 1.2 倍
-
----
-
-> 下一篇：[6. 后端设计](/guide/shop-backend)
+> 下一篇：[6. 商城后端边界](/guide/shop-backend)

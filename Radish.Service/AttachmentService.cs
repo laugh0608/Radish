@@ -1,7 +1,9 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Radish.Common.AttributeTool;
 using Radish.Common.CoreTool;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
@@ -14,6 +16,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Serilog;
 
 namespace Radish.Service;
@@ -25,7 +28,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IFileStorage _fileStorage;
     private readonly IImageProcessor _imageProcessor;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
-    private readonly IAttachmentReferenceInspector _attachmentReferenceInspector;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
     private readonly FileStorageOptions _fileStorageOptions;
     private readonly string _tempPath;
 
@@ -35,7 +38,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
         IAttachmentUrlResolver attachmentUrlResolver,
-        IAttachmentReferenceInspector attachmentReferenceInspector,
+        IChatChannelAccessService chatChannelAccessService,
         IOptions<FileStorageOptions> fileStorageOptions)
         : base(mapper, baseRepository)
     {
@@ -43,7 +46,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         _fileStorage = fileStorage;
         _imageProcessor = imageProcessor;
         _attachmentUrlResolver = attachmentUrlResolver;
-        _attachmentReferenceInspector = attachmentReferenceInspector;
+        _chatChannelAccessService = chatChannelAccessService;
         _fileStorageOptions = fileStorageOptions.Value;
         _tempPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp");
 
@@ -64,20 +67,51 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         long uploaderId,
         string uploaderName)
     {
+        FileUploadResult? successfulUpload = null;
+        Dictionary<string, string>? generatedSizes = null;
+        var generatedPaths = new HashSet<string>(StringComparer.Ordinal);
+        var attachmentPersisted = false;
+
         try
         {
             var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+
+            if (!AttachmentBusinessTypes.TryNormalize(optionsDto.BusinessType, out var normalizedBusinessType))
+            {
+                throw new BusinessException(
+                    "不支持该附件业务类型",
+                    StatusCodes.Status400BadRequest,
+                    AttachmentErrorCodes.BusinessTypeUnsupported,
+                    AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.BusinessTypeUnsupported));
+            }
+
+            optionsDto.BusinessType = normalizedBusinessType;
 
             // 1. 基础校验
             if (file == null || file.Length == 0)
             {
                 Log.Warning("上传文件为空");
-                return null;
+                throw new BusinessException(
+                    "文件不能为空",
+                    StatusCodes.Status400BadRequest,
+                    AttachmentErrorCodes.FileEmpty,
+                    AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.FileEmpty));
             }
 
             var fileName = file.FileName;
             var extension = Path.GetExtension(fileName).ToLowerInvariant();
-            var contentType = file.ContentType;
+
+            if (!FileStoragePolicy.IsAllowedForBusinessType(
+                    _fileStorageOptions,
+                    extension,
+                    AttachmentBusinessTypes.RequiresImage(normalizedBusinessType)))
+            {
+                throw new BusinessException(
+                    "该附件业务类型不支持此文件格式",
+                    StatusCodes.Status415UnsupportedMediaType,
+                    AttachmentErrorCodes.UnsupportedMediaType,
+                    AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.UnsupportedMediaType));
+            }
 
             Log.Information("开始上传文件：{FileName}, 大小：{FileSize} bytes", fileName, file.Length);
 
@@ -93,15 +127,25 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 var hashBytes = await sha256.ComputeHashAsync(memoryStream);
                 fileHash = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
 
-                // 只有在没有特殊处理选项时才启用去重
-                // 如果用户指定了水印、多尺寸等处理，则不去重，允许上传新文件
-                var hasSpecialProcessing = optionsDto.AddWatermark || optionsDto.GenerateMultipleSizes;
+                // 当前附件记录没有持久化处理指纹。任何会改变原图或派生文件的处理都必须跳过去重，
+                // 避免返回缺少本次缩略图、尺寸、水印或 EXIF 清理语义的历史产物。
+                var hasSpecialProcessing = optionsDto.AddWatermark
+                                           || optionsDto.GenerateThumbnail
+                                           || optionsDto.GenerateMultipleSizes
+                                           || optionsDto.RemoveExif;
 
-                if (!hasSpecialProcessing)
+                if (_fileStorageOptions.Deduplication.Enable && !hasSpecialProcessing)
                 {
-                    // 检查是否已存在相同文件（去重）
+                    // 附件记录同时承载上传者与业务归属，只有完整归属一致时才可复用。
+                    // 已绑定到具体业务的数据不能作为下一次上传草稿返回，否则后续关联会篡改旧业务归属。
                     var existingAttachment = await _attachmentRepository.QueryFirstAsync(
-                        a => a.FileHash == fileHash && a.TenantId == normalizedTenantId && !a.IsDeleted
+                        a => a.FileHash == fileHash
+                             && a.TenantId == normalizedTenantId
+                             && a.UploaderId == uploaderId
+                             && a.BusinessType == normalizedBusinessType
+                             && a.BusinessId == null
+                             && a.IsEnabled
+                             && !a.IsDeleted
                     );
 
                     if (existingAttachment != null)
@@ -123,7 +167,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 }
                 else
                 {
-                    Log.Information("用户指定了特殊处理选项（水印/多尺寸），跳过去重检查");
+                    Log.Information(
+                        _fileStorageOptions.Deduplication.Enable
+                            ? "当前上传包含图片处理语义，跳过去重检查"
+                            : "文件去重已禁用，跳过去重检查");
                 }
             }
 
@@ -134,16 +181,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 uploadResult = await _fileStorage.UploadAsync(
                     stream,
                     fileName,
-                    contentType,
                     optionsDto
                 );
             }
 
             if (!uploadResult.Success)
             {
-                Log.Error("文件上传失败：{ErrorMessage}", uploadResult.ErrorMessage);
-                return null;
+                Log.Error("文件上传失败：{FailureKind}, {ErrorMessage}", uploadResult.FailureKind, uploadResult.ErrorMessage);
+                throw CreateUploadFailureException(uploadResult);
             }
+
+            successfulUpload = uploadResult;
 
             // 4. 如果是图片，添加水印（在其他处理之前）
             if (optionsDto.AddWatermark && IsImageFile(extension))
@@ -166,10 +214,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
 
             // 4.6. 如果是图片，生成多尺寸
-            Dictionary<string, string>? multipleSizes = null;
             if (optionsDto.GenerateMultipleSizes && IsImageFile(extension))
             {
-                multipleSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath);
+                generatedSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath, generatedPaths);
             }
 
             // 5. 如果是图片，移除 EXIF
@@ -179,42 +226,61 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
 
             // 6. 保存到数据库
-            var businessId = optionsDto.BusinessType == "Avatar" ? (long?)uploaderId : null;
-
             var attachment = new Attachment
             {
                 OriginalName = string.IsNullOrWhiteSpace(optionsDto.OriginalFileName) ? fileName : optionsDto.OriginalFileName,
                 StoredName = uploadResult.StoredName,
                 Extension = extension,
                 FileSize = uploadResult.FileSize,
-                MimeType = contentType,
+                MimeType = uploadResult.ContentType,
                 StorageType = "Local", // 当前只支持本地存储
                 StoragePath = uploadResult.StoragePath,
                 ThumbnailPath = uploadResult.ThumbnailPath,
-                SmallPath = multipleSizes?.GetValueOrDefault("small"),
-                MediumPath = multipleSizes?.GetValueOrDefault("medium"),
-                LargePath = multipleSizes?.GetValueOrDefault("large"),
+                SmallPath = generatedSizes?.GetValueOrDefault("small"),
+                MediumPath = generatedSizes?.GetValueOrDefault("medium"),
+                LargePath = generatedSizes?.GetValueOrDefault("large"),
                 FileHash = fileHash,
                 UploaderId = uploaderId,
                 UploaderName = uploaderName,
                 BusinessType = optionsDto.BusinessType,
-                BusinessId = businessId, // 头像文件关联到用户ID
+                // 上传只创建未绑定附件；业务归属必须由对应域服务在目标对象校验后设置。
+                BusinessId = null,
                 TenantId = normalizedTenantId,
-                IsPublic = true,
+                IsPublic = normalizedBusinessType != AttachmentBusinessTypes.Chat,
                 DownloadCount = 0
             };
 
             var attachmentId = await AddAsync(attachment);
+            if (attachmentId <= 0)
+            {
+                throw CreateProcessingFailedException();
+            }
+
             attachment.Id = attachmentId;
+            attachmentPersisted = true;
 
             Log.Information("文件上传成功：{AttachmentId}, 路径：{StoragePath}", attachmentId, uploadResult.StoragePath);
 
             return Mapper.Map<AttachmentVo>(attachment);
         }
+        catch (BusinessException)
+        {
+            if (!attachmentPersisted)
+            {
+                await CleanupFailedUploadAsync(successfulUpload, generatedPaths);
+            }
+
+            throw;
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "上传文件时发生异常：{FileName}", file?.FileName);
-            return null;
+            if (!attachmentPersisted)
+            {
+                await CleanupFailedUploadAsync(successfulUpload, generatedPaths);
+            }
+
+            throw;
         }
     }
 
@@ -306,25 +372,52 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         return Mapper.Map<List<AttachmentVo>>(attachments);
     }
 
-    /// <summary>
-    /// 根据文件哈希查找已存在的附件（去重）
-    /// </summary>
-    public async Task<AttachmentVo?> FindByHashAsync(string fileHash)
+    public async Task<AttachmentVo?> GetAccessibleByIdAsync(
+        long attachmentId,
+        long tenantId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null)
     {
-        if (string.IsNullOrWhiteSpace(fileHash))
+        if (attachmentId <= 0)
         {
             return null;
         }
 
-        var normalizedTenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+        var attachment = await _attachmentRepository.QueryFirstAsync(candidate =>
+            candidate.Id == attachmentId && candidate.IsEnabled && !candidate.IsDeleted);
+        if (attachment == null ||
+            !await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
+        {
+            return null;
+        }
 
-        var attachment = await _attachmentRepository.QueryFirstAsync(
-            a => a.FileHash == fileHash
-                 && a.TenantId == normalizedTenantId
-                 && !a.IsDeleted
-        );
+        return Mapper.Map<AttachmentVo>(attachment);
+    }
 
-        return attachment == null ? null : Mapper.Map<AttachmentVo>(attachment);
+    public async Task<List<AttachmentVo>> GetAccessibleByBusinessAsync(
+        string businessType,
+        long businessId,
+        long tenantId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null)
+    {
+        var normalizedTenantId = NormalizeTenantId(tenantId);
+        var attachments = await _attachmentRepository.QueryAsync(candidate =>
+            candidate.BusinessType == businessType &&
+            candidate.BusinessId == businessId &&
+            candidate.TenantId == normalizedTenantId &&
+            candidate.IsEnabled &&
+            !candidate.IsDeleted);
+        var accessibleAttachments = new List<Attachment>(attachments.Count);
+        foreach (var attachment in attachments)
+        {
+            if (await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
+            {
+                accessibleAttachments.Add(attachment);
+            }
+        }
+
+        return Mapper.Map<List<AttachmentVo>>(accessibleAttachments);
     }
 
     public async Task<AttachmentAssetDto?> GetAttachmentAssetAsync(long attachmentId)
@@ -374,7 +467,12 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             !attachment.IsDeleted);
 
         return attachments
-            .Where(attachment => attachment.BusinessId.HasValue)
+            .Where(attachment =>
+                attachment.BusinessId.HasValue &&
+                attachment.UploaderId == attachment.BusinessId.Value &&
+                FileStoragePolicy.IsImageExtension(_fileStorageOptions, attachment.Extension) &&
+                !string.IsNullOrWhiteSpace(attachment.MimeType) &&
+                attachment.MimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             .OrderByDescending(attachment => attachment.CreateTime)
             .ThenByDescending(attachment => attachment.Id)
             .GroupBy(attachment => attachment.BusinessId!.Value)
@@ -393,20 +491,97 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     #region Update
 
     /// <summary>
-    /// 更新附件的业务关联
+    /// 设置或清空当前用户头像。
     /// </summary>
-    public async Task<bool> UpdateBusinessAssociationAsync(long attachmentId, string businessType, long businessId)
+    [UseTran]
+    public async Task SetCurrentAvatarAsync(long attachmentId, long userId, string modifierName)
     {
-        var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
-        if (attachment == null)
+        if (userId <= 0)
         {
-            return false;
+            throw new ArgumentOutOfRangeException(nameof(userId), "用户标识必须有效。");
         }
 
-        attachment.BusinessType = businessType;
-        attachment.BusinessId = businessId;
+        if (attachmentId < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(attachmentId), "附件标识不能为负数。");
+        }
 
-        return await UpdateAsync(attachment);
+        var now = DateTime.UtcNow;
+        var normalizedModifierName = string.IsNullOrWhiteSpace(modifierName) ? "System" : modifierName.Trim();
+        var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+        if (attachmentId == 0)
+        {
+            await UpdateColumnsAsync(
+                attachment => new Attachment
+                {
+                    BusinessId = null,
+                    ModifyTime = now,
+                    ModifyBy = normalizedModifierName,
+                    ModifyId = userId
+                },
+                attachment => attachment.TenantId == tenantId &&
+                              attachment.BusinessType == AttachmentBusinessTypes.Avatar &&
+                              attachment.BusinessId == userId &&
+                              !attachment.IsDeleted);
+            return;
+        }
+
+        var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
+        if (attachment == null || attachment.TenantId != tenantId)
+        {
+            throw new BusinessException(
+                "附件不存在",
+                StatusCodes.Status404NotFound,
+                AttachmentErrorCodes.AttachmentNotFound,
+                AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.AttachmentNotFound));
+        }
+
+        if (attachment.UploaderId != userId)
+        {
+            throw new BusinessException(
+                "无权设置该附件为头像",
+                StatusCodes.Status403Forbidden,
+                AttachmentErrorCodes.UploadForbidden,
+                AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.UploadForbidden));
+        }
+
+        if (!attachment.IsEnabled ||
+            attachment.IsDeleted ||
+            attachment.BusinessType != AttachmentBusinessTypes.Avatar ||
+            !FileStoragePolicy.IsImageExtension(_fileStorageOptions, attachment.Extension) ||
+            string.IsNullOrWhiteSpace(attachment.MimeType) ||
+            !attachment.MimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new BusinessException(
+                "该附件不能设置为头像",
+                StatusCodes.Status415UnsupportedMediaType,
+                AttachmentErrorCodes.ImageTypeUnsupported,
+                AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.ImageTypeUnsupported));
+        }
+
+        await UpdateColumnsAsync(
+            candidate => new Attachment
+            {
+                BusinessId = null,
+                ModifyTime = now,
+                ModifyBy = normalizedModifierName,
+                ModifyId = userId
+            },
+            candidate => candidate.TenantId == tenantId &&
+                         candidate.BusinessType == AttachmentBusinessTypes.Avatar &&
+                         candidate.BusinessId == userId &&
+                         candidate.Id != attachmentId &&
+                         !candidate.IsDeleted);
+
+        attachment.BusinessId = userId;
+        attachment.ModifyTime = now;
+        attachment.ModifyBy = normalizedModifierName;
+        attachment.ModifyId = userId;
+
+        if (!await _attachmentRepository.UpdateAsync(attachment))
+        {
+            throw CreateProcessingFailedException();
+        }
     }
 
     /// <summary>
@@ -440,7 +615,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         long attachmentId,
         long? requestUserId = null,
         List<string>? requestUserRoles = null,
-        AttachmentUrlVariant variant = AttachmentUrlVariant.Original)
+        AttachmentUrlVariant variant = AttachmentUrlVariant.Original,
+        long? requestTenantId = null)
     {
         try
         {
@@ -451,27 +627,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 return (null, null);
             }
 
-            if ((attachment.IsDeleted || !attachment.IsEnabled) &&
-                !await TryRestoreReferencedAttachmentAsync(attachment))
+            if (attachment.IsDeleted || !attachment.IsEnabled)
             {
                 return (null, null);
             }
 
-            // 2. 检查权限（如果不是公开文件，需要权限检查）
-            if (!attachment.IsPublic)
+            // 2. Chat 资源始终按频道权限判定；其他非公开资源保留上传者与管理角色规则。
+            var tenantId = requestTenantId ?? App.CurrentUser.TenantId;
+            if (!await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
             {
-                // 权限规则：
-                // - 上传者本人可下载
-                // - Admin/System 角色可下载
-                // - 其他用户无权下载
-                var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
-                var isAdmin = UserRoleHelper.IsSystemOrAdmin(requestUserRoles);
-
-                if (!isUploader && !isAdmin)
-                {
-                    Log.Warning("用户 {UserId} 尝试下载非公开文件：{AttachmentId}（上传者：{UploaderId}）", requestUserId, attachmentId, attachment.UploaderId);
-                    return (null, null);
-                }
+                Log.Warning("用户 {UserId} 尝试访问无权限附件：{AttachmentId}（业务类型：{BusinessType}）", requestUserId, attachmentId, attachment.BusinessType);
+                return (null, null);
             }
 
             // 3. 获取文件流
@@ -493,6 +659,36 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             Log.Error(ex, "获取下载流时发生异常：{AttachmentId}", attachmentId);
             return (null, null);
         }
+    }
+
+    private async Task<bool> CanReadAttachmentAsync(
+        Attachment attachment,
+        long tenantId,
+        long? requestUserId,
+        List<string>? requestUserRoles)
+    {
+        var isUploader = requestUserId.HasValue && attachment.UploaderId == requestUserId.Value;
+        if (attachment.BusinessType == AttachmentBusinessTypes.Chat)
+        {
+            if (!attachment.BusinessId.HasValue)
+            {
+                return isUploader ||
+                       requestUserId.HasValue &&
+                       await _chatChannelAccessService.CanAccessChatAttachmentAsync(
+                           NormalizeTenantId(tenantId),
+                           requestUserId.Value,
+                           attachment.Id);
+            }
+
+            return requestUserId.HasValue &&
+                   await _chatChannelAccessService.CanAccessChatAttachmentAsync(
+                       NormalizeTenantId(tenantId),
+                       requestUserId.Value,
+                       attachment.Id,
+                       attachment.BusinessId.Value);
+        }
+
+        return attachment.IsPublic || isUploader || UserRoleHelper.IsSystemOrAdmin(requestUserRoles);
     }
 
     #endregion
@@ -519,41 +715,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         return attachment.StoragePath;
     }
 
-    private async Task<bool> TryRestoreReferencedAttachmentAsync(Attachment attachment)
-    {
-        if (attachment.Id <= 0)
-        {
-            return false;
-        }
-
-        if (!await _attachmentReferenceInspector.IsReferencedAsync(attachment.Id))
-        {
-            return false;
-        }
-
-        if (!await _fileStorage.ExistsAsync(attachment.StoragePath))
-        {
-            return false;
-        }
-
-        attachment.IsDeleted = false;
-        attachment.IsEnabled = true;
-        attachment.ModifyTime = DateTime.Now;
-        attachment.ModifyBy = "System";
-        attachment.ModifyId = 0;
-
-        var restored = await _attachmentRepository.UpdateAsync(attachment);
-        if (restored)
-        {
-            Log.Warning(
-                "检测到已被业务引用但状态异常的附件，已自动恢复：{AttachmentId}, 路径：{StoragePath}",
-                attachment.Id,
-                attachment.StoragePath);
-        }
-
-        return restored;
-    }
-
     private AttachmentAssetDto MapToAssetDto(Attachment attachment)
     {
         return new AttachmentAssetDto
@@ -577,7 +738,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     {
         if (string.IsNullOrWhiteSpace(thumbnailPath))
         {
-            return;
+            throw CreateProcessingFailedException();
         }
 
         try
@@ -597,11 +758,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             if (!result.Success)
             {
                 Log.Warning("缩略图生成失败：{ErrorMessage}", result.ErrorMessage);
+                throw CreateProcessingFailedException();
             }
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "生成缩略图时发生异常：{SourcePath}", sourcePath);
+            throw CreateProcessingFailedException(ex);
         }
     }
 
@@ -610,6 +777,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     private async Task AddWatermarkAsync(string filePath, string? watermarkText)
     {
+        string? tempPath = null;
         if (string.IsNullOrWhiteSpace(watermarkText))
         {
             watermarkText = "Radish";
@@ -620,7 +788,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var fullPath = _fileStorage.GetFullPath(filePath);
 
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
-            var tempPath = Path.Combine(_tempPath, tempFileName);
+            tempPath = Path.Combine(_tempPath, tempFileName);
 
             // 使用配置文件中的水印设置
             var watermarkConfig = _fileStorageOptions.Watermark?.Text ?? new TextWatermarkOptions();
@@ -665,17 +833,22 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 else
                 {
                     Log.Warning("水印添加失败：{ErrorMessage}", result.ErrorMessage);
-                    // 清理临时文件
-                    if (File.Exists(tempPath))
-                    {
-                        File.Delete(tempPath);
-                    }
+                    throw CreateProcessingFailedException();
                 }
             }
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "添加水印时发生异常：{FilePath}", filePath);
+            throw CreateProcessingFailedException(ex);
+        }
+        finally
+        {
+            DeletePhysicalFileIfExists(tempPath);
         }
     }
 
@@ -714,12 +887,13 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     private async Task RemoveExifAsync(string filePath)
     {
+        string? tempPath = null;
         try
         {
             var fullPath = _fileStorage.GetFullPath(filePath);
 
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
-            var tempPath = Path.Combine(_tempPath, tempFileName);
+            tempPath = Path.Combine(_tempPath, tempFileName);
 
             // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
             var fileBytes = await File.ReadAllBytesAsync(fullPath);
@@ -736,24 +910,31 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 }
                 else
                 {
-                    // 清理临时文件
-                    if (File.Exists(tempPath))
-                    {
-                        File.Delete(tempPath);
-                    }
+                    throw CreateProcessingFailedException();
                 }
             }
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "移除 EXIF 信息时发生异常：{FilePath}", filePath);
+            throw CreateProcessingFailedException(ex);
+        }
+        finally
+        {
+            DeletePhysicalFileIfExists(tempPath);
         }
     }
 
     /// <summary>
     /// 生成多尺寸图片
     /// </summary>
-    private async Task<Dictionary<string, string>> GenerateMultipleSizesAsync(string sourcePath)
+    private async Task<Dictionary<string, string>> GenerateMultipleSizesAsync(
+        string sourcePath,
+        ISet<string> generatedPaths)
     {
         var result = new Dictionary<string, string>();
 
@@ -772,6 +953,15 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 new() { Name = "large", Width = 1200, Height = 900, KeepAspectRatio = true, Quality = 85 }
             };
 
+            var sourceDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
+            foreach (var size in sizes)
+            {
+                generatedPaths.Add(Path.Combine(
+                        sourceDirectory,
+                        $"{Path.GetFileNameWithoutExtension(sourcePath)}_{size.Name}{Path.GetExtension(sourcePath)}")
+                    .Replace('\\', '/'));
+            }
+
             await using var sourceStream = File.OpenRead(sourceFullPath);
             // 注意：baseOutputPath 应该包含扩展名，这样 ImageProcessor 才能正确识别格式
             var baseOutputPath = Path.Combine(directory ?? "", fileNameWithoutExt + extension);
@@ -782,9 +972,23 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 sizes
             );
 
+            if (results.Count != sizes.Count || results.Any(sizeResult => !sizeResult.Success))
+            {
+                Log.Warning(
+                    "多尺寸图片生成失败：{SuccessCount}/{ExpectedCount}",
+                    results.Count(sizeResult => sizeResult.Success),
+                    sizes.Count);
+                foreach (var sizeResult in results)
+                {
+                    DeletePhysicalFileIfExists(sizeResult.OutputPath);
+                }
+
+                throw CreateProcessingFailedException();
+            }
+
             // 转换为相对路径
             var sourceRelativePath = sourcePath;
-            foreach (var sizeResult in results.Where(r => r.Success))
+            foreach (var sizeResult in results)
             {
                 var sizeName = Path.GetFileNameWithoutExtension(sizeResult.OutputPath)
                     .Replace(fileNameWithoutExt + "_", "");
@@ -804,12 +1008,130 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 Log.Information("生成 {SizeName} 尺寸成功：{Path}", sizeName, finalRelativePath);
             }
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             Log.Error(ex, "生成多尺寸图片时发生异常：{SourcePath}", sourcePath);
+            throw CreateProcessingFailedException(ex);
         }
 
         return result;
+    }
+
+    private async Task CleanupFailedUploadAsync(
+        FileUploadResult? uploadResult,
+        IReadOnlyCollection<string> generatedPaths)
+    {
+        if (uploadResult == null)
+        {
+            return;
+        }
+
+        var paths = new[]
+            {
+                uploadResult.StoragePath,
+                uploadResult.ThumbnailPath
+            }
+            .Concat(generatedPaths)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var path in paths)
+        {
+            try
+            {
+                var deleted = await _fileStorage.DeleteAsync(path!);
+                if (!deleted && await _fileStorage.ExistsAsync(path!))
+                {
+                    Log.Warning("失败上传文件未能清理：{StoragePath}", path);
+                }
+            }
+            catch (Exception cleanupException)
+            {
+                Log.Warning(
+                    cleanupException,
+                    "清理失败上传文件时发生异常：{StoragePath}",
+                    path);
+            }
+        }
+    }
+
+    private static void DeletePhysicalFileIfExists(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            File.Delete(path);
+        }
+        catch (Exception exception)
+        {
+            Log.Warning(exception, "清理图片处理临时文件失败：{Path}", path);
+        }
+    }
+
+    private static BusinessException CreateUploadFailureException(FileUploadResult uploadResult)
+    {
+        var (statusCode, errorCode, message) = uploadResult.FailureKind switch
+        {
+            FileUploadFailureKind.FileTooLarge => (
+                StatusCodes.Status413PayloadTooLarge,
+                AttachmentErrorCodes.FileTooLarge,
+                uploadResult.ErrorMessage ?? "文件大小超过限制"),
+            FileUploadFailureKind.InvalidBusinessType => (
+                StatusCodes.Status400BadRequest,
+                AttachmentErrorCodes.BusinessTypeUnsupported,
+                "不支持该附件业务类型"),
+            FileUploadFailureKind.UnsupportedType => (
+                StatusCodes.Status415UnsupportedMediaType,
+                AttachmentErrorCodes.UnsupportedMediaType,
+                uploadResult.ErrorMessage ?? "不支持该文件类型"),
+            FileUploadFailureKind.ContentMismatch => (
+                StatusCodes.Status415UnsupportedMediaType,
+                AttachmentErrorCodes.ContentMismatch,
+                uploadResult.ErrorMessage ?? "文件内容与扩展名不匹配"),
+            FileUploadFailureKind.StorageFailed => (
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.StorageFailed,
+                "文件存储失败，请稍后重试"),
+            _ => (
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.StorageFailed,
+                "文件存储失败，请稍后重试")
+        };
+
+        return new BusinessException(
+            message,
+            statusCode,
+            errorCode,
+            AttachmentErrorCodes.ResolveMessageKey(errorCode),
+            uploadResult.MessageArguments);
+    }
+
+    private static BusinessException CreateProcessingFailedException(Exception? innerException = null)
+    {
+        const string message = "文件处理失败，请稍后重试";
+        var messageKey = AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.ProcessingFailed);
+
+        return innerException == null
+            ? new BusinessException(
+                message,
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.ProcessingFailed,
+                messageKey)
+            : new BusinessException(
+                message,
+                innerException,
+                StatusCodes.Status500InternalServerError,
+                AttachmentErrorCodes.ProcessingFailed,
+                messageKey);
     }
 
     #endregion

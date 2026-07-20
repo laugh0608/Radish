@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Model.ViewModels;
@@ -73,28 +74,60 @@ public class UserBenefitVo
     /// <summary>是否激活使用中</summary>
     public bool VoIsActive { get; set; }
 
-    /// <summary>有效期显示文本</summary>
-    public string VoDurationDisplay
+    /// <summary>服务端按 UTC 计算的当前状态。</summary>
+    public UserBenefitStatus VoStatus { get; set; }
+
+    /// <summary>当前状态显示名称。</summary>
+    public string VoStatusDisplay => VoStatus switch
     {
-        get
-        {
-            if (VoDurationType == DurationType.Permanent)
-                return "永久";
-            if (VoExpiresAt == null)
-                return "未知";
-            if (VoIsExpired)
-                return "已过期";
-            var remaining = VoExpiresAt.Value - DateTime.Now;
-            if (remaining.TotalDays > 1)
-                return $"剩余 {(int)remaining.TotalDays} 天";
-            if (remaining.TotalHours > 1)
-                return $"剩余 {(int)remaining.TotalHours} 小时";
-            return "即将过期";
-        }
-    }
+        UserBenefitStatus.Available => "可用",
+        UserBenefitStatus.Active => "使用中",
+        UserBenefitStatus.Expired => "已过期",
+        UserBenefitStatus.Revoked => "已撤销",
+        _ => "未知"
+    };
+
+    /// <summary>当前是否允许用户选择该权益。</summary>
+    public bool VoCanActivate { get; set; }
+
+    /// <summary>当前是否允许用户停用该权益。</summary>
+    public bool VoCanDeactivate { get; set; }
+
+    /// <summary>当前不可操作原因。</summary>
+    public string? VoUnavailableReason { get; set; }
+
+    /// <summary>撤销时间。</summary>
+    public DateTime? VoRevokedAt { get; set; }
+
+    /// <summary>撤销操作者名称。</summary>
+    public string? VoRevokedByName { get; set; }
+
+    /// <summary>撤销原因。</summary>
+    public string? VoRevocationReason { get; set; }
+
+    /// <summary>有效期显示文本</summary>
+    public string VoDurationDisplay { get; set; } = string.Empty;
 
     /// <summary>创建时间</summary>
     public DateTime VoCreateTime { get; set; }
+}
+
+/// <summary>用户权益选择、停用、过期或撤销的结构化结果。</summary>
+public sealed class UserBenefitActionResultVo
+{
+    public bool VoChanged { get; set; }
+
+    public string VoAction { get; set; } = string.Empty;
+
+    public long VoBenefitId { get; set; }
+
+    public BenefitType VoBenefitType { get; set; }
+
+    public UserBenefitStatus VoStatus { get; set; }
+
+    public long? VoCurrentBenefitId { get; set; }
+
+    public UserBenefitVo? VoCurrentBenefit { get; set; }
 }
 
 /// <summary>用户背包项视图模型</summary>
@@ -165,6 +198,27 @@ public class UseItemDto
     /// - 其他：可空
     /// </remarks>
     public long? TargetId { get; set; }
+
+    /// <summary>客户端为本次用户动作生成的幂等键。</summary>
+    [Required(ErrorMessage = "幂等键不能为空")]
+    [StringLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string IdempotencyKey { get; set; } = string.Empty;
+}
+
+/// <summary>使用改名卡 DTO。</summary>
+public class UseRenameCardDto
+{
+    /// <summary>背包项 ID。</summary>
+    public long InventoryId { get; set; }
+
+    /// <summary>新的公开展示名。</summary>
+    [Required(ErrorMessage = "新展示名不能为空")]
+    public string NewDisplayName { get; set; } = string.Empty;
+
+    /// <summary>客户端为本次用户动作生成的幂等键。</summary>
+    [Required(ErrorMessage = "幂等键不能为空")]
+    [StringLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string IdempotencyKey { get; set; } = string.Empty;
 }
 
 /// <summary>使用道具结果 DTO</summary>
@@ -172,6 +226,12 @@ public class UseItemResultDto
 {
     /// <summary>是否成功</summary>
     public bool Success { get; set; }
+
+    /// <summary>本次业务操作流水 ID。</summary>
+    public long? OperationId { get; set; }
+
+    /// <summary>是否为既有成功结果的幂等回放。</summary>
+    public bool IsIdempotentReplay { get; set; }
 
     /// <summary>错误信息</summary>
     public string? ErrorMessage { get; set; }
@@ -182,4 +242,79 @@ public class UseItemResultDto
     /// <summary>效果描述</summary>
     /// <remarks>如"获得 100 经验值"、"帖子已置顶 24 小时"</remarks>
     public string? EffectDescription { get; set; }
+
+    /// <summary>效果类型。</summary>
+    public string? EffectType { get; set; }
+
+    /// <summary>效果值。</summary>
+    public string? EffectValue { get; set; }
+
+    /// <summary>效果资源类型。</summary>
+    public string? EffectResourceType { get; set; }
+
+    /// <summary>效果资源 ID。</summary>
+    public long? EffectResourceId { get; set; }
+
+    /// <summary>效果资源编号。</summary>
+    public string? EffectResourceNo { get; set; }
+}
+
+/// <summary>商城权益操作流水视图模型。</summary>
+public sealed class ShopEntitlementOperationVo
+{
+    public long VoId { get; set; }
+
+    public long VoUserId { get; set; }
+
+    public long? VoInventoryId { get; set; }
+
+    public long? VoBenefitId { get; set; }
+
+    public long? VoRelatedBenefitId { get; set; }
+
+    public string VoOperationType { get; set; } = string.Empty;
+
+    public ConsumableType? VoConsumableType { get; set; }
+
+    public string? VoConsumableTypeDisplay => VoConsumableType switch
+    {
+        ConsumableType.RenameCard => "改名卡",
+        ConsumableType.ExpCard => "经验卡",
+        ConsumableType.CoinCard => "萝卜币红包",
+        null => null,
+        _ => VoConsumableType.ToString()
+    };
+
+    public BenefitType? VoBenefitType { get; set; }
+
+    public string? VoBenefitTypeDisplay => VoBenefitType switch
+    {
+        BenefitType.Badge => "徽章",
+        BenefitType.AvatarFrame => "头像框",
+        BenefitType.Title => "称号",
+        BenefitType.Theme => "主题",
+        BenefitType.Signature => "签名档",
+        BenefitType.NameColor => "用户名颜色",
+        BenefitType.LikeEffect => "点赞特效",
+        null => null,
+        _ => VoBenefitType.ToString()
+    };
+
+    public int? VoQuantity { get; set; }
+
+    public string? VoReason { get; set; }
+
+    public string VoEffectType { get; set; } = string.Empty;
+
+    public string? VoEffectValue { get; set; }
+
+    public string? VoEffectResourceType { get; set; }
+
+    public long? VoEffectResourceId { get; set; }
+
+    public string? VoEffectResourceNo { get; set; }
+
+    public DateTime VoCreateTime { get; set; }
+
+    public string VoCreateBy { get; set; } = string.Empty;
 }

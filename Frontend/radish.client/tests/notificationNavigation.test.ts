@@ -1,333 +1,95 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import type { NotificationTargetKind, NotificationTargetVo } from '@radish/http';
 import { resolveWebNotificationNavigation } from '../src/utils/notificationNavigation.ts';
-import {
-  buildNotificationActionGroups,
-  getNotificationActionScope,
-  getNotificationTargetHintKey,
-  resolveNotificationPreview,
-  toNotificationStoreItem,
-} from '../src/notifications/notificationActionQueue.ts';
 
 const postPublicId = 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f';
-const postId = '2042219067430928384';
-const commentId = '2042219067430928385';
-const userId = '2042219067430928386';
-const orderId = '2042219067430928387';
 const notificationsSourceState = {
   app: 'notifications',
   route: { kind: 'index' },
 } as const;
 
-test('resolveWebNotificationNavigation 应将论坛通知优先导向公开帖子详情', () => {
-  assert.deepEqual(
-    resolveWebNotificationNavigation({
-      extData: JSON.stringify({
-        app: 'forum',
-        postPublicId,
-        commentId,
-      }),
-    }),
-    {
-      surface: 'web',
-      href: `/forum/post/${postPublicId}?commentId=${commentId}`,
-      sourceState: {
-        forumDetailSourceRoute: notificationsSourceState,
-      },
-    },
-  );
+function target(kind: NotificationTargetKind, fields: Partial<NotificationTargetVo> = {}): NotificationTargetVo {
+  return {
+    voKind: kind,
+    voPostId: null,
+    voPostPublicId: null,
+    voCommentId: null,
+    voChannelId: null,
+    voMessageId: null,
+    voUserId: null,
+    voUserPublicId: null,
+    voOrderId: null,
+    voBenefitId: null,
+    voDocumentSlug: null,
+    voGovernanceCaseId: null,
+    voUnavailableReason: null,
+    ...fields,
+  };
+}
 
+test('结构化论坛 target 优先使用公开 ID，并保留评论锚点来源', () => {
   assert.deepEqual(
-    resolveWebNotificationNavigation({
-      businessType: 'Post',
-      businessId: postId,
-    }),
+    resolveWebNotificationNavigation(target('ForumPost', {
+      voPostId: '2042219067430928384',
+      voPostPublicId: postPublicId,
+      voCommentId: '2042219067430928385',
+    })),
     {
       surface: 'web',
-      href: `/forum/post/${postId}`,
-      sourceState: {
-        forumDetailSourceRoute: notificationsSourceState,
-      },
-    },
-  );
-});
-
-test('resolveWebNotificationNavigation 应将公开个人页和正式 Web 私有目标分流', () => {
-  assert.deepEqual(
-    resolveWebNotificationNavigation({
-      type: 'follow',
-      triggerId: userId,
-    }),
-    {
-      surface: 'web',
-      href: `/u/${userId}`,
-      sourceState: {
-        profileSourceRoute: notificationsSourceState,
-      },
-    },
-  );
-
-  assert.deepEqual(
-    resolveWebNotificationNavigation({
-      businessType: 'Order',
-      businessId: orderId,
-    }),
-    {
-      surface: 'web',
-      href: `/shop/order/${orderId}`,
-    },
-  );
-
-  assert.deepEqual(
-    resolveWebNotificationNavigation({
-      businessType: 'Order',
-      businessId: '0',
-    }),
-    {
-      surface: 'web',
-      href: '/shop/orders',
-    },
-  );
-
-  assert.deepEqual(
-    resolveWebNotificationNavigation({
-      extData: JSON.stringify({
-        app: 'chat',
-        channelId: '2042219067430928390',
-        messageId: '2042219067430928391',
-      }),
-    }),
-    {
-      surface: 'web',
-      href: '/messages?channelId=2042219067430928390&messageId=2042219067430928391',
+      href: `/forum/post/${postPublicId}?commentId=2042219067430928385`,
+      sourceState: { forumDetailSourceRoute: notificationsSourceState },
     },
   );
 });
 
-test('resolveWebNotificationNavigation 应为弱上下文互动通知回到论坛，并拒绝无效目标', () => {
+test('结构化聊天、用户、订单、库存、成长和文档 target 使用正式路由', () => {
   assert.deepEqual(
-    resolveWebNotificationNavigation({
-      businessType: 'Comment',
-      businessId: commentId,
-    }),
+    resolveWebNotificationNavigation(target('ChatConversation', {
+      voChannelId: '2042219067430928390',
+      voMessageId: '2042219067430928391',
+    })),
+    { surface: 'web', href: '/messages?channelId=2042219067430928390&messageId=2042219067430928391' },
+  );
+  assert.deepEqual(
+    resolveWebNotificationNavigation(target('UserProfile', { voUserPublicId: 'usr_public' })),
     {
       surface: 'web',
-      href: '/forum',
+      href: '/u/usr_public',
+      sourceState: { profileSourceRoute: notificationsSourceState },
     },
   );
-
   assert.deepEqual(
-    resolveWebNotificationNavigation({
-      type: 'mention',
-    }),
-    {
-      surface: 'web',
-      href: '/forum',
-    },
+    resolveWebNotificationNavigation(target('ShopOrder', { voOrderId: '2042219067430928392' })),
+    { surface: 'web', href: '/shop/order/2042219067430928392' },
   );
-
-  assert.equal(
-    resolveWebNotificationNavigation({
-      businessType: 'Post',
-      businessId: '0',
-    }),
-    null,
-  );
-});
-
-test('notificationActionQueue 应按社区复访场景归类通知', () => {
-  const messageTarget = resolveWebNotificationNavigation({
-    extData: JSON.stringify({
-      app: 'chat',
-      channelId: '2042219067430928390',
-      messageId: '2042219067430928391',
-    }),
+  assert.deepEqual(resolveWebNotificationNavigation(target('Inventory')), {
+    surface: 'web', href: '/shop/inventory',
   });
-  assert.equal(
-    getNotificationActionScope({
-      id: '1',
-      type: 'system',
-      title: '新的频道消息',
-      content: '你收到一条聊天消息',
-      businessType: 'ChannelMessage',
-      businessId: '2042219067430928391',
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }, messageTarget),
-    'messages',
-  );
-
-  assert.equal(
-    getNotificationActionScope({
-      id: '2',
-      type: 'system',
-      title: '宠物状态变化',
-      content: '宠物照护已完成',
-      businessType: 'PetCare',
-      businessId: '2042219067430928392',
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }, null),
-    'pet',
-  );
-
-  assert.equal(
-    getNotificationActionScope({
-      id: '3',
-      type: 'system',
-      title: '举报审核结果',
-      content: '你的举报已完成治理审核',
-      businessType: 'ModerationReport',
-      businessId: '2042219067430928393',
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }, null),
-    'governance',
-  );
-});
-
-test('notificationActionQueue 应区分帖子动态和问答通知', () => {
-  const postTarget = resolveWebNotificationNavigation({
-    businessType: 'Post',
-    businessId: postId,
+  assert.deepEqual(resolveWebNotificationNavigation(target('Experience')), {
+    surface: 'web', href: '/me/experience',
   });
-
-  assert.equal(
-    getNotificationActionScope({
-      id: '4',
-      type: 'system',
-      title: '帖子有新动态',
-      content: '你的主题已发布到社区',
-      businessType: 'Post',
-      businessId: postId,
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }, postTarget),
-    'posts',
-  );
-
-  assert.equal(
-    getNotificationActionScope({
-      id: '5',
-      type: 'system',
-      title: '回答被采纳',
-      content: '你的问答回复已被采纳',
-      businessType: 'PostAnswer',
-      businessId: commentId,
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }, null),
-    'answers',
+  assert.deepEqual(
+    resolveWebNotificationNavigation(target('DocsDocument', { voDocumentSlug: 'notification-center' })),
+    { surface: 'web', href: '/docs/notification-center' },
   );
 });
 
-test('notificationActionQueue 应按动作域生成可处理队列分组', () => {
-  const previews = [
-    resolveNotificationPreview({
-      id: '10',
-      type: 'reply',
-      title: '有人回复了你',
-      content: '新的社区评论',
-      businessType: 'Comment',
-      businessId: commentId,
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }),
-    resolveNotificationPreview({
-      id: '11',
-      type: 'system',
-      title: '新的频道消息',
-      content: '你收到一条聊天消息',
-      businessType: 'ChannelMessage',
-      businessId: '2042219067430928391',
-      extData: JSON.stringify({
-        app: 'chat',
-        channelId: '2042219067430928390',
-        messageId: '2042219067430928391',
-      }),
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }),
-    resolveNotificationPreview({
-      id: '12',
-      type: 'system',
-      title: '举报审核结果',
-      content: '你的举报已完成治理审核',
-      businessType: 'ModerationReport',
-      businessId: '0',
-      extData: null,
-      isRead: false,
-      createdAt: '2026-07-05T12:00:00Z',
-    }),
-    resolveNotificationPreview({
-      id: '13',
-      type: 'system',
-      title: '订单完成',
-      content: '订单已完成',
-      businessType: 'Order',
-      businessId: orderId,
-      extData: null,
-      isRead: true,
-      createdAt: '2026-07-05T12:00:00Z',
-    }),
-  ];
-
-  const groups = buildNotificationActionGroups(previews);
-  assert.deepEqual(groups.map((group) => group.scope), ['comments', 'messages', 'governance', 'orders']);
-
-  const governanceGroup = groups.find((group) => group.scope === 'governance');
-  assert.ok(governanceGroup);
-  assert.equal(governanceGroup.totalCount, 1);
-  assert.equal(governanceGroup.manualCount, 1);
-  assert.equal(governanceGroup.routedCount, 0);
-  const governanceItem = governanceGroup.items[0];
-  assert.ok(governanceItem);
-  assert.equal(
-    getNotificationTargetHintKey(governanceItem, governanceItem.target),
-    'notification.web.targetMissing.governance',
-  );
-
-  const orderGroup = groups.find((group) => group.scope === 'orders');
-  assert.ok(orderGroup);
-  assert.equal(orderGroup.routedCount, 1);
-});
-
-test('notificationActionQueue 应把后端通知 VO 映射为可回跳预览', () => {
-  const storeItem = toNotificationStoreItem({
-    voId: '2042219067430928400',
-    voUserId: userId,
-    voNotificationId: '2042219067430928401',
-    voIsRead: false,
-    voReadAt: null,
-    voDeliveryStatus: 'Delivered',
-    voDeliveredAt: '2026-07-05T12:00:00Z',
-    voCreateTime: '2026-07-05T12:00:00Z',
-    voNotification: {
-      voId: '2042219067430928401',
-      voType: 'Followed',
-      voPriority: 1,
-      voTitle: '新的关注',
-      voContent: '有人关注了你',
-      voBusinessType: 'User',
-      voBusinessId: userId,
-      voTriggerId: userId,
-      voTriggerName: 'Radish User',
-      voTriggerAvatar: null,
-      voExtData: null,
-      voCreateTime: '2026-07-05T12:00:00Z',
+test('治理 target 只使用结构化 case id 并带通知返回路径', () => {
+  assert.deepEqual(
+    resolveWebNotificationNavigation(target('GovernanceCase', { voGovernanceCaseId: '2042219067430928393' })),
+    {
+      surface: 'console',
+      href: '/console/moderation?sourceReportId=2042219067430928393&backTo=%2Fnotifications',
     },
-  });
+  );
+});
 
-  assert.ok(storeItem);
-  assert.equal(storeItem.type, 'follow');
-
-  const preview = resolveNotificationPreview(storeItem);
-  assert.equal(preview.target?.href, `/u/${userId}`);
-  assert.equal(getNotificationActionScope(preview, preview.target), 'follow');
+test('无效 target 不回退到泛化页面，也不从内容猜测', () => {
+  assert.equal(resolveWebNotificationNavigation(target('None')), null);
+  assert.equal(resolveWebNotificationNavigation(target('ForumPost', { voPostId: '0' })), null);
+  assert.equal(resolveWebNotificationNavigation(target('ChatConversation')), null);
+  assert.equal(resolveWebNotificationNavigation(target('ShopOrder')), null);
+  assert.equal(resolveWebNotificationNavigation(target('DocsDocument', { voDocumentSlug: ' ' })), null);
+  assert.equal(resolveWebNotificationNavigation(target('GovernanceCase', { voGovernanceCaseId: 'bad' })), null);
 });

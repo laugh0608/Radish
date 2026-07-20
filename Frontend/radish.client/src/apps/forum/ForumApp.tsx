@@ -140,9 +140,11 @@ export const ForumApp = () => {
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const [commentTypingUserNames, setCommentTypingUserNames] = useState<string[]>([]);
+  const [isDetailAnswerEditorUploading, setIsDetailAnswerEditorUploading] = useState(false);
   const searchRequestIdRef = useRef(0);
   const commentTypingUsersRef = useRef(new Map<string, string>());
   const commentTypingTimersRef = useRef(new Map<string, number>());
+  const detailAnswerEditorUploadingRef = useRef(false);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
   const windowParams = parseForumWindowParams(currentWindow?.appParams);
@@ -370,6 +372,17 @@ export const ForumApp = () => {
     resetCommentSort: dataState.resetCommentSort
   });
   const { handleSelectPost } = actionsState;
+  const handleDetailAnswerEditorUploadingChange = useCallback((uploading: boolean) => {
+    detailAnswerEditorUploadingRef.current = uploading;
+    setIsDetailAnswerEditorUploading(uploading);
+  }, []);
+  const handleSelectPostWhileAnswerEditorIdle = useCallback((postId: LongId) => {
+    if (detailAnswerEditorUploadingRef.current) {
+      return Promise.resolve(null);
+    }
+
+    return handleSelectPost(postId);
+  }, [handleSelectPost]);
 
   useEffect(() => {
     const postId = selectedPost?.voId;
@@ -541,6 +554,10 @@ export const ForumApp = () => {
       return;
     }
 
+    if (isDetailAnswerEditorUploading) {
+      return;
+    }
+
     const routeSignature = `${windowPostIdentifier}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}`;
     if (handledWindowRouteRef.current === routeSignature) {
       return;
@@ -561,7 +578,7 @@ export const ForumApp = () => {
       setCommentNavigationTarget(null);
       setCommentNavigationNotice(null);
 
-      const post = await handleSelectPost(windowPostIdentifier);
+      const post = await handleSelectPostWhileAnswerEditorIdle(windowPostIdentifier);
       if (cancelled || !windowParams.commentId) {
         return;
       }
@@ -588,7 +605,8 @@ export const ForumApp = () => {
       cancelled = true;
     };
   }, [
-    handleSelectPost,
+    handleSelectPostWhileAnswerEditorIdle,
+    isDetailAnswerEditorUploading,
     windowParams.commentId,
     windowParams.navigationKey,
     windowPostIdentifier,
@@ -693,7 +711,7 @@ export const ForumApp = () => {
 
     let cancelled = false;
     setFollowLoading(true);
-    void getFollowStatus(selectedPost.voAuthorId)
+    void getFollowStatus(selectedPost.voAuthorId, t)
       .then((status) => {
         if (!cancelled) {
           setFollowStatus(status);
@@ -719,7 +737,8 @@ export const ForumApp = () => {
     loggedIn,
     userId,
     selectedPost,
-    setDataError
+    setDataError,
+    t,
   ]);
 
   const handleToggleFollow = async (targetUserId: LongId, isFollowing: boolean) => {
@@ -732,8 +751,8 @@ export const ForumApp = () => {
     dataState.setError(null);
     try {
       const status = isFollowing
-        ? await unfollowUser(targetUserId)
-        : await followUser(targetUserId);
+        ? await unfollowUser(targetUserId, t)
+        : await followUser(targetUserId, t);
       setFollowStatus(status);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -779,6 +798,10 @@ export const ForumApp = () => {
   };
 
   const handleShowAllPosts = () => {
+    if (detailAnswerEditorUploadingRef.current) {
+      return;
+    }
+
     setIsSearchView(false);
     setCommentNavigationTarget(null);
     setCommentNavigationNotice(null);
@@ -810,6 +833,10 @@ export const ForumApp = () => {
   };
 
   const handleOpenSearchView = (keyword: string) => {
+    if (detailAnswerEditorUploadingRef.current) {
+      return;
+    }
+
     const normalizedKeyword = keyword.trim();
     setCommentNavigationTarget(null);
     setCommentNavigationNotice(null);
@@ -826,6 +853,32 @@ export const ForumApp = () => {
     setIsSearchView(true);
   };
 
+  const handleClosePostDetail = () => {
+    if (detailAnswerEditorUploadingRef.current) {
+      return;
+    }
+
+    setCommentNavigationTarget(null);
+    setCommentNavigationNotice(null);
+    dataState.setSelectedPost(null);
+    dataState.setComments([]);
+    dataState.setQuickReplies([]);
+    dataState.setQuickReplyTotal(0);
+    dataState.resetCommentSort();
+  };
+
+  const handleDeletePostWhileAnswerEditorIdle = (postId: LongId) => {
+    if (!detailAnswerEditorUploadingRef.current) {
+      actionsState.handleDeletePost(postId);
+    }
+  };
+
+  const handleConfirmDeletePostWhileAnswerEditorIdle = () => {
+    if (!detailAnswerEditorUploadingRef.current) {
+      void actionsState.confirmDeletePost();
+    }
+  };
+
   return (
     <div className={styles.containerShell} ref={containerShellRef}>
       <div className={styles.container}>
@@ -840,6 +893,7 @@ export const ForumApp = () => {
                   : ''
               }`}
               onClick={handleShowAllPosts}
+              disabled={isDetailAnswerEditorUploading}
               title={t('forum.viewAllPosts')}
             >
               {t('forum.allPosts')}
@@ -895,15 +949,7 @@ export const ForumApp = () => {
                 followLoading={followLoading}
                 commentNavigationTarget={commentNavigationTarget}
                 commentTypingUserNames={commentTypingUserNames}
-                onBack={() => {
-                  setCommentNavigationTarget(null);
-                  setCommentNavigationNotice(null);
-                  dataState.setSelectedPost(null);
-                  dataState.setComments([]);
-                  dataState.setQuickReplies([]);
-                  dataState.setQuickReplyTotal(0);
-                  dataState.resetCommentSort();
-                }}
+                onBack={handleClosePostDetail}
                 onLike={actionsState.handleLikePost}
                 onVotePoll={actionsState.handleVotePoll}
                 onClosePoll={actionsState.handleClosePoll}
@@ -916,7 +962,7 @@ export const ForumApp = () => {
                 onToggleTop={actionsState.handleTogglePostTop}
                 onEdit={actionsState.handleEditPost}
                 onViewPostHistory={actionsState.handleViewPostHistory}
-                onDelete={actionsState.handleDeletePost}
+                onDelete={handleDeletePostWhileAnswerEditorIdle}
                 onCreateQuickReply={actionsState.handleCreateQuickReply}
                 onDeleteQuickReply={actionsState.handleDeleteQuickReply}
                 onCommentSortChange={actionsState.handleCommentSortChange}
@@ -945,6 +991,7 @@ export const ForumApp = () => {
                 onReportQuickReply={(quickReplyId) => handleOpenReport('PostQuickReply', quickReplyId)}
                 onReportComment={(commentId) => handleOpenReport('Comment', commentId)}
                 onNavigateToComment={handleNavigateToComment}
+                onAnswerEditorUploadingChange={handleDetailAnswerEditorUploadingChange}
                 workspaceIntent={windowParams.intent ?? null}
                 workspaceIntentKey={windowParams.intent ? `${windowPostIdentifier}:${windowParams.commentId ?? 'none'}:${windowParams.navigationKey ?? 'initial'}:${windowParams.intent}` : null}
               />
@@ -995,7 +1042,7 @@ export const ForumApp = () => {
                     setSearchCurrentPage(1);
                   }}
                   onPageChange={setSearchCurrentPage}
-                  onPostClick={actionsState.handleSelectPost}
+                  onPostClick={handleSelectPostWhileAnswerEditorIdle}
                   onAuthorClick={handleOpenUserProfile}
                 />
               ) : (
@@ -1019,7 +1066,7 @@ export const ForumApp = () => {
                   onPollStatusChange={dataState.setPollStatus}
                   onOpenSearch={handleOpenSearchView}
                   onPageChange={actionsState.handlePageChange}
-                  onPostClick={actionsState.handleSelectPost}
+                  onPostClick={handleSelectPostWhileAnswerEditorIdle}
                   onAuthorClick={handleOpenUserProfile}
                   canPublish={loggedIn}
                   onPublishClick={handleOpenPublish}
@@ -1034,7 +1081,7 @@ export const ForumApp = () => {
           <TrendingSidebar
             hotPosts={dataState.hotPosts}
             godComments={dataState.trendingGodComments}
-            onPostClick={actionsState.handleSelectPost}
+            onPostClick={handleSelectPostWhileAnswerEditorIdle}
             onAuthorClick={handleOpenUserProfile}
             loading={dataState.loadingTrending}
             selectedPost={dataState.selectedPost}
@@ -1075,7 +1122,7 @@ export const ForumApp = () => {
           confirmText={t('common.delete')}
           cancelText={t('common.cancel')}
           danger={true}
-          onConfirm={actionsState.confirmDeletePost}
+          onConfirm={handleConfirmDeletePostWhileAnswerEditorIdle}
           onCancel={actionsState.cancelDeletePost}
         />
 

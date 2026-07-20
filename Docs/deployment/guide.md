@@ -1,11 +1,12 @@
 # 部署与容器指南
 
 ## 目标
-本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 `Radish.Api/Dockerfile`、`Radish.Auth/Dockerfile`、`Radish.Gateway/Dockerfile` 与 `Frontend/Dockerfile` 构建首版最小镜像链，并通过 `Deploy/docker-compose.local.yaml` 或 `Deploy/docker-compose.yaml` 组织 `gateway / api / auth / frontend` 四个容器。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
+本指南面向需要在本地或服务器上快速部署 Radish 的维护者，说明如何使用 DbMigrate、API、Auth、Gateway 与 Frontend 五个镜像入口，并通过 `Deploy/docker-compose.local.yaml` 或 `Deploy/docker-compose.yaml` 组织应用服务及 PostgreSQL / Redis。当前部署口径已经收束为“开发环境直接 IDE / 宿主机运行，本地容器验证保留容器内 HTTPS，测试与生产环境统一采用外部反代 HTTPS、容器内 HTTP，并默认启用 PostgreSQL / Redis”。
 
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [M15 v26.7.1.1204-release 生产部署记录](/records/m15-release-record-v26.7.1.1204-2026-07-12)
 - [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
 - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
@@ -42,7 +43,7 @@
 
 ### 不再需要手工修改的数据库数据
 
-当前附件相关业务已经完成“去 URL 真值化”收口。更换域名时，不再需要手工修改以下数据库字段：
+采用 `AttachmentId / attachment://` 的新写入与已迁移数据已经完成“去 URL 真值化”收口。更换域名时，不再需要手工修改以下字段：
 
 - `Attachment` 记录
 - `Sticker.AttachmentId`、`StickerGroup.CoverAttachmentId`
@@ -52,6 +53,8 @@
 - `ProductCategory.IconAttachmentId`
 - `Order.ProductIconAttachmentId`
 - 正文中的 `attachment://{id}` 引用
+
+例外：历史 Markdown / 富文本、Wiki revision、`Site.Branding.FaviconUrl` 或外部缓存若仍保存 `/uploads/**` 或旧域名绝对 URL，必须在关闭兼容静态入口或切换域名前完成盘点、迁移与抽样验证。
 
 原因很简单：
 
@@ -72,7 +75,7 @@
 - 业务侧统一推荐通过 `/_assets/attachments/{id}` 与 `/_assets/attachments/{id}/thumbnail` 暴露媒体资源。
 - `Radish.Gateway` 当前已内建 `/_assets/attachments/** -> Radish.Api` 转发。
 - 如果系统通过外层反代统一对外，仍需确保该路径被放行到 Gateway，而不是被静态站点或默认首页兜底吞掉。
-- `/uploads/**` 只应理解为底层静态文件暴露或兼容路径，不应继续被当作业务长期引用口径。
+- 用户上传根目录不得通过 `/uploads/**` 直接暴露；当前只保留 `/uploads/DefaultIco/**` 版本内置可信图标。业务附件必须经过 `/_assets/attachments/**` 的状态与访问权限判定。
 
 ## 仓库发版与合并流程
 
@@ -187,7 +190,7 @@
 - `ghcr.io/<owner>/radish-gateway`
 - `ghcr.io/<owner>/radish-frontend`
 
-截至 `2026-03-28`，`radish-api / radish-auth / radish-gateway / radish-frontend` 已完成一轮真实 `docker pull` 验证；`radish-dbmigrate` 已接入 workflow 与部署编排，待下一次规范 tag 完成首次真实拉取验证。
+截至 `2026-07-12`，`v26.7.1.1204-release` 已完成五个正式镜像的构建、扫描、推送、固定 tag 拉取和生产部署；`radish-dbmigrate` 已在生产完成 PostgreSQL / OpenIddict 前滚，应用服务随后正常启动。
 
 当前 tag 规则如下：
 
@@ -208,13 +211,13 @@
 ## 构建服务镜像
 以下内容主要用于 `CI`、本地容器验证或手动验证镜像入口。测试部署与生产部署默认应直接拉取 `GHCR` 里的预构建镜像，而不是在部署机执行 `docker build` 或 `docker compose build`。
 
-当前仓库已提供首版最小镜像链，对应四个构建入口：
+当前仓库已提供首版最小镜像链，对应五个构建入口：
 
 - `Radish.DbMigrate/Dockerfile`：发布数据库初始化入口，默认用于容器部署时的 `apply` 一次性任务，负责按需 `init + seed` 共享业务库。
 - `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
 - `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
 - `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
-- `Frontend/Dockerfile`：当前采用 `Node 24` 多阶段镜像，先构建 `radish.client` 与 `radish.console`，最终镜像只保留静态产物与内置静态服务器，统一托管 `/` 与 `/console/`。
+- `Frontend/Dockerfile`：使用 `node:24-bookworm-slim` 构建 client / console，以 `node:24-alpine` 作为最终运行层，只保留静态产物与内置静态服务器，并移除运行时不需要的 npm / npx / Corepack / Yarn 入口，统一托管 `/` 与 `/console/`。
 
 常用单镜像构建命令如下：
 
@@ -250,7 +253,7 @@ docker build \
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
 - 部署态默认只注入 `RADISH_PUBLIC_URL`，前端运行时配置统一回退到同一个 Gateway 公开入口
 
-> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并且已经完全切到运行时配置注入；同时 `Frontend/Dockerfile` 已收口为轻量多阶段运行时镜像，本地构建验证体积约 `300MB`，继续沿用“预构建镜像 + 部署时注入公开地址”时不再需要额外改 Dockerfile。
+> 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并完全切到运行时配置注入。最终层不承担依赖安装或现场构建职责；基础镜像、系统包或 Node 运行层发生变化时，必须重新执行最终镜像 High / Critical 扫描，不能只依据构建层审计结果。
 
 ## 运行容器
 当前最小链默认以 `Gateway` 作为唯一对外入口。Compose 现在收束为两类：
@@ -319,7 +322,7 @@ docker compose up -d
 - `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
 - 默认 `RadishDeployment__Stage=production` 且 `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
 - 若误把 `Seed__DeveloperDefaultsEnabled=true` 带入生产或未配置安全阶段，`dbmigrate apply` 会直接失败退出；不要通过改阶段绕过生产防护
-- 首次打开 `RADISH_PUBLIC_URL` 根入口时，`radish.client` 会检测是否尚无 `System / Admin` 管理员；若没有管理员，会进入首个管理员初始化页，要求部署人员设置账号和强密码
+- 已发布的 `v26.7.1.1204-release` 只在进入聊天、通知、圈子等当时已接入 `BootstrapGate` 的入口时触发首次管理员检查；该固定 tag 的行为保持不变。`dev` 已改为由 `BrowserAppRouter` 统一覆盖公开路由、Workbench、私域、WebOS Root 和 OIDC 回调，待包含该提交的新版本发布后，首次部署验收应从任一产品入口确认都会先进入同一初始化门禁；部署固定旧 tag 时仍按旧行为验收
 - 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
 - `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址；未设置 `RADISH_IMAGE_TAG` 时按 `RADISH_IMAGE_TRACK` 使用浮动别名，设置后优先使用固定版本 tag
 - `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
@@ -347,10 +350,11 @@ docker compose up -d
 3. 重新执行 `pull + up -d`
 4. 按 `M14` 顺序复跑 `check:host-runtime`、维护记录汇总与部署后最小复核
 
-**文件上传目录挂载（生产环境建议）**：
-- 本地存储模式下，上传文件存放在 `DataBases/Uploads/`
-- 建议挂载到宿主机持久化目录，避免容器重启丢失文件
-- Gateway 当前默认已经转发 `/_assets/attachments/**`；如果前面还有 `Nginx / Traefik / Caddy`，也要同步放行该路径，而不是只暴露底层 `/uploads/**`
+**附件与分片部署边界**：
+
+- `${FileStorage:Local:BasePath}`（默认 `DataBases/Uploads`）与 `ChunkedUpload:TempChunkPath`（默认 `DataBases/Temp/Chunks`）都必须位于持久化挂载内；Gateway 和外层反向代理只放行 `/_assets/attachments/**` 与可信 `DefaultIco` 路由，不映射整个 `/uploads/**`。
+- 当前会话互斥使用进程内 `AsyncKeyedLock`，启用分片上传的 `Radish.Api` 必须保持单实例；扩容前需同时具备共享临时存储、按会话分布式锁和故障切换验收，粘性会话不能作为一致性保证。细节见[文件上传与附件管理](/features/file-upload-design)。
+- 合并到 `master` 前至少盘点历史 `/uploads/**` 直链；阶段验收取得启动授权后，再通过真实 Gateway 验证用户上传静态路径不可达、`DefaultIco` 可达及受控附件状态 / 私有访问规则。
 
 如需分别单独运行镜像，可参考：
 
@@ -724,224 +728,6 @@ HTTP (5000/5100) → ASP.NET Core 应用
 - 端口占用可通过 `docker compose ps` 或 `lsof -i :8080` 定位，调整 `ports` 映射即可。
 - 清理旧镜像：`docker image prune -f`；清理多余卷：`docker volume prune`（慎用）。
 
-## 未来两镜像多容器部署设计（规划阶段）
+## 后续镜像治理边界
 
-> 本节用于记录未来在服务器上采用“两个镜像、多容器”的部署思路，目前 **仅作为设计文档，不在开发阶段使用 Docker 进行启动与测试**。
->
-> 当前仓库已经有一套真实可构建的最小镜像链，本节保留的是“进一步压缩镜像数量”的后续设计，不代表当前首版 `dev` 已经切换到该方案。
-
-### 设计目标与前提
-
-- 目标机器内存约 **4–8GB**，希望在资源有限的前提下尽量简化镜像数量；
-- 采用 **两个基础镜像**：
-  - `radish-backend`：承载所有 .NET 服务（Api / Gateway / Auth / DbMigrate 等）；
-  - `radish-frontend`：承载所有前端项目的构建与静态资源（radish.client / radish.console）。
-- 在 Compose 层面仍然按照服务拆分多个容器：
-  - 后端：`gateway`、`api`、`auth`（以及可选的 `db-migrate` 等 Job 容器）；
-  - 前端：`client`（未来可扩展为 `console`、`docs` 独立容器）；
-  - 数据：`postgres`、`redis`。
-- 区分概念：**镜像数量少** 不代表只跑少量容器，每个服务仍然应有独立容器，便于监控、扩容和故障隔离。
-
-### 后端镜像设计示例（Dockerfile.backend 草案）
-
-> 下述 Dockerfile 仅为设计示例，用于说明统一后端镜像的构建思路，**仓库中默认不会自动创建该文件**。当后续确实需要上线容器部署时，可在确认路径与项目之后再落地。
-
-```dockerfile
-# 统一构建所有 .NET 服务的后端镜像
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
-
-# 复制解决方案与各项目文件（根据实际项目补充）
-COPY Radish.slnx ./
-COPY Radish.Api/Radish.Api.csproj Radish.Api/
-COPY Radish.Auth/Radish.Auth.csproj Radish.Auth/
-COPY Radish.Gateway/Radish.Gateway.csproj Radish.Gateway/
-# 如有额外 Job/Web 项目，可在此继续追加 COPY + restore
-
-RUN dotnet restore Radish.Api/Radish.Api.csproj
-RUN dotnet restore Radish.Auth/Radish.Auth.csproj
-RUN dotnet restore Radish.Gateway/Radish.Gateway.csproj
-
-# 复制全部源代码
-COPY . .
-
-# 分别发布到不同目录，供运行时容器按需选择入口
-RUN dotnet publish Radish.Api/Radish.Api.csproj -c Release -o /app/api /p:UseAppHost=false
-RUN dotnet publish Radish.Auth/Radish.Auth.csproj -c Release -o /app/auth /p:UseAppHost=false
-RUN dotnet publish Radish.Gateway/Radish.Gateway.csproj -c Release -o /app/gateway /p:UseAppHost=false
-# 例如：RUN dotnet publish Radish.DbMigrate/Radish.DbMigrate.csproj -c Release -o /app/dbmigrate /p:UseAppHost=false
-
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
-WORKDIR /app
-
-COPY --from=build /app/api /app/api
-COPY --from=build /app/auth /app/auth
-COPY --from=build /app/gateway /app/gateway
-# COPY --from=build /app/dbmigrate /app/dbmigrate
-
-# 运行时不在镜像中写死 ENTRYPOINT，由 docker-compose 的 command 决定具体运行哪一个服务
-```
-
-### 前端镜像设计示例（Dockerfile.frontend 草案，兼顾公开内容 SEO）
-
-> 同样仅作为设计示例，说明如何用单一前端镜像承载前端项目。
-> 当前 `radish.client` 已先采用 SPA 静态产物 + 运行时 head helper 的 SEO 基线：`index.html` 提供站点默认 meta，`publicHead` 在公开路由运行时维护 title、description、Open Graph 与 canonical，`public/robots.txt` 和 `public/sitemap.xml` 作为静态抓取 seed。SSR / SSG 不属于当前部署前置条件，后续若正式立项再补专门服务入口。
-
-```dockerfile
-FROM node:20 AS base
-WORKDIR /app
-
-# 安装三个前端项目的依赖
-COPY Frontend/radish.client/package*.json Frontend/radish.client/
-COPY Frontend/radish.console/package*.json Frontend/radish.console/
-
-RUN cd Frontend/radish.client && npm install
-RUN cd Frontend/radish.console && npm install
-
-# 复制源代码
-COPY radish.client radish.client
-COPY radish.console radish.console
-
-# 统一构建所有前端项目
-# - radish.client: 当前构建为静态 SPA 产物，包含 robots.txt / sitemap.xml seed
-# - radish.console: 通常构建为静态站点
-RUN cd Frontend/radish.client && npm run build
-RUN cd Frontend/radish.console && npm run build
-
-# 运行时可使用 Nginx / Caddy / 静态文件服务承载 dist
-# - 未匹配的公开 SPA 路由仍回退 index.html
-# - robots.txt / sitemap.xml 需要直接作为静态文件返回
-FROM nginx:alpine AS final
-COPY --from=base /app/Frontend/radish.client/dist /usr/share/nginx/html
-```
-
-> 注意：上面的 Dockerfile 仍是部署设计示例，真实仓库镜像入口以当前 `Frontend/Dockerfile` 和 Compose 配置为准。若后续切到 SSR / SSG，需要重新定义前端运行时、缓存策略和健康检查，而不是沿用当前静态文件服务假设。
-
-### 两镜像多容器的 Compose 结构示例（草案）
-
-> 本小节给出一个基于 `radish-backend` 与 `radish-frontend` 的 Compose 结构示例，并结合 4–8GB 内存的目标机器给出初始内存限制配置。数值仅供参考，实际部署应结合 `docker stats` 和监控数据调整。
-
-推荐在仓库根目录使用 `docker-compose.yaml` 统一编排（路径可根据团队习惯调整）：
-
-```yaml
-version: "3.9"
-
-services:
-  gateway:
-    image: radish-backend
-    container_name: radish-gateway
-    command: ["dotnet", "Radish.Gateway.dll"]
-    working_dir: /app/gateway
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
-    ports:
-      - "5000:5000"
-      - "5001:5001"
-    depends_on:
-      - api
-      - auth
-      - client
-    mem_reservation: 192m
-    mem_limit: 384m
-    networks:
-      - radish-net
-
-  api:
-    image: radish-backend
-    container_name: radish-api
-    command: ["dotnet", "Radish.Api.dll"]
-    working_dir: /app/api
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
-      # ConnectionStrings__Main: "Host=postgres;Port=5432;Database=radish;Username=radish;Password=change_me"
-    depends_on:
-      - postgres
-      - redis
-    mem_reservation: 256m
-    mem_limit: 768m
-    networks:
-      - radish-net
-
-  auth:
-    image: radish-backend
-    container_name: radish-auth
-    command: ["dotnet", "Radish.Auth.dll"]
-    working_dir: /app/auth
-    environment:
-      ASPNETCORE_ENVIRONMENT: "Production"
-    depends_on:
-      - postgres
-      - redis
-    mem_reservation: 256m
-    mem_limit: 512m
-    networks:
-      - radish-net
-
-  client:
-    image: radish-frontend
-    container_name: radish-client
-    ports:
-      - "3000:80"  # 生产环境可由 Gateway 或外部反向代理统一暴露
-    mem_reservation: 64m
-    mem_limit: 256m
-    networks:
-      - radish-net
-
-  postgres:
-    image: postgres:16
-    container_name: radish-postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: "radish"
-      POSTGRES_USER: "radish"
-      POSTGRES_PASSWORD: "change_me"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    mem_reservation: 256m
-    mem_limit: 768m
-    networks:
-      - radish-net
-
-  redis:
-    image: redis:7
-    container_name: radish-redis
-    restart: unless-stopped
-    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
-    volumes:
-      - redisdata:/data
-    ports:
-      - "6379:6379"
-    mem_reservation: 64m
-    mem_limit: 256m
-    networks:
-      - radish-net
-
-networks:
-  radish-net:
-    driver: bridge
-
-volumes:
-  pgdata:
-  redisdata:
-```
-
-该结构下，在 4–8GB 宿主机上：
-
-- 所有服务的 `mem_limit` 上限之和约为 3GB 左右，保留了充足的系统与缓冲空间；
-- 后续可根据实际监控情况对 `mem_reservation` 与 `mem_limit` 做细调：
-  - 如果某服务常年远低于软限制，可适当下调节省资源；
-  - 如果某服务经常接近硬限制，则需要考虑优化缓存/查询或上调限制。
-
-### 当前开发阶段的约定与落地建议
-
-- **当前阶段默认仍优先宿主机运行与调试**：
-  - 后端推荐继续使用 `dotnet run` / `dotnet watch` 在宿主机运行 Api / Gateway / Auth；
-  - 前端推荐继续使用 `npm run dev --prefix Frontend/radish.client` 等命令运行 Vite 开发服务；
-  - Docker 相关内容当前已不再只是草案，而是首版 `dev` 的最小构建 / 交付验证资产；但运行态联调与日常开发默认仍以宿主机方式为主。
-- **在真正落地容器部署前，建议遵循以下步骤**：
-  1. 与运维/基础设施同学确认最终的目录结构与文件命名（例如是否采用 `Dockerfile.backend`、`Dockerfile.frontend` 与仓库根目录 `docker-compose.yaml`）；
-  2. 根据实际数据库/Redis/域名/TLS 方案，补全 Compose 中的环境变量与端口映射；
-  3. 在测试环境中逐步启用各服务容器，并使用 `docker stats`/监控系统验证内存与 CPU 占用情况；
-  4. 确认没有影响现有非容器化部署流程后，再考虑将该方案纳入正式的部署流水线。
+当前真实交付仍以五个独立镜像和 `Deploy/docker-compose*.yaml` 为准，不维护未落地的“两镜像多容器”草案。若未来因镜像复用、制品体积或资源治理重新立项，需先确认服务隔离、独立扩缩容、健康检查、资源限制与回滚边界，再新增专题设计；不得用草案替代本页记录的真实部署入口。

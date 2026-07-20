@@ -1,14 +1,6 @@
 # 记录与验收索引
 
-本页是 `Docs/records/` 的统一入口，专门收纳以下非说明书型文档：
-
-- 批次级回归记录
-- 人工验收清单
-- 发布 / 回滚记录
-- checklist / template
-- spike / 评估观察记录
-
-如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
+本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 
 ## 一、通用模板与总索引
 
@@ -16,6 +8,7 @@
 - [人工验收模板](/records/manual-acceptance-template)
 - [回归结论记录模板](/records/regression-result-template)
 - [变更回归记录模板](/records/change-regression-record-template)
+- [F4-A 生产六链路证据采集记录模板](/records/f4-a-production-evidence-capture-template)
 - [`PR -> master` 最小执行清单](/records/master-pr-minimal-checklist)
 
 ## 二、公开壳层与内容阅读验收
@@ -74,6 +67,29 @@
 
 ## 七、专题清单与一次性观察
 
+- [f4-day-end-doc-review-2026-07-19](/records/f4-day-end-doc-review-2026-07-19)
+- [f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)
+- [f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)
+- [f4-f-b-chat-message-read-receipt-server-contract-2026-07-19](/records/f4-f-b-chat-message-read-receipt-server-contract-2026-07-19)
+- [f4-e-d-chat-message-pin-stage-acceptance-2026-07-19](/records/f4-e-d-chat-message-pin-stage-acceptance-2026-07-19)
+- [f4-e-c-chat-message-pin-web-workspace-2026-07-19](/records/f4-e-c-chat-message-pin-web-workspace-2026-07-19)
+- [f4-e-b-chat-message-pin-server-contract-2026-07-19](/records/f4-e-b-chat-message-pin-server-contract-2026-07-19)
+- [f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19](/records/f4-d-d-chat-message-reaction-stage-acceptance-2026-07-19)
+- [f4-d-c-chat-message-reaction-web-workspace-2026-07-19](/records/f4-d-c-chat-message-reaction-web-workspace-2026-07-19)
+- [f4-d-b-chat-message-reaction-server-contract-2026-07-19](/records/f4-d-b-chat-message-reaction-server-contract-2026-07-19)
+- [f4-c-d-chat-message-search-stage-acceptance-2026-07-19](/records/f4-c-d-chat-message-search-stage-acceptance-2026-07-19)
+- [f4-c-c-chat-message-search-web-workspace-2026-07-19](/records/f4-c-c-chat-message-search-web-workspace-2026-07-19)
+- [f4-c-b-chat-message-search-server-contract-2026-07-19](/records/f4-c-b-chat-message-search-server-contract-2026-07-19)
+- [通知系统历史方案索引](/records/notification-legacy/)
+- [f4-day-end-doc-review-2026-07-18](/records/f4-day-end-doc-review-2026-07-18)
+- [f4-a-first-real-usage-evidence-attribution-2026-07-18](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)
+- [f3-d-i18n-stage-acceptance-2026-07-17](/records/f3-d-i18n-stage-acceptance-2026-07-17)
+- [f3-i18n-day-end-doc-review-2026-07-16](/records/f3-i18n-day-end-doc-review-2026-07-16)
+- [f3-c8-shared-feedback-upload-shell-static-closure-2026-07-16](/records/f3-c8-shared-feedback-upload-shell-static-closure-2026-07-16)
+- [f3-i18n-day-end-doc-review-2026-07-15](/records/f3-i18n-day-end-doc-review-2026-07-15)
+- [f2-theme-system-stage-acceptance-2026-07-14](/records/f2-theme-system-stage-acceptance-2026-07-14)
+- [f1-e-shop-entitlement-stage-acceptance-2026-07-14](/records/f1-e-shop-entitlement-stage-acceptance-2026-07-14)
+- [p3-12-day-end-doc-review-2026-07-12](/records/p3-12-day-end-doc-review-2026-07-12)
 - [p3-12-e8-pre-master-integration-review-2026-07-11](/records/p3-12-e8-pre-master-integration-review-2026-07-11)
 - [p3-12-e8-b-limited-product-matrix-audit-2026-07-11](/records/p3-12-e8-b-limited-product-matrix-audit-2026-07-11)
 - [p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10](/records/p3-12-e8-q0-security-exposure-implementation-plan-2026-07-10)

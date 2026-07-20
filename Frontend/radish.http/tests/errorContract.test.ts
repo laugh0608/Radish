@@ -23,6 +23,8 @@ test('parseHttpResponse 应保留真实 HTTP 状态与 MessageModel 契约状态
   assert.deepEqual(parsed, {
     ok: false,
     message: '资源状态已发生变化，请刷新后重试',
+    messageInfo: '资源状态已发生变化，请刷新后重试',
+    messageKey: 'error.common.conflict',
     code: 'Common.Conflict',
     statusCode: 409,
     traceId: 'trace-body',
@@ -46,6 +48,24 @@ test('parseHttpResponse 应兼容 HTTP 200 的历史失败体但保留真实状�
   assert.equal(parsed.ok, false);
   assert.equal(parsed.statusCode, 400);
   assert.equal(parsed.httpStatus, 200);
+});
+
+test('parseHttpResponse 应保留非空动态消息参数', async () => {
+  const response = new Response(JSON.stringify({
+    statusCode: 413,
+    isSuccess: false,
+    messageInfo: '所选文件超过上传大小限制（最大 5 MB）。',
+    code: 'Attachment.FileTooLarge',
+    messageKey: 'error.attachment.file_too_large',
+    messageArguments: ['5 MB'],
+  }), {
+    status: 413,
+    headers: { 'content-type': 'application/json' },
+  });
+
+  const parsed = await parseHttpResponse(response);
+
+  assert.deepEqual(parsed.messageArguments, ['5 MB']);
 });
 
 test('parseHttpResponse 应从响应头补充 TraceId 并安全处理非 JSON 错误', async () => {

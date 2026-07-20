@@ -12,10 +12,24 @@
   background: #000;
 }
 
+.cropperWrapperProcessing {
+  pointer-events: none;
+}
+
 .controls {
   padding: 20px;
   background: #fff;
   border-top: 1px solid #e5e7eb;
+}
+
+.error {
+  padding: 10px 20px;
+  border-top: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
 .controlGroup {
@@ -95,7 +109,7 @@
   color: #374151;
 }
 
-.cancelButton:hover {
+.cancelButton:hover:not(:disabled) {
   background: #e5e7eb;
 }
 
@@ -104,11 +118,18 @@
   color: #fff;
 }
 
-.confirmButton:hover {
+.confirmButton:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.confirmButton:active {
+.confirmButton:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.cancelButton:disabled,
+.confirmButton:disabled,
+.slider:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }

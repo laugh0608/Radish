@@ -9,7 +9,7 @@
     linear-gradient(
       180deg,
       color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%) 0%,
-      color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%) 100%
+      color-mix(in srgb, var(--theme-bg-surface) 96%, var(--theme-surface-highlight) 4%) 100%
     );
 }
 
@@ -35,7 +35,7 @@
   min-height: 28px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   color: var(--theme-brand-primary);
   font-size: 11px;
   font-weight: 700;
@@ -72,7 +72,7 @@
   min-width: 0;
   padding: 12px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 

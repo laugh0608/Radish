@@ -52,7 +52,8 @@ public class UserControllerProfileTest
             Mock.Of<IUserBrowseHistoryService>(),
             Mock.Of<IUserTimePreferenceService>(),
             Mock.Of<IAttachmentService>(),
-            Options.Create(new TimeOptions()));
+            Options.Create(new TimeOptions()),
+            Mock.Of<IUserAdornmentService>());
 
         var result = await controller.UpdateMyProfile(new UpdateMyProfileDto
         {
@@ -72,5 +73,43 @@ public class UserControllerProfileTest
                 It.IsAny<Expression<Func<User, User>>>(),
                 It.IsAny<Expression<Func<User, bool>>>()),
             Times.Once);
+    }
+
+    [Theory]
+    [InlineData(0, "已清空头像")]
+    [InlineData(9001, "设置成功")]
+    public async Task SetMyAvatar_Should_Delegate_Transactional_Association_To_AttachmentService(
+        long attachmentId,
+        string expectedMessage)
+    {
+        var currentUserAccessor = new Mock<ICurrentUserAccessor>(MockBehavior.Strict);
+        currentUserAccessor
+            .SetupGet(item => item.Current)
+            .Returns(new CurrentUser
+            {
+                IsAuthenticated = true,
+                UserId = 1001,
+                UserName = "tester"
+            });
+        var attachmentService = new Mock<IAttachmentService>(MockBehavior.Strict);
+        attachmentService
+            .Setup(service => service.SetCurrentAvatarAsync(attachmentId, 1001, "tester"))
+            .Returns(Task.CompletedTask);
+        var controller = new UserController(
+            Mock.Of<IUserService>(),
+            currentUserAccessor.Object,
+            Mock.Of<IPostService>(),
+            Mock.Of<ICommentService>(),
+            Mock.Of<IUserBrowseHistoryService>(),
+            Mock.Of<IUserTimePreferenceService>(),
+            attachmentService.Object,
+            Options.Create(new TimeOptions()),
+            Mock.Of<IUserAdornmentService>());
+
+        var result = await controller.SetMyAvatar(new SetMyAvatarDto { AttachmentId = attachmentId });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(expectedMessage, result.MessageInfo);
+        attachmentService.VerifyAll();
     }
 }

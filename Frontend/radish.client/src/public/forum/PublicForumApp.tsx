@@ -32,6 +32,8 @@ interface PublicForumAppProps {
     href?: string;
     onBack: () => void;
   } | null;
+  navigationLocked: boolean;
+  onNavigationLockChange: (locked: boolean) => void;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
   onNavigateToProfile?: (userId: string) => void;
   onNavigateToSearch?: (keyword?: string) => void;
@@ -46,6 +48,8 @@ export const PublicForumApp = ({
   fallbackBrowseRoute,
   routeSourceState,
   detailBackAction,
+  navigationLocked,
+  onNavigationLockChange,
   onNavigate,
   onNavigateToProfile,
   onNavigateToSearch,
@@ -67,27 +71,6 @@ export const PublicForumApp = ({
   const detailBackLabel = detailBackLabelKey ? t(detailBackLabelKey) : t('public.shell.backToForum');
   const detailBackHref = detailBackAction?.href ?? buildPublicForumPath(fallbackBrowseRoute);
   const handleForumDetailBack = detailBackAction?.onBack ?? (() => onNavigate(fallbackBrowseRoute));
-
-  useEffect(() => {
-    const titleKey = route.kind === 'detail'
-      ? 'forum.postDetail.title'
-      : route.kind === 'compose'
-        ? 'forum.public.composeTitle'
-        : route.kind === 'search'
-          ? 'forum.public.searchTitle'
-          : route.kind === 'tag'
-            ? 'forum.public.tagTitle'
-            : route.kind === 'question'
-              ? 'forum.public.questionTitle'
-              : route.kind === 'poll'
-                ? 'forum.public.pollTitle'
-                : route.kind === 'lottery'
-                  ? 'forum.public.lotteryTitle'
-                  : 'forum.allPosts';
-    const nextTitle = `${t('desktop.apps.forum.name')} · ${t(titleKey)}`;
-
-    document.title = nextTitle;
-  }, [route.kind, t]);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -126,8 +109,13 @@ export const PublicForumApp = ({
         brandMark="论"
         brandName={t('desktop.apps.forum.name')}
         brandSubline={t('forum.public.shellLabel')}
-        onBrandClick={() => onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 })}
+        onBrandClick={() => {
+          if (!navigationLocked) {
+            onNavigate({ kind: 'list', categoryId: null, sortBy: 'newest', page: 1 });
+          }
+        }}
         loginLabel={t('public.shell.loginAction')}
+        navigationLocked={navigationLocked}
       />
 
       <main className={styles.main}>
@@ -142,6 +130,8 @@ export const PublicForumApp = ({
             backLabel={detailBackLabel}
             backHref={detailBackHref}
             onBack={handleForumDetailBack}
+            isAnswerEditorUploading={navigationLocked}
+            onAnswerEditorUploadingChange={onNavigationLockChange}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
             onOpenQuestion={onNavigateToQuestion}

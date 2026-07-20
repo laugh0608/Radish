@@ -28,7 +28,7 @@
   border: 1px solid var(--theme-dock-border);
   box-shadow:
     var(--theme-shadow-soft),
-    inset 0 0 0 1px color-mix(in srgb, white 28%, transparent 72%);
+    inset 0 0 0 1px color-mix(in srgb, var(--theme-surface-highlight) 28%, transparent 72%);
   transition:
     transform 500ms cubic-bezier(0.33, 1, 0.68, 1),
     background 500ms cubic-bezier(0.33, 1, 0.68, 1),
@@ -275,7 +275,7 @@
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.04em;
-  border: 1px solid color-mix(in srgb, white 52%, transparent 48%);
+  border: 1px solid color-mix(in srgb, var(--theme-surface-highlight) 52%, transparent 48%);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--theme-accent-earth) 16%, transparent 84%);
 }
 
@@ -292,12 +292,12 @@
 }
 
 .languageButton[data-state='zh'] {
-  background: color-mix(in srgb, var(--theme-accent-ink) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-accent-ink) 10%, var(--theme-surface-highlight) 90%);
   border-color: color-mix(in srgb, var(--theme-accent-ink) 28%, transparent 72%);
 }
 
 .languageButton[data-state='en'] {
-  background: color-mix(in srgb, var(--theme-state-info) 12%, white 88%);
+  background: color-mix(in srgb, var(--theme-state-info) 12%, var(--theme-surface-highlight) 88%);
   border-color: color-mix(in srgb, var(--theme-state-info) 30%, transparent 70%);
 }
 
@@ -318,13 +318,13 @@
 }
 
 .themeButton[data-state='default'] {
-  background: color-mix(in srgb, var(--theme-accent-ink) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-accent-ink) 10%, var(--theme-surface-highlight) 90%);
   border-color: color-mix(in srgb, var(--theme-accent-ink) 24%, transparent 76%);
   color: var(--theme-accent-ink);
 }
 
 .themeButton[data-state='guofeng'] {
-  background: color-mix(in srgb, var(--theme-brand-primary) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-brand-primary) 10%, var(--theme-surface-highlight) 90%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 28%, transparent 72%);
   color: var(--theme-brand-primary);
 }

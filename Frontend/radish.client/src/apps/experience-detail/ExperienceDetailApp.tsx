@@ -1,8 +1,21 @@
-import { useCallback, useEffect, lazy, Suspense, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
 import { ExperienceBar } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
+import {
+  addExperienceValues,
+  buildExperienceBarData,
+  buildExperienceDailyStats,
+  buildExperienceSourceStats,
+  createExperienceBarPresentation,
+  formatExperienceDateTime,
+  formatExperienceNumber,
+  formatExperienceSignedNumber,
+  formatExperienceType,
+} from '@/experience/experiencePresentation';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import styles from './ExperienceDetailApp.module.css';
 
 const LineChart = lazy(() =>
@@ -14,6 +27,7 @@ const PieChart = lazy(() =>
 );
 
 const EXPERIENCE_TRANSACTION_PAGE_SIZE = 20;
+const EXPERIENCE_SOURCE_COLORS = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
 
 interface ExperienceDetailAppProps {
   pageIndex?: number;
@@ -21,21 +35,34 @@ interface ExperienceDetailAppProps {
   onDataLoaded?: (snapshot: ExperienceDetailSnapshot) => void;
 }
 
-interface ExperienceDetailSnapshot {
+export interface ExperienceDetailSnapshot {
   experience: ExperienceData | null;
   transactions: ExpTransactionData[];
   totalPages: number;
 }
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
 export const ExperienceDetailApp = ({
   pageIndex: controlledPageIndex,
   onPageIndexChange,
-  onDataLoaded
+  onDataLoaded,
 }: ExperienceDetailAppProps = {}) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const chartNow = useMemo(() => new Date(), []);
+  const experienceBarPresentation = useMemo(
+    () => createExperienceBarPresentation(t, language, displayTimeZone),
+    [displayTimeZone, language, t],
+  );
   const [experience, setExperience] = useState<ExperienceData | null>(null);
   const [transactions, setTransactions] = useState<ExpTransactionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [transactionsError, setTransactionsError] = useState<string | null>(null);
   const [internalPageIndex, setInternalPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [days, setDays] = useState<7 | 30>(7);
@@ -49,145 +76,48 @@ export const ExperienceDetailApp = ({
   const loadData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setTransactionsError(null);
 
     try {
-      const expResult = await experienceApi.getMyExperience();
-      if (!expResult) {
-        setExperience(null);
-        setTransactions([]);
-        setTotalPages(1);
-        onDataLoadedRef.current?.({ experience: null, transactions: [], totalPages: 1 });
-        setError('暂时无法获取等级数据，请稍后重试');
-        return;
-      }
-
+      const expResult = await experienceApi.getMyExperience(t);
       setExperience(expResult);
 
       try {
         const transResult = await experienceApi.getTransactions({
           pageIndex,
-          pageSize: EXPERIENCE_TRANSACTION_PAGE_SIZE
+          pageSize: EXPERIENCE_TRANSACTION_PAGE_SIZE,
+        }, t);
+        const normalizedTotalPages = Math.max(transResult.pageCount, 1);
+        setTransactions(transResult.data);
+        setTotalPages(normalizedTotalPages);
+        onDataLoadedRef.current?.({
+          experience: expResult,
+          transactions: transResult.data,
+          totalPages: normalizedTotalPages,
         });
-        if (transResult) {
-          setTransactions(transResult.data);
-          setTotalPages(transResult.pageCount);
-          onDataLoadedRef.current?.({
-            experience: expResult,
-            transactions: transResult.data,
-            totalPages: transResult.pageCount
-          });
-        } else {
-          setTransactions([]);
-          setTotalPages(1);
-          onDataLoadedRef.current?.({ experience: expResult, transactions: [], totalPages: 1 });
-        }
-      } catch (transErr) {
-        log.warn('经验值交易记录 API 不可用:', transErr);
+      } catch (transactionError) {
+        const message = getErrorMessage(transactionError, t('experience.transactions.loadFailed'));
+        log.warn('经验值交易记录 API 不可用:', transactionError);
         setTransactions([]);
         setTotalPages(1);
+        setTransactionsError(message);
         onDataLoadedRef.current?.({ experience: expResult, transactions: [], totalPages: 1 });
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载数据失败');
+    } catch (loadError) {
+      setExperience(null);
+      setTransactions([]);
+      setTotalPages(1);
+      setError(getErrorMessage(loadError, t('experience.loadFailed')));
       onDataLoadedRef.current?.({ experience: null, transactions: [], totalPages: 1 });
-      log.error('加载经验值详情失败:', err);
+      log.error('加载经验值详情失败:', loadError);
     } finally {
       setLoading(false);
     }
-  }, [pageIndex]);
+  }, [pageIndex, t]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  // 从交易记录计算每日统计数据
-  const getDailyStats = () => {
-    if (transactions.length === 0) {
-      // 如果没有交易记录，返回空数组
-      return [];
-    }
-
-    const stats: Record<string, number> = {};
-    const today = new Date();
-
-    // 初始化最近 N 天的数据
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      const dateKey = `${date.getMonth() + 1}/${date.getDate()}`;
-      stats[dateKey] = 0;
-    }
-
-    // 统计交易记录中的经验值
-    transactions.forEach(tx => {
-      const txDate = new Date(tx.voCreateTime);
-      const dateKey = `${txDate.getMonth() + 1}/${txDate.getDate()}`;
-
-      // 只统计最近 N 天的数据
-      if (Object.prototype.hasOwnProperty.call(stats, dateKey)) {
-        stats[dateKey] += tx.voExpAmount;
-      }
-    });
-
-    // 转换为数组格式
-    return Object.entries(stats).map(([date, exp]) => ({
-      date,
-      exp
-    }));
-  };
-
-  // 计算经验值来源分布
-  const getExpSourceDistribution = () => {
-    const sources: Record<string, number> = {};
-
-    transactions.forEach(tx => {
-      const type = tx.voExpType || '其他';
-      sources[type] = (sources[type] || 0) + tx.voExpAmount;
-    });
-
-    const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b'];
-
-    return Object.entries(sources).map(([name, value], index) => ({
-      name: getExpTypeDisplay(name),
-      value,
-      color: colors[index % colors.length]
-    }));
-  };
-
-  const getExpTypeDisplay = (type: string): string => {
-    const typeMap: Record<string, string> = {
-      'POST_CREATE': '发帖',
-      'FIRST_POST': '首次发帖',
-      'COMMENT_CREATE': '评论',
-      'FIRST_COMMENT': '首次评论',
-      'POST_LIKED': '帖子被点赞',
-      'COMMENT_LIKED': '评论被点赞',
-      'LIKE_POST': '点赞帖子',
-      'LIKE_COMMENT': '点赞评论',
-      'GIVE_LIKE': '给出点赞',
-      'RECEIVE_LIKE': '收到点赞',
-      'GOD_COMMENT': '神评',
-      'SOFA': '沙发',
-      'ADMIN_ADJUST': '管理员调整',
-      'DAILY_LOGIN': '每日登录',
-      'WEEKLY_LOGIN': '每周登录',
-      'PROFILE_COMPLETE': '完善资料',
-      'PENALTY': '违规扣分'
-    };
-    return typeMap[type] || type;
-  };
-
-  const handlePrevPage = () => {
-    if (pageIndex > 1) {
-      updatePageIndex(pageIndex - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (pageIndex < totalPages) {
-      updatePageIndex(pageIndex + 1);
-    }
-  };
 
   const updatePageIndex = (nextPageIndex: number) => {
     if (onPageIndexChange) {
@@ -198,11 +128,27 @@ export const ExperienceDetailApp = ({
     setInternalPageIndex(nextPageIndex);
   };
 
-  const dailyStats = getDailyStats();
-  const sourceDistribution = getExpSourceDistribution();
-  const resolvedLevelName = experience?.voCurrentLevelName?.trim() || (experience ? `等级 ${experience.voCurrentLevel}` : '');
-  const totalProgress = experience
-    ? Math.min(1, Math.max(0, experience.voTotalExp / Math.max(experience.voTotalExp + experience.voExpToNextLevel, 1)))
+  const dailyStats = useMemo(
+    () => buildExperienceDailyStats(transactions, days, chartNow, language, displayTimeZone),
+    [chartNow, days, displayTimeZone, language, transactions],
+  );
+  const sourceDistribution = useMemo(
+    () => buildExperienceSourceStats(transactions, t).map((item, index) => ({
+      ...item,
+      color: EXPERIENCE_SOURCE_COLORS[index % EXPERIENCE_SOURCE_COLORS.length],
+    })),
+    [t, transactions],
+  );
+  const resolvedLevelName = experience?.voCurrentLevelName?.trim()
+    || (experience ? t('experience.levelFallback', { level: experience.voCurrentLevel }) : '');
+  const resolvedNextLevelName = experience?.voNextLevelName?.trim()
+    || (experience ? t('experience.levelFallback', { level: experience.voNextLevel }) : '');
+  const cumulativeThreshold = experience
+    ? addExperienceValues(experience.voTotalExp, experience.voExpToNextLevel)
+    : '0';
+  const cumulativeThresholdNumber = Number(cumulativeThreshold);
+  const totalProgress = experience && cumulativeThresholdNumber > 0
+    ? Math.min(1, Math.max(0, Number(experience.voTotalExp) / cumulativeThresholdNumber))
     : 0;
 
   return (
@@ -210,14 +156,14 @@ export const ExperienceDetailApp = ({
       <div className={styles.header}>
         <h1 className={styles.title}>
           <Icon icon="mdi:star-circle" size={32} />
-          等级
+          {t('experience.title')}
         </h1>
       </div>
 
       {loading && (
         <div className={styles.loading}>
           <Icon icon="mdi:loading" size={32} className={styles.spinner} />
-          <p>加载中...</p>
+          <p>{t('experience.loading')}</p>
         </div>
       )}
 
@@ -225,8 +171,8 @@ export const ExperienceDetailApp = ({
         <div className={styles.error}>
           <Icon icon="mdi:alert-circle" size={24} />
           <p>{error}</p>
-          <button onClick={() => void loadData()} className={styles.retryButton}>
-            重试
+          <button type="button" onClick={() => void loadData()} className={styles.retryButton}>
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -234,183 +180,194 @@ export const ExperienceDetailApp = ({
       {!loading && !error && !experience && (
         <div className={styles.empty}>
           <Icon icon="mdi:star-off-outline" size={56} />
-          <p>当前没有可展示的等级数据</p>
-          <button onClick={() => void loadData()} className={styles.retryButton}>
-            重新获取
+          <p>{t('experience.empty')}</p>
+          <button type="button" onClick={() => void loadData()} className={styles.retryButton}>
+            {t('experience.reload')}
           </button>
         </div>
       )}
 
       {!loading && !error && experience && (
         <>
-          {/* 经验条区域 */}
           <div className={styles.experienceBarSection}>
             <div className={styles.expBarGroup}>
-              {/* 当前等级进度条 */}
               <div className={styles.expBarItem}>
-                <div className={styles.expBarLabel}>当前等级进度</div>
+                <div className={styles.expBarLabel}>{t('experience.currentLevelProgress')}</div>
                 <ExperienceBar
-                  data={{
-                    ...experience,
-                    voNextLevelExp: experience.voLevelProgress > 0
-                      ? Math.round(experience.voCurrentExp / experience.voLevelProgress)
-                      : experience.voCurrentExp + experience.voExpToNextLevel
-                  }}
+                  data={buildExperienceBarData(experience)}
                   size="medium"
                   showLevel={true}
                   showProgress={true}
                   showTooltip={true}
                   animated={true}
+                  presentation={experienceBarPresentation}
                 />
               </div>
 
-              {/* 总进度条（到满级） */}
               <div className={styles.expBarItem}>
-                <div className={styles.expBarLabel}>总进度（到满级）</div>
+                <div className={styles.expBarLabel}>{t('experience.cumulativeProgress')}</div>
                 <ExperienceBar
                   data={{
-                    ...experience,
-                    voCurrentLevelName: `${resolvedLevelName} → 满级`,
+                    ...buildExperienceBarData(experience),
+                    voCurrentLevelName: t('experience.cumulativeLevel', {
+                      current: resolvedLevelName,
+                      next: resolvedNextLevelName,
+                    }),
                     voCurrentExp: experience.voTotalExp,
-                    voNextLevelExp: Math.max(experience.voTotalExp + experience.voExpToNextLevel, 1),
-                    voLevelProgress: totalProgress
+                    voNextLevelExp: cumulativeThreshold,
+                    voLevelProgress: totalProgress,
                   }}
                   size="medium"
                   showLevel={true}
                   showProgress={true}
                   showTooltip={false}
                   animated={true}
+                  presentation={experienceBarPresentation}
                 />
               </div>
             </div>
           </div>
 
-          {/* 经验值概览 */}
           <div className={styles.overview}>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>当前等级</div>
+              <div className={styles.statLabel}>{t('experience.stat.currentLevel')}</div>
               <div className={styles.statValue} style={{ color: experience.voThemeColor || 'var(--theme-brand-primary)' }}>
-                Lv.{experience.voCurrentLevel} {resolvedLevelName}
+                Lv.{experience.voCurrentLevel}
+                {experience.voCurrentLevelName?.trim() ? ` ${experience.voCurrentLevelName}` : ''}
               </div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>当前经验值</div>
-              <div className={styles.statValue}>{Number(experience.voCurrentExp).toLocaleString()}</div>
+              <div className={styles.statLabel}>{t('experience.stat.currentExp')}</div>
+              <div className={styles.statValue}>{formatExperienceNumber(experience.voCurrentExp, language)}</div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>累计经验值</div>
-              <div className={styles.statValue}>{Number(experience.voTotalExp).toLocaleString()}</div>
+              <div className={styles.statLabel}>{t('experience.stat.totalExp')}</div>
+              <div className={styles.statValue}>{formatExperienceNumber(experience.voTotalExp, language)}</div>
             </div>
             <div className={styles.statCard}>
-              <div className={styles.statLabel}>距下一级</div>
-              <div className={styles.statValue}>{Number(experience.voExpToNextLevel).toLocaleString()}</div>
+              <div className={styles.statLabel}>{t('experience.stat.toNextLevel')}</div>
+              <div className={styles.statValue}>{formatExperienceNumber(experience.voExpToNextLevel, language)}</div>
             </div>
           </div>
 
-          {/* 图表区域 - 两列布局 */}
-          <div className={styles.chartContainer}>
-            {/* 经验值趋势图 */}
-            <div className={styles.chartSection}>
-              <div className={styles.chartHeader}>
-                <h2 className={styles.chartTitle}>经验值趋势</h2>
-                <div className={styles.chartControls}>
-                  <button
-                    className={`${styles.controlButton} ${days === 7 ? styles.active : ''}`}
-                    onClick={() => setDays(7)}
-                  >
-                    最近7天
-                  </button>
-                  <button
-                    className={`${styles.controlButton} ${days === 30 ? styles.active : ''}`}
-                    onClick={() => setDays(30)}
-                  >
-                    最近30天
-                  </button>
+          {!transactionsError && (
+            <div className={styles.chartContainer}>
+              <div className={styles.chartSection}>
+                <div className={styles.chartHeader}>
+                  <h2 className={styles.chartTitle}>{t('experience.chart.trendTitle')}</h2>
+                  <div className={styles.chartControls}>
+                    <button
+                      type="button"
+                      className={`${styles.controlButton} ${days === 7 ? styles.active : ''}`}
+                      onClick={() => setDays(7)}
+                    >
+                      {t('experience.chart.rangeDays', { count: 7 })}
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.controlButton} ${days === 30 ? styles.active : ''}`}
+                      onClick={() => setDays(30)}
+                    >
+                      {t('experience.chart.rangeDays', { count: 30 })}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <Suspense fallback={<div className={styles.empty}>图表加载中...</div>}>
-                <LineChart
-                  data={dailyStats}
-                  lines={[
-                    { dataKey: 'exp', name: '经验值', color: '#667eea', strokeWidth: 2 }
-                  ]}
-                  xAxisKey="date"
-                  loading={loading}
-                  error={null}
-                  height={220}
-                  showGrid={true}
-                  showLegend={true}
-                />
-              </Suspense>
-            </div>
-
-            {/* 经验值来源分布 */}
-            {sourceDistribution.length > 0 && (
-              <div className={`${styles.chartSection} ${styles.pieChart}`}>
-                <h2 className={styles.chartTitle}>经验值来源</h2>
-                <Suspense fallback={<div className={styles.empty}>图表加载中...</div>}>
-                  <PieChart
-                    data={sourceDistribution}
-                    loading={loading}
+                <Suspense fallback={<div className={styles.empty}>{t('experience.chart.loading')}</div>}>
+                  <LineChart
+                    data={dailyStats}
+                    lines={[
+                      { dataKey: 'exp', name: t('experience.chart.expSeries'), color: '#667eea', strokeWidth: 2 },
+                    ]}
+                    xAxisKey="date"
+                    loading={false}
                     error={null}
-                    height={300}
+                    height={220}
+                    showGrid={true}
                     showLegend={true}
-                    innerRadius={0}
-                    outerRadius={100}
-                    showLabel={true}
+                    valueFormatter={(value) => formatExperienceNumber(value, language)}
                   />
                 </Suspense>
               </div>
-            )}
-          </div>
 
-          {/* 经验值明细列表 */}
+              {sourceDistribution.length > 0 && (
+                <div className={`${styles.chartSection} ${styles.pieChart}`}>
+                  <h2 className={styles.chartTitle}>{t('experience.chart.sourceTitle')}</h2>
+                  <Suspense fallback={<div className={styles.empty}>{t('experience.chart.loading')}</div>}>
+                    <PieChart
+                      data={sourceDistribution}
+                      loading={false}
+                      error={null}
+                      height={300}
+                      showLegend={true}
+                      innerRadius={0}
+                      outerRadius={100}
+                      showLabel={true}
+                      valueFormatter={(value) => formatExperienceNumber(value, language)}
+                      percentageFormatter={experienceBarPresentation.formatPercentage}
+                    />
+                  </Suspense>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className={styles.transactionSection}>
-            <h2 className={styles.sectionTitle}>经验值明细</h2>
-            {transactions.length === 0 ? (
+            <h2 className={styles.sectionTitle}>{t('experience.transactions.title')}</h2>
+            {transactionsError ? (
+              <div className={styles.error}>
+                <Icon icon="mdi:alert-circle" size={24} />
+                <p>{transactionsError}</p>
+                <button type="button" onClick={() => void loadData()} className={styles.retryButton}>
+                  {t('common.retry')}
+                </button>
+              </div>
+            ) : transactions.length === 0 ? (
               <div className={styles.empty}>
                 <Icon icon="mdi:file-document-outline" size={64} />
-                <p>暂无经验值记录</p>
+                <p>{t('experience.transactions.empty')}</p>
               </div>
             ) : (
               <>
                 <div className={styles.transactionList}>
-                  {transactions.map((tx) => {
-                    const isPositive = tx.voExpAmount > 0;
-                    const typeLabel = getExpTypeDisplay(tx.voExpTypeDisplay || tx.voExpType);
-                    const timeLabel = new Date(tx.voCreateTime).toLocaleString('zh-CN', {
-                      month: '2-digit',
-                      day: '2-digit',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    });
+                  {transactions.map((transaction) => {
+                    const isPositive = transaction.voExpAmount > 0;
+                    const typeLabel = formatExperienceType(transaction.voExpType, t);
+                    const timeLabel = formatExperienceDateTime(
+                      transaction.voCreateTime,
+                      displayTimeZone,
+                      language,
+                    );
                     return (
                       <div
-                        key={tx.voId}
+                        key={transaction.voId}
                         className={`${styles.transactionItem} ${isPositive ? styles.positive : styles.negative}`}
                       >
                         <div className={`${styles.txBadge} ${isPositive ? styles.txBadgePositive : styles.txBadgeNegative}`}>
-                          <Icon icon={isPositive ? "mdi:plus" : "mdi:minus"} size={18} />
+                          <Icon icon={isPositive ? 'mdi:plus' : 'mdi:minus'} size={18} />
                         </div>
                         <div className={styles.txInfo}>
                           <div className={styles.txTitleRow}>
                             <div className={styles.txType}>{typeLabel}</div>
-                            {tx.voIsLevelUp && <span className={styles.txLevelUp}>升级</span>}
+                            {transaction.voIsLevelUp && (
+                              <span className={styles.txLevelUp}>{t('experience.transaction.levelUp')}</span>
+                            )}
                           </div>
                           <div className={styles.txMeta}>
                             <span className={styles.txTime}>{timeLabel}</span>
                             <span className={styles.txLevelChange}>
-                              Lv.{tx.voLevelBefore} → Lv.{tx.voLevelAfter}
+                              Lv.{transaction.voLevelBefore} → Lv.{transaction.voLevelAfter}
                             </span>
                           </div>
-                          {tx.voRemark && <div className={styles.txRemark}>{tx.voRemark}</div>}
+                          {transaction.voRemark && <div className={styles.txRemark}>{transaction.voRemark}</div>}
                         </div>
                         <div className={styles.txAmountWrap}>
                           <div className={styles.txAmount}>
-                            {isPositive ? '+' : ''}{tx.voExpAmount}
+                            {formatExperienceSignedNumber(transaction.voExpAmount, language)}
                           </div>
                           <div className={styles.txBalance}>
-                            余额 {Number(tx.voExpAfter).toLocaleString()}
+                            {t('experience.transaction.balance', {
+                              value: formatExperienceNumber(transaction.voExpAfter, language),
+                            })}
                           </div>
                         </div>
                       </div>
@@ -420,24 +377,29 @@ export const ExperienceDetailApp = ({
 
                 <div className={styles.pagination}>
                   <button
-                    onClick={handlePrevPage}
+                    type="button"
+                    onClick={() => pageIndex > 1 && updatePageIndex(pageIndex - 1)}
                     disabled={pageIndex === 1}
                     className={styles.pageButton}
                   >
                     <Icon icon="mdi:chevron-left" size={20} />
-                    上一页
+                    {t('common.previousPage')}
                   </button>
 
                   <span className={styles.pageInfo}>
-                    第 {pageIndex} / {totalPages} 页
+                    {t('experience.pagination.pageInfo', {
+                      current: formatExperienceNumber(pageIndex, language),
+                      total: formatExperienceNumber(totalPages, language),
+                    })}
                   </span>
 
                   <button
-                    onClick={handleNextPage}
+                    type="button"
+                    onClick={() => pageIndex < totalPages && updatePageIndex(pageIndex + 1)}
                     disabled={pageIndex >= totalPages}
                     className={styles.pageButton}
                   >
-                    下一页
+                    {t('common.nextPage')}
                     <Icon icon="mdi:chevron-right" size={20} />
                   </button>
                 </div>

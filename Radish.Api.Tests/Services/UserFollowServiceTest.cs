@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -7,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.OptionTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -18,6 +20,77 @@ namespace Radish.Api.Tests.Services;
 
 public class UserFollowServiceTest
 {
+    [Fact]
+    public async Task FollowAsync_ShouldRestoreSoftDeletedPairAndQueueNotification()
+    {
+        var outboxService = new Mock<IReliableOutboxService>();
+        var harness = CreateHarness(outboxService);
+        var deletedFollow = new UserFollow
+        {
+            Id = 301,
+            FollowerUserId = 10001,
+            FollowingUserId = 20002,
+            IsDeleted = true,
+            DeletedAt = DateTime.UtcNow,
+            DeletedBy = "alice",
+            TenantId = 0
+        };
+        harness.UserRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync((Expression<Func<User, bool>> predicate) =>
+            {
+                var users = new[]
+                {
+                    new User { Id = 10001, UserName = "alice", PublicId = "usr_alice", IsEnable = true },
+                    new User { Id = 20002, UserName = "bob", PublicId = "usr_bob", IsEnable = true }
+                };
+                return users.FirstOrDefault(predicate.Compile());
+            });
+        harness.UserFollowRepository
+            .Setup(repository => repository.QueryPairIncludingDeletedAsync(10001, 20002, 0))
+            .ReturnsAsync(deletedFollow);
+        harness.UserFollowRepository
+            .Setup(repository => repository.UpdateAsync(deletedFollow))
+            .ReturnsAsync(true);
+        harness.AttachmentRepository
+            .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>>()))
+            .ReturnsAsync([]);
+        outboxService
+            .Setup(service => service.AddAsync(
+                ReliableOutboxSources.Main,
+                0,
+                ReliableTaskTypes.NotificationRequested,
+                It.IsAny<string>(),
+                "UserFollow",
+                "10001:20002",
+                It.IsAny<NotificationRequestedTaskPayload>(),
+                It.IsAny<DateTime>(),
+                1))
+            .ReturnsAsync(401L);
+
+        var result = await harness.Service.FollowAsync(10001, 20002, 0, "alice");
+
+        Assert.True(result);
+        Assert.False(deletedFollow.IsDeleted);
+        Assert.Null(deletedFollow.DeletedAt);
+        Assert.Null(deletedFollow.DeletedBy);
+        harness.UserFollowRepository.Verify(repository => repository.UpdateAsync(deletedFollow), Times.Once);
+        outboxService.Verify(service => service.AddAsync(
+            ReliableOutboxSources.Main,
+            0,
+            ReliableTaskTypes.NotificationRequested,
+            It.IsAny<string>(),
+            "UserFollow",
+            "10001:20002",
+            It.Is<NotificationRequestedTaskPayload>(payload =>
+                payload.Notification.Type == NotificationType.Followed &&
+                payload.Notification.ReceiverUserIds.SequenceEqual(new[] { 20002L }) &&
+                payload.Notification.Target != null &&
+                payload.Notification.Target.UserId == 10001),
+            It.IsAny<DateTime>(),
+            1), Times.Once);
+    }
+
     [Fact]
     public async Task GetMyFollowingAsync_ShouldReturnUserPublicId()
     {
@@ -133,10 +206,10 @@ public class UserFollowServiceTest
             It.IsAny<Expression<Func<User, bool>>>()), Times.Once);
     }
 
-    private static UserFollowServiceHarness CreateHarness()
+    private static UserFollowServiceHarness CreateHarness(Mock<IReliableOutboxService>? outboxService = null)
     {
         var mapper = new Mock<IMapper>();
-        var userFollowRepository = new Mock<IBaseRepository<UserFollow>>();
+        var userFollowRepository = new Mock<IUserFollowRepository>();
         var userRepository = new Mock<IBaseRepository<User>>();
         var attachmentRepository = new Mock<IBaseRepository<Attachment>>();
         var postService = new Mock<IPostService>();
@@ -153,7 +226,8 @@ public class UserFollowServiceTest
             notificationService.Object,
             logger.Object,
             Options.Create(new FeedDistributionOptions()),
-            attachmentUrlResolver.Object);
+            attachmentUrlResolver.Object,
+            outboxService?.Object);
 
         return new UserFollowServiceHarness(
             service,
@@ -164,7 +238,7 @@ public class UserFollowServiceTest
 
     private sealed record UserFollowServiceHarness(
         UserFollowService Service,
-        Mock<IBaseRepository<UserFollow>> UserFollowRepository,
+        Mock<IUserFollowRepository> UserFollowRepository,
         Mock<IBaseRepository<User>> UserRepository,
         Mock<IBaseRepository<Attachment>> AttachmentRepository);
 }

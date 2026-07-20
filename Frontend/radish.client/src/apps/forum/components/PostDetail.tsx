@@ -1,11 +1,15 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { createReactionBarLabels } from '../utils/reactionBarLabels';
+import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
+import { UserAdornment } from '@/components/UserAdornment';
 import type { PostDetail as PostDetailType, QuestionAnswerFilter, QuestionAnswerSort, ReactionSummaryVo } from '@/api/forum';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import type { LongId } from '@/api/user';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
+import { log } from '@/utils/logger';
 import { Icon } from '@radish/ui/icon';
 import {
   buildAttachmentAssetUrl,
@@ -37,6 +41,7 @@ interface PostDetailProps {
   onClosePoll?: () => Promise<void>;
   onDrawLottery?: () => Promise<void>;
   onAnswerQuestion?: (content: string) => Promise<void>;
+  onAnswerEditorUploadingChange?: (uploading: boolean) => void;
   onAcceptAnswer?: (answerId: LongId) => Promise<void>;
   answerSort?: QuestionAnswerSort;
   answerFilter?: QuestionAnswerFilter;
@@ -106,6 +111,7 @@ export const PostDetail = ({
   onClosePoll,
   onDrawLottery,
   onAnswerQuestion,
+  onAnswerEditorUploadingChange,
   onAcceptAnswer,
   answerSort = 'default',
   answerFilter = 'all',
@@ -136,7 +142,15 @@ export const PostDetail = ({
   onLotteryClick,
   onReport,
 }: PostDetailProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const reactionLabels = useMemo(() => createReactionBarLabels(t), [t]);
+  const markdownEditorLabels = useMemo(
+    () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, t],
+  );
+  const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
+    log.error('PostDetail', `Answer Markdown ${kind} upload failed:`, error);
+  }, []);
   const isReadOnly = mode === 'readOnly';
   const containerClassName = `${styles.container} ${density === 'compact' ? styles.containerCompact : ''}`;
   const resolveProfileUserId = (userId: LongId, publicId?: string | null): LongId =>
@@ -155,11 +169,16 @@ export const PostDetail = ({
   const [isVoting, setIsVoting] = useState(false);
   const [answerContent, setAnswerContent] = useState('');
   const [isSubmittingAnswer, setIsSubmittingAnswer] = useState(false);
+  const [isAnswerEditorUploading, setIsAnswerEditorUploading] = useState(false);
   const [acceptingAnswerId, setAcceptingAnswerId] = useState<LongId | null>(null);
   const [isDrawingLottery, setIsDrawingLottery] = useState(false);
   const [isClosingPoll, setIsClosingPoll] = useState(false);
   const [isTogglingTop, setIsTogglingTop] = useState(false);
   const answerComposerRef = useRef<HTMLDivElement | null>(null);
+  const handleAnswerEditorUploadingChange = useCallback((uploading: boolean) => {
+    setIsAnswerEditorUploading(uploading);
+    onAnswerEditorUploadingChange?.(uploading);
+  }, [onAnswerEditorUploadingChange]);
 
   const isAuthor = !!post && isSameLongId(post.voAuthorId, currentUserId);
   const showFollowAction = isAuthenticated && !!post && !isAuthor && String(post.voAuthorId) !== '0' && !!onToggleFollow;
@@ -355,7 +374,7 @@ export const PostDetail = ({
 
   const handleAnswerSubmit = async () => {
     const trimmedContent = answerContent.trim();
-    if (!trimmedContent || !onAnswerQuestion) {
+    if (!trimmedContent || !onAnswerQuestion || isAnswerEditorUploading) {
       return;
     }
 
@@ -368,13 +387,17 @@ export const PostDetail = ({
     }
   };
 
-  const handleAnswerImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
+  const handleAnswerImageUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownImageUploadResult> => {
     const result = await uploadImage({
       file,
       businessType: 'Comment',
       generateThumbnail: true,
       generateMultipleSizes: false,
-      removeExif: true
+      removeExif: true,
+      onProgress: reportProgress,
     }, t);
 
     return {
@@ -384,10 +407,14 @@ export const PostDetail = ({
     };
   };
 
-  const handleAnswerDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
+  const handleAnswerDocumentUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownDocumentUploadResult> => {
     const result = await uploadDocument({
       file,
-      businessType: 'Comment'
+      businessType: 'Comment',
+      onProgress: reportProgress,
     }, t);
 
     return {
@@ -476,6 +503,7 @@ export const PostDetail = ({
                 )}
               </span>
               <span>{t('forum.postDetail.author', { name: post.voAuthorName })}</span>
+              <UserAdornment adornment={post.voAuthorAdornment} />
             </button>
           )}
           {post.voCreateTime && <span> · {formatDateTimeByTimeZone(post.voCreateTime, displayTimeZone)}</span>}
@@ -841,6 +869,7 @@ export const PostDetail = ({
                               )}
                             </span>
                             <span className={styles.answerAuthor}>{answerAuthorName}</span>
+                            <UserAdornment adornment={answer.voAuthorAdornment} />
                           </button>
                           <span className={styles.answerTime}>
                             {formatDateTimeByTimeZone(answer.voCreateTime, displayTimeZone, unknownTimeLabel)}
@@ -889,6 +918,7 @@ export const PostDetail = ({
                   <MarkdownEditor
                     value={answerContent}
                     onChange={setAnswerContent}
+                    labels={markdownEditorLabels}
                     placeholder={isAuthenticated
                       ? t('forum.postDetail.question.placeholderLoggedIn')
                       : t('forum.postDetail.question.placeholderLoggedOut')}
@@ -900,6 +930,8 @@ export const PostDetail = ({
                     className={styles.answerEditor}
                     onImageUpload={handleAnswerImageUpload}
                     onDocumentUpload={handleAnswerDocumentUpload}
+                    onUploadError={handleEditorUploadError}
+                    onUploadingChange={handleAnswerEditorUploadingChange}
                     stickerGroups={stickerGroups}
                     stickerMap={stickerMap}
                   />
@@ -918,7 +950,7 @@ export const PostDetail = ({
                     onClick={() => {
                       void handleAnswerSubmit();
                     }}
-                    disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer}
+                    disabled={!isAuthenticated || !answerContent.trim() || isSubmittingAnswer || isAnswerEditorUploading}
                   >
                     {isSubmittingAnswer ? t('forum.postDetail.question.submitLoading') : t('forum.postDetail.question.submit')}
                   </button>
@@ -1001,6 +1033,7 @@ export const PostDetail = ({
               stickerGroups={stickerGroups}
               onToggle={onToggleReaction}
               onRequireLogin={onRequireReactionLogin}
+              labels={reactionLabels}
             />
           )}
 
@@ -1047,6 +1080,7 @@ export const PostDetail = ({
                       onClick={() => onDelete(post.voId)}
                       className={styles.deleteButton}
                       title={t('forum.postDetail.action.deleteTitle')}
+                      disabled={isAnswerEditorUploading}
                     >
                       <Icon icon="mdi:delete" size={18} />
                       {t('forum.postDetail.action.delete')}

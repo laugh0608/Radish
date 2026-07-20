@@ -50,7 +50,7 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="userId">用户 Id</param>
     /// <param name="commentId">评论 Id</param>
     /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
-    Task<CommentLikeResultDto> ToggleLikeAsync(long userId, long commentId);
+    Task<CommentLikeResultDto> ToggleLikeAsync(long userId, string userName, long commentId);
 
     /// <summary>
     /// 批量查询用户对评论的点赞状态

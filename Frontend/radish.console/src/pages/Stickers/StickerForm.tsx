@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AntModal as Modal,
   Form,
@@ -9,6 +10,8 @@ import {
   PlusOutlined,
   Space,
   message,
+  attachmentImageAccept,
+  isSupportedAttachmentImageFile,
 } from '@radish/ui';
 import { Upload } from 'antd';
 import type { UploadProps } from 'antd';
@@ -35,6 +38,7 @@ interface StickerFormProps {
 }
 
 export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSuccess }: StickerFormProps) => {
+  const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
@@ -53,15 +57,13 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
   const handleImageUpload: UploadProps['customRequest'] = async (options) => {
     const file = options.file;
     if (!(file instanceof File)) {
-      options.onError?.(new Error('无效文件'));
+      options.onError?.(new Error(t('stickers.common.invalidFile')));
       return;
     }
 
-    const isImage = file.type
-      ? file.type.startsWith('image/')
-      : /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(file.name);
+    const isImage = isSupportedAttachmentImageFile(file);
     if (!isImage) {
-      const error = new Error('仅支持上传图片文件');
+      const error = new Error(t('stickers.common.imageOnly'));
       options.onError?.(error);
       message.error(error.message);
       return;
@@ -69,7 +71,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
 
     const isLt5M = file.size / 1024 / 1024 <= 5;
     if (!isLt5M) {
-      const error = new Error('图片大小不能超过 5MB');
+      const error = new Error(t('stickers.common.imageTooLarge'));
       options.onError?.(error);
       message.error(error.message);
       return;
@@ -86,9 +88,9 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       });
       setPreviewUrl(getAvatarUrl(result.thumbnailUrl || result.url) || '');
       options.onSuccess?.(result);
-      message.success('图片上传成功，已自动回填附件 ID');
+      message.success(t('stickers.itemForm.imageUploaded'));
     } catch (error) {
-      const uploadError = error instanceof Error ? error : new Error('图片上传失败');
+      const uploadError = error instanceof Error ? error : new Error(t('stickers.common.uploadFailed'));
       options.onError?.(uploadError);
       log.error('StickerForm', '上传单个表情图片失败:', error);
       message.error(uploadError.message);
@@ -111,7 +113,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       setCodeChecking(true);
       const result = await checkStickerCode(groupId, code);
       if (!result.voAvailable) {
-        form.setFields([{ name: 'code', errors: ['该分组内表情标识符已存在'] }]);
+        form.setFields([{ name: 'code', errors: [t('stickers.itemForm.codeExists')] }]);
       } else {
         form.setFields([{ name: 'code', errors: [] }]);
       }
@@ -124,7 +126,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
 
   const handleSubmit = async () => {
     if (imageUploading) {
-      message.warning('图片仍在上传中，请稍候提交');
+      message.warning(t('stickers.itemForm.uploading'));
       return;
     }
 
@@ -136,7 +138,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         const normalizedCode = values.code.trim().toLowerCase();
         const availability = await checkStickerCode(groupId, normalizedCode);
         if (!availability.voAvailable) {
-          form.setFields([{ name: 'code', errors: ['该分组内表情标识符已存在'] }]);
+          form.setFields([{ name: 'code', errors: [t('stickers.itemForm.codeExists')] }]);
           return;
         }
 
@@ -152,7 +154,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         };
 
         await addSticker(request);
-        message.success('新增表情成功');
+        message.success(t('stickers.itemForm.feedback.created'));
       } else if (mode === 'edit' && sticker) {
         const request: UpdateStickerRequest = {
           name: values.name.trim(),
@@ -164,13 +166,13 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
         };
 
         await updateSticker(sticker.voId, request);
-        message.success('更新表情成功');
+        message.success(t('stickers.itemForm.feedback.updated'));
       }
 
       onSuccess();
     } catch (error) {
       log.error('StickerForm', '提交表情表单失败:', error);
-      message.error(mode === 'create' ? '新增表情失败' : '更新表情失败');
+      message.error(t(mode === 'create' ? 'stickers.itemForm.feedback.createFailed' : 'stickers.itemForm.feedback.updateFailed'));
     } finally {
       setLoading(false);
     }
@@ -211,7 +213,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
 
   return (
     <Modal
-      title={mode === 'create' ? '新增表情' : '编辑表情'}
+      title={t(mode === 'create' ? 'stickers.itemForm.createTitle' : 'stickers.itemForm.editTitle')}
       open={visible}
       onOk={() => {
         void handleSubmit();
@@ -230,7 +232,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
               setPreviewUrl('');
             }}
           >
-            重置
+            {t('stickers.itemForm.reset')}
           </Button>
           <OkBtn />
         </>
@@ -239,58 +241,58 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
       <Form form={form} layout="vertical">
         <Form.Item
           name="code"
-          label="表情标识符"
-          tooltip={mode === 'edit' ? '表情标识符创建后不可修改' : '仅允许小写字母、数字和下划线'}
+          label={t('stickers.itemForm.code')}
+          tooltip={t(mode === 'edit' ? 'stickers.itemForm.codeImmutable' : 'stickers.common.codePattern')}
           rules={[
-            { required: true, message: '请输入表情标识符' },
-            { max: 100, message: '表情标识符不能超过100个字符' },
-            { pattern: /^[a-z0-9_]+$/, message: '仅允许小写字母、数字和下划线' },
+            { required: true, message: t('stickers.itemForm.codeRequired') },
+            { max: 100, message: t('stickers.itemForm.codeMax') },
+            { pattern: /^[a-z0-9_]+$/, message: t('stickers.common.codePattern') },
           ]}
         >
           <Input
-            placeholder="例如：happy"
+            placeholder={t('stickers.itemForm.codePlaceholder')}
             disabled={mode === 'edit'}
             onBlur={() => {
               void handleCodeBlur();
             }}
-            suffix={codeChecking ? '校验中...' : undefined}
+            suffix={codeChecking ? t('stickers.common.codeChecking') : undefined}
           />
         </Form.Item>
 
         <Form.Item
           name="name"
-          label="显示名称"
+          label={t('stickers.itemForm.name')}
           rules={[
-            { required: true, message: '请输入显示名称' },
-            { max: 200, message: '显示名称不能超过200个字符' },
+            { required: true, message: t('stickers.itemForm.nameRequired') },
+            { max: 200, message: t('stickers.itemForm.nameMax') },
           ]}
         >
-          <Input placeholder="例如：开心" />
+          <Input placeholder={t('stickers.itemForm.namePlaceholder')} />
         </Form.Item>
 
-        <Form.Item label="图片资源">
+        <Form.Item label={t('stickers.itemForm.image')}>
           <Space orientation="vertical" className="admin-form-field-stack" size={10}>
             <div className="admin-form-upload-preview admin-form-upload-preview--sticker">
               {previewUrl ? (
                 <img
                   src={previewUrl}
-                  alt="表情预览"
+                  alt={t('stickers.itemForm.imageAlt')}
                   className="admin-form-upload-preview__image admin-form-upload-preview__image--contain"
                 />
               ) : (
-                <span>暂无图片</span>
+                <span>{t('stickers.itemForm.noImage')}</span>
               )}
             </div>
 
             <Space>
               <Upload
-                accept="image/*"
+                accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={handleImageUpload}
                 disabled={imageUploading || loading}
               >
                 <Button icon={<PlusOutlined />} disabled={imageUploading || loading}>
-                  {imageUploading ? '上传中...' : '上传图片'}
+                  {t(imageUploading ? 'stickers.common.uploading' : 'stickers.itemForm.uploadImage')}
                 </Button>
               </Upload>
               <Button
@@ -302,7 +304,7 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
                   setPreviewUrl('');
                 }}
               >
-                清空图片
+                {t('stickers.itemForm.clearImage')}
               </Button>
             </Space>
           </Space>
@@ -310,34 +312,34 @@ export const StickerForm = ({ visible, groupId, mode, sticker, onCancel, onSucce
 
         <Form.Item
           name="attachmentId"
-          label="附件 ID"
-          tooltip="上传后自动回填；也可手动填写"
-          rules={[{ pattern: /^[1-9]\d*$/, message: '附件ID必须为正整数' }]}
+          label={t('stickers.itemForm.attachmentId')}
+          tooltip={t('stickers.itemForm.attachmentIdTooltip')}
+          rules={[{ pattern: /^[1-9]\d*$/, message: t('stickers.common.attachmentIdInvalid') }]}
         >
-          <Input placeholder="例如：2028085755741470720" />
+          <Input placeholder={t('stickers.itemForm.attachmentIdPlaceholder')} />
         </Form.Item>
 
         <Form.Item
           name="sort"
-          label="排序"
+          label={t('stickers.common.sort')}
           rules={[
-            { required: true, message: '请输入排序值' },
-            { type: 'number', min: 0, message: '排序值不能为负数' },
+            { required: true, message: t('stickers.common.sortRequired') },
+            { type: 'number', min: 0, message: t('stickers.common.sortMin') },
           ]}
         >
           <InputNumber min={0} className="admin-form-control-full" />
         </Form.Item>
 
-        <Form.Item name="allowInline" label="允许内嵌正文" valuePropName="checked">
-          <Switch checkedChildren="允许" unCheckedChildren="仅Reaction" />
+        <Form.Item name="allowInline" label={t('stickers.itemForm.inline')} valuePropName="checked">
+          <Switch checkedChildren={t('stickers.item.inline.allowed')} unCheckedChildren={t('stickers.item.inline.reactionOnly')} />
         </Form.Item>
 
-        <Form.Item name="isAnimated" label="是否动图" valuePropName="checked">
-          <Switch checkedChildren="GIF" unCheckedChildren="静图" />
+        <Form.Item name="isAnimated" label={t('stickers.itemForm.animated')} valuePropName="checked">
+          <Switch checkedChildren="GIF" unCheckedChildren={t('stickers.item.type.static')} />
         </Form.Item>
 
-        <Form.Item name="isEnabled" label="启用状态" valuePropName="checked">
-          <Switch checkedChildren="启用" unCheckedChildren="禁用" />
+        <Form.Item name="isEnabled" label={t('stickers.itemForm.enabled')} valuePropName="checked">
+          <Switch checkedChildren={t('stickers.common.enabled')} unCheckedChildren={t('stickers.common.disabled')} />
         </Form.Item>
       </Form>
     </Modal>

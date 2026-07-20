@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { ToastContainer } from '@radish/ui/toast';
 import { LevelUpModal } from '@radish/ui/level-up-modal';
 import { getApiBaseUrl } from '@/config/env';
 import { notificationHub } from '@/services/notificationHub';
@@ -26,8 +25,7 @@ import styles from './Shell.module.css';
  * WebOS 的主容器，包含桌面、窗口管理器和 Dock（含灵动岛）
  */
 export const Shell = () => {
-  // 使用 ref 防止 React StrictMode 双重挂载导致重复连接
-  const hasStartedRef = useRef(false);
+  const chatHubOwnerRef = useRef(Symbol('desktop-shell-chat'));
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
   // 升级事件监听
@@ -57,9 +55,7 @@ export const Shell = () => {
       clearUser();
 
       // 清除通知
-      const notificationStore = useNotificationStore.getState();
-      notificationStore.clearRecentNotifications();
-      notificationStore.setUnreadCount(0);
+      useNotificationStore.getState().reset();
       resetChatStore();
     }
   }, [isAuthenticated, currentUser, clearUser, resetChatStore]);
@@ -125,26 +121,26 @@ export const Shell = () => {
 
   // 根据认证状态控制 SignalR 连接
   useEffect(() => {
-    // 防止 React StrictMode 导致重复启动连接
-    if (isAuthenticated && !hasStartedRef.current) {
-      hasStartedRef.current = true;
+    // StrictMode 可能重放旧 render 的 effect；执行时重新读取账号状态，避免旧 false 停掉新连接。
+    const isCurrentlyAuthenticated = useAuthStore.getState().isAuthenticated;
+    if (isCurrentlyAuthenticated) {
       void notificationHub.start();
-      void chatHub.start();
-    } else if (!isAuthenticated && hasStartedRef.current) {
-      hasStartedRef.current = false;
+    } else if (!tokenService.getAccessToken()) {
+      // Token 仍在 hydration 时不停止账号级连接；真实登出会先清除 Token。
       void notificationHub.stop();
-      void chatHub.stop();
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const owner = chatHubOwnerRef.current;
+    if (!isAuthenticated) {
+      void chatHub.release(owner);
+      return;
     }
 
-    // cleanup 函数：仅在组件真正卸载时执行
+    void chatHub.acquire(owner);
     return () => {
-      // 延迟执行 stop，给 StrictMode 的第二次 mount 一个机会
-      setTimeout(() => {
-        if (!hasStartedRef.current) {
-          void notificationHub.stop();
-          void chatHub.stop();
-        }
-      }, 100);
+      void chatHub.release(owner);
     };
   }, [isAuthenticated]);
 
@@ -159,8 +155,6 @@ export const Shell = () => {
       <div className={styles.dockLayer}>
         <Dock />
       </div>
-      <ToastContainer />
-
       {/* 升级动画弹窗 */}
       {levelUpData && (
         <LevelUpModal

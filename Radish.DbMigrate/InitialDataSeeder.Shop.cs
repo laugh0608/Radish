@@ -4,6 +4,7 @@ using System.Linq;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Model;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -409,12 +410,12 @@ internal static partial class InitialDataSeeder
                 CategoryId = "theme",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Theme,
-                BenefitValue = "theme-dark-night",
+                BenefitValue = ShopThemeResources.DarkNight,
                 Price = 200,
                 StockType = StockType.Unlimited,
                 DurationType = DurationType.Permanent,
                 SortOrder = 0,
-                IsOnSale = true,
+                IsOnSale = false,
                 IsEnabled = true,
                 CreateTime = DateTime.Now,
                 CreateBy = "System"
@@ -427,12 +428,12 @@ internal static partial class InitialDataSeeder
                 CategoryId = "theme",
                 ProductType = ProductType.Benefit,
                 BenefitType = BenefitType.Theme,
-                BenefitValue = "theme-sakura",
+                BenefitValue = ShopThemeResources.Sakura,
                 Price = 200,
                 StockType = StockType.Unlimited,
                 DurationType = DurationType.Permanent,
                 SortOrder = 1,
-                IsOnSale = true,
+                IsOnSale = false,
                 IsEnabled = true,
                 CreateTime = DateTime.Now,
                 CreateBy = "System"

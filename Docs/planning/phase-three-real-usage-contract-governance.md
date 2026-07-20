@@ -1,6 +1,6 @@
 # 第三开发阶段：真实使用增长与长期契约治理
 
-> 状态：`P3-12-F 正式版发布候选`；Q0 与 E8-B 已完成，当前按 `Q1 收口 → Q2 数据与版本治理 → Q3 候选验证 → 受控试用` 推进，`Q4` 为持续维护
+> 状态：`P3-12-F 已完成`；`v26.7.1.1204-release` 已完成固定 tag 生产部署，当前进入发布后长期维护与功能完成线
 >
 > 启动日期：2026-05-13（Asia/Shanghai）
 >
@@ -16,7 +16,7 @@
 2. 多端之间的路由、对象标识、登录回流和公开链接契约是否足够稳定。
 3. 现有代码体量、验证入口和文档入口是否还能支撑继续扩展。
 
-因此第三阶段主题暂定为：**真实使用增长与长期契约治理**。当前 `P3-12-F` 属于“把既有产品做到可发布、可升级、可恢复、可受控试用”的正式候选期，不把代码量、页面数量或本地通过当作增长证据。真正的增长验证由候选验收后的受控真实试用开始，以真实内容、参与转化、复访、治理反馈和运行数据决定后续投入。
+因此第三阶段主题固定为：**真实使用增长与长期契约治理**。`P3-12-F` 已完成“可发布、可升级、可恢复、可受控试用”的正式候选与生产部署闭环，不把代码量、页面数量或本地通过当作增长证据。后续增长验证从生产真实使用开始，以真实内容、参与转化、复访、治理反馈和运行数据决定维护与功能投入。
 
 ## 当前推进状态
 
@@ -28,7 +28,7 @@
 
 `P3-7-A / P3-7-B` 已完成 WebOS / PC 工作台复访小闭环和高信号候选筛查，当前未发现新的 `P0/P1`。`P3-7-C` 已完成近期开发任务重评估与首批热区治理：`WikiApp`、`ChatApp`、`ContentModerationService` 与 `ExperienceService` 均已完成首批行为等价拆分。继续硬拆 `ExperienceService` 经验发放主流程的收益下降、风险上升，因此 `P3-7-C3` 作为当前主线阶段收口。
 
-`P3-8` 至 `P3-11` 已完成多端补全、Web-first 信息架构、公开与私域主路径、管理员治理路径以及阶段性回归；当时的“暂缓 PR / 跳过发布”属于对应批次的历史约束，不再作为当前冻结门禁。[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 的 `Q0 + E8-B` 已完成并进入 `F`；Q1-A、Q1-B、Q1-C 与 Q2-A 高风险时间语义均已收口，当前进入 Q2-B 数据库演进方案。随后按 `Q2-C 版本真值 → Q3 候选验证` 推进，`Q4` 继续作为持续维护。
+`P3-8` 至 `P3-11` 已完成多端补全、Web-first 信息架构、公开与私域主路径、管理员治理路径以及阶段性回归；当时的“暂缓 PR / 跳过发布”属于对应批次的历史约束，不再作为当前冻结门禁。[P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) 的 `Q0 + E8-B`、Q1、Q2、Q3、候选运行态验收与正式部署均已完成；`Q4` 和生产真实反馈进入持续维护，功能完成线按商城权益、主题和 i18n 顺位推进。
 
 ## `P3-0` 定义与工程整备
 
@@ -598,7 +598,7 @@ npm run check:repo-hygiene:changed
 ### 现状判断
 
 - 当前 `Frontend/radish.client/public/sitemap.xml` 是静态 seed，只覆盖 `/discover`、forum / docs / shop 公开入口和少量列表页。
-- Gateway 当前通过 YARP 将 `/api/{**catch-all}`、`/uploads/{**catch-all}`、`/_assets/attachments/{**catch-all}` 等路由转到 API，并用最低优先级 `/{**catch-all}` 转前端；动态 sitemap 若对外暴露为顶层 `/sitemap.xml`，必须在 Gateway 中显式声明高于前端 catch-all 的路由。
+- Gateway 当前通过 YARP 将 `/api/{**catch-all}`、`/uploads/DefaultIco/{**catch-all}`、`/_assets/attachments/{**catch-all}` 等路由转到 API，并用最低优先级 `/{**catch-all}` 转前端；用户上传根目录不得直接代理。动态 sitemap 若对外暴露为顶层 `/sitemap.xml`，必须在 Gateway 中显式声明高于前端 catch-all 的路由。
 - forum 已具备 `Post.PublicId` canonical，docs 已以 `slug` 作为公开详情主路由，shop 仍以 `productId` 作为兼容公开详情路由。三类详情都能由后端根据公开状态筛出可索引 URL。
 
 ### 路线评估

@@ -16,6 +16,65 @@ export type {
   ParsedApiResponse,
 } from './types';
 
+export type {
+  NotificationCategory,
+  NotificationTargetKind,
+  NotificationTargetVo,
+  NotificationInboxSummaryVo,
+  NotificationInboxGroupVo,
+  NotificationInboxPageVo,
+  NotificationInboxMutationVo,
+  NotificationPreferenceVo,
+  UpdateNotificationPreferenceDto,
+  NotificationInboxChangedVo,
+} from './notification-contract';
+
+export type {
+  ChatMessageSearchScope,
+  SearchChannelMessagesDto,
+  ChannelMessageSearchItemVo,
+  ChannelMessageSearchPageVo,
+} from './chat-search-contract';
+export { ChatMessageSearchScopes } from './chat-search-contract';
+
+export type {
+  ChatReactionEmojiType,
+  ChatReactionSummaryVo,
+  ChatMessageReactionStateVo,
+  GetChatMessageReactionStatesDto,
+  SetChatMessageReactionDto,
+  ChatMessageReactionMutationVo,
+} from './chat-reaction-contract';
+
+export type {
+  ChatPinnedMessageVo,
+  ChatMessagePinVo,
+  ChatMessagePinStateVo,
+  SetChatMessagePinDto,
+  ChatMessagePinMutationVo,
+} from './chat-pin-contract';
+
+export type {
+  ChatReadReceiptMode,
+  AdvanceChannelReadStateDto,
+  ChannelReadStateVo,
+  GetChatReadReceiptSummariesDto,
+  ChatReadReceiptSummaryItemVo,
+  ChatReadReceiptSummariesVo,
+  ChatReadReceiptReaderVo,
+  GetChatReadReceiptReadersQuery,
+  ChatReadReceiptReaderPageVo,
+  ReadReceiptsChangedVo,
+} from './chat-read-receipt-contract';
+export { ChatReadReceiptModes } from './chat-read-receipt-contract';
+
+export type { ApiClientConfig } from './client';
+export {
+  ApiResponseError,
+  createApiResponseError,
+  isApiResponseNotFoundError,
+} from './api-response-error';
+
 // API 客户端
 export {
   configureApiClient,

@@ -29,10 +29,10 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, white 92%, var(--theme-bg-surface) 8%) 0%,
+      color-mix(in srgb, var(--theme-surface-highlight) 92%, var(--theme-bg-surface) 8%) 0%,
       color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-bg-muted) 10%) 100%
     );
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, white 20%);
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, var(--theme-surface-highlight) 20%);
   box-shadow:
     0 10px 22px color-mix(in srgb, var(--theme-accent-earth) 12%, transparent 88%),
     inset 0 0 0 1px color-mix(in srgb, var(--theme-brand-primary) 8%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.7);
@@ -48,7 +48,7 @@
   background:
     linear-gradient(
       180deg,
-      color-mix(in srgb, white 96%, var(--theme-bg-surface) 4%) 0%,
+      color-mix(in srgb, var(--theme-surface-highlight) 96%, var(--theme-bg-surface) 4%) 0%,
       color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-bg-muted) 6%) 100%
     );
   box-shadow:

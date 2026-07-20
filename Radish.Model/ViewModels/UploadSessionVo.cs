@@ -89,9 +89,9 @@ public class CreateUploadSessionDto
     public string? MimeType { get; set; }
 
     /// <summary>
-    /// 分片大小（字节，默认 2MB）
+    /// 分片大小（字节）；省略或传 0 时使用服务端 ChunkedUpload:DefaultChunkSize。
     /// </summary>
-    public int ChunkSize { get; set; } = 2 * 1024 * 1024;
+    public int ChunkSize { get; set; }
 
     /// <summary>
     /// 业务类型
@@ -99,7 +99,8 @@ public class CreateUploadSessionDto
     public string BusinessType { get; set; } = "General";
 
     /// <summary>
-    /// 业务ID（可选）
+    /// 业务 ID（保留兼容字段；当前分片上传不接受直接关联，非 null 请求会返回 400）
+    /// 合并完成后应通过具备目标业务授权的受控关联接口更新。
     /// </summary>
     public long? BusinessId { get; set; }
 }

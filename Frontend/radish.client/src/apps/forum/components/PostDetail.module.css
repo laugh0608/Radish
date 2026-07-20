@@ -134,6 +134,7 @@
   font-size: 12px;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -228,7 +229,7 @@
   border-radius: 12px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 82%, var(--theme-surface-highlight) 18%) 0%,
     color-mix(in srgb, var(--theme-brand-soft) 28%, var(--theme-bg-surface) 72%) 100%
   );
   min-width: 0;
@@ -241,7 +242,7 @@
   border-radius: 12px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 12%, var(--theme-bg-surface) 88%) 100%
   );
   min-width: 0;
@@ -354,7 +355,7 @@
   align-items: center;
   padding: 6px 10px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%);
   color: var(--theme-accent-earth);
   font-size: 12px;
   border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 18%, transparent);
@@ -382,7 +383,7 @@
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-accent-earth) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-earth) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 72%, var(--theme-brand-primary) 28%) 100%
   );
   color: var(--theme-bg-surface);
@@ -433,7 +434,7 @@
 .lotteryWinnerItem {
   padding: 12px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%);
   border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 14%, transparent);
 }
 
@@ -573,8 +574,8 @@
   border-radius: inherit;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--theme-brand-primary) 82%, white 18%) 0%,
-    color-mix(in srgb, var(--theme-accent-jade) 86%, white 14%) 100%
+    color-mix(in srgb, var(--theme-brand-primary) 82%, var(--theme-surface-highlight) 18%) 0%,
+    color-mix(in srgb, var(--theme-accent-jade) 86%, var(--theme-surface-highlight) 14%) 100%
   );
 }
 
@@ -603,8 +604,8 @@
   border-radius: 10px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-primary) 88%, white 12%) 0%,
-    color-mix(in srgb, var(--theme-accent-jade) 86%, white 14%) 100%
+    color-mix(in srgb, var(--theme-brand-primary) 88%, var(--theme-surface-highlight) 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-jade) 86%, var(--theme-surface-highlight) 14%) 100%
   );
   color: var(--theme-bg-surface);
   font-size: 13px;
@@ -646,7 +647,7 @@
   border-radius: 12px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%) 0%,
+    color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%) 0%,
     color-mix(in srgb, var(--theme-accent-earth) 8%, var(--theme-bg-surface) 92%) 100%
   );
   min-width: 0;
@@ -805,7 +806,7 @@
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-state-success) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-state-success) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-state-success) 72%, var(--theme-accent-jade) 28%) 100%
   );
   color: var(--theme-bg-surface);
@@ -832,6 +833,7 @@
 .answerAuthorButton {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 0;
   border: none;
@@ -899,8 +901,8 @@
   border-radius: 10px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-state-success) 88%, white 12%) 0%,
-    color-mix(in srgb, var(--theme-accent-jade) 82%, white 18%) 100%
+    color-mix(in srgb, var(--theme-state-success) 88%, var(--theme-surface-highlight) 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-jade) 82%, var(--theme-surface-highlight) 18%) 100%
   );
   color: var(--theme-bg-surface);
   font-size: 12px;
@@ -998,7 +1000,7 @@
   border-radius: 10px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-accent-earth) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-earth) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-brand-primary) 72%, var(--theme-accent-earth) 28%) 100%
   );
   color: var(--theme-bg-surface);
@@ -1219,6 +1221,17 @@
   background-color: color-mix(in srgb, var(--theme-state-danger) 12%, var(--theme-bg-surface) 88%);
   border-color: color-mix(in srgb, var(--theme-state-danger) 38%, transparent);
   color: var(--theme-state-danger);
+}
+
+.deleteButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.deleteButton:disabled:hover {
+  background-color: transparent;
+  border-color: var(--theme-border-soft);
+  color: var(--theme-text-primary);
 }
 
 @media (max-width: 720px) {

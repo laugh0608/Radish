@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useBrowserNavigationLock } from '@/bootstrap/browserNavigationLock';
 import { getApiBaseUrl } from '@/config/env';
 import { bootstrapAuth } from '@/services/authBootstrap';
 import { buildCirclePath } from '@/circle/circleRouteState';
@@ -78,17 +79,13 @@ import {
   type PublicRouteDescriptor,
   type PublicRouteSourceState,
 } from './publicRouteNavigation';
-import { applyPublicHead, buildPublicRouteHead } from './publicHead';
-import {
-  applyPublicStructuredData,
-  buildPublicRouteStructuredData,
-  removePublicStructuredData,
-} from './publicStructuredData';
+import { PublicHeadLifecycleOwner } from './PublicHeadLifecycle';
 export type {
   PublicListSort,
 } from './forumRouteState';
 
 const PUBLIC_ROUTE_SOURCE_STATE_KEY = 'radishPublicRouteSource';
+const PUBLIC_HISTORY_POSITION_STATE_KEY = 'radishPublicHistoryPosition';
 
 interface PublicBackAction {
   mode: PublicDetailBackMode;
@@ -119,13 +116,26 @@ function readPublicRouteSourceState(): PublicRouteSourceState {
     : {};
 }
 
-function buildPublicHistoryState(sourceState: PublicRouteSourceState): Record<string, unknown> {
-  const historyState = window.history.state;
+function readPublicHistoryPosition(historyState: unknown): number | null {
+  if (!historyState || typeof historyState !== 'object') {
+    return null;
+  }
+
+  const position = (historyState as Record<string, unknown>)[PUBLIC_HISTORY_POSITION_STATE_KEY];
+  return typeof position === 'number' && Number.isInteger(position) ? position : null;
+}
+
+function buildPublicHistoryState(
+  sourceState: PublicRouteSourceState,
+  position: number,
+  historyState: unknown = window.history.state,
+): Record<string, unknown> {
   const nextHistoryState = historyState && typeof historyState === 'object'
     ? { ...(historyState as Record<string, unknown>) }
     : {};
 
   nextHistoryState[PUBLIC_ROUTE_SOURCE_STATE_KEY] = sourceState;
+  nextHistoryState[PUBLIC_HISTORY_POSITION_STATE_KEY] = position;
   return nextHistoryState;
 }
 
@@ -231,6 +241,7 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
 export const PublicEntry = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [route, setRoute] = useState<PublicContentRouteDescriptor>(() => parsePublicRoute());
+  const [isForumDetailNavigationLocked, setIsForumDetailNavigationLocked] = useState(false);
   const [lastDiscoverRoute, setLastDiscoverRoute] = useState<PublicDiscoverRoute>(() => {
     const parsedRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
     return parsedRoute ?? createDefaultPublicDiscoverRoute();
@@ -248,9 +259,31 @@ export const PublicEntry = () => {
     return parsedRoute.kind === 'products' ? parsedRoute : createDefaultPublicShopProductsRoute();
   });
   const [routeSourceState, setRouteSourceState] = useState<PublicRouteSourceState>(() => readPublicRouteSourceState());
+  const historyPositionRef = useRef(readPublicHistoryPosition(window.history.state) ?? 0);
+  const lockedPathRef = useRef<string | null>(null);
+  const lockedHistoryStateRef = useRef<Record<string, unknown> | null>(null);
+  const lockedRouteSourceStateRef = useRef<PublicRouteSourceState | null>(null);
+
+  useBrowserNavigationLock(isForumDetailNavigationLocked);
+
+  const handleForumDetailNavigationLockChange = useCallback((locked: boolean) => {
+    if (locked) {
+      lockedPathRef.current = buildPublicPath(route);
+      lockedHistoryStateRef.current = buildPublicHistoryState(
+        routeSourceState,
+        historyPositionRef.current,
+      );
+      lockedRouteSourceStateRef.current = routeSourceState;
+    }
+
+    setIsForumDetailNavigationLocked(locked);
+  }, [route, routeSourceState]);
 
   useEffect(() => {
-    window.history.replaceState(buildPublicHistoryState(routeSourceState), '');
+    window.history.replaceState(
+      buildPublicHistoryState(routeSourceState, historyPositionRef.current),
+      '',
+    );
   }, [routeSourceState]);
 
   useEffect(() => {
@@ -271,17 +304,38 @@ export const PublicEntry = () => {
   }, [route]);
 
   useEffect(() => {
-    applyPublicHead(buildPublicRouteHead(route));
-  }, [route]);
-
-  useEffect(() => {
-    applyPublicStructuredData(buildPublicRouteStructuredData(route));
-    return removePublicStructuredData;
-  }, [route]);
-
-  useEffect(() => {
     const handlePopState = () => {
+      const nextHistoryPosition = readPublicHistoryPosition(window.history.state);
+      if (isForumDetailNavigationLocked) {
+        const stablePath = lockedPathRef.current ?? buildPublicPath(route);
+        const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        if (nextHistoryPosition === historyPositionRef.current && currentPath === stablePath) {
+          return;
+        }
+
+        if (nextHistoryPosition !== null) {
+          const restoreDelta = historyPositionRef.current - nextHistoryPosition;
+          if (restoreDelta !== 0) {
+            window.history.go(restoreDelta);
+            return;
+          }
+        }
+
+        const stableSourceState = lockedRouteSourceStateRef.current ?? routeSourceState;
+        window.history.pushState(
+          buildPublicHistoryState(
+            stableSourceState,
+            historyPositionRef.current,
+            lockedHistoryStateRef.current,
+          ),
+          '',
+          stablePath,
+        );
+        return;
+      }
+
       const nextRoute = parsePublicRoute();
+      historyPositionRef.current = nextHistoryPosition ?? 0;
       setRoute(nextRoute);
       setRouteSourceState(readPublicRouteSourceState());
       if (nextRoute.app === 'discover') {
@@ -302,9 +356,29 @@ export const PublicEntry = () => {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, []);
+  }, [isForumDetailNavigationLocked, route, routeSourceState]);
+
+  useEffect(() => {
+    if (!isForumDetailNavigationLocked) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isForumDetailNavigationLocked]);
 
   const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: PublicNavigateOptions) => {
+    if (isForumDetailNavigationLocked) {
+      return;
+    }
+
     const currentRoute = parsePublicRoute();
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
@@ -329,12 +403,16 @@ export const PublicEntry = () => {
       nextRoute,
       { preserveExisting: options?.preserveSourceState }
     );
-    const nextHistoryState = buildPublicHistoryState(nextRouteSourceState);
+    const nextHistoryPosition = options?.replace
+      ? historyPositionRef.current
+      : historyPositionRef.current + 1;
+    const nextHistoryState = buildPublicHistoryState(nextRouteSourceState, nextHistoryPosition);
 
     if (options?.replace) {
       window.history.replaceState(nextHistoryState, '', nextPath);
     } else if (currentPath !== nextPath) {
       window.history.pushState(nextHistoryState, '', nextPath);
+      historyPositionRef.current = nextHistoryPosition;
     }
 
     if (nextRoute.app === 'discover') {
@@ -351,7 +429,7 @@ export const PublicEntry = () => {
     }
     setRouteSourceState(nextRouteSourceState);
     setRoute(nextRoute);
-  }, []);
+  }, [isForumDetailNavigationLocked]);
 
   const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
@@ -466,7 +544,7 @@ export const PublicEntry = () => {
     };
   }, [navigateToRoute, routeSourceState.shopDetailSourceRoute]);
 
-  return route.app === 'discover' ? (
+  const page = route.app === 'discover' ? (
     <PublicDiscoverApp
       route={route.route}
       onNavigate={navigateToDiscoverRoute}
@@ -513,6 +591,8 @@ export const PublicEntry = () => {
       fallbackBrowseRoute={lastForumBrowseRoute}
       routeSourceState={routeSourceState}
       detailBackAction={forumDetailBackAction}
+      navigationLocked={isForumDetailNavigationLocked}
+      onNavigationLockChange={handleForumDetailNavigationLockChange}
       onNavigate={navigateToForumRoute}
       onNavigateToProfile={navigateToProfileFromForum}
       onNavigateToSearch={navigateToPublicForumSearch}
@@ -521,5 +601,11 @@ export const PublicEntry = () => {
       onNavigateToPoll={navigateToForumPoll}
       onNavigateToLottery={navigateToForumLottery}
     />
+  );
+
+  return (
+    <PublicHeadLifecycleOwner route={route} routeKey={buildPublicPath(route)}>
+      {page}
+    </PublicHeadLifecycleOwner>
   );
 };

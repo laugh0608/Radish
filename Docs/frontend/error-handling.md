@@ -1,608 +1,165 @@
-# 错误处理指南
+# 前端错误处理指南
 
-## 概述
+> 本页描述 client、Console、`@radish/http` 与共享 UI 的当前错误处理职责。
 
-`@radish/ui` 提供了统一的错误处理机制，帮助你优雅地处理各种错误情况，并向用户展示友好的错误消息。
+错误处理的目标不是把所有异常统一弹成一句 Toast，而是保留稳定控制流、用户操作上下文和可追踪诊断信息。
 
-## 核心特性
+## 1. 错误分层
 
-- ✅ 统一的错误处理接口
-- ✅ 自动错误消息提示
-- ✅ 可配置的错误处理器
-- ✅ 网络错误识别
-- ✅ HTTP 状态码错误映射
-- ✅ 开发环境详细日志
+| 类型 | 识别依据 | 处理位置 |
+| --- | --- | --- |
+| 表单校验 | 本地规则或服务端 validation error | 字段 / 表单附近 |
+| 业务失败 | HTTP status + `Code / MessageKey / MessageArguments / MessageInfo` | 当前业务页面或操作弹层 |
+| 认证失效 | `401`、Token 刷新结果、会话事件 | 宿主认证边界 |
+| 无权限 | `403` 或稳定权限 `Code` | 页面状态槽或禁用动作说明 |
+| not-found / gone | `404 / 410` 或稳定结构化错误 | 页面 not-found 状态 |
+| conflict | `409` 或稳定业务 `Code` | 保留输入，提示刷新 / 重试 / 调整请求 |
+| 网络 / 超时 | fetch reject、`AbortError` | 可重试页面状态或操作反馈 |
+| 未处理异常 | Error Boundary / 全局异常边界 | 安全通用错误 + 诊断入口 |
 
-## 快速开始
+禁止根据中英文消息文本判断错误类型。
 
-### 1. 配置错误处理
+## 2. API 调用模式
 
-在应用入口配置：
+不抛错的页面调用：
 
-```typescript
-import { configureErrorHandling, message } from '@radish/ui';
-
-configureErrorHandling({
-  // 是否自动显示错误消息
-  autoShowMessage: true,
-
-  // 消息显示函数
-  showMessage: (msg) => {
-    message.error(msg);
-  },
-
-  // 自定义错误处理器（可选）
-  onError: (error, context) => {
-    // 错误上报
-    console.error('Error occurred:', error, context);
-
-    // 可以在这里添加错误上报服务
-    // reportToSentry(error, context);
-  },
-});
-```
-
-### 2. 处理 API 错误
-
-```typescript
-import { handleApiError } from '@radish/ui';
-import { clientApi } from './api/clients';
-
-const result = await clientApi.getClients();
-
-// 自动处理 API 错误
-handleApiError(result);
-
-if (result.ok && result.data) {
-  // 成功逻辑
-  console.log(result.data);
+```ts
+const response = await apiGet<UserVo>(path, { withAuth: true });
+if (!response.ok || !response.data) {
+  setLoadError(response.message ?? t('error.common.loadFailed'));
+  return;
 }
+
+setUser(response.data);
 ```
 
-### 3. 处理通用错误
+需要跨 helper 抛错时：
 
-```typescript
-import { handleError } from '@radish/ui';
+```ts
+import { createApiResponseError } from '@radish/http';
+
+const response = await apiGet<UserVo>(path, { withAuth: true });
+if (!response.ok || !response.data) {
+  throw createApiResponseError(response, t('error.user.loadFailed'));
+}
+
+return response.data;
+```
+
+`ApiResponseError` 保留：
+
+- `code`
+- `messageKey`
+- `messageArguments`
+- `messageInfo`
+- `statusCode`
+- `httpStatus`
+- `traceId`
+
+不要把它提前转换成普通 `Error`。
+
+## 3. 控制流与用户文案
+
+控制流只读取：
+
+1. 真实 `httpStatus`；
+2. 稳定业务 `Code`；
+3. 明确数据状态；
+4. 兼容期才读取响应体 `statusCode`。
+
+用户文案按以下顺序选择：
+
+```text
+失败响应存在前端 MessageKey 翻译（使用可选 MessageArguments 格式化）
+  -> 服务端安全 MessageInfo
+  -> 当前操作的本地通用 fallback
+```
+
+`MessageInfo` 可以随语言和文案调整，不能成为 switch、正则或重试策略的输入。
+
+`MessageArguments` 只承载服务端规范化后的短位置参数，宿主可用于词元插值，但不得据此决定权限、重试、not-found 或其他业务流程。
+
+## 4. 页面反馈方式
+
+- 首次加载失败：使用页面状态槽，保留标题、返回路径和重试动作。
+- 列表局部刷新失败：保留旧数据并明确刷新失败，不清空成“无数据”。
+- 表单提交失败：保留输入、焦点和选择项；字段错误贴近字段，整体错误放在动作区附近。
+- 删除、撤销、购买、权益切换等高风险动作：错误留在确认上下文中，不以静默刷新掩盖失败。
+- 后台表格错误：保留筛选、分页和来源返回，不把管理人员送回首页。
+- Toast 只用于短暂、无需持续阅读的反馈；长说明、TraceId 和恢复步骤使用页面状态或弹层。
+
+## 5. not-found 与 conflict
+
+```ts
+import { isApiResponseNotFoundError } from '@radish/http';
 
 try {
-  await someOperation();
+  const data = await loadResource();
+  setData(data);
 } catch (error) {
-  handleError(error, { operation: 'someOperation' });
-}
-```
-
-## 错误处理函数
-
-### handleError
-
-通用错误处理函数，支持多种错误类型：
-
-```typescript
-function handleError(error: unknown, context?: any): void
-```
-
-**参数：**
-- `error` - 错误对象（Error、string 或其他类型）
-- `context` - 错误上下文信息（可选）
-
-**示例：**
-
-```typescript
-import { handleError } from '@radish/ui';
-
-// 处理 Error 对象
-try {
-  throw new Error('Something went wrong');
-} catch (error) {
-  handleError(error);
-}
-
-// 处理字符串错误
-handleError('操作失败');
-
-// 带上下文信息
-handleError(error, {
-  userId: currentUser.id,
-  operation: 'deleteUser',
-});
-```
-
-### handleApiError
-
-专门处理 API 响应错误：
-
-```typescript
-function handleApiError<T>(response: ParsedApiResponse<T>, context?: any): void
-```
-
-**参数：**
-- `response` - API 响应对象
-- `context` - 错误上下文信息（可选）
-
-**示例：**
-
-```typescript
-import { handleApiError } from '@radish/ui';
-import { userApi } from './api/users';
-
-const handleDelete = async (userId: string) => {
-  const result = await userApi.deleteUser(userId);
-
-  // 如果失败，自动显示错误消息
-  handleApiError(result, { userId });
-
-  if (result.ok) {
-    message.success('删除成功');
-    await loadUsers();
-  }
-};
-```
-
-### handleNetworkError
-
-处理网络相关错误：
-
-```typescript
-function handleNetworkError(error: unknown): void
-```
-
-**识别的错误类型：**
-- `AbortError` → "请求超时"
-- `Failed to fetch` → "网络连接失败，请检查您的网络"
-- 其他网络错误
-
-**示例：**
-
-```typescript
-import { handleNetworkError } from '@radish/ui';
-
-try {
-  const response = await fetch('/api/data');
-} catch (error) {
-  // 自动识别并显示友好的网络错误消息
-  handleNetworkError(error);
-}
-```
-
-### handleHttpError
-
-处理 HTTP 状态码错误：
-
-```typescript
-function handleHttpError(statusCode: number, message?: string): void
-```
-
-**内置状态码映射：**
-- `400` → "请求参数错误"
-- `401` → "未授权，请重新登录"
-- `403` → "拒绝访问"
-- `404` → "请求的资源不存在"
-- `408` → "请求超时"
-- `500` → "服务器内部错误"
-- `502` → "网关错误"
-- `503` → "服务不可用"
-- `504` → "网关超时"
-
-**示例：**
-
-```typescript
-import { handleHttpError } from '@radish/ui';
-
-const response = await fetch('/api/data');
-
-if (!response.ok) {
-  handleHttpError(response.status);
-}
-```
-
-### withErrorHandling
-
-错误处理装饰器，自动捕获异步函数的错误：
-
-```typescript
-function withErrorHandling<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-  context?: any
-): T
-```
-
-**示例：**
-
-```typescript
-import { withErrorHandling } from '@radish/ui';
-
-// 原始函数
-const loadData = async () => {
-  const response = await fetch('/api/data');
-  return response.json();
-};
-
-// 包装后自动处理错误
-const loadDataWithErrorHandling = withErrorHandling(
-  loadData,
-  { operation: 'loadData' }
-);
-
-// 使用
-await loadDataWithErrorHandling();
-// 如果出错，会自动显示错误消息
-```
-
-## 完整示例
-
-### Console 应用示例
-
-```typescript
-// src/main.tsx 或 src/api/index.ts
-import { configureErrorHandling, message } from '@radish/ui';
-
-// 配置全局错误处理
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => {
-    message.error(msg);
-  },
-  onError: (error, context) => {
-    // 开发环境：打印详细错误
-    if (import.meta.env.DEV) {
-      console.error('[Error]', error, context);
-    }
-
-    // 生产环境：上报错误
-    if (import.meta.env.PROD) {
-      // reportError(error, context);
-    }
-  },
-});
-```
-
-### 组件中使用
-
-```typescript
-// src/pages/Users.tsx
-import { useState, useEffect } from 'react';
-import { message, handleError, handleApiError } from '@radish/ui';
-import { userApi } from '../../api/users';
-import type { User } from '../../types/user';
-
-export const Users = () => {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // 加载用户列表
-  const loadUsers = async () => {
-    setLoading(true);
-    try {
-      const result = await userApi.getUsers();
-
-      // 自动处理错误
-      handleApiError(result, { operation: 'loadUsers' });
-
-      if (result.ok && result.data) {
-        setUsers(result.data);
-      }
-    } catch (error) {
-      // 处理网络错误等异常情况
-      handleError(error, { operation: 'loadUsers' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 删除用户
-  const handleDelete = async (userId: string) => {
-    try {
-      const result = await userApi.deleteUser(userId);
-
-      handleApiError(result, { operation: 'deleteUser', userId });
-
-      if (result.ok) {
-        message.success('删除成功');
-        await loadUsers();
-      }
-    } catch (error) {
-      handleError(error, { operation: 'deleteUser', userId });
-    }
-  };
-
-  useEffect(() => {
-    void loadUsers();
-  }, []);
-
-  // ...
-};
-```
-
-### 自定义错误处理
-
-```typescript
-// src/utils/errorHandler.ts
-import {
-  configureErrorHandling,
-  handleError as baseHandleError,
-} from '@radish/ui';
-import { message } from '@radish/ui';
-import * as Sentry from '@sentry/react';
-
-// 配置 Sentry
-if (import.meta.env.PROD) {
-  Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
-  });
-}
-
-// 配置错误处理
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => {
-    message.error(msg);
-  },
-  onError: (error, context) => {
-    // 开发环境日志
-    if (import.meta.env.DEV) {
-      console.group('❌ Error Handler');
-      console.error('Error:', error);
-      console.log('Context:', context);
-      console.groupEnd();
-    }
-
-    // 生产环境上报
-    if (import.meta.env.PROD) {
-      Sentry.captureException(error, {
-        extra: context,
-      });
-    }
-  },
-});
-
-// 导出自定义的错误处理函数
-export function handleError(error: unknown, context?: any) {
-  // 特殊错误处理逻辑
-  if (error instanceof NetworkError) {
-    message.warning('网络连接不稳定，请稍后重试');
+  if (isApiResponseNotFoundError(error)) {
+    setNotFound(true);
     return;
   }
 
-  // 默认处理
-  baseHandleError(error, context);
+  setLoadError(toUserMessage(error));
 }
 ```
 
-## 高级用法
+对于 `409 Conflict`，页面应根据业务 `Code` 区分版本冲突、幂等键冲突、状态已变化等情况。默认行为是保留用户输入并提供明确恢复动作，不自动覆盖服务端新状态。
 
-### 条件性错误提示
+## 6. 认证与权限
 
-```typescript
-import { handleApiError } from '@radish/ui';
+- Token 有效性与续期由宿主认证边界统一治理，不由页面自己竞争刷新；client 配置 `@radish/http` 的 401 刷新，Console 当前在请求前通过 `tokenService` 续期。
+- refresh token 确认失效后由宿主认证边界清理会话并保存安全回流上下文。
+- `401` 不等于所有请求都立即跳登录；先遵循统一刷新结果。
+- `403` 显示权限边界，不伪装成资源不存在，除非服务端安全策略明确如此定义。
+- Console 按权限控制导航和按钮只是体验优化，服务端授权仍是安全边界。
 
-const result = await userApi.getUsers();
+## 7. 网络、超时与非 JSON
 
-// 只在特定情况下显示错误
-if (!result.ok) {
-  if (result.code === 'PERMISSION_DENIED') {
-    message.warning('您没有权限查看用户列表');
-  } else {
-    handleApiError(result);
-  }
-}
-```
+- fetch reject 和超时属于传输错误，不生成伪造业务 `Code`。
+- 非 JSON 或无效 JSON 响应由 `parseHttpResponse` 保留真实 HTTP 状态并生成安全说明。
+- 业务层重试必须由用户动作或明确的幂等策略驱动，页面不得自行重放写请求。
+- 当前 client 配置 Token 刷新后，`@radish/http` 会对收到认证 `401` 的原始 `withAuth` 请求重放一次，且尚未按 HTTP 方法区分；关键非幂等写入必须具备服务端幂等键 / 去重契约或改用不参与该重放的专用适配器，这一认证恢复边界需要在相关业务批次持续审计。
+- 上传、流式响应等特殊传输仍复用统一 base URL、认证和语言配置。
 
-### 错误重试机制
+## 8. TraceId 与日志
 
-```typescript
-import { handleError } from '@radish/ui';
+- `TraceId` 用于复制诊断和服务端日志关联，不默认放进主错误标题。
+- client 使用 `Frontend/radish.client/src/utils/logger.ts`，Console 使用 `Frontend/radish.console/src/utils/logger.ts`。
+- 页面代码不得新增 `console.log/info/warn/error`。
+- 日志不记录 access token、refresh token、支付口令、完整敏感请求体或未脱敏凭据。
+- 用户可恢复错误的复制内容、显示层级和降级方式见[可恢复错误诊断规范](/frontend/recoverable-error-diagnostics)。
 
-async function fetchWithRetry(url: string, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const response = await fetch(url);
-      if (response.ok) {
-        return response;
-      }
-    } catch (error) {
-      if (i === maxRetries - 1) {
-        // 最后一次失败才显示错误
-        handleError(error, { url, attempt: i + 1 });
-        throw error;
-      }
-      // 等待后重试
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
-  }
-}
-```
+## 9. Error Boundary
 
-### 批量操作错误处理
+Error Boundary 只处理渲染阶段未捕获异常，不能替代业务错误状态：
 
-```typescript
-import { handleError, message } from '@radish/ui';
+- 边界展示安全通用说明和恢复 / 返回动作。
+- 开发诊断通过统一日志记录，生产 UI 不暴露堆栈。
+- 可预期的加载失败、权限、not-found、conflict 应在页面状态模型内处理，不主动抛给 Error Boundary。
 
-async function batchDelete(ids: string[]) {
-  const errors: Array<{ id: string; error: string }> = [];
+## 10. 共享组件边界
 
-  for (const id of ids) {
-    try {
-      const result = await userApi.deleteUser(id);
-      if (!result.ok) {
-        errors.push({ id, error: result.message || '删除失败' });
-      }
-    } catch (error) {
-      errors.push({ id, error: '网络错误' });
-    }
-  }
+- `@radish/ui` 不读取宿主 i18n 或认证状态。
+- 共享错误组件通过 `labels`、message 或 render props 接收用户文案。
+- `@radish/http` 的 `configureErrorHandling / handleError / handleApiError / handleNetworkError / handleHttpError / withErrorHandling` 只提供底层回调接线；它们不替页面决定 Toast、路由或业务恢复策略。
+- 新代码优先直接消费 `ParsedApiResponse` 或 `ApiResponseError`，避免把结构化错误压扁成只有字符串的全局回调。
 
-  if (errors.length === 0) {
-    message.success('全部删除成功');
-  } else if (errors.length === ids.length) {
-    message.error('全部删除失败');
-  } else {
-    message.warning(`部分删除失败：${errors.length}/${ids.length}`);
-    console.error('Failed deletions:', errors);
-  }
-}
-```
+## 11. 验证清单
 
-## 最佳实践
-
-### 1. 全局配置
-
-**推荐：** 在应用入口配置一次
-
-```typescript
-// ✅ src/main.tsx
-import { configureErrorHandling, message } from '@radish/ui';
-
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => message.error(msg),
-});
-```
-
-**不推荐：** 在每个组件中重复配置
-
-```typescript
-// ❌ 不要这样做
-function MyComponent() {
-  configureErrorHandling({ /* ... */ });
-  // ...
-}
-```
-
-### 2. 使用自动错误提示
-
-**推荐：** 启用 `autoShowMessage`
-
-```typescript
-// ✅ 配置自动提示
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => message.error(msg),
-});
-
-// API 调用
-const result = await userApi.getUsers();
-// 错误消息自动显示，无需手动处理
-```
-
-**不推荐：** 每次都手动提示
-
-```typescript
-// ❌ 重复代码
-const result = await userApi.getUsers();
-if (!result.ok) {
-  message.error(result.message || '请求失败');
-}
-```
-
-### 3. 添加错误上下文
-
-**推荐：** 提供错误上下文信息
-
-```typescript
-// ✅ 有助于调试
-handleError(error, {
-  userId: currentUser.id,
-  operation: 'deleteUser',
-  timestamp: Date.now(),
-});
-```
-
-**不推荐：** 没有上下文信息
-
-```typescript
-// ❌ 难以调试
-handleError(error);
-```
-
-### 4. 区分开发和生产环境
-
-**推荐：** 根据环境调整行为
-
-```typescript
-// ✅ 区分环境
-configureErrorHandling({
-  onError: (error, context) => {
-    if (import.meta.env.DEV) {
-      console.error('[Dev Error]', error, context);
-    } else {
-      // reportToSentry(error, context);
-    }
-  },
-});
-```
-
-## 常见问题
-
-### Q: 如何禁用自动错误提示？
-
-**A:** 设置 `autoShowMessage: false`：
-
-```typescript
-configureErrorHandling({
-  autoShowMessage: false,
-});
-```
-
-然后手动处理错误：
-
-```typescript
-const result = await userApi.getUsers();
-if (!result.ok) {
-  // 自定义错误处理
-  console.error(result.message);
-}
-```
-
-### Q: 如何自定义错误消息？
-
-**A:** 在调用前检查错误类型：
-
-```typescript
-const result = await userApi.getUsers();
-
-if (!result.ok) {
-  if (result.code === 'PERMISSION_DENIED') {
-    message.warning('您没有权限');
-  } else {
-    handleApiError(result);
-  }
-}
-```
-
-### Q: 如何处理 401 未授权错误？
-
-**A:** 在 `onError` 中统一处理：
-
-```typescript
-configureErrorHandling({
-  onError: (error, context) => {
-    if (context?.statusCode === 401) {
-      localStorage.removeItem('access_token');
-      window.location.href = '/login';
-    }
-  },
-});
-```
-
-### Q: 如何集成第三方错误监控（如 Sentry）？
-
-**A:** 在 `onError` 回调中上报：
-
-```typescript
-import * as Sentry from '@sentry/react';
-
-configureErrorHandling({
-  onError: (error, context) => {
-    if (import.meta.env.PROD) {
-      Sentry.captureException(error, {
-        extra: context,
-      });
-    }
-  },
-});
-```
+- 同一 `Code / status` 在中英文消息不同的情况下走相同控制流。
+- not-found、权限、conflict 不匹配消息文本。
+- 表单和高风险操作失败后上下文仍保留。
+- 非 JSON、网络错误、超时和 Token 刷新失败都有稳定状态。
+- `MessageArguments` 能按位置格式化，异常对象、控制字符或超长参数会先被安全降级、规范化或截断，不以原始值进入 UI，也不参与控制流。
+- TraceId 可复制但不泄漏内部异常。
+- PC / mobile 下长英文错误和按钮组不溢出。
 
 ## 相关文档
 
-- [API 客户端使用指南](./api-client.md)
-- [UI 组件库概览](./ui-library.md)
+- [`@radish/http` HTTP 客户端指南](/frontend/http-client)
+- [国际化与多语言规范](/architecture/i18n)
+- [可恢复错误诊断规范](/frontend/recoverable-error-diagnostics)
+- [前端日志规范](/guide/frontend-logging)

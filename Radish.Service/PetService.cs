@@ -105,7 +105,11 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
         var actionType = NormalizeActionType(request.ActionType);
         if (!CareRules.TryGetValue(actionType, out var rule))
         {
-            throw new BusinessException("不支持的照顾动作", (int)HttpStatusCodeEnum.BadRequest, "Pet.InvalidAction");
+            throw new BusinessException(
+                "不支持的照顾动作",
+                (int)HttpStatusCodeEnum.BadRequest,
+                "Pet.InvalidAction",
+                "error.pet.invalid_action");
         }
 
         var idempotencyKey = NormalizeIdempotencyKey(request.IdempotencyKey);
@@ -224,7 +228,11 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
         var pet = await GetActivePetAsync(userId);
         if (pet == null)
         {
-            throw new BusinessException("请先领取电子宠物", (int)HttpStatusCodeEnum.NotFound, "Pet.NotClaimed");
+            throw new BusinessException(
+                "请先领取电子宠物",
+                (int)HttpStatusCodeEnum.NotFound,
+                "Pet.NotClaimed",
+                "error.pet.not_claimed");
         }
 
         return pet;
@@ -244,7 +252,11 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
 
         if (usedToday >= rule.DailyLimit)
         {
-            throw new BusinessException("今日该照顾动作次数已用完", (int)HttpStatusCodeEnum.BadRequest, "Pet.DailyLimitReached");
+            throw new BusinessException(
+                "今日该照顾动作次数已用完",
+                (int)HttpStatusCodeEnum.BadRequest,
+                "Pet.DailyLimitReached",
+                "error.pet.daily_limit_reached");
         }
 
         var (latestLogs, _) = await _logRepository.QueryPageAsync(
@@ -268,7 +280,11 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
         var nextAvailableAt = latest.CreateTime.AddMinutes(rule.CooldownMinutes);
         if (nextAvailableAt > now)
         {
-            throw new BusinessException("照顾动作仍在冷却中", (int)HttpStatusCodeEnum.BadRequest, "Pet.CareCooldown");
+            throw new BusinessException(
+                "照顾动作仍在冷却中",
+                (int)HttpStatusCodeEnum.BadRequest,
+                "Pet.CareCooldown",
+                "error.pet.care_cooldown");
         }
     }
 
@@ -328,7 +344,11 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
     {
         if (userId <= 0)
         {
-            throw new BusinessException("未登录", (int)HttpStatusCodeEnum.Unauthorized, "Auth.Required");
+            throw new BusinessException(
+                "未登录",
+                (int)HttpStatusCodeEnum.Unauthorized,
+                "Auth.Required",
+                "error.auth.unauthorized");
         }
     }
 

@@ -50,7 +50,7 @@ npm run collect:m14-host-record
 1. 记录信息
    - 日期、记录人、环境类型、范围
 2. 部署口径
-   - `base + test` 或 `base + prod`
+   - `Deploy/docker-compose.yaml` 与当前环境 `.env`
    - 外部访问地址
    - 镜像版本 / tag
 3. 自动化前置
@@ -87,7 +87,7 @@ npm run collect:m14-host-record
 
 ### 部署口径
 
-- Compose 组合：`base + test` / `base + prod`
+- Compose：`Deploy/docker-compose.yaml` + 当前环境 `.env`
 - 外部访问地址：`https://...`
 - 镜像版本：`<tag>`
 - 证书来源：<path / volume / secret / 自动生成>
@@ -105,8 +105,8 @@ npm run collect:m14-host-record
 - `OpenIddict__Server__Issuer`：一致 / 不一致 / 未执行
 - 证书路径 / 挂载：正确 / 异常 / 未执行
 - 公开入口口径：
-  - 测试部署：Gateway 容器内 HTTPS / 自签名证书
-  - 生产部署：外层反代 HTTPS / 容器内 HTTP
+  - 测试部署：外层反代 HTTPS / Gateway 容器内 HTTP
+  - 生产部署：外层反代 HTTPS / Gateway 容器内 HTTP
 - 反代头：
   - `Host`：正常 / 异常 / 不适用
   - `X-Forwarded-Proto`：正常 / 异常 / 不适用

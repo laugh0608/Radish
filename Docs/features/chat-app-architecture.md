@@ -1,26 +1,30 @@
 # 聊天室 App 架构设计
 
-> Radish Chat App 前端架构基线（WebOS 应用层）
+> Radish Chat App 前端架构基线（正式 Web 与 WebOS 复用层）
 >
-> **版本**: v26.3.3
+> **版本**: v26.7.2
 >
-> **最后更新**: 2026.03.11
+> **最后更新**: 2026.07.19
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
 > [聊天室系统设计](./chat-system.md) ·
-> [聊天室系统 - 前端架构与组件设计](./chat-frontend.md)
+> [聊天室系统 - 前端架构与组件设计](./chat-frontend.md) ·
+> [聊天历史搜索与消息定位设计](./chat-message-search-design.md) ·
+> [聊天消息 Reaction 设计](./chat-message-reaction-design.md) ·
+> [聊天消息置顶设计](./chat-message-pin-design.md) ·
+> [聊天轻量阅读回执设计](./chat-message-read-receipt-design.md)
 
 ---
 
 ## 概述
 
-聊天室 App 采用“窗口应用 + 实时连接 + 本地缓存状态”模式，在 WebOS 中提供低延迟、高并发消息交互体验。
+聊天室 App 采用“正式 Web 工作区 / WebOS 窗口复用 + 实时连接 + 本地缓存状态”模式。`/messages` 是正式产品入口，`/desktop` 复用同一 `ChatApp`、API 与 Hub，不建立平行协议。
 
 设计目标：
 - 与现有 `notificationHub` 并行运行，互不干扰。
-- 页面与数据解耦，支持后续私聊、Reaction、搜索渐进扩展。
-- 当前以 P1 体验收口为主，不做脱离主链路的大型重构。
+- 页面与数据解耦；一对一私聊、搜索、Reaction、置顶与轻量阅读回执均通过独立专题完成权威契约和正式 Web 页面。
+- F4-C 至 F4-F 已完成 A-D 批并成为维护基线；后续功能完成线不在 Chat 内继续堆叠临时状态，也不改动已经稳定的 Store、REST / Hub 权威边界和隐私契约。
 
 ---
 
@@ -49,6 +53,32 @@
 Frontend/radish.client/src/apps/chat/
 ├── ChatApp.tsx
 ├── ChatApp.module.css
+├── ChatChannelSidebar.tsx
+├── ChatConversationHeader.tsx
+├── ChatMessageList.tsx
+├── ChatMessageContent.tsx
+├── ChatMessageSearchPanel.tsx
+├── ChatPinnedMessages.tsx
+├── ChatReadReceiptIndicator.tsx
+├── ChatMemberPanel.tsx
+├── ChatMentionMenu.tsx
+├── ChatComposerStatus.tsx
+├── ChatProtectedImage.tsx
+├── chatApp.helpers.ts
+├── chatApp.types.ts
+├── chatConversationPresentation.ts
+├── chatMessageSearch.ts
+├── chatReadReceipts.ts
+├── useActiveChatReadSurface.ts
+├── useChatMessageNavigation.ts
+├── useChatMessagePins.ts
+├── useChatMessageReactions.ts
+├── useChatMessageSearch.ts
+├── useChatReadReceipts.ts
+└── useChatConversationWorkspace.ts
+Frontend/radish.client/src/messages/
+├── MessagesApp.tsx
+└── MessagesApp.module.css
 Frontend/radish.client/src/api/
 └── chat.ts
 Frontend/radish.client/src/services/
@@ -59,20 +89,20 @@ Frontend/radish.client/src/types/
 └── chat.ts
 ```
 
-> 注：当前仍为“单入口集中编排”实现形态。`components/*` 与 `hooks/*` 拆分仍是后续可选重构，不再视为 P1 前置条件。
+> 注：`ChatApp.tsx` 仍承担页面编排，但消息列表、频道侧栏、会话头、成员面板、置顶列表和会话动作已经按真实职责拆分。F4-C 搜索与 F4-E 置顶使用独立 Hook 和组件，不回退为新的单文件集中实现。
 
 ---
 
 ## 分层边界
 
-1. 视图层 `apps/chat/ChatApp.tsx`（当前现状）
-- 当前由单入口承载渲染与交互编排，已覆盖频道切换、引用回复、图片上传、成员面板、草稿恢复、重连状态条与乐观发送。
+1. 视图层 `apps/chat/ChatApp.tsx + Chat*.tsx`
+- `ChatApp` 负责页面编排，分离组件承担频道、消息、会话头、成员和输入状态展示。
 
 2. 应用层 `ChatApp.tsx`
 - 负责频道切换、分页触发、输入上报、滚动已读与 Hub 生命周期联动。
 
 3. 状态层 `stores/chatStore.ts`
-- 维护频道列表、未读数、消息 Map、当前激活频道，以及本地发送状态替换逻辑。
+- 维护频道列表、未读、消息 Map、当前激活频道、回应 / 置顶 / 回执权威状态，以及本地发送状态替换逻辑。
 
 4. 基础设施层 `api/* + services/chatHub.ts`
 - REST 负责持久化操作。
@@ -84,8 +114,12 @@ Frontend/radish.client/src/types/
 
 `chatStore` 最小字段：
 - `channels: ChannelVo[]`
-- `messageMap: Record<number, ChannelMessageVo[]>`
-- `activeChannelId: number | null`
+- `messageMap: Record<string, ChannelMessageVo[]>`
+- `reactionStateMap: Record<string, ChatMessageReactionStateVo>`
+- `pinStateMap: Record<string, ChatMessagePinStateVo>`
+- `readReceiptSummaryMap: Record<string, ChatReadReceiptSummariesVo>`
+- `readReceiptInvalidationMap: Record<string, number>`
+- `activeChannelId: string | null`
 - `connectionState: 'disconnected' | 'connecting' | 'connected' | 'reconnecting'`
 
 内存管理现状：
@@ -101,6 +135,9 @@ Frontend/radish.client/src/types/
 - `addMessage`（按 `messageId / clientRequestId` 合并，兼容替换 `status: 'sending'` 临时消息）
 - `removeMessage`（撤销失败临时消息）
 - `recallMessage`
+- `setReactionStates` / `applyReactionBroadcast`（按消息 revision 合并权威完整状态）
+- `setPinState` / `applyPinBroadcast`（按频道 revision 替换权威完整快照）
+- `setReadReceiptSummaries` / `invalidateReadReceipts` / `clearChannelReadReceipts`
 - `updateUnread`（对象载荷：`{ channelId, unreadCount, hasMention }`）
 - `reset`
 
@@ -111,7 +148,7 @@ Frontend/radish.client/src/types/
 1. 首次进入 ChatApp
 - 拉取频道列表（含未读）。
 - 选择默认频道并拉取最新历史。
-- 调用 `chatHub.start()` 建立连接。
+- 正式 Web `/messages` 或 WebOS `Shell` 使用稳定 owner 调用 `chatHub.acquire(owner)`；最后一个 owner 释放后才关闭共用连接。
 
 2. 发送消息（当前流程）
 - 前端先生成负数临时消息与 `clientRequestId`，立即插入本地列表。
@@ -128,18 +165,22 @@ Frontend/radish.client/src/types/
 
 ---
 
-## 与 WebOS 集成点
+## 与正式 Web / WebOS 集成点
 
-- Shell 登录后启动 `chatHub`，登出时统一停止并清空状态。
+- `/messages` 与 WebOS `Shell` 登录后分别取得 `chatHub` 所有权，普通卸载只释放自身 owner；登出时统一停止连接，新账号进入工作区后先以服务端列表替换账号相关 store 快照。
 - `chatHub` 连接成功与重连成功后会自动尝试加入当前激活频道。
 - 当前频道在重连恢复后会清空本地缓存并重新拉取最新 50 条，优先保证状态一致。
-- Dock 未读气泡由 `chatStore.channels` 聚合计算，不额外轮询。
+- `ConversationStateChanged` 只推动 `chatStore` 会话修订号变化，工作区随后重读服务端会话摘要，不用本地事件载荷推导请求、阻断或归档状态。
+- 会话侧栏的未读直接使用服务端频道 Vo；WebOS Dock 当前角标归通知收件箱，不复制聊天未读真相源。
 - 窗口最小化/恢复不重建连接，避免短时频繁重连。
 
 ---
 
 ## 扩展策略
 
-- Phase 2：私聊分区、消息搜索、Reaction（复用现有系统）。
+- Phase 2：私聊分区已完成；F4-C 搜索采用独立搜索状态和服务端 cursor，不把跨频道命中写入 `messageMap`。
+- 搜索结果点击统一进入 `useChatMessageNavigation`，继续调用现有 `GetMessageWindow(channelId, messageId)`；通知深链和搜索定位共用这一条导航链路。
+- 搜索面板与成员面板在 PC 右栏互斥；移动端由 `MessagesApp` URL 状态切换单列搜索视图，浏览器返回可恢复会话。
+- Reaction、置顶与阅读回执均已按独立专题完成 A-D 批；后续维护继续保持各自 revision / 失效协议、权限和账号 reset 边界。
 - Phase 3：语音消息、频道权限细分、跨设备同步增强。
 - 所有扩展保持“先补契约文档，再落代码”的流程。

@@ -68,6 +68,7 @@
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   min-width: 0;
 }
@@ -111,8 +112,8 @@
   padding: 2px 6px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-state-success) 88%, white 12%) 0%,
-    color-mix(in srgb, var(--theme-accent-jade) 78%, white 22%) 100%
+    color-mix(in srgb, var(--theme-state-success) 88%, var(--theme-surface-highlight) 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-jade) 78%, var(--theme-surface-highlight) 22%) 100%
   );
   color: var(--theme-bg-surface);
   font-size: 10px;
@@ -128,7 +129,7 @@
   padding: 2px 6px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-accent-earth) 88%, white 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-earth) 88%, var(--theme-surface-highlight) 12%) 0%,
     color-mix(in srgb, var(--theme-brand-primary) 70%, var(--theme-accent-earth) 30%) 100%
   );
   color: var(--theme-bg-surface);
@@ -364,7 +365,7 @@
 
 .likeButton:hover:not(:disabled) {
   background-color: color-mix(in srgb, var(--theme-state-danger) 12%, var(--theme-bg-surface) 88%);
-  color: color-mix(in srgb, var(--theme-state-danger) 78%, white 22%);
+  color: color-mix(in srgb, var(--theme-state-danger) 78%, var(--theme-surface-highlight) 22%);
 }
 
 .likeButton:active:not(:disabled) {

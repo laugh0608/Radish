@@ -1,5 +1,5 @@
 export type PublicProfileTab = 'posts' | 'comments';
-export type PublicProfileIntent = 'follow';
+export type PublicProfileIntent = 'follow' | 'message';
 
 export interface PublicProfileRoute {
   kind: 'detail';
@@ -58,9 +58,12 @@ function normalizeTab(value: string | null): PublicProfileTab {
 }
 
 function normalizeIntent(params: URLSearchParams): PublicProfileIntent | undefined {
-  return params.getAll('intent').length === 1 && params.get('intent') === 'follow'
-    ? 'follow'
-    : undefined;
+  if (params.getAll('intent').length !== 1) {
+    return undefined;
+  }
+
+  const intent = params.get('intent');
+  return intent === 'follow' || intent === 'message' ? intent : undefined;
 }
 
 export function parsePublicProfileRoute(pathname: string, search: string): PublicProfileRoute | null {
@@ -89,7 +92,7 @@ export function buildPublicProfilePath(route: PublicProfileRoute): string {
   if (route.page > 1) {
     search.set('page', String(route.page));
   }
-  if (route.intent === 'follow') {
+  if (route.intent === 'follow' || route.intent === 'message') {
     search.set('intent', route.intent);
   }
 

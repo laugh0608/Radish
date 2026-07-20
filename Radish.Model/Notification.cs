@@ -42,6 +42,13 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
     private void InitializeDefaults()
     {
         Type = string.Empty;
+        Category = string.Empty;
+        TemplateKey = string.Empty;
+        TemplateArgumentsJson = null;
+        TargetKind = NotificationTargetKind.None;
+        TargetDataJson = null;
+        TargetSchemaVersion = 1;
+        OccurredAtUtc = DateTime.UtcNow;
         Priority = 2; // 默认普通优先级
         Title = string.Empty;
         Content = string.Empty;
@@ -62,6 +69,13 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
     private void ApplyBasicInformation(NotificationInitializationOptions options)
     {
         Type = NormalizeRequired(options.Type, nameof(options.Type));
+        Category = NormalizeRequired(options.Category, nameof(options.Category));
+        TemplateKey = NormalizeRequired(options.TemplateKey, nameof(options.TemplateKey));
+        TemplateArgumentsJson = options.TemplateArgumentsJson;
+        TargetKind = NormalizeRequired(options.TargetKind, nameof(options.TargetKind));
+        TargetDataJson = options.TargetDataJson;
+        TargetSchemaVersion = options.TargetSchemaVersion;
+        OccurredAtUtc = options.OccurredAtUtc;
         Title = NormalizeRequired(options.Title, nameof(options.Title));
         Content = options.Content?.Trim() ?? string.Empty;
 
@@ -137,6 +151,35 @@ public class Notification : RootEntityTKey<long>, ITenantEntity
     /// </remarks>
     [SugarColumn(Length = 50, IsNullable = false, ColumnDescription = "通知类型")]
     public string Type { get; set; } = string.Empty;
+
+    /// <summary>稳定用户分类。</summary>
+    [SugarColumn(Length = 32, IsNullable = false, ColumnDescription = "通知分类")]
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>稳定本地化模板 key。</summary>
+    [SugarColumn(Length = 120, IsNullable = false, ColumnDescription = "通知模板Key")]
+    public string TemplateKey { get; set; } = string.Empty;
+
+    /// <summary>模板结构化参数 JSON。</summary>
+    [SugarColumn(ColumnDataType = "text", IsNullable = true, ColumnDescription = "模板参数")]
+    public string? TemplateArgumentsJson { get; set; }
+
+    /// <summary>结构化目标类型。</summary>
+    [SugarColumn(Length = 40, IsNullable = false, ColumnDescription = "目标类型")]
+    public string TargetKind { get; set; } = NotificationTargetKind.None;
+
+    /// <summary>结构化目标数据 JSON。</summary>
+    [SugarColumn(ColumnDataType = "text", IsNullable = true, ColumnDescription = "目标数据")]
+    public string? TargetDataJson { get; set; }
+
+    /// <summary>目标载荷 schema 版本。</summary>
+    [SugarColumn(IsNullable = false, ColumnDescription = "目标版本")]
+    public int TargetSchemaVersion { get; set; } = 1;
+
+    /// <summary>源业务事件发生 UTC 时间，也是通知月表分片字段。</summary>
+    [SplitField]
+    [SugarColumn(IsNullable = false, ColumnDescription = "事件发生UTC时间")]
+    public DateTime OccurredAtUtc { get; set; }
 
     /// <summary>通知优先级</summary>
     /// <remarks>
@@ -265,6 +308,27 @@ public sealed class NotificationInitializationOptions
 
     /// <summary>通知类型</summary>
     public string Type { get; }
+
+    /// <summary>稳定用户分类。</summary>
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>模板 key。</summary>
+    public string TemplateKey { get; set; } = string.Empty;
+
+    /// <summary>模板参数 JSON。</summary>
+    public string? TemplateArgumentsJson { get; set; }
+
+    /// <summary>目标类型。</summary>
+    public string TargetKind { get; set; } = NotificationTargetKind.None;
+
+    /// <summary>目标数据 JSON。</summary>
+    public string? TargetDataJson { get; set; }
+
+    /// <summary>目标载荷版本。</summary>
+    public int TargetSchemaVersion { get; set; } = 1;
+
+    /// <summary>源事件发生 UTC 时间。</summary>
+    public DateTime OccurredAtUtc { get; set; } = DateTime.UtcNow;
 
     /// <summary>通知标题</summary>
     public string Title { get; }

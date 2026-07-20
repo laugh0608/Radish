@@ -81,20 +81,20 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
 
   const loadSummary = useCallback(async () => {
     try {
-      const data = await getMyFollowSummary();
+      const data = await getMyFollowSummary(t);
       setSummary(data);
     } catch (error) {
       log.error('UserFollowPanel', '加载关系链汇总失败:', error);
     }
-  }, []);
+  }, [t]);
 
   const loadFeed = useCallback(async (pageIndex: number, viewType: FeedViewType) => {
     setLoading(true);
     setErrorMessage(null);
     try {
       const data = viewType === 'following'
-        ? await getMyFollowingFeed(pageIndex, PAGE_SIZE)
-        : await getMyDistributionFeed(viewType, pageIndex, PAGE_SIZE);
+        ? await getMyFollowingFeed(pageIndex, PAGE_SIZE, t)
+        : await getMyDistributionFeed(viewType, pageIndex, PAGE_SIZE, t);
       setFeedItems(data.voItems || []);
       setFeedTotal(data.voTotal || 0);
     } catch (error) {
@@ -111,7 +111,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     setLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getMyFollowers(pageIndex, PAGE_SIZE);
+      const data = await getMyFollowers(pageIndex, PAGE_SIZE, t);
       setFollowerItems(data.voItems || []);
       setFollowerTotal(data.voTotal || 0);
     } catch (error) {
@@ -128,7 +128,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
     setLoading(true);
     setErrorMessage(null);
     try {
-      const data = await getMyFollowing(pageIndex, PAGE_SIZE);
+      const data = await getMyFollowing(pageIndex, PAGE_SIZE, t);
       setFollowingItems(data.voItems || []);
       setFollowingTotal(data.voTotal || 0);
     } catch (error) {

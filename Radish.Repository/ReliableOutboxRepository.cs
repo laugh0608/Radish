@@ -278,6 +278,7 @@ public sealed class ReliableOutboxRepository : IReliableOutboxRepository
                 entity.Status,
                 entity.AttemptCount,
                 entity.MaxAttempts,
+                entity.OccurredAtUtc,
                 entity.AvailableAtUtc,
                 entity.LastErrorCode,
                 entity.LastErrorSummary);

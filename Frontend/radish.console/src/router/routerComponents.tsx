@@ -1,13 +1,30 @@
 import { Suspense, type ReactNode } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { AdminLayout } from '../components/AdminLayout';
+import { ClientBackLink } from '../components/ClientBackLink';
 import { RouteGuard } from '../components/PermissionGuard';
 import { useUser } from '../hooks/useUser';
 import { tokenService } from '../services/tokenService';
 import { canEnterConsole, consoleRouteMetaMap } from './routeMeta';
 import './routerComponents.css';
+import { useTranslation } from 'react-i18next';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+
+function ConsoleAccessDenied() {
+  const { t } = useTranslation();
+  useDocumentTitle(t('console.auth.deniedTitle'));
+
+  return (
+    <div className="console-route-state console-route-state--permission">
+      <h2>{t('console.auth.deniedTitle')}</h2>
+      <p>{t('console.auth.deniedDescription')}</p>
+      <ClientBackLink />
+    </div>
+  );
+}
 
 export function AuthenticatedLayout() {
+  const { t } = useTranslation();
   const token = tokenService.getAccessToken();
   const { user, loading } = useUser();
 
@@ -28,7 +45,7 @@ export function AuthenticatedLayout() {
   if (loading) {
     return (
       <div className="console-route-state console-route-state--loading" role="status">
-        正在校验 Console 访问权限...
+        {t('console.auth.checking')}
       </div>
     );
   }
@@ -38,14 +55,7 @@ export function AuthenticatedLayout() {
   }
 
   if (!canEnterConsole(user)) {
-    return (
-      <div className="console-route-state console-route-state--permission">
-        <h2>当前账号未开通 Console 访问权限</h2>
-        <p>
-          请联系管理员为当前角色分配至少一个 Console 页面权限；入口权限会随授权自动收口。
-        </p>
-      </div>
-    );
+    return <ConsoleAccessDenied />;
   }
 
   return (
@@ -56,9 +66,10 @@ export function AuthenticatedLayout() {
 }
 
 export function RouteLoading() {
+  const { t } = useTranslation();
   return (
     <div className="console-route-state console-route-state--loading" role="status">
-      正在加载页面...
+      {t('console.route.loading')}
     </div>
   );
 }

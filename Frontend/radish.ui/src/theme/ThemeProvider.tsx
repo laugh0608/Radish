@@ -1,13 +1,18 @@
 import { ConfigProvider } from 'antd';
-import zhCN from 'antd/locale/zh_CN';
+import type { ConfigProviderProps, ThemeConfig } from 'antd';
 import type { ReactNode } from 'react';
 import { antdTheme, antdDarkTheme } from './antd-theme';
+import { antdLocales } from './antd-locales';
 
 export interface ThemeProviderProps {
   /** 子组件 */
   children: ReactNode;
   /** 是否使用暗色主题 */
   dark?: boolean;
+  /** 由宿主产品主题注册表提供的语义配置 */
+  themeConfig?: ThemeConfig;
+  /** 由宿主语言状态提供的 Ant Design locale */
+  locale?: ConfigProviderProps['locale'];
 }
 
 /**
@@ -28,11 +33,27 @@ export interface ThemeProviderProps {
  * }
  * ```
  */
-export function ThemeProvider({ children, dark = false }: ThemeProviderProps) {
+export function ThemeProvider({ children, dark = false, themeConfig, locale = antdLocales.zh }: ThemeProviderProps) {
+  const baseTheme = dark ? antdDarkTheme : antdTheme;
+  const mergedTheme: ThemeConfig = themeConfig
+    ? {
+        ...baseTheme,
+        ...themeConfig,
+        token: {
+          ...baseTheme.token,
+          ...themeConfig.token,
+        },
+        components: {
+          ...baseTheme.components,
+          ...themeConfig.components,
+        },
+      }
+    : baseTheme;
+
   return (
     <ConfigProvider
-      theme={dark ? antdDarkTheme : antdTheme}
-      locale={zhCN}
+      theme={mergedTheme}
+      locale={locale}
     >
       {children}
     </ConfigProvider>

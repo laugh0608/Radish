@@ -4,37 +4,35 @@
 @inject Microsoft.Extensions.Localization.IStringLocalizer<Radish.Auth.Resources.Errors> Localizer
 
 @{
-    var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
     var client = Model.Client;
-    ViewData["Title"] = isZh ? "创建新账号" : "Create a new account";
+    ViewData["Title"] = Localizer["auth.register.title"];
 
-    var heroTitle = isZh ? "新用户注册" : "New account";
-    var heading = isZh ? "创建新账号" : "Create your account";
-    var description = isZh ? "加入 Radish 社区，完成注册后即可继续当前流程。" : "Join Radish and continue the current flow as soon as your account is created.";
-    var rewardTitle = isZh ? "新用户福利" : "New user bonus";
-    var rewardDescription = isZh ? "注册即送 50 胡萝卜，完成账号创建后自动到账。" : "Receive 50 carrots automatically after your account is created.";
-    var serviceDescription = string.IsNullOrWhiteSpace(client.Description) ? (isZh ? "Radish 统一身份认证服务" : "Radish unified identity service") : client.Description;
-    var clientName = string.IsNullOrWhiteSpace(client.DisplayName) ? (isZh ? "Radish 社区" : "Radish Community") : client.DisplayName;
-    var developerLabel = isZh ? "开发者" : "Developer";
-    var displayNameLabel = isZh ? "展示名" : "Display name";
-    var displayNamePlaceholder = isZh
-        ? $"{Model.DisplayNameMinLength}-{Model.DisplayNameMaxLength} 位中文、英文字母或数字"
-        : $"{Model.DisplayNameMinLength}-{Model.DisplayNameMaxLength} Chinese characters, letters, or numbers";
-    var displayNameHint = isZh
-        ? "展示名会作为公开身份展示，后续修改有次数和频率限制，请慎重设置。"
-        : "This public display name has future change limits, so choose carefully.";
-    var passwordLabel = isZh ? "密码" : "Password";
-    var passwordPlaceholder = isZh ? "至少 6 个字符" : "At least 6 characters";
-    var confirmPasswordLabel = isZh ? "确认密码" : "Confirm password";
-    var confirmPasswordPlaceholder = isZh ? "再次输入密码" : "Enter the password again";
-    var emailLabel = isZh ? "电子邮箱" : "Email";
-    var emailPlaceholder = isZh ? "用于找回密码和接收通知" : "Used for password recovery and notifications";
-    var submitText = isZh ? "立即注册" : "Create account";
-    var loginPrompt = isZh ? "已有账号？" : "Already have an account?";
-    var loginAction = isZh ? "立即登录" : "Sign in";
-    var showPasswordText = isZh ? "显示" : "Show";
-    var hidePasswordText = isZh ? "隐藏" : "Hide";
-    var logoAlt = isZh ? "客户端图标" : "Client logo";
+    var heroTitle = Localizer["auth.register.heroTitle"];
+    var heading = Localizer["auth.register.heading"];
+    var description = Localizer["auth.register.description"];
+    var rewardTitle = Localizer["auth.register.rewardTitle"];
+    var rewardDescription = Localizer["auth.register.rewardDescription"];
+    var fallbackServiceDescription = string.IsNullOrWhiteSpace(client.Description) ? Localizer["auth.register.defaultServiceDescription"].Value : client.Description;
+    var fallbackClientName = string.IsNullOrWhiteSpace(client.DisplayName) ? Localizer["auth.register.defaultClientName"].Value : client.DisplayName;
+    var serviceDescription = AuthClientText.Resolve(Localizer, client.ClientId, "description", fallbackServiceDescription);
+    var clientName = AuthClientText.Resolve(Localizer, client.ClientId, "displayName", fallbackClientName);
+    var developerName = AuthClientText.Resolve(Localizer, client.ClientId, "developerName", client.DeveloperName ?? string.Empty);
+    var developerLabel = Localizer["auth.register.developerLabel"];
+    var displayNameLabel = Localizer["auth.register.displayNameLabel"];
+    var displayNamePlaceholder = Localizer["auth.register.displayNamePlaceholder", Model.DisplayNameMinLength, Model.DisplayNameMaxLength];
+    var displayNameHint = Localizer["auth.register.displayNameHint"];
+    var passwordLabel = Localizer["auth.register.passwordLabel"];
+    var passwordPlaceholder = Localizer["auth.register.passwordPlaceholder"];
+    var confirmPasswordLabel = Localizer["auth.register.confirmPasswordLabel"];
+    var confirmPasswordPlaceholder = Localizer["auth.register.confirmPasswordPlaceholder"];
+    var emailLabel = Localizer["auth.register.emailLabel"];
+    var emailPlaceholder = Localizer["auth.register.emailPlaceholder"];
+    var submitText = Localizer["auth.register.submit"];
+    var loginPrompt = Localizer["auth.register.loginPrompt"];
+    var loginAction = Localizer["auth.register.loginAction"];
+    var showPasswordText = Localizer["auth.register.password.show"];
+    var hidePasswordText = Localizer["auth.register.password.hide"];
+    var logoAlt = Localizer["auth.register.client.logoAlt"];
 }
 
 <!DOCTYPE html>
@@ -546,11 +544,11 @@
                         <div class="client-meta-value">@(string.IsNullOrWhiteSpace(client.ClientId) ? "-" : client.ClientId)</div>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(client.DeveloperName))
+                    @if (!string.IsNullOrWhiteSpace(developerName))
                     {
                         <div class="client-meta-item">
                             <span class="client-meta-label">@developerLabel</span>
-                            <div class="client-meta-value">@client.DeveloperName</div>
+                            <div class="client-meta-value">@developerName</div>
                         </div>
                     }
                 </div>
@@ -564,8 +562,8 @@
                     </div>
 
                     <div class="lang-switcher">
-                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
-                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en')">English</button>
                     </div>
                 </div>
 
@@ -639,7 +637,7 @@
                     </div>
 
                     <div class="login-link">
-                        @loginPrompt <a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl })">@loginAction</a>
+                        @loginPrompt <a href="@Url.Action("Login", "Account", new { returnUrl = Model.ReturnUrl, culture = CultureInfo.CurrentUICulture.Name })">@loginAction</a>
                     </div>
                 </form>
             </section>
@@ -648,10 +646,14 @@
 
     <script>
         function switchLanguage(culture) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('culture', culture);
-            url.searchParams.set('ui-culture', culture);
-            window.location.href = url.toString();
+            const returnUrl = new URL(window.location.href);
+            returnUrl.searchParams.delete('culture');
+            returnUrl.searchParams.delete('ui-culture');
+            const localReturnUrl = `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`;
+            const switchUrl = new URL('@Url.Action("SetLanguage", "Account")', window.location.origin);
+            switchUrl.searchParams.set('culture', culture);
+            switchUrl.searchParams.set('returnUrl', localReturnUrl);
+            window.location.assign(switchUrl.toString());
         }
 
         document.addEventListener('DOMContentLoaded', () => {

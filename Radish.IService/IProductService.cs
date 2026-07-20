@@ -42,6 +42,9 @@ public interface IProductService : IBaseService<Product, ProductVo>
     /// <returns>商品视图模型</returns>
     Task<ProductVo?> GetProductDetailAsync(long productId);
 
+    /// <summary>获取服务端权威商品能力元数据。</summary>
+    Task<List<ShopProductCapabilityVo>> GetProductCapabilitiesAsync();
+
     /// <summary>检查用户是否可以购买商品</summary>
     /// <param name="userId">用户 ID</param>
     /// <param name="productId">商品 ID</param>

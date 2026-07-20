@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
@@ -18,12 +18,14 @@ import {
 } from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { redirectToLogin } from '@/services/auth';
 import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
 import { useUserStore } from '@/stores/userStore';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import type { LongId } from '@/api/user';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
+import { resolveForumPublishErrorMessage } from '../utils/forumPublishPresentation';
 import { RichTextMarkdownEditor } from './RichTextMarkdownEditor';
 import styles from './PublishPostModal.module.css';
 
@@ -96,18 +98,6 @@ const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
 
-function getErrorMessage(error: unknown, fallback: string): string {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message.trim();
-  }
-
-  if (typeof error === 'string' && error.trim()) {
-    return error.trim();
-  }
-
-  return fallback;
-}
-
 function appendRecoveryHint(message: string, hint: string): string {
   const trimmedMessage = message.trim();
   const trimmedHint = hint.trim();
@@ -163,6 +153,7 @@ export const PublishPostModal = ({
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEditorUploading, setIsEditorUploading] = useState(false);
   const [categoryId, setCategoryId] = useState<LongId | null>(selectedCategoryId);
   const [selectedCategorySnapshot, setSelectedCategorySnapshot] = useState<CategorySelectionSnapshot | null>(
     () => findCategorySnapshot(categories, selectedCategoryId)
@@ -192,8 +183,18 @@ export const PublishPostModal = ({
     const normalized = role.trim().toLowerCase();
     return normalized === 'admin' || normalized === 'system';
   });
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
+  const markdownEditorLabels = useMemo(
+    () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, t],
+  );
+  const richTextEditorLabels = useMemo(() => ({
+    ...markdownEditorLabels,
+    placeholder: t('markdownEditor.richText.placeholder'),
+    linkPrompt: t('markdownEditor.richText.linkPrompt'),
+    imageUnavailable: t('markdownEditor.richText.imageUnavailable'),
+  }), [markdownEditorLabels, t]);
 
   const handleSearchUsers = useCallback(async (keyword: string): Promise<UiUserMentionOption[]> => {
     try {
@@ -206,8 +207,8 @@ export const PublishPostModal = ({
         avatar: user.voAvatar
       }));
     } catch (error) {
-      log.error('发布帖子搜索提及用户失败:', error);
-      return [];
+      log.error(t('forum.mention.searchFailed'), error);
+      throw error;
     }
   }, [t]);
 
@@ -712,11 +713,11 @@ export const PublishPostModal = ({
       onClose();
     } catch (error) {
       const errorMessage = appendRecoveryHint(
-        getErrorMessage(error, '发布失败，请稍后重试'),
-        '草稿仍保存在本地，请检查网络或稍后重试。'
+        resolveForumPublishErrorMessage(error, t, t('forum.publishFailed')),
+        t('forum.publishDraftRetainedHint')
       );
       setPublishError(errorMessage);
-      toast.error('发布失败，草稿仍保存在本地');
+      toast.error(t('forum.publishDraftRetainedToast'));
       log.error('发布失败:', error);
     } finally {
       setIsSubmitting(false);
@@ -724,7 +725,7 @@ export const PublishPostModal = ({
   };
 
   const handlePublishAttempt = async () => {
-    if (isSubmitting) {
+    if (isSubmitting || isEditorUploading) {
       return;
     }
 
@@ -758,7 +759,10 @@ export const PublishPostModal = ({
     redirectToLogin({ returnPath: loginReturnPath ?? buildDesktopForumReturnPath() });
   };
 
-  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
+  const handleImageUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void = () => undefined,
+  ): Promise<MarkdownImageUploadResult> => {
     const result = await uploadImage(
       {
         file,
@@ -767,7 +771,8 @@ export const PublishPostModal = ({
         generateMultipleSizes,
         addWatermark,
         watermarkText,
-        removeExif: true
+        removeExif: true,
+        onProgress: reportProgress,
       },
       t
     );
@@ -780,11 +785,15 @@ export const PublishPostModal = ({
     };
   };
 
-  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
+  const handleDocumentUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void = () => undefined,
+  ): Promise<MarkdownDocumentUploadResult> => {
     const result = await uploadDocument(
       {
         file,
-        businessType: 'Post'
+        businessType: 'Post',
+        onProgress: reportProgress,
       },
       t
     );
@@ -794,6 +803,22 @@ export const PublishPostModal = ({
       fileName: result.voOriginalName || file.name
     };
   };
+
+  const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
+    log.error('PublishPostModal', `Markdown ${kind} upload failed:`, error);
+  }, []);
+
+  const handleEditorUploadingChange = useCallback((uploading: boolean) => {
+    setIsEditorUploading(uploading);
+  }, []);
+
+  const handleCloseAttempt = useCallback(() => {
+    if (isSubmitting || isEditorUploading) {
+      return;
+    }
+
+    onClose();
+  }, [isEditorUploading, isSubmitting, onClose]);
 
   const updatePollOption = (index: number, value: string) => {
     setPollOptions((current) => current.map((item, itemIndex) => (itemIndex === index ? value : item)));
@@ -831,7 +856,8 @@ export const PublishPostModal = ({
     selectedTags.length >= MIN_TAG_COUNT
   ].filter(Boolean).length;
   const isPublishBlocked = blockingIssues.length > 0;
-  const canPublish = !isPublishBlocked && !isSubmitting;
+  const isComposerBusy = isSubmitting || isEditorUploading;
+  const canPublish = !isPublishBlocked && !isComposerBusy;
 
   const editorToolbarExtras = (
     <div className={styles.editorToggles}>
@@ -840,25 +866,28 @@ export const PublishPostModal = ({
         className={`${styles.editorToggle} ${addWatermark ? styles.editorToggleActive : ''}`}
         onClick={() => setAddWatermark(!addWatermark)}
         aria-pressed={addWatermark}
+        disabled={isComposerBusy}
       >
         <Icon icon="mdi:watermark" size={16} />
-        <span>水印</span>
+        <span>{t('forum.editor.watermark')}</span>
       </button>
       <button
         type="button"
         className={`${styles.editorToggle} ${generateMultipleSizes ? styles.editorToggleActive : ''}`}
         onClick={() => setGenerateMultipleSizes(!generateMultipleSizes)}
         aria-pressed={generateMultipleSizes}
+        disabled={isComposerBusy}
       >
         <Icon icon="mdi:aspect-ratio" size={16} />
-        <span>多尺寸</span>
+        <span>{t('forum.editor.multiSize')}</span>
       </button>
       <label className={styles.editorScaleLabel}>
-        <span>缩放</span>
+        <span>{t('forum.editor.scale')}</span>
         <select
           value={imageScalePercent}
           onChange={(event) => setImageScalePercent(Number(event.target.value))}
           className={styles.editorScaleSelect}
+          disabled={isComposerBusy}
         >
           {IMAGE_SCALE_OPTIONS.map((scale) => (
             <option key={scale} value={scale}>
@@ -885,7 +914,12 @@ export const PublishPostModal = ({
         </span>
       </div>
       <div className={styles.footerActions}>
-        <button type="button" className={styles.cancelButton} onClick={onClose}>
+        <button
+          type="button"
+          className={styles.cancelButton}
+          onClick={handleCloseAttempt}
+          disabled={isComposerBusy}
+        >
           取消
         </button>
         <button
@@ -894,7 +928,7 @@ export const PublishPostModal = ({
           onClick={() => {
             void handlePublishAttempt();
           }}
-          disabled={isSubmitting}
+          disabled={isComposerBusy}
           aria-disabled={!canPublish}
         >
           {isSubmitting ? '发布中...' : '发布帖子'}
@@ -907,7 +941,8 @@ export const PublishPostModal = ({
     return (
       <BottomSheet
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={handleCloseAttempt}
+        closeLabel={t('common.close')}
         height="62%"
         className={styles.sheet}
         bodyClassName={styles.sheetBody}
@@ -926,7 +961,10 @@ export const PublishPostModal = ({
   return (
     <BottomSheet
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCloseAttempt}
+      closeLabel={t('common.close')}
+      closeOnOverlayClick={!isComposerBusy}
+      closeOnEscape={!isComposerBusy}
       height={isFullscreen ? '96%' : '76%'}
       className={`${styles.sheet} ${isFullscreen ? styles.sheetFullscreen : ''}`.trim()}
       bodyClassName={styles.sheetBody}
@@ -941,6 +979,7 @@ export const PublishPostModal = ({
                 type="button"
                 className={`${styles.modeButton} ${composerMode === 'markdown' ? styles.modeButtonActive : ''}`}
                 onClick={() => setComposerMode('markdown')}
+                disabled={isComposerBusy}
               >
                 Markdown
               </button>
@@ -948,6 +987,7 @@ export const PublishPostModal = ({
                 type="button"
                 className={`${styles.modeButton} ${composerMode === 'rich' ? styles.modeButtonActive : ''}`}
                 onClick={() => setComposerMode('rich')}
+                disabled={isComposerBusy}
               >
                 富文本
               </button>
@@ -973,7 +1013,13 @@ export const PublishPostModal = ({
               <Icon icon={isFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'} size={18} />
               <span>{isFullscreen ? '退出全屏' : '全屏创作'}</span>
             </button>
-            <button type="button" className={styles.headerIconButton} onClick={onClose} aria-label="关闭创作器">
+            <button
+              type="button"
+              className={styles.headerIconButton}
+              onClick={handleCloseAttempt}
+              aria-label="关闭创作器"
+              disabled={isComposerBusy}
+            >
               <Icon icon="mdi:close" size={20} />
             </button>
           </div>
@@ -1011,7 +1057,7 @@ export const PublishPostModal = ({
         )}
         {publishError && (
           <div className={`${styles.validationBanner} ${styles.recoverableErrorBanner}`} role="alert">
-            <strong className={styles.validationTitle}>发布失败，草稿已保留</strong>
+            <strong className={styles.validationTitle}>{t('forum.publishDraftRetainedTitle')}</strong>
             <p className={styles.recoverableErrorText}>{publishError}</p>
           </div>
         )}
@@ -1019,13 +1065,15 @@ export const PublishPostModal = ({
         <div className={`${styles.workspace} ${composerMode === 'rich' ? styles.workspaceRich : ''}`}>
           <div className={`${styles.editorFrame} ${composerMode === 'rich' ? styles.editorFrameRich : ''}`}>
             {composerMode === 'markdown' ? (
-              <Suspense fallback={<div className={styles.editorLoading}>编辑器加载中...</div>}>
+              <Suspense fallback={<div className={styles.editorLoading}>{t('markdownEditor.loading')}</div>}>
                 <MarkdownEditor
                   value={content}
                   onChange={setContent}
-                  placeholder="开始写正文，支持 Markdown。右侧预览、左侧编辑、分屏切换都在工具栏末尾。"
+                  labels={markdownEditorLabels}
                   onImageUpload={handleImageUpload}
                   onDocumentUpload={handleDocumentUpload}
+                  onUploadError={handleEditorUploadError}
+                  onUploadingChange={handleEditorUploadingChange}
                   stickerGroups={stickerGroups}
                   stickerMap={stickerMap}
                   onStickerSelect={(selection) => {
@@ -1043,10 +1091,12 @@ export const PublishPostModal = ({
               <RichTextMarkdownEditor
                 value={content}
                 onChange={setContent}
-                placeholder="直接输入正文，使用上方工具栏完成标题、强调、引用、列表、链接和图片等排版。"
+                labels={richTextEditorLabels}
                 minHeight={0}
                 onImageUpload={handleImageUpload}
                 onDocumentUpload={handleDocumentUpload}
+                onUploadError={handleEditorUploadError}
+                onUploadingChange={handleEditorUploadingChange}
                 toolbarExtras={editorToolbarExtras}
                 className={styles.richTextEditor}
               />
@@ -1054,13 +1104,14 @@ export const PublishPostModal = ({
 
             {addWatermark && (
               <div className={styles.watermarkRow}>
-                <span className={styles.watermarkLabel}>水印文字</span>
+                <span className={styles.watermarkLabel}>{t('forum.editor.watermarkLabel')}</span>
                 <input
                   type="text"
-                  placeholder="输入水印文字"
+                  placeholder={t('forum.editor.watermarkPlaceholder')}
                   value={watermarkText}
                   onChange={(event) => setWatermarkText(event.target.value)}
                   className={styles.watermarkInput}
+                  disabled={isComposerBusy}
                 />
               </div>
             )}

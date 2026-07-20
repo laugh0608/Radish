@@ -18,14 +18,15 @@
   - `/u/:identifier`，其中 `identifier` 优先为 `User.PublicId`，旧 LongId 字符串保留兼容读取
   - `/leaderboard`
   - `/shop`、`/shop/products`、`/shop/product/:productId`
+  - `/legal`（公开承诺与社区边界页）
 - 登录后功能不进入公开 SEO 范围，例如发帖、编辑、订单、背包、设置、Console 与治理后台。
-- `/workbench` 是正式 Web 功能地图，不进入 sitemap、canonical 或公开详情分享范围；公共头部“工作台”可以指向它，但公开内容 canonical 仍只能使用对应公开真实路径。
+- `/workbench` 是正式 Web 功能地图，不进入 sitemap、canonical 或公开详情分享范围；其“公开阅读”分组提供真实 `/legal` 入口。`/legal` 当前具备运行时 head / JSON-LD，但尚未进入 Gateway 首包 snapshot 与静态 sitemap；若后续确认正式索引，再与收录策略一并补齐。
 - 桌面工作台入口继续由 `/desktop` 承载；公开 URL 命中时优先渲染公开内容壳层，而不是完整 WebOS 桌面 Shell。
 - `/circle` 是登录后“我的圈子”关系流入口，不进入公开 SEO、sitemap、canonical 或分享页范围；它可以在当前标签页中把来源状态一次性交接给后续公开详情，但不能把圈子来源写入公开 URL。
 
 ##### 10.5.2 当前 head 契约
 
-`Frontend/radish.client/src/public/publicHead.ts` 是公开壳层的统一 head helper。公开页面进入、路由切换和详情数据加载后，应通过该 helper 统一维护：
+`Frontend/radish.client/src/public/PublicHeadLifecycle.tsx` 是公开壳层 head 和 JSON-LD 的唯一运行时 DOM writer，`publicHead.ts` 和 `publicStructuredData.ts` 只提供构建与 DOM helper。公开页面进入或路由切换时，owner 先按当前 UI locale 写入路由基线；搜索词、分类、标签、榜单类型、商品、文档、帖子与用户名称等用户或运营内容保留原文。页面取得真实数据后只通过 `usePublicHeadSnapshot()` 提交 data-driven 快照：集合页可只覆盖 head，详情页同时提交 head + JSON-LD；任何页面都不得直接写 `document.head` 或 `document.title`。owner 统一维护：
 
 - `document.title`
 - `meta[name="description"]`
@@ -34,8 +35,13 @@
 - `meta[property="og:description"]`
 - `meta[property="og:url"]`
 - 可选 `meta[property="og:image"]`
+- `meta[name="twitter:card"]`、title / description 与可选 image
 
 `Frontend/radish.client/index.html` 只提供 SPA 首包的中文语言、站点默认 title、description 与 Open Graph 基线；页面级标题、摘要、canonical 和分享 URL 由运行时 head helper 根据公开路由补齐。
+
+公开壳层离开时，owner 必须清理 canonical、公开路由 Open Graph / Twitter 状态和 JSON-LD，并恢复站点级 title / description 基线，避免私域页面继承上一个公开详情的元信息。
+
+所有 data-driven 快照注册同时绑定 owner token 和当前规范 route key；提交快照前还必须验证实体身份与当前 route 一致，不能把旧商品、用户、文档或帖子数据注册到新路由。路由切换后旧 key 快照立即失效，旧组件 cleanup 只能清除自己的 token，不得清掉新页 owner；request id、cancelled guard 和 keyed remount 负责阻止旧异步结果回写，但不能替代 source identity 校验。该顺序同时必须能承受 React StrictMode 的 effect setup / cleanup 重放。
 
 公开集合页和 forum / docs / shop 三类公开详情还会在 Gateway 层做首包 head snapshot 注入：API 提供公开详情 head snapshot，Gateway 在返回前端入口 HTML 前注入 `<title>`、description、canonical、Open Graph、Twitter card 与 JSON-LD。该能力只改首包 `<head>`，不渲染正文 HTML，不改变 React hydrate，也不替代运行时 `publicHead`。
 
@@ -77,9 +83,9 @@ API 侧根据 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生成公开 cano
 
 ##### 10.5.4 结构化数据
 
-`Frontend/radish.client/src/public/publicStructuredData.ts` 负责运行时 JSON-LD 的构建、注入、复用和清理。
+`Frontend/radish.client/src/public/publicStructuredData.ts` 负责运行时 JSON-LD 的构建与 DOM helper；实际注入、替换和清理由 `PublicHeadLifecycle` 与同一份页面快照协调。
 
-- 公开集合页：`discover / leaderboard / forum / docs / shop` 的非详情路由输出 `CollectionPage`；其他公开非详情路由输出 `WebPage`。
+- 公开集合页：`discover / leaderboard / forum / docs / shop` 的非详情路由输出 `CollectionPage`；其他公开非详情路由输出 `WebPage`。fallback JSON-LD 必须复用 owner 最终解析的本地化 head，保证 `name / description` 与页面当前语言一致。
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。

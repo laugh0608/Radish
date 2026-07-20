@@ -3,7 +3,7 @@
   align-items: center;
   gap: 4px;
   padding: 4px 12px;
-  background: color-mix(in srgb, var(--theme-dock-item-bg) 84%, white 16%);
+  background: color-mix(in srgb, var(--theme-dock-item-bg) 84%, var(--theme-surface-highlight) 16%);
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
@@ -11,7 +11,7 @@
 }
 
 .coinBalance:hover {
-  background: color-mix(in srgb, var(--theme-dock-item-hover-bg) 80%, white 20%);
+  background: color-mix(in srgb, var(--theme-dock-item-hover-bg) 80%, var(--theme-surface-highlight) 20%);
   transform: translateY(-1px);
 }
 

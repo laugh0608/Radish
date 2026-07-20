@@ -16,9 +16,9 @@
   min-height: 28px;
   padding: 0 8px;
   border-radius: 999px;
-  border: 1px solid transparent;
-  background: rgba(0, 0, 0, 0.06);
-  color: #111827;
+  border: 1px solid var(--theme-border-subtle, transparent);
+  background: var(--theme-bg-muted, rgba(0, 0, 0, 0.06));
+  color: var(--theme-text-primary, #111827);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -29,7 +29,7 @@
 
 .bubble:hover:not(:disabled) {
   transform: translateY(-1px);
-  background: rgba(0, 0, 0, 0.09);
+  background: var(--theme-surface-highlight, rgba(0, 0, 0, 0.09));
 }
 
 .bubble:disabled {
@@ -38,9 +38,9 @@
 }
 
 .bubbleActive {
-  background: rgba(45, 108, 223, 0.14);
-  border-color: #2d6cdf;
-  color: #1d4ed8;
+  background: var(--theme-brand-soft, rgba(45, 108, 223, 0.14));
+  border-color: var(--theme-brand-primary, #2d6cdf);
+  color: var(--theme-brand-primary, #1d4ed8);
 }
 
 .emoji {
@@ -77,14 +77,14 @@
 .collapseButton {
   background: transparent;
   border: none;
-  color: #2d6cdf;
+  color: var(--theme-brand-primary, #2d6cdf);
   font-size: 12px;
   cursor: pointer;
   padding: 0 4px;
 }
 
 .collapseButton:hover {
-  color: #1d4ed8;
+  color: var(--theme-link-hover, #1d4ed8);
   text-decoration: underline;
 }
 
@@ -92,9 +92,9 @@
   width: 28px;
   height: 28px;
   border-radius: 999px;
-  border: 1px dashed #9ca3af;
+  border: 1px dashed var(--theme-border-strong, #9ca3af);
   background: transparent;
-  color: #4b5563;
+  color: var(--theme-text-secondary, #4b5563);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -112,14 +112,27 @@
 }
 
 .plusButton:hover:not(:disabled) {
-  border-color: #2d6cdf;
-  color: #2d6cdf;
-  background: rgba(45, 108, 223, 0.08);
+  border-color: var(--theme-brand-primary, #2d6cdf);
+  color: var(--theme-brand-primary, #2d6cdf);
+  background: var(--theme-brand-soft, rgba(45, 108, 223, 0.08));
 }
 
 .plusButton:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.plusButtonLabeled {
+  width: auto;
+  min-width: 28px;
+  padding: 0 10px;
+  gap: 5px;
+}
+
+.plusLabel {
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 700;
 }
 
 .quickPanel {
@@ -128,9 +141,9 @@
   bottom: calc(100% + 8px);
   width: max-content;
   max-width: min(320px, calc(100vw - 48px));
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  background: var(--theme-bg-surface, #ffffff);
+  border: 1px solid var(--theme-border-strong, #e5e7eb);
+  box-shadow: var(--theme-shadow-elevated, 0 10px 24px rgba(15, 23, 42, 0.12));
   border-radius: 12px;
   padding: 8px;
   display: flex;
@@ -157,7 +170,7 @@
 }
 
 .quickEmoji:hover:not(:disabled) {
-  background: rgba(45, 108, 223, 0.12);
+  background: var(--theme-brand-soft, rgba(45, 108, 223, 0.12));
   transform: scale(1.06);
 }
 

@@ -29,7 +29,6 @@ public class MinioFileStorage : IFileStorage
     public Task<FileUploadResult> UploadAsync(
         Stream stream,
         string fileName,
-        string contentType,
         FileUploadOptionsDto? options = null)
     {
         throw new NotImplementedException("MinIO 存储上传功能尚未实现");

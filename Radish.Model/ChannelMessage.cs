@@ -9,6 +9,10 @@ namespace Radish.Model;
 [Tenant(configId: "Chat")]
 [SugarIndex("idx_channel_message_channel_id", nameof(ChannelId), OrderByType.Asc, nameof(Id), OrderByType.Desc)]
 [SugarIndex("idx_channel_message_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_channel_message_client_request", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(ClientRequestId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_channel_message_attachment", nameof(TenantId), OrderByType.Asc, nameof(AttachmentId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_channel_message_channel_search_order", nameof(ChannelId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc, nameof(Id), OrderByType.Desc)]
+[SugarIndex("idx_channel_message_tenant_search_order", nameof(TenantId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc, nameof(Id), OrderByType.Desc)]
 public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>频道 Id</summary>
@@ -23,6 +27,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(Length = 100, IsNullable = false)]
     public string UserName { get; set; } = string.Empty;
 
+    /// <summary>客户端请求 Id；同一租户、发送者内用于消息发送幂等</summary>
+    [SugarColumn(Length = 100, IsNullable = true)]
+    public string? ClientRequestId { get; set; }
+
     /// <summary>发送者头像附件快照 Id</summary>
     [SugarColumn(IsNullable = true)]
     public long? UserAvatarAttachmentIdSnapshot { get; set; }
@@ -35,6 +43,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(Length = 4000, IsNullable = true)]
     public string? Content { get; set; }
 
+    /// <summary>由当前可见正文派生的规范化搜索文本；可重建且不对客户端暴露</summary>
+    [SugarColumn(Length = 4000, IsNullable = true)]
+    public string? SearchText { get; set; }
+
     /// <summary>回复消息 Id</summary>
     [SugarColumn(IsNullable = true)]
     public long? ReplyToId { get; set; }
@@ -42,6 +54,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>图片附件 Id</summary>
     [SugarColumn(IsNullable = true)]
     public long? AttachmentId { get; set; }
+
+    /// <summary>消息回应聚合修订号；仅在实际回应状态变化时递增。</summary>
+    [SugarColumn(IsNullable = false, DefaultValue = "0")]
+    public long ReactionRevision { get; set; }
 
     /// <summary>租户 Id</summary>
     [SugarColumn(IsNullable = false)]

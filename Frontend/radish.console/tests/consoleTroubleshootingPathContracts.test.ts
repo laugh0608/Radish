@@ -102,22 +102,42 @@ test('Console 用户详情应提供内容治理排障入口并复用治理 URL h
   assert.match(userDetailSource, /section: 'manual'/);
   assert.match(moderationSource, /parseModerationSectionQuery/);
   assert.match(moderationSource, /parseModerationLongIdQuery/);
-  assert.match(moderationSource, /返回来源/);
+  assert.match(moderationSource, /t\('moderation\.backToSource'\)/);
 });
 
 test('Console 移动边界应固定高频导航与低风险治理顺序', () => {
   const layoutSource = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
   const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
 
-  assert.match(layoutSource, /label: '总览'/);
-  assert.match(layoutSource, /label: '治理'/);
-  assert.match(layoutSource, /label: '交易'/);
-  assert.match(layoutSource, /label: '权限'/);
-  assert.match(layoutSource, /label: '更多'/);
-  assert.match(layoutSource, /aria-label="Console 移动高频导航"/);
-  assert.match(layoutSource, /按当前账号权限显示 Console 可访问页面/);
-  assert.match(moderationSource, /aria-label="移动治理操作边界"/);
-  assert.match(moderationSource, /手机视图优先完成低风险核对/);
-  assert.match(moderationSource, /高风险批量策略和复杂权限调整仍保持桌面优先/);
-  assert.match(moderationSource, /查看队列/);
+  assert.match(layoutSource, /label: t\('console\.mobile\.overview'\)/);
+  assert.match(layoutSource, /label: t\('console\.mobile\.governance'\)/);
+  assert.match(layoutSource, /label: t\('console\.mobile\.commerce'\)/);
+  assert.match(layoutSource, /label: t\('console\.mobile\.access'\)/);
+  assert.match(layoutSource, /label: t\('console\.mobile\.more'\)/);
+  assert.match(layoutSource, /aria-label=\{t\('console\.mobile\.navLabel'\)\}/);
+  assert.match(layoutSource, /t\('console\.mobile\.allDescription'\)/);
+  assert.match(moderationSource, /aria-label=\{t\('moderation\.mobile\.label'\)\}/);
+  assert.match(moderationSource, /t\('moderation\.mobile\.description'\)/);
+  assert.match(moderationSource, /t\('moderation\.mobile\.queue'\)/);
+});
+
+test('Console 应提供安全的 client 来源返回入口与 Web 主线对象回看', () => {
+  const mainSource = readConsoleSource('src/main.tsx');
+  const layoutSource = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
+  const clientBackLinkSource = readConsoleSource('src/components/ClientBackLink/ClientBackLink.tsx');
+  const loginSource = readConsoleSource('src/pages/Login/Login.tsx');
+  const oidcCallbackSource = readConsoleSource('src/pages/OidcCallback/OidcCallback.tsx');
+  const routerComponentsSource = readConsoleSource('src/router/routerComponents.tsx');
+  const moderationHelpersSource = readConsoleSource('src/pages/Moderation/moderationPageHelpers.ts');
+
+  assert.match(mainSource, /rememberClientBackTo\(window\.location\.search\)/);
+  assert.match(layoutSource, /<ClientBackLink \/>/);
+  assert.match(clientBackLinkSource, /href=\{clientBackTo\}/);
+  assert.match(clientBackLinkSource, /clearRememberedClientBackTo\(\)/);
+  assert.match(clientBackLinkSource, /t\('console\.clientBack\.returning'\)/);
+  assert.match(loginSource, /<ClientBackLink \/>/);
+  assert.match(oidcCallbackSource, /error \? <ClientBackLink \/>/);
+  assert.match(routerComponentsSource, /<ClientBackLink \/>/);
+  assert.match(moderationHelpersSource, /new URL\('\/messages', getApiBaseUrl\(\)\)/);
+  assert.doesNotMatch(moderationHelpersSource, /new URL\('\/desktop'/);
 });

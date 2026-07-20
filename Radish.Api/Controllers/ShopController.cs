@@ -1,8 +1,10 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Routing;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
@@ -29,6 +31,7 @@ public class ShopController : ControllerBase
     private readonly IUserInventoryService _userInventoryService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
     public ShopController(
         IProductService productService,
@@ -36,7 +39,8 @@ public class ShopController : ControllerBase
         IUserBenefitService userBenefitService,
         IUserInventoryService userInventoryService,
         IUserBrowseHistoryService userBrowseHistoryService,
-        ICurrentUserAccessor currentUserAccessor)
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _productService = productService;
         _orderService = orderService;
@@ -44,6 +48,7 @@ public class ShopController : ControllerBase
         _userInventoryService = userInventoryService;
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -117,7 +122,11 @@ public class ShopController : ControllerBase
         var result = await _productService.GetProductDetailAsync(productId);
         if (result == null)
         {
-            return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
+            return BuildError<ProductVo>(
+                HttpStatusCodeEnum.NotFound,
+                "商品不存在",
+                "Product.NotFound",
+                "error.product.not_found");
         }
 
         if (Current.UserId > 0)
@@ -137,6 +146,15 @@ public class ShopController : ControllerBase
         }
 
         return MessageModel<ProductVo>.Success("查询成功", result);
+    }
+
+    /// <summary>获取服务端权威商品能力元数据。</summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<MessageModel<List<ShopProductCapabilityVo>>> GetProductCapabilities()
+    {
+        var result = await _productService.GetProductCapabilitiesAsync();
+        return MessageModel<List<ShopProductCapabilityVo>>.Success("查询成功", result);
     }
 
     /// <summary>
@@ -237,7 +255,11 @@ public class ShopController : ControllerBase
         var result = await _orderService.GetOrderDetailAsync(userId, orderId);
         if (result == null)
         {
-            return MessageModel<OrderVo>.Message(false, "订单不存在", default!);
+            return BuildError<OrderVo>(
+                HttpStatusCodeEnum.NotFound,
+                "订单不存在",
+                "Order.NotFound",
+                "error.order.not_found");
         }
 
         return MessageModel<OrderVo>.Success("查询成功", result);
@@ -248,7 +270,7 @@ public class ShopController : ControllerBase
     /// </summary>
     /// <param name="orderId">订单 ID</param>
     /// <param name="reason">取消原因</param>
-    /// <returns>是否成功</returns>
+    /// <returns>选择结果与该类型当前权益</returns>
     [HttpPost("{orderId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<bool>> CancelOrder(long orderId, string? reason = null)
@@ -315,25 +337,27 @@ public class ShopController : ControllerBase
     /// 激活权益
     /// </summary>
     /// <param name="benefitId">权益 ID</param>
-    /// <returns>是否成功</returns>
+    /// <returns>停用结果与该类型当前权益</returns>
     [HttpPost("{benefitId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<bool>> ActivateBenefit(long benefitId)
+    public async Task<MessageModel<UserBenefitActionResultVo>> ActivateBenefit(long benefitId)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return MessageModel<UserBenefitActionResultVo>.Message(false, "未登录", default!);
         }
 
         try
         {
             var result = await _userBenefitService.ActivateBenefitAsync(userId, benefitId);
-            return MessageModel<bool>.Success("激活成功", result);
+            return MessageModel<UserBenefitActionResultVo>.Success(
+                result.VoChanged ? "激活成功" : "权益已处于激活状态",
+                result);
         }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
         }
     }
 
@@ -344,16 +368,25 @@ public class ShopController : ControllerBase
     /// <returns>是否成功</returns>
     [HttpPost("{benefitId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<bool>> DeactivateBenefit(long benefitId)
+    public async Task<MessageModel<UserBenefitActionResultVo>> DeactivateBenefit(long benefitId)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
-            return MessageModel<bool>.Message(false, "未登录", false);
+            return MessageModel<UserBenefitActionResultVo>.Message(false, "未登录", default!);
         }
 
-        var result = await _userBenefitService.DeactivateBenefitAsync(userId, benefitId);
-        return MessageModel<bool>.Success("取消激活成功", result);
+        try
+        {
+            var result = await _userBenefitService.DeactivateBenefitAsync(userId, benefitId);
+            return MessageModel<UserBenefitActionResultVo>.Success(
+                result.VoChanged ? "取消激活成功" : "权益当前未激活",
+                result);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
+        }
     }
 
     #endregion
@@ -420,12 +453,34 @@ public class ShopController : ControllerBase
     /// <summary>
     /// 使用改名卡
     /// </summary>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <param name="newNickname">新昵称</param>
+    /// <param name="dto">改名卡使用请求</param>
     /// <returns>使用结果</returns>
-    [HttpPost("{inventoryId:long}")]
+    [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<UseItemResultDto>> UseRenameCard(long inventoryId, [FromQuery] string newNickname)
+    public async Task<MessageModel<UseItemResultDto>> UseRenameCard([FromBody] UseRenameCardDto dto)
+    {
+        return await UseRenameCardCoreAsync(dto);
+    }
+
+    /// <summary>旧版 query string 改名卡入口，仅保留迁移期兼容。</summary>
+    [Obsolete("请改用 POST /api/v1/Shop/UseRenameCard body 请求")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    [HttpPost("~/api/v{version:apiVersion}/Shop/UseRenameCard/{inventoryId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<UseItemResultDto>> UseRenameCardLegacy(
+        long inventoryId,
+        [FromQuery] string newNickname,
+        [FromHeader(Name = "Idempotency-Key")] string idempotencyKey)
+    {
+        return await UseRenameCardCoreAsync(new UseRenameCardDto
+        {
+            InventoryId = inventoryId,
+            NewDisplayName = newNickname,
+            IdempotencyKey = idempotencyKey
+        });
+    }
+
+    private async Task<MessageModel<UseItemResultDto>> UseRenameCardCoreAsync(UseRenameCardDto dto)
     {
         var userId = GetCurrentUserId();
         if (userId <= 0)
@@ -436,7 +491,7 @@ public class ShopController : ControllerBase
         UseItemResultDto result;
         try
         {
-            result = await _userInventoryService.UseRenameCardAsync(userId, inventoryId, newNickname);
+            result = await _userInventoryService.UseRenameCardAsync(userId, dto);
         }
         catch (BusinessException ex)
         {
@@ -491,7 +546,11 @@ public class ShopController : ControllerBase
         var result = await _productService.GetProductDetailForAdminAsync(productId);
         if (result == null)
         {
-            return MessageModel<ProductVo>.Message(false, "商品不存在", default!);
+            return BuildError<ProductVo>(
+                HttpStatusCodeEnum.NotFound,
+                "商品不存在",
+                "Product.NotFound",
+                "error.product.not_found");
         }
 
         return MessageModel<ProductVo>.Success("查询成功", result);
@@ -513,9 +572,23 @@ public class ShopController : ControllerBase
             var productId = await _productService.CreateProductAsync(dto, userId, userName);
             return MessageModel<long>.Success("创建成功", productId);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                0L);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<long>.Message(false, ex.Message, default);
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                0L);
         }
     }
 
@@ -535,9 +608,23 @@ public class ShopController : ControllerBase
             var result = await _productService.UpdateProductAsync(dto, userId, userName);
             return MessageModel<bool>.Success("更新成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -557,9 +644,23 @@ public class ShopController : ControllerBase
             var result = await _productService.DeleteProductAsync(productId, userId, userName);
             return MessageModel<bool>.Success("删除成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -576,9 +677,23 @@ public class ShopController : ControllerBase
             var result = await _productService.PutOnSaleAsync(productId, request.ExpectedVersion);
             return MessageModel<bool>.Success("上架成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -595,9 +710,23 @@ public class ShopController : ControllerBase
             var result = await _productService.TakeOffSaleAsync(productId, request.ExpectedVersion);
             return MessageModel<bool>.Success("下架成功", result);
         }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Product.OperationRejected",
+                ex.MessageKey ?? "error.product.operation_rejected",
+                false);
+        }
         catch (InvalidOperationException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                ex.Message,
+                "Product.OperationRejected",
+                "error.product.operation_rejected",
+                false);
         }
     }
 
@@ -631,10 +760,75 @@ public class ShopController : ControllerBase
         var result = await _orderService.GetOrderDetailForAdminAsync(orderId);
         if (result == null)
         {
-            return MessageModel<OrderVo>.Message(false, "订单不存在", default!);
+            return BuildError<OrderVo>(
+                HttpStatusCodeEnum.NotFound,
+                "订单不存在",
+                "Order.NotFound",
+                "error.order.not_found");
         }
 
         return MessageModel<OrderVo>.Success("查询成功", result);
+    }
+
+    /// <summary>获取指定用户的持续权益与消耗品业务流水（管理后台）。</summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.BenefitsView)]
+    public async Task<MessageModel<PageModel<ShopEntitlementOperationVo>>> AdminGetEntitlementOperations(
+        long userId,
+        string? operationType = null,
+        BenefitType? benefitType = null,
+        ConsumableType? consumableType = null,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var result = await _userBenefitService.GetOperationsForAdminAsync(
+            userId,
+            operationType,
+            benefitType,
+            consumableType,
+            pageIndex,
+            pageSize);
+        return MessageModel<PageModel<ShopEntitlementOperationVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>获取指定用户的持续权益（管理后台）。</summary>
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.BenefitsView)]
+    public async Task<MessageModel<List<UserBenefitVo>>> AdminGetUserBenefits(long userId)
+    {
+        var result = await _userBenefitService.GetUserBenefitsForAdminAsync(userId);
+        return MessageModel<List<UserBenefitVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>撤销指定用户权益（管理后台）。</summary>
+    [HttpPost("{benefitId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.BenefitsRevoke)]
+    public async Task<MessageModel<UserBenefitActionResultVo>> AdminRevokeBenefit(
+        long benefitId,
+        [FromBody] RevokeUserBenefitDto request)
+    {
+        try
+        {
+            var result = await _userBenefitService.RevokeBenefitAsync(
+                benefitId,
+                request.Reason,
+                GetCurrentUserId(),
+                GetCurrentUserName());
+            return MessageModel<UserBenefitActionResultVo>.Success(
+                result.VoChanged ? "权益已撤销" : "权益此前已撤销",
+                result);
+        }
+        catch (InvalidOperationException)
+        {
+            return BuildError<UserBenefitActionResultVo>(
+                HttpStatusCodeEnum.Conflict,
+                "当前权益操作无法完成，请刷新后核对权益状态",
+                "Shop.BenefitOperationRejected",
+                "error.shop.benefit_operation_rejected");
+        }
     }
 
     /// <summary>
@@ -650,9 +844,23 @@ public class ShopController : ControllerBase
             var result = await _orderService.RetryGrantBenefitAsync(orderId);
             return MessageModel<bool>.Success("重新发放成功", result);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Order.RetryRejected",
+                ex.MessageKey ?? "error.order.retry_rejected",
+                false);
+        }
+        catch (InvalidOperationException)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                "当前订单不能重新发放，请刷新后核对订单状态与支付证据",
+                "Order.RetryRejected",
+                "error.order.retry_rejected",
+                false);
         }
     }
 
@@ -673,11 +881,30 @@ public class ShopController : ControllerBase
                 GetCurrentUserName());
             return result
                 ? MessageModel<bool>.Success("备注已保存", true)
-                : MessageModel<bool>.Message(false, "备注保存失败", false);
+                : BuildError(
+                    HttpStatusCodeEnum.Conflict,
+                    "订单备注保存失败，请刷新后重试",
+                    "Order.RemarkFailed",
+                    "error.order.remark_failed",
+                    responseData: false);
         }
-        catch (InvalidOperationException ex)
+        catch (BusinessException ex)
         {
-            return MessageModel<bool>.Message(false, ex.Message, false);
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Order.RemarkFailed",
+                ex.MessageKey ?? "error.order.remark_failed",
+                false);
+        }
+        catch (InvalidOperationException)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.Conflict,
+                "订单备注保存失败，请刷新后重试",
+                "Order.RemarkFailed",
+                "error.order.remark_failed",
+                false);
         }
     }
 
@@ -691,6 +918,25 @@ public class ShopController : ControllerBase
     /// <summary>获取当前用户名</summary>
     private string GetCurrentUserName() =>
         string.IsNullOrWhiteSpace(Current.UserName) ? "Unknown" : Current.UserName;
+
+    private MessageModel<T> BuildError<T>(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey,
+        T? responseData = default)
+    {
+        var localizedMessage = _errorsLocalizer[messageKey];
+        return new MessageModel<T>
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            ResponseData = responseData,
+            Code = code,
+            MessageKey = messageKey
+        };
+    }
 
     #endregion
 }

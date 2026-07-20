@@ -11,9 +11,11 @@ public static class ApiErrorResultFactory
         string message,
         string code,
         string? messageKey = null,
+        object[]? messageArguments = null,
         object? responseData = null)
     {
         var traceId = ApplyTraceId(httpContext);
+        var normalizedMessageArguments = ApiMessageArgumentNormalizer.Normalize(messageArguments);
         var response = new MessageModel
         {
             StatusCode = statusCode,
@@ -21,6 +23,7 @@ public static class ApiErrorResultFactory
             MessageInfo = message,
             Code = code,
             MessageKey = messageKey,
+            MessageArguments = normalizedMessageArguments.Length > 0 ? normalizedMessageArguments : null,
             TraceId = traceId,
             ResponseData = responseData
         };
@@ -37,10 +40,11 @@ public static class ApiErrorResultFactory
         string message,
         string code,
         string? messageKey = null,
+        object[]? messageArguments = null,
         object? responseData = null,
         CancellationToken cancellationToken = default)
     {
-        var result = Create(httpContext, statusCode, message, code, messageKey, responseData);
+        var result = Create(httpContext, statusCode, message, code, messageKey, messageArguments, responseData);
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(
             result.Value,

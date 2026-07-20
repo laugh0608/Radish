@@ -3,7 +3,7 @@
   gap: 18px;
   border: 1px solid var(--theme-border-soft, var(--rx-border-soft, #ded8cc));
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface, var(--rx-bg-surface, #fffdf8)) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface, var(--rx-bg-surface, #fffdf8)) 94%, var(--theme-surface-highlight) 6%);
   color: var(--theme-text-primary, var(--rx-text-primary, #211f1c));
   padding: 20px;
   box-shadow: var(--theme-shadow-soft, var(--rx-shadow-card, 0 12px 32px rgb(30 25 18 / 8%)));
@@ -54,7 +54,7 @@
   align-content: start;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft, var(--rx-border-soft, #ded8cc)) 82%, transparent 18%);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-muted, var(--rx-bg-muted, #f6f2ea)) 42%, white 58%);
+  background: color-mix(in srgb, var(--theme-bg-muted, var(--rx-bg-muted, #f6f2ea)) 42%, var(--theme-surface-highlight) 58%);
   padding: 13px;
 }
 
@@ -79,7 +79,7 @@
   justify-content: center;
   flex: 0 0 auto;
   color: var(--theme-brand-primary, var(--rx-brand-primary, #6f8f72));
-  background: color-mix(in srgb, var(--theme-brand-soft, var(--rx-brand-soft, #e9f0e4)) 62%, white 38%);
+  background: color-mix(in srgb, var(--theme-brand-soft, var(--rx-brand-soft, #e9f0e4)) 62%, var(--theme-surface-highlight) 38%);
 }
 
 .boundaryBadge {

@@ -96,6 +96,7 @@ interface PostDetailContentViewProps {
   onReportQuickReply: (quickReplyId: LongId) => void;
   onReportComment: (commentId: LongId) => void;
   onNavigateToComment: (commentId: LongId) => Promise<void> | void;
+  onAnswerEditorUploadingChange?: (uploading: boolean) => void;
   workspaceIntent?: ForumWorkspaceIntent | null;
   workspaceIntentKey?: string | null;
 }
@@ -178,11 +179,13 @@ export const PostDetailContentView = ({
   onReportQuickReply,
   onReportComment,
   onNavigateToComment,
+  onAnswerEditorUploadingChange,
   workspaceIntent = null,
   workspaceIntentKey = null,
 }: PostDetailContentViewProps) => {
   const { i18n, t } = useTranslation();
   const [isCommentSheetOpen, setIsCommentSheetOpen] = useState(false);
+  const [isAnswerEditorUploading, setIsAnswerEditorUploading] = useState(false);
   const [highlightedCommentId, setHighlightedCommentId] = useState<LongId | null>(null);
   const [commentAnchorVersion, setCommentAnchorVersion] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -343,6 +346,17 @@ export const PostDetailContentView = ({
     setIsCommentSheetOpen(true);
   };
 
+  const handleAnswerEditorUploadingChange = useCallback((uploading: boolean) => {
+    setIsAnswerEditorUploading(uploading);
+    onAnswerEditorUploadingChange?.(uploading);
+  }, [onAnswerEditorUploadingChange]);
+
+  const handleBack = () => {
+    if (!isAnswerEditorUploading) {
+      onBack();
+    }
+  };
+
   const handleCloseCommentSheet = () => {
     setIsCommentSheetOpen(false);
     onCancelReply();
@@ -373,7 +387,7 @@ export const PostDetailContentView = ({
   return (
     <div className={styles.detailView}>
       <div className={styles.detailToolbar}>
-        <button className={styles.backButton} onClick={onBack}>
+        <button className={styles.backButton} onClick={handleBack} disabled={isAnswerEditorUploading}>
           <Icon icon="mdi:arrow-left" size={20} />
           {t('forum.backToList')}
         </button>
@@ -395,6 +409,7 @@ export const PostDetailContentView = ({
               onClosePoll={onClosePoll}
               onDrawLottery={onDrawLottery}
               onAnswerQuestion={onAnswerQuestion}
+              onAnswerEditorUploadingChange={handleAnswerEditorUploadingChange}
               onAcceptAnswer={onAcceptAnswer}
               answerSort={questionAnswerSort}
               answerFilter={questionAnswerFilter}
@@ -512,6 +527,7 @@ export const PostDetailContentView = ({
       <BottomSheet
         isOpen={isCommentSheetOpen}
         onClose={handleCloseCommentSheet}
+        closeLabel={t('common.close')}
         title={t('forum.joinDiscussion')}
         height="60%"
         className={styles.commentSheet}

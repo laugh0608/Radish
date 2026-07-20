@@ -5,6 +5,8 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
+using Serilog;
 
 namespace Radish.Service;
 
@@ -39,42 +41,49 @@ public class BootstrapService : IBootstrapService
 
     public async Task<BootstrapAdminCreationResult> CreateFirstAdministratorAsync(BootstrapCreateAdminDto dto)
     {
-        var displayName = dto.DisplayName.Trim();
+        var displayName = (dto.DisplayName ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(displayName))
         {
-            return BootstrapAdminCreationResult.Failed(
-                BootstrapAdminCreationStatus.InvalidInput,
-                "展示名不能为空");
+            return InvalidInput(
+                "展示名不能为空",
+                BootstrapErrorCodes.DisplayNameRequired);
         }
 
         if (displayName.Length is < DisplayNameMinLength or > DisplayNameMaxLength)
         {
-            return BootstrapAdminCreationResult.Failed(
-                BootstrapAdminCreationStatus.InvalidInput,
-                $"展示名长度必须为 {DisplayNameMinLength}-{DisplayNameMaxLength} 位");
+            return InvalidInput(
+                $"展示名长度必须为 {DisplayNameMinLength}-{DisplayNameMaxLength} 位",
+                BootstrapErrorCodes.DisplayNameLengthInvalid,
+                DisplayNameMinLength,
+                DisplayNameMaxLength);
         }
 
         if (!displayName.All(IsValidDisplayNameCharacter))
         {
-            return BootstrapAdminCreationResult.Failed(
-                BootstrapAdminCreationStatus.InvalidInput,
-                "展示名只能包含中文、英文字母和数字");
+            return InvalidInput(
+                "展示名只能包含中文、英文字母和数字",
+                BootstrapErrorCodes.DisplayNameCharactersInvalid);
         }
 
         var normalizedEmail = NormalizeEmail(dto.Email);
         if (normalizedEmail == null)
         {
-            return BootstrapAdminCreationResult.Failed(
-                BootstrapAdminCreationStatus.InvalidInput,
-                "请填写有效的电子邮箱");
+            return InvalidInput(
+                "请填写有效的电子邮箱",
+                BootstrapErrorCodes.EmailInvalid);
         }
 
-        var passwordError = BootstrapPasswordPolicy.Validate(displayName, normalizedEmail, dto.Password, dto.ConfirmPassword);
-        if (!string.IsNullOrWhiteSpace(passwordError))
+        var passwordError = BootstrapPasswordPolicy.Validate(
+            displayName,
+            normalizedEmail,
+            dto.Password,
+            dto.ConfirmPassword);
+        if (passwordError != null)
         {
-            return BootstrapAdminCreationResult.Failed(
-                BootstrapAdminCreationStatus.InvalidInput,
-                passwordError);
+            return InvalidInput(
+                passwordError.Message,
+                passwordError.Code,
+                passwordError.MessageArguments);
         }
 
         var passwordHash = PasswordHasher.HashPassword(dto.Password);
@@ -86,10 +95,32 @@ public class BootstrapService : IBootstrapService
             publicIndexReservationPolicy);
         if (result.Status == BootstrapAdminCreationStatus.Created)
         {
-            await _coinService.GrantRegistrationRewardAsync(result.UserId);
+            try
+            {
+                await _coinService.GrantRegistrationRewardAsync(result.UserId);
+            }
+            catch (Exception exception)
+            {
+                Log.Error(
+                    exception,
+                    "首个管理员已创建，但注册奖励暂未发放：UserId={UserId}",
+                    result.UserId);
+            }
         }
 
         return result;
+    }
+
+    private static BootstrapAdminCreationResult InvalidInput(
+        string fallbackMessage,
+        string code,
+        params object[] messageArguments)
+    {
+        return BootstrapAdminCreationResult.Failed(
+            BootstrapAdminCreationStatus.InvalidInput,
+            fallbackMessage,
+            code,
+            messageArguments);
     }
 
     private static bool IsValidDisplayNameCharacter(char value)

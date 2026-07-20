@@ -85,7 +85,7 @@
 
 .ruleCard:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--theme-border-strong) 76%, white 24%);
+  border-color: color-mix(in srgb, var(--theme-border-strong) 76%, var(--theme-surface-highlight) 24%);
   box-shadow: 0 14px 26px color-mix(in srgb, var(--theme-accent-earth) 8%, transparent 92%);
 }
 

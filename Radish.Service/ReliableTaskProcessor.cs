@@ -14,6 +14,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
     private readonly ICoinService _coinService;
     private readonly IExperienceService _experienceService;
     private readonly INotificationService _notificationService;
+    private readonly IChatAttachmentBindingService _chatAttachmentBindingService;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
 
@@ -22,6 +23,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         ICoinService coinService,
         IExperienceService experienceService,
         INotificationService notificationService,
+        IChatAttachmentBindingService chatAttachmentBindingService,
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository)
     {
@@ -29,6 +31,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         _coinService = coinService;
         _experienceService = experienceService;
         _notificationService = notificationService;
+        _chatAttachmentBindingService = chatAttachmentBindingService;
         _postRepository = postRepository;
         _commentRepository = commentRepository;
     }
@@ -48,16 +51,30 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 await ProcessPostPublishedAsync(Deserialize<PostPublishedTaskPayload>(message));
                 break;
             case ReliableTaskTypes.PostLiked:
-                await ProcessLikeAsync(Deserialize<LikeEffectsTaskPayload>(message), isPost: true);
+                await ProcessLikeAsync(
+                    Deserialize<LikeEffectsTaskPayload>(message),
+                    isPost: true,
+                    message.TenantId,
+                    message.OccurredAtUtc);
                 break;
             case ReliableTaskTypes.CommentPublished:
-                await ProcessCommentPublishedAsync(Deserialize<CommentPublishedTaskPayload>(message));
+                await ProcessCommentPublishedAsync(
+                    Deserialize<CommentPublishedTaskPayload>(message),
+                    message.TenantId,
+                    message.OccurredAtUtc);
                 break;
             case ReliableTaskTypes.CommentLiked:
-                await ProcessLikeAsync(Deserialize<LikeEffectsTaskPayload>(message), isPost: false);
+                await ProcessLikeAsync(
+                    Deserialize<LikeEffectsTaskPayload>(message),
+                    isPost: false,
+                    message.TenantId,
+                    message.OccurredAtUtc);
                 break;
             case ReliableTaskTypes.ExperienceLevelChanged:
-                await ProcessLevelChangedAsync(Deserialize<ExperienceLevelChangedTaskPayload>(message));
+                await ProcessLevelChangedAsync(
+                    Deserialize<ExperienceLevelChangedTaskPayload>(message),
+                    message.TenantId,
+                    message.OccurredAtUtc);
                 break;
             case ReliableTaskTypes.HighlightBaseReward:
                 await ProcessHighlightBaseRewardAsync(Deserialize<HighlightBaseRewardTaskPayload>(message));
@@ -66,8 +83,22 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 await ProcessHighlightBonusRewardAsync(Deserialize<HighlightBonusRewardTaskPayload>(message));
                 break;
             case ReliableTaskTypes.NotificationRequested:
-                await _notificationService.CreateNotificationAsync(
-                    Deserialize<NotificationRequestedTaskPayload>(message).Notification);
+                try
+                {
+                    var requestedNotification = Deserialize<NotificationRequestedTaskPayload>(message).Notification;
+                    requestedNotification.TenantId = message.TenantId;
+                    requestedNotification.OccurredAtUtc = message.OccurredAtUtc;
+                    await _notificationService.CreateNotificationAsync(requestedNotification);
+                }
+                catch (Exception exception) when (exception is ArgumentException or JsonException)
+                {
+                    throw new PermanentReliableTaskException(
+                        $"通知可靠任务契约无效：{exception.Message}");
+                }
+                break;
+            case ReliableTaskTypes.ChatAttachmentBinding:
+                await _chatAttachmentBindingService.BindAsync(
+                    Deserialize<ChatAttachmentBindingTaskPayload>(message));
                 break;
             default:
                 throw new PermanentReliableTaskException($"未知可靠任务类型：{message.TaskType}");
@@ -100,7 +131,11 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         }
     }
 
-    private async Task ProcessLikeAsync(LikeEffectsTaskPayload payload, bool isPost)
+    private async Task ProcessLikeAsync(
+        LikeEffectsTaskPayload payload,
+        bool isPost,
+        long tenantId,
+        DateTime occurredAtUtc)
     {
         if (!DateTime.TryParseExact(
                 payload.RewardDateKey,
@@ -150,6 +185,9 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         {
             postPublicId = (await _postRepository.QueryByIdAsync(payload.PostId.Value))?.PublicId;
         }
+        var likerName = string.IsNullOrWhiteSpace(payload.LikerName)
+            ? $"User-{payload.LikerId}"
+            : payload.LikerName.Trim();
 
         await _notificationService.CreateNotificationAsync(new CreateNotificationDto
         {
@@ -162,15 +200,29 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             BusinessType = businessType,
             BusinessId = payload.TargetId,
             TriggerId = payload.LikerId,
+            TriggerName = likerName,
             ReceiverUserIds = [payload.AuthorId],
-            ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(
-                payload.PostId ?? payload.TargetId,
-                isPost ? null : payload.TargetId,
-                postPublicId)
+            TenantId = tenantId,
+            OccurredAtUtc = occurredAtUtc,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["actorName"] = likerName,
+                ["targetTitle"] = payload.TargetTitleOrContent
+            },
+            TargetKind = NotificationTargetKind.ForumPost,
+            Target = new NotificationTargetData
+            {
+                PostId = payload.PostId ?? payload.TargetId,
+                PostPublicId = postPublicId,
+                CommentId = isPost ? null : payload.TargetId
+            }
         });
     }
 
-    private async Task ProcessCommentPublishedAsync(CommentPublishedTaskPayload payload)
+    private async Task ProcessCommentPublishedAsync(
+        CommentPublishedTaskPayload payload,
+        long tenantId,
+        DateTime occurredAtUtc)
     {
         if (!DateTime.TryParseExact(
                 payload.RewardDateKey,
@@ -224,7 +276,11 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                     payload.CommentId,
                     payload.ReplyTargetAuthorId.Value,
                     payload,
-                    post?.PublicId));
+                    post?.PublicId,
+                    post?.Title,
+                    tenantId,
+                    occurredAtUtc,
+                    isReply: true));
             }
         }
         else if (post != null && post.AuthorId != payload.AuthorId)
@@ -237,11 +293,18 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 payload.PostId,
                 post.AuthorId,
                 payload,
-                post.PublicId));
+                post.PublicId,
+                post.Title,
+                tenantId,
+                occurredAtUtc,
+                isReply: false));
         }
     }
 
-    private async Task ProcessLevelChangedAsync(ExperienceLevelChangedTaskPayload payload)
+    private async Task ProcessLevelChangedAsync(
+        ExperienceLevelChangedTaskPayload payload,
+        long tenantId,
+        DateTime occurredAtUtc)
     {
         if (payload.CoinReward > 0)
         {
@@ -266,7 +329,17 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             BusinessType = BusinessType.User,
             BusinessId = payload.UserId,
             TriggerName = "系统",
-            ReceiverUserIds = [payload.UserId]
+            ReceiverUserIds = [payload.UserId],
+            TenantId = tenantId,
+            OccurredAtUtc = occurredAtUtc,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["oldLevel"] = payload.OldLevel.ToString(),
+                ["newLevel"] = payload.NewLevel.ToString(),
+                ["coinReward"] = payload.CoinReward.ToString()
+            },
+            TargetKind = NotificationTargetKind.Experience,
+            Target = new NotificationTargetData { UserId = payload.UserId }
         });
     }
 
@@ -311,13 +384,17 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         long businessId,
         long receiverId,
         CommentPublishedTaskPayload payload,
-        string? postPublicId)
+        string? postPublicId,
+        string? postTitle,
+        long tenantId,
+        DateTime occurredAtUtc,
+        bool isReply)
     {
         return new CreateNotificationDto
         {
             NotificationId = notificationId,
             BusinessKey = businessKey,
-            Type = NotificationType.CommentReplied,
+            Type = isReply ? NotificationType.CommentReplied : NotificationType.PostCommented,
             Title = title,
             Content = payload.Content,
             Priority = (int)NotificationPriority.Normal,
@@ -326,10 +403,20 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             TriggerId = payload.AuthorId,
             TriggerName = payload.AuthorName,
             ReceiverUserIds = [receiverId],
-            ExtData = NotificationNavigationHelper.BuildForumNavigationExtData(
-                payload.PostId,
-                payload.CommentId,
-                postPublicId)
+            TenantId = tenantId,
+            OccurredAtUtc = occurredAtUtc,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["actorName"] = payload.AuthorName,
+                ["targetTitle"] = postTitle
+            },
+            TargetKind = NotificationTargetKind.ForumPost,
+            Target = new NotificationTargetData
+            {
+                PostId = payload.PostId,
+                PostPublicId = postPublicId,
+                CommentId = payload.CommentId
+            }
         };
     }
 

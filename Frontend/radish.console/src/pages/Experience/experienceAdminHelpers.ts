@@ -1,10 +1,19 @@
-import dayjs, { type Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import type { TFunction } from 'i18next';
 import {
   type UserExpAnomalyRuleSummaryVo,
   type UserExpDailyLimitSnapshotVo,
   type UserExpGovernanceRecommendationVo,
   type UserExperienceGovernanceActionVo,
 } from '@/api/experienceAdminApi';
+import {
+  formatConsoleDate,
+  formatConsoleDateTime,
+  formatConsoleInteger,
+  formatConsoleMonthDay,
+  formatConsoleSignedInteger,
+  formatConsoleWeekday,
+} from '@/utils/localeFormatters';
 
 export interface FreezeFormValues {
   userId: string;
@@ -53,18 +62,18 @@ const HIGHLIGHT_RELATED_OBSERVATION_RULE_CODES = new Set([
   'HIGHLIGHT_REWARD_CLUSTERED',
 ]);
 
-export const EXPERIENCE_TRANSACTION_TYPE_OPTIONS = [
-  { label: '点赞相关', value: LIKE_TRANSACTION_FILTER },
-  { label: '高亮相关', value: HIGHLIGHT_TRANSACTION_FILTER },
-  { label: '管理员调整', value: 'ADMIN_ADJUST' },
-  { label: '惩罚扣减', value: 'PENALTY' },
-  { label: '发布帖子', value: 'POST_CREATE' },
-  { label: '发布评论', value: 'COMMENT_CREATE' },
-  { label: '点赞互动', value: 'LIKE_OTHERS' },
-  { label: '被点赞', value: 'RECEIVE_LIKE' },
-  { label: '高亮奖励', value: 'GOD_COMMENT' },
-  { label: '登录奖励', value: 'DAILY_LOGIN' },
-];
+export const EXPERIENCE_TRANSACTION_TYPES = [
+  LIKE_TRANSACTION_FILTER,
+  HIGHLIGHT_TRANSACTION_FILTER,
+  'ADMIN_ADJUST',
+  'PENALTY',
+  'POST_CREATE',
+  'COMMENT_CREATE',
+  'LIKE_OTHERS',
+  'RECEIVE_LIKE',
+  'GOD_COMMENT',
+  'DAILY_LOGIN',
+] as const;
 
 export function normalizePositiveLongIdInput(value: string): string | undefined {
   const trimmed = value.trim();
@@ -75,24 +84,24 @@ export function isFormValidationError(error: unknown): error is { errorFields: u
   return typeof error === 'object' && error !== null && 'errorFields' in error;
 }
 
-export function formatStatDate(value: string): string {
-  return dayjs(value).format('MM-DD');
+export function formatStatDate(value: string, language?: string): string {
+  return formatConsoleMonthDay(value, language);
 }
 
-export function formatFullStatDate(value: string): string {
-  return dayjs(value).format('YYYY-MM-DD');
+export function formatStatWeekday(value: string, language?: string): string {
+  return formatConsoleWeekday(value, language);
 }
 
-export function formatDisplayTime(value?: string | null): string {
-  if (!value) {
-    return '-';
-  }
-
-  return dayjs(value).isValid() ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : value;
+export function formatFullStatDate(value: string, language?: string): string {
+  return formatConsoleDate(value, language);
 }
 
-export function formatTransactionAmount(value: number): string {
-  return `${value >= 0 ? '+' : ''}${value}`;
+export function formatDisplayTime(value?: string | null, language?: string): string {
+  return formatConsoleDateTime(value, language);
+}
+
+export function formatTransactionAmount(value: number, language?: string): string {
+  return formatConsoleSignedInteger(value, language);
 }
 
 export function getRecommendationTagColor(level?: UserExpGovernanceRecommendationVo['voLevel']): 'success' | 'warning' | 'error' | 'default' {
@@ -121,16 +130,16 @@ export function getRuleSeverityTagColor(severity?: UserExpAnomalyRuleSummaryVo['
   }
 }
 
-export function getRuleSeverityLabel(severity?: UserExpAnomalyRuleSummaryVo['voSeverity']): string {
+export function getRuleSeverityLabel(t: TFunction, severity?: UserExpAnomalyRuleSummaryVo['voSeverity']): string {
   switch (severity) {
     case 'freeze-suggest':
-      return '冻结建议';
+      return t('experience.severity.freezeSuggest');
     case 'review':
-      return '人工复核';
+      return t('experience.severity.review');
     case 'observe':
-      return '继续观察';
+      return t('experience.severity.observe');
     default:
-      return '继续观察';
+      return t('experience.severity.observe');
   }
 }
 
@@ -198,11 +207,12 @@ export function getTransactionExpTypePresetForRuleCodes(ruleCodes: string[]): st
 export function formatLimitValue(
   value: number,
   limit: number,
-  limits?: UserExpDailyLimitSnapshotVo | null
+  limits?: UserExpDailyLimitSnapshotVo | null,
+  language?: string,
 ): string {
   if (!limits?.voDailyLimitEnabled || limit <= 0) {
-    return String(value);
+    return formatConsoleInteger(value, language);
   }
 
-  return `${value}/${limit}`;
+  return `${formatConsoleInteger(value, language)}/${formatConsoleInteger(limit, language)}`;
 }

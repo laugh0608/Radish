@@ -1,759 +1,233 @@
-# @radish/http - HTTP 客户端库
+# `@radish/http` HTTP 客户端指南
 
-## 概述
+> 当前版本：`26.7.1`
+>
+> 位置：`Frontend/radish.http/`
 
-`@radish/http` 是 Radish 项目的统一 HTTP 客户端库，提供类型安全的 API 请求封装。该库从 `@radish/ui` 中独立出来，专注于 HTTP 通信功能，支持认证、拦截器、超时控制等特性。
+`@radish/http` 是 client、Console 和共享业务模块唯一正式 HTTP 客户端。它负责请求配置、认证、超时、响应解析、结构化错误、语言头与 Token 刷新；不依赖 React、i18next 实例或任一宿主 UI。
 
-## 包信息
+共享包当前仍为旧调用保留默认读取 `localStorage.access_token` 的兼容 `getToken`；正式宿主必须在初始化时注入自己的 `tokenService`，新增代码不得把该默认值当成认证存储契约。
 
-- **包名**: `@radish/http`
-- **版本**: 26.1.1
-- **类型**: ESM 模块
-- **位置**: `Frontend/radish.http/`
+## 1. 模块边界
 
-## 核心特性
+- 正式调用直接从 `@radish/http` 导入。
+- `@radish/ui` 只为旧调用保留兼容 re-export，新代码不得继续从 UI 包导入 HTTP API。
+- 页面和业务模块不得再创建平行 fetch / axios 封装。
+- 上传进度等必须使用 `XMLHttpRequest` 的场景，也要通过 `getApiClientConfig()` 读取统一 base URL、timeout、token、语言和消息翻译配置，并复用结构化响应解析。Console 附件适配器已遵循该边界；client 附件适配器当前仍单独从 `getApiBaseUrl()` 拼 URL，后续应在附件维护批次收敛，不能据此扩散第二套配置来源。
+- 宿主环境变量通过各自 `env.ts` 读取，不在共享包中直接访问 `import.meta.env`。
 
-- ✅ **统一配置管理**：全局配置 baseUrl、timeout、token 获取方式
-- ✅ **类型安全**：完整的 TypeScript 类型定义
-- ✅ **认证支持**：自动添加 Bearer Token
-- ✅ **拦截器**：请求/响应/错误拦截器
-- ✅ **超时控制**：可配置的请求超时时间
-- ✅ **统一错误处理**：标准化的错误响应格式
-- ✅ **分页支持**：内置分页数据类型
-- ✅ **国际化支持**：支持 i18n 消息键
+## 2. 宿主初始化
 
-## 安装和配置
+client 和 Console 在应用入口各配置一次：
 
-### 1. 安装依赖
+```ts
+import { configureApiClient } from '@radish/http';
+import i18n from './i18n';
+
+configureApiClient({
+  baseUrl: apiBaseUrl,
+  timeout: 30_000,
+  getToken: () => tokenService.getAccessToken(),
+  getLanguage: () => i18n.resolvedLanguage ?? i18n.language,
+  translateMessage: (key, args) => (
+    i18n.exists(key)
+      ? i18n.t(key, Object.fromEntries((args ?? []).map((value, index) => [index, value])))
+      : undefined
+  ),
+});
+```
+
+配置项：
+
+| 字段 | 作用 |
+| --- | --- |
+| `baseUrl` | 相对 API 路径的统一前缀 |
+| `timeout` | 请求超时毫秒数，默认 `30000` |
+| `getToken` | 在 `withAuth=true` 时提供 Bearer Token |
+| `getLanguage` | 提供当前请求语言；客户端在未显式覆盖时写入 `Accept-Language` |
+| `translateMessage` | 根据服务端 `MessageKey` 与可选位置参数获取宿主本地翻译 |
+| `onRequest / onResponse / onError` | 宿主级观测和错误接线；不能在此改写业务成功语义 |
+
+调用方显式传入的 `Accept`、`Accept-Language`、`Content-Type` 等 Header 优先，统一客户端不会覆盖。
+
+## 3. 请求方法
+
+```ts
+import {
+  apiDelete,
+  apiGet,
+  apiPost,
+  apiPut,
+  type PagedResponse,
+} from '@radish/http';
+
+const products = await apiGet<PagedResponse<Product>>(
+  '/api/v1/Shop/GetProducts?pageIndex=1&pageSize=20',
+);
+
+const created = await apiPost<Product>(
+  '/api/v1/Shop/CreateProduct',
+  payload,
+  { withAuth: true },
+);
+
+const updated = await apiPut<Product>(
+  '/api/v1/Shop/UpdateProduct',
+  payload,
+  { withAuth: true },
+);
+
+const removed = await apiDelete<boolean>(
+  `/api/v1/Shop/DeleteProduct/${encodeURIComponent(productId)}`,
+  { withAuth: true },
+);
+```
+
+`apiPost / apiPut` 默认补 `Content-Type: application/json` 并序列化普通对象 payload。文件上传等非 JSON 请求使用 `apiFetch` 并显式提供 body 与 Header。
+
+## 4. 响应契约
+
+后端 `MessageModel<T>` 对应：
+
+```ts
+interface ApiResponse<T> {
+  isSuccess: boolean;
+  statusCode: number;
+  messageInfo: string;
+  messageInfoDev?: string;
+  responseData?: T;
+  code?: string;
+  messageKey?: string;
+  messageArguments?: unknown[];
+  traceId?: string;
+}
+```
+
+统一方法返回：
+
+```ts
+interface ParsedApiResponse<T> {
+  ok: boolean;
+  data?: T;
+  message?: string;
+  messageInfo?: string;
+  messageKey?: string;
+  messageArguments?: unknown[];
+  code?: string;
+  statusCode?: number;
+  httpStatus?: number;
+  traceId?: string;
+}
+```
+
+- `statusCode` 是响应体兼容状态，`httpStatus` 是真实 HTTP 状态；控制流优先使用真实 HTTP 状态和稳定 `Code`。
+- `message` 是用户展示候选：失败响应且宿主存在 `MessageKey` 翻译时使用本地文案，否则保留安全 `MessageInfo`；成功响应不会由统一客户端再次本地化。
+- `messageInfo` 保留服务端原始安全消息，用于诊断和缺键回退。
+- `messageArguments` 是服务端规范化后的可选短位置参数，只传给 `translateMessage(key, args?)` 做展示格式化，不参与控制流。
+- `traceId` 来自响应体或 `X-Correlation-ID`，用于显式诊断入口，不默认拼进主提示。
+- `204` 解析为成功；非 JSON、无效 JSON 和非 `MessageModel` 响应保留真实 HTTP 状态并返回失败说明。
+
+## 5. 结构化错误
+
+业务 helper 需要抛错时使用 `ApiResponseError`，保留 `Code / MessageKey / MessageArguments / MessageInfo / status / TraceId`：
+
+```ts
+import {
+  createApiResponseError,
+  isApiResponseNotFoundError,
+} from '@radish/http';
+
+const response = await apiGet<DocumentVo>(path);
+if (!response.ok || !response.data) {
+  throw createApiResponseError(response, '无法读取文档');
+}
+
+return response.data;
+```
+
+页面可以在边界处识别稳定状态：
+
+```ts
+try {
+  const document = await getPublicDocument(slug);
+  setDocument(document);
+} catch (error) {
+  if (isApiResponseNotFoundError(error)) {
+    setNotFound(true);
+    return;
+  }
+
+  throw error;
+}
+```
+
+禁止：
+
+- 通过“商品不存在”“not found”等中英文字符串或正则决定业务分支；
+- 抛出普通 `Error(response.message)` 后丢失 `Code / status / MessageKey / MessageArguments / TraceId`；
+- 把 `MessageInfo` 当作稳定协议字段；
+- 未处理异常时向 UI 暴露堆栈、SQL、路径或凭据。
+
+## 6. 用户提示与诊断
+
+请求方法只负责生成结构化结果，不直接决定 Toast、页面错误槽或弹窗。宿主根据交互层级展示：
+
+- 行内校验：贴近字段，保留用户输入。
+- 页面加载失败：使用页面状态槽，并提供重试。
+- 操作失败：保留当前表单、选中对象和上下文。
+- 可恢复异常：按[可恢复错误诊断规范](/frontend/recoverable-error-diagnostics)提供复制诊断入口。
+- 日志：client / Console 使用各自 `log` 工具，不新增 `console.log/info/warn/error`。
+
+## 7. 401 与 Token 刷新
+
+```ts
+import { configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
+
+configureTokenRefresh({
+  refreshEndpoint: `${authServerBaseUrl}/connect/token`,
+  getRefreshToken: () => tokenService.getRefreshToken(),
+  onTokenRefreshed: (accessToken, refreshToken) => {
+    tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
+  },
+  onRefreshFailed: (errorType) => {
+    if (errorType === TokenRefreshErrorType.InvalidRefreshToken) {
+      tokenService.clearTokens();
+    }
+  },
+});
+```
+
+- 只有带认证 Header 的请求在符合刷新条件时自动尝试刷新。
+- 刷新成功后使用新 Token 重试原请求。
+- 确认 refresh token 失效时触发会话过期处理；网络或服务端临时失败保留原响应交给调用方。
+- 业务模块不得各自实现刷新锁或重复请求队列。
+
+上述行为只在宿主调用 `configureTokenRefresh` 后生效。client 当前采用该模式；Console 当前在 `onRequest` 通过 `tokenService.getValidAccessToken()` 预刷新，并在最终 `401` 时清理会话和跳转登录，不启用本模块的 401 重放。
+
+当前重试会原样重放任意收到认证 `401` 的 `withAuth` 请求，尚未按 HTTP 方法区分。业务页面不得再叠加自动重试；关键非幂等写入必须由服务端幂等 / 去重契约保护，或使用不参与该重放的专用传输适配器。
+
+## 8. 原始请求与解析 helper
+
+- `apiFetch`：需要自定义 body、Header 或读取原始 `Response` 时使用。
+- `parseHttpResponse`：把真实 HTTP Response 解析为 `ParsedApiResponse<T>`。
+- `parseApiResponse`：只解析已经反序列化的 `MessageModel<T>`。
+- `parseApiResponseWithI18n`：兼容显式 translator 的旧 helper；正式统一方法已经使用宿主 `translateMessage`。
+- `getApiClientConfig`：供上传等特殊传输只读获取 base URL、timeout、token、语言与翻译器，不用于页面修改全局状态；特殊传输仍需保留取消、超时和结构化错误契约。
+
+## 9. 验证
+
+修改 `@radish/http` 后至少执行：
 
 ```bash
-# 在前端项目根目录
-npm install
+npm run type-check --workspace=@radish/http
+npm run test --workspace=@radish/http
 ```
 
-`@radish/http` 通过 npm workspaces 自动链接，无需单独安装。
-
-### 2. 配置 API 客户端
-
-在应用入口或 API 文件顶部配置客户端：
-
-```typescript
-import { configureApiClient } from '@radish/http';
-
-// 配置 API 基础 URL
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
-
-configureApiClient({
-  baseUrl: apiBaseUrl.replace(/\/$/, ''), // 移除末尾斜杠
-  timeout: 30000, // 30 秒超时
-  getToken: () => {
-    // 自定义 token 获取逻辑
-    return localStorage.getItem('access_token');
-  },
-});
-```
-
-### 3. 环境变量配置
-
-在 `.env.development` 或 `.env.production` 中配置：
-
-```env
-# API 基础 URL
-VITE_API_BASE_URL=https://localhost:5000
-```
-
-## API 使用示例
-
-### 基础请求方法
-
-#### GET 请求
-
-```typescript
-import { apiGet } from '@radish/http';
-
-// 不需要认证的请求
-const response = await apiGet<Product[]>('/api/v1/Shop/GetProducts');
-
-if (response.ok && response.data) {
-  console.log('商品列表:', response.data);
-} else {
-  console.error('请求失败:', response.message);
-}
-
-// 需要认证的请求
-const response = await apiGet<UserProfile>('/api/v1/User/GetProfile', {
-  withAuth: true,
-});
-```
-
-#### POST 请求
-
-```typescript
-import { apiPost } from '@radish/http';
-
-// 创建商品
-const response = await apiPost<Product>(
-  '/api/v1/Shop/CreateProduct',
-  {
-    name: '新商品',
-    price: 99.99,
-    stock: 100,
-  },
-  { withAuth: true }
-);
-
-if (response.ok && response.data) {
-  console.log('创建成功:', response.data);
-}
-```
-
-#### PUT 请求
-
-```typescript
-import { apiPut } from '@radish/http';
-
-// 更新商品
-const response = await apiPut<Product>(
-  '/api/v1/Shop/UpdateProduct',
-  {
-    id: 1,
-    name: '更新后的商品',
-    price: 89.99,
-  },
-  { withAuth: true }
-);
-```
-
-#### DELETE 请求
-
-```typescript
-import { apiDelete } from '@radish/http';
-
-// 删除商品
-const response = await apiDelete<boolean>(
-  '/api/v1/Shop/DeleteProduct?id=1',
-  { withAuth: true }
-);
-
-if (response.ok) {
-  console.log('删除成功');
-}
-```
-
-### 分页请求
-
-```typescript
-import { apiGet, type PagedResponse } from '@radish/http';
-
-// 分页查询商品
-const response = await apiGet<PagedResponse<Product>>(
-  '/api/v1/Shop/GetProducts?pageIndex=1&pageSize=20',
-  { withAuth: true }
-);
-
-if (response.ok && response.data) {
-  const { data, dataCount, page, pageCount } = response.data;
-  console.log(`第 ${page} 页，共 ${pageCount} 页，总计 ${dataCount} 条`);
-  console.log('商品列表:', data);
-}
-```
-
-### 错误处理
-
-```typescript
-import { apiGet } from '@radish/http';
-
-try {
-  const response = await apiGet<Product[]>('/api/v1/Shop/GetProducts');
-
-  if (response.ok && response.data) {
-    // 请求成功
-    console.log('数据:', response.data);
-  } else {
-    // 业务错误
-    console.error('业务错误:', response.message);
-    console.error('错误码:', response.code);
-    console.error('HTTP 状态码:', response.statusCode);
-  }
-} catch (error) {
-  // 网络错误或超时
-  console.error('网络错误:', error);
-}
-```
-
-## 高级配置
-
-### 自定义拦截器
-
-```typescript
-import { configureApiClient } from '@radish/http';
-
-configureApiClient({
-  baseUrl: 'https://localhost:5000',
-
-  // 请求拦截器
-  onRequest: (url, options) => {
-    console.log('发送请求:', url);
-    console.log('请求配置:', options);
-  },
-
-  // 响应拦截器
-  onResponse: (response) => {
-    console.log('收到响应:', response.status);
-  },
-
-  // 错误拦截器
-  onError: (error) => {
-    console.error('请求错误:', error.message);
-
-    // 可以在这里统一处理错误，如显示通知
-    if (error.message.includes('timeout')) {
-      showNotification('请求超时，请稍后重试');
-    }
-  },
-});
-```
-
-### 自定义 Token 获取
-
-```typescript
-import { configureApiClient } from '@radish/http';
-
-configureApiClient({
-  baseUrl: 'https://localhost:5000',
-
-  // 自定义 token 获取逻辑
-  getToken: () => {
-    // 从 localStorage 获取
-    const token = localStorage.getItem('access_token');
-
-    // 检查 token 是否过期
-    if (token && isTokenExpired(token)) {
-      // 清除过期 token
-      localStorage.removeItem('access_token');
-      return null;
-    }
-
-    return token;
-  },
-});
-```
-
-### 获取当前配置
-
-```typescript
-import { getApiClientConfig } from '@radish/http';
-
-// 获取当前配置（只读）
-const config = getApiClientConfig();
-console.log('当前 baseUrl:', config.baseUrl);
-console.log('当前 timeout:', config.timeout);
-```
-
-## 类型定义
-
-### ApiResponse
-
-后端 `MessageModel` 对应的响应类型：
-
-```typescript
-interface ApiResponse<T = any> {
-  /** 操作是否成功 */
-  isSuccess: boolean;
-  /** HTTP 状态码 */
-  statusCode: number;
-  /** 消息内容 */
-  messageInfo: string;
-  /** 开发环境消息（可选） */
-  messageInfoDev?: string;
-  /** 响应数据 */
-  responseData?: T;
-  /** 错误码（可选，用于客户端特殊处理） */
-  code?: string;
-  /** 国际化消息键（可选，用于 i18n） */
-  messageKey?: string;
-}
-```
-
-### ParsedApiResponse
-
-解析后的响应类型：
-
-```typescript
-interface ParsedApiResponse<T> {
-  /** 请求是否成功 */
-  ok: boolean;
-  /** 响应数据 */
-  data?: T;
-  /** 错误消息 */
-  message?: string;
-  /** 错误码 */
-  code?: string;
-  /** HTTP 状态码 */
-  statusCode?: number;
-}
-```
-
-### PagedResponse
-
-分页数据类型：
-
-```typescript
-interface PagedResponse<T> {
-  /** 当前页码 */
-  page: number;
-  /** 每页数量 */
-  pageSize: number;
-  /** 总数据量 */
-  dataCount: number;
-  /** 总页数 */
-  pageCount: number;
-  /** 数据列表 */
-  data: T[];
-}
-```
-
-### ApiRequestOptions
-
-请求配置类型：
-
-```typescript
-interface ApiRequestOptions extends RequestInit {
-  /** 是否携带认证信息 */
-  withAuth?: boolean;
-  /** 基础 URL（可选，默认使用全局配置） */
-  baseUrl?: string;
-  /** 请求超时时间（毫秒） */
-  timeout?: number;
-}
-```
-
-## 实战示例
-
-### 创建 API 模块
-
-```typescript
-// src/api/product.ts
-import { apiGet, apiPost, apiPut, apiDelete, configureApiClient, type PagedResponse } from '@radish/http';
-
-// 配置 API 客户端
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
-configureApiClient({
-  baseUrl: apiBaseUrl.replace(/\/$/, ''),
-});
-
-// 商品数据类型
-export interface Product {
-  voId: string | number;
-  voName: string;
-  voDescription: string;
-  voPrice: number;
-  voStock: number;
-  voIcon: string;
-}
-
-// 创建商品 DTO
-export interface CreateProductDto {
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  icon: string;
-}
-
-// 商品 API
-export const productApi = {
-  /**
-   * 获取商品列表
-   */
-  async getProducts(pageIndex: number = 1, pageSize: number = 20) {
-    const response = await apiGet<PagedResponse<Product>>(
-      `/api/v1/Shop/GetProducts?pageIndex=${pageIndex}&pageSize=${pageSize}`,
-      { withAuth: true }
-    );
-
-    if (!response.ok || !response.data) {
-      throw new Error(response.message || '获取商品列表失败');
-    }
-
-    return response.data;
-  },
-
-  /**
-   * 获取商品详情
-   */
-  async getProduct(id: number) {
-    const response = await apiGet<Product>(
-      `/api/v1/Shop/GetProduct?id=${id}`,
-      { withAuth: true }
-    );
-
-    if (!response.ok || !response.data) {
-      throw new Error(response.message || '获取商品详情失败');
-    }
-
-    return response.data;
-  },
-
-  /**
-   * 创建商品
-   */
-  async createProduct(data: CreateProductDto) {
-    const response = await apiPost<Product>(
-      '/api/v1/Shop/CreateProduct',
-      data,
-      { withAuth: true }
-    );
-
-    if (!response.ok || !response.data) {
-      throw new Error(response.message || '创建商品失败');
-    }
-
-    return response.data;
-  },
-
-  /**
-   * 更新商品
-   */
-  async updateProduct(id: number, data: Partial<CreateProductDto>) {
-    const response = await apiPut<Product>(
-      '/api/v1/Shop/UpdateProduct',
-      { id, ...data },
-      { withAuth: true }
-    );
-
-    if (!response.ok || !response.data) {
-      throw new Error(response.message || '更新商品失败');
-    }
-
-    return response.data;
-  },
-
-  /**
-   * 删除商品
-   */
-  async deleteProduct(id: number) {
-    const response = await apiDelete<boolean>(
-      `/api/v1/Shop/DeleteProduct?id=${id}`,
-      { withAuth: true }
-    );
-
-    if (!response.ok) {
-      throw new Error(response.message || '删除商品失败');
-    }
-
-    return true;
-  },
-};
-```
-
-### 在组件中使用
-
-```typescript
-// src/components/ProductList.tsx
-import { useState, useEffect } from 'react';
-import { productApi, type Product } from '@/api/product';
-
-export const ProductList: React.FC = () => {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
-  const loadProducts = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const data = await productApi.getProducts(1, 20);
-      setProducts(data.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载失败');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) return <div>加载中...</div>;
-  if (error) return <div>错误: {error}</div>;
-
-  return (
-    <div>
-      {products.map(product => (
-        <div key={product.voId}>
-          <h3>{product.voName}</h3>
-          <p>{product.voDescription}</p>
-          <p>价格: ¥{product.voPrice}</p>
-        </div>
-      ))}
-    </div>
-  );
-};
-```
-
-## 特殊场景处理
-
-### 上传进度回调
-
-对于需要监听上传进度的场景（如分片上传），可以使用 XMLHttpRequest：
-
-```typescript
-import { getApiClientConfig } from '@radish/http';
-
-/**
- * 上传分片
- * 注意：此方法使用 XMLHttpRequest 而非统一 API 客户端，
- * 因为需要支持上传进度回调功能
- */
-export async function uploadChunk(
-  sessionId: string,
-  chunkBlob: Blob,
-  onProgress?: (progress: number) => void
-): Promise<UploadSession> {
-  const config = getApiClientConfig();
-  const url = `${config.baseUrl}/api/v1/ChunkedUpload/UploadChunk`;
-
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-
-    // 监听上传进度
-    if (onProgress) {
-      xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-          onProgress(Math.round((e.loaded / e.total) * 100));
-        }
-      });
-    }
-
-    xhr.addEventListener('load', () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const json = JSON.parse(xhr.responseText);
-        resolve(json.responseData);
-      } else {
-        reject(new Error(`上传失败: HTTP ${xhr.status}`));
-      }
-    });
-
-    xhr.addEventListener('error', () => {
-      reject(new Error('网络错误'));
-    });
-
-    xhr.open('POST', url);
-
-    // 从统一配置获取 token
-    const token = config.getToken?.();
-    if (token) {
-      xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-    }
-
-    const formData = new FormData();
-    formData.append('sessionId', sessionId);
-    formData.append('chunkData', chunkBlob);
-    xhr.send(formData);
-  });
-}
-```
-
-## 从 @radish/ui 迁移
-
-如果你的代码之前从 `@radish/ui` 导入 API 客户端，需要进行以下迁移：
-
-### 迁移步骤
-
-1. **更新导入语句**
-
-```typescript
-// ❌ 旧代码
-import { apiGet, apiPost, configureApiClient } from '@radish/ui';
-
-// ✅ 新代码
-import { apiGet, apiPost, configureApiClient } from '@radish/http';
-```
-
-2. **更新类型导入**
-
-```typescript
-// ❌ 旧代码
-import type { PagedResponse } from '@radish/ui';
-
-// ✅ 新代码
-import type { PagedResponse } from '@radish/http';
-```
-
-3. **配置方式不变**
-
-```typescript
-// 配置方式保持不变
-import { configureApiClient } from '@radish/http';
-
-configureApiClient({
-  baseUrl: 'https://localhost:5000',
-});
-```
-
-### 迁移检查清单
-
-- [ ] 更新所有 API 文件的导入语句
-- [ ] 更新所有组件中的导入语句
-- [ ] 更新类型导入
-- [ ] 测试所有 API 调用是否正常工作
-- [ ] 检查认证是否正常工作
-
-## 最佳实践
-
-### 1. 统一配置管理
-
-在应用入口统一配置，避免在多处重复配置：
-
-```typescript
-// src/config/api.ts
-import { configureApiClient } from '@radish/http';
-import { env } from '@/config/env';
-
-export function initApiClient() {
-  configureApiClient({
-    baseUrl: env.apiBaseUrl,
-    timeout: 30000,
-    getToken: () => localStorage.getItem('access_token'),
-    onError: (error) => {
-      // 统一错误处理
-      console.error('API 错误:', error);
-    },
-  });
-}
-
-// src/main.tsx
-import { initApiClient } from '@/config/api';
-
-initApiClient();
-```
-
-### 2. 创建 API 模块
-
-为每个业务领域创建独立的 API 模块：
-
-```
-src/api/
-  ├── user.ts       # 用户相关 API
-  ├── product.ts    # 商品相关 API
-  ├── order.ts      # 订单相关 API
-  └── leaderboard.ts # 排行榜相关 API
-```
-
-### 3. 统一错误处理
-
-在 API 模块中统一处理错误：
-
-```typescript
-async function handleApiCall<T>(
-  apiCall: () => Promise<ParsedApiResponse<T>>
-): Promise<T> {
-  const response = await apiCall();
-
-  if (!response.ok || !response.data) {
-    throw new Error(response.message || '请求失败');
-  }
-
-  return response.data;
-}
-
-// 使用
-export const productApi = {
-  async getProducts() {
-    return handleApiCall(() =>
-      apiGet<PagedResponse<Product>>('/api/v1/Shop/GetProducts')
-    );
-  },
-};
-```
-
-### 4. 类型安全
-
-始终为 API 响应定义类型：
-
-```typescript
-// ✅ 正确：定义类型
-interface Product {
-  voId: string | number;
-  voName: string;
-  voPrice: number;
-}
-
-const response = await apiGet<Product>('/api/v1/Shop/GetProduct?id=1');
-
-// 外部 LongId 只做字符串透传或 string | number 过渡，不提前 Number(...) 转换
-const productId = String(response.data?.voId ?? '');
-
-// ❌ 错误：不定义类型
-const untypedResponse = await apiGet('/api/v1/Shop/GetProduct?id=1');
-```
-
-## 常见问题
-
-### Q: 为什么要从 @radish/ui 中独立出来？
-
-A: 职责分离。`@radish/ui` 专注于 UI 组件，`@radish/http` 专注于 HTTP 通信。这样可以：
-- 减少 UI 库的体积
-- 提高代码可维护性
-- 方便独立测试和优化
-
-### Q: 如何处理 401 未授权错误？
-
-A: 在错误拦截器中统一处理：
-
-```typescript
-configureApiClient({
-  onError: (error) => {
-    if (error.message.includes('401')) {
-      // 清除 token
-      localStorage.removeItem('access_token');
-      // 跳转到登录页
-      window.location.href = '/login';
-    }
-  },
-});
-```
-
-### Q: 如何取消请求？
-
-A: 使用 AbortController：
-
-```typescript
-const controller = new AbortController();
-
-const response = await apiGet('/api/v1/Shop/GetProducts', {
-  signal: controller.signal,
-});
-
-// 取消请求
-controller.abort();
-```
-
-### Q: 如何处理文件上传？
-
-A: 使用 FormData：
-
-```typescript
-const formData = new FormData();
-formData.append('file', file);
-
-const response = await apiPost<UploadResult>(
-  '/api/v1/Upload/UploadFile',
-  formData,
-  {
-    withAuth: true,
-    headers: {
-      // 不要设置 Content-Type，让浏览器自动设置
-    },
-  }
-);
-```
+涉及 client / Console 配置或公共调用方式时，再执行对应宿主 type-check、测试和 production build。运行态 smoke 只在成组功能准备验收并取得当轮启动授权后执行。
 
 ## 相关文档
 
-- [前端设计](./design.md)
-- [认证服务统一指南](../guide/authentication-service.md)
-- [环境配置](../guide/configuration.md)
+- [前端 API 客户端兼容入口](/frontend/api-client)
+- [错误处理指南](/frontend/error-handling)
+- [国际化与多语言规范](/architecture/i18n)
+- [可恢复错误诊断规范](/frontend/recoverable-error-diagnostics)

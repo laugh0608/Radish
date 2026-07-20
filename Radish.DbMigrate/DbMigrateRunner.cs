@@ -124,13 +124,17 @@ internal static class DbMigrateRunner
         await InitialDataSeeder.SeedAsync(db, services);
     }
 
-    private static async Task EnsureBusinessSchemaAsync(
+    internal static async Task EnsureBusinessSchemaAsync(
         IServiceProvider services,
         IConfiguration configuration,
         string environment,
-        ISqlSugarClient db)
+        ISqlSugarClient db,
+        string? mainDbConnIdOverride = null,
+        IReadOnlyCollection<string>? migrationScopes = null)
     {
-        var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        var mainDbConnId = string.IsNullOrWhiteSpace(mainDbConnIdOverride)
+            ? AppSettingsTool.RadishApp("MainDb")
+            : mainDbConnIdOverride;
         if (db is not SqlSugarScope dbScope)
         {
             throw new InvalidOperationException("DbMigrate schema 管理需要 SqlSugarScope。");
@@ -140,17 +144,28 @@ internal static class DbMigrateRunner
             .ToLowerInvariant();
         var hasAppliedBaseline = SchemaMigrationLedger.HasAppliedBaseline(dbScope, normalizedMainDbConnId);
 
+        if (hasAppliedBaseline)
+        {
+            Console.WriteLine("[Radish.DbMigrate] Main 已由 schema ledger 接管，开始应用有序 migration...");
+            EnsureSchemaBaseline(services, db, mainDbConnId, migrationScopes);
+
+            var migratedInspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
+            if (!migratedInspectionResult.IsReadyForSeed)
+            {
+                throw new InvalidOperationException(
+                    "有序 migration 应用后 Main 仍存在缺表或缺列：" +
+                    FormatMissingSchema(migratedInspectionResult));
+            }
+
+            Console.WriteLine("[Radish.DbMigrate] ✓ 有序 migration 已应用，数据库表结构可用于 Seed");
+            return;
+        }
+
         Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
         var inspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
 
         if (inspectionResult.DatabaseFileMissing || inspectionResult.MissingTables.Count > 0 || inspectionResult.MissingColumns.Count > 0)
         {
-            if (hasAppliedBaseline)
-            {
-                throw new InvalidOperationException(
-                    "已由 schema ledger 接管的 Main 存在缺表或缺列；禁止 Code First 自动修复，请新增有序 migration。");
-            }
-
             if (inspectionResult.DatabaseFileMissing)
             {
                 Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到主库文件缺失 ({inspectionResult.DatabaseFilePath ?? "<unknown>"})，自动执行 init...");
@@ -177,17 +192,44 @@ internal static class DbMigrateRunner
         {
             EnsureSupplementalIndexes(db, mainDbConnId);
         }
-        EnsureSchemaBaseline(services, db);
+        EnsureSchemaBaseline(services, db, mainDbConnId, migrationScopes);
     }
 
-    private static void EnsureSchemaBaseline(IServiceProvider services, ISqlSugarClient db)
+    private static string FormatMissingSchema(DbMigrateInspection.SeedInspectionResult inspectionResult)
+    {
+        var parts = new List<string>();
+        if (inspectionResult.DatabaseFileMissing)
+        {
+            parts.Add($"数据库文件缺失 {inspectionResult.DatabaseFilePath ?? "<unknown>"}");
+        }
+
+        if (inspectionResult.MissingTables.Count > 0)
+        {
+            parts.Add($"缺表 {string.Join(", ", inspectionResult.MissingTables)}");
+        }
+
+        if (inspectionResult.MissingColumns.Count > 0)
+        {
+            parts.Add($"缺列 {string.Join(", ", inspectionResult.MissingColumns)}");
+        }
+
+        return string.Join("；", parts);
+    }
+
+    private static void EnsureSchemaBaseline(
+        IServiceProvider services,
+        ISqlSugarClient db,
+        string? mainDbConnIdOverride = null,
+        IReadOnlyCollection<string>? migrationScopes = null)
     {
         if (db is not SqlSugarScope dbScope)
         {
             throw new InvalidOperationException("Schema ledger 需要 SqlSugarScope 才能覆盖全部 ConnId。");
         }
 
-        var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
+        var mainDbConnId = string.IsNullOrWhiteSpace(mainDbConnIdOverride)
+            ? AppSettingsTool.RadishApp("MainDb")
+            : mainDbConnIdOverride;
         var normalizedMainDbConnId = (string.IsNullOrWhiteSpace(mainDbConnId) ? "Main" : mainDbConnId)
             .ToLowerInvariant();
         var timeAudit = TimeSemanticsAudit.Inspect(
@@ -201,8 +243,9 @@ internal static class DbMigrateRunner
 
         SchemaMigrationLedger.EnsureBaseline(
             dbScope,
-            services.GetRequiredService<TimeProvider>());
-        SchemaMigrationLedger.ApplyPending(dbScope, services);
+            services.GetRequiredService<TimeProvider>(),
+            migrationScopes);
+        SchemaMigrationLedger.ApplyPending(dbScope, services, migrationScopes);
     }
 
     private static async Task ApplyOpenIddictMigrationsAsync(
@@ -710,8 +753,8 @@ internal static class DbMigrateRunner
 
         var linkedBenefitIds = db.DbMaintenance.IsAnyTable(db.EntityMaintenance.GetEntityInfo<Order>().DbTableName, false)
             ? db.Queryable<Order>()
-                .Where(order => order.UserBenefitId.HasValue)
-                .Select(order => order.UserBenefitId!.Value)
+                .Where(order => order.GrantedBenefitId.HasValue || order.UserBenefitId.HasValue)
+                .Select(order => order.GrantedBenefitId ?? order.UserBenefitId!.Value)
                 .ToList()
                 .ToHashSet()
             : [];
@@ -830,16 +873,18 @@ internal static class DbMigrateRunner
             .Where(order =>
                 order.ProductType == ProductType.Consumable &&
                 order.Status == OrderStatus.Completed &&
-                order.UserBenefitId.HasValue &&
+                (order.GrantedInventoryId.HasValue || order.UserBenefitId.HasValue) &&
                 order.ConsumableType.HasValue)
             .ToList()
-            .Where(order => !existingSourceOrderIds.Contains(order.Id) && inventoryIds.Contains(order.UserBenefitId!.Value))
+            .Where(order =>
+                !existingSourceOrderIds.Contains(order.Id) &&
+                inventoryIds.Contains(order.GrantedInventoryId ?? order.UserBenefitId!.Value))
             .Select(order => new UserInventoryGrantRecord
             {
                 Id = order.Id,
                 TenantId = order.TenantId,
                 UserId = order.UserId,
-                InventoryId = order.UserBenefitId!.Value,
+                InventoryId = order.GrantedInventoryId ?? order.UserBenefitId!.Value,
                 SourceOrderId = order.Id,
                 SourceProductId = order.ProductId,
                 ConsumableType = order.ConsumableType!.Value,

@@ -1,4 +1,4 @@
-import { apiGet, apiPost } from '@radish/http';
+import { apiGet, apiPost, createApiResponseError } from '@radish/http';
 
 export type ConsoleLongId = string;
 
@@ -123,7 +123,7 @@ export async function getReviewQueue(params: {
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取审核队列失败');
+    throw createApiResponseError(response, '获取审核队列失败');
   }
 
   return response.data;
@@ -132,7 +132,7 @@ export async function getReviewQueue(params: {
 export async function reviewReport(request: ReviewContentReportRequest): Promise<ContentReportQueueItemVo> {
   const response = await apiPost<ContentReportQueueItemVo>('/api/v1/ContentModeration/Review', request, { withAuth: true });
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '审核举报失败');
+    throw createApiResponseError(response, '审核举报失败');
   }
 
   return response.data;
@@ -141,7 +141,7 @@ export async function reviewReport(request: ReviewContentReportRequest): Promise
 export async function applyUserModerationAction(request: ApplyUserModerationActionRequest): Promise<UserModerationActionVo> {
   const response = await apiPost<UserModerationActionVo>('/api/v1/ContentModeration/ApplyUserAction', request, { withAuth: true });
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '执行治理动作失败');
+    throw createApiResponseError(response, '执行治理动作失败');
   }
 
   return response.data;
@@ -173,7 +173,7 @@ export async function getActionLogs(params: ContentModerationActionLogQuery): Pr
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取治理动作日志失败');
+    throw createApiResponseError(response, '获取治理动作日志失败');
   }
 
   return response.data;

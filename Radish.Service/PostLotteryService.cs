@@ -142,7 +142,8 @@ public class PostLotteryService : IPostLotteryService
         IReadOnlyCollection<PostLotteryWinner> winners,
         string operatorName,
         long operatorUserId,
-        int actualWinnerCount)
+        int actualWinnerCount,
+        DateTime occurredAtUtc)
     {
         var receiverUserIds = winners
             .Select(winner => winner.UserId)
@@ -178,12 +179,19 @@ public class PostLotteryService : IPostLotteryService
             TriggerAvatar = null,
             ReceiverUserIds = receiverUserIds,
             TenantId = lottery.TenantId,
-            ExtData = NotificationNavigationHelper.BuildForumLotteryNavigationExtData(
-                post.Id,
-                lottery.Id,
-                normalizedPrizeName,
-                actualWinnerCount,
-                post.PublicId)
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["targetTitle"] = normalizedPostTitle,
+                ["prizeName"] = normalizedPrizeName,
+                ["winnerCount"] = actualWinnerCount.ToString()
+            },
+            TargetKind = NotificationTargetKind.ForumPost,
+            Target = new NotificationTargetData
+            {
+                PostId = post.Id,
+                PostPublicId = post.PublicId
+            },
+            OccurredAtUtc = occurredAtUtc
         };
         var reliableOutboxService = _reliableOutboxService
             ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
@@ -195,7 +203,7 @@ public class PostLotteryService : IPostLotteryService
             "PostLottery",
             lottery.Id.ToString(),
             new NotificationRequestedTaskPayload(notification),
-            GetUtcNow());
+            occurredAtUtc);
     }
 
     private async Task<Post> GetPostOrThrowAsync(long postId)
@@ -319,7 +327,14 @@ public class PostLotteryService : IPostLotteryService
         lottery.ModifyId = operatorUserId > 0 ? operatorUserId : null;
         await _postLotteryRepository.UpdateAsync(lottery);
 
-        await NotifyWinnersAsync(post, lottery, winners, operatorName, operatorUserId, actualWinnerCount);
+        await NotifyWinnersAsync(
+            post,
+            lottery,
+            winners,
+            operatorName,
+            operatorUserId,
+            actualWinnerCount,
+            drawAtUtc);
 
         var result = await GetByPostIdAsync(post.Id, operatorUserId > 0 ? operatorUserId : null);
         if (result.VoLottery == null)

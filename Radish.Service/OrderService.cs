@@ -3,6 +3,7 @@ using AutoMapper;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -24,6 +25,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<User> _userRepository;
+    private readonly IBaseRepository<CoinTransaction> _coinTransactionRepository;
     private readonly IProductService _productService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly ICoinService _coinService;
@@ -38,6 +40,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         IBaseRepository<Order> orderRepository,
         IBaseRepository<Product> productRepository,
         IBaseRepository<User> userRepository,
+        IBaseRepository<CoinTransaction> coinTransactionRepository,
         IProductService productService,
         IUserBenefitService userBenefitService,
         ICoinService coinService,
@@ -52,6 +55,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         _orderRepository = orderRepository;
         _productRepository = productRepository;
         _userRepository = userRepository;
+        _coinTransactionRepository = coinTransactionRepository;
         _productService = productService;
         _userBenefitService = userBenefitService;
         _coinService = coinService;
@@ -70,8 +74,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     {
         OperationIdempotencyBeginResult? idempotencyResult = null;
         var assetWriteStarted = false;
-        long? idempotencyResourceId = null;
-        string? idempotencyResourceNo = null;
 
         try
         {
@@ -175,10 +177,12 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 BenefitValue = product.BenefitValue,
                 DurationType = product.DurationType,
                 DurationDays = product.DurationDays,
+                FixedExpiresAt = product.ExpiresAt,
                 Quantity = dto.Quantity,
                 UnitPrice = product.Price,
                 TotalPrice = totalPrice,
                 Status = OrderStatus.Pending,
+                FailureStage = OrderFailureStage.None,
                 UserRemark = dto.UserRemark,
                 TenantId = tenantId,
                 CreateTime = GetUtcNow(),
@@ -189,8 +193,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var orderId = await _orderRepository.AddAsync(order);
             order.Id = orderId;
             assetWriteStarted = true;
-            idempotencyResourceId = orderId;
-            idempotencyResourceNo = order.OrderNo;
 
             // 8. 扣除萝卜币
             try
@@ -204,6 +206,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
                 order.CoinTransactionId = transactionId;
                 order.Status = OrderStatus.Paid;
+                order.FailureStage = OrderFailureStage.None;
                 order.PaidTime = GetUtcNow();
             }
             catch (Exception ex)
@@ -217,6 +220,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 }
 
                 order.Status = OrderStatus.Failed;
+                order.FailureStage = OrderFailureStage.Payment;
                 order.FailReason = $"扣除萝卜币失败：{ex.Message}";
                 await _orderRepository.UpdateAsync(order);
 
@@ -235,28 +239,22 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
 
             // 9. 发放权益
-            long? userBenefitId = null;
+            OrderFulfillmentResultDto? fulfillmentResult = null;
             try
             {
-                userBenefitId = await _userBenefitService.GrantBenefitAsync(userId, product, orderId, dto.Quantity);
-                order.UserBenefitId = userBenefitId;
+                fulfillmentResult = await _userBenefitService.GrantOrderFulfillmentAsync(order);
+                order.GrantedBenefitId = fulfillmentResult.GrantedBenefitId;
+                order.GrantedInventoryId = fulfillmentResult.GrantedInventoryId;
+                order.BenefitExpiresAt = fulfillmentResult.ExpiresAt;
                 order.Status = OrderStatus.Completed;
+                order.FailureStage = OrderFailureStage.None;
                 order.CompletedTime = GetUtcNow();
-
-                // 计算权益到期时间
-                if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
-                {
-                    order.BenefitExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
-                }
-                else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
-                {
-                    order.BenefitExpiresAt = product.ExpiresAt;
-                }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "发放权益失败，订单 {OrderId}", orderId);
                 order.Status = OrderStatus.Failed;
+                order.FailureStage = OrderFailureStage.Fulfillment;
                 order.FailReason = $"发放权益失败：{ex.Message}";
             }
 
@@ -278,13 +276,20 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 {
                     NotificationId = SnowFlakeSingle.Instance.NextId(),
                     BusinessKey = $"notification:purchase-success:order:{orderId}",
-                    Type = "PURCHASE_SUCCESS",
+                    Type = NotificationType.PurchaseSucceeded,
                     Title = "购买成功",
                     Content = $"您已成功购买 {product.Name}",
                     BusinessType = "Order",
                     BusinessId = orderId,
                     ReceiverUserIds = [userId],
-                    TenantId = order.TenantId
+                    TenantId = order.TenantId,
+                    TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+                    {
+                        ["productName"] = product.Name
+                    },
+                    TargetKind = NotificationTargetKind.ShopOrder,
+                    Target = new NotificationTargetData { OrderId = orderId },
+                    OccurredAtUtc = order.CompletedTime
                 };
                 await reliableOutboxService.AddAsync(
                     ReliableOutboxSources.Main,
@@ -294,7 +299,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                     "Order",
                     orderId.ToString(),
                     new NotificationRequestedTaskPayload(notification),
-                    GetUtcNow());
+                    order.CompletedTime!.Value);
             }
 
             Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",
@@ -305,7 +310,9 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 Success = order.Status == OrderStatus.Completed,
                 OrderId = orderId,
                 OrderNo = order.OrderNo,
-                UserBenefitId = userBenefitId,
+                UserBenefitId = fulfillmentResult?.GrantedBenefitId ?? fulfillmentResult?.GrantedInventoryId,
+                GrantedBenefitId = fulfillmentResult?.GrantedBenefitId,
+                GrantedInventoryId = fulfillmentResult?.GrantedInventoryId,
                 DeductedCoins = totalPrice,
                 RemainingBalance = newBalance?.VoBalance,
                 ErrorMessage = order.Status == OrderStatus.Failed ? order.FailReason : null
@@ -321,21 +328,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         catch (Exception ex)
         {
             Log.Error(ex, "用户 {UserId} 购买商品 {ProductId} 失败", userId, dto.ProductId);
-
-            var failureResult = new PurchaseResultDto
-            {
-                Success = false,
-                OrderId = idempotencyResourceId,
-                OrderNo = idempotencyResourceNo,
-                ErrorMessage = "购买失败，请稍后重试"
-            };
-
-            return await CompletePurchaseIdempotencyAsync(
-                idempotencyResult,
-                failureResult,
-                shouldOccupyKey: assetWriteStarted,
-                resourceId: idempotencyResourceId,
-                resourceNo: idempotencyResourceNo);
+            throw new BusinessException("购买失败，请稍后重试", ex);
         }
     }
 
@@ -587,7 +580,11 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
-                throw new InvalidOperationException("订单不存在");
+                throw new BusinessException(
+                    "订单不存在",
+                    (int)HttpStatusCodeEnum.NotFound,
+                    "Order.NotFound",
+                    "error.order.not_found");
             }
 
             order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
@@ -620,38 +617,34 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
             if (order == null)
             {
-                throw new InvalidOperationException("订单不存在");
+                throw new BusinessException(
+                    "订单不存在",
+                    (int)HttpStatusCodeEnum.NotFound,
+                    "Order.NotFound",
+                    "error.order.not_found");
             }
 
             if (order.Status != OrderStatus.Failed)
             {
-                throw new InvalidOperationException("只能重试发放失败的订单");
+                throw BuildRetryRejected("只能重试发放失败的订单");
             }
 
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == order.ProductId && !p.IsDeleted);
-            if (product == null)
+            if (order.FailureStage != OrderFailureStage.Fulfillment)
             {
-                throw new InvalidOperationException("商品不存在");
+                throw BuildRetryRejected("支付阶段失败的订单不能重试发放");
             }
 
-            // 重新发放权益
-            var userBenefitId = await _userBenefitService.GrantBenefitAsync(order.UserId, product, orderId, order.Quantity);
+            await EnsureValidPaymentEvidenceAsync(order);
 
-            order.UserBenefitId = userBenefitId;
+            var fulfillmentResult = await _userBenefitService.GrantOrderFulfillmentAsync(order);
+            order.GrantedBenefitId = fulfillmentResult.GrantedBenefitId;
+            order.GrantedInventoryId = fulfillmentResult.GrantedInventoryId;
+            order.BenefitExpiresAt = fulfillmentResult.ExpiresAt;
             order.Status = OrderStatus.Completed;
+            order.FailureStage = OrderFailureStage.None;
             order.CompletedTime = GetUtcNow();
             order.FailReason = null;
             order.ModifyTime = GetUtcNow();
-
-            // 计算权益到期时间
-            if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
-            {
-                order.BenefitExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
-            }
-            else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
-            {
-                order.BenefitExpiresAt = product.ExpiresAt;
-            }
 
             var result = await _orderRepository.UpdateAsync(order);
 
@@ -670,6 +663,38 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     }
 
     #endregion
+
+    private async Task EnsureValidPaymentEvidenceAsync(Order order)
+    {
+        if (!order.PaidTime.HasValue || !order.CoinTransactionId.HasValue)
+        {
+            throw BuildRetryRejected("订单缺少有效支付证据，不能重试发放");
+        }
+
+        var transaction = await _coinTransactionRepository.QueryFirstAsync(transaction =>
+            transaction.Id == order.CoinTransactionId.Value &&
+            transaction.TenantId == order.TenantId &&
+            transaction.FromUserId == order.UserId &&
+            transaction.TransactionType == "CONSUME" &&
+            transaction.Status == "SUCCESS" &&
+            transaction.BusinessType == "Order" &&
+            transaction.BusinessId == order.Id &&
+            transaction.Amount == order.TotalPrice);
+
+        if (transaction == null)
+        {
+            throw BuildRetryRejected("订单扣款流水与履约快照不匹配，不能自动重试发放");
+        }
+    }
+
+    private static BusinessException BuildRetryRejected(string message)
+    {
+        return new BusinessException(
+            message,
+            (int)HttpStatusCodeEnum.Conflict,
+            "Order.RetryRejected",
+            "error.order.retry_rejected");
+    }
 
     private static long NormalizeTenantId(long tenantId)
     {

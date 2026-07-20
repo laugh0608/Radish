@@ -9,6 +9,7 @@ import {
   apiPut,
   apiDelete,
   configureApiClient,
+  createApiResponseError,
 } from '@radish/http';
 import type { TFunction } from 'i18next';
 import type { LongId } from './user';
@@ -127,11 +128,13 @@ export type {
  * 获取所有标签
  */
 export async function getAllTags(t: TFunction): Promise<Tag[]> {
-  void t;
   const response = await apiGet<Tag[]>('/api/v1/Tag/GetAll', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载标签失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.loadTagsFailed'),
+    );
   }
 
   return response.data;
@@ -141,11 +144,13 @@ export async function getAllTags(t: TFunction): Promise<Tag[]> {
  * 获取固定标签
  */
 export async function getFixedTags(t: TFunction): Promise<Tag[]> {
-  void t;
   const response = await apiGet<Tag[]>('/api/v1/Tag/GetFixedTags', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载固定标签失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.loadTagsFailed'),
+    );
   }
 
   return response.data;
@@ -156,11 +161,13 @@ export async function getFixedTags(t: TFunction): Promise<Tag[]> {
  * @param topCount 返回数量（默认 20）
  */
 export async function getHotTags(t: TFunction, topCount: number = 20): Promise<Tag[]> {
-  void t;
   const response = await apiGet<Tag[]>(`/api/v1/Tag/GetHotTags?topCount=${topCount}`, { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载热门标签失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.loadTagsFailed'),
+    );
   }
 
   return response.data;
@@ -170,18 +177,13 @@ export async function getHotTags(t: TFunction, topCount: number = 20): Promise<T
  * 按 slug 获取公开标签详情
  */
 export async function getTagBySlug(tagSlug: string, t: TFunction): Promise<Tag> {
-  void t;
   const response = await apiGet<Tag>(
     `/api/v1/Tag/GetBySlug/${encodeURIComponent(tagSlug)}`,
     { timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
-    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
-      throw new Error(response.message || '标签不存在或已不可用');
-    }
-
-    throw new Error(response.message || '加载标签详情失败');
+    throw createApiResponseError(response, t('forum.public.tagLoadFailed'));
   }
 
   return response.data;
@@ -191,11 +193,13 @@ export async function getTagBySlug(tagSlug: string, t: TFunction): Promise<Tag> 
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
-  void t;
   const response = await apiGet<Category[]>('/api/v1/Category/GetTopCategories', { timeout: FORUM_READ_TIMEOUT_MS });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载分类失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.loadCategoriesFailed'),
+    );
   }
 
   return response.data;
@@ -205,18 +209,13 @@ export async function getTopCategories(t: TFunction): Promise<Category[]> {
  * 按 ID 获取分类详情
  */
 export async function getCategoryById(categoryId: string, t: TFunction): Promise<Category> {
-  void t;
   const response = await apiGet<Category>(
     `/api/v1/Category/GetById/${categoryId}`,
     { timeout: FORUM_READ_TIMEOUT_MS }
   );
 
   if (!response.ok || !response.data) {
-    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
-      throw new Error(response.message || '分类不存在或已不可用');
-    }
-
-    throw new Error(response.message || '加载分类详情失败');
+    throw createApiResponseError(response, t('forum.public.categoryLoadFailed'));
   }
 
   return response.data;
@@ -280,7 +279,6 @@ export async function getPostById(
   t: TFunction,
   answerSort: QuestionAnswerSort = 'default'
 ): Promise<PostDetail> {
-  void t;
   const hasToken = Boolean(tokenService.getAccessToken());
   const response = await apiGet<PostDetail>(
     `/api/v1/Post/GetById/${encodeURIComponent(String(postId))}?answerSort=${answerSort}`,
@@ -288,11 +286,7 @@ export async function getPostById(
   );
 
   if (!response.ok || !response.data) {
-    // 针对帖子不存在的情况给出友好提示
-    if (!response.ok && (response.statusCode === 404 || response.statusCode === 410)) {
-      throw new Error(response.message || '帖子不存在或已被删除');
-    }
-    throw new Error(response.message || '加载帖子详情失败');
+    throw createApiResponseError(response, t('forum.public.postLoadFailed'));
   }
 
   return response.data;
@@ -436,11 +430,13 @@ export async function getRootCommentsPage(
  * @returns 新帖子的 ID
  */
 export async function publishPost(request: PublishPostRequest, t: TFunction): Promise<LongId> {
-  void t;
   const response = await apiPost<LongId>('/api/v1/Post/Publish', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
-    throw new Error(response.message || '发布帖子失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.publishFailed'),
+    );
   }
 
   return response.data;

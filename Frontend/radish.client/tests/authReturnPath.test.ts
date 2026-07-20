@@ -25,6 +25,7 @@ import {
   buildPublicForumComposeReturnPath,
   buildPublicForumPostReturnPath,
   buildPublicProfileFollowReturnPath,
+  buildPublicProfileMessageReturnPath,
   buildShopInventoryReturnPath,
   buildShopOrderReturnPath,
   buildShopOrdersReturnPath,
@@ -129,6 +130,10 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
     normalizeAuthReturnPath('/u/USR_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=follow'),
     '/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=follow',
   );
+  assert.equal(
+    normalizeAuthReturnPath('/u/USR_018F6B6F7C7D70008F8F8F8F8F8F8F8F?intent=message'),
+    '/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=message',
+  );
   assert.equal(normalizeAuthReturnPath('/circle?tab=hot'), null);
   assert.equal(normalizeAuthReturnPath('/circle?tab=following&tab=followers'), null);
   assert.equal(normalizeAuthReturnPath('/circle?page=2&page=3'), null);
@@ -190,6 +195,9 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/u/2042219067430928384?intent=follow&intent=follow'), null);
   assert.equal(normalizeAuthReturnPath('/u/2042219067430928384?intent=follow&from=forum'), null);
   assert.equal(normalizeAuthReturnPath('/u/2042219067430928384?intent=follow#profile'), null);
+  assert.equal(normalizeAuthReturnPath('/u/2042219067430928384?intent=message&intent=message'), null);
+  assert.equal(normalizeAuthReturnPath('/u/2042219067430928384?intent=message&from=profile'), null);
+  assert.equal(normalizeAuthReturnPath('/u/2042219067430928384?intent=message#profile'), null);
   assert.equal(normalizeAuthReturnPath('/discover'), null);
   assert.equal(normalizeAuthReturnPath('/oidc/callback'), null);
   assert.equal(normalizeAuthReturnPath('https://radishx.com/desktop?app=shop'), null);
@@ -209,6 +217,16 @@ test('buildPublicProfileFollowReturnPath 应构造受控公开主页关注回流
   assert.equal(buildPublicProfileFollowReturnPath('2042219067430928384'), '/u/2042219067430928384?intent=follow');
   assert.equal(buildPublicProfileFollowReturnPath('0'), null);
   assert.equal(buildPublicProfileFollowReturnPath('user'), null);
+});
+
+test('buildPublicProfileMessageReturnPath 应构造受控公开主页私聊回流路径', () => {
+  assert.equal(
+    buildPublicProfileMessageReturnPath('USR_018F6B6F7C7D70008F8F8F8F8F8F8F8F'),
+    '/u/usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=message',
+  );
+  assert.equal(buildPublicProfileMessageReturnPath('2042219067430928384'), '/u/2042219067430928384?intent=message');
+  assert.equal(buildPublicProfileMessageReturnPath('0'), null);
+  assert.equal(buildPublicProfileMessageReturnPath('user'), null);
 });
 
 test('buildMessagesReturnPath 应构造消息复访登录回流路径', () => {

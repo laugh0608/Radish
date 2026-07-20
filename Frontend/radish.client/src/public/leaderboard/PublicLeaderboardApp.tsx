@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { formatLocalizedNumber } from '@radish/ui';
 import {
   leaderboardApi,
   LeaderboardCategory,
@@ -19,7 +20,8 @@ import {
 } from '../leaderboardRouteState';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicShellHeader } from '../components/PublicShellHeader';
-import { buildPublicShareUrl } from '../publicHead';
+import { buildLocalizedPublicRouteHead, buildPublicShareUrl } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
 import { resolvePublicUserRouteIdentifier } from '../publicId';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
 import { buildPublicProfilePath } from '../profileRouteState';
@@ -376,7 +378,7 @@ export const PublicLeaderboardApp = ({
   onNavigateToProfile,
   onNavigateToShopProduct,
 }: PublicLeaderboardAppProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
   const requestIdRef = useRef(0);
   const userId = useUserStore((state) => state.userId);
@@ -410,6 +412,17 @@ export const PublicLeaderboardApp = ({
       ?? fallbackTypes.find((item) => item.voType === activeRouteDefinition.type)
       ?? fallbackTypes[0];
   }, [activeRouteDefinition.type, fallbackTypes, types]);
+  const publicHeadSnapshot = useMemo(() => {
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'leaderboard', route }, t);
+    return {
+      head: {
+        ...routeHead,
+        title: `${activeTypeConfig.voName} · ${t('desktop.apps.leaderboard.name')}`,
+        description: activeTypeConfig.voDescription?.trim() || routeHead.description,
+      },
+    };
+  }, [activeTypeConfig.voDescription, activeTypeConfig.voName, route, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -430,10 +443,6 @@ export const PublicLeaderboardApp = ({
       window.removeEventListener('resize', handleResize);
     };
   }, []);
-
-  useEffect(() => {
-    document.title = `${activeTypeConfig.voName} · ${t('desktop.apps.leaderboard.name')}`;
-  }, [activeTypeConfig.voName, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -750,7 +759,7 @@ export const PublicLeaderboardApp = ({
                             {item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback')}
                           </span>
                           <span className={`${styles.userStatChip} ${styles.userMetricChip}`}>
-                            {Number(item.voPrimaryValue || 0).toLocaleString()} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
+                            {formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
                           </span>
                           <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                         </div>
@@ -813,13 +822,13 @@ export const PublicLeaderboardApp = ({
                           <span className={styles.sideInfoLabel}>{t('shop.meta.price')}</span>
                           <span className={styles.sideInfoValue}>
                             {t('leaderboard.public.productPrice', {
-                              price: Number(item.voProductPrice || 0).toLocaleString(),
+                              price: formatLocalizedNumber(Number(item.voProductPrice || 0), i18n.resolvedLanguage ?? i18n.language),
                             })}
                           </span>
                         </div>
                       </div>
                       <div className={styles.itemMetric}>
-                        <span className={styles.metricValue}>{Number(item.voPrimaryValue || 0).toLocaleString()}</span>
+                        <span className={styles.metricValue}>{formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)}</span>
                         <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
                         <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                       </div>

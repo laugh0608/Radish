@@ -3,9 +3,10 @@
  * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { apiGet, configureApiClient } from '@radish/http';
+import { apiGet, configureApiClient, createApiResponseError } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
+import type { UserAdornment } from '@/types/userAdornment';
 
 // 配置 API 客户端
 configureApiClient({
@@ -67,6 +68,7 @@ export interface PublicUserProfile {
   voCreateTime: string;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
+  voAdornment?: UserAdornment | null;
 }
 
 export interface PublicUserStats {
@@ -133,8 +135,6 @@ export async function searchUsersForMention(
   t: TFunction,
   limit: number = 10
 ): Promise<UserMentionOption[]> {
-  void t;
-
   if (!keyword.trim()) {
     return [];
   }
@@ -145,7 +145,10 @@ export async function searchUsersForMention(
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '搜索用户失败');
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      t('forum.mention.searchFailed'),
+    );
   }
 
   // 直接返回后端数据，不做字段映射
@@ -208,7 +211,7 @@ export async function getPublicProfile(identifier: PublicUserIdentifier): Promis
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载公开资料失败');
+    throw createApiResponseError(response, '加载公开资料失败');
   }
 
   return response.data;

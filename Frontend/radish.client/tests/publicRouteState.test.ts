@@ -168,6 +168,29 @@ test('公开个人页应解析并稳定回写关注意图', () => {
   });
 });
 
+test('公开个人页应解析并稳定回写私聊意图', () => {
+  assert.deepEqual(parsePublicProfileRoute('/u/2042219067430928384', '?intent=message'), {
+    kind: 'detail',
+    userId: '2042219067430928384',
+    tab: 'posts',
+    page: 1,
+    intent: 'message',
+  });
+  assert.equal(buildPublicProfilePath({
+    kind: 'detail',
+    userId: '2042219067430928384',
+    tab: 'comments',
+    page: 2,
+    intent: 'message',
+  }), '/u/2042219067430928384?tab=comments&page=2&intent=message');
+  assert.deepEqual(parsePublicProfileRoute('/u/2042219067430928384', '?intent=message&intent=message'), {
+    kind: 'detail',
+    userId: '2042219067430928384',
+    tab: 'posts',
+    page: 1,
+  });
+});
+
 test('parsePublicShopRoute 应解析公开商城列表上下文', () => {
   const route = parsePublicShopRoute('/shop/products', '?category=digital&q=vip&page=5');
 

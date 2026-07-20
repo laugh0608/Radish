@@ -1,4 +1,6 @@
 import { BarChart } from '@radish/ui/bar-chart';
+import { useTranslation } from 'react-i18next';
+import { formatCoinAmount, formatCoinChartDate, toCoinChartNumber } from '../../utils';
 import type { StatisticsData } from '../../types';
 import styles from './IncomeExpenseChart.module.css';
 
@@ -14,11 +16,13 @@ interface IncomeExpenseChartProps {
  * 收支图表组件 - 使用柱状图展示收入和支出
  */
 export const IncomeExpenseChart = ({ data, loading, error, displayMode, timeRange }: IncomeExpenseChartProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   // 准备图表数据
   const chartData = data?.voTrendData.map((item) => ({
-    name: item.voDate,
-    收入: displayMode === 'carrot' ? item.voIncome : item.voIncome,
-    支出: displayMode === 'carrot' ? item.voExpense : item.voExpense
+    name: formatCoinChartDate(item.voDate, language),
+    income: toCoinChartNumber(item.voIncome),
+    expense: toCoinChartNumber(item.voExpense),
   })) || [];
 
   // 根据显示模式设置颜色
@@ -30,16 +34,17 @@ export const IncomeExpenseChart = ({ data, loading, error, displayMode, timeRang
       <BarChart
         data={chartData}
         bars={[
-          { dataKey: '收入', name: '收入', color: incomeColor },
-          { dataKey: '支出', name: '支出', color: expenseColor }
+          { dataKey: 'income', name: t('pit.statistics.income'), color: incomeColor },
+          { dataKey: 'expense', name: t('pit.statistics.expense'), color: expenseColor }
         ]}
         xAxisKey="name"
-        title={`收支趋势 (${timeRange === 'month' ? '月度' : timeRange === 'quarter' ? '季度' : '年度'})`}
+        title={t('pit.statistics.chartTitle', { range: t(`pit.statistics.range.${timeRange}`) })}
         loading={loading}
         error={error}
         height={350}
         showGrid={true}
         showLegend={true}
+        valueFormatter={(value) => formatCoinAmount(value, language, t, displayMode)}
       />
     </div>
   );

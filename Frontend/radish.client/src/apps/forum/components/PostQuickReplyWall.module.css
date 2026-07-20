@@ -7,7 +7,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 88%, transparent);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--theme-brand-soft) 18%, transparent) 0%, transparent 34%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 97%, white 3%) 0%, color-mix(in srgb, var(--theme-bg-component) 80%, var(--theme-bg-surface) 20%) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 97%, var(--theme-surface-highlight) 3%) 0%, color-mix(in srgb, var(--theme-bg-component) 80%, var(--theme-bg-surface) 20%) 100%);
   box-shadow: 0 16px 30px color-mix(in srgb, var(--theme-accent-ink) 8%, transparent);
 }
 
@@ -144,7 +144,7 @@
 
 .submitButton {
   border: none;
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-primary) 84%, white 16%) 0%, color-mix(in srgb, var(--theme-brand-secondary, var(--theme-brand-primary)) 80%, white 20%) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-primary) 84%, var(--theme-surface-highlight) 16%) 0%, color-mix(in srgb, var(--theme-brand-secondary, var(--theme-brand-primary)) 80%, var(--theme-surface-highlight) 20%) 100%);
   color: var(--theme-text-primary);
   box-shadow: 0 10px 20px color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
 }
@@ -240,10 +240,10 @@
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 95%, white 5%) 0%, color-mix(in srgb, var(--theme-bg-component) 84%, var(--theme-bg-surface) 16%) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 95%, var(--theme-surface-highlight) 5%) 0%, color-mix(in srgb, var(--theme-bg-component) 84%, var(--theme-bg-surface) 16%) 100%);
   box-shadow:
     0 8px 18px color-mix(in srgb, var(--theme-accent-ink) 7%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 42%, transparent);
+    inset 0 1px 0 color-mix(in srgb, var(--theme-surface-highlight) 42%, transparent);
 }
 
 .sectionCompact .pill {

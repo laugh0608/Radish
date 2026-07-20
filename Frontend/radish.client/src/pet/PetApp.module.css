@@ -4,7 +4,7 @@
   display: flex;
   flex-direction: column;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, white 6%) 0%, var(--theme-bg-muted) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 94%, var(--theme-surface-highlight) 6%) 0%, var(--theme-bg-muted) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -27,7 +27,7 @@
 .railCard {
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -72,8 +72,8 @@
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
   background:
-    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--theme-accent-jade) 24%, white 76%) 0 22%, transparent 23%),
-    color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
+    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--theme-accent-jade) 24%, var(--theme-surface-highlight) 76%) 0 22%, transparent 23%),
+    color-mix(in srgb, var(--theme-brand-soft) 70%, var(--theme-surface-highlight) 30%);
   color: var(--theme-brand-primary);
   font-family: var(--theme-font-serif);
   font-size: 34px;
@@ -86,8 +86,8 @@
 
 .petPortrait[data-intent="thriving"] {
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-accent-jade) 30%, white 70%) 0 22%, transparent 23%),
-    color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-accent-jade) 30%, var(--theme-surface-highlight) 70%) 0 22%, transparent 23%),
+    color-mix(in srgb, var(--theme-brand-soft) 78%, var(--theme-surface-highlight) 22%);
 }
 
 .petPortrait[data-mood="hungry"],
@@ -101,8 +101,8 @@
 .petPortrait[data-intent="tired"] {
   border-color: color-mix(in srgb, var(--theme-accent-earth) 42%, transparent);
   background:
-    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-accent-earth) 24%, white 76%) 0 22%, transparent 23%),
-    color-mix(in srgb, var(--theme-bg-muted) 72%, white 28%);
+    radial-gradient(circle at 50% 18%, color-mix(in srgb, var(--theme-accent-earth) 24%, var(--theme-surface-highlight) 76%) 0 22%, transparent 23%),
+    color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .claimBody,
@@ -145,7 +145,7 @@
   padding: 12px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .heroMetricIcon {
@@ -237,12 +237,12 @@
 .primaryButton {
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 36%, transparent);
   background: var(--theme-brand-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
 }
 
 .secondaryButton {
   border: 1px solid var(--theme-border-soft);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-text-primary);
 }
 
@@ -312,7 +312,7 @@
 .feedbackDeltas em {
   border-radius: 999px;
   padding: 3px 8px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 70%, white 30%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, var(--theme-surface-highlight) 30%);
   color: var(--theme-brand-primary);
   font-size: 12px;
   font-style: normal;
@@ -342,7 +342,7 @@
   align-items: center;
   justify-content: center;
   color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .insightPanel[data-intent="hungry"] .insightIcon,
@@ -421,7 +421,7 @@
   margin-top: 12px;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-border-soft) 52%, white 48%);
+  background: color-mix(in srgb, var(--theme-border-soft) 52%, var(--theme-surface-highlight) 48%);
 }
 
 .statTrack span {
@@ -485,7 +485,7 @@
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   padding: 14px;
-  background: color-mix(in srgb, var(--theme-bg-muted) 54%, white 46%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 54%, var(--theme-surface-highlight) 46%);
   color: var(--theme-text-primary);
   text-align: left;
   cursor: pointer;
@@ -524,13 +524,13 @@
   width: fit-content;
   border-radius: 999px;
   padding: 3px 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 82%, white 18%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 82%, var(--theme-surface-highlight) 18%);
   font-weight: 800;
 }
 
 .actionButton[data-availability="ready"] .actionStatus {
   color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .actionButton[data-availability="cooldown"] .actionStatus,
@@ -684,7 +684,7 @@
   justify-self: end;
   border-radius: 999px;
   padding: 3px 8px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 84%, white 16%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-surface-highlight) 16%);
   color: var(--theme-text-secondary);
   font-size: 11px;
   font-style: normal;
@@ -694,7 +694,7 @@
 
 .railActionItem[data-availability="ready"] em {
   color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .railActionItem[data-availability="cooldown"] em,
@@ -751,7 +751,7 @@
   padding: 12px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--theme-bg-muted) 54%, white 46%);
+  background: color-mix(in srgb, var(--theme-bg-muted) 54%, var(--theme-surface-highlight) 46%);
 }
 
 .logIcon {
@@ -762,7 +762,7 @@
   align-items: center;
   justify-content: center;
   color: var(--theme-brand-primary);
-  background: color-mix(in srgb, var(--theme-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .logItem div:nth-child(2) {

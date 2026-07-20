@@ -11,17 +11,20 @@ public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly IChatPresenceService _chatPresenceService;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
     private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
     private readonly ILogger<ChatHub> _logger;
 
     public ChatHub(
         IChatService chatService,
         IChatPresenceService chatPresenceService,
+        IChatChannelAccessService chatChannelAccessService,
         IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
         ILogger<ChatHub> logger)
     {
         _chatService = chatService;
         _chatPresenceService = chatPresenceService;
+        _chatChannelAccessService = chatChannelAccessService;
         _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
         _logger = logger;
     }
@@ -65,9 +68,7 @@ public class ChatHub : Hub
 
         var userId = GetUserId();
         var tenantId = GetTenantId();
-        var userName = GetUserName();
-
-        await _chatService.JoinChannelAsync(tenantId, userId, channelId, userName);
+        await _chatService.JoinChannelAsync(tenantId, userId, channelId);
 
         var channelGroup = BuildChannelGroup(tenantId, channelId);
         await Groups.AddToGroupAsync(Context.ConnectionId, channelGroup);
@@ -104,9 +105,19 @@ public class ChatHub : Hub
             return;
         }
 
-        var tenantId = GetTenantId();
-        var userId = GetUserId();
-        var userName = GetUserName();
+        var currentUser = GetCurrentUser();
+        var tenantId = currentUser.TenantId;
+        var userId = currentUser.UserId;
+        var userName = string.IsNullOrWhiteSpace(currentUser.UserName) ? "Unknown" : currentUser.UserName;
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            tenantId,
+            userId,
+            channelId,
+            currentUser.IsSystemOrAdmin());
+        if (!access.CanSend)
+        {
+            throw new HubException("频道不存在或无权发言");
+        }
 
         var channelGroup = BuildChannelGroup(tenantId, channelId);
         await Clients.OthersInGroup(channelGroup)
@@ -115,29 +126,6 @@ public class ChatHub : Hub
                 channelId,
                 userId,
                 userName
-            });
-    }
-
-    /// <summary>标记频道已读</summary>
-    public async Task MarkChannelAsRead(long channelId)
-    {
-        if (channelId <= 0)
-        {
-            return;
-        }
-
-        var tenantId = GetTenantId();
-        var userId = GetUserId();
-        var userName = GetUserName();
-
-        var unreadState = await _chatService.MarkChannelAsReadAsync(tenantId, userId, channelId, userName);
-
-        await Clients.Group($"user:{userId}")
-            .SendAsync("ChannelUnreadChanged", new
-            {
-                channelId = unreadState.VoChannelId,
-                unreadCount = unreadState.VoUnreadCount,
-                hasMention = unreadState.VoHasMention
             });
     }
 
@@ -155,12 +143,6 @@ public class ChatHub : Hub
     private long GetTenantId()
     {
         return GetCurrentUser().TenantId;
-    }
-
-    private string GetUserName()
-    {
-        var currentUser = GetCurrentUser();
-        return string.IsNullOrWhiteSpace(currentUser.UserName) ? "Unknown" : currentUser.UserName;
     }
 
     private CurrentUser GetCurrentUser()

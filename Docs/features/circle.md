@@ -2,7 +2,7 @@
 
 > Radish 登录态个人圈子 `/circle` 的产品边界、职责分工与维护约束。
 >
-> **最后更新**: 2026.06.18
+> **最后更新**: 2026.07.15
 
 ## 定位
 
@@ -45,6 +45,13 @@
 
 所有帖子和用户项都输出真实公开 `href`。普通点击会附带当前 `/circle` tab / page 的一次性来源返回；新开标签、复制链接、canonical 和分享仍只使用公开 URL。
 
+## 多语言与内容边界
+
+- 圈子标题、摘要、tab、空态、分页、关系标签和失败反馈属于系统词元，由 `radish.client` 的 `community` 中英文资源维护。
+- 帖子标题、摘要、作者名、用户展示名和公开句柄属于用户内容，始终按原文展示，不做自动翻译。
+- 日期、页码、关注数、粉丝数、评论数、点赞数和本页汇总按当前语言 locale 格式化；英文数量文案必须覆盖单复数。
+- `UserFollow` API 失败通过稳定 HTTP status、`Code / MessageKey` 和结构化 `ApiResponseError` 消费，页面控制流不得依赖中文消息文本。
+
 ## 对象与接口
 
 首批复用现有接口：
@@ -67,7 +74,7 @@
 
 ```text
 Frontend/radish.client/src/circle/
-├── CircleEntry.tsx             # 圈子入口，包裹 BootstrapGate
+├── CircleEntry.tsx             # 圈子业务入口；顶层 BrowserAppRouter 统一承接 BootstrapGate
 ├── CircleApp.tsx               # 登录态、路由、数据加载与渲染
 ├── CircleApp.module.css        # 圈子页面样式
 └── circleRouteState.ts         # /circle tab/page 路由解析
@@ -100,4 +107,5 @@ Radish.Api/Controllers/UserFollowController.cs
 - 关注 / 粉丝用户进入 `/u/usr_...`。
 - 从圈子进入公开帖子详情或公开个人页后，应能返回原来的圈子 tab/page；新开标签和复制链接仍只保留公开 URL。
 - 公开主页 `/u/usr_...` 能被入口白名单识别并进入公开壳层。
+- 中英文切换后，圈子日期、数字、结果数量与 UserFollow 失败反馈应跟随当前语言；用户内容保持原文。
 - `radish.client` 构建、路由 / 回流测试、`UserFollow` 后端测试通过。

@@ -1,4 +1,17 @@
-import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransactionStatusColor, getSafeUserDisplayName } from '../../utils';
+import { useTranslation } from 'react-i18next';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import {
+  absoluteCoinValue,
+  compareCoinValues,
+  formatCoinAmount,
+  formatCoinDateTime,
+  formatTransactionStatus,
+  formatTransactionType,
+  getSafeUserDisplayName,
+  getTransactionIcon,
+  getTransactionStatusTone,
+  resolveTransactionDirection,
+} from '../../utils';
 import { useUserStore } from '@/stores/userStore';
 import type { CoinTransaction } from '@/api/coin';
 import styles from './TransactionDetail.module.css';
@@ -15,9 +28,11 @@ interface TransactionDetailProps {
  * 交易详情组件
  */
 export const TransactionDetail = ({ transaction, displayMode, onClose }: TransactionDetailProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
   const { userId } = useUserStore();
   const currentUserId = String(userId);
-  const useWhiteRadish = displayMode === 'white';
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {
@@ -28,35 +43,32 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
   const handleCopyTransactionNo = async () => {
     try {
       await navigator.clipboard.writeText(transaction.voTransactionNo);
-      toast.success('流水号已复制到剪贴板');
+      toast.success(t('pit.common.transactionNoCopied'));
     } catch (err) {
       log.error('TransactionDetail', '复制失败:', err);
-      toast.error('复制失败，请手动复制');
+      toast.error(t('pit.common.copyFailed'));
     }
   };
 
   const getAmountDirection = (): 'in' | 'out' => {
-    if (transaction.voToUserId === currentUserId) return 'in';
-    if (transaction.voFromUserId === currentUserId) return 'out';
-    return transaction.voAmount > 0 ? 'in' : 'out';
+    return resolveTransactionDirection(transaction, currentUserId);
   };
 
   const renderParticipants = () => {
-    const fromUser = transaction.voFromUserName;
-    const toUser = transaction.voToUserName;
+    const fromUser = transaction.voFromUserId ? transaction.voFromUserName : null;
+    const toUser = transaction.voToUserId ? transaction.voToUserName : null;
 
     return (
       <div className={styles.participants}>
         <div className={styles.participantItem}>
-          <div className={styles.participantLabel}>发起方</div>
+          <div className={styles.participantLabel}>{t('pit.history.detail.sender')}</div>
           <div className={styles.participantValue}>
             {fromUser ? (
               <span className={transaction.voFromUserId === currentUserId ? styles.currentUser : ''}>
-                {getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId)}
-                {transaction.voFromUserId === currentUserId && ' (我)'}
+                {getSafeUserDisplayName(fromUser, transaction.voFromUserId === currentUserId, t('pit.common.me'))}
               </span>
             ) : (
-              <span className={styles.systemUser}>系统</span>
+              <span className={styles.systemUser}>{t('pit.common.system')}</span>
             )}
           </div>
         </div>
@@ -64,15 +76,14 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
         <div className={styles.arrow}>→</div>
 
         <div className={styles.participantItem}>
-          <div className={styles.participantLabel}>接收方</div>
+          <div className={styles.participantLabel}>{t('pit.history.detail.recipient')}</div>
           <div className={styles.participantValue}>
             {toUser ? (
               <span className={transaction.voToUserId === currentUserId ? styles.currentUser : ''}>
-                {getSafeUserDisplayName(toUser, transaction.voToUserId === currentUserId)}
-                {transaction.voToUserId === currentUserId && ' (我)'}
+                {getSafeUserDisplayName(toUser, transaction.voToUserId === currentUserId, t('pit.common.me'))}
               </span>
             ) : (
-              <span className={styles.systemUser}>系统</span>
+              <span className={styles.systemUser}>{t('pit.common.system')}</span>
             )}
           </div>
         </div>
@@ -89,9 +100,9 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
               {getTransactionIcon(transaction.voTransactionType)}
             </div>
             <div className={styles.headerInfo}>
-              <h3 className={styles.title}>交易详情</h3>
+              <h3 className={styles.title}>{t('pit.history.detail.title')}</h3>
               <div className={styles.transactionType}>
-                {getTransactionTypeDisplay(transaction.voTransactionType)}
+                {formatTransactionType(transaction.voTransactionType, t)}
               </div>
             </div>
           </div>
@@ -103,48 +114,50 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
         <div className={styles.content}>
           {/* 金额信息 */}
           <div className={styles.amountSection}>
-            <div className={styles.amountLabel}>交易金额</div>
+            <div className={styles.amountLabel}>{t('pit.history.detail.amount')}</div>
             <div className={`${styles.amountValue} ${
               getAmountDirection() === 'in' ? styles.positive : styles.negative
             }`}>
               {getAmountDirection() === 'in' ? '+' : '-'}
-              {formatCoinAmount(Math.abs(transaction.voAmount), true, useWhiteRadish)}
+              {formatCoinAmount(absoluteCoinValue(transaction.voAmount), language, t, displayMode)}
             </div>
-              {transaction.voFee && transaction.voFee > 0 && (
+              {compareCoinValues(transaction.voFee, 0) > 0 && (
               <div className={styles.feeInfo}>
-                手续费: {formatCoinAmount(transaction.voFee, true, useWhiteRadish)}
+                {t('pit.history.detail.feeValue', {
+                  value: formatCoinAmount(transaction.voFee, language, t, displayMode),
+                })}
               </div>
             )}
           </div>
 
           {/* 状态信息 */}
           <div className={styles.statusSection}>
-            <div className={`${styles.statusBadge} ${styles[getTransactionStatusColor(transaction.voStatus)]}`}>
-              {transaction.voStatusDisplay}
+            <div className={`${styles.statusBadge} ${styles[getTransactionStatusTone(transaction.voStatus)]}`}>
+              {formatTransactionStatus(transaction.voStatus, t)}
             </div>
             <div className={styles.statusTime}>
-              {formatDateTime(transaction.voCreateTime)}
+              {formatCoinDateTime(transaction.voCreateTime, displayTimeZone, language)}
             </div>
           </div>
 
           {/* 参与方信息 */}
           <div className={styles.section}>
-            <h4 className={styles.sectionTitle}>参与方</h4>
+            <h4 className={styles.sectionTitle}>{t('pit.history.detail.participants')}</h4>
             {renderParticipants()}
           </div>
 
           {/* 交易信息 */}
           <div className={styles.section}>
-            <h4 className={styles.sectionTitle}>交易信息</h4>
+            <h4 className={styles.sectionTitle}>{t('pit.history.detail.info')}</h4>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>流水号</div>
+                <div className={styles.infoLabel}>{t('pit.common.transactionNo')}</div>
                 <div className={styles.infoValue}>
                   <span className={styles.transactionNo}>{transaction.voTransactionNo}</span>
                   <button
                     className={styles.copyButton}
                     onClick={handleCopyTransactionNo}
-                    title="复制流水号"
+                    title={t('pit.common.copyTransactionNo')}
                   >
                     📋
                   </button>
@@ -152,22 +165,22 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
               </div>
 
               <div className={styles.infoItem}>
-                <div className={styles.infoLabel}>创建时间</div>
+                <div className={styles.infoLabel}>{t('pit.history.detail.createdAt')}</div>
                 <div className={styles.infoValue}>
-                  {new Date(transaction.voCreateTime).toLocaleString('zh-CN')}
+                  {formatCoinDateTime(transaction.voCreateTime, displayTimeZone, language)}
                 </div>
               </div>
 
               {transaction.voBusinessType && (
                 <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>业务类型</div>
+                  <div className={styles.infoLabel}>{t('pit.history.detail.businessType')}</div>
                   <div className={styles.infoValue}>{transaction.voBusinessType}</div>
                 </div>
               )}
 
               {transaction.voBusinessId && (
                 <div className={styles.infoItem}>
-                  <div className={styles.infoLabel}>业务ID</div>
+                  <div className={styles.infoLabel}>{t('pit.history.detail.businessId')}</div>
                   <div className={styles.infoValue}>{transaction.voBusinessId}</div>
                 </div>
               )}
@@ -177,7 +190,7 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
           {/* 备注信息 */}
           {transaction.voRemark && (
             <div className={styles.section}>
-              <h4 className={styles.sectionTitle}>备注</h4>
+              <h4 className={styles.sectionTitle}>{t('pit.history.detail.remark')}</h4>
               <div className={styles.noteContent}>
                 <span className={styles.noteIcon}>💬</span>
                 {transaction.voRemark}
@@ -188,21 +201,21 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
           {/* 金额计算详情 */}
           {(transaction.voTheoreticalAmount || transaction.voRoundingDiff) && (
             <div className={styles.section}>
-              <h4 className={styles.sectionTitle}>计算详情</h4>
+              <h4 className={styles.sectionTitle}>{t('pit.history.detail.calculation')}</h4>
               <div className={styles.calculationDetails}>
                 {transaction.voTheoreticalAmount && (
                   <div className={styles.calculationItem}>
-                    <span className={styles.calculationLabel}>理论金额:</span>
+                    <span className={styles.calculationLabel}>{t('pit.history.detail.theoretical')}</span>
                     <span className={styles.calculationValue}>
-                      {formatCoinAmount(transaction.voTheoreticalAmount, true, useWhiteRadish)}
+                      {formatCoinAmount(transaction.voTheoreticalAmount, language, t, displayMode)}
                     </span>
                   </div>
                 )}
                 {transaction.voRoundingDiff && (
                   <div className={styles.calculationItem}>
-                    <span className={styles.calculationLabel}>舍入差额:</span>
+                    <span className={styles.calculationLabel}>{t('pit.history.detail.rounding')}</span>
                     <span className={styles.calculationValue}>
-                      {formatCoinAmount(transaction.voRoundingDiff, true, useWhiteRadish)}
+                      {formatCoinAmount(transaction.voRoundingDiff, language, t, displayMode)}
                     </span>
                   </div>
                 )}
@@ -213,29 +226,10 @@ export const TransactionDetail = ({ transaction, displayMode, onClose }: Transac
 
         <div className={styles.footer}>
           <button className={styles.closeFooterButton} onClick={onClose}>
-            关闭
+            {t('pit.common.close')}
           </button>
         </div>
       </div>
     </div>
   );
-};
-
-/**
- * 根据交易类型获取图标
- */
-const getTransactionIcon = (transactionType: string): string => {
-  const iconMap: Record<string, string> = {
-    'SYSTEM_GRANT': '🎁',
-    'LIKE_REWARD': '👍',
-    'COMMENT_REWARD': '💬',
-    'GODLIKE_REWARD': '⭐',
-    'SOFA_REWARD': '🛋️',
-    'TRANSFER_IN': '📥',
-    'TRANSFER_OUT': '📤',
-    'PURCHASE': '🛒',
-    'ADMIN_ADJUST': '⚙️'
-  };
-
-  return iconMap[transactionType] || '💰';
 };

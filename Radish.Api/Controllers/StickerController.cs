@@ -1,13 +1,16 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers;
@@ -17,16 +20,22 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("表情包管理")]
 public class StickerController : ControllerBase
 {
     private readonly IStickerService _stickerService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors>? _errorsLocalizer;
 
-    public StickerController(IStickerService stickerService, ICurrentUserAccessor currentUserAccessor)
+    public StickerController(
+        IStickerService stickerService,
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors>? errorsLocalizer = null)
     {
         _stickerService = stickerService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -342,26 +351,22 @@ public class StickerController : ControllerBase
 
             if (result.VoConflicts.Count > 0)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = 409,
-                    Code = "BatchCodeConflict",
-                    MessageInfo = "存在重复标识符，请修改后重试",
-                    ResponseData = result
-                };
+                return BuildError(
+                    409,
+                    "存在重复标识符，请修改后重试",
+                    "BatchCodeConflict",
+                    "error.sticker.batch_code_conflict",
+                    result);
             }
 
             if (result.VoFailedItems.Count > 0)
             {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                    Code = "ImageProcessFailed",
-                    MessageInfo = "缩略图生成失败，请稍后重试",
-                    ResponseData = result
-                };
+                return BuildError(
+                    (int)HttpStatusCodeEnum.InternalServerError,
+                    "缩略图生成失败，请稍后重试",
+                    "ImageProcessFailed",
+                    "error.sticker.image_processing_failed",
+                    result);
             }
 
             return new MessageModel
@@ -374,22 +379,19 @@ public class StickerController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildError(
+                (int)HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                MessageInfo = ex.Message,
-                Code = "StickerGroupNotFound"
-            };
+            return BuildError(
+                (int)HttpStatusCodeEnum.NotFound,
+                ex.Message,
+                "StickerGroupNotFound",
+                "error.sticker.group_not_found");
         }
     }
 
@@ -645,6 +647,27 @@ public class StickerController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = stickers
+        };
+    }
+
+    private MessageModel BuildError(
+        int statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey,
+        object? responseData = null)
+    {
+        var localizedMessage = _errorsLocalizer?[messageKey];
+        return new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = statusCode,
+            MessageInfo = localizedMessage is null || localizedMessage.ResourceNotFound
+                ? fallbackMessage
+                : localizedMessage.Value,
+            Code = code,
+            MessageKey = messageKey,
+            ResponseData = responseData
         };
     }
 }

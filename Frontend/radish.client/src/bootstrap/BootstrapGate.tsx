@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { ApiResponseError } from '@radish/http';
+import { useTranslation } from 'react-i18next';
 import { getBootstrapStatus, createFirstAdministrator } from '@/api/bootstrap';
 import { redirectToLogin } from '@/services/auth';
 import { log } from '@/utils/logger';
@@ -11,50 +13,50 @@ interface BootstrapGateProps {
 }
 
 export function BootstrapGate({ children }: BootstrapGateProps) {
+  const { t, i18n } = useTranslation();
   const [state, setState] = useState<BootstrapGateState>('loading');
-  const [error, setError] = useState<string>();
 
   const loadStatus = useCallback(async () => {
     setState('loading');
-    setError(undefined);
 
     try {
-      const response = await getBootstrapStatus();
-      if (!response.ok || !response.data) {
-        setState('error');
-        setError(response.message || '无法读取系统初始化状态');
-        return;
-      }
-
-      setState(response.data.voRequiresAdminInitialization ? 'required' : 'ready');
+      const status = await getBootstrapStatus(i18n.t('bootstrap.error.statusFallback'));
+      setState(status.voRequiresAdminInitialization ? 'required' : 'ready');
     } catch (err) {
       log.error('bootstrap', '读取系统初始化状态失败', err);
       setState('error');
-      setError(err instanceof Error ? err.message : '无法读取系统初始化状态');
     }
-  }, []);
+  }, [i18n]);
 
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  useEffect(() => {
+    if (state === 'loading') {
+      document.title = t('bootstrap.documentTitle.checking');
+    } else if (state === 'error') {
+      document.title = t('bootstrap.documentTitle.error');
+    }
+  }, [state, t]);
 
   if (state === 'ready') {
     return <>{children}</>;
   }
 
   if (state === 'required') {
-    return <FirstAdminBootstrapPage />;
+    return <FirstAdminBootstrapPage onInitializationUnavailable={loadStatus} />;
   }
 
   if (state === 'error') {
     return (
       <div className={styles.page}>
         <section className={styles.panel}>
-          <p className={styles.kicker}>系统初始化</p>
-          <h1>无法确认初始化状态</h1>
-          <p className={styles.description}>{error}</p>
+          <p className={styles.kicker}>{t('bootstrap.kicker.systemInitialization')}</p>
+          <h1>{t('bootstrap.status.errorTitle')}</h1>
+          <p className={styles.description}>{t('bootstrap.error.statusFallback')}</p>
           <button type="button" className={styles.primaryButton} onClick={() => void loadStatus()}>
-            重试
+            {t('common.retry')}
           </button>
         </section>
       </div>
@@ -64,52 +66,67 @@ export function BootstrapGate({ children }: BootstrapGateProps) {
   return (
     <div className={styles.page}>
       <section className={styles.panel}>
-        <p className={styles.kicker}>系统初始化</p>
-        <h1>正在检查初始化状态</h1>
-        <p className={styles.description}>请稍候。</p>
+        <p className={styles.kicker}>{t('bootstrap.kicker.systemInitialization')}</p>
+        <h1>{t('bootstrap.status.checkingTitle')}</h1>
+        <p className={styles.description}>{t('bootstrap.status.checkingDescription')}</p>
       </section>
     </div>
   );
 }
 
-function FirstAdminBootstrapPage() {
+interface FirstAdminBootstrapPageProps {
+  onInitializationUnavailable: () => Promise<void>;
+}
+
+function FirstAdminBootstrapPage({ onInitializationUnavailable }: FirstAdminBootstrapPageProps) {
+  const { t, i18n } = useTranslation();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<string>();
+  const [messageKey, setMessageKey] = useState<string>();
   const [createdAdmin, setCreatedAdmin] = useState<{ displayName: string; email: string }>();
 
   useEffect(() => {
-    document.title = '初始化管理员';
-  }, []);
+    document.title = createdAdmin
+      ? t('bootstrap.documentTitle.completed')
+      : t('bootstrap.documentTitle.required');
+  }, [createdAdmin, t]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setSubmitting(true);
-    setMessage(undefined);
+    setMessageKey(undefined);
 
     try {
-      const response = await createFirstAdministrator({
-        displayName,
-        email,
-        password,
-        confirmPassword,
-      });
-
-      if (!response.ok || !response.data) {
-        setMessage(response.message || '初始化失败');
-        return;
-      }
+      const response = await createFirstAdministrator(
+        {
+          displayName,
+          email,
+          password,
+          confirmPassword,
+        },
+        t('bootstrap.error.createFallback'),
+      );
 
       setCreatedAdmin({
-        displayName: response.data.voDisplayName,
-        email: response.data.voEmail,
+        displayName: response.voDisplayName,
+        email: response.voEmail,
       });
     } catch (err) {
       log.error('bootstrap', '创建首个管理员失败', err);
-      setMessage(err instanceof Error ? err.message : '初始化失败');
+      if (err instanceof ApiResponseError && err.code === 'Bootstrap.AlreadyInitialized') {
+        await onInitializationUnavailable();
+        return;
+      }
+
+      const stableMessageKey = err instanceof ApiResponseError
+        && err.messageKey?.startsWith('error.bootstrap.')
+        && i18n.exists(err.messageKey)
+        ? err.messageKey
+        : 'bootstrap.error.createFallback';
+      setMessageKey(stableMessageKey);
     } finally {
       setSubmitting(false);
     }
@@ -119,13 +136,16 @@ function FirstAdminBootstrapPage() {
     return (
       <div className={styles.page}>
         <section className={styles.panel}>
-          <p className={styles.kicker}>系统初始化</p>
-          <h1>管理员已创建</h1>
+          <p className={styles.kicker}>{t('bootstrap.kicker.systemInitialization')}</p>
+          <h1>{t('bootstrap.completed.title')}</h1>
           <p className={styles.description}>
-            管理员 {createdAdmin.displayName} 已创建。使用邮箱 {createdAdmin.email} 登录后即可进入工作台和管理入口。
+            {t('bootstrap.completed.description', {
+              displayName: createdAdmin.displayName,
+              email: createdAdmin.email,
+            })}
           </p>
           <button type="button" className={styles.primaryButton} onClick={() => redirectToLogin()}>
-            登录
+            {t('bootstrap.action.login')}
           </button>
         </section>
       </div>
@@ -135,15 +155,15 @@ function FirstAdminBootstrapPage() {
   return (
     <div className={styles.page}>
       <section className={styles.panel}>
-        <p className={styles.kicker}>首次部署</p>
-        <h1>创建首个管理员</h1>
+        <p className={styles.kicker}>{t('bootstrap.kicker.firstDeployment')}</p>
+        <h1>{t('bootstrap.form.title')}</h1>
         <p className={styles.description}>
-          当前系统尚无管理员账号。请设置管理员展示名、邮箱和强密码，初始化完成后默认账号入口会关闭。
+          {t('bootstrap.form.description')}
         </p>
 
         <form className={styles.form} onSubmit={handleSubmit}>
           <label className={styles.field}>
-            <span>展示名</span>
+            <span>{t('bootstrap.field.displayName')}</span>
             <input
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
@@ -152,11 +172,11 @@ function FirstAdminBootstrapPage() {
               maxLength={24}
               required
             />
-            <span className={styles.fieldHint}>展示名会作为公开身份展示，后续修改有次数和频率限制。</span>
+            <span className={styles.fieldHint}>{t('bootstrap.field.displayNameHint')}</span>
           </label>
 
           <label className={styles.field}>
-            <span>邮箱</span>
+            <span>{t('bootstrap.field.email')}</span>
             <input
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -167,7 +187,7 @@ function FirstAdminBootstrapPage() {
           </label>
 
           <label className={styles.field}>
-            <span>密码</span>
+            <span>{t('bootstrap.field.password')}</span>
             <input
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -179,7 +199,7 @@ function FirstAdminBootstrapPage() {
           </label>
 
           <label className={styles.field}>
-            <span>确认密码</span>
+            <span>{t('bootstrap.field.confirmPassword')}</span>
             <input
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
@@ -190,12 +210,12 @@ function FirstAdminBootstrapPage() {
             />
           </label>
 
-          <p className={styles.passwordRule}>密码至少 12 位，并包含大写字母、小写字母、数字和特殊字符。</p>
+          <p className={styles.passwordRule}>{t('bootstrap.form.passwordRule')}</p>
 
-          {message && <p className={styles.error}>{message}</p>}
+          {messageKey && <p className={styles.error}>{t(messageKey)}</p>}
 
           <button type="submit" className={styles.primaryButton} disabled={submitting}>
-            {submitting ? '正在初始化...' : '创建管理员'}
+            {submitting ? t('bootstrap.action.creating') : t('bootstrap.action.create')}
           </button>
         </form>
       </section>

@@ -34,7 +34,10 @@ import { AppBreadcrumb } from '../Breadcrumb';
 import { GlobalSearch, useGlobalSearchHotkey } from '../GlobalSearch';
 import { getActiveMenuKey, getSidebarRouteGroups, type ConsoleRouteIconKey } from '@/router/routeMeta';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
+import { ClientBackLink } from '../ClientBackLink';
 import './AdminLayout.css';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
 
 const { Header, Sider, Content } = Layout;
 
@@ -82,6 +85,7 @@ export interface AdminLayoutProps {
 }
 
 export function AdminLayout({ children }: AdminLayoutProps) {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(() => isMobileSidebarLayout());
   const [isMobileLayout, setIsMobileLayout] = useState(() => isMobileSidebarLayout());
   const [searchVisible, setSearchVisible] = useState(false);
@@ -89,14 +93,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading } = useUser();
+  const unknownUserLabel = t('common.unknownUser');
   const displayUserName = user
-    ? resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, '未知用户'))
-      || resolveVisibleUserDisplayName(user, '未知用户')
-    : '未知用户';
+    ? resolveVisibleUserHandle(user, resolveVisibleUserDisplayName(user, unknownUserLabel))
+      || resolveVisibleUserDisplayName(user, unknownUserLabel)
+    : unknownUserLabel;
 
   useGlobalSearchHotkey(() => setSearchVisible(true));
 
-  const sidebarGroups = useMemo(() => getSidebarRouteGroups(user), [user]);
+  const sidebarGroups = useMemo(
+    () => getSidebarRouteGroups(user, t),
+    [t, user]
+  );
   const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const activeMenuKey = getActiveMenuKey(location.pathname);
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(
@@ -126,25 +134,25 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     const definitions = [
       {
         key: 'overview',
-        label: '总览',
+        label: t('console.mobile.overview'),
         icon: <DashboardOutlined />,
         routeKeys: ['dashboard'],
       },
       {
         key: 'governance',
-        label: '治理',
+        label: t('console.mobile.governance'),
         icon: <SafetyOutlined />,
         routeKeys: ['moderation', 'experience'],
       },
       {
         key: 'commerce',
-        label: '交易',
+        label: t('console.mobile.commerce'),
         icon: <ShoppingOutlined />,
         routeKeys: ['orders', 'products', 'coins'],
       },
       {
         key: 'access',
-        label: '权限',
+        label: t('console.mobile.access'),
         icon: <TeamOutlined />,
         routeKeys: ['users', 'roles'],
       },
@@ -163,7 +171,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       }),
       {
         key: 'more',
-        label: '更多',
+        label: t('console.mobile.more'),
         icon: <AppstoreOutlined />,
         path: undefined,
         active: Boolean(activeMenuKey) && !highFrequencyMobileRouteKeys.includes(activeMenuKey),
@@ -171,18 +179,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         isMore: true,
       },
     ];
-  }, [activeMenuKey, sidebarRoutes]);
+  }, [activeMenuKey, sidebarRoutes, t]);
 
   const userMenuItems: MenuProps['items'] = [
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: '个人信息',
+      label: t('console.user.profile'),
     },
     {
       key: 'settings',
       icon: <SettingOutlined />,
-      label: '设置',
+      label: t('console.user.settings'),
     },
     {
       type: 'divider',
@@ -190,7 +198,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: '退出登录',
+      label: t('console.user.logout'),
       danger: true,
     },
   ];
@@ -299,7 +307,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           {!collapsed ? (
               <span className="admin-logo-copy">
                 <span className="admin-logo-title">Radish Console</span>
-                <span className="admin-logo-subtitle">治理工作台</span>
+                <span className="admin-logo-subtitle">{t('console.brand.subtitle')}</span>
               </span>
           ) : null}
         </div>
@@ -332,8 +340,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                 />
               )
             )}
+            <ClientBackLink />
           </div>
           <div className="admin-header-right">
+            <LanguageSwitcher />
             <SearchOutlined
               className="admin-search-icon"
               onClick={() => setSearchVisible(true)}
@@ -352,7 +362,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   src={getAvatarUrl(user?.voAvatarUrl)}
                 />
                 <span className="admin-username">
-                  {loading ? '加载中...' : displayUserName}
+                  {loading ? t('common.loading') : displayUserName}
                 </span>
               </div>
             </Dropdown>
@@ -365,7 +375,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </Layout>
 
       {isMobileLayout ? (
-        <nav className="admin-mobile-nav" aria-label="Console 移动高频导航">
+        <nav className="admin-mobile-nav" aria-label={t('console.mobile.navLabel')}>
           {mobileNavItems.map((item) => (
             <button
               key={item.key}
@@ -394,24 +404,24 @@ export function AdminLayout({ children }: AdminLayoutProps) {
           <button
             className="admin-mobile-functions__backdrop"
             type="button"
-            aria-label="关闭全部功能"
+            aria-label={t('console.mobile.closeAll')}
             onClick={() => setMobileFunctionsOpen(false)}
           />
           <section
             className="admin-mobile-functions__panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Console 全部功能"
+            aria-label={t('console.mobile.allTitle')}
           >
             <div className="admin-mobile-functions__header">
               <div>
-                <h2>全部功能</h2>
-                <p>按当前账号权限显示 Console 可访问页面。</p>
+                <h2>{t('console.mobile.allTitle')}</h2>
+                <p>{t('console.mobile.allDescription')}</p>
               </div>
               <button
                 className="admin-mobile-functions__close"
                 type="button"
-                aria-label="关闭全部功能"
+                aria-label={t('console.mobile.closeAll')}
                 onClick={() => setMobileFunctionsOpen(false)}
               >
                 <CloseOutlined />

@@ -1,7 +1,10 @@
+using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Localization;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Api.Resources;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
@@ -23,6 +26,25 @@ public class UserFollowControllerTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
+        Assert.Equal("UserFollow.SelfFollowRejected", result.Code);
+        Assert.Equal("error.user_follow.self_follow_rejected", result.MessageKey);
+    }
+
+    [Fact]
+    public async Task Follow_Should_Return_Stable_NotFound_When_Target_Is_Unavailable()
+    {
+        var serviceMock = CreateServiceMock();
+        serviceMock
+            .Setup(s => s.FollowAsync(10001, 20002, 0, "Tester"))
+            .ThrowsAsync(new InvalidOperationException("目标用户不存在或不可用"));
+        var controller = CreateController(serviceMock.Object);
+
+        var result = await controller.Follow(new FollowUserDto { TargetUserId = 20002 });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("UserFollow.TargetUnavailable", result.Code);
+        Assert.Equal("error.user_follow.target_unavailable", result.MessageKey);
     }
 
     [Fact]
@@ -160,6 +182,8 @@ public class UserFollowControllerTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
+        Assert.Equal("UserFollow.InvalidStreamType", result.Code);
+        Assert.Equal("error.user_follow.invalid_stream_type", result.MessageKey);
     }
 
     private static UserFollowController CreateController(IUserFollowService followService)
@@ -172,11 +196,23 @@ public class UserFollowControllerTest
             TenantId = 0
         });
 
-        return new UserFollowController(followService, currentUserAccessorMock.Object);
+        return new UserFollowController(
+            followService,
+            currentUserAccessorMock.Object,
+            CreateErrorsLocalizer());
     }
 
     private static Mock<IUserFollowService> CreateServiceMock()
     {
         return new Mock<IUserFollowService>(MockBehavior.Strict);
+    }
+
+    private static IStringLocalizer<Errors> CreateErrorsLocalizer()
+    {
+        var localizerMock = new Mock<IStringLocalizer<Errors>>();
+        localizerMock
+            .Setup(localizer => localizer[It.IsAny<string>()])
+            .Returns((string key) => new LocalizedString(key, key, resourceNotFound: true));
+        return localizerMock.Object;
     }
 }

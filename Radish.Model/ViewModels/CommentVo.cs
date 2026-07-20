@@ -81,6 +81,11 @@ public class CommentVo
     public string? VoAuthorAvatarUrl { get; set; }
 
     /// <summary>
+    /// 作者当前公开身份装饰
+    /// </summary>
+    public UserAdornmentVo? VoAuthorAdornment { get; set; }
+
+    /// <summary>
     /// 点赞次数
     /// </summary>
     public int VoLikeCount { get; set; }

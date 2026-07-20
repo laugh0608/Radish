@@ -12,7 +12,7 @@
   padding: 22px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   border: 1px solid var(--rx-border-strong);
   padding: 0 14px;
   border-radius: var(--rx-radius-pill);
@@ -113,7 +113,7 @@
   gap: 6px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-pill);
-  background: color-mix(in srgb, var(--rx-bg-surface) 82%, white 18%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 82%, var(--theme-surface-highlight) 18%);
   color: var(--rx-text-secondary);
   padding: 0 10px;
 }
@@ -171,7 +171,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--rx-radius-pill);
-  background: color-mix(in srgb, var(--rx-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   color: var(--rx-brand-primary);
   font-size: 13px;
   font-weight: 900;
@@ -184,7 +184,7 @@
 
 .orderCard {
   display: block;
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border-radius: var(--rx-radius-card);
   padding: 18px;
   box-shadow: var(--theme-shadow-soft);
@@ -235,7 +235,7 @@
   font-weight: 800;
   padding: 4px 8px;
   border-radius: var(--rx-radius-pill);
-  background: color-mix(in srgb, var(--rx-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 72%, var(--theme-surface-highlight) 28%);
 }
 
 .orderContent {
@@ -265,7 +265,7 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-brand-soft) 64%, white 36%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 64%, var(--theme-surface-highlight) 36%);
   color: var(--rx-brand-primary);
   flex: 0 0 auto;
 }

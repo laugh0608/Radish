@@ -1,6 +1,7 @@
-import { useEffect, type MouseEvent } from 'react';
+import { useEffect, type MouseEvent, type ReactNode } from 'react';
 import { Icon } from '@radish/ui/icon';
 import styles from './WebShellHeader.module.css';
+import { useTranslation } from 'react-i18next';
 
 export type WebShellVariant = 'public' | 'private';
 
@@ -11,6 +12,7 @@ export interface WebShellNavItem {
   icon: string;
   avatarUrl?: string | null;
   avatarText?: string;
+  badgeCount?: number;
   onClick?: () => void;
 }
 
@@ -23,24 +25,11 @@ interface WebShellHeaderProps {
   activeKey?: string;
   navItems?: WebShellNavItem[];
   actionItems?: WebShellNavItem[];
+  actionSlot?: ReactNode;
   mobileNavItems?: WebShellNavItem[];
   hideMobileNav?: boolean;
+  navigationLocked?: boolean;
 }
-
-const productNavItems: WebShellNavItem[] = [
-  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
-  { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'chat', label: '聊天', href: '/messages', icon: 'mdi:message-text-outline' },
-  { key: 'more', label: '更多', href: '/workbench', icon: 'mdi:dots-grid' },
-];
-
-const productMobileNavItems: WebShellNavItem[] = [
-  { key: 'discover', label: '发现', href: '/discover', icon: 'mdi:compass-outline' },
-  { key: 'forum', label: '论坛', href: '/forum', icon: 'mdi:forum-outline' },
-  { key: 'chat', label: '聊天', href: '/messages', icon: 'mdi:message-text-outline' },
-  { key: 'more', label: '更多', href: '/workbench', icon: 'mdi:dots-grid' },
-  { key: 'me', label: '我的', href: '/me', icon: 'mdi:account-circle-outline' },
-];
 
 function shouldHandleShellLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return !event.defaultPrevented
@@ -166,12 +155,20 @@ function resolveActiveKey(variant: WebShellVariant): string {
   return variant === 'private' ? 'more' : 'discover';
 }
 
-function getDefaultNavItems(): WebShellNavItem[] {
-  return productNavItems;
+function getDefaultNavItems(t: (key: string) => string): WebShellNavItem[] {
+  return [
+    { key: 'discover', label: t('public.shell.nav.discover'), href: '/discover', icon: 'mdi:compass-outline' },
+    { key: 'forum', label: t('public.shell.nav.forum'), href: '/forum', icon: 'mdi:forum-outline' },
+    { key: 'chat', label: t('public.shell.nav.chat'), href: '/messages', icon: 'mdi:message-text-outline' },
+    { key: 'more', label: t('public.shell.nav.more'), href: '/workbench', icon: 'mdi:dots-grid' },
+  ];
 }
 
-function getDefaultMobileNavItems(): WebShellNavItem[] {
-  return productMobileNavItems;
+function getDefaultMobileNavItems(t: (key: string) => string): WebShellNavItem[] {
+  return [
+    ...getDefaultNavItems(t),
+    { key: 'me', label: t('public.shell.nav.me'), href: '/me', icon: 'mdi:account-circle-outline' },
+  ];
 }
 
 interface WebShellLinkProps {
@@ -179,17 +176,26 @@ interface WebShellLinkProps {
   className: string;
   activeClassName: string;
   isActive: boolean;
+  navigationLocked: boolean;
 }
 
-function WebShellLink({ item, className, activeClassName, isActive }: WebShellLinkProps) {
+function WebShellLink({ item, className, activeClassName, isActive, navigationLocked }: WebShellLinkProps) {
+  const badgeCount = Math.max(0, item.badgeCount ?? 0);
+  const badgeLabel = badgeCount > 99 ? '99+' : String(badgeCount);
   return (
     <a
       className={`${className} ${isActive ? activeClassName : ''}`}
       href={item.href}
       aria-current={isActive ? 'page' : undefined}
-      title={item.label}
+      aria-disabled={navigationLocked || undefined}
+      title={badgeCount > 0 ? `${item.label} (${badgeLabel})` : item.label}
       onClick={(event) => {
         if (!shouldHandleShellLinkClick(event)) {
+          return;
+        }
+
+        if (navigationLocked) {
+          event.preventDefault();
           return;
         }
 
@@ -211,7 +217,12 @@ function WebShellLink({ item, className, activeClassName, isActive }: WebShellLi
       ) : (
         <Icon icon={item.icon} size={18} />
       )}
-      <span>{item.label}</span>
+      <span className={styles.linkLabel}>{item.label}</span>
+      {badgeCount > 0 && (
+        <span className={styles.linkBadge} aria-label={`${item.label} ${badgeLabel}`}>
+          {badgeLabel}
+        </span>
+      )}
     </a>
   );
 }
@@ -225,12 +236,15 @@ export function WebShellHeader({
   activeKey,
   navItems,
   actionItems,
+  actionSlot,
   mobileNavItems,
   hideMobileNav = false,
+  navigationLocked = false,
 }: WebShellHeaderProps) {
+  const { t } = useTranslation();
   const resolvedActiveKey = normalizeActiveKey(activeKey ?? resolveActiveKey(variant));
-  const resolvedNavItems = navItems ?? getDefaultNavItems();
-  const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems();
+  const resolvedNavItems = navItems ?? getDefaultNavItems(t);
+  const resolvedMobileNavItems = mobileNavItems ?? getDefaultMobileNavItems(t);
   const resolvedActionItems = actionItems ?? [];
   const headerClassName = `${styles.header} ${variant === 'private' ? styles.privateHeader : styles.publicHeader}`;
   const actionRailClassName = styles.actionRail;
@@ -251,7 +265,7 @@ export function WebShellHeader({
     <>
       <header className={headerClassName}>
         <div className={styles.inner}>
-          <button type="button" className={styles.brand} onClick={onBrandClick}>
+          <button type="button" className={styles.brand} onClick={onBrandClick} disabled={navigationLocked}>
             <span className={styles.brandMark}>{brandMark}</span>
             <span className={styles.brandCopy}>
               <span className={styles.brandName}>{brandName}</span>
@@ -259,7 +273,7 @@ export function WebShellHeader({
             </span>
           </button>
 
-          <nav className={styles.navRail} aria-label="产品导航">
+          <nav className={styles.navRail} aria-label={t('public.shell.navLabel')}>
             {resolvedNavItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -267,11 +281,21 @@ export function WebShellHeader({
                 className={styles.navItem}
                 activeClassName={styles.navItemActive}
                 isActive={item.key === resolvedActiveKey}
+                navigationLocked={navigationLocked}
               />
             ))}
           </nav>
 
-          <div className={actionRailClassName} aria-label="页面动作">
+          <div className={actionRailClassName} aria-label={t('public.shell.actionsLabel')}>
+            {actionSlot && (
+              <div
+                className={`${styles.actionSlot} ${navigationLocked ? styles.actionSlotLocked : ''}`}
+                aria-disabled={navigationLocked || undefined}
+                inert={navigationLocked || undefined}
+              >
+                {actionSlot}
+              </div>
+            )}
             {resolvedActionItems.map((item) => (
               <WebShellLink
                 key={item.key}
@@ -279,6 +303,7 @@ export function WebShellHeader({
                 className={styles.actionItem}
                 activeClassName={styles.actionItemActive}
                 isActive={item.key === resolvedActiveKey}
+                navigationLocked={navigationLocked}
               />
             ))}
           </div>
@@ -286,7 +311,7 @@ export function WebShellHeader({
       </header>
 
       {!hideMobileNav && (
-        <nav className={styles.mobileTabBar} aria-label="产品移动导航" data-web-mobile-nav="true">
+        <nav className={styles.mobileTabBar} aria-label={t('public.shell.mobileNavLabel')} data-web-mobile-nav="true">
           {resolvedMobileNavItems.map((item) => (
             <WebShellLink
               key={item.key}
@@ -294,6 +319,7 @@ export function WebShellHeader({
               className={styles.mobileTab}
               activeClassName={styles.mobileTabActive}
               isActive={item.key === resolvedActiveKey}
+              navigationLocked={navigationLocked}
             />
           ))}
         </nav>

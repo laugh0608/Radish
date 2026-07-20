@@ -1,6 +1,8 @@
 using System;
+using System.Data;
 using System.IO;
 using System.Reflection;
+using Moq;
 using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.Extension.AopExtension;
@@ -150,6 +152,34 @@ public class SqlSugarAopTests
 
         var result = method.Invoke(null, [sql]);
         result.ShouldBe(expectedTableName);
+    }
+
+    [Fact(DisplayName = "SQLite PRAGMA 应按物理连接只初始化一次")]
+    public void ApplySqlitePragmas_ShouldInitializeSameConnectionOnlyOnce()
+    {
+        var connection = new Mock<IDbConnection>();
+        var command = new Mock<IDbCommand>();
+        var connectionString = $"Data Source=pragma-{Guid.NewGuid():N}.db";
+        connection.SetupGet(item => item.State).Returns(ConnectionState.Open);
+        connection.SetupGet(item => item.ConnectionString).Returns(connectionString);
+        connection.Setup(item => item.CreateCommand()).Returns(command.Object);
+        command.Setup(item => item.ExecuteNonQuery()).Returns(0);
+        command.Setup(item => item.ExecuteScalar()).Returns("wal");
+        var config = new ConnectionConfig
+        {
+            ConfigId = $"pragma-{Guid.NewGuid():N}",
+            ConnectionString = connectionString,
+            DbType = SqlSugar.DbType.Sqlite
+        };
+        var method = typeof(SqlSugarSetup).GetMethod(
+            "ApplySqlitePragmas",
+            BindingFlags.NonPublic | BindingFlags.Static);
+        method.ShouldNotBeNull();
+
+        method.Invoke(null, [connection.Object, config]);
+        method.Invoke(null, [connection.Object, config]);
+
+        connection.Verify(item => item.CreateCommand(), Times.Exactly(3));
     }
 
     [Fact(DisplayName = "内容根目录中的 csproj 应优先决定日志项目名")]

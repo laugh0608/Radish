@@ -1,4 +1,6 @@
-import { type ChangeEvent, useEffect, useRef, useState } from 'react';
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import {
   AntInput as Input,
   AntModal as Modal,
@@ -55,96 +57,43 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import {
+  DOCUMENT_STATUS,
+  DOCUMENT_VISIBILITY,
+  formatDocumentDateTime,
+  formatDocumentNumber,
+  getDocumentAccessSummary,
+  getDocumentSourceTypeText,
+  getDocumentStatusText,
+  getDocumentSummary,
+  getDocumentVisibilityText,
+} from './documentGovernancePresentation';
 import '../adminForm.css';
 import '../adminFeature.css';
 import './DocumentGovernancePage.css';
 
-const DOCUMENT_STATUS = {
-  draft: 0,
-  published: 1,
-  archived: 2,
-} as const;
-
-const DOCUMENT_VISIBILITY = {
-  public: 1,
-  authenticated: 2,
-  restricted: 3,
-} as const;
-
-const statusOptions = [
-  { label: '全部状态', value: 'all' },
-  { label: '草稿', value: String(DOCUMENT_STATUS.draft) },
-  { label: '已发布', value: String(DOCUMENT_STATUS.published) },
-  { label: '已归档', value: String(DOCUMENT_STATUS.archived) },
-];
-
-const visibilityOptions = [
-  { label: '全部可见性', value: 'all' },
-  { label: '公开', value: String(DOCUMENT_VISIBILITY.public) },
-  { label: '登录可见', value: String(DOCUMENT_VISIBILITY.authenticated) },
-  { label: '受限', value: String(DOCUMENT_VISIBILITY.restricted) },
-];
-
-const sourceTypeOptions = [
-  { label: '全部来源', value: 'all' },
-  { label: '手写文档', value: 'Custom' },
-  { label: '导入文档', value: 'Imported' },
-  { label: '内置文档', value: 'BuiltIn' },
-];
-
-const deletedOptions = [
-  { label: '未删除', value: 'active' },
-  { label: '含回收站', value: 'all' },
-  { label: '仅回收站', value: 'deleted' },
-];
-
-function getStatusTag(status: number) {
+function getStatusTag(status: number, t: TFunction) {
   if (status === DOCUMENT_STATUS.published) {
-    return <Tag color="success">已发布</Tag>;
+    return <Tag color="success">{getDocumentStatusText(status, t)}</Tag>;
   }
 
   if (status === DOCUMENT_STATUS.archived) {
-    return <Tag color="default">已归档</Tag>;
+    return <Tag color="default">{getDocumentStatusText(status, t)}</Tag>;
   }
 
-  return <Tag color="warning">草稿</Tag>;
+  return <Tag color="warning">{getDocumentStatusText(status, t)}</Tag>;
 }
 
-function getVisibilityTag(visibility: number) {
+function getVisibilityTag(visibility: number, t: TFunction) {
   if (visibility === DOCUMENT_VISIBILITY.public) {
-    return <Tag color="green">公开</Tag>;
+    return <Tag color="green">{getDocumentVisibilityText(visibility, t)}</Tag>;
   }
 
   if (visibility === DOCUMENT_VISIBILITY.restricted) {
-    return <Tag color="red">受限</Tag>;
+    return <Tag color="red">{getDocumentVisibilityText(visibility, t)}</Tag>;
   }
 
-  return <Tag color="blue">登录可见</Tag>;
-}
-
-function getSourceTypeText(sourceType: string) {
-  if (sourceType === 'BuiltIn') {
-    return '内置';
-  }
-
-  if (sourceType === 'Imported') {
-    return '导入';
-  }
-
-  return '手写';
-}
-
-function formatDateTime(value?: string | null) {
-  if (!value) {
-    return '-';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return parsed.toLocaleString('zh-CN', { hour12: false });
+  return <Tag color="blue">{getDocumentVisibilityText(visibility, t)}</Tag>;
 }
 
 function splitAccessList(rawValue: string) {
@@ -173,51 +122,33 @@ function canMaintainDocument(record: WikiDocumentVo | WikiDocumentDetailVo | nul
   return Boolean(record) && !record?.voIsDeleted && !isBuiltInDocument(record);
 }
 
-function getStatusText(status: number) {
-  if (status === DOCUMENT_STATUS.published) {
-    return '已发布';
-  }
-
-  if (status === DOCUMENT_STATUS.archived) {
-    return '已归档';
-  }
-
-  return '草稿';
-}
-
-function getVisibilityText(visibility: number) {
-  if (visibility === DOCUMENT_VISIBILITY.public) {
-    return '公开';
-  }
-
-  if (visibility === DOCUMENT_VISIBILITY.restricted) {
-    return '受限';
-  }
-
-  return '登录可见';
-}
-
-function getDocumentSummary(record: WikiDocumentVo | WikiDocumentDetailVo) {
-  const summary = record.voSummary?.trim();
-  if (!summary) {
-    return '暂无摘要。';
-  }
-
-  return summary.length > 88 ? `${summary.slice(0, 88)}...` : summary;
-}
-
-function getAccessSummary(record: WikiDocumentVo | WikiDocumentDetailVo) {
-  if (record.voVisibility !== DOCUMENT_VISIBILITY.restricted) {
-    return getVisibilityText(record.voVisibility);
-  }
-
-  const roles = record.voAllowedRoles?.length ?? 0;
-  const permissions = record.voAllowedPermissions?.length ?? 0;
-  return `受限：${roles} 个角色 / ${permissions} 个权限`;
-}
-
 export const DocumentGovernancePage = () => {
-  useDocumentTitle('文档治理');
+  const { t, i18n } = useTranslation();
+  useDocumentTitle(t('documents.documentTitle'));
+
+  const statusOptions = useMemo(() => [
+    { label: t('documents.status.all'), value: 'all' },
+    { label: t('documents.status.draft'), value: String(DOCUMENT_STATUS.draft) },
+    { label: t('documents.status.published'), value: String(DOCUMENT_STATUS.published) },
+    { label: t('documents.status.archived'), value: String(DOCUMENT_STATUS.archived) },
+  ], [t]);
+  const visibilityOptions = useMemo(() => [
+    { label: t('documents.visibility.all'), value: 'all' },
+    { label: t('documents.visibility.public'), value: String(DOCUMENT_VISIBILITY.public) },
+    { label: t('documents.visibility.authenticated'), value: String(DOCUMENT_VISIBILITY.authenticated) },
+    { label: t('documents.visibility.restricted'), value: String(DOCUMENT_VISIBILITY.restricted) },
+  ], [t]);
+  const sourceTypeOptions = useMemo(() => [
+    { label: t('documents.source.all'), value: 'all' },
+    { label: t('documents.source.custom'), value: 'Custom' },
+    { label: t('documents.source.imported'), value: 'Imported' },
+    { label: t('documents.source.builtin'), value: 'BuiltIn' },
+  ], [t]);
+  const deletedOptions = useMemo(() => [
+    { label: t('documents.deleted.active'), value: 'active' },
+    { label: t('documents.deleted.all'), value: 'all' },
+    { label: t('documents.deleted.only'), value: 'deleted' },
+  ], [t]);
 
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(false);
@@ -292,7 +223,7 @@ export const DocumentGovernancePage = () => {
         sourceType: sourceTypeFilter === 'all' ? undefined : sourceTypeFilter,
         includeDeleted,
         deletedOnly,
-      });
+      }, t);
 
       setDocuments(page.data);
       setTotal(page.dataCount);
@@ -300,7 +231,7 @@ export const DocumentGovernancePage = () => {
       setPageSize(page.pageSize);
     } catch (error) {
       log.error('DocumentGovernancePage', '加载文档治理列表失败:', error);
-      message.error(error instanceof Error ? error.message : '加载文档治理列表失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.loadListFailed'));
     } finally {
       setLoading(false);
     }
@@ -320,11 +251,11 @@ export const DocumentGovernancePage = () => {
     setDetailDocument(null);
     setDetailLoading(true);
     try {
-      const detail = await getWikiGovernanceDetail(record.voId, true);
+      const detail = await getWikiGovernanceDetail(record.voId, true, t);
       setDetailDocument(detail);
     } catch (error) {
       log.error('DocumentGovernancePage', '加载文档详情失败:', error);
-      message.error(error instanceof Error ? error.message : '加载文档详情失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.loadDetailFailed'));
     } finally {
       setDetailLoading(false);
     }
@@ -343,7 +274,7 @@ export const DocumentGovernancePage = () => {
 
   const openAccessPolicy = (record: WikiDocumentVo) => {
     if (!canUpdatePermissions || record.voIsDeleted || isBuiltInDocument(record)) {
-      message.error('当前文档不可调整访问策略');
+      message.error(t('documents.feedback.accessUnavailable'));
       return;
     }
 
@@ -359,7 +290,7 @@ export const DocumentGovernancePage = () => {
     }
 
     if (!canUpdatePermissions || accessDocument.voIsDeleted || isBuiltInDocument(accessDocument)) {
-      message.error('当前文档不可调整访问策略');
+      message.error(t('documents.feedback.accessUnavailable'));
       return;
     }
 
@@ -367,7 +298,7 @@ export const DocumentGovernancePage = () => {
     const allowedPermissions = splitAccessList(accessPermissionsText);
     const visibility = Number(accessVisibility);
     if (visibility === DOCUMENT_VISIBILITY.restricted && allowedRoles.length === 0 && allowedPermissions.length === 0) {
-      message.error('受限文档至少需要配置一个角色或权限');
+      message.error(t('documents.feedback.restrictedAccessRequired'));
       return;
     }
 
@@ -377,13 +308,13 @@ export const DocumentGovernancePage = () => {
         visibility,
         allowedRoles,
         allowedPermissions,
-      });
-      message.success('访问策略已更新');
+      }, t);
+      message.success(t('documents.feedback.accessUpdated'));
       setAccessDocument(null);
       await loadDocuments();
     } catch (error) {
       log.error('DocumentGovernancePage', '更新文档访问策略失败:', error);
-      message.error(error instanceof Error ? error.message : '更新文档访问策略失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.accessUpdateFailed'));
     } finally {
       setAccessSaving(false);
     }
@@ -395,14 +326,14 @@ export const DocumentGovernancePage = () => {
     setRevisionDetail(null);
     setRevisionLoading(true);
     try {
-      const revisions = await getWikiRevisionList(record.voId);
+      const revisions = await getWikiRevisionList(record.voId, t);
       setRevisionItems(revisions);
       if (revisions[0]) {
         await loadRevisionDetail(revisions[0].voId);
       }
     } catch (error) {
       log.error('DocumentGovernancePage', '加载版本列表失败:', error);
-      message.error(error instanceof Error ? error.message : '加载版本列表失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.loadRevisionsFailed'));
     } finally {
       setRevisionLoading(false);
     }
@@ -411,11 +342,11 @@ export const DocumentGovernancePage = () => {
   const loadRevisionDetail = async (revisionId: LongId) => {
     setRevisionDetailLoading(true);
     try {
-      const detail = await getWikiRevisionDetail(revisionId);
+      const detail = await getWikiRevisionDetail(revisionId, t);
       setRevisionDetail(detail);
     } catch (error) {
       log.error('DocumentGovernancePage', '加载版本详情失败:', error);
-      message.error(error instanceof Error ? error.message : '加载版本详情失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.loadRevisionDetailFailed'));
     } finally {
       setRevisionDetailLoading(false);
     }
@@ -423,20 +354,20 @@ export const DocumentGovernancePage = () => {
 
   const handleRollback = async (revisionId: LongId) => {
     if (!canRollback || !revisionDocument || revisionDocument.voIsDeleted || isBuiltInDocument(revisionDocument)) {
-      message.error('当前版本不可回滚');
+      message.error(t('documents.feedback.rollbackUnavailable'));
       return;
     }
 
     await runDocumentAction(
       async () => {
-        await rollbackWikiRevision(revisionId);
+        await rollbackWikiRevision(revisionId, t);
         if (revisionDocument) {
-          const revisions = await getWikiRevisionList(revisionDocument.voId);
+          const revisions = await getWikiRevisionList(revisionDocument.voId, t);
           setRevisionItems(revisions);
         }
       },
-      '版本已回滚',
-      '回滚版本失败'
+      t('documents.feedback.rolledBack'),
+      t('documents.feedback.rollbackFailed')
     );
   };
 
@@ -448,23 +379,23 @@ export const DocumentGovernancePage = () => {
     }
 
     if (!canImport) {
-      message.error('无文档导入权限');
+      message.error(t('documents.feedback.importForbidden'));
       return;
     }
 
     if (!/\.(md|markdown|txt)$/i.test(file.name)) {
-      message.error('仅支持 .md、.markdown 或 .txt 文件');
+      message.error(t('documents.feedback.importUnsupported'));
       return;
     }
 
     try {
       setImporting(true);
-      const id = await importWikiMarkdown(file);
-      message.success(`Markdown 已导入，文档 ID：${id}`);
+      const id = await importWikiMarkdown(file, t);
+      message.success(t('documents.feedback.imported', { id }));
       await loadDocuments(1, pageSize);
     } catch (error) {
       log.error('DocumentGovernancePage', '导入 Markdown 失败:', error);
-      message.error(error instanceof Error ? error.message : '导入 Markdown 失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.importFailed'));
     } finally {
       setImporting(false);
     }
@@ -472,23 +403,23 @@ export const DocumentGovernancePage = () => {
 
   const handleExport = async (record: WikiDocumentVo) => {
     if (!canExport) {
-      message.error('无文档导出权限');
+      message.error(t('documents.feedback.exportForbidden'));
       return;
     }
 
     try {
-      const result = await exportWikiMarkdown(record.voId);
+      const result = await exportWikiMarkdown(record.voId, t);
       triggerDownload(result.blob, result.fileName);
-      message.success('Markdown 已导出');
+      message.success(t('documents.feedback.exported'));
     } catch (error) {
       log.error('DocumentGovernancePage', '导出 Markdown 失败:', error);
-      message.error(error instanceof Error ? error.message : '导出 Markdown 失败');
+      message.error(error instanceof Error ? error.message : t('documents.feedback.exportFailed'));
     }
   };
 
   const columns: TableColumnsType<WikiDocumentVo> = [
     {
-      title: '文档',
+      title: t('documents.table.document'),
       key: 'document',
       width: 280,
       fixed: 'left',
@@ -500,45 +431,45 @@ export const DocumentGovernancePage = () => {
       ),
     },
     {
-      title: '状态',
+      title: t('documents.table.status'),
       key: 'status',
       width: 110,
-      render: (_, record) => record.voIsDeleted ? <Tag color="default">回收站</Tag> : getStatusTag(record.voStatus),
+      render: (_, record) => record.voIsDeleted ? <Tag color="default">{t('documents.status.recycleBin')}</Tag> : getStatusTag(record.voStatus, t),
     },
     {
-      title: '可见性',
+      title: t('documents.table.visibility'),
       key: 'visibility',
       width: 120,
-      render: (_, record) => getVisibilityTag(record.voVisibility),
+      render: (_, record) => getVisibilityTag(record.voVisibility, t),
     },
     {
-      title: '来源',
+      title: t('documents.table.source'),
       key: 'sourceType',
       width: 100,
       render: (_, record) => (
-        <Tag color={isBuiltInDocument(record) ? 'purple' : 'default'}>{getSourceTypeText(record.voSourceType)}</Tag>
+        <Tag color={isBuiltInDocument(record) ? 'purple' : 'default'}>{getDocumentSourceTypeText(record.voSourceType, t)}</Tag>
       ),
     },
     {
-      title: '版本',
+      title: t('documents.table.version'),
       dataIndex: 'voVersion',
       key: 'voVersion',
       width: 90,
     },
     {
-      title: '发布时间',
+      title: t('documents.table.publishedAt'),
       key: 'voPublishedAt',
       width: 170,
-      render: (_, record) => formatDateTime(record.voPublishedAt),
+      render: (_, record) => formatDocumentDateTime(record.voPublishedAt, i18n.resolvedLanguage),
     },
     {
-      title: '更新时间',
+      title: t('documents.table.updatedAt'),
       key: 'voModifyTime',
       width: 170,
-      render: (_, record) => formatDateTime(record.voModifyTime ?? record.voCreateTime),
+      render: (_, record) => formatDocumentDateTime(record.voModifyTime ?? record.voCreateTime, i18n.resolvedLanguage),
     },
     {
-      title: '操作',
+      title: t('documents.table.actions'),
       key: 'actions',
       width: 420,
       fixed: 'right',
@@ -547,14 +478,14 @@ export const DocumentGovernancePage = () => {
         return (
           <Space size="small" wrap>
             <Button variant="ghost" size="small" icon={<EyeOutlined />} onClick={() => { void handleViewDetail(record); }}>
-              详情
+              {t('documents.actions.detail')}
             </Button>
             <Button variant="ghost" size="small" icon={<ClockCircleOutlined />} onClick={() => { void openRevisions(record); }}>
-              版本
+              {t('documents.actions.revisions')}
             </Button>
             {canExport ? (
               <Button variant="ghost" size="small" icon={<FileTextOutlined />} onClick={() => { void handleExport(record); }}>
-                导出
+                {t('documents.actions.export')}
               </Button>
             ) : null}
             {!record.voIsDeleted && !isBuiltInDocument(record) && canPublish && record.voStatus !== DOCUMENT_STATUS.published ? (
@@ -564,13 +495,13 @@ export const DocumentGovernancePage = () => {
                 icon={<CheckOutlined />}
                 onClick={() => {
                   void runDocumentAction(
-                    () => publishWikiDocument(record.voId),
-                    '文档已发布',
-                    '发布文档失败'
+                    () => publishWikiDocument(record.voId, t),
+                    t('documents.feedback.published'),
+                    t('documents.feedback.publishFailed')
                   );
                 }}
               >
-                发布
+                {t('documents.actions.publish')}
               </Button>
             ) : null}
             {!record.voIsDeleted && !isBuiltInDocument(record) && canPublish && record.voStatus !== DOCUMENT_STATUS.draft ? (
@@ -580,13 +511,13 @@ export const DocumentGovernancePage = () => {
                 icon={<CloseOutlined />}
                 onClick={() => {
                   void runDocumentAction(
-                    () => unpublishWikiDocument(record.voId),
-                    record.voStatus === DOCUMENT_STATUS.archived ? '文档已转回草稿' : '文档已下架',
-                    '下架文档失败'
+                    () => unpublishWikiDocument(record.voId, t),
+                    record.voStatus === DOCUMENT_STATUS.archived ? t('documents.feedback.backToDraft') : t('documents.feedback.unpublished'),
+                    t('documents.feedback.unpublishFailed')
                   );
                 }}
               >
-                {record.voStatus === DOCUMENT_STATUS.archived ? '转草稿' : '下架'}
+                {record.voStatus === DOCUMENT_STATUS.archived ? t('documents.actions.toDraft') : t('documents.actions.unpublish')}
               </Button>
             ) : null}
             {!record.voIsDeleted && !isBuiltInDocument(record) && canArchive && record.voStatus !== DOCUMENT_STATUS.archived ? (
@@ -596,18 +527,18 @@ export const DocumentGovernancePage = () => {
                 icon={<SyncOutlined />}
                 onClick={() => {
                   void runDocumentAction(
-                    () => archiveWikiDocument(record.voId),
-                    '文档已归档',
-                    '归档文档失败'
+                    () => archiveWikiDocument(record.voId, t),
+                    t('documents.feedback.archived'),
+                    t('documents.feedback.archiveFailed')
                   );
                 }}
               >
-                归档
+                {t('documents.actions.archive')}
               </Button>
             ) : null}
             {!writeDisabled && canUpdatePermissions ? (
               <Button variant="ghost" size="small" icon={<LockOutlined />} onClick={() => openAccessPolicy(record)}>
-                权限
+                {t('documents.actions.permissions')}
               </Button>
             ) : null}
             {record.voIsDeleted && !isBuiltInDocument(record) && canRestore ? (
@@ -617,31 +548,31 @@ export const DocumentGovernancePage = () => {
                 icon={<UnlockOutlined />}
                 onClick={() => {
                   void runDocumentAction(
-                    () => restoreWikiDocument(record.voId),
-                    '文档已恢复',
-                    '恢复文档失败'
+                    () => restoreWikiDocument(record.voId, t),
+                    t('documents.feedback.restored'),
+                    t('documents.feedback.restoreFailed')
                   );
                 }}
               >
-                恢复
+                {t('documents.actions.restore')}
               </Button>
             ) : null}
             {!writeDisabled && canDelete ? (
               <Popconfirm
-                title="移入回收站"
-                description="确定要把该文档移入回收站吗？"
-                okText="确认"
-                cancelText="取消"
+                title={t('documents.delete.title')}
+                description={t('documents.delete.description')}
+                okText={t('documents.actions.confirm')}
+                cancelText={t('documents.actions.cancel')}
                 onConfirm={() => {
                   void runDocumentAction(
-                    () => deleteWikiDocument(record.voId),
-                    '文档已移入回收站',
-                    '删除文档失败'
+                    () => deleteWikiDocument(record.voId, t),
+                    t('documents.feedback.deleted'),
+                    t('documents.feedback.deleteFailed')
                   );
                 }}
               >
                 <Button variant="danger" size="small" icon={<DeleteOutlined />}>
-                  删除
+                  {t('documents.actions.delete')}
                 </Button>
               </Popconfirm>
             ) : null}
@@ -669,7 +600,7 @@ export const DocumentGovernancePage = () => {
           disabled={importing}
           onClick={() => importInputRef.current?.click()}
         >
-          {importing ? '导入中...' : '导入 Markdown'}
+          {importing ? t('documents.actions.importing') : t('documents.actions.import')}
         </Button>
       ) : null}
       <Button
@@ -679,7 +610,7 @@ export const DocumentGovernancePage = () => {
           void loadDocuments();
         }}
       >
-        刷新
+        {t('documents.actions.refresh')}
       </Button>
     </>
   );
@@ -687,56 +618,58 @@ export const DocumentGovernancePage = () => {
   return (
     <div className="admin-feature-page document-governance-page">
       <ConsolePageHeader
-        eyebrow="文档治理"
-        title="文档治理"
-        description="治理文档发布状态、访问策略、版本回滚、导入导出与回收站。"
+        eyebrow={t('documents.page.eyebrow')}
+        title={t('documents.page.title')}
+        description={t('documents.page.description')}
         icon={<FileTextOutlined />}
         status={(
           <ConsoleStatusChip tone={canView ? 'success' : 'danger'}>
-            {canView ? '可查看' : '无权限'}
+            {canView ? t('documents.page.viewable') : t('documents.page.forbidden')}
           </ConsoleStatusChip>
         )}
         actions={documentHeaderActions}
       />
 
-      <ConsoleMetricGrid label="文档治理指标">
-        <ConsoleMetricCard label="当前页文档" value={documents.length} description="当前页可见文档" tone="info" />
-        <ConsoleMetricCard label="当前页已发布" value={publishedCount} description="已发布且未删除" tone="success" />
-        <ConsoleMetricCard label="当前页受限" value={restrictedCount} description="受限访问策略文档" tone="warning" />
-        <ConsoleMetricCard label="当前页内置" value={builtInCount} description="内置文档不可直接写入" />
+      <ConsoleMetricGrid label={t('documents.page.metricsAriaLabel')}>
+        <ConsoleMetricCard label={t('documents.metrics.documents')} value={formatDocumentNumber(documents.length, i18n.resolvedLanguage)} description={t('documents.metrics.documentsDescription')} tone="info" />
+        <ConsoleMetricCard label={t('documents.metrics.published')} value={formatDocumentNumber(publishedCount, i18n.resolvedLanguage)} description={t('documents.metrics.publishedDescription')} tone="success" />
+        <ConsoleMetricCard label={t('documents.metrics.restricted')} value={formatDocumentNumber(restrictedCount, i18n.resolvedLanguage)} description={t('documents.metrics.restrictedDescription')} tone="warning" />
+        <ConsoleMetricCard label={t('documents.metrics.builtIn')} value={formatDocumentNumber(builtInCount, i18n.resolvedLanguage)} description={t('documents.metrics.builtInDescription')} />
       </ConsoleMetricGrid>
 
-      <section className="governance-task-flow" aria-label="文档治理任务流">
+      <section className="governance-task-flow" aria-label={t('documents.page.flowAriaLabel')}>
         <div className="governance-task-flow__item">
           <span>1</span>
-          <strong>列表定位</strong>
-          <p>{total} 个匹配文档，当前页 {documents.length} 个；筛选条件先限定治理范围。</p>
+          <strong>{t('documents.flow.listTitle')}</strong>
+          <p>{t('documents.flow.listDescription', { total, current: documents.length })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>2</span>
-          <strong>发布状态</strong>
-          <p>当前页 {publishedCount} 个已发布、{draftCount} 个草稿、{archivedCount} 个归档，发布 / 下架继续走既有动作。</p>
+          <strong>{t('documents.flow.statusTitle')}</strong>
+          <p>{t('documents.flow.statusDescription', { published: publishedCount, draft: draftCount, archived: archivedCount })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>3</span>
-          <strong>访问策略</strong>
-          <p>{restrictedCount} 个受限文档；角色和权限名单只通过现有访问策略弹窗维护。</p>
+          <strong>{t('documents.flow.accessTitle')}</strong>
+          <p>{t('documents.flow.accessDescription', { count: restrictedCount })}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>4</span>
-          <strong>版本回看</strong>
-          <p>{governanceDocument ? `${getStatusText(governanceDocument.voStatus)}，当前证据 v${governanceDocument.voVersion}` : '选择文档后回看版本证据'}，回滚仅对可维护文档开放。</p>
+          <strong>{t('documents.flow.revisionTitle')}</strong>
+          <p>{governanceDocument
+            ? t('documents.flow.revisionSelected', { status: getDocumentStatusText(governanceDocument.voStatus, t), version: governanceDocument.voVersion })
+            : t('documents.flow.revisionEmpty')}{t('documents.flow.revisionSuffix')}</p>
         </div>
       </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选文档"
-            description="按标题、slug、状态、可见性、来源和回收站范围定位治理对象。"
+            title={t('documents.filter.title')}
+            description={t('documents.filter.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('documents.filter.active', { count: activeFilterCount }) : t('documents.filter.none')}
               </ConsoleStatusChip>
             )}
           >
@@ -744,7 +677,7 @@ export const DocumentGovernancePage = () => {
               <Input
                 allowClear
                 prefix={<SearchOutlined />}
-                placeholder="标题、slug、摘要、来源路径"
+                placeholder={t('documents.filter.placeholder')}
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
               />
@@ -775,81 +708,83 @@ export const DocumentGovernancePage = () => {
           </section>
         </main>
 
-        <aside className="admin-table-aside" aria-label="文档治理详情上下文">
+        <aside className="admin-table-aside" aria-label={t('documents.rail.ariaLabel')}>
           <div className="admin-feature-rail__header">
             <div>
-              <span className="admin-feature-rail__eyebrow">文档档案</span>
-              <h3>文档治理详情</h3>
+              <span className="admin-feature-rail__eyebrow">{t('documents.rail.eyebrow')}</span>
+              <h3>{t('documents.rail.title')}</h3>
             </div>
             <ConsoleStatusChip tone={canView ? 'success' : 'danger'}>
-              {canView ? '可查看' : '无权限'}
+              {canView ? t('documents.page.viewable') : t('documents.page.forbidden')}
             </ConsoleStatusChip>
           </div>
-          <p className="admin-feature-subtle">文档治理按列表定位、详情证据、访问策略和版本回滚分区承载，不替代作者态编辑器。</p>
+          <p className="admin-feature-subtle">{t('documents.rail.description')}</p>
           <div className="admin-feature-rail__list">
             <div className="admin-feature-rail__item">
-              <span>查询范围</span>
-              <strong>{activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '未筛选'}</strong>
+              <span>{t('documents.rail.queryScope')}</span>
+              <strong>{activeFilterCount > 0 ? t('documents.filter.active', { count: activeFilterCount }) : t('documents.filter.none')}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>发布治理</span>
-              <strong>{canPublish || canArchive ? '可处理发布 / 归档' : '仅查看发布状态'}</strong>
+              <span>{t('documents.rail.publishGovernance')}</span>
+              <strong>{canPublish || canArchive ? t('documents.rail.publishWritable') : t('documents.rail.publishReadOnly')}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>访问策略</span>
-              <strong>{canUpdatePermissions ? '可调整可见性' : '无访问策略权限'}</strong>
+              <span>{t('documents.rail.accessPolicy')}</span>
+              <strong>{canUpdatePermissions ? t('documents.rail.accessWritable') : t('documents.rail.accessReadOnly')}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>版本治理</span>
-              <strong>{canRollback ? '可回滚非当前版本' : '仅查看版本'}</strong>
+              <span>{t('documents.rail.revisionGovernance')}</span>
+              <strong>{canRollback ? t('documents.rail.revisionWritable') : t('documents.rail.revisionReadOnly')}</strong>
             </div>
             <div className="admin-feature-rail__item">
-              <span>回收站</span>
-              <strong>{deletedCount > 0 ? `当前页 ${deletedCount} 个` : '当前页无回收站文档'}</strong>
+              <span>{t('documents.rail.recycleBin')}</span>
+              <strong>{deletedCount > 0 ? t('documents.rail.recycleBinCount', { count: deletedCount }) : t('documents.rail.recycleBinEmpty')}</strong>
             </div>
           </div>
           {governanceDocument ? (
             <>
               <div className="admin-feature-rail__callout">
-                <span>当前文档</span>
+                <span>{t('documents.rail.currentDocument')}</span>
                 <strong>{governanceDocument.voTitle}</strong>
-                <p>{getDocumentSummary(governanceDocument)}</p>
+                <p>{getDocumentSummary(governanceDocument, t)}</p>
                 <Space wrap>
-                  {getStatusTag(governanceDocument.voStatus)}
-                  {getVisibilityTag(governanceDocument.voVisibility)}
-                  <Tag color={isBuiltInDocument(governanceDocument) ? 'purple' : 'default'}>{getSourceTypeText(governanceDocument.voSourceType)}</Tag>
-                  {governanceDocument.voIsDeleted ? <Tag color="default">回收站</Tag> : null}
+                  {getStatusTag(governanceDocument.voStatus, t)}
+                  {getVisibilityTag(governanceDocument.voVisibility, t)}
+                  <Tag color={isBuiltInDocument(governanceDocument) ? 'purple' : 'default'}>{getDocumentSourceTypeText(governanceDocument.voSourceType, t)}</Tag>
+                  {governanceDocument.voIsDeleted ? <Tag color="default">{t('documents.status.recycleBin')}</Tag> : null}
                 </Space>
               </div>
               <div className="admin-feature-rail__list">
                 <div className="admin-feature-rail__item">
-                  <span>访问策略</span>
-                  <strong>{getAccessSummary(governanceDocument)}</strong>
+                  <span>{t('documents.rail.accessPolicy')}</span>
+                  <strong>{getDocumentAccessSummary(governanceDocument, t)}</strong>
                 </div>
                 <div className="admin-feature-rail__item">
-                  <span>版本证据</span>
-                  <strong>{governanceDocumentRevisionCount > 0 ? `${governanceDocumentRevisionCount} 个版本，当前 v${governanceDocument.voVersion}` : `当前 v${governanceDocument.voVersion}`}</strong>
+                  <span>{t('documents.rail.revisionEvidence')}</span>
+                  <strong>{governanceDocumentRevisionCount > 0
+                    ? t('documents.rail.revisionWithCount', { versions: t('documents.count.versions', { count: governanceDocumentRevisionCount }), version: governanceDocument.voVersion })
+                    : t('documents.rail.currentVersion', { version: governanceDocument.voVersion })}</strong>
                 </div>
                 <div className="admin-feature-rail__item">
-                  <span>来源路径</span>
+                  <span>{t('documents.rail.sourcePath')}</span>
                   <strong>{governanceDocument.voSourcePath || governanceDocument.voSlug}</strong>
                 </div>
               </div>
               <div className="admin-feature-rail__actions">
                 <Button variant="ghost" size="small" icon={<EyeOutlined />} onClick={() => { void handleViewDetail(governanceDocument); }}>
-                  详情
+                  {t('documents.actions.detail')}
                 </Button>
                 <Button variant="ghost" size="small" icon={<ClockCircleOutlined />} onClick={() => { void openRevisions(governanceDocument); }}>
-                  版本
+                  {t('documents.actions.revisions')}
                 </Button>
                 {canUpdatePermissions && canMaintainDocument(governanceDocument) ? (
                   <Button variant="ghost" size="small" icon={<LockOutlined />} onClick={() => openAccessPolicy(governanceDocument)}>
-                    访问策略
+                    {t('documents.rail.accessPolicy')}
                   </Button>
                 ) : null}
                 {canExport ? (
                   <Button variant="ghost" size="small" icon={<FileTextOutlined />} onClick={() => { void handleExport(governanceDocument); }}>
-                    导出
+                    {t('documents.actions.export')}
                   </Button>
                 ) : null}
                 {canPublish && canMaintainDocument(governanceDocument) && governanceDocument.voStatus !== DOCUMENT_STATUS.published ? (
@@ -859,13 +794,13 @@ export const DocumentGovernancePage = () => {
                     icon={<CheckOutlined />}
                     onClick={() => {
                       void runDocumentAction(
-                        () => publishWikiDocument(governanceDocument.voId),
-                        '文档已发布',
-                        '发布文档失败'
+                        () => publishWikiDocument(governanceDocument.voId, t),
+                        t('documents.feedback.published'),
+                        t('documents.feedback.publishFailed')
                       );
                     }}
                   >
-                    发布
+                    {t('documents.actions.publish')}
                   </Button>
                 ) : null}
                 {canPublish && canMaintainDocument(governanceDocument) && governanceDocument.voStatus === DOCUMENT_STATUS.published ? (
@@ -875,25 +810,25 @@ export const DocumentGovernancePage = () => {
                     icon={<CloseOutlined />}
                     onClick={() => {
                       void runDocumentAction(
-                        () => unpublishWikiDocument(governanceDocument.voId),
-                        '文档已下架',
-                        '下架文档失败'
+                        () => unpublishWikiDocument(governanceDocument.voId, t),
+                        t('documents.feedback.unpublished'),
+                        t('documents.feedback.unpublishFailed')
                       );
                     }}
                   >
-                    下架
+                    {t('documents.actions.unpublish')}
                   </Button>
                 ) : null}
               </div>
             </>
           ) : (
-            <p className="admin-feature-rail__empty">当前页暂无文档，调整筛选条件后会形成治理详情上下文。</p>
+            <p className="admin-feature-rail__empty">{t('documents.rail.empty')}</p>
           )}
         </aside>
       </div>
 
       <Modal
-        title="文档详情"
+        title={t('documents.detail.title')}
         open={detailLoading || Boolean(detailDocument)}
         width={860}
         footer={null}
@@ -903,14 +838,14 @@ export const DocumentGovernancePage = () => {
         }}
       >
         {detailLoading ? (
-          <p className="admin-feature-subtle">正在加载文档详情...</p>
+          <p className="admin-feature-subtle">{t('documents.detail.loading')}</p>
         ) : detailDocument ? (
           <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
             <Space wrap>
-              {getStatusTag(detailDocument.voStatus)}
-              {getVisibilityTag(detailDocument.voVisibility)}
-              <Tag color={isBuiltInDocument(detailDocument) ? 'purple' : 'default'}>{getSourceTypeText(detailDocument.voSourceType)}</Tag>
-              {detailDocument.voIsDeleted ? <Tag color="default">回收站</Tag> : null}
+              {getStatusTag(detailDocument.voStatus, t)}
+              {getVisibilityTag(detailDocument.voVisibility, t)}
+              <Tag color={isBuiltInDocument(detailDocument) ? 'purple' : 'default'}>{getDocumentSourceTypeText(detailDocument.voSourceType, t)}</Tag>
+              {detailDocument.voIsDeleted ? <Tag color="default">{t('documents.status.recycleBin')}</Tag> : null}
             </Space>
             <div>
               <h3>{detailDocument.voTitle}</h3>
@@ -918,15 +853,15 @@ export const DocumentGovernancePage = () => {
             </div>
             <div className="admin-table-summary">
               <div className="admin-table-summary__item">
-                <span className="admin-table-summary__label">摘要</span>
+                <span className="admin-table-summary__label">{t('documents.detail.summary')}</span>
                 <span className="admin-table-summary__value">{detailDocument.voSummary || '-'}</span>
               </div>
               <div className="admin-table-summary__item">
-                <span className="admin-table-summary__label">来源路径</span>
+                <span className="admin-table-summary__label">{t('documents.detail.sourcePath')}</span>
                 <span className="admin-table-summary__value">{detailDocument.voSourcePath || '-'}</span>
               </div>
               <div className="admin-table-summary__item">
-                <span className="admin-table-summary__label">允许角色 / 权限</span>
+                <span className="admin-table-summary__label">{t('documents.detail.rolesAndPermissions')}</span>
                 <span className="admin-table-summary__value">
                   {(detailDocument.voAllowedRoles || []).join(', ') || '-'} / {(detailDocument.voAllowedPermissions || []).join(', ') || '-'}
                 </span>
@@ -938,11 +873,11 @@ export const DocumentGovernancePage = () => {
       </Modal>
 
       <Modal
-        title="文档访问策略"
+        title={t('documents.access.title')}
         open={Boolean(accessDocument)}
         width={640}
-        okText="保存"
-        cancelText="取消"
+        okText={t('documents.actions.save')}
+        cancelText={t('documents.actions.cancel')}
         confirmLoading={accessSaving}
         onOk={() => {
           void saveAccessPolicy();
@@ -950,9 +885,7 @@ export const DocumentGovernancePage = () => {
         onCancel={() => setAccessDocument(null)}
       >
         <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
-          <p className="admin-feature-subtle">
-            访问策略只影响文档可见性和受限访问列表，不修改正文、发布状态或版本内容。
-          </p>
+          <p className="admin-feature-subtle">{t('documents.access.description')}</p>
           <Select
             className="admin-feature-control-full"
             value={accessVisibility}
@@ -962,20 +895,20 @@ export const DocumentGovernancePage = () => {
           <Input.TextArea
             rows={4}
             value={accessRolesText}
-            placeholder="允许角色，每行一个，例如 admin"
+            placeholder={t('documents.access.rolesPlaceholder')}
             onChange={(event) => setAccessRolesText(event.target.value)}
           />
           <Input.TextArea
             rows={4}
             value={accessPermissionsText}
-            placeholder="允许权限，每行一个，例如 console.docs.view"
+            placeholder={t('documents.access.permissionsPlaceholder')}
             onChange={(event) => setAccessPermissionsText(event.target.value)}
           />
         </Space>
       </Modal>
 
       <Modal
-        title={revisionDocument ? `版本治理：${revisionDocument.voTitle}` : '版本治理'}
+        title={revisionDocument ? t('documents.revision.titleWithDocument', { title: revisionDocument.voTitle }) : t('documents.revision.title')}
         open={Boolean(revisionDocument)}
         width={960}
         footer={null}
@@ -996,26 +929,26 @@ export const DocumentGovernancePage = () => {
                 pagination={false}
                 columns={[
                   {
-                    title: '版本',
+                    title: t('documents.table.version'),
                     dataIndex: 'voVersion',
                     key: 'voVersion',
                     width: 80,
                     render: (version, record) => record.voIsCurrent ? <Tag color="success">v{version}</Tag> : `v${version}`,
                   },
                   {
-                    title: '说明',
+                    title: t('documents.revision.description'),
                     dataIndex: 'voChangeSummary',
                     key: 'voChangeSummary',
                     render: (summary) => summary || '-',
                   },
                   {
-                    title: '时间',
+                    title: t('documents.revision.time'),
                     key: 'voCreateTime',
                     width: 170,
-                    render: (_, record) => formatDateTime(record.voCreateTime),
+                    render: (_, record) => formatDocumentDateTime(record.voCreateTime, i18n.resolvedLanguage),
                   },
                   {
-                    title: '操作',
+                    title: t('documents.revision.actions'),
                     key: 'actions',
                     width: 170,
                     render: (_, record) => (
@@ -1027,20 +960,20 @@ export const DocumentGovernancePage = () => {
                             void loadRevisionDetail(record.voId);
                           }}
                         >
-                          查看
+                          {t('documents.actions.view')}
                         </Button>
                         {canRollback && revisionDocument && !isBuiltInDocument(revisionDocument) && !revisionDocument.voIsDeleted && !record.voIsCurrent ? (
                           <Popconfirm
-                            title="回滚版本"
-                            description={`确定要回滚到 v${record.voVersion} 吗？`}
-                            okText="确认"
-                            cancelText="取消"
+                            title={t('documents.revision.rollbackTitle')}
+                            description={t('documents.revision.rollbackDescription', { version: record.voVersion })}
+                            okText={t('documents.actions.confirm')}
+                            cancelText={t('documents.actions.cancel')}
                             onConfirm={() => {
                               void handleRollback(record.voId);
                             }}
                           >
                             <Button variant="ghost" size="small">
-                              回滚
+                              {t('documents.actions.rollback')}
                             </Button>
                           </Popconfirm>
                         ) : null}
@@ -1052,17 +985,17 @@ export const DocumentGovernancePage = () => {
             </div>
           </div>
           <aside className="admin-table-aside">
-            <h3>版本内容</h3>
+            <h3>{t('documents.revision.contentTitle')}</h3>
             {revisionDetailLoading ? (
-              <p className="admin-feature-subtle">正在加载版本详情...</p>
+              <p className="admin-feature-subtle">{t('documents.revision.loadingDetail')}</p>
             ) : revisionDetail ? (
               <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
                 <Tag color={revisionDetail.voIsCurrent ? 'success' : 'default'}>v{revisionDetail.voVersion}</Tag>
-                <p className="admin-feature-subtle">{revisionDetail.voChangeSummary || '无变更说明'}</p>
+                <p className="admin-feature-subtle">{revisionDetail.voChangeSummary || t('documents.revision.noSummary')}</p>
                 <Input.TextArea value={revisionDetail.voMarkdownContent} readOnly rows={12} />
               </Space>
             ) : (
-              <p className="admin-feature-subtle">请选择版本。</p>
+              <p className="admin-feature-subtle">{t('documents.revision.select')}</p>
             )}
           </aside>
         </div>

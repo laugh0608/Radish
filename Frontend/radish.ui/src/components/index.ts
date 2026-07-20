@@ -35,13 +35,18 @@ export { ImageLightbox } from './ImageLightbox/ImageLightbox';
 export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
 
 export { MarkdownEditor } from './MarkdownEditor/MarkdownEditor';
-export type { MarkdownEditorProps } from './MarkdownEditor/MarkdownEditor';
+export type {
+  MarkdownEditorLabels,
+  MarkdownEditorProps,
+  MarkdownEditorUploadKind,
+  MarkdownEditorUploadProgressReporter,
+} from './MarkdownEditor/MarkdownEditor';
 
 export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 export type { ConfirmDialogProps } from './ConfirmDialog/ConfirmDialog';
 
 export { UserMention } from './UserMention/UserMention';
-export type { UserMentionProps, UserMentionOption } from './UserMention/UserMention';
+export type { UserMentionProps, UserMentionOption, UserMentionLabels } from './UserMention/UserMention';
 
 export { StickerPicker } from './StickerPicker/StickerPicker';
 export type {
@@ -50,6 +55,7 @@ export type {
   StickerPickerGroup,
   StickerPickerSticker,
   StickerPickerSelection,
+  StickerPickerLabels,
 } from './StickerPicker/StickerPicker';
 
 export { ReactionBar } from './ReactionBar/ReactionBar';
@@ -58,6 +64,7 @@ export type {
   ReactionSummaryItem,
   ReactionTogglePayload,
   ReactionTargetType,
+  ReactionBarLabels,
 } from './ReactionBar/ReactionBar';
 
 export { FileUpload } from './FileUpload/FileUpload';
@@ -72,7 +79,11 @@ export type {
 } from './ChunkedFileUpload/ChunkedFileUpload';
 
 export { ImageCropper } from './ImageCropper/ImageCropper';
-export type { ImageCropperProps } from './ImageCropper/ImageCropper';
+export type {
+  ImageCropperLabels,
+  ImageCropperProcessingChangeHandler,
+  ImageCropperProps,
+} from './ImageCropper/ImageCropper';
 
 export { Toast, ToastContainer } from './Toast/Toast';
 export { toast, toastManager } from './Toast';
@@ -95,7 +106,14 @@ export { message, notification } from './feedbackApi';
 export type { AntdFeedbackBridgeProps } from './AntdFeedbackBridge';
 
 export { ExperienceBar } from './ExperienceBar/ExperienceBar';
-export type { ExperienceBarProps, ExperienceData } from './ExperienceBar/ExperienceBar';
+export type {
+  ExperienceBarLabels,
+  ExperienceBarPresentation,
+  ExperienceBarProps,
+  ExperienceData,
+  ExperienceData as ExperienceBarData,
+  ExperienceNumericValue,
+} from './ExperienceBar/ExperienceBar';
 
 export { LevelUpModal } from './LevelUpModal/LevelUpModal';
 export type { LevelUpModalProps, LevelUpData } from './LevelUpModal/LevelUpModal';
@@ -197,6 +215,7 @@ export {
   TrophyOutlined,
   WalletOutlined,
   TagsOutlined,
+  TranslationOutlined,
 } from '@ant-design/icons';
 
 // Re-export types

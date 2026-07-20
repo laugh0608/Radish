@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
@@ -18,16 +20,22 @@ namespace Radish.Api.Controllers;
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
 [Authorize(Policy = AuthorizationPolicies.Client)]
+[ApiErrorContract]
 [Tags("电子宠物")]
 public class PetController : ControllerBase
 {
     private readonly IPetService _petService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-    public PetController(IPetService petService, ICurrentUserAccessor currentUserAccessor)
+    public PetController(
+        IPetService petService,
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _petService = petService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -56,7 +64,11 @@ public class PetController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return MessageModel<PetProfileVo>.Message(false, "请求参数验证失败", default!);
+            return BuildError<PetProfileVo>(
+                HttpStatusCodeEnum.BadRequest,
+                "请求参数验证失败",
+                "Pet.InvalidRequest",
+                "error.pet.invalid_request");
         }
 
         return await ExecuteAsync(async () =>
@@ -71,7 +83,11 @@ public class PetController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return MessageModel<PetCareResultVo>.Message(false, "请求参数验证失败", default!);
+            return BuildError<PetCareResultVo>(
+                HttpStatusCodeEnum.BadRequest,
+                "请求参数验证失败",
+                "Pet.InvalidRequest",
+                "error.pet.invalid_request");
         }
 
         return await ExecuteAsync(async () =>
@@ -90,7 +106,7 @@ public class PetController : ControllerBase
                 await _petService.GetMyLogsAsync(Current.UserId, pageIndex, pageSize)));
     }
 
-    private static async Task<MessageModel<T>> ExecuteAsync<T>(Func<Task<MessageModel<T>>> action)
+    private async Task<MessageModel<T>> ExecuteAsync<T>(Func<Task<MessageModel<T>>> action)
     {
         try
         {
@@ -98,13 +114,36 @@ public class PetController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            var localizedMessage = string.IsNullOrWhiteSpace(ex.MessageKey)
+                ? null
+                : _errorsLocalizer[ex.MessageKey];
             return new MessageModel<T>
             {
                 IsSuccess = false,
                 StatusCode = ex.StatusCode,
-                MessageInfo = ex.Message,
-                Code = ex.ErrorCode
+                MessageInfo = localizedMessage is null || localizedMessage.ResourceNotFound
+                    ? ex.Message
+                    : localizedMessage.Value,
+                Code = ex.ErrorCode,
+                MessageKey = ex.MessageKey
             };
         }
+    }
+
+    private MessageModel<T> BuildError<T>(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey)
+    {
+        var localizedMessage = _errorsLocalizer[messageKey];
+        return new MessageModel<T>
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            Code = code,
+            MessageKey = messageKey
+        };
     }
 }

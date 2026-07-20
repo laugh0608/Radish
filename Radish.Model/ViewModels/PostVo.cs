@@ -71,6 +71,11 @@ public class PostVo
     public string? VoAuthorAvatarUrl { get; set; }
 
     /// <summary>
+    /// 作者当前公开身份装饰
+    /// </summary>
+    public UserAdornmentVo? VoAuthorAdornment { get; set; }
+
+    /// <summary>
     /// 分类 Id
     /// </summary>
     public long VoCategoryId { get; set; }

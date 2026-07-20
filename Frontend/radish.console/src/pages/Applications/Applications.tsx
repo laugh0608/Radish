@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { log } from '@/utils/logger';
 import {
@@ -29,7 +30,8 @@ import '../adminFeature.css';
 import './Applications.css';
 
 export const Applications = () => {
-  useDocumentTitle('应用管理');
+  const { t } = useTranslation();
+  useDocumentTitle(t('applications.documentTitle'));
   const [clients, setClients] = useState<OidcClient[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,30 +46,30 @@ export const Applications = () => {
   const enabledClients = clients.filter((client) => client.status !== 'Disabled').length;
   const thirdPartyClients = clients.filter((client) => client.type === 'ThirdParty').length;
 
-  useEffect(() => {
-    if (!canViewApplications) {
-      return;
-    }
-
-    void loadClients();
-  }, [canViewApplications]);
-
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
     setLoading(true);
     try {
       const result = await clientApi.getClients({ page: 1, pageSize: 100 });
       if (result.ok && result.data) {
         setClients(result.data.data);
       } else {
-        message.error(result.message || '加载失败');
+        message.error(result.message || t('applications.feedback.loadFailed'));
       }
     } catch (error) {
-      message.error('加载失败');
+      message.error(t('applications.feedback.loadFailed'));
       log.error(error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    if (!canViewApplications) {
+      return;
+    }
+
+    void loadClients();
+  }, [canViewApplications, loadClients]);
 
   const handleCreate = () => {
     setModalMode('create');
@@ -95,13 +97,13 @@ export const Applications = () => {
     try {
       const result = await clientApi.deleteClient(id);
       if (result.ok) {
-        message.success('删除成功');
+        message.success(t('applications.feedback.deleted'));
         await loadClients();
       } else {
-        message.error(result.message || '删除失败');
+        message.error(result.message || t('applications.feedback.deleteFailed'));
       }
     } catch (error) {
-      message.error('删除失败');
+      message.error(t('applications.feedback.deleteFailed'));
       log.error(error);
     }
   };
@@ -111,10 +113,10 @@ export const Applications = () => {
       const result = await clientApi.resetClientSecret(id);
       if (result.ok && result.data) {
         AntModal.info({
-          title: '客户端密钥已重置',
+          title: t('applications.secret.resetTitle'),
           content: (
             <div>
-              <p>新的客户端密钥（请妥善保存，仅显示一次）：</p>
+              <p>{t('applications.secret.newSecret')}</p>
               <p className="applications-secret-box">
                 {result.data.clientSecret}
               </p>
@@ -123,10 +125,10 @@ export const Applications = () => {
           width: 600,
         });
       } else {
-        message.error(result.message || '重置失败');
+        message.error(result.message || t('applications.feedback.resetFailed'));
       }
     } catch (error) {
-      message.error('重置失败');
+      message.error(t('applications.feedback.resetFailed'));
       log.error(error);
     }
   };
@@ -147,13 +149,13 @@ export const Applications = () => {
         };
         const result = await clientApi.createClient(data);
         if (result.ok && result.data) {
-          message.success('创建成功');
+          message.success(t('applications.feedback.created'));
           AntModal.info({
-            title: '客户端创建成功',
+            title: t('applications.secret.createdTitle'),
             content: (
               <div>
-                <p>Client ID: {result.data.clientId}</p>
-                <p>Client Secret（请妥善保存，仅显示一次）：</p>
+                <p>{t('applications.secret.clientId', { clientId: result.data.clientId })}</p>
+                <p>{t('applications.secret.clientSecret')}</p>
                 <p className="applications-secret-box">
                   {result.data.clientSecret}
                 </p>
@@ -164,7 +166,7 @@ export const Applications = () => {
           setIsModalOpen(false);
           await loadClients();
         } else {
-          message.error(result.message || '创建失败');
+          message.error(result.message || t('applications.feedback.createFailed'));
         }
       } else if (modalMode === 'edit' && currentClient) {
         const data = {
@@ -177,11 +179,11 @@ export const Applications = () => {
         };
         const result = await clientApi.updateClient(currentClient.id, data);
         if (result.ok) {
-          message.success('更新成功');
+          message.success(t('applications.feedback.updated'));
           setIsModalOpen(false);
           await loadClients();
         } else {
-          message.error(result.message || '更新失败');
+          message.error(result.message || t('applications.feedback.updateFailed'));
         }
       }
     } catch (error) {
@@ -191,47 +193,47 @@ export const Applications = () => {
 
   const columns: TableColumnsType<OidcClient> = [
     {
-      title: 'Client ID',
+      title: t('applications.form.clientId'),
       dataIndex: 'clientId',
       key: 'clientId',
       width: 200,
     },
     {
-      title: '显示名称',
+      title: t('applications.column.displayName'),
       dataIndex: 'displayName',
       key: 'displayName',
       width: 150,
     },
     {
-      title: '描述',
+      title: t('applications.column.description'),
       dataIndex: 'description',
       key: 'description',
       ellipsis: true,
     },
     {
-      title: '类型',
+      title: t('applications.column.type'),
       dataIndex: 'type',
       key: 'type',
       width: 100,
       render: (type: string) => (
         <Tag color={type === 'Internal' ? 'blue' : 'green'}>
-          {type === 'Internal' ? '官方' : '第三方'}
+          {type === 'Internal' ? t('applications.type.internal') : t('applications.type.thirdParty')}
         </Tag>
       ),
     },
     {
-      title: '状态',
+      title: t('applications.column.status'),
       dataIndex: 'status',
       key: 'status',
       width: 80,
       render: (status: string) => (
         <Tag color={status !== 'Disabled' ? 'success' : 'default'}>
-          {status !== 'Disabled' ? '启用' : '禁用'}
+          {status !== 'Disabled' ? t('applications.status.enabled') : t('applications.status.disabled')}
         </Tag>
       ),
     },
     {
-      title: '操作',
+      title: t('applications.column.actions'),
       key: 'action',
       width: 220,
       render: (_, record) => (
@@ -243,7 +245,7 @@ export const Applications = () => {
               icon={<EditOutlined />}
               onClick={() => handleEdit(record)}
             >
-              编辑
+              {t('applications.action.edit')}
             </Button>
           ) : null}
           {canResetApplicationSecret ? (
@@ -253,22 +255,22 @@ export const Applications = () => {
               icon={<KeyOutlined />}
               onClick={() => void handleResetSecret(record.id)}
             >
-              重置密钥
+              {t('applications.action.resetSecret')}
             </Button>
           ) : null}
           {canDeleteApplication ? (
             <Popconfirm
-              title="确定删除此客户端吗？"
+              title={t('applications.delete.confirm')}
               onConfirm={() => void handleDelete(record.id)}
-              okText="确定"
-              cancelText="取消"
+              okText={t('applications.delete.ok')}
+              cancelText={t('applications.delete.cancel')}
             >
               <Button
                 variant="danger"
                 size="small"
                 icon={<DeleteOutlined />}
               >
-                删除
+                {t('applications.action.delete')}
               </Button>
             </Popconfirm>
           ) : null}
@@ -282,46 +284,46 @@ export const Applications = () => {
         <div className="admin-feature-header">
           <div>
             <h2>
-              <AppstoreOutlined /> 应用管理
+              <AppstoreOutlined /> {t('applications.title')}
             </h2>
-            <p className="admin-feature-subtle">维护 OIDC 客户端、回调地址和客户端密钥重置入口。</p>
+            <p className="admin-feature-subtle">{t('applications.description')}</p>
           </div>
           <div className="applications-header-actions">
             <Button icon={<ReloadOutlined />} onClick={() => void loadClients()}>
-              刷新
+              {t('applications.action.refresh')}
             </Button>
             {canCreateApplication ? (
               <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
-                新增应用
+                {t('applications.action.create')}
               </Button>
             ) : null}
           </div>
         </div>
       </section>
 
-      <section className="admin-feature-metrics" aria-label="应用列表指标">
+      <section className="admin-feature-metrics" aria-label={t('applications.metrics.label')}>
         <div className="admin-feature-metric">
-          已加载应用
+          {t('applications.metrics.loaded')}
           <strong>{clients.length}</strong>
         </div>
         <div className="admin-feature-metric">
-          启用应用
+          {t('applications.metrics.enabled')}
           <strong>{enabledClients}</strong>
         </div>
         <div className="admin-feature-metric">
-          第三方应用
+          {t('applications.metrics.thirdParty')}
           <strong>{thirdPartyClients}</strong>
         </div>
       </section>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label="应用列表状态">
+          <section className="admin-table-toolbar" aria-label={t('applications.list.label')}>
             <div className="admin-table-toolbar__title">
-              <span>客户端列表</span>
-              <Tag>{loading ? '加载中' : '最近 100 条'}</Tag>
+              <span>{t('applications.list.title')}</span>
+              <Tag>{loading ? t('applications.list.loading') : t('applications.list.recent')}</Tag>
             </div>
-            <p className="admin-feature-subtle">当前列表沿用既有客户端接口，创建和编辑表单字段保持不变。</p>
+            <p className="admin-feature-subtle">{t('applications.list.description')}</p>
           </section>
 
           <section className="admin-table-panel">
@@ -334,36 +336,36 @@ export const Applications = () => {
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total) => `共 ${total} 条`,
+                showTotal: (total) => t('applications.list.total', { count: total }),
               }}
             />
           </section>
         </main>
 
         <aside className="admin-table-aside">
-          <h3>应用摘要</h3>
-          <p className="admin-feature-subtle">用于核对客户端状态、类型和敏感操作权限。</p>
+          <h3>{t('applications.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('applications.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
-              <span className="admin-table-summary__value">客户端接口前 100 条</span>
+              <span className="admin-table-summary__label">{t('applications.summary.scopeLabel')}</span>
+              <span className="admin-table-summary__value">{t('applications.summary.scopeValue')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">创建权限</span>
+              <span className="admin-table-summary__label">{t('applications.summary.createPermission')}</span>
               <span className="admin-table-summary__value">
-                {canCreateApplication ? '可新增应用' : '不可新增应用'}
+                {canCreateApplication ? t('applications.summary.createAllowed') : t('applications.summary.createDenied')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">密钥操作</span>
+              <span className="admin-table-summary__label">{t('applications.summary.secretPermission')}</span>
               <span className="admin-table-summary__value">
-                {canResetApplicationSecret ? '可重置客户端密钥' : '无密钥重置权限'}
+                {canResetApplicationSecret ? t('applications.summary.secretAllowed') : t('applications.summary.secretDenied')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">删除权限</span>
+              <span className="admin-table-summary__label">{t('applications.summary.deletePermission')}</span>
               <span className="admin-table-summary__value">
-                {canDeleteApplication ? '可删除应用' : '不可删除应用'}
+                {canDeleteApplication ? t('applications.summary.deleteAllowed') : t('applications.summary.deleteDenied')}
               </span>
             </div>
           </div>
@@ -371,7 +373,7 @@ export const Applications = () => {
       </div>
 
       <AntModal
-        title={modalMode === 'create' ? '新增应用' : '编辑应用'}
+        title={modalMode === 'create' ? t('applications.modal.createTitle') : t('applications.modal.editTitle')}
         open={isModalOpen}
         onOk={() => void handleModalOk()}
         onCancel={() => setIsModalOpen(false)}
@@ -384,48 +386,48 @@ export const Applications = () => {
           autoComplete="off"
         >
           <Form.Item
-            label="Client ID"
+            label={t('applications.form.clientId')}
             name="clientId"
-            rules={[{ required: true, message: '请输入 Client ID' }]}
+            rules={[{ required: true, message: t('applications.form.clientIdRequired') }]}
           >
-            <AntInput placeholder="例如: my-app" disabled={modalMode === 'edit'} />
+            <AntInput placeholder={t('applications.form.clientIdPlaceholder')} disabled={modalMode === 'edit'} />
           </Form.Item>
 
           <Form.Item
-            label="显示名称"
+            label={t('applications.form.displayName')}
             name="displayName"
-            rules={[{ required: true, message: '请输入显示名称' }]}
+            rules={[{ required: true, message: t('applications.form.displayNameRequired') }]}
           >
-            <AntInput placeholder="例如: My Application" />
+            <AntInput placeholder={t('applications.form.displayNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item label="描述" name="description">
-            <AntInput.TextArea rows={3} placeholder="应用描述" />
+          <Form.Item label={t('applications.form.description')} name="description">
+            <AntInput.TextArea rows={3} placeholder={t('applications.form.descriptionPlaceholder')} />
           </Form.Item>
 
-          <Form.Item label="开发者名称" name="developerName">
-            <AntInput placeholder="开发者或组织名称" />
+          <Form.Item label={t('applications.form.developerName')} name="developerName">
+            <AntInput placeholder={t('applications.form.developerNamePlaceholder')} />
           </Form.Item>
 
-          <Form.Item label="开发者邮箱" name="developerEmail">
+          <Form.Item label={t('applications.form.developerEmail')} name="developerEmail">
             <AntInput type="email" placeholder="developer@example.com" />
           </Form.Item>
 
           <Form.Item
-            label="回调 URI"
+            label={t('applications.form.redirectUris')}
             name="redirectUris"
-            rules={[{ required: true, message: '请输入至少一个回调 URI' }]}
+            rules={[{ required: true, message: t('applications.form.redirectUrisRequired') }]}
           >
             <AntInput.TextArea
               rows={3}
-              placeholder="每行一个 URI，例如：&#10;https://localhost:3000/callback"
+              placeholder={t('applications.form.redirectUrisPlaceholder')}
             />
           </Form.Item>
 
-          <Form.Item label="登出回调 URI" name="postLogoutRedirectUris">
+          <Form.Item label={t('applications.form.postLogoutRedirectUris')} name="postLogoutRedirectUris">
             <AntInput.TextArea
               rows={2}
-              placeholder="每行一个 URI，例如：&#10;https://localhost:3000"
+              placeholder={t('applications.form.postLogoutRedirectUrisPlaceholder')}
             />
           </Form.Item>
         </Form>

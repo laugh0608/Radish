@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
@@ -15,6 +16,12 @@ namespace Radish.Api.Tests.Controllers;
 [TestSubject(typeof(StickerController))]
 public class StickerControllerTest
 {
+    [Fact]
+    public void StickerController_Should_Opt_Into_True_Http_Error_Contract()
+    {
+        Assert.NotNull(Attribute.GetCustomAttribute(typeof(StickerController), typeof(ApiErrorContractAttribute)));
+    }
+
     [Fact]
     public async Task GetAdminGroups_Should_Return_Groups()
     {
@@ -76,6 +83,7 @@ public class StickerControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(409, result.StatusCode);
         Assert.Equal("BatchCodeConflict", result.Code);
+        Assert.Equal("error.sticker.batch_code_conflict", result.MessageKey);
         var payload = Assert.IsType<StickerBatchAddResultVo>(result.ResponseData);
         Assert.Single(payload.VoConflicts);
     }
@@ -111,6 +119,7 @@ public class StickerControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(500, result.StatusCode);
         Assert.Equal("ImageProcessFailed", result.Code);
+        Assert.Equal("error.sticker.image_processing_failed", result.MessageKey);
         var payload = Assert.IsType<StickerBatchAddResultVo>(result.ResponseData);
         Assert.Single(payload.VoFailedItems);
     }
@@ -133,6 +142,7 @@ public class StickerControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
         Assert.Equal("StickerGroupNotFound", result.Code);
+        Assert.Equal("error.sticker.group_not_found", result.MessageKey);
     }
 
     [Fact]

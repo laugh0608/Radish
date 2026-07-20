@@ -145,7 +145,9 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - Public Web `P01-P14` 当前发布前页面族已复用共享 header 与移动底栏；`/discover`、forum、docs、shop、leaderboard、profile 和 workbench 承接均保留真实 `href`。
 - `PublicShellHeader` 继续作为 public 页面适配层，但默认主导航跟 private 一致，不能再用 `mobileNavItems` 长期分叉出一套 public 底栏。
 - `/workbench` 在 E8 后归属“更多”，用于承接公开商城、榜单、Docs、规则、Console、作者态、订单 / 背包和 `/desktop` 兼容入口；移动底栏不再按 public / private 分叉。
+- `/workbench` 的公开阅读分组必须保留 `/legal` 真实链接，规则与用户承诺不只依赖用户已知直链。
 - 新增工作台继续处理队列和状态 rail 属于页面内容层，不新增共享 header 或状态槽变体。
+- `radish.client` 每个 Browser React root 只挂载一个 `ToastContainer`；桌面 Shell、消息、通知与组件展示页等同根消费者不得重复挂载。只有真正独立的 React root 才能按同一规则自己挂载容器。
 
 ## radish.client 组件使用口径
 

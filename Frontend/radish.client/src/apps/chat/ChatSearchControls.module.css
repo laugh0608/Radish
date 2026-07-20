@@ -1,0 +1,81 @@
+.sidebarHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebarSearchButton {
+  width: 30px;
+  height: 30px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-secondary);
+  cursor: pointer;
+}
+
+.mainSearchMode {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.contentAreaSearch.contentAreaSearch {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.messageTargetUnavailable {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-state-danger) 42%, var(--theme-border-soft) 58%);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-bg-surface) 92%);
+  color: var(--theme-state-danger);
+}
+
+.messageTargetUnavailable span {
+  display: grid;
+  gap: 2px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.messageTargetUnavailable strong {
+  color: var(--theme-text-primary);
+}
+
+.conversationSearchButton {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.conversationSearchButton[aria-pressed='true'] {
+  border-color: var(--theme-brand-primary);
+  background: var(--theme-brand-soft);
+  color: var(--theme-brand-primary);
+}
+
+@media (max-width: 680px) {
+  .conversationSearchButton span {
+    display: none;
+  }
+
+  .conversationSearchButton {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+}

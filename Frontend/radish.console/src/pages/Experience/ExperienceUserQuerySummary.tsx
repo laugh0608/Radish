@@ -1,5 +1,7 @@
 import { AntInput as Input, Button, Tag } from '@radish/ui';
 import type { UserExperienceVo } from '@/api/experienceAdminApi';
+import { useTranslation } from 'react-i18next';
+import { formatConsoleDateTime, formatConsoleInteger } from '@/utils/localeFormatters';
 
 type ExperienceUserQuerySummaryProps = {
   queryUserId: string;
@@ -18,23 +20,25 @@ export const ExperienceUserQuerySummary = ({
   onQueryUserIdChange,
   onQuery,
 }: ExperienceUserQuerySummaryProps) => {
+  const { t, i18n } = useTranslation();
+
   return (
     <section className="admin-feature-card">
       <div className="admin-feature-header">
         <div>
-          <h3>用户经验查询</h3>
-          <p className="admin-feature-subtle">输入用户 ID 查看当前等级、总经验、下一级与冻结状态。</p>
+          <h3>{t('experience.query.title')}</h3>
+          <p className="admin-feature-subtle">{t('experience.query.description')}</p>
         </div>
         <div className="experience-inline-actions">
           <Input
-            placeholder="用户 ID"
+            placeholder={t('experience.form.userId')}
             value={queryUserId}
             onChange={(event) => onQueryUserIdChange(event.target.value)}
             onPressEnter={onQuery}
             className="experience-query-control"
           />
           <Button variant="primary" onClick={onQuery} disabled={loadingExperience}>
-            {loadingExperience ? '查询中...' : '查询'}
+            {loadingExperience ? t('experience.actions.searching') : t('experience.actions.search')}
           </Button>
         </div>
       </div>
@@ -42,31 +46,31 @@ export const ExperienceUserQuerySummary = ({
       <div className="admin-feature-metrics experience-section-gap-md">
         <div className="experience-query-current">
           {loadedUserId && experience
-            ? `当前展示：${experience.voUserName || '未命名用户'}（ID: ${loadedUserId}）`
-            : '当前未加载用户经验数据'}
+            ? t('experience.query.current', { name: experience.voUserName || t('experience.common.unnamedUser'), userId: loadedUserId })
+            : t('experience.query.notLoaded')}
         </div>
         <div className="admin-feature-metric">
-          <span>当前等级</span>
+          <span>{t('experience.query.currentLevel')}</span>
           <strong>{experience ? `${experience.voCurrentLevelName} (L${experience.voCurrentLevel})` : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span>总经验</span>
-          <strong>{experience ? experience.voTotalExp : '--'}</strong>
+          <span>{t('experience.query.totalExp')}</span>
+          <strong>{experience ? formatConsoleInteger(experience.voTotalExp, i18n.resolvedLanguage) : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span>距下一级</span>
-          <strong>{experience ? experience.voExpToNextLevel : '--'}</strong>
+          <span>{t('experience.query.nextLevel')}</span>
+          <strong>{experience ? formatConsoleInteger(experience.voExpToNextLevel, i18n.resolvedLanguage) : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span>状态</span>
-          <strong>{experience ? (experience.voExpFrozen ? '经验冻结' : '正常') : '--'}</strong>
+          <span>{t('experience.table.status')}</span>
+          <strong>{experience ? (experience.voExpFrozen ? t('experience.common.frozen') : t('experience.common.normal')) : '--'}</strong>
         </div>
       </div>
       {experience?.voExpFrozen && (
         <div className="experience-inline-actions experience-inline-actions--center experience-section-gap-sm">
-          <Tag color="warning">冻结中</Tag>
-          <span>到期时间：{experience.voFrozenUntil || '永久冻结'}</span>
-          <span>原因：{experience.voFrozenReason || '未填写'}</span>
+          <Tag color="warning">{t('experience.common.freezing')}</Tag>
+          <span>{t('experience.query.expiresAt', { value: experience.voFrozenUntil ? formatConsoleDateTime(experience.voFrozenUntil, i18n.resolvedLanguage) : t('experience.common.permanentFreeze') })}</span>
+          <span>{t('experience.query.reason', { value: experience.voFrozenReason || t('experience.common.notProvided') })}</span>
         </div>
       )}
     </section>

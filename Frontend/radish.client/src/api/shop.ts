@@ -10,15 +10,18 @@ import type {
   ProductCategory,
   ProductListItem,
   Product,
+  ShopProductCapability,
   ProductBuyCheckResult,
   OrderListItem,
   Order,
   UserBenefit,
+  UserBenefitActionResult,
   UserInventoryItem,
   PagedResponse,
   CreateOrderRequest,
   PurchaseResult,
   UseItemRequest,
+  UseRenameCardRequest,
   UseItemResult
 } from '@/types/shop';
 import { getApiBaseUrl } from '@/config/env';
@@ -34,6 +37,7 @@ export type {
   ProductCategory,
   ProductListItem,
   Product,
+  ShopProductCapability,
   ProductBuyCheckResult,
   OrderListItem,
   Order,
@@ -43,6 +47,7 @@ export type {
   CreateOrderRequest,
   PurchaseResult,
   UseItemRequest,
+  UseRenameCardRequest,
   UseItemResult
 };
 
@@ -156,6 +161,11 @@ export async function getProduct(productId: LongId, t: TFunction): Promise<Parse
   return await apiGet<Product>(`/api/v1/Shop/GetProduct/${encodeURIComponent(String(productId))}`);
 }
 
+export async function getProductCapabilities(t: TFunction): Promise<ParsedApiResponse<ShopProductCapability[]>> {
+  void t;
+  return await apiGet<ShopProductCapability[]>('/api/v1/Shop/GetProductCapabilities');
+}
+
 /**
  * 检查是否可以购买商品
  */
@@ -257,7 +267,7 @@ export async function getMyActiveBenefits(t: TFunction): Promise<ParsedApiRespon
  */
 export async function activateBenefit(benefitId: LongId, t: TFunction) {
   void t;
-  return await apiPost<boolean>(`/api/v1/Shop/ActivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
+  return await apiPost<UserBenefitActionResult>(`/api/v1/Shop/ActivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
 }
 
 /**
@@ -265,7 +275,7 @@ export async function activateBenefit(benefitId: LongId, t: TFunction) {
  */
 export async function deactivateBenefit(benefitId: LongId, t: TFunction) {
   void t;
-  return await apiPost<boolean>(`/api/v1/Shop/DeactivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
+  return await apiPost<UserBenefitActionResult>(`/api/v1/Shop/DeactivateBenefit/${encodeURIComponent(String(benefitId))}`, undefined, { withAuth: true });
 }
 
 /**
@@ -287,11 +297,11 @@ export async function useItem(request: UseItemRequest, t: TFunction) {
 /**
  * 使用改名卡
  */
-export async function useRenameCard(inventoryId: LongId, newNickname: string, t: TFunction) {
+export async function useRenameCard(request: UseRenameCardRequest, t: TFunction) {
   void t;
   return await apiPost<UseItemResult>(
-    `/api/v1/Shop/UseRenameCard/${encodeURIComponent(String(inventoryId))}?newNickname=${encodeURIComponent(newNickname)}`,
-    undefined,
+    '/api/v1/Shop/UseRenameCard',
+    request,
     { withAuth: true }
   );
 }

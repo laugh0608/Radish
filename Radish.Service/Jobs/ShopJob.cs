@@ -20,21 +20,21 @@ public class ShopJob
     private static readonly SemaphoreSlim TimeoutOrderCancellationLock = new(1, 1);
 
     private readonly IBaseRepository<Order> _orderRepository;
-    private readonly IBaseRepository<UserBenefit> _benefitRepository;
     private readonly IOrderService _orderService;
+    private readonly IUserBenefitService _userBenefitService;
     private readonly TimeProvider _timeProvider;
     private readonly BusinessCalendar _businessCalendar;
 
     public ShopJob(
         IBaseRepository<Order> orderRepository,
-        IBaseRepository<UserBenefit> benefitRepository,
         IOrderService orderService,
+        IUserBenefitService userBenefitService,
         TimeProvider timeProvider,
         BusinessCalendar businessCalendar)
     {
         _orderRepository = orderRepository;
-        _benefitRepository = benefitRepository;
         _orderService = orderService;
+        _userBenefitService = userBenefitService;
         _timeProvider = timeProvider;
         _businessCalendar = businessCalendar;
     }
@@ -126,15 +126,9 @@ public class ShopJob
         {
             Log.Information("[ShopJob] 开始处理过期权益");
 
-            var now = GetUtcNow();
+            var expiredBenefitIds = await _userBenefitService.GetDueBenefitIdsAsync();
 
-            // 查询已到期但未标记过期的权益
-            var expiredBenefits = await _benefitRepository.QueryAsync(b =>
-                !b.IsExpired &&
-                b.ExpiresAt.HasValue &&
-                b.ExpiresAt.Value < now);
-
-            if (expiredBenefits == null || expiredBenefits.Count == 0)
+            if (expiredBenefitIds.Count == 0)
             {
                 Log.Information("[ShopJob] 没有需要标记的过期权益");
                 return 0;
@@ -142,29 +136,19 @@ public class ShopJob
 
             var markedCount = 0;
 
-            foreach (var benefit in expiredBenefits)
+            foreach (var benefitId in expiredBenefitIds)
             {
                 try
                 {
-                    benefit.IsExpired = true;
-                    // 如果权益正在激活中，自动取消激活
-                    if (benefit.IsActive)
+                    if (await _userBenefitService.ExpireBenefitAsync(benefitId))
                     {
-                        benefit.IsActive = false;
-                        Log.Information("[ShopJob] 权益 {BenefitId} 已过期，自动取消激活", benefit.Id);
+                        markedCount++;
+                        Log.Information("[ShopJob] 已物化权益过期：{BenefitId}", benefitId);
                     }
-                    benefit.ModifyTime = now;
-                    benefit.ModifyBy = "System";
-
-                    await _benefitRepository.UpdateAsync(benefit);
-                    markedCount++;
-
-                    Log.Information("[ShopJob] 已标记权益过期：{BenefitId}，用户：{UserId}，类型：{BenefitType}，到期时间：{ExpiresAt}",
-                        benefit.Id, benefit.UserId, benefit.BenefitType, benefit.ExpiresAt);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[ShopJob] 标记权益过期失败：{BenefitId}", benefit.Id);
+                    Log.Error(ex, "[ShopJob] 标记权益过期失败：{BenefitId}", benefitId);
                 }
             }
 

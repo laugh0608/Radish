@@ -1,10 +1,50 @@
-import type { Product } from '../../api/types';
+import type { TFunction } from 'i18next';
+import type { Product, ShopProductCapability } from '../../api/types';
 
 interface ProductLike {
   voProductType?: string | number | null;
   voBenefitType?: string | number | null;
   voConsumableType?: string | number | null;
   voIsOnSale?: boolean;
+}
+
+const productTypeNumbers: Record<string, number> = {
+  Benefit: 1,
+  Consumable: 2,
+  Physical: 99,
+};
+
+const benefitTypeNumbers: Record<string, number> = {
+  Badge: 1,
+  AvatarFrame: 2,
+  Title: 3,
+  Theme: 4,
+  Signature: 5,
+  NameColor: 6,
+  LikeEffect: 7,
+};
+
+const consumableTypeNumbers: Record<string, number> = {
+  RenameCard: 1,
+  PostPinCard: 2,
+  PostHighlightCard: 3,
+  ExpCard: 4,
+  CoinCard: 5,
+  DoubleExpCard: 6,
+  LotteryTicket: 99,
+};
+
+export function normalizeEnumNumber(value: unknown, mapping: Record<string, number>): number | undefined {
+  const normalized = String(value ?? '').trim();
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (/^\d+$/.test(normalized)) {
+    return Number.parseInt(normalized, 10);
+  }
+
+  return mapping[normalized];
 }
 
 export function normalizeProductType(type?: string | number | null): string {
@@ -63,109 +103,188 @@ export function normalizeConsumableType(type?: string | number | null): string {
   }
 }
 
-export function getProductTypeDisplay(type?: string | number | null): string {
+export function findProductCapability(
+  capabilities: ShopProductCapability[],
+  productType?: unknown,
+  benefitType?: unknown,
+  consumableType?: unknown,
+): ShopProductCapability | undefined {
+  const normalizedProductType = normalizeEnumNumber(productType, productTypeNumbers);
+  const normalizedBenefitType = normalizeEnumNumber(benefitType, benefitTypeNumbers);
+  const normalizedConsumableType = normalizeEnumNumber(consumableType, consumableTypeNumbers);
+
+  return capabilities.find((capability) => {
+    const capabilityProductType = normalizeEnumNumber(capability.voProductType, productTypeNumbers);
+    const capabilityBenefitType = normalizeEnumNumber(capability.voBenefitType, benefitTypeNumbers);
+    const capabilityConsumableType = normalizeEnumNumber(capability.voConsumableType, consumableTypeNumbers);
+
+    return capabilityProductType === normalizedProductType
+      && (normalizedProductType !== 1 || capabilityBenefitType === normalizedBenefitType)
+      && (normalizedProductType !== 2 || capabilityConsumableType === normalizedConsumableType);
+  });
+}
+
+export function getProductTypeDisplay(type: string | number | null | undefined, t: TFunction): string {
   switch (normalizeProductType(type)) {
     case 'Benefit':
-      return '权益';
+      return t('products.type.benefit');
     case 'Consumable':
-      return '消耗品';
+      return t('products.type.consumable');
     case 'Physical':
-      return '实物';
+      return t('products.type.physical');
     default:
-      return '未知';
+      return t('products.common.unknown');
   }
 }
 
-export function getBenefitTypeDisplay(type?: string | number | null): string {
+export function getBenefitTypeDisplay(type: string | number | null | undefined, t: TFunction): string {
   switch (normalizeBenefitType(type)) {
     case 'Badge':
-      return '徽章';
+      return t('products.benefitType.badge');
     case 'AvatarFrame':
-      return '头像框';
+      return t('products.benefitType.avatarFrame');
     case 'Title':
-      return '称号';
+      return t('products.benefitType.title');
     case 'Theme':
-      return '主题';
+      return t('products.benefitType.theme');
     case 'Signature':
-      return '签名档';
+      return t('products.benefitType.signature');
     case 'NameColor':
-      return '用户名颜色';
+      return t('products.benefitType.nameColor');
     case 'LikeEffect':
-      return '点赞特效';
+      return t('products.benefitType.likeEffect');
     default:
       return '-';
   }
 }
 
-export function getConsumableTypeDisplay(type?: string | number | null): string {
+export function getConsumableTypeDisplay(type: string | number | null | undefined, t: TFunction): string {
   switch (normalizeConsumableType(type)) {
     case 'RenameCard':
-      return '改名卡';
+      return t('products.consumableType.renameCard');
     case 'PostPinCard':
-      return '置顶卡';
+      return t('products.consumableType.postPinCard');
     case 'PostHighlightCard':
-      return '高亮卡';
+      return t('products.consumableType.postHighlightCard');
     case 'ExpCard':
-      return '经验卡';
+      return t('products.consumableType.expCard');
     case 'CoinCard':
-      return '萝卜币红包';
+      return t('products.consumableType.coinCard');
     case 'DoubleExpCard':
-      return '双倍经验卡';
+      return t('products.consumableType.doubleExpCard');
     case 'LotteryTicket':
-      return '抽奖券';
+      return t('products.consumableType.lotteryTicket');
     default:
       return '-';
   }
 }
 
-export function getUnsupportedSaleReason(product: ProductLike): string | null {
-  const productType = normalizeProductType(product.voProductType);
+function getCapabilityProductDisplay(capability: ShopProductCapability, t: TFunction): string {
+  const productType = normalizeProductType(capability.voProductType);
   if (productType === 'Benefit') {
-    const benefitType = normalizeBenefitType(product.voBenefitType);
-    if (
-      benefitType === 'Badge'
-      || benefitType === 'AvatarFrame'
-      || benefitType === 'Title'
-      || benefitType === 'Theme'
-      || benefitType === 'Signature'
-      || benefitType === 'NameColor'
-      || benefitType === 'LikeEffect'
-    ) {
-      return '当前权益效果未开放，不能上架销售';
-    }
+    return getBenefitTypeDisplay(capability.voBenefitType, t);
   }
 
   if (productType === 'Consumable') {
-    const consumableType = normalizeConsumableType(product.voConsumableType);
-    if (
-      consumableType === 'PostPinCard'
-      || consumableType === 'PostHighlightCard'
-      || consumableType === 'DoubleExpCard'
-      || consumableType === 'LotteryTicket'
-    ) {
-      return '当前道具未开放，不能上架销售';
-    }
+    return getConsumableTypeDisplay(capability.voConsumableType, t);
   }
 
-  return null;
+  return getProductTypeDisplay(capability.voProductType, t);
 }
 
-export function getUnsupportedSaleStatusLabel(product: ProductLike): string | null {
-  if (!getUnsupportedSaleReason(product)) {
+export function getCapabilityDescription(
+  capability: ShopProductCapability | undefined,
+  t: TFunction,
+): string {
+  if (!capability) {
+    return t('products.capability.metadataUnavailable');
+  }
+
+  const display = getCapabilityProductDisplay(capability, t);
+  if (!capability.voCanSell) {
+    const reasonKey = capability.voUnavailableReasonKey?.trim();
+    if (reasonKey) {
+      return t(reasonKey, { type: display });
+    }
+
+    return capability.voUnavailableReason || t('products.capability.unavailable.unknown');
+  }
+
+  const requirementKeys = capability.voConfigurationRequirementKeys ?? [];
+  if (requirementKeys.length > 0) {
+    return requirementKeys
+      .map((key, index) => t(key, { defaultValue: capability.voConfigurationRequirements[index] ?? key }))
+      .join(t('products.common.listSeparator'));
+  }
+
+  if (capability.voConfigurationRequirements.length > 0) {
+    return capability.voConfigurationRequirements.join(t('products.common.listSeparator'));
+  }
+
+  return t('products.capability.available');
+}
+
+export function getUnsupportedSaleReason(
+  product: ProductLike,
+  capabilities: ShopProductCapability[],
+  t: TFunction,
+): string | null {
+  const capability = findProductCapability(
+    capabilities,
+    product.voProductType,
+    product.voBenefitType,
+    product.voConsumableType,
+  );
+
+  return capability?.voCanSell === true ? null : getCapabilityDescription(capability, t);
+}
+
+export function getUnsupportedSaleStatusLabel(
+  product: ProductLike,
+  capabilities: ShopProductCapability[],
+  t: TFunction,
+): string | null {
+  if (!getUnsupportedSaleReason(product, capabilities, t)) {
     return null;
   }
 
-  return product.voIsOnSale ? '历史上架' : '未开放';
+  return product.voIsOnSale
+    ? t('products.status.historicalOnSale')
+    : t('products.status.unavailable');
 }
 
-export function getProductConfigLabel(product: Product): string {
+export function getProductConfigLabel(product: Product, t: TFunction): string {
   if (normalizeProductType(product.voProductType) === 'Benefit') {
-    return getBenefitTypeDisplay(product.voBenefitType);
+    return t('products.detail.field.benefitType');
   }
 
   if (normalizeProductType(product.voProductType) === 'Consumable') {
-    return getConsumableTypeDisplay(product.voConsumableType);
+    return t('products.detail.field.consumableType');
   }
 
-  return '商品配置';
+  return t('products.detail.field.configuration');
+}
+
+export function getProductDurationDisplay(
+  product: Product,
+  t: TFunction,
+  formatTime: (value: string) => string,
+): string {
+  switch (String(product.voDurationType ?? '')) {
+    case '0':
+    case 'Permanent':
+      return t('products.duration.permanent');
+    case '1':
+    case 'Days':
+      return typeof product.voDurationDays === 'number'
+        ? t('products.duration.days', { count: product.voDurationDays })
+        : t('products.duration.unknown');
+    case '2':
+    case 'FixedDate':
+      return product.voExpiresAt
+        ? t('products.duration.until', { time: formatTime(product.voExpiresAt) })
+        : t('products.duration.unknown');
+    default:
+      return t('products.duration.unknown');
+  }
 }

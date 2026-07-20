@@ -9,6 +9,7 @@ import type {
 import type { LongId } from '@/api/user';
 import type {
   PublicForumBrowseRoute,
+  PublicForumDetailRoute,
   PublicForumListRoute,
   PublicForumSearchRoute,
   PublicForumTagRoute,
@@ -16,7 +17,7 @@ import type {
 } from '../forumRouteState';
 import { buildPublicForumPath } from '../forumRouteState.ts';
 import type { PublicReadingGuideItem } from '../components/PublicReadingGuide';
-import { publicDefaultDescription, type PublicHeadDescriptor } from '../publicHead.ts';
+import { buildPublicRouteHead, type PublicHeadDescriptor } from '../publicHead.ts';
 import { normalizePublicPostId, normalizePublicUserId } from '../publicId.ts';
 
 interface PublicGuideDefinition {
@@ -118,23 +119,38 @@ function truncatePublicHeadText(value: string | undefined, maxLength: number): s
   return `${value.slice(0, maxLength - 1).trimEnd()}…`;
 }
 
+interface BuildForumPostPublicHeadOptions {
+  appName?: string;
+  routeHead?: PublicHeadDescriptor;
+}
+
 export function buildForumPostPublicHead(
   post: Pick<PostDetail, 'voId' | 'voPublicId' | 'voTitle' | 'voSummary' | 'voContent'>,
   commentId?: string,
-  imageUrl?: string | null
+  imageUrl?: string | null,
+  options: BuildForumPostPublicHeadOptions = {},
 ): PublicHeadDescriptor {
   const postIdentifier = getForumPostRouteIdentifier(post);
-  const canonicalPath = buildPublicForumPath(commentId
+  const canonicalRoute: PublicForumDetailRoute = commentId
     ? { kind: 'detail', postId: postIdentifier, commentId }
-    : { kind: 'detail', postId: postIdentifier });
-  const title = normalizePublicHeadText(post.voTitle) ?? '论坛帖子';
+    : { kind: 'detail', postId: postIdentifier };
+  const canonicalPath = buildPublicForumPath(canonicalRoute);
+  const routeHead = options.routeHead ?? buildPublicRouteHead({ app: 'forum', route: canonicalRoute });
+  const postTitle = normalizePublicHeadText(post.voTitle);
+  const appName = normalizePublicHeadText(options.appName);
+  const title = postTitle
+    ? appName
+      ? `${postTitle} · ${appName}`
+      : `${postTitle} - Radish 论坛`
+    : routeHead.title;
   const description = truncatePublicHeadText(
     normalizePublicHeadText(post.voSummary) ?? stripMarkdownForPublicHead(post.voContent),
     160
-  ) ?? publicDefaultDescription;
+  ) ?? routeHead.description;
 
   return {
-    title: `${title} - Radish 论坛`,
+    ...routeHead,
+    title,
     description,
     canonicalPath,
     type: 'article',

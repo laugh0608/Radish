@@ -314,6 +314,7 @@ export function ShopWebApp() {
         <Inventory
           benefits={dataState.userBenefits}
           inventory={dataState.userInventory}
+          capabilities={dataState.productCapabilities}
           loading={dataState.loadingInventory}
           loadError={dataState.loadError}
           backHref={publicShopHref}

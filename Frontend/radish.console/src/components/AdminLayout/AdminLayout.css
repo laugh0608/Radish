@@ -178,6 +178,7 @@
 .admin-header-left {
   display: flex;
   align-items: center;
+  gap: 18px;
 }
 
 .admin-header-right {
@@ -288,6 +289,10 @@
   .admin-header-right {
     gap: 8px;
     min-width: 0;
+  }
+
+  .admin-header-left {
+    gap: 8px;
   }
 
   .admin-search-icon {

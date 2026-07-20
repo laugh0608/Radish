@@ -84,6 +84,16 @@ export interface Product {
   voCreateTime?: string;
 }
 
+export interface ShopProductCapability {
+  voProductType: string | number;
+  voBenefitType?: string | number | null;
+  voConsumableType?: string | number | null;
+  voCanSell: boolean;
+  voCanActivate: boolean;
+  voConfigurationRequirements: string[];
+  voUnavailableReason?: string | null;
+}
+
 export interface ProductBuyCheckResult {
   canBuy: boolean;
   reason: string;
@@ -101,6 +111,7 @@ export interface OrderListItem {
   voTotalPrice: number;
   voStatus: string | number;
   voStatusDisplay?: string;
+  voFailureStage?: string | number;
   voCreateTime?: string;
 }
 
@@ -124,7 +135,14 @@ export interface Order {
   voTotalPrice: number;
   voStatus: string | number;
   voStatusDisplay?: string;
+  voFailureStage?: string | number;
+  voFailureStageDisplay?: string;
+  voCanRetryFulfillment?: boolean;
+  voCoinTransactionId?: LongId | null;
+  voGrantedBenefitId?: LongId | null;
+  voGrantedInventoryId?: LongId | null;
   voBenefitExpiresAt?: string | null;
+  voFixedExpiresAt?: string | null;
   voDurationDisplay?: string | null;
   voCreateTime?: string;
   voPaidTime?: string | null;
@@ -154,8 +172,27 @@ export interface UserBenefit {
   voExpiresAt?: string | null;
   voIsExpired?: boolean;
   voIsActive?: boolean;
+  voStatus: string | number;
+  voStatusDisplay?: string;
+  voCanActivate: boolean;
+  voCanDeactivate: boolean;
+  voUnavailableReason?: string | null;
+  voRevokedAt?: string | null;
+  voRevokedByName?: string | null;
+  voRevocationReason?: string | null;
   voDurationDisplay?: string;
   voCreateTime?: string;
+}
+
+/** 持续权益选择、停用或撤销结果。 */
+export interface UserBenefitActionResult {
+  voChanged: boolean;
+  voAction: string;
+  voBenefitId: LongId;
+  voBenefitType: string | number;
+  voStatus: string | number;
+  voCurrentBenefitId?: LongId | null;
+  voCurrentBenefit?: UserBenefit | null;
 }
 
 /**
@@ -196,6 +233,8 @@ export interface PurchaseResult {
   errorCode?: string;
   requiresPasscodeUpgrade?: boolean;
   userBenefitId?: LongId;
+  grantedBenefitId?: LongId;
+  grantedInventoryId?: LongId;
   deductedCoins?: number;
   remainingBalance?: number;
 }
@@ -207,6 +246,16 @@ export interface UseItemRequest {
   inventoryId: LongId;
   quantity?: number;
   targetId?: LongId;
+  idempotencyKey: string;
+}
+
+/**
+ * 使用改名卡请求
+ */
+export interface UseRenameCardRequest {
+  inventoryId: LongId;
+  newDisplayName: string;
+  idempotencyKey: string;
 }
 
 /**
@@ -215,6 +264,13 @@ export interface UseItemRequest {
 export interface UseItemResult {
   success: boolean;
   errorMessage?: string;
+  operationId?: LongId;
+  isIdempotentReplay?: boolean;
   remainingQuantity: number;
   effectDescription?: string;
+  effectType?: string;
+  effectValue?: string;
+  effectResourceType?: string;
+  effectResourceId?: LongId;
+  effectResourceNo?: string;
 }

@@ -16,14 +16,14 @@ Frontend/
 
 职责边界：
 
-- `@radish/http`：统一 API 客户端、认证续期、请求类型
-- `@radish/ui`：共享组件、交互反馈、展示辅助能力
+- `@radish/http`：统一 API 客户端、认证续期、请求语言、结构化错误和请求类型
+- `@radish/ui`：共享组件、交互反馈、Ant Design theme / locale、本地化格式化和宿主 labels 契约
 - `radish.client`：面向普通用户的纯 Web 前台；普通浏览器根路径 `/` 当前进入 `/discover`，公共头部“工作台”进入 `/workbench` 功能地图，WebOS 工作台能力保留在 `/desktop`
 - `radish.console`：面向后台治理的独立前端
 
 ## 2. 依赖与链接机制
 
-- 仓库根目录的 [`package.json`](</D:/Code/Radish/package.json>) 维护 workspaces 列表
+- 仓库根目录的 `package.json` 维护 workspaces 列表
 - 首次拉仓库或变更前端依赖后，需要在根目录执行一次 `npm install`
 - `@radish/http` 与 `@radish/ui` 通过 workspace 直接链接，不需要单独发布或单独安装
 
@@ -62,6 +62,21 @@ npm run dev
   - `node_modules` 是否完整
   - 当前开发服务器是否从正确 workspace 启动
   - `vite.config.ts` 是否仍保留共享包监听配置
+
+### 共享反馈 API
+
+- client / console 需要 Ant Design `message` 或 `notification` 时，从 `@radish/ui` 导入，不直接使用 antd 静态反馈 API。
+- Console 根入口在 `AntApp` 内挂载 `AntdFeedbackBridge`；bridge 通过 effect 注册 scoped API，卸载时只清理自己注册的实例。
+- `@radish/ui` 导出的 `message / notification` 是稳定代理，业务模块可以安全持有引用；不要在 render 期间改写 ref、全局对象或重新创建平行 bridge。
+- 共享 chart 尺寸计算统一复用 `chartDimension`，组件 render 保持纯函数，不用无意义的 memo 或 effect 掩盖简单派生值。
+
+### 共享语言与错误边界
+
+- client / Console 各自持有 i18next 实例和资源 registry；共享 `radish_lang` 设备偏好键，但不跨宿主引用翻译资源。
+- `@radish/ui` 不读取 i18next 或 localStorage；`ThemeProvider` 接收宿主解析后的 Ant Design locale，业务组件通过 labels 传入用户文案。
+- 日期、数字和相对时间优先复用 `formatLocalizedDateTime / formatLocalizedNumber / formatLocalizedRelativeTime`，单位与业务词仍留在宿主资源。
+- `@radish/http` 由宿主配置 `getLanguage / translateMessage(key, args?)`，统一发送 `Accept-Language` 并保留 status、`Code / MessageKey / MessageArguments / MessageInfo / TraceId`；动态参数只用于展示格式化。
+- not-found、conflict 和权限控制流不得匹配中英文消息文本；需要跨 helper 抛错时保留 `ApiResponseError`。
 
 ## 5. UI 设计源协作
 
@@ -103,6 +118,11 @@ npm run type-check --workspace=@radish/http
 npm run type-check --workspace=radish.client
 npm run type-check --workspace=radish.console
 
+npm run lint --workspace=@radish/http
+npm run lint --workspace=@radish/ui
+npm run lint --workspace=radish.client
+npm run lint --workspace=radish.console
+
 npm run build --workspace=radish.client
 npm run build --workspace=radish.console
 ```
@@ -120,7 +140,11 @@ npm run type-check --workspace=@radish/http
 - 不要把共享 UI 再拆成第二套“通用组件库”，统一复用 `@radish/ui`
 - 不要在 public / private 页面里重复实现 header、移动底栏或状态卡；`radish.client` 内部优先复用 `components/web-shell`
 - 修改共享包后，优先同时检查 `radish.client` 和 `radish.console` 的使用面
+- 四个 workspace 的 lint 均以 `--max-warnings=0` 进入候选基线；Hook dependency、render ref mutation 和未使用变量不能以 warning 留到发布阶段
+- Console 的 `tsconfig.strict.json` 是渐进 strict 门禁；只扩大已治理文件，不通过跳过检查或恢复独立 lockfile 规避错误
 - 前端运行时配置统一通过 `env.ts` 或运行时配置入口读取，不直接散落读取 `import.meta.env`
+- 共享组件不得读取宿主 i18n、认证或业务 store；新增可见文案必须形成 labels / render props 边界
+- API 错误控制流只读取 status、稳定 `Code` 或明确数据状态，不把 `MessageInfo` 当作协议字段
 
 ## 8. 常见问题
 

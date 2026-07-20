@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -39,6 +40,7 @@ import { usePermission } from '@/hooks/usePermission';
 import { ROUTES } from '@/router/routes';
 import { getAvatarUrl } from '@/config/env';
 import { log } from '@/utils/logger';
+import { formatConsoleNumber } from '@/utils/localeFormatters';
 import { StickerForm } from './StickerForm';
 import { StickerBatchUploadModal } from './StickerBatchUploadModal';
 import '../adminFeature.css';
@@ -47,12 +49,14 @@ import './StickerList.css';
 const getPreviewUrl = (sticker: StickerVo) => getAvatarUrl(sticker.voThumbnailUrl || sticker.voImageUrl);
 
 export const StickerList = () => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
   const { groupId } = useParams<{ groupId: string }>();
   const normalizedGroupId = String(groupId || '').trim();
   const isValidGroupId = /^[1-9]\d*$/.test(normalizedGroupId);
 
-  useDocumentTitle('分组表情管理');
+  useDocumentTitle(t('stickers.item.documentTitle'));
 
   const [loading, setLoading] = useState(false);
   const [savingSort, setSavingSort] = useState(false);
@@ -82,11 +86,11 @@ export const StickerList = () => {
       setSortDrafts({});
     } catch (error) {
       log.error('StickerList', '加载分组表情失败:', error);
-      message.error('加载分组表情失败');
+      message.error(t('stickers.item.feedback.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [isValidGroupId, normalizedGroupId]);
+  }, [isValidGroupId, normalizedGroupId, t]);
 
   useEffect(() => {
     if (!canViewStickers) {
@@ -116,11 +120,11 @@ export const StickerList = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteSticker(id);
-      message.success('删除表情成功');
+      message.success(t('stickers.item.feedback.deleted'));
       await loadStickers();
     } catch (error) {
       log.error('StickerList', '删除表情失败:', error);
-      message.error('删除表情失败');
+      message.error(t('stickers.item.feedback.deleteFailed'));
     }
   };
 
@@ -134,7 +138,7 @@ export const StickerList = () => {
   const handleSaveSort = async () => {
     const entries = Object.entries(sortDrafts);
     if (entries.length === 0) {
-      message.info('没有待保存的排序变更');
+      message.info(t('stickers.item.feedback.noSortChanges'));
       return;
     }
 
@@ -147,11 +151,11 @@ export const StickerList = () => {
         })),
       });
 
-      message.success('排序已更新');
+      message.success(t('stickers.item.feedback.sortUpdated'));
       await loadStickers();
     } catch (error) {
       log.error('StickerList', '批量更新排序失败:', error);
-      message.error('批量更新排序失败');
+      message.error(t('stickers.item.feedback.sortFailed'));
     } finally {
       setSavingSort(false);
     }
@@ -159,7 +163,7 @@ export const StickerList = () => {
 
   const columns: TableColumnsType<StickerVo> = [
     {
-      title: '预览',
+      title: t('stickers.item.table.preview'),
       key: 'preview',
       width: 90,
       render: (_, record) => (
@@ -169,7 +173,7 @@ export const StickerList = () => {
       ),
     },
     {
-      title: '名称',
+      title: t('stickers.item.table.name'),
       dataIndex: 'voName',
       key: 'voName',
       width: 180,
@@ -181,43 +185,44 @@ export const StickerList = () => {
       width: 180,
     },
     {
-      title: '类型',
+      title: t('stickers.item.table.type'),
       key: 'voIsAnimated',
       width: 100,
       render: (_, record) => (
         <Tag color={record.voIsAnimated ? 'blue' : 'default'}>
-          {record.voIsAnimated ? 'GIF' : '静图'}
+          {record.voIsAnimated ? 'GIF' : t('stickers.item.type.static')}
         </Tag>
       ),
     },
     {
-      title: '允许内嵌',
+      title: t('stickers.item.table.inline'),
       key: 'voAllowInline',
       width: 110,
       render: (_, record) => (
         <Tag color={record.voAllowInline ? 'success' : 'default'}>
-          {record.voAllowInline ? '允许' : '仅Reaction'}
+          {t(record.voAllowInline ? 'stickers.item.inline.allowed' : 'stickers.item.inline.reactionOnly')}
         </Tag>
       ),
     },
     {
-      title: '状态',
+      title: t('stickers.item.table.status'),
       key: 'voIsEnabled',
       width: 90,
       render: (_, record) => (
         <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-          {record.voIsEnabled ? '启用' : '禁用'}
+          {t(record.voIsEnabled ? 'stickers.common.enabled' : 'stickers.common.disabled')}
         </Tag>
       ),
     },
     {
-      title: '使用次数',
+      title: t('stickers.item.table.uses'),
       dataIndex: 'voUseCount',
       key: 'voUseCount',
       width: 100,
+      render: (value: number) => formatConsoleNumber(value, language),
     },
     {
-      title: '排序',
+      title: t('stickers.item.table.sort'),
       key: 'voSort',
       width: 120,
       render: (_, record) => (
@@ -231,7 +236,7 @@ export const StickerList = () => {
       ),
     },
     {
-      title: '操作',
+      title: t('stickers.item.table.actions'),
       key: 'actions',
       width: 220,
       fixed: 'right',
@@ -248,22 +253,22 @@ export const StickerList = () => {
                 setFormVisible(true);
               }}
             >
-              编辑
+              {t('stickers.common.edit')}
             </Button>
           ) : null}
 
           {canDeleteStickerPermission ? (
             <Popconfirm
-              title="确认删除表情"
-              description="删除后将软删除该表情，确认继续？"
+              title={t('stickers.item.delete.title')}
+              description={t('stickers.item.delete.description')}
               onConfirm={() => {
                 void handleDelete(record.voId);
               }}
-              okText="确认"
-              cancelText="取消"
+              okText={t('stickers.common.confirm')}
+              cancelText={t('stickers.common.cancel')}
             >
               <Button variant="ghost" size="small" icon={<DeleteOutlined />}>
-                删除
+                {t('stickers.common.delete')}
               </Button>
             </Popconfirm>
           ) : null}
@@ -276,11 +281,11 @@ export const StickerList = () => {
     return (
       <div className="admin-feature-page sticker-item-list-page">
         <ConsolePageHeader
-          eyebrow="表情资源"
-          title="分组表情管理"
-          description="分组 ID 无效，无法加载表情列表。"
+          eyebrow={t('stickers.common.eyebrow')}
+          title={t('stickers.item.page.title')}
+          description={t('stickers.item.page.invalidDescription')}
           icon={<AppstoreOutlined />}
-          status={<ConsoleStatusChip tone="warning">无效分组</ConsoleStatusChip>}
+          status={<ConsoleStatusChip tone="warning">{t('stickers.item.page.invalidStatus')}</ConsoleStatusChip>}
           actions={(
             <Button
               icon={<LeftOutlined />}
@@ -288,7 +293,7 @@ export const StickerList = () => {
                 navigate(ROUTES.STICKERS);
               }}
             >
-              返回分组列表
+              {t('stickers.item.actions.back')}
             </Button>
           )}
         />
@@ -298,13 +303,13 @@ export const StickerList = () => {
   return (
     <div className="admin-feature-page sticker-item-list-page">
       <ConsolePageHeader
-        eyebrow="表情资源"
-        title="分组表情管理"
-        description={`当前分组：${normalizedGroupId}。维护表情图片、编码、内嵌能力和排序权重。`}
+        eyebrow={t('stickers.common.eyebrow')}
+        title={t('stickers.item.page.title')}
+        description={t('stickers.item.page.description', { groupId: normalizedGroupId })}
         icon={<AppstoreOutlined />}
         status={(
           <ConsoleStatusChip tone={canCreateSticker ? 'success' : 'neutral'}>
-            {canCreateSticker ? '可新增' : '只读'}
+            {t(canCreateSticker ? 'stickers.common.createWritable' : 'stickers.common.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={(
@@ -315,7 +320,7 @@ export const StickerList = () => {
               }}
               icon={<LeftOutlined />}
             >
-              返回分组列表
+              {t('stickers.item.actions.back')}
             </Button>
             <Button
               icon={<ReloadOutlined />}
@@ -323,7 +328,7 @@ export const StickerList = () => {
                 void loadStickers();
               }}
             >
-              刷新
+              {t('stickers.common.refresh')}
             </Button>
             {canCreateSticker ? (
               <Button
@@ -335,7 +340,7 @@ export const StickerList = () => {
                   setFormVisible(true);
                 }}
               >
-                新增表情
+                {t('stickers.item.actions.create')}
               </Button>
             ) : null}
             {canBatchUploadSticker ? (
@@ -344,28 +349,28 @@ export const StickerList = () => {
                   setBatchModalVisible(true);
                 }}
               >
-                批量上传
+                {t('stickers.item.actions.batchUpload')}
               </Button>
             ) : null}
           </>
         )}
       />
 
-      <ConsoleMetricGrid label="分组表情指标">
-        <ConsoleMetricCard label="全部表情" value={stickers.length} description="当前分组表情总数" />
-        <ConsoleMetricCard label="当前结果" value={filteredStickers.length} description="当前筛选后的表情" tone="info" />
-        <ConsoleMetricCard label="启用表情" value={enabledStickers} description="当前启用表情数量" tone="success" />
-        <ConsoleMetricCard label="排序草稿" value={sortDraftCount} description="尚未保存的排序变更" tone={sortDraftCount > 0 ? 'warning' : 'neutral'} />
+      <ConsoleMetricGrid label={t('stickers.item.metrics.ariaLabel')}>
+        <ConsoleMetricCard label={t('stickers.item.metrics.total')} value={formatConsoleNumber(stickers.length, language)} description={t('stickers.item.metrics.totalDescription')} />
+        <ConsoleMetricCard label={t('stickers.item.metrics.result')} value={formatConsoleNumber(filteredStickers.length, language)} description={t('stickers.item.metrics.resultDescription')} tone="info" />
+        <ConsoleMetricCard label={t('stickers.item.metrics.enabled')} value={formatConsoleNumber(enabledStickers, language)} description={t('stickers.item.metrics.enabledDescription')} tone="success" />
+        <ConsoleMetricCard label={t('stickers.item.metrics.drafts')} value={formatConsoleNumber(sortDraftCount, language)} description={t('stickers.item.metrics.draftsDescription')} tone={sortDraftCount > 0 ? 'warning' : 'neutral'} />
       </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选表情"
-            description="按表情名称和 Code 定位当前分组素材，排序草稿继续通过表格列批量保存。"
+            title={t('stickers.item.filter.title')}
+            description={t('stickers.item.filter.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('stickers.common.filterCount', { count: activeFilterCount }) : t('stickers.common.notFiltered')}
               </ConsoleStatusChip>
             )}
             actions={canSortSticker ? (
@@ -375,7 +380,7 @@ export const StickerList = () => {
                   void handleSaveSort();
                 }}
               >
-                保存排序
+                {t('stickers.item.actions.saveSort')}
               </Button>
             ) : null}
           >
@@ -383,7 +388,7 @@ export const StickerList = () => {
               <Input
                 allowClear
                 className="sticker-list-filter-input"
-                placeholder="搜索名称 / Code"
+                placeholder={t('stickers.item.filter.placeholder')}
                 prefix={<SearchOutlined />}
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
@@ -404,27 +409,27 @@ export const StickerList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>表情摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前分组筛选、排序草稿和表情类型分布。</p>
+          <h3>{t('stickers.item.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('stickers.item.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">分组 ID</span>
+              <span className="admin-table-summary__label">{t('stickers.item.summary.groupId')}</span>
               <span className="admin-table-summary__value">{normalizedGroupId}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__label">{t('stickers.item.summary.scope')}</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? '名称 / Code 筛选' : '全部分组表情'}
+                {t(activeFilterCount > 0 ? 'stickers.item.summary.filtered' : 'stickers.item.summary.all')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">GIF / 内嵌</span>
-              <span className="admin-table-summary__value">{animatedStickers} / {inlineStickers}</span>
+              <span className="admin-table-summary__label">{t('stickers.item.summary.types')}</span>
+              <span className="admin-table-summary__value">{formatConsoleNumber(animatedStickers, language)} / {formatConsoleNumber(inlineStickers, language)}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">排序权限</span>
+              <span className="admin-table-summary__label">{t('stickers.item.summary.sort')}</span>
               <span className="admin-table-summary__value">
-                {canSortSticker ? '可调整排序' : '仅可查看排序'}
+                {t(canSortSticker ? 'stickers.item.summary.sortWritable' : 'stickers.item.summary.sortReadOnly')}
               </span>
             </div>
           </div>

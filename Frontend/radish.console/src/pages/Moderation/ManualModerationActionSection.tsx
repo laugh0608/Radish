@@ -8,10 +8,12 @@ import {
   InputNumber,
   Space,
   Tag,
+  formatLocalizedDateTime,
 } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
 import {
-  MANUAL_ACTION_OPTIONS,
   MANUAL_ACTION_TYPE,
+  getManualActionOptions,
   getManualActionTypeText,
   toPositiveLongString,
   type ActionLogPreset,
@@ -54,12 +56,14 @@ function ManualStatusCard({
   onApplyActionLogPreset,
   onApplyManualActionPreset,
 }: ManualStatusCardProps) {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   if (!action) {
     return (
       <div className="moderation-manual-status-card">
         <div className="moderation-manual-status-card__title">{title}</div>
-        <Tag>当前未生效</Tag>
-        <div className="moderation-manual-status-card__empty">没有生效中的{title}动作。</div>
+        <Tag>{t('moderation.manual.notActive')}</Tag>
+        <div className="moderation-manual-status-card__empty">{t('moderation.manual.noActiveAction', { action: title })}</div>
       </div>
     );
   }
@@ -68,14 +72,16 @@ function ManualStatusCard({
     <div className="moderation-manual-status-card">
       <div className="moderation-manual-status-card__head">
         <div className="moderation-manual-status-card__title">{title}</div>
-        <Tag color="processing">生效中</Tag>
+        <Tag color="processing">{t('moderation.action.active')}</Tag>
       </div>
-      <div className="moderation-manual-status-card__meta">动作单 #{action.actionId}</div>
+      <div className="moderation-manual-status-card__meta">{t('moderation.manual.actionRecord', { id: action.actionId })}</div>
       <div className="moderation-manual-status-card__meta">
-        截止时间：{action.endTime || '永久'}
+        {t('moderation.manual.endTime', {
+          time: action.endTime ? formatLocalizedDateTime(action.endTime, language) : t('moderation.manual.permanent'),
+        })}
       </div>
       {action.sourceReportId ? (
-        <div className="moderation-manual-status-card__meta">来源举报单：#{action.sourceReportId}</div>
+        <div className="moderation-manual-status-card__meta">{t('moderation.manual.sourceReport', { id: action.sourceReportId })}</div>
       ) : null}
       <div className="moderation-manual-status-card__reason">{action.reason}</div>
       <Space wrap>
@@ -86,11 +92,11 @@ function ManualStatusCard({
               targetUserId,
               actionType: action.actionType,
               isActive: 'active',
-              hint: `已带入用户 #${targetUserId} 当前生效中的${title}动作日志。`,
+              hint: t('moderation.manual.hint.currentLog', { userId: targetUserId, action: title }),
             });
           }}
         >
-          查看当前动作
+          {t('moderation.manual.viewCurrent')}
         </Button>
         <Button
           size="small"
@@ -100,12 +106,19 @@ function ManualStatusCard({
               targetUserId,
               sourceReportId: action.sourceReportId ? String(action.sourceReportId) : undefined,
               actionType: cancelActionType,
-              reason: `参考动作单 #${action.actionId}，人工复核后${getManualActionTypeText(cancelActionType)}`,
-              hint: `已根据当前生效中的${title}动作单 #${action.actionId} 预填${getManualActionTypeText(cancelActionType)}表单。`,
+              reason: t('moderation.reason.fromActionUndo', {
+                actionId: action.actionId,
+                action: getManualActionTypeText(cancelActionType, t),
+              }),
+              hint: t('moderation.manual.hint.prefillUndo', {
+                action: title,
+                actionId: action.actionId,
+                undoAction: getManualActionTypeText(cancelActionType, t),
+              }),
             });
           }}
         >
-          {getManualActionTypeText(cancelActionType)}
+          {getManualActionTypeText(cancelActionType, t)}
         </Button>
       </Space>
     </div>
@@ -127,19 +140,20 @@ export function ManualModerationActionSection({
   onApplyActionLogPreset,
   onApplyManualActionPreset,
 }: ManualModerationActionSectionProps) {
+  const { t } = useTranslation();
   return (
     <section className="admin-feature-card" ref={sectionRef}>
       <div className="admin-feature-header">
         <div>
-          <h3>手动治理动作</h3>
-          <p className="admin-feature-subtle">从举报队列或治理日志一键带入目标用户、来源举报单和解除建议，补齐人工禁言 / 封禁 / 解除动作闭环。</p>
+          <h3>{t('moderation.manual.title')}</h3>
+          <p className="admin-feature-subtle">{t('moderation.manual.description')}</p>
         </div>
         <Space wrap>
           <Button onClick={onResetForm}>
-            清空表单
+            {t('moderation.manual.clear')}
           </Button>
           <Button variant="primary" disabled={submitting} onClick={onSubmit}>
-            {submitting ? '执行中...' : '执行治理动作'}
+            {t(submitting ? 'moderation.manual.executing' : 'moderation.manual.execute')}
           </Button>
         </Space>
       </div>
@@ -153,23 +167,23 @@ export function ManualModerationActionSection({
       <div className="moderation-manual-status">
         <div className="moderation-manual-status__header">
           <div>
-            <div className="moderation-manual-status__title">当前生效状态</div>
-            <div className="moderation-manual-status__subtitle">输入或带入目标用户 ID 后，可直接查看该用户当前是否仍处于禁言或封禁中。</div>
+            <div className="moderation-manual-status__title">{t('moderation.manual.statusTitle')}</div>
+            <div className="moderation-manual-status__subtitle">{t('moderation.manual.statusDescription')}</div>
           </div>
           <Button size="small" onClick={onRefreshStatus}>
-            刷新状态
+            {t('moderation.manual.refreshStatus')}
           </Button>
         </div>
 
         {!statusSnapshot && !statusLoading && !statusError ? (
-          <div className="moderation-manual-status__empty">先输入目标用户 ID，或从上方举报队列 / 动作日志一键带入。</div>
+          <div className="moderation-manual-status__empty">{t('moderation.manual.statusEmpty')}</div>
         ) : null}
-        {statusLoading ? <div className="moderation-manual-status__empty">正在加载当前治理状态...</div> : null}
+        {statusLoading ? <div className="moderation-manual-status__empty">{t('moderation.manual.statusLoading')}</div> : null}
         {statusError ? <div className="moderation-manual-status__error">{statusError}</div> : null}
         {statusSnapshot ? (
           <div className="moderation-manual-status__grid">
             <ManualStatusCard
-              title="禁言"
+              title={t('moderation.action.mute')}
               action={statusSnapshot.muteAction}
               cancelActionType={MANUAL_ACTION_TYPE.unmute}
               targetUserId={statusSnapshot.targetUserId}
@@ -177,7 +191,7 @@ export function ManualModerationActionSection({
               onApplyManualActionPreset={onApplyManualActionPreset}
             />
             <ManualStatusCard
-              title="封禁"
+              title={t('moderation.action.ban')}
               action={statusSnapshot.banAction}
               cancelActionType={MANUAL_ACTION_TYPE.unban}
               targetUserId={statusSnapshot.targetUserId}
@@ -192,9 +206,9 @@ export function ManualModerationActionSection({
         <div className="moderation-manual-action-form__grid">
           <Form.Item
             name="targetUserId"
-            label="目标用户 ID"
+            label={t('moderation.manual.targetUserId')}
             rules={[
-              { required: true, message: '请输入目标用户 ID' },
+              { required: true, message: t('moderation.manual.targetUserRequired') },
               {
                 validator: (_, value) => {
                   if (typeof value !== 'string' || value.trim().length === 0) {
@@ -205,13 +219,13 @@ export function ManualModerationActionSection({
                     return Promise.resolve();
                   }
 
-                  return Promise.reject(new Error('请输入有效的目标用户 ID'));
+                  return Promise.reject(new Error(t('moderation.invalidTargetUserId')));
                 },
               },
             ]}
           >
             <Input
-              placeholder="输入目标用户 ID，或从上方队列 / 日志一键带入"
+              placeholder={t('moderation.manual.targetUserPlaceholder')}
               onChange={onTargetUserInputChange}
               onBlur={onRefreshStatus}
               onPressEnter={onRefreshStatus}
@@ -220,7 +234,7 @@ export function ManualModerationActionSection({
 
           <Form.Item
             name="sourceReportId"
-            label="关联举报单 ID"
+            label={t('moderation.manual.sourceReportId')}
             rules={[
               {
                 validator: (_, value) => {
@@ -230,18 +244,18 @@ export function ManualModerationActionSection({
 
                   return toPositiveLongString(String(value))
                     ? Promise.resolve()
-                    : Promise.reject(new Error('请输入有效的关联举报单 ID'));
+                    : Promise.reject(new Error(t('moderation.invalidSourceReportId')));
                 },
               },
             ]}
           >
-            <Input placeholder="可选，保留动作与举报单的关联" />
+            <Input placeholder={t('moderation.manual.sourceReportPlaceholder')} />
           </Form.Item>
         </div>
 
         <div className="moderation-manual-action-form__grid">
-          <Form.Item name="actionType" label="治理动作" rules={[{ required: true, message: '请选择治理动作' }]}>
-            <Select options={MANUAL_ACTION_OPTIONS} placeholder="选择禁言、封禁或解除动作" />
+          <Form.Item name="actionType" label={t('moderation.manual.action')} rules={[{ required: true, message: t('moderation.manual.actionRequired') }]}>
+            <Select options={getManualActionOptions(t)} placeholder={t('moderation.manual.actionPlaceholder')} />
           </Form.Item>
 
           <Form.Item
@@ -257,24 +271,31 @@ export function ManualModerationActionSection({
               return (
                 <Form.Item
                   name="durationHours"
-                  label={currentActionType === MANUAL_ACTION_TYPE.mute ? '持续时长（小时）' : '持续时长（小时，可留空表示永久封禁）'}
+                  label={t(currentActionType === MANUAL_ACTION_TYPE.mute ? 'moderation.manual.duration' : 'moderation.manual.banDuration')}
                   rules={currentActionType === MANUAL_ACTION_TYPE.mute
-                    ? [{ required: true, message: '请输入禁言时长' }]
+                    ? [{ required: true, message: t('moderation.manual.muteDurationRequired') }]
                     : []}
                 >
-                  <InputNumber min={1} max={720} className="moderation-full-width-control" placeholder={currentActionType === MANUAL_ACTION_TYPE.mute ? '例如 24' : '留空表示永久封禁'} />
+                  <InputNumber
+                    min={1}
+                    max={720}
+                    className="moderation-full-width-control"
+                    placeholder={t(currentActionType === MANUAL_ACTION_TYPE.mute
+                      ? 'moderation.manual.durationExample'
+                      : 'moderation.manual.permanentPlaceholder')}
+                  />
                 </Form.Item>
               );
             }}
           </Form.Item>
         </div>
 
-        <Form.Item name="reason" label="动作原因">
-          <Input.TextArea rows={4} maxLength={500} showCount placeholder="补充人工治理依据；若从上方队列或日志带入，会自动预填推荐说明。" />
+        <Form.Item name="reason" label={t('moderation.manual.reason')}>
+          <Input.TextArea rows={4} maxLength={500} showCount placeholder={t('moderation.manual.reasonPlaceholder')} />
         </Form.Item>
 
         <div className="moderation-manual-action-form__footnote">
-          禁言必须填写时长，封禁可留空表示永久；解除禁言 / 解除封禁会记录新的治理动作单，并自动回跳到对应日志。
+          {t('moderation.manual.footnote')}
         </div>
       </Form>
     </section>

@@ -240,13 +240,6 @@ export const PublicForumSearch = ({
     void loadPosts();
   }, [reloadToken, routeState, t]);
 
-  useEffect(() => {
-    const title = keyword
-      ? t('forum.public.searchResultTitle', { keyword })
-      : t('forum.public.searchTitle');
-    document.title = `${t('desktop.apps.forum.name')} · ${title}`;
-  }, [keyword, t]);
-
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);
   }, [currentPage, isCompactViewport, totalPages]);

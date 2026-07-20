@@ -7,73 +7,55 @@
 @{
     ViewData["Title"] = Localizer["auth.consent.title"];
 
-    var isZh = CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase);
-    var displayClientName = string.IsNullOrWhiteSpace(Model.ClientName) ? Model.ClientId : Model.ClientName;
-    var hasClientDescription = !string.IsNullOrWhiteSpace(Model.ClientDescription);
-    var applicationDescription = hasClientDescription ? Model.ClientDescription : string.Empty;
-    var developerName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
+    var fallbackClientName = string.IsNullOrWhiteSpace(Model.ClientName) ? Model.ClientId : Model.ClientName;
+    var fallbackClientDescription = Model.ClientDescription ?? string.Empty;
+    var fallbackDeveloperName = string.IsNullOrWhiteSpace(Model.DeveloperName) ? "Radish" : Model.DeveloperName;
+    var displayClientName = AuthClientText.Resolve(Localizer, Model.ClientId, "displayName", fallbackClientName);
+    var applicationDescription = AuthClientText.Resolve(Localizer, Model.ClientId, "description", fallbackClientDescription);
+    var developerName = AuthClientText.Resolve(Localizer, Model.ClientId, "developerName", fallbackDeveloperName);
+    var hasClientDescription = !string.IsNullOrWhiteSpace(applicationDescription);
     var redirectTarget = string.IsNullOrWhiteSpace(Model.RedirectHost) ? Model.RedirectUri : Model.RedirectHost;
     var redirectDisplay = string.IsNullOrWhiteSpace(redirectTarget)
-        ? (isZh ? "请求应用" : "the requesting app")
+        ? Localizer["auth.consent.requestingApp"].Value
         : redirectTarget;
-    var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? (isZh ? "当前登录账号" : "Current account") : User!.Identity!.Name!;
+    var loginIdentity = string.IsNullOrWhiteSpace(User?.Identity?.Name) ? Localizer["auth.consent.currentAccount"].Value : User!.Identity!.Name!;
     var clientInitial = string.IsNullOrWhiteSpace(displayClientName) ? "R" : displayClientName.Trim()[..1].ToUpperInvariant();
-    var permissionCountLabel = isZh
-        ? $"{Model.Scopes.Count} 项权限"
-        : $"{Model.Scopes.Count} permission{(Model.Scopes.Count == 1 ? string.Empty : "s")}";
+    var permissionCountLabel = Localizer[
+        Model.Scopes.Count == 1 ? "auth.consent.permissionCount.one" : "auth.consent.permissionCount.other",
+        Model.Scopes.Count];
 
-    var pageEyebrow = isZh ? "Radish 安全授权" : "Radish secure authorization";
-    var targetLabel = isZh ? "授权请求" : "Authorization request";
-    var headingText = isZh
-        ? $"允许 {displayClientName} 访问你的 Radish 账号？"
-        : $"Allow {displayClientName} to access your Radish account?";
-    var heroCopy = isZh
-        ? $"你正在以 {loginIdentity} 授权，确认后会回到 {redirectDisplay} 继续刚才的操作。"
-        : $"You are authorizing as {loginIdentity}. After approval, you will return to {redirectDisplay} to continue.";
-    var identityTitle = isZh ? "账号与应用" : "Account and app";
-    var identityHint = isZh
-        ? "请核对账号、应用和返回位置，三项都符合预期时再允许。"
-        : "Check the account, app, and return destination before allowing access.";
-    var accountLabel = isZh ? "当前账号" : "Signed in as";
-    var appLabel = isZh ? "应用" : "Application";
-    var developerLabel = isZh ? "开发方" : "Developer";
-    var redirectLabel = isZh ? "返回到" : "Return to";
-    var permissionTitle = isZh ? "允许后它可以" : "After approval it can";
-    var permissionHint = isZh
-        ? "只授予本次请求包含的访问范围，原始 scope 可在技术信息里核对。"
-        : "Only the scopes included in this request will be granted. You can review raw scopes in technical details.";
-    var safetyTitle = isZh ? "它不会获得" : "It will not get";
-    var safetyPoint1 = isZh ? "你的密码、支付口令、验证码或浏览器保存的登录凭据。" : "Your password, payment passcode, one-time codes, or saved browser credentials.";
-    var safetyPoint2 = isZh ? "自动修改账号资料、资产或授予新的管理权限。" : "The ability to automatically change your profile, assets, or grant new admin permissions.";
-    var riskHint = isZh
-        ? "不认识应用、账号不对或返回位置异常时，请取消授权。取消不会退出 Radish。"
-        : "If the app, account, or destination looks wrong, cancel authorization. Cancelling will not sign you out of Radish.";
-    var decisionHint = isZh ? "请只在应用、账号和返回位置都符合预期时允许。" : "Allow only when the app, account, and destination all look right.";
-    var technicalTitle = isZh ? "查看技术信息" : "View technical details";
-    var technicalHint = isZh ? "用于排障和安全核对，普通确认时无需优先阅读。" : "For troubleshooting and security review. You do not need these details for normal confirmation.";
-    var clientIdLabel = isZh ? "Client ID" : "Client ID";
-    var redirectUriLabel = isZh ? "完整回调地址" : "Full redirect URI";
-    var rawScopeLabel = isZh ? "原始 scope" : "Raw scope";
+    var pageEyebrow = Localizer["auth.consent.pageEyebrow"];
+    var targetLabel = Localizer["auth.consent.targetLabel"];
+    var headingText = Localizer["auth.consent.headingText", displayClientName];
+    var heroCopy = Localizer["auth.consent.heroCopy", loginIdentity, redirectDisplay];
+    var identityTitle = Localizer["auth.consent.identityTitle"];
+    var identityHint = Localizer["auth.consent.identityHint"];
+    var accountLabel = Localizer["auth.consent.accountLabel"];
+    var appLabel = Localizer["auth.consent.appLabel"];
+    var developerLabel = Localizer["auth.consent.developerLabel"];
+    var redirectLabel = Localizer["auth.consent.redirectLabel"];
+    var permissionTitle = Localizer["auth.consent.permissionTitle"];
+    var permissionHint = Localizer["auth.consent.permissionHint"];
+    var safetyTitle = Localizer["auth.consent.safetyTitle"];
+    var safetyPoint1 = Localizer["auth.consent.safetyPoint1"];
+    var safetyPoint2 = Localizer["auth.consent.safetyPoint2"];
+    var riskHint = Localizer["auth.consent.riskHint"];
+    var decisionHint = Localizer["auth.consent.decisionHint"];
+    var technicalTitle = Localizer["auth.consent.technicalTitle"];
+    var technicalHint = Localizer["auth.consent.technicalHint"];
+    var clientIdLabel = Localizer["auth.consent.clientIdLabel"];
+    var redirectUriLabel = Localizer["auth.consent.redirectUriLabel"];
+    var rawScopeLabel = Localizer["auth.consent.rawScopeLabel"];
 
     (string Title, string Description) DescribeScope(string scope)
     {
         return scope switch
         {
-            "openid" => isZh
-                ? ("确认登录身份", "让应用知道当前是哪个 Radish 账号在操作。")
-                : ("Confirm signed-in identity", "Lets the app know which Radish account is acting."),
-            "profile" => isZh
-                ? ("读取昵称与头像", "用于在应用里显示你的基础资料。")
-                : ("Read display name and avatar", "Shows your basic profile inside the app."),
-            "offline_access" => isZh
-                ? ("保持本次登录", "减少短时间内重复登录或重复授权。")
-                : ("Keep this session", "Reduces repeated sign-ins or repeated approvals for a short period."),
-            "radish-api" => isZh
-                ? ("继续当前服务操作", "用于完成你刚才在请求应用里打开的受保护任务。")
-                : ("Continue the current service action", "Completes the protected task you opened in the requesting app."),
-            _ => isZh
-                ? ("附加访问权限", "这是请求应用声明的额外访问范围，请确认符合预期。")
-                : ("Additional access", "An extra scope declared by the requesting app. Review it before continuing.")
+            "openid" => (Localizer["auth.consent.scope.openid.title"].Value, Localizer["auth.consent.scope.openid.description"].Value),
+            "profile" => (Localizer["auth.consent.scope.profile.title"].Value, Localizer["auth.consent.scope.profile.description"].Value),
+            "offline_access" => (Localizer["auth.consent.scope.offlineAccess.title"].Value, Localizer["auth.consent.scope.offlineAccess.description"].Value),
+            "radish-api" => (Localizer["auth.consent.scope.radishApi.title"].Value, Localizer["auth.consent.scope.radishApi.description"].Value),
+            _ => (Localizer["auth.consent.scope.additional.title"].Value, Localizer["auth.consent.scope.additional.description"].Value)
         };
     }
 }
@@ -673,8 +655,8 @@
                     </div>
 
                     <div class="lang-switcher" aria-label="Language">
-                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh-CN')">中文</button>
-                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en-US')">English</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('zh')">中文</button>
+                        <button type="button" class="lang-button @(CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase) ? "active" : "")" onclick="switchLanguage('en')">English</button>
                     </div>
                 </header>
 
@@ -802,10 +784,14 @@
 
     <script>
         function switchLanguage(culture) {
-            const url = new URL(window.location.href);
-            url.searchParams.set('culture', culture);
-            url.searchParams.set('ui-culture', culture);
-            window.location.href = url.toString();
+            const returnUrl = new URL(window.location.href);
+            returnUrl.searchParams.delete('culture');
+            returnUrl.searchParams.delete('ui-culture');
+            const localReturnUrl = `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`;
+            const switchUrl = new URL('@Url.Action("SetLanguage", "Account")', window.location.origin);
+            switchUrl.searchParams.set('culture', culture);
+            switchUrl.searchParams.set('returnUrl', localReturnUrl);
+            window.location.assign(switchUrl.toString());
         }
     </script>
 </body>

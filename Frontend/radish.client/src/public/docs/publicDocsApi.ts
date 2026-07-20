@@ -1,4 +1,5 @@
-import { apiGet, configureApiClient } from '@radish/http';
+import { apiGet, configureApiClient, createApiResponseError } from '@radish/http';
+import type { ParsedApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 import type {
   WikiDocumentDetailVo,
@@ -12,10 +13,10 @@ configureApiClient({
   baseUrl: getApiBaseUrl(),
 });
 
-async function ensureOk<T>(request: Promise<{ ok: boolean; data?: T; message?: string }>, fallbackMessage: string): Promise<T> {
+async function ensureOk<T>(request: Promise<ParsedApiResponse<T>>, fallbackMessage: string): Promise<T> {
   const response = await request;
   if (!response.ok || response.data === undefined) {
-    throw new Error(response.message || fallbackMessage);
+    throw createApiResponseError(response, fallbackMessage);
   }
 
   return response.data;

@@ -1,4 +1,4 @@
-import type { ThemeConfig } from 'antd';
+import { theme as antdThemeEngine, type ThemeConfig } from 'antd';
 
 /**
  * Radish 主题色配置
@@ -90,6 +90,7 @@ export const antdTheme: ThemeConfig = {
  */
 export const antdDarkTheme: ThemeConfig = {
   ...antdTheme,
+  algorithm: antdThemeEngine.darkAlgorithm,
   token: {
     ...antdTheme.token,
     colorBgBase: '#141414',

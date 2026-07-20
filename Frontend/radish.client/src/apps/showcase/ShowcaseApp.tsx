@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { Button } from '@radish/ui/button';
 import { GlassPanel } from '@radish/ui/glass-panel';
@@ -7,7 +8,7 @@ import { Input } from '@radish/ui/input';
 import { Select } from '@radish/ui/select';
 import { Modal } from '@radish/ui/modal';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
-import { ToastContainer, toast } from '@radish/ui/toast';
+import { toast } from '@radish/ui/toast';
 import { ExperienceBar, type ExperienceData } from '@radish/ui/experience-bar';
 import { TableSkeleton, SimpleSkeleton, CardSkeleton } from '@radish/ui/skeleton';
 import { LineChart } from '@radish/ui/line-chart';
@@ -15,6 +16,8 @@ import { BarChart } from '@radish/ui/bar-chart';
 import { PieChart } from '@radish/ui/pie-chart';
 import { AreaChart } from '@radish/ui/area-chart';
 import { useTheme } from '@/theme/useTheme';
+import { createExperienceBarPresentation } from '@/experience/experiencePresentation';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
 import styles from './ShowcaseApp.module.css';
 
 type SectionId = 'overview' | 'basic' | 'form' | 'feedback' | 'data' | 'charts';
@@ -83,7 +86,14 @@ const areaChartData = [
  * 面向当前 WebOS 主题与共享组件的维护中预览页。
  */
 export const ShowcaseApp = () => {
+  const { t, i18n } = useTranslation();
   const { currentTheme } = useTheme();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const experienceBarPresentation = useMemo(
+    () => createExperienceBarPresentation(t, language, displayTimeZone),
+    [displayTimeZone, language, t],
+  );
   const [activeSection, setActiveSection] = useState<SectionId>('overview');
   const [inputValue, setInputValue] = useState('');
   const [selectValue, setSelectValue] = useState('');
@@ -431,6 +441,7 @@ export const ShowcaseApp = () => {
               <Modal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
+                closeLabel={t('common.close')}
                 title="组件说明补充"
               >
                 <div className={styles.modalBody}>
@@ -447,6 +458,8 @@ export const ShowcaseApp = () => {
                 isOpen={confirmOpen}
                 title="确认更新展示状态"
                 message="确认后会保留当前筛选分类，并重新计算展示页可见组件状态。"
+                confirmText={t('common.confirm')}
+                cancelText={t('common.cancel')}
                 onCancel={() => setConfirmOpen(false)}
                 onConfirm={() => {
                   setConfirmOpen(false);
@@ -492,6 +505,7 @@ export const ShowcaseApp = () => {
                       showProgress={true}
                       showTooltip={true}
                       animated={true}
+                      presentation={experienceBarPresentation}
                     />
                   </div>
                   <div>
@@ -502,6 +516,7 @@ export const ShowcaseApp = () => {
                       showLevel={true}
                       showProgress={true}
                       animated={true}
+                      presentation={experienceBarPresentation}
                     />
                   </div>
                   <div>
@@ -512,6 +527,7 @@ export const ShowcaseApp = () => {
                       showLevel={true}
                       showProgress={false}
                       animated={true}
+                      presentation={experienceBarPresentation}
                     />
                   </div>
                 </div>
@@ -610,7 +626,6 @@ export const ShowcaseApp = () => {
           </section>
         )}
       </div>
-      <ToastContainer />
     </div>
   );
 };

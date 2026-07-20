@@ -1,4 +1,6 @@
 import type { PetCareActionState, PetProfile, PetStatLog } from '@/api/pet';
+import { getIntlLocale } from '../locales/language.ts';
+import { formatDateTimeByTimeZone } from '../utils/dateTime.ts';
 
 export type PetStatKey = 'voSatiety' | 'voCleanliness' | 'voEnergy';
 export type PetStatusIntent = 'thriving' | 'hungry' | 'messy' | 'tired' | 'steady';
@@ -27,6 +29,85 @@ export interface CooldownDisplayParts {
 export interface PetStatDelta {
   statKey: PetStatKey;
   value: number;
+}
+
+const actionTranslationKeys: Record<string, string> = {
+  feed: 'pet.care.action.feed',
+  clean: 'pet.care.action.clean',
+  play: 'pet.care.action.play',
+  rest: 'pet.care.action.rest',
+};
+
+const moodTranslationKeys: Record<string, string> = {
+  happy: 'pet.mood.happy',
+  calm: 'pet.mood.calm',
+  tired: 'pet.mood.tired',
+  hungry: 'pet.mood.hungry',
+  messy: 'pet.mood.messy',
+};
+
+export function formatPetNumber(value: number | string, language?: string): string {
+  const locale = getIntlLocale(language);
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? new Intl.NumberFormat(locale).format(value) : '-';
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return '-';
+  }
+
+  if (/^-?\d+$/.test(normalized)) {
+    return new Intl.NumberFormat(locale).format(BigInt(normalized));
+  }
+
+  const numericValue = Number(normalized);
+  return Number.isFinite(numericValue) ? new Intl.NumberFormat(locale).format(numericValue) : '-';
+}
+
+export function formatPetSignedNumber(value: number | string, language?: string): string {
+  const formattedValue = formatPetNumber(value, language);
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  return numericValue > 0 ? `+${formattedValue}` : formattedValue;
+}
+
+export function formatPetDateTime(
+  value: string | Date | number | null | undefined,
+  timeZoneId: string,
+  language?: string,
+  fallback: string = '-',
+): string {
+  return formatDateTimeByTimeZone(value, timeZoneId, fallback, getIntlLocale(language));
+}
+
+export function resolvePetGrowthStageTranslationKey(growthStage: number): string {
+  if (growthStage <= 1) {
+    return 'pet.growthStage.sprout';
+  }
+
+  if (growthStage === 2) {
+    return 'pet.growthStage.unfurling';
+  }
+
+  if (growthStage === 3) {
+    return 'pet.growthStage.growing';
+  }
+
+  return 'pet.growthStage.mature';
+}
+
+export function resolvePetMoodTranslationKey(mood: string): string {
+  return moodTranslationKeys[mood] ?? 'pet.mood.calm';
+}
+
+export function resolvePetActionTranslationKey(actionType: string): string {
+  return actionTranslationKeys[actionType] ?? 'pet.care.action.unknown';
+}
+
+export function resolvePetLogMessageTranslationKey(actionType: string): string {
+  return actionTranslationKeys[actionType]
+    ? `pet.logs.message.${actionType}`
+    : 'pet.logs.message.unknown';
 }
 
 const moodInsightMap: Record<string, PetStatusInsight> = {

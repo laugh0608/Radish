@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { routeTitleMap } from '@/router/routeMeta';
+import { getConsoleRouteTitle, routeTitleMap } from '@/router/routeMeta';
 
 /**
  * 页面标题管理 Hook
@@ -38,7 +38,7 @@ export function useDocumentTitle(title: string, suffix = 'Radish Console') {
  * @returns 页面标题
  */
 export function getTitleFromPath(pathname: string): string {
-  return routeTitleMap[pathname] || '页面';
+  return getConsoleRouteTitle(pathname);
 }
 
 export { routeTitleMap };

@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 48%, transparent) 0%, transparent 32%),
     radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-jade) 16%, transparent) 0%, transparent 24%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-app) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -29,7 +29,7 @@
 }
 
 .sectionCard {
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid var(--theme-border-soft);
   border-radius: 18px;
   box-shadow: var(--theme-shadow-soft);
@@ -40,7 +40,7 @@
 .sectionHeader {
   padding: 28px 28px 18px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
   border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
   display: flex;
   justify-content: space-between;
@@ -86,7 +86,7 @@
 }
 
 .readOnlyBadge {
-  background: color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 78%, var(--theme-surface-highlight) 22%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   color: var(--theme-brand-primary);
 }
@@ -138,7 +138,7 @@
   padding: 6px 12px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   color: var(--theme-brand-primary);
   font: inherit;
   font-size: 12px;
@@ -165,7 +165,7 @@
 }
 
 .shareFeedback[data-state='error'] {
-  color: var(--theme-state-danger, #bb5b54);
+  color: var(--theme-state-danger);
 }
 
 .toolbar {
@@ -208,7 +208,7 @@
 .tabButtonActive {
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-ink) 44%, var(--theme-brand-primary) 56%) 100%);
   border-color: transparent;
-  color: #fff;
+  color: var(--theme-text-inverse);
   box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
 }
 
@@ -234,7 +234,7 @@
   padding: 14px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 80%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   min-width: 0;
 }
@@ -274,7 +274,7 @@
 
 .railLinkRow:hover,
 .railLinkRowActive {
-  background: color-mix(in srgb, var(--theme-brand-soft) 60%, white 40%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 60%, var(--theme-surface-highlight) 40%);
   color: var(--theme-brand-primary);
 }
 
@@ -335,7 +335,7 @@
   margin: 18px 24px 0;
   padding: 12px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, var(--theme-surface-highlight) 54%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 
@@ -371,7 +371,7 @@
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   cursor: pointer;
   color: inherit;
   font: inherit;
@@ -391,7 +391,7 @@
 }
 
 .listItemCurrentUser {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 68%, white 32%) 0%, color-mix(in srgb, var(--theme-bg-surface) 88%, white 12%) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-surface-highlight) 32%) 0%, color-mix(in srgb, var(--theme-bg-surface) 88%, var(--theme-surface-highlight) 12%) 100%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 20%, transparent);
 }
 
@@ -487,7 +487,7 @@
 }
 
 .productImageFallback {
-  background: color-mix(in srgb, var(--theme-brand-soft) 58%, white 42%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-surface-highlight) 42%);
   color: var(--theme-brand-primary);
 }
 
@@ -497,7 +497,7 @@
 }
 
 .userAvatarFallback {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 50%, white 50%) 0%, color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 50%, var(--theme-surface-highlight) 50%) 0%, color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%) 100%);
   color: var(--theme-brand-primary);
   font-size: 17px;
   font-weight: 700;
@@ -575,7 +575,7 @@
 .currentUserBadge {
   min-height: 26px;
   padding: 4px 10px;
-  background: color-mix(in srgb, var(--theme-brand-primary) 12%, white 88%);
+  background: color-mix(in srgb, var(--theme-brand-primary) 12%, var(--theme-surface-highlight) 88%);
   color: var(--theme-brand-primary);
 }
 
@@ -630,7 +630,7 @@
 .userMetricChip {
   color: var(--theme-brand-primary);
   font-weight: 700;
-  background: color-mix(in srgb, var(--theme-brand-soft) 34%, white 66%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-surface-highlight) 66%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
 }
 
@@ -698,7 +698,7 @@
   min-height: 26px;
   padding: 4px 9px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 62%, white 38%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, var(--theme-surface-highlight) 38%);
   color: var(--theme-brand-primary);
   font-size: 12px;
   font-weight: 800;
@@ -746,7 +746,7 @@
 
 .pageNumberButtonActive {
   background: var(--theme-brand-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-brand-primary);
 }
 
@@ -757,11 +757,11 @@
   padding: 24px;
   border-radius: 24px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .statusCard[data-tone='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 7%, white 93%);
+  background: color-mix(in srgb, var(--theme-state-danger) 7%, var(--theme-surface-highlight) 93%);
   border-color: color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
 }
 
@@ -770,7 +770,7 @@
 }
 
 .statusCard[data-tone='loading'] {
-  background: color-mix(in srgb, var(--theme-brand-soft) 42%, white 58%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-surface-highlight) 58%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
 }
 
@@ -782,7 +782,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 56%, white 44%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 56%, var(--theme-surface-highlight) 44%);
   color: var(--theme-brand-primary);
 }
 
@@ -814,7 +814,7 @@
   padding: 9px 16px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 76%, var(--theme-surface-highlight) 24%);
   color: var(--theme-brand-primary);
   font-size: 13px;
   font-weight: 700;

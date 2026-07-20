@@ -83,6 +83,12 @@ public class MessageModel<T> : IMessageModel
     public string? MessageKey { get; set; }
 
     /// <summary>
+    /// 多语言消息的格式参数。
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object[]? MessageArguments { get; set; }
+
+    /// <summary>
     /// 服务端诊断关联标识
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -258,6 +264,12 @@ public class MessageModel : IMessageModel
     public string? MessageKey { get; set; }
 
     /// <summary>
+    /// 多语言消息的格式参数。
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public object[]? MessageArguments { get; set; }
+
+    /// <summary>
     /// 服务端诊断关联标识
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
@@ -313,6 +325,8 @@ public interface IMessageModel
     string? Code { get; set; }
 
     string? MessageKey { get; set; }
+
+    object[]? MessageArguments { get; set; }
 
     string? TraceId { get; set; }
 }

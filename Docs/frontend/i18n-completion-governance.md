@@ -1,0 +1,357 @@
+# F3 i18n 完成度治理实施说明
+
+> 本文是 `F3 i18n 完成度治理` 的审计与实施入口，承载当前范围、状态模型、模块职责、迁移批次、停止线和验证矩阵。
+>
+> 长期通用规范仍以[国际化与多语言规范](/architecture/i18n)为准；F2 主题运行时以[前端主题与 i18n 实施说明](/frontend/theme-i18n-implementation)为准。本专题不重新实施主题系统。
+
+## 1. 当前状态
+
+- **阶段**：发布后长期维护与功能完成。
+- **顺位**：F1 商城、F2 主题与 F3 i18n 均已完成，工程第一顺位已进入 F4 真实使用观察与反馈归因。
+- **审计基线**：`dev` 提交 `0d8e63be`；`F3-C8` 实施提交为 `d5341095 / 762e32ac`。
+- **当前进度**：三端与共享边界审计、`F3-A / F3-B / F3-C1-C9 / F3-D` 已全部完成；Public / Private / Auth、Console 认证 / 无权限边界与管理员受权内页均已通过 `zh / en × PC / mobile` 代表运行态矩阵。
+- **正式范围**：`radish.client`、`radish.console`、`Radish.Auth`，以及它们依赖的 `@radish/http`、`@radish/ui` 共享契约。
+- **兼容范围**：`/desktop` 只保证语言切换与高频反馈不发生阻断级回退。
+
+F3 的目标不是把仓库中的中文逐个替换成翻译键，而是建立一套可以持续扩展、能自动防止双语漂移、并且让服务端错误与前端展示职责清晰的正式 Web 多语言契约。
+
+## 2. 审计基线与完成对照
+
+本章保留 `0d8e63be` 立项审计时的量化结果和初始缺口，用来解释后续批次为何这样拆分；表格或条目中的“没有 / 尚未 / 当前”若未显式标注已完成，均指该历史审计时点，不代表 `F3-C8` 之后的运行态。最新结论以第 1 节状态和第 6 节成组批次为准。
+
+### 2.1 语言选择、初始化与持久化
+
+| 模块 | 审计时已有能力 | 审计时真实缺口 |
+| --- | --- | --- |
+| `radish.client` | i18next 支持 `zh / en`；检测顺序为 `?lang`、`localStorage.radish_lang`、浏览器语言；OIDC 发起时携带 `culture / ui-culture` | 正式 Web Header 没有语言入口，当前主要入口仍在 `/desktop` Dock；`document.lang`、Ant Design locale、API `Accept-Language` 没有由同一语言状态统一驱动 |
+| `radish.console` | 设置页存在只读的“简体中文”占位 | 没有 i18n 依赖、初始化、语言入口或持久化；Ant Design 与日期均固定中文；API 请求没有统一语言头 |
+| `Radish.Auth` | `RequestLocalizationOptions` 支持 Query String、Cookie、`Accept-Language`，默认 `zh`；三页均有中英文切换按钮 | 页面切换只改当前 URL query，没有写入文化 cookie；Login / Register 互跳和 POST 回跳不保留显式选择；三页各自复制切换脚本 |
+
+当前不存在用户 Profile 级语言字段。F3 先把语言定义为**同一浏览器设备上的正式 Web 偏好**，不在首批引入数据库字段、Claim 或跨设备同步承诺。
+
+### 2.2 文案资源与硬编码
+
+- `radish.client/src/i18n.ts` 已达到约 `4,794` 行，主资源约 `2,360` 个 key / 语言；中英文主资源 key 当前成对且未发现重复 key，但没有自动化守卫。
+- client 已按业务域形成 `forum / shop / wiki / profile / me / discover / workbench` 等 key 前缀，说明现有命名基础可复用；问题主要是资源物理组织仍集中在单文件。
+- `F3-C8` 已收口公开承诺、页面 head、低频设置和共享上传等正式消费者；后续 client 只处理真实新增回归，不因历史审计命中重复返工。
+- `radish.console` 没有资源层。当前 138 个 TS / TSX 文件中 92 个含中文文本；这些命中包含日志、注释和技术文本，不能直接等同于迁移量，但路由元数据、管理壳、Dashboard、用户、治理、订单、文档和反馈文案均已确认是用户可见硬编码。
+- `Radish.Auth` 的 Login / Register / Consent 分别约 `573 / 678 / 812` 行。Register 与 Consent 大量使用 `isZh ? ... : ...`，Controller 的注册校验和成功 / 失败反馈仍直接写中文。
+- Auth `zh` / 默认资源各有 25 个 key，`en` 只有 18 个；英文缺少 7 个登录客户端信息 key，当前会回退到默认中文。
+- `@radish/ui` 的上传、Markdown、裁切、确认框等正式消费者已改由宿主传入 locale、labels 或 formatter；共享组件不得读取宿主语言状态的边界保持不变。
+
+### 2.3 服务端错误与前端翻译职责
+
+当前已有正确的契约骨架：
+
+```text
+HTTP status + Code + MessageKey + MessageInfo + MessageArguments + TraceId
+```
+
+立项审计时实现尚未闭环；以下缺口已随 `F3-A / F3-B / F3-C1-C8` 按真实消费面逐批治理，保留在此作为决策依据：
+
+- `MessageModel`、全局异常处理和 `ApiErrorContractAttribute` 已支持稳定 `Code / MessageKey / TraceId`；API 的 `zh / en` 资源目前各只有 6 个 key，多数 Controller 仍返回直接写死的中文 `MessageInfo`。
+- `@radish/http` 有 `parseApiResponseWithI18n`，但统一 `apiGet / apiPost / apiPut / apiDelete` 只调用不带 i18n 的解析器；多数业务 API 因此继续直接展示服务端字符串。
+- client 商城 API 等接口虽然接收 `t`，但立即 `void t`；这说明调用签名已经表达翻译意图，统一客户端却没有提供实际能力。
+- client 主资源当前没有 `error.*` 键；少数使用 i18n 解析器的调用仍只能回退到服务端 `MessageInfo`。
+- 部分页面通过匹配“商品不存在 / 文档不存在 / 帖子不存在”等中文字符串判断状态，语言切换后会破坏控制流。状态判断必须改用 `Code`、HTTP status 或明确数据状态。
+
+F3 固定职责如下：
+
+- `Code` 与 HTTP status 决定控制流，禁止用中英文消息文本决定业务分支。
+- `MessageKey` 是稳定翻译契约；前端存在对应 key 时优先使用本地翻译。
+- `MessageInfo` 是服务端按 `Accept-Language` 生成的安全兜底，不是前端业务判断依据。
+- `TraceId` 只用于诊断复制与日志关联，不拼入普通主提示；可恢复错误按现有诊断规范提供显式入口。
+- 未处理异常不得把异常消息直接暴露给用户；服务端记录完整异常，外部只返回稳定通用错误与 TraceId。
+- 动态参数统一使用 `MessageArguments` 短位置数组，最多 8 项，只允许字符串、字符、布尔与有限数值等安全标量；服务端将单个字符串限制为 256 个字符并规范化控制字符，未知对象、非有限数值等降级为安全占位。前端只把参数交给 `MessageKey` 翻译器做展示格式化，不用于控制流或任意对象透传。
+
+### 2.4 日期、数字、金额、相对时间与复数
+
+- client 同时存在固定 `zh-CN`、浏览器默认 `toLocaleString()`、局部 `en-US / zh-CN` 映射和 date-fns 相对时间四种口径。
+- 现有 `formatDateTimeByTimeZone` 正确承接用户时区，但格式 locale 固定为 `zh-CN`；语言与时区尚未解耦为两个明确输入。
+- Console 多个用户、角色、订单、商品、文档和系统设置页面固定使用 `zh-CN`。
+- 金额 / 胡萝卜与统计数字多由页面自行拼接，API helper 中也存在中文单位和“原价”文案。
+- 英文 count 文案普遍只有单一 `{{count}} items / posts / replies`，没有使用 i18next `_one / _other` 复数规则；Auth Consent 仅手工处理了一处 permission 单复数。
+
+F3 统一通过 `Intl.DateTimeFormat`、`Intl.NumberFormat` 和 i18next plural 规则完成展示；时区决定“显示哪个时刻”，locale 决定“如何呈现”，两者不得混为一个设置。
+
+### 2.5 中英文长文本、表格与 PC / mobile
+
+- client 正式 Web Header 已有横向滚动、ellipsis、移动图标化和底部导航基础，可作为英文长标签的适配基座；但默认导航仍是中文常量，尚未经过英文真实渲染验证。
+- Console 已有 `scroll.x`、ellipsis、移动功能抽屉等表格与壳层基础；当前没有英文资源，无法证明列头、筛选项、状态标签和操作按钮在英文下稳定。
+- Auth 三页已有 `920 / 720 / 640` 等响应式断点与部分 `word-break`，但英文缺键和 Razor 内联双语使长文本覆盖不可自动验证。
+- 当前没有覆盖 `zh / en × PC / mobile × 表格 / 长文本` 的测试或专题验收矩阵。
+
+## 3. 目标状态模型
+
+正式 Web 只接受中性语言代码：
+
+```ts
+type SupportedLanguage = 'zh' | 'en';
+```
+
+展示层映射集中维护：
+
+```text
+zh -> Intl / Ant Design / date-fns: zh-CN
+en -> Intl / Ant Design / date-fns: en-US
+```
+
+### 3.1 解析优先级
+
+```text
+当前显式入口参数
+  ?lang=zh|en（SPA）或 culture / ui-culture（Auth / OIDC handoff）
+        ↓
+同设备显式偏好
+  localStorage.radish_lang（client / Console）
+  .AspNetCore.Culture（Auth）
+        ↓
+浏览器语言
+        ↓
+默认 zh
+```
+
+规则：
+
+- 所有输入先归一化为 `zh / en`，非法值不进入状态。
+- client 与 Console 在同源 Gateway 下共享 `radish_lang`，切换后通过 `storage` 事件同步其他标签页。
+- Auth 显式切换必须写文化 cookie，并保留安全的本地 return URL；OIDC handoff 继续携带中性语言参数。
+- 初始化完成后同步更新 `document.documentElement.lang`、i18next、Ant Design locale、date-fns / Intl locale 和 API `Accept-Language`。
+- F3 不新增服务端用户语言字段；未来若需要跨设备偏好，必须另行定义 Profile、Claim、匿名设备偏好与冲突优先级。
+
+## 4. 模块职责
+
+### 4.1 `radish.client`
+
+- 拥有产品端语言状态、正式 Web Header 语言入口和 client 业务资源。
+- 继续使用 `radish_lang`，保留现有 `/desktop` Dock 入口，但正式入口以 Web Header 为准。
+- 语言切换必须同时刷新页面文案、Ant Design locale、格式化结果、document title 和后续 API 请求语言。
+
+### 4.2 `radish.console`
+
+- 建立独立的 i18next 资源与管理端业务域，不跨 workspace 引用 client 资源。
+- 与 client 共享语言代码和同源设备偏好键，但资源、路由标题和管理术语由 Console 自己维护。
+- 把当前只读“语言”占位改为本设备有效设置；不冒充服务端 Profile 偏好。
+
+### 4.3 `@radish/ui`
+
+- 不读取 i18next、`localStorage`、认证或宿主设置。
+- `ThemeProvider` 接收宿主解析后的 Ant Design locale；共享组件通过 `labels` / formatter 参数消费文案。
+- 只有跨宿主语义完全一致的默认反馈才允许形成共享 label contract，业务文案留在宿主。
+
+### 4.4 `@radish/http`
+
+- 不依赖 React 或任一宿主的 i18next 实例。
+- 由宿主配置 `getLanguage()` 与可选 `translateMessage(key, args?)`；统一请求自动写 `Accept-Language`。
+- 解析结果保留 `Code / MessageKey / MessageInfo / MessageArguments / TraceId / HTTP status`；失败响应按“本地 key 优先、服务端安全消息兜底”生成用户提示，成功响应不额外本地化；位置参数只传给宿主翻译器格式化。
+- 网络、超时、非 JSON 和未知异常使用宿主提供的稳定通用 key，不在库内写死中文。
+
+### 4.5 `Radish.Api`
+
+- 全局认证、权限、验证、限流、依赖和系统异常维持稳定 `Code / MessageKey`。
+- 首批高频正式 Web Controller 迁移领域错误；成功读取类消息不要求全部展示或全部资源化。
+- `MessageInfo` 按请求文化生成；日志和内部异常不进入 UI 文案。
+- 对外 `MessageArguments` 统一经 API normalizer 收口为最多 8 项的安全短标量，字符串最长 256 字符，控制字符、对象与非有限数值按统一规则规范化或降级。
+
+### 4.6 `Radish.Auth`
+
+- 请求文化、Auth cookie 与 `.resx` 是服务端页面真相源。
+- Login / Register / Consent 不再自行维护 `isZh` 双分支；Controller 可见反馈也必须走资源键。
+- 客户端名称、描述、用户输入和 redirect host 属于动态内容，只做安全编码，不进行机器翻译。
+
+## 5. 翻译键与资源组织
+
+### 5.1 业务域
+
+- `common.*`：确实跨域的加载、保存、取消、删除、重试、分页和诊断动作。
+- `shell.* / lang.* / auth.* / oidc.*`：壳层、语言与认证。
+- `discover.* / forum.* / messages.* / notification.* / profile.* / me.* / shop.* / wiki.*`：产品业务域。
+- `console.<domain>.*`：Console 路由、页面、表格、筛选、状态和动作。
+- `error.<domain>.* / info.<domain>.*`：与服务端 `MessageKey` 对齐的跨层消息。
+
+同一句中文或英文相同不代表 key 应合并；只有语义、生命周期和所有者都相同的文案才能进入 `common.*`。
+
+### 5.2 文件组织
+
+client 首批把现有大文件拆成“语言 × 业务域”资源模块，由单一 registry 合并，保持现有 key 不做无关重命名。建议分组：
+
+```text
+locales/
+  resources.ts
+  en/{core,shell,discover,community,account,commerce,docs}.ts
+  zh/{core,shell,discover,community,account,commerce,docs}.ts
+  welcome*.ts
+```
+
+Console 使用同样的 registry 形态，但只包含 Console 业务域。自动化必须阻断：
+
+- 中英文缺 key；
+- 同一语言重复 key；
+- 非法顶级域；
+- 资源重新膨胀为超大单文件；
+- `error.*` 与首批服务端公开 `MessageKey` 不一致。
+
+## 6. 成组实施批次
+
+### F3-A：基础设施与正式入口
+
+1. 拆分 client 资源 registry，补 key parity、重复键和语言归一化测试。
+2. client 新增正式 Web Header 语言切换；统一根语言状态、`document.lang`、Ant Design locale 与跨标签同步。
+3. Console 接入与 client 对齐版本的 i18next 依赖，建立 Console registry、根 Provider、管理壳入口和本设备语言设置。
+4. `@radish/ui` 改为由宿主传入 Ant Design locale；优先治理正式 Web 实际使用的反馈、通知、确认与上传 labels。
+5. `@radish/http` 增加宿主注入的语言 / 翻译配置，统一 `Accept-Language` 和响应本地化；禁止页面继续按消息文本判断状态。
+6. Auth 补齐英文资源，迁移 Login / Register / Consent 与注册反馈，建立文化 cookie 持久化和 OIDC 语言往返测试。
+
+### F3-B：首批高频正式 Web 链路
+
+在 F3-A 同一连续开发批次内完成以下垂直链路，不拆成逐页小修：
+
+- client：共享 Header / mobile tab、Discover、Forum 列表与详情、Messages、Notifications、Me、公开商城、订单与背包。
+- Console：登录回流、AdminLayout、路由 / 面包屑 / 全局搜索、Dashboard、用户、内容治理、订单排障。
+- Auth：Login、Register、Consent 的中英文 UI、校验反馈、长客户端名 / redirect URI 与单复数权限说明。
+- API：上述链路实际消费的通用认证 / 权限 / 限流 / not-found / conflict 错误，以及高频领域失败的 `Code / MessageKey`。
+- 格式化：共享日期时间、数字、胡萝卜金额、相对时间和 plural helper，并迁移上述链路。
+
+F3-B 按连续业务面分两组推进：
+
+- **F3-B1（已完成，2026-07-14）**：client 正式 Header、公开商城 / 论坛 / Docs、通知、订单与背包；Console Login、AdminLayout、路由、Dashboard、Settings 和用户 / 订单关键格式化；Auth Login / Register / Consent；共享 HTTP / UI 契约。
+- **F3-B2（已完成，2026-07-15）**：Console 用户 / 内容治理 / 订单完整业务文案，client Messages / Me 的语言与格式化残余，以及这些链路实际消费的高频领域 `Code / MessageKey`。
+
+F3-A + F3-B 共同构成首批可交付范围；只有基础库没有真实页面消费，或只有页面替换没有统一契约，都不算首批完成。
+
+### F3-C：剩余正式 Web 业务域
+
+- client：Docs 作者态、圈子、宠物、经验、萝卜坑、低频设置与公开承诺长文本。
+- Console：商品配置、文档治理、角色权限、分类标签、表情、经验与胡萝卜管理。
+- 继续按业务域迁移服务端错误，不做全仓 Controller 一次性机械资源化。
+
+其中 `F3-C1（已完成，2026-07-15）` 已收口 Console 个人设置与系统设置列表、编辑、筛选和变更历史；代码注册的设置定义通过稳定 `voKey` 解析宿主双语资源，未知定义保留服务端元数据兜底，不改变 `SystemConfig` 存储和运行时读取契约。
+
+`F3-C2（已完成，2026-07-15）` 已收口 Console 商品列表、详情、表单、能力说明和写入反馈；商品名称、描述与分类名称仍作为运营内容原样展示。可售控制继续只认服务端 `voCanSell`，能力元数据新增稳定说明 key，商品有效期改用结构化字段，not-found、配置拒绝、未开放、版本冲突和订单关联删除拒绝均具备稳定 HTTP status、`Code / MessageKey` 与双语兜底。
+
+`F3-C3（已完成，2026-07-15）` 已成组收口 client Docs 作者态与 Console 文档治理：作者台、列表、编辑器、版本历史、治理筛选、访问策略、导入导出与回滚反馈进入各宿主双语资源，日期、数字和数量使用当前 locale；Docs 标题、摘要、正文、slug、来源路径、角色与权限值仍按用户或运营原文展示。Wiki 高频失败补齐稳定 HTTP status、`Code / MessageKey`、双语前后端资源与结构化 `ApiResponseError`，页面控制流不依赖展示消息。
+
+`F3-C4（已完成，2026-07-15）` 已收口 client 圈子域：既有系统词元保持在 `community` 双语资源，日期、页码、关系数、互动数和结果数量按当前 locale 与英文单复数展示；帖子标题、摘要、作者名、用户展示名和公开句柄继续保留原文。共享 `userFollow` API 由调用宿主显式提供本地化 fallback，并使用结构化 `ApiResponseError`；UserFollow 参数拒绝、自关注 / 自取消、目标不可用和分发流类型错误具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源。
+
+`F3-C5（已完成，2026-07-15）` 已收口 client 宠物域：`/pet` 与 `/me` 宠物摘要只按稳定的成长阶段、心情和动作类型解析宿主词元，宠物名称继续作为用户内容原样展示；成长值、状态值、次数、冷却和流水时间按当前 locale 与英文单复数展示。Pet API 使用结构化 `ApiResponseError`，参数拒绝、未领取、不支持动作、每日次数耗尽和冷却错误具备稳定 HTTP status、`Code / MessageKey` 与 API 双语资源；本批不扩展经济、商城物品、社区任务、Console 配置或公开宠物名片。
+
+`F3-C6（已完成，2026-07-15）` 已收口 client 经验域：经验详情、`/me` 摘要、桌面经验状态与共享 `ExperienceBar` 使用宿主双语词元和 locale 日期、数字、百分比、分页、图表及英文数量规则；系统经验类型只按稳定 `voExpType` 解析，未知类型显示稳定原值，`voExpTypeDisplay` 仅保留响应兼容。等级名称、交易备注、冻结原因等配置或人工内容在没有稳定本地化标识时继续原样展示。当前真实消费的经验摘要与流水 API 改用结构化 `ApiResponseError`，未登录、越权与经验数据不存在补齐稳定 HTTP status、`Code / MessageKey` 和 API 双语资源；本批不改变经验获取、等级公式、每日上限、排行、冻结业务语义、数据库、Console 或公开排行榜。
+
+`F3-C7（已完成，2026-07-15）` 已收口 client 萝卜资产域：萝卜坑五个标签、`/me` 资产摘要、Profile 钱包 / 流水、资料余额和桌面余额统一使用宿主双语词元、locale 日期 / 数字 / 图表与英文数量规则；后端 `long` 金额和 ID 在 client 按字符串接收并以整数安全方式比较、计算和换算。交易类型、状态、统计分类及安全日志只按稳定字段本地化，未知词元保留原值，用户名、备注、IP 和 User-Agent 等人工或外部内容保持原文；历史 `vo*Display / voAction` 仅保留兼容。Coin 与 PaymentPassword API 改用结构化 `ApiResponseError`，交易不存在、自转移、金额、余额、账户、并发、幂等和口令高频失败补齐稳定 HTTP status、`Code / MessageKey` 及 API 双语资源；萝卜坑模拟通知已删除，交易通知继续由 `/notifications` 承接。本批不改变余额、转移、奖励、统计、支付口令锁定等业务规则，不修改数据库、迁移或 Console 管理。
+
+`F3-C8（已完成，2026-07-16）` 已成组收口 client 低频页面、公开承诺长文本、公开页面 head 与正式页面实际消费的共享反馈 / 上传组件：系统词元、共享 labels、locale formatter、真实上传进度和结构化错误由宿主提供，运营长文与用户内容保持原文；公开 head 由唯一 lifecycle owner 写入并在退出壳层时清理。实际链路同步固定附件业务类型、权限、路径、服务端 MIME / 文件签名、禁用 SVG、单次上传和失败清理，并加固裁切任务生命周期、论坛发布事务与安全动态错误参数，不把共享组件改成宿主状态持有者。
+
+`F3-C9（已完成，2026-07-17）` 已成组收口 Console 角色授权、分类 / 标签、表情、经验和萝卜管理：八条正式路由的页面壳、表格、筛选、状态、操作、表单、指标、反馈和动态面包屑进入宿主双语资源；日期、数字、英文数量和 long 金额使用统一 locale 与字符串安全 formatter，系统枚举按稳定 key 翻译，运营名称、说明、备注和审计内容保留原文。分类与表情上传继续复用 `attachmentApi`，表情批量失败改用真实 HTTP 并保留结构化冲突数据；经验 / 萝卜管理高频失败补齐稳定 `Code / MessageKey`，认证刷新重放固定为复用原请求配置的一次重放。下一顺位进入 `F3-D` 真实语言、视图与 OIDC 专题验收。
+
+### F3-D：专题验收与常态门禁
+
+- 完成 `zh / en × PC / mobile × Public / Private / Console / Auth` 代表矩阵。
+- 清理首批过渡资源和无效 fallback，更新长期规范与验证入口。
+- 专题完成后只允许新业务域按同一 registry、错误和 formatter 契约扩展。
+
+`F3-D1（已完成，2026-07-17）` 已覆盖 Public Discover / Forum / Docs、Private `/me`、Auth Login / Register / Consent、Console OIDC 回调与无权限页的双语 PC / mobile 代表旅程；真实语言切换、共享设备偏好、嵌套 authorize returnUrl、官方客户端元数据、页面标题、locale 日期 / 数字和用户内容原文边界均通过。验收中补齐 Console Applications / Profile / Hangfire、callback、not-found、permission guard 与 error boundary 资源，并把前端 LongId 响应恢复为字符串契约。
+
+`F3-D2（已完成，2026-07-17）` 使用本地开发种子中的既有管理员，经标准 OIDC 登录完成 Console Dashboard、用户、内容治理、订单、应用、个人资料、Hangfire 与 not-found 的 `zh / en × PC / mobile` 只读矩阵。双语页面壳、长文本、表格、日期、功能抽屉和 Hangfire 实际内容均正常，根级宽度在 PC / mobile 分别稳定为 `1920 / 390`；未修改账号、角色、权限或 Main 业务数据。验收同时修复个人资料异步数据早于 Form 挂载写值导致的浏览器警告。
+
+### 6.1 2026-07-15 首批实现状态
+
+已完成：
+
+- client 大资源文件按 `core / shell / discover / community / account / commerce / docs` 拆分，中英文 parity、跨域重复键和单文件上限进入测试；
+- client 与 Console 建立同一 `radish_lang` 设备偏好、正式 Header / 管理壳语言入口、跨标签同步、`document.lang` 与 Ant Design locale 联动；
+- `@radish/http` 统一发送 `Accept-Language`，保留 `Code / MessageKey / MessageInfo / MessageArguments / TraceId / HTTP status`，通过宿主 `translateMessage(key, args?)` 格式化展示文案并支持结构化 `ApiResponseError`；公开商品、文档、论坛和主页的 not-found 控制流已停止匹配中英文消息文本；
+- `@radish/ui` 接收宿主 locale，提供数字、日期和相对时间 formatter；论坛 Reaction、StickerPicker、用户提及等首批共享组件改为宿主 labels；
+- Auth Login / Register / Consent 可见文案和注册校验进入 `.resx`，补齐英文缺键，语言切换写入安全文化 cookie；
+- Console 完成 Login、AdminLayout、路由 / 面包屑 / 搜索、Dashboard、Settings 的首批资源化，并在用户、订单链路接入 locale 日期与数字格式；
+- client Header、通知、公开商城、排行榜、订单与背包完成首批 locale 格式化，高频商品 / Discover / Forum 数量文案开始使用 i18next plural。
+- Console 用户、内容治理和订单形成独立 `users / moderation / orders` 中英文域资源；路由、表格、筛选、状态、动作、弹层与移动治理说明均从宿主语言状态解析；
+- client Messages / Me 补齐品牌标记、资产与任务数量复数、日期时区和数字格式化，聊天展示 helper 不再保留中文默认翻译分支；
+- 订单状态、失败阶段、商品类型、权益状态和有效期展示改用结构化枚举或快照字段；订单 / 治理 API helper 使用 `ApiResponseError` 保留控制流与诊断字段；
+- API 为订单 not-found、重试拒绝、备注失败、权益操作拒绝和内容治理高频失败补齐稳定状态、`Code / MessageKey` 与中英文 `.resx`，资源 parity、结构化错误和 `0 / 1 / 2` 复数进入测试。
+- Console 个人设置与系统设置进入独立 `settings` 中英文域资源；语言偏好明确为本设备设置，系统设置名称、分类、说明和影响范围按稳定 `voKey` 本地化，日期、复数、编辑反馈和 API 结构化异常同步收口。
+- Console 商品配置进入独立 `products` 中英文域资源；列表、详情、表单、能力矩阵、数字、日期和复数统一由宿主语言解析，能力缺失时阻止上架而不使用本地硬编码开放矩阵。
+- 商品能力元数据同时返回中文兼容说明与稳定 `VoConfigurationRequirementKeys / VoUnavailableReasonKey`；Console 优先解析 key，旧服务端或未知扩展才使用兼容兜底。
+- API 为商品 not-found、配置无效、类型未开放、版本冲突、订单关联删除拒绝和通用操作拒绝补齐稳定状态、`Code / MessageKey` 与中英文 `.resx`。
+- client Docs 作者态复用 `docs` 资源域，系统状态、来源、空态、编辑校验、版本证据和数字格式进入宿主词元；正文、标题、摘要及访问名单不做自动翻译。
+- Console 文档治理进入独立 `documents` 中英文域资源，筛选、表格、状态、访问策略、版本治理和 `0 / 1 / 2` 数量规则形成测试门禁。
+- Wiki not-found、访问拒绝、恢复 / 回滚拒绝、父级冲突、Markdown 导入与内置只读错误具备稳定状态、`Code / MessageKey`、前端资源和 API 双语 `.resx`。
+- client 圈子沿用 `community` 资源域并补齐 locale 日期 / 数字与英文数量规则；共享 UserFollow API 不再暴露中文 fallback，关注关系失败形成前后端稳定错误契约。
+- client 宠物沿用 `account` 资源域，`/pet` 与 `/me` 摘要按稳定阶段、心情和动作字段解析系统词元，宠物名保留原文；Pet 业务错误形成前后端稳定错误契约。
+- client 经验沿用 `account` 资源域，经验详情、`/me` 摘要、桌面状态和共享经验条完成双语词元、locale formatter、分页、图表与英文数量规则；Experience 高频失败形成前后端稳定错误契约。
+- client 萝卜资产沿用 `commerce` 资源域，萝卜坑、`/me`、Profile 与桌面实际消费者完成稳定词元、long 安全金额、locale formatter、图表和英文数量规则；Coin / PaymentPassword 高频失败形成前后端稳定错误契约。
+
+最终验收结论：
+
+- Public、Private、Auth、Console 认证 / 无权限与管理员受权内页均已完成 PC / mobile 双语代表矩阵；F3 不再保留待补证据项。
+
+## 7. 首批实际修改模块
+
+| 模块 | 已完成改动与后续职责 |
+| --- | --- |
+| `Frontend/radish.client` | 已完成 registry、language runtime / switcher、Web Header、B1 页面、B2 Messages / Me、C3 Docs 作者态、C4 圈子、C5 宠物、C6 经验、C7 萝卜资产、C8 低频页面 / 公开承诺 / head / 上传消费者与 F3-D 运行态代表矩阵；后续只按新增业务或真实回归扩展 |
+| `Frontend/radish.console` | 已完成 i18n 初始化、管理壳、route meta、Dashboard、用户 / 治理 / 订单、设置、商品、文档、权限、分类标签、表情、经验、萝卜、应用、个人资料与 Hangfire 资源；认证、无权限和管理员受权内页均已完成双语 PC / mobile 代表验收 |
+| `Frontend/radish.ui` | 已完成 `ThemeProvider` locale、共享 formatter、正式上传类型、Markdown / 裁切 / 弹层 labels 与处理期关闭契约；后续按正式宿主消费面扩展 |
+| `Frontend/radish.http` | 已完成 language / translator 配置、`Accept-Language`、`MessageArguments`、结构化响应与错误测试 |
+| `Radish.Auth` | 已完成 `.resx`、三张 Razor View、官方客户端稳定双语元数据、文化持久化、嵌套 OIDC 语言往返、Controller 反馈与测试 |
+| `Radish.Api / Radish.Shared / Radish.Model` | 已按真实消费面补齐订单 / 权益 / 治理、商品、Wiki、UserFollow、Pet、Experience、Coin / PaymentPassword 及 Console 管理错误键和稳定错误码；后续按新增业务扩展，不重做 Q1-B 已有错误管线 |
+| `Docs/` | 已建立专题说明、F3-D 最终验收记录并同步规划入口；后续只维护长期规范与真实回归证据 |
+
+Console 已按当前任务授权加入与 client 对齐的 i18next 依赖，并复核 `Frontend/radish.console/package.json` 与根 `package-lock.json`；后续依赖更新仍须重新说明命令、版本和 lockfile 影响并取得当轮授权。
+
+## 8. 停止线
+
+- 不重新实施 F1 商城效力或 F2 主题运行时。
+- 不把 F3 变成全站逐字符串清零；日志、注释、内部诊断和用户内容不因中文命中自动进入迁移。
+- 不自动翻译用户帖子、评论、聊天、商品自定义内容或 Docs 正文。
+- 不建设在线翻译管理平台、机器翻译流水线或多语言 CMS。
+- 不新增 Profile 语言字段、数据库迁移、语言 Claim 或跨设备同步，除非另行确认。
+- 不承诺多语言 SEO URL、`hreflang` 或服务端多语言 head 快照；英文 UI 的客户端 document title 可同步，爬虫默认语言另立 SEO 契约。
+- 不解冻 Tauri，不扩展 Flutter；`/desktop` 只做阻断级兼容。
+- 不借资源拆分重命名全部现有 key，不顺手重构页面结构或主题 token。
+- 不把 Console mobile 做成桌面完整能力复制，只保证现有移动管理边界在英文下可操作。
+
+F3 完成后若出现第三种语言、非开发人员维护译文或译文独立发布的真实需求，可按[未来规划](/planning/backlog)回拉“本地化资源管理”专题。该能力必须作为独立 Console 治理域设计，不得直接复用普通 `SystemConfig`，也不得在未定义资源真相源、版本发布、审计和缓存失效前把仓库静态资源改为运行时可编辑资源。
+
+## 9. 风险与控制
+
+| 风险 | 控制方式 |
+| --- | --- |
+| 大资源文件拆分造成漏键或覆盖 | 保持 key 名不变；先加 registry parity / duplicate 测试，再机械迁移 |
+| client / Console / Auth 语言互相漂移 | 中性代码单一映射；同源 storage + Auth culture cookie + OIDC 参数定向测试 |
+| API 本地化改变业务判断 | 控制流只看 Code / status；测试中加入中英文不同消息但同码场景 |
+| `MessageInfo` 历史中文造成混合语言 | 首批高频错误补 key；未迁移领域保留安全服务端兜底并进入后续域批次，不按字符串猜测 |
+| locale 与时区混淆 | formatter 同时显式接收 locale 与 timeZone；保留现有 UTC / 用户时区契约 |
+| 英文标签撑破 Header、表格或弹层 | PC / mobile 长文本 fixture；允许换行、ellipsis 或横向滚动按组件职责选择 |
+| 共享 UI 反向持有宿主状态 | `@radish/ui` 只接收 locale / labels / formatter，不导入宿主 i18n |
+| 新依赖扩大 lockfile | 仅在明确宿主缺少运行时能力时增加依赖；执行前单独授权并复核 lockfile |
+
+## 10. 验证矩阵
+
+### 10.1 开发中静态与定向验证
+
+- client / Console 资源 parity、重复键、非法 locale、持久化优先级和跨标签同步测试。
+- `@radish/http`：`Accept-Language`、本地 `MessageKey` 优先、`MessageArguments` 位置格式化、服务端 fallback、Code / status / TraceId 保留、非 JSON 与网络错误测试。
+- formatter：`zh / en` 日期、时区、数字、金额、相对时间，以及 `0 / 1 / 2` plural 测试。
+- Auth：Query / cookie / header 优先级、Login / Register / Consent 资源完整性、切换持久化、POST 错误语言与 OIDC 往返测试。
+- client / Console 首批页面定向测试、`@radish/ui` 与 `@radish/http` type-check / test。
+- `npm run build --workspace=radish.client`、`npm run build --workspace=radish.console`。
+- 涉及后端后执行 `dotnet test Radish.Api.Tests` 与 `dotnet build Radish.slnx -c Debug`。
+- `npm run check:repo-hygiene:changed`、changed-only lint、`git diff --check`。
+
+### 10.2 专题验收矩阵
+
+专题成组完成并获得当轮启动授权后，再通过 Gateway 执行：
+
+| 视图 | Client | Console | Auth |
+| --- | --- | --- | --- |
+| PC `1920 × 1080` | Header、Discover、Forum、Messages、Notifications、Me、Shop | 壳层、Dashboard、用户、治理、订单表格 | Login、Register、Consent |
+| mobile `390 × 844` | Header 动作、mobile tab、列表 / 详情、长反馈 | 现有移动壳、功能抽屉、表格横向滚动 | 表单双列降单列、长应用名与 redirect URI |
+
+每个代表页同时覆盖：
+
+- `zh -> en -> 刷新 -> 新标签 -> OIDC 往返 -> en 保持`；
+- 空态、加载、成功、失败、无权限、not-found 与可复制 TraceId；
+- 日期 / 时区、数字 / 金额、相对时间、`0 / 1 / 2` 数量；
+- 英文长标题、表格列头、按钮组、弹层、错误说明和用户动态内容混排。
+
+2026-07-17 已在当轮授权下启动完整本地宿主并完成 F3-D1 / F3-D2 运行态矩阵；详细页面、验证命令、数据影响和边界见 [F3-D i18n 专题验收记录](/records/f3-d-i18n-stage-acceptance-2026-07-17)。

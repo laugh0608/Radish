@@ -19,6 +19,23 @@ import {
 import { getApiBaseUrl } from '@/config/env';
 import { WebStateSlot } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
+import {
+  resolvePetGrowthStageTranslationKey,
+  resolvePetMoodTranslationKey,
+} from '@/pet/petPresentation';
+import {
+  buildExperienceBarData,
+  createExperienceBarPresentation,
+  formatExperienceNumber,
+  formatExperienceSignedNumber,
+  formatExperienceType,
+} from '@/experience/experiencePresentation';
+import {
+  absoluteCoinValue,
+  formatCoinNumber,
+  formatTransactionType,
+  resolveTransactionDirection,
+} from '@/coin/coinPresentation';
 import { buildPublicForumPath } from '@/public/forumRouteState';
 import { resolvePublicUserRouteIdentifier } from '@/public/publicId';
 import { buildPublicProfilePath, type PublicProfileRoute } from '@/public/profileRouteState';
@@ -44,6 +61,7 @@ import { useUserStore } from '@/stores/userStore';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
+import { getIntlLocale } from '@/locales/language';
 import { MeAssetsPage } from './MeAssetsPage';
 import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
@@ -67,7 +85,7 @@ const ExperienceDetailApp = lazy(() =>
   import('@/apps/experience-detail/ExperienceDetailApp').then((module) => ({ default: module.ExperienceDetailApp }))
 );
 
-type MeDataErrorKey = 'profile' | 'experience' | 'assets' | 'browse' | 'pet';
+type MeDataErrorKey = 'profile' | 'experience' | 'experienceTransactions' | 'assets' | 'browse' | 'pet';
 
 interface MeDashboardData {
   publicProfile: PublicUserProfile | null;
@@ -154,14 +172,6 @@ const initialExperienceContext: MeExperienceContext = {
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
-}
-
-function formatNumber(value: number | null | undefined): string {
-  return Number(value ?? 0).toLocaleString();
-}
-
-function formatSignedNumber(value: number): string {
-  return `${value > 0 ? '+' : ''}${formatNumber(value)}`;
 }
 
 function truncatePreviewText(value: string | null | undefined, fallback: string, maxLength = 96): string {
@@ -345,9 +355,17 @@ function buildMeRouteReturnPath(route: MeRoute): string {
 }
 
 export const MeApp = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
+  const experienceBarPresentation = useMemo(
+    () => createExperienceBarPresentation(t, language, displayTimeZone),
+    [displayTimeZone, language, t],
+  );
+  const formatDisplayDateTime = (value: string | number | Date | null | undefined, fallback = '-') => (
+    formatDateTimeByTimeZone(value, displayTimeZone, fallback, getIntlLocale(language))
+  );
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const userId = useUserStore(state => state.userId);
   const storeDisplayName = useUserStore(state => state.displayName);
@@ -452,12 +470,12 @@ export const MeApp = () => {
       petResult,
     ] = await Promise.allSettled([
       getPublicProfile(userId),
-      experienceApi.getMyExperience(),
-      experienceApi.getTransactions({ pageIndex: 1, pageSize: 5 }),
-      coinApi.getBalance(),
-      coinApi.getTransactions(1, 5),
+      experienceApi.getMyExperience(t),
+      experienceApi.getTransactions({ pageIndex: 1, pageSize: 5 }, t),
+      coinApi.getBalance(t),
+      coinApi.getTransactions(1, 5, null, null, t),
       getMyBrowseHistory(1, 5),
-      getMyPet(),
+      getMyPet(t),
     ]);
 
     const errors: MeDashboardData['errors'] = {};
@@ -466,14 +484,16 @@ export const MeApp = () => {
       errors.profile = getErrorMessage(profileResult.reason, t('me.error.profile'));
       log.warn('MeApp', '加载公开资料失败', profileResult.reason);
     }
-    if (experienceResult.status === 'rejected' || expTransactionsResult.status === 'rejected') {
-      const reason = experienceResult.status === 'rejected'
-        ? experienceResult.reason
-        : expTransactionsResult.status === 'rejected'
-          ? expTransactionsResult.reason
-          : null;
-      errors.experience = getErrorMessage(reason, t('me.error.experience'));
-      log.warn('MeApp', '加载经验状态失败', reason);
+    if (experienceResult.status === 'rejected') {
+      errors.experience = getErrorMessage(experienceResult.reason, t('me.error.experience'));
+      log.warn('MeApp', '加载经验状态失败', experienceResult.reason);
+    }
+    if (expTransactionsResult.status === 'rejected') {
+      errors.experienceTransactions = getErrorMessage(
+        expTransactionsResult.reason,
+        t('experience.transactions.loadFailed'),
+      );
+      log.warn('MeApp', '加载近期经验流水失败', expTransactionsResult.reason);
     }
     if (balanceResult.status === 'rejected' || coinTransactionsResult.status === 'rejected') {
       const reason = balanceResult.status === 'rejected'
@@ -567,7 +587,7 @@ export const MeApp = () => {
   const balance = dashboardData.balance;
   const pet = dashboardData.pet;
   const loadedAtLabel = dashboardData.loadedAt
-    ? formatDateTimeByTimeZone(dashboardData.loadedAt, displayTimeZone)
+    ? formatDisplayDateTime(dashboardData.loadedAt)
     : null;
 
   const rememberSelfPublicProfileSource = useCallback((event: MouseEvent<HTMLAnchorElement>) => {
@@ -875,7 +895,7 @@ export const MeApp = () => {
             badge: activeContentTabLabel,
             title: firstItem.voTitle,
             description: truncatePreviewText(firstItem.voContent, t('me.preview.noSummary')),
-            meta: formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone),
+            meta: formatDisplayDateTime(firstItem.voCreateTime),
             href: buildForumDetailHref(firstItem.voId, firstItem.voPublicId),
             rememberSource: true,
             actionLabel: t('me.preview.openPublicDetail'),
@@ -904,7 +924,7 @@ export const MeApp = () => {
             badge: activeContentTabLabel,
             title: t('me.preview.commentTitle'),
             description: truncatePreviewText(firstItem.voContent, t('me.preview.noSummary')),
-            meta: formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone),
+            meta: formatDisplayDateTime(firstItem.voCreateTime),
             href: buildForumDetailHref(firstItem.voPostId, firstItem.voPostPublicId, firstItem.voId),
             rememberSource: true,
             actionLabel: t('me.preview.openPublicDetail'),
@@ -930,7 +950,7 @@ export const MeApp = () => {
             badge: activeContentTabLabel,
             title: firstItem.voPostTitle,
             description: truncatePreviewText(firstItem.voContent, t('me.preview.noSummary')),
-            meta: formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone),
+            meta: formatDisplayDateTime(firstItem.voCreateTime),
             href: buildForumDetailHref(firstItem.voPostId, firstItem.voPostPublicId),
             rememberSource: true,
             actionLabel: t('me.preview.openPublicDetail'),
@@ -1016,7 +1036,7 @@ export const MeApp = () => {
               badge: firstItem.voTargetTypeDisplay,
               title: firstItem.voTitle,
               description: truncatePreviewText(firstItem.voSummary, t('profile.browse.noSummary')),
-              meta: formatDateTimeByTimeZone(firstItem.voLastViewTime, displayTimeZone),
+              meta: formatDisplayDateTime(firstItem.voLastViewTime),
               href,
               rememberSource: Boolean(href),
               actionLabel: t('me.preview.openPublicRoute'),
@@ -1098,7 +1118,7 @@ export const MeApp = () => {
                 firstItem.voMimeType || firstItem.voExtension,
                 t('me.attachments.previewDescription')
               ),
-              meta: firstItem.voCreateTime ? formatDateTimeByTimeZone(firstItem.voCreateTime, displayTimeZone) : t('me.preview.noTime'),
+              meta: firstItem.voCreateTime ? formatDisplayDateTime(firstItem.voCreateTime) : t('me.preview.noTime'),
               href,
               external: Boolean(href),
               actionLabel: t('profile.attachments.download'),
@@ -1174,13 +1194,14 @@ export const MeApp = () => {
           onPageIndexChange={(page) => navigateToMeRoute({ kind: 'experience', page })}
           onDataLoaded={(snapshot) => {
             const firstTransaction = snapshot.transactions[0];
+            const levelName = snapshot.experience?.voCurrentLevelName.trim();
             const levelLabel = snapshot.experience
-              ? `Lv.${snapshot.experience.voCurrentLevel} ${snapshot.experience.voCurrentLevelName}`
+              ? `Lv.${snapshot.experience.voCurrentLevel}${levelName ? ` ${levelName}` : ''}`
               : null;
             const preview: MeSubPagePreview | null = firstTransaction
               ? {
                 icon: firstTransaction.voExpAmount >= 0 ? 'mdi:plus-circle-outline' : 'mdi:minus-circle-outline',
-                badge: firstTransaction.voExpTypeDisplay || firstTransaction.voExpType,
+                badge: formatExperienceType(firstTransaction.voExpType, t),
                 title: firstTransaction.voIsLevelUp ? t('me.experience.previewLevelUp') : t('me.experience.previewTransaction'),
                 description: truncatePreviewText(
                   firstTransaction.voRemark,
@@ -1189,10 +1210,12 @@ export const MeApp = () => {
                     after: firstTransaction.voLevelAfter,
                   })
                 ),
-                meta: formatDateTimeByTimeZone(firstTransaction.voCreateTime, displayTimeZone),
+                meta: formatDisplayDateTime(firstTransaction.voCreateTime),
                 stats: [
-                  formatSignedNumber(firstTransaction.voExpAmount),
-                  t('me.experience.previewBalance', { value: formatNumber(firstTransaction.voExpAfter) }),
+                  formatExperienceSignedNumber(firstTransaction.voExpAmount, language),
+                  t('me.experience.previewBalance', {
+                    value: formatExperienceNumber(firstTransaction.voExpAfter, language),
+                  }),
                 ],
               }
               : snapshot.experience
@@ -1201,10 +1224,12 @@ export const MeApp = () => {
                   badge: t('me.experienceTitle'),
                   title: levelLabel ?? t('me.experience.detailTitle'),
                   description: t('me.experience.previewNoTransactions'),
-                  meta: t('me.experience.previewTotalExp', { value: formatNumber(snapshot.experience.voTotalExp) }),
+                  meta: t('me.experience.previewTotalExp', {
+                    value: formatExperienceNumber(snapshot.experience.voTotalExp, language),
+                  }),
                   stats: [
                     t('me.nextLevel'),
-                    formatNumber(snapshot.experience.voExpToNextLevel),
+                    formatExperienceNumber(snapshot.experience.voExpToNextLevel, language),
                   ],
                 }
                 : null;
@@ -1408,20 +1433,21 @@ export const MeApp = () => {
             ) : experience ? (
               <>
                 <ExperienceBar
-                  data={experience}
+                  data={buildExperienceBarData(experience)}
                   size="medium"
                   showLevel={true}
                   showProgress={true}
                   showTooltip={true}
                   animated={true}
+                  presentation={experienceBarPresentation}
                 />
                 <div className={styles.metricRow}>
                   <span>{t('me.totalExp')}</span>
-                  <strong>{formatNumber(experience.voTotalExp)}</strong>
+                  <strong>{formatExperienceNumber(experience.voTotalExp, language)}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.nextLevel')}</span>
-                  <strong>{formatNumber(experience.voExpToNextLevel)}</strong>
+                  <strong>{formatExperienceNumber(experience.voExpToNextLevel, language)}</strong>
                 </div>
               </>
             ) : (
@@ -1438,14 +1464,14 @@ export const MeApp = () => {
               <p className={styles.errorText}>{dashboardData.errors.assets}</p>
             ) : balance ? (
               <>
-                <div className={styles.balanceValue}>{balance.voBalanceDisplay || `${formatNumber(balance.voBalance)} ${t('me.carrotUnit')}`}</div>
+                <div className={styles.balanceValue}>{formatCoinNumber(balance.voBalance, language)} {t('me.carrotUnit')}</div>
                 <div className={styles.metricRow}>
                   <span>{t('me.frozenBalance')}</span>
-                  <strong>{balance.voFrozenBalanceDisplay || `${formatNumber(balance.voFrozenBalance)} ${t('me.carrotUnit')}`}</strong>
+                  <strong>{formatCoinNumber(balance.voFrozenBalance, language)} {t('me.carrotUnit')}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.totalEarned')}</span>
-                  <strong>{formatNumber(balance.voTotalEarned)}</strong>
+                  <strong>{formatCoinNumber(balance.voTotalEarned, language)}</strong>
                 </div>
               </>
             ) : (
@@ -1482,11 +1508,11 @@ export const MeApp = () => {
                 <div className={styles.balanceValue}>{pet.voName}</div>
                 <div className={styles.metricRow}>
                   <span>{t('me.petMood')}</span>
-                  <strong>{pet.voMoodDisplay}</strong>
+                  <strong>{t(resolvePetMoodTranslationKey(pet.voMood))}</strong>
                 </div>
                 <div className={styles.metricRow}>
                   <span>{t('me.petStage')}</span>
-                  <strong>{pet.voGrowthStageName}</strong>
+                  <strong>{t(resolvePetGrowthStageTranslationKey(pet.voGrowthStage))}</strong>
                 </div>
               </>
             ) : (
@@ -1513,7 +1539,9 @@ export const MeApp = () => {
                 {t('me.openExperienceDetail')}
               </a>
             </div>
-            {dashboardData.expTransactions.length > 0 ? (
+            {dashboardData.errors.experienceTransactions ? (
+              <p className={styles.errorText}>{dashboardData.errors.experienceTransactions}</p>
+            ) : dashboardData.expTransactions.length > 0 ? (
               <div className={styles.itemList}>
                 {dashboardData.expTransactions.map((transaction) => (
                   <div key={transaction.voId} className={styles.listItem}>
@@ -1521,10 +1549,12 @@ export const MeApp = () => {
                       <Icon icon={transaction.voExpAmount >= 0 ? 'mdi:plus' : 'mdi:minus'} size={16} />
                     </div>
                     <div className={styles.itemBody}>
-                      <strong>{transaction.voExpTypeDisplay || transaction.voExpType}</strong>
-                      <span>{formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}</span>
+                      <strong>{formatExperienceType(transaction.voExpType, t)}</strong>
+                      <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
                     </div>
-                    <div className={styles.itemAmount}>{formatSignedNumber(transaction.voExpAmount)}</div>
+                    <div className={styles.itemAmount}>
+                      {formatExperienceSignedNumber(transaction.voExpAmount, language)}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1552,18 +1582,23 @@ export const MeApp = () => {
             </div>
             {dashboardData.coinTransactions.length > 0 ? (
               <div className={styles.itemList}>
-                {dashboardData.coinTransactions.map((transaction) => (
-                  <div key={transaction.voId} className={styles.listItem}>
-                    <div className={styles.itemIcon} data-tone={transaction.voAmount >= 0 ? 'positive' : 'negative'}>
-                      <Icon icon={transaction.voAmount >= 0 ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
+                {dashboardData.coinTransactions.map((transaction) => {
+                  const direction = resolveTransactionDirection(transaction, userId);
+                  return (
+                    <div key={transaction.voId} className={styles.listItem}>
+                      <div className={styles.itemIcon} data-tone={direction === 'in' ? 'positive' : 'negative'}>
+                        <Icon icon={direction === 'in' ? 'mdi:arrow-up' : 'mdi:arrow-down'} size={16} />
+                      </div>
+                      <div className={styles.itemBody}>
+                        <strong>{formatTransactionType(transaction.voTransactionType, t)}</strong>
+                        <span>{formatDisplayDateTime(transaction.voCreateTime)}</span>
+                      </div>
+                      <div className={styles.itemAmount}>
+                        {direction === 'in' ? '+' : '-'}{formatCoinNumber(absoluteCoinValue(transaction.voAmount), language)}
+                      </div>
                     </div>
-                    <div className={styles.itemBody}>
-                      <strong>{transaction.voTransactionTypeDisplay || transaction.voTransactionType}</strong>
-                      <span>{formatDateTimeByTimeZone(transaction.voCreateTime, displayTimeZone)}</span>
-                    </div>
-                    <div className={styles.itemAmount}>{transaction.voAmountDisplay || formatSignedNumber(transaction.voAmount)}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className={styles.emptyText}>{t('me.recentAssetsEmpty')}</p>
@@ -1602,7 +1637,7 @@ export const MeApp = () => {
                           <strong>{item.voTitle}</strong>
                         )}
                         <span>
-                          {item.voTargetTypeDisplay} · {formatDateTimeByTimeZone(item.voLastViewTime, displayTimeZone)}
+                          {item.voTargetTypeDisplay} · {formatDisplayDateTime(item.voLastViewTime)}
                         </span>
                       </div>
                       <span className={styles.viewCount}>{t('me.viewCount', { count: item.voViewCount })}</span>
@@ -1624,7 +1659,7 @@ export const MeApp = () => {
       <PublicShellHeader
         variant="private"
         activeKey="me"
-        brandMark="我"
+        brandMark={t('me.brandMark')}
         brandName={t('me.title')}
         brandSubline={t('me.shellSubline')}
         onBrandClick={() => {

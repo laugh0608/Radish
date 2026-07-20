@@ -21,6 +21,207 @@
   <data name="error.auth.legacy_login_deprecated" xml:space="preserve">
     <value>The legacy login endpoint is deprecated. Please use the OIDC login flow.</value>
   </data>
+  <data name="error.auth.unauthorized" xml:space="preserve">
+    <value>Sign in to continue.</value>
+  </data>
+  <data name="error.bootstrap.display_name_required" xml:space="preserve">
+    <value>Enter a display name.</value>
+  </data>
+  <data name="error.bootstrap.display_name_length_invalid" xml:space="preserve">
+    <value>The display name must contain {0}-{1} characters.</value>
+  </data>
+  <data name="error.bootstrap.display_name_characters_invalid" xml:space="preserve">
+    <value>The display name can contain only Chinese characters, English letters, and numbers.</value>
+  </data>
+  <data name="error.bootstrap.email_invalid" xml:space="preserve">
+    <value>Enter a valid email address.</value>
+  </data>
+  <data name="error.bootstrap.password_required" xml:space="preserve">
+    <value>Enter a password.</value>
+  </data>
+  <data name="error.bootstrap.password_confirmation_mismatch" xml:space="preserve">
+    <value>The passwords do not match.</value>
+  </data>
+  <data name="error.bootstrap.password_length_invalid" xml:space="preserve">
+    <value>The password must contain at least {0} characters.</value>
+  </data>
+  <data name="error.bootstrap.password_complexity_invalid" xml:space="preserve">
+    <value>The password must include an uppercase letter, a lowercase letter, a number, and a special character.</value>
+  </data>
+  <data name="error.bootstrap.password_contains_display_name" xml:space="preserve">
+    <value>The password cannot contain the display name.</value>
+  </data>
+  <data name="error.bootstrap.password_contains_email_local_part" xml:space="preserve">
+    <value>The password cannot contain the part of the email address before @.</value>
+  </data>
+  <data name="error.bootstrap.password_weak" xml:space="preserve">
+    <value>Default and commonly used weak passwords are not allowed.</value>
+  </data>
+  <data name="error.bootstrap.already_initialized" xml:space="preserve">
+    <value>An administrator already exists, so initialization is closed.</value>
+  </data>
+  <data name="error.bootstrap.email_taken" xml:space="preserve">
+    <value>This email address is already registered.</value>
+  </data>
+  <data name="error.bootstrap.concurrent_initialization" xml:space="preserve">
+    <value>Administrator initialization is already in progress. Refresh and try again.</value>
+  </data>
+  <data name="error.bootstrap.initialization_failed" xml:space="preserve">
+    <value>Administrator initialization failed. Try again later.</value>
+  </data>
+  <data name="error.forum.publish_title_required" xml:space="preserve">
+    <value>Enter a post title.</value>
+  </data>
+  <data name="error.forum.publish_title_too_short" xml:space="preserve">
+    <value>The post title is too short. Add more detail before publishing.</value>
+  </data>
+  <data name="error.forum.publish_title_too_long" xml:space="preserve">
+    <value>The post title is too long. Shorten it before publishing.</value>
+  </data>
+  <data name="error.forum.publish_content_required" xml:space="preserve">
+    <value>Enter post content.</value>
+  </data>
+  <data name="error.forum.publish_content_too_short" xml:space="preserve">
+    <value>The post content is too short. Add more detail before publishing.</value>
+  </data>
+  <data name="error.forum.publish_content_too_long" xml:space="preserve">
+    <value>The post content is too long. Shorten it before publishing.</value>
+  </data>
+  <data name="error.forum.publish_category_required" xml:space="preserve">
+    <value>Select a post category before publishing.</value>
+  </data>
+  <data name="error.forum.publish_content_type_invalid" xml:space="preserve">
+    <value>The post content type is invalid.</value>
+  </data>
+  <data name="error.forum.publish_tag_count_invalid" xml:space="preserve">
+    <value>Select between one and five tags before publishing.</value>
+  </data>
+  <data name="error.forum.publish_feature_combination_invalid" xml:space="preserve">
+    <value>Question, poll, and lottery features cannot be enabled together.</value>
+  </data>
+  <data name="error.forum.publish_poll_question_required" xml:space="preserve">
+    <value>Enter a poll question.</value>
+  </data>
+  <data name="error.forum.publish_poll_question_too_long" xml:space="preserve">
+    <value>The poll question cannot exceed 200 characters.</value>
+  </data>
+  <data name="error.forum.publish_poll_end_time_invalid" xml:space="preserve">
+    <value>The poll end time must be in the future.</value>
+  </data>
+  <data name="error.forum.publish_poll_options_required" xml:space="preserve">
+    <value>Enter poll options.</value>
+  </data>
+  <data name="error.forum.publish_poll_option_count_invalid" xml:space="preserve">
+    <value>A poll must contain between two and six options.</value>
+  </data>
+  <data name="error.forum.publish_poll_options_duplicate" xml:space="preserve">
+    <value>Poll options must be unique.</value>
+  </data>
+  <data name="error.forum.publish_poll_option_too_long" xml:space="preserve">
+    <value>Each poll option cannot exceed 100 characters.</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_name_required" xml:space="preserve">
+    <value>Enter a lottery prize name.</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_name_too_long" xml:space="preserve">
+    <value>The prize name cannot exceed 100 characters.</value>
+  </data>
+  <data name="error.forum.publish_lottery_prize_description_too_long" xml:space="preserve">
+    <value>The prize description cannot exceed 500 characters.</value>
+  </data>
+  <data name="error.forum.publish_lottery_draw_time_required" xml:space="preserve">
+    <value>Select a lottery draw time.</value>
+  </data>
+  <data name="error.forum.publish_lottery_draw_time_too_soon" xml:space="preserve">
+    <value>The lottery draw time must be at least one hour after publication.</value>
+  </data>
+  <data name="error.forum.publish_lottery_winner_count_invalid" xml:space="preserve">
+    <value>The winner count must be between 1 and 20.</value>
+  </data>
+  <data name="error.forum.publish_forbidden" xml:space="preserve">
+    <value>Your current account status does not allow publishing.</value>
+  </data>
+  <data name="error.forum.publish_tag_create_forbidden" xml:space="preserve">
+    <value>A selected tag does not exist, and your account cannot create new tags.</value>
+  </data>
+  <data name="error.forum.publish_submission_id_invalid" xml:space="preserve">
+    <value>The submission identifier is invalid. Refresh and submit again.</value>
+  </data>
+  <data name="error.forum.publish_submission_conflict" xml:space="preserve">
+    <value>This submission conflicts with an existing request. Refresh and submit again.</value>
+  </data>
+  <data name="error.forum.publish_submission_processing" xml:space="preserve">
+    <value>Your content is still being submitted. Check the result shortly.</value>
+  </data>
+  <data name="error.forum.publish_rate_limited" xml:space="preserve">
+    <value>You are submitting too frequently. Try again in {0} seconds.</value>
+  </data>
+  <data name="error.attachment.file_empty" xml:space="preserve">
+    <value>Select a non-empty file to upload.</value>
+  </data>
+  <data name="error.attachment.not_found" xml:space="preserve">
+    <value>The attachment does not exist or is no longer available.</value>
+  </data>
+  <data name="error.attachment.image_type_unsupported" xml:space="preserve">
+    <value>This image format is not supported.</value>
+  </data>
+  <data name="error.attachment.document_type_unsupported" xml:space="preserve">
+    <value>This document format is not supported.</value>
+  </data>
+  <data name="error.attachment.business_type_unsupported" xml:space="preserve">
+    <value>This attachment business type is not supported.</value>
+  </data>
+  <data name="error.attachment.upload_forbidden" xml:space="preserve">
+    <value>Your account does not have permission to upload this file.</value>
+  </data>
+  <data name="error.attachment.rate_limited" xml:space="preserve">
+    <value>You are uploading too frequently. Try again later.</value>
+  </data>
+  <data name="error.attachment.concurrent_upload_limit_reached" xml:space="preserve">
+    <value>You currently have {0} uploads in progress, which reaches the concurrent upload limit of {1}.</value>
+  </data>
+  <data name="error.attachment.upload_frequency_limit_reached" xml:space="preserve">
+    <value>You started {0} uploads this minute, which reaches the limit of {1} upload attempts per minute. Try again later.</value>
+  </data>
+  <data name="error.attachment.daily_upload_size_limit_reached" xml:space="preserve">
+    <value>Your completed and reserved uploads use {0} today, leaving {1}; this {2} file cannot be uploaded.</value>
+  </data>
+  <data name="error.attachment.file_too_large" xml:space="preserve">
+    <value>The selected file exceeds the upload size limit of {0}.</value>
+  </data>
+  <data name="error.attachment.unsupported_media_type" xml:space="preserve">
+    <value>This file type is not supported.</value>
+  </data>
+  <data name="error.attachment.content_mismatch" xml:space="preserve">
+    <value>The file content does not match its extension.</value>
+  </data>
+  <data name="error.attachment.storage_failed" xml:space="preserve">
+    <value>The file could not be stored. Try again later.</value>
+  </data>
+  <data name="error.attachment.processing_failed" xml:space="preserve">
+    <value>The file could not be processed. Try again later.</value>
+  </data>
+  <data name="error.attachment.chunked_upload_disabled" xml:space="preserve">
+    <value>Chunked uploads are currently disabled.</value>
+  </data>
+  <data name="error.attachment.upload_session_invalid" xml:space="preserve">
+    <value>The upload session request is invalid. Check the file and chunk parameters.</value>
+  </data>
+  <data name="error.attachment.upload_session_not_found" xml:space="preserve">
+    <value>The upload session does not exist or your account cannot access it.</value>
+  </data>
+  <data name="error.attachment.upload_session_expired" xml:space="preserve">
+    <value>The upload session expired. Start the upload again.</value>
+  </data>
+  <data name="error.attachment.upload_session_state_conflict" xml:space="preserve">
+    <value>The upload session state does not allow this operation.</value>
+  </data>
+  <data name="error.attachment.upload_chunk_invalid" xml:space="preserve">
+    <value>The upload chunk index or data length is invalid.</value>
+  </data>
+  <data name="error.attachment.upload_chunks_incomplete" xml:space="preserve">
+    <value>Some chunks are still missing, so the upload cannot be merged yet.</value>
+  </data>
   <data name="error.common.internal_error" xml:space="preserve">
     <value>Internal server error. Please try again later.</value>
   </data>
@@ -29,5 +230,374 @@
   </data>
   <data name="error.user.not_found" xml:space="preserve">
     <value>User not found.</value>
+  </data>
+  <data name="error.experience.other_user_forbidden" xml:space="preserve">
+    <value>You cannot view another user’s private experience details.</value>
+  </data>
+  <data name="error.experience.not_found" xml:space="preserve">
+    <value>Experience data was not found for this account.</value>
+  </data>
+  <data name="error.order.not_found" xml:space="preserve">
+    <value>The order was not found.</value>
+  </data>
+  <data name="error.order.retry_rejected" xml:space="preserve">
+    <value>This order cannot be fulfilled again. Refresh and verify its state and payment evidence.</value>
+  </data>
+  <data name="error.order.remark_failed" xml:space="preserve">
+    <value>The order note could not be saved. Refresh and try again.</value>
+  </data>
+  <data name="error.shop.benefit_operation_rejected" xml:space="preserve">
+    <value>The benefit operation could not be completed. Refresh and verify the current benefit state.</value>
+  </data>
+  <data name="error.product.not_found" xml:space="preserve">
+    <value>The product was not found.</value>
+  </data>
+  <data name="error.product.configuration_invalid" xml:space="preserve">
+    <value>The product configuration is invalid. Review the capability requirements and try again.</value>
+  </data>
+  <data name="error.product.sale_unsupported" xml:space="preserve">
+    <value>This product type is not open and cannot be put on sale.</value>
+  </data>
+  <data name="error.product.version_conflict" xml:space="preserve">
+    <value>Another administrator changed this product. Refresh and try again.</value>
+  </data>
+  <data name="error.product.delete_order_conflict" xml:space="preserve">
+    <value>This product has order records and cannot be deleted. Take it off sale to preserve historical order snapshots.</value>
+  </data>
+  <data name="error.product.operation_rejected" xml:space="preserve">
+    <value>The product operation could not be completed. Refresh and try again.</value>
+  </data>
+  <data name="error.moderation.validation_failed" xml:space="preserve">
+    <value>The moderation request is invalid. Check the submitted values and try again.</value>
+  </data>
+  <data name="error.moderation.target_user_not_found" xml:space="preserve">
+    <value>The target user was not found.</value>
+  </data>
+  <data name="error.moderation.report_already_pending" xml:space="preserve">
+    <value>A pending report already exists for this content.</value>
+  </data>
+  <data name="error.moderation.report_not_found" xml:space="preserve">
+    <value>The report was not found.</value>
+  </data>
+  <data name="error.moderation.report_already_reviewed" xml:space="preserve">
+    <value>The report has already been reviewed. Refresh the review queue.</value>
+  </data>
+  <data name="error.moderation.target_action_unsupported" xml:space="preserve">
+    <value>This target does not support a linked user-moderation action.</value>
+  </data>
+  <data name="error.moderation.concurrent_review_conflict" xml:space="preserve">
+    <value>The report was processed by another request. Refresh the review queue.</value>
+  </data>
+  <data name="error.wiki.validation_failed" xml:space="preserve">
+    <value>The document request is invalid. Check the submitted values and try again.</value>
+  </data>
+  <data name="error.wiki.document_not_found" xml:space="preserve">
+    <value>The document was not found.</value>
+  </data>
+  <data name="error.wiki.document_not_accessible" xml:space="preserve">
+    <value>The document was not found or the current account cannot access it.</value>
+  </data>
+  <data name="error.wiki.restore_rejected" xml:space="preserve">
+    <value>The document was not found or cannot be restored from its current state.</value>
+  </data>
+  <data name="error.wiki.revision_not_found" xml:space="preserve">
+    <value>The document revision was not found.</value>
+  </data>
+  <data name="error.wiki.rollback_rejected" xml:space="preserve">
+    <value>The revision was not found or the document has been deleted, so it cannot be rolled back.</value>
+  </data>
+  <data name="error.wiki.built_in_read_only" xml:space="preserve">
+    <value>Built-in documents are read only. Update their source file in Docs instead.</value>
+  </data>
+  <data name="error.wiki.child_document_conflict" xml:space="preserve">
+    <value>Handle child documents before deleting this document.</value>
+  </data>
+  <data name="error.wiki.revision_already_current" xml:space="preserve">
+    <value>This document already matches the selected revision and does not need to be rolled back.</value>
+  </data>
+  <data name="error.wiki.markdown_file_empty" xml:space="preserve">
+    <value>The Markdown file cannot be empty.</value>
+  </data>
+  <data name="error.wiki.markdown_file_unsupported" xml:space="preserve">
+    <value>Only Markdown text files can be imported.</value>
+  </data>
+  <data name="error.wiki.markdown_content_empty" xml:space="preserve">
+    <value>The imported Markdown content cannot be empty.</value>
+  </data>
+  <data name="error.wiki.access_policy_required" xml:space="preserve">
+    <value>A restricted document requires at least one role or permission.</value>
+  </data>
+  <data name="error.wiki.parent_cannot_be_self" xml:space="preserve">
+    <value>A document cannot be its own parent.</value>
+  </data>
+  <data name="error.wiki.parent_not_found" xml:space="preserve">
+    <value>The parent document was not found.</value>
+  </data>
+  <data name="error.wiki.parent_cycle_conflict" xml:space="preserve">
+    <value>A descendant of this document cannot be selected as its parent.</value>
+  </data>
+  <data name="error.user_follow.invalid_target_user" xml:space="preserve">
+    <value>The target user is invalid.</value>
+  </data>
+  <data name="error.user_follow.self_follow_rejected" xml:space="preserve">
+    <value>You cannot follow yourself.</value>
+  </data>
+  <data name="error.user_follow.self_unfollow_rejected" xml:space="preserve">
+    <value>You cannot unfollow yourself.</value>
+  </data>
+  <data name="error.user_follow.target_unavailable" xml:space="preserve">
+    <value>The target user does not exist or is unavailable.</value>
+  </data>
+  <data name="error.user_follow.follow_rejected" xml:space="preserve">
+    <value>The follow action could not be completed.</value>
+  </data>
+  <data name="error.user_follow.invalid_stream_type" xml:space="preserve">
+    <value>This content stream type is not supported.</value>
+  </data>
+  <data name="error.pet.invalid_request" xml:space="preserve">
+    <value>Check the pet profile or care details and try again.</value>
+  </data>
+  <data name="error.pet.invalid_action" xml:space="preserve">
+    <value>This care action is not supported.</value>
+  </data>
+  <data name="error.pet.not_claimed" xml:space="preserve">
+    <value>Claim your pet first.</value>
+  </data>
+  <data name="error.pet.daily_limit_reached" xml:space="preserve">
+    <value>This care action has reached its daily limit.</value>
+  </data>
+  <data name="error.pet.care_cooldown" xml:space="preserve">
+    <value>This care action is still cooling down.</value>
+  </data>
+  <data name="error.coin.transaction_not_found" xml:space="preserve">
+    <value>The transaction was not found.</value>
+  </data>
+  <data name="error.coin.transfer_self_rejected" xml:space="preserve">
+    <value>You cannot transfer carrots to yourself.</value>
+  </data>
+  <data name="error.coin.transfer_amount_invalid" xml:space="preserve">
+    <value>The transfer amount must be greater than zero.</value>
+  </data>
+  <data name="error.coin.transfer_insufficient_balance" xml:space="preserve">
+    <value>Your available carrot balance is insufficient.</value>
+  </data>
+  <data name="error.coin.transfer_account_unavailable" xml:space="preserve">
+    <value>The current asset account state does not allow this transfer.</value>
+  </data>
+  <data name="error.coin.transfer_concurrency_conflict" xml:space="preserve">
+    <value>The asset state changed. Refresh and try again.</value>
+  </data>
+  <data name="error.coin.transfer_processing" xml:space="preserve">
+    <value>This transfer is still processing. Check its result shortly.</value>
+  </data>
+  <data name="error.coin.transfer_idempotency_conflict" xml:space="preserve">
+    <value>This request identifier was already used for different transfer details.</value>
+  </data>
+  <data name="error.coin.transfer_idempotency_invalid" xml:space="preserve">
+    <value>The transfer request identifier is invalid.</value>
+  </data>
+  <data name="error.coin.transfer_replay_unavailable" xml:space="preserve">
+    <value>The previous transfer result is temporarily unavailable. Try again shortly.</value>
+  </data>
+  <data name="error.payment_password.required" xml:space="preserve">
+    <value>Enter your payment passcode.</value>
+  </data>
+  <data name="error.payment_password.format_invalid" xml:space="preserve">
+    <value>The payment passcode must contain exactly six digits.</value>
+  </data>
+  <data name="error.payment_password.repeated_digits" xml:space="preserve">
+    <value>The payment passcode cannot use the same digit six times.</value>
+  </data>
+  <data name="error.payment_password.confirmation_mismatch" xml:space="preserve">
+    <value>The payment passcodes do not match.</value>
+  </data>
+  <data name="error.payment_password.already_configured" xml:space="preserve">
+    <value>A payment passcode is already configured. Use the change action instead.</value>
+  </data>
+  <data name="error.payment_password.not_configured" xml:space="preserve">
+    <value>No payment passcode has been configured.</value>
+  </data>
+  <data name="error.payment_password.invalid" xml:space="preserve">
+    <value>The payment passcode is incorrect. Try again.</value>
+  </data>
+  <data name="error.payment_password.locked" xml:space="preserve">
+    <value>The payment passcode is temporarily locked. Try again later.</value>
+  </data>
+  <data name="error.payment_password.upgrade_required" xml:space="preserve">
+    <value>The legacy payment passcode is disabled. Reset a new six-digit passcode in Security settings.</value>
+  </data>
+  <data name="error.common.validation_failed" xml:space="preserve">
+    <value>Check the submitted information and try again.</value>
+  </data>
+  <data name="error.common.not_found" xml:space="preserve">
+    <value>The requested resource was not found.</value>
+  </data>
+  <data name="error.common.conflict" xml:space="preserve">
+    <value>The resource has changed. Refresh and try again.</value>
+  </data>
+  <data name="error.sticker.batch_code_conflict" xml:space="preserve">
+    <value>One or more sticker codes already exist. Update the conflicting rows and try again.</value>
+  </data>
+  <data name="error.sticker.image_processing_failed" xml:space="preserve">
+    <value>One or more sticker images could not be processed. Try again later.</value>
+  </data>
+  <data name="error.sticker.group_not_found" xml:space="preserve">
+    <value>The sticker group does not exist or is no longer available.</value>
+  </data>
+  <data name="error.coin.balance_query_rejected" xml:space="preserve">
+    <value>The user balance could not be loaded. Verify the account and try again.</value>
+  </data>
+  <data name="error.coin.admin_adjust_rejected" xml:space="preserve">
+    <value>The balance adjustment could not be completed. Verify the balance and submitted details.</value>
+  </data>
+  <data name="error.experience.admin_adjust_rejected" xml:space="preserve">
+    <value>The experience adjustment could not be completed. Verify the account and submitted details.</value>
+  </data>
+  <data name="error.experience.freeze_until_invalid" xml:space="preserve">
+    <value>The freeze expiration must be later than the current time.</value>
+  </data>
+  <data name="error.experience.freeze_rejected" xml:space="preserve">
+    <value>The experience freeze could not be completed. Verify the account state and try again.</value>
+  </data>
+  <data name="error.experience.unfreeze_rejected" xml:space="preserve">
+    <value>The experience freeze could not be removed. Verify the account state and try again.</value>
+  </data>
+  <data name="error.experience.review_rejected" xml:space="preserve">
+    <value>The governance review result could not be recorded. Verify the submitted details.</value>
+  </data>
+  <data name="error.chat.channel_unavailable" xml:space="preserve">
+    <value>The conversation does not exist or this account cannot access it.</value>
+  </data>
+  <data name="error.chat.send_forbidden" xml:space="preserve">
+    <value>This account cannot send messages in the conversation.</value>
+  </data>
+  <data name="error.chat.message_idempotency_conflict" xml:space="preserve">
+    <value>This message request identifier was already used for different content. Refresh the conversation and try again.</value>
+  </data>
+  <data name="error.chat.attachment_unavailable" xml:space="preserve">
+    <value>The chat attachment is unavailable, not permitted, or already bound to another message.</value>
+  </data>
+  <data name="error.chat.attachment_binding_conflict" xml:space="preserve">
+    <value>The chat attachment binding has changed. Refresh the conversation and try again.</value>
+  </data>
+  <data name="error.chat.channel_list_view_invalid" xml:space="preserve">
+    <value>The conversation list view must be active or archived.</value>
+  </data>
+  <data name="error.chat.direct_target_invalid" xml:space="preserve">
+    <value>The target user identifier is invalid.</value>
+  </data>
+  <data name="error.chat.direct_self_not_allowed" xml:space="preserve">
+    <value>You cannot start a direct conversation with yourself.</value>
+  </data>
+  <data name="error.chat.direct_target_unavailable" xml:space="preserve">
+    <value>The target user does not exist or is unavailable.</value>
+  </data>
+  <data name="error.chat.direct_peer_unavailable" xml:space="preserve">
+    <value>The other account is unavailable, so this conversation cannot continue.</value>
+  </data>
+  <data name="error.chat.direct_receiver_required" xml:space="preserve">
+    <value>Only the recipient of the direct-message request can perform this action.</value>
+  </data>
+  <data name="error.chat.direct_action_conflict" xml:space="preserve">
+    <value>The current direct-message request state does not allow this action.</value>
+  </data>
+  <data name="error.chat.direct_blocked_by_peer" xml:space="preserve">
+    <value>The conversation was blocked by the other participant.</value>
+  </data>
+  <data name="error.chat.direct_unblock_forbidden" xml:space="preserve">
+    <value>Only the participant who blocked the conversation can unblock it.</value>
+  </data>
+  <data name="error.chat.direct_blocked" xml:space="preserve">
+    <value>The conversation is blocked.</value>
+  </data>
+  <data name="error.chat.direct_not_accepted" xml:space="preserve">
+    <value>Accept the direct-message request before sending messages.</value>
+  </data>
+  <data name="error.chat.direct_request_already_sent" xml:space="preserve">
+    <value>The first message for this direct-message request has already been sent.</value>
+  </data>
+  <data name="error.chat.direct_request_text_only" xml:space="preserve">
+    <value>A direct-message request allows one plain text message without images, replies, or mentions.</value>
+  </data>
+  <data name="error.chat.direct_request_declined" xml:space="preserve">
+    <value>The direct-message request was declined and cannot receive more messages.</value>
+  </data>
+  <data name="error.chat.message_type_unavailable" xml:space="preserve">
+    <value>This endpoint only accepts text or image messages.</value>
+  </data>
+  <data name="error.chat.reply_unavailable" xml:space="preserve">
+    <value>The replied-to message does not exist or belongs to another conversation.</value>
+  </data>
+  <data name="error.chat.search_keyword_invalid" xml:space="preserve">
+    <value>The normalized search keyword must contain 2 to 100 characters.</value>
+  </data>
+  <data name="error.chat.search_scope_invalid" xml:space="preserve">
+    <value>The search scope and conversation parameters are invalid.</value>
+  </data>
+  <data name="error.chat.search_page_size_invalid" xml:space="preserve">
+    <value>The search page size must be between 1 and 50.</value>
+  </data>
+  <data name="error.chat.search_time_range_invalid" xml:space="preserve">
+    <value>The search start time must be earlier than the end time.</value>
+  </data>
+  <data name="error.chat.search_cursor_invalid" xml:space="preserve">
+    <value>The search conditions, account, or conversation access changed. Run the search again.</value>
+  </data>
+  <data name="error.chat.reaction_invalid_argument" xml:space="preserve">
+    <value>The message reaction request is invalid.</value>
+  </data>
+  <data name="error.chat.reaction_not_allowed" xml:space="preserve">
+    <value>The current conversation state does not allow message reactions.</value>
+  </data>
+  <data name="error.chat.reaction_target_unavailable" xml:space="preserve">
+    <value>The message is missing, recalled, or unavailable to this account.</value>
+  </data>
+  <data name="error.chat.reaction_idempotency_conflict" xml:space="preserve">
+    <value>This reaction operation ID was already used for another action. Refresh and try again.</value>
+  </data>
+  <data name="error.chat.reaction_concurrent_conflict" xml:space="preserve">
+    <value>The reaction state changed concurrently. Refresh and try again.</value>
+  </data>
+  <data name="error.chat.reaction_limit_exceeded" xml:space="preserve">
+    <value>You can keep at most 10 reaction types on one message.</value>
+  </data>
+  <data name="error.chat.reaction_sticker_unavailable" xml:space="preserve">
+    <value>The selected sticker is missing, disabled, or unavailable to this tenant.</value>
+  </data>
+  <data name="error.chat.pin_invalid_argument" xml:space="preserve">
+    <value>The message pin request is invalid.</value>
+  </data>
+  <data name="error.chat.pin_not_allowed" xml:space="preserve">
+    <value>This account cannot manage message pins in the current conversation.</value>
+  </data>
+  <data name="error.chat.pin_target_unavailable" xml:space="preserve">
+    <value>The message is missing, recalled, or unavailable to this account.</value>
+  </data>
+  <data name="error.chat.pin_concurrent_conflict" xml:space="preserve">
+    <value>The message pin state changed concurrently. Refresh and try again.</value>
+  </data>
+  <data name="error.chat.pin_limit_exceeded" xml:space="preserve">
+    <value>Each conversation can keep at most 20 pinned messages.</value>
+  </data>
+  <data name="error.chat.read_state_invalid_argument" xml:space="preserve">
+    <value>The channel read-state request is invalid.</value>
+  </data>
+  <data name="error.chat.read_target_unavailable" xml:space="preserve">
+    <value>The message is missing or unavailable to this account.</value>
+  </data>
+  <data name="error.chat.receipt_invalid_argument" xml:space="preserve">
+    <value>The message read-receipt request is invalid.</value>
+  </data>
+  <data name="error.chat.receipt_target_unavailable" xml:space="preserve">
+    <value>The message is missing, recalled, or unavailable to this account.</value>
+  </data>
+  <data name="error.chat.receipt_message_not_owned" xml:space="preserve">
+    <value>You can only view read receipts for messages sent by this account.</value>
+  </data>
+  <data name="error.chat.receipt_not_supported" xml:space="preserve">
+    <value>Reader details are not available for this conversation type.</value>
+  </data>
+  <data name="error.chat.receipt_cursor_invalid" xml:space="preserve">
+    <value>The reader page, account, or conversation permissions changed. Reopen the reader list.</value>
   </data>
 </root>

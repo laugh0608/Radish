@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import {
   getCurrentGodCommentsBatch,
@@ -19,6 +20,8 @@ import type {
   PublicListSort,
 } from '../forumRouteState';
 import { buildPublicForumPath, createDefaultListRoute, createDefaultSearchRoute } from '../forumRouteState';
+import { buildLocalizedPublicRouteHead } from '../publicHead';
+import { usePublicHeadSnapshot } from '../publicHeadLifecycleContext';
 import { usePublicReplaceRouteSync } from '../usePublicReplaceRouteSync';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
 import { PublicForumPagination, PublicForumRouteLink } from './PublicForumLinks';
@@ -82,6 +85,7 @@ export const PublicForumTag = ({
   const [loadingTag, setLoadingTag] = useState(false);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [tagError, setTagError] = useState<string | null>(null);
+  const [tagNotFound, setTagNotFound] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
@@ -146,6 +150,7 @@ export const PublicForumTag = ({
     const loadTag = async () => {
       setLoadingTag(true);
       setTagError(null);
+      setTagNotFound(false);
       try {
         const tag = await getTagBySlug(routeState.tagSlug, t);
         if (requestId !== tagRequestIdRef.current) {
@@ -160,6 +165,7 @@ export const PublicForumTag = ({
 
         const message = err instanceof Error ? err.message : String(err);
         setSelectedTag(null);
+        setTagNotFound(isApiResponseNotFoundError(err));
         setTagError(message);
       } finally {
         if (requestId === tagRequestIdRef.current) {
@@ -263,7 +269,8 @@ export const PublicForumTag = ({
   const tagState = resolvePublicForumTagLoadState({
     loadingTag,
     hasTag: !!selectedTag,
-    tagError
+    tagError,
+    tagNotFound
   });
   const pageTitle = selectedTag?.voName
     || (tagState.kind === 'notFound' ? t('forum.public.tagUnavailableTitle') : t('forum.public.tagTitle'));
@@ -271,15 +278,29 @@ export const PublicForumTag = ({
     || (tagState.kind === 'notFound'
       ? t('forum.public.tagUnavailableDescription')
       : t('forum.public.tagDescriptionFallback'));
+  const publicHeadSnapshot = useMemo(() => {
+    if (
+      !selectedTag
+      || selectedTag.voSlug.trim().toLowerCase() !== routeState.tagSlug.trim().toLowerCase()
+    ) {
+      return null;
+    }
+
+    const routeHead = buildLocalizedPublicRouteHead({ app: 'forum', route: routeState }, t);
+    return {
+      head: {
+        ...routeHead,
+        title: `${selectedTag.voName} · ${t('desktop.apps.forum.name')}`,
+        description: selectedTag.voDescription?.trim() || routeHead.description,
+      },
+    };
+  }, [routeState, selectedTag, t]);
+  usePublicHeadSnapshot(publicHeadSnapshot);
   const tagPostCount = useMemo(() => formatTagPostCount(selectedTag, t), [selectedTag, t]);
   const readingGuide = useMemo(
     () => createForumReadingGuide(t, tagGuideDefinition),
     [t]
   );
-
-  useEffect(() => {
-    document.title = `${t('desktop.apps.forum.name')} · ${pageTitle}`;
-  }, [pageTitle, t]);
 
   const visiblePages = useMemo(() => {
     return buildVisiblePages(currentPage, totalPages, isCompactViewport ? 5 : 7);

@@ -2,15 +2,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
-using Serilog;
+using Radish.Model.ViewModels;
 
 namespace Radish.Api.Hubs;
 
-/// <summary>
-/// 通知 SignalR Hub
-/// </summary>
+/// <summary>只广播权威收件箱 revision 的通知 Hub。</summary>
 [Authorize(Policy = AuthorizationPolicies.Client)]
-public class NotificationHub : Hub
+public sealed class NotificationHub : Hub
 {
     private readonly INotificationPushService _notificationPushService;
     private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
@@ -26,118 +24,60 @@ public class NotificationHub : Hub
         _logger = logger;
     }
 
-    /// <summary>
-    /// 连接建立时
-    /// </summary>
     public override async Task OnConnectedAsync()
     {
-        var userId = GetUserId();
-        var connectionId = Context.ConnectionId;
-        var clientIp = Context.GetHttpContext()?.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        var current = GetCurrentUser();
+        if (current.UserId <= 0)
+        {
+            throw new HubException("无法获取用户 ID");
+        }
 
-        _logger.LogInformation(
-            "[NotificationHub] 连接建立 - UserId: {UserId}, ConnectionId: {ConnectionId}, IP: {ClientIp}",
-            userId, connectionId, clientIp);
+        await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{current.UserId}");
+        var summary = await _notificationPushService.GetInboxSummaryAsync(current.TenantId, current.UserId);
+        await Clients.Caller.SendAsync("NotificationInboxChanged", new NotificationInboxChangedVo
+        {
+            VoRevision = summary.VoRevision,
+            VoUnreadGroupCount = summary.VoUnreadGroupCount,
+            VoUnreadOccurrenceCount = summary.VoUnreadOccurrenceCount,
+            VoReason = "Connected",
+            VoRealtimePreviewAllowed = false
+        });
 
-        // 将连接加入用户组（支持多端同时在线）
-        await Groups.AddToGroupAsync(connectionId, $"user:{userId}");
-
-        // 获取并推送真实的未读数
-        var unreadCount = await _notificationPushService.GetUnreadCountAsync(userId);
-        await Clients.Caller.SendAsync("UnreadCountChanged", new { unreadCount });
-
-        _logger.LogInformation(
-            "[NotificationHub] 已推送未读数到用户 {UserId}，未读数：{UnreadCount}",
-            userId, unreadCount);
-
+        // F4-B-C 前保留旧前端连接初始化事件。
+        await Clients.Caller.SendAsync("UnreadCountChanged", new
+        {
+            unreadCount = summary.VoUnreadGroupCount
+        });
         await base.OnConnectedAsync();
     }
 
-    /// <summary>
-    /// 连接断开时
-    /// </summary>
     public override async Task OnDisconnectedAsync(Exception? exception)
     {
-        var userId = GetUserId();
-        var connectionId = Context.ConnectionId;
+        var current = GetCurrentUser();
+        if (current.UserId > 0)
+        {
+            await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user:{current.UserId}");
+        }
 
         if (exception != null)
         {
-            _logger.LogWarning(exception,
-                "[NotificationHub] 连接异常断开 - UserId: {UserId}, ConnectionId: {ConnectionId}",
-                userId, connectionId);
+            _logger.LogWarning(
+                exception,
+                "通知 Hub 连接异常断开，UserId={UserId}, ConnectionId={ConnectionId}",
+                current.UserId,
+                Context.ConnectionId);
         }
-        else
-        {
-            _logger.LogInformation(
-                "[NotificationHub] 连接正常断开 - UserId: {UserId}, ConnectionId: {ConnectionId}",
-                userId, connectionId);
-        }
-
-        // 从用户组移除
-        await Groups.RemoveFromGroupAsync(connectionId, $"user:{userId}");
 
         await base.OnDisconnectedAsync(exception);
     }
 
-    /// <summary>
-    /// 客户端标记通知已读（用于多端同步）
-    /// </summary>
-    /// <param name="notificationId">通知 ID</param>
-    public async Task MarkAsRead(long notificationId)
-    {
-        var userId = GetUserId();
-
-        _logger.LogDebug(
-            "[NotificationHub] 客户端标记已读 - UserId: {UserId}, NotificationId: {NotificationId}",
-            userId, notificationId);
-
-        // 通知该用户的其他端（多端同步）
-        await Clients.OthersInGroup($"user:{userId}")
-            .SendAsync("NotificationRead", new { notificationIds = new[] { notificationId } });
-    }
-
-    /// <summary>
-    /// 客户端标记全部已读（用于多端同步）
-    /// </summary>
-    public async Task MarkAllAsRead()
-    {
-        var userId = GetUserId();
-
-        _logger.LogDebug("[NotificationHub] 客户端标记全部已读 - UserId: {UserId}", userId);
-
-        // 通知该用户的其他端
-        await Clients.OthersInGroup($"user:{userId}")
-            .SendAsync("AllNotificationsRead", new { });
-    }
-
-    /// <summary>
-    /// 获取当前用户 ID
-    /// </summary>
-    private long GetUserId()
+    private CurrentUser GetCurrentUser()
     {
         if (Context.User == null)
         {
-            _logger.LogWarning(
-                "[NotificationHub] 连接缺少认证用户 - ConnectionId: {ConnectionId}",
-                Context.ConnectionId);
             throw new HubException("用户未认证");
         }
 
-        var userId = GetCurrentUser().UserId;
-        if (userId > 0)
-        {
-            return userId;
-        }
-
-        _logger.LogWarning(
-            "[NotificationHub] 连接无法解析用户标识 - ConnectionId: {ConnectionId}",
-            Context.ConnectionId);
-        throw new HubException("无法获取用户 ID");
-    }
-
-    private CurrentUser GetCurrentUser()
-    {
         return _claimsPrincipalNormalizer.Normalize(Context.User, GetAccessToken());
     }
 
@@ -151,12 +91,7 @@ public class NotificationHub : Hub
         }
 
         var authorization = httpContext?.Request.Headers.Authorization.ToString();
-        if (string.IsNullOrWhiteSpace(authorization))
-        {
-            return null;
-        }
-
-        return authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
+        return authorization?.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase) == true
             ? authorization["Bearer ".Length..].Trim()
             : authorization;
     }

@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
   buildAvatarText,
   findMentionContext,
+  formatChatTime,
   getEntityKey,
   getReplyTargetMessageId,
   normalizeMentionText,
@@ -33,6 +34,12 @@ test('findMentionContext 应只在合法 @ 触发位置返回上下文', () => {
   });
   assert.equal(findMentionContext('email@test', 'email@test'.length), null);
   assert.equal(findMentionContext('hello @ali ce', 'hello @ali ce'.length), null);
+});
+
+test('formatChatTime 应按当前语言格式化时间', () => {
+  const value = '2026-05-22T08:05:00Z';
+  assert.notEqual(formatChatTime(value, 'zh-CN'), formatChatTime(value, 'en-US'));
+  assert.equal(formatChatTime('invalid', 'en-US'), '--:--');
 });
 
 test('normalizeMentionText 应把存储格式提炼为可读文本', () => {

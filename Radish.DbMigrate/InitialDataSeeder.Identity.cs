@@ -591,6 +591,33 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 500562L,
+                ApiModuleName = "Admin get entitlement operations",
+                LinkUrl = "/api/v1/Shop/AdminGetEntitlementOperations",
+                ControllerName = "Shop",
+                ActionName = "AdminGetEntitlementOperations",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 500563L,
+                ApiModuleName = "Admin get user benefits",
+                LinkUrl = "/api/v1/Shop/AdminGetUserBenefits",
+                ControllerName = "Shop",
+                ActionName = "AdminGetUserBenefits",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 500564L,
+                ApiModuleName = "Admin revoke benefit",
+                LinkUrl = "/api/v1/Shop/AdminRevokeBenefit/.+",
+                ControllerName = "Shop",
+                ActionName = "AdminRevokeBenefit",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50057L,
                 ApiModuleName = "Retry grant benefit",
                 LinkUrl = "/api/v1/Shop/RetryGrantBenefit/.+",

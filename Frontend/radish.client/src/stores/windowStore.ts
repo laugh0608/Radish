@@ -104,7 +104,7 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
     // 如果是外部链接类型，直接在新标签页打开
     if (app.type === 'external' && app.externalUrl) {
-      window.open(app.externalUrl, '_blank');
+      window.open(app.externalUrl, '_blank', 'noopener,noreferrer');
       return;
     }
 

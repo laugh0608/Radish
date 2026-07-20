@@ -18,7 +18,8 @@ internal static partial class InitialDataSeeder
         chatDb.CodeFirst.InitTables<Channel>();
         chatDb.CodeFirst.InitTables<ChannelMessage>();
         chatDb.CodeFirst.InitTables<ChannelMember>();
-        Console.WriteLine("[Radish.DbMigrate] 已同步 Chat 库 Channel/ChannelMessage/ChannelMember 表结构。");
+        chatDb.CodeFirst.InitTables<DirectConversation>();
+        Console.WriteLine("[Radish.DbMigrate] 已同步 Chat 库 Channel/ChannelMessage/ChannelMember/DirectConversation 表结构。");
 
         var defaultChannels = new[]
         {

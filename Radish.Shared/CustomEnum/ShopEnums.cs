@@ -55,6 +55,22 @@ public enum BenefitType
     LikeEffect = 7
 }
 
+/// <summary>用户持续权益的服务端有效状态。</summary>
+public enum UserBenefitStatus
+{
+    /// <summary>权益有效但当前未选择。</summary>
+    Available = 0,
+
+    /// <summary>权益有效且为该类型的当前选择。</summary>
+    Active = 1,
+
+    /// <summary>权益已到达 UTC 到期时间。</summary>
+    Expired = 2,
+
+    /// <summary>权益已被管理员撤销。</summary>
+    Revoked = 3
+}
+
 /// <summary>消耗品类型枚举</summary>
 /// <remarks>
 /// 定义一次性使用的道具类型
@@ -119,6 +135,20 @@ public enum OrderStatus
     /// <summary>发放失败</summary>
     /// <remarks>权益发放失败，需人工处理</remarks>
     Failed = 5
+}
+
+/// <summary>订单失败阶段</summary>
+/// <remarks>用于区分未形成有效扣款的支付失败与已支付后的履约失败。</remarks>
+public enum OrderFailureStage
+{
+    /// <summary>订单当前没有失败</summary>
+    None = 0,
+
+    /// <summary>支付阶段失败，禁止发放商品</summary>
+    Payment = 1,
+
+    /// <summary>支付成功后的履约阶段失败，可在支付证据校验通过后重试</summary>
+    Fulfillment = 2
 }
 
 /// <summary>库存类型枚举</summary>

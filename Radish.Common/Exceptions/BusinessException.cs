@@ -20,12 +20,23 @@ public class BusinessException : Exception
     /// </summary>
     public string? MessageKey { get; }
 
-    public BusinessException(string message, int statusCode = 400, string? errorCode = null, string? messageKey = null)
+    /// <summary>
+    /// 可安全公开的多语言格式参数。
+    /// </summary>
+    public IReadOnlyList<object> MessageArguments { get; }
+
+    public BusinessException(
+        string message,
+        int statusCode = 400,
+        string? errorCode = null,
+        string? messageKey = null,
+        params object[] messageArguments)
         : base(message)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
         MessageKey = messageKey;
+        MessageArguments = messageArguments ?? Array.Empty<object>();
     }
 
     public BusinessException(
@@ -33,11 +44,13 @@ public class BusinessException : Exception
         Exception innerException,
         int statusCode = 400,
         string? errorCode = null,
-        string? messageKey = null)
+        string? messageKey = null,
+        params object[] messageArguments)
         : base(message, innerException)
     {
         StatusCode = statusCode;
         ErrorCode = errorCode;
         MessageKey = messageKey;
+        MessageArguments = messageArguments ?? Array.Empty<object>();
     }
 }

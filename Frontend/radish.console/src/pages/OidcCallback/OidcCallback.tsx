@@ -1,18 +1,24 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { message } from '@radish/ui';
 import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { log } from '@/utils/logger';
+import { ClientBackLink } from '@/components/ClientBackLink';
+import i18n from '@/i18n';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
 /**
  * OIDC 回调处理页面
  */
 export function OidcCallback() {
+  const { t } = useTranslation();
   const [error, setError] = useState<string>();
-  const [messageText, setMessageText] = useState<string>('正在完成登录...');
+  const [messageText, setMessageText] = useState<string>(() => i18n.t('console.callback.processing'));
   const navigate = useNavigate();
+  useDocumentTitle(t('console.callback.documentTitle'));
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -31,14 +37,14 @@ export function OidcCallback() {
           clientId: 'radish-console',
           authServerBaseUrl,
           redirectUri,
-          missingCodeMessage: '授权码缺失',
-          staleCallbackMessage: '登录回调已失效，请重新发起登录。',
-          missingAccessTokenMessage: '未收到 access_token',
+          missingCodeMessage: i18n.t('console.callback.missingCode'),
+          staleCallbackMessage: i18n.t('console.callback.stale'),
+          missingAccessTokenMessage: i18n.t('console.callback.missingAccessToken'),
           buildTokenRequestFailedMessage: ({ status, statusText, error, errorDescription }) => {
             const detailMessage = errorDescription || error;
             return detailMessage
-              ? `Token 请求失败: ${status} ${statusText} (${detailMessage})`
-              : `Token 请求失败: ${status} ${statusText}`;
+              ? i18n.t('console.callback.tokenRequestFailedWithDetail', { status, statusText, detail: detailMessage })
+              : i18n.t('console.callback.tokenRequestFailed', { status, statusText });
           }
         });
 
@@ -58,8 +64,8 @@ export function OidcCallback() {
         window.dispatchEvent(new CustomEvent('auth:token-updated'));
 
         log.info('OidcCallback', 'Token 信息已保存');
-        setMessageText('登录成功，正在跳转...');
-        message.success('登录成功');
+        setMessageText(i18n.t('console.callback.successRedirecting'));
+        message.success(i18n.t('console.callback.success'));
 
         // 使用 React Router 导航到首页
         redirectTimer = setTimeout(() => {
@@ -71,16 +77,17 @@ export function OidcCallback() {
         }
 
         if (err instanceof OidcCallbackError && err.code === 'stale_callback') {
-          setError('登录回调已失效，请重新发起登录。');
-          setMessageText('登录失败');
-          message.error('登录回调已失效，请重新发起登录。');
+          const staleMessage = i18n.t('console.callback.stale');
+          setError(staleMessage);
+          setMessageText(i18n.t('console.callback.failure'));
+          message.error(staleMessage);
           return;
         }
 
         const msg = err instanceof Error ? err.message : String(err);
         setError(msg);
-        setMessageText('登录失败');
-        message.error('登录失败：' + msg);
+        setMessageText(i18n.t('console.callback.failure'));
+        message.error(i18n.t('console.callback.failureWithDetail', { detail: msg }));
       }
     };
 
@@ -96,9 +103,10 @@ export function OidcCallback() {
 
   return (
     <div style={{ padding: '40px', textAlign: 'center' }}>
-      <h1>OIDC 回调处理</h1>
+      <h1>{t('console.callback.heading')}</h1>
       <p>{messageText}</p>
-      {error && <p style={{ color: 'red' }}>错误详情：{error}</p>}
+      {error && <p style={{ color: 'red' }}>{t('console.callback.errorDetails', { detail: error })}</p>}
+      {error ? <ClientBackLink /> : null}
     </div>
   );
 }

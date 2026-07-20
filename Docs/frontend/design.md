@@ -55,7 +55,7 @@
 - WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；forum 回流统一优先使用 `postPublicId`，旧 `postId` 仅作为兼容 fallback，docs / shop 仍保留现有 slug 或 long 路由兼容但不把旧 long 路径作为用户可见文案；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
 - 公开内容壳层当前已完成 `/discover`、forum、docs、个人公开页、公开榜单与公开商城浏览入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/discover`、`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:identifier`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，公开个人页路由参数当前可承接 `User.PublicId` 或旧 long 字符串，canonical / 分享 / 普通内容入口优先使用 `PublicId`
 - 纯 Web 已开始承担根路径 `/` 与默认浏览器入口；普通浏览器 `/` 当前进入 `/discover` 公开分发页，公开内容壳层的已有路径是纯 Web 主线的第一批基础，不再回塞进 WebOS 窗口系统
-- 纯 Web 登录态私域与作者态入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/me/content`、`/me/history`、`/me/attachments`、`/me/experience`、`/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`、`/forum/compose`、`/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`：分别承接通知列表 / 目标分流、关注动态与关系链复访、个人状态与内容历史复访、资产流水、商城购买结果 / 订单 / 背包、会话 / 消息定位、电子宠物领取与照顾、论坛发帖和 Docs 作者入口；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 与 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
+- 纯 Web 登录态私域与作者态入口当前已覆盖 `/notifications`、`/circle`、`/me`、`/me/content`、`/me/history`、`/me/attachments`、`/me/experience`、`/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`、`/messages`、`/pet`、`/forum/compose`、`/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`：分别承接权威通知收件箱 / 偏好 / 结构化目标、关注动态与关系链复访、个人状态与内容历史复访、资产流水、商城购买结果 / 订单 / 背包、一对一会话生命周期 / 消息定位、电子宠物领取与照顾、论坛发帖和 Docs 作者入口；这些路由不进入公开 sitemap，不替代 `/desktop` 的完整工作台能力，细节见 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 与 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
 - `/workbench` 当前作为正式 Web “更多”功能地图与社区活动中心，除公开浏览、登录态私域、后台治理和历史桌面四组功能地图外，还会汇总通知行动、聊天未读 / 提及 / 草稿、论坛草稿、订单 / Docs / 宠物等继续处理项；公共头部“更多”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - `/legal` 当前作为公开用户承诺入口，承载社区内容规范、隐私边界、账号安全、通知、虚拟商品和退款 / 不退款边界；`/legal` 与登录态 `/me` 复用同一套隐私与安全边界组件，帮助用户区分公开、本人私域、仅 Console 和不可公开数据。
 - 正式 Web 当前已形成共享头部视觉和动作基线：PC 主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`；移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`。`/me`、`/circle`、`/pet` 归属“我的”，`/messages` 归属“聊天”，Docs、商城、榜单、规则、Console、订单 / 背包、作者态和 `/desktop` 兼容入口由“更多”进入 `/workbench` 承接；共享头部和移动底栏由 `components/web-shell/WebShellHeader` 承接，页面状态槽由 `WebStateSlot` 承接
@@ -395,11 +395,12 @@ export const tokens = {
 
 当前口径：
 
-- `radish.client` 主题状态由根级主题能力驱动
+- `radish.client` 主题状态由根级主题能力驱动；`default / guofeng` 为内置偏好，`theme-dark-night / theme-sakura` 为服务端 Theme 权益主题
 - 新增 UI 改造优先复用语义 token，不继续扩硬编码颜色
-- 高频桌面壳层、商城、论坛、聊天、通知、个人中心和文档应用已完成首轮主题 / i18n 接入
+- 正式 Web Header、PC / mobile 页面族、共享 UI 与 Ant Design 已统一消费当前有效主题；登录、停用、到期、撤销和登出时回退内置主题偏好
+- client 翻译资源已按业务域拆分，client / Console 共用设备语言键但各自维护资源；Auth 使用 `.resx` 与文化 Cookie，HTTP 与共享 UI 分别通过 `@radish/http` 和 locale / labels 契约接线
 - Console 后续新增或明显改动页面优先使用 `--console-*` 局部变量承接 `@radish/ui` / `--theme-*` token，并按页面类型复用 `adminFeature.css` 中的功能页、表格、设置、详情、工作台和摘要栏结构，不启动后台整站视觉重构
-- 后续只在真实联调中处理残余边角，不在设计入口继续追加流水
+- 主题与 i18n 后续按业务域和页面族维护，不在设计入口追加命令级验证流水
 
 主题与 i18n 落地细节见 [前端主题与 i18n 落地记录](/frontend/theme-i18n-implementation)、[视觉主题规范](/frontend/visual-theme-spec)、[视觉色彩参考](/frontend/visual-color-reference)、[UI 设计灵感参考](/frontend/ui-design-inspiration)、[Console 样式与 Token 使用说明](/frontend/console-style-guide) 与 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 

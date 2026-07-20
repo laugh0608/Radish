@@ -24,4 +24,36 @@ public class ChannelVo
     public bool VoHasMention { get; set; }
 
     public ChannelMessageVo? VoLastMessage { get; set; }
+
+    public string VoConversationKind { get; set; } = "public";
+
+    public long? VoPeerUserId { get; set; }
+
+    public string? VoPeerPublicId { get; set; }
+
+    public string? VoPeerDisplayName { get; set; }
+
+    public string? VoPeerAvatarUrl { get; set; }
+
+    public string? VoDirectRequestStatus { get; set; }
+
+    public bool VoCanSend { get; set; }
+
+    public bool VoCanReact { get; set; }
+
+    public bool VoCanPinMessages { get; set; }
+
+    public bool VoCanAccept { get; set; }
+
+    public bool VoCanDecline { get; set; }
+
+    public bool VoCanBlock { get; set; }
+
+    public bool VoCanUnblock { get; set; }
+
+    public bool VoIsBlockedByCurrentUser { get; set; }
+
+    public bool VoIsArchived { get; set; }
+
+    public bool VoIsPeerAvailable { get; set; } = true;
 }

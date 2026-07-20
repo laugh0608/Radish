@@ -53,6 +53,7 @@ public class ApiErrorContractTest
         Assert.Equal(context.TraceIdentifier, json.RootElement.GetProperty("traceId").GetString());
         Assert.DoesNotContain("secret", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("SELECT", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        Assert.False(json.RootElement.TryGetProperty("messageArguments", out _));
     }
 
     [Fact]
@@ -73,6 +74,44 @@ public class ApiErrorContractTest
         var json = await ReadResponseJsonAsync(context);
         Assert.Equal(ApiErrorCodes.Conflict, json.RootElement.GetProperty("code").GetString());
         Assert.Equal("error.common.conflict", json.RootElement.GetProperty("messageKey").GetString());
+    }
+
+    [Fact]
+    public async Task ExceptionHandler_Should_Expose_Only_Normalized_Scalar_MessageArguments()
+    {
+        var handler = new ApiExceptionHandler(NullLogger<ApiExceptionHandler>.Instance);
+        var context = CreateApiContext();
+        var exception = new BusinessException(
+            "上传限制",
+            StatusCodes.Status429TooManyRequests,
+            "Attachment.UploadFrequencyLimitReached",
+            "error.attachment.upload_frequency_limit_reached",
+            5,
+            new { Password = "secret" },
+            double.NaN,
+            "safe\0value");
+
+        var handled = await handler.TryHandleAsync(context, exception, CancellationToken.None);
+
+        Assert.True(handled);
+        var json = await ReadResponseJsonAsync(context);
+        var arguments = json.RootElement.GetProperty("messageArguments");
+        Assert.Equal(5, arguments[0].GetInt32());
+        Assert.Equal("[unsupported]", arguments[1].GetString());
+        Assert.Equal("[unsupported]", arguments[2].GetString());
+        Assert.Equal("safe value", arguments[3].GetString());
+        Assert.DoesNotContain("secret", json.RootElement.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void MessageArgumentNormalizer_Should_Limit_Argument_Count_And_Sanitize_Control_Characters()
+    {
+        var arguments = ApiMessageArgumentNormalizer.Normalize(
+            new object[] { '\0', 1, 2, 3, 4, 5, 6, 7, 8, 9 });
+
+        Assert.Equal(8, arguments.Length);
+        Assert.Equal(" ", arguments[0]);
+        Assert.Equal(7, arguments[^1]);
     }
 
     [Fact]

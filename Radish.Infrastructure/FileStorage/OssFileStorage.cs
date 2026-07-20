@@ -29,7 +29,6 @@ public class OssFileStorage : IFileStorage
     public Task<FileUploadResult> UploadAsync(
         Stream stream,
         string fileName,
-        string contentType,
         FileUploadOptionsDto? options = null)
     {
         throw new NotImplementedException("OSS 存储上传功能尚未实现");

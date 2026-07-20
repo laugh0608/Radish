@@ -1,4 +1,6 @@
-import { formatDateTime } from '../../utils';
+import { useTranslation } from 'react-i18next';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import { formatCoinDateTime } from '../../utils';
 import type { TransferResult as TransferResultType } from '../../types';
 import styles from './TransferResult.module.css';
 import { log } from '@/utils/logger';
@@ -16,15 +18,18 @@ interface TransferResultProps {
  * 转账结果组件
  */
 export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHistory }: TransferResultProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
   const handleCopyTransactionNo = async () => {
     if (!result.transactionNo) return;
 
     try {
       await navigator.clipboard.writeText(result.transactionNo);
-      toast.success('流水号已复制到剪贴板');
+      toast.success(t('pit.common.transactionNoCopied'));
     } catch (err) {
       log.error('TransferResult', '复制失败:', err);
-      toast.error('复制失败，请手动复制');
+      toast.error(t('pit.common.copyFailed'));
     }
   };
 
@@ -36,7 +41,7 @@ export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHist
             {result.success ? '✅' : '❌'}
           </div>
           <h3 className={styles.cardTitle}>
-            {result.success ? '转移成功' : '转移失败'}
+            {t(result.success ? 'pit.transfer.result.successTitle' : 'pit.transfer.result.failedTitle')}
           </h3>
           <p className={styles.cardSubtitle}>
             {result.message}
@@ -57,35 +62,35 @@ export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHist
                 </div>
 
                 <div className={styles.successMessage}>
-                  <h4>转移已完成</h4>
-                  <p>您的萝卜已成功转移，对方将立即收到</p>
+                  <h4>{t('pit.transfer.result.completed')}</h4>
+                  <p>{t('pit.transfer.result.completedDescription')}</p>
                 </div>
 
                 {result.transactionNo && (
                   <div className={styles.transactionInfo}>
-                    <div className={styles.transactionLabel}>交易流水号</div>
+                    <div className={styles.transactionLabel}>{t('pit.common.transactionNo')}</div>
                     <div className={styles.transactionNo}>
                       <span className={styles.transactionNoText}>{result.transactionNo}</span>
                       <button
                         className={styles.copyButton}
                         onClick={handleCopyTransactionNo}
-                        title="复制流水号"
+                        title={t('pit.common.copyTransactionNo')}
                       >
                         📋
                       </button>
                     </div>
                     <div className={styles.transactionTime}>
-                      {formatDateTime(new Date().toISOString())}
+                      {formatCoinDateTime(new Date(), displayTimeZone, language)}
                     </div>
                   </div>
                 )}
 
                 <div className={styles.nextSteps}>
-                  <h5>接下来您可以：</h5>
+                  <h5>{t('pit.transfer.result.nextSteps')}</h5>
                   <ul>
-                    <li>查看详细的交易记录</li>
-                    <li>继续进行其他转移操作</li>
-                    <li>返回账户总览查看余额</li>
+                    <li>{t('pit.transfer.result.nextHistory')}</li>
+                    <li>{t('pit.transfer.result.nextTransfer')}</li>
+                    <li>{t('pit.transfer.result.nextOverview')}</li>
                   </ul>
                 </div>
               </div>
@@ -105,32 +110,38 @@ export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHist
                 </div>
 
                 <div className={styles.errorMessage}>
-                  <h4>{result.requiresPasscodeUpgrade ? '请先重置支付口令' : '转移失败'}</h4>
-                  <p>{result.requiresPasscodeUpgrade ? '检测到您仍在使用已废弃的旧支付口令' : '很抱歉，您的转移操作未能完成'}</p>
+                  <h4>{t(result.requiresPasscodeUpgrade
+                    ? 'pit.transfer.result.upgradeTitle'
+                    : 'pit.transfer.result.failedTitle')}</h4>
+                  <p>{t(result.requiresPasscodeUpgrade
+                    ? 'pit.transfer.result.upgradeDescription'
+                    : 'pit.transfer.result.failedDescription')}</p>
                 </div>
 
                 <div className={styles.errorDetails}>
                   <div className={styles.errorReason}>
-                    <strong>失败原因：</strong>
+                    <strong>{t('pit.transfer.result.reason')}</strong>
                     <span>{result.message}</span>
                   </div>
                 </div>
 
                 <div className={styles.troubleshooting}>
-                  <h5>{result.requiresPasscodeUpgrade ? '下一步建议：' : '可能的解决方案：'}</h5>
+                  <h5>{t(result.requiresPasscodeUpgrade
+                    ? 'pit.transfer.result.upgradeSuggestions'
+                    : 'pit.transfer.result.solutions')}</h5>
                   <ul>
                     {result.requiresPasscodeUpgrade ? (
                       <>
-                        <li>前往资产中心的安全设置，直接重置为新的 6 位数字支付口令</li>
-                        <li>重置完成后，再重新发起本次转移</li>
-                        <li>旧支付口令已经废弃，不能继续用于转移或商城购买</li>
+                        <li>{t('pit.transfer.result.upgradeStepSecurity')}</li>
+                        <li>{t('pit.transfer.result.upgradeStepRetry')}</li>
+                        <li>{t('pit.transfer.result.upgradeStepLegacy')}</li>
                       </>
                     ) : (
                       <>
-                        <li>检查账户余额是否充足</li>
-                        <li>确认接收方用户信息正确</li>
-                        <li>验证支付口令是否正确</li>
-                        <li>稍后重试或联系客服</li>
+                        <li>{t('pit.transfer.result.solutionBalance')}</li>
+                        <li>{t('pit.transfer.result.solutionRecipient')}</li>
+                        <li>{t('pit.transfer.result.solutionPasscode')}</li>
+                        <li>{t('pit.transfer.result.solutionRetry')}</li>
                       </>
                     )}
                   </ul>
@@ -147,7 +158,7 @@ export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHist
                 className={styles.warningButton}
                 onClick={onResetPasscode}
               >
-                前往安全设置
+                {t('pit.transfer.result.openSecurity')}
               </button>
             )}
             <button
@@ -155,7 +166,11 @@ export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHist
               className={styles.primaryButton}
               onClick={onStartNew}
             >
-              {result.success ? '继续转移' : result.requiresPasscodeUpgrade ? '返回转移页' : '重新转移'}
+              {t(result.success
+                ? 'pit.transfer.result.continue'
+                : result.requiresPasscodeUpgrade
+                  ? 'pit.transfer.result.back'
+                  : 'pit.transfer.result.retry')}
             </button>
 
             {result.success && (
@@ -164,7 +179,7 @@ export const TransferResult = ({ result, onStartNew, onResetPasscode, onViewHist
                 className={styles.secondaryButton}
                 onClick={onViewHistory}
               >
-                查看记录
+                {t('pit.transfer.result.viewHistory')}
               </button>
             )}
           </div>

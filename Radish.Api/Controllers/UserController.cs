@@ -44,6 +44,7 @@ public class UserController : ControllerBase
     private readonly ICommentService _commentService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
+    private readonly IUserAdornmentService _userAdornmentService;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -54,7 +55,8 @@ public class UserController : ControllerBase
         IUserBrowseHistoryService userBrowseHistoryService,
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
-        IOptions<TimeOptions> timeOptions)
+        IOptions<TimeOptions> timeOptions,
+        IUserAdornmentService userAdornmentService)
     {
         _userService = userService;
         _currentUserAccessor = currentUserAccessor;
@@ -64,6 +66,7 @@ public class UserController : ControllerBase
         _userTimePreferenceService = userTimePreferenceService;
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
+        _userAdornmentService = userAdornmentService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -658,6 +661,7 @@ public class UserController : ControllerBase
         }
 
         var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
+        var adornment = await _userAdornmentService.GetUserAdornmentAsync(user.Uuid);
 
         var profile = new UserPublicProfileVo
         {
@@ -669,7 +673,8 @@ public class UserController : ControllerBase
             VoDisplayHandle = user.VoDisplayHandle,
             VoCreateTime = user.VoCreateTime,
             VoAvatarUrl = avatar?.Url,
-            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl
+            VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,
+            VoAdornment = adornment
         };
 
         return new MessageModel
@@ -920,88 +925,13 @@ public class UserController : ControllerBase
     public async Task<MessageModel> SetMyAvatar([FromBody] SetMyAvatarDto dto)
     {
         var userId = Current.UserId;
-        var now = DateTime.UtcNow;
-        var modifierName = Current.UserName;
-
-        // 如果 attachmentId == 0，表示清空头像
-        if (dto.AttachmentId == 0)
-        {
-            await _attachmentService.UpdateColumnsAsync(
-                a => new Attachment
-                {
-                    BusinessId = null,
-                    ModifyTime = now,
-                    ModifyBy = modifierName,
-                    ModifyId = userId
-                },
-                a => a.UploaderId == userId &&
-                     !a.IsDeleted &&
-                     a.BusinessType == "Avatar" &&
-                     a.BusinessId == userId);
-
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "已清空头像"
-            };
-        }
-
-        var attachment = await _attachmentService.GetAttachmentAssetAsync(dto.AttachmentId);
-        if (attachment == null)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                MessageInfo = "附件不存在"
-            };
-        }
-
-        // 只有上传者或管理员可以绑定为头像
-        var isAdmin = Current.IsSystemOrAdmin();
-        if (attachment.UploaderId != userId && !isAdmin)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
-                MessageInfo = "无权设置该附件为头像"
-            };
-        }
-
-        // 先取消旧头像关联（同一用户只保留最新 Avatar 关联）
-        // 保留 BusinessType=Avatar，仅清空 BusinessId，便于在"我的附件"里仍能按 Avatar 过滤查看历史头像
-        await _attachmentService.UpdateColumnsAsync(
-            a => new Attachment
-            {
-                BusinessId = null,
-                ModifyTime = now,
-                ModifyBy = modifierName,
-                ModifyId = userId
-            },
-            a => a.UploaderId == userId &&
-                 !a.IsDeleted &&
-                 a.BusinessType == "Avatar" &&
-                 a.BusinessId == userId &&
-                 a.Id != dto.AttachmentId);
-
-        var updated = await _attachmentService.UpdateBusinessAssociationAsync(dto.AttachmentId, "Avatar", userId);
-        if (!updated)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.InternalServerError,
-                MessageInfo = "设置头像失败"
-            };
-        }
+        await _attachmentService.SetCurrentAvatarAsync(dto.AttachmentId, userId, Current.UserName);
 
         return new MessageModel
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "设置成功"
+            MessageInfo = dto.AttachmentId == 0 ? "已清空头像" : "设置成功"
         };
     }
 

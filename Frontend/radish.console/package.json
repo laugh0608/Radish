@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "test": "node --test --test-isolation=none ./tests/tokenClaims.test.ts ./tests/loggerSanitization.test.ts ./tests/orderListUrlState.test.ts ./tests/productListUrlState.test.ts ./tests/rolePermissionHelpers.test.ts ./tests/consoleTroubleshootingPathContracts.test.ts",
+    "test": "node --test --test-isolation=none ./tests/*.test.ts",
     "type-check": "tsc --noEmit && tsc -p tsconfig.strict.json --noEmit",
     "lint": "eslint . --max-warnings=0",
     "preview": "vite preview"
@@ -15,8 +15,11 @@
     "@radish/http": "*",
     "@radish/ui": "*",
     "dayjs": "^1.11.19",
+    "i18next": "^23.16.8",
+    "i18next-browser-languagedetector": "^7.2.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-i18next": "^15.7.4",
     "react-router-dom": "^7.18.1"
   },
   "devDependencies": {

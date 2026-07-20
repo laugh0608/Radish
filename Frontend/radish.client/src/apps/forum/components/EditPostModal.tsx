@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@radish/ui/modal';
 import { Button } from '@radish/ui/button';
@@ -15,6 +15,7 @@ import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import type { LongId } from '@/api/user';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import styles from './EditPostModal.module.css';
@@ -36,8 +37,12 @@ const MarkdownEditor = lazy(() =>
 );
 
 export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: EditPostModalProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
+  const markdownEditorLabels = useMemo(
+    () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, t],
+  );
   const roles = useUserStore(state => state.roles || []);
   const isAdmin = roles.some(role => {
     const normalized = role.trim().toLowerCase();
@@ -50,6 +55,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [saving, setSaving] = useState(false);
+  const [editorUploading, setEditorUploading] = useState(false);
   const [allTagNames, setAllTagNames] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -69,8 +75,8 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
         avatar: user.voAvatar
       }));
     } catch (searchError) {
-      log.error('EditPostModal', '搜索提及用户失败:', searchError);
-      return [];
+      log.error('EditPostModal', t('forum.mention.searchFailed'), searchError);
+      throw searchError;
     }
   }, [t]);
 
@@ -159,7 +165,7 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     : [];
 
   const handleSave = async () => {
-    if (!post) return;
+    if (!post || editorUploading) return;
 
     if (!title.trim() || !content.trim()) {
       setError(t('forum.editPost.requiredFields'));
@@ -196,53 +202,59 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
   };
 
   const handleClose = () => {
-    if (!saving) {
+    if (!saving && !editorUploading) {
       setError(null);
       setCategoryError(null);
       onClose();
     }
   };
 
-  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
-    try {
-      const result = await uploadImage({
-        file,
-        businessType: 'Post',
-        generateThumbnail: true,
-        generateMultipleSizes,
-        addWatermark,
-        watermarkText,
-        removeExif: true
-      }, t);
+  const handleImageUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownImageUploadResult> => {
+    const result = await uploadImage({
+      file,
+      businessType: 'Post',
+      generateThumbnail: true,
+      generateMultipleSizes,
+      addWatermark,
+      watermarkText,
+      removeExif: true,
+      onProgress: reportProgress,
+    }, t);
 
-      return {
-        attachmentId: result.voId,
-        displayVariant: 'original',
-        previewUrl: buildAttachmentAssetUrl(result.voId, 'original'),
-        scalePercent: imageScalePercent,
-      };
-    } catch (uploadError) {
-      log.error('编辑帖子上传图片失败:', uploadError);
-      throw uploadError;
-    }
+    return {
+      attachmentId: result.voId,
+      displayVariant: 'original',
+      previewUrl: buildAttachmentAssetUrl(result.voId, 'original'),
+      scalePercent: imageScalePercent,
+    };
   };
 
-  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
-    try {
-      const result = await uploadDocument({
-        file,
-        businessType: 'Post'
-      }, t);
+  const handleDocumentUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownDocumentUploadResult> => {
+    const result = await uploadDocument({
+      file,
+      businessType: 'Post',
+      onProgress: reportProgress,
+    }, t);
 
-      return {
-        attachmentId: result.voId,
-        fileName: result.voOriginalName || file.name
-      };
-    } catch (uploadError) {
-      log.error('编辑帖子上传文档失败:', uploadError);
-      throw uploadError;
-    }
+    return {
+      attachmentId: result.voId,
+      fileName: result.voOriginalName || file.name
+    };
   };
+
+  const handleEditorUploadError = useCallback((kind: 'image' | 'document', uploadError: unknown) => {
+    log.error('EditPostModal', `Markdown ${kind} upload failed:`, uploadError);
+  }, []);
+
+  const handleEditorUploadingChange = useCallback((uploading: boolean) => {
+    setEditorUploading(uploading);
+  }, []);
 
   const editorToolbarExtras = (
     <div className={styles.editorToggles}>
@@ -251,25 +263,28 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
         className={`${styles.editorToggle} ${addWatermark ? styles.editorToggleActive : ''}`}
         onClick={() => setAddWatermark(!addWatermark)}
         aria-pressed={addWatermark}
+        disabled={saving || editorUploading}
       >
         <Icon icon="mdi:watermark" size={16} />
-        <span>{t('forum.editPost.watermark')}</span>
+        <span>{t('forum.editor.watermark')}</span>
       </button>
       <button
         type="button"
         className={`${styles.editorToggle} ${generateMultipleSizes ? styles.editorToggleActive : ''}`}
         onClick={() => setGenerateMultipleSizes(!generateMultipleSizes)}
         aria-pressed={generateMultipleSizes}
+        disabled={saving || editorUploading}
       >
         <Icon icon="mdi:aspect-ratio" size={16} />
-        <span>{t('forum.editPost.multiSize')}</span>
+        <span>{t('forum.editor.multiSize')}</span>
       </button>
       <label className={styles.editorScaleLabel}>
-        <span>{t('forum.editPost.scale')}</span>
+        <span>{t('forum.editor.scale')}</span>
         <select
           value={imageScalePercent}
           onChange={(e) => setImageScalePercent(Number(e.target.value))}
           className={styles.editorScaleSelect}
+          disabled={saving || editorUploading}
         >
           {IMAGE_SCALE_OPTIONS.map(scale => (
             <option key={scale} value={scale}>{scale}%</option>
@@ -283,14 +298,17 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
+      closeLabel={t('common.close')}
+      closeOnOverlayClick={!saving && !editorUploading}
+      closeOnEscape={!saving && !editorUploading}
       title={t('forum.editPost.title')}
       size="large"
       footer={
         <div className={styles.footer}>
-          <Button variant="secondary" onClick={handleClose} disabled={saving}>
+          <Button variant="secondary" onClick={handleClose} disabled={saving || editorUploading}>
             {t('common.cancel')}
           </Button>
-          <Button variant="primary" onClick={handleSave} disabled={saving}>
+          <Button variant="primary" onClick={handleSave} disabled={saving || editorUploading}>
             {saving ? t('forum.editPost.saving') : t('common.save')}
           </Button>
         </div>
@@ -429,9 +447,12 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
             <MarkdownEditor
               value={content}
               onChange={setContent}
+              labels={markdownEditorLabels}
               placeholder={t('forum.editPost.contentPlaceholder')}
               onImageUpload={handleImageUpload}
               onDocumentUpload={handleDocumentUpload}
+              onUploadError={handleEditorUploadError}
+              onUploadingChange={handleEditorUploadingChange}
               stickerGroups={stickerGroups}
               stickerMap={stickerMap}
               onStickerSelect={(selection) => {
@@ -450,14 +471,14 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
 
         {addWatermark && (
           <div className={styles.watermarkRow}>
-            <span className={styles.watermarkLabel}>{t('forum.editPost.watermarkLabel')}</span>
+            <span className={styles.watermarkLabel}>{t('forum.editor.watermarkLabel')}</span>
             <input
               type="text"
-              placeholder={t('forum.editPost.watermarkPlaceholder')}
+              placeholder={t('forum.editor.watermarkPlaceholder')}
               value={watermarkText}
               onChange={(e) => setWatermarkText(e.target.value)}
               className={styles.watermarkInput}
-              disabled={saving}
+              disabled={saving || editorUploading}
             />
           </div>
         )}

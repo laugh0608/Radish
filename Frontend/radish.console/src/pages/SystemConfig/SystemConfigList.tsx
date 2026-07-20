@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -9,6 +10,7 @@ import {
   AntModal as Modal,
   AntSelect as Select,
   AntInput as Input,
+  formatLocalizedDateTime,
   type TableColumnsType,
 } from '@radish/ui';
 import { Grid, Upload } from 'antd';
@@ -43,6 +45,12 @@ import {
 } from '@/components/ConsolePage';
 import { SystemConfigForm } from './SystemConfigForm';
 import { log } from '@/utils/logger';
+import {
+  getSystemConfigCategoryLabel,
+  getSystemConfigDescription,
+  getSystemConfigName,
+  getSystemConfigPresentation,
+} from './systemConfigPresentation';
 import '../adminFeature.css';
 import './SystemConfigList.css';
 
@@ -50,7 +58,9 @@ const SITE_FAVICON_KEY = 'Site.Branding.FaviconUrl';
 const DEFAULT_SITE_FAVICON_PATH = '/uploads/DefaultIco/bailuobo.ico';
 
 export const SystemConfigList = () => {
-  useDocumentTitle('系统设置');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('console.route.system-config'));
   const [configs, setConfigs] = useState<SystemConfigVo[]>([]);
   const [filteredConfigs, setFilteredConfigs] = useState<SystemConfigVo[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -77,29 +87,29 @@ export const SystemConfigList = () => {
   ].filter(Boolean).length;
 
   // 加载系统设置列表
-  const loadConfigs = async () => {
+  const loadConfigs = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await getSystemConfigs();
+      const data = await getSystemConfigs(t);
       setConfigs(data);
       setFilteredConfigs(data);
     } catch (error) {
       log.error('SystemConfigList', '加载系统设置列表失败:', error);
-      message.error('加载系统设置列表失败');
+      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.loadListFailed'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   // 加载系统设置分类
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
-      const data = await getConfigCategories();
+      const data = await getConfigCategories(t);
       setCategories(data);
     } catch (error) {
       log.error('SystemConfigList', '加载系统设置分类失败:', error);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (!canViewSystemConfig) {
@@ -108,7 +118,7 @@ export const SystemConfigList = () => {
 
     void loadConfigs();
     void loadCategories();
-  }, [canViewSystemConfig]);
+  }, [canViewSystemConfig, loadCategories, loadConfigs]);
 
   // 筛选系统设置
   useEffect(() => {
@@ -122,15 +132,18 @@ export const SystemConfigList = () => {
     // 按关键词搜索
     if (searchKeyword) {
       const keyword = searchKeyword.toLowerCase();
-      filtered = filtered.filter(config =>
-        config.voName.toLowerCase().includes(keyword) ||
-        config.voKey.toLowerCase().includes(keyword) ||
-        config.voDescription?.toLowerCase().includes(keyword)
-      );
+      filtered = filtered.filter((config) => {
+        const presentation = getSystemConfigPresentation(config, t);
+        return presentation.name.toLowerCase().includes(keyword)
+          || config.voName.toLowerCase().includes(keyword)
+          || config.voKey.toLowerCase().includes(keyword)
+          || presentation.description.toLowerCase().includes(keyword)
+          || config.voDescription?.toLowerCase().includes(keyword);
+      });
     }
 
     setFilteredConfigs(filtered);
-  }, [configs, selectedCategory, searchKeyword]);
+  }, [configs, selectedCategory, searchKeyword, t]);
 
   const faviconConfig = configs.find((config) => config.voKey === SITE_FAVICON_KEY);
   const faviconPreviewUrl = getAvatarUrl(faviconConfig?.voEffectiveValue || DEFAULT_SITE_FAVICON_PATH);
@@ -140,23 +153,25 @@ export const SystemConfigList = () => {
 
   const handleRestoreDefaultFavicon = async () => {
     if (!canEditSystemConfig || !faviconConfig) {
-      message.error(canEditSystemConfig ? '站点图标配置尚未加载完成' : '无系统设置编辑权限');
+      message.error(canEditSystemConfig
+        ? t('systemConfig.feedback.faviconNotReady')
+        : t('systemConfig.feedback.editDenied'));
       return;
     }
 
     try {
       setFaviconSaving(true);
       await restoreConfigDefault(faviconConfig.voId, {
-        reason: '恢复站点 favicon 默认值',
+        reason: t('systemConfig.reason.restoreFavicon'),
         confirmRiskLevel: faviconConfig.voRiskLevel,
         confirmKey: faviconConfig.voKey,
         expectedVersion: faviconConfig.voVersion,
-      });
-      message.success('已恢复为默认站点图标');
+      }, t);
+      message.success(t('systemConfig.feedback.faviconRestored'));
       await loadConfigs();
     } catch (error) {
       log.error('SystemConfigList', '恢复默认站点图标失败:', error);
-      message.error(error instanceof Error ? error.message : '恢复默认站点图标失败');
+      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.faviconRestoreFailed'));
     } finally {
       setFaviconSaving(false);
     }
@@ -165,28 +180,28 @@ export const SystemConfigList = () => {
   const handleFaviconUpload: UploadProps['customRequest'] = async (options) => {
     const file = options.file;
     if (!canEditSystemConfig) {
-      const uploadError = new Error('无系统设置编辑权限');
+      const uploadError = new Error(t('systemConfig.feedback.editDenied'));
       options.onError?.(uploadError);
       message.error(uploadError.message);
       return;
     }
 
     if (!(file instanceof File)) {
-      const uploadError = new Error('无效的图标文件');
+      const uploadError = new Error(t('systemConfig.feedback.invalidIcon'));
       options.onError?.(uploadError);
       message.error(uploadError.message);
       return;
     }
 
     if (!/\.ico$/i.test(file.name)) {
-      const uploadError = new Error('仅支持上传 .ico 格式的图标文件');
+      const uploadError = new Error(t('systemConfig.feedback.icoOnly'));
       options.onError?.(uploadError);
       message.error(uploadError.message);
       return;
     }
 
     if (!faviconConfig) {
-      const uploadError = new Error('站点图标配置尚未加载完成');
+      const uploadError = new Error(t('systemConfig.feedback.faviconNotReady'));
       options.onError?.(uploadError);
       message.error(uploadError.message);
       return;
@@ -207,23 +222,23 @@ export const SystemConfigList = () => {
       );
 
       if (!uploaded.url) {
-        throw new Error('上传成功但未返回图标地址');
+        throw new Error(t('systemConfig.feedback.missingUploadUrl'));
       }
 
       setFaviconSaving(true);
       await updateConfig(faviconConfig.voId, {
         value: uploaded.url,
         isEnabled: true,
-        reason: `上传站点 favicon：${file.name}`,
+        reason: t('systemConfig.reason.uploadFavicon', { name: file.name }),
         confirmRiskLevel: faviconConfig.voRiskLevel,
         confirmKey: faviconConfig.voKey,
         expectedVersion: faviconConfig.voVersion,
-      });
+      }, t);
       await loadConfigs();
       options.onSuccess?.(uploaded);
-      message.success('站点图标已更新');
+      message.success(t('systemConfig.feedback.faviconUpdated'));
     } catch (error) {
-      const uploadError = error instanceof Error ? error : new Error('站点图标上传失败');
+      const uploadError = error instanceof Error ? error : new Error(t('systemConfig.feedback.faviconUploadFailed'));
       log.error('SystemConfigList', '上传站点图标失败:', error);
       options.onError?.(uploadError);
       message.error(uploadError.message);
@@ -236,7 +251,9 @@ export const SystemConfigList = () => {
   // 编辑系统设置覆盖值
   const handleEdit = (record: SystemConfigVo) => {
     if (!canEditSystemConfig || !record.voIsEditable) {
-      message.error(canEditSystemConfig ? '该设置不允许编辑' : '无系统设置编辑权限');
+      message.error(canEditSystemConfig
+        ? t('systemConfig.feedback.notEditable')
+        : t('systemConfig.feedback.editDenied'));
       return;
     }
 
@@ -249,11 +266,11 @@ export const SystemConfigList = () => {
     setHistoryVisible(true);
     setHistoryLoading(true);
     try {
-      const logs = await getConfigChangeLogs(record.voId, 20);
+      const logs = await getConfigChangeLogs(record.voId, 20, t);
       setHistoryLogs(logs);
     } catch (error) {
       log.error('SystemConfigList', '加载系统设置变更历史失败:', error);
-      message.error(error instanceof Error ? error.message : '加载系统设置变更历史失败');
+      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.historyLoadFailed'));
       setHistoryLogs([]);
     } finally {
       setHistoryLoading(false);
@@ -294,19 +311,11 @@ export const SystemConfigList = () => {
   };
 
   const formatEffectiveMode = (effectiveMode: string) => {
-    const modeMap: Record<string, string> = {
-      Immediate: '立即生效',
-      RestartRequired: '重启生效',
-    };
-    return modeMap[effectiveMode] || effectiveMode;
+    return t(`systemConfig.mode.${effectiveMode}`, { defaultValue: effectiveMode });
   };
 
   const formatChangeAction = (actionType: string) => {
-    const actionMap: Record<string, string> = {
-      UpdateOverride: '更新覆盖值',
-      RestoreDefault: '恢复默认',
-    };
-    return actionMap[actionType] || actionType;
+    return t(`systemConfig.action.${actionType}`, { defaultValue: actionType });
   };
 
   const formatOperator = (record: SystemConfigChangeLogVo) => {
@@ -324,7 +333,7 @@ export const SystemConfigList = () => {
       return (
         <div className="favicon-cell">
           {faviconPreviewUrl ? (
-            <img src={faviconPreviewUrl} alt="站点图标预览" className="favicon-cell__image" />
+            <img src={faviconPreviewUrl} alt={t('systemConfig.branding.previewAlt')} className="favicon-cell__image" />
           ) : null}
           <span className="favicon-cell__value">{value}</span>
         </div>
@@ -343,24 +352,24 @@ export const SystemConfigList = () => {
         variant="ghost"
         size="small"
         icon={<EditOutlined />}
-        aria-label={compact ? '编辑' : undefined}
-        title={compact ? '编辑' : undefined}
+        aria-label={compact ? t('systemConfig.common.edit') : undefined}
+        title={compact ? t('systemConfig.common.edit') : undefined}
         onClick={() => handleEdit(record)}
         disabled={!canEditSystemConfig || !record.voIsEditable}
       >
-        {compact ? null : '编辑'}
+        {compact ? null : t('systemConfig.common.edit')}
       </Button>
       <Button
         variant="ghost"
         size="small"
         icon={<ClockCircleOutlined />}
-        aria-label={compact ? '历史' : undefined}
-        title={compact ? '历史' : undefined}
+        aria-label={compact ? t('systemConfig.common.history') : undefined}
+        title={compact ? t('systemConfig.common.history') : undefined}
         onClick={() => {
           void handleViewHistory(record);
         }}
       >
-        {compact ? null : '历史'}
+        {compact ? null : t('systemConfig.common.history')}
       </Button>
     </Space>
   );
@@ -368,14 +377,14 @@ export const SystemConfigList = () => {
   const renderCompactConfig = (record: SystemConfigVo) => (
     <div className="system-config-mobile-config">
       <div className="system-config-mobile-config__header">
-        <span className="system-config-mobile-config__name">{record.voName}</span>
-        <Tag color="cyan">{record.voCategory}</Tag>
+        <span className="system-config-mobile-config__name">{getSystemConfigName(record, t)}</span>
+        <Tag color="cyan">{getSystemConfigCategoryLabel(record.voKey, record.voCategory, t)}</Tag>
       </div>
       <code className="system-config-key-code system-config-key-code--mobile">
         {record.voKey}
       </code>
       <div className="system-config-mobile-config__value">
-        <span className="system-config-mobile-config__label">当前值</span>
+        <span className="system-config-mobile-config__label">{t('systemConfig.common.currentValue')}</span>
         <div className="system-config-mobile-config__current">
           {renderEffectiveValue(record.voEffectiveValue, record)}
         </div>
@@ -385,14 +394,14 @@ export const SystemConfigList = () => {
 
   const historyColumns: TableColumnsType<SystemConfigChangeLogVo> = [
     {
-      title: '时间',
+      title: t('systemConfig.history.time'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 170,
-      render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
+      render: (time: string) => time ? formatLocalizedDateTime(time, language) : '-',
     },
     {
-      title: '动作',
+      title: t('systemConfig.history.action'),
       dataIndex: 'voActionType',
       key: 'voActionType',
       width: 110,
@@ -403,7 +412,7 @@ export const SystemConfigList = () => {
       ),
     },
     {
-      title: '旧值',
+      title: t('systemConfig.history.oldValue'),
       dataIndex: 'voOldValue',
       key: 'voOldValue',
       width: 180,
@@ -411,7 +420,7 @@ export const SystemConfigList = () => {
       render: (value: string) => value || '-',
     },
     {
-      title: '新值',
+      title: t('systemConfig.history.newValue'),
       dataIndex: 'voNewValue',
       key: 'voNewValue',
       width: 180,
@@ -419,20 +428,20 @@ export const SystemConfigList = () => {
       render: (value: string) => value || '-',
     },
     {
-      title: '原因',
+      title: t('systemConfig.history.reason'),
       dataIndex: 'voReason',
       key: 'voReason',
       width: 220,
       ellipsis: true,
     },
     {
-      title: '操作者',
+      title: t('systemConfig.history.operator'),
       key: 'operator',
       width: 150,
       render: (_, record) => formatOperator(record),
     },
     {
-      title: '来源',
+      title: t('systemConfig.history.source'),
       dataIndex: 'voRequestIp',
       key: 'voRequestIp',
       width: 140,
@@ -442,28 +451,29 @@ export const SystemConfigList = () => {
 
   const desktopColumns: TableColumnsType<SystemConfigVo> = [
     {
-      title: 'ID',
+      title: t('systemConfig.table.id'),
       dataIndex: 'voId',
       key: 'voId',
       width: 70,
     },
     {
-      title: '分类',
+      title: t('systemConfig.table.category'),
       dataIndex: 'voCategory',
       key: 'voCategory',
       width: 120,
-      render: (category: string) => (
-        <Tag color="cyan">{category}</Tag>
+      render: (category: string, record) => (
+        <Tag color="cyan">{getSystemConfigCategoryLabel(record.voKey, category, t)}</Tag>
       ),
     },
     {
-      title: '设置名称',
+      title: t('systemConfig.table.name'),
       dataIndex: 'voName',
       key: 'voName',
       width: 150,
+      render: (_, record) => getSystemConfigName(record, t),
     },
     {
-      title: '设置键',
+      title: t('systemConfig.table.key'),
       dataIndex: 'voKey',
       key: 'voKey',
       width: 220,
@@ -474,7 +484,7 @@ export const SystemConfigList = () => {
       ),
     },
     {
-      title: '当前值',
+      title: t('systemConfig.table.currentValue'),
       dataIndex: 'voEffectiveValue',
       key: 'voEffectiveValue',
       width: 190,
@@ -482,7 +492,7 @@ export const SystemConfigList = () => {
       render: renderEffectiveValue,
     },
     {
-      title: '默认值',
+      title: t('systemConfig.table.defaultValue'),
       dataIndex: 'voDefaultValue',
       key: 'voDefaultValue',
       width: 180,
@@ -490,27 +500,29 @@ export const SystemConfigList = () => {
       render: (value: string) => <span>{value}</span>,
     },
     {
-      title: '覆盖状态',
+      title: t('systemConfig.table.overrideStatus'),
       dataIndex: 'voIsOverridden',
       key: 'voIsOverridden',
       width: 100,
       render: (isOverridden: boolean) => (
         <Tag color={isOverridden ? 'processing' : 'default'}>
-          {isOverridden ? '已覆盖' : '使用默认'}
+          {isOverridden ? t('systemConfig.status.overridden') : t('systemConfig.status.default')}
         </Tag>
       ),
     },
     {
-      title: '风险',
+      title: t('systemConfig.table.risk'),
       dataIndex: 'voRiskLevel',
       key: 'voRiskLevel',
       width: 90,
       render: (riskLevel: string) => (
-        <Tag color={getRiskTagColor(riskLevel)}>{riskLevel}</Tag>
+        <Tag color={getRiskTagColor(riskLevel)}>
+          {t(`systemConfig.risk.${riskLevel}`, { defaultValue: riskLevel })}
+        </Tag>
       ),
     },
     {
-      title: '生效方式',
+      title: t('systemConfig.table.effectiveMode'),
       dataIndex: 'voEffectiveMode',
       key: 'voEffectiveMode',
       width: 110,
@@ -519,29 +531,32 @@ export const SystemConfigList = () => {
       ),
     },
     {
-      title: '类型',
+      title: t('systemConfig.table.type'),
       dataIndex: 'voType',
       key: 'voType',
       width: 80,
       render: (type: string) => (
-        <Tag color={getTypeTagColor(type)}>{type}</Tag>
+        <Tag color={getTypeTagColor(type)}>
+          {t(`systemConfig.type.${type}`, { defaultValue: type })}
+        </Tag>
       ),
     },
     {
-      title: '描述',
+      title: t('systemConfig.table.description'),
       dataIndex: 'voDescription',
       key: 'voDescription',
       ellipsis: true,
+      render: (_, record) => getSystemConfigDescription(record, t),
     },
     {
-      title: '覆盖时间',
+      title: t('systemConfig.table.overrideTime'),
       dataIndex: 'voModifyTime',
       key: 'voModifyTime',
       width: 180,
-      render: (time: string) => time ? new Date(time).toLocaleString('zh-CN') : '-',
+      render: (time: string) => time ? formatLocalizedDateTime(time, language) : '-',
     },
     {
-      title: '操作',
+      title: t('systemConfig.table.actions'),
       key: 'action',
       width: 230,
       fixed: 'right',
@@ -551,13 +566,13 @@ export const SystemConfigList = () => {
 
   const compactColumns: TableColumnsType<SystemConfigVo> = [
     {
-      title: '设置',
+      title: t('systemConfig.table.compactSetting'),
       key: 'compactConfig',
       width: 224,
       render: (_, record) => renderCompactConfig(record),
     },
     {
-      title: '操作',
+      title: t('systemConfig.table.actions'),
       key: 'action',
       width: 60,
       render: (_, record) => renderConfigActions(record, true),
@@ -570,13 +585,13 @@ export const SystemConfigList = () => {
   return (
     <div className="admin-feature-page system-config-list-page">
       <ConsolePageHeader
-        eyebrow="系统策略"
-        title="系统设置"
-        description="按注册定义查看默认值、当前覆盖值、风险等级和生效方式。"
+        eyebrow={t('systemConfig.page.eyebrow')}
+        title={t('systemConfig.page.title')}
+        description={t('systemConfig.page.description')}
         icon={<SettingOutlined />}
         status={(
           <ConsoleStatusChip tone={canEditSystemConfig ? 'success' : 'neutral'}>
-            {canEditSystemConfig ? '可编辑低风险设置' : '只读查看'}
+            {canEditSystemConfig ? t('systemConfig.page.editable') : t('systemConfig.page.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={(
@@ -585,17 +600,17 @@ export const SystemConfigList = () => {
               icon={<ReloadOutlined />}
               onClick={loadConfigs}
             >
-              刷新
+              {t('systemConfig.page.refresh')}
             </Button>
           </div>
         )}
       />
 
-      <ConsoleMetricGrid label="系统设置指标">
-        <ConsoleMetricCard label="注册设置" value={configs.length} description="代码注册的设置定义" tone="info" />
-        <ConsoleMetricCard label="当前结果" value={filteredConfigs.length} description="当前筛选后的设置数量" />
-        <ConsoleMetricCard label="已覆盖" value={overriddenConfigs} description="存在运行时覆盖值" tone="warning" />
-        <ConsoleMetricCard label="可编辑" value={editableConfigs} description="允许在 Console 调整" tone="success" />
+      <ConsoleMetricGrid label={t('systemConfig.metrics.label')}>
+        <ConsoleMetricCard label={t('systemConfig.metrics.registered')} value={configs.length} description={t('systemConfig.metrics.registeredDescription')} tone="info" />
+        <ConsoleMetricCard label={t('systemConfig.metrics.results')} value={filteredConfigs.length} description={t('systemConfig.metrics.resultsDescription')} />
+        <ConsoleMetricCard label={t('systemConfig.metrics.overridden')} value={overriddenConfigs} description={t('systemConfig.metrics.overriddenDescription')} tone="warning" />
+        <ConsoleMetricCard label={t('systemConfig.metrics.editable')} value={editableConfigs} description={t('systemConfig.metrics.editableDescription')} tone="success" />
       </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
@@ -604,23 +619,23 @@ export const SystemConfigList = () => {
             <div className="branding-card__main">
               <div className="branding-card__preview">
                 {faviconPreviewUrl ? (
-                  <img src={faviconPreviewUrl} alt="当前站点图标" className="branding-card__image" />
+                  <img src={faviconPreviewUrl} alt={t('systemConfig.branding.currentAlt')} className="branding-card__image" />
                 ) : (
-                  <span className="branding-card__empty">暂无图标</span>
+                  <span className="branding-card__empty">{t('systemConfig.branding.empty')}</span>
                 )}
               </div>
               <div className="branding-card__content">
                 <div className="branding-card__title-row">
-                  <h3 className="branding-card__title">网站标签页图标</h3>
+                  <h3 className="branding-card__title">{t('systemConfig.branding.title')}</h3>
                   <Tag color={isUsingDefaultFavicon ? 'default' : 'processing'}>
-                    {isUsingDefaultFavicon ? '使用默认' : '已覆盖'}
+                    {isUsingDefaultFavicon ? t('systemConfig.status.default') : t('systemConfig.status.overridden')}
                   </Tag>
                   <Tag color="success">
                     Low
                   </Tag>
                 </div>
                 <p className="branding-card__description">
-                  当前浏览器标签页左侧显示的站点图标。默认文件来自 `DataBases/Uploads/DefaultIco/bailuobo.ico`，修改后立即生效。
+                  {t('systemConfig.branding.description')}
                 </p>
                 <code className="branding-card__value">{faviconConfig?.voEffectiveValue || DEFAULT_SITE_FAVICON_PATH}</code>
               </div>
@@ -637,7 +652,7 @@ export const SystemConfigList = () => {
                   icon={<PlusOutlined />}
                   disabled={!canEditSystemConfig || faviconUploading || faviconSaving}
                 >
-                  {faviconUploading ? '上传中...' : '上传 ICO'}
+                  {faviconUploading ? t('systemConfig.branding.uploading') : t('systemConfig.branding.upload')}
                 </Button>
               </Upload>
               <Button
@@ -646,7 +661,7 @@ export const SystemConfigList = () => {
                 }}
                 disabled={!canEditSystemConfig || faviconUploading || faviconSaving || isUsingDefaultFavicon}
               >
-                恢复默认
+                {t('systemConfig.branding.restore')}
               </Button>
               <Button
                 onClick={() => {
@@ -654,38 +669,48 @@ export const SystemConfigList = () => {
                 }}
                 disabled={faviconUploading || faviconSaving}
               >
-                重新读取
+                {t('systemConfig.branding.reload')}
               </Button>
             </div>
           </section>
 
           <ConsoleToolbar
-            title="筛选设置"
-            description="按分类、设置名称、设置键或说明定位配置项。"
+            title={t('systemConfig.filter.title')}
+            description={t('systemConfig.filter.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0
+                  ? t('systemConfig.filter.active', { count: activeFilterCount })
+                  : t('systemConfig.filter.none')}
               </ConsoleStatusChip>
             )}
           >
             <div className="admin-table-toolbar__filters">
               <Select
                 className="system-config-filter-select"
-                placeholder="选择分类"
+                placeholder={t('systemConfig.filter.categoryPlaceholder')}
                 value={selectedCategory || undefined}
                 onChange={setSelectedCategory}
                 allowClear
-                options={categories.map(category => ({ label: category, value: category }))}
+                options={categories.map((category) => {
+                  const categoryConfig = configs.find((config) => config.voCategory === category);
+                  return {
+                    label: categoryConfig
+                      ? getSystemConfigCategoryLabel(categoryConfig.voKey, category, t)
+                      : category,
+                    value: category,
+                  };
+                })}
               />
               <Input
                 className="system-config-filter-input"
-                placeholder="搜索设置名称、键或描述"
+                placeholder={t('systemConfig.filter.searchPlaceholder')}
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 prefix={<SearchOutlined />}
                 allowClear
               />
-              <Button onClick={handleResetFilter}>重置</Button>
+              <Button onClick={handleResetFilter}>{t('systemConfig.filter.reset')}</Button>
             </div>
           </ConsoleToolbar>
 
@@ -698,7 +723,7 @@ export const SystemConfigList = () => {
               pagination={{
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total) => `共 ${total} 条`,
+                showTotal: (total) => t('systemConfig.pagination.total', { count: total }),
               }}
               scroll={{ x: tableScrollX }}
             />
@@ -706,29 +731,31 @@ export const SystemConfigList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>设置摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前注册设置范围、品牌图标状态和编辑权限。</p>
+          <h3>{t('systemConfig.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('systemConfig.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__label">{t('systemConfig.summary.queryScope')}</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? `${activeFilterCount} 个筛选条件` : '全部设置'}
+                {activeFilterCount > 0
+                  ? t('systemConfig.summary.filtered', { count: activeFilterCount })
+                  : t('systemConfig.summary.all')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">站点图标</span>
+              <span className="admin-table-summary__label">{t('systemConfig.summary.favicon')}</span>
               <span className="admin-table-summary__value">
-                {isUsingDefaultFavicon ? '使用默认' : '已覆盖'}
+                {isUsingDefaultFavicon ? t('systemConfig.status.default') : t('systemConfig.status.overridden')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">设置分类</span>
-              <span className="admin-table-summary__value">{categories.length} 类</span>
+              <span className="admin-table-summary__label">{t('systemConfig.summary.categories')}</span>
+              <span className="admin-table-summary__value">{t('systemConfig.summary.categoryCount', { count: categories.length })}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">编辑权限</span>
+              <span className="admin-table-summary__label">{t('systemConfig.summary.permission')}</span>
               <span className="admin-table-summary__value">
-                {canEditSystemConfig ? '可编辑低风险设置' : '仅可查看设置'}
+                {canEditSystemConfig ? t('systemConfig.page.editable') : t('systemConfig.summary.viewOnly')}
               </span>
             </div>
           </div>
@@ -743,7 +770,7 @@ export const SystemConfigList = () => {
       />
 
       <Modal
-        title="系统设置变更历史"
+        title={t('systemConfig.history.title')}
         open={historyVisible}
         onCancel={() => {
           setHistoryVisible(false);
@@ -755,9 +782,13 @@ export const SystemConfigList = () => {
         destroyOnHidden
       >
         <div className="system-config-history-summary">
-          <span>{historyConfig?.voName || '系统设置'}</span>
+          <span>{historyConfig ? getSystemConfigName(historyConfig, t) : t('systemConfig.history.fallbackName')}</span>
           {historyConfig ? <code>{historyConfig.voKey}</code> : null}
-          {historyConfig ? <Tag color={getRiskTagColor(historyConfig.voRiskLevel)}>{historyConfig.voRiskLevel}</Tag> : null}
+          {historyConfig ? (
+            <Tag color={getRiskTagColor(historyConfig.voRiskLevel)}>
+              {t(`systemConfig.risk.${historyConfig.voRiskLevel}`, { defaultValue: historyConfig.voRiskLevel })}
+            </Tag>
+          ) : null}
         </div>
         <div className="admin-table-scroll-region">
           <Table
@@ -767,7 +798,7 @@ export const SystemConfigList = () => {
             loading={historyLoading}
             pagination={false}
             scroll={{ x: 1150 }}
-            locale={{ emptyText: '暂无变更历史' }}
+            locale={{ emptyText: t('systemConfig.history.empty') }}
           />
         </div>
       </Modal>

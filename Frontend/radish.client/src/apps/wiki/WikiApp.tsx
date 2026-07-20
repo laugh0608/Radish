@@ -10,10 +10,10 @@ import {
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
-import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { uploadDocument, uploadImage } from '@/api/attachment';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
+import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import type { LongId } from '@/api/user';
@@ -44,6 +44,7 @@ import type {
   WikiDocumentVo,
 } from './types/wiki';
 import { WikiDocumentStatus, WikiDocumentVisibility } from './types/wiki';
+import { toSourceText, toStatusText, toVisibilityText } from './wikiPresentation';
 import {
   buildCreateRequest,
   buildUpdateRequest,
@@ -69,17 +70,6 @@ import styles from './WikiApp.module.css';
 
 type EditorMode = 'create' | 'edit';
 
-function toStatusText(t: TFunction, status: number): string {
-  switch (status) {
-    case WikiDocumentStatus.Published:
-      return t('wiki.status.published');
-    case WikiDocumentStatus.Archived:
-      return t('wiki.status.archived');
-    default:
-      return t('wiki.status.draft');
-  }
-}
-
 function toStatusClassName(status: number): string {
   switch (status) {
     case WikiDocumentStatus.Published:
@@ -91,36 +81,12 @@ function toStatusClassName(status: number): string {
   }
 }
 
-function toVisibilityText(t: TFunction, visibility?: number): string {
-  switch (visibility) {
-    case WikiDocumentVisibility.Public:
-      return t('wiki.visibility.public');
-    case WikiDocumentVisibility.Restricted:
-      return t('wiki.visibility.restricted');
-    default:
-      return t('wiki.visibility.authenticated');
-  }
-}
-
-function toSourceText(t: TFunction, sourceType?: string | null): string {
-  switch ((sourceType || '').trim().toLowerCase()) {
-    case 'manual':
-      return t('wiki.source.manual');
-    case 'imported':
-      return t('wiki.source.imported');
-    case 'custom':
-      return t('wiki.source.custom');
-    case 'builtin':
-      return t('wiki.source.builtin');
-    case 'rollback':
-      return t('wiki.source.rollback');
-    default:
-      return sourceType?.trim() || t('wiki.source.unknown');
-  }
-}
-
 export const WikiApp = () => {
   const { t, i18n } = useTranslation();
+  const markdownEditorLabels = useMemo(
+    () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, t],
+  );
   const currentWindow = useCurrentWindow();
   const loggedIn = useAuthStore((state) => state.isAuthenticated);
   const roles = useUserStore((state) => state.roles || []);
@@ -151,8 +117,10 @@ export const WikiApp = () => {
   const [loadingRevisionList, setLoadingRevisionList] = useState(false);
   const [loadingRevisionDetail, setLoadingRevisionDetail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [isEditorUploading, setIsEditorUploading] = useState(false);
   const [editorVisible, setEditorVisible] = useState(false);
   const [editorMode, setEditorMode] = useState<EditorMode>('create');
+  const [editorDocumentId, setEditorDocumentId] = useState<LongId | null>(null);
   const [draft, setDraft] = useState<EditorDraft>(EMPTY_DRAFT);
   const [rollbackConfirmOpen, setRollbackConfirmOpen] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -186,16 +154,17 @@ export const WikiApp = () => {
   const isDeletedDocument = Boolean(selectedDocument?.voIsDeleted);
   const canEditSelectedDocument = isAdmin && Boolean(selectedDocument) && !isBuiltInDocument && !isDeletedDocument;
   const canRestoreSelectedDocument = isAdmin && Boolean(selectedDocument) && !isBuiltInDocument && isDeletedDocument;
+  const editorNavigationLocked = editorVisible || isEditorUploading;
   const shouldUseSidebarOverlay = isReadingLayout && (editorVisible || Boolean(selectedDocumentId) || loadingDetail);
   const invalidParentIds = useMemo(() => {
-    if (!selectedDocumentId) {
+    if (!editorDocumentId) {
       return new Set<string>();
     }
 
-    const ids = new Set(Array.from(collectDescendantIds(tree, selectedDocumentId), String));
-    ids.add(String(selectedDocumentId));
+    const ids = new Set(Array.from(collectDescendantIds(tree, editorDocumentId), String));
+    ids.add(String(editorDocumentId));
     return ids;
-  }, [selectedDocumentId, tree]);
+  }, [editorDocumentId, tree]);
 
   const refreshCollections = useCallback(async (preserveSelection: boolean = true) => {
     setLoadingTree(true);
@@ -203,7 +172,7 @@ export const WikiApp = () => {
 
     try {
       const [treeData, pageData] = await Promise.all([
-        getWikiTree(),
+        getWikiTree(t),
         getWikiList({
           pageIndex: 1,
           pageSize: 100,
@@ -211,7 +180,7 @@ export const WikiApp = () => {
           status: isAdmin && statusFilter !== '' ? Number(statusFilter) : undefined,
           includeDeleted: showingDeleted,
           deletedOnly: showingDeleted,
-        }),
+        }, t),
       ]);
 
       setTree(treeData);
@@ -244,7 +213,7 @@ export const WikiApp = () => {
     setLoadingDetail(true);
 
     try {
-      const detail = await getWikiDocumentById(documentId, showingDeleted);
+      const detail = await getWikiDocumentById(documentId, showingDeleted, t);
       setSelectedDocument(detail);
     } catch (error) {
       log.error('WikiApp', '加载文档详情失败:', error);
@@ -262,7 +231,7 @@ export const WikiApp = () => {
     }
 
     try {
-      const detail = await getWikiDocumentBySlug(normalizedSlug);
+      const detail = await getWikiDocumentBySlug(normalizedSlug, t);
       setSelectedDocumentId(detail.voId);
       setSelectedDocument(detail);
     } catch (error) {
@@ -273,7 +242,7 @@ export const WikiApp = () => {
 
   const loadDocumentByRouteId = useCallback(async (documentId: LongId) => {
     try {
-      const detail = await getWikiDocumentById(documentId, showingDeleted);
+      const detail = await getWikiDocumentById(documentId, showingDeleted, t);
       setSelectedDocumentId(detail.voId);
       setSelectedDocument(detail);
     } catch (error) {
@@ -293,7 +262,7 @@ export const WikiApp = () => {
     setLoadingRevisionList(true);
 
     try {
-      const revisions = await getWikiRevisionList(documentId);
+      const revisions = await getWikiRevisionList(documentId, t);
       setRevisionList(revisions);
 
       if (revisions.length === 0) {
@@ -331,7 +300,7 @@ export const WikiApp = () => {
     setLoadingRevisionDetail(true);
 
     try {
-      const detail = await getWikiRevisionDetail(revisionId);
+      const detail = await getWikiRevisionDetail(revisionId, t);
       setSelectedRevision(detail);
     } catch (error) {
       log.error('WikiApp', '加载版本详情失败:', error);
@@ -505,11 +474,16 @@ export const WikiApp = () => {
   }, [expandableNodeIds, selectedDocumentId, tree]);
 
   const openCreateEditor = () => {
+    if (editorNavigationLocked) {
+      return;
+    }
+
     const parentId = selectedDocument && !selectedDocument.voIsDeleted ? String(selectedDocument.voId) : '';
     const suggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalLongId(parentId)));
 
     setIsSidebarSheetOpen(false);
     setEditorMode('create');
+    setEditorDocumentId(null);
     setDraft({
       ...EMPTY_DRAFT,
       parentId,
@@ -528,6 +502,7 @@ export const WikiApp = () => {
 
     setIsSidebarSheetOpen(false);
     setEditorMode('edit');
+    setEditorDocumentId(selectedDocument.voId);
     setDraft({
       title: selectedDocument.voTitle,
       slug: selectedDocument.voSlug,
@@ -546,17 +521,26 @@ export const WikiApp = () => {
   };
 
   const closeEditor = () => {
+    if (isEditorUploading) {
+      return;
+    }
+
     setEditorVisible(false);
+    setEditorDocumentId(null);
     setDraft(EMPTY_DRAFT);
     setSortSuggestion(EMPTY_DRAFT.sort);
   };
 
   const handleSelectDocument = useCallback((documentId: LongId) => {
+    if (editorNavigationLocked) {
+      return;
+    }
+
     setSelectedDocumentId(documentId);
     if (shouldUseSidebarOverlay) {
       setIsSidebarSheetOpen(false);
     }
-  }, [shouldUseSidebarOverlay]);
+  }, [editorNavigationLocked, shouldUseSidebarOverlay]);
 
   const openHistoryModal = () => {
     if (!selectedDocumentId || !canEditSelectedDocument) {
@@ -572,7 +556,7 @@ export const WikiApp = () => {
   };
 
   const handleParentChange = (nextParentId: string) => {
-    const currentDocumentId = editorMode === 'edit' ? selectedDocumentId ?? undefined : undefined;
+    const currentDocumentId = editorMode === 'edit' ? editorDocumentId ?? undefined : undefined;
     const nextSuggestedSort = String(getSuggestedSortValue(tree, normalizeOptionalLongId(nextParentId), currentDocumentId));
 
     setDraft((current) => ({
@@ -590,11 +574,39 @@ export const WikiApp = () => {
   }, [loadDocumentDetail, loadRevisionList, refreshCollections]);
 
   const handleSearch = async () => {
+    if (editorNavigationLocked) {
+      return;
+    }
+
     setSidebarView('results');
     await refreshCollections(false);
   };
 
+  const handleStatusFilterChange = (nextStatus: string) => {
+    if (!editorNavigationLocked) {
+      setStatusFilter(nextStatus);
+    }
+  };
+
+  const handleDeletionFilterChange = (nextFilter: DeletionFilter) => {
+    if (!editorNavigationLocked) {
+      setDeletionFilter(nextFilter);
+    }
+  };
+
+  const handleRefresh = async () => {
+    if (editorNavigationLocked) {
+      return;
+    }
+
+    await refreshCollections(true);
+  };
+
   const handleSave = async () => {
+    if (isEditorUploading) {
+      return;
+    }
+
     if (!draft.title.trim() || !draft.markdownContent.trim()) {
       toast.error(t('wiki.toast.requiredFields'));
       return;
@@ -613,7 +625,7 @@ export const WikiApp = () => {
 
     try {
       if (editorMode === 'create') {
-        const createdId = await createWikiDocument(buildCreateRequest(draft));
+        const createdId = await createWikiDocument(buildCreateRequest(draft), t);
         toast.success(t('wiki.toast.created'));
         closeEditor();
         await refreshCollections(true);
@@ -621,15 +633,16 @@ export const WikiApp = () => {
         return;
       }
 
-      if (!selectedDocumentId) {
+      const targetDocumentId = editorDocumentId;
+      if (!targetDocumentId) {
         toast.error(t('wiki.toast.noSelection'));
         return;
       }
 
-      await updateWikiDocument(selectedDocumentId, buildUpdateRequest(draft));
+      await updateWikiDocument(targetDocumentId, buildUpdateRequest(draft), t);
       toast.success(t('wiki.toast.updated'));
       closeEditor();
-      await refreshDocumentWorkspace(selectedDocumentId, false);
+      await refreshDocumentWorkspace(targetDocumentId, false);
     } catch (error) {
       log.error('WikiApp', '保存文档失败:', error);
       toast.error(error instanceof Error ? error.message : t('wiki.toast.saveFailed'));
@@ -645,7 +658,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await publishWikiDocument(selectedDocumentId);
+      await publishWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.published'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
@@ -663,7 +676,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await unpublishWikiDocument(selectedDocumentId);
+      await unpublishWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.unpublished'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
@@ -681,7 +694,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await archiveWikiDocument(selectedDocumentId);
+      await archiveWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.archived'));
       await refreshDocumentWorkspace(selectedDocumentId);
     } catch (error) {
@@ -711,7 +724,7 @@ export const WikiApp = () => {
 
     setSubmitting(true);
     try {
-      await deleteWikiDocument(selectedDocumentId);
+      await deleteWikiDocument(selectedDocumentId, t);
       toast.success(t('wiki.toast.deleted'));
       setDeleteConfirmOpen(false);
       await refreshCollections(true);
@@ -731,7 +744,7 @@ export const WikiApp = () => {
     setSubmitting(true);
     try {
       const restoredDocumentId = selectedDocumentId;
-      await restoreWikiDocument(restoredDocumentId);
+      await restoreWikiDocument(restoredDocumentId, t);
       toast.success(t('wiki.toast.restored'));
 
       if (showingDeleted) {
@@ -755,7 +768,7 @@ export const WikiApp = () => {
     }
 
     try {
-      const { blob, fileName } = await downloadWikiMarkdown(selectedDocumentId);
+      const { blob, fileName } = await downloadWikiMarkdown(selectedDocumentId, t);
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = downloadUrl;
@@ -772,10 +785,19 @@ export const WikiApp = () => {
   };
 
   const triggerImport = () => {
+    if (editorNavigationLocked) {
+      return;
+    }
+
     importInputRef.current?.click();
   };
 
   const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (editorNavigationLocked) {
+      event.target.value = '';
+      return;
+    }
+
     const file = event.target.files?.[0];
     if (!file) {
       return;
@@ -788,7 +810,7 @@ export const WikiApp = () => {
         file,
         parentId: selectedDocumentId ?? undefined,
         publishAfterImport: false,
-      });
+      }, t);
 
       toast.success(t('wiki.toast.imported'));
       await refreshCollections(true);
@@ -802,13 +824,17 @@ export const WikiApp = () => {
     }
   };
 
-  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
+  const handleImageUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownImageUploadResult> => {
     const attachment = await uploadImage(
       {
         file,
         businessType: 'Wiki',
         generateThumbnail: true,
         removeExif: true,
+        onProgress: reportProgress,
       },
       t,
     );
@@ -820,11 +846,15 @@ export const WikiApp = () => {
     };
   };
 
-  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
+  const handleDocumentUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownDocumentUploadResult> => {
     const attachment = await uploadDocument(
       {
         file,
         businessType: 'Wiki',
+        onProgress: reportProgress,
       },
       t,
     );
@@ -834,6 +864,10 @@ export const WikiApp = () => {
       fileName: attachment.voOriginalName || file.name,
     };
   };
+
+  const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
+    log.error('WikiApp', `Markdown ${kind} upload failed:`, error);
+  }, []);
 
   const openRollbackConfirm = () => {
     if (!selectedRevision || selectedRevision.voIsCurrent || submitting) {
@@ -872,7 +906,7 @@ export const WikiApp = () => {
     setSubmitting(true);
 
     try {
-      await rollbackWikiRevision(selectedRevisionId);
+      await rollbackWikiRevision(selectedRevisionId, t);
       toast.success(t('wiki.toast.rolledBack', { version: selectedRevision?.voVersion ?? '' }));
       setRollbackConfirmOpen(false);
       await refreshDocumentWorkspace(selectedDocumentId, false);
@@ -926,6 +960,7 @@ export const WikiApp = () => {
             loggedIn={loggedIn}
             isAdmin={isAdmin}
             submitting={submitting}
+            navigationLocked={editorNavigationLocked}
             showingDeleted={showingDeleted}
             totalTreeDocuments={totalTreeDocuments}
             totalResultsCount={totalResultsCount}
@@ -940,10 +975,10 @@ export const WikiApp = () => {
             onSelectDocument={handleSelectDocument}
             onSidebarViewChange={setSidebarView}
             onKeywordChange={setKeyword}
-            onStatusFilterChange={setStatusFilter}
-            onDeletionFilterChange={setDeletionFilter}
+            onStatusFilterChange={handleStatusFilterChange}
+            onDeletionFilterChange={handleDeletionFilterChange}
             onSearch={handleSearch}
-            onRefresh={() => refreshCollections(true)}
+            onRefresh={handleRefresh}
             onCreate={openCreateEditor}
             onImport={triggerImport}
           />
@@ -992,7 +1027,12 @@ export const WikiApp = () => {
               </button>
             ) : null}
             {editorVisible ? (
-              <button type="button" className={styles.ghostButton} onClick={closeEditor}>
+              <button
+                type="button"
+                className={styles.ghostButton}
+                onClick={closeEditor}
+                disabled={submitting || isEditorUploading}
+              >
                 {t('wiki.actions.cancelEdit')}
               </button>
             ) : null}
@@ -1144,17 +1184,20 @@ export const WikiApp = () => {
               <MarkdownEditor
                 value={draft.markdownContent}
                 onChange={(value) => setDraft((current) => ({ ...current, markdownContent: value }))}
+                labels={markdownEditorLabels}
                 minHeight={shouldUseSidebarOverlay ? 280 : 360}
                 placeholder={t('wiki.form.markdownPlaceholder')}
                 onImageUpload={handleImageUpload}
                 onDocumentUpload={handleDocumentUpload}
+                onUploadError={handleEditorUploadError}
+                onUploadingChange={setIsEditorUploading}
               />
 
               <div className={styles.editorActions}>
-                <button type="button" className={styles.ghostButton} onClick={closeEditor} disabled={submitting}>
+                <button type="button" className={styles.ghostButton} onClick={closeEditor} disabled={submitting || isEditorUploading}>
                   {t('common.cancel')}
                 </button>
-                <button type="button" className={styles.primaryButton} onClick={() => void handleSave()} disabled={submitting}>
+                <button type="button" className={styles.primaryButton} onClick={() => void handleSave()} disabled={submitting || isEditorUploading}>
                   {submitting ? t('wiki.actions.saving') : editorMode === 'create' ? t('wiki.actions.createDocument') : t('wiki.actions.saveChanges')}
                 </button>
               </div>
@@ -1256,6 +1299,7 @@ export const WikiApp = () => {
         <BottomSheet
           isOpen={isSidebarSheetOpen}
           onClose={() => setIsSidebarSheetOpen(false)}
+          closeLabel={t('common.close')}
           title={t('wiki.actions.directory')}
           height="86%"
           bodyClassName={styles.sidebarSheetBody}
@@ -1276,6 +1320,7 @@ export const WikiApp = () => {
               loggedIn={loggedIn}
               isAdmin={isAdmin}
               submitting={submitting}
+              navigationLocked={editorNavigationLocked}
               showingDeleted={showingDeleted}
               totalTreeDocuments={totalTreeDocuments}
               totalResultsCount={totalResultsCount}
@@ -1290,10 +1335,10 @@ export const WikiApp = () => {
               onSelectDocument={handleSelectDocument}
               onSidebarViewChange={setSidebarView}
               onKeywordChange={setKeyword}
-              onStatusFilterChange={setStatusFilter}
-              onDeletionFilterChange={setDeletionFilter}
+              onStatusFilterChange={handleStatusFilterChange}
+              onDeletionFilterChange={handleDeletionFilterChange}
               onSearch={handleSearch}
-              onRefresh={() => refreshCollections(true)}
+              onRefresh={handleRefresh}
               onCreate={openCreateEditor}
               onImport={triggerImport}
             />
@@ -1306,6 +1351,7 @@ export const WikiApp = () => {
         className={styles.hiddenInput}
         type="file"
         accept=".md,.markdown,.txt,text/markdown,text/plain"
+        disabled={editorNavigationLocked}
         onChange={(event) => void handleImportFile(event)}
       />
 
@@ -1313,6 +1359,7 @@ export const WikiApp = () => {
       <Modal
         isOpen={historyModalOpen}
         onClose={closeHistoryModal}
+        closeLabel={t('common.close')}
         title={selectedDocument ? t('wiki.history.titleWithName', { title: selectedDocument.voTitle }) : t('wiki.history.title')}
         size="large"
       >
@@ -1400,6 +1447,7 @@ export const WikiApp = () => {
         title={t('wiki.confirm.deleteTitle')}
         message={selectedDocument ? t('wiki.confirm.deleteMessageWithTitle', { title: selectedDocument.voTitle }) : t('wiki.confirm.deleteMessage')}
         confirmText={t('wiki.confirm.deleteConfirm')}
+        cancelText={t('common.cancel')}
         danger
         onCancel={closeDeleteConfirm}
         onConfirm={() => void handleDelete()}
@@ -1410,6 +1458,7 @@ export const WikiApp = () => {
         title={t('wiki.confirm.rollbackTitle')}
         message={selectedRevision ? t('wiki.confirm.rollbackMessageWithVersion', { version: selectedRevision.voVersion }) : t('wiki.confirm.rollbackMessage')}
         confirmText={t('wiki.confirm.rollbackConfirm')}
+        cancelText={t('common.cancel')}
         danger
         onCancel={closeRollbackConfirm}
         onConfirm={() => void handleRollback()}

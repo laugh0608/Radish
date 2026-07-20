@@ -8,6 +8,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
@@ -111,7 +112,11 @@ public class QuestionControllerTest
             });
         postServiceMock
             .Setup(service => service.AddAnswerAsync(9999, "帖子已经不存在", 10001, "Tester", 0))
-            .ThrowsAsync(new AggregateException(new BusinessException("问答帖不存在", 404, "Forum.QuestionNotFound")));
+            .ThrowsAsync(new AggregateException(new BusinessException(
+                "问答帖不存在",
+                404,
+                "Forum.QuestionNotFound",
+                "error.forum.question_not_found")));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 
@@ -124,6 +129,75 @@ public class QuestionControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
         Assert.Contains("问答帖不存在", result.MessageInfo);
+        Assert.Equal("Forum.QuestionNotFound", result.Code);
+        Assert.Equal("error.forum.question_not_found", result.MessageKey);
+        Assert.Null(result.MessageArguments);
+    }
+
+    [Theory]
+    [InlineData(
+        409,
+        ForumPublishErrorCodes.SubmissionProcessing,
+        "error.forum.publish_submission_processing",
+        null)]
+    [InlineData(
+        429,
+        ForumPublishErrorCodes.RateLimited,
+        "error.forum.publish_rate_limited",
+        17L)]
+    public async Task Answer_Should_Preserve_BusinessErrorContract(
+        int statusCode,
+        string errorCode,
+        string messageKey,
+        long? retryAfterSeconds)
+    {
+        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
+        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
+        var forumContentWriteServiceMock = new Mock<IForumContentWriteService>(MockBehavior.Strict);
+
+        moderationServiceMock
+            .Setup(service => service.GetPublishPermissionAsync(10001))
+            .ReturnsAsync(new ContentModerationPermissionVo
+            {
+                VoUserId = 10001,
+                VoCanPublish = true
+            });
+
+        var messageArguments = retryAfterSeconds.HasValue
+            ? new object[] { retryAfterSeconds.Value }
+            : [];
+        forumContentWriteServiceMock
+            .Setup(service => service.AddAnswerAsync(
+                9527,
+                "给出排查步骤",
+                10001,
+                "Tester",
+                0,
+                "answer-submission-1"))
+            .ThrowsAsync(new BusinessException(
+                "操作暂时无法完成",
+                statusCode,
+                errorCode,
+                messageKey,
+                messageArguments));
+
+        var controller = CreateController(
+            postServiceMock.Object,
+            moderationServiceMock.Object,
+            forumContentWriteServiceMock.Object);
+
+        var result = await controller.Answer(new CreateAnswerDto
+        {
+            PostId = 9527,
+            Content = "给出排查步骤",
+            ClientSubmissionId = "answer-submission-1"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(statusCode, result.StatusCode);
+        Assert.Equal(errorCode, result.Code);
+        Assert.Equal(messageKey, result.MessageKey);
+        Assert.Equal(messageArguments.Length == 0 ? null : messageArguments, result.MessageArguments);
     }
 
     [Fact]
@@ -211,7 +285,11 @@ public class QuestionControllerTest
 
         postServiceMock
             .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
-            .ThrowsAsync(new BusinessException("只有提问者可以采纳答案", 403, "Forum.AnswerAcceptForbidden"));
+            .ThrowsAsync(new BusinessException(
+                "只有提问者可以采纳答案",
+                403,
+                "Forum.AnswerAcceptForbidden",
+                "error.forum.answer_accept_forbidden"));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 
@@ -224,6 +302,8 @@ public class QuestionControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
         Assert.Contains("只有提问者可以采纳答案", result.MessageInfo);
+        Assert.Equal("Forum.AnswerAcceptForbidden", result.Code);
+        Assert.Equal("error.forum.answer_accept_forbidden", result.MessageKey);
     }
 
     [Fact]
@@ -234,7 +314,11 @@ public class QuestionControllerTest
 
         postServiceMock
             .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
-            .ThrowsAsync(new AggregateException(new BusinessException("不能采纳自己的回答", 400, "Forum.CannotAcceptOwnAnswer")));
+            .ThrowsAsync(new AggregateException(new BusinessException(
+                "不能采纳自己的回答",
+                400,
+                "Forum.CannotAcceptOwnAnswer",
+                "error.forum.cannot_accept_own_answer")));
 
         var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
 
@@ -247,11 +331,14 @@ public class QuestionControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
         Assert.Contains("不能采纳自己的回答", result.MessageInfo);
+        Assert.Equal("Forum.CannotAcceptOwnAnswer", result.Code);
+        Assert.Equal("error.forum.cannot_accept_own_answer", result.MessageKey);
     }
 
     private static QuestionController CreateController(
         IPostService postService,
-        IContentModerationService moderationService)
+        IContentModerationService moderationService,
+        IForumContentWriteService? forumContentWriteService = null)
     {
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(accessor => accessor.Current).Returns(new CurrentUser
@@ -287,6 +374,6 @@ public class QuestionControllerTest
             postService,
             moderationService,
             currentUserAccessorMock.Object,
-            forumContentWriteServiceMock.Object);
+            forumContentWriteService ?? forumContentWriteServiceMock.Object);
     }
 }

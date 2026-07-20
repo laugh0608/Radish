@@ -202,7 +202,7 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="userId">用户 Id</param>
     /// <param name="postId">帖子 Id</param>
     /// <returns>点赞操作结果（当前状态和最新点赞数）</returns>
-    Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId);
+    Task<PostLikeResultDto> ToggleLikeAsync(long userId, string userName, long postId);
 
     /// <summary>
     /// 设置帖子置顶状态

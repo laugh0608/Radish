@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
@@ -16,6 +17,78 @@ namespace Radish.Api.Tests.Repositories;
 
 public sealed class SchemaMigrationLedgerTest
 {
+    [Fact]
+    public async Task EnsureBusinessSchemaAsync_ShouldApplyPendingLedgerBeforeSeedReadinessInspection()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-schema-ledger-pending-{Guid.NewGuid():N}.db");
+
+        try
+        {
+            using var db = CreateSqliteScope($"Data Source={path}", "main");
+            var mainDb = db.GetConnectionScope("main");
+            foreach (var entityType in DbMigrateEntityRegistry.GetEntityTypesForConfig("Main"))
+            {
+                mainDb.CodeFirst.InitTables(entityType);
+            }
+
+            var timeProvider = new FixedTimeProvider(
+                new DateTimeOffset(2026, 7, 14, 8, 0, 0, TimeSpan.Zero));
+            using var services = new ServiceCollection()
+                .AddSingleton<ISqlSugarClient>(db)
+                .AddSingleton<TimeProvider>(timeProvider)
+                .AddSingleton(new BusinessCalendar(
+                    timeProvider,
+                    Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" })))
+                .BuildServiceProvider();
+
+            SchemaMigrationLedger.EnsureBaseline(db, timeProvider, ["main"]);
+            SchemaMigrationLedger.ApplyPending(db, services, ["main"]);
+
+            var f1MigrationIds = new[]
+            {
+                ShopOrderFulfillmentSafetyMigration.Instance.MigrationId,
+                ShopEntitlementOperationSchemaMigration.Instance.MigrationId,
+                UserActiveBenefitSchemaMigration.Instance.MigrationId,
+                ShopEntitlementOperationSubjectNullabilityMigration.Instance.MigrationId
+            };
+            mainDb.Deleteable<SchemaMigrationRecord>()
+                .Where(record => f1MigrationIds.Contains(record.MigrationId))
+                .ExecuteCommand();
+            mainDb.Ado.ExecuteCommand("DROP TABLE \"ShopUserActiveBenefit\"");
+            mainDb.Ado.ExecuteCommand("DROP TABLE \"ShopEntitlementOperation\"");
+            foreach (var columnName in new[] { "FixedExpiresAt", "FailureStage", "GrantedBenefitId", "GrantedInventoryId" })
+            {
+                mainDb.Ado.ExecuteCommand($"ALTER TABLE \"ShopOrder\" DROP COLUMN \"{columnName}\"");
+            }
+
+            foreach (var columnName in new[] { "RevokedAt", "RevokedById", "RevokedByName", "RevocationReason" })
+            {
+                mainDb.Ado.ExecuteCommand($"ALTER TABLE \"ShopUserBenefit\" DROP COLUMN \"{columnName}\"");
+            }
+
+            var pendingInspection = DbMigrateInspection.InspectSeedReadiness(services, "main");
+            Assert.False(pendingInspection.IsReadyForSeed);
+
+            await DbMigrateRunner.EnsureBusinessSchemaAsync(
+                services,
+                new ConfigurationBuilder().Build(),
+                "Test",
+                db,
+                "main",
+                ["main"]);
+
+            Assert.True(DbMigrateInspection.InspectSeedReadiness(services, "main").IsReadyForSeed);
+            Assert.All(SchemaMigrationLedger.Inspect(db, ["main"]), status => Assert.True(status.Applied));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
     [Fact]
     public async Task EnsureBaseline_ShouldSerializeConcurrentSqliteAdoption()
     {
@@ -108,7 +181,10 @@ public sealed class SchemaMigrationLedgerTest
             Assert.True(status.Applied);
             Assert.True(status.ChecksumMatches);
             Assert.All(statuses, item => Assert.True(item.Applied));
-            Assert.Equal(2, mainDb.Queryable<SchemaMigrationRecord>().Count());
+            Assert.Equal(
+                1 + SchemaMigrationRegistry.All.Count(migration =>
+                    string.Equals(migration.Scope, "Main", StringComparison.OrdinalIgnoreCase)),
+                mainDb.Queryable<SchemaMigrationRecord>().Count());
             Assert.True(SchemaMigrationLedger.HasAppliedBaseline(db, "Main"));
 
             mainDb.Updateable<SchemaMigrationRecord>()
@@ -177,11 +253,11 @@ public sealed class SchemaMigrationLedgerTest
         public override DateTimeOffset GetUtcNow() => utcNow;
     }
 
-    private static SqlSugarScope CreateSqliteScope(string connectionString)
+    private static SqlSugarScope CreateSqliteScope(string connectionString, string configId = "Main")
     {
         return new SqlSugarScope(new ConnectionConfig
         {
-            ConfigId = "Main",
+            ConfigId = configId,
             ConnectionString = connectionString,
             DbType = DbType.Sqlite,
             IsAutoCloseConnection = true,

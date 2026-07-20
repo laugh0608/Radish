@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
   Table,
@@ -38,14 +39,15 @@ import { usePermission } from '@/hooks/usePermission';
 import { getAvatarUrl } from '@/config/env';
 import { ROUTES } from '@/router/routes';
 import { log } from '@/utils/logger';
+import { formatConsoleNumber } from '@/utils/localeFormatters';
 import { StickerGroupForm } from './StickerGroupForm';
 import '../adminFeature.css';
 import './StickerGroupList.css';
 
-const getGroupTypeText = (type: number) => (type === 2 ? '付费' : '官方');
-
 export const StickerGroupList = () => {
-  useDocumentTitle('表情包管理');
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  useDocumentTitle(t('stickers.group.documentTitle'));
 
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -60,18 +62,18 @@ export const StickerGroupList = () => {
   const canDeleteStickerPermission = usePermission(CONSOLE_PERMISSIONS.stickersDelete);
   const canToggleSticker = usePermission(CONSOLE_PERMISSIONS.stickersToggle);
 
-  const loadGroups = async () => {
+  const loadGroups = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getAdminStickerGroups();
       setGroups(data);
     } catch (error) {
       log.error('StickerGroupList', '加载表情包分组失败:', error);
-      message.error('加载表情包分组失败');
+      message.error(t('stickers.group.feedback.loadFailed'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (!canViewStickers) {
@@ -79,7 +81,7 @@ export const StickerGroupList = () => {
     }
 
     void loadGroups();
-  }, [canViewStickers]);
+  }, [canViewStickers, loadGroups]);
 
   const filteredGroups = useMemo(() => {
     const normalized = keyword.trim().toLowerCase();
@@ -113,11 +115,11 @@ export const StickerGroupList = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteStickerGroup(id);
-      message.success('删除表情包分组成功');
+      message.success(t('stickers.group.feedback.deleted'));
       await loadGroups();
     } catch (error) {
       log.error('StickerGroupList', '删除表情包分组失败:', error);
-      message.error('删除表情包分组失败');
+      message.error(t('stickers.group.feedback.deleteFailed'));
     }
   };
 
@@ -133,17 +135,17 @@ export const StickerGroupList = () => {
       };
 
       await updateStickerGroup(group.voId, request);
-      message.success(enabled ? '分组已启用' : '分组已禁用');
+      message.success(t(enabled ? 'stickers.group.feedback.enabled' : 'stickers.group.feedback.disabled'));
       await loadGroups();
     } catch (error) {
       log.error('StickerGroupList', '更新分组状态失败:', error);
-      message.error('更新分组状态失败');
+      message.error(t('stickers.group.feedback.toggleFailed'));
     }
   };
 
   const columns: TableColumnsType<StickerGroupVo> = [
     {
-      title: '封面',
+      title: t('stickers.group.table.cover'),
       key: 'cover',
       width: 84,
       render: (_, record) => {
@@ -154,14 +156,14 @@ export const StickerGroupList = () => {
             {coverImageUrl ? (
               <img src={coverImageUrl} alt={record.voName} />
             ) : (
-              <span>无</span>
+              <span>{t('stickers.group.table.none')}</span>
             )}
           </div>
         );
       },
     },
     {
-      title: '名称',
+      title: t('stickers.group.table.name'),
       dataIndex: 'voName',
       key: 'voName',
       width: 180,
@@ -173,45 +175,46 @@ export const StickerGroupList = () => {
       width: 180,
     },
     {
-      title: '类型',
+      title: t('stickers.group.table.type'),
       key: 'voGroupType',
       width: 100,
       render: (_, record) => (
         <Tag color={record.voGroupType === 2 ? 'gold' : 'blue'}>
-          {getGroupTypeText(record.voGroupType)}
+          {t(record.voGroupType === 2 ? 'stickers.group.type.paid' : 'stickers.group.type.official')}
         </Tag>
       ),
     },
     {
-      title: '状态',
+      title: t('stickers.group.table.status'),
       key: 'voIsEnabled',
       width: 100,
       render: (_, record) => (
         <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-          {record.voIsEnabled ? '启用' : '禁用'}
+          {t(record.voIsEnabled ? 'stickers.common.enabled' : 'stickers.common.disabled')}
         </Tag>
       ),
     },
     {
-      title: '表情数',
+      title: t('stickers.group.table.count'),
       dataIndex: 'voStickerCount',
       key: 'voStickerCount',
       width: 100,
+      render: (value: number) => formatConsoleNumber(value, language),
     },
     {
-      title: '排序',
+      title: t('stickers.group.table.sort'),
       dataIndex: 'voSort',
       key: 'voSort',
       width: 100,
     },
     {
-      title: '描述',
+      title: t('stickers.group.table.description'),
       dataIndex: 'voDescription',
       key: 'voDescription',
       ellipsis: true,
     },
     {
-      title: '操作',
+      title: t('stickers.group.table.actions'),
       key: 'actions',
       width: 360,
       fixed: 'right',
@@ -226,7 +229,7 @@ export const StickerGroupList = () => {
                 navigate(`${ROUTES.STICKERS}/${record.voId}/items`);
               }}
             >
-              管理表情
+              {t('stickers.group.actions.manage')}
             </Button>
           ) : null}
 
@@ -237,7 +240,7 @@ export const StickerGroupList = () => {
               icon={<EditOutlined />}
               onClick={() => openEdit(record)}
             >
-              编辑
+              {t('stickers.common.edit')}
             </Button>
           ) : null}
 
@@ -249,22 +252,22 @@ export const StickerGroupList = () => {
                 void handleToggleStatus(record, !record.voIsEnabled);
               }}
             >
-              {record.voIsEnabled ? '禁用' : '启用'}
+              {t(record.voIsEnabled ? 'stickers.common.disabled' : 'stickers.common.enabled')}
             </Button>
           ) : null}
 
           {canDeleteStickerPermission ? (
             <Popconfirm
-              title="确认删除分组"
-              description={`删除后将软删除该分组及组内表情，确认继续？`}
+              title={t('stickers.group.delete.title')}
+              description={t('stickers.group.delete.description')}
               onConfirm={() => {
                 void handleDelete(record.voId);
               }}
-              okText="确认"
-              cancelText="取消"
+              okText={t('stickers.common.confirm')}
+              cancelText={t('stickers.common.cancel')}
             >
               <Button variant="ghost" size="small" icon={<DeleteOutlined />}>
-                删除
+                {t('stickers.common.delete')}
               </Button>
             </Popconfirm>
           ) : null}
@@ -275,13 +278,13 @@ export const StickerGroupList = () => {
   return (
     <div className="admin-feature-page sticker-group-list-page">
       <ConsolePageHeader
-        eyebrow="表情资源"
-        title="表情包管理"
-        description="维护表情包分组、启停状态和进入分组表情管理的操作入口。"
+        eyebrow={t('stickers.common.eyebrow')}
+        title={t('stickers.group.page.title')}
+        description={t('stickers.group.page.description')}
         icon={<AppstoreOutlined />}
         status={(
           <ConsoleStatusChip tone={canCreateSticker ? 'success' : 'neutral'}>
-            {canCreateSticker ? '可新增' : '只读'}
+            {t(canCreateSticker ? 'stickers.common.createWritable' : 'stickers.common.readOnly')}
           </ConsoleStatusChip>
         )}
         actions={(
@@ -292,32 +295,32 @@ export const StickerGroupList = () => {
                 void loadGroups();
               }}
             >
-              刷新
+              {t('stickers.common.refresh')}
             </Button>
             {canCreateSticker ? (
               <Button variant="primary" icon={<PlusOutlined />} onClick={openCreate}>
-                新建分组
+                {t('stickers.group.actions.create')}
               </Button>
             ) : null}
           </>
         )}
       />
 
-      <ConsoleMetricGrid label="表情包分组指标">
-        <ConsoleMetricCard label="全部分组" value={groups.length} description="当前可见分组总数" />
-        <ConsoleMetricCard label="当前结果" value={filteredGroups.length} description="当前筛选后的分组" tone="info" />
-        <ConsoleMetricCard label="启用分组" value={enabledGroups} description="当前启用分组数量" tone="success" />
-        <ConsoleMetricCard label="表情总数" value={totalStickers} description="所有分组表情合计" />
+      <ConsoleMetricGrid label={t('stickers.group.metrics.ariaLabel')}>
+        <ConsoleMetricCard label={t('stickers.group.metrics.total')} value={formatConsoleNumber(groups.length, language)} description={t('stickers.group.metrics.totalDescription')} />
+        <ConsoleMetricCard label={t('stickers.group.metrics.result')} value={formatConsoleNumber(filteredGroups.length, language)} description={t('stickers.group.metrics.resultDescription')} tone="info" />
+        <ConsoleMetricCard label={t('stickers.group.metrics.enabled')} value={formatConsoleNumber(enabledGroups, language)} description={t('stickers.group.metrics.enabledDescription')} tone="success" />
+        <ConsoleMetricCard label={t('stickers.group.metrics.stickers')} value={formatConsoleNumber(totalStickers, language)} description={t('stickers.group.metrics.stickersDescription')} />
       </ConsoleMetricGrid>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <ConsoleToolbar
-            title="筛选分组"
-            description="按分组名称、Code 和描述定位表情包分组。"
+            title={t('stickers.group.filter.title')}
+            description={t('stickers.group.filter.description')}
             meta={(
               <ConsoleStatusChip tone={activeFilterCount > 0 ? 'info' : 'neutral'}>
-                {activeFilterCount > 0 ? `${activeFilterCount} 个条件` : '未筛选'}
+                {activeFilterCount > 0 ? t('stickers.common.filterCount', { count: activeFilterCount }) : t('stickers.common.notFiltered')}
               </ConsoleStatusChip>
             )}
           >
@@ -325,7 +328,7 @@ export const StickerGroupList = () => {
               <Input
                 allowClear
                 className="sticker-list-filter-input"
-                placeholder="搜索名称 / Code / 描述"
+                placeholder={t('stickers.group.filter.placeholder')}
                 prefix={<SearchOutlined />}
                 value={keyword}
                 onChange={(event) => setKeyword(event.target.value)}
@@ -346,29 +349,29 @@ export const StickerGroupList = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>分组摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前分组范围、类型分布和可执行动作。</p>
+          <h3>{t('stickers.group.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('stickers.group.summary.description')}</p>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">查询范围</span>
+              <span className="admin-table-summary__label">{t('stickers.group.summary.scope')}</span>
               <span className="admin-table-summary__value">
-                {activeFilterCount > 0 ? '名称 / Code / 描述筛选' : '全部表情包分组'}
+                {t(activeFilterCount > 0 ? 'stickers.group.summary.filtered' : 'stickers.group.summary.all')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">付费分组</span>
-              <span className="admin-table-summary__value">{paidGroups}</span>
+              <span className="admin-table-summary__label">{t('stickers.group.summary.paid')}</span>
+              <span className="admin-table-summary__value">{formatConsoleNumber(paidGroups, language)}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">启停权限</span>
+              <span className="admin-table-summary__label">{t('stickers.group.summary.toggle')}</span>
               <span className="admin-table-summary__value">
-                {canToggleSticker ? '可启用 / 禁用' : '仅可查看启停状态'}
+                {t(canToggleSticker ? 'stickers.group.summary.toggleWritable' : 'stickers.group.summary.toggleReadOnly')}
               </span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">分组维护</span>
+              <span className="admin-table-summary__label">{t('stickers.group.summary.maintenance')}</span>
               <span className="admin-table-summary__value">
-                {canEditSticker ? '可编辑分组并管理表情' : '仅可查看分组'}
+                {t(canEditSticker ? 'stickers.group.summary.maintenanceWritable' : 'stickers.group.summary.maintenanceReadOnly')}
               </span>
             </div>
           </div>

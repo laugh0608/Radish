@@ -1,7 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { coinApi } from '@/api/coin';
 import { log } from '@/utils/logger';
-import { formatCoinAmount, formatDateTime, getTransactionTypeDisplay, getTransactionStatusColor } from '../../utils';
+import { useUserStore } from '@/stores/userStore';
+import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
+import {
+  absoluteCoinValue,
+  formatCoinAmount,
+  formatCoinRelativeDateTime,
+  formatTransactionStatus,
+  formatTransactionType,
+  getTransactionIcon,
+  getTransactionStatusTone,
+  resolveTransactionDirection,
+} from '../../utils';
 import type { CoinTransaction } from '@/api/coin';
 import styles from './RecentTransactions.module.css';
 
@@ -14,32 +26,34 @@ interface RecentTransactionsProps {
  * 最近交易组件
  */
 export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransactionsProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const displayTimeZone = getBrowserTimeZoneId(DEFAULT_TIME_ZONE);
+  const currentUserId = String(useUserStore((state) => state.userId));
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const useWhiteRadish = displayMode === 'white';
-
-  useEffect(() => {
-    loadRecentTransactions();
-  }, []);
-
-  const loadRecentTransactions = async () => {
+  const loadRecentTransactions = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
 
       // 获取最近5条交易记录
-      const response = await coinApi.getTransactions(1, 5);
+      const response = await coinApi.getTransactions(1, 5, null, null, t);
       setTransactions(response.data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '加载最近记录失败';
+      const errorMessage = err instanceof Error ? err.message : t('pit.api.transactionsFailed');
       setError(errorMessage);
       log.error('加载最近交易失败:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    void loadRecentTransactions();
+  }, [loadRecentTransactions]);
 
   const handleViewAll = () => {
     log.debug('RecentTransactions', '查看全部交易记录');
@@ -52,12 +66,12 @@ export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransaction
         <div className={styles.header}>
           <h3 className={styles.title}>
             <span className={styles.icon}>📋</span>
-            最近记录
+            {t('pit.overview.recentTransactions')}
           </h3>
         </div>
         <div className={styles.loading}>
           <div className={styles.loadingSpinner}></div>
-          <p>加载最近记录中...</p>
+          <p>{t('pit.overview.recentLoading')}</p>
         </div>
       </div>
     );
@@ -69,14 +83,14 @@ export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransaction
         <div className={styles.header}>
           <h3 className={styles.title}>
             <span className={styles.icon}>📋</span>
-            最近记录
+            {t('pit.overview.recentTransactions')}
           </h3>
         </div>
         <div className={styles.error}>
           <div className={styles.errorIcon}>⚠️</div>
           <p>{error}</p>
           <button className={styles.retryButton} onClick={loadRecentTransactions}>
-            重试
+            {t('pit.common.retry')}
           </button>
         </div>
       </div>
@@ -88,11 +102,11 @@ export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransaction
       <div className={styles.header}>
         <h3 className={styles.title}>
           <span className={styles.icon}>📋</span>
-          最近记录
+          {t('pit.overview.recentTransactions')}
         </h3>
         {transactions.length > 0 && (
           <button className={styles.viewAllButton} onClick={handleViewAll}>
-            查看全部
+            {t('pit.common.viewAll')}
           </button>
         )}
       </div>
@@ -101,8 +115,8 @@ export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransaction
         {transactions.length === 0 ? (
           <div className={styles.empty}>
             <div className={styles.emptyIcon}>📝</div>
-            <p>暂无交易记录</p>
-            <p className={styles.emptyHint}>开始使用萝卜后，记录将显示在这里</p>
+            <p>{t('pit.history.emptyTitle')}</p>
+            <p className={styles.emptyHint}>{t('pit.overview.recentEmptyDescription')}</p>
           </div>
         ) : (
           <div className={styles.transactionList}>
@@ -115,24 +129,24 @@ export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransaction
                 <div className={styles.transactionContent}>
                   <div className={styles.transactionMain}>
                     <div className={styles.transactionType}>
-                      {getTransactionTypeDisplay(transaction.voTransactionType)}
+                      {formatTransactionType(transaction.voTransactionType, t)}
                     </div>
                     <div className={styles.transactionAmount}>
                       <span className={`${styles.amountValue} ${
-                        transaction.voAmount > 0 ? styles.positive : styles.negative
+                        resolveTransactionDirection(transaction, currentUserId) === 'in' ? styles.positive : styles.negative
                       }`}>
-                        {transaction.voAmount > 0 ? '+' : ''}
-                        {formatCoinAmount(Math.abs(transaction.voAmount), true, useWhiteRadish)}
+                        {resolveTransactionDirection(transaction, currentUserId) === 'in' ? '+' : '-'}
+                        {formatCoinAmount(absoluteCoinValue(transaction.voAmount), language, t, displayMode)}
                       </span>
                     </div>
                   </div>
 
                   <div className={styles.transactionDetails}>
                     <div className={styles.transactionTime}>
-                      {formatDateTime(transaction.voCreateTime)}
+                      {formatCoinRelativeDateTime(transaction.voCreateTime, displayTimeZone, language)}
                     </div>
-                    <div className={`${styles.transactionStatus} ${styles[getTransactionStatusColor(transaction.voStatus)]}`}>
-                      {transaction.voStatusDisplay}
+                    <div className={`${styles.transactionStatus} ${styles[getTransactionStatusTone(transaction.voStatus)]}`}>
+                      {formatTransactionStatus(transaction.voStatus, t)}
                     </div>
                   </div>
 
@@ -149,23 +163,4 @@ export const RecentTransactions = ({ displayMode, onViewAll }: RecentTransaction
       </div>
     </div>
   );
-};
-
-/**
- * 根据交易类型获取图标
- */
-const getTransactionIcon = (transactionType: string): string => {
-  const iconMap: Record<string, string> = {
-    'SYSTEM_GRANT': '🎁',
-    'LIKE_REWARD': '👍',
-    'COMMENT_REWARD': '💬',
-    'GODLIKE_REWARD': '⭐',
-    'SOFA_REWARD': '🛋️',
-    'TRANSFER_IN': '📥',
-    'TRANSFER_OUT': '📤',
-    'PURCHASE': '🛒',
-    'ADMIN_ADJUST': '⚙️'
-  };
-
-  return iconMap[transactionType] || '💰';
 };

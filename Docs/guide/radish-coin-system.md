@@ -14,6 +14,7 @@
 - [16. 实施落地待完善（后端与接口）](/guide/radish-coin-implementation-review-backend)
 - [16. 实施落地待完善（前端与性能）](/guide/radish-coin-implementation-review-frontend)
 - [17-18. 参考资料与 M6 总结](/guide/radish-coin-references-summary)
+- [专题：论坛内容赞赏（胡萝卜 +1）](/features/forum-content-reward)
 
 ---
 
@@ -38,5 +39,6 @@
 - 注册默认奖励、登录补偿和首个管理员初始化统一走 `CoinService.GrantRegistrationRewardAsync`，确保真实用户具备默认胡萝卜。
 - 余额查询、发放、扣除和管理员调账前必须校验真实用户存在；Console 不应为不存在的 UserId 创建余额记录。
 - 商城购买扣款流水以 `TransactionType=CONSUME`、`BusinessType=Order`、`BusinessId=OrderId` 关联订单；Console 可从订单详情跳到对应流水筛选结果，用于资产一致性排查。
+- 论坛“胡萝卜 +1”统一定义为基于现有账本的内容赞赏：发送者扣除 `1 胡萝卜`、作者收到 `1 胡萝卜`，不创建新积分或风评值；当前仅完成专题设计，尚未进入实现。
 
 ---

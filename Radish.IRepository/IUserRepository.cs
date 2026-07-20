@@ -1,10 +1,14 @@
-﻿using Radish.Model;
+using Radish.Model;
 
 namespace Radish.IRepository;
 
 /// <summary>用户仓储接口</summary>
 public interface IUserRepository
 {
+    Task<IReadOnlyList<long>> GetActiveUserIdsAsync(
+        long tenantId,
+        IReadOnlyCollection<long> userIds);
+
     // /// <summary>
     // /// 获取所有的 角色-API 关系
     // /// </summary>

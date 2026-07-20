@@ -47,6 +47,7 @@ export const EditHistoryModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
+      closeLabel={t('common.close')}
       title={title}
       size="large"
       footer={

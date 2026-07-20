@@ -13,6 +13,7 @@ public class UnitOfWorkManage : IUnitOfWorkManage
     private readonly ISqlSugarClient _sqlSugarClient;
 
     private int _tranCount { get; set; }
+    private long _savepointSequence;
     public int TranCount => _tranCount;
     public readonly ConcurrentStack<string> TranStack = new();
 
@@ -77,10 +78,11 @@ public class UnitOfWorkManage : IUnitOfWorkManage
                 {
                     GetDbClient().CommitTran();
                 }
-                catch (Exception ex)
+                catch (Exception commitException)
                 {
-                    Console.WriteLine(ex.Message);
-                    GetDbClient().RollbackTran();
+                    _logger.LogError(commitException, "UnitOfWork commit failed; rolling back the transaction.");
+                    RollbackAfterCommitFailure(commitException);
+                    throw;
                 }
             }
         }
@@ -106,11 +108,14 @@ public class UnitOfWorkManage : IUnitOfWorkManage
                     _logger.LogDebug($"Commit Transaction");
                     Console.WriteLine($"Commit Transaction");
                 }
-                catch (Exception ex)
+                catch (Exception commitException)
                 {
-                    Console.WriteLine(ex.Message);
-                    GetDbClient().RollbackTran();
-                    _logger.LogDebug($"Commit Error , Rollback Transaction");
+                    _logger.LogError(
+                        commitException,
+                        "Transaction commit failed for {Method}; rolling back the transaction.",
+                        method.GetFullName());
+                    RollbackAfterCommitFailure(commitException);
+                    throw;
                 }
                 finally
                 {
@@ -158,4 +163,91 @@ public class UnitOfWorkManage : IUnitOfWorkManage
             }
         }
     }
+
+    public async Task<TResult> ExecuteInSavepointAsync<TResult>(Func<Task<TResult>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+
+        if (TranCount <= 0)
+        {
+            return await operation();
+        }
+
+        var db = GetDbClient();
+        var savepointName = $"radish_sp_{Interlocked.Increment(ref _savepointSequence)}";
+        var commands = CreateSavepointCommands(db.CurrentConnectionConfig.DbType, savepointName);
+        await db.Ado.ExecuteCommandAsync(commands.Create);
+
+        try
+        {
+            var result = await operation();
+            if (commands.Release != null)
+            {
+                await db.Ado.ExecuteCommandAsync(commands.Release);
+            }
+
+            return result;
+        }
+        catch (Exception operationException)
+        {
+            try
+            {
+                await db.Ado.ExecuteCommandAsync(commands.Rollback);
+                if (commands.Release != null)
+                {
+                    await db.Ado.ExecuteCommandAsync(commands.Release);
+                }
+            }
+            catch (Exception rollbackException)
+            {
+                _logger.LogError(
+                    rollbackException,
+                    "Rollback to savepoint {SavepointName} failed after operation failure.",
+                    savepointName);
+                throw new AggregateException(
+                    $"Operation and rollback to savepoint {savepointName} both failed.",
+                    operationException,
+                    rollbackException);
+            }
+
+            throw;
+        }
+    }
+
+    private void RollbackAfterCommitFailure(Exception commitException)
+    {
+        try
+        {
+            GetDbClient().RollbackTran();
+        }
+        catch (Exception rollbackException)
+        {
+            _logger.LogError(
+                rollbackException,
+                "Transaction rollback also failed after commit failure.");
+            throw new AggregateException(
+                "Transaction commit and rollback both failed.",
+                commitException,
+                rollbackException);
+        }
+    }
+
+    private static SavepointCommands CreateSavepointCommands(DbType dbType, string savepointName)
+    {
+        return dbType switch
+        {
+            DbType.PostgreSQL or DbType.Sqlite or DbType.MySql => new SavepointCommands(
+                $"SAVEPOINT {savepointName}",
+                $"ROLLBACK TO SAVEPOINT {savepointName}",
+                $"RELEASE SAVEPOINT {savepointName}"),
+            DbType.SqlServer => new SavepointCommands(
+                $"SAVE TRANSACTION {savepointName}",
+                $"ROLLBACK TRANSACTION {savepointName}",
+                null),
+            _ => throw new NotSupportedException(
+                $"数据库类型 {dbType} 尚未定义事务保存点语法，不能安全恢复约束冲突。")
+        };
+    }
+
+    private sealed record SavepointCommands(string Create, string Rollback, string? Release);
 }

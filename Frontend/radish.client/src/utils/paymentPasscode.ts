@@ -1,6 +1,5 @@
 export const PAYMENT_PASSCODE_LENGTH = 6;
 export const PAYMENT_PASSCODE_UPGRADE_REQUIRED_ERROR_CODE = 'PAYMENT_PASSCODE_UPGRADE_REQUIRED';
-export const PAYMENT_PASSCODE_UPGRADE_REQUIRED_ERROR_MESSAGE = '旧支付口令已废弃，请前往安全设置重置新的6位数字支付口令';
 
 const repeatedDigitPattern = /^(\d)\1{5}$/;
 
@@ -69,31 +68,35 @@ export function getPaymentPasscodeStrength(value: string): number {
 
 export function getPaymentPasscodeValidationMessage(
   value: string,
-  options?: { requiredMessage?: string; allowRepeatedDigits?: boolean }
+  options?: {
+    requiredMessage?: string;
+    formatMessage?: string;
+    repeatedDigitsMessage?: string;
+    allowRepeatedDigits?: boolean;
+  }
 ): string | null {
   const trimmedValue = value.trim();
   if (!trimmedValue) {
-    return options?.requiredMessage ?? '请输入支付口令';
+    return options?.requiredMessage ?? 'Payment passcode is required';
   }
 
   if (!isPaymentPasscodeFormatValid(trimmedValue)) {
-    return `支付口令必须为${PAYMENT_PASSCODE_LENGTH}位数字`;
+    return options?.formatMessage ?? `Payment passcode must contain ${PAYMENT_PASSCODE_LENGTH} digits`;
   }
 
   if (!options?.allowRepeatedDigits && isRepeatedDigitPaymentPasscode(trimmedValue)) {
-    return '支付口令不能为6个相同数字';
+    return options?.repeatedDigitsMessage ?? 'Payment passcode cannot repeat the same digit six times';
   }
 
   return null;
 }
 
 export function isPaymentPasscodeUpgradeRequiredError(
-  error: { code?: string | null; message?: string | null } | null | undefined
+  error: { code?: string | null } | null | undefined
 ): boolean {
   if (!error) {
     return false;
   }
 
-  return error.code === PAYMENT_PASSCODE_UPGRADE_REQUIRED_ERROR_CODE
-    || error.message === PAYMENT_PASSCODE_UPGRADE_REQUIRED_ERROR_MESSAGE;
+  return error.code === PAYMENT_PASSCODE_UPGRADE_REQUIRED_ERROR_CODE;
 }

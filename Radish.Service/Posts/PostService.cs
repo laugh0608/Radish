@@ -7,6 +7,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 
 namespace Radish.Service;
 
@@ -39,6 +40,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
     private readonly IBaseRepository<Attachment>? _attachmentRepository;
     private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly IUserAdornmentService? _userAdornmentService;
 
     private sealed record PostContentSettings(
         int MinTitleLength,
@@ -76,7 +78,8 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IBaseRepository<Comment>? commentRepository = null,
         IBaseRepository<CommentHighlight>? commentHighlightRepository = null,
         IBaseRepository<User>? userRepository = null,
-        IReliableOutboxService? reliableOutboxService = null)
+        IReliableOutboxService? reliableOutboxService = null,
+        IUserAdornmentService? userAdornmentService = null)
         : base(mapper, baseRepository)
     {
         _postRepository = baseRepository;
@@ -103,23 +106,14 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         _attachmentRepository = attachmentRepository;
         _systemSettingProvider = systemSettingProvider;
         _reliableOutboxService = reliableOutboxService;
+        _userAdornmentService = userAdornmentService;
     }
 
     private async Task<PostContentSettings> ValidatePostContentSettingsAsync(string title, string content)
     {
-        var settings = await GetPostContentSettingsAsync();
+        var settings = await GetValidatedPostContentSettingsAsync();
         var trimmedTitle = title.Trim();
         var trimmedContent = content.Trim();
-
-        if (settings.MinTitleLength > settings.MaxTitleLength)
-        {
-            throw new InvalidOperationException("系统设置配置错误：帖子标题最小长度不能大于最大长度");
-        }
-
-        if (settings.MinBodyLength > settings.MaxBodyLength)
-        {
-            throw new InvalidOperationException("系统设置配置错误：帖子正文最小长度不能大于最大长度");
-        }
 
         if (trimmedTitle.Length < settings.MinTitleLength)
         {
@@ -139,6 +133,60 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         if (trimmedContent.Length > settings.MaxBodyLength)
         {
             throw new ArgumentException($"帖子内容不能超过 {settings.MaxBodyLength} 个字符");
+        }
+
+        return settings;
+    }
+
+    private async Task<PostContentSettings> ValidatePublishPostContentSettingsAsync(string title, string content)
+    {
+        var settings = await GetValidatedPostContentSettingsAsync();
+        var trimmedTitle = title.Trim();
+        var trimmedContent = content.Trim();
+
+        if (trimmedTitle.Length < settings.MinTitleLength)
+        {
+            throw CreatePublishException(
+                $"帖子标题不能少于 {settings.MinTitleLength} 个字符",
+                ForumPublishErrorCodes.TitleTooShort);
+        }
+
+        if (trimmedTitle.Length > settings.MaxTitleLength)
+        {
+            throw CreatePublishException(
+                $"帖子标题不能超过 {settings.MaxTitleLength} 个字符",
+                ForumPublishErrorCodes.TitleTooLong);
+        }
+
+        if (trimmedContent.Length < settings.MinBodyLength)
+        {
+            throw CreatePublishException(
+                $"帖子内容不能少于 {settings.MinBodyLength} 个字符",
+                ForumPublishErrorCodes.ContentTooShort);
+        }
+
+        if (trimmedContent.Length > settings.MaxBodyLength)
+        {
+            throw CreatePublishException(
+                $"帖子内容不能超过 {settings.MaxBodyLength} 个字符",
+                ForumPublishErrorCodes.ContentTooLong);
+        }
+
+        return settings;
+    }
+
+    private async Task<PostContentSettings> GetValidatedPostContentSettingsAsync()
+    {
+        var settings = await GetPostContentSettingsAsync();
+
+        if (settings.MinTitleLength > settings.MaxTitleLength)
+        {
+            throw new InvalidOperationException("系统设置配置错误：帖子标题最小长度不能大于最大长度");
+        }
+
+        if (settings.MinBodyLength > settings.MaxBodyLength)
+        {
+            throw new InvalidOperationException("系统设置配置错误：帖子正文最小长度不能大于最大长度");
         }
 
         return settings;

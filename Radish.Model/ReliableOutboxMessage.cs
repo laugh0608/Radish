@@ -127,6 +127,7 @@ public sealed record ReliableOutboxSnapshot(
     string Status,
     int AttemptCount,
     int MaxAttempts,
+    DateTime OccurredAtUtc,
     DateTime AvailableAtUtc,
     string? LastErrorCode,
     string? LastErrorSummary);

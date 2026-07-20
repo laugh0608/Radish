@@ -1,11 +1,23 @@
 import { useEffect, useState } from 'react';
-import { Modal, Descriptions, Tag, Button, Space, Image, message } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
+import {
+  Modal,
+  Descriptions,
+  Tag,
+  Button,
+  Space,
+  Image,
+  message,
+  formatLocalizedDateTime,
+  formatLocalizedNumber,
+} from '@radish/ui';
 import { adminGetProduct } from '../../api/shopApi';
-import type { Product } from '../../api/types';
+import type { Product, ShopProductCapability } from '../../api/types';
 import {
   getBenefitTypeDisplay,
   getConsumableTypeDisplay,
   getProductConfigLabel,
+  getProductDurationDisplay,
   getProductTypeDisplay,
   getUnsupportedSaleReason,
   getUnsupportedSaleStatusLabel,
@@ -16,6 +28,7 @@ interface ProductDetailProps {
   visible: boolean;
   productId?: string;
   fallbackProduct?: Product;
+  capabilities: ShopProductCapability[];
   reloadToken?: number;
   onClose: () => void;
   onEdit?: (product: Product) => void;
@@ -23,29 +36,24 @@ interface ProductDetailProps {
   onReturnToSource?: () => void;
 }
 
-function formatDateTime(value?: string | null): string {
-  if (!value) {
-    return '-';
-  }
-
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
-  }
-
-  return parsed.toLocaleString('zh-CN');
+function isUnlimitedStock(product: Product): boolean {
+  const stockType = String(product.voStockType ?? '');
+  return stockType === 'Unlimited' || stockType === '0';
 }
 
 export const ProductDetail = ({
   visible,
   productId,
   fallbackProduct,
+  capabilities,
   reloadToken = 0,
   onClose,
   onEdit,
   onViewOrders,
   onReturnToSource,
 }: ProductDetailProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [product, setProduct] = useState<Product | undefined>(fallbackProduct);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -71,7 +79,7 @@ export const ProductDetail = ({
       try {
         setLoading(true);
         setLoadError(null);
-        const result = await adminGetProduct(productId);
+        const result = await adminGetProduct(productId, t);
         if (cancelled) {
           return;
         }
@@ -82,7 +90,7 @@ export const ProductDetail = ({
           return;
         }
 
-        const errorMessage = error instanceof Error ? error.message : '加载商品详情失败';
+        const errorMessage = error instanceof Error ? error.message : t('products.detail.loadFailed');
         setLoadError(errorMessage);
         setProduct((current) => current ?? fallbackProduct);
         message.error(errorMessage);
@@ -98,56 +106,63 @@ export const ProductDetail = ({
     return () => {
       cancelled = true;
     };
-  }, [fallbackProduct, productId, reloadToken, visible]);
+  }, [fallbackProduct, productId, reloadToken, t, visible]);
 
   const currentProduct = product ?? fallbackProduct;
-  const unsupportedSaleReason = currentProduct ? getUnsupportedSaleReason(currentProduct) : null;
-  const unsupportedSaleStatusLabel = currentProduct ? getUnsupportedSaleStatusLabel(currentProduct) : null;
-  const productConfigLabel = currentProduct ? getProductConfigLabel(currentProduct) : '商品配置';
+  const unsupportedSaleReason = currentProduct
+    ? getUnsupportedSaleReason(currentProduct, capabilities, t)
+    : null;
+  const unsupportedSaleStatusLabel = currentProduct
+    ? getUnsupportedSaleStatusLabel(currentProduct, capabilities, t)
+    : null;
+  const productConfigLabel = currentProduct
+    ? getProductConfigLabel(currentProduct, t)
+    : t('products.detail.field.configuration');
   const productConfigValue = currentProduct
     ? normalizeProductType(currentProduct.voProductType) === 'Benefit'
-      ? getBenefitTypeDisplay(currentProduct.voBenefitType)
+      ? getBenefitTypeDisplay(currentProduct.voBenefitType, t)
       : normalizeProductType(currentProduct.voProductType) === 'Consumable'
-        ? getConsumableTypeDisplay(currentProduct.voConsumableType)
+        ? getConsumableTypeDisplay(currentProduct.voConsumableType, t)
         : '-'
     : '-';
 
   return (
     <Modal
-      title="商品详情"
+      title={t('products.detail.title')}
       isOpen={visible}
       onClose={onClose}
+      closeLabel={t('products.action.close')}
       size="large"
       footer={
         <Space wrap>
           {currentProduct && onReturnToSource ? (
             <Button onClick={onReturnToSource}>
-              返回订单
+              {t('products.action.backToOrders')}
             </Button>
           ) : null}
           {currentProduct && onViewOrders ? (
             <Button onClick={() => onViewOrders(currentProduct)}>
-              查看相关订单
+              {t('products.action.orders')}
             </Button>
           ) : null}
           {currentProduct && onEdit ? (
             <Button variant="primary" onClick={() => onEdit(currentProduct)}>
-              编辑商品
+              {t('products.action.edit')}
             </Button>
           ) : null}
-          <Button onClick={onClose}>关闭</Button>
+          <Button onClick={onClose}>{t('products.action.close')}</Button>
         </Space>
       }
     >
       {!currentProduct ? (
         <div className="product-detail-empty">
-          {loading ? '正在加载商品详情...' : loadError ?? '未找到商品详情'}
+          {loading ? t('products.detail.loading') : loadError ?? t('products.detail.notFound')}
         </div>
       ) : (
         <>
           <div className="product-detail-media">
             <div className="product-detail-media-block">
-              <div className="product-detail-media-label">商品图标</div>
+              <div className="product-detail-media-label">{t('products.detail.icon')}</div>
               <Image
                 src={currentProduct.voIcon || '/placeholder.png'}
                 alt={currentProduct.voName}
@@ -158,10 +173,10 @@ export const ProductDetail = ({
               />
             </div>
             <div className="product-detail-media-block">
-              <div className="product-detail-media-label">商品封面</div>
+              <div className="product-detail-media-label">{t('products.detail.cover')}</div>
               <Image
                 src={currentProduct.voCoverImage || currentProduct.voIcon || '/placeholder.png'}
-                alt={`${currentProduct.voName} 封面`}
+                alt={t('products.detail.coverAlt', { name: currentProduct.voName })}
                 width={180}
                 height={108}
                 className="product-detail-image"
@@ -171,59 +186,74 @@ export const ProductDetail = ({
           </div>
 
           <Descriptions bordered column={2}>
-            <Descriptions.Item label="商品 ID">
+            <Descriptions.Item label={t('products.detail.field.id')}>
               {currentProduct.voId}
             </Descriptions.Item>
-            <Descriptions.Item label="分类">
+            <Descriptions.Item label={t('products.detail.field.category')}>
               {currentProduct.voCategoryName || currentProduct.voCategoryId}
             </Descriptions.Item>
 
-            <Descriptions.Item label="商品名称" span={2}>
+            <Descriptions.Item label={t('products.detail.field.name')} span={2}>
               {currentProduct.voName}
             </Descriptions.Item>
 
-            <Descriptions.Item label="商品描述" span={2}>
+            <Descriptions.Item label={t('products.detail.field.description')} span={2}>
               {currentProduct.voDescription || '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="商品类型">
-              <Tag color="blue">{getProductTypeDisplay(currentProduct.voProductType)}</Tag>
+            <Descriptions.Item label={t('products.detail.field.productType')}>
+              <Tag color="blue">{getProductTypeDisplay(currentProduct.voProductType, t)}</Tag>
             </Descriptions.Item>
             <Descriptions.Item label={productConfigLabel}>
               {productConfigValue}
             </Descriptions.Item>
 
-            <Descriptions.Item label="配置值" span={2}>
+            <Descriptions.Item label={t('products.detail.field.configurationValue')} span={2}>
               {currentProduct.voBenefitValue || '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="售价">
+            <Descriptions.Item label={t('products.detail.field.price')}>
               <span className="product-detail-price">
-                {currentProduct.voPrice} 胡萝卜
+                {formatLocalizedNumber(currentProduct.voPrice, language)} {t('console.unit.carrot')}
               </span>
             </Descriptions.Item>
-            <Descriptions.Item label="原价">
-              {currentProduct.voOriginalPrice ? `${currentProduct.voOriginalPrice} 胡萝卜` : '-'}
+            <Descriptions.Item label={t('products.detail.field.originalPrice')}>
+              {currentProduct.voOriginalPrice
+                ? `${formatLocalizedNumber(currentProduct.voOriginalPrice, language)} ${t('console.unit.carrot')}`
+                : '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="库存">
-              {currentProduct.voStockType === 'Unlimited' ? '无限库存' : currentProduct.voStock}
+            <Descriptions.Item label={t('products.detail.field.stock')}>
+              {isUnlimitedStock(currentProduct)
+                ? t('products.stock.unlimited')
+                : formatLocalizedNumber(currentProduct.voStock, language)}
             </Descriptions.Item>
-            <Descriptions.Item label="已售 / 限购">
-              {currentProduct.voSoldCount} / {currentProduct.voLimitPerUser > 0 ? currentProduct.voLimitPerUser : '不限'}
-            </Descriptions.Item>
-
-            <Descriptions.Item label="有效期">
-              {currentProduct.voDurationDisplay}
-            </Descriptions.Item>
-            <Descriptions.Item label="固定到期时间">
-              {formatDateTime(currentProduct.voExpiresAt)}
+            <Descriptions.Item label={t('products.detail.field.soldLimit')}>
+              {formatLocalizedNumber(currentProduct.voSoldCount, language)} / {' '}
+              {currentProduct.voLimitPerUser > 0
+                ? formatLocalizedNumber(currentProduct.voLimitPerUser, language)
+                : t('products.common.unlimited')}
             </Descriptions.Item>
 
-            <Descriptions.Item label="上架状态">
+            <Descriptions.Item label={t('products.detail.field.duration')}>
+              {getProductDurationDisplay(
+                currentProduct,
+                t,
+                (value) => formatLocalizedDateTime(value, language),
+              )}
+            </Descriptions.Item>
+            <Descriptions.Item label={t('products.detail.field.fixedExpiry')}>
+              {currentProduct.voExpiresAt
+                ? formatLocalizedDateTime(currentProduct.voExpiresAt, language)
+                : '-'}
+            </Descriptions.Item>
+
+            <Descriptions.Item label={t('products.detail.field.saleStatus')}>
               <Space size="small" wrap>
                 <Tag color={currentProduct.voIsOnSale ? 'success' : 'default'}>
-                  {currentProduct.voIsOnSale ? '已上架' : '已下架'}
+                  {currentProduct.voIsOnSale
+                    ? t('products.status.onSale')
+                    : t('products.status.offSale')}
                 </Tag>
                 {unsupportedSaleStatusLabel ? (
                   <Tag color={currentProduct.voIsOnSale ? 'warning' : 'processing'}>
@@ -231,16 +261,23 @@ export const ProductDetail = ({
                   </Tag>
                 ) : null}
                 <Tag color={currentProduct.voIsEnabled ? 'success' : 'error'}>
-                  {currentProduct.voIsEnabled ? '启用' : '禁用'}
+                  {currentProduct.voIsEnabled
+                    ? t('products.status.enabled')
+                    : t('products.status.disabled')}
                 </Tag>
               </Space>
             </Descriptions.Item>
-            <Descriptions.Item label="上 / 下架时间">
-              {formatDateTime(currentProduct.voOnSaleTime)} / {formatDateTime(currentProduct.voOffSaleTime)}
+            <Descriptions.Item label={t('products.detail.field.saleTimes')}>
+              {currentProduct.voOnSaleTime
+                ? formatLocalizedDateTime(currentProduct.voOnSaleTime, language)
+                : '-'} / {' '}
+              {currentProduct.voOffSaleTime
+                ? formatLocalizedDateTime(currentProduct.voOffSaleTime, language)
+                : '-'}
             </Descriptions.Item>
 
-            <Descriptions.Item label="创建时间" span={2}>
-              {formatDateTime(currentProduct.voCreateTime)}
+            <Descriptions.Item label={t('products.detail.field.createdAt')} span={2}>
+              {formatLocalizedDateTime(currentProduct.voCreateTime, language)}
             </Descriptions.Item>
           </Descriptions>
 

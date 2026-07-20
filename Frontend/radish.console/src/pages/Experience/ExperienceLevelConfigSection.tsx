@@ -1,6 +1,7 @@
 import { Button, Table } from '@radish/ui';
 import type { LevelConfigVo } from '@/api/experienceAdminApi';
 import { createLevelColumns } from './experienceAdminColumns';
+import { useTranslation } from 'react-i18next';
 
 type ExperienceLevelConfigSectionProps = {
   levels: LevelConfigVo[];
@@ -17,14 +18,15 @@ export const ExperienceLevelConfigSection = ({
   recalculating,
   onRecalculate,
 }: ExperienceLevelConfigSectionProps) => {
-  const levelColumns = createLevelColumns();
+  const { t, i18n } = useTranslation();
+  const levelColumns = createLevelColumns(t, i18n.resolvedLanguage);
 
   return (
     <section className="admin-feature-card">
       <div className="admin-feature-header">
         <div>
-          <h3>等级配置</h3>
-          <p className="admin-feature-subtle">查看当前等级曲线，必要时重新按后端配置重算。</p>
+          <h3>{t('experience.levels.title')}</h3>
+          <p className="admin-feature-subtle">{t('experience.levels.description')}</p>
         </div>
         <Button
           variant="primary"
@@ -33,7 +35,7 @@ export const ExperienceLevelConfigSection = ({
             void onRecalculate();
           }}
         >
-          {recalculating ? '重算中...' : '重算等级配置'}
+          {recalculating ? t('experience.actions.recalculating') : t('experience.actions.recalculate')}
         </Button>
       </div>
 

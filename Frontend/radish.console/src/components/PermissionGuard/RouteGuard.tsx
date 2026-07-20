@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useUser } from '@/hooks/useUser';
 import {
@@ -13,11 +14,12 @@ interface RouteGuardProps {
 }
 
 export function RouteGuard({ children, route }: RouteGuardProps) {
+  const { t } = useTranslation();
   const location = useLocation();
   const { user, loading } = useUser();
 
   if (loading) {
-    return <div style={{ padding: '24px' }}>正在校验页面权限...</div>;
+    return <div style={{ padding: '24px' }}>{t('console.guard.checking')}</div>;
   }
 
   if (!user) {
@@ -31,7 +33,8 @@ export function RouteGuard({ children, route }: RouteGuardProps) {
       return <Navigate to={fallbackPath} replace />;
     }
 
-    return <div style={{ padding: '24px' }}>当前账号暂无 {route.title} 访问权限。</div>;
+    const routeTitle = t(`console.route.${route.key}`, { defaultValue: route.title });
+    return <div style={{ padding: '24px' }}>{t('console.guard.denied', { title: routeTitle })}</div>;
   }
 
   return <>{children}</>;

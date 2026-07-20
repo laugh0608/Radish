@@ -26,15 +26,18 @@
 - [本地运行与排障手册](/guide/operations-runbook)
 - [验证基线说明](/guide/validation-baseline)
 - [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)
+- [F4 真实使用证据采集与反馈归因](/guide/real-usage-evidence-collection)
 - [专题回归索引](/guide/regression-index)
 - [Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)
 - [产品版本与发布标识治理](/guide/version-governance)
+- [时间语义与业务自然日](/guide/time-semantics)
 
 ### 基础设施与安全
 
 - [配置管理](/guide/configuration)
 - [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - [鉴权与授权指南](/guide/authentication)
+- [OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)
 - [认证服务实现说明](/guide/authentication-service)
 - [Auth 授权确认页信息层级说明](/guide/auth-consent-page)
 - [Token 不活跃过期治理](/guide/auth-idle-session)
@@ -43,6 +46,7 @@
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
 - [日志规范与实现说明](/guide/logging)
+- [日志敏感数据与查询凭据保护](/guide/logging-sensitive-data)
 - [前端日志与敏感字段脱敏](/guide/frontend-logging)
 - [密码安全](/guide/password-security)
 - [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
@@ -62,6 +66,7 @@
 ### 文档、通知与控制台
 
 - [文档系统方案](/guide/document-system)
+- [正式 Web 聊天工作区使用说明](/guide/chat-workspace)
 - [通知系统 API 文档](/guide/notification-api)
 - [通知中心设计说明](/guide/notification-center)
 - [通知系统前端说明](/guide/notification-frontend)
@@ -103,6 +108,7 @@
   - [radish-pit-backend](/guide/radish-pit-backend)
   - [radish-pit-frontend](/guide/radish-pit-frontend)
 - Radish Pet：
+  - [radish-pet-system](/guide/radish-pet-system)
   - [radish-pet-roadmap](/features/radish-pet-roadmap)
 
 ## 二、专项评审与迁移说明

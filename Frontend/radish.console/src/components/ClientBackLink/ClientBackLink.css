@@ -1,0 +1,47 @@
+.console-client-back-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+  color: var(--console-text-secondary);
+  background: var(--console-bg-surface);
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s, background-color 0.2s, border-color 0.2s, opacity 0.2s;
+}
+
+.console-client-back-link:hover {
+  color: var(--console-text-primary);
+  background: var(--console-bg-muted);
+  border-color: color-mix(in srgb, var(--console-brand-primary) 38%, var(--console-border-subtle) 62%);
+}
+
+.console-client-back-link--pending {
+  opacity: 0.68;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .console-client-back-link {
+    min-height: 34px;
+    padding: 0 9px;
+  }
+
+  .console-client-back-link span {
+    max-width: 78px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .console-client-back-link {
+    transition: none;
+  }
+}

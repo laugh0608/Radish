@@ -13,10 +13,10 @@ import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import { useTheme } from '@/theme/useTheme';
 import i18n from '@/i18n';
-import type { ApiResponse } from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
-import { tokenService } from '@/services/tokenService';
+import { notificationInboxSync } from '@/services/notificationInboxSync';
 import { resolveMediaUrl } from '@/utils/media';
+import { log } from '@/utils/logger';
 import styles from './Dock.module.css';
 
 /**
@@ -34,23 +34,33 @@ export const Dock = () => {
   const { openWindows, openApp, restoreWindow } = useWindowStore();
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { displayName, userName, userId, displayHandle, nickname, avatarUrl, avatarThumbnailUrl, clearUser } = useUserStore();
-  const { unreadCount: storeUnreadCount, connectionState } = useNotificationStore();
+  const storeUnreadCount = useNotificationStore(state => state.unreadCount);
   const { currentTheme, cycleTheme } = useTheme();
   const [time, setTime] = useState(new Date());
   const [isExpanded, setIsExpanded] = useState(false); // 默认为灵动岛状态
-  const [pollingUnreadCount, setPollingUnreadCount] = useState(0); // 轮询降级时的未读数
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const currentLanguage = i18n.resolvedLanguage?.startsWith('en') ? 'en' : 'zh';
   const timeLocale = currentLanguage === 'en' ? 'en-US' : 'zh-CN';
   const languageIcon = currentLanguage === 'en' ? 'mdi:format-letter-case' : 'mdi:translate-variant';
   const languageBadge = currentLanguage === 'en' ? 'EN' : 'ZH';
-  const themeIcon = currentTheme.id === 'default' ? 'mdi:view-dashboard-outline' : 'mdi:landscape';
-  const themeBadge = currentTheme.id === 'default' ? '简' : '风';
+  const themeIcon = currentTheme.id === 'default'
+    ? 'mdi:view-dashboard-outline'
+    : currentTheme.id === 'theme-dark-night'
+      ? 'mdi:weather-night'
+      : currentTheme.id === 'theme-sakura'
+        ? 'mdi:flower-outline'
+        : 'mdi:landscape';
+  const themeBadge = currentTheme.id === 'default'
+    ? '简'
+    : currentTheme.id === 'theme-dark-night'
+      ? '夜'
+      : currentTheme.id === 'theme-sakura'
+        ? '樱'
+        : '风';
 
   const loggedIn = hasAuthenticatedSession(authAuthenticated, userId);
 
-  // 根据连接状态决定显示哪个未读数
-  const unreadMessages = connectionState === 'connected' ? storeUnreadCount : pollingUnreadCount;
+  const unreadMessages = storeUnreadCount;
 
   // 统一通过 Gateway 访问
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -119,32 +129,6 @@ export const Dock = () => {
     return [...notificationItem, ...otherApps];
   }, [openWindows]);
 
-  interface ApiFetchOptions extends RequestInit {
-    withAuth?: boolean;
-  }
-
-  function apiFetch(input: RequestInfo | URL, options: ApiFetchOptions = {}) {
-    const { withAuth, headers, ...rest } = options;
-
-    const finalHeaders: HeadersInit = {
-      Accept: 'application/json',
-      'Accept-Language': i18n.language || 'zh',
-      ...headers
-    };
-
-    if (withAuth && typeof window !== 'undefined') {
-      const token = tokenService.getAccessToken();
-      if (token) {
-        (finalHeaders as Record<string, string>).Authorization = `Bearer ${token}`;
-      }
-    }
-
-    return fetch(input, {
-      ...rest,
-      headers: finalHeaders
-    });
-  }
-
   const handleLogoutClick = () => {
     clearUser();
     logout();
@@ -160,29 +144,6 @@ export const Dock = () => {
   };
   const getAppLabel = (app: AppDefinition) => app.nameKey ? t(app.nameKey) : app.name;
 
-  // 获取未读通知数量（降级轮询时使用）
-  const fetchUnreadNotificationCount = async () => {
-    if (typeof window === 'undefined') return;
-    const token = tokenService.getAccessToken();
-    if (!token) {
-      setPollingUnreadCount(0);
-      return;
-    }
-
-    const requestUrl = `${apiBaseUrl}/api/v1/Notification/GetUnreadCount`;
-
-    try {
-      const response = await apiFetch(requestUrl, { withAuth: true });
-      const json = await response.json() as ApiResponse<{ unreadCount: number }>;
-
-      if (json.isSuccess && json.responseData) {
-        setPollingUnreadCount(Math.max(0, json.responseData.unreadCount ?? 0));
-      }
-    } catch {
-      // 静默失败，保持当前状态
-    }
-  };
-
   // 时间更新 + 降级轮询
   useEffect(() => {
     const timer = setInterval(() => {
@@ -193,21 +154,17 @@ export const Dock = () => {
     // 注意：WebSocket 连接由 Shell.tsx 统一管理，此处不再启动
 
     if (typeof window !== 'undefined' && loggedIn) {
-      // 初始化时获取一次未读数（作为降级数据）
-      void fetchUnreadNotificationCount();
+      void notificationInboxSync.refreshSummary().catch((error) => {
+        log.warn('Dock', '初始化通知摘要失败', error);
+      });
 
       // 降级轮询：仅在用户已登录且 SignalR 连接失败时使用（60秒间隔）
       const pollingTimer = setInterval(() => {
-        // 检查用户是否登录
-        const token = tokenService.getAccessToken();
-        if (!token) {
-          return;
-        }
-
-        // 从 store 中实时读取 connectionState
         const state = useNotificationStore.getState().connectionState;
         if (state !== 'connected') {
-          void fetchUnreadNotificationCount();
+          void notificationInboxSync.refreshSummary().catch((error) => {
+            log.warn('Dock', '离线轮询通知摘要失败', error);
+          });
         }
       }, 60000);
 
@@ -218,7 +175,6 @@ export const Dock = () => {
     }
 
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loggedIn]);
 
   // 鼠标移入展开，移出缩小

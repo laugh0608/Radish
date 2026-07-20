@@ -14,6 +14,7 @@
     "./pie-chart": "./src/components/Charts/PieChart.tsx",
     "./hooks": "./src/hooks/index.ts",
     "./utils": "./src/utils/index.ts",
+    "./intl": "./src/utils/intl.ts",
     "./attachment-markdown": "./src/utils/attachmentMarkdown.ts",
     "./markdown-url": "./src/utils/markdownUrl.ts",
     "./types": "./src/types/index.ts",
@@ -42,7 +43,7 @@
     "./notification": "./src/components/Notification/Notification.tsx"
   },
   "scripts": {
-    "test": "node --test --test-isolation=none ./tests/markdownUrl.test.ts",
+    "test": "node --test --test-isolation=none ./tests/*.test.ts",
     "lint": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit"
   },

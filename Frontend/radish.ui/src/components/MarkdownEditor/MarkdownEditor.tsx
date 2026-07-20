@@ -3,12 +3,20 @@ import type { ReactNode } from 'react';
 import type { KeyboardEvent, ChangeEvent, ClipboardEvent, DragEvent } from 'react';
 import { Icon } from '../Icon/Icon';
 import { StickerPicker } from '../StickerPicker/StickerPicker';
-import type { StickerPickerGroup, StickerPickerSelection } from '../StickerPicker/StickerPicker';
+import type {
+  StickerPickerGroup,
+  StickerPickerLabels,
+  StickerPickerSelection,
+} from '../StickerPicker/StickerPicker';
 import { MarkdownRenderer, type MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
 import { UserMention } from '../UserMention/UserMention';
-import type { UserMentionOption } from '../UserMention/UserMention';
+import type { UserMentionLabels, UserMentionOption } from '../UserMention/UserMention';
 import {
   buildAttachmentMarkdownUrl,
+  attachmentImageAccept,
+  escapeMarkdownLabel,
+  isSupportedAttachmentImageFile,
+  isSupportedAttachmentImageMimeType,
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '../../utils';
@@ -22,6 +30,55 @@ const MENTION_PANEL_PADDING = 12;
 interface MentionContext {
   keyword: string;
   start: number;
+}
+
+export type MarkdownEditorUploadKind = 'image' | 'document';
+
+export type MarkdownEditorUploadProgressReporter = (progress: number) => void;
+
+export interface MarkdownEditorLabels {
+  placeholder: string;
+  insert: {
+    imageDescription: string;
+    boldText: string;
+    italicText: string;
+    strikethroughText: string;
+    heading: string;
+    quote: string;
+    inlineCode: string;
+    codeBlock: string;
+    listItem: string;
+    linkText: string;
+  };
+  toolbar: {
+    heading: string;
+    bold: string;
+    italic: string;
+    strikethrough: string;
+    quote: string;
+    inlineCode: string;
+    codeBlock: string;
+    unorderedList: string;
+    orderedList: string;
+    link: string;
+    image: string;
+    document: string;
+    horizontalRule: string;
+    sticker: string;
+    edit: string;
+    preview: string;
+    split: string;
+  };
+  upload: {
+    formatUploading: (progress: number | null) => string;
+    formatError: (kind: MarkdownEditorUploadKind, error: unknown) => string;
+    imageFailed: string;
+    documentFailed: string;
+    dismissError: string;
+  };
+  previewEmpty: string;
+  stickerPicker: StickerPickerLabels;
+  userMention: UserMentionLabels;
 }
 
 const getTextareaCaretRelativePosition = (
@@ -130,6 +187,7 @@ function findMentionContext(text: string, cursor: number): MentionContext | null
 export interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
+  labels: MarkdownEditorLabels;
   placeholder?: string;
   minHeight?: number;
   maxHeight?: number;
@@ -143,12 +201,22 @@ export interface MarkdownEditorProps {
    * 图片上传处理函数
    * 如果不提供，图片按钮将插入默认的 Markdown 语法
    */
-  onImageUpload?: (file: File) => Promise<MarkdownImageUploadResult>;
+  onImageUpload?: (
+    file: File,
+    reportProgress: MarkdownEditorUploadProgressReporter
+  ) => Promise<MarkdownImageUploadResult>;
   /**
    * 文档上传处理函数
    * 如果不提供，文档按钮将不显示
    */
-  onDocumentUpload?: (file: File) => Promise<MarkdownDocumentUploadResult>;
+  onDocumentUpload?: (
+    file: File,
+    reportProgress: MarkdownEditorUploadProgressReporter
+  ) => Promise<MarkdownDocumentUploadResult>;
+  /** 上传失败时交由宿主记录或补充反馈。 */
+  onUploadError?: (kind: MarkdownEditorUploadKind, error: unknown) => void;
+  /** 上传忙碌态交由宿主锁定会卸载编辑器的入口。 */
+  onUploadingChange?: (uploading: boolean) => void;
   /** 贴图分组（可选，传入后显示 StickerPicker） */
   stickerGroups?: StickerPickerGroup[];
   /** 贴图渲染映射（可选） */
@@ -161,10 +229,19 @@ export interface MarkdownEditorProps {
 
 type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'document' | 'hr';
 
+const normalizeUploadProgress = (progress: number): number | null => {
+  if (!Number.isFinite(progress)) {
+    return null;
+  }
+
+  return Math.min(Math.max(Math.round(progress), 0), 100);
+};
+
 export const MarkdownEditor = ({
   value,
   onChange,
-  placeholder = '输入内容，支持 Markdown...',
+  labels,
+  placeholder,
   minHeight = 150,
   maxHeight,
   defaultMode,
@@ -175,6 +252,8 @@ export const MarkdownEditor = ({
   className = '',
   onImageUpload,
   onDocumentUpload,
+  onUploadError,
+  onUploadingChange,
   stickerGroups,
   stickerMap,
   onStickerSelect,
@@ -184,6 +263,7 @@ export const MarkdownEditor = ({
     defaultMode ?? (typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit')
   );
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
   const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
@@ -191,6 +271,24 @@ export const MarkdownEditor = ({
   const editPaneRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const uploadInFlightRef = useRef(false);
+  const onUploadingChangeRef = useRef(onUploadingChange);
+  const editorPlaceholder = placeholder ?? labels.placeholder;
+
+  useEffect(() => {
+    onUploadingChangeRef.current = onUploadingChange;
+    onUploadingChange?.(uploading);
+  }, [onUploadingChange, uploading]);
+
+  useEffect(() => () => {
+    onUploadingChangeRef.current?.(false);
+  }, []);
+
+  useEffect(() => {
+    if (disabled || uploading) {
+      setMentionContext(null);
+    }
+  }, [disabled, uploading]);
 
   // 常用 Emoji
   const emojis = [
@@ -319,10 +417,11 @@ export const MarkdownEditor = ({
 
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
-    const selectedText = value.substring(start, end);
+    const currentValue = textarea.value;
+    const selectedText = currentValue.substring(start, end);
     const textToInsert = selectedText || placeholder;
 
-    const newValue = value.substring(0, start) + before + textToInsert + after + value.substring(end);
+    const newValue = currentValue.substring(0, start) + before + textToInsert + after + currentValue.substring(end);
     onChange(newValue);
 
     // 设置新的光标位置
@@ -333,63 +432,82 @@ export const MarkdownEditor = ({
     }, 0);
   };
 
+  const reportUploadProgress: MarkdownEditorUploadProgressReporter = (progress) => {
+    const normalizedProgress = normalizeUploadProgress(progress);
+    if (normalizedProgress !== null) {
+      setUploadProgress(normalizedProgress);
+    }
+  };
+
   // 处理图片上传
   const handleImageUpload = async (file: File) => {
-    if (!onImageUpload) {
-      // 如果没有提供上传函数，使用默认行为
-      insertText('![', '](url)', '图片描述');
+    if (disabled || uploading || uploadInFlightRef.current || !textareaRef.current) {
       return;
     }
 
+    if (!onImageUpload) {
+      // 如果没有提供上传函数，使用默认行为
+      insertText('![', '](url)', labels.insert.imageDescription);
+      return;
+    }
+
+    uploadInFlightRef.current = true;
     setUploading(true);
+    setUploadProgress(null);
     setUploadError(null);
 
     try {
-      const result = await onImageUpload(file);
+      const result = await onImageUpload(file, reportUploadProgress);
       const imageUrl = buildAttachmentMarkdownUrl(result.attachmentId, {
         displayVariant: result.displayVariant,
         scalePercent: result.scalePercent,
       });
 
       // 插入图片 Markdown 语法
-      insertText(`![${file.name}](${imageUrl})`, '', '');
-
-      setUploading(false);
+      const imageLabel = escapeMarkdownLabel(file.name) || labels.insert.imageDescription;
+      insertText(`![${imageLabel}](${imageUrl})`, '', '');
     } catch (error) {
+      setUploadError(labels.upload.formatError('image', error));
+      onUploadError?.('image', error);
+    } finally {
+      uploadInFlightRef.current = false;
       setUploading(false);
-      setUploadError(error instanceof Error ? error.message : '上传失败');
-      console.error('图片上传失败:', error);
+      setUploadProgress(null);
     }
   };
 
   // 处理文档上传
   const handleDocumentUpload = async (file: File) => {
-    if (!onDocumentUpload) {
+    if (disabled || uploading || uploadInFlightRef.current || !textareaRef.current || !onDocumentUpload) {
       return;
     }
 
+    uploadInFlightRef.current = true;
     setUploading(true);
+    setUploadProgress(null);
     setUploadError(null);
 
     try {
-      const result = await onDocumentUpload(file);
+      const result = await onDocumentUpload(file, reportUploadProgress);
       const documentUrl = buildAttachmentMarkdownUrl(result.attachmentId);
 
       // 插入文档链接 Markdown 语法
-      insertText(`[${result.fileName || file.name}](${documentUrl})`, '', '');
-
-      setUploading(false);
+      const documentLabel = escapeMarkdownLabel(result.fileName || file.name) || labels.toolbar.document;
+      insertText(`[${documentLabel}](${documentUrl})`, '', '');
     } catch (error) {
+      setUploadError(labels.upload.formatError('document', error));
+      onUploadError?.('document', error);
+    } finally {
+      uploadInFlightRef.current = false;
       setUploading(false);
-      setUploadError(error instanceof Error ? error.message : '文档上传失败');
-      console.error('文档上传失败:', error);
+      setUploadProgress(null);
     }
   };
 
   // 处理文件选择
   const handleFileInputChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && isSupportedAttachmentImageFile(file)) {
       await handleImageUpload(file);
     }
     // 清空文件输入，允许重复选择同一个文件
@@ -419,10 +537,10 @@ export const MarkdownEditor = ({
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      if (item.type.startsWith('image/')) {
+      if (isSupportedAttachmentImageMimeType(item.type)) {
         e.preventDefault();
         const file = item.getAsFile();
-        if (file) {
+        if (file && isSupportedAttachmentImageFile(file)) {
           await handleImageUpload(file);
         }
         break;
@@ -441,7 +559,7 @@ export const MarkdownEditor = ({
     if (!files || files.length === 0) return;
 
     const file = files[0];
-    if (file.type.startsWith('image/')) {
+    if (isSupportedAttachmentImageFile(file)) {
       await handleImageUpload(file);
     }
   };
@@ -454,36 +572,40 @@ export const MarkdownEditor = ({
 
   // 工具栏操作
   const handleToolbarAction = (action: ToolbarAction) => {
+    if (disabled || uploading || !textareaRef.current) {
+      return;
+    }
+
     switch (action) {
       case 'bold':
-        insertText('**', '**', '粗体文本');
+        insertText('**', '**', labels.insert.boldText);
         break;
       case 'italic':
-        insertText('*', '*', '斜体文本');
+        insertText('*', '*', labels.insert.italicText);
         break;
       case 'strikethrough':
-        insertText('~~', '~~', '删除线文本');
+        insertText('~~', '~~', labels.insert.strikethroughText);
         break;
       case 'heading':
-        insertText('## ', '', '标题');
+        insertText('## ', '', labels.insert.heading);
         break;
       case 'quote':
-        insertText('> ', '', '引用文本');
+        insertText('> ', '', labels.insert.quote);
         break;
       case 'code':
-        insertText('`', '`', '代码');
+        insertText('`', '`', labels.insert.inlineCode);
         break;
       case 'codeblock':
-        insertText('```\n', '\n```', '代码块');
+        insertText('```\n', '\n```', labels.insert.codeBlock);
         break;
       case 'ul':
-        insertText('- ', '', '列表项');
+        insertText('- ', '', labels.insert.listItem);
         break;
       case 'ol':
-        insertText('1. ', '', '列表项');
+        insertText('1. ', '', labels.insert.listItem);
         break;
       case 'link':
-        insertText('[', '](url)', '链接文本');
+        insertText('[', '](url)', labels.insert.linkText);
         break;
       case 'image':
         if (onImageUpload) {
@@ -491,7 +613,7 @@ export const MarkdownEditor = ({
           fileInputRef.current?.click();
         } else {
           // 否则插入默认模板
-          insertText('![', '](url)', '图片描述');
+          insertText('![', '](url)', labels.insert.imageDescription);
         }
         break;
       case 'document':
@@ -583,14 +705,14 @@ export const MarkdownEditor = ({
 
   const handleMentionSelect = useCallback((user: UserMentionOption) => {
     const textarea = textareaRef.current;
-    if (!textarea || !mentionContext) {
+    if (disabled || uploading || !textarea || !mentionContext) {
       return;
     }
 
     const mentionText = `@${user.userName} `;
     replaceSelection(mentionText, mentionContext.start, textarea.selectionStart);
     setMentionContext(null);
-  }, [mentionContext, replaceSelection]);
+  }, [disabled, mentionContext, replaceSelection, uploading]);
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
     const nextValue = e.target.value;
@@ -614,6 +736,7 @@ export const MarkdownEditor = ({
   };
 
   const themeClassName = theme === 'light' ? styles.themeLight : '';
+  const editingDisabled = disabled || uploading || mode === 'preview';
 
   return (
     <div className={`${styles.container} ${themeClassName} ${className}`} style={rootStyle}>
@@ -621,8 +744,9 @@ export const MarkdownEditor = ({
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept={attachmentImageAccept}
         style={{ display: 'none' }}
+        disabled={editingDisabled}
         onChange={handleFileInputChange}
       />
       <input
@@ -630,6 +754,7 @@ export const MarkdownEditor = ({
         type="file"
         accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.zip,.rar"
         style={{ display: 'none' }}
+        disabled={editingDisabled}
         onChange={handleDocumentInputChange}
       />
 
@@ -641,8 +766,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('heading')}
-              title="标题 (##)"
-              disabled={disabled}
+              title={labels.toolbar.heading}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-header-pound" size={18} />
             </button>
@@ -650,8 +775,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('bold')}
-              title="加粗 (Ctrl+B)"
-              disabled={disabled}
+              title={labels.toolbar.bold}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-bold" size={18} />
             </button>
@@ -659,8 +784,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('italic')}
-              title="斜体 (Ctrl+I)"
-              disabled={disabled}
+              title={labels.toolbar.italic}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-italic" size={18} />
             </button>
@@ -668,8 +793,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('strikethrough')}
-              title="删除线"
-              disabled={disabled}
+              title={labels.toolbar.strikethrough}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-strikethrough" size={18} />
             </button>
@@ -682,8 +807,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('quote')}
-              title="引用"
-              disabled={disabled}
+              title={labels.toolbar.quote}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-quote-close" size={18} />
             </button>
@@ -691,8 +816,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('code')}
-              title="行内代码"
-              disabled={disabled}
+              title={labels.toolbar.inlineCode}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:code-tags" size={18} />
             </button>
@@ -700,8 +825,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('codeblock')}
-              title="代码块"
-              disabled={disabled}
+              title={labels.toolbar.codeBlock}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:code-braces" size={18} />
             </button>
@@ -714,8 +839,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('ul')}
-              title="无序列表"
-              disabled={disabled}
+              title={labels.toolbar.unorderedList}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-list-bulleted" size={18} />
             </button>
@@ -723,8 +848,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('ol')}
-              title="有序列表"
-              disabled={disabled}
+              title={labels.toolbar.orderedList}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:format-list-numbered" size={18} />
             </button>
@@ -737,8 +862,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('link')}
-              title="链接 (Ctrl+K)"
-              disabled={disabled}
+              title={labels.toolbar.link}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:link" size={18} />
             </button>
@@ -746,8 +871,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('image')}
-              title="图片"
-              disabled={disabled}
+              title={labels.toolbar.image}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:image" size={18} />
             </button>
@@ -756,8 +881,8 @@ export const MarkdownEditor = ({
                 type="button"
                 className={styles.toolbarButton}
                 onClick={() => handleToolbarAction('document')}
-                title="文档"
-                disabled={disabled}
+                title={labels.toolbar.document}
+                disabled={editingDisabled}
               >
                 <Icon icon="mdi:file-document-outline" size={18} />
               </button>
@@ -766,8 +891,8 @@ export const MarkdownEditor = ({
               type="button"
               className={styles.toolbarButton}
               onClick={() => handleToolbarAction('hr')}
-              title="分割线"
-              disabled={disabled}
+              title={labels.toolbar.horizontalRule}
+              disabled={editingDisabled}
             >
               <Icon icon="mdi:minus" size={18} />
             </button>
@@ -780,10 +905,11 @@ export const MarkdownEditor = ({
               groups={stickerGroups || []}
               mode="insert"
               theme={theme}
-              disabled={disabled || uploading}
+              disabled={editingDisabled}
               onSelect={handleStickerPickerSelect}
-              triggerTitle="插入表情包"
+              triggerTitle={labels.toolbar.sticker}
               emojis={emojis}
+              labels={labels.stickerPicker}
             />
           </div>
 
@@ -798,7 +924,8 @@ export const MarkdownEditor = ({
               type="button"
               className={`${styles.toolbarButton} ${mode === 'edit' ? styles.active : ''}`}
               onClick={() => setMode('edit')}
-              title="编辑"
+              title={labels.toolbar.edit}
+              disabled={disabled || uploading}
             >
               <Icon icon="mdi:pencil" size={18} />
             </button>
@@ -806,7 +933,8 @@ export const MarkdownEditor = ({
               type="button"
               className={`${styles.toolbarButton} ${mode === 'preview' ? styles.active : ''}`}
               onClick={() => setMode('preview')}
-              title="预览"
+              title={labels.toolbar.preview}
+              disabled={disabled || uploading}
             >
               <Icon icon="mdi:eye" size={18} />
             </button>
@@ -814,7 +942,8 @@ export const MarkdownEditor = ({
               type="button"
               className={`${styles.toolbarButton} ${mode === 'split' ? styles.active : ''}`}
               onClick={() => setMode('split')}
-              title="分屏编辑"
+              title={labels.toolbar.split}
+              disabled={disabled || uploading}
             >
               <Icon icon="mdi:format-columns" size={18} />
             </button>
@@ -853,10 +982,10 @@ export const MarkdownEditor = ({
                   updateMentionPosition(event.currentTarget, event.currentTarget.selectionStart);
                 }
               }}
-              placeholder={placeholder}
+              placeholder={editorPlaceholder}
               disabled={disabled || uploading}
             />
-            {mentionContext && onUserMentionSearch && (
+            {!disabled && !uploading && mentionContext && onUserMentionSearch && (
               <UserMention
                 keyword={mentionContext.keyword}
                 onSearch={onUserMentionSearch}
@@ -864,22 +993,25 @@ export const MarkdownEditor = ({
                 onClose={() => setMentionContext(null)}
                 position={mentionPosition}
                 positionMode="absolute"
+                labels={labels.userMention}
               />
             )}
             {uploading && (
-              <div className={styles.uploadingOverlay}>
+              <div className={styles.uploadingOverlay} role="status" aria-live="polite">
                 <Icon icon="mdi:loading" size={24} className={styles.spinIcon} />
-                <span>上传中...</span>
+                <span>{labels.upload.formatUploading(uploadProgress)}</span>
               </div>
             )}
             {uploadError && (
-              <div className={styles.uploadError}>
+              <div className={styles.uploadError} role="alert">
                 <Icon icon="mdi:alert-circle" size={16} />
                 <span>{uploadError}</span>
                 <button
                   type="button"
                   className={styles.dismissError}
                   onClick={() => setUploadError(null)}
+                  title={labels.upload.dismissError}
+                  aria-label={labels.upload.dismissError}
                 >
                   <Icon icon="mdi:close" size={14} />
                 </button>
@@ -892,7 +1024,7 @@ export const MarkdownEditor = ({
             {value ? (
               <MarkdownRenderer content={value} stickerMap={mergedStickerMap} />
             ) : (
-              <p className={styles.previewEmpty}>没有内容可预览</p>
+              <p className={styles.previewEmpty}>{labels.previewEmpty}</p>
             )}
           </div>
         )}

@@ -11,7 +11,7 @@ public interface IPostRepository
     /// <param name="userId">操作用户 Id</param>
     /// <param name="postId">帖子 Id</param>
     /// <returns>点赞持久化结果</returns>
-    Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, long postId);
+    Task<PostLikePersistenceResult> TogglePostLikeAsync(long userId, string userName, long postId);
 
     /// <summary>
     /// 分页查询普通论坛帖子列表

@@ -11,7 +11,7 @@ public interface ICommentRepository
     /// <param name="userId">操作用户 Id</param>
     /// <param name="commentId">评论 Id</param>
     /// <returns>评论点赞持久化结果</returns>
-    Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, long commentId);
+    Task<CommentLikePersistenceResult> ToggleCommentLikeAsync(long userId, string userName, long commentId);
 
     /// <summary>
     /// 按帖子批量查询最近互动用户对应的最新评论实体

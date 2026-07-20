@@ -5,6 +5,7 @@ import { Modal } from '@radish/ui/modal';
 import { Select } from '@radish/ui/select';
 import { toast } from '@radish/ui/toast';
 import { submitContentReport, type ContentReportTargetType } from '@/api/contentModeration';
+import { log } from '@/utils/logger';
 import styles from './ContentReportModal.module.css';
 
 interface ContentReportModalProps {
@@ -79,25 +80,35 @@ export const ContentReportModal = ({
         targetContentId: normalizedTargetId,
         reasonType,
         reasonDetail: reasonDetail.trim() || undefined,
-      });
+      }, t('report.submitFailed'));
 
       toast.success(t('report.submitSuccess'));
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t('report.submitFailed'));
+      log.error('ContentReportModal', '提交内容举报失败:', error);
+      toast.error(t('report.submitFailed'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!submitting) {
+      onClose();
     }
   };
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
+      closeLabel={t('common.close')}
+      closeOnEscape={!submitting}
+      closeOnOverlayClick={!submitting}
       title={`${t('report.title')} · ${targetLabel}`}
       footer={(
         <div className={styles.footer}>
-          <Button variant="secondary" onClick={onClose} disabled={submitting}>
+          <Button variant="secondary" onClick={handleClose} disabled={submitting}>
             {t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={submitting || !normalizedTargetId}>
@@ -114,6 +125,7 @@ export const ContentReportModal = ({
           value={reasonType}
           onChange={(event) => setReasonType(event.target.value)}
           options={reasonOptions}
+          disabled={submitting}
         />
 
         <label className={styles.fieldLabel} htmlFor="content-report-detail">
@@ -127,6 +139,7 @@ export const ContentReportModal = ({
           placeholder={t('report.detail.placeholder')}
           maxLength={500}
           rows={5}
+          disabled={submitting}
         />
       </div>
     </Modal>

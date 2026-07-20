@@ -105,13 +105,13 @@
 1. **组件开发** ✅ 全部完成
    - [x] `ExperienceBar` 组件(经验条) - 已实现 (@radish/ui)
    - [x] `LevelUpModal` 组件(升级动画) - 已实现 (@radish/ui)
-   - [x] `experienceApi` 客户端 - 已实现 (@radish/ui)
+   - [x] `experienceApi` 客户端 - 已实现 (`Frontend/radish.client/src/api/experience.ts`)
    - [x] `ExperienceDetail` 页面(明细) - 已实现 (Frontend/radish.client/src/apps/experience-detail)
    - [x] `Leaderboard` 页面(排行榜) - 已实现 (Frontend/radish.client/src/apps/leaderboard)
 
 2. **个人主页集成** ✅
-   - [x] 在个人主页添加经验条 - 已实现 (UserInfoCard)
-   - [x] 添加"经验详情"入口 - 已实现（桌面应用）
+   - [x] 在正式 `/me` 添加经验摘要和共享经验条 - 已实现 (`MeApp`)
+   - [x] 添加 `/me/experience` 经验详情入口 - 已实现；桌面应用保留历史兼容
 
 3. **Dock 集成** ✅
    - [x] 显示当前等级徽章 - 已实现 (ExperienceDisplay 组件)
@@ -218,12 +218,19 @@
 
 ---
 
-**文档版本**:v1.5
+**文档版本**:v1.7
 **创建日期**:2026-01-02
-**最后更新**:2026-01-11
+**最后更新**:2026-07-15
 **实施状态**:P0/P1/P2/P3 已完成（100%）
 **负责人**:待定
 **审核状态**:P0/P1/P2/P3 已实施
+
+**v1.7 更新内容**（2026-07-15）:
+- ✅ 正式入口更新为 `/me` 摘要与 `/me/experience` 详情，WebOS 仅保留历史兼容
+- ✅ `ExperienceBar` 改为宿主 labels / formatter 注入，多语言状态留在 client
+- ✅ 经验类型只按稳定 `voExpType` 本地化，等级名称、备注与冻结原因保持原文
+- ✅ 趋势与来源分布复用 `@radish/ui` 共享图表，数字、百分比和日期由宿主格式化
+- ✅ client 摘要与流水 API 采用结构化 `ApiResponseError`，long 经验值按字符串安全展示
 
 **v1.6 更新内容**（2026-01-11）:
 - ✅ 代码实际完成情况审查

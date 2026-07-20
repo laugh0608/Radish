@@ -104,13 +104,22 @@ public class ShopProfile : Profile
         CreateMap<UserBenefit, UserBenefitVo>()
             .ForMember(dest => dest.VoSourceOrderId, opt => opt.MapFrom(src => src.SourceOrderId))
             .ForMember(dest => dest.VoSourceProductId, opt => opt.MapFrom(src => src.SourceProductId))
-            .ForMember(dest => dest.VoBenefitIcon, opt => opt.Ignore());
+            .ForMember(dest => dest.VoBenefitIcon, opt => opt.Ignore())
+            .ForMember(dest => dest.VoStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanActivate, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanDeactivate, opt => opt.Ignore())
+            .ForMember(dest => dest.VoUnavailableReason, opt => opt.Ignore())
+            .ForMember(dest => dest.VoDurationDisplay, opt => opt.Ignore());
 
         // UserBenefitVo -> UserBenefit
         CreateMap<UserBenefitVo, UserBenefit>()
             .ForMember(dest => dest.SourceOrderId, opt => opt.Ignore())
             .ForMember(dest => dest.SourceProductId, opt => opt.Ignore())
             .ForMember(dest => dest.ActivatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.RevokedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.RevokedById, opt => opt.Ignore())
+            .ForMember(dest => dest.RevokedByName, opt => opt.Ignore())
+            .ForMember(dest => dest.RevocationReason, opt => opt.Ignore())
             .ForMember(dest => dest.TenantId, opt => opt.Ignore())
             .ForMember(dest => dest.CreateTime, opt => opt.Ignore())
             .ForMember(dest => dest.CreateBy, opt => opt.Ignore())

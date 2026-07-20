@@ -1,7 +1,14 @@
 import { useState, useEffect, useEffectEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getTransactions, type CoinTransaction } from '@/api/coin';
-import { formatDateTimeByTimeZone } from '@/utils/dateTime';
+import {
+  compareCoinValues,
+  formatCoinAmount,
+  formatCoinDateTime,
+  formatCoinNumber,
+  formatTransactionStatus,
+  formatTransactionType,
+} from '@/coin/coinPresentation';
 import styles from './CoinTransactionList.module.css';
 
 interface CoinTransactionListProps {
@@ -13,7 +20,8 @@ interface CoinTransactionListProps {
  * 萝卜币交易记录列表组件
  */
 export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinTransactionListProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [transactions, setTransactions] = useState<CoinTransaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -127,10 +135,10 @@ export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinT
             <div key={tx.voId} className={styles.transaction}>
               <div className={styles.transactionHeader}>
                 <span className={`${styles.type} ${styles[tx.voTransactionType]}`}>
-                  {tx.voTransactionTypeDisplay}
+                  {formatTransactionType(tx.voTransactionType, t)}
                 </span>
                 <span className={`${styles.status} ${styles[tx.voStatus]}`}>
-                  {tx.voStatusDisplay}
+                  {formatTransactionStatus(tx.voStatus, t)}
                 </span>
               </div>
 
@@ -138,11 +146,19 @@ export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinT
                 <div className={styles.info}>
                   <div className={styles.participants}>
                     <span className={styles.from}>
-                      {t('profile.transactions.from', { name: tx.voFromUserName || t('profile.transactions.systemUser') })}
+                      {t('profile.transactions.from', {
+                        name: tx.voFromUserId === null
+                          ? t('profile.transactions.systemUser')
+                          : tx.voFromUserName ?? t('pit.common.unknown'),
+                      })}
                     </span>
                     <span className={styles.arrow}>→</span>
                     <span className={styles.to}>
-                      {t('profile.transactions.to', { name: tx.voToUserName || t('profile.transactions.systemUser') })}
+                      {t('profile.transactions.to', {
+                        name: tx.voToUserId === null
+                          ? t('profile.transactions.systemUser')
+                          : tx.voToUserName ?? t('pit.common.unknown'),
+                      })}
                     </span>
                   </div>
 
@@ -157,18 +173,20 @@ export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinT
                       {t('profile.transactions.transactionNo', { value: tx.voTransactionNo })}
                     </span>
                     <span className={styles.time}>
-                      {formatDateTimeByTimeZone(tx.voCreateTime, displayTimeZone)}
+                      {formatCoinDateTime(tx.voCreateTime, displayTimeZone, language)}
                     </span>
                   </div>
                 </div>
 
                 <div className={styles.amounts}>
                   <div className={styles.amount}>
-                    {t('profile.transactions.amountWhiteRadish', { amount: tx.voAmountDisplay })}
+                    {formatCoinAmount(tx.voAmount, language, t, 'white')}
                   </div>
-                  {tx.voFee > 0 && (
+                  {compareCoinValues(tx.voFee, 0) > 0 && (
                     <div className={styles.fee}>
-                      {t('profile.transactions.fee', { amount: tx.voFeeDisplay })}
+                      {t('profile.transactions.fee', {
+                        amount: formatCoinAmount(tx.voFee, language, t, 'white'),
+                      })}
                     </div>
                   )}
                 </div>
@@ -188,7 +206,12 @@ export const CoinTransactionList = ({ displayTimeZone = 'Asia/Shanghai' }: CoinT
             {t('common.previousPage')}
           </button>
           <span className={styles.pageInfo}>
-            {t('profile.transactions.pageInfo', { current: pageIndex, total: totalPages, count: totalCount })}
+            {t('profile.transactions.pageInfo', {
+              current: formatCoinNumber(pageIndex, language),
+              total: formatCoinNumber(totalPages, language),
+              count: totalCount,
+              value: formatCoinNumber(totalCount, language),
+            })}
           </span>
           <button
             onClick={handleNextPage}

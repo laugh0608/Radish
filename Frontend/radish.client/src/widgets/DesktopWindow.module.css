@@ -5,7 +5,7 @@
   flex-direction: column;
   background: var(--theme-window-bg);
   border-radius: 12px;
-  box-shadow: var(--theme-shadow-strong), inset 0 0 0 1px color-mix(in srgb, white 45%, transparent);
+  box-shadow: var(--theme-shadow-strong), inset 0 0 0 1px color-mix(in srgb, var(--theme-surface-highlight) 45%, transparent);
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 35%, transparent);
   backdrop-filter: blur(18px);

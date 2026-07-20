@@ -23,6 +23,7 @@ interface WikiSidebarProps {
   loggedIn: boolean;
   isAdmin: boolean;
   submitting: boolean;
+  navigationLocked: boolean;
   showingDeleted: boolean;
   totalTreeDocuments: number;
   totalResultsCount: number;
@@ -60,6 +61,7 @@ export const WikiSidebar = ({
   loggedIn,
   isAdmin,
   submitting,
+  navigationLocked,
   showingDeleted,
   totalTreeDocuments,
   totalResultsCount,
@@ -118,6 +120,7 @@ export const WikiSidebar = ({
             <button
               type="button"
               className={`${styles.treeNode} ${String(selectedDocumentId) === String(node.voId) ? styles.treeNodeActive : ''}`}
+              disabled={navigationLocked}
               onClick={() => {
                 onSelectDocument(node.voId);
                 if (isExpandable) {
@@ -180,6 +183,7 @@ export const WikiSidebar = ({
                 key={document.voId}
                 type="button"
                 className={`${styles.listItem} ${String(selectedDocumentId) === String(document.voId) ? styles.listItemActive : ''}`}
+                disabled={navigationLocked}
                 onClick={() => onSelectDocument(document.voId)}
               >
                 <div className={styles.listItemHeader}>
@@ -241,16 +245,16 @@ export const WikiSidebar = ({
               type="button"
               className={styles.secondaryButton}
               onClick={() => void onRefresh()}
-              disabled={loadingTree || loadingList}
+              disabled={loadingTree || loadingList || navigationLocked}
             >
               {t('wiki.actions.refresh')}
             </button>
             {isAdmin ? (
               <>
-                <button type="button" className={styles.primaryButton} onClick={onCreate}>
+                <button type="button" className={styles.primaryButton} onClick={onCreate} disabled={navigationLocked}>
                   {t('wiki.actions.create')}
                 </button>
-                <button type="button" className={styles.ghostButton} onClick={onImport} disabled={submitting}>
+                <button type="button" className={styles.ghostButton} onClick={onImport} disabled={submitting || navigationLocked}>
                   {t('wiki.actions.import')}
                 </button>
               </>
@@ -266,12 +270,12 @@ export const WikiSidebar = ({
               placeholder={t('wiki.sidebar.searchPlaceholder')}
               onChange={(event) => onKeywordChange(event.target.value)}
               onKeyDown={(event) => {
-                if (event.key === 'Enter') {
+                if (event.key === 'Enter' && !navigationLocked) {
                   void onSearch();
                 }
               }}
             />
-            <button type="button" className={styles.primaryButton} onClick={() => void onSearch()}>
+            <button type="button" className={styles.primaryButton} onClick={() => void onSearch()} disabled={navigationLocked}>
               {t('wiki.actions.search')}
             </button>
           </div>
@@ -282,6 +286,7 @@ export const WikiSidebar = ({
                 <select
                   className={styles.select}
                   value={statusFilter}
+                  disabled={navigationLocked}
                   onChange={(event) => onStatusFilterChange(event.target.value)}
                 >
                   <option value="">{t('wiki.filter.allStatuses')}</option>
@@ -294,6 +299,7 @@ export const WikiSidebar = ({
                 <select
                   className={styles.select}
                   value={deletionFilter}
+                  disabled={navigationLocked}
                   onChange={(event) => onDeletionFilterChange(event.target.value as DeletionFilter)}
                 >
                   <option value="active">{t('wiki.filter.activeOnly')}</option>

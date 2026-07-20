@@ -61,8 +61,8 @@
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-primary) 86%, white 14%) 0%,
-    color-mix(in srgb, var(--theme-accent-jade) 84%, white 16%) 100%
+    color-mix(in srgb, var(--theme-brand-primary) 86%, var(--theme-surface-highlight) 14%) 0%,
+    color-mix(in srgb, var(--theme-accent-jade) 84%, var(--theme-surface-highlight) 16%) 100%
   );
   color: var(--theme-bg-surface);
   font-size: 12px;
@@ -82,7 +82,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 90%, transparent);
   border-radius: 18px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 96%, white 4%) 0%, var(--theme-bg-surface) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 96%, var(--theme-surface-highlight) 4%) 0%, var(--theme-bg-surface) 100%);
   box-shadow: 0 14px 32px color-mix(in srgb, var(--theme-accent-ink) 7%, transparent);
   overflow: hidden;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -134,6 +134,7 @@
   font-size: 12px;
   line-height: 1.4;
   color: var(--theme-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .replyMeta {
@@ -199,6 +200,7 @@
   color: var(--theme-brand-primary);
   font-size: 11px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .replyDivider {
@@ -216,6 +218,8 @@
 
 .uploadError span {
   min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
 }
 
 .textareaWrapper {
@@ -353,8 +357,8 @@
   border-radius: 999px;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--theme-brand-primary) 88%, white 12%) 0%,
-    color-mix(in srgb, var(--theme-accent-jade) 82%, white 18%) 100%
+    color-mix(in srgb, var(--theme-brand-primary) 88%, var(--theme-surface-highlight) 12%) 0%,
+    color-mix(in srgb, var(--theme-accent-jade) 82%, var(--theme-surface-highlight) 18%) 100%
   );
   color: var(--theme-bg-surface);
   font-size: 12px;

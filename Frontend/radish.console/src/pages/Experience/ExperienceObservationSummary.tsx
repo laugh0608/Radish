@@ -14,6 +14,8 @@ import {
   getRuleSeverityTagColor,
   type StatsWindowDays,
 } from './experienceAdminHelpers';
+import { useTranslation } from 'react-i18next';
+import { formatConsoleInteger, formatConsoleNumber } from '@/utils/localeFormatters';
 
 type ExperienceObservationSummaryProps = {
   loadedUserId: string | null;
@@ -56,7 +58,10 @@ export const ExperienceObservationSummary = ({
   onDayGovernanceReview,
   onDayFreezeReason,
 }: ExperienceObservationSummaryProps) => {
+  const { t, i18n } = useTranslation();
   const dailyStatsColumns = createDailyStatsColumns({
+    t,
+    language: i18n.resolvedLanguage,
     canFreeze,
     dailyLimits,
     onDayReview,
@@ -68,8 +73,8 @@ export const ExperienceObservationSummary = ({
     <section className="admin-feature-card">
       <div className="admin-feature-header">
         <div>
-          <h3>经验统计观察</h3>
-          <p className="admin-feature-subtle">查看最近 7 / 30 天经验来源与异常判定，仅服务人工复核和冻结建议，不自动处罚。</p>
+          <h3>{t('experience.observation.title')}</h3>
+          <p className="admin-feature-subtle">{t('experience.observation.description')}</p>
         </div>
         <div className="experience-inline-actions">
           <Button
@@ -77,14 +82,14 @@ export const ExperienceObservationSummary = ({
             disabled={!loadedUserId || loadingDailyStats}
             onClick={() => onStatsWindowDaysChange(7)}
           >
-            最近 7 天
+            {t('experience.observation.window', { count: 7 })}
           </Button>
           <Button
             variant={statsWindowDays === 30 ? 'primary' : 'secondary'}
             disabled={!loadedUserId || loadingDailyStats}
             onClick={() => onStatsWindowDaysChange(30)}
           >
-            最近 30 天
+            {t('experience.observation.window', { count: 30 })}
           </Button>
         </div>
       </div>
@@ -93,47 +98,47 @@ export const ExperienceObservationSummary = ({
         <>
           <div className="admin-feature-metrics experience-section-gap-md">
             <div className="admin-feature-metric">
-              <span>窗口总经验</span>
-              <strong>{dailyStatsSummary ? dailyStatsSummary.voTotalExp : '--'}</strong>
+              <span>{t('experience.observation.totalExp')}</span>
+              <strong>{dailyStatsSummary ? formatConsoleInteger(dailyStatsSummary.voTotalExp, i18n.resolvedLanguage) : '--'}</strong>
             </div>
             <div className="admin-feature-metric">
-              <span>日均经验</span>
-              <strong>{dailyStatsSummary ? dailyStatsSummary.voAverageExp.toFixed(1) : '--'}</strong>
+              <span>{t('experience.observation.averageExp')}</span>
+              <strong>{dailyStatsSummary ? formatConsoleNumber(dailyStatsSummary.voAverageExp, i18n.resolvedLanguage) : '--'}</strong>
             </div>
             <div className="admin-feature-metric">
-              <span>峰值单日</span>
-              <strong>{dailyStatsSummary ? dailyStatsSummary.voPeakDayExp : '--'}</strong>
+              <span>{t('experience.observation.peakDay')}</span>
+              <strong>{dailyStatsSummary ? formatConsoleInteger(dailyStatsSummary.voPeakDayExp, i18n.resolvedLanguage) : '--'}</strong>
               <div className="experience-metric-note">
                 {dailyStatsSummary?.voPeakStatDate
-                  ? formatFullStatDate(dailyStatsSummary.voPeakStatDate)
+                  ? formatFullStatDate(dailyStatsSummary.voPeakStatDate, i18n.resolvedLanguage)
                   : '--'}
               </div>
             </div>
             <div className="admin-feature-metric">
-              <span>零增长天数</span>
-              <strong>{dailyStatsSummary ? dailyStatsSummary.voZeroGainDays : '--'}</strong>
+              <span>{t('experience.observation.zeroDays')}</span>
+              <strong>{dailyStatsSummary ? formatConsoleInteger(dailyStatsSummary.voZeroGainDays, i18n.resolvedLanguage) : '--'}</strong>
             </div>
             <div className="admin-feature-metric">
-              <span>异常命中天数</span>
-              <strong>{dailyStatsSummary ? dailyStatsSummary.voReviewDays : '--'}</strong>
+              <span>{t('experience.observation.reviewDays')}</span>
+              <strong>{dailyStatsSummary ? formatConsoleInteger(dailyStatsSummary.voReviewDays, i18n.resolvedLanguage) : '--'}</strong>
             </div>
           </div>
 
           {dailyLimits && (
             <div className="admin-feature-banner experience-section-gap-sm">
               <div className="experience-inline-actions experience-inline-actions--center">
-                <strong>当前经验阈值</strong>
+                <strong>{t('experience.observation.thresholds')}</strong>
                 <Tag color={dailyLimits.voDailyLimitEnabled ? 'success' : 'default'}>
-                  {dailyLimits.voDailyLimitEnabled ? '每日上限启用中' : '每日上限已停用'}
+                  {dailyLimits.voDailyLimitEnabled ? t('experience.observation.limitEnabled') : t('experience.observation.limitDisabled')}
                 </Tag>
               </div>
               <div className="experience-banner-list">
-                <span>总经验 {dailyLimits.voMaxDailyExp}</span>
-                <span>发帖 {dailyLimits.voMaxExpFromPost}</span>
-                <span>评论 {dailyLimits.voMaxExpFromComment}</span>
-                <span>点赞 {dailyLimits.voMaxExpFromLike}</span>
-                <span>高亮 {dailyLimits.voMaxExpFromHighlight}</span>
-                <span>登录 {dailyLimits.voMaxExpFromLogin}</span>
+                <span>{t('experience.table.totalExp')} {formatConsoleInteger(dailyLimits.voMaxDailyExp, i18n.resolvedLanguage)}</span>
+                <span>{t('experience.source.post')} {formatConsoleInteger(dailyLimits.voMaxExpFromPost, i18n.resolvedLanguage)}</span>
+                <span>{t('experience.source.comment')} {formatConsoleInteger(dailyLimits.voMaxExpFromComment, i18n.resolvedLanguage)}</span>
+                <span>{t('experience.source.like')} {formatConsoleInteger(dailyLimits.voMaxExpFromLike, i18n.resolvedLanguage)}</span>
+                <span>{t('experience.source.highlight')} {formatConsoleInteger(dailyLimits.voMaxExpFromHighlight, i18n.resolvedLanguage)}</span>
+                <span>{t('experience.source.login')} {formatConsoleInteger(dailyLimits.voMaxExpFromLogin, i18n.resolvedLanguage)}</span>
               </div>
             </div>
           )}
@@ -141,14 +146,14 @@ export const ExperienceObservationSummary = ({
           {governanceRecommendation && (
             <div className="admin-feature-banner experience-section-gap-sm">
               <div className="experience-inline-actions experience-inline-actions--center">
-                <strong>当前治理建议</strong>
+                <strong>{t('experience.observation.recommendation')}</strong>
                 <Tag color={getRecommendationTagColor(governanceRecommendation.voLevel)}>
                   {governanceRecommendation.voTitle}
                 </Tag>
               </div>
               <div className="experience-section-gap-xs">{governanceRecommendation.voReason}</div>
               <div className="experience-review-draft-reason">
-                建议动作：{governanceRecommendation.voSuggestedAction}
+                {t('experience.observation.suggestedAction', { value: governanceRecommendation.voSuggestedAction })}
               </div>
               <div className="experience-inline-actions experience-inline-actions--compact experience-section-gap-xs">
                 <Button
@@ -156,7 +161,7 @@ export const ExperienceObservationSummary = ({
                   disabled={!canFreeze}
                   onClick={() => onRecommendationGovernanceReview(governanceRecommendation)}
                 >
-                  带入复核结论
+                  {t('experience.actions.prefillReview')}
                 </Button>
                 {governanceRecommendation.voLevel !== 'normal' && (
                   <Button
@@ -164,7 +169,7 @@ export const ExperienceObservationSummary = ({
                     disabled={!canFreeze}
                     onClick={() => onRecommendationFreezeReason(`经验异常待复核：${governanceRecommendation.voReason}`)}
                   >
-                    带入冻结原因
+                    {t('experience.actions.prefillFreeze')}
                   </Button>
                 )}
               </div>
@@ -173,7 +178,7 @@ export const ExperienceObservationSummary = ({
 
           {anomalyRuleSummaries.length > 0 && (
             <div className="experience-rule-summary">
-              <div className="experience-rule-summary__title">异常规则摘要</div>
+              <div className="experience-rule-summary__title">{t('experience.observation.ruleSummary')}</div>
               <div className="experience-rule-grid">
                 {anomalyRuleSummaries.map((rule) => (
                   <div
@@ -183,35 +188,35 @@ export const ExperienceObservationSummary = ({
                     <div className="experience-rule-card__head">
                       <strong>{rule.voRuleLabel}</strong>
                       <Tag color={getRuleSeverityTagColor(rule.voSeverity)}>
-                        {getRuleSeverityLabel(rule.voSeverity)}
+                        {getRuleSeverityLabel(t, rule.voSeverity)}
                       </Tag>
                     </div>
                     <div className="experience-rule-card__description">{rule.voThresholdDescription}</div>
                     <div className="experience-rule-card__facts">
-                      <span>窗口命中：{rule.voHitDays} 天</span>
-                      <span>最强信号：{rule.voStrongestSignal}</span>
-                      <span>最近命中：{rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate) : '-'}</span>
+                      <span>{t('experience.observation.hitDays', { count: rule.voHitDays })}</span>
+                      <span>{t('experience.observation.strongestSignal', { value: rule.voStrongestSignal })}</span>
+                      <span>{t('experience.observation.latestHit', { value: rule.voLatestHitDate ? formatFullStatDate(rule.voLatestHitDate, i18n.resolvedLanguage) : '-' })}</span>
                     </div>
                     <div className="experience-rule-card__recommendation">
-                      建议动作：{rule.voSuggestedAction}
+                      {t('experience.observation.suggestedAction', { value: rule.voSuggestedAction })}
                     </div>
                     <div className="experience-inline-actions experience-inline-actions--compact experience-section-gap-xs">
                       <Button onClick={() => onRuleReview(rule)}>
-                        查看流水
+                        {t('experience.actions.viewTransactions')}
                       </Button>
                       <Button
                         variant="secondary"
                         disabled={!canFreeze}
                         onClick={() => onRuleGovernanceReview(rule)}
                       >
-                        带入复核结论
+                        {t('experience.actions.prefillReview')}
                       </Button>
                       <Button
                         variant="secondary"
                         disabled={!canFreeze}
                         onClick={() => onRuleFreezeReason(rule)}
                       >
-                        带入冻结原因
+                        {t('experience.actions.prefillFreeze')}
                       </Button>
                     </div>
                   </div>
@@ -238,14 +243,14 @@ export const ExperienceObservationSummary = ({
             className="experience-table-spaced"
             locale={{
               emptyText: loadingDailyStats
-                ? '统计加载中...'
-                : `最近 ${statsWindowDays} 天暂无经验统计记录`,
+                ? t('experience.observation.loading')
+                : t('experience.observation.empty', { count: statsWindowDays }),
             }}
           />
         </>
       ) : (
         <div className="experience-empty-hint">
-          请先查询用户经验，再查看最近 {statsWindowDays} 天的统计观察。
+          {t('experience.observation.queryFirst', { count: statsWindowDays })}
         </div>
       )}
     </section>

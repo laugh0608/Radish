@@ -1,36 +1,83 @@
-import React, { useState } from 'react';
+import React, { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { Modal } from '@radish/ui/modal';
 import { ImageCropper } from '@radish/ui/image-cropper';
-import { uploadImage } from '@/api/attachment';
+import { attachmentImageAccept, isSupportedAttachmentImageFile } from '@radish/ui';
+import { setMyAvatar, uploadImage } from '@/api/attachment';
+import { resolveAttachmentUploadErrorMessage } from '@/attachments/attachmentPresentation';
 import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
-import { tokenService } from '@/services/tokenService';
 import styles from './AvatarUploadModal.module.css';
 
 interface AvatarUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  apiBaseUrl: string;
 }
 
 export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  apiBaseUrl,
 }) => {
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
+  const [cropperProcessing, setCropperProcessing] = useState(false);
+  const mountedRef = useRef(false);
+  const operationGenerationRef = useRef(0);
+  const uploadingRef = useRef(false);
+  const cropperProcessingRef = useRef(false);
+  const activeRequestControllerRef = useRef<AbortController | null>(null);
+
+  const invalidateActiveOperation = useCallback(() => {
+    operationGenerationRef.current += 1;
+    activeRequestControllerRef.current?.abort();
+    activeRequestControllerRef.current = null;
+  }, []);
+
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      invalidateActiveOperation();
+      uploadingRef.current = false;
+      cropperProcessingRef.current = false;
+    };
+  }, [invalidateActiveOperation]);
+
+  useLayoutEffect(() => {
+    if (isOpen) {
+      return;
+    }
+
+    invalidateActiveOperation();
+    uploadingRef.current = false;
+    cropperProcessingRef.current = false;
+    setUploading(false);
+    setCropperProcessing(false);
+    setSelectedFile(null);
+    setShowCropper(false);
+    setError(null);
+  }, [invalidateActiveOperation, isOpen]);
+
+  const interactionLocked = uploading || cropperProcessing;
+
+  const isOperationCurrent = (operationGeneration: number): boolean => (
+    mountedRef.current && operationGeneration === operationGenerationRef.current
+  );
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (uploadingRef.current || cropperProcessingRef.current) {
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    if (!isSupportedAttachmentImageFile(file)) {
       setError(t('profile.avatar.selectImageFile'));
       return;
     }
@@ -40,13 +87,26 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
       return;
     }
 
+    invalidateActiveOperation();
     setSelectedFile(file);
     setShowCropper(true);
     setError(null);
   };
 
   const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!mountedRef.current || uploadingRef.current) {
+      return;
+    }
+
+    const operationGeneration = operationGenerationRef.current + 1;
+    operationGenerationRef.current = operationGeneration;
+    const requestController = new AbortController();
+    activeRequestControllerRef.current = requestController;
+    let failureFallback = t('profile.avatar.uploadFailed');
+    let succeeded = false;
+
     try {
+      uploadingRef.current = true;
       setUploading(true);
       setError(null);
 
@@ -65,97 +125,150 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
           generateMultipleSizes: false,
           addWatermark: false,
           removeExif: true,
+          signal: requestController.signal,
         },
         t
       );
+
+      if (!isOperationCurrent(operationGeneration)) {
+        return;
+      }
+
       log.debug('AvatarUploadModal', '图片上传成功:', uploadResult);
 
       const attachmentId = uploadResult.voId;
-      const token = tokenService.getAccessToken();
-      const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ AttachmentId: String(attachmentId) }),
-      });
+      failureFallback = t('profile.avatar.setAvatarFailed');
+      await setMyAvatar(String(attachmentId), t, requestController.signal);
 
-      const json = await res.json();
-      log.debug('AvatarUploadModal', 'SetMyAvatar 响应:', json);
-
-      if (!res.ok || !json.isSuccess) {
-        throw new Error(json.message || t('profile.avatar.setAvatarFailed'));
+      if (!isOperationCurrent(operationGeneration)) {
+        return;
       }
 
       log.debug('AvatarUploadModal', '头像设置成功');
-      onSuccess();
+      succeeded = true;
     } catch (error) {
+      if (!isOperationCurrent(operationGeneration)) {
+        return;
+      }
+
       log.error('AvatarUploadModal', '上传头像失败:', error);
-      setError(error instanceof Error ? error.message : t('profile.avatar.uploadFailed'));
+      setError(resolveAttachmentUploadErrorMessage(error, failureFallback));
+      setSelectedFile(null);
       setShowCropper(false);
+      cropperProcessingRef.current = false;
+      setCropperProcessing(false);
     } finally {
-      setUploading(false);
+      if (isOperationCurrent(operationGeneration)) {
+        uploadingRef.current = false;
+        setUploading(false);
+      }
+
+      if (activeRequestControllerRef.current === requestController) {
+        activeRequestControllerRef.current = null;
+      }
+    }
+
+    if (succeeded && isOperationCurrent(operationGeneration)) {
+      onSuccess();
     }
   };
 
   const handleCropCancel = () => {
+    if (uploadingRef.current || cropperProcessingRef.current) {
+      return;
+    }
+
+    invalidateActiveOperation();
     setShowCropper(false);
     setSelectedFile(null);
   };
 
+  const handleCropperProcessingChange = (processing: boolean) => {
+    if (!mountedRef.current) {
+      return;
+    }
+
+    cropperProcessingRef.current = processing;
+    setCropperProcessing(processing);
+  };
+
   const handleRemoveAvatar = async () => {
+    if (uploadingRef.current || cropperProcessingRef.current) {
+      return;
+    }
+
+    const operationGeneration = operationGenerationRef.current + 1;
+    operationGenerationRef.current = operationGeneration;
+    const requestController = new AbortController();
+    activeRequestControllerRef.current = requestController;
+    const failureFallback = t('profile.avatar.removeFailed');
+    let succeeded = false;
+
     try {
+      uploadingRef.current = true;
       setUploading(true);
       setError(null);
 
-      const token = tokenService.getAccessToken();
-      const res = await fetch(`${apiBaseUrl}/api/v1/User/SetMyAvatar`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ attachmentId: 0 }),
-      });
+      await setMyAvatar(null, t, requestController.signal);
 
-      const json = await res.json();
-      log.debug('AvatarUploadModal', '移除头像响应:', json);
-
-      if (!res.ok || !json.isSuccess) {
-        throw new Error(json.message || t('profile.avatar.removeAvatarFailed'));
+      if (!isOperationCurrent(operationGeneration)) {
+        return;
       }
 
       log.debug('AvatarUploadModal', '头像移除成功');
-      onSuccess();
+      succeeded = true;
     } catch (error) {
+      if (!isOperationCurrent(operationGeneration)) {
+        return;
+      }
+
       log.error('AvatarUploadModal', '移除头像失败:', error);
-      setError(error instanceof Error ? error.message : t('profile.avatar.removeFailed'));
+      setError(resolveAttachmentUploadErrorMessage(error, failureFallback));
     } finally {
-      setUploading(false);
+      if (isOperationCurrent(operationGeneration)) {
+        uploadingRef.current = false;
+        setUploading(false);
+      }
+
+      if (activeRequestControllerRef.current === requestController) {
+        activeRequestControllerRef.current = null;
+      }
+    }
+
+    if (succeeded && isOperationCurrent(operationGeneration)) {
+      onSuccess();
     }
   };
 
   const handleClose = () => {
-    if (!uploading) {
-      setSelectedFile(null);
-      setShowCropper(false);
-      setError(null);
-      onClose();
+    if (uploadingRef.current || cropperProcessingRef.current) {
+      return;
     }
+
+    invalidateActiveOperation();
+    setSelectedFile(null);
+    setShowCropper(false);
+    setError(null);
+    onClose();
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title={t('profile.avatar.title')}>
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      closeLabel={t('common.close')}
+      title={t('profile.avatar.title')}
+      closeDisabled={interactionLocked}
+      closeOnOverlayClick={!interactionLocked}
+      closeOnEscape={!interactionLocked}
+    >
       <div className={styles.container}>
         {!showCropper ? (
           <div className={styles.uploadSection}>
             <div className={styles.uploadArea}>
               <input
                 type="file"
-                accept="image/*"
+                accept={attachmentImageAccept}
                 onChange={handleFileSelect}
                 className={styles.fileInput}
                 id="avatar-upload"
@@ -172,6 +285,7 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
 
             <div className={styles.actions}>
               <button
+                type="button"
                 onClick={handleRemoveAvatar}
                 className={styles.removeButton}
                 disabled={uploading}
@@ -185,9 +299,19 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
             {selectedFile && (
               <ImageCropper
                 image={selectedFile}
+                labels={{
+                  zoom: t('profile.avatar.cropZoom'),
+                  cancel: t('common.cancel'),
+                  confirm: t('common.confirm'),
+                  cropFailed: t('profile.avatar.cropFailed'),
+                }}
                 aspect={1}
                 onCropComplete={handleCropComplete}
                 onCancel={handleCropCancel}
+                onProcessingChange={handleCropperProcessingChange}
+                onError={(cropError) => {
+                  log.error('AvatarUploadModal', '裁切头像失败:', cropError);
+                }}
               />
             )}
             {uploading && (

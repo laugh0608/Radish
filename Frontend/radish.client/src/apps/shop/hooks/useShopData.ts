@@ -6,6 +6,7 @@ import type {
   ProductCategory,
   ProductListItem,
   Product,
+  ShopProductCapability,
   ProductBuyCheckResult,
   OrderListItem,
   Order,
@@ -44,6 +45,7 @@ export interface ShopDataState {
   // 用户权益和背包
   userBenefits: UserBenefit[];
   userInventory: UserInventoryItem[];
+  productCapabilities: ShopProductCapability[];
   loadingInventory: boolean;
 
   // 错误状态
@@ -77,6 +79,7 @@ export const useShopData = (t: TFunction) => {
     loadingOrderDetail: false,
     userBenefits: [],
     userInventory: [],
+    productCapabilities: [],
     loadingInventory: false,
     error: null,
     loadError: null
@@ -347,16 +350,18 @@ export const useShopData = (t: TFunction) => {
       loadError: prev.loadError?.scope === 'inventory' ? null : prev.loadError
     }));
     try {
-      const [benefitsResult, inventoryResult] = await Promise.all([
-        shopApi.getMyBenefits(false, t),
-        shopApi.getMyInventory(t)
+      const [benefitsResult, inventoryResult, capabilitiesResult] = await Promise.all([
+        shopApi.getMyBenefits(true, t),
+        shopApi.getMyInventory(t),
+        shopApi.getProductCapabilities(t)
       ]);
 
-      if (benefitsResult.ok && inventoryResult.ok) {
+      if (benefitsResult.ok && inventoryResult.ok && capabilitiesResult.ok) {
         setState(prev => ({
           ...prev,
           userBenefits: benefitsResult.data || [],
           userInventory: inventoryResult.data || [],
+          productCapabilities: capabilitiesResult.data || [],
           loadingInventory: false,
           loadError: prev.loadError?.scope === 'inventory' ? null : prev.loadError
         }));

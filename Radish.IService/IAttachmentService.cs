@@ -45,12 +45,20 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
     /// <returns>附件列表</returns>
     Task<List<AttachmentVo>> GetByBusinessAsync(string businessType, long businessId);
 
-    /// <summary>
-    /// 根据文件哈希查找已存在的附件（去重）
-    /// </summary>
-    /// <param name="fileHash">文件哈希值</param>
-    /// <returns>已存在的附件信息</returns>
-    Task<AttachmentVo?> FindByHashAsync(string fileHash);
+    /// <summary>按当前请求身份获取可访问的附件元数据。</summary>
+    Task<AttachmentVo?> GetAccessibleByIdAsync(
+        long attachmentId,
+        long tenantId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null);
+
+    /// <summary>按当前请求身份获取可访问的业务附件元数据。</summary>
+    Task<List<AttachmentVo>> GetAccessibleByBusinessAsync(
+        string businessType,
+        long businessId,
+        long tenantId,
+        long? requestUserId = null,
+        List<string>? requestUserRoles = null);
 
     /// <summary>
     /// 获取附件轻量资源信息
@@ -74,13 +82,12 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
     Task<Dictionary<long, AttachmentAssetDto>> GetLatestAvatarAssetMapAsync(IReadOnlyCollection<long> userIds);
 
     /// <summary>
-    /// 更新附件的业务关联
+    /// 设置或清空当前用户头像，并在同一事务内清理旧头像关联。
     /// </summary>
-    /// <param name="attachmentId">附件 ID</param>
-    /// <param name="businessType">业务类型</param>
-    /// <param name="businessId">业务 ID</param>
-    /// <returns>是否更新成功</returns>
-    Task<bool> UpdateBusinessAssociationAsync(long attachmentId, string businessType, long businessId);
+    /// <param name="attachmentId">Avatar 附件 ID；0 表示清空。</param>
+    /// <param name="userId">当前用户 ID。</param>
+    /// <param name="modifierName">修改者名称。</param>
+    Task SetCurrentAvatarAsync(long attachmentId, long userId, string modifierName);
 
     /// <summary>
     /// 增加下载次数
@@ -100,5 +107,6 @@ public interface IAttachmentService : IBaseService<Attachment, AttachmentVo>
         long attachmentId,
         long? requestUserId = null,
         List<string>? requestUserRoles = null,
-        AttachmentUrlVariant variant = AttachmentUrlVariant.Original);
+        AttachmentUrlVariant variant = AttachmentUrlVariant.Original,
+        long? requestTenantId = null);
 }

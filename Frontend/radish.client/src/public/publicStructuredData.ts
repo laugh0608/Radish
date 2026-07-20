@@ -7,6 +7,7 @@ import {
   buildPublicRouteHead,
   publicDefaultDescription,
   publicSiteName,
+  type PublicHeadDescriptor,
 } from './publicHead.ts';
 import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '../utils/userIdentityDisplay.ts';
@@ -26,10 +27,12 @@ interface PublicStructuredDataOptions {
 
 interface BuildForumPostStructuredDataOptions extends PublicStructuredDataOptions {
   post: PostDetail;
+  fallbackDescription?: string;
 }
 
 interface BuildDocsStructuredDataOptions extends PublicStructuredDataOptions {
   document: WikiDocumentDetailVo;
+  fallbackDescription?: string;
 }
 
 interface BuildShopProductStructuredDataOptions extends PublicStructuredDataOptions {
@@ -41,6 +44,11 @@ interface BuildProfileStructuredDataOptions extends PublicStructuredDataOptions 
   profile: PublicUserProfile;
   stats?: PublicUserStats | null;
   imageUrl?: string | null;
+}
+
+interface BuildPublicRouteStructuredDataOptions {
+  origin?: string;
+  head?: PublicHeadDescriptor;
 }
 
 function normalizeText(value: string | number | null | undefined): string | undefined {
@@ -113,7 +121,10 @@ function withContext(data: JsonLdObject): JsonLdObject {
 
 export function buildForumPostStructuredData(options: BuildForumPostStructuredDataOptions): JsonLdObject {
   const description = truncateText(
-    normalizeText(options.post.voSummary) ?? stripMarkdown(options.post.voContent) ?? publicDefaultDescription,
+    normalizeText(options.post.voSummary)
+      ?? stripMarkdown(options.post.voContent)
+      ?? normalizeText(options.fallbackDescription)
+      ?? publicDefaultDescription,
     240
   );
   const canonicalUrl = toCanonicalUrl(options);
@@ -151,7 +162,10 @@ export function buildForumPostStructuredData(options: BuildForumPostStructuredDa
 
 export function buildDocsArticleStructuredData(options: BuildDocsStructuredDataOptions): JsonLdObject {
   const description = truncateText(
-    normalizeText(options.document.voSummary) ?? stripMarkdown(options.document.voMarkdownContent) ?? publicDefaultDescription,
+    normalizeText(options.document.voSummary)
+      ?? stripMarkdown(options.document.voMarkdownContent)
+      ?? normalizeText(options.fallbackDescription)
+      ?? publicDefaultDescription,
     240
   );
   const canonicalUrl = toCanonicalUrl(options);
@@ -230,9 +244,15 @@ function isPublicRouteCollectionPage(route: PublicContentRouteDescriptor): boole
   return false;
 }
 
-export function buildPublicRouteStructuredData(route: PublicContentRouteDescriptor, origin?: string): JsonLdObject {
-  const head = buildPublicRouteHead(route);
-  const canonicalUrl = buildPublicCanonicalUrl(head.canonicalPath, origin);
+export function buildPublicRouteStructuredData(
+  route: PublicContentRouteDescriptor,
+  originOrOptions?: string | BuildPublicRouteStructuredDataOptions,
+): JsonLdObject {
+  const options = typeof originOrOptions === 'string'
+    ? { origin: originOrOptions }
+    : originOrOptions;
+  const head = options?.head ?? buildPublicRouteHead(route);
+  const canonicalUrl = buildPublicCanonicalUrl(head.canonicalPath, options?.origin);
   const pageType = isPublicRouteCollectionPage(route) ? 'CollectionPage' : 'WebPage';
 
   return withContext({
@@ -244,7 +264,7 @@ export function buildPublicRouteStructuredData(route: PublicContentRouteDescript
     isPartOf: {
       '@type': 'WebSite',
       name: publicSiteName,
-      url: buildPublicCanonicalUrl('/', origin),
+      url: buildPublicCanonicalUrl('/', options?.origin),
     },
     publisher: buildOrganization(),
   });

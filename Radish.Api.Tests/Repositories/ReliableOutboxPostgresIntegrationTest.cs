@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using Radish.IRepository;
 using Radish.Model;
 using Radish.Repository;
 using Radish.Repository.UnitOfWorks;
@@ -179,58 +180,62 @@ public sealed class ReliableOutboxPostgresIntegrationTest
         var messageDb = messageScope.GetConnectionScope("message");
         messageDb.CodeFirst.InitTables<Notification>();
         messageDb.CodeFirst.InitTables<UserNotification>();
+        messageDb.CodeFirst.InitTables<NotificationSetting>();
+        messageDb.CodeFirst.InitTables<NotificationInboxGroup>();
+        messageDb.CodeFirst.InitTables<NotificationInboxState>();
         var unitOfWork = new UnitOfWorkManage(
             messageScope,
             NullLogger<UnitOfWorkManage>.Instance);
         var repository = new NotificationRepository(unitOfWork);
 
+        var nowUtc = new DateTime(2026, 7, 11, 8, 0, 0, DateTimeKind.Utc);
         var created = await repository.PersistAsync(
-            CreateNotification(7101, "notification:postgres:business-key"),
-            [CreateUserNotification(8101, 7101, 1001)]);
+            CreateNotification(7101, "notification:postgres:business-key", nowUtc),
+            [new NotificationInboxRecipient(1001, true)],
+            nowUtc);
         var duplicateBusinessKey = await repository.PersistAsync(
-            CreateNotification(7102, "notification:postgres:business-key"),
-            [CreateUserNotification(8102, 7102, 1001)]);
-        var rolledBack = await repository.PersistAsync(
-            CreateNotification(7103, "notification:postgres:rollback"),
+            CreateNotification(7102, "notification:postgres:business-key", nowUtc),
+            [new NotificationInboxRecipient(1001, true)],
+            nowUtc);
+        var partialReplay = await repository.PersistAsync(
+            CreateNotification(7101, "notification:postgres:business-key", nowUtc),
             [
-                CreateUserNotification(8103, 7103, 1002),
-                CreateUserNotification(8103, 7103, 1003)
-            ]);
+                new NotificationInboxRecipient(1001, true),
+                new NotificationInboxRecipient(1002, true)
+            ],
+            nowUtc);
 
         var notificationTableName = Convert.ToString(await messageDb.Ado.GetScalarAsync(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_name LIKE 'notification_%' ORDER BY table_name DESC LIMIT 1"));
+            "SELECT table_name FROM information_schema.tables " +
+            "WHERE table_schema = current_schema() AND table_name ~ '^notification_[0-9]{8}$' " +
+            "ORDER BY table_name DESC LIMIT 1"));
         Assert.False(string.IsNullOrWhiteSpace(notificationTableName));
         var notificationCount = Convert.ToInt32(await messageDb.Ado.GetScalarAsync(
             $"SELECT COUNT(*) FROM {QuoteIdentifier(notificationTableName!)}"));
         var userNotificationCount = await messageDb.Queryable<UserNotification>().CountAsync();
 
-        Assert.True(created);
-        Assert.False(duplicateBusinessKey);
-        Assert.False(rolledBack);
+        Assert.True(created.EventCreated);
+        Assert.Empty(duplicateBusinessKey.RecipientChanges);
+        Assert.Single(partialReplay.RecipientChanges);
+        Assert.Equal(1002, partialReplay.RecipientChanges[0].UserId);
         Assert.Equal(1, notificationCount);
-        Assert.Equal(1, userNotificationCount);
+        Assert.Equal(2, userNotificationCount);
     }
 
-    private static Notification CreateNotification(long id, string businessKey)
+    private static Notification CreateNotification(long id, string businessKey, DateTime occurredAtUtc)
     {
         return new Notification(new NotificationInitializationOptions("SystemAnnouncement", "测试通知")
         {
+            Category = NotificationCategory.System,
+            TemplateKey = "notification.SystemAnnouncement",
+            TargetKind = NotificationTargetKind.None,
+            OccurredAtUtc = occurredAtUtc,
             TenantId = 0
         })
         {
             Id = id,
-            BusinessKey = businessKey
-        };
-    }
-
-    private static UserNotification CreateUserNotification(long id, long notificationId, long userId)
-    {
-        return new UserNotification(new UserNotificationInitializationOptions(userId, notificationId)
-        {
-            TenantId = 0
-        })
-        {
-            Id = id
+            BusinessKey = businessKey,
+            CreateTime = occurredAtUtc
         };
     }
 

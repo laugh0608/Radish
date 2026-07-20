@@ -6,8 +6,10 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
 using SqlSugar;
@@ -18,21 +20,30 @@ namespace Radish.Service;
 public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUserBenefitService
 {
     private readonly IBaseRepository<UserBenefit> _userBenefitRepository;
+    private readonly IBaseRepository<ShopEntitlementOperation> _operationRepository;
+    private readonly IUserBenefitRepository _userBenefitCustomRepository;
     private readonly IUserInventoryRepository _userInventoryRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly IReliableOutboxService? _reliableOutboxService;
     private readonly TimeProvider _timeProvider;
 
     public UserBenefitService(
         IMapper mapper,
         IBaseRepository<UserBenefit> userBenefitRepository,
+        IBaseRepository<ShopEntitlementOperation> operationRepository,
+        IUserBenefitRepository userBenefitCustomRepository,
         IUserInventoryRepository userInventoryRepository,
         IAttachmentUrlResolver attachmentUrlResolver,
+        IReliableOutboxService? reliableOutboxService = null,
         TimeProvider? timeProvider = null)
         : base(mapper, userBenefitRepository)
     {
         _userBenefitRepository = userBenefitRepository;
+        _operationRepository = operationRepository;
+        _userBenefitCustomRepository = userBenefitCustomRepository;
         _userInventoryRepository = userInventoryRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _reliableOutboxService = reliableOutboxService;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -43,16 +54,17 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
-            Expression<Func<UserBenefit, bool>> where = b => b.UserId == userId && !b.IsDeleted;
-
+            var now = GetUtcNow();
+            var benefits = await _userBenefitRepository.QueryAsync(b => b.UserId == userId && !b.IsDeleted);
             if (!includeExpired)
             {
-                where = where.And(b => !b.IsExpired);
+                benefits = benefits
+                    .Where(benefit => IsUsableAt(benefit, now))
+                    .ToList();
             }
-
-            var benefits = await _userBenefitRepository.QueryAsync(where);
+            var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
             var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
-            FillBenefitUrls(benefitVos);
+            FillBenefitState(benefits, benefitVos, selections, now);
             return benefitVos;
         }
         catch (Exception ex)
@@ -67,16 +79,20 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
-            Expression<Func<UserBenefit, bool>> where = b => b.UserId == userId && b.BenefitType == benefitType;
-
+            var now = GetUtcNow();
+            var benefits = await _userBenefitRepository.QueryAsync(b =>
+                b.UserId == userId &&
+                b.BenefitType == benefitType &&
+                !b.IsDeleted);
             if (!includeExpired)
             {
-                where = where.And(b => !b.IsExpired);
+                benefits = benefits
+                    .Where(benefit => IsUsableAt(benefit, now))
+                    .ToList();
             }
-
-            var benefits = await _userBenefitRepository.QueryAsync(where);
+            var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
             var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
-            FillBenefitUrls(benefitVos);
+            FillBenefitState(benefits, benefitVos, selections, now);
             return benefitVos;
         }
         catch (Exception ex)
@@ -91,11 +107,8 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
-            var benefits = await _userBenefitRepository.QueryAsync(
-                b => b.UserId == userId && b.IsActive && !b.IsExpired && !b.IsDeleted);
-            var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits);
-            FillBenefitUrls(benefitVos);
-            return benefitVos;
+            var benefits = await GetUserBenefitsAsync(userId);
+            return benefits.Where(benefit => benefit.VoStatus == UserBenefitStatus.Active).ToList();
         }
         catch (Exception ex)
         {
@@ -109,17 +122,22 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
+            var now = GetUtcNow();
             Expression<Func<UserBenefit, bool>> where = b =>
                 b.UserId == userId &&
                 b.BenefitType == benefitType &&
-                !b.IsExpired;
+                !b.IsDeleted &&
+                b.RevokedAt == null;
 
             if (!string.IsNullOrWhiteSpace(benefitValue))
             {
                 where = where.And(b => b.BenefitValue == benefitValue);
             }
 
-            return await _userBenefitRepository.QueryExistsAsync(where);
+            var benefits = await _userBenefitRepository.QueryAsync(where);
+            return benefits.Any(benefit =>
+                benefit.EffectiveAt <= now &&
+                IsUsableAt(benefit, now));
         }
         catch (Exception ex)
         {
@@ -130,84 +148,156 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
 
     #endregion
 
+    #region 管理后台查询
+
+    public Task<List<UserBenefitVo>> GetUserBenefitsForAdminAsync(long userId)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(userId), "用户 ID 必须大于 0");
+        }
+
+        return GetUserBenefitsAsync(userId, includeExpired: true);
+    }
+
+    public async Task<PageModel<ShopEntitlementOperationVo>> GetOperationsForAdminAsync(
+        long userId,
+        string? operationType = null,
+        BenefitType? benefitType = null,
+        ConsumableType? consumableType = null,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(userId), "用户 ID 必须大于 0");
+        }
+
+        pageIndex = Math.Max(1, pageIndex);
+        pageSize = Math.Clamp(pageSize, 1, 100);
+        Expression<Func<ShopEntitlementOperation, bool>> where = operation => operation.UserId == userId;
+        if (!string.IsNullOrWhiteSpace(operationType))
+        {
+            var normalizedOperationType = operationType.Trim();
+            where = where.And(operation => operation.OperationType == normalizedOperationType);
+        }
+
+        if (benefitType.HasValue)
+        {
+            where = where.And(operation => operation.BenefitType == benefitType.Value);
+        }
+
+        if (consumableType.HasValue)
+        {
+            where = where.And(operation => operation.ConsumableType == consumableType.Value);
+        }
+
+        var (operations, totalCount) = await _operationRepository.QueryPageAsync(
+            where,
+            pageIndex,
+            pageSize,
+            operation => operation.CreateTime,
+            OrderByType.Desc);
+        return new PageModel<ShopEntitlementOperationVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
+            Data = operations.Select(operation => new ShopEntitlementOperationVo
+            {
+                VoId = operation.Id,
+                VoUserId = operation.UserId,
+                VoInventoryId = operation.InventoryId,
+                VoBenefitId = operation.BenefitId,
+                VoRelatedBenefitId = operation.RelatedBenefitId,
+                VoOperationType = operation.OperationType,
+                VoConsumableType = operation.ConsumableType,
+                VoBenefitType = operation.BenefitType,
+                VoQuantity = operation.Quantity,
+                VoReason = operation.Reason,
+                VoEffectType = operation.EffectType,
+                VoEffectValue = operation.EffectValue,
+                VoEffectResourceType = operation.EffectResourceType,
+                VoEffectResourceId = operation.EffectResourceId,
+                VoEffectResourceNo = operation.EffectResourceNo,
+                VoCreateTime = operation.CreateTime,
+                VoCreateBy = operation.CreateBy
+            }).ToList()
+        };
+    }
+
+    #endregion
+
     #region 权益发放
 
-    /// <summary>发放权益</summary>
+    /// <summary>按照订单快照完成商品履约</summary>
     [UseTran(Propagation = Propagation.Required)]
-    public async Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1)
+    public async Task<OrderFulfillmentResultDto> GrantOrderFulfillmentAsync(Order order)
     {
         try
         {
-            if (quantity < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(quantity), "发放数量必须大于 0");
-            }
+            EnsureValidOrderSnapshot(order);
 
             Log.Information("开始发放权益：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
-                userId, product.Id, orderId);
+                order.UserId, order.ProductId, order.Id);
 
-            // 根据商品类型发放不同的权益
-            if (product.ProductType == ProductType.Benefit && product.BenefitType.HasValue)
+            if (order.ProductType == ProductType.Benefit && order.BenefitType.HasValue)
             {
-                // 发放权益类商品
-                return await GrantBenefitItemAsync(userId, product, orderId);
+                return await GrantBenefitItemAsync(order);
             }
-            else if (product.ProductType == ProductType.Consumable && product.ConsumableType.HasValue)
+
+            if (order.ProductType == ProductType.Consumable && order.ConsumableType.HasValue)
             {
-                // 发放消耗品到背包
-                return await GrantConsumableItemAsync(userId, product, orderId, quantity);
+                return await GrantConsumableItemAsync(order);
             }
-            else
-            {
-                throw new InvalidOperationException($"不支持的商品类型：{product.ProductType}");
-            }
+
+            throw new InvalidOperationException($"不支持的商品类型：{order.ProductType}");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "发放权益失败：用户={UserId}, 商品={ProductId}", userId, product.Id);
+            Log.Error(ex, "发放权益失败：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
+                order.UserId, order.ProductId, order.Id);
             throw;
         }
     }
 
     /// <summary>发放权益类商品</summary>
-    private async Task<long> GrantBenefitItemAsync(long userId, Product product, long orderId)
+    private async Task<OrderFulfillmentResultDto> GrantBenefitItemAsync(Order order)
     {
         var existingBenefit = await _userBenefitRepository.QueryFirstAsync(
-            benefit => benefit.SourceOrderId == orderId && !benefit.IsDeleted);
+            benefit => benefit.SourceOrderId == order.Id && !benefit.IsDeleted);
         if (existingBenefit != null)
         {
-            return existingBenefit.Id;
+            return new OrderFulfillmentResultDto
+            {
+                GrantedBenefitId = existingBenefit.Id,
+                ExpiresAt = existingBenefit.ExpiresAt
+            };
         }
 
+        var now = GetUtcNow();
+        var expiresAt = ResolveBenefitExpiresAt(order, now);
         var benefit = new UserBenefit
         {
-            TenantId = product.TenantId,
-            UserId = userId,
-            BenefitType = product.BenefitType!.Value,
-            BenefitValue = product.BenefitValue ?? string.Empty,
-            BenefitName = product.Name,
-            BenefitIconAttachmentId = product.IconAttachmentId,
-            SourceOrderId = orderId,
-            SourceProductId = product.Id,
+            TenantId = order.TenantId,
+            UserId = order.UserId,
+            BenefitType = order.BenefitType!.Value,
+            BenefitValue = order.BenefitValue ?? string.Empty,
+            BenefitName = order.ProductName,
+            BenefitIconAttachmentId = order.ProductIconAttachmentId,
+            SourceOrderId = order.Id,
+            SourceProductId = order.ProductId,
             SourceType = "Purchase",
-            DurationType = product.DurationType,
-            EffectiveAt = GetUtcNow(),
+            DurationType = order.DurationType,
+            EffectiveAt = now,
+            ExpiresAt = expiresAt,
             IsExpired = false,
             IsActive = false,
-            CreateTime = GetUtcNow(),
+            CreateTime = now,
             CreateBy = "System",
-            CreateId = userId
+            CreateId = order.UserId
         };
-
-        // 计算到期时间
-        if (product.DurationType == DurationType.Days && product.DurationDays.HasValue)
-        {
-            benefit.ExpiresAt = GetUtcNow().AddDays(product.DurationDays.Value);
-        }
-        else if (product.DurationType == DurationType.FixedDate && product.ExpiresAt.HasValue)
-        {
-            benefit.ExpiresAt = product.ExpiresAt;
-        }
 
         long benefitId;
         try
@@ -217,45 +307,56 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         catch (Exception ex) when (IsUniqueConstraintException(ex))
         {
             existingBenefit = await _userBenefitRepository.QueryFirstAsync(
-                storedBenefit => storedBenefit.SourceOrderId == orderId && !storedBenefit.IsDeleted);
+                storedBenefit => storedBenefit.SourceOrderId == order.Id && !storedBenefit.IsDeleted);
             if (existingBenefit != null)
             {
-                return existingBenefit.Id;
+                return new OrderFulfillmentResultDto
+                {
+                    GrantedBenefitId = existingBenefit.Id,
+                    ExpiresAt = existingBenefit.ExpiresAt
+                };
             }
 
             throw;
         }
 
         Log.Information("权益发放成功：用户={UserId}, 权益ID={BenefitId}, 类型={BenefitType}",
-            userId, benefitId, product.BenefitType);
+            order.UserId, benefitId, order.BenefitType);
 
-        return benefitId;
+        return new OrderFulfillmentResultDto
+        {
+            GrantedBenefitId = benefitId,
+            ExpiresAt = expiresAt
+        };
     }
 
     /// <summary>发放消耗品到背包</summary>
-    private async Task<long> GrantConsumableItemAsync(long userId, Product product, long orderId, int quantity)
+    private async Task<OrderFulfillmentResultDto> GrantConsumableItemAsync(Order order)
     {
         var grantResult = await _userInventoryRepository.GrantConsumableForOrderAsync(
-            product.TenantId,
-            userId,
-            product.ConsumableType!.Value,
-            product.BenefitValue,
-            product.Name,
-            product.IconAttachmentId,
-            quantity,
-            orderId,
-            product.Id);
+            order.TenantId,
+            order.UserId,
+            order.ConsumableType!.Value,
+            order.BenefitValue,
+            order.ProductName,
+            order.ProductIconAttachmentId,
+            order.Quantity,
+            order.Id,
+            order.ProductId);
 
         Log.Information(
             grantResult.CreatedGrantRecord
                 ? "消耗品发放成功：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 数量={Quantity}"
                 : "消耗品订单已发放，复用既有背包项：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 当前数量={Quantity}",
-            userId,
+            order.UserId,
             grantResult.InventoryId,
-            product.ConsumableType,
+            order.ConsumableType,
             grantResult.CreatedGrantRecord ? grantResult.QuantityDelta : grantResult.CurrentQuantity);
 
-        return grantResult.InventoryId;
+        return new OrderFulfillmentResultDto
+        {
+            GrantedInventoryId = grantResult.InventoryId
+        };
     }
 
     /// <summary>系统赠送权益</summary>
@@ -270,6 +371,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         try
         {
+            var now = GetUtcNow();
             var benefit = new UserBenefit
             {
                 UserId = userId,
@@ -279,17 +381,17 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 BenefitIconAttachmentId = benefitIconAttachmentId,
                 SourceType = "System",
                 DurationType = durationType,
-                EffectiveAt = GetUtcNow(),
+                EffectiveAt = now,
                 IsExpired = false,
                 IsActive = false,
-                CreateTime = GetUtcNow(),
+                CreateTime = now,
                 CreateBy = "System",
                 CreateId = 0
             };
 
             if (durationType == DurationType.Days && durationDays.HasValue)
             {
-                benefit.ExpiresAt = GetUtcNow().AddDays(durationDays.Value);
+                benefit.ExpiresAt = now.AddDays(durationDays.Value);
             }
 
             var benefitId = await _userBenefitRepository.AddAsync(benefit);
@@ -311,142 +413,314 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     #region 权益激活
 
     /// <summary>激活权益</summary>
-    public async Task<bool> ActivateBenefitAsync(long userId, long benefitId)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<UserBenefitActionResultVo> ActivateBenefitAsync(long userId, long benefitId)
     {
-        try
+        var benefit = await _userBenefitRepository.QueryFirstAsync(
+            item => item.Id == benefitId && item.UserId == userId && !item.IsDeleted)
+            ?? throw new InvalidOperationException("权益不存在");
+        var now = GetUtcNow();
+        var status = ResolveStatus(benefit, false, now);
+        if (status == UserBenefitStatus.Revoked)
         {
-            var benefit = await _userBenefitRepository.QueryFirstAsync(
-                b => b.Id == benefitId && b.UserId == userId && !b.IsDeleted);
-
-            if (benefit == null)
-            {
-                throw new InvalidOperationException("权益不存在");
-            }
-
-            if (benefit.IsExpired)
-            {
-                throw new InvalidOperationException("权益已过期");
-            }
-
-            if (ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType))
-            {
-                throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetBenefitTypeDisplayName(benefit.BenefitType)}暂未开放，当前不可激活");
-            }
-
-            // 取消同类型的其他激活权益
-            var activeBenefits = await _userBenefitRepository.QueryAsync(
-                b => b.UserId == userId &&
-                     b.BenefitType == benefit.BenefitType &&
-                     b.IsActive &&
-                     b.Id != benefitId &&
-                     !b.IsDeleted);
-
-            foreach (var activeBenefit in activeBenefits)
-            {
-                activeBenefit.IsActive = false;
-                activeBenefit.ModifyTime = GetUtcNow();
-                await _userBenefitRepository.UpdateAsync(activeBenefit);
-            }
-
-            // 激活当前权益
-            benefit.IsActive = true;
-            benefit.ActivatedAt = GetUtcNow();
-            benefit.ModifyTime = GetUtcNow();
-
-            var result = await _userBenefitRepository.UpdateAsync(benefit);
-
-            if (result)
-            {
-                Log.Information("权益激活成功：用户={UserId}, 权益ID={BenefitId}", userId, benefitId);
-            }
-
-            return result;
+            throw new InvalidOperationException("权益已撤销");
         }
-        catch (Exception ex)
+
+        if (status == UserBenefitStatus.Expired)
         {
-            Log.Error(ex, "激活权益失败：用户={UserId}, 权益ID={BenefitId}", userId, benefitId);
-            throw;
+            throw new InvalidOperationException("权益已过期");
         }
+
+        if (ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType))
+        {
+            throw new InvalidOperationException(
+                $"{ShopProductAvailabilityPolicy.GetBenefitTypeDisplayName(benefit.BenefitType)}暂未开放，当前不可激活");
+        }
+
+        if (benefit.BenefitType == BenefitType.Theme && !ShopThemeResources.IsSupported(benefit.BenefitValue))
+        {
+            throw new InvalidOperationException("主题资源不存在或已下线，当前不可激活");
+        }
+
+        var result = await _userBenefitCustomRepository.ActivateAsync(userId, benefitId, userId, "User", now);
+        Log.Information("权益选择完成：用户={UserId}, 权益ID={BenefitId}, Changed={Changed}",
+            userId, benefitId, result.Changed);
+        return await BuildActionResultAsync(result, ShopEntitlementOperationTypes.Activate, now);
     }
 
     /// <summary>取消激活权益</summary>
-    public async Task<bool> DeactivateBenefitAsync(long userId, long benefitId)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<UserBenefitActionResultVo> DeactivateBenefitAsync(long userId, long benefitId)
     {
-        try
-        {
-            var affected = await _userBenefitRepository.UpdateColumnsAsync(
-                b => new UserBenefit
-                {
-                    IsActive = false,
-                    ModifyTime = GetUtcNow()
-                },
-                b => b.Id == benefitId && b.UserId == userId);
+        var now = GetUtcNow();
+        var result = await _userBenefitCustomRepository.DeactivateAsync(userId, benefitId, userId, "User", now);
+        Log.Information("权益停用完成：用户={UserId}, 权益ID={BenefitId}, Changed={Changed}",
+            userId, benefitId, result.Changed);
+        return await BuildActionResultAsync(result, ShopEntitlementOperationTypes.Deactivate, now);
+    }
 
-            if (affected > 0)
-            {
-                Log.Information("权益取消激活成功：用户={UserId}, 权益ID={BenefitId}", userId, benefitId);
-            }
-
-            return affected > 0;
-        }
-        catch (Exception ex)
+    /// <summary>管理员撤销持续权益。</summary>
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<UserBenefitActionResultVo> RevokeBenefitAsync(
+        long benefitId,
+        string reason,
+        long operatorId,
+        string operatorName)
+    {
+        var normalizedReason = reason.Trim();
+        if (normalizedReason.Length is < 2 or > 500)
         {
-            Log.Error(ex, "取消激活权益失败：用户={UserId}, 权益ID={BenefitId}", userId, benefitId);
-            throw;
+            throw new InvalidOperationException("撤销原因长度必须为 2-500 个字符");
         }
+
+        var now = GetUtcNow();
+        var result = await _userBenefitCustomRepository.RevokeAsync(
+            benefitId,
+            normalizedReason,
+            operatorId,
+            operatorName,
+            now);
+        Log.Information("管理员撤销权益完成：权益ID={BenefitId}, 操作者={OperatorId}, Changed={Changed}",
+            benefitId, operatorId, result.Changed);
+        return await BuildActionResultAsync(result, ShopEntitlementOperationTypes.Revoke, now);
     }
 
     #endregion
 
     #region 权益过期处理
 
-    /// <summary>检查并更新过期权益</summary>
-    public async Task<int> CheckAndExpireBenefitsAsync()
+    public Task<List<long>> GetDueBenefitIdsAsync(int take = 100)
     {
-        try
+        return _userBenefitCustomRepository.GetDueBenefitIdsAsync(GetUtcNow(), take);
+    }
+
+    /// <summary>物化单份权益的过期事实。</summary>
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<bool> ExpireBenefitAsync(long benefitId)
+    {
+        var now = GetUtcNow();
+        var result = await _userBenefitCustomRepository.ExpireAsync(benefitId, now);
+        if (result is not { Changed: true })
         {
-            var now = GetUtcNow();
-
-            // 查找已过期但未标记的权益
-            var expiredBenefits = await _userBenefitRepository.QueryAsync(
-                b => !b.IsExpired &&
-                     b.ExpiresAt.HasValue &&
-                     b.ExpiresAt.Value < now &&
-                     !b.IsDeleted);
-
-            if (expiredBenefits.Count == 0)
-            {
-                return 0;
-            }
-
-            foreach (var benefit in expiredBenefits)
-            {
-                benefit.IsExpired = true;
-                benefit.IsActive = false;
-                benefit.ModifyTime = now;
-            }
-
-            var affected = await _userBenefitRepository.UpdateRangeAsync(expiredBenefits);
-
-            Log.Information("已更新 {Count} 个过期权益", affected);
-
-            return affected;
+            return false;
         }
-        catch (Exception ex)
+
+        var reliableOutboxService = _reliableOutboxService
+            ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
+        var notification = new CreateNotificationDto
         {
-            Log.Error(ex, "检查并更新过期权益失败");
-            throw;
-        }
+            NotificationId = SnowFlakeSingle.Instance.NextId(),
+            BusinessKey = $"notification:benefit-expired:{benefitId}",
+            Type = NotificationType.BenefitExpired,
+            Title = "权益已到期",
+            Content = $"您的权益“{result.Benefit.BenefitName ?? result.Benefit.BenefitValue}”已到期",
+            BusinessType = "UserBenefit",
+            BusinessId = benefitId,
+            ReceiverUserIds = [result.Benefit.UserId],
+            TenantId = result.Benefit.TenantId,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["benefitName"] = result.Benefit.BenefitName ?? result.Benefit.BenefitValue
+            },
+            TargetKind = NotificationTargetKind.Inventory,
+            Target = new NotificationTargetData { BenefitId = benefitId },
+            OccurredAtUtc = now
+        };
+        await reliableOutboxService.AddAsync(
+            ReliableOutboxSources.Main,
+            result.Benefit.TenantId,
+            ReliableTaskTypes.NotificationRequested,
+            $"task:notification:benefit-expired:{benefitId}",
+            "UserBenefit",
+            benefitId.ToString(),
+            new NotificationRequestedTaskPayload(notification),
+            now);
+        return true;
     }
 
     #endregion
 
-    private void FillBenefitUrls(List<UserBenefitVo> benefits)
+    private static void EnsureValidOrderSnapshot(Order order)
     {
-        foreach (var benefit in benefits)
+        ArgumentNullException.ThrowIfNull(order);
+
+        if (order.Id <= 0 || order.UserId <= 0 || order.ProductId <= 0)
         {
-            benefit.VoBenefitIcon = ResolveAttachmentUrl(benefit.VoBenefitIconAttachmentId);
+            throw new InvalidOperationException("订单履约快照缺少有效的订单、用户或商品 ID");
         }
+
+        if (order.Quantity < 1)
+        {
+            throw new InvalidOperationException("订单履约数量必须大于 0");
+        }
+
+        if (order.Status != OrderStatus.Paid &&
+            !(order.Status == OrderStatus.Failed && order.FailureStage == OrderFailureStage.Fulfillment))
+        {
+            throw new InvalidOperationException("只有已支付或履约失败的订单可以发放商品");
+        }
+
+        if (order.ProductType == ProductType.Benefit && !order.BenefitType.HasValue)
+        {
+            throw new InvalidOperationException("权益订单快照缺少权益类型");
+        }
+
+        if (order.ProductType == ProductType.Consumable && !order.ConsumableType.HasValue)
+        {
+            throw new InvalidOperationException("消耗品订单快照缺少消耗品类型");
+        }
+    }
+
+    private static DateTime? ResolveBenefitExpiresAt(Order order, DateTime now)
+    {
+        return order.DurationType switch
+        {
+            DurationType.Permanent => null,
+            DurationType.Days when order.DurationDays is > 0 => now.AddDays(order.DurationDays.Value),
+            DurationType.Days => throw new InvalidOperationException("权益订单快照缺少有效期天数"),
+            DurationType.FixedDate when order.FixedExpiresAt.HasValue && order.FixedExpiresAt.Value > now =>
+                order.FixedExpiresAt.Value,
+            DurationType.FixedDate when order.FixedExpiresAt.HasValue =>
+                throw new InvalidOperationException("权益订单的固定到期时间已过，需人工处理"),
+            DurationType.FixedDate => throw new InvalidOperationException("权益订单快照缺少固定到期时间"),
+            _ => throw new InvalidOperationException($"不支持的有效期类型：{order.DurationType}")
+        };
+    }
+
+    private async Task<UserBenefitActionResultVo> BuildActionResultAsync(
+        UserBenefitPersistenceResult result,
+        string action,
+        DateTime nowUtc)
+    {
+        UserBenefitVo? currentBenefit = null;
+        if (result.CurrentBenefitId.HasValue)
+        {
+            var current = await _userBenefitRepository.QueryFirstAsync(
+                benefit => benefit.Id == result.CurrentBenefitId.Value && !benefit.IsDeleted);
+            if (current != null)
+            {
+                currentBenefit = Mapper.Map<UserBenefitVo>(current);
+                FillBenefitState(
+                    [current],
+                    [currentBenefit],
+                    [new UserActiveBenefit
+                    {
+                        TenantId = current.TenantId,
+                        UserId = current.UserId,
+                        BenefitType = current.BenefitType,
+                        BenefitId = current.Id,
+                        SelectedAt = nowUtc
+                    }],
+                    nowUtc);
+            }
+        }
+
+        return new UserBenefitActionResultVo
+        {
+            VoChanged = result.Changed,
+            VoAction = action,
+            VoBenefitId = result.Benefit.Id,
+            VoBenefitType = result.Benefit.BenefitType,
+            VoStatus = ResolveStatus(
+                result.Benefit,
+                result.CurrentBenefitId == result.Benefit.Id,
+                nowUtc),
+            VoCurrentBenefitId = result.CurrentBenefitId,
+            VoCurrentBenefit = currentBenefit
+        };
+    }
+
+    private void FillBenefitState(
+        IReadOnlyList<UserBenefit> benefits,
+        IReadOnlyList<UserBenefitVo> benefitVos,
+        IReadOnlyList<UserActiveBenefit> selections,
+        DateTime nowUtc)
+    {
+        var activeBenefitIds = selections.Select(selection => selection.BenefitId).ToHashSet();
+        var entitiesById = benefits.ToDictionary(benefit => benefit.Id);
+        foreach (var benefitVo in benefitVos)
+        {
+            if (!entitiesById.TryGetValue(benefitVo.VoId, out var benefit))
+            {
+                continue;
+            }
+
+            var status = ResolveStatus(benefit, activeBenefitIds.Contains(benefit.Id), nowUtc);
+            benefitVo.VoStatus = status;
+            benefitVo.VoIsExpired = status == UserBenefitStatus.Expired;
+            benefitVo.VoIsActive = status == UserBenefitStatus.Active;
+            benefitVo.VoCanDeactivate = status == UserBenefitStatus.Active;
+            benefitVo.VoCanActivate = status == UserBenefitStatus.Available &&
+                                      benefit.EffectiveAt <= nowUtc &&
+                                      !ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType) &&
+                                      (benefit.BenefitType != BenefitType.Theme ||
+                                       ShopThemeResources.IsSupported(benefit.BenefitValue));
+            benefitVo.VoUnavailableReason = GetUnavailableReason(benefit, status, nowUtc);
+            benefitVo.VoDurationDisplay = GetDurationDisplay(benefit, status);
+            benefitVo.VoBenefitIcon = ResolveAttachmentUrl(benefitVo.VoBenefitIconAttachmentId);
+        }
+    }
+
+    private static UserBenefitStatus ResolveStatus(UserBenefit benefit, bool hasActiveSelection, DateTime nowUtc)
+    {
+        if (benefit.RevokedAt.HasValue)
+        {
+            return UserBenefitStatus.Revoked;
+        }
+
+        if (benefit.ExpiresAt.HasValue && benefit.ExpiresAt.Value <= nowUtc)
+        {
+            return UserBenefitStatus.Expired;
+        }
+
+        return hasActiveSelection ? UserBenefitStatus.Active : UserBenefitStatus.Available;
+    }
+
+    private static bool IsUsableAt(UserBenefit benefit, DateTime nowUtc)
+    {
+        return !benefit.RevokedAt.HasValue &&
+               (!benefit.ExpiresAt.HasValue || benefit.ExpiresAt.Value > nowUtc);
+    }
+
+    private static string? GetUnavailableReason(
+        UserBenefit benefit,
+        UserBenefitStatus status,
+        DateTime nowUtc)
+    {
+        return status switch
+        {
+            UserBenefitStatus.Revoked => benefit.RevocationReason ?? "权益已撤销",
+            UserBenefitStatus.Expired => "权益已过期",
+            _ when benefit.BenefitType == BenefitType.Theme && !ShopThemeResources.IsSupported(benefit.BenefitValue) =>
+                "主题资源不存在或已下线",
+            UserBenefitStatus.Active => null,
+            _ when benefit.EffectiveAt > nowUtc => "权益尚未生效",
+            _ when ShopProductAvailabilityPolicy.IsUnavailableBenefitType(benefit.BenefitType) =>
+                $"{ShopProductAvailabilityPolicy.GetBenefitTypeDisplayName(benefit.BenefitType)}暂未开放",
+            _ => null
+        };
+    }
+
+    private static string GetDurationDisplay(UserBenefit benefit, UserBenefitStatus status)
+    {
+        if (status == UserBenefitStatus.Revoked)
+        {
+            return "已撤销";
+        }
+
+        if (status == UserBenefitStatus.Expired)
+        {
+            return "已过期";
+        }
+
+        if (benefit.DurationType == DurationType.Permanent)
+        {
+            return "永久";
+        }
+
+        return benefit.ExpiresAt.HasValue
+            ? $"有效至 {benefit.ExpiresAt.Value:yyyy-MM-dd HH:mm} UTC"
+            : "未知";
     }
 
     private string? ResolveAttachmentUrl(long? attachmentId)

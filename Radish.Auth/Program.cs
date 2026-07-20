@@ -30,6 +30,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Radish.Common.HttpContextTool;
 using Radish.Common.TimeTool;
 using Radish.Auth.Models;
+using Radish.Auth.Resources;
 
 // -------------- 容器构建阶段 ---------------
 var builder = WebApplication.CreateBuilder(args);
@@ -186,6 +187,10 @@ builder.Services.AddAntiforgery(options =>
 
 // 添加控制器 + 视图（用于登录页）
 builder.Services.AddControllersWithViews()
+    .AddDataAnnotationsLocalization(options =>
+    {
+        options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(Errors));
+    })
     .AddJsonOptions(options =>
     {
         // 🚀 配置 JSON 序列化使用 camelCase 命名策略（保持与 API 一致）

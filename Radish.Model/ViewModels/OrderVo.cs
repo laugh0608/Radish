@@ -62,6 +62,18 @@ public class OrderVo
     /// <summary>订单状态</summary>
     public OrderStatus VoStatus { get; set; }
 
+    /// <summary>订单失败阶段</summary>
+    public OrderFailureStage VoFailureStage { get; set; }
+
+    /// <summary>失败阶段显示名称</summary>
+    public string VoFailureStageDisplay => VoFailureStage switch
+    {
+        OrderFailureStage.None => "无",
+        OrderFailureStage.Payment => "支付失败",
+        OrderFailureStage.Fulfillment => "履约失败",
+        _ => "未知"
+    };
+
     /// <summary>订单状态显示名称</summary>
     public string VoStatusDisplay => VoStatus switch
     {
@@ -70,15 +82,39 @@ public class OrderVo
         OrderStatus.Completed => "已完成",
         OrderStatus.Cancelled => "已取消",
         OrderStatus.Refunded => "已退款",
-        OrderStatus.Failed => "发放失败",
+        OrderStatus.Failed when VoFailureStage == OrderFailureStage.Payment => "支付失败",
+        OrderStatus.Failed => "履约失败",
         _ => "未知"
     };
 
     /// <summary>扣款交易 ID</summary>
     public long? VoCoinTransactionId { get; set; }
 
+    /// <summary>已发放的持续权益 ID</summary>
+    public long? VoGrantedBenefitId { get; set; }
+
+    /// <summary>已发放的消耗品背包 ID</summary>
+    public long? VoGrantedInventoryId { get; set; }
+
+    /// <summary>是否具备履约重试的基础状态</summary>
+    /// <remarks>服务端重试时仍会校验真实扣款流水。</remarks>
+    public bool VoCanRetryFulfillment =>
+        VoStatus == OrderStatus.Failed &&
+        VoFailureStage == OrderFailureStage.Fulfillment &&
+        VoPaidTime.HasValue &&
+        VoCoinTransactionId.HasValue;
+
     /// <summary>权益到期时间</summary>
     public DateTime? VoBenefitExpiresAt { get; set; }
+
+    /// <summary>固定到期时间快照</summary>
+    public DateTime? VoFixedExpiresAt { get; set; }
+
+    /// <summary>有效期类型快照</summary>
+    public DurationType VoDurationType { get; set; }
+
+    /// <summary>有效期天数快照</summary>
+    public int? VoDurationDays { get; set; }
 
     /// <summary>有效期显示文本</summary>
     public string? VoDurationDisplay { get; set; }
@@ -135,6 +171,9 @@ public class OrderListItemVo
     /// <summary>订单状态</summary>
     public OrderStatus VoStatus { get; set; }
 
+    /// <summary>订单失败阶段</summary>
+    public OrderFailureStage VoFailureStage { get; set; }
+
     /// <summary>订单状态显示名称</summary>
     public string VoStatusDisplay => VoStatus switch
     {
@@ -143,7 +182,8 @@ public class OrderListItemVo
         OrderStatus.Completed => "已完成",
         OrderStatus.Cancelled => "已取消",
         OrderStatus.Refunded => "已退款",
-        OrderStatus.Failed => "发放失败",
+        OrderStatus.Failed when VoFailureStage == OrderFailureStage.Payment => "支付失败",
+        OrderStatus.Failed => "履约失败",
         _ => "未知"
     };
 
@@ -197,6 +237,12 @@ public class PurchaseResultDto
     /// <summary>用户权益 ID</summary>
     /// <remarks>购买成功后发放的权益 ID</remarks>
     public long? UserBenefitId { get; set; }
+
+    /// <summary>已发放的持续权益 ID</summary>
+    public long? GrantedBenefitId { get; set; }
+
+    /// <summary>已发放的消耗品背包 ID</summary>
+    public long? GrantedInventoryId { get; set; }
 
     /// <summary>扣除的萝卜币数量</summary>
     public long? DeductedCoins { get; set; }

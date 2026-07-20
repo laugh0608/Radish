@@ -39,6 +39,14 @@ export interface StickerPickerSelection {
   thumbnailUrl?: string;
 }
 
+export interface StickerPickerLabels {
+  searchPlaceholder: string;
+  clearSearch: string;
+  reactionOnly: (name: string) => string;
+  noEmoji: string;
+  noSticker: string;
+}
+
 export interface StickerPickerProps {
   groups: StickerPickerGroup[];
   onSelect: (selection: StickerPickerSelection) => void;
@@ -47,8 +55,9 @@ export interface StickerPickerProps {
   panelPlacement?: 'left' | 'right';
   disabled?: boolean;
   className?: string;
-  triggerTitle?: string;
+  triggerTitle: string;
   emojis?: string[];
+  labels: StickerPickerLabels;
 }
 
 const normalizeCode = (value: string): string => value.trim().toLowerCase();
@@ -71,8 +80,9 @@ export const StickerPicker = ({
   panelPlacement = 'right',
   disabled = false,
   className = '',
-  triggerTitle = '插入表情包',
+  triggerTitle,
   emojis = DEFAULT_EMOJIS,
+  labels,
 }: StickerPickerProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -111,6 +121,13 @@ export const StickerPicker = ({
   }, [activeTab, normalizedGroups]);
 
   useEffect(() => {
+    if (disabled) {
+      setOpen(false);
+      setKeyword('');
+    }
+  }, [disabled]);
+
+  useEffect(() => {
     if (!open) {
       return;
     }
@@ -126,15 +143,17 @@ export const StickerPicker = ({
 
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
         setOpen(false);
       }
     };
 
     document.addEventListener('pointerdown', handleOutsidePointerDown, true);
-    window.addEventListener('keydown', handleEsc);
+    window.addEventListener('keydown', handleEsc, true);
     return () => {
       document.removeEventListener('pointerdown', handleOutsidePointerDown, true);
-      window.removeEventListener('keydown', handleEsc);
+      window.removeEventListener('keydown', handleEsc, true);
     };
   }, [open]);
 
@@ -172,13 +191,17 @@ export const StickerPicker = ({
   }, [mode, normalizedKeyword, selectedGroup]);
 
   const handleSelectEmoji = (emoji: string) => {
+    if (disabled) {
+      return;
+    }
+
     onSelect({ type: 'unicode', emoji });
     setOpen(false);
     setKeyword('');
   };
 
   const handleSelectSticker = (sticker: StickerPickerSticker) => {
-    if (!selectedGroup) {
+    if (disabled || !selectedGroup) {
       return;
     }
 
@@ -215,7 +238,7 @@ export const StickerPicker = ({
         <Icon icon="mdi:sticker-emoji" size={18} />
       </button>
 
-      {open && (
+      {open && !disabled && (
         <div
           className={`${styles.panel} ${
             panelPlacement === 'left' ? styles.panelLeft : styles.panelRight
@@ -260,14 +283,14 @@ export const StickerPicker = ({
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               className={styles.searchInput}
-              placeholder="搜索表情"
+              placeholder={labels.searchPlaceholder}
             />
             {keyword && (
               <button
                 type="button"
                 className={styles.clearButton}
                 onClick={() => setKeyword('')}
-                aria-label="清空搜索"
+                aria-label={labels.clearSearch}
               >
                 <Icon icon="mdi:close" size={14} />
               </button>
@@ -298,7 +321,7 @@ export const StickerPicker = ({
                     key={`${sticker.code}-${sticker.name}`}
                     type="button"
                     className={`${styles.stickerItem} ${disabledInInsert ? styles.stickerItemDisabled : ''}`}
-                    title={disabledInInsert ? `${sticker.name}（仅支持 Reaction）` : sticker.name}
+                    title={disabledInInsert ? labels.reactionOnly(sticker.name) : sticker.name}
                     onClick={() => handleSelectSticker(sticker)}
                     disabled={disabledInInsert}
                   >
@@ -311,10 +334,10 @@ export const StickerPicker = ({
           )}
 
           {activeTab === 'emoji' && filteredEmojis.length === 0 && (
-            <div className={styles.empty}>未找到匹配的表情</div>
+            <div className={styles.empty}>{labels.noEmoji}</div>
           )}
           {activeTab !== 'emoji' && filteredStickers.length === 0 && (
-            <div className={styles.empty}>该分组暂无可插入表情</div>
+            <div className={styles.empty}>{labels.noSticker}</div>
           )}
         </div>
       )}

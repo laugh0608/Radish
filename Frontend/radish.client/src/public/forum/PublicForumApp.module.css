@@ -6,7 +6,7 @@
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-soft) 58%, transparent) 0%, transparent 36%),
     radial-gradient(circle at top right, color-mix(in srgb, var(--theme-accent-jade) 20%, transparent) 0%, transparent 28%),
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, white 8%) 0%, var(--theme-bg-app) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-app) 92%, var(--theme-surface-highlight) 8%) 0%, var(--theme-bg-app) 100%);
   color: var(--theme-text-primary);
   overflow-x: hidden;
   overflow-y: auto;
@@ -40,7 +40,7 @@
 }
 
 .sectionCard {
-  background: color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid var(--theme-border-soft);
   border-radius: 28px;
   box-shadow: var(--theme-shadow-soft);
@@ -69,7 +69,7 @@
 .sectionHeader {
   padding: 28px 28px 18px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, white 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--theme-bg-surface) 86%, var(--theme-surface-highlight) 14%) 0%, color-mix(in srgb, var(--theme-bg-surface) 96%, transparent) 100%);
   border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
 }
 
@@ -123,7 +123,7 @@
   padding: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 82%, transparent);
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   box-shadow: var(--theme-shadow-soft);
   min-width: 0;
 }
@@ -235,7 +235,7 @@
   padding: 0 14px;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   color: var(--theme-text-secondary);
 }
 
@@ -265,7 +265,7 @@
   padding: 0 12px;
   border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
   color: var(--theme-text-primary);
   font-size: 13px;
 }
@@ -294,7 +294,7 @@
   border-radius: 22px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 54%, white 46%) 0%, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 54%, var(--theme-surface-highlight) 46%) 0%, color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%) 100%);
 }
 
 .categoryCoverWrap::after {
@@ -319,7 +319,7 @@
   padding: 24px;
   border-radius: 24px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, white 10%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .statusCardCompact {
@@ -329,7 +329,7 @@
 
 .statusCard[data-tone='error'],
 .statusCard[data-tone='notFound'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 7%, white 93%);
+  background: color-mix(in srgb, var(--theme-state-danger) 7%, var(--theme-surface-highlight) 93%);
   border-color: color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
 }
 
@@ -338,7 +338,7 @@
 }
 
 .statusCard[data-tone='loading'] {
-  background: color-mix(in srgb, var(--theme-brand-soft) 42%, white 58%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-surface-highlight) 58%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
 }
 
@@ -350,7 +350,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 56%, white 44%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 56%, var(--theme-surface-highlight) 44%);
   color: var(--theme-brand-primary);
 }
 
@@ -414,7 +414,7 @@
 .segmentButtonActive {
   background: linear-gradient(135deg, var(--theme-brand-primary) 0%, color-mix(in srgb, var(--theme-accent-earth) 48%, var(--theme-brand-primary) 52%) 100%);
   border-color: transparent;
-  color: #fff;
+  color: var(--theme-text-inverse);
   box-shadow: 0 10px 22px color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
 }
 
@@ -441,7 +441,7 @@
 }
 
 .categoryChipActive {
-  background: color-mix(in srgb, var(--theme-brand-soft) 80%, white 20%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 80%, var(--theme-surface-highlight) 20%);
   border-color: color-mix(in srgb, var(--theme-brand-primary) 36%, transparent);
   color: var(--theme-brand-primary);
 }
@@ -460,13 +460,13 @@
   margin: 0 20px 16px;
   padding: 12px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 46%, white 54%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 46%, var(--theme-surface-highlight) 54%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
 }
 
 .inlineNotice[data-tone='warning'] {
-  background: color-mix(in srgb, var(--theme-state-warning, #b7791f) 10%, white 90%);
-  border-color: color-mix(in srgb, var(--theme-state-warning, #b7791f) 18%, transparent);
+  background: color-mix(in srgb, var(--theme-state-warning) 14%, var(--theme-bg-surface) 86%);
+  border-color: color-mix(in srgb, var(--theme-state-warning) 28%, transparent);
 }
 
 .inlineNoticeText {
@@ -556,7 +556,7 @@
   margin: 16px 28px 0;
   padding: 12px 14px;
   border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-state-danger) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-surface-highlight) 90%);
   color: var(--theme-state-danger);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
 }
@@ -580,7 +580,7 @@
   padding: 9px 16px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 28%, transparent);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 76%, white 24%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 76%, var(--theme-surface-highlight) 24%);
   color: var(--theme-brand-primary);
   font-size: 13px;
   font-weight: 700;
@@ -625,7 +625,7 @@
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   background:
-    linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 52%, white 48%) 0%, color-mix(in srgb, var(--theme-bg-surface) 94%, white 6%) 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-brand-soft) 52%, var(--theme-surface-highlight) 48%) 0%, color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%) 100%);
   min-width: 0;
 }
 
@@ -669,7 +669,7 @@
   padding: 8px 13px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--theme-brand-primary);
   font-family: inherit;
   font-size: 13px;
@@ -694,7 +694,7 @@
 .workspaceActionButtonPrimary {
   border-color: color-mix(in srgb, var(--theme-brand-primary) 68%, transparent);
   background: var(--theme-brand-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   box-shadow: 0 10px 18px color-mix(in srgb, var(--theme-brand-primary) 12%, transparent);
 }
 
@@ -739,7 +739,7 @@
 
 .paginationButtonActive {
   background: var(--theme-brand-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   border-color: var(--theme-brand-primary);
 }
 
@@ -778,13 +778,13 @@
 }
 
 .shareFeedback[data-state='success'] {
-  background: color-mix(in srgb, var(--theme-state-success) 10%, white 90%);
+  background: color-mix(in srgb, var(--theme-state-success) 10%, var(--theme-surface-highlight) 90%);
   border: 1px solid color-mix(in srgb, var(--theme-state-success) 20%, transparent);
   color: color-mix(in srgb, var(--theme-state-success) 74%, var(--theme-text-primary) 26%);
 }
 
 .shareFeedback[data-state='error'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 8%, white 92%);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-surface-highlight) 92%);
   border: 1px solid color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
   color: var(--theme-state-danger);
 }
@@ -801,7 +801,7 @@
   min-height: 34px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--theme-brand-soft) 78%, white 22%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 78%, var(--theme-surface-highlight) 22%);
   border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 18%, transparent);
   color: var(--theme-brand-primary);
   font-size: 12px;
@@ -840,7 +840,7 @@
   padding: 12px 14px;
   border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   min-width: 0;
 }
 
@@ -897,7 +897,7 @@
   padding: 16px;
   border-radius: 20px;
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   min-width: 0;
 }
 
@@ -918,7 +918,7 @@
 .commentSection {
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 20px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   padding: 16px;
   min-width: 0;
 }
@@ -1267,10 +1267,13 @@
   }
 
   .workspaceActionButton {
-    flex: 1 1 150px;
     min-width: 0;
     min-height: 38px;
     padding: 8px 12px;
+  }
+
+  .workspaceActionButtons .workspaceActionButton {
+    flex: 1 1 150px;
   }
 
   .workspaceActionButton span {

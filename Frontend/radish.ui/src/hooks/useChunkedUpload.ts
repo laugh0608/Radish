@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import type { TFunction } from 'i18next';
 import type { UploadProgress, ChunkedUploadOptions, ChunkedUploadResult } from '../components/ChunkedFileUpload/ChunkedFileUpload';
+import { runChunkUploadWorkers } from './chunkedUploadWorkers';
 
 type ChunkedUploadBusinessType = NonNullable<ChunkedUploadOptions['businessType']>;
 
@@ -10,7 +11,6 @@ interface CreateChunkedUploadSessionOptions {
   mimeType?: string;
   chunkSize?: number;
   businessType?: ChunkedUploadBusinessType;
-  businessId?: number | string;
 }
 
 interface ChunkedUploadSession {
@@ -29,9 +29,8 @@ interface MergeChunkedUploadOptions {
 }
 
 interface ChunkedUploadAttachmentInfo {
-  id: number;
+  attachmentId: string;
   fileName: string;
-  filePath: string;
   fileSize: number;
   accessUrl: string;
 }
@@ -42,7 +41,8 @@ interface ChunkedUploadApi {
     sessionId: string,
     index: number,
     blob: Blob,
-    onChunkProgress?: (progress: number) => void
+    onChunkProgress?: (progress: number) => void,
+    signal?: AbortSignal,
   ) => Promise<void>;
   getSession: (sessionId: string) => Promise<ChunkedUploadSession>;
   mergeChunks: (opts: MergeChunkedUploadOptions) => Promise<ChunkedUploadAttachmentInfo>;
@@ -52,12 +52,13 @@ interface ChunkedUploadApi {
 /**
  * 分片上传 Hook
  *
- * 封装分片上传的完整逻辑：文件切片、并发控制、进度跟踪、断点续传
+ * 封装分片上传的完整逻辑：文件切片、并发控制、进度跟踪与失败会话回收。
  */
 export function useChunkedUpload(t: TFunction) {
   void t;
   const [uploading, setUploading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const finalizingRef = useRef(false);
   const sessionIdRef = useRef<string | null>(null);
   const uploadedChunksRef = useRef<Set<number>>(new Set());
 
@@ -77,11 +78,12 @@ export function useChunkedUpload(t: TFunction) {
       }
 
       setUploading(true);
+      finalizingRef.current = false;
       abortControllerRef.current = new AbortController();
       uploadedChunksRef.current.clear();
 
       const chunkSize = options.chunkSize || 2 * 1024 * 1024; // 默认 2MB
-      const concurrency = options.concurrency || 5; // 默认 5 个并发
+      const concurrency = Math.max(1, Math.floor(options.concurrency || 5));
       const totalChunks = Math.ceil(file.size / chunkSize);
 
       let uploadedBytes = 0;
@@ -96,18 +98,20 @@ export function useChunkedUpload(t: TFunction) {
           totalSize: file.size,
           mimeType: file.type,
           chunkSize,
-          businessType: options.businessType || 'General',
-          businessId: options.businessId
+          businessType: options.businessType || 'General'
         });
 
         sessionIdRef.current = session.sessionId;
 
-        // 如果会话已存在（断点续传），恢复已上传的分片
+        // 尊重服务端返回的已上传索引；当前公开入口每次都会创建新会话，尚不承诺跨请求续传。
         if (session.uploadedChunkIndexes && Array.isArray(session.uploadedChunkIndexes)) {
           session.uploadedChunkIndexes.forEach((idx: number) => {
             uploadedChunksRef.current.add(idx);
           });
-          uploadedBytes = session.uploadedChunks * chunkSize;
+          uploadedBytes = session.uploadedChunkIndexes.reduce((total, chunkIndex) => {
+            const chunkStart = chunkIndex * chunkSize;
+            return total + Math.max(0, Math.min(chunkSize, file.size - chunkStart));
+          }, 0);
         }
 
         // 2. 准备待上传的分片队列
@@ -157,54 +161,43 @@ export function useChunkedUpload(t: TFunction) {
                 speed,
                 remainingTime,
                 uploadedChunks: uploadedChunksRef.current.size,
-                totalChunks
+                totalChunks,
+                isFinalizing: false
               });
 
               lastUpdateTime = now;
               lastUploadedBytes = uploadedBytes;
-            }
+            },
+            abortControllerRef.current?.signal,
           );
 
           uploadedChunksRef.current.add(chunkIndex);
         };
 
-        // 并发控制：每次最多上传 concurrency 个分片
-        const uploadQueue = [...pendingChunks];
-        const activeUploads: Promise<void>[] = [];
+        await runChunkUploadWorkers(
+          pendingChunks,
+          concurrency,
+          () => abortControllerRef.current?.signal.aborted === true,
+          uploadChunk,
+        );
 
-        while (uploadQueue.length > 0 || activeUploads.length > 0) {
-          // 启动新的上传任务（不超过并发限制）
-          while (activeUploads.length < concurrency && uploadQueue.length > 0) {
-            const chunkIndex = uploadQueue.shift()!;
-            const uploadPromise = uploadChunk(chunkIndex).catch((err) => {
-              // 分片上传失败，重新加入队列（最多重试 3 次）
-              if (!uploadQueue.includes(chunkIndex)) {
-                uploadQueue.push(chunkIndex);
-              }
-              throw err;
-            });
-            activeUploads.push(uploadPromise);
-          }
-
-          // 等待任意一个上传完成
-          if (activeUploads.length > 0) {
-            await Promise.race(activeUploads);
-            // 移除已完成的上传
-            const completedIndex = activeUploads.findIndex((p) => {
-              let completed = false;
-              p.then(() => { completed = true; }).catch(() => { completed = true; });
-              return completed;
-            });
-            if (completedIndex >= 0) {
-              activeUploads.splice(completedIndex, 1);
-            }
-          }
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error('上传已取消');
         }
 
-        // 等待所有上传完成
-        await Promise.all(activeUploads);
-
-        // 4. 合并分片
+        // 4. 合并分片。服务端最终化开始后不能可靠撤销，不再暴露伪取消。
+        finalizingRef.current = true;
+        abortControllerRef.current = null;
+        onProgress({
+          uploadedBytes: file.size,
+          totalBytes: file.size,
+          percentage: 99,
+          speed: 0,
+          remainingTime: 0,
+          uploadedChunks: totalChunks,
+          totalChunks,
+          isFinalizing: true
+        });
         const attachmentInfo = await api.mergeChunks({
           sessionId: sessionIdRef.current!,
           generateThumbnail: options.generateThumbnail ?? true,
@@ -222,33 +215,39 @@ export function useChunkedUpload(t: TFunction) {
           speed: 0,
           remainingTime: 0,
           uploadedChunks: totalChunks,
-          totalChunks
+          totalChunks,
+          isFinalizing: false
         });
 
         setUploading(false);
+        finalizingRef.current = false;
+        abortControllerRef.current = null;
         sessionIdRef.current = null;
         uploadedChunksRef.current.clear();
 
         return {
-          attachmentId: attachmentInfo.id,
+          attachmentId: attachmentInfo.attachmentId,
           fileName: attachmentInfo.fileName,
-          filePath: attachmentInfo.filePath,
           fileSize: attachmentInfo.fileSize,
           accessUrl: attachmentInfo.accessUrl
         };
       } catch (error) {
         setUploading(false);
+        finalizingRef.current = false;
 
-        // 如果是取消操作，清理会话
-        if (abortControllerRef.current?.signal.aborted && sessionIdRef.current) {
+        // 任何终止错误都回收服务端会话，避免旧会话与配额预留一直占用到自然过期。
+        const sessionId = sessionIdRef.current;
+        if (sessionId) {
           try {
-            await api.cancelSession(sessionIdRef.current);
+            await api.cancelSession(sessionId);
           } catch {
-            // 忽略取消会话的错误
+            // 原始错误优先；服务端仍会通过会话过期清理兜底。
           }
-          sessionIdRef.current = null;
-          uploadedChunksRef.current.clear();
         }
+
+        sessionIdRef.current = null;
+        uploadedChunksRef.current.clear();
+        abortControllerRef.current = null;
 
         throw error;
       }
@@ -260,7 +259,12 @@ export function useChunkedUpload(t: TFunction) {
    * 取消上传
    */
   const cancel = useCallback(() => {
-    abortControllerRef.current?.abort();
+    if (finalizingRef.current || !abortControllerRef.current) {
+      return false;
+    }
+
+    abortControllerRef.current.abort();
+    return true;
   }, []);
 
   return {

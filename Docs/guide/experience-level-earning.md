@@ -45,7 +45,8 @@ TTL: 次日凌晨
 **示例**:
 ```csharp
 // 检查每日上限
-var todayExpKey = $"exp:daily:{userId}:receive_like:{DateTime.Today:yyyyMMdd}";
+var statDate = _businessCalendar.GetCurrentDate();
+var todayExpKey = $"exp:daily:{userId}:receive_like:{statDate:yyyyMMdd}";
 var todayExp = await _cache.GetAsync<int>(todayExpKey);
 
 if (todayExp >= 50) // 点赞经验每日上限 50

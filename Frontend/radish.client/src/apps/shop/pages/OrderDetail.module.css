@@ -12,7 +12,7 @@
   padding: 22px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   border: 1px solid var(--rx-border-strong);
   padding: 0 14px;
   border-radius: var(--rx-radius-pill);
@@ -107,7 +107,7 @@
 }
 
 .section {
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
   padding: 20px;
@@ -147,7 +147,7 @@
   flex-shrink: 0;
   border: 1px solid color-mix(in srgb, var(--rx-brand-primary) 28%, transparent);
   border-radius: var(--rx-radius-pill);
-  background: color-mix(in srgb, var(--rx-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   color: var(--rx-brand-primary);
   cursor: pointer;
   font-size: 13px;
@@ -172,7 +172,7 @@
   height: 80px;
   border-radius: var(--rx-radius-card);
   overflow: hidden;
-  background: color-mix(in srgb, var(--rx-brand-soft) 64%, white 36%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 64%, var(--theme-surface-highlight) 36%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -197,7 +197,7 @@
 .productType {
   font-size: 12px;
   color: var(--rx-brand-primary);
-  background: color-mix(in srgb, var(--rx-brand-soft) 72%, white 28%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 72%, var(--theme-surface-highlight) 28%);
   padding: 2px 8px;
   border-radius: var(--rx-radius-pill);
   display: inline-block;
@@ -329,7 +329,7 @@
   display: flex;
   justify-content: flex-end;
   padding: 20px;
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
   box-shadow: var(--theme-shadow-soft);
@@ -341,7 +341,7 @@
   gap: 12px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   padding: 18px;
 }
@@ -352,7 +352,7 @@
   gap: 7px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-muted) 58%, white 42%);
+  background: color-mix(in srgb, var(--rx-bg-muted) 58%, var(--theme-surface-highlight) 42%);
   padding: 14px;
 }
 
@@ -407,7 +407,7 @@
 
 .railBackButton {
   border: 1px solid var(--rx-border-strong);
-  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--rx-text-secondary);
 }
 
@@ -561,7 +561,7 @@
 }
 
 .dialogConfirmButton:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--theme-state-danger) 80%, white 20%);
+  background: color-mix(in srgb, var(--theme-state-danger) 80%, var(--theme-surface-highlight) 20%);
 }
 
 .dialogConfirmButton:disabled {

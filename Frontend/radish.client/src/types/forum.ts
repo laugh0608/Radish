@@ -1,4 +1,5 @@
 import type { LongId } from '@/api/user';
+import type { UserAdornment } from '@/types/userAdornment';
 
 /**
  * 论坛相关的 TypeScript 类型定义
@@ -163,6 +164,7 @@ export interface PostAnswer {
   voAuthorPublicId?: string | null;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
+  voAuthorAdornment?: UserAdornment | null;
   voContent: string;
   voIsAccepted: boolean;
   voCreateTime: string;
@@ -255,6 +257,7 @@ export interface PostItem {
   voAuthorPublicId?: string | null;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
+  voAuthorAdornment?: UserAdornment | null;
   voLatestInteractors?: PostInteractor[];
   voGodCommentId?: LongId | null;
   voGodCommentAuthorName?: string | null;
@@ -296,6 +299,7 @@ export interface PostDetail {
   voAuthorPublicId?: string | null;
   voAuthorName?: string | null;
   voAuthorAvatarUrl?: string | null;
+  voAuthorAdornment?: UserAdornment | null;
   voTags?: string;
   voTagNames?: string[];
   voTagSlugs?: string[];
@@ -335,6 +339,7 @@ export interface CommentNode {
   voAuthorPublicId?: string | null;
   voAuthorName: string;
   voAuthorAvatarUrl?: string | null;
+  voAuthorAdornment?: UserAdornment | null;
   voParentId?: LongId | null;
   voRootId?: LongId | null;
   voReplyToCommentId?: LongId | null;

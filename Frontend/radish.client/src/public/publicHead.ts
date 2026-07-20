@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next';
 import { buildPublicDiscoverPath } from './discoverRouteState.ts';
 import { buildPublicDocsPath } from './docsRouteState.ts';
 import { buildPublicForumPath } from './forumRouteState.ts';
@@ -291,6 +292,132 @@ export function buildPublicRouteHead(route: PublicContentRouteDescriptor): Publi
   return buildShopHead(route);
 }
 
+function withLocalizedAppTitle(pageTitle: string, appName: string): string {
+  return `${pageTitle} · ${appName}`;
+}
+
+/**
+ * 构造当前界面语言的公开路由 head 基线。路由中的搜索词、标签等原始值只做插值，不交给 i18n 当作翻译键。
+ */
+export function buildLocalizedPublicRouteHead(
+  route: PublicContentRouteDescriptor,
+  t: TFunction,
+): PublicHeadDescriptor {
+  const routeHead = buildPublicRouteHead(route);
+
+  if (route.app === 'discover') {
+    return {
+      ...routeHead,
+      title: withLocalizedAppTitle(t('discover.public.pageTitle'), publicSiteName),
+      description: t('discover.public.pageIntro'),
+    };
+  }
+
+  if (route.app === 'forum') {
+    const appName = t('desktop.apps.forum.name');
+    const forumRoute = route.route;
+    const pageTitle = forumRoute.kind === 'detail'
+      ? t('forum.postDetail.title')
+      : forumRoute.kind === 'compose'
+        ? t('forum.public.composeTitle')
+        : forumRoute.kind === 'search'
+          ? forumRoute.keyword
+            ? t('forum.public.searchResultTitle', { keyword: forumRoute.keyword })
+            : t('forum.public.searchTitle')
+          : forumRoute.kind === 'tag'
+            ? `#${forumRoute.tagSlug}`
+            : forumRoute.kind === 'question'
+              ? t('forum.public.questionTitle')
+              : forumRoute.kind === 'poll'
+                ? t('forum.public.pollTitle')
+                : forumRoute.kind === 'lottery'
+                  ? t('forum.public.lotteryTitle')
+                  : t('forum.allPosts');
+    const description = forumRoute.kind === 'compose'
+      ? t('forum.public.composeDescription')
+      : forumRoute.kind === 'search'
+        ? t('forum.public.searchIdleDescription')
+        : t('forum.public.readOnlyDescription');
+
+    return {
+      ...routeHead,
+      title: withLocalizedAppTitle(pageTitle, appName),
+      description,
+    };
+  }
+
+  if (route.app === 'docs') {
+    const appName = t('desktop.apps.document.name');
+    const docsRoute = route.route;
+    const pageTitle = docsRoute.kind === 'detail'
+      ? isNumericRouteIdentifier(docsRoute.slug)
+        ? t('wiki.public.detailTitle')
+        : docsRoute.slug
+      : docsRoute.kind === 'search'
+        ? docsRoute.keyword
+          ? t('wiki.public.searchResultTitle', { keyword: docsRoute.keyword })
+          : t('wiki.public.searchTitle')
+        : t('wiki.public.pageTitle');
+    const description = docsRoute.kind === 'detail'
+      ? t('wiki.public.detailGuideDescription')
+      : docsRoute.kind === 'search'
+        ? t('wiki.public.searchGuideDescription')
+        : t('wiki.public.listGuideDescription');
+
+    return {
+      ...routeHead,
+      title: withLocalizedAppTitle(pageTitle, appName),
+      description,
+    };
+  }
+
+  if (route.app === 'profile') {
+    return {
+      ...routeHead,
+      title: withLocalizedAppTitle(t('profile.public.title'), publicSiteName),
+      description: t('profile.public.contentDescription'),
+    };
+  }
+
+  if (route.app === 'leaderboard') {
+    return {
+      ...routeHead,
+      title: withLocalizedAppTitle(
+        t('leaderboard.public.title'),
+        t('desktop.apps.leaderboard.name'),
+      ),
+      description: t('leaderboard.public.pageIntro'),
+    };
+  }
+
+  if (route.app === 'legal') {
+    return {
+      ...routeHead,
+      title: t('legal.header.brandName'),
+      description: t('workbench.item.legal.description'),
+    };
+  }
+
+  const appName = t('desktop.apps.shop.name');
+  const shopRoute = route.route;
+  const pageTitle = shopRoute.kind === 'detail'
+    ? t('shop.public.detailTitle')
+    : shopRoute.kind === 'products'
+      ? shopRoute.keyword?.trim() || t('shop.public.productsTitle')
+      : t('shop.public.homeTitle');
+  const description = shopRoute.kind === 'detail'
+    ? t('shop.public.detailGuideDescription')
+    : shopRoute.kind === 'products'
+      ? t('shop.public.productsToolbarDescription')
+      : t('shop.public.guideDescription');
+
+  return {
+    ...routeHead,
+    title: withLocalizedAppTitle(pageTitle, appName),
+    description,
+  };
+}
+
 function upsertMetaByName(name: string, content: string): void {
   const normalizedContent = normalizeDescription(content);
   const existing = document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
@@ -302,6 +429,10 @@ function upsertMetaByName(name: string, content: string): void {
   }
 }
 
+function removeMetaByName(name: string): void {
+  document.head.querySelector<HTMLMetaElement>(`meta[name="${name}"]`)?.remove();
+}
+
 function upsertMetaByProperty(property: string, content: string): void {
   const normalizedContent = normalizeDescription(content);
   const existing = document.head.querySelector<HTMLMetaElement>(`meta[property="${property}"]`);
@@ -311,6 +442,10 @@ function upsertMetaByProperty(property: string, content: string): void {
   if (!existing) {
     document.head.appendChild(element);
   }
+}
+
+function removeMetaByProperty(property: string): void {
+  document.head.querySelector<HTMLMetaElement>(`meta[property="${property}"]`)?.remove();
 }
 
 function upsertCanonicalLink(href: string): void {
@@ -340,6 +475,39 @@ export function applyPublicHead(head: PublicHeadDescriptor, options?: ApplyPubli
   upsertMetaByProperty('og:type', head.type ?? 'website');
   if (head.imageUrl) {
     upsertMetaByProperty('og:image', head.imageUrl);
+  } else {
+    removeMetaByProperty('og:image');
+  }
+  upsertMetaByName('twitter:card', head.imageUrl ? 'summary_large_image' : 'summary');
+  upsertMetaByName('twitter:title', title);
+  upsertMetaByName('twitter:description', description);
+  if (head.imageUrl) {
+    upsertMetaByName('twitter:image', head.imageUrl);
+  } else {
+    removeMetaByName('twitter:image');
   }
   upsertCanonicalLink(canonicalUrl);
+}
+
+/**
+ * PublicEntry 离开时恢复站点级基线，避免公开路由的 canonical 和分享信息残留到私域页。
+ */
+export function resetPublicHead(): void {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document.title = publicSiteName;
+  upsertMetaByName('description', publicDefaultDescription);
+  upsertMetaByProperty('og:site_name', publicSiteName);
+  upsertMetaByProperty('og:title', publicSiteName);
+  upsertMetaByProperty('og:description', publicDefaultDescription);
+  upsertMetaByProperty('og:type', 'website');
+  removeMetaByProperty('og:url');
+  removeMetaByProperty('og:image');
+  removeMetaByName('twitter:card');
+  removeMetaByName('twitter:title');
+  removeMetaByName('twitter:description');
+  removeMetaByName('twitter:image');
+  document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
 }

@@ -14,7 +14,21 @@ public class ChatProfile : Profile
         CreateMap<Channel, ChannelVo>()
             .ForMember(dest => dest.VoUnreadCount, opt => opt.Ignore())
             .ForMember(dest => dest.VoHasMention, opt => opt.Ignore())
-            .ForMember(dest => dest.VoLastMessage, opt => opt.Ignore());
+            .ForMember(dest => dest.VoLastMessage, opt => opt.Ignore())
+            .ForMember(dest => dest.VoConversationKind, opt => opt.Ignore())
+            .ForMember(dest => dest.VoPeerUserId, opt => opt.Ignore())
+            .ForMember(dest => dest.VoPeerPublicId, opt => opt.Ignore())
+            .ForMember(dest => dest.VoPeerDisplayName, opt => opt.Ignore())
+            .ForMember(dest => dest.VoPeerAvatarUrl, opt => opt.Ignore())
+            .ForMember(dest => dest.VoDirectRequestStatus, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanSend, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanAccept, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanDecline, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanBlock, opt => opt.Ignore())
+            .ForMember(dest => dest.VoCanUnblock, opt => opt.Ignore())
+            .ForMember(dest => dest.VoIsBlockedByCurrentUser, opt => opt.Ignore())
+            .ForMember(dest => dest.VoIsArchived, opt => opt.Ignore())
+            .ForMember(dest => dest.VoIsPeerAvailable, opt => opt.Ignore());
         RecognizePrefixes("Vo");
         CreateMap<ChannelVo, Channel>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore())

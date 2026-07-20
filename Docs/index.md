@@ -41,6 +41,7 @@ features:
 - [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
+- [Client 与 Console 跨应用导航契约](/frontend/client-console-navigation-contract) - 产品端、治理端与原生壳层的跳转、返回和认证边界
 - [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics) - 页面级错误恢复、复制诊断和隐私边界
 - [Web 功能地图](/workbench) - 正式 Web 低频能力与历史兼容入口，不承担 Discover 首页主叙事
 - [纯 Web 私域复访入口](/frontend/private-web-revisit) - `/notifications`、`/me`、`/messages`、`/pet` 的登录恢复、来源返回与私域边界
@@ -80,11 +81,13 @@ features:
 - [私域与作者态 Web 工作流设计](/frontend/private-web-workflows-design)
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design)
 - [国际化指南](/architecture/i18n)
+- [F3 i18n 完成度治理实施说明](/frontend/i18n-completion-governance)
 - [文档系统方案](/guide/document-system)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)
-- [Radish 电子宠物](/features/radish-pet-roadmap)
+- [Radish 电子宠物系统](/guide/radish-pet-system)
 - [个人圈子](/features/circle)
+- [商城商品效力与权益履约](/features/shop-product-effect-entitlement-fulfillment)
 - [论坛投票 MVP 设计方案](/features/forum-poll-mvp)
 - [论坛问答 MVP 设计方案](/features/forum-qa-mvp)
 

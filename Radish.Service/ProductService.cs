@@ -1,13 +1,16 @@
 using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 using AutoMapper;
 using Radish.Common;
 using Radish.Common.CoreTool;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
 using SqlSugar;
@@ -20,14 +23,17 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<ProductCategory> _categoryRepository;
     private readonly IBaseRepository<Order> _orderRepository;
+    private readonly IBaseRepository<Attachment>? _attachmentRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 #pragma warning disable CS0618
     private static readonly Expression<Func<Product, bool>> SupportedPublicProductExpression = p =>
+        p.ProductType != ProductType.Physical &&
+        !(p.ProductType == ProductType.Benefit &&
+          p.BenefitType == BenefitType.Theme &&
+          p.BenefitValue != ShopThemeResources.DarkNight &&
+          p.BenefitValue != ShopThemeResources.Sakura) &&
         !(p.ProductType == ProductType.Benefit && (
-            p.BenefitType == BenefitType.Badge ||
             p.BenefitType == BenefitType.AvatarFrame ||
-            p.BenefitType == BenefitType.Title ||
-            p.BenefitType == BenefitType.Theme ||
             p.BenefitType == BenefitType.Signature ||
             p.BenefitType == BenefitType.NameColor ||
             p.BenefitType == BenefitType.LikeEffect)) &&
@@ -40,11 +46,13 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         p.IsEnabled &&
         p.IsOnSale &&
         !p.IsDeleted &&
+        p.ProductType != ProductType.Physical &&
+        !(p.ProductType == ProductType.Benefit &&
+          p.BenefitType == BenefitType.Theme &&
+          p.BenefitValue != ShopThemeResources.DarkNight &&
+          p.BenefitValue != ShopThemeResources.Sakura) &&
         !(p.ProductType == ProductType.Benefit && (
-            p.BenefitType == BenefitType.Badge ||
             p.BenefitType == BenefitType.AvatarFrame ||
-            p.BenefitType == BenefitType.Title ||
-            p.BenefitType == BenefitType.Theme ||
             p.BenefitType == BenefitType.Signature ||
             p.BenefitType == BenefitType.NameColor ||
             p.BenefitType == BenefitType.LikeEffect)) &&
@@ -66,13 +74,15 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         IBaseRepository<Product> productRepository,
         IBaseRepository<ProductCategory> categoryRepository,
         IBaseRepository<Order> orderRepository,
-        IAttachmentUrlResolver attachmentUrlResolver)
+        IAttachmentUrlResolver attachmentUrlResolver,
+        IBaseRepository<Attachment>? attachmentRepository = null)
         : base(mapper, productRepository)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
         _orderRepository = orderRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _attachmentRepository = attachmentRepository;
     }
 
     #region 商品分类
@@ -241,8 +251,17 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             var productConfigurationError = GetInvalidProductConfigurationMessage(
                 product.ProductType,
+                product.BenefitType,
                 product.ConsumableType,
-                product.BenefitValue);
+                product.BenefitValue,
+                product.IconAttachmentId);
+            if (productConfigurationError == null &&
+                product.ProductType == ProductType.Benefit &&
+                product.BenefitType == BenefitType.Badge &&
+                !await IsPublicAttachmentAvailableAsync(product.IconAttachmentId!.Value))
+            {
+                productConfigurationError = "徽章图标附件不存在、不可公开或已失效";
+            }
             if (productConfigurationError != null)
             {
                 Log.Warning("商品 {ProductId} 配置不完整，拒绝购买：{Reason}", productId, productConfigurationError);
@@ -272,6 +291,56 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             Log.Error(ex, "检查用户 {UserId} 是否可购买商品 {ProductId} 失败", userId, productId);
             throw;
         }
+    }
+
+    public Task<List<ShopProductCapabilityVo>> GetProductCapabilitiesAsync()
+    {
+        List<ShopProductCapabilityVo> capabilities = new();
+
+        foreach (var benefitType in Enum.GetValues<BenefitType>())
+        {
+            capabilities.Add(BuildCapability(ProductType.Benefit, benefitType, null));
+        }
+
+#pragma warning disable CS0618
+        foreach (var consumableType in Enum.GetValues<ConsumableType>())
+        {
+            capabilities.Add(BuildCapability(ProductType.Consumable, null, consumableType));
+        }
+#pragma warning restore CS0618
+
+        capabilities.Add(BuildCapability(ProductType.Physical, null, null));
+        return Task.FromResult(capabilities);
+    }
+
+    private static ShopProductCapabilityVo BuildCapability(
+        ProductType productType,
+        BenefitType? benefitType,
+        ConsumableType? consumableType)
+    {
+        var canSell = !ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(
+            productType,
+            benefitType,
+            consumableType);
+        return new ShopProductCapabilityVo
+        {
+            VoProductType = productType,
+            VoBenefitType = benefitType,
+            VoConsumableType = consumableType,
+            VoCanSell = canSell,
+            VoCanActivate = productType == ProductType.Benefit &&
+                            ShopProductAvailabilityPolicy.CanActivateBenefitType(benefitType),
+            VoConfigurationRequirements = ShopProductAvailabilityPolicy
+                .GetConfigurationRequirements(productType, benefitType, consumableType)
+                .ToList(),
+            VoConfigurationRequirementKeys = ShopProductAvailabilityPolicy
+                .GetConfigurationRequirementKeys(productType, benefitType, consumableType)
+                .ToList(),
+            VoUnavailableReason = ShopProductAvailabilityPolicy.GetUnavailableReason(
+                productType, benefitType, consumableType),
+            VoUnavailableReasonKey = ShopProductAvailabilityPolicy.GetUnavailableReasonKey(
+                productType, benefitType, consumableType)
+        };
     }
 
     /// <summary>获取用户购买某商品的数量</summary>
@@ -412,7 +481,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
-            EnsureValidProductConfiguration(dto.ProductType, dto.ConsumableType, dto.BenefitValue);
+            await EnsureValidProductConfigurationAsync(
+                dto.ProductType,
+                dto.BenefitType,
+                dto.ConsumableType,
+                dto.BenefitValue,
+                dto.IconAttachmentId);
 
             var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
             var product = Mapper.Map<Product>(dto);
@@ -445,12 +519,17 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         try
         {
             EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
-            EnsureValidProductConfiguration(dto.ProductType, dto.ConsumableType, dto.BenefitValue);
+            await EnsureValidProductConfigurationAsync(
+                dto.ProductType,
+                dto.BenefitType,
+                dto.ConsumableType,
+                dto.BenefitValue,
+                dto.IconAttachmentId);
 
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
             {
-                throw new InvalidOperationException("商品不存在");
+                throw CreateProductNotFoundException();
             }
 
             EnsureExpectedProductVersion(product, dto.ExpectedVersion);
@@ -491,7 +570,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => p.Id == dto.Id && p.TenantId == product.TenantId && p.Version == dto.ExpectedVersion && !p.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+                throw CreateProductVersionConflictException();
             }
 
             Log.Information("更新商品成功：{ProductId}, 操作员={Operator}", dto.Id, operatorName);
@@ -513,15 +592,20 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null)
             {
-                return false;
+                throw CreateProductNotFoundException();
             }
 
             if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
             {
-                throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，不能上架销售");
+                throw CreateProductSaleUnsupportedException(product.BenefitType, product.ConsumableType);
             }
 
-            EnsureValidProductConfiguration(product.ProductType, product.ConsumableType, product.BenefitValue);
+            await EnsureValidProductConfigurationAsync(
+                product.ProductType,
+                product.BenefitType,
+                product.ConsumableType,
+                product.BenefitValue,
+                product.IconAttachmentId);
             EnsureExpectedProductVersion(product, expectedVersion);
 
             var affected = await _productRepository.UpdateColumnsAsync(
@@ -535,7 +619,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+                throw CreateProductVersionConflictException();
             }
 
             Log.Information("商品 {ProductId} 上架成功", productId);
@@ -560,28 +644,64 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             return;
         }
 
-        throw new InvalidOperationException($"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(benefitType, consumableType)}暂未开放，不能上架销售");
+        throw CreateProductSaleUnsupportedException(benefitType, consumableType);
     }
 
-    private static void EnsureValidProductConfiguration(
+    private async Task EnsureValidProductConfigurationAsync(
         ProductType productType,
+        BenefitType? benefitType,
         ConsumableType? consumableType,
-        string? benefitValue)
+        string? benefitValue,
+        long? iconAttachmentId)
     {
-        var errorMessage = GetInvalidProductConfigurationMessage(productType, consumableType, benefitValue);
+        var errorMessage = GetInvalidProductConfigurationMessage(productType, benefitType, consumableType, benefitValue, iconAttachmentId);
         if (errorMessage == null)
         {
-            return;
+            if (productType != ProductType.Benefit || benefitType != BenefitType.Badge)
+            {
+                return;
+            }
+
+            var attachment = await IsPublicAttachmentAvailableAsync(iconAttachmentId!.Value);
+            if (attachment)
+            {
+                return;
+            }
+
+            errorMessage = "徽章图标附件不存在、不可公开或已失效";
         }
 
-        throw new InvalidOperationException(errorMessage);
+        throw new BusinessException(
+            errorMessage,
+            400,
+            "Product.ConfigurationInvalid",
+            "error.product.configuration_invalid");
     }
 
     private static string? GetInvalidProductConfigurationMessage(
         ProductType productType,
+        BenefitType? benefitType,
         ConsumableType? consumableType,
-        string? benefitValue)
+        string? benefitValue,
+        long? iconAttachmentId)
     {
+        var normalizedValue = benefitValue?.Trim();
+        if (productType == ProductType.Benefit)
+        {
+            return benefitType switch
+            {
+                BenefitType.Badge when string.IsNullOrWhiteSpace(normalizedValue) => "徽章资源标识不能为空",
+                BenefitType.Badge when normalizedValue!.Length > 100 || !Regex.IsMatch(normalizedValue, "^[A-Za-z0-9._-]+$") =>
+                    "徽章资源标识长度必须为 1-100，且只能包含字母、数字、点、下划线和连字符",
+                BenefitType.Badge when iconAttachmentId is not > 0 => "徽章必须配置图标附件",
+                BenefitType.Title when string.IsNullOrWhiteSpace(normalizedValue) => "称号文本不能为空",
+                BenefitType.Title when normalizedValue!.Length > 40 => "称号文本长度不能超过 40 个字符",
+                BenefitType.Theme when !ShopThemeResources.IsSupported(normalizedValue) =>
+                    $"主题资源标识必须是：{string.Join("、", ShopThemeResources.SupportedValues)}",
+                _ => null
+            };
+        }
+
         if (productType != ProductType.Consumable)
         {
             return null;
@@ -595,6 +715,22 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         };
     }
 
+    private async Task<bool> IsPublicAttachmentAvailableAsync(long attachmentId)
+    {
+        if (_attachmentRepository == null)
+        {
+            return false;
+        }
+
+        var attachment = await _attachmentRepository.QueryFirstAsync(item =>
+                item.Id == attachmentId &&
+                item.IsPublic &&
+                item.IsEnabled &&
+                !item.IsDeleted &&
+                (item.AuditStatus == null || item.AuditStatus != "Reject"));
+        return attachment != null;
+    }
+
     private static bool IsPositiveIntegerConfigValue(string? benefitValue)
     {
         return !string.IsNullOrWhiteSpace(benefitValue)
@@ -602,11 +738,43 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             && parsedValue > 0;
     }
 
+    private static BusinessException CreateProductNotFoundException()
+    {
+        return new BusinessException(
+            "商品不存在",
+            404,
+            "Product.NotFound",
+            "error.product.not_found");
+    }
+
+    private static BusinessException CreateProductSaleUnsupportedException(
+        BenefitType? benefitType,
+        ConsumableType? consumableType)
+    {
+        var productName = ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(
+            benefitType,
+            consumableType);
+        return new BusinessException(
+            $"{productName}暂未开放，不能上架销售",
+            409,
+            "Product.SaleUnsupported",
+            "error.product.sale_unsupported");
+    }
+
+    private static BusinessException CreateProductVersionConflictException()
+    {
+        return new BusinessException(
+            "商品信息已被其他管理员修改，请刷新后重试",
+            409,
+            "Product.VersionConflict",
+            "error.product.version_conflict");
+    }
+
     private static void EnsureExpectedProductVersion(Product product, int expectedVersion)
     {
         if (product.Version != expectedVersion)
         {
-            throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+            throw CreateProductVersionConflictException();
         }
     }
 
@@ -618,7 +786,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null)
             {
-                return false;
+                throw CreateProductNotFoundException();
             }
 
             EnsureExpectedProductVersion(product, expectedVersion);
@@ -634,7 +802,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
             if (affected <= 0)
             {
-                throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+                throw CreateProductVersionConflictException();
             }
 
             Log.Information("商品 {ProductId} 下架成功", productId);
@@ -739,7 +907,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
             if (product == null)
             {
-                throw new InvalidOperationException("商品不存在");
+                throw CreateProductNotFoundException();
             }
 
             var relatedOrderCount = await _orderRepository.QueryCountAsync(
@@ -748,7 +916,11 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     && order.TenantId == product.TenantId);
             if (relatedOrderCount > 0)
             {
-                throw new InvalidOperationException("商品已有订单记录，不能删除；请下架商品以保留历史订单快照");
+                throw new BusinessException(
+                    "商品已有订单记录，不能删除；请下架商品以保留历史订单快照",
+                    409,
+                    "Product.DeleteOrderConflict",
+                    "error.product.delete_order_conflict");
             }
 
             product.IsDeleted = true;
@@ -759,15 +931,20 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             product.ModifyId = operatorId;
 
             var result = await _productRepository.UpdateAsync(product);
-            if (result)
+            if (!result)
             {
-                Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
-                    productId,
-                    product.ModifyBy,
-                    operatorId);
+                throw new BusinessException(
+                    "商品删除失败，请刷新后重试",
+                    409,
+                    "Product.OperationRejected",
+                    "error.product.operation_rejected");
             }
 
-            return result;
+            Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
+                productId,
+                product.ModifyBy,
+                operatorId);
+            return true;
         }
         catch (Exception ex)
         {

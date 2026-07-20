@@ -38,44 +38,8 @@ public interface IUserInventoryService : IBaseService<UserInventory, UserInvento
     /// <returns>使用结果</returns>
     Task<UseItemResultDto> UseItemAsync(long userId, UseItemDto dto);
 
-    /// <summary>使用改名卡</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <param name="newNickname">新昵称</param>
-    /// <returns>使用结果</returns>
-    Task<UseItemResultDto> UseRenameCardAsync(long userId, long inventoryId, string newNickname);
-
-    /// <summary>使用经验卡</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <returns>使用结果</returns>
-    Task<UseItemResultDto> UseExpCardAsync(long userId, long inventoryId);
-
-    /// <summary>使用萝卜币红包</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <returns>使用结果</returns>
-    Task<UseItemResultDto> UseCoinCardAsync(long userId, long inventoryId);
-
-    /// <summary>使用双倍经验卡</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <returns>使用结果</returns>
-    Task<UseItemResultDto> UseDoubleExpCardAsync(long userId, long inventoryId);
-
-    /// <summary>使用帖子置顶卡</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <param name="postId">帖子 ID</param>
-    /// <returns>使用结果</returns>
-    Task<UseItemResultDto> UsePostPinCardAsync(long userId, long inventoryId, long postId);
-
-    /// <summary>使用帖子高亮卡</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="inventoryId">背包项 ID</param>
-    /// <param name="postId">帖子 ID</param>
-    /// <returns>使用结果</returns>
-    Task<UseItemResultDto> UsePostHighlightCardAsync(long userId, long inventoryId, long postId);
+    /// <summary>使用改名卡。</summary>
+    Task<UseItemResultDto> UseRenameCardAsync(long userId, UseRenameCardDto dto);
 
     #endregion
 

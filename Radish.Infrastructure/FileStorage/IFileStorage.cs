@@ -16,13 +16,11 @@ public interface IFileStorage
     /// </summary>
     /// <param name="stream">文件流</param>
     /// <param name="fileName">文件名</param>
-    /// <param name="contentType">MIME 类型</param>
     /// <param name="options">上传选项</param>
     /// <returns>上传结果</returns>
     Task<FileUploadResult> UploadAsync(
         Stream stream,
         string fileName,
-        string contentType,
         FileUploadOptionsDto? options = null);
 
     /// <summary>

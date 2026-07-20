@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { log } from '@/utils/logger';
+import { formatCoinNumber } from '../../utils';
 import styles from './TransactionFilters.module.css';
 
 export interface FilterOptions {
@@ -18,6 +20,8 @@ interface TransactionFiltersProps {
  * 交易筛选器组件
  */
 export const TransactionFilters = ({ filters, onFilterChange }: TransactionFiltersProps) => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [isExpanded, setIsExpanded] = useState(false);
   const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
 
@@ -26,24 +30,23 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
   }, [filters]);
 
   const transactionTypes = [
-    { value: '', label: '全部类型' },
-    { value: 'SYSTEM_GRANT', label: '系统赠送' },
-    { value: 'LIKE_REWARD', label: '点赞奖励' },
-    { value: 'COMMENT_REWARD', label: '评论奖励' },
-    { value: 'GODLIKE_REWARD', label: '神评奖励' },
-    { value: 'SOFA_REWARD', label: '沙发奖励' },
-    { value: 'TRANSFER_IN', label: '转入' },
-    { value: 'TRANSFER_OUT', label: '转出' },
-    { value: 'PURCHASE', label: '购买消费' },
-    { value: 'ADMIN_ADJUST', label: '管理员调整' },
+    { value: '', label: t('pit.history.filter.allTypes') },
+    { value: 'SYSTEM_GRANT', label: t('pit.transactionType.SYSTEM_GRANT') },
+    { value: 'LIKE_REWARD', label: t('pit.transactionType.LIKE_REWARD') },
+    { value: 'COMMENT_REWARD', label: t('pit.transactionType.COMMENT_REWARD') },
+    { value: 'TRANSFER', label: t('pit.transactionType.TRANSFER') },
+    { value: 'TIP', label: t('pit.transactionType.TIP') },
+    { value: 'CONSUME', label: t('pit.transactionType.CONSUME') },
+    { value: 'REFUND', label: t('pit.transactionType.REFUND') },
+    { value: 'PENALTY', label: t('pit.transactionType.PENALTY') },
+    { value: 'ADMIN_ADJUST', label: t('pit.transactionType.ADMIN_ADJUST') },
   ];
 
   const statusOptions = [
-    { value: '', label: '全部状态' },
-    { value: 'PENDING', label: '处理中' },
-    { value: 'SUCCESS', label: '成功' },
-    { value: 'FAILED', label: '失败' },
-    { value: 'CANCELLED', label: '已取消' },
+    { value: '', label: t('pit.history.filter.allStatuses') },
+    { value: 'PENDING', label: t('pit.transactionStatus.PENDING') },
+    { value: 'SUCCESS', label: t('pit.transactionStatus.SUCCESS') },
+    { value: 'FAILED', label: t('pit.transactionStatus.FAILED') },
   ];
 
   const handleFilterChange = (
@@ -97,22 +100,29 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
         <div className={styles.headerLeft}>
           <h3 className={styles.title}>
             <span className={styles.icon}>🔍</span>
-            筛选条件
+            {t('pit.history.filter.title')}
           </h3>
-          {hasActiveFilters && <span className={styles.activeIndicator}>{activeFilterCount} 个筛选条件</span>}
+          {hasActiveFilters && (
+            <span className={styles.activeIndicator}>
+              {t('pit.history.filter.activeCount', {
+                count: activeFilterCount,
+                value: formatCoinNumber(activeFilterCount, language),
+              })}
+            </span>
+          )}
         </div>
         <div className={styles.headerRight}>
           {hasActiveFilters && (
-            <button className={styles.clearButton} onClick={handleClearFilters} title="清空筛选条件">
-              清空
+            <button className={styles.clearButton} onClick={handleClearFilters} title={t('pit.history.filter.clear')}>
+              {t('pit.history.filter.clear')}
             </button>
           )}
           <button
             className={`${styles.expandButton} ${isExpanded ? styles.expanded : ''}`}
             onClick={toggleExpanded}
-            title={isExpanded ? '收起筛选器' : '展开筛选器'}
+            title={t(isExpanded ? 'pit.history.filter.collapse' : 'pit.history.filter.expand')}
           >
-            {isExpanded ? '收起' : '展开'}
+            {t(isExpanded ? 'pit.history.filter.collapse' : 'pit.history.filter.expand')}
           </button>
         </div>
       </div>
@@ -120,18 +130,18 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
       <div className={`${styles.content} ${isExpanded ? styles.expanded : ''}`}>
         <div className={styles.filtersGrid}>
           <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>搜索</label>
+            <label className={styles.filterLabel}>{t('pit.history.filter.search')}</label>
             <input
               type="text"
               className={styles.searchInput}
-              placeholder="搜索交易流水号、备注..."
+              placeholder={t('pit.history.filter.searchPlaceholder')}
               value={localFilters.searchKeyword || ''}
               onChange={(e) => handleFilterChange('searchKeyword', e.target.value)}
             />
           </div>
 
           <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>交易类型</label>
+            <label className={styles.filterLabel}>{t('pit.history.filter.type')}</label>
             <select
               className={styles.filterSelect}
               value={localFilters.transactionType || ''}
@@ -146,7 +156,7 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
           </div>
 
           <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>交易状态</label>
+            <label className={styles.filterLabel}>{t('pit.history.filter.status')}</label>
             <select
               className={styles.filterSelect}
               value={localFilters.status || ''}
@@ -161,7 +171,7 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
           </div>
 
           <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>开始日期</label>
+            <label className={styles.filterLabel}>{t('pit.history.filter.startDate')}</label>
             <input
               type="date"
               className={styles.dateInput}
@@ -171,7 +181,7 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
           </div>
 
           <div className={styles.filterGroup}>
-            <label className={styles.filterLabel}>结束日期</label>
+            <label className={styles.filterLabel}>{t('pit.history.filter.endDate')}</label>
             <input
               type="date"
               className={styles.dateInput}
@@ -182,22 +192,19 @@ export const TransactionFilters = ({ filters, onFilterChange }: TransactionFilte
         </div>
 
         <div className={styles.quickFilters}>
-          <span className={styles.quickFiltersLabel}>快捷筛选：</span>
+          <span className={styles.quickFiltersLabel}>{t('pit.history.filter.quick')}</span>
           <div className={styles.quickFilterButtons}>
             <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'LIKE_REWARD')}>
-              点赞奖励
+              {t('pit.transactionType.LIKE_REWARD')}
             </button>
             <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'COMMENT_REWARD')}>
-              评论奖励
+              {t('pit.transactionType.COMMENT_REWARD')}
             </button>
-            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'TRANSFER_IN')}>
-              转入记录
-            </button>
-            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'TRANSFER_OUT')}>
-              转出记录
+            <button className={styles.quickFilterButton} onClick={() => handleFilterChange('transactionType', 'TRANSFER')}>
+              {t('pit.transactionType.TRANSFER')}
             </button>
             <button className={styles.quickFilterButton} onClick={() => handleFilterChange('status', 'SUCCESS')}>
-              成功交易
+              {t('pit.history.filter.successful')}
             </button>
           </div>
         </div>

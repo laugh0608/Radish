@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Button,
   Form,
@@ -33,6 +34,8 @@ import {
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
+import { getLocalizedApiErrorMessage } from '@/utils/apiErrorMessage';
+import { formatConsoleDateTime, formatConsoleInteger } from '@/utils/localeFormatters';
 import dayjs, { type Dayjs } from 'dayjs';
 import {
   formatFullStatDate,
@@ -59,7 +62,8 @@ import '../adminFeature.css';
 import './ExperienceAdminPage.css';
 
 export const ExperienceAdminPage = () => {
-  useDocumentTitle('经验等级');
+  const { t, i18n } = useTranslation();
+  useDocumentTitle(t('experience.documentTitle'));
 
   const [queryUserId, setQueryUserId] = useState('');
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
@@ -108,22 +112,22 @@ export const ExperienceAdminPage = () => {
   ).some((observation) => observation.voKind === 'anomaly')) ?? dailyStats[0] ?? null;
   const latestGovernanceAction = governanceActions[0] ?? null;
 
-  const loadLevels = async () => {
+  const loadLevels = useCallback(async () => {
     try {
       setLoadingLevels(true);
       const result = await getLevelConfigs();
       setLevels(result);
     } catch (error) {
       log.error('ExperienceAdminPage', '加载等级配置失败:', error);
-      message.error('加载等级配置失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadLevelsFailed'));
     } finally {
       setLoadingLevels(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     void loadLevels();
-  }, []);
+  }, [loadLevels]);
 
   const loadDailyStats = async (userId: string, days: StatsWindowDays = statsWindowDays) => {
     const normalizedUserId = normalizePositiveLongIdInput(userId);
@@ -138,7 +142,7 @@ export const ExperienceAdminPage = () => {
       setDailyStatsWindow(result);
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验统计失败:', error);
-      message.error(error instanceof Error ? error.message : '加载用户经验统计失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadStatsFailed'));
       setDailyStatsWindow(null);
     } finally {
       setLoadingDailyStats(false);
@@ -156,7 +160,7 @@ export const ExperienceAdminPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedUserId, statsWindowDays]);
 
-  const loadGovernanceActions = async (userId: string, take: number = 20) => {
+  const loadGovernanceActions = useCallback(async (userId: string, take: number = 20) => {
     const normalizedUserId = normalizePositiveLongIdInput(userId);
     if (!normalizedUserId) {
       setGovernanceActions([]);
@@ -169,12 +173,12 @@ export const ExperienceAdminPage = () => {
       setGovernanceActions(result);
     } catch (error) {
       log.error('ExperienceAdminPage', '加载经验治理留痕失败:', error);
-      message.error(error instanceof Error ? error.message : '加载经验治理留痕失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadActionsFailed'));
       setGovernanceActions([]);
     } finally {
       setLoadingGovernanceActions(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     if (!loadedUserId) {
@@ -183,7 +187,7 @@ export const ExperienceAdminPage = () => {
     }
 
     void loadGovernanceActions(loadedUserId);
-  }, [loadedUserId]);
+  }, [loadGovernanceActions, loadedUserId]);
 
   const loadTransactions = async (
     userId: string,
@@ -217,7 +221,7 @@ export const ExperienceAdminPage = () => {
       setTransactionPageSize(result.pageSize);
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验流水失败:', error);
-      message.error(error instanceof Error ? error.message : '加载用户经验流水失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadTransactionsFailed'));
       setTransactions([]);
       setTransactionTotal(0);
     } finally {
@@ -267,7 +271,7 @@ export const ExperienceAdminPage = () => {
     const userId = userIdOverride ?? normalizePositiveLongIdInput(queryUserId);
     if (!userId) {
       if (options?.showInvalidMessage ?? true) {
-        message.error('请输入有效的用户 ID');
+        message.error(t('experience.form.userIdInvalid'));
       }
       return;
     }
@@ -288,7 +292,7 @@ export const ExperienceAdminPage = () => {
       reviewForm.resetFields();
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验失败:', error);
-      message.error(error instanceof Error ? error.message : '加载用户经验失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadUserFailed'));
     } finally {
       setLoadingExperience(false);
     }
@@ -330,7 +334,7 @@ export const ExperienceAdminPage = () => {
     });
     setReviewContextDraft(options.context);
     focusReviewSection();
-    message.success('已带入复核结论草稿');
+    message.success(t('experience.feedback.reviewDraftPrefilled'));
   };
 
   const prefillFreezeReason = (reason: string) => {
@@ -343,7 +347,7 @@ export const ExperienceAdminPage = () => {
       reason,
     });
     focusFreezeSection();
-    message.success('已带入冻结原因');
+    message.success(t('experience.feedback.freezeReasonPrefilled'));
   };
 
   const handleRuleReview = (rule: UserExpAnomalyRuleSummaryVo) => {
@@ -351,8 +355,8 @@ export const ExperienceAdminPage = () => {
       expType: getTransactionExpTypePresetForRuleCodes([rule.voRuleCode]),
       date: rule.voLatestHitDate ? dayjs(rule.voLatestHitDate) : null,
       hint: rule.voLatestHitDate
-        ? `已按规则「${rule.voRuleLabel}」定位到 ${formatFullStatDate(rule.voLatestHitDate)} 的经验流水。`
-        : `已按规则「${rule.voRuleLabel}」定位相关经验流水。`,
+        ? t('experience.hint.ruleTransactionsOnDate', { rule: rule.voRuleLabel, date: formatFullStatDate(rule.voLatestHitDate, i18n.resolvedLanguage) })
+        : t('experience.hint.ruleTransactions', { rule: rule.voRuleLabel }),
     });
   };
 
@@ -373,7 +377,7 @@ export const ExperienceAdminPage = () => {
         ruleLabels: [],
         recommendationLevel: recommendation.voLevel,
         recommendationReason: recommendation.voReason,
-        hint: `已带入当前治理建议「${recommendation.voTitle}」作为复核上下文。`,
+        hint: t('experience.hint.recommendationPrefilled', { title: recommendation.voTitle }),
       },
     });
   };
@@ -393,8 +397,8 @@ export const ExperienceAdminPage = () => {
         recommendationLevel: governanceRecommendation?.voLevel,
         recommendationReason: rule.voSuggestedAction,
         hint: latestHitDate
-          ? `已带入规则「${rule.voRuleLabel}」和最近命中日 ${latestHitDate} 的复核上下文。`
-          : `已带入规则「${rule.voRuleLabel}」的复核上下文。`,
+          ? t('experience.hint.ruleReviewOnDate', { rule: rule.voRuleLabel, date: latestHitDate })
+          : t('experience.hint.ruleReview', { rule: rule.voRuleLabel }),
       },
     });
   };
@@ -406,7 +410,7 @@ export const ExperienceAdminPage = () => {
     applyTransactionReviewPreset({
       expType: getTransactionExpTypePresetForRuleCodes(anomalyRuleCodes),
       date: dayjs(record.voStatDate),
-      hint: `已定位到 ${formatFullStatDate(record.voStatDate)} 的经验流水，优先复核该日异常记录。`,
+      hint: t('experience.hint.dayTransactions', { date: formatFullStatDate(record.voStatDate, i18n.resolvedLanguage) }),
     });
   };
 
@@ -432,14 +436,14 @@ export const ExperienceAdminPage = () => {
         ruleLabels: anomalyObservations.map((observation) => observation.voLabel),
         recommendationLevel: governanceRecommendation?.voLevel,
         recommendationReason: governanceRecommendation?.voReason,
-        hint: `已带入 ${formatFullStatDate(record.voStatDate)} 的异常命中记录作为复核上下文。`,
+        hint: t('experience.hint.dayReview', { date: formatFullStatDate(record.voStatDate, i18n.resolvedLanguage) }),
       },
     });
   };
 
   const handleRecordGovernanceReview = async () => {
     if (!loadedUserId) {
-      message.error('请先查询用户经验');
+      message.error(t('experience.feedback.queryFirst'));
       return;
     }
 
@@ -447,7 +451,7 @@ export const ExperienceAdminPage = () => {
       const values = await reviewForm.validateFields();
       const normalizedUserId = normalizePositiveLongIdInput(loadedUserId);
       if (!normalizedUserId) {
-        message.error('请输入有效的用户 ID');
+        message.error(t('experience.form.userIdInvalid'));
         return;
       }
 
@@ -466,7 +470,7 @@ export const ExperienceAdminPage = () => {
         recommendationReason: reviewContextDraft?.recommendationReason ?? undefined,
       });
 
-      message.success('复核结论已记录');
+      message.success(t('experience.feedback.reviewRecorded'));
       await loadGovernanceActions(normalizedUserId);
       reviewForm.resetFields();
       setReviewContextDraft(null);
@@ -476,7 +480,7 @@ export const ExperienceAdminPage = () => {
       }
 
       log.error('ExperienceAdminPage', '记录经验治理复核结论失败:', error);
-      message.error(error instanceof Error ? error.message : '记录复核结论失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.reviewFailed'));
     } finally {
       setReviewing(false);
     }
@@ -487,7 +491,7 @@ export const ExperienceAdminPage = () => {
       const values = await form.validateFields();
       const normalizedUserId = normalizePositiveLongIdInput(values.userId);
       if (!normalizedUserId) {
-        message.error('请输入有效的用户 ID');
+        message.error(t('experience.form.userIdInvalid'));
         return;
       }
 
@@ -499,7 +503,7 @@ export const ExperienceAdminPage = () => {
         reason: values.reason,
       });
 
-      message.success('经验调整成功');
+      message.success(t('experience.feedback.adjusted'));
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
       form.setFieldsValue({ deltaExp: 0, reason: '' });
     } catch (error) {
@@ -508,7 +512,7 @@ export const ExperienceAdminPage = () => {
       }
 
       log.error('ExperienceAdminPage', '调整经验失败:', error);
-      message.error(error instanceof Error ? error.message : '调整经验失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.adjustFailed'));
     } finally {
       setSubmitting(false);
     }
@@ -519,7 +523,7 @@ export const ExperienceAdminPage = () => {
       const values = await freezeForm.validateFields();
       const normalizedUserId = normalizePositiveLongIdInput(values.userId);
       if (!normalizedUserId) {
-        message.error('请输入有效的用户 ID');
+        message.error(t('experience.form.userIdInvalid'));
         return;
       }
 
@@ -531,7 +535,7 @@ export const ExperienceAdminPage = () => {
         frozenUntil: values.frozenUntil ? values.frozenUntil.toDate().toISOString() : undefined,
       });
 
-      message.success('经验已冻结');
+      message.success(t('experience.feedback.frozen'));
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
       await loadGovernanceActions(normalizedUserId);
     } catch (error) {
@@ -540,7 +544,7 @@ export const ExperienceAdminPage = () => {
       }
 
       log.error('ExperienceAdminPage', '冻结经验失败:', error);
-      message.error(error instanceof Error ? error.message : '冻结经验失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.freezeFailed'));
     } finally {
       setFreezing(false);
     }
@@ -551,7 +555,7 @@ export const ExperienceAdminPage = () => {
       const values = await freezeForm.validateFields(['userId']);
       const normalizedUserId = normalizePositiveLongIdInput(values.userId);
       if (!normalizedUserId) {
-        message.error('请输入有效的用户 ID');
+        message.error(t('experience.form.userIdInvalid'));
         return;
       }
 
@@ -559,7 +563,7 @@ export const ExperienceAdminPage = () => {
       setTransactionPageIndex(1);
       await adminUnfreezeExperience(normalizedUserId);
 
-      message.success('经验已解冻');
+      message.success(t('experience.feedback.unfrozen'));
       await loadExperience(normalizedUserId, { showInvalidMessage: false });
       await loadGovernanceActions(normalizedUserId);
       freezeForm.setFieldsValue({
@@ -573,7 +577,7 @@ export const ExperienceAdminPage = () => {
       }
 
       log.error('ExperienceAdminPage', '解冻经验失败:', error);
-      message.error(error instanceof Error ? error.message : '解冻经验失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.unfreezeFailed'));
     } finally {
       setUnfreezing(false);
     }
@@ -584,10 +588,10 @@ export const ExperienceAdminPage = () => {
       setRecalculating(true);
       const result = await recalculateLevelConfigs();
       setLevels(result);
-      message.success('等级配置已重新计算');
+      message.success(t('experience.feedback.recalculated'));
     } catch (error) {
       log.error('ExperienceAdminPage', '重算等级配置失败:', error);
-      message.error('重算等级配置失败');
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.recalculateFailed'));
     } finally {
       setRecalculating(false);
     }
@@ -606,52 +610,52 @@ export const ExperienceAdminPage = () => {
         }}
       />
 
-      <ConsoleMetricGrid label="经验治理工作台指标">
+      <ConsoleMetricGrid label={t('experience.metrics.ariaLabel')}>
         <ConsoleMetricCard
-          label="当前用户"
-          value={loadedUserId ?? '未查询'}
-          description={experience?.voUserName || '等待输入用户 ID'}
+          label={t('experience.metrics.currentUser')}
+          value={loadedUserId ?? t('experience.common.notQueried')}
+          description={experience?.voUserName || t('experience.metrics.awaitUserId')}
           tone={loadedUserId ? 'info' : 'neutral'}
         />
         <ConsoleMetricCard
-          label="总经验"
-          value={experience ? experience.voTotalExp : '--'}
-          description={experience ? `等级 ${experience.voCurrentLevel}` : '未加载用户'}
+          label={t('experience.metrics.totalExp')}
+          value={experience ? formatConsoleInteger(experience.voTotalExp, i18n.resolvedLanguage) : '--'}
+          description={experience ? t('experience.metrics.level', { level: experience.voCurrentLevel }) : t('experience.metrics.userNotLoaded')}
           tone="success"
         />
         <ConsoleMetricCard
-          label="异常命中"
-          value={dailyStatsSummary ? dailyStatsSummary.voReviewDays : '--'}
-          description={`${statsWindowDays} 天观察窗口`}
+          label={t('experience.metrics.anomalyHits')}
+          value={dailyStatsSummary ? formatConsoleInteger(dailyStatsSummary.voReviewDays, i18n.resolvedLanguage) : '--'}
+          description={t('experience.metrics.window', { count: statsWindowDays })}
           tone={dailyStatsSummary && dailyStatsSummary.voReviewDays > 0 ? 'warning' : 'neutral'}
         />
         <ConsoleMetricCard
-          label="治理留痕"
-          value={governanceActions.length}
-          description="最近治理动作记录"
+          label={t('experience.metrics.actions')}
+          value={formatConsoleInteger(governanceActions.length, i18n.resolvedLanguage)}
+          description={t('experience.metrics.actionsDescription')}
         />
       </ConsoleMetricGrid>
 
-      <section className="governance-task-flow" aria-label="经验治理台账任务流">
+      <section className="governance-task-flow" aria-label={t('experience.flow.ariaLabel')}>
         <div className="governance-task-flow__item">
           <span>1</span>
-          <strong>用户定位</strong>
-          <p>{loadedUserId ? `已载入 #${loadedUserId}` : '先输入用户 ID，再生成经验台账。'}</p>
+          <strong>{t('experience.flow.user')}</strong>
+          <p>{loadedUserId ? t('experience.flow.userLoaded', { userId: loadedUserId }) : t('experience.flow.userPending')}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>2</span>
-          <strong>趋势证据</strong>
-          <p>{dailyStatsSummary ? `${statsWindowDays} 天内 ${dailyStatsSummary.voReviewDays} 天需复核。` : '等待统计窗口返回。'}</p>
+          <strong>{t('experience.flow.trend')}</strong>
+          <p>{dailyStatsSummary ? t('experience.flow.trendReady', { window: statsWindowDays, count: dailyStatsSummary.voReviewDays }) : t('experience.flow.trendPending')}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>3</span>
-          <strong>流水核对</strong>
-          <p>{transactionTotal > 0 ? `${transactionTotal} 条流水可筛选回看。` : '按异常日期或类型定位流水。'}</p>
+          <strong>{t('experience.flow.transactions')}</strong>
+          <p>{transactionTotal > 0 ? t('experience.flow.transactionsReady', { count: transactionTotal }) : t('experience.flow.transactionsPending')}</p>
         </div>
         <div className="governance-task-flow__item">
           <span>4</span>
-          <strong>复核留痕</strong>
-          <p>{governanceActions.length > 0 ? `最近 ${governanceActions.length} 条治理动作。` : '复核、冻结和解冻都会进入台账。'}</p>
+          <strong>{t('experience.flow.review')}</strong>
+          <p>{governanceActions.length > 0 ? t('experience.flow.reviewReady', { count: governanceActions.length }) : t('experience.flow.reviewPending')}</p>
         </div>
       </section>
 
@@ -750,14 +754,14 @@ export const ExperienceAdminPage = () => {
         </div>
 
         <div className="governance-workbench__actions">
-          <section className="admin-feature-rail" aria-label="经验治理证据与动作上下文">
+          <section className="admin-feature-rail" aria-label={t('experience.rail.ariaLabel')}>
             <div className="admin-feature-rail__header">
               <div>
-                <span className="admin-feature-rail__eyebrow">台账上下文</span>
-                <h3>台账证据与动作</h3>
+                <span className="admin-feature-rail__eyebrow">{t('experience.rail.eyebrow')}</span>
+                <h3>{t('experience.rail.title')}</h3>
               </div>
               <ConsoleStatusChip tone={experience?.voExpFrozen ? 'warning' : (loadedUserId ? 'info' : 'neutral')}>
-                {experience?.voExpFrozen ? '冻结中' : (loadedUserId ? '观察中' : '未查询')}
+                {experience?.voExpFrozen ? t('experience.common.freezing') : (loadedUserId ? t('experience.common.observing') : t('experience.common.notQueried'))}
               </ConsoleStatusChip>
             </div>
 
@@ -765,75 +769,75 @@ export const ExperienceAdminPage = () => {
               <>
                 <div className="admin-feature-rail__list">
                   <div className="admin-feature-rail__item">
-                    <span>当前用户</span>
+                    <span>{t('experience.metrics.currentUser')}</span>
                     <strong>{experience.voUserName || `#${loadedUserId}`}</strong>
                   </div>
                   <div className="admin-feature-rail__item">
-                    <span>等级 / 总经验</span>
-                    <strong>Lv.{experience.voCurrentLevel} · {experience.voTotalExp}</strong>
+                    <span>{t('experience.rail.levelTotal')}</span>
+                    <strong>Lv.{experience.voCurrentLevel} · {formatConsoleInteger(experience.voTotalExp, i18n.resolvedLanguage)}</strong>
                   </div>
                   <div className="admin-feature-rail__item">
-                    <span>观察建议</span>
-                    <strong>{governanceRecommendation?.voTitle ?? '无系统建议'}</strong>
+                    <span>{t('experience.rail.recommendation')}</span>
+                    <strong>{governanceRecommendation?.voTitle ?? t('experience.rail.noRecommendation')}</strong>
                   </div>
                 </div>
 
                 {primaryAnomalyRule ? (
                   <div className="admin-feature-rail__callout">
-                    <span>首要异常规则</span>
+                    <span>{t('experience.rail.primaryRule')}</span>
                     <strong>{primaryAnomalyRule.voRuleLabel}</strong>
                     <p>{primaryAnomalyRule.voStrongestSignal}</p>
                     <div className="admin-feature-rail__actions">
                       <Button size="small" onClick={() => handleRuleReview(primaryAnomalyRule)}>
-                        查看流水
+                        {t('experience.actions.viewTransactions')}
                       </Button>
                       <Button
                         size="small"
                         disabled={!canFreeze}
                         onClick={() => handleRuleGovernanceReview(primaryAnomalyRule)}
                       >
-                        带入复核
+                        {t('experience.actions.prefillReviewShort')}
                       </Button>
                     </div>
                   </div>
                 ) : primaryReviewDay ? (
                   <div className="admin-feature-rail__callout">
-                    <span>当前观察日</span>
-                    <strong>{formatFullStatDate(primaryReviewDay.voStatDate)}</strong>
-                    <p>当日新增 {primaryReviewDay.voExpEarned} 经验，可继续核对来源构成。</p>
+                    <span>{t('experience.rail.reviewDay')}</span>
+                    <strong>{formatFullStatDate(primaryReviewDay.voStatDate, i18n.resolvedLanguage)}</strong>
+                    <p>{t('experience.rail.dayExp', { value: formatConsoleInteger(primaryReviewDay.voExpEarned, i18n.resolvedLanguage) })}</p>
                     <div className="admin-feature-rail__actions">
                       <Button size="small" onClick={() => handleDayReview(primaryReviewDay)}>
-                        定位流水
+                        {t('experience.actions.locateTransactions')}
                       </Button>
                       <Button
                         size="small"
                         disabled={!canFreeze}
                         onClick={() => handleDayGovernanceReview(primaryReviewDay)}
                       >
-                        带入复核
+                        {t('experience.actions.prefillReviewShort')}
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <p className="admin-feature-rail__empty">
-                    当前窗口尚无可摘要的经验观察数据；切换 7 / 30 天窗口或重新查询用户后会刷新证据。
+                    {t('experience.rail.noObservation')}
                   </p>
                 )}
 
                 <div className="admin-feature-rail__list">
                   <div className="admin-feature-rail__item">
-                    <span>最近留痕</span>
-                    <strong>{latestGovernanceAction ? latestGovernanceAction.voActionTypeDisplay : '暂无'}</strong>
+                    <span>{t('experience.rail.latestAction')}</span>
+                    <strong>{latestGovernanceAction ? t(`experience.actionType.${latestGovernanceAction.voActionType}`, { defaultValue: latestGovernanceAction.voActionTypeDisplay }) : t('experience.common.none')}</strong>
                   </div>
                   <div className="admin-feature-rail__item">
-                    <span>冻结状态</span>
-                    <strong>{experience.voExpFrozen ? (experience.voFrozenUntil || '永久冻结') : '未冻结'}</strong>
+                    <span>{t('experience.rail.freezeStatus')}</span>
+                    <strong>{experience.voExpFrozen ? (experience.voFrozenUntil ? formatConsoleDateTime(experience.voFrozenUntil, i18n.resolvedLanguage) : t('experience.common.permanentFreeze')) : t('experience.common.notFrozen')}</strong>
                   </div>
                 </div>
               </>
             ) : (
               <p className="admin-feature-rail__empty">
-                先查询用户经验，右侧会汇总等级、趋势、异常规则和最近治理留痕。
+                {t('experience.rail.queryFirst')}
               </p>
             )}
           </section>

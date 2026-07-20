@@ -66,7 +66,7 @@ public class WikiController : ControllerBase
     {
         var result = await _wikiDocumentService.GetPublicBySlugAsync(slug);
         return result == null
-            ? MessageModel<WikiDocumentDetailVo>.Failed("公开文档不存在", default!)
+            ? BuildFailure(StatusCodes.Status404NotFound, "公开文档不存在", default(WikiDocumentDetailVo)!, "Wiki.DocumentNotFound", "error.wiki.document_not_found")
             : MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
     }
 
@@ -120,7 +120,7 @@ public class WikiController : ControllerBase
             Current.Roles);
         if (result == null)
         {
-            return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);
+            return BuildFailure(StatusCodes.Status404NotFound, "文档不存在或无权访问", default(WikiDocumentDetailVo)!, "Wiki.DocumentNotAccessible", "error.wiki.document_not_accessible");
         }
 
         if (Current.UserId > 0)
@@ -154,7 +154,7 @@ public class WikiController : ControllerBase
             roleNames: Current.Roles);
         if (result == null)
         {
-            return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在或无权访问", default!);
+            return BuildFailure(StatusCodes.Status404NotFound, "文档不存在或无权访问", default(WikiDocumentDetailVo)!, "Wiki.DocumentNotAccessible", "error.wiki.document_not_accessible");
         }
 
         if (Current.UserId > 0)
@@ -220,7 +220,7 @@ public class WikiController : ControllerBase
         var result = await _wikiDocumentService.GetGovernanceDetailAsync(id, includeDeleted);
         if (result == null)
         {
-            return MessageModel<WikiDocumentDetailVo>.Failed("文档不存在", default!);
+            return BuildFailure(StatusCodes.Status404NotFound, "文档不存在", default(WikiDocumentDetailVo)!, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
 
         return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
@@ -232,7 +232,7 @@ public class WikiController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return MessageModel<long>.Failed("请求参数验证失败", 0);
+            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", 0L, "Wiki.ValidationFailed", "error.wiki.validation_failed");
         }
 
         try
@@ -252,7 +252,7 @@ public class WikiController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return MessageModel<bool>.Failed("请求参数验证失败", false);
+            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", false, "Wiki.ValidationFailed", "error.wiki.validation_failed");
         }
 
         try
@@ -260,7 +260,7 @@ public class WikiController : ControllerBase
             var updated = await _wikiDocumentService.UpdateDocumentAsync(id, updateDto, Current.UserId, Current.UserName);
             return updated
                 ? MessageModel<bool>.Success("更新成功", true)
-                : MessageModel<bool>.Failed("文档不存在", false);
+                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -278,7 +278,7 @@ public class WikiController : ControllerBase
             var deleted = await _wikiDocumentService.DeleteDocumentAsync(id, Current.UserId, Current.UserName);
             return deleted
                 ? MessageModel<bool>.Success("删除成功", true)
-                : MessageModel<bool>.Failed("文档不存在", false);
+                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -296,7 +296,7 @@ public class WikiController : ControllerBase
             var restored = await _wikiDocumentService.RestoreDocumentAsync(id, Current.UserId, Current.UserName);
             return restored
                 ? MessageModel<bool>.Success("恢复成功", true)
-                : MessageModel<bool>.Failed("文档不存在或无法恢复", false);
+                : BuildFailure(StatusCodes.Status409Conflict, "文档不存在或无法恢复", false, "Wiki.RestoreRejected", "error.wiki.restore_rejected");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -314,7 +314,7 @@ public class WikiController : ControllerBase
             var result = await _wikiDocumentService.PublishAsync(id, Current.UserId, Current.UserName);
             return result
                 ? MessageModel<bool>.Success("发布成功", true)
-                : MessageModel<bool>.Failed("文档不存在", false);
+                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -332,7 +332,7 @@ public class WikiController : ControllerBase
             var result = await _wikiDocumentService.UnpublishAsync(id, Current.UserId, Current.UserName);
             return result
                 ? MessageModel<bool>.Success("已转为草稿", true)
-                : MessageModel<bool>.Failed("文档不存在", false);
+                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -350,7 +350,7 @@ public class WikiController : ControllerBase
             var result = await _wikiDocumentService.ArchiveAsync(id, Current.UserId, Current.UserName);
             return result
                 ? MessageModel<bool>.Success("归档成功", true)
-                : MessageModel<bool>.Failed("文档不存在", false);
+                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -365,7 +365,7 @@ public class WikiController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return MessageModel<bool>.Failed("请求参数验证失败", false);
+            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", false, "Wiki.ValidationFailed", "error.wiki.validation_failed");
         }
 
         try
@@ -373,7 +373,7 @@ public class WikiController : ControllerBase
             var updated = await _wikiDocumentService.UpdateAccessPolicyAsync(id, updateDto, Current.UserId, Current.UserName);
             return updated
                 ? MessageModel<bool>.Success("访问策略已更新", true)
-                : MessageModel<bool>.Failed("文档不存在", false);
+                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -398,7 +398,7 @@ public class WikiController : ControllerBase
         var result = await _wikiDocumentService.GetRevisionDetailAsync(revisionId);
         if (result == null)
         {
-            return MessageModel<WikiDocumentRevisionDetailVo>.Failed("版本不存在", default!);
+            return BuildFailure(StatusCodes.Status404NotFound, "版本不存在", default(WikiDocumentRevisionDetailVo)!, "Wiki.RevisionNotFound", "error.wiki.revision_not_found");
         }
 
         return MessageModel<WikiDocumentRevisionDetailVo>.Success("查询成功", result);
@@ -414,7 +414,7 @@ public class WikiController : ControllerBase
             var result = await _wikiDocumentService.RollbackAsync(revisionId, Current.UserId, Current.UserName);
             return result
                 ? MessageModel<bool>.Success("回滚成功", true)
-                : MessageModel<bool>.Failed("版本不存在或文档已删除", false);
+                : BuildFailure(StatusCodes.Status409Conflict, "版本不存在或文档已删除", false, "Wiki.RollbackRejected", "error.wiki.rollback_rejected");
         }
         catch (Exception ex) when (ex is ArgumentException or BusinessException)
         {
@@ -430,7 +430,7 @@ public class WikiController : ControllerBase
     {
         if (!ModelState.IsValid)
         {
-            return MessageModel<long>.Failed("请求参数验证失败", 0);
+            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", 0L, "Wiki.ValidationFailed", "error.wiki.validation_failed");
         }
 
         try
@@ -447,13 +447,28 @@ public class WikiController : ControllerBase
     private static MessageModel<T> BuildFailure<T>(Exception exception, T responseData)
     {
         var businessException = exception as BusinessException;
+        return BuildFailure(
+            businessException?.StatusCode ?? StatusCodes.Status400BadRequest,
+            exception.Message,
+            responseData,
+            businessException?.ErrorCode ?? "Wiki.ValidationFailed",
+            businessException?.MessageKey ?? "error.wiki.validation_failed");
+    }
+
+    private static MessageModel<T> BuildFailure<T>(
+        int statusCode,
+        string message,
+        T responseData,
+        string code,
+        string messageKey)
+    {
         return new MessageModel<T>
         {
             IsSuccess = false,
-            StatusCode = businessException?.StatusCode ?? StatusCodes.Status400BadRequest,
-            MessageInfo = exception.Message,
-            Code = businessException?.ErrorCode,
-            MessageKey = businessException?.MessageKey,
+            StatusCode = statusCode,
+            MessageInfo = message,
+            Code = code,
+            MessageKey = messageKey,
             ResponseData = responseData
         };
     }
@@ -466,7 +481,7 @@ public class WikiController : ControllerBase
         var result = await _wikiDocumentService.ExportMarkdownAsync(id, includeUnpublished: true);
         if (result == null)
         {
-            return NotFound(MessageModel<string>.Failed("文档不存在", string.Empty));
+            return NotFound(BuildFailure(StatusCodes.Status404NotFound, "文档不存在", string.Empty, "Wiki.DocumentNotFound", "error.wiki.document_not_found"));
         }
 
         var (fileName, markdownContent) = result.Value;

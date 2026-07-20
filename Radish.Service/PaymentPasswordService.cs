@@ -3,12 +3,14 @@ using Microsoft.Extensions.Logging;
 using Radish.Common.HelpTool;
 using Radish.Common.Utils;
 using Radish.Common;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Radish.Shared.Security;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 using System.Security.Cryptography;
 using System.Text;
@@ -103,10 +105,13 @@ public class PaymentPasswordService : IPaymentPasswordService
         try
         {
             // 验证请求参数
-            EnsureNewPasscodeCanBeSaved(request.NewPassword, "新支付口令不能为空");
+            EnsureNewPasscodeCanBeSaved(request.NewPassword);
 
             if (request.NewPassword != request.ConfirmPassword)
-                throw new ArgumentException("两次输入的支付口令不一致");
+                throw CreatePaymentPasswordException(
+                    "两次输入的支付口令不一致",
+                    PaymentPasscodeErrorCodes.ConfirmationMismatch,
+                    "error.payment_password.confirmation_mismatch");
 
             // 检查是否已设置支付密码
             var existingPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
@@ -114,7 +119,11 @@ public class PaymentPasswordService : IPaymentPasswordService
                 && !string.IsNullOrEmpty(existingPassword.PasswordHash)
                 && !HasLegacyPasscode(existingPassword))
             {
-                throw new InvalidOperationException("用户已设置支付口令，请使用修改口令功能");
+                throw CreatePaymentPasswordException(
+                    "用户已设置支付口令，请使用修改口令功能",
+                    PaymentPasscodeErrorCodes.AlreadyConfigured,
+                    "error.payment_password.already_configured",
+                    HttpStatusCodeEnum.Conflict);
             }
 
             // 当前版本使用 Argon2id 自带盐值编码，旧 Salt 字段保留为空字符串兼容表结构。
@@ -183,23 +192,37 @@ public class PaymentPasswordService : IPaymentPasswordService
         {
             // 验证请求参数
             if (string.IsNullOrWhiteSpace(request.CurrentPassword))
-                throw new ArgumentException("当前支付口令不能为空");
+                throw CreatePaymentPasswordException(
+                    "当前支付口令不能为空",
+                    PaymentPasscodeErrorCodes.Required,
+                    "error.payment_password.required");
 
-            EnsureNewPasscodeCanBeSaved(request.NewPassword, "新支付口令不能为空");
+            EnsureNewPasscodeCanBeSaved(request.NewPassword);
 
             if (request.NewPassword != request.ConfirmPassword)
-                throw new ArgumentException("两次输入的新支付口令不一致");
+                throw CreatePaymentPasswordException(
+                    "两次输入的新支付口令不一致",
+                    PaymentPasscodeErrorCodes.ConfirmationMismatch,
+                    "error.payment_password.confirmation_mismatch");
 
             // 获取现有支付密码
             var paymentPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
             if (paymentPassword == null || string.IsNullOrEmpty(paymentPassword.PasswordHash))
             {
-                throw new InvalidOperationException("用户未设置支付口令");
+                throw CreatePaymentPasswordException(
+                    "用户未设置支付口令",
+                    PaymentPasscodeErrorCodes.NotConfigured,
+                    "error.payment_password.not_configured",
+                    HttpStatusCodeEnum.Conflict);
             }
 
             if (HasLegacyPasscode(paymentPassword))
             {
-                throw new InvalidOperationException(PaymentPasscodeRules.UpgradeRequiredErrorMessage);
+                throw CreatePaymentPasswordException(
+                    PaymentPasscodeRules.UpgradeRequiredErrorMessage,
+                    PaymentPasscodeErrorCodes.UpgradeRequired,
+                    "error.payment_password.upgrade_required",
+                    HttpStatusCodeEnum.Conflict);
             }
 
             // 验证当前密码
@@ -211,7 +234,7 @@ public class PaymentPasswordService : IPaymentPasswordService
 
             if (!verifyResult.IsSuccess)
             {
-                throw new UnauthorizedAccessException(verifyResult.ErrorMessage ?? "当前支付口令验证失败");
+                throw CreateVerificationException(verifyResult);
             }
 
             // 当前版本使用 Argon2id 自带盐值编码，旧 Salt 字段保留为空字符串兼容表结构。
@@ -259,6 +282,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                 {
                     IsSuccess = false,
                     ErrorMessage = PaymentPasscodeRules.EmptyErrorMessage,
+                    ErrorCode = PaymentPasscodeErrorCodes.Required,
+                    MessageKey = "error.payment_password.required",
                     RemainingAttempts = MaxFailedAttempts
                 };
             }
@@ -271,6 +296,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                 {
                     IsSuccess = false,
                     ErrorMessage = "用户未设置支付口令",
+                    ErrorCode = PaymentPasscodeErrorCodes.NotConfigured,
+                    MessageKey = "error.payment_password.not_configured",
                     RemainingAttempts = 0
                 };
             }
@@ -290,6 +317,8 @@ public class PaymentPasswordService : IPaymentPasswordService
                 {
                     IsSuccess = false,
                     ErrorMessage = $"账户已被锁定，请{remainingMinutes}分钟后重试",
+                    ErrorCode = PaymentPasscodeErrorCodes.Locked,
+                    MessageKey = "error.payment_password.locked",
                     IsLocked = true,
                     LockedRemainingMinutes = remainingMinutes,
                     RemainingAttempts = 0
@@ -344,6 +373,12 @@ public class PaymentPasswordService : IPaymentPasswordService
                 {
                     IsSuccess = false,
                     ErrorMessage = errorMessage,
+                    ErrorCode = lockedUntil.HasValue
+                        ? PaymentPasscodeErrorCodes.Locked
+                        : PaymentPasscodeErrorCodes.Invalid,
+                    MessageKey = lockedUntil.HasValue
+                        ? "error.payment_password.locked"
+                        : "error.payment_password.invalid",
                     RemainingAttempts = remainingAttempts,
                     IsLocked = lockedUntil.HasValue,
                     LockedRemainingMinutes = lockedUntil.HasValue ? LockoutMinutes : 0
@@ -599,16 +634,25 @@ public class PaymentPasswordService : IPaymentPasswordService
 
     #region 私有方法
 
-    private static void EnsureNewPasscodeCanBeSaved(string? passcode, string emptyMessage)
+    private static void EnsureNewPasscodeCanBeSaved(string? passcode)
     {
         if (string.IsNullOrWhiteSpace(passcode))
-            throw new ArgumentException(emptyMessage);
+            throw CreatePaymentPasswordException(
+                "新支付口令不能为空",
+                PaymentPasscodeErrorCodes.Required,
+                "error.payment_password.required");
 
         if (!PaymentPasscodeRules.IsFormatValid(passcode))
-            throw new ArgumentException(PaymentPasscodeRules.FormatErrorMessage);
+            throw CreatePaymentPasswordException(
+                PaymentPasscodeRules.FormatErrorMessage,
+                PaymentPasscodeErrorCodes.FormatInvalid,
+                "error.payment_password.format_invalid");
 
         if (PaymentPasscodeRules.IsRepeatedDigits(passcode))
-            throw new ArgumentException(PaymentPasscodeRules.RepeatedDigitErrorMessage);
+            throw CreatePaymentPasswordException(
+                PaymentPasscodeRules.RepeatedDigitErrorMessage,
+                PaymentPasscodeErrorCodes.RepeatedDigits,
+                "error.payment_password.repeated_digits");
     }
 
     private static bool HasLegacyPasscode(UserPaymentPassword paymentPassword)
@@ -623,10 +667,35 @@ public class PaymentPasswordService : IPaymentPasswordService
         {
             IsSuccess = false,
             ErrorCode = PaymentPasscodeErrorCodes.UpgradeRequired,
+            MessageKey = "error.payment_password.upgrade_required",
             ErrorMessage = PaymentPasscodeRules.UpgradeRequiredErrorMessage,
             RemainingAttempts = 0,
             RequiresPasscodeUpgrade = true
         };
+    }
+
+    private static BusinessException CreateVerificationException(PaymentPasswordVerifyResult result)
+    {
+        var statusCode = result.IsLocked
+            ? HttpStatusCodeEnum.TooManyRequests
+            : result.ErrorCode is PaymentPasscodeErrorCodes.NotConfigured or PaymentPasscodeErrorCodes.UpgradeRequired
+                ? HttpStatusCodeEnum.Conflict
+                : HttpStatusCodeEnum.BadRequest;
+
+        return CreatePaymentPasswordException(
+            result.ErrorMessage ?? "支付口令验证失败",
+            result.ErrorCode ?? PaymentPasscodeErrorCodes.Invalid,
+            result.MessageKey ?? PaymentPasscodeErrorCodes.ResolveMessageKey(result.ErrorCode),
+            statusCode);
+    }
+
+    private static BusinessException CreatePaymentPasswordException(
+        string message,
+        string errorCode,
+        string messageKey,
+        HttpStatusCodeEnum statusCode = HttpStatusCodeEnum.BadRequest)
+    {
+        return new BusinessException(message, (int)statusCode, errorCode, messageKey);
     }
 
     private async Task UpgradePaymentPasswordHashAsync(UserPaymentPassword paymentPassword, string password)

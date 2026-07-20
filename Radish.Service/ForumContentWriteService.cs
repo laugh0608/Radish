@@ -1,8 +1,11 @@
+using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Service;
 
@@ -16,6 +19,21 @@ public class ForumContentWriteService : IForumContentWriteService
     private const int PostCreateFrequencyWindowSeconds = 30;
     private const int CommentCreateFrequencyWindowSeconds = 10;
     private const int AnswerCreateFrequencyWindowSeconds = 30;
+    private const int MaxPostTitleLength = 200;
+    private const int MaxPostContentLength = 50000;
+    private const int MaxContentTypeLength = 20;
+    private const int MaxClientSubmissionIdLength = 80;
+    private const int MinPostTagCount = 1;
+    private const int MaxPostTagCount = 5;
+    private const int MaxPollQuestionLength = 200;
+    private const int MinPollOptionCount = 2;
+    private const int MaxPollOptionCount = 6;
+    private const int MaxPollOptionLength = 100;
+    private const int MaxLotteryPrizeNameLength = 100;
+    private const int MaxLotteryPrizeDescriptionLength = 500;
+    private const int MinLotteryWinnerCount = 1;
+    private const int MaxLotteryWinnerCount = 20;
+    private static readonly TimeSpan MinLotteryLeadTime = TimeSpan.FromHours(1);
 
     private const string CategoryTargetType = "Category";
     private const string PostTargetType = "Post";
@@ -35,6 +53,7 @@ public class ForumContentWriteService : IForumContentWriteService
         _commentService = commentService;
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<long>> PublishPostAsync(
         Post post,
         CreatePollDto? poll,
@@ -44,6 +63,14 @@ public class ForumContentWriteService : IForumContentWriteService
         bool allowCreateTag,
         string? clientSubmissionId)
     {
+        ValidatePostPublishRequestShape(
+            post,
+            poll,
+            lottery,
+            isQuestion,
+            tagNames,
+            clientSubmissionId);
+
         var snapshot = _contentSubmissionService.CreateRequestSnapshot(
             BuildPostCreateRequestValues(post, poll, lottery, isQuestion, tagNames),
             BuildPostCreateFingerprintValues(post, poll, lottery, isQuestion, tagNames));
@@ -69,45 +96,26 @@ public class ForumContentWriteService : IForumContentWriteService
                 : ContentWriteResult<long>.ReplayedResult(postId, beginResult.Message);
         }
 
-        EnsureStarted(beginResult);
+        EnsurePostPublishStarted(beginResult);
 
-        long? createdPostId = null;
-        try
-        {
-            createdPostId = await _postService.PublishPostAsync(
-                post,
-                poll,
-                lottery,
-                isQuestion,
-                tagNames,
-                allowCreateTag);
+        var createdPostId = await _postService.PublishPostAsync(
+            post,
+            poll,
+            lottery,
+            isQuestion,
+            tagNames,
+            allowCreateTag);
 
-            await CompleteSuccessAsync(
-                beginResult,
-                ContentSubmissionResultTypes.Post,
-                createdPostId.Value,
-                post.PublicId);
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.Post,
+            createdPostId,
+            post.PublicId);
 
-            return ContentWriteResult<long>.CreatedResult(createdPostId.Value);
-        }
-        catch (Exception ex)
-        {
-            if (createdPostId.HasValue)
-            {
-                await CompleteSuccessAsync(
-                    beginResult,
-                    ContentSubmissionResultTypes.Post,
-                    createdPostId.Value,
-                    post.PublicId);
-
-                return ContentWriteResult<long>.CreatedResult(createdPostId.Value);
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        return ContentWriteResult<long>.CreatedResult(createdPostId);
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<CommentCreateResult>> CreateCommentAsync(
         Comment comment,
         string? clientSubmissionId)
@@ -151,52 +159,22 @@ public class ForumContentWriteService : IForumContentWriteService
 
         EnsureStarted(beginResult);
 
-        long? createdCommentId = null;
-        CommentHighlightRecheckResultVo? createdHighlightRecheckResult = null;
-        try
+        var (createdCommentId, createdHighlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.Comment,
+            createdCommentId,
+            null);
+
+        return ContentWriteResult<CommentCreateResult>.CreatedResult(new CommentCreateResult
         {
-            var (newCommentId, highlightRecheckResult) = await _commentService.AddCommentAsync(comment);
-            createdCommentId = newCommentId;
-            createdHighlightRecheckResult = highlightRecheckResult;
-
-            await CompleteSuccessAsync(
-                beginResult,
-                ContentSubmissionResultTypes.Comment,
-                createdCommentId.Value,
-                null);
-
-            return ContentWriteResult<CommentCreateResult>.CreatedResult(new CommentCreateResult
-            {
-                CommentId = createdCommentId.Value,
-                HighlightRecheckResult = createdHighlightRecheckResult
-            });
-        }
-        catch (Exception ex)
-        {
-            if (createdCommentId.HasValue)
-            {
-                await CompleteSuccessAsync(
-                    beginResult,
-                    ContentSubmissionResultTypes.Comment,
-                    createdCommentId.Value,
-                    null);
-
-                return ContentWriteResult<CommentCreateResult>.CreatedResult(new CommentCreateResult
-                {
-                    CommentId = createdCommentId.Value,
-                    HighlightRecheckResult = createdHighlightRecheckResult ?? new CommentHighlightRecheckResultVo
-                    {
-                        VoPostId = comment.PostId,
-                        VoChanged = false
-                    }
-                });
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+            CommentId = createdCommentId,
+            HighlightRecheckResult = createdHighlightRecheckResult
+        });
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<PostQuestionVo>> AddAnswerAsync(
         long postId,
         string content,
@@ -235,36 +213,17 @@ public class ForumContentWriteService : IForumContentWriteService
 
         EnsureStarted(beginResult);
 
-        PostQuestionVo? createdQuestion = null;
-        try
-        {
-            createdQuestion = await _postService.AddAnswerAsync(postId, content, authorId, authorName, tenantId);
-            await CompleteSuccessAsync(
-                beginResult,
-                ContentSubmissionResultTypes.PostQuestion,
-                postId,
-                null);
+        var createdQuestion = await _postService.AddAnswerAsync(postId, content, authorId, authorName, tenantId);
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.PostQuestion,
+            postId,
+            null);
 
-            return ContentWriteResult<PostQuestionVo>.CreatedResult(createdQuestion);
-        }
-        catch (Exception ex)
-        {
-            if (createdQuestion != null)
-            {
-                await CompleteSuccessAsync(
-                    beginResult,
-                    ContentSubmissionResultTypes.PostQuestion,
-                    postId,
-                    null);
-
-                return ContentWriteResult<PostQuestionVo>.CreatedResult(createdQuestion);
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        return ContentWriteResult<PostQuestionVo>.CreatedResult(createdQuestion);
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<PostEditResult>> UpdatePostAsync(
         long tenantId,
         long postId,
@@ -318,37 +277,22 @@ public class ForumContentWriteService : IForumContentWriteService
                 "内容没有变化，无需保存");
         }
 
-        var postUpdated = false;
-        try
-        {
-            await _postService.UpdatePostAsync(
-                postId,
-                title,
-                content,
-                categoryId,
-                tagNames,
-                allowCreateTag,
-                operatorId,
-                operatorName,
-                isAdmin);
-            postUpdated = true;
+        await _postService.UpdatePostAsync(
+            postId,
+            title,
+            content,
+            categoryId,
+            tagNames,
+            allowCreateTag,
+            operatorId,
+            operatorName,
+            isAdmin);
 
-            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
-            return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
-        }
-        catch (Exception ex)
-        {
-            if (postUpdated)
-            {
-                await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
-                return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
-            }
-
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
+        return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
     }
 
+    [UseTran]
     public async Task<ContentWriteResult<CommentEditResult>> UpdateCommentAsync(
         long tenantId,
         long commentId,
@@ -397,35 +341,19 @@ public class ForumContentWriteService : IForumContentWriteService
                 "内容没有变化，无需保存");
         }
 
-        var commentUpdated = false;
-        try
+        var (success, message) = await _commentService.UpdateCommentAsync(
+            commentId,
+            content,
+            operatorId,
+            operatorName,
+            isAdmin);
+        if (!success)
         {
-            var (success, message) = await _commentService.UpdateCommentAsync(
-                commentId,
-                content,
-                operatorId,
-                operatorName,
-                isAdmin);
-            if (!success)
-            {
-                throw new InvalidOperationException(message);
-            }
-
-            commentUpdated = true;
-            await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
-            return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment), message);
+            throw new InvalidOperationException(message);
         }
-        catch (Exception ex)
-        {
-            if (commentUpdated)
-            {
-                await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
-                return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment));
-            }
 
-            await CompleteFailureAsync(beginResult, ex);
-            throw;
-        }
+        await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
+        return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment), message);
     }
 
     private async Task<PostQuestionVo> ResolveQuestionAsync(long postId, long viewerUserId)
@@ -452,6 +380,272 @@ public class ForumContentWriteService : IForumContentWriteService
         return false;
     }
 
+    private static void EnsurePostPublishStarted(ContentSubmissionBeginResult beginResult)
+    {
+        if (beginResult.Status == ContentSubmissionBeginStatus.Started && beginResult.RecordId.HasValue)
+        {
+            return;
+        }
+
+        throw beginResult.Status switch
+        {
+            ContentSubmissionBeginStatus.InvalidKey => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.BadRequest,
+                ForumPublishErrorCodes.SubmissionIdInvalid,
+                "提交标识格式无效，请刷新后重新提交"),
+            ContentSubmissionBeginStatus.Conflict => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.Conflict,
+                ForumPublishErrorCodes.SubmissionConflict,
+                "提交标识已被其他内容使用，请刷新后重新提交"),
+            ContentSubmissionBeginStatus.Processing => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.Conflict,
+                ForumPublishErrorCodes.SubmissionProcessing,
+                "内容正在提交，请稍后确认"),
+            ContentSubmissionBeginStatus.FrequencyLimited => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.TooManyRequests,
+                ForumPublishErrorCodes.RateLimited,
+                "发布过于频繁，请稍后重试"),
+            ContentSubmissionBeginStatus.Succeeded or ContentSubmissionBeginStatus.DuplicateContent =>
+                CreateSubmissionException(
+                    beginResult,
+                    HttpStatusCodeEnum.Conflict,
+                    ForumPublishErrorCodes.SubmissionConflict,
+                    "此前提交结果暂不可用，请刷新后重试"),
+            _ => new InvalidOperationException("内容提交服务返回了未知状态")
+        };
+    }
+
+    private static void ValidatePostPublishRequestShape(
+        Post post,
+        CreatePollDto? poll,
+        CreateLotteryDto? lottery,
+        bool isQuestion,
+        List<string>? tagNames,
+        string? clientSubmissionId)
+    {
+        if (string.IsNullOrWhiteSpace(post.Title))
+        {
+            throw CreatePublishValidationException(
+                "帖子标题不能为空",
+                ForumPublishErrorCodes.TitleRequired);
+        }
+
+        if (post.Title.Length > MaxPostTitleLength)
+        {
+            throw CreatePublishValidationException(
+                $"帖子标题不能超过 {MaxPostTitleLength} 个字符",
+                ForumPublishErrorCodes.TitleTooLong);
+        }
+
+        if (string.IsNullOrWhiteSpace(post.Content))
+        {
+            throw CreatePublishValidationException(
+                "帖子内容不能为空",
+                ForumPublishErrorCodes.ContentRequired);
+        }
+
+        if (post.Content.Length > MaxPostContentLength)
+        {
+            throw CreatePublishValidationException(
+                $"帖子内容不能超过 {MaxPostContentLength} 个字符",
+                ForumPublishErrorCodes.ContentTooLong);
+        }
+
+        if (post.CategoryId <= 0)
+        {
+            throw CreatePublishValidationException(
+                "请选择帖子分类",
+                ForumPublishErrorCodes.CategoryRequired);
+        }
+
+        if (post.ContentType?.Length > MaxContentTypeLength)
+        {
+            throw CreatePublishValidationException(
+                "帖子内容类型无效",
+                ForumPublishErrorCodes.ContentTypeInvalid);
+        }
+
+        if (clientSubmissionId?.Length > MaxClientSubmissionIdLength)
+        {
+            throw CreatePublishValidationException(
+                "提交标识格式无效，请刷新后重新提交",
+                ForumPublishErrorCodes.SubmissionIdInvalid);
+        }
+
+        var featureCount = (poll != null ? 1 : 0) + (lottery != null ? 1 : 0) + (isQuestion ? 1 : 0);
+        if (featureCount > 1)
+        {
+            throw CreatePublishValidationException(
+                "问答帖、投票和抽奖暂时互斥",
+                ForumPublishErrorCodes.FeatureCombinationInvalid);
+        }
+
+        var normalizedTags = tagNames?
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Select(tag => tag.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? [];
+        if (normalizedTags.Count is < MinPostTagCount or > MaxPostTagCount)
+        {
+            throw CreatePublishValidationException(
+                $"发布帖子时标签数量必须在 {MinPostTagCount} 到 {MaxPostTagCount} 个之间",
+                ForumPublishErrorCodes.TagCountInvalid);
+        }
+
+        if (poll != null)
+        {
+            ValidatePollRequestShape(poll);
+        }
+
+        if (lottery != null)
+        {
+            ValidateLotteryRequestShape(lottery);
+        }
+    }
+
+    private static void ValidatePollRequestShape(CreatePollDto poll)
+    {
+        var question = poll.Question?.Trim();
+        if (string.IsNullOrWhiteSpace(question))
+        {
+            throw CreatePublishValidationException(
+                "投票问题不能为空",
+                ForumPublishErrorCodes.PollQuestionRequired);
+        }
+
+        if (question.Length > MaxPollQuestionLength)
+        {
+            throw CreatePublishValidationException(
+                $"投票问题不能超过 {MaxPollQuestionLength} 个字符",
+                ForumPublishErrorCodes.PollQuestionTooLong);
+        }
+
+        if (poll.Options == null)
+        {
+            throw CreatePublishValidationException(
+                "投票选项不能为空",
+                ForumPublishErrorCodes.PollOptionsRequired);
+        }
+
+        if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow)
+        {
+            throw CreatePublishValidationException(
+                "投票截止时间必须晚于当前时间",
+                ForumPublishErrorCodes.PollEndTimeInvalid);
+        }
+
+        var providedOptions = poll.Options.OfType<PollOptionDto>().ToList();
+        if (providedOptions.Count != poll.Options.Count)
+        {
+            throw CreatePublishValidationException(
+                "投票选项不能为空",
+                ForumPublishErrorCodes.PollOptionsRequired);
+        }
+
+        var normalizedOptions = providedOptions
+            .Where(option => !string.IsNullOrWhiteSpace(option.OptionText))
+            .Select(option => option.OptionText.Trim())
+            .ToList();
+        if (normalizedOptions.Count is < MinPollOptionCount or > MaxPollOptionCount)
+        {
+            throw CreatePublishValidationException(
+                $"投票选项数量必须在 {MinPollOptionCount} 到 {MaxPollOptionCount} 个之间",
+                ForumPublishErrorCodes.PollOptionCountInvalid);
+        }
+
+        if (normalizedOptions.Any(option => option.Length > MaxPollOptionLength))
+        {
+            throw CreatePublishValidationException(
+                $"单个投票选项不能超过 {MaxPollOptionLength} 个字符",
+                ForumPublishErrorCodes.PollOptionTooLong);
+        }
+
+        if (normalizedOptions.Distinct(StringComparer.OrdinalIgnoreCase).Count() != normalizedOptions.Count)
+        {
+            throw CreatePublishValidationException(
+                "投票选项不能重复",
+                ForumPublishErrorCodes.PollOptionsDuplicate);
+        }
+    }
+
+    private static void ValidateLotteryRequestShape(CreateLotteryDto lottery)
+    {
+        var prizeName = lottery.PrizeName?.Trim();
+        if (string.IsNullOrWhiteSpace(prizeName))
+        {
+            throw CreatePublishValidationException(
+                "奖品名称不能为空",
+                ForumPublishErrorCodes.LotteryPrizeNameRequired);
+        }
+
+        if (prizeName.Length > MaxLotteryPrizeNameLength)
+        {
+            throw CreatePublishValidationException(
+                $"奖品名称不能超过 {MaxLotteryPrizeNameLength} 个字符",
+                ForumPublishErrorCodes.LotteryPrizeNameTooLong);
+        }
+
+        if (lottery.PrizeDescription?.Trim().Length > MaxLotteryPrizeDescriptionLength)
+        {
+            throw CreatePublishValidationException(
+                $"奖品说明不能超过 {MaxLotteryPrizeDescriptionLength} 个字符",
+                ForumPublishErrorCodes.LotteryPrizeDescriptionTooLong);
+        }
+
+        if (lottery.WinnerCount is < MinLotteryWinnerCount or > MaxLotteryWinnerCount)
+        {
+            throw CreatePublishValidationException(
+                $"中奖人数必须在 {MinLotteryWinnerCount} 到 {MaxLotteryWinnerCount} 之间",
+                ForumPublishErrorCodes.LotteryWinnerCountInvalid);
+        }
+
+        if (!lottery.DrawTime.HasValue)
+        {
+            throw CreatePublishValidationException(
+                "抽奖截止时间不能为空",
+                ForumPublishErrorCodes.LotteryDrawTimeRequired);
+        }
+
+        if (lottery.DrawTime.Value < DateTime.UtcNow.Add(MinLotteryLeadTime))
+        {
+            throw CreatePublishValidationException(
+                "抽奖截止时间必须至少晚于发帖时间 1 小时",
+                ForumPublishErrorCodes.LotteryDrawTimeTooSoon);
+        }
+    }
+
+    private static BusinessException CreatePublishValidationException(string message, string errorCode)
+    {
+        return new BusinessException(
+            message,
+            (int)HttpStatusCodeEnum.BadRequest,
+            errorCode,
+            ForumPublishErrorCodes.ResolveMessageKey(errorCode));
+    }
+
+    private static BusinessException CreateSubmissionException(
+        ContentSubmissionBeginResult beginResult,
+        HttpStatusCodeEnum statusCode,
+        string errorCode,
+        string fallbackMessage)
+    {
+        object[] messageArguments = errorCode == ForumPublishErrorCodes.RateLimited
+            ? [beginResult.RetryAfterSeconds ?? throw new InvalidOperationException(
+                "内容提交频率限制结果缺少 RetryAfterSeconds")]
+            : [];
+
+        return new BusinessException(
+            beginResult.Message ?? fallbackMessage,
+            (int)statusCode,
+            errorCode,
+            ForumPublishErrorCodes.ResolveMessageKey(errorCode),
+            messageArguments);
+    }
+
     private static void EnsureStarted(ContentSubmissionBeginResult beginResult)
     {
         if (beginResult.Status == ContentSubmissionBeginStatus.Started && beginResult.RecordId.HasValue)
@@ -459,7 +653,36 @@ public class ForumContentWriteService : IForumContentWriteService
             return;
         }
 
-        throw new ArgumentException(beginResult.Message ?? "内容提交状态无效，请稍后重试");
+        throw beginResult.Status switch
+        {
+            ContentSubmissionBeginStatus.InvalidKey => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.BadRequest,
+                ForumPublishErrorCodes.SubmissionIdInvalid,
+                "提交标识格式无效，请刷新后重新提交"),
+            ContentSubmissionBeginStatus.Conflict => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.Conflict,
+                ForumPublishErrorCodes.SubmissionConflict,
+                "提交标识已被其他内容使用，请刷新后重新提交"),
+            ContentSubmissionBeginStatus.Processing => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.Conflict,
+                ForumPublishErrorCodes.SubmissionProcessing,
+                "内容正在提交，请稍后确认"),
+            ContentSubmissionBeginStatus.FrequencyLimited => CreateSubmissionException(
+                beginResult,
+                HttpStatusCodeEnum.TooManyRequests,
+                ForumPublishErrorCodes.RateLimited,
+                "操作过于频繁，请稍后重试"),
+            ContentSubmissionBeginStatus.Succeeded or ContentSubmissionBeginStatus.DuplicateContent =>
+                CreateSubmissionException(
+                    beginResult,
+                    HttpStatusCodeEnum.Conflict,
+                    ForumPublishErrorCodes.SubmissionConflict,
+                    "此前提交结果暂不可用，请刷新后重试"),
+            _ => new ContentSubmissionConsistencyException("内容提交服务返回了未知状态")
+        };
     }
 
     private async Task CompleteSuccessAsync(
@@ -470,7 +693,7 @@ public class ForumContentWriteService : IForumContentWriteService
     {
         if (!beginResult.RecordId.HasValue)
         {
-            return;
+            throw new ContentSubmissionConsistencyException("内容提交记录缺少 RecordId，无法完成成功状态");
         }
 
         await _contentSubmissionService.CompleteSuccessAsync(new ContentSubmissionCompletionRequest
@@ -480,19 +703,6 @@ public class ForumContentWriteService : IForumContentWriteService
             ResultId = resultId,
             ResultPublicId = resultPublicId
         });
-    }
-
-    private async Task CompleteFailureAsync(ContentSubmissionBeginResult beginResult, Exception exception)
-    {
-        if (!beginResult.RecordId.HasValue)
-        {
-            return;
-        }
-
-        await _contentSubmissionService.CompleteFailureAsync(
-            beginResult.RecordId.Value,
-            exception.GetType().Name,
-            exception.Message);
     }
 
     private static IReadOnlyDictionary<string, object?> BuildPostCreateRequestValues(
@@ -513,6 +723,7 @@ public class ForumContentWriteService : IForumContentWriteService
             ["pollQuestion"] = poll?.Question,
             ["pollEndTime"] = poll?.EndTime,
             ["pollOptions"] = poll?.Options
+                .OfType<PollOptionDto>()
                 .OrderBy(option => option.SortOrder ?? int.MaxValue)
                 .ThenBy(option => option.OptionText, StringComparer.Ordinal)
                 .Select(option => new { option.OptionText, option.SortOrder })

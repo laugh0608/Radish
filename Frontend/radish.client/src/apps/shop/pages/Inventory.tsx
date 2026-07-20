@@ -1,8 +1,9 @@
 import { useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { formatLocalizedDateTime } from '@radish/ui';
 import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
-import type { UserBenefit, UserInventoryItem } from '@/types/shop';
+import type { ShopProductCapability, UserBenefit, UserInventoryItem } from '@/types/shop';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
 import type { ShopLoadError } from '../hooks/useShopData';
@@ -11,12 +12,22 @@ import styles from './Inventory.module.css';
 interface InventoryProps {
   benefits: UserBenefit[];
   inventory: UserInventoryItem[];
+  capabilities: ShopProductCapability[];
   loading: boolean;
   loadError?: ShopLoadError | null;
-  onActivateBenefit: (benefitId: LongId) => void;
-  onDeactivateBenefit: (benefitId: LongId) => void;
-  onUseItem: (inventoryId: LongId, quantity?: number, targetId?: LongId) => Promise<boolean>;
-  onUseRenameCard: (inventoryId: LongId, newNickname: string) => Promise<boolean>;
+  onActivateBenefit: (benefitId: LongId) => Promise<void>;
+  onDeactivateBenefit: (benefitId: LongId) => Promise<void>;
+  onUseItem: (
+    inventoryId: LongId,
+    quantity: number,
+    targetId: LongId | undefined,
+    idempotencyKey: string
+  ) => Promise<boolean>;
+  onUseRenameCard: (
+    inventoryId: LongId,
+    newDisplayName: string,
+    idempotencyKey: string
+  ) => Promise<boolean>;
   backHref?: string;
   getSourceOrderHref?: (orderId: LongId) => string;
   getSourceProductHref?: (productId: LongId) => string;
@@ -102,24 +113,44 @@ const normalizeConsumableType = (type?: string | null): string => {
 const isRenameCardItem = (item?: UserInventoryItem | null): boolean =>
   normalizeConsumableType(item?.voConsumableType) === 'RenameCard';
 
-const isUnavailableBenefitItem = (benefit?: UserBenefit | null): boolean => {
-  const normalizedType = normalizeBenefitType(benefit?.voBenefitType);
-  return normalizedType === 'Badge'
-    || normalizedType === 'AvatarFrame'
-    || normalizedType === 'Title'
-    || normalizedType === 'Theme'
-    || normalizedType === 'Signature'
-    || normalizedType === 'NameColor'
-    || normalizedType === 'LikeEffect';
+const normalizeBenefitStatus = (status?: string | number | null): 'Available' | 'Active' | 'Expired' | 'Revoked' => {
+  switch (String(status ?? '')) {
+    case '1':
+    case 'Active':
+      return 'Active';
+    case '2':
+    case 'Expired':
+      return 'Expired';
+    case '3':
+    case 'Revoked':
+      return 'Revoked';
+    default:
+      return 'Available';
+  }
 };
 
-const isUnavailableConsumableItem = (item?: UserInventoryItem | null): boolean => {
-  const normalizedType = normalizeConsumableType(item?.voConsumableType);
-  return normalizedType === 'PostPinCard'
-    || normalizedType === 'PostHighlightCard'
-    || normalizedType === 'DoubleExpCard'
-    || normalizedType === 'LotteryTicket';
+const normalizeProductType = (type?: string | number | null): string => {
+  switch (String(type ?? '')) {
+    case '1': return 'Benefit';
+    case '2': return 'Consumable';
+    case '99': return 'Physical';
+    default: return String(type ?? '');
+  }
 };
+
+const findBenefitCapability = (
+  capabilities: ShopProductCapability[],
+  benefitType?: string | null
+): ShopProductCapability | undefined => capabilities.find((capability) =>
+  normalizeProductType(capability.voProductType) === 'Benefit'
+  && normalizeBenefitType(String(capability.voBenefitType ?? '')) === normalizeBenefitType(benefitType));
+
+const findConsumableCapability = (
+  capabilities: ShopProductCapability[],
+  consumableType?: string | null
+): ShopProductCapability | undefined => capabilities.find((capability) =>
+  normalizeProductType(capability.voProductType) === 'Consumable'
+  && normalizeConsumableType(String(capability.voConsumableType ?? '')) === normalizeConsumableType(consumableType));
 
 const isPositiveLongId = (value?: LongId | null): value is LongId => {
   if (typeof value === 'number') {
@@ -150,9 +181,17 @@ function handleInventoryLinkClick(event: MouseEvent<HTMLAnchorElement>, action: 
   action();
 }
 
+function buildInventoryUseIdempotencyKey(): string {
+  const randomPart = typeof globalThis.crypto?.randomUUID === 'function'
+    ? globalThis.crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+  return `shop-use:${randomPart}`;
+}
+
 export const Inventory = ({
   benefits,
   inventory,
+  capabilities,
   loading,
   loadError,
   onActivateBenefit,
@@ -169,21 +208,28 @@ export const Inventory = ({
   diagnosticActionLabel,
   onCopyDiagnostics
 }: InventoryProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [activeTab, setActiveTab] = useState<TabType>('benefits');
   const [selectedItem, setSelectedItem] = useState<UserInventoryItem | null>(null);
   const [useQuantity, setUseQuantity] = useState(1);
   const [showUseModal, setShowUseModal] = useState(false);
   const [renameValue, setRenameValue] = useState('');
+  const [useIdempotencyKey, setUseIdempotencyKey] = useState(() => buildInventoryUseIdempotencyKey());
+  const [usingItem, setUsingItem] = useState(false);
+  const [pendingBenefitId, setPendingBenefitId] = useState<LongId | null>(null);
   const selectedItemIconUrl = resolveMediaUrl(selectedItem?.voItemIcon);
-  const activeBenefits = benefits.filter((benefit) => benefit.voIsActive && !benefit.voIsExpired).length;
-  const availableBenefits = benefits.filter((benefit) => !benefit.voIsExpired).length;
+  const activeBenefits = benefits.filter((benefit) => normalizeBenefitStatus(benefit.voStatus) === 'Active').length;
+  const availableBenefits = benefits.filter((benefit) => {
+    const status = normalizeBenefitStatus(benefit.voStatus);
+    return status === 'Available' || status === 'Active';
+  }).length;
   const sourceOrderBenefits = benefits.filter((benefit) => isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)).length;
   const consumableQuantity = inventory.reduce((total, item) => total + Math.max(0, item.voQuantity), 0);
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return '-';
-    return new Date(timeStr).toLocaleString('zh-CN', {
+    return formatLocalizedDateTime(timeStr, language, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -196,7 +242,21 @@ export const Inventory = ({
     setSelectedItem(item);
     setUseQuantity(1);
     setRenameValue('');
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
     setShowUseModal(true);
+  };
+
+  const runBenefitAction = async (benefitId: LongId, action: (id: LongId) => Promise<void>) => {
+    if (pendingBenefitId !== null) {
+      return;
+    }
+
+    setPendingBenefitId(benefitId);
+    try {
+      await action(benefitId);
+    } finally {
+      setPendingBenefitId(null);
+    }
   };
 
   const handleConfirmUse = async () => {
@@ -204,9 +264,19 @@ export const Inventory = ({
       return;
     }
 
-    const success = isRenameCardItem(selectedItem)
-      ? await onUseRenameCard(selectedItem.voId, renameValue.trim())
-      : await onUseItem(selectedItem.voId, useQuantity);
+    if (usingItem) {
+      return;
+    }
+
+    setUsingItem(true);
+    let success = false;
+    try {
+      success = isRenameCardItem(selectedItem)
+        ? await onUseRenameCard(selectedItem.voId, renameValue.trim(), useIdempotencyKey)
+        : await onUseItem(selectedItem.voId, useQuantity, undefined, useIdempotencyKey);
+    } finally {
+      setUsingItem(false);
+    }
 
     if (!success) {
       return;
@@ -215,13 +285,36 @@ export const Inventory = ({
     setShowUseModal(false);
     setSelectedItem(null);
     setRenameValue('');
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
   };
 
   const handleCloseModal = () => {
+    if (usingItem) {
+      return;
+    }
+
     setShowUseModal(false);
     setSelectedItem(null);
     setUseQuantity(1);
     setRenameValue('');
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
+  };
+
+  const handleUseQuantityChange = (newQuantity: number) => {
+    const normalizedQuantity = Math.max(1, Math.min(selectedItem?.voQuantity ?? 1, newQuantity));
+    if (normalizedQuantity === useQuantity) {
+      return;
+    }
+
+    setUseQuantity(normalizedQuantity);
+    setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
+  };
+
+  const handleRenameValueChange = (newValue: string) => {
+    if (newValue !== renameValue) {
+      setUseIdempotencyKey(buildInventoryUseIdempotencyKey());
+    }
+    setRenameValue(newValue);
   };
 
   if (loading) {
@@ -357,6 +450,13 @@ export const Inventory = ({
             ) : (
               benefits.map((benefit) => {
                 const benefitIconUrl = resolveMediaUrl(benefit.voBenefitIcon);
+                const benefitStatus = normalizeBenefitStatus(benefit.voStatus);
+                const benefitActionPending = String(pendingBenefitId ?? '') === String(benefit.voId);
+                const benefitCapability = findBenefitCapability(capabilities, benefit.voBenefitType);
+                const canActivateBenefit = benefit.voCanActivate && benefitCapability?.voCanActivate === true;
+                const benefitUnavailableReason = benefit.voUnavailableReason
+                  || benefitCapability?.voUnavailableReason
+                  || benefit.voStatusDisplay;
                 const sourceOrderId = isPurchaseSource(benefit) && isPositiveLongId(benefit.voSourceOrderId)
                   ? benefit.voSourceOrderId
                   : undefined;
@@ -383,12 +483,15 @@ export const Inventory = ({
                         <span className={styles.benefitName}>
                           {benefit.voBenefitName || benefit.voBenefitTypeDisplay}
                         </span>
-                        <span className={`${styles.benefitStatus} ${benefit.voIsActive ? styles.active : ''}`}>
-                          {benefit.voIsExpired
-                            ? t('shop.inventory.status.expired')
-                            : benefit.voIsActive
-                              ? t('shop.inventory.status.active')
-                              : t('shop.inventory.status.inactive')}
+                        <span className={`${styles.benefitStatus} ${benefitStatus === 'Active' ? styles.active : ''}`}>
+                          {benefit.voStatusDisplay
+                            || (benefitStatus === 'Expired'
+                              ? t('shop.inventory.status.expired')
+                              : benefitStatus === 'Revoked'
+                                ? t('shop.inventory.status.revoked')
+                                : benefitStatus === 'Active'
+                                  ? t('shop.inventory.status.active')
+                                  : t('shop.inventory.status.inactive'))}
                         </span>
                       </div>
                       <div className={styles.benefitType}>{benefit.voBenefitTypeDisplay ?? ''}</div>
@@ -396,7 +499,7 @@ export const Inventory = ({
                         <span>{t('shop.inventory.source', { value: benefit.voSourceTypeDisplay ?? '' })}</span>
                         <span>{t('shop.inventory.duration', { value: benefit.voDurationDisplay ?? '' })}</span>
                       </div>
-                      {benefit.voExpiresAt && !benefit.voIsExpired && (
+                      {benefit.voExpiresAt && benefitStatus !== 'Expired' && benefitStatus !== 'Revoked' && (
                         <div className={styles.benefitExpiry}>
                           {t('shop.inventory.expireAt', { value: formatTime(benefit.voExpiresAt) })}
                         </div>
@@ -445,29 +548,30 @@ export const Inventory = ({
                       )}
                     </div>
                     <div className={styles.benefitActions}>
-                      {!benefit.voIsExpired && (
-                        benefit.voIsActive ? (
+                      {benefit.voCanDeactivate ? (
                           <button
                             className={styles.deactivateButton}
-                            onClick={() => onDeactivateBenefit(benefit.voId)}
+                            disabled={pendingBenefitId !== null}
+                            onClick={() => void runBenefitAction(benefit.voId, onDeactivateBenefit)}
                           >
-                            {t('shop.inventory.deactivate')}
+                            {benefitActionPending ? t('shop.inventory.processing') : t('shop.inventory.deactivate')}
                           </button>
-                        ) : isUnavailableBenefitItem(benefit) ? (
+                        ) : canActivateBenefit ? (
                           <button
                             className={styles.activateButton}
-                            disabled
+                            disabled={pendingBenefitId !== null}
+                            onClick={() => void runBenefitAction(benefit.voId, onActivateBenefit)}
                           >
-                            {t('shop.inventory.unavailable')}
+                            {benefitActionPending ? t('shop.inventory.processing') : t('shop.inventory.activate')}
                           </button>
                         ) : (
                           <button
                             className={styles.activateButton}
-                            onClick={() => onActivateBenefit(benefit.voId)}
+                            disabled
+                            title={benefitUnavailableReason ?? undefined}
                           >
-                            {t('shop.inventory.activate')}
+                            {benefitUnavailableReason || t('shop.inventory.unavailable')}
                           </button>
-                        )
                       )}
                     </div>
                   </div>
@@ -487,6 +591,8 @@ export const Inventory = ({
             ) : (
               inventory.map((item) => {
                 const itemIconUrl = resolveMediaUrl(item.voItemIcon);
+                const itemCapability = findConsumableCapability(capabilities, item.voConsumableType);
+                const itemUnavailable = itemCapability?.voCanSell !== true;
                 const sourceProductId = isPositiveLongId(item.voSourceProductId)
                   ? item.voSourceProductId
                   : undefined;
@@ -535,9 +641,9 @@ export const Inventory = ({
                       <button
                         className={styles.useButton}
                         onClick={() => handleUseItemClick(item)}
-                        disabled={item.voQuantity <= 0 || isUnavailableConsumableItem(item)}
+                        disabled={item.voQuantity <= 0 || itemUnavailable}
                       >
-                        {isUnavailableConsumableItem(item)
+                        {itemUnavailable
                           ? t('shop.inventory.unavailable')
                           : t('shop.inventory.use')}
                       </button>
@@ -612,9 +718,9 @@ export const Inventory = ({
                     id="shop-rename-input"
                     className={styles.textInput}
                     value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
+                    onChange={(e) => handleRenameValueChange(e.target.value)}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && renameValue.trim()) {
+                      if (e.key === 'Enter' && renameValue.trim() && !usingItem) {
                         void handleConfirmUse();
                       }
                     }}
@@ -628,15 +734,15 @@ export const Inventory = ({
                   <label>{t('shop.inventory.useQuantity')}</label>
                   <div className={styles.quantityControls}>
                     <button
-                      onClick={() => setUseQuantity(Math.max(1, useQuantity - 1))}
-                      disabled={useQuantity <= 1}
+                      onClick={() => handleUseQuantityChange(useQuantity - 1)}
+                      disabled={useQuantity <= 1 || usingItem}
                     >
                       -
                     </button>
                     <span>{useQuantity}</span>
                     <button
-                      onClick={() => setUseQuantity(Math.min(selectedItem.voQuantity, useQuantity + 1))}
-                      disabled={useQuantity >= selectedItem.voQuantity}
+                      onClick={() => handleUseQuantityChange(useQuantity + 1)}
+                      disabled={useQuantity >= selectedItem.voQuantity || usingItem}
                     >
                       +
                     </button>
@@ -645,13 +751,13 @@ export const Inventory = ({
               )}
             </div>
             <div className={styles.modalFooter}>
-              <button className={styles.cancelButton} onClick={handleCloseModal}>
+              <button className={styles.cancelButton} onClick={handleCloseModal} disabled={usingItem}>
                 {t('common.cancel')}
               </button>
               <button
                 className={styles.confirmButton}
                 onClick={() => { void handleConfirmUse(); }}
-                disabled={isRenameCardItem(selectedItem) && !renameValue.trim()}
+                disabled={usingItem || (isRenameCardItem(selectedItem) && !renameValue.trim())}
               >
                 {t('shop.inventory.confirmUse')}
               </button>

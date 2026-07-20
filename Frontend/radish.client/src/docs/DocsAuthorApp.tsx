@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Icon } from '@radish/ui/icon';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
@@ -11,6 +12,7 @@ import {
 } from '@radish/ui';
 import type { LongId } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
+import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import {
   createWikiDocument,
   getWikiDocumentById,
@@ -28,7 +30,6 @@ import {
   flattenTreeOptions,
   formatWikiTime,
   getSuggestedSortValue,
-  normalizeAccessList,
   normalizeOptionalLongId,
   normalizeOptionalNumber,
   type EditorDraft,
@@ -41,7 +42,7 @@ import type {
   WikiDocumentTreeNodeVo,
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
-import { WikiDocumentStatus, WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
+import { WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 import { WebStateSlot, type WebStateSlotTone } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
@@ -59,11 +60,19 @@ import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { canUseDocsAuthorTools, isBuiltInWikiDocument } from './docsAuthorAccess';
 import {
+  formatDocsAuthorNumber,
+  getDocsAuthorSourceText,
+  getDocsAuthorStatusText,
+  getDocsAuthorSummaryPreview,
+  getDocsAuthorVisibilityText,
+  validateDocsAuthorDraft,
+} from './docsAuthorPresentation';
+import {
   buildDocsAuthorPath,
   createDefaultDocsAuthorRoute,
-  parseDocsAuthorRoute,
   type DocsAuthorRoute,
 } from './docsAuthorRouteState';
+import { shouldHandleAuthorLinkClick, useDocsAuthorNavigation } from './useDocsAuthorNavigation';
 import styles from './DocsAuthorApp.module.css';
 
 interface CollectionState {
@@ -120,23 +129,6 @@ const initialRevisionState: RevisionState = {
   error: null,
 };
 
-function resolveInitialDocsAuthorRoute(): DocsAuthorRoute {
-  if (typeof window === 'undefined') {
-    return createDefaultDocsAuthorRoute();
-  }
-
-  return parseDocsAuthorRoute(window.location.pathname) ?? createDefaultDocsAuthorRoute();
-}
-
-function shouldHandleAuthorLinkClick(event: MouseEvent<HTMLAnchorElement>): boolean {
-  return !event.defaultPrevented
-    && event.button === 0
-    && !event.metaKey
-    && !event.ctrlKey
-    && !event.shiftKey
-    && !event.altKey;
-}
-
 function canEditDocument(document: WikiDocumentDetailVo | null): boolean {
   return Boolean(document) && canMaintainWikiDocument(document);
 }
@@ -168,45 +160,6 @@ function createDraftForCompose(tree: WikiDocumentTreeNodeVo[]): EditorDraft {
   };
 }
 
-function toStatusText(status?: number): string {
-  switch (status) {
-    case WikiDocumentStatus.Published:
-      return '已发布';
-    case WikiDocumentStatus.Archived:
-      return '已归档';
-    default:
-      return '草稿';
-  }
-}
-
-function toVisibilityText(visibility?: number): string {
-  switch (visibility) {
-    case WikiDocumentVisibility.Public:
-      return '公开';
-    case WikiDocumentVisibility.Restricted:
-      return '受限';
-    default:
-      return '登录可见';
-  }
-}
-
-function toSourceText(sourceType?: string | null): string {
-  switch ((sourceType || '').trim().toLowerCase()) {
-    case 'manual':
-      return '手动维护';
-    case 'imported':
-      return '导入';
-    case 'custom':
-      return '自定义';
-    case 'builtin':
-      return '内置';
-    case 'rollback':
-      return '回滚';
-    default:
-      return sourceType?.trim() || '未知';
-  }
-}
-
 function canMaintainWikiDocument(document: WikiDocumentVo | WikiDocumentDetailVo | null): boolean {
   return Boolean(document) && !isBuiltInWikiDocument(document) && document?.voIsDeleted !== true;
 }
@@ -221,15 +174,6 @@ function countBuiltInDocuments(documents: WikiDocumentVo[]): number {
 
 function pickPreviewDocument(documents: WikiDocumentVo[]): WikiDocumentVo | null {
   return documents.find((document) => canMaintainWikiDocument(document)) ?? documents[0] ?? null;
-}
-
-function toDocumentSummaryPreview(summary?: string | null): string {
-  const normalized = summary?.trim();
-  if (!normalized) {
-    return '没有摘要';
-  }
-
-  return normalized.length > 96 ? `${normalized.slice(0, 96)}...` : normalized;
 }
 
 function buildRouteReturnPath(route: DocsAuthorRoute): string {
@@ -259,23 +203,6 @@ function buildParentOptions(tree: WikiDocumentTreeNodeVo[], documentId: LongId |
   );
 }
 
-function validateDraft(draft: EditorDraft): string | null {
-  if (!draft.title.trim() || !draft.markdownContent.trim()) {
-    return '标题和正文不能为空';
-  }
-
-  const visibility = normalizeOptionalNumber(draft.visibility) ?? WikiDocumentVisibility.Authenticated;
-  if (
-    visibility === WikiDocumentVisibility.Restricted
-    && normalizeAccessList(draft.allowedRoles).length === 0
-    && normalizeAccessList(draft.allowedPermissions).length === 0
-  ) {
-    return '受限文档需要至少一个角色或权限';
-  }
-
-  return null;
-}
-
 export function DocsAuthorApp() {
   const { t, i18n } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -284,11 +211,12 @@ export function DocsAuthorApp() {
   const roles = useUserStore((state) => state.roles || []);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const canUseAuthorTools = useMemo(() => canUseDocsAuthorTools(roles), [roles]);
-  const [route, setRoute] = useState<DocsAuthorRoute>(() => resolveInitialDocsAuthorRoute());
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [collectionState, setCollectionState] = useState<CollectionState>(initialCollectionState);
   const [editorState, setEditorState] = useState<EditorState>(initialEditorState);
+  const [isEditorUploading, setIsEditorUploading] = useState(false);
+  const { route, navigateToRoute } = useDocsAuthorNavigation(isEditorUploading);
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
   const treeRef = useRef<WikiDocumentTreeNodeVo[]>([]);
 
@@ -299,18 +227,6 @@ export function DocsAuthorApp() {
     treeRef.current = collectionState.tree;
   }, [collectionState.tree]);
 
-  const navigateToRoute = useCallback((nextRoute: DocsAuthorRoute, options?: { replace?: boolean }) => {
-    const nextPath = buildDocsAuthorPath(nextRoute);
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (options?.replace) {
-      window.history.replaceState(window.history.state, '', nextPath);
-    } else if (currentPath !== nextPath) {
-      window.history.pushState(window.history.state, '', nextPath);
-    }
-
-    setRoute(nextRoute);
-  }, []);
-
   const loadCollections = useCallback(async () => {
     setCollectionState((current) => ({
       ...current,
@@ -320,8 +236,8 @@ export function DocsAuthorApp() {
 
     try {
       const [tree, list] = await Promise.all([
-        getWikiTree(),
-        getWikiList({ pageIndex: 1, pageSize: 100 }),
+        getWikiTree(t),
+        getWikiList({ pageIndex: 1, pageSize: 100 }, t),
       ]);
 
       setCollectionState({
@@ -336,10 +252,10 @@ export function DocsAuthorApp() {
       setCollectionState((current) => ({
         ...current,
         loading: false,
-        error: getErrorMessage(error, '加载文档列表失败'),
+        error: getErrorMessage(error, t('wiki.author.feedback.loadListFailed')),
       }));
     }
-  }, []);
+  }, [t]);
 
   const loadEditor = useCallback(async (nextRoute: DocsAuthorRoute) => {
     const currentTree = treeRef.current;
@@ -365,7 +281,7 @@ export function DocsAuthorApp() {
     }));
 
     try {
-      const document = await getWikiDocumentById(nextRoute.documentId, true);
+      const document = await getWikiDocumentById(nextRoute.documentId, true, t);
       const draft = createDraftFromDocument(document);
       setEditorState({
         draft,
@@ -382,10 +298,10 @@ export function DocsAuthorApp() {
         document: null,
         loading: false,
         submitting: false,
-        error: getErrorMessage(error, '加载文档详情失败'),
+        error: getErrorMessage(error, t('wiki.author.feedback.loadDetailFailed')),
       }));
     }
-  }, []);
+  }, [t]);
 
   const loadRevisionDetail = useCallback(async (revisionId: LongId) => {
     setRevisionState((current) => ({
@@ -397,7 +313,7 @@ export function DocsAuthorApp() {
     }));
 
     try {
-      const detail = await getWikiRevisionDetail(revisionId);
+      const detail = await getWikiRevisionDetail(revisionId, t);
       setRevisionState((current) => ({
         ...current,
         selectedRevision: detail,
@@ -409,10 +325,10 @@ export function DocsAuthorApp() {
         ...current,
         selectedRevision: null,
         loadingDetail: false,
-        error: getErrorMessage(error, '加载修订详情失败'),
+        error: getErrorMessage(error, t('wiki.author.feedback.loadRevisionDetailFailed')),
       }));
     }
-  }, []);
+  }, [t]);
 
   const loadRevisions = useCallback(async (documentId: LongId) => {
     setRevisionState({
@@ -422,8 +338,8 @@ export function DocsAuthorApp() {
 
     try {
       const [document, revisions] = await Promise.all([
-        getWikiDocumentById(documentId, true),
-        getWikiRevisionList(documentId),
+        getWikiDocumentById(documentId, true, t),
+        getWikiRevisionList(documentId, t),
       ]);
       const selectedRevisionId = revisions.find((revision) => revision.voIsCurrent)?.voId ?? revisions[0]?.voId ?? null;
 
@@ -445,10 +361,10 @@ export function DocsAuthorApp() {
       setRevisionState({
         ...initialRevisionState,
         loading: false,
-        error: getErrorMessage(error, '加载修订列表失败'),
+        error: getErrorMessage(error, t('wiki.author.feedback.loadRevisionsFailed')),
       });
     }
-  }, [loadRevisionDetail]);
+  }, [loadRevisionDetail, t]);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -472,27 +388,8 @@ export function DocsAuthorApp() {
   }, [apiBaseUrl]);
 
   useEffect(() => {
-    const handlePopState = () => {
-      setRoute(resolveInitialDocsAuthorRoute());
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, []);
-
-  useEffect(() => {
-    const canonicalPath = buildDocsAuthorPath(route);
-    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (currentPath !== canonicalPath) {
-      window.history.replaceState(window.history.state, '', canonicalPath);
-    }
-  }, [route]);
-
-  useEffect(() => {
-    document.title = '文档作者台 · Radish';
-  }, []);
+    document.title = t('wiki.author.documentTitle');
+  }, [t]);
 
   useEffect(() => {
     if (!authReady || loggedIn || redirecting) {
@@ -534,7 +431,17 @@ export function DocsAuthorApp() {
     }
 
     event.preventDefault();
+    if (isEditorUploading) {
+      return;
+    }
+
     navigateToRoute(nextRoute);
+  };
+
+  const preventEditorNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
+      event.preventDefault();
+    }
   };
 
   const setDraft = useCallback((updater: (current: EditorDraft) => EditorDraft) => {
@@ -563,13 +470,17 @@ export function DocsAuthorApp() {
     }));
   }, [collectionState.tree, route]);
 
-  const handleImageUpload = async (file: File): Promise<MarkdownImageUploadResult> => {
+  const handleImageUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownImageUploadResult> => {
     const attachment = await uploadImage(
       {
         file,
         businessType: 'Wiki',
         generateThumbnail: true,
         removeExif: true,
+        onProgress: reportProgress,
       },
       t,
     );
@@ -581,11 +492,15 @@ export function DocsAuthorApp() {
     };
   };
 
-  const handleDocumentUpload = async (file: File): Promise<MarkdownDocumentUploadResult> => {
+  const handleDocumentUpload = async (
+    file: File,
+    reportProgress: (progress: number) => void,
+  ): Promise<MarkdownDocumentUploadResult> => {
     const attachment = await uploadDocument(
       {
         file,
         businessType: 'Wiki',
+        onProgress: reportProgress,
       },
       t,
     );
@@ -598,14 +513,14 @@ export function DocsAuthorApp() {
 
   const handleSave = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const validationMessage = validateDraft(editorState.draft);
+    const validationMessage = validateDocsAuthorDraft(editorState.draft, t);
     if (validationMessage) {
       toast.error(validationMessage);
       return;
     }
 
     if (route.kind === 'edit' && !canEditDocument(editorState.document)) {
-      toast.error('当前文档不可在作者入口编辑');
+      toast.error(t('wiki.author.feedback.editUnavailable'));
       return;
     }
 
@@ -616,8 +531,8 @@ export function DocsAuthorApp() {
 
     try {
       if (route.kind === 'compose') {
-        const createdId = await createWikiDocument(buildCreateRequest(editorState.draft));
-        toast.success('文档已创建');
+        const createdId = await createWikiDocument(buildCreateRequest(editorState.draft), t);
+        toast.success(t('wiki.author.feedback.created'));
         await loadCollections();
         navigateToRoute({ kind: 'edit', documentId: createdId });
         return;
@@ -627,15 +542,15 @@ export function DocsAuthorApp() {
         return;
       }
 
-      await updateWikiDocument(route.documentId, buildUpdateRequest(editorState.draft));
-      toast.success('文档已保存');
+      await updateWikiDocument(route.documentId, buildUpdateRequest(editorState.draft), t);
+      toast.success(t('wiki.author.feedback.saved'));
       await Promise.all([
         loadCollections(),
         loadEditor(route),
       ]);
     } catch (error) {
       log.error('DocsAuthorApp', '保存文档失败:', error);
-      toast.error(getErrorMessage(error, '保存文档失败'));
+      toast.error(getErrorMessage(error, t('wiki.author.feedback.saveFailed')));
     } finally {
       setEditorState((current) => ({
         ...current,
@@ -649,8 +564,8 @@ export function DocsAuthorApp() {
       return (
         <StatusPanel
           icon="mdi:lock-outline"
-          title="正在确认登录状态"
-          description="文档作者入口需要登录后继续，当前会保留目标页面并跳转登录。"
+          title={t('wiki.author.auth.loadingTitle')}
+          description={t('wiki.author.auth.loadingDescription')}
         />
       );
     }
@@ -659,10 +574,10 @@ export function DocsAuthorApp() {
       return (
         <StatusPanel
           icon="mdi:shield-alert-outline"
-          title="当前账号没有文档作者权限"
-          description="本阶段作者入口沿用 Wiki 写接口权限，只开放给 System 或 Admin 角色。"
+          title={t('wiki.author.auth.forbiddenTitle')}
+          description={t('wiki.author.auth.forbiddenDescription')}
           actionHref={buildPublicDocsPath({ kind: 'list' })}
-          actionLabel="返回公开文档"
+          actionLabel={t('wiki.author.actions.publicDocs')}
         />
       );
     }
@@ -673,6 +588,7 @@ export function DocsAuthorApp() {
           route={route}
           tree={collectionState.tree}
           state={editorState}
+          isEditorUploading={isEditorUploading}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
           onNavigate={handleRouteLinkClick}
           onParentChange={handleParentChange}
@@ -680,6 +596,7 @@ export function DocsAuthorApp() {
           onSave={handleSave}
           onImageUpload={handleImageUpload}
           onDocumentUpload={handleDocumentUpload}
+          onEditorUploadingChange={setIsEditorUploading}
         />
       );
     }
@@ -711,42 +628,41 @@ export function DocsAuthorApp() {
       <PublicShellHeader
         variant="private"
         activeKey="more"
-        brandMark="文"
-        brandName="文档作者台"
-        brandSubline="文档写作入口"
+        brandMark={t('wiki.author.brandMark')}
+        brandName={t('wiki.author.title')}
+        brandSubline={t('wiki.author.brandSubline')}
         onBrandClick={() => navigateToRoute(createDefaultDocsAuthorRoute())}
+        navigationLocked={isEditorUploading}
       />
 
       <main className={styles.main}>
-        <section className={styles.authorHero} aria-label="文档作者任务摘要">
+        <section className={styles.authorHero} aria-label={t('wiki.author.heroAriaLabel')}>
           <div className={styles.authorHeroCopy}>
             <p className={styles.kicker}>Author Workspace</p>
-            <h1 className={styles.authorHeroTitle}>文档作者台</h1>
-            <p className={styles.authorHeroDescription}>
-              维护文档草稿、编辑正文和查看修订历史；公开阅读继续回到正式 Docs 页面，发布与治理留在 Console。
-            </p>
+            <h1 className={styles.authorHeroTitle}>{t('wiki.author.title')}</h1>
+            <p className={styles.authorHeroDescription}>{t('wiki.author.heroDescription')}</p>
           </div>
           <div className={styles.authorSummaryGrid}>
             <div className={styles.authorSummaryCard}>
               <span className={styles.authorSummaryIcon}>
                 <Icon icon="mdi:file-tree-outline" size={20} />
               </span>
-              <strong>{collectionState.tree.length}</strong>
-              <span>目录节点</span>
+              <strong>{formatDocsAuthorNumber(collectionState.tree.length, i18n.resolvedLanguage)}</strong>
+              <span>{t('wiki.author.metrics.directoryNodes')}</span>
             </div>
             <div className={styles.authorSummaryCard}>
               <span className={styles.authorSummaryIcon}>
                 <Icon icon="mdi:file-document-multiple-outline" size={20} />
               </span>
-              <strong>{collectionState.totalDocuments}</strong>
-              <span>文档总数</span>
+              <strong>{formatDocsAuthorNumber(collectionState.totalDocuments, i18n.resolvedLanguage)}</strong>
+              <span>{t('wiki.author.metrics.totalDocuments')}</span>
             </div>
             <div className={styles.authorSummaryCard}>
               <span className={styles.authorSummaryIcon}>
                 <Icon icon={canUseAuthorTools ? 'mdi:shield-check-outline' : 'mdi:shield-alert-outline'} size={20} />
               </span>
-              <strong>{canUseAuthorTools ? '可写' : '受限'}</strong>
-              <span>{route.kind === 'mine' ? '当前列表' : route.kind === 'compose' ? '新建草稿' : route.kind === 'edit' ? '编辑文档' : '修订查看'}</span>
+              <strong>{canUseAuthorTools ? t('wiki.author.access.writable') : t('wiki.author.access.restricted')}</strong>
+              <span>{t(`wiki.author.route.${route.kind}`)}</span>
             </div>
           </div>
         </section>
@@ -756,21 +672,28 @@ export function DocsAuthorApp() {
             className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
             href={mineHref}
             onClick={(event) => handleRouteLinkClick(event, { kind: 'mine' })}
+            aria-disabled={isEditorUploading}
           >
             <Icon icon="mdi:file-document-multiple-outline" size={18} />
-            <span>我的文档</span>
+            <span>{t('wiki.author.actions.myDocuments')}</span>
           </a>
           <a
             className={route.kind === 'compose' ? styles.navItemActive : styles.navItem}
             href={composeHref}
             onClick={(event) => handleRouteLinkClick(event, { kind: 'compose' })}
+            aria-disabled={isEditorUploading}
           >
             <Icon icon="mdi:plus-box-outline" size={18} />
-            <span>新建文档</span>
+            <span>{t('wiki.author.actions.create')}</span>
           </a>
-          <a className={styles.navItem} href={buildPublicDocsPath({ kind: 'list' })}>
+          <a
+            className={styles.navItem}
+            href={buildPublicDocsPath({ kind: 'list' })}
+            onClick={preventEditorNavigationWhileUploading}
+            aria-disabled={isEditorUploading}
+          >
             <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-            <span>公开阅读</span>
+            <span>{t('wiki.author.actions.publicReading')}</span>
           </a>
         </div>
 
@@ -822,6 +745,7 @@ interface DocsMinePageProps {
 }
 
 function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePageProps) {
+  const { t } = useTranslation();
   const hasDocuments = state.documents.length > 0;
   const previewDocument = pickPreviewDocument(state.documents);
   const maintainableCount = countMaintainableDocuments(state.documents);
@@ -834,8 +758,8 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
         <div className={styles.panelHeader}>
           <div>
             <p className={styles.kicker}>Author Workspace</p>
-            <h1 className={styles.pageTitle}>文档作者台</h1>
-            <p className={styles.pageIntro}>集中处理文档草稿、内容修订和公开阅读入口，不承载发布与治理动作。</p>
+            <h1 className={styles.pageTitle}>{t('wiki.author.title')}</h1>
+            <p className={styles.pageIntro}>{t('wiki.author.mine.intro')}</p>
           </div>
           <div className={styles.headerActions}>
             <a
@@ -844,40 +768,40 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
               onClick={(event) => onNavigate(event, { kind: 'compose' })}
             >
               <Icon icon="mdi:plus" size={18} />
-              <span>新建文档</span>
+              <span>{t('wiki.author.actions.create')}</span>
             </a>
             <button type="button" className={styles.secondaryButton} onClick={onReload} disabled={state.loading}>
               <Icon icon={state.loading ? 'mdi:progress-clock' : 'mdi:refresh'} size={18} />
-              <span>{state.loading ? '刷新中' : '刷新'}</span>
+              <span>{state.loading ? t('wiki.author.actions.refreshing') : t('wiki.author.actions.refresh')}</span>
             </button>
           </div>
         </div>
 
         <div className={styles.summaryGrid}>
-          <SummaryTile label="目录节点" value={state.tree.length} />
-          <SummaryTile label="文档总数" value={state.totalDocuments} />
-          <SummaryTile label="本页加载" value={state.documents.length} />
+          <SummaryTile label={t('wiki.author.metrics.directoryNodes')} value={state.tree.length} language={language} />
+          <SummaryTile label={t('wiki.author.metrics.totalDocuments')} value={state.totalDocuments} language={language} />
+          <SummaryTile label={t('wiki.author.metrics.loadedDocuments')} value={state.documents.length} language={language} />
         </div>
 
         {state.error ? (
           <StatusPanel
             icon="mdi:alert-circle-outline"
-            title="文档列表加载失败"
+            title={t('wiki.author.mine.errorTitle')}
             description={state.error}
           />
         ) : state.loading && !hasDocuments ? (
           <StatusPanel
             icon="mdi:progress-clock"
-            title="正在加载文档"
-            description="正在读取 Wiki 目录和文档列表。"
+            title={t('wiki.author.mine.loadingTitle')}
+            description={t('wiki.author.mine.loadingDescription')}
           />
         ) : !hasDocuments ? (
           <StatusPanel
             icon="mdi:file-document-outline"
-            title="暂无可维护文档"
-            description="可以先创建一篇登录可见文档，发布与权限治理留在 Console 管理批次处理。"
+            title={t('wiki.author.mine.emptyTitle')}
+            description={t('wiki.author.mine.emptyDescription')}
             actionHref={buildDocsAuthorPath({ kind: 'compose' })}
-            actionLabel="新建文档"
+            actionLabel={t('wiki.author.actions.create')}
           />
         ) : (
           <div className={styles.documentList}>
@@ -893,26 +817,26 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
         )}
       </section>
 
-      <aside className={styles.authorRail} aria-label="文档作者任务上下文">
+      <aside className={styles.authorRail} aria-label={t('wiki.author.mine.contextAriaLabel')}>
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>文档库</p>
+          <p className={styles.railKicker}>{t('wiki.author.rail.library')}</p>
           <div className={styles.railMetricGrid}>
-            <RailMetric label="可编辑" value={maintainableCount} />
-            <RailMetric label="内置只读" value={builtInCount} />
-            <RailMetric label="已删除" value={deletedCount} />
+            <RailMetric label={t('wiki.author.rail.maintainable')} value={maintainableCount} language={language} />
+            <RailMetric label={t('wiki.author.rail.builtInReadOnly')} value={builtInCount} language={language} />
+            <RailMetric label={t('wiki.author.rail.deleted')} value={deletedCount} language={language} />
           </div>
-          <p className={styles.railText}>作者入口只处理个人可维护内容；发布、撤回、权限和治理仍进入 Console。</p>
+          <p className={styles.railText}>{t('wiki.author.rail.libraryDescription')}</p>
         </section>
 
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>当前预览</p>
+          <p className={styles.railKicker}>{t('wiki.author.rail.preview')}</p>
           {previewDocument ? (
             <>
               <h2 className={styles.railTitle}>{previewDocument.voTitle}</h2>
-              <p className={styles.railText}>{toDocumentSummaryPreview(previewDocument.voSummary)}</p>
+              <p className={styles.railText}>{getDocsAuthorSummaryPreview(previewDocument.voSummary, t)}</p>
               <div className={styles.railChipList}>
-                <span className={styles.railChip}>{toStatusText(previewDocument.voStatus)}</span>
-                <span className={styles.railChip}>{toVisibilityText(previewDocument.voVisibility)}</span>
+                <span className={styles.railChip}>{getDocsAuthorStatusText(previewDocument.voStatus, t)}</span>
+                <span className={styles.railChip}>{getDocsAuthorVisibilityText(previewDocument.voVisibility, t)}</span>
                 <span className={styles.railChip}>v{previewDocument.voVersion}</span>
               </div>
               <div className={styles.railActionList}>
@@ -923,7 +847,7 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
                     onClick={(event) => onNavigate(event, { kind: 'edit', documentId: previewDocument.voId })}
                   >
                     <Icon icon="mdi:pencil-outline" size={18} />
-                    <span>编辑文档</span>
+                    <span>{t('wiki.author.actions.edit')}</span>
                   </a>
                 ) : null}
                 <a
@@ -932,25 +856,25 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
                   onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: previewDocument.voId })}
                 >
                   <Icon icon="mdi:history" size={18} />
-                  <span>修订记录</span>
+                  <span>{t('wiki.author.actions.revisions')}</span>
                 </a>
                 <a className={styles.railLink} href={buildPublicDocsPath({ kind: 'detail', slug: previewDocument.voSlug })}>
                   <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                  <span>公开阅读</span>
+                  <span>{t('wiki.author.actions.publicReading')}</span>
                 </a>
               </div>
             </>
           ) : (
-            <p className={styles.railText}>暂无可预览文档。</p>
+            <p className={styles.railText}>{t('wiki.author.rail.previewEmpty')}</p>
           )}
         </section>
 
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>任务边界</p>
+          <p className={styles.railKicker}>{t('wiki.author.rail.boundary')}</p>
           <ul className={styles.railRuleList}>
-            <li>文档树、文档表格和右侧版本证据在作者页内完成。</li>
-            <li>公开阅读继续使用公开文档页面。</li>
-            <li>发布状态、撤回和治理动作不在作者入口扩展。</li>
+            <li>{t('wiki.author.rail.boundaryAuthor')}</li>
+            <li>{t('wiki.author.rail.boundaryPublic')}</li>
+            <li>{t('wiki.author.rail.boundaryGovernance')}</li>
           </ul>
         </section>
       </aside>
@@ -961,13 +885,14 @@ function DocsMinePage({ state, language, onReload, onNavigate }: DocsMinePagePro
 interface SummaryTileProps {
   label: string;
   value: number;
+  language?: string;
 }
 
-function SummaryTile({ label, value }: SummaryTileProps) {
+function SummaryTile({ label, value, language }: SummaryTileProps) {
   return (
     <div className={styles.summaryTile}>
       <span className={styles.summaryLabel}>{label}</span>
-      <strong className={styles.summaryValue}>{value.toLocaleString()}</strong>
+      <strong className={styles.summaryValue}>{formatDocsAuthorNumber(value, language)}</strong>
     </div>
   );
 }
@@ -975,24 +900,25 @@ function SummaryTile({ label, value }: SummaryTileProps) {
 interface RailMetricProps {
   label: string;
   value: number | string;
+  language?: string;
 }
 
-function RailMetric({ label, value }: RailMetricProps) {
+function RailMetric({ label, value, language }: RailMetricProps) {
   return (
     <div className={styles.railMetric}>
       <span>{label}</span>
-      <strong>{typeof value === 'number' ? value.toLocaleString() : value}</strong>
+      <strong>{typeof value === 'number' ? formatDocsAuthorNumber(value, language) : value}</strong>
     </div>
   );
 }
 
-function getDocumentEditBlockedReason(document: WikiDocumentVo): string | null {
+function getDocumentEditBlockedReason(document: WikiDocumentVo, t: TFunction): string | null {
   if (document.voIsDeleted) {
-    return '已删除只读';
+    return t('wiki.author.document.deletedReadOnly');
   }
 
   if (isBuiltInWikiDocument(document)) {
-    return '内置只读';
+    return t('wiki.author.document.builtInReadOnly');
   }
 
   return null;
@@ -1005,28 +931,29 @@ interface DocumentRowProps {
 }
 
 function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
+  const { t } = useTranslation();
   const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voId };
   const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voId };
   const publicHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
-  const editBlockedReason = getDocumentEditBlockedReason(document);
+  const editBlockedReason = getDocumentEditBlockedReason(document, t);
   const canEdit = !editBlockedReason;
 
   return (
     <article className={styles.documentRow}>
       <div className={styles.documentMain}>
         <div className={styles.metaRow}>
-          <span className={styles.statusChip}>{document.voIsDeleted ? '已删除' : toStatusText(document.voStatus)}</span>
-          <span className={styles.metaChip}>{toVisibilityText(document.voVisibility)}</span>
-          <span className={styles.metaChip}>{toSourceText(document.voSourceType)}</span>
+          <span className={styles.statusChip}>{document.voIsDeleted ? t('wiki.author.document.deleted') : getDocsAuthorStatusText(document.voStatus, t)}</span>
+          <span className={styles.metaChip}>{getDocsAuthorVisibilityText(document.voVisibility, t)}</span>
+          <span className={styles.metaChip}>{getDocsAuthorSourceText(document.voSourceType, t)}</span>
           <span className={styles.metaChip}>v{document.voVersion}</span>
         </div>
         <h2 className={styles.documentTitle}>{document.voTitle}</h2>
         <p className={styles.documentSummary}>
-          {document.voSummary?.trim() || '没有摘要'}
+          {document.voSummary?.trim() || t('wiki.author.summaryFallback')}
         </p>
         <div className={styles.documentMeta}>
           <span>slug: {document.voSlug}</span>
-          <span>更新: {formatWikiTime(document.voModifyTime || document.voCreateTime, language)}</span>
+          <span>{t('wiki.author.document.updated', { time: formatWikiTime(document.voModifyTime || document.voCreateTime, language) })}</span>
         </div>
       </div>
       <div className={styles.documentActions}>
@@ -1036,11 +963,11 @@ function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
             href={buildDocsAuthorPath(editRoute)}
             onClick={(event) => onNavigate(event, editRoute)}
           >
-            编辑
+            {t('wiki.author.actions.edit')}
           </a>
         ) : (
           <span className={styles.readOnlyButton} title={editBlockedReason ?? undefined}>
-            {editBlockedReason ?? '只读'}
+            {editBlockedReason ?? t('wiki.author.access.readOnly')}
           </span>
         )}
         <a
@@ -1048,10 +975,10 @@ function DocumentRow({ document, language, onNavigate }: DocumentRowProps) {
           href={buildDocsAuthorPath(revisionsRoute)}
           onClick={(event) => onNavigate(event, revisionsRoute)}
         >
-          修订
+          {t('wiki.author.actions.revisions')}
         </a>
         <a className={styles.secondaryButton} href={publicHref}>
-          阅读
+          {t('wiki.author.actions.read')}
         </a>
       </div>
     </article>
@@ -1062,19 +989,22 @@ interface DocsEditorPageProps {
   route: DocsAuthorRoute & ({ kind: 'compose' } | { kind: 'edit' });
   tree: WikiDocumentTreeNodeVo[];
   state: EditorState;
+  isEditorUploading: boolean;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
   onParentChange: (parentId: string) => void;
   onSetDraft: (updater: (current: EditorDraft) => EditorDraft) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
-  onImageUpload: (file: File) => Promise<MarkdownImageUploadResult>;
-  onDocumentUpload: (file: File) => Promise<MarkdownDocumentUploadResult>;
+  onImageUpload: (file: File, reportProgress: (progress: number) => void) => Promise<MarkdownImageUploadResult>;
+  onDocumentUpload: (file: File, reportProgress: (progress: number) => void) => Promise<MarkdownDocumentUploadResult>;
+  onEditorUploadingChange: (uploading: boolean) => void;
 }
 
 function DocsEditorPage({
   route,
   tree,
   state,
+  isEditorUploading,
   onBack,
   onNavigate,
   onParentChange,
@@ -1082,29 +1012,53 @@ function DocsEditorPage({
   onSave,
   onImageUpload,
   onDocumentUpload,
+  onEditorUploadingChange,
 }: DocsEditorPageProps) {
+  const { t, i18n } = useTranslation();
+  const markdownEditorLabels = useMemo(
+    () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
+    [i18n.language, i18n.resolvedLanguage, t],
+  );
+  const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
+    log.error('DocsEditorPage', `Markdown ${kind} upload failed:`, error);
+  }, []);
   const parentOptions = useMemo(
     () => buildParentOptions(tree, route.kind === 'edit' ? route.documentId : null),
     [route, tree]
   );
   const readOnly = route.kind === 'edit' && !canEditDocument(state.document);
-  const pageTitle = route.kind === 'compose' ? '新建文档' : state.document?.voTitle || '编辑文档';
+  const pageTitle = route.kind === 'compose' ? t('wiki.author.editor.createTitle') : state.document?.voTitle || t('wiki.author.editor.editTitle');
   const pageIntro = route.kind === 'compose'
-    ? '默认创建登录可见草稿，发布、归档和权限治理留在 Console。'
-    : '编辑正文、摘要和目录位置；当前入口不处理发布状态切换。';
+    ? t('wiki.author.editor.createIntro')
+    : t('wiki.author.editor.editIntro');
   const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
     ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
     : null;
-  const draftVisibilityText = toVisibilityText(
-    normalizeOptionalNumber(state.draft.visibility) ?? WikiDocumentVisibility.Authenticated
+  const draftVisibilityText = getDocsAuthorVisibilityText(
+    normalizeOptionalNumber(state.draft.visibility) ?? WikiDocumentVisibility.Authenticated,
+    t,
   );
+  const handleEditorSubmit = (event: FormEvent<HTMLFormElement>) => {
+    if (isEditorUploading) {
+      event.preventDefault();
+      return;
+    }
+
+    onSave(event);
+  };
+
+  const preventNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
+      event.preventDefault();
+    }
+  };
 
   if (state.loading) {
     return (
       <StatusPanel
         icon="mdi:progress-clock"
-        title="正在加载编辑信息"
-        description="正在读取文档详情和目录位置。"
+        title={t('wiki.author.editor.loadingTitle')}
+        description={t('wiki.author.editor.loadingDescription')}
       />
     );
   }
@@ -1113,7 +1067,7 @@ function DocsEditorPage({
     return (
       <StatusPanel
         icon="mdi:alert-circle-outline"
-        title="编辑信息加载失败"
+        title={t('wiki.author.editor.errorTitle')}
         description={state.error}
       />
     );
@@ -1132,25 +1086,42 @@ function DocsEditorPage({
           <a
             className={styles.secondaryButton}
             href={buildDocsAuthorPath({ kind: 'mine' })}
-            onClick={onBack}
+            onClick={(event) => {
+              preventNavigationWhileUploading(event);
+              if (!event.defaultPrevented) {
+                onBack(event);
+              }
+            }}
+            aria-disabled={isEditorUploading}
           >
             <Icon icon="mdi:arrow-left" size={18} />
-            <span>返回列表</span>
+            <span>{t('wiki.author.actions.backToList')}</span>
           </a>
           {route.kind === 'edit' ? (
             <a
               className={styles.secondaryButton}
               href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
-              onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
+              onClick={(event) => {
+                preventNavigationWhileUploading(event);
+                if (!event.defaultPrevented) {
+                  onNavigate(event, { kind: 'revisions', documentId: route.documentId });
+                }
+              }}
+              aria-disabled={isEditorUploading}
             >
               <Icon icon="mdi:history" size={18} />
-              <span>修订记录</span>
+              <span>{t('wiki.author.actions.revisions')}</span>
             </a>
           ) : null}
           {publicReadHref ? (
-            <a className={styles.secondaryButton} href={publicReadHref}>
+            <a
+              className={styles.secondaryButton}
+              href={publicReadHref}
+              onClick={preventNavigationWhileUploading}
+              aria-disabled={isEditorUploading}
+            >
               <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-              <span>公开阅读</span>
+              <span>{t('wiki.author.actions.publicReading')}</span>
             </a>
           ) : null}
         </div>
@@ -1159,23 +1130,23 @@ function DocsEditorPage({
       {readOnly && state.document ? (
         <div className={styles.inlineNotice}>
           <Icon icon="mdi:lock-outline" size={20} />
-          <span>
-            当前文档来自 {toSourceText(state.document.voSourceType)}
-            {state.document.voIsDeleted ? '，且已删除' : ''}，作者入口保持只读。
-          </span>
+          <span>{t('wiki.author.editor.readOnlyNotice', {
+            source: getDocsAuthorSourceText(state.document.voSourceType, t),
+            deleted: state.document.voIsDeleted ? t('wiki.author.editor.deletedSuffix') : '',
+          })}</span>
         </div>
       ) : null}
 
-      <form className={styles.editorForm} onSubmit={onSave}>
+      <form className={styles.editorForm} onSubmit={handleEditorSubmit}>
         <div className={styles.formGrid}>
           <label className={styles.field}>
-            <span>标题</span>
+            <span>{t('wiki.author.form.title')}</span>
             <input
               className={styles.input}
               value={state.draft.title}
               disabled={readOnly || state.submitting}
               onChange={(event) => onSetDraft((current) => ({ ...current, title: event.target.value }))}
-              placeholder="文档标题"
+              placeholder={t('wiki.author.form.titlePlaceholder')}
             />
           </label>
           <label className={styles.field}>
@@ -1185,18 +1156,18 @@ function DocsEditorPage({
               value={state.draft.slug}
               disabled={readOnly || state.submitting}
               onChange={(event) => onSetDraft((current) => ({ ...current, slug: event.target.value }))}
-              placeholder="留空时由后端生成"
+              placeholder={t('wiki.author.form.slugPlaceholder')}
             />
           </label>
           <label className={styles.field}>
-            <span>上级文档</span>
+            <span>{t('wiki.author.form.parent')}</span>
             <select
               className={styles.select}
               value={state.draft.parentId}
               disabled={readOnly || state.submitting}
               onChange={(event) => onParentChange(event.target.value)}
             >
-              <option value="">根目录</option>
+              <option value="">{t('wiki.author.form.root')}</option>
               {parentOptions.map((option) => (
                 <option key={option.id} value={String(option.id)}>
                   {option.label}
@@ -1205,7 +1176,7 @@ function DocsEditorPage({
             </select>
           </label>
           <label className={styles.field}>
-            <span>排序</span>
+            <span>{t('wiki.author.form.sort')}</span>
             <input
               className={styles.input}
               value={state.draft.sort}
@@ -1214,35 +1185,35 @@ function DocsEditorPage({
             />
           </label>
           <label className={styles.field}>
-            <span>封面附件 ID</span>
+            <span>{t('wiki.author.form.coverAttachmentId')}</span>
             <input
               className={styles.input}
               value={state.draft.coverAttachmentId}
               disabled={readOnly || state.submitting}
               onChange={(event) => onSetDraft((current) => ({ ...current, coverAttachmentId: event.target.value }))}
-              placeholder="可选"
+              placeholder={t('wiki.author.form.optional')}
             />
           </label>
           {route.kind === 'edit' ? (
             <label className={styles.field}>
-              <span>变更摘要</span>
+              <span>{t('wiki.author.form.changeSummary')}</span>
               <input
                 className={styles.input}
                 value={state.draft.changeSummary}
                 disabled={readOnly || state.submitting}
                 onChange={(event) => onSetDraft((current) => ({ ...current, changeSummary: event.target.value }))}
-                placeholder="本次修改说明"
+                placeholder={t('wiki.author.form.changeSummaryPlaceholder')}
               />
             </label>
           ) : null}
           <label className={`${styles.field} ${styles.fieldFull}`}>
-            <span>摘要</span>
+            <span>{t('wiki.author.form.summary')}</span>
             <textarea
               className={styles.textarea}
               value={state.draft.summary}
               disabled={readOnly || state.submitting}
               onChange={(event) => onSetDraft((current) => ({ ...current, summary: event.target.value }))}
-              placeholder="用于公开阅读页和列表摘要"
+              placeholder={t('wiki.author.form.summaryPlaceholder')}
             />
           </label>
         </div>
@@ -1250,81 +1221,101 @@ function DocsEditorPage({
         <MarkdownEditor
           value={state.draft.markdownContent}
           onChange={(value) => onSetDraft((current) => ({ ...current, markdownContent: value }))}
+          labels={markdownEditorLabels}
           minHeight={420}
           disabled={readOnly || state.submitting}
-          placeholder="输入 Markdown 正文"
+          placeholder={t('wiki.author.form.markdownPlaceholder')}
           onImageUpload={onImageUpload}
           onDocumentUpload={onDocumentUpload}
+          onUploadError={handleEditorUploadError}
+          onUploadingChange={onEditorUploadingChange}
         />
 
         <div className={styles.editorActions}>
           <span className={styles.editorHint}>
-            当前可见性: {draftVisibilityText}
+            {t('wiki.author.editor.currentVisibility', { visibility: draftVisibilityText })}
           </span>
-          <button type="submit" className={styles.primaryButton} disabled={readOnly || state.submitting}>
+          <button type="submit" className={styles.primaryButton} disabled={readOnly || state.submitting || isEditorUploading}>
             <Icon icon={state.submitting ? 'mdi:progress-clock' : 'mdi:content-save-outline'} size={18} />
-            <span>{state.submitting ? '保存中' : '保存文档'}</span>
+            <span>{state.submitting ? t('wiki.author.actions.saving') : t('wiki.author.actions.save')}</span>
           </button>
         </div>
       </form>
       </section>
 
-      <aside className={styles.authorRail} aria-label="文档编辑任务上下文">
+      <aside className={styles.authorRail} aria-label={t('wiki.author.editor.contextAriaLabel')}>
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>编辑上下文</p>
+          <p className={styles.railKicker}>{t('wiki.author.editor.context')}</p>
           <div className={styles.railMetricGrid}>
-            <RailMetric label="模式" value={route.kind === 'compose' ? '新建' : '编辑'} />
-            <RailMetric label="上级选项" value={parentOptions.length} />
-            <RailMetric label="建议排序" value={state.sortSuggestion} />
+            <RailMetric label={t('wiki.author.editor.mode')} value={route.kind === 'compose' ? t('wiki.author.editor.modeCreate') : t('wiki.author.editor.modeEdit')} />
+            <RailMetric label={t('wiki.author.editor.parentOptions')} value={parentOptions.length} language={i18n.resolvedLanguage} />
+            <RailMetric label={t('wiki.author.editor.suggestedSort')} value={state.sortSuggestion} />
           </div>
           <div className={styles.railChipList}>
             <span className={styles.railChip}>{draftVisibilityText}</span>
-            <span className={styles.railChip}>{readOnly ? '只读' : '可保存'}</span>
+            <span className={styles.railChip}>{readOnly ? t('wiki.author.access.readOnly') : t('wiki.author.access.savable')}</span>
           </div>
         </section>
 
         {state.document ? (
           <section className={styles.railCard}>
-            <p className={styles.railKicker}>文档证据</p>
+            <p className={styles.railKicker}>{t('wiki.author.editor.evidence')}</p>
             <h2 className={styles.railTitle}>{state.document.voTitle}</h2>
-            <p className={styles.railText}>{toDocumentSummaryPreview(state.document.voSummary)}</p>
+            <p className={styles.railText}>{getDocsAuthorSummaryPreview(state.document.voSummary, t)}</p>
             <div className={styles.railChipList}>
-              <span className={styles.railChip}>{toStatusText(state.document.voStatus)}</span>
-              <span className={styles.railChip}>{toSourceText(state.document.voSourceType)}</span>
+              <span className={styles.railChip}>{getDocsAuthorStatusText(state.document.voStatus, t)}</span>
+              <span className={styles.railChip}>{getDocsAuthorSourceText(state.document.voSourceType, t)}</span>
               <span className={styles.railChip}>v{state.document.voVersion}</span>
             </div>
           </section>
         ) : null}
 
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>流转动作</p>
+          <p className={styles.railKicker}>{t('wiki.author.editor.flowActions')}</p>
           <div className={styles.railActionList}>
             <a
               className={styles.railLink}
               href={buildDocsAuthorPath({ kind: 'mine' })}
-              onClick={onBack}
+              onClick={(event) => {
+                preventNavigationWhileUploading(event);
+                if (!event.defaultPrevented) {
+                  onBack(event);
+                }
+              }}
+              aria-disabled={isEditorUploading}
             >
               <Icon icon="mdi:arrow-left" size={18} />
-              <span>返回列表</span>
+              <span>{t('wiki.author.actions.backToList')}</span>
             </a>
             {route.kind === 'edit' ? (
               <a
                 className={styles.railLink}
                 href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
-                onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: route.documentId })}
+                onClick={(event) => {
+                  preventNavigationWhileUploading(event);
+                  if (!event.defaultPrevented) {
+                    onNavigate(event, { kind: 'revisions', documentId: route.documentId });
+                  }
+                }}
+                aria-disabled={isEditorUploading}
               >
                 <Icon icon="mdi:history" size={18} />
-                <span>修订记录</span>
+                <span>{t('wiki.author.actions.revisions')}</span>
               </a>
             ) : null}
             {publicReadHref ? (
-              <a className={styles.railLink} href={publicReadHref}>
+              <a
+                className={styles.railLink}
+                href={publicReadHref}
+                onClick={preventNavigationWhileUploading}
+                aria-disabled={isEditorUploading}
+              >
                 <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>公开阅读</span>
+                <span>{t('wiki.author.actions.publicReading')}</span>
               </a>
             ) : null}
           </div>
-          <p className={styles.railText}>保存只维护正文、摘要、目录位置和访问字段；发布、归档和权限治理仍由 Console 处理。</p>
+          <p className={styles.railText}>{t('wiki.author.editor.boundary')}</p>
         </section>
       </aside>
     </div>
@@ -1340,6 +1331,7 @@ interface DocsRevisionsPageProps {
 }
 
 function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }: DocsRevisionsPageProps) {
+  const { t } = useTranslation();
   const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
     ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
     : null;
@@ -1352,13 +1344,13 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
         <div className={styles.panelHeader}>
           <div>
             <p className={styles.kicker}>Revision History</p>
-            <h1 className={styles.pageTitle}>{state.document?.voTitle || '修订记录'}</h1>
-            <p className={styles.pageIntro}>查看历史快照内容，不在作者入口执行回滚治理动作。</p>
+            <h1 className={styles.pageTitle}>{state.document?.voTitle || t('wiki.author.revisions.title')}</h1>
+            <p className={styles.pageIntro}>{t('wiki.author.revisions.intro')}</p>
           </div>
           <div className={styles.headerActions}>
             <a className={styles.secondaryButton} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
               <Icon icon="mdi:arrow-left" size={18} />
-              <span>返回列表</span>
+              <span>{t('wiki.author.actions.backToList')}</span>
             </a>
             {state.document && canEditDocument(state.document) ? (
               <a
@@ -1367,13 +1359,13 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
                 onClick={(event) => onEdit(event, state.document!.voId)}
               >
                 <Icon icon="mdi:pencil-outline" size={18} />
-                <span>编辑文档</span>
+                <span>{t('wiki.author.actions.edit')}</span>
               </a>
             ) : null}
             {publicReadHref ? (
               <a className={styles.secondaryButton} href={publicReadHref}>
                 <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>公开阅读</span>
+                <span>{t('wiki.author.actions.publicReading')}</span>
               </a>
             ) : null}
           </div>
@@ -1382,20 +1374,20 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
       {state.loading ? (
         <StatusPanel
           icon="mdi:progress-clock"
-          title="正在加载修订记录"
-          description="正在读取文档版本历史。"
+          title={t('wiki.author.revisions.loadingTitle')}
+          description={t('wiki.author.revisions.loadingDescription')}
         />
       ) : state.error && state.revisions.length === 0 ? (
         <StatusPanel
           icon="mdi:alert-circle-outline"
-          title="修订记录加载失败"
+          title={t('wiki.author.revisions.errorTitle')}
           description={state.error}
         />
       ) : state.revisions.length === 0 ? (
         <StatusPanel
           icon="mdi:history"
-          title="暂无修订记录"
-          description="当前文档还没有可查看的历史快照。"
+          title={t('wiki.author.revisions.emptyTitle')}
+          description={t('wiki.author.revisions.emptyDescription')}
         />
       ) : (
         <div className={styles.revisionLayout}>
@@ -1408,11 +1400,11 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
                 onClick={() => onSelectRevision(revision.voId)}
               >
                 <span className={styles.revisionTitle}>v{revision.voVersion}</span>
-                <span className={styles.revisionSummary}>{revision.voChangeSummary || '无变更摘要'}</span>
+                <span className={styles.revisionSummary}>{revision.voChangeSummary || t('wiki.author.revisions.noSummary')}</span>
                 <span className={styles.revisionMeta}>
                   {formatWikiTime(revision.voCreateTime, language)} · {revision.voCreateBy}
                 </span>
-                {revision.voIsCurrent ? <span className={styles.statusChip}>当前</span> : null}
+                {revision.voIsCurrent ? <span className={styles.statusChip}>{t('wiki.author.revisions.current')}</span> : null}
               </button>
             ))}
           </aside>
@@ -1421,8 +1413,8 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
             {state.loadingDetail ? (
               <StatusPanel
                 icon="mdi:progress-clock"
-                title="正在加载版本内容"
-                description="正在读取选中的修订快照。"
+                title={t('wiki.author.revisions.detailLoadingTitle')}
+                description={t('wiki.author.revisions.detailLoadingDescription')}
               />
             ) : state.selectedRevision ? (
               <>
@@ -1432,7 +1424,7 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
                     <p className={styles.revisionMeta}>{state.selectedRevision.voTitle}</p>
                   </div>
                   <div className={styles.metaRow}>
-                    <span className={styles.metaChip}>{toSourceText(state.selectedRevision.voSourceType)}</span>
+                    <span className={styles.metaChip}>{getDocsAuthorSourceText(state.selectedRevision.voSourceType, t)}</span>
                     <span className={styles.metaChip}>{formatWikiTime(state.selectedRevision.voCreateTime, language)}</span>
                   </div>
                 </div>
@@ -1441,8 +1433,8 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
             ) : (
               <StatusPanel
                 icon="mdi:file-search-outline"
-                title="请选择一个修订版本"
-                description="从左侧版本列表选择后查看快照内容。"
+                title={t('wiki.author.revisions.selectTitle')}
+                description={t('wiki.author.revisions.selectDescription')}
               />
             )}
           </article>
@@ -1450,36 +1442,36 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
         )}
       </section>
 
-      <aside className={styles.authorRail} aria-label="文档修订任务上下文">
+      <aside className={styles.authorRail} aria-label={t('wiki.author.revisions.contextAriaLabel')}>
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>版本证据</p>
+          <p className={styles.railKicker}>{t('wiki.author.revisions.evidence')}</p>
           <div className={styles.railMetricGrid}>
-            <RailMetric label="版本数" value={state.revisions.length} />
-            <RailMetric label="当前版本" value={currentRevision ? `v${currentRevision.voVersion}` : '-'} />
-            <RailMetric label="选中版本" value={selectedVersion === '-' ? '-' : `v${selectedVersion}`} />
+            <RailMetric label={t('wiki.author.revisions.count')} value={state.revisions.length} language={language} />
+            <RailMetric label={t('wiki.author.revisions.currentVersion')} value={currentRevision ? `v${currentRevision.voVersion}` : '-'} />
+            <RailMetric label={t('wiki.author.revisions.selectedVersion')} value={selectedVersion === '-' ? '-' : `v${selectedVersion}`} />
           </div>
-          <p className={styles.railText}>修订页只负责查看快照内容和版本证据，不在这里处理回滚、发布或治理。</p>
+          <p className={styles.railText}>{t('wiki.author.revisions.boundary')}</p>
         </section>
 
         {state.selectedRevision ? (
           <section className={styles.railCard}>
-            <p className={styles.railKicker}>选中快照</p>
+            <p className={styles.railKicker}>{t('wiki.author.revisions.selectedSnapshot')}</p>
             <h2 className={styles.railTitle}>{state.selectedRevision.voTitle}</h2>
-            <p className={styles.railText}>{state.selectedRevision.voChangeSummary || '无变更摘要'}</p>
+            <p className={styles.railText}>{state.selectedRevision.voChangeSummary || t('wiki.author.revisions.noSummary')}</p>
             <div className={styles.railChipList}>
-              <span className={styles.railChip}>{toSourceText(state.selectedRevision.voSourceType)}</span>
+              <span className={styles.railChip}>{getDocsAuthorSourceText(state.selectedRevision.voSourceType, t)}</span>
               <span className={styles.railChip}>{formatWikiTime(state.selectedRevision.voCreateTime, language)}</span>
-              {state.selectedRevision.voIsCurrent ? <span className={styles.railChip}>当前</span> : null}
+              {state.selectedRevision.voIsCurrent ? <span className={styles.railChip}>{t('wiki.author.revisions.current')}</span> : null}
             </div>
           </section>
         ) : null}
 
         <section className={styles.railCard}>
-          <p className={styles.railKicker}>流转动作</p>
+          <p className={styles.railKicker}>{t('wiki.author.revisions.flowActions')}</p>
           <div className={styles.railActionList}>
             <a className={styles.railLink} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
               <Icon icon="mdi:arrow-left" size={18} />
-              <span>返回列表</span>
+              <span>{t('wiki.author.actions.backToList')}</span>
             </a>
             {state.document && canEditDocument(state.document) ? (
               <a
@@ -1488,13 +1480,13 @@ function DocsRevisionsPage({ state, language, onBack, onEdit, onSelectRevision }
                 onClick={(event) => onEdit(event, state.document!.voId)}
               >
                 <Icon icon="mdi:pencil-outline" size={18} />
-                <span>编辑文档</span>
+                <span>{t('wiki.author.actions.edit')}</span>
               </a>
             ) : null}
             {publicReadHref ? (
               <a className={styles.railLink} href={publicReadHref}>
                 <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>公开阅读</span>
+                <span>{t('wiki.author.actions.publicReading')}</span>
               </a>
             ) : null}
           </div>

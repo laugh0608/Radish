@@ -7,8 +7,13 @@ import {
   Tag,
   Table,
   message,
+  AntModal as Modal,
+  AntInput as Input,
   type TableColumnsType,
+  formatLocalizedDateTime,
+  formatLocalizedNumber,
 } from '@radish/ui';
+import { useTranslation } from 'react-i18next';
 import { Descriptions, Empty, Tabs } from 'antd';
 import {
   UserOutlined,
@@ -21,14 +26,30 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
+import { formatConsoleInteger, formatConsoleSignedInteger } from '@/utils/localeFormatters';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { userManagementApi } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
-import { adminGetOrders, getOrderStatusColor, getOrderStatusDisplay } from '@/api/shopApi';
+import {
+  adminGetEntitlementOperations,
+  adminGetUserBenefits,
+  adminGetOrders,
+  adminRevokeBenefit,
+} from '@/api/shopApi';
 import { buildOrderDetailPath } from '@/pages/Orders/orderListUrlState';
+import {
+  getBenefitDurationLabel,
+  getBenefitSourceLabel,
+  getBenefitStatusLabel,
+  getBenefitTypeLabel,
+  getCoinTransactionTypeLabel,
+  getConsumableTypeLabel,
+  getOrderStatusColor,
+  getOrderStatusLabel,
+} from '@/pages/Orders/orderPresentation';
 import { buildModerationPath } from '@/pages/Moderation/moderationPageUrlState';
-import type { Order } from '@/api/types';
+import type { Order, ShopEntitlementOperation, UserBenefit } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
 import './UserDetail.css';
@@ -44,15 +65,19 @@ interface UserDetailData {
 }
 
 export const UserDetail = () => {
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
-  useDocumentTitle('用户详情');
+  useDocumentTitle(t('console.route.user-detail'));
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
+  const canViewBenefits = usePermission(CONSOLE_PERMISSIONS.benefitsView);
+  const canRevokeBenefits = usePermission(CONSOLE_PERMISSIONS.benefitsRevoke);
   const canViewExperience = usePermission(CONSOLE_PERMISSIONS.experienceView);
   const canViewModeration = usePermission(CONSOLE_PERMISSIONS.moderationView);
   const canReviewModeration = usePermission(CONSOLE_PERMISSIONS.moderationReview);
@@ -60,14 +85,24 @@ export const UserDetail = () => {
   const [loading, setLoading] = useState(false);
   const [coinLoading, setCoinLoading] = useState(false);
   const [orderLoading, setOrderLoading] = useState(false);
+  const [operationLoading, setOperationLoading] = useState(false);
+  const [benefitLoading, setBenefitLoading] = useState(false);
+  const [revokeLoading, setRevokeLoading] = useState(false);
   const [user, setUser] = useState<UserDetailData | null>(null);
   const [balance, setBalance] = useState<UserBalanceVo | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
   const [coinTransactions, setCoinTransactions] = useState<CoinTransactionVo[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [entitlementOperations, setEntitlementOperations] = useState<ShopEntitlementOperation[]>([]);
+  const [benefits, setBenefits] = useState<UserBenefit[]>([]);
+  const [revokeTarget, setRevokeTarget] = useState<UserBenefit | null>(null);
+  const [revokeReason, setRevokeReason] = useState('');
 
-  const mapUserDetail = (item: UserListItem): UserDetailData => {
-    const displayName = resolveVisibleUserDisplayName(item, item.uuid ? `用户 ${item.uuid}` : '-');
+  const mapUserDetail = useCallback((item: UserListItem): UserDetailData => {
+    const displayName = resolveVisibleUserDisplayName(
+      item,
+      item.uuid ? t('users.common.userFallback', { id: item.uuid }) : '-',
+    );
 
     return {
       uuid: item.uuid,
@@ -78,29 +113,25 @@ export const UserDetail = () => {
       createTime: item.voCreateTime,
       lastLoginTime: item.voUpdateTime,
     };
-  };
+  }, [t]);
 
   const formatDisplayTime = (time?: string | null) => {
     if (!time) return '-';
 
-    const date = new Date(time);
-    if (Number.isNaN(date.getTime())) {
-      return time;
-    }
-
-    return date.toLocaleString('zh-CN');
+    return formatLocalizedDateTime(time, language);
   };
 
   const getSignedCoinAmount = (transaction: CoinTransactionVo) => {
+    const amount = BigInt(transaction.voAmount);
     if (userId && String(transaction.voFromUserId ?? '') === userId) {
-      return -transaction.voAmount;
+      return -amount;
     }
 
-    return transaction.voAmount;
+    return amount;
   };
 
-  const getSignedAmountClassName = (amount: number) => (
-    amount >= 0
+  const getSignedAmountClassName = (amount: bigint) => (
+    amount >= 0n
       ? 'user-detail-signed-amount user-detail-signed-amount--positive'
       : 'user-detail-signed-amount user-detail-signed-amount--negative'
   );
@@ -171,17 +202,17 @@ export const UserDetail = () => {
       setLoading(true);
       const response = await userManagementApi.getUserById(userId);
       if (!response.ok || !response.data) {
-        throw new Error(response.message || '加载用户详情失败');
+        throw new Error(response.message || t('users.detail.loadFailed'));
       }
 
       setUser(mapUserDetail(response.data));
     } catch (error) {
       log.error('UserDetail', '加载用户详情失败:', error);
-      message.error(error instanceof Error ? error.message : '加载用户详情失败');
+      message.error(error instanceof Error ? error.message : t('users.detail.loadFailed'));
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [mapUserDetail, t, userId]);
 
   const loadBalance = useCallback(async () => {
     if (!userId || !canViewCoins) return;
@@ -247,6 +278,63 @@ export const UserDetail = () => {
     }
   }, [userId, canViewOrders]);
 
+  const loadEntitlementOperations = useCallback(async () => {
+    if (!userId || !canViewBenefits) return;
+
+    try {
+      setOperationLoading(true);
+      const result = await adminGetEntitlementOperations({
+        userId,
+        pageIndex: 1,
+        pageSize: 10,
+      });
+      setEntitlementOperations(result.data);
+    } catch (error) {
+      log.error('UserDetail', '加载商城权益流水失败:', error);
+      setEntitlementOperations([]);
+    } finally {
+      setOperationLoading(false);
+    }
+  }, [userId, canViewBenefits]);
+
+  const loadBenefits = useCallback(async () => {
+    if (!userId || !canViewBenefits) return;
+
+    try {
+      setBenefitLoading(true);
+      setBenefits(await adminGetUserBenefits(userId));
+    } catch (error) {
+      log.error('UserDetail', '加载持续权益失败:', error);
+      setBenefits([]);
+    } finally {
+      setBenefitLoading(false);
+    }
+  }, [userId, canViewBenefits]);
+
+  const handleRevokeBenefit = async () => {
+    if (!revokeTarget) return;
+
+    const normalizedReason = revokeReason.trim();
+    if (normalizedReason.length < 2) {
+      message.warning(t('users.detail.revokeReasonInvalid'));
+      return;
+    }
+
+    try {
+      setRevokeLoading(true);
+      const result = await adminRevokeBenefit(revokeTarget.voId, normalizedReason);
+      message.success(t(result.voChanged ? 'users.detail.revokeSuccess' : 'users.detail.alreadyRevoked'));
+      setRevokeTarget(null);
+      setRevokeReason('');
+      await Promise.all([loadBenefits(), loadEntitlementOperations()]);
+    } catch (error) {
+      log.error('UserDetail', '撤销持续权益失败:', error);
+      message.error(error instanceof Error ? error.message : t('users.detail.revokeFailed'));
+    } finally {
+      setRevokeLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (userId && canViewUsers) {
       void loadUserDetail();
@@ -259,52 +347,64 @@ export const UserDetail = () => {
       void loadExperience();
       void loadCoinTransactions();
       void loadOrders();
+      void loadEntitlementOperations();
+      void loadBenefits();
     }
-  }, [userId, canViewUsers, loadBalance, loadExperience, loadCoinTransactions, loadOrders]);
+  }, [
+    userId,
+    canViewUsers,
+    loadBalance,
+    loadExperience,
+    loadCoinTransactions,
+    loadOrders,
+    loadEntitlementOperations,
+    loadBenefits,
+  ]);
   // 萝卜币流水表格列
   const coinColumns: TableColumnsType<CoinTransactionVo> = [
     {
-      title: '金额',
+      title: t('users.detail.column.amount'),
       dataIndex: 'voAmount',
       key: 'voAmount',
       width: 120,
-      render: (_amount: number, record) => {
+      render: (_amount: string, record) => {
         const signedAmount = getSignedCoinAmount(record);
 
         return (
           <span className={getSignedAmountClassName(signedAmount)}>
-            {signedAmount >= 0 ? '+' : ''}{signedAmount}
+            {formatConsoleSignedInteger(signedAmount, language)}
           </span>
         );
       },
     },
     {
-      title: '类型',
-      dataIndex: 'voTransactionTypeDisplay',
-      key: 'voTransactionTypeDisplay',
+      title: t('users.detail.column.type'),
+      dataIndex: 'voTransactionType',
+      key: 'voTransactionType',
       width: 120,
+      render: (transactionType: string) => getCoinTransactionTypeLabel(transactionType, t),
     },
     {
-      title: '备注',
+      title: t('users.detail.column.remark'),
       dataIndex: 'voRemark',
       key: 'voRemark',
       render: (remark?: string | null) => remark || '-',
     },
     {
-      title: '时间',
+      title: t('users.detail.column.time'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
       render: (time: string) => formatDisplayTime(time),
     },
     {
-      title: '操作',
+      title: t('users.detail.column.action'),
       key: 'action',
       width: 120,
       render: (_: unknown, record) => (
         record.voBusinessType === 'Order' && record.voBusinessId ? (
           <Button onClick={() => handleViewOrderFromTransaction(record)}>
-            查看订单
+            {t('users.detail.action.viewOrder')}
           </Button>
         ) : '-'
       ),
@@ -314,43 +414,43 @@ export const UserDetail = () => {
   // 订单表格列
   const orderColumns: TableColumnsType<Order> = [
     {
-      title: '订单号',
+      title: t('users.detail.column.orderNo'),
       dataIndex: 'voOrderNo',
       key: 'voOrderNo',
       width: 180,
     },
     {
-      title: '商品',
+      title: t('users.detail.column.product'),
       dataIndex: 'voProductName',
       key: 'voProductName',
     },
     {
-      title: '金额',
+      title: t('users.detail.column.amount'),
       dataIndex: 'voTotalPrice',
       key: 'voTotalPrice',
       width: 120,
-      render: (price: number) => `${price} 胡萝卜`,
+      render: (price: number) => `${formatLocalizedNumber(price, language)} ${t('console.unit.carrot')}`,
     },
     {
-      title: '状态',
+      title: t('users.detail.column.status'),
       dataIndex: 'voStatus',
       key: 'voStatus',
       width: 100,
-      render: (status: string) => (
-        <Tag color={getOrderStatusColor(status)}>
-          {getOrderStatusDisplay(status)}
+      render: (_status: string, record) => (
+        <Tag color={getOrderStatusColor(record.voStatus)}>
+          {getOrderStatusLabel(record, t)}
         </Tag>
       ),
     },
     {
-      title: '时间',
+      title: t('users.detail.column.time'),
       dataIndex: 'voCreateTime',
       key: 'voCreateTime',
       width: 180,
       render: (time: string) => formatDisplayTime(time),
     },
     {
-      title: '操作',
+      title: t('users.detail.column.action'),
       key: 'action',
       width: 200,
       render: (_: unknown, record: Order) => (
@@ -361,15 +461,142 @@ export const UserDetail = () => {
               returnTo: getCurrentReturnTo(),
             }));
           }}>
-            治理详情
+            {t('users.detail.action.orderGovernance')}
           </Button>
           {record.voCoinTransactionId ? (
             <Button onClick={() => handleViewCoinTransactionFromOrder(record)}>
-              扣款流水
+              {t('users.detail.action.coinTransaction')}
             </Button>
           ) : null}
         </Space>
       ),
+    },
+  ];
+
+  const operationColumns: TableColumnsType<ShopEntitlementOperation> = [
+    {
+      title: t('users.detail.column.businessObject'),
+      key: 'businessObject',
+      width: 180,
+      render: (_: unknown, record) => record.voBenefitType !== null && record.voBenefitType !== undefined
+        ? getBenefitTypeLabel(record.voBenefitType, t)
+        : record.voConsumableType !== null && record.voConsumableType !== undefined
+          ? getConsumableTypeLabel(record.voConsumableType, t)
+          : '-',
+    },
+    {
+      title: t('users.detail.column.quantity'),
+      dataIndex: 'voQuantity',
+      key: 'voQuantity',
+      width: 90,
+      render: (quantity?: number | null) => quantity ?? '-',
+    },
+    {
+      title: t('users.detail.column.reason'),
+      dataIndex: 'voReason',
+      key: 'voReason',
+      width: 200,
+      render: (reason?: string | null) => reason || '-',
+    },
+    {
+      title: t('users.detail.column.effect'),
+      key: 'effect',
+      render: (_: unknown, record) => (
+        <Space wrap>
+          <Tag>{record.voEffectType}</Tag>
+          <span>{record.voEffectValue || '-'}</span>
+        </Space>
+      ),
+    },
+    {
+      title: t('users.detail.column.resource'),
+      key: 'resource',
+      width: 240,
+      render: (_: unknown, record) => {
+        const resourceReference = record.voEffectResourceNo || record.voEffectResourceId;
+        return record.voEffectResourceType
+          ? `${record.voEffectResourceType}${resourceReference ? ` · ${resourceReference}` : ''}`
+          : '-';
+      },
+    },
+    {
+      title: t('users.detail.column.operationId'),
+      dataIndex: 'voId',
+      key: 'voId',
+      width: 190,
+    },
+    {
+      title: t('users.detail.column.time'),
+      dataIndex: 'voCreateTime',
+      key: 'voCreateTime',
+      width: 180,
+      render: (time: string) => formatDisplayTime(time),
+    },
+  ];
+
+  const benefitColumns: TableColumnsType<UserBenefit> = [
+    {
+      title: t('users.detail.column.benefit'),
+      key: 'benefit',
+      width: 220,
+      render: (_: unknown, record) => (
+        <div>
+          <strong>{record.voBenefitName || getBenefitTypeLabel(record.voBenefitType, t)}</strong>
+          <div className="admin-feature-subtle">{record.voBenefitValue}</div>
+        </div>
+      ),
+    },
+    {
+      title: t('users.detail.column.status'),
+      dataIndex: 'voStatusDisplay',
+      key: 'voStatusDisplay',
+      width: 110,
+      render: (_statusDisplay: string, record) => {
+        const status = String(record.voStatus);
+        const color = status === '1' || status === 'Active'
+          ? 'success'
+          : status === '3' || status === 'Revoked'
+            ? 'error'
+            : status === '2' || status === 'Expired'
+              ? 'default'
+              : 'processing';
+        return <Tag color={color}>{getBenefitStatusLabel(record.voStatus, t)}</Tag>;
+      },
+    },
+    {
+      title: t('users.detail.column.duration'),
+      dataIndex: 'voDurationDisplay',
+      key: 'voDurationDisplay',
+      width: 180,
+      render: (_: string, record) => getBenefitDurationLabel(record, t, formatDisplayTime),
+    },
+    {
+      title: t('users.detail.column.source'),
+      dataIndex: 'voSourceType',
+      key: 'voSourceType',
+      width: 110,
+      render: (sourceType: string) => getBenefitSourceLabel(sourceType, t),
+    },
+    {
+      title: t('users.detail.column.revocation'),
+      key: 'revocation',
+      width: 240,
+      render: (_: unknown, record) => record.voRevokedAt
+        ? `${formatDisplayTime(record.voRevokedAt)} · ${record.voRevocationReason || '-'}`
+        : '-',
+    },
+    {
+      title: t('users.detail.column.action'),
+      key: 'actions',
+      width: 110,
+      render: (_: unknown, record) => canRevokeBenefits && !record.voRevokedAt ? (
+        <Button onClick={() => {
+          setRevokeTarget(record);
+          setRevokeReason('');
+        }}>
+          {t('users.detail.action.revoke')}
+        </Button>
+      ) : '-',
     },
   ];
 
@@ -380,12 +607,12 @@ export const UserDetail = () => {
           <div className="admin-feature-header">
             <div>
               <h2>
-                <UserOutlined /> 用户详情
+                <UserOutlined /> {t('users.detail.title')}
               </h2>
-              <p className="admin-feature-subtle">没有查看用户详情的权限。</p>
+              <p className="admin-feature-subtle">{t('users.detail.noPermission')}</p>
             </div>
             <Button icon={<LeftOutlined />} onClick={handleBack}>
-              返回
+              {t('users.detail.back')}
             </Button>
           </div>
         </section>
@@ -400,9 +627,9 @@ export const UserDetail = () => {
           <div className="admin-feature-header">
             <div>
               <h2>
-                <UserOutlined /> 用户详情
+                <UserOutlined /> {t('users.detail.title')}
               </h2>
-              <p className="admin-feature-subtle">加载用户档案、资产和最近行为记录。</p>
+              <p className="admin-feature-subtle">{t('users.detail.loadingDescription')}</p>
             </div>
           </div>
         </section>
@@ -416,37 +643,37 @@ export const UserDetail = () => {
         <div className="admin-feature-header">
           <div className="user-detail-heading">
             <Button icon={<LeftOutlined />} onClick={handleBack}>
-              返回
+              {t('users.detail.back')}
             </Button>
             <div>
               <h2>
-                <UserOutlined /> 用户详情
+                <UserOutlined /> {t('users.detail.title')}
               </h2>
-              <p className="admin-feature-subtle">聚合用户基础资料、经验、胡萝卜余额和最近订单。</p>
+              <p className="admin-feature-subtle">{t('users.detail.description')}</p>
             </div>
           </div>
           <Tag color={user.isEnabled ? 'success' : 'error'}>
-            {user.isEnabled ? '启用' : '禁用'}
+            {t(user.isEnabled ? 'users.common.enabled' : 'users.common.disabled')}
           </Tag>
         </div>
       </section>
 
-      <section className="admin-feature-metrics" aria-label="用户详情指标">
+      <section className="admin-feature-metrics" aria-label={t('users.detail.metricsLabel')}>
         <div className="admin-feature-metric">
-          <span><TrophyOutlined /> 等级</span>
+          <span><TrophyOutlined /> {t('users.detail.metric.level')}</span>
           <strong>{experience ? `${experience.voCurrentLevel} ${experience.voCurrentLevelName}` : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span><UserOutlined /> 当前经验</span>
+          <span><UserOutlined /> {t('users.detail.metric.currentExperience')}</span>
           <strong>{experience ? `${experience.voCurrentExp} / ${experience.voExpToNextLevel}` : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span><TrophyOutlined /> 总经验</span>
-          <strong>{experience?.voTotalExp ?? '--'}</strong>
+          <span><TrophyOutlined /> {t('users.detail.metric.totalExperience')}</span>
+          <strong>{experience ? formatLocalizedNumber(experience.voTotalExp, language) : '--'}</strong>
         </div>
         <div className="admin-feature-metric">
-          <span><WalletOutlined /> 胡萝卜余额</span>
-          <strong>{balance?.voBalance ?? '--'}</strong>
+          <span><WalletOutlined /> {t('users.detail.metric.balance')}</span>
+          <strong>{balance ? formatConsoleInteger(balance.voBalance, language) : '--'}</strong>
         </div>
       </section>
 
@@ -455,37 +682,37 @@ export const UserDetail = () => {
           <section className="admin-table-panel">
             <div className="user-detail-section-title">
               <div>
-                <h3>基本信息</h3>
-                <p className="admin-feature-subtle">用户账号基础档案和最近登录时间。</p>
+                <h3>{t('users.detail.basic.title')}</h3>
+                <p className="admin-feature-subtle">{t('users.detail.basic.description')}</p>
               </div>
             </div>
             <Descriptions column={2}>
-              <Descriptions.Item label="展示名称">{user.displayName}</Descriptions.Item>
-              <Descriptions.Item label="公开句柄">{user.displayHandle}</Descriptions.Item>
-              <Descriptions.Item label="邮箱">{user.email}</Descriptions.Item>
-              <Descriptions.Item label="用户 ID">{user.uuid}</Descriptions.Item>
-              <Descriptions.Item label="状态">
+              <Descriptions.Item label={t('users.detail.basic.displayName')}>{user.displayName}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.handle')}>{user.displayHandle}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.email')}>{user.email}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.userId')}>{user.uuid}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.status')}>
                 <Tag color={user.isEnabled ? 'success' : 'error'}>
-                  {user.isEnabled ? '启用' : '禁用'}
+                  {t(user.isEnabled ? 'users.common.enabled' : 'users.common.disabled')}
                 </Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="注册时间">{formatDisplayTime(user.createTime)}</Descriptions.Item>
-              <Descriptions.Item label="最后登录">{formatDisplayTime(user.lastLoginTime)}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.registeredAt')}>{formatDisplayTime(user.createTime)}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.lastLogin')}>{formatDisplayTime(user.lastLoginTime)}</Descriptions.Item>
             </Descriptions>
           </section>
 
           <section className="admin-table-panel">
             <div className="user-detail-section-title">
               <div>
-                <h3>最近记录</h3>
-                <p className="admin-feature-subtle">展示最近 10 条胡萝卜流水和购买记录。</p>
+                <h3>{t('users.detail.records.title')}</h3>
+                <p className="admin-feature-subtle">{t('users.detail.records.description')}</p>
               </div>
             </div>
             <Tabs
               items={[
                 {
                   key: 'coins',
-                  label: '萝卜币流水',
+                  label: t('users.detail.tabs.coins'),
                   children: (
                     canViewCoins ? (
                       <div className="admin-table-scroll-region">
@@ -499,13 +726,13 @@ export const UserDetail = () => {
                         />
                       </div>
                     ) : (
-                      <Empty description="没有查看萝卜币流水的权限" />
+                      <Empty description={t('users.detail.permission.noCoins')} />
                     )
                   ),
                 },
                 {
                   key: 'orders',
-                  label: '购买记录',
+                  label: t('users.detail.tabs.orders'),
                   children: (
                     canViewOrders ? (
                       <div className="admin-table-scroll-region">
@@ -519,7 +746,47 @@ export const UserDetail = () => {
                         />
                       </div>
                     ) : (
-                      <Empty description="没有查看购买记录的权限" />
+                      <Empty description={t('users.detail.permission.noOrders')} />
+                    )
+                  ),
+                },
+                {
+                  key: 'benefits',
+                  label: t('users.detail.tabs.benefits'),
+                  children: (
+                    canViewBenefits ? (
+                      <div className="admin-table-scroll-region">
+                        <Table
+                          columns={benefitColumns}
+                          dataSource={benefits}
+                          rowKey="voId"
+                          loading={benefitLoading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 1050 }}
+                        />
+                      </div>
+                    ) : (
+                      <Empty description={t('users.detail.permission.noBenefits')} />
+                    )
+                  ),
+                },
+                {
+                  key: 'entitlement-operations',
+                  label: t('users.detail.tabs.operations'),
+                  children: (
+                    canViewBenefits ? (
+                      <div className="admin-table-scroll-region">
+                        <Table
+                          columns={operationColumns}
+                          dataSource={entitlementOperations}
+                          rowKey="voId"
+                          loading={operationLoading}
+                          pagination={{ pageSize: 10 }}
+                          scroll={{ x: 1050 }}
+                        />
+                      </div>
+                    ) : (
+                      <Empty description={t('users.detail.permission.noOperations')} />
                     )
                   ),
                 },
@@ -529,46 +796,77 @@ export const UserDetail = () => {
         </main>
 
         <aside className="admin-table-aside">
-          <h3>用户摘要</h3>
-          <p className="admin-feature-subtle">用于核对当前用户跨模块数据可见性和返回来源。</p>
+          <h3>{t('users.detail.summary.title')}</h3>
+          <p className="admin-feature-subtle">{t('users.detail.summary.description')}</p>
           <div className="user-detail-case-actions">
             {canViewModeration ? (
               <Button icon={<SafetyOutlined />} onClick={handleViewModerationLogs}>
-                查看治理记录
+                {t('users.detail.summary.viewModeration')}
               </Button>
             ) : null}
             {canReviewModeration ? (
               <Button variant="primary" icon={<SafetyOutlined />} onClick={handleOpenManualModeration}>
-                手动治理
+                {t('users.detail.summary.manualModeration')}
               </Button>
             ) : null}
           </div>
           <div className="admin-table-summary">
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">用户 ID</span>
+              <span className="admin-table-summary__label">{t('users.detail.summary.userId')}</span>
               <span className="admin-table-summary__value">{user.uuid}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">资产权限</span>
-              <span className="admin-table-summary__value">{canViewCoins ? '可查看胡萝卜资产' : '无资产查看权限'}</span>
+              <span className="admin-table-summary__label">{t('users.detail.summary.assetPermission')}</span>
+              <span className="admin-table-summary__value">{t(canViewCoins ? 'users.detail.summary.canViewAssets' : 'users.detail.summary.noAssets')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">经验权限</span>
-              <span className="admin-table-summary__value">{canViewExperience ? '可查看经验数据' : '无经验查看权限'}</span>
+              <span className="admin-table-summary__label">{t('users.detail.summary.experiencePermission')}</span>
+              <span className="admin-table-summary__value">{t(canViewExperience ? 'users.detail.summary.canViewExperience' : 'users.detail.summary.noExperience')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">订单权限</span>
-              <span className="admin-table-summary__value">{canViewOrders ? '可查看购买记录' : '无订单查看权限'}</span>
+              <span className="admin-table-summary__label">{t('users.detail.summary.orderPermission')}</span>
+              <span className="admin-table-summary__value">{t(canViewOrders ? 'users.detail.summary.canViewOrders' : 'users.detail.summary.noOrders')}</span>
             </div>
             <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">治理权限</span>
+              <span className="admin-table-summary__label">{t('users.detail.summary.moderationPermission')}</span>
               <span className="admin-table-summary__value">
-                {canReviewModeration ? '可执行手动治理' : canViewModeration ? '可查看治理记录' : '无治理查看权限'}
+                {t(canReviewModeration
+                  ? 'users.detail.summary.canModerate'
+                  : canViewModeration
+                    ? 'users.detail.summary.canViewModeration'
+                    : 'users.detail.summary.noModeration')}
               </span>
             </div>
           </div>
         </aside>
       </div>
+      <Modal
+        title={t('users.detail.revoke.title')}
+        open={revokeTarget !== null}
+        okText={t('users.detail.revoke.confirm')}
+        cancelText={t('users.detail.revoke.cancel')}
+        confirmLoading={revokeLoading}
+        onOk={() => void handleRevokeBenefit()}
+        onCancel={() => {
+          if (revokeLoading) return;
+          setRevokeTarget(null);
+          setRevokeReason('');
+        }}
+      >
+        <p>
+          {revokeTarget
+            ? t('users.detail.revoke.description', { benefit: revokeTarget.voBenefitName || revokeTarget.voBenefitTypeDisplay })
+            : ''}
+        </p>
+        <Input.TextArea
+          rows={4}
+          maxLength={500}
+          showCount
+          value={revokeReason}
+          placeholder={t('users.detail.revoke.placeholder')}
+          onChange={(event) => setRevokeReason(event.target.value)}
+        />
+      </Modal>
     </div>
   );
 };

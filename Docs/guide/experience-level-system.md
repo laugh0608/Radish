@@ -29,7 +29,12 @@
 
 ## 1.1 当前前端承接状态
 
-- WebOS 和 Console 继续承担经验规则展示、配置治理、人工复核与运营管理链路。
+- 纯 Web 正式入口由 `/me` 展示经验摘要，并通过 `/me/experience` 承接等级进度、趋势、来源分布和分页流水。
+- `Frontend/radish.client/src/apps/experience-detail/ExperienceDetailApp.tsx` 同时保留为 WebOS `/desktop` 历史兼容应用；`ExperienceDisplay` 只承担桌面状态展示。
+- `@radish/ui` 的 `ExperienceBar` 是共享展示组件，由 client 注入 labels、数字、百分比和日期 formatter，不持有宿主语言状态。
+- 系统经验类型只按稳定 `voExpType` 解析宿主词元；未知类型显示原始稳定值，`voExpTypeDisplay` 不参与控制或本地化。
+- 等级名称、交易备注和冻结原因属于配置或人工内容；没有稳定本地化标识时保持原文。
+- Console 继续承担经验配置治理、人工复核和运营管理链路，不与 client 展示词元互相推导。
 - Flutter 登录态我的页提供“查看经验记录”只读入口，展示等级、当前经验、总经验、升级进度、冻结状态和最近经验流水。
 - Flutter 最近流水用于用户移动端自查经验来源，不替代管理员复核或等级配置治理。
 - Flutter 当前不开放经验调整、冻结治理、规则配置或管理员复核。

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Radish.Common.AttributeTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -16,7 +17,7 @@ namespace Radish.Service;
 /// <summary>用户关系链服务实现</summary>
 public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFollowService
 {
-    private readonly IBaseRepository<UserFollow> _userFollowRepository;
+    private readonly IUserFollowRepository _userFollowRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IPostService _postService;
@@ -27,7 +28,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
     public UserFollowService(
         IMapper mapper,
-        IBaseRepository<UserFollow> baseRepository,
+        IUserFollowRepository baseRepository,
         IBaseRepository<User> userRepository,
         IPostService postService,
         IBaseRepository<Attachment> attachmentRepository,
@@ -67,11 +68,12 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             throw new InvalidOperationException("目标用户不存在或不可用");
         }
 
-        var existing = await _userFollowRepository.QueryFirstAsync(f =>
-            f.FollowerUserId == followerUserId && f.FollowingUserId == targetUserId);
-
         var normalizedOperator = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
         var normalizedTenantId = tenantId > 0 ? tenantId : 0;
+        var existing = await _userFollowRepository.QueryPairIncludingDeletedAsync(
+            followerUserId,
+            targetUserId,
+            normalizedTenantId);
         var now = DateTime.UtcNow;
 
         if (existing != null)
@@ -96,7 +98,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             var restored = await _userFollowRepository.UpdateAsync(existing);
             if (restored)
             {
-                await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId);
+                await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId, now);
             }
 
             return restored;
@@ -113,7 +115,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             CreateId = followerUserId
         });
 
-        await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId);
+        await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId, now);
 
         return true;
     }
@@ -409,7 +411,11 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 });
     }
 
-    private async Task TrySendFollowNotificationAsync(long followerUserId, User targetUser, long tenantId)
+    private async Task TrySendFollowNotificationAsync(
+        long followerUserId,
+        User targetUser,
+        long tenantId,
+        DateTime occurredAtUtc)
     {
         if (followerUserId <= 0 || targetUser.Id <= 0 || followerUserId == targetUser.Id)
         {
@@ -441,7 +447,18 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 TriggerName = followerName,
                 TriggerAvatar = avatarMap.GetValueOrDefault(followerUserId),
                 ReceiverUserIds = new List<long> { targetUser.Id },
-                TenantId = tenantId
+                TenantId = tenantId,
+                TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+                {
+                    ["actorName"] = followerName
+                },
+                TargetKind = NotificationTargetKind.UserProfile,
+                Target = new NotificationTargetData
+                {
+                    UserId = followerUserId,
+                    UserPublicId = follower?.PublicId
+                },
+                OccurredAtUtc = occurredAtUtc
             };
             var reliableOutboxService = _reliableOutboxService
                 ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
@@ -453,7 +470,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 "UserFollow",
                 $"{followerUserId}:{targetUser.Id}",
                 new NotificationRequestedTaskPayload(notification),
-                DateTime.UtcNow);
+                occurredAtUtc);
         }
         catch (Exception ex)
         {

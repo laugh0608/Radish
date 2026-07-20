@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Repository.UnitOfWorks;
 using Radish.Shared.Constants;
 using Serilog;
 using SqlSugar;
@@ -22,10 +23,14 @@ public class ContentSubmissionService : IContentSubmissionService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IBaseRepository<ContentSubmissionRecord> _recordRepository;
+    private readonly IUnitOfWorkManage _unitOfWorkManage;
 
-    public ContentSubmissionService(IBaseRepository<ContentSubmissionRecord> recordRepository)
+    public ContentSubmissionService(
+        IBaseRepository<ContentSubmissionRecord> recordRepository,
+        IUnitOfWorkManage unitOfWorkManage)
     {
         _recordRepository = recordRepository;
+        _unitOfWorkManage = unitOfWorkManage;
     }
 
     public string? NormalizeClientSubmissionId(string? clientSubmissionId)
@@ -113,7 +118,13 @@ public class ContentSubmissionService : IContentSubmissionService
 
         try
         {
-            record.Id = await _recordRepository.AddAsync(record);
+            record.Id = await _unitOfWorkManage.ExecuteInSavepointAsync(
+                () => _recordRepository.AddAsync(record));
+            if (record.Id <= 0)
+            {
+                throw new ContentSubmissionConsistencyException("内容提交记录创建失败，未取得有效记录 ID");
+            }
+
             return Started(record.Id);
         }
         catch (Exception ex) when (IsUniqueConstraintConflict(ex))
@@ -144,8 +155,8 @@ public class ContentSubmissionService : IContentSubmissionService
         var record = await _recordRepository.QueryByIdAsync(request.RecordId);
         if (record == null)
         {
-            Log.Warning("内容提交记录完成成功时未找到记录：RecordId={RecordId}", request.RecordId);
-            return;
+            throw new ContentSubmissionConsistencyException(
+                $"内容提交记录不存在，无法完成成功状态：RecordId={request.RecordId}");
         }
 
         var now = DateTime.Now;
@@ -160,31 +171,11 @@ public class ContentSubmissionService : IContentSubmissionService
         record.ModifyBy = "System";
         record.ModifyId = 0;
 
-        await _recordRepository.UpdateAsync(record);
-    }
-
-    public async Task CompleteFailureAsync(long recordId, string? errorCode, string? errorMessage)
-    {
-        var record = await _recordRepository.QueryByIdAsync(recordId);
-        if (record == null)
+        if (!await _recordRepository.UpdateAsync(record))
         {
-            Log.Warning("内容提交记录完成失败时未找到记录：RecordId={RecordId}", recordId);
-            return;
+            throw new ContentSubmissionConsistencyException(
+                $"内容提交记录成功状态未持久化：RecordId={request.RecordId}");
         }
-
-        var now = DateTime.Now;
-        record.Status = ContentSubmissionStatuses.Failed;
-        record.ResultType = null;
-        record.ResultId = null;
-        record.ResultPublicId = null;
-        record.ErrorCode = NormalizeOptional(errorCode);
-        record.ErrorMessage = Truncate(errorMessage, 500);
-        record.CompleteTime = now;
-        record.ModifyTime = now;
-        record.ModifyBy = "System";
-        record.ModifyId = 0;
-
-        await _recordRepository.UpdateAsync(record);
     }
 
     private async Task<ContentSubmissionBeginResult> ResolveExistingRecordAsync(
@@ -300,7 +291,11 @@ public class ContentSubmissionService : IContentSubmissionService
         record.ModifyBy = "System";
         record.ModifyId = 0;
 
-        await _recordRepository.UpdateAsync(record);
+        if (!await _recordRepository.UpdateAsync(record))
+        {
+            throw new ContentSubmissionConsistencyException(
+                $"内容提交记录重置状态未持久化：RecordId={record.Id}");
+        }
     }
 
     private async Task<ContentSubmissionRecord?> QueryRecordAsync(

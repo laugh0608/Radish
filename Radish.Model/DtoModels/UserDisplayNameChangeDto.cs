@@ -8,6 +8,8 @@ public static class UserDisplayNameChangeSources
     public const string Console = "Console";
 
     public const string System = "System";
+
+    public const string RenameCard = "RenameCard";
 }
 
 /// <summary>展示名变更上下文</summary>

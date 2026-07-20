@@ -31,6 +31,7 @@ public static class SerilogSetup
                 .ReadFrom.Configuration(AppSettingsTool.Configuration)
                 .MinimumLevel.Is(minimumLevel)
                 .Enrich.FromLogContext()
+                .Enrich.With<SensitiveQueryStringLogEnricher>()
                 .WriteToConsole(options)
                 .WriteToFile(options)
                 .WriteToDatabase(services, options);

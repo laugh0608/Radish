@@ -9,6 +9,8 @@
 > **2026-03 对齐说明**：商品图片字段已经从“直接存 URL”收口为“存附件 Id，URL 运行时派生”。下方模型请以当前代码口径理解：`IconAttachmentId` / `CoverAttachmentId` 为真值，`voIcon` / `voCoverImage` 为展示字段。
 >
 > **2026-06-20 对齐说明**：商品管理写入已接入 `Product.Version` 乐观并发语义。Console 商品详情 / 编辑表单读取 `VoVersion`，更新、上架和下架请求提交 `ExpectedVersion`；版本不匹配时服务端拒绝覆盖并提示刷新后重试。
+>
+> **2026-07-14 对齐说明**：商品可用性由服务端 `ShopProductAvailabilityPolicy` 和 `GetProductCapabilities` 统一约束公开查询、购买、上架、Console 配置与权益启用。Badge、Title、Theme 已具备真实消费能力；Badge 必须配置公开有效附件，Title 文本长度为 `1-40`，Theme 资源只接受 `theme-dark-night / theme-sakura`。AvatarFrame、Signature、NameColor、LikeEffect 以及置顶卡、高亮卡、双倍经验卡、抽奖券仍不可售或不可用。能力开放不会自动上架历史商品。
 
 ```csharp
 /// <summary>
@@ -618,6 +620,14 @@ private async Task<int> GetUserTodayPurchasedCountAsync(long productId, long use
 ## 3.5 商品种子数据
 
 ### 3.5.1 初始商品配置
+
+当前种子真相源是 `Radish.DbMigrate/InitialDataSeeder.Shop.cs`。下方代码仅保留为早期字段组合示意，不作为可复制的当前 seed：
+
+- 固定 seed ID 用于幂等初始化，不在 seed 中动态生成 Snowflake ID；
+- seed 的 `IsOnSale=true` 仍不能绕过服务端能力和配置校验；
+- Badge 缺少公开图标附件时不能进入公开销售；
+- Theme 当前只登记暗夜与樱花资源，默认保持下架，是否销售由运营显式决定；
+- `DbMigrate apply` 不得借能力开放强制恢复历史商品上架状态。
 
 ```csharp
 public async Task SeedProductsAsync()

@@ -2,6 +2,7 @@ import type { PostItem } from '@/api/forum';
 import type { LongId } from '@/api/user';
 import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
+import { UserAdornment } from '@/components/UserAdornment';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
@@ -239,11 +240,13 @@ export const PostCard = ({
     >
       {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
       <span className={styles.authorName}>{authorName}</span>
+      <UserAdornment adornment={post.voAuthorAdornment} />
     </button>
   ) : (
     <div className={`${styles.authorStatic} ${isPublicCompact ? styles.authorLinkCompact : ''}`}>
       {renderAvatar(authorName, post.voAuthorAvatarUrl, styles.avatar, authorName)}
       <span className={styles.authorName}>{authorName}</span>
+      <UserAdornment adornment={post.voAuthorAdornment} />
     </div>
   );
 

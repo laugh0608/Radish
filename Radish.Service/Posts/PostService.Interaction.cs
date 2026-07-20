@@ -168,10 +168,10 @@ public partial class PostService
     /// <summary>
     /// 切换帖子点赞状态（点赞/取消点赞）
     /// </summary>
-    public async Task<PostLikeResultDto> ToggleLikeAsync(long userId, long postId)
+    public async Task<PostLikeResultDto> ToggleLikeAsync(long userId, string userName, long postId)
     {
         var likeResult = await (_postCustomRepository ?? throw new InvalidOperationException("帖子专属仓储未注册"))
-            .TogglePostLikeAsync(userId, postId);
+            .TogglePostLikeAsync(userId, userName, postId);
 
         return new PostLikeResultDto
         {

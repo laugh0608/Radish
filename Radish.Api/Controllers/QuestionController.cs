@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Radish.Api.ErrorHandling;
 using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
@@ -51,6 +52,8 @@ public class QuestionController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
     public async Task<MessageModel> Answer([FromBody] CreateAnswerDto request)
     {
         if (request.PostId <= 0)
@@ -102,17 +105,17 @@ public class QuestionController : ControllerBase
                 ResponseData = answerResult.Result
             };
         }
-        catch (AggregateException ex) when (TryBuildAnswerErrorResponse(ex, out var response))
+        catch (AggregateException ex) when (TryBuildKnownErrorResponse(ex, out var response))
         {
             return response;
         }
         catch (ArgumentException ex)
         {
-            return BuildAnswerErrorResponse(ex);
+            return BuildErrorResponse(ex);
         }
         catch (BusinessException ex)
         {
-            return BuildAnswerErrorResponse(ex);
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -126,6 +129,7 @@ public class QuestionController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
     public async Task<MessageModel> Accept([FromBody] AcceptAnswerDto request)
     {
         if (request.PostId <= 0)
@@ -164,39 +168,26 @@ public class QuestionController : ControllerBase
                 ResponseData = question
             };
         }
-        catch (AggregateException ex) when (TryBuildAcceptErrorResponse(ex, out var response))
+        catch (AggregateException ex) when (TryBuildKnownErrorResponse(ex, out var response))
         {
             return response;
         }
         catch (ArgumentException ex)
         {
-            return BuildAcceptErrorResponse(ex);
+            return BuildErrorResponse(ex);
         }
         catch (BusinessException ex)
         {
-            return BuildAcceptErrorResponse(ex);
+            return BuildErrorResponse(ex);
         }
     }
 
-    private static bool TryBuildAnswerErrorResponse(AggregateException exception, out MessageModel response)
+    private static bool TryBuildKnownErrorResponse(AggregateException exception, out MessageModel response)
     {
         var knownException = UnwrapKnownException(exception);
         if (knownException is ArgumentException or BusinessException)
         {
-            response = BuildAnswerErrorResponse(knownException);
-            return true;
-        }
-
-        response = null!;
-        return false;
-    }
-
-    private static bool TryBuildAcceptErrorResponse(AggregateException exception, out MessageModel response)
-    {
-        var knownException = UnwrapKnownException(exception);
-        if (knownException is ArgumentException or BusinessException)
-        {
-            response = BuildAcceptErrorResponse(knownException);
+            response = BuildErrorResponse(knownException);
             return true;
         }
 
@@ -212,28 +203,27 @@ public class QuestionController : ControllerBase
             : flattened.GetBaseException();
     }
 
-    private static MessageModel BuildAnswerErrorResponse(Exception exception)
+    private static MessageModel BuildErrorResponse(Exception exception)
     {
-        var statusCode = exception switch
+        return exception switch
         {
-            ArgumentException => HttpStatusCodeEnum.BadRequest,
-            BusinessException businessException => (HttpStatusCodeEnum)businessException.StatusCode,
-            _ => HttpStatusCodeEnum.BadRequest
+            BusinessException businessException => BuildBusinessErrorResponse(businessException),
+            _ => BuildErrorResponse(HttpStatusCodeEnum.BadRequest, exception.Message)
         };
-
-        return BuildErrorResponse(statusCode, exception.Message);
     }
 
-    private static MessageModel BuildAcceptErrorResponse(Exception exception)
+    private static MessageModel BuildBusinessErrorResponse(BusinessException exception)
     {
-        var statusCode = exception switch
+        var messageArguments = ApiMessageArgumentNormalizer.Normalize(exception.MessageArguments);
+        return new MessageModel
         {
-            ArgumentException => HttpStatusCodeEnum.BadRequest,
-            BusinessException businessException => (HttpStatusCodeEnum)businessException.StatusCode,
-            _ => HttpStatusCodeEnum.BadRequest
+            IsSuccess = false,
+            StatusCode = exception.StatusCode,
+            MessageInfo = exception.Message,
+            Code = exception.ErrorCode,
+            MessageKey = exception.MessageKey,
+            MessageArguments = messageArguments.Length > 0 ? messageArguments : null
         };
-
-        return BuildErrorResponse(statusCode, exception.Message);
     }
 
     private static MessageModel BuildErrorResponse(HttpStatusCodeEnum statusCode, string message)

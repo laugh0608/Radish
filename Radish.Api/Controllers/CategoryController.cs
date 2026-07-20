@@ -22,6 +22,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛分类管理")]
 public class CategoryController : ControllerBase
 {

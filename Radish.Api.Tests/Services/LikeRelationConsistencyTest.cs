@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -38,9 +39,9 @@ public sealed class LikeRelationConsistencyTest
             LikeCount = 0
         }).ExecuteCommand();
 
-        var liked = await harness.PostRepository.TogglePostLikeAsync(3001, 1001);
-        var unliked = await harness.PostRepository.TogglePostLikeAsync(3001, 1001);
-        var restored = await harness.PostRepository.TogglePostLikeAsync(3001, 1001);
+        var liked = await harness.PostRepository.TogglePostLikeAsync(3001, "liker", 1001);
+        var unliked = await harness.PostRepository.TogglePostLikeAsync(3001, "liker", 1001);
+        var restored = await harness.PostRepository.TogglePostLikeAsync(3001, "liker", 1001);
 
         Assert.True(liked.IsLiked);
         Assert.Equal(1, liked.Delta);
@@ -63,6 +64,12 @@ public sealed class LikeRelationConsistencyTest
         Assert.Equal(1, post.LikeCount);
         Assert.Equal(2, outboxMessages.Count);
         Assert.All(outboxMessages, message => Assert.Equal(ReliableTaskTypes.PostLiked, message.TaskType));
+        Assert.All(outboxMessages, message =>
+        {
+            var payload = JsonSerializer.Deserialize<LikeEffectsTaskPayload>(message.PayloadJson);
+            Assert.NotNull(payload);
+            Assert.Equal("liker", payload.LikerName);
+        });
     }
 
     [Fact]
@@ -88,7 +95,7 @@ public sealed class LikeRelationConsistencyTest
             LikedAt = DateTime.UtcNow
         }).ExecuteCommand();
 
-        var result = await harness.CommentRepository.ToggleCommentLikeAsync(3001, 4001);
+        var result = await harness.CommentRepository.ToggleCommentLikeAsync(3001, "liker", 4001);
 
         Assert.False(result.IsLiked);
         Assert.Equal(-1, result.Delta);
@@ -120,7 +127,7 @@ public sealed class LikeRelationConsistencyTest
         }).ExecuteCommand();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            harness.PostRepository.TogglePostLikeAsync(3001, 1002));
+            harness.PostRepository.TogglePostLikeAsync(3001, "liker", 1002));
 
         Assert.False(harness.Db.Queryable<UserPostLike>()
             .Where(like => like.UserId == 3001 && like.PostId == 1002)
@@ -144,7 +151,7 @@ public sealed class LikeRelationConsistencyTest
             experienceService.Object);
 
         customRepository
-            .Setup(repository => repository.TogglePostLikeAsync(3001, 1001))
+            .Setup(repository => repository.TogglePostLikeAsync(3001, "liker", 1001))
             .ReturnsAsync(new PostLikePersistenceResult(
                 1001,
                 0,
@@ -155,7 +162,7 @@ public sealed class LikeRelationConsistencyTest
                 1,
                 0));
 
-        var result = await service.ToggleLikeAsync(3001, 1001);
+        var result = await service.ToggleLikeAsync(3001, "liker", 1001);
 
         Assert.True(result.IsLiked);
         Assert.Equal(1, result.LikeCount);
@@ -184,7 +191,7 @@ public sealed class LikeRelationConsistencyTest
             experienceService.Object);
 
         customRepository
-            .Setup(repository => repository.ToggleCommentLikeAsync(3001, 4001))
+            .Setup(repository => repository.ToggleCommentLikeAsync(3001, "liker", 4001))
             .ReturnsAsync(new CommentLikePersistenceResult(
                 4001,
                 0,
@@ -196,7 +203,7 @@ public sealed class LikeRelationConsistencyTest
                 1,
                 0));
 
-        var result = await service.ToggleLikeAsync(3001, 4001);
+        var result = await service.ToggleLikeAsync(3001, "liker", 4001);
 
         Assert.True(result.IsLiked);
         Assert.Equal(1, result.LikeCount);

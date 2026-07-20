@@ -192,7 +192,8 @@ internal static class DbMigrateDoctor
                 }
                 warnings.AddRange(timeAudit.Warnings);
 
-                foreach (var status in SchemaMigrationLedger.Inspect(dbScope))
+                var schemaStatuses = SchemaMigrationLedger.Inspect(dbScope);
+                foreach (var status in schemaStatuses)
                 {
                     Console.WriteLine(
                         $"[Radish.DbMigrate] [Doctor] Schema: {status.Scope}.{status.MigrationId}: {status.Message}");
@@ -203,6 +204,24 @@ internal static class DbMigrateDoctor
                     else if (!status.Applied)
                     {
                         warnings.Add($"{status.Scope}.{status.MigrationId} pending；请执行 DbMigrate apply。");
+                    }
+                }
+
+                foreach (var migration in SchemaMigrationRegistry.All
+                             .Where(migration => string.Equals(
+                                 migration.Scope,
+                                 normalizedMainDbConnId,
+                                 StringComparison.OrdinalIgnoreCase)))
+                {
+                    var isApplied = schemaStatuses
+                        .Any(status =>
+                            string.Equals(status.Scope, migration.Scope, StringComparison.OrdinalIgnoreCase) &&
+                            status.MigrationId == migration.MigrationId &&
+                            status.Applied);
+                    if (!isApplied)
+                    {
+                        warnings.AddRange(migration.Diagnose(mainDb, services)
+                            .Select(message => $"{migration.Scope}.{migration.MigrationId}: {message}"));
                     }
                 }
 

@@ -23,6 +23,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Tags("论坛标签管理")]
 public class TagController : ControllerBase
 {

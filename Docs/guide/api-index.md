@@ -54,6 +54,17 @@
 }
 ```
 
+### 错误与异常契约
+
+- `MessageModel<T>` 的 `statusCode` 必须与真实 HTTP 状态保持一致；前端不得只根据响应体中的成功字段判断网络结果。
+- `BusinessException` 由全局 `ApiExceptionHandler` 转换为稳定的 HTTP 状态、错误码、`messageKey` 和用户可读消息。
+- 未知异常统一返回 `500 + UnexpectedError`，响应中不暴露原始 `ex.Message`、堆栈、SQL 或内部路径。
+- 每个错误响应携带或复用 `TraceId / X-Correlation-ID`，用于关联日志和用户反馈。
+- 全局异常中间件只处理尚未开始写入、且属于 `MessageModel` API 的响应；非 API 响应或已经开始传输的异常重新抛给 ASP.NET Core，不能被吞掉或伪装为成功。
+- Controller 可返回业务失败，但必须同步真实 HTTP 状态；不要依赖统一异常处理器修正错误的 Controller 状态码。
+
+前端 `@radish/http` 会保留真实 HTTP 状态、解析历史 HTTP 200 失败体，并对错误对象中的 token、密码、cookie、authorization 等字段脱敏。页面应使用统一客户端和错误解析，不自行拼接 `fetch` 异常协议。
+
 ### 分页壳
 
 分页接口通常返回：
@@ -77,7 +88,7 @@
 ### 外部 ID 字符串安全
 
 - 服务端内部仍可使用 Snowflake `long` 主键。
-- API 响应、通知 `extData`、公开路由、深链参数、Console 查询参数和 Flutter handoff 中的外部对象 ID，前端都应按字符串消费。
+- API 响应、通知结构化 `NotificationTargetVo`、公开路由、深链参数、Console 查询参数和 Flutter handoff 中的外部对象 ID，前端都应按字符串消费；旧通知接口中的 `extData` 仅作兼容字段，不再作为正式 Web 分类或跳转真值。
 - JavaScript / TypeScript 侧禁止把用户 ID、帖子 ID、评论 ID、订单 ID、商品 ID、通知 ID、角色 ID、资源 ID、API 模块 ID 等外部 long 标识提前转成 `number`。
 - Dart / Flutter 侧也应优先把外部对象 ID 建模为 `String`，只有分页、数量、金额、排序权重和枚举状态等真实数值进入 `int`。
 - 需要正式切换 `PublicId` 的对象按 [ID 与联邦路线图](/architecture/id-and-federation-roadmap) 推进；当前要求先保证仍暴露的 LongId 字符串安全。
@@ -185,7 +196,7 @@
 
 ### 电子宠物
 
-电子宠物接口以 Scalar / OpenAPI 和 [Radish 电子宠物开发计划](/features/radish-pet-roadmap) 为准。当前 `PetController` 全部需要登录态 `Client` 授权，使用当前用户身份定位自己的宠物：
+电子宠物接口以 Scalar / OpenAPI 和 [Radish 电子宠物系统说明](/guide/radish-pet-system) 为准；长期边界与后续阶段另见[开发计划](/features/radish-pet-roadmap)。当前 `PetController` 全部需要登录态 `Client` 授权，使用当前用户身份定位自己的宠物：
 
 - `GET /api/v1/Pet/GetMy`：读取当前用户宠物状态；未领取时返回明确空态，不隐式创建宠物。
 - `POST /api/v1/Pet/Claim`：领取默认宠物；同一用户重复领取返回已有宠物，不创建多只宠物。
@@ -194,6 +205,8 @@
 - `GET /api/v1/Pet/GetLogs`：查询当前用户宠物状态流水；未领取时返回分页空态。
 
 `PetProfileVo` 会返回宠物 `VoPublicId`、名称、形态、成长阶段、心情、饱食度、清洁度、精力、成长值、公开展示开关、最后照顾时间和 `VoCareActions`。前端只展示动作可用性与反馈，不计算最终状态；状态变化以服务端返回和 `PetStatLogVo` 为准。
+
+Pet 高频失败使用稳定 `Pet.*` Code 与 `error.pet.*` MessageKey；Client 通过 `ApiResponseError` 保留 status、Code、MessageKey 和 TraceId，不匹配中英文消息决定未领取、次数耗尽或冷却状态。成长阶段、心情和动作展示只读取稳定字段，宠物名称保持用户原文。
 
 ### 附件与上传
 
@@ -223,6 +236,19 @@
 - `Coin/AdminGetTransactions`
 
 管理端购买排障当前依赖订单与胡萝卜流水的业务上下文关联：商城购买扣款流水使用 `transactionType=CONSUME`、`businessType=Order`、`businessId=OrderId`，Console 可从订单详情跳转到上述筛选结果。
+
+### 聊天
+
+聊天接口以 `Radish.Api.Chat.http`、Scalar 和 [聊天室系统设计](/features/chat-system) 为准，主要分为：
+
+- 频道与会话：`Channel/GetList`、`Channel/GetDetail`、`DirectConversation/*`；
+- 历史与定位：`ChannelMessage/GetHistory`、`ChannelMessage/GetMessageWindow`、`ChannelMessage/Search`；
+- 消息写入：`ChannelMessage/Send`、`ChannelMessage/Recall/{id}`；
+- 消息回应：`ChannelMessageReaction/GetStates`、`ChannelMessageReaction/Set`；
+- 消息置顶：`ChannelMessagePin/GetState`、`ChannelMessagePin/Set`；
+- 已读与回执：`ChannelReadState/Advance`、`ChannelReadReceipt/GetSummaries`、`ChannelReadReceipt/GetReaders`。
+
+所有 Chat `long / long?` 标识在 HTTP 与 Hub 边界按字符串消费。搜索、回应、置顶和回执类型由 `@radish/http` 导出；正式前端不得自行封装 fetch，也不得用客户端频道白名单、角色名称或在线状态替代服务端 ACL。
 
 ### 其他专题
 

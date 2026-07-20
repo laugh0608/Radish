@@ -45,6 +45,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 
 - [前端设计](./frontend/design.md)
 - [前端多壳层策略](./frontend/shell-strategy.md)
+- [Client 与 Console 跨应用导航契约](./frontend/client-console-navigation-contract.md)
 - [Web UI 共享基座设计说明](./frontend/web-ui-foundation-design.md)
 - [公开 Web 统一体验设计说明](./frontend/public-web-unified-experience-design.md)
 - [私域与作者态 Web 工作流设计说明](./frontend/private-web-workflows-design.md)
@@ -53,7 +54,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [纯 Web 私域复访入口](./frontend/private-web-revisit.md)
 - [Flutter 移动端 handoff 与回流说明](./guide/flutter-mobile-handoff.md)
 - [公开内容 SEO 与分享基线](./frontend/public-seo-sharing.md)
-- [Radish 电子宠物](./features/radish-pet-roadmap.md)
+- [Radish 电子宠物系统说明](./guide/radish-pet-system.md)
 - [Console 样式与 Token 使用说明](./frontend/console-style-guide.md)
 - [视觉主题规范](./frontend/visual-theme-spec.md)
 - [视觉颜色参考](./frontend/visual-color-reference.md)
@@ -62,6 +63,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [个人圈子](./features/circle.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)
+- [论坛内容赞赏（胡萝卜 +1）设计方案](./features/forum-content-reward.md)
 
 ## 记录与验收
 

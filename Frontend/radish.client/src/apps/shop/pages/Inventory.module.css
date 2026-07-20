@@ -12,7 +12,7 @@
   padding: 22px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
 }
 
@@ -22,7 +22,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   border: 1px solid var(--rx-border-strong);
   padding: 0 14px;
   border-radius: var(--rx-radius-pill);
@@ -123,7 +123,7 @@
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-pill);
-  background: color-mix(in srgb, var(--rx-bg-muted) 66%, white 34%);
+  background: color-mix(in srgb, var(--rx-bg-muted) 66%, var(--theme-surface-highlight) 34%);
   color: var(--rx-text-secondary);
   font-size: 12px;
   font-weight: 800;
@@ -135,7 +135,7 @@
   gap: 8px;
   padding: 4px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   border-radius: var(--rx-radius-pill);
   box-shadow: var(--theme-shadow-soft);
 }
@@ -158,7 +158,7 @@
 }
 
 .tab.active {
-  background: color-mix(in srgb, var(--rx-brand-soft) 74%, white 26%);
+  background: color-mix(in srgb, var(--rx-brand-soft) 74%, var(--theme-surface-highlight) 26%);
   color: var(--rx-brand-primary);
 }
 
@@ -172,7 +172,7 @@
   gap: 12px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   box-shadow: var(--theme-shadow-soft);
   padding: 18px;
 }
@@ -183,7 +183,7 @@
   gap: 7px;
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);
   border-radius: var(--rx-radius-card);
-  background: color-mix(in srgb, var(--rx-bg-muted) 58%, white 42%);
+  background: color-mix(in srgb, var(--rx-bg-muted) 58%, var(--theme-surface-highlight) 42%);
   padding: 14px;
 }
 
@@ -214,7 +214,7 @@
   gap: 8px;
   border: 1px solid var(--rx-border-strong);
   border-radius: var(--rx-radius-pill);
-  background: color-mix(in srgb, var(--rx-bg-surface) 92%, white 8%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 92%, var(--theme-surface-highlight) 8%);
   color: var(--rx-text-secondary);
   cursor: pointer;
   font-size: 13px;
@@ -264,7 +264,7 @@
   align-items: center;
   gap: 16px;
   padding: 20px;
-  background: color-mix(in srgb, var(--rx-bg-surface) 94%, white 6%);
+  background: color-mix(in srgb, var(--rx-bg-surface) 94%, var(--theme-surface-highlight) 6%);
   border-radius: var(--rx-radius-card);
   box-shadow: var(--theme-shadow-soft);
   border: 1px solid color-mix(in srgb, var(--rx-border-soft) 78%, transparent);

@@ -1,6 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
+using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -17,15 +20,21 @@ namespace Radish.Api.Controllers;
 [Produces("application/json")]
 [Tags("用户关系链")]
 [Authorize(Policy = AuthorizationPolicies.Client)]
+[ApiErrorContract]
 public class UserFollowController : ControllerBase
 {
     private readonly IUserFollowService _userFollowService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-    public UserFollowController(IUserFollowService userFollowService, ICurrentUserAccessor currentUserAccessor)
+    public UserFollowController(
+        IUserFollowService userFollowService,
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _userFollowService = userFollowService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -39,12 +48,20 @@ public class UserFollowController : ControllerBase
     {
         if (dto.TargetUserId <= 0)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "目标用户 ID 无效",
+                "UserFollow.InvalidTargetUser",
+                "error.user_follow.invalid_target_user");
         }
 
         if (dto.TargetUserId == Current.UserId)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "不能关注自己");
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "不能关注自己",
+                "UserFollow.SelfFollowRejected",
+                "error.user_follow.self_follow_rejected");
         }
 
         try
@@ -66,11 +83,19 @@ public class UserFollowController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "UserFollow.FollowRejected",
+                "error.user_follow.follow_rejected");
         }
         catch (InvalidOperationException ex)
         {
-            return BuildError(HttpStatusCodeEnum.NotFound, ex.Message);
+            return BuildError(
+                HttpStatusCodeEnum.NotFound,
+                ex.Message,
+                "UserFollow.TargetUnavailable",
+                "error.user_follow.target_unavailable");
         }
     }
 
@@ -82,12 +107,20 @@ public class UserFollowController : ControllerBase
     {
         if (dto.TargetUserId <= 0)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "目标用户 ID 无效",
+                "UserFollow.InvalidTargetUser",
+                "error.user_follow.invalid_target_user");
         }
 
         if (dto.TargetUserId == Current.UserId)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "不能取消关注自己");
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "不能取消关注自己",
+                "UserFollow.SelfUnfollowRejected",
+                "error.user_follow.self_unfollow_rejected");
         }
 
         var changed = await _userFollowService.UnfollowAsync(
@@ -113,7 +146,11 @@ public class UserFollowController : ControllerBase
     {
         if (targetUserId <= 0)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "目标用户 ID 无效");
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "目标用户 ID 无效",
+                "UserFollow.InvalidTargetUser",
+                "error.user_follow.invalid_target_user");
         }
 
         var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, targetUserId);
@@ -180,7 +217,11 @@ public class UserFollowController : ControllerBase
         var normalizedStreamType = streamType?.Trim().ToLowerInvariant() ?? "recommend";
         if (normalizedStreamType is not ("recommend" or "hot" or "newest" or "hottest"))
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, "streamType 仅支持 recommend、hot、newest");
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "streamType 仅支持 recommend、hot、newest",
+                "UserFollow.InvalidStreamType",
+                "error.user_follow.invalid_stream_type");
         }
 
         var result = await _userFollowService.GetMyDistributionFeedAsync(
@@ -213,13 +254,20 @@ public class UserFollowController : ControllerBase
         };
     }
 
-    private static MessageModel BuildError(HttpStatusCodeEnum statusCode, string message)
+    private MessageModel BuildError(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string code,
+        string messageKey)
     {
+        var localizedMessage = _errorsLocalizer[messageKey];
         return new MessageModel
         {
             IsSuccess = false,
             StatusCode = (int)statusCode,
-            MessageInfo = message
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            Code = code,
+            MessageKey = messageKey
         };
     }
 }

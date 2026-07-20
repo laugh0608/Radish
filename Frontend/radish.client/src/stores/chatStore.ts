@@ -1,10 +1,17 @@
 import { create } from 'zustand';
 import type {
+  ChatMessagePinStateVo,
+  ChatMessageReactionStateVo,
+  ChatReadReceiptSummariesVo,
+} from '@radish/http';
+import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
   ChannelVo,
   EntityIdValue,
 } from '@/types/chat';
+import { mergeChatReactionState } from '@/utils/chatMessageReactions';
+import { mergeChatPinState } from '@/utils/chatMessagePins';
 import {
   areEntityIdsEqual,
   compareEntityIds,
@@ -12,6 +19,7 @@ import {
   isTemporaryEntityId,
   normalizeEntityId,
 } from '@/types/chat';
+import { mergeChannelLastMessage } from '@/utils/chatChannelProjection';
 
 export type ChatConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -24,18 +32,32 @@ interface ChatStore {
   channels: ChannelVo[];
   activeChannelId: EntityIdValue | null;
   messageMap: Record<string, ChannelMessageVo[]>;
+  reactionStateMap: Record<string, ChatMessageReactionStateVo>;
+  pinStateMap: Record<string, ChatMessagePinStateVo>;
+  readReceiptSummaryMap: Record<string, ChatReadReceiptSummariesVo>;
+  readReceiptInvalidationMap: Record<string, number>;
+  recalledMessageIds: Record<string, true>;
   typingMap: Record<string, TypingUser[]>;
   connectionState: ChatConnectionState;
+  conversationRevision: number;
 
   setChannels: (channels: ChannelVo[]) => void;
   setActiveChannel: (channelId: EntityIdValue | null) => void;
   setConnectionState: (state: ChatConnectionState) => void;
+  notifyConversationStateChanged: () => void;
   setChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   prependChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   appendChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   addMessage: (message: ChannelMessageVo) => void;
   removeMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
+  setReactionStates: (states: ChatMessageReactionStateVo[]) => void;
+  applyReactionBroadcast: (state: ChatMessageReactionStateVo) => void;
+  setPinState: (state: ChatMessagePinStateVo) => void;
+  applyPinBroadcast: (state: ChatMessagePinStateVo) => void;
+  setReadReceiptSummaries: (summaries: ChatReadReceiptSummariesVo) => void;
+  invalidateReadReceipts: (channelId: EntityIdValue) => void;
+  clearChannelReadReceipts: (channelId: EntityIdValue) => void;
   updateUnread: (payload: ChannelUnreadChangedPayload) => void;
   setTypingUser: (channelId: EntityIdValue, userId: EntityIdValue, userName: string) => void;
   removeTypingUser: (channelId: EntityIdValue, userId: EntityIdValue) => void;
@@ -153,8 +175,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
   channels: [],
   activeChannelId: null,
   messageMap: {},
+  reactionStateMap: {},
+  pinStateMap: {},
+  readReceiptSummaryMap: {},
+  readReceiptInvalidationMap: {},
+  recalledMessageIds: {},
   typingMap: {},
   connectionState: 'disconnected',
+  conversationRevision: 0,
 
   setChannels: (channels: ChannelVo[]) => {
     set({ channels });
@@ -166,6 +194,10 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   setConnectionState: (connectionState: ChatConnectionState) => {
     set({ connectionState });
+  },
+
+  notifyConversationStateChanged: () => {
+    set((state) => ({ conversationRevision: state.conversationRevision + 1 }));
   },
 
   setChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => {
@@ -220,8 +252,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
     const current = get().messageMap[channelKey] || [];
     const merged = mergeMessages(current, [message]);
+    const persistedMessage = isPersistedEntityId(message.voId) && message.voLocalStatus !== 'failed'
+      ? merged.find((item) => areEntityIdsEqual(item.voId, message.voId)) ?? normalizeMessage(message)
+      : null;
 
     set((state) => ({
+      channels: persistedMessage
+        ? state.channels.map((channel) => mergeChannelLastMessage(channel, persistedMessage))
+        : state.channels,
       messageMap: {
         ...state.messageMap,
         [channelKey]: merged,
@@ -252,35 +290,165 @@ export const useChatStore = create<ChatStore>((set, get) => ({
 
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => {
     const channelKey = getChannelKey(channelId);
-    if (!channelKey) {
+    const messageKey = normalizeEntityId(messageId);
+    if (!channelKey || !messageKey) {
       return;
     }
 
     set((state) => {
       const current = state.messageMap[channelKey] || [];
-      if (current.length === 0) {
-        return state;
-      }
-
       return {
-        messageMap: {
-          ...state.messageMap,
-          [channelKey]: current.map((item) => {
-            if (!areEntityIdsEqual(item.voId, messageId)) {
-              return item;
-            }
+        recalledMessageIds: state.recalledMessageIds[messageKey]
+          ? state.recalledMessageIds
+          : { ...state.recalledMessageIds, [messageKey]: true },
+        messageMap: current.length === 0
+          ? state.messageMap
+          : {
+              ...state.messageMap,
+              [channelKey]: current.map((item) => {
+                if (!areEntityIdsEqual(item.voId, messageId)) {
+                  return item;
+                }
 
-            return {
-              ...item,
-              voIsRecalled: true,
-              voContent: null,
-              voImageUrl: null,
-              voImageThumbnailUrl: null,
-            };
-          }),
-        },
+                return {
+                  ...item,
+                  voIsRecalled: true,
+                  voContent: null,
+                  voImageUrl: null,
+                  voImageThumbnailUrl: null,
+                };
+              }),
+            },
+        reactionStateMap: Object.hasOwn(state.reactionStateMap, messageKey)
+          ? Object.fromEntries(
+              Object.entries(state.reactionStateMap).filter(([key]) => key !== messageKey)
+            )
+          : state.reactionStateMap,
+        pinStateMap: Object.hasOwn(state.pinStateMap, channelKey)
+          ? {
+              ...state.pinStateMap,
+              [channelKey]: {
+                ...state.pinStateMap[channelKey],
+                voItems: state.pinStateMap[channelKey].voItems.filter(
+                  (item) => !areEntityIdsEqual(item.voMessageId, messageId)
+                ),
+              },
+          }
+          : state.pinStateMap,
+        readReceiptSummaryMap: Object.hasOwn(state.readReceiptSummaryMap, channelKey)
+          ? {
+              ...state.readReceiptSummaryMap,
+              [channelKey]: {
+                ...state.readReceiptSummaryMap[channelKey],
+                voItems: state.readReceiptSummaryMap[channelKey].voItems.filter(
+                  (item) => !areEntityIdsEqual(item.voMessageId, messageId)
+                ),
+              },
+            }
+          : state.readReceiptSummaryMap,
       };
     });
+  },
+
+  setReactionStates: (states: ChatMessageReactionStateVo[]) => {
+    if (states.length === 0) {
+      return;
+    }
+
+    set((state) => ({
+      reactionStateMap: states.reduce<Record<string, ChatMessageReactionStateVo>>((map, incoming) => {
+        map[incoming.voMessageId] = mergeChatReactionState(
+          map[incoming.voMessageId],
+          incoming,
+          'authoritative'
+        );
+        return map;
+      }, { ...state.reactionStateMap }),
+    }));
+  },
+
+  applyReactionBroadcast: (incoming: ChatMessageReactionStateVo) => {
+    set((state) => ({
+      reactionStateMap: {
+        ...state.reactionStateMap,
+        [incoming.voMessageId]: mergeChatReactionState(
+          state.reactionStateMap[incoming.voMessageId],
+          incoming,
+          'broadcast'
+        ),
+      },
+    }));
+  },
+
+  setPinState: (incoming: ChatMessagePinStateVo) => {
+    const channelKey = getChannelKey(incoming.voChannelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      pinStateMap: {
+        ...state.pinStateMap,
+        [channelKey]: mergeChatPinState(state.pinStateMap[channelKey], incoming, 'authoritative'),
+      },
+    }));
+  },
+
+  applyPinBroadcast: (incoming: ChatMessagePinStateVo) => {
+    const channelKey = getChannelKey(incoming.voChannelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      pinStateMap: {
+        ...state.pinStateMap,
+        [channelKey]: mergeChatPinState(state.pinStateMap[channelKey], incoming, 'broadcast'),
+      },
+    }));
+  },
+
+  setReadReceiptSummaries: (incoming: ChatReadReceiptSummariesVo) => {
+    const channelKey = getChannelKey(incoming.voChannelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      readReceiptSummaryMap: {
+        ...state.readReceiptSummaryMap,
+        [channelKey]: incoming,
+      },
+    }));
+  },
+
+  invalidateReadReceipts: (channelId: EntityIdValue) => {
+    const channelKey = getChannelKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      readReceiptInvalidationMap: {
+        ...state.readReceiptInvalidationMap,
+        [channelKey]: (state.readReceiptInvalidationMap[channelKey] ?? 0) + 1,
+      },
+    }));
+  },
+
+  clearChannelReadReceipts: (channelId: EntityIdValue) => {
+    const channelKey = getChannelKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      readReceiptSummaryMap: Object.hasOwn(state.readReceiptSummaryMap, channelKey)
+        ? Object.fromEntries(
+            Object.entries(state.readReceiptSummaryMap).filter(([key]) => key !== channelKey)
+          )
+        : state.readReceiptSummaryMap,
+    }));
   },
 
   updateUnread: (payload: ChannelUnreadChangedPayload) => {
@@ -340,8 +508,14 @@ export const useChatStore = create<ChatStore>((set, get) => ({
       channels: [],
       activeChannelId: null,
       messageMap: {},
+      reactionStateMap: {},
+      pinStateMap: {},
+      readReceiptSummaryMap: {},
+      readReceiptInvalidationMap: {},
+      recalledMessageIds: {},
       typingMap: {},
       connectionState: 'disconnected',
+      conversationRevision: 0,
     });
   },
 }));

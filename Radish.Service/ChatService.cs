@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
 using Radish.Common;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using AutoMapper;
 using Radish.IRepository.Base;
@@ -9,7 +11,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
-using Serilog;
+using Radish.Shared.Constants;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -19,34 +21,47 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 {
     private readonly IBaseRepository<Channel> _channelRepository;
     private readonly IChannelMessageRepository _messageRepository;
+    private readonly IChatReadReceiptRepository _readReceiptRepository;
     private readonly IBaseRepository<ChannelMember> _memberRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IChatPresenceService _chatPresenceService;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
+    private readonly IDirectConversationService _directConversationService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public ChatService(
         IMapper mapper,
         IBaseRepository<Channel> baseRepository,
         IChannelMessageRepository messageRepository,
+        IChatReadReceiptRepository readReceiptRepository,
         IBaseRepository<ChannelMember> memberRepository,
         IBaseRepository<Attachment> attachmentRepository,
         IBaseRepository<User> userRepository,
         IChatPresenceService chatPresenceService,
         INotificationService notificationService,
+        IChatChannelAccessService chatChannelAccessService,
+        IDirectConversationService directConversationService,
         IAttachmentUrlResolver attachmentUrlResolver)
         : base(mapper, baseRepository)
     {
         _channelRepository = baseRepository;
         _messageRepository = messageRepository;
+        _readReceiptRepository = readReceiptRepository;
         _memberRepository = memberRepository;
         _attachmentRepository = attachmentRepository;
         _userRepository = userRepository;
         _chatPresenceService = chatPresenceService;
+        _chatChannelAccessService = chatChannelAccessService;
+        _directConversationService = directConversationService;
         _attachmentUrlResolver = attachmentUrlResolver;
     }
 
-    public async Task<List<ChannelVo>> GetChannelListAsync(long tenantId, long userId)
+    public async Task<List<ChannelVo>> GetChannelListAsync(
+        long tenantId,
+        long userId,
+        ChatChannelListView view = ChatChannelListView.Active,
+        bool canManageChannel = false)
     {
         var channels = await _channelRepository.QueryWithOrderAsync(
             c => c.IsEnabled && !c.IsDeleted,
@@ -61,11 +76,36 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         var channelIds = channels.Select(c => c.Id).ToList();
         var members = await _memberRepository.QueryAsync(m => m.UserId == userId && channelIds.Contains(m.ChannelId) && !m.IsDeleted);
         var memberMap = members.ToDictionary(m => m.ChannelId, m => m);
+        var directSummaries = await _directConversationService.GetChannelSummariesAsync(tenantId, userId, channelIds);
 
         var result = new List<ChannelVo>(channels.Count);
         foreach (var channel in channels)
         {
+            var access = await _chatChannelAccessService.GetAccessAsync(
+                tenantId,
+                userId,
+                channel.Id,
+                canManageChannel);
+            if (!access.CanView)
+            {
+                continue;
+            }
+
+            directSummaries.TryGetValue(channel.Id, out var directSummary);
+            if (view == ChatChannelListView.Archived)
+            {
+                if (directSummary?.VoIsArchived != true)
+                {
+                    continue;
+                }
+            }
+            else if (directSummary?.VoIsArchived == true)
+            {
+                continue;
+            }
+
             var channelVo = Mapper.Map<ChannelVo>(channel);
+            ApplyConversationMetadata(channelVo, access, directSummary);
             channelVo.VoLastMessage = await GetLastMessagePreviewAsync(channel.Id);
 
             memberMap.TryGetValue(channel.Id, out var member);
@@ -79,8 +119,22 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return result;
     }
 
-    public async Task<ChannelVo?> GetChannelDetailAsync(long tenantId, long userId, long channelId)
+    public async Task<ChannelVo?> GetChannelDetailAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        bool canManageChannel = false)
     {
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            tenantId,
+            userId,
+            channelId,
+            canManageChannel);
+        if (!access.CanView)
+        {
+            return null;
+        }
+
         var channel = await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
         if (channel == null)
         {
@@ -88,6 +142,12 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         }
 
         var channelVo = Mapper.Map<ChannelVo>(channel);
+        var directSummaries = await _directConversationService.GetChannelSummariesAsync(
+            tenantId,
+            userId,
+            new[] { channelId });
+        directSummaries.TryGetValue(channelId, out var directSummary);
+        ApplyConversationMetadata(channelVo, access, directSummary);
         channelVo.VoLastMessage = await GetLastMessagePreviewAsync(channel.Id);
 
         var member = await _memberRepository.QueryFirstAsync(m => m.ChannelId == channel.Id && m.UserId == userId && !m.IsDeleted);
@@ -98,6 +158,42 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return channelVo;
     }
 
+    public async Task<List<ChannelMessageVo>> GetMessagesByIdsAsync(
+        long tenantId,
+        long userId,
+        long channelId,
+        IReadOnlyCollection<long> messageIds)
+    {
+        if (channelId <= 0 || messageIds.Count == 0 || messageIds.Count > 20)
+        {
+            return [];
+        }
+
+        var normalizedIds = messageIds.Where(id => id > 0).Distinct().ToList();
+        if (normalizedIds.Count != messageIds.Count)
+        {
+            return [];
+        }
+
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanView)
+        {
+            return [];
+        }
+
+        var messages = await _messageRepository.QueryByIdsIncludingDeletedAsync(normalizedIds);
+        if (messages.Count != normalizedIds.Count || messages.Any(message =>
+                message.ChannelId != channelId ||
+                message.IsDeleted ||
+                message.TenantId != 0 && message.TenantId != tenantId))
+        {
+            return [];
+        }
+
+        var messageMap = messages.ToDictionary(message => message.Id);
+        return await MapChannelMessagesAsync(normalizedIds.Select(id => messageMap[id]).ToList());
+    }
+
     public async Task<List<ChannelMessageVo>> GetHistoryAsync(
         long tenantId,
         long userId,
@@ -106,9 +202,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         long? afterMessageId,
         int pageSize = 50)
     {
-        _ = tenantId;
-        _ = userId;
-
         if (channelId <= 0)
         {
             return new List<ChannelMessageVo>();
@@ -119,8 +212,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return new List<ChannelMessageVo>();
         }
 
-        var channel = await GetEnabledChannelAsync(channelId);
-        if (channel == null)
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanView)
         {
             return new List<ChannelMessageVo>();
         }
@@ -149,16 +242,13 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         int beforeCount = 25,
         int afterCount = 25)
     {
-        _ = tenantId;
-        _ = userId;
-
         if (channelId <= 0 || messageId <= 0)
         {
             return null;
         }
 
-        var channel = await GetEnabledChannelAsync(channelId);
-        if (channel == null)
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanView)
         {
             return null;
         }
@@ -202,7 +292,12 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         };
     }
 
-    public async Task<ChannelMessageVo> SendMessageAsync(long tenantId, long userId, string userName, SendChannelMessageDto request)
+    public async Task<ChatMessageSendResult> SendMessageAsync(
+        long tenantId,
+        long userId,
+        string userName,
+        SendChannelMessageDto request,
+        bool canManageChannel = false)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -211,36 +306,104 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             throw new ArgumentException("频道 Id 无效", nameof(request.ChannelId));
         }
 
-        var channel = await _channelRepository.QueryFirstAsync(c => c.Id == request.ChannelId && c.IsEnabled && !c.IsDeleted);
-        if (channel == null)
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            tenantId,
+            userId,
+            request.ChannelId,
+            canManageChannel);
+        if (!access.CanView)
         {
-            throw new InvalidOperationException("频道不存在或不可用");
+            throw CreateChannelSendDeniedException(access);
         }
 
-        var normalizedUserName = await ResolveChatDisplayNameAsync(userId, userName);
+        var channel = await _channelRepository.QueryFirstAsync(c =>
+            c.Id == request.ChannelId && c.IsEnabled && !c.IsDeleted);
+        if (channel == null)
+        {
+            throw CreateChannelSendDeniedException(ChatChannelAccessResult.Unavailable);
+        }
+
         var normalizedContent = request.Content?.Trim();
+        var normalizedClientRequestId = string.IsNullOrWhiteSpace(request.ClientRequestId)
+            ? null
+            : request.ClientRequestId.Trim();
+        var normalizedReplyToId = request.ReplyToId is > 0 ? request.ReplyToId : null;
+        var normalizedAttachmentId = request.AttachmentId is > 0 ? request.AttachmentId : null;
+
+        if (request.Type is not MessageType.Text and not MessageType.Image)
+        {
+            throw new BusinessException(
+                "当前接口只允许发送文本或图片消息",
+                StatusCodes.Status400BadRequest,
+                "Chat.MessageTypeUnavailable",
+                "error.chat.message_type_unavailable");
+        }
 
         if (request.Type == MessageType.Text && string.IsNullOrWhiteSpace(normalizedContent))
         {
             throw new ArgumentException("文本消息内容不能为空", nameof(request.Content));
         }
 
-        if (request.Type == MessageType.Image && (!request.AttachmentId.HasValue || request.AttachmentId.Value <= 0))
+        if (request.Type == MessageType.Image && !normalizedAttachmentId.HasValue)
         {
             throw new ArgumentException("图片消息必须提供附件 ID", nameof(request.AttachmentId));
         }
 
+        if (normalizedClientRequestId != null)
+        {
+            var existingMessage = await FindIdempotentMessageAsync(tenantId, userId, normalizedClientRequestId);
+            if (existingMessage != null)
+            {
+                EnsureIdempotentRequestMatches(
+                    existingMessage,
+                    request.ChannelId,
+                    request.Type,
+                    normalizedContent,
+                    normalizedReplyToId,
+                    normalizedAttachmentId);
+                await CompletePersistedMessageStateAsync(channel, existingMessage, tenantId, userId, userName);
+                return new ChatMessageSendResult(await MapSingleMessageAsync(existingMessage), false);
+            }
+        }
+
+        if (access.IsDirectConversation)
+        {
+            ValidateDirectSendRequest(
+                access,
+                userId,
+                request.Type,
+                normalizedContent,
+                normalizedReplyToId,
+                normalizedAttachmentId);
+        }
+        else if (!access.CanSend)
+        {
+            throw CreateChannelSendDeniedException(access);
+        }
+
+        var normalizedUserName = await ResolveChatDisplayNameAsync(userId, userName);
         var userAvatarAttachmentId = await GetCurrentUserAvatarAttachmentIdAsync(userId);
         var senderAvatarUrl = ResolveAttachmentUrl(userAvatarAttachmentId);
 
         ChannelMessage? replyToMessage = null;
-        if (request.ReplyToId.HasValue && request.ReplyToId.Value > 0)
+        if (normalizedReplyToId.HasValue)
         {
-            replyToMessage = await _messageRepository.QueryFirstAsync(m => m.Id == request.ReplyToId.Value && m.ChannelId == request.ChannelId);
+            replyToMessage = await _messageRepository.QueryFirstAsync(m =>
+                m.Id == normalizedReplyToId.Value && m.ChannelId == request.ChannelId);
             if (replyToMessage == null)
             {
-                throw new InvalidOperationException("引用消息不存在");
+                throw new BusinessException(
+                    "引用消息不存在或不属于当前会话",
+                    StatusCodes.Status400BadRequest,
+                    "Chat.ReplyUnavailable",
+                    "error.chat.reply_unavailable");
             }
+        }
+
+        Attachment? attachment = null;
+        if (normalizedAttachmentId.HasValue)
+        {
+            attachment = await GetOwnedUnboundChatAttachmentAsync(normalizedAttachmentId.Value, userId);
         }
 
         var message = new ChannelMessage
@@ -248,31 +411,39 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             ChannelId = request.ChannelId,
             UserId = userId,
             UserName = normalizedUserName,
+            ClientRequestId = normalizedClientRequestId,
             UserAvatarAttachmentIdSnapshot = userAvatarAttachmentId,
             Type = request.Type,
             Content = normalizedContent,
-            ReplyToId = request.ReplyToId,
-            AttachmentId = request.AttachmentId,
+            SearchText = ChatMessageSearchTextNormalizer.Normalize(normalizedContent),
+            ReplyToId = normalizedReplyToId,
+            AttachmentId = normalizedAttachmentId,
             TenantId = tenantId,
-            CreateTime = DateTime.Now,
+            CreateTime = DateTime.UtcNow,
             IsDeleted = false
         };
 
         var messageId = SnowFlakeSingle.Instance.NextId();
         message.Id = messageId;
-        var mentionNotification = await BuildMentionNotificationAsync(
-            tenantId,
-            messageId,
-            request.ChannelId,
-            channel.Name,
-            userId,
-            normalizedUserName,
-            senderAvatarUrl,
-            normalizedContent);
-        ReliableOutboxDraft? mentionOutbox = null;
+        var occurredAtUtc = message.CreateTime;
+        var outboxDrafts = new List<ReliableOutboxDraft>();
+        var isPendingDirectRequest = access.IsDirectConversation &&
+                                     access.DirectRequestStatus == DirectConversationRequestStatus.Pending;
+        var mentionNotification = isPendingDirectRequest
+            ? null
+            : await BuildMentionNotificationAsync(
+                tenantId,
+                messageId,
+                request.ChannelId,
+                channel.Name,
+                userId,
+                normalizedUserName,
+                senderAvatarUrl,
+                normalizedContent,
+                occurredAtUtc);
         if (mentionNotification != null)
         {
-            mentionOutbox = new ReliableOutboxDraft(
+            outboxDrafts.Add(new ReliableOutboxDraft(
                 ReliableOutboxSources.Chat,
                 tenantId,
                 ReliableTaskTypes.NotificationRequested,
@@ -281,64 +452,384 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 "ChannelMessage",
                 messageId.ToString(),
                 JsonSerializer.Serialize(new NotificationRequestedTaskPayload(mentionNotification)),
-                DateTime.UtcNow);
+                occurredAtUtc));
         }
 
-        await _messageRepository.AddWithOutboxAsync(message, mentionOutbox);
-
-        channel.LastMessageId = messageId;
-        channel.LastMessageTime = message.CreateTime;
-        channel.ModifyTime = DateTime.Now;
-        channel.ModifyBy = normalizedUserName;
-        channel.ModifyId = userId;
-        await _channelRepository.UpdateAsync(channel);
-
-        if (request.AttachmentId.HasValue && request.AttachmentId.Value > 0)
+        if (isPendingDirectRequest && access.DirectPeerUserId.HasValue)
         {
-            await TryBindMessageAttachmentAsync(request.AttachmentId.Value, messageId, userId, normalizedUserName);
+            var requestNotification = BuildDirectRequestNotification(
+                tenantId,
+                messageId,
+                request.ChannelId,
+                userId,
+                normalizedUserName,
+                senderAvatarUrl,
+                access.DirectPeerUserId.Value,
+                occurredAtUtc);
+            outboxDrafts.Add(new ReliableOutboxDraft(
+                ReliableOutboxSources.Chat,
+                tenantId,
+                ReliableTaskTypes.NotificationRequested,
+                1,
+                $"task:notification:chat-request:message:{messageId}",
+                "ChannelMessage",
+                messageId.ToString(),
+                JsonSerializer.Serialize(new NotificationRequestedTaskPayload(requestNotification)),
+                occurredAtUtc));
         }
 
-        await EnsureMemberAndUpdateReadStateAsync(channel.Id, userId, tenantId, normalizedUserName, messageId);
-        var replyMap = new Dictionary<long, ChannelMessage>();
-        if (replyToMessage != null)
+        if (attachment != null)
         {
-            replyMap[replyToMessage.Id] = replyToMessage;
+            outboxDrafts.Add(new ReliableOutboxDraft(
+                ReliableOutboxSources.Chat,
+                tenantId,
+                ReliableTaskTypes.ChatAttachmentBinding,
+                1,
+                $"task:chat-attachment-bind:message:{messageId}",
+                "ChannelMessage",
+                messageId.ToString(),
+                JsonSerializer.Serialize(new ChatAttachmentBindingTaskPayload(
+                    tenantId,
+                    messageId,
+                    attachment.Id,
+                    userId,
+                    normalizedUserName)),
+                occurredAtUtc));
         }
 
-        return MapMessageVo(message, replyMap);
-    }
-
-    private async Task TryBindMessageAttachmentAsync(long attachmentId, long messageId, long userId, string userName)
-    {
         try
         {
-            var attachment = await _attachmentRepository.QueryFirstAsync(a => a.Id == attachmentId && !a.IsDeleted);
-            if (attachment == null || attachment.UploaderId != userId)
+            await _messageRepository.AddWithEffectsAsync(
+                message,
+                outboxDrafts,
+                access.DirectPeerUserId,
+                isPendingDirectRequest ? access.DirectConversationId : null);
+        }
+        catch (Exception exception)
+        {
+            if (normalizedClientRequestId != null)
             {
-                return;
+                var existingMessage = await FindIdempotentMessageAsync(tenantId, userId, normalizedClientRequestId);
+                if (existingMessage != null)
+                {
+                    EnsureIdempotentRequestMatches(
+                        existingMessage,
+                        request.ChannelId,
+                        request.Type,
+                        normalizedContent,
+                        normalizedReplyToId,
+                        normalizedAttachmentId);
+                    await CompletePersistedMessageStateAsync(channel, existingMessage, tenantId, userId, normalizedUserName);
+                    return new ChatMessageSendResult(await MapSingleMessageAsync(existingMessage), false);
+                }
             }
 
-            attachment.BusinessType = "Chat";
-            attachment.BusinessId = messageId;
-            attachment.ModifyTime = DateTime.Now;
-            attachment.ModifyBy = userName;
-            attachment.ModifyId = userId;
-            await _attachmentRepository.UpdateAsync(attachment);
+            if (exception is DirectConversationRequestClaimException)
+            {
+                throw new BusinessException(
+                    "陌生私聊请求已经发送过首条消息",
+                    StatusCodes.Status409Conflict,
+                    "Chat.DirectRequestAlreadySent",
+                    "error.chat.direct_request_already_sent");
+            }
+
+            if (normalizedAttachmentId.HasValue &&
+                await _messageRepository.QueryExistsAsync(candidate =>
+                    candidate.AttachmentId == normalizedAttachmentId.Value && !candidate.IsDeleted))
+            {
+                throw new BusinessException(
+                    "Chat 附件已被其他消息引用",
+                    StatusCodes.Status409Conflict,
+                    "Chat.AttachmentBindingConflict",
+                    "error.chat.attachment_binding_conflict");
+            }
+
+            throw;
         }
-        catch (Exception ex)
+
+        await CompletePersistedMessageStateAsync(channel, message, tenantId, userId, normalizedUserName);
+        var changedUserIds = access.DirectPeerUserId.HasValue
+            ? new[] { access.DirectPeerUserId.Value }
+            : Array.Empty<long>();
+        return new ChatMessageSendResult(
+            await MapSingleMessageAsync(message, replyToMessage),
+            true,
+            changedUserIds);
+    }
+
+    private async Task<ChannelMessage?> FindIdempotentMessageAsync(
+        long tenantId,
+        long userId,
+        string clientRequestId)
+    {
+        return await _messageRepository.QueryFirstIncludingDeletedAsync(message =>
+            message.TenantId == tenantId &&
+            message.UserId == userId &&
+            message.ClientRequestId == clientRequestId);
+    }
+
+    private static void EnsureIdempotentRequestMatches(
+        ChannelMessage existingMessage,
+        long channelId,
+        MessageType type,
+        string? content,
+        long? replyToId,
+        long? attachmentId)
+    {
+        if (existingMessage.ChannelId == channelId &&
+            existingMessage.Type == type &&
+            string.Equals(existingMessage.Content, content, StringComparison.Ordinal) &&
+            existingMessage.ReplyToId == replyToId &&
+            existingMessage.AttachmentId == attachmentId)
         {
-            Log.Warning(ex, "[ChatService] 绑定消息附件失败：AttachmentId={AttachmentId}, MessageId={MessageId}", attachmentId, messageId);
+            return;
+        }
+
+        throw new BusinessException(
+            "clientRequestId 已用于不同的消息请求",
+            StatusCodes.Status409Conflict,
+            "Chat.MessageIdempotencyConflict",
+            "error.chat.message_idempotency_conflict");
+    }
+
+    private async Task<Attachment> GetOwnedUnboundChatAttachmentAsync(long attachmentId, long userId)
+    {
+        var attachment = await _attachmentRepository.QueryFirstAsync(candidate =>
+            candidate.Id == attachmentId && candidate.IsEnabled && !candidate.IsDeleted);
+        if (attachment == null ||
+            attachment.UploaderId != userId ||
+            attachment.BusinessType != AttachmentBusinessTypes.Chat ||
+            string.IsNullOrWhiteSpace(attachment.MimeType) ||
+            !attachment.MimeType.StartsWith("image/", StringComparison.OrdinalIgnoreCase) ||
+            attachment.BusinessId.HasValue)
+        {
+            throw new BusinessException(
+                "Chat 附件不存在、无权使用或已绑定",
+                StatusCodes.Status400BadRequest,
+                "Chat.AttachmentUnavailable",
+                "error.chat.attachment_unavailable");
+        }
+
+        return attachment;
+    }
+
+    private async Task CompletePersistedMessageStateAsync(
+        Channel channel,
+        ChannelMessage message,
+        long tenantId,
+        long userId,
+        string userName)
+    {
+        var normalizedUserName = string.IsNullOrWhiteSpace(userName) ? message.UserName : userName.Trim();
+        if (!channel.LastMessageId.HasValue || channel.LastMessageId.Value < message.Id)
+        {
+            channel.LastMessageId = message.Id;
+            channel.LastMessageTime = message.CreateTime;
+            channel.ModifyTime = DateTime.UtcNow;
+            channel.ModifyBy = normalizedUserName;
+            channel.ModifyId = userId;
+            await _channelRepository.UpdateAsync(channel);
+        }
+
+        await _readReceiptRepository.AdvanceAsync(new AdvanceChatReadStateCommand(
+            channel.Id,
+            userId,
+            tenantId,
+            message.Id,
+            channel.Type is ChannelType.Public or ChannelType.Announcement,
+            normalizedUserName,
+            DateTime.UtcNow));
+    }
+
+    private async Task<ChannelMessageVo> MapSingleMessageAsync(
+        ChannelMessage message,
+        ChannelMessage? knownReply = null)
+    {
+        var replyMap = new Dictionary<long, ChannelMessage>();
+        if (knownReply != null)
+        {
+            replyMap[knownReply.Id] = knownReply;
+        }
+        else if (message.ReplyToId.HasValue)
+        {
+            var reply = await _messageRepository.QueryFirstIncludingDeletedAsync(candidate =>
+                candidate.Id == message.ReplyToId.Value && candidate.ChannelId == message.ChannelId);
+            if (reply != null)
+            {
+                replyMap[reply.Id] = reply;
+            }
+        }
+
+        var avatarMap = await GetUserAvatarAttachmentMapAsync(
+            new[] { message.UserId }.Concat(replyMap.Values.Select(reply => reply.UserId)));
+        return MapMessageVo(message, replyMap, avatarMap);
+    }
+
+    private static BusinessException CreateChannelSendDeniedException(ChatChannelAccessResult access)
+    {
+        var statusCode = access.Exists && access.ChannelType == ChannelType.Announcement
+            ? StatusCodes.Status403Forbidden
+            : StatusCodes.Status404NotFound;
+        return new BusinessException(
+            statusCode == StatusCodes.Status403Forbidden ? "当前用户无权在该频道发言" : "频道不存在或无权访问",
+            statusCode,
+            statusCode == StatusCodes.Status403Forbidden ? "Chat.SendForbidden" : "Chat.ChannelUnavailable",
+            statusCode == StatusCodes.Status403Forbidden ? "error.chat.send_forbidden" : "error.chat.channel_unavailable");
+    }
+
+    private static void ValidateDirectSendRequest(
+        ChatChannelAccessResult access,
+        long userId,
+        MessageType messageType,
+        string? content,
+        long? replyToId,
+        long? attachmentId)
+    {
+        if (access.DirectBlockedByUserId.HasValue)
+        {
+            throw new BusinessException(
+                "会话已被阻断",
+                StatusCodes.Status409Conflict,
+                "Chat.DirectBlocked",
+                "error.chat.direct_blocked");
+        }
+
+        if (!access.IsPeerAvailable)
+        {
+            throw new BusinessException(
+                "对方账号当前不可用",
+                StatusCodes.Status409Conflict,
+                "Chat.DirectPeerUnavailable",
+                "error.chat.direct_peer_unavailable");
+        }
+
+        switch (access.DirectRequestStatus)
+        {
+            case DirectConversationRequestStatus.Pending:
+                if (access.DirectRequestedByUserId != userId)
+                {
+                    throw new BusinessException(
+                        "接受私聊请求后才能发送消息",
+                        StatusCodes.Status409Conflict,
+                        "Chat.DirectNotAccepted",
+                        "error.chat.direct_not_accepted");
+                }
+
+                if (access.HasMessages)
+                {
+                    throw new BusinessException(
+                        "陌生私聊请求已经发送过首条消息",
+                        StatusCodes.Status409Conflict,
+                        "Chat.DirectRequestAlreadySent",
+                        "error.chat.direct_request_already_sent");
+                }
+
+                if (messageType != MessageType.Text ||
+                    replyToId.HasValue ||
+                    attachmentId.HasValue ||
+                    ParseMentionedUserIds(content).Count > 0)
+                {
+                    throw new BusinessException(
+                        "陌生私聊请求只允许发送一条纯文本消息",
+                        StatusCodes.Status400BadRequest,
+                        "Chat.DirectRequestTextOnly",
+                        "error.chat.direct_request_text_only");
+                }
+
+                break;
+            case DirectConversationRequestStatus.Declined:
+                throw new BusinessException(
+                    "私聊请求已被拒绝",
+                    StatusCodes.Status409Conflict,
+                    "Chat.DirectRequestDeclined",
+                    "error.chat.direct_request_declined");
+            case DirectConversationRequestStatus.Accepted:
+                break;
+            default:
+                throw new BusinessException(
+                    "当前会话状态不能发送消息",
+                    StatusCodes.Status409Conflict,
+                    "Chat.DirectNotAccepted",
+                    "error.chat.direct_not_accepted");
+        }
+
+        if (!access.CanSend)
+        {
+            throw new BusinessException(
+                "当前会话状态不能发送消息",
+                StatusCodes.Status409Conflict,
+                "Chat.DirectNotAccepted",
+                "error.chat.direct_not_accepted");
         }
     }
 
-    private async Task<Channel?> GetEnabledChannelAsync(long channelId)
+    private static CreateNotificationDto BuildDirectRequestNotification(
+        long tenantId,
+        long messageId,
+        long channelId,
+        long senderUserId,
+        string senderUserName,
+        string? senderAvatarUrl,
+        long receiverUserId,
+        DateTime occurredAtUtc)
     {
-        if (channelId <= 0)
+        return new CreateNotificationDto
         {
-            return null;
+            NotificationId = SnowFlakeSingle.Instance.NextId(),
+            BusinessKey = $"notification:chat-request:message:{messageId}",
+            Type = NotificationType.DirectMessageRequested,
+            Title = "新的私信请求",
+            Content = $"{senderUserName} 向你发送了私信请求",
+            Priority = (int)NotificationPriority.Normal,
+            BusinessType = "ChannelMessage",
+            BusinessId = messageId,
+            TriggerId = senderUserId,
+            TriggerName = senderUserName,
+            TriggerAvatar = senderAvatarUrl,
+            ReceiverUserIds = [receiverUserId],
+            TenantId = tenantId,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["actorName"] = senderUserName
+            },
+            TargetKind = NotificationTargetKind.ChatConversation,
+            Target = new NotificationTargetData
+            {
+                ChannelId = channelId,
+                MessageId = messageId
+            },
+            OccurredAtUtc = occurredAtUtc
+        };
+    }
+
+    private static void ApplyConversationMetadata(
+        ChannelVo channel,
+        ChatChannelAccessResult access,
+        DirectConversationVo? directConversation)
+    {
+        channel.VoCanSend = access.CanSend;
+        channel.VoCanReact = access.CanReact;
+        channel.VoCanPinMessages = access.CanPinMessages;
+        if (directConversation == null)
+        {
+            channel.VoConversationKind = channel.VoType == ChannelType.Private ? "group" : "public";
+            return;
         }
 
-        return await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
+        channel.VoConversationKind = directConversation.VoConversationKind;
+        channel.VoPeerUserId = directConversation.VoPeerUserId;
+        channel.VoPeerPublicId = directConversation.VoPeerPublicId;
+        channel.VoPeerDisplayName = directConversation.VoPeerDisplayName;
+        channel.VoPeerAvatarUrl = directConversation.VoPeerAvatarUrl;
+        channel.VoDirectRequestStatus = directConversation.VoDirectRequestStatus;
+        channel.VoCanSend = directConversation.VoCanSend;
+        channel.VoCanAccept = directConversation.VoCanAccept;
+        channel.VoCanDecline = directConversation.VoCanDecline;
+        channel.VoCanBlock = directConversation.VoCanBlock;
+        channel.VoCanUnblock = directConversation.VoCanUnblock;
+        channel.VoIsBlockedByCurrentUser = directConversation.VoIsBlockedByCurrentUser;
+        channel.VoIsArchived = directConversation.VoIsArchived;
+        channel.VoIsPeerAvailable = directConversation.VoIsPeerAvailable;
     }
 
     private async Task<List<ChannelMessage>> QueryChannelMessagesAsync(
@@ -394,10 +885,13 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .ToList();
     }
 
-    public async Task<long?> RecallMessageAsync(long tenantId, long userId, string userName, long messageId, bool canRecallOthers)
+    public async Task<ChatMessageRecallResult?> RecallMessageAsync(
+        long tenantId,
+        long userId,
+        string userName,
+        long messageId,
+        bool canRecallOthers)
     {
-        _ = tenantId;
-
         if (messageId <= 0)
         {
             return null;
@@ -409,9 +903,19 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            tenantId,
+            userId,
+            message.ChannelId,
+            canRecallOthers);
+        if (!access.CanView)
+        {
+            return null;
+        }
+
         if (message.IsDeleted)
         {
-            return message.ChannelId;
+            return new ChatMessageRecallResult(message.ChannelId, false);
         }
 
         var isOwner = message.UserId == userId;
@@ -420,33 +924,34 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
-        if (!canRecallOthers && message.CreateTime < DateTime.Now.AddMinutes(-30))
+        if (!canRecallOthers && message.CreateTime < DateTime.UtcNow.AddMinutes(-30))
         {
             return null;
         }
 
         var normalizedOperator = string.IsNullOrWhiteSpace(userName) ? "System" : userName.Trim();
-        var affected = await _messageRepository.UpdateColumnsAsync(
-            m => new ChannelMessage
-            {
-                IsDeleted = true,
-                DeletedAt = DateTime.Now,
-                DeletedBy = normalizedOperator
-            },
-            m => m.Id == messageId && !m.IsDeleted);
+        var writeResult = await _messageRepository.RecallWithEffectsAsync(
+            messageId,
+            userId,
+            normalizedOperator,
+            DateTime.UtcNow);
 
-        return affected > 0 ? message.ChannelId : null;
+        return writeResult.AffectedRows > 0
+            ? new ChatMessageRecallResult(writeResult.ChannelId, writeResult.PinsChanged)
+            : null;
     }
 
-    public async Task JoinChannelAsync(long tenantId, long userId, long channelId, string operatorName)
+    public async Task JoinChannelAsync(long tenantId, long userId, long channelId)
     {
-        var channel = await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
-        if (channel == null)
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanJoinRealtime)
         {
-            throw new InvalidOperationException("频道不存在或不可用");
+            throw new BusinessException(
+                "频道不存在或无权访问",
+                StatusCodes.Status404NotFound,
+                "Chat.ChannelUnavailable",
+                "error.chat.channel_unavailable");
         }
-
-        await EnsureMemberAndUpdateReadStateAsync(channelId, userId, tenantId, operatorName, null);
     }
 
     public Task LeaveChannelAsync(long tenantId, long userId, long channelId)
@@ -457,12 +962,10 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         return Task.CompletedTask;
     }
 
-    public async Task<ChannelUnreadStateVo> MarkChannelAsReadAsync(long tenantId, long userId, long channelId, string operatorName)
+    public async Task<ChannelUnreadStateVo> GetChannelUnreadStateAsync(long tenantId, long userId, long channelId)
     {
-        _ = tenantId;
-
-        var channel = await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
-        if (channel == null)
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanView)
         {
             return new ChannelUnreadStateVo
             {
@@ -471,23 +974,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 VoHasMention = false
             };
         }
-
-        var (latestMessages, _) = await _messageRepository.QueryPageAsync(
-            m => m.ChannelId == channelId && !m.IsDeleted,
-            1,
-            1,
-            m => m.Id,
-            OrderByType.Desc);
-
-        var latestMessageId = latestMessages.FirstOrDefault()?.Id;
-        await EnsureMemberAndUpdateReadStateAsync(channelId, userId, tenantId, operatorName, latestMessageId);
-
-        return await GetChannelUnreadStateAsync(tenantId, userId, channelId);
-    }
-
-    public async Task<ChannelUnreadStateVo> GetChannelUnreadStateAsync(long tenantId, long userId, long channelId)
-    {
-        _ = tenantId;
 
         var member = await _memberRepository.QueryFirstAsync(m => m.ChannelId == channelId && m.UserId == userId && !m.IsDeleted);
         return await GetUnreadStateInternalAsync(channelId, userId, member?.LastReadMessageId);
@@ -507,10 +993,10 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .ToList();
     }
 
-    public async Task<List<ChannelMemberVo>> GetOnlineMembersAsync(long tenantId, long channelId)
+    public async Task<List<ChannelMemberVo>> GetOnlineMembersAsync(long tenantId, long userId, long channelId)
     {
-        var channel = await _channelRepository.QueryFirstAsync(c => c.Id == channelId && c.IsEnabled && !c.IsDeleted);
-        if (channel == null)
+        var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
+        if (!access.CanViewMembers)
         {
             return new List<ChannelMemberVo>();
         }
@@ -609,49 +1095,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         };
     }
 
-    private async Task EnsureMemberAndUpdateReadStateAsync(long channelId, long userId, long tenantId, string operatorName, long? lastReadMessageId)
-    {
-        var normalizedOperator = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
-
-        var member = await _memberRepository.QueryFirstAsync(m => m.ChannelId == channelId && m.UserId == userId);
-        if (member == null)
-        {
-            await _memberRepository.AddAsync(new ChannelMember
-            {
-                ChannelId = channelId,
-                UserId = userId,
-                Role = MemberRole.Member,
-                LastReadMessageId = lastReadMessageId,
-                JoinedAt = DateTime.Now,
-                TenantId = tenantId,
-                CreateTime = DateTime.Now,
-                CreateBy = normalizedOperator,
-                CreateId = userId,
-                IsDeleted = false
-            });
-
-            return;
-        }
-
-        if (lastReadMessageId.HasValue)
-        {
-            member.LastReadMessageId = lastReadMessageId;
-        }
-
-        if (member.IsDeleted)
-        {
-            member.IsDeleted = false;
-            member.DeletedAt = null;
-            member.DeletedBy = null;
-        }
-
-        member.ModifyTime = DateTime.Now;
-        member.ModifyBy = normalizedOperator;
-        member.ModifyId = userId;
-
-        await _memberRepository.UpdateAsync(member);
-    }
-
     private async Task<Dictionary<long, long>> GetUserAvatarAttachmentMapAsync(IEnumerable<long> userIds)
     {
         var targetUserIds = userIds
@@ -701,7 +1144,8 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         long senderUserId,
         string senderUserName,
         string? senderAvatarUrl,
-        string? content)
+        string? content,
+        DateTime occurredAtUtc)
     {
         var mentionedUserIds = ParseMentionedUserIds(content)
             .Where(userId => userId > 0 && userId != senderUserId)
@@ -723,32 +1167,49 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .Distinct()
             .ToList();
 
-        if (receiverUserIds.Count == 0)
+        var visibleReceiverUserIds = new List<long>(receiverUserIds.Count);
+        foreach (var receiverUserId in receiverUserIds)
+        {
+            var access = await _chatChannelAccessService.GetAccessAsync(tenantId, receiverUserId, channelId);
+            if (access.CanView)
+            {
+                visibleReceiverUserIds.Add(receiverUserId);
+            }
+        }
+
+        if (visibleReceiverUserIds.Count == 0)
         {
             return null;
         }
-
-        var preview = BuildMentionPreview(content);
-        var notificationContent = string.IsNullOrWhiteSpace(preview)
-            ? $"{senderUserName} 在频道「{channelName}」中提到了你"
-            : $"{senderUserName} 在频道「{channelName}」中提到了你：{preview}";
 
         var notificationId = SnowFlakeSingle.Instance.NextId();
         return new CreateNotificationDto
         {
             NotificationId = notificationId,
             BusinessKey = $"notification:chat-mention:message:{messageId}",
-            Type = NotificationType.Mentioned,
+            Type = NotificationType.ChatMentioned,
             Title = "聊天室提及",
-            Content = notificationContent,
+            Content = $"{senderUserName} 在频道「{channelName}」中提到了你",
             Priority = (int)NotificationPriority.High,
+            BusinessType = "ChannelMessage",
             BusinessId = messageId,
             TriggerId = senderUserId,
             TriggerName = senderUserName,
             TriggerAvatar = senderAvatarUrl,
-            ReceiverUserIds = receiverUserIds,
+            ReceiverUserIds = visibleReceiverUserIds,
             TenantId = tenantId,
-            ExtData = NotificationNavigationHelper.BuildChatNavigationExtData(channelId, messageId)
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["actorName"] = senderUserName,
+                ["channelName"] = channelName
+            },
+            TargetKind = NotificationTargetKind.ChatConversation,
+            Target = new NotificationTargetData
+            {
+                ChannelId = channelId,
+                MessageId = messageId
+            },
+            OccurredAtUtc = occurredAtUtc
         };
     }
 
@@ -764,19 +1225,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             .Where(userId => userId > 0)
             .Distinct()
             .ToList();
-    }
-
-    private static string BuildMentionPreview(string? content)
-    {
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return string.Empty;
-        }
-
-        var normalized = Regex.Replace(content, @"@\[(?<name>[^\]]+)\]\((\d+)\)", "@${name}");
-        normalized = Regex.Replace(normalized, @"\s+", " ").Trim();
-
-        return normalized.Length > 80 ? $"{normalized[..80]}..." : normalized;
     }
 
     private ChannelMessageVo MapMessageVo(

@@ -19,11 +19,7 @@
 ```
 Frontend/radish.ui/
 ├── src/
-│   ├── api/                  # API 客户端和错误处理
-│   │   ├── types.ts         # API 类型定义
-│   │   ├── client.ts        # API 客户端
-│   │   ├── error-handler.ts # 错误处理
-│   │   └── index.ts
+│   ├── api/                  # 仅兼容重导出 @radish/http
 │   ├── components/          # UI 组件
 │   │   ├── Button/
 │   │   ├── Input/
@@ -39,8 +35,10 @@ Frontend/radish.ui/
 │   │   └── index.ts
 │   ├── utils/               # 工具函数
 │   │   ├── format.ts
+│   │   ├── intl.ts
 │   │   ├── validation.ts
 │   │   └── index.ts
+│   ├── theme/               # ThemeProvider、Ant Design theme / locale
 │   └── index.ts             # 主入口
 ├── package.json
 └── tsconfig.json
@@ -71,14 +69,11 @@ import { AntButton, Table, Form, message } from '@radish/ui';
 import { useDebounce, useToggle, useLocalStorage } from '@radish/ui';
 
 // 导入工具函数
-import { formatDate, isEmail } from '@radish/ui';
-
-// 导入 API 客户端
 import {
-  configureApiClient,
-  apiGet,
-  apiPost,
-  handleError,
+  formatDate,
+  formatLocalizedDateTime,
+  formatLocalizedNumber,
+  isEmail,
 } from '@radish/ui';
 ```
 
@@ -120,18 +115,11 @@ function MyComponent() {
 
 ## 核心模块
 
-### 1. API 客户端 (api/)
+### 1. HTTP 兼容入口 (`api/`)
 
-统一的 API 请求和错误处理机制。
+`src/api/index.ts` 只为旧调用重新导出 `@radish/http`，不再持有 API 客户端实现。正式代码直接从 `@radish/http` 导入 `configureApiClient / apiGet / apiPost / ApiResponseError` 等能力。
 
-**主要功能：**
-- 配置化的 API 客户端
-- 自动处理认证 token
-- 统一的响应格式解析
-- 完善的错误处理
-- 请求/响应拦截器
-
-**详细文档：** [API 客户端使用指南](./api-client.md)
+**详细文档：** [`@radish/http` 指南](./http-client.md)
 
 ### 2. UI 组件 (components/)
 
@@ -144,6 +132,7 @@ function MyComponent() {
 - **ContextMenu** - 右键菜单组件
 - **ConfirmDialog** - 确认对话框组件
 - **UserMention** - 用户提及组件（@用户名）
+  - 可见加载、空态、选择提示通过 `UserMentionLabels` 由宿主注入
 - **BottomSheet** - 底部抽屉 / 弹层容器
 - **Skeleton** - 骨架屏组件
 
@@ -165,6 +154,9 @@ function MyComponent() {
 - **ExperienceBar** - 经验值进度条组件
 - **LevelUpModal** - 升级弹窗组件
 - **ReactionBar** - 反应条组件
+  - 支持 `Post / Comment / ChatMessage` 展示目标、只读状态、展开 / 收起、快捷 emoji 与 StickerPicker
+  - 数量、选择状态、展开、取消 / 添加回应和表情选择器文案通过 `ReactionBarLabels` 由宿主注入
+  - 组件只负责展示与交互，不请求通用 Reaction API；Forum 与 Chat 分别提供自己的权威状态和写入回调
 
 #### 反馈与通知
 - **Toast** - 轻量临时提示
@@ -179,6 +171,7 @@ function MyComponent() {
 - **FileUpload / ChunkedFileUpload** - 文件上传与分片上传组件
 - **ImageLightbox / ImageCropper** - 图片预览与裁剪组件
 - **StickerPicker** - 表情包选择器
+  - 搜索、空态和模式提示通过 `StickerPickerLabels` 由宿主注入
 
 #### Ant Design 组件封装
 `@radish/ui` 重新导出了常用的 Ant Design 组件，确保版本一致：
@@ -230,12 +223,19 @@ useClickOutside(ref, () => setIsOpen(false));
 
 #### 格式化 (format.ts)
 ```typescript
-formatDate(date)           // 格式化日期
-formatDateTime(date)       // 格式化日期时间
-formatTime(date)          // 格式化时间
-formatFileSize(bytes)     // 格式化文件大小
-formatNumber(num)         // 格式化数字
+formatDate(date)          // 兼容日期格式
+formatFileSize(bytes)     // 文件大小
 ```
+
+#### 本地化格式化 (`intl.ts`)
+```typescript
+resolveIntlLocale(language)
+formatLocalizedDateTime(value, language, options)
+formatLocalizedNumber(value, language, options)
+formatLocalizedRelativeTime(value, language, now)
+```
+
+语言与时区是不同输入：locale 决定展示格式，`Intl.DateTimeFormatOptions.timeZone` 决定显示哪个时刻。单位和业务文案仍由宿主翻译资源提供。
 
 #### 验证 (validation.ts)
 ```typescript
@@ -251,6 +251,22 @@ capitalize(str)           // 首字母大写
 truncate(str, length)     // 截断字符串
 slugify(str)              // 生成 slug
 ```
+
+### 5. 主题与 Ant Design locale
+
+```tsx
+import { ThemeProvider, antdLocales } from '@radish/ui';
+
+<ThemeProvider
+  themeConfig={themeConfig}
+  dark={colorScheme === 'dark'}
+  locale={language === 'en' ? antdLocales.en : antdLocales.zh}
+>
+  {children}
+</ThemeProvider>
+```
+
+`@radish/ui` 不读取宿主 i18next、`localStorage` 或认证状态。宿主负责解析主题和语言，再把 theme config、Ant Design locale、labels 与 formatter 输入共享组件。
 
 ## 开发模式
 
@@ -288,7 +304,7 @@ import { Button, message } from 'antd';
 
 ```typescript
 // ✅ 推荐
-import { apiGet, apiPost } from '@radish/ui';
+import { apiGet, apiPost } from '@radish/http';
 
 const result = await apiGet('/api/v1/Users', { withAuth: true });
 
@@ -300,24 +316,17 @@ const response = await fetch('/api/v1/Users', {
 
 ### 3. 错误处理
 
-**推荐：** 配置统一的错误处理
+**推荐：** 保留 `@radish/http` 的结构化响应，再由页面决定反馈层级
 
 ```typescript
-// ✅ 推荐
-import { configureErrorHandling, message } from '@radish/ui';
-
-configureErrorHandling({
-  autoShowMessage: true,
-  showMessage: (msg) => message.error(msg),
-});
-
-// ❌ 不推荐（每个地方都写 try-catch）
-try {
-  await apiCall();
-} catch (error) {
-  message.error(error.message);
+const result = await apiGet<UserVo>(path, { withAuth: true });
+if (!result.ok || !result.data) {
+  message.error(result.message ?? t('error.common.loadFailed'));
+  return;
 }
 ```
+
+not-found、conflict、权限等控制流只读取 status / `Code` / 数据状态，不匹配消息文本。完整规则见[错误处理指南](./error-handling.md)。
 
 ## 版本管理
 

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Data;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.Common;
@@ -29,6 +30,8 @@ public static class SqlSugarSetup
         RegexOptions.Compiled);
     private static readonly ConcurrentDictionary<string, byte> InitializedSqliteWalDatabases =
         new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConditionalWeakTable<IDbConnection, SqlitePragmaInitializationState>
+        InitializedSqliteConnections = new();
 
     public static void AddSqlSugarSetup(this IServiceCollection services)
     {
@@ -216,17 +219,44 @@ public static class SqlSugarSetup
             return;
         }
 
-        ExecuteSqlitePragma(connection, $"PRAGMA busy_timeout = {SqliteBusyTimeoutMs};", expectScalarResult: false);
-        ExecuteSqlitePragma(connection, "PRAGMA synchronous = NORMAL;", expectScalarResult: false);
-
-        var sqliteWalKey = $"{config.ConfigId}:{connection.ConnectionString}";
-        if (InitializedSqliteWalDatabases.TryAdd(sqliteWalKey, 0))
+        var initializationState = InitializedSqliteConnections.GetValue(
+            connection,
+            static _ => new SqlitePragmaInitializationState());
+        lock (initializationState)
         {
-            ExecuteSqlitePragma(connection, "PRAGMA journal_mode = WAL;", expectScalarResult: true);
+            if (initializationState.IsInitialized)
+            {
+                return;
+            }
+
+            if (!ExecuteSqlitePragma(
+                    connection,
+                    $"PRAGMA busy_timeout = {SqliteBusyTimeoutMs};",
+                    expectScalarResult: false) ||
+                !ExecuteSqlitePragma(
+                    connection,
+                    "PRAGMA synchronous = NORMAL;",
+                    expectScalarResult: false))
+            {
+                return;
+            }
+
+            var sqliteWalKey = $"{config.ConfigId}:{connection.ConnectionString}";
+            if (!InitializedSqliteWalDatabases.ContainsKey(sqliteWalKey))
+            {
+                if (!ExecuteSqlitePragma(connection, "PRAGMA journal_mode = WAL;", expectScalarResult: true))
+                {
+                    return;
+                }
+
+                InitializedSqliteWalDatabases.TryAdd(sqliteWalKey, 0);
+            }
+
+            initializationState.IsInitialized = true;
         }
     }
 
-    private static void ExecuteSqlitePragma(IDbConnection connection, string sql, bool expectScalarResult)
+    private static bool ExecuteSqlitePragma(IDbConnection connection, string sql, bool expectScalarResult)
     {
         try
         {
@@ -242,10 +272,13 @@ public static class SqlSugarSetup
             {
                 _ = command.ExecuteNonQuery();
             }
+
+            return true;
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "[SqlSugar] SQLite PRAGMA 执行失败，Sql: {Sql}", sql);
+            return false;
         }
     }
 
@@ -270,5 +303,10 @@ public static class SqlSugarSetup
 
         var normalizedTableName = rawTableName.Split('.', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
         return normalizedTableName?.Trim('`', '"', '[', ']') ?? string.Empty;
+    }
+
+    private sealed class SqlitePragmaInitializationState
+    {
+        public bool IsInitialized { get; set; }
     }
 }

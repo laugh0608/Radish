@@ -1,5 +1,6 @@
 using Radish.IService.Base;
 using Radish.Model;
+using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 
@@ -39,13 +40,10 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
 
     #region 权益发放
 
-    /// <summary>发放权益</summary>
-    /// <param name="userId">用户 ID</param>
-    /// <param name="product">商品信息</param>
-    /// <param name="orderId">订单 ID</param>
-    /// <param name="quantity">购买数量</param>
-    /// <returns>用户权益 ID</returns>
-    Task<long> GrantBenefitAsync(long userId, Product product, long orderId, int quantity = 1);
+    /// <summary>按照订单快照完成商品履约</summary>
+    /// <param name="order">包含不可变商品快照和支付状态的订单</param>
+    /// <returns>明确区分持续权益与消耗品背包的履约结果</returns>
+    Task<OrderFulfillmentResultDto> GrantOrderFulfillmentAsync(Order order);
 
     /// <summary>系统赠送权益</summary>
     /// <param name="userId">用户 ID</param>
@@ -72,22 +70,43 @@ public interface IUserBenefitService : IBaseService<UserBenefit, UserBenefitVo>
     /// <summary>激活权益</summary>
     /// <param name="userId">用户 ID</param>
     /// <param name="benefitId">权益 ID</param>
-    /// <returns>是否成功</returns>
-    Task<bool> ActivateBenefitAsync(long userId, long benefitId);
+    /// <returns>选择结果与该类型当前权益</returns>
+    Task<UserBenefitActionResultVo> ActivateBenefitAsync(long userId, long benefitId);
 
     /// <summary>取消激活权益</summary>
     /// <param name="userId">用户 ID</param>
     /// <param name="benefitId">权益 ID</param>
-    /// <returns>是否成功</returns>
-    Task<bool> DeactivateBenefitAsync(long userId, long benefitId);
+    /// <returns>停用结果与该类型当前权益</returns>
+    Task<UserBenefitActionResultVo> DeactivateBenefitAsync(long userId, long benefitId);
+
+    /// <summary>管理员撤销一份持续权益。</summary>
+    Task<UserBenefitActionResultVo> RevokeBenefitAsync(
+        long benefitId,
+        string reason,
+        long operatorId,
+        string operatorName);
 
     #endregion
 
     #region 权益过期处理
 
-    /// <summary>检查并更新过期权益</summary>
-    /// <returns>更新的数量</returns>
-    Task<int> CheckAndExpireBenefitsAsync();
+    /// <summary>查询一批已到达 UTC 到期时间且尚未物化的权益 ID。</summary>
+    Task<List<long>> GetDueBenefitIdsAsync(int take = 100);
+
+    /// <summary>物化一份权益的过期事实，并可靠请求到期通知。</summary>
+    Task<bool> ExpireBenefitAsync(long benefitId);
+
+    /// <summary>管理后台查询用户权益。</summary>
+    Task<List<UserBenefitVo>> GetUserBenefitsForAdminAsync(long userId);
+
+    /// <summary>管理后台分页查询商城权益与消耗品业务流水。</summary>
+    Task<PageModel<ShopEntitlementOperationVo>> GetOperationsForAdminAsync(
+        long userId,
+        string? operationType = null,
+        BenefitType? benefitType = null,
+        ConsumableType? consumableType = null,
+        int pageIndex = 1,
+        int pageSize = 20);
 
     #endregion
 }

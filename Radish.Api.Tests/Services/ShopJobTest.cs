@@ -38,7 +38,6 @@ public class ShopJobTest
         };
 
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
-        var benefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
         var orderService = new Mock<IOrderService>(MockBehavior.Strict);
 
         orderRepository
@@ -64,7 +63,7 @@ public class ShopJobTest
                 It.Is<string>(reason => reason.Contains($"{timeoutMinutes} 分钟未支付", StringComparison.Ordinal))))
             .ReturnsAsync(true);
 
-        var job = CreateJob(orderRepository, benefitRepository, orderService);
+        var job = CreateJob(orderRepository, orderService);
 
         var result = await job.CancelTimeoutOrdersAsync(timeoutMinutes);
 
@@ -76,7 +75,6 @@ public class ShopJobTest
     public async Task CancelTimeoutOrdersAsync_ShouldReturnZero_WhenOrderQueryFails()
     {
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
-        var benefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
         var orderService = new Mock<IOrderService>(MockBehavior.Strict);
 
         orderRepository
@@ -85,7 +83,7 @@ public class ShopJobTest
                 It.IsAny<Expression<Func<Order, bool>>?>()))
             .ThrowsAsync(new InvalidOperationException("reader closed"));
 
-        var job = CreateJob(orderRepository, benefitRepository, orderService);
+        var job = CreateJob(orderRepository, orderService);
 
         var result = await job.CancelTimeoutOrdersAsync();
 
@@ -120,9 +118,8 @@ public class ShopJobTest
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Order, bool>>?>()))
             .ReturnsAsync((Expression<Func<Order, bool>>? predicate) =>
                 predicate == null ? orders : orders.Where(predicate.Compile()).ToList());
-        var benefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
         var orderService = new Mock<IOrderService>(MockBehavior.Strict);
-        var job = CreateJob(orderRepository, benefitRepository, orderService);
+        var job = CreateJob(orderRepository, orderService);
 
         var result = await job.GenerateDailyStatsAsync();
 
@@ -131,10 +128,27 @@ public class ShopJobTest
         Assert.Equal(20, result.TotalRevenue);
     }
 
+    [Fact]
+    public async Task MarkExpiredBenefitsAsync_ShouldDelegateEachUtcDueBenefitToService()
+    {
+        var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
+        var orderService = new Mock<IOrderService>(MockBehavior.Strict);
+        var benefitService = new Mock<IUserBenefitService>(MockBehavior.Strict);
+        benefitService.Setup(service => service.GetDueBenefitIdsAsync(100)).ReturnsAsync([8001, 8002]);
+        benefitService.Setup(service => service.ExpireBenefitAsync(8001)).ReturnsAsync(true);
+        benefitService.Setup(service => service.ExpireBenefitAsync(8002)).ReturnsAsync(false);
+        var job = CreateJob(orderRepository, orderService, benefitService);
+
+        var result = await job.MarkExpiredBenefitsAsync();
+
+        Assert.Equal(1, result);
+        benefitService.VerifyAll();
+    }
+
     private static ShopJob CreateJob(
         Mock<IBaseRepository<Order>> orderRepository,
-        Mock<IBaseRepository<UserBenefit>> benefitRepository,
-        Mock<IOrderService> orderService)
+        Mock<IOrderService> orderService,
+        Mock<IUserBenefitService>? benefitService = null)
     {
         var timeProvider = new FixedTimeProvider(FixedNow);
         var calendar = new BusinessCalendar(
@@ -142,8 +156,8 @@ public class ShopJobTest
             Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
         return new ShopJob(
             orderRepository.Object,
-            benefitRepository.Object,
             orderService.Object,
+            benefitService?.Object ?? Mock.Of<IUserBenefitService>(),
             timeProvider,
             calendar);
     }

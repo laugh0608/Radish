@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut, apiDelete } from '@radish/http';
+import { apiGet, apiPost, apiPut, apiDelete, createApiResponseError } from '@radish/http';
 
 export interface TagVo {
   voId: number;
@@ -64,7 +64,7 @@ export async function getTagPage(params: {
   const response = await apiGet<TagPageModel>(`/api/v1/Tag/GetPage?${searchParams.toString()}`, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取标签列表失败');
+    throw createApiResponseError(response, '获取标签列表失败');
   }
 
   return response.data;
@@ -74,7 +74,7 @@ export async function createTag(request: TagUpsertRequest): Promise<number> {
   const response = await apiPost<number>('/api/v1/Tag/Create', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
-    throw new Error(response.message || '创建标签失败');
+    throw createApiResponseError(response, '创建标签失败');
   }
 
   return response.data;
@@ -84,7 +84,7 @@ export async function updateTag(id: number, request: TagUpsertRequest): Promise<
   const response = await apiPut<boolean>(`/api/v1/Tag/Update/${id}`, request, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '更新标签失败');
+    throw createApiResponseError(response, '更新标签失败');
   }
 }
 
@@ -92,7 +92,7 @@ export async function toggleTagStatus(id: number, enabled: boolean): Promise<voi
   const response = await apiPut<boolean>(`/api/v1/Tag/ToggleStatus/${id}/status?enabled=${enabled}`, {}, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '更新标签状态失败');
+    throw createApiResponseError(response, '更新标签状态失败');
   }
 }
 
@@ -100,7 +100,7 @@ export async function updateTagSort(id: number, sortOrder: number): Promise<void
   const response = await apiPut<boolean>(`/api/v1/Tag/UpdateSort/${id}/sort?sortOrder=${sortOrder}`, {}, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '更新排序失败');
+    throw createApiResponseError(response, '更新排序失败');
   }
 }
 
@@ -108,7 +108,7 @@ export async function deleteTag(id: number): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Tag/Delete/${id}`, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '删除标签失败');
+    throw createApiResponseError(response, '删除标签失败');
   }
 }
 
@@ -116,6 +116,6 @@ export async function restoreTag(id: number): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Tag/Restore/${id}/restore`, {}, { withAuth: true });
 
   if (!response.ok) {
-    throw new Error(response.message || '恢复标签失败');
+    throw createApiResponseError(response, '恢复标签失败');
   }
 }

@@ -1,6 +1,9 @@
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.Model;
 using Radish.Model.DtoModels;
+using Radish.Shared.Constants;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.Service;
 
@@ -8,6 +11,10 @@ public partial class PostService
 {
     private static readonly TimeSpan MinLotteryLeadTime = TimeSpan.FromHours(1);
     private const string PostPublicIdPrefix = "pst_";
+    private const int MaxPollQuestionLength = 200;
+    private const int MaxPollOptionLength = 100;
+    private const int MinLotteryWinnerCount = 1;
+    private const int MaxLotteryWinnerCount = 20;
 
     /// <summary>
     /// 发布帖子
@@ -21,14 +28,30 @@ public partial class PostService
         List<string>? tagNames = null,
         bool allowCreateTag = true)
     {
+        if (string.IsNullOrWhiteSpace(post.Title))
+        {
+            throw CreatePublishException(
+                "帖子标题不能为空",
+                ForumPublishErrorCodes.TitleRequired);
+        }
+
+        if (string.IsNullOrWhiteSpace(post.Content))
+        {
+            throw CreatePublishException(
+                "帖子内容不能为空",
+                ForumPublishErrorCodes.ContentRequired);
+        }
+
         var featureCount = (poll != null ? 1 : 0) + (lottery != null ? 1 : 0) + (isQuestion ? 1 : 0);
         if (featureCount > 1)
         {
-            throw new ArgumentException("问答帖、投票和抽奖暂时互斥");
+            throw CreatePublishException(
+                "问答帖、投票和抽奖暂时互斥",
+                ForumPublishErrorCodes.FeatureCombinationInvalid);
         }
 
-        var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "发布帖子时至少需要一个标签");
-        var contentSettings = await ValidatePostContentSettingsAsync(post.Title, post.Content);
+        var normalizedTagNames = NormalizePublishTagNamesOrThrow(tagNames);
+        var contentSettings = await ValidatePublishPostContentSettingsAsync(post.Title, post.Content);
         ApplyPostSummarySettings(post, contentSettings);
 
         var operatorName = string.IsNullOrWhiteSpace(post.AuthorName) ? "System" : post.AuthorName;
@@ -177,12 +200,23 @@ public partial class PostService
         var question = poll.Question?.Trim();
         if (string.IsNullOrWhiteSpace(question))
         {
-            throw new ArgumentException("投票问题不能为空", nameof(poll));
+            throw CreatePublishException(
+                "投票问题不能为空",
+                ForumPublishErrorCodes.PollQuestionRequired);
+        }
+
+        if (question.Length > MaxPollQuestionLength)
+        {
+            throw CreatePublishException(
+                $"投票问题不能超过 {MaxPollQuestionLength} 个字符",
+                ForumPublishErrorCodes.PollQuestionTooLong);
         }
 
         if (poll.EndTime.HasValue && poll.EndTime.Value <= DateTime.UtcNow)
         {
-            throw new ArgumentException("投票截止时间必须晚于当前时间", nameof(poll));
+            throw CreatePublishException(
+                "投票截止时间必须晚于当前时间",
+                ForumPublishErrorCodes.PollEndTimeInvalid);
         }
     }
 
@@ -191,12 +225,16 @@ public partial class PostService
         var prizeName = lottery.PrizeName?.Trim();
         if (string.IsNullOrWhiteSpace(prizeName))
         {
-            throw new ArgumentException("奖品名称不能为空", nameof(lottery));
+            throw CreatePublishException(
+                "奖品名称不能为空",
+                ForumPublishErrorCodes.LotteryPrizeNameRequired);
         }
 
         if (prizeName.Length > 100)
         {
-            throw new ArgumentException("奖品名称长度不能超过100个字符", nameof(lottery));
+            throw CreatePublishException(
+                "奖品名称长度不能超过100个字符",
+                ForumPublishErrorCodes.LotteryPrizeNameTooLong);
         }
 
         var prizeDescription = string.IsNullOrWhiteSpace(lottery.PrizeDescription)
@@ -204,19 +242,32 @@ public partial class PostService
             : lottery.PrizeDescription.Trim();
         if (prizeDescription != null && prizeDescription.Length > 500)
         {
-            throw new ArgumentException("奖品说明长度不能超过500个字符", nameof(lottery));
+            throw CreatePublishException(
+                "奖品说明长度不能超过500个字符",
+                ForumPublishErrorCodes.LotteryPrizeDescriptionTooLong);
+        }
+
+        if (lottery.WinnerCount is < MinLotteryWinnerCount or > MaxLotteryWinnerCount)
+        {
+            throw CreatePublishException(
+                $"中奖人数必须在 {MinLotteryWinnerCount} 到 {MaxLotteryWinnerCount} 之间",
+                ForumPublishErrorCodes.LotteryWinnerCountInvalid);
         }
 
         var drawTime = lottery.DrawTime;
         if (!drawTime.HasValue)
         {
-            throw new ArgumentException("抽奖截止时间不能为空", nameof(lottery));
+            throw CreatePublishException(
+                "抽奖截止时间不能为空",
+                ForumPublishErrorCodes.LotteryDrawTimeRequired);
         }
 
         var minimumDrawTime = DateTime.UtcNow.Add(MinLotteryLeadTime);
         if (drawTime.Value < minimumDrawTime)
         {
-            throw new ArgumentException("抽奖截止时间必须至少晚于发帖时间 1 小时", nameof(lottery));
+            throw CreatePublishException(
+                "抽奖截止时间必须至少晚于发帖时间 1 小时",
+                ForumPublishErrorCodes.LotteryDrawTimeTooSoon);
         }
     }
 
@@ -224,10 +275,20 @@ public partial class PostService
     {
         if (options == null)
         {
-            throw new ArgumentException("投票选项不能为空", nameof(options));
+            throw CreatePublishException(
+                "投票选项不能为空",
+                ForumPublishErrorCodes.PollOptionsRequired);
         }
 
-        var normalizedOptions = options
+        var providedOptions = options.OfType<PollOptionDto>().ToList();
+        if (providedOptions.Count != options.Count)
+        {
+            throw CreatePublishException(
+                "投票选项不能为空",
+                ForumPublishErrorCodes.PollOptionsRequired);
+        }
+
+        var normalizedOptions = providedOptions
             .Where(option => !string.IsNullOrWhiteSpace(option.OptionText))
             .Select((option, index) => new PollOptionDto
             {
@@ -238,7 +299,16 @@ public partial class PostService
 
         if (normalizedOptions.Count < MinPollOptionCount || normalizedOptions.Count > MaxPollOptionCount)
         {
-            throw new ArgumentException($"投票选项数量必须在 {MinPollOptionCount} 到 {MaxPollOptionCount} 个之间", nameof(options));
+            throw CreatePublishException(
+                $"投票选项数量必须在 {MinPollOptionCount} 到 {MaxPollOptionCount} 个之间",
+                ForumPublishErrorCodes.PollOptionCountInvalid);
+        }
+
+        if (normalizedOptions.Any(option => option.OptionText.Length > MaxPollOptionLength))
+        {
+            throw CreatePublishException(
+                $"单个投票选项不能超过 {MaxPollOptionLength} 个字符",
+                ForumPublishErrorCodes.PollOptionTooLong);
         }
 
         var distinctCount = normalizedOptions
@@ -248,7 +318,9 @@ public partial class PostService
 
         if (distinctCount != normalizedOptions.Count)
         {
-            throw new ArgumentException("投票选项不能重复", nameof(options));
+            throw CreatePublishException(
+                "投票选项不能重复",
+                ForumPublishErrorCodes.PollOptionsDuplicate);
         }
 
         return normalizedOptions;
@@ -312,6 +384,24 @@ public partial class PostService
         return normalizedTagNames;
     }
 
+    private static List<string> NormalizePublishTagNamesOrThrow(List<string>? tagNames)
+    {
+        var normalizedTagNames = tagNames?
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList() ?? [];
+
+        if (normalizedTagNames.Count is < 1 or > 5)
+        {
+            throw CreatePublishException(
+                "发布帖子时标签数量必须在 1 到 5 个之间",
+                ForumPublishErrorCodes.TagCountInvalid);
+        }
+
+        return normalizedTagNames;
+    }
+
     private static string EnsurePostPublicId(string? currentPublicId)
     {
         var normalizedCurrent = currentPublicId?.Trim();
@@ -339,10 +429,25 @@ public partial class PostService
 
         if (!allowCreateTag)
         {
-            throw new InvalidOperationException($"标签不存在且当前用户无权限创建：{tagName}");
+            throw CreatePublishException(
+                $"标签不存在且当前用户无权限创建：{tagName}",
+                ForumPublishErrorCodes.TagCreateForbidden,
+                HttpStatusCodeEnum.Forbidden);
         }
 
         return await _tagService.GetOrCreateTagAsync(tagName);
+    }
+
+    private static BusinessException CreatePublishException(
+        string fallbackMessage,
+        string errorCode,
+        HttpStatusCodeEnum statusCode = HttpStatusCodeEnum.BadRequest)
+    {
+        return new BusinessException(
+            fallbackMessage,
+            (int)statusCode,
+            errorCode,
+            ForumPublishErrorCodes.ResolveMessageKey(errorCode));
     }
 
     private async Task SyncPostTagsAsync(

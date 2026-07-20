@@ -1,4 +1,5 @@
 import { ClockCircleOutlined, LinkOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import {
   ConsoleMetricCard,
   ConsoleMetricGrid,
@@ -6,19 +7,22 @@ import {
   ConsoleStatusChip,
 } from '../../components/ConsolePage';
 import { getApiBaseUrl } from '../../config/env';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './HangfirePage.css';
 
 export const HangfirePage = () => {
+  const { t } = useTranslation();
+  useDocumentTitle(t('systemTools.hangfire.documentTitle'));
   const hangfireDashboardUrl = `${getApiBaseUrl()}/hangfire`;
 
   return (
     <div className="admin-feature-page hangfire-page">
       <ConsolePageHeader
-        eyebrow="任务运维"
-        title="定时任务"
-        description="通过受保护的 Console 入口查看 Hangfire Dashboard，当前仍保留外部运维面板承载。"
+        eyebrow={t('systemTools.hangfire.eyebrow')}
+        title={t('systemTools.hangfire.title')}
+        description={t('systemTools.hangfire.description')}
         icon={<ClockCircleOutlined />}
-        status={<ConsoleStatusChip tone="warning">宿主任务看板</ConsoleStatusChip>}
+        status={<ConsoleStatusChip tone="warning">{t('systemTools.hangfire.status')}</ConsoleStatusChip>}
         actions={(
           <a
             className="hangfire-page__external-link"
@@ -27,25 +31,40 @@ export const HangfirePage = () => {
             rel="noreferrer"
           >
             <LinkOutlined />
-            打开新窗口
+            {t('systemTools.hangfire.open')}
           </a>
         )}
       />
 
-      <ConsoleMetricGrid label="定时任务入口状态">
-        <ConsoleMetricCard label="入口类型" value="嵌入看板" description="复用 Gateway 暴露的任务运维页面" tone="info" />
-        <ConsoleMetricCard label="权限守卫" value="已接入" description="沿用 console.hangfire.view 路由权限" tone="success" />
-        <ConsoleMetricCard label="内部任务台" value="后续建设" description="任务队列、重试和审计入口仍由宿主看板承接" tone="warning" />
+      <ConsoleMetricGrid label={t('systemTools.hangfire.metrics.label')}>
+        <ConsoleMetricCard
+          label={t('systemTools.hangfire.metrics.entry.label')}
+          value={t('systemTools.hangfire.metrics.entry.value')}
+          description={t('systemTools.hangfire.metrics.entry.description')}
+          tone="info"
+        />
+        <ConsoleMetricCard
+          label={t('systemTools.hangfire.metrics.guard.label')}
+          value={t('systemTools.hangfire.metrics.guard.value')}
+          description={t('systemTools.hangfire.metrics.guard.description')}
+          tone="success"
+        />
+        <ConsoleMetricCard
+          label={t('systemTools.hangfire.metrics.internal.label')}
+          value={t('systemTools.hangfire.metrics.internal.value')}
+          description={t('systemTools.hangfire.metrics.internal.description')}
+          tone="warning"
+        />
       </ConsoleMetricGrid>
 
-      <section className="hangfire-page__shell" aria-label="Hangfire Dashboard 外部面板">
+      <section className="hangfire-page__shell" aria-label={t('systemTools.hangfire.panel.label')}>
         <div className="hangfire-page__notice">
-          <span>当前页面承载宿主任务看板，不在前端内重建任务队列、失败重试或运行审计模型。</span>
+          <span>{t('systemTools.hangfire.panel.notice')}</span>
         </div>
         <iframe
           className="hangfire-page__frame"
           src={hangfireDashboardUrl}
-          title="Hangfire Dashboard"
+          title={t('systemTools.hangfire.panel.title')}
         />
       </section>
     </div>

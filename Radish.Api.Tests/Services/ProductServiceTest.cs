@@ -1,8 +1,10 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -39,7 +41,7 @@ public class ProductServiceTest
     }
 
     [Fact]
-    public async Task CheckCanBuyAsync_ShouldRejectBadgeBenefit()
+    public async Task CheckCanBuyAsync_ShouldRejectBadgeWithoutRequiredIcon()
     {
         var product = CreateBadgeProduct();
         var productRepository = CreateProductRepository(product);
@@ -58,7 +60,70 @@ public class ProductServiceTest
         var (canBuy, reason) = await service.CheckCanBuyAsync(9527, product.Id, 1);
 
         Assert.False(canBuy);
-        Assert.Equal("徽章暂未开放，当前不可购买", reason);
+        Assert.Equal("商品配置不完整，请联系管理员", reason);
+    }
+
+    [Fact]
+    public async Task GetProductCapabilitiesAsync_ShouldOnlyOpenCompletedProductTypes()
+    {
+        var service = new ProductService(
+            Mock.Of<IMapper>(),
+            Mock.Of<IBaseRepository<Product>>(),
+            Mock.Of<IBaseRepository<ProductCategory>>(),
+            Mock.Of<IBaseRepository<Order>>(),
+            Mock.Of<IAttachmentUrlResolver>());
+
+        var result = await service.GetProductCapabilitiesAsync();
+
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Badge).VoCanSell);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Badge).VoCanActivate);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Title).VoCanSell);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Title).VoCanActivate);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanSell);
+        Assert.True(result.Single(item => item.VoBenefitType == BenefitType.Theme).VoCanActivate);
+        Assert.False(result.Single(item => item.VoProductType == ProductType.Physical).VoCanSell);
+        Assert.True(result.Single(item => item.VoConsumableType == ConsumableType.CoinCard).VoCanSell);
+        Assert.Equal(
+            [
+                "products.capability.requirement.badgeResource",
+                "products.capability.requirement.badgeIcon"
+            ],
+            result.Single(item => item.VoBenefitType == BenefitType.Badge).VoConfigurationRequirementKeys);
+        Assert.Equal(
+            "products.capability.unavailable.physical",
+            result.Single(item => item.VoProductType == ProductType.Physical).VoUnavailableReasonKey);
+    }
+
+    [Fact]
+    public async Task CreateProductAsync_ShouldRejectUnknownThemeResource()
+    {
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
+        var service = new ProductService(
+            Mock.Of<IMapper>(),
+            productRepository.Object,
+            Mock.Of<IBaseRepository<ProductCategory>>(),
+            Mock.Of<IBaseRepository<Order>>(),
+            Mock.Of<IAttachmentUrlResolver>());
+        var dto = new CreateProductDto
+        {
+            Name = "未注册主题",
+            CategoryId = "theme",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Theme,
+            BenefitValue = "theme-not-registered",
+            Price = 200,
+            StockType = StockType.Unlimited,
+            DurationType = DurationType.Permanent,
+            IsOnSale = false
+        };
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(
+            () => service.CreateProductAsync(dto, 10001, "tester"));
+
+        Assert.Equal("主题资源标识必须是：theme-dark-night、theme-sakura", exception.Message);
+        Assert.Equal("Product.ConfigurationInvalid", exception.ErrorCode);
+        Assert.Equal("error.product.configuration_invalid", exception.MessageKey);
+        productRepository.Verify(repository => repository.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
     [Fact]
@@ -115,8 +180,10 @@ public class ProductServiceTest
             DurationDays = 5
         };
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateProductAsync(dto, 10001, "tester"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CreateProductAsync(dto, 10001, "tester"));
         Assert.Equal("萝卜币红包必须配置正整数胡萝卜数量", exception.Message);
+        Assert.Equal("Product.ConfigurationInvalid", exception.ErrorCode);
+        Assert.Equal("error.product.configuration_invalid", exception.MessageKey);
         productRepository.Verify(r => r.AddAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -144,14 +211,26 @@ public class ProductServiceTest
     }
 
     [Fact]
-    public async Task GetProductDetailAsync_ShouldHideBadgeBenefitFromPublicView()
+    public async Task GetProductDetailAsync_ShouldExposeBadgeBenefitAfterCapabilityCompletion()
     {
         var product = CreateBadgeProduct();
         var productRepository = CreateProductRepository(product);
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        categoryRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()))
+            .ReturnsAsync(new ProductCategory { Id = product.CategoryId, Name = "徽章" });
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper.Setup(item => item.Map<ProductVo>(product)).Returns(new ProductVo
+        {
+            VoId = product.Id,
+            VoName = product.Name,
+            VoCategoryId = product.CategoryId,
+            VoProductType = product.ProductType,
+            VoBenefitType = product.BenefitType,
+            VoBenefitValue = product.BenefitValue
+        });
 
         var service = new ProductService(
             mapper.Object,
@@ -162,8 +241,42 @@ public class ProductServiceTest
 
         var result = await service.GetProductDetailAsync(product.Id);
 
+        Assert.NotNull(result);
+        Assert.Equal(BenefitType.Badge, result!.VoBenefitType);
+        Assert.Equal("徽章", result.VoCategoryName);
+    }
+
+    [Fact]
+    public async Task GetProductDetailAsync_ShouldHideUnknownThemeResource()
+    {
+        var product = new Product
+        {
+            Id = 100059,
+            Name = "旧主题",
+            CategoryId = "theme",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Theme,
+            BenefitValue = "theme-retired",
+            IsEnabled = true,
+            IsOnSale = true,
+            StockType = StockType.Unlimited,
+            CreateTime = DateTime.Now,
+            CreateBy = "System"
+        };
+        var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
+        var service = new ProductService(
+            Mock.Of<IMapper>(),
+            CreateProductRepository(product).Object,
+            categoryRepository.Object,
+            Mock.Of<IBaseRepository<Order>>(),
+            Mock.Of<IAttachmentUrlResolver>());
+
+        var result = await service.GetProductDetailAsync(product.Id);
+
         Assert.Null(result);
-        categoryRepository.Verify(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()), Times.Never);
+        categoryRepository.Verify(
+            repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ProductCategory, bool>>?>()),
+            Times.Never);
     }
 
     [Fact]
@@ -280,9 +393,11 @@ public class ProductServiceTest
             orderRepository.Object,
             attachmentUrlResolver.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.DeleteProductAsync(product.Id, 10001, "tester"));
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.DeleteProductAsync(product.Id, 10001, "tester"));
 
         Assert.Equal("商品已有订单记录，不能删除；请下架商品以保留历史订单快照", exception.Message);
+        Assert.Equal("Product.DeleteOrderConflict", exception.ErrorCode);
+        Assert.Equal("error.product.delete_order_conflict", exception.MessageKey);
         productRepository.Verify(repository => repository.UpdateAsync(It.IsAny<Product>()), Times.Never);
     }
 
@@ -304,7 +419,7 @@ public class ProductServiceTest
             orderRepository.Object,
             attachmentUrlResolver.Object);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.UpdateProductAsync(
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateProductAsync(
             new UpdateProductDto
             {
                 Id = product.Id,
@@ -323,6 +438,8 @@ public class ProductServiceTest
             "tester"));
 
         Assert.Equal("商品信息已被其他管理员修改，请刷新后重试", exception.Message);
+        Assert.Equal("Product.VersionConflict", exception.ErrorCode);
+        Assert.Equal("error.product.version_conflict", exception.MessageKey);
         productRepository.Verify(
             repository => repository.UpdateColumnsAsync(
                 It.IsAny<Expression<Func<Product, Product>>>(),

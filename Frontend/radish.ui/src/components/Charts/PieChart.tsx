@@ -28,6 +28,8 @@ export interface PieChartProps {
   outerRadius?: number;
   showLabel?: boolean;
   className?: string;
+  valueFormatter?: (value: number) => string;
+  percentageFormatter?: (value: number) => string;
 }
 
 const DEFAULT_COLORS = [
@@ -54,7 +56,9 @@ export const PieChart = ({
   innerRadius = 0,
   outerRadius = 80,
   showLabel = true,
-  className
+  className,
+  valueFormatter,
+  percentageFormatter,
 }: PieChartProps) => {
   const initialDimension = getInitialChartDimension(height);
 
@@ -62,8 +66,11 @@ export const PieChart = ({
     const { name, value } = props;
     if (typeof value !== 'number' || !name) return '';
     const total = data.reduce((sum, item) => sum + item.value, 0);
-    const percent = ((value / total) * 100).toFixed(1);
-    return `${name}: ${percent}%`;
+    const ratio = total === 0 ? 0 : value / total;
+    const percent = percentageFormatter
+      ? percentageFormatter(ratio)
+      : `${(ratio * 100).toFixed(1)}%`;
+    return `${name}: ${percent}`;
   };
 
   return (
@@ -95,6 +102,7 @@ export const PieChart = ({
             ))}
           </Pie>
           <Tooltip
+            formatter={(value) => typeof value === 'number' && valueFormatter ? valueFormatter(value) : value}
             contentStyle={{
               backgroundColor: 'var(--theme-bg-surface, #fbfcfc)',
               border: '1px solid var(--theme-border-soft, rgba(84, 108, 122, 0.16))',

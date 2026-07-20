@@ -3,7 +3,14 @@
  * 直接使用后端 Vo 字段名，无需映射
  */
 
-import { apiGet, configureApiClient, type PagedResponse } from '@radish/http';
+import {
+  apiGet,
+  configureApiClient,
+  createApiResponseError,
+  type PagedResponse,
+  type ParsedApiResponse,
+} from '@radish/http';
+import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 import type { LongId } from './user';
 
@@ -21,10 +28,9 @@ export interface ExperienceData {
   voAvatarUrl?: string;
   voCurrentLevel: number;
   voCurrentLevelName: string;  // 后端字段名
-  voCurrentExp: number;  // 当前等级内的经验值进度
-  voNextLevelExp: number;  // 当前等级升级所需总经验值
-  voTotalExp: number;  // 累计总经验值
-  voExpToNextLevel: number;  // 距离下一级还需多少经验
+  voCurrentExp: LongId;  // 当前等级内的经验值进度，后端 long 按字符串返回
+  voTotalExp: LongId;  // 累计总经验值，后端 long 按字符串返回
+  voExpToNextLevel: LongId;  // 距离下一级还需多少经验，后端 long 按字符串返回
   voNextLevel: number;
   voNextLevelName: string;
   voLevelProgress: number;  // 0-1 之间的小数
@@ -42,17 +48,18 @@ export interface ExperienceData {
  * 经验值交易记录 Vo（直接使用后端字段名）
  */
 export interface ExpTransactionData {
-  voId: number;
+  voId: LongId;
   voUserId: LongId;
   voUserName?: string;
   voExpType: string;  // 后端字段名
-  voExpTypeDisplay: string;  // 后端字段名
+  /** 后端兼容展示字段；client 的控制与本地化必须只使用稳定 voExpType。 */
+  voExpTypeDisplay: string;
   voExpAmount: number;  // 后端字段名（经验值变动量）
   voBusinessType?: string;  // 后端字段名
   voBusinessId?: LongId;  // 后端字段名
   voRemark?: string;  // 后端字段名（备注）
-  voExpBefore: number;
-  voExpAfter: number;
+  voExpBefore: LongId;
+  voExpAfter: LongId;
   voLevelBefore: number;
   voLevelAfter: number;
   voIsLevelUp: boolean;  // 后端计算属性
@@ -83,6 +90,17 @@ interface RankResponse {
   voRank: number;
 }
 
+function ensureRequiredResponse<T>(response: ParsedApiResponse<T>, fallbackMessage: string): T {
+  if (!response.ok || response.data === undefined) {
+    throw createApiResponseError(
+      response.messageKey ? response : { ...response, message: undefined },
+      fallbackMessage,
+    );
+  }
+
+  return response.data;
+}
+
 /**
  * 经验值 API
  */
@@ -90,15 +108,11 @@ export const experienceApi = {
   /**
    * 获取我的经验值信息
    */
-  async getMyExperience(): Promise<ExperienceData | null> {
+  async getMyExperience(t: TFunction): Promise<ExperienceData> {
     const response = await apiGet<ExperienceData>('/api/v1/Experience/GetMyExperience', {
       withAuth: true,
     });
-
-    if (response.ok && response.data) {
-      return response.data;
-    }
-    return null;
+    return ensureRequiredResponse(response, t('experience.api.loadFailed'));
   },
 
   /**
@@ -107,7 +121,7 @@ export const experienceApi = {
   async getTransactions(params: {
     pageIndex?: number;
     pageSize?: number;
-  }): Promise<PagedResponse<ExpTransactionData> | null> {
+  }, t: TFunction): Promise<PagedResponse<ExpTransactionData>> {
     const { pageIndex = 1, pageSize = 20 } = params;
 
     const response = await apiGet<PagedResponse<ExpTransactionData>>(
@@ -115,10 +129,7 @@ export const experienceApi = {
       { withAuth: true }
     );
 
-    if (response.ok && response.data) {
-      return response.data;
-    }
-    return null;
+    return ensureRequiredResponse(response, t('experience.api.transactionsFailed'));
   },
 
   /**
