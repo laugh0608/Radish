@@ -4,7 +4,7 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.19
+> **最后更新**: 2026.07.20
 
 ---
 
@@ -12,7 +12,7 @@
 
 本组文档聚焦聊天室在 `radish.client` 中作为独立应用的前端架构与交互实现，按“架构/实时/模块/里程碑”拆分，避免单文档持续膨胀。
 
-当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction、消息置顶、轻量阅读回执与移动端列表 / 详情切换。F4-C 搜索、F4-D Reaction、[F4-E 消息置顶](/features/chat-message-pin-design) 与 [F4-F 轻量阅读回执](/features/chat-message-read-receipt-design) 均已完成 A-D 批并关闭；Chat 新增能力转入维护基线，工程顺位进入 F4-G-A 功能完成线候选审计，移动系统通知继续后置。
+当前额外提供正式 Web `/messages` 入口，用于普通浏览器登录态聊天工作区。`/messages` 复用现有 `ChatApp`、聊天 API 与 `ChatHub`，承接通知里的 `channelId/messageId` 定位、成员公开主页来源返回、一对一会话生命周期、消息搜索、消息 Reaction、消息置顶、轻量阅读回执与移动端列表 / 详情切换。F4-C 搜索、F4-D Reaction、[F4-E 消息置顶](/features/chat-message-pin-design) 与 [F4-F 轻量阅读回执](/features/chat-message-read-receipt-design) 均已完成 A-D 批并关闭；Chat 新增能力转入维护基线，工程顺位已进入 F4-H-A 功能完成线候选复核，移动系统通知继续后置。
 
 后台数据模型与 API 细节请优先参考：
 - [正式 Web 聊天工作区使用说明](/guide/chat-workspace)

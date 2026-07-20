@@ -66,9 +66,8 @@
 
 ## 七、专题清单与一次性观察
 
-- [f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20)
-- [f4-g-c-wiki-author-console-pages-2026-07-20](/records/f4-g-c-wiki-author-console-pages-2026-07-20)
-- [f4-g-b-wiki-author-collaboration-server-contract-2026-07-20](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20)
+- [f4-day-end-doc-review-2026-07-20](/records/f4-day-end-doc-review-2026-07-20)
+- F4-G Wiki 作者协作：[D 成组验收](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20) · [C 正式页面](/records/f4-g-c-wiki-author-console-pages-2026-07-20) · [B 服务端契约](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20)
 - [f4-day-end-doc-review-2026-07-19](/records/f4-day-end-doc-review-2026-07-19)
 - [f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)
 - [f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)
