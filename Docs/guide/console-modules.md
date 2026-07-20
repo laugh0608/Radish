@@ -24,7 +24,7 @@
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
 | Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.*` | ✅ 已补齐 | 举报审核、手动治理、治理日志和用户过滤 URL 状态已接入 |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
-| Documents | ✅ 已接入 | 治理工作台 + 详情 | `console.docs.*` | ✅ 已补齐 | 文档列表、状态治理、访问策略、版本和导入导出已接入 |
+| Documents | ✅ 已接入 | 审核证据 + 治理工作台 | `console.docs.*` | ✅ 已补齐 | 待审队列、审核应用、独立发布、访问策略、版本和导入导出已接入 |
 | Hangfire | ✅ 已接入 | 特殊入口 / 运维外壳 | `console.hangfire.view` | ✅ 已补齐 | React 外层页承载受保护 iframe，特殊入口授权过滤器校验 |
 
 页面类型只描述 UI 承载方式，不改变权限键、API 契约或业务动作语义。新增页面时先确认权限模型，再按页面类型选择布局基座。
@@ -303,6 +303,7 @@
 ### 当前边界
 
 - 查看：`console.docs.view`
+- 审核：`console.docs.review`，只允许 RequestChanges / Reject / Apply
 - 发布 / 下架：`console.docs.publish`
 - 归档：`console.docs.archive`
 - 删除 / 恢复：`console.docs.delete` / `console.docs.restore`
@@ -310,10 +311,11 @@
 
 ### 当前状态
 
+- ✅ 待审队列、正式正文 / 草稿证据、协作者与审核时间线已经接入；Apply 只更新权威正文并生成 Revision，不自动 Publish
 - ✅ 文档治理列表、详情、状态与访问策略、版本回看 / 回滚、Markdown 导入 / 导出均已接入
 - ✅ 状态、可见性和来源类型按稳定字段解析中英文词元，标题、正文、Slug、角色 / 权限键和修订说明保留原文
 - ✅ 日期、数量和英文复数按当前 locale 展示；Wiki API 失败统一保留 HTTP status、`Wiki.*` Code 和 `error.wiki.*` MessageKey
-- ✅ 正式 Web 作者入口、Console 治理和公开阅读保持既有职责分层，不把 Console 动作混入作者态
+- ✅ 正式 Web Author 入口、Console 审核 / 治理和公开阅读保持职责分层，不把审核或发布动作混入作者态
 
 ## 3.16 Hangfire
 

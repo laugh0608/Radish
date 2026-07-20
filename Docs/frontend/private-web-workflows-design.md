@@ -34,7 +34,9 @@
 >
 > 更新：2026-07-08（Asia/Shanghai）：E8 首日已把 `radish.client` public / private 主导航统一为 PC `发现 / 论坛 / 聊天 / 更多` + 右侧 `通知 / 账号`，移动底栏统一为 `发现 / 论坛 / 聊天 / 更多 / 我的`；私域 / 作者态页面不再维护独立全局底栏。
 >
-> 状态：设计源 `P01-P30` 已补齐；`radish.client` 私域 / 作者态视觉实现首轮、D51 移动任务流首批、D54 Pencil / Gateway 真实页面对齐、D62 页面族首批实现、E3/E4/E5 首批产品硬化和 E8 主导航收敛已完成，后续继续按成熟度矩阵处理正式 UI、信息密度、文案成熟度和旅程级验证
+> 更新：2026-07-20（Asia/Shanghai）：F4-G 已把 `P18 / P19 / P20` 更新为 Owner / Collaborator、共享工作草稿、审核状态、冲突恢复和正式 Revision 边界，并补齐同结构 mobile 作者任务流；普通作者不再直接写正式正文或执行发布。
+>
+> 状态：设计源 `P01-P30` 与 Docs 作者协作扩展已完成代码和成组验收；后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
 
 ## 设计源
 
@@ -63,9 +65,9 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P15 - Pet Care` | `/pet` 宠物档案、基础照护动作、状态条和变化流水 |
 | `P16 - Forum Compose` | `/forum/compose` 论坛发帖编辑器、分类 / 标签、发布检查和提交反馈 |
 | `P17 - Forum Edit History` | `/forum/post/:id?intent=answer|edit|history` 作者编辑、问答回答和编辑历史 |
-| `P18 - Docs Mine` | `/docs/mine` Docs 作者库、文档树、文档列表和低风险作者动作 |
-| `P19 - Docs Compose Edit` | `/docs/compose`、`/docs/edit/:id` 文档编辑器、元信息和保存 / 预览动作 |
-| `P20 - Docs Revisions` | `/docs/revisions/:id` 文档版本栈、只读预览和差异回看 |
+| `P18 - Docs Mine / Authoritative Drafts` | `/docs/mine` 的 Owner / Invitee / Editor 文档库、草稿与审核状态及服务端允许动作 |
+| `P19 - Docs Shared Draft / Conflict` | `/docs/compose`、`/docs/edit/:id` 的共享草稿、邀请、CAS 保存、提交 / 撤回和冲突恢复 |
+| `P20 - Docs Revisions` | `/docs/revisions/:id` 已批准正式版本、只读预览和差异回看；不混入工作草稿保存历史 |
 | `P21 - Mobile Workbench` | 移动端 `/workbench`，正式 Web 功能地图和今日队列 |
 | `P22 - Mobile Me` | 移动端 `/me`，个人状态、经验、资产摘要和我的入口 |
 | `P23 - Mobile Content History` | 移动端 `/me/content`、`/me/history`、`/me/attachments` 的复访任务 |
@@ -81,7 +83,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 - 让登录态私域与作者态在正式 Web 中形成统一、可复访的工作流。
 - 把 `/workbench`、`/me`、资产 / 订单、通知 / 消息、圈子 / 宠物、论坛作者态和文档作者态整理为一致的信息节奏。
-- 固定作者态与治理态边界：普通作者处理草稿、发布、保存、版本回看；Console 处理治理、权限、审计和高风险操作。
+- 固定作者态与治理态边界：普通 Owner / Editor 处理共享草稿，Owner 提交审核；Console 分别处理审核应用、发布、权限、审计和高风险治理。
 - 在进入视觉代码前，先固定桌面密度、移动单列顺序、状态槽和停止线。
 
 ## 统一契约
@@ -152,10 +154,10 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 - 不新增独立“作者工作台”路由；作者态由 `/forum/compose`、`/forum/post/:id?intent=answer|edit|history`、`/docs/mine`、`/docs/compose`、`/docs/edit/:id` 和 `/docs/revisions/:id` 承接。
 - 论坛作者态与文档作者态在视觉节奏上保持一致，但页面形态必须贴合真实功能：论坛是发帖 / 编辑 / 问答，Docs 是文档树 / Markdown 编辑 / 版本回看。
-- 写入继续保留 `clientSubmissionId`、草稿同步、保存状态、发布成功和发布失败反馈。
-- Docs 作者库的编辑入口按数据态展示：非内置、未删除文档可进入编辑；内置固定文档和已删除文档必须展示只读原因，并继续允许修订回看和公开阅读。
+- 论坛写入继续保留 `clientSubmissionId`；Docs 保存携带 `ExpectedDraftVersion`，提交和审核按草稿 / 正文双版本裁决。
+- Docs 作者库按 Owner / Invitee / Editor 与服务端 `VoCan*` 展示动作；内置、已删除、Submitted 或失权文档明确显示只读原因。
 - Docs 编辑页和修订页都应提供公开阅读真实 `href`，但编辑 / 修订导航本身留在作者态路由内；普通点击可以走内部导航，新开标签和复制链接仍依赖正式 Web URL。
-- 作者态不包含审核治理、权限策略、文档治理列表、回收站或 Console 管理动作；普通作者的导出 / 分享只作为低风险二级动作呈现。
+- 作者态不包含审核决定、发布、权限策略、文档治理列表、回收站或 Console 管理动作；Apply 与 Publish 必须保持分离。
 
 代码对齐状态：
 
@@ -163,15 +165,15 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - `P3-12-D13` 已移除通知 / 消息 / 圈子 / 宠物状态槽外层重复卡片，并统一论坛发帖和 Docs 作者摘要卡圆角；D9-D13 已完成 Gateway PC / mobile 成组验收。
 - `P3-12-D41` 已将 Docs 作者库不可编辑文档的入口状态显式化：内置文档和已删除文档展示只读原因，权限、保存、上传、路由和版本回看契约保持不变。
 - `P3-12-D42` 已补 Docs 编辑 / 修订页的公开阅读回跳，修订记录入口改为作者态内部导航，并用当前文档树快照避免目录异步加载覆盖编辑器草稿。
-- D62 后论坛发帖、公开详情作者态、Docs 作者库、文档编辑和修订回看都已补任务流说明；作者态仍只处理创作、保存、发布、编辑历史和版本回看，不混入 Console 审核、访问策略治理或高风险回收站动作。
+- F4-G 后 Docs 作者库、共享草稿、邀请响应、冲突恢复、审核状态和修订回看均已接入；作者态只处理创作、协作、保存和提交，不混入 Console 审核、发布、访问策略或高风险回收站动作。
 
 ### 编辑器 / 版本
 
-- 编辑器主区展示标题、正文、元信息、保存状态、发布动作和提交前检查。
-- 版本侧栏展示当前草稿、发布版本、编辑历史和初稿，并提供只读差异预览。
+- 编辑器主区展示标题、正文、元信息、草稿版本、保存状态、提交 / 撤回和冲突恢复；Editor 不显示提交动作。
+- 协作与审核侧栏展示 Owner、Invitee / Editor、审核状态、意见和事件；版本页只展示已批准 Revision。
 - 编辑器加载目录树时只能影响父级选择、排序建议和目录展示，不应在用户已经进入 `/docs/compose` 或 `/docs/edit/:id` 后重建草稿并覆盖正在编辑的标题、正文、摘要或元信息。
 - 版本回看以阅读、对比和留痕为主；版本回退、完整富文本、批量导入导出、撤回、归档和回收站治理若进入实现需单独拆分确认。
-- 发布成功后进入公开详情，失败时保留错误说明、重试和回到草稿的路径。
+- Apply 后仍停留在作者 / 审核语境；只有独立 Publish 成功后公开详情才可见，未发布内容不得伪造公开链接成功态。
 
 ### 移动单列
 
@@ -188,7 +190,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - 私域桌面默认使用中等偏紧密密度，资产 / 订单和作者态页面可比公开阅读页更紧凑。
 - 卡片只用于功能入口、数据摘要、表格容器、状态块和必要工具面板，不把每个文本行都包成独立卡片。
 - 不同功能页必须有领域特征：资产用余额 / 流水，订单用状态分组 / 详情时间线，消息用会话结构，创作用编辑器，宠物用状态与照护动作；禁止用同一三栏模板套所有页面。
-- Docs 作者态 PC 页使用文档树、文档表格、版本对比、发布状态和侧栏证据形成信息密度；不得把 `/docs/mine`、`/docs/revisions/:id` 退化为两个空白面板或泛用列表模板。
+- Docs 作者态 PC 页使用文档树、角色 / 草稿 / 审核状态、版本对比和协作侧栏形成信息密度；不得把 `/docs/mine`、`/docs/revisions/:id` 退化为泛用列表模板。
 - 右侧 rail 必须服务状态理解、决策或动作，不能用大面积空白和装饰撑满页面。
 - 移动端不做桌面布局缩小版，必须保持单列可读和稳定触控目标。
 - 实现边界、技术停止线和 WebOS 退场说明只写入设计 / 记录文档，不作为普通用户可见面板进入真实 UI。

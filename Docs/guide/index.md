@@ -46,6 +46,7 @@
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
 - [日志规范与实现说明](/guide/logging)
+- [Hangfire 定时任务指南](/guide/hangfire-scheduled-jobs)
 - [日志敏感数据与查询凭据保护](/guide/logging-sensitive-data)
 - [前端日志与敏感字段脱敏](/guide/frontend-logging)
 - [密码安全](/guide/password-security)
@@ -66,6 +67,7 @@
 ### 文档、通知与控制台
 
 - [文档系统方案](/guide/document-system)
+- [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
 - [正式 Web 聊天工作区使用说明](/guide/chat-workspace)
 - [通知系统 API 文档](/guide/notification-api)
 - [通知中心设计说明](/guide/notification-center)

@@ -147,7 +147,7 @@
 
 - `Radish.Api.Wiki.http`
 
-文档接口当前仍由 `WikiController` 承载，外部产品口径统一称为“文档”。入口职责按 [文档系统](/guide/document-system) 拆分：
+文档接口当前仍由 `WikiController` 承载，外部产品口径统一称为“文档”。入口职责按 [文档系统](/guide/document-system) 拆分，用户操作与冲突恢复见 [作者协作使用说明](/guide/docs-author-collaboration)：
 
 - 公开 `/docs` 使用只读读取接口：
   - `Wiki/GetTree`
@@ -186,7 +186,7 @@
 权限边界：
 
 - 公开读取接口允许匿名进入，但服务端按文档状态、删除状态、可见性、登录态和角色过滤结果。
-- 作者入口不依赖 `console.docs.create` 或 `console.docs.edit`；登录用户可创建自己的草稿，所有者与已接受协作者按作者契约编辑，正式版本只能由具备 `console.docs.review` 的审核者批准应用。
+- 作者入口不依赖 `console.docs.create` 或 `console.docs.edit`；LongId 在 `@radish/http/wiki-authoring-contract` 中保持字符串，保存与审核分别提交草稿 / 正文期望版本，旧 `Wiki/Create / Update` HTTP 写入口不得恢复。
 - Console 治理接口必须走 `console.docs.*` 权限映射，权限覆盖见 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
 - 固定文档 `SourceType=builtin` 只读，不允许通过作者入口或 Console 回写仓库 `Docs/` 源文件。
 

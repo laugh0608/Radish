@@ -1,10 +1,10 @@
 # Console 治理工作台设计端点
 
-> 状态：`P3-12-D5` 已完成 Console 治理设计源 `P00-P18` 设计收口；`P3-12-D14-D35` 已完成 `radish.console` 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D38` 已裁决完整内部调度 / 运维 Jobs 平台后置，移动 Console 画板作为响应式验收参考；D44-D45 已补深层动作权限态与系统设置移动溢出收口；D55-D57 已补共享页头、工具条、筛选控件、治理工作台、权限矩阵、文档治理移动表格和深层弹窗 / 真实数据态复核边界；D63 已补内容治理、经验治理、商业运营、文档治理、用户管理和权限矩阵任务面；E2/E3-A 已补 Console 404 真实搜索、ErrorBoundary 诊断复制和内容治理移动处理顺序；E7-A 已补正式后台首页密度和移动高频入口
+> 状态：`P00-P18` 设计与 Console 首轮视觉 / 交互治理已收口；文档治理 `P11 / P16` 已进一步承接待审队列、正文证据、审核动作与独立发布，移动 Console 继续只作为响应式管理后台参考
 >
 > 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 最近更新：2026-07-07（Asia/Shanghai）
+> 最近更新：2026-07-20（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
 >
@@ -53,6 +53,8 @@
 > `2026-07-05` 更新：D63 已将治理 / 运营 / 文档 / 用户 / 权限代表页补成任务面：页面顶部展示任务流、指标和对象上下文，右侧 rail 解释证据、订单 / 商品回看、版本证据、用户对象和授权证据；E2/E3-A 明确 Console 移动端先按响应式治理视图承接内容治理，不开发独立移动 Console App。
 >
 > `2026-07-07` 更新：E7-A 已将 `/console/` Dashboard 调整为正式后台首页：首屏优先展示社区治理、交易复核、权限边界、全部功能面板和最近订单，移动端通过 `总览 / 治理 / 交易 / 权限 / 更多` 承接高频任务与完整路由入口；本批不新增 API、权限、后端调度平台或独立移动 Console App。
+>
+> `2026-07-20` 更新：F4-G 将 `P11` 更新为文档审核队列、正式正文 / 草稿证据、版本与协作者上下文、RequestChanges / Reject / Apply 和独立 Publish；`P16` 固定移动处理顺序为“队列 → 正文证据 → 版本与权限 → 审核动作 → 留痕”。
 
 ## 目标
 
@@ -94,12 +96,12 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 | `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验复核单列流程、趋势 / 流水和底部 tab |
 | `P09` | `Console Full Navigation & Permission IA` | 真实 Console 路由分组、功能覆盖矩阵和权限信息架构 |
 | `P10` | `Console Commerce Operations - Products & Orders` | 商品、订单、胡萝卜等交易 / 资产运营代表页 |
-| `P11` | `Console Document Governance - Publishing & Access` | 文档治理、发布、访问策略和版本回滚代表页 |
+| `P11` | `Console Document Governance - Review Evidence & Publish` | 待审队列、正文证据、审核动作、独立发布及既有访问 / 版本治理代表页 |
 | `P12` | `Console RBAC Permission Matrix` | 角色列表、权限矩阵、高危授权和审计上下文 |
 | `P13` | `Console Operations Tools - System Config & Jobs` | 系统配置与外部 Hangfire 外壳为当前发布前代表页；内部 Jobs 平台后置 |
 | `P14` | `Mobile Console Hub - Routes & Alerts` | 移动端 Console 路由 Hub、告警和待办队列 |
 | `P15` | `Mobile Commerce Operations - Order Flow` | 移动端订单 / 商品任务卡和履约动作 |
-| `P16` | `Mobile Document Governance - Publish Flow` | 移动端文档发布、访问策略和回滚动作 |
+| `P16` | `Mobile Document Governance - Review Flow` | 移动端待审队列、正文证据、版本权限、审核动作和留痕 |
 | `P17` | `Mobile RBAC Permission - Approval Flow` | 移动端角色权限审批，矩阵转为权限分组确认 |
 | `P18` | `Mobile Operations Jobs - Retry Flow` | 移动端运维参考流；内部任务失败重试、配置覆盖和审计流后置 |
 
@@ -237,6 +239,7 @@ D14 后 `radish.console` 页面级视觉结构优先复用以下组件：
 - D63 任务面：`ModerationPage`、`ExperienceAdminPage`、`OrderList`、`ProductList`、`DocumentGovernancePage`、`UserList` 和 `RolePermissionPage` 已补 `governance-task-flow` 任务说明和证据 / 上下文 rail；任务面只解释“定位对象 -> 回看证据 -> 执行动作 -> 留痕复核”的处理顺序，不改变 API、权限键、表格列、提交载荷或审计语义。
 - E2/E3-A 信任治理补强：`NotFound` 从无效搜索提示改为真实 Console 路由搜索；`ErrorBoundary` 增加诊断编号和复制动作；内容治理移动视图新增处理顺序，固定为队列筛选、目标证据、处理动作和留痕回看。
 - E7-A 正式后台密度：`Dashboard` 已从普通统计面板调整为 Console 调度台，首屏组织高频处理队列、命令组、完整功能面板和最近订单；移动端高频底栏为 `总览 / 治理 / 交易 / 权限 / 更多`，`更多` 面板按当前账号权限展示完整页面组。本批只调整信息结构、导航承载和移动确认效率，不改变统计 API、权限键、路由契约或后端运行行为。
+- F4-G 文档审核：`DocumentGovernancePage` 在既有 `/documents` 内增加待审队列、正式正文 / 草稿双栏证据、审核时间线和 RequestChanges / Reject / Apply；`console.docs.review` 与 Publish、访问策略和其他治理权限保持分离。
 
 后续评估：
 
@@ -272,7 +275,7 @@ Console 治理工作台按四段组织：
 3. 处理动作：审核、治理动作、持续时间和备注必须保留必填说明与权限状态。
 4. 留痕回看：处理后能回到举报单、目标快照和治理动作记录。
 
-订单、商品、文档、用户和权限页的移动视图继续按响应式表格、任务卡、证据 rail 和弹窗动作观察，不承诺移动端完整后台体验。
+订单、商品、用户和权限页的移动视图继续按响应式表格、任务卡、证据 rail 和弹窗动作观察，不承诺移动端完整后台体验。文档审核移动视图按 `P16` 保留队列、正文证据、版本与权限、审核动作和留痕五段，不把 Apply 与 Publish 合并。
 
 E7-A 后移动端 Console 的一级底栏只放高频任务：`总览` 回到 Dashboard，`治理` 优先进入内容 / 经验治理，`交易` 优先进入订单 / 商品 / 胡萝卜相关页面，`权限` 优先进入用户 / 角色，`更多` 展示完整可访问路由。不要把所有 Console 页面继续挤进一级底栏。
 

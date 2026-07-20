@@ -1,8 +1,8 @@
 # 通知中心使用说明
 
-> **文档版本**：v1.8
+> **文档版本**：v1.9
 >
-> **最后更新**：2026-07-18
+> **最后更新**：2026-07-20
 >
 > **当前状态**：F4-B 已完成并关闭。正式 Web、Workbench、导航角标与 WebOS 复用面均使用服务端权威收件箱、摘要、偏好、结构化目标和 revision 对账；Flutter 继续只维护既有 MVP。
 
@@ -23,6 +23,7 @@
 ### 权威分组与筛选
 
 - 通知按服务端 `NotificationCategory` 和稳定 `Kind` 展示，不扫描标题、正文、`businessType` 或 `ExtData` 猜分类。
+- Knowledge 分类当前包含 Wiki 协作者邀请和审核结果；偏好仍由服务端注册表决定可见类型。
 - 页面支持全部分类、具体分类和仅未读筛选。
 - 点赞等高频事件由服务端形成一个通知分组，展示事件数、去重触发者数和安全摘要。
 - 列表 cursor 绑定筛选条件和 revision；cursor 过期时刷新权威第一页并明确提示，不静默拼接旧页。
@@ -56,6 +57,7 @@
 | `Inventory` | `/shop/inventory` |
 | `Experience` | `/me/experience` |
 | `DocsDocument` | `/docs/:slug` |
+| `DocsAuthorDraft` | 携带文档与可选草稿 ID；服务端先复核 Owner / Accepted Editor 权限，当前消费端未识别该目标时只保留通知摘要 |
 | `GovernanceCase` | 仅在存在正式受权目标时打开 |
 | `None` | 保留摘要和失效原因，不渲染伪造链接 |
 

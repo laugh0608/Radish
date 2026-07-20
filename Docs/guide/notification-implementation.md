@@ -2,9 +2,9 @@
 
 > **状态**：当前入口
 >
-> **最后更新**：2026-07-18
+> **最后更新**：2026-07-20
 
-当前通知实现由 Message 库通知月表、`UserNotification`、`NotificationInboxGroup`、`NotificationInboxState`、`NotificationSetting`、稳定定义注册表、可靠 Outbox、专属仓储事务、HTTP Controller、revision SignalR Hub 和 client 通知 Store 组成。偏好在入箱前生效，聚合、分类、未读、容量和 cursor 均以数据库权威状态为准。
+当前通知实现由 Message 库通知月表、`UserNotification`、`NotificationInboxGroup`、`NotificationInboxState`、`NotificationSetting`、稳定定义注册表、可靠 Outbox、专属仓储事务、HTTP Controller、revision SignalR Hub 和 client 通知 Store 组成。偏好在入箱前生效，聚合、分类、未读、容量和 cursor 均以数据库权威状态为准；Wiki 邀请与审核结果使用 Knowledge 分类和 `DocsAuthorDraft` 目标。
 
 正式消费者使用 `GetInbox / GetInboxSummary / GetPreferences / UpdatePreferences`、分组写操作和 `NotificationInboxChanged`；缓存读改写、客户端关键字分类、泛化目标回退和虚假 delivery 状态已经退出正确性链路。旧 API 暂时保留给兼容消费者，不能用于新增页面。
 
