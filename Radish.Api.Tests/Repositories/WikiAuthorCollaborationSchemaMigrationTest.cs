@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.DbMigrate;
 using Radish.Model;
@@ -12,7 +13,7 @@ namespace Radish.Api.Tests.Repositories;
 public sealed class WikiAuthorCollaborationSchemaMigrationTest
 {
     private const string PostgreSqlConnectionStringEnvironmentVariable = "RADISH_TEST_POSTGRES_CONNECTION_STRING";
-    [Fact]
+    [Fact(Timeout = 10_000)]
     public void Migration_ShouldCreateAuthoringTablesAndBackfillSafeOwnerOnSqlite()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-wiki-author-migration-{Guid.NewGuid():N}.db");
@@ -21,7 +22,7 @@ public sealed class WikiAuthorCollaborationSchemaMigrationTest
         try
         {
             db.CodeFirst.InitTables<User>();
-            db.CodeFirst.InitTables<WikiDocument>();
+            db.CodeFirst.InitTables<LegacyWikiDocument>();
             db.Insertable(new User
             {
                 Id = 10001,
@@ -33,21 +34,31 @@ public sealed class WikiAuthorCollaborationSchemaMigrationTest
                 IsEnable = true,
                 IsDeleted = false
             }).ExecuteCommand();
-            db.Insertable(new WikiDocument
+            db.Insertable(new LegacyWikiDocument
             {
                 Id = 20001,
                 TenantId = 0,
-                Title = "Existing",
-                Slug = "existing",
-                MarkdownContent = "body",
                 SourceType = "Custom",
-                Version = 1,
                 CreateId = 10001,
-                CreateBy = "Author"
+                ModifyTime = DateTime.UtcNow
             }).ExecuteCommand();
 
             var migration = WikiAuthorCollaborationSchemaMigration.Instance;
-            migration.Apply(db, services);
+            var connection = Assert.IsType<SqliteConnection>(db.Ado.Connection);
+            connection.Open();
+            db.Ado.Transaction = connection.BeginTransaction(deferred: false);
+            try
+            {
+                migration.Apply(db, services);
+                Assert.Empty(migration.Verify(db, services));
+                db.Ado.CommitTran();
+            }
+            catch
+            {
+                db.Ado.RollbackTran();
+                throw;
+            }
+
             migration.Apply(db, services);
 
             Assert.Empty(migration.Verify(db, services));
@@ -56,7 +67,7 @@ public sealed class WikiAuthorCollaborationSchemaMigrationTest
             Assert.True(db.DbMaintenance.IsAnyTable("WikiDocumentReviewEvent", false));
             Assert.True(db.DbMaintenance.IsAnyIndex("idx_wikidoc_active_draft"));
             Assert.True(db.DbMaintenance.IsAnyIndex("idx_wikicollab_document_user"));
-            Assert.Equal(10001, db.Queryable<WikiDocument>().Single().OwnerUserId);
+            Assert.Equal(10001, db.Queryable<WikiDocument>().Select(document => document.OwnerUserId).Single());
         }
         finally
         {
@@ -118,4 +129,21 @@ public sealed class WikiAuthorCollaborationSchemaMigrationTest
 
     private static string QuoteIdentifier(string identifier) =>
         $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
+
+    [SugarTable("WikiDocument")]
+    private sealed class LegacyWikiDocument
+    {
+        [SugarColumn(IsPrimaryKey = true)]
+        public long Id { get; set; }
+
+        public long TenantId { get; set; }
+
+        [SugarColumn(Length = 30, IsNullable = false)]
+        public string SourceType { get; set; } = "Manual";
+
+        public long CreateId { get; set; }
+
+        [SugarColumn(IsNullable = true)]
+        public DateTime? ModifyTime { get; set; }
+    }
 }

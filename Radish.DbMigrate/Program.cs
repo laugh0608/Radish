@@ -17,7 +17,7 @@ using Radish.DbMigrate;
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 //  - 高级命令。执行基础数据灌入（例如默认角色/管理员/租户等）
 
-var builder = DbMigrateBootstrap.CreateBuilder(args);
+var builder = DbMigrateBootstrap.CreateBuilder();
 
 using var host = builder.Build();
 Radish.Common.CoreTool.InternalApp.ConfigureApplication(host);

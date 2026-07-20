@@ -13,9 +13,14 @@ namespace Radish.DbMigrate;
 
 internal static class DbMigrateBootstrap
 {
-    public static HostApplicationBuilder CreateBuilder(string[] args)
+    public static HostApplicationBuilder CreateBuilder()
     {
-        var builder = Host.CreateApplicationBuilder(args);
+        // DbMigrate 会在下方显式重建全部配置源，命令参数也由 DbMigrateRunner 独立解析。
+        // 关闭随后会被清空的 Host 默认配置，避免重复初始化与命令行配置产生启动期副作用。
+        var builder = new HostApplicationBuilder(new HostApplicationBuilderSettings
+        {
+            DisableDefaults = true
+        });
 
         ConfigureConfiguration(builder);
         ConfigureServices(builder);
