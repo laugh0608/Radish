@@ -324,6 +324,7 @@ builder.Services.AddSignalR(options =>
 
 // 注册通知推送服务（基于 SignalR）
 builder.Services.AddScoped<INotificationPushService, Radish.Api.Services.NotificationPushService>();
+builder.Services.AddScoped<IContentModerationRealtimeNotifier, Radish.Api.Services.ContentModerationRealtimeNotifier>();
 builder.Services.AddScoped<CommentRealtimePushService>();
 
 // 注册 SqlSugar 服务

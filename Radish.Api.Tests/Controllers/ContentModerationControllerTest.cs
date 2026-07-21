@@ -42,7 +42,7 @@ public class ContentModerationControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.SubmitReportAsync(
+            .Setup(s => s.SubmitCaseReportAsync(
                 It.Is<SubmitContentReportDto>(dto =>
                     dto.TargetType == "Post" &&
                     dto.TargetContentId == 9527 &&
@@ -50,7 +50,12 @@ public class ContentModerationControllerTest
                 10001,
                 "Tester",
                 0))
-            .ReturnsAsync(777001);
+            .ReturnsAsync(new ContentReportReceiptVo
+            {
+                VoReportPublicId = "rpt_demo",
+                VoTargetType = "Post",
+                VoReporterState = "Submitted"
+            });
 
         var controller = CreateController(serviceMock.Object);
         var result = await controller.Report(new SubmitContentReportDto
@@ -63,8 +68,8 @@ public class ContentModerationControllerTest
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
-        var payload = Assert.IsType<long>(result.ResponseData);
-        Assert.Equal(777001, payload);
+        var payload = Assert.IsType<ContentReportReceiptVo>(result.ResponseData);
+        Assert.Equal("rpt_demo", payload.VoReportPublicId);
     }
 
     [Fact]
@@ -269,9 +274,11 @@ public class ContentModerationControllerTest
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser
         {
+            IsAuthenticated = true,
             UserId = 10001,
             UserName = "Tester",
-            TenantId = 0
+            TenantId = 0,
+            Roles = [UserRoles.System]
         });
 
         return new ContentModerationController(

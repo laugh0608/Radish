@@ -9,8 +9,26 @@ namespace Radish.Model;
 [SugarTable("UserModerationAction")]
 [SugarIndex("idx_moderation_target_active", nameof(TenantId), OrderByType.Asc, nameof(TargetUserId), OrderByType.Asc, nameof(ActionType), OrderByType.Asc, nameof(IsActive), OrderByType.Asc)]
 [SugarIndex("idx_moderation_starttime", nameof(TenantId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
+[SugarIndex("idx_moderation_operation_key", nameof(TenantId), OrderByType.Asc, nameof(OperationKey), OrderByType.Asc, IsUnique = true)]
 public class UserModerationAction : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
+    /// <summary>来源治理案件 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CaseId { get; set; }
+
+    /// <summary>动作幂等业务键；历史迁移前允许为空。</summary>
+    [SugarColumn(Length = 160, IsNullable = true)]
+    public string? OperationKey { get; set; }
+
+    public int PreviousStateVersion { get; set; }
+    public int ResultStateVersion { get; set; }
+
+    [SugarColumn(IsNullable = true)]
+    public long? SupersedesActionId { get; set; }
+
+    [SugarColumn(Length = 80, IsNullable = true)]
+    public string? ResultCode { get; set; }
+
     /// <summary>租户 ID</summary>
     [SugarColumn(IsNullable = false)]
     public long TenantId { get; set; } = 0;

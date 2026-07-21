@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-I-B 内容治理案件、证据与动作服务端权威契约`
-- **产品下一顺位**：`把孤立举报单、可变动作记录和目标处置收束为案件、证据、决定、动作与当前状态的一致治理链路`
+- **工程第一顺位**：`F4-I-C 内容治理案件工作台与本人举报结果页`
+- **产品下一顺位**：`在既有 Console /moderation 与 /me 私域内接入案件、证据、决定、动作和精简举报结果`
 - **复核日期**：`2026-07-21`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -101,6 +101,7 @@
   - 2026-07-21 F4-H-C 已完成：Pencil `P09 / P14` 和正式 `/u/:id` 已加入位于身份摘要与公开内容之间的只读宠物名片，直接消费 `VoPet`，`null` 时不渲染；页面仅展示公开白名单字段，覆盖中英文、长名称、四主题语义 token、移动布局与无障碍，并明确阻止宠物信息进入 JSON-LD。本批未启动服务或执行 Gateway smoke。详见 [F4-H-C 完成记录](/records/f4-h-c-pet-public-card-web-2026-07-21)，下一顺位进入 F4-H-D 成组运行态验收与专题关闭。
   - 2026-07-21 F4-H-D 已完成并关闭专题：主人 / 访客 / 匿名在 Gateway 正式路径覆盖显隐切换、跨标签、软删除、用户失效、跨租户、无宠物、公开字段白名单、`zh / en`、PC / mobile 与四主题代表矩阵；JSON-LD 和 sitemap 未包含宠物信息。临时宠物、主题权益与激活指针已清理，访客凭据恢复并匹配基线，六库完整性和严格 verify 通过。详见 [F4-H-D 成组验收记录](/records/f4-h-d-pet-public-card-stage-acceptance-2026-07-21)，工程第一顺位进入 F4-I-A 下一专题候选复核与权威设计。
   - 2026-07-21 F4-I-A 已完成：同口径复核圈子关系与治理候选后，裁决[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)为唯一当前专题。圈子已有关注、关注流、关系列表、公开主页回跳和可靠通知，新增关系隐私需另行定义政策；治理现有多举报孤立、审核与动作重复真相、来源关联缺校验、活跃动作无唯一状态和目标处置无权威结果，优先进入系统一致性治理。权威设计已固定 Case / Evidence / Event / UserModerationState、目标适配、权限、迁移、A-D 批次与停止线；下一顺位进入 F4-I-B。
+  - 2026-07-21 F4-I-B 已完成：`20260721_008_content_moderation_case` 建立 Case / Evidence / Event / UserModerationState 及历史映射，专属 Repository 落地案件聚合、追加证据、Case / State CAS、决定与动作幂等、五类目标处置、Chat 跨库可靠任务、治理通知和旧写入口过渡兼容；新用户侧 / Console API、Action 独立权限与 `@radish/http` 契约已建立。SQLite 与 PostgreSQL 17 migration 重入、后端全量 `973` 项、前端生产构建和静态契约通过，未修改 Pencil 或正式页面。详见 [F4-I-B 服务端权威契约完成记录](/records/f4-i-b-content-moderation-server-contract-2026-07-21)，下一顺位进入 F4-I-C。
 
 ## V1 产品与发布范围
 
@@ -193,7 +194,7 @@ Radish V1 的产品定位固定为：
 6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭，唯一持久游标、隐私裁剪、发送者受限读取、活跃阅读面、正式 Web / WebOS 与三普通账号成组验收全部通过。
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A-D 批已完成并关闭；Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply、独立 Publish、公开隔离与临时数据清理均已通过。
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
-9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A 批审计与权威设计；下一顺位进入 `F4-I-B`，实现案件聚合、追加式证据、Case CAS、用户治理唯一当前状态、目标处置适配、可靠通知和 SQLite / PostgreSQL migration，不提前修改 Pencil 或正式页面结构。
+9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-B 批设计与服务端权威契约；下一顺位进入 `F4-I-C`，先更新既有 Console `P02 / P07` 与本人举报页 Pencil，再迁移正式 `/moderation` 和 `/me/reports` 消费者并退役旧写入口。
 
 ## 昨日事项（2026-07-18）
 
@@ -251,7 +252,8 @@ Radish V1 的产品定位固定为：
 4. 页面没有私域状态、照顾入口、内部标识、隐藏原因或第二写入口；宠物信息不进入 public head、JSON-LD 与 sitemap。
 5. F4-H-D 已覆盖主人 / 访客 / 匿名、显隐与失效条件、`zh / en × PC / mobile` 和四主题代表矩阵；临时宠物、主题权益与受控凭据已清理，六库完整性和严格 verify 通过。
 6. F4-I-A 已完成圈子关系与治理候选的同口径审计，裁决治理案件、证据与动作一致性为唯一当前专题；权威设计已明确数据、权限、接口、迁移、页面、失败恢复、A-D 批次与停止线。
-7. 下一批进入 `F4-I-B` 服务端权威契约：先完成 Main ledger migration、历史兼容、专属 Repository、案件 / 证据 / 状态事务和跨领域目标动作，再建立新 API 与定向测试；不提前修改 Pencil 或正式页面结构。
+7. `F4-I-B` 已完成 Main ledger migration、历史兼容、专属 Repository、案件 / 证据 / 状态事务、五类目标动作、新 API、独立权限、可靠通知和定向测试；旧写入口已接入同一权威用户状态，避免 F4-I-C 迁移前双写分叉。
+8. 下一批进入 `F4-I-C`：先更新 Console `P02 / P07` 与 `/me/reports` 的 PC / mobile Pencil，再接入正式页面、冲突恢复、双语和旧消费者退役；不提前执行 Gateway 运行态验收。
 
 ## 并行维护线
 

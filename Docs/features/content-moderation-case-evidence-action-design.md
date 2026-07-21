@@ -1,6 +1,6 @@
 # F4-I 内容治理案件、证据与动作一致性
 
-> **状态**：F4-I-A 现状审计与权威设计已完成；下一顺位进入 F4-I-B 服务端权威契约
+> **状态**：F4-I-A-B 设计与服务端权威契约已完成；下一顺位进入 F4-I-C Pencil 与正式页面
 >
 > **复核日期**：2026-07-21（Asia/Shanghai）
 >
@@ -387,13 +387,15 @@ F4-I-C 在既有 `P02 / P07` 上更新 Pencil，不新建平行治理应用：
 - 固定对象、状态、权限、迁移、接口、页面、通知、失败恢复、停止线和验收口径。
 - 本批不修改业务代码、接口、migration 或 Pencil。
 
-### F4-I-B：服务端权威契约
+### F4-I-B：服务端权威契约（已完成）
 
 - 完成 Main ledger migration、历史映射、doctor / verify 与 SQLite / PostgreSQL 回归。
 - 增加专属 Case / Evidence / State Repository，禁止 Service 直接访问 Db。
 - 落地案件聚合、证据追加、Case CAS、用户状态原子设置、目标动作适配、可靠通知和稳定错误。
 - 建立新用户侧 / Console API 与 `@radish/http` 契约；保留旧消费者所需兼容读写边界。
 - 按停止线不修改 Pencil 或正式页面结构。
+
+完成事实与验证证据见 [F4-I-B 服务端权威契约完成记录](/records/f4-i-b-content-moderation-server-contract-2026-07-21)。旧 `Review / ApplyUserAction` 在消费者迁移前已复用同一 `UserModerationState` 原子写入边界，不再形成第二套当前状态；新页面完成迁移后仍按原计划删除旧写入口。
 
 ### F4-I-C：Pencil 与正式页面
 

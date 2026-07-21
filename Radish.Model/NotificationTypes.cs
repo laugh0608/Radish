@@ -47,6 +47,10 @@ public static class NotificationType
 
     public const string WikiReviewUpdated = "WikiReviewUpdated";
 
+    public const string ContentReportResolved = "ContentReportResolved";
+
+    public const string UserModerationChanged = "UserModerationChanged";
+
     #endregion
 
     #region 成就类通知（P2 后续实现）

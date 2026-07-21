@@ -33,6 +33,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
+    private readonly IContentModerationCaseRepository? _moderationCaseRepository;
 
     public ContentModerationService(
         IMapper mapper,
@@ -44,7 +45,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IBaseRepository<Product> productRepository,
         IBaseRepository<PostQuickReply> postQuickReplyRepository,
         IBaseRepository<User> userRepository,
-        IUnitOfWorkManage? unitOfWorkManage = null)
+        IUnitOfWorkManage? unitOfWorkManage = null,
+        IContentModerationCaseRepository? moderationCaseRepository = null)
         : base(mapper, baseRepository)
     {
         _contentReportRepository = baseRepository;
@@ -56,6 +58,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         _postQuickReplyRepository = postQuickReplyRepository;
         _userRepository = userRepository;
         _unitOfWorkManage = unitOfWorkManage;
+        _moderationCaseRepository = moderationCaseRepository;
     }
 
     public async Task<long> SubmitReportAsync(SubmitContentReportDto dto, long reporterUserId, string reporterUserName, long tenantId)
@@ -315,16 +318,35 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             if (dto.IsApproved && actionType is ModerationActionTypeEnum.Mute or ModerationActionTypeEnum.Ban)
             {
                 var actionReason = BuildReviewActionReason(report);
-                await ExecuteActionAsync(
-                    report.TargetUserId,
-                    report.TargetUserName,
-                    actionType,
-                    dto.DurationHours,
-                    actionReason,
-                    report.Id,
-                    reviewerUserId,
-                    normalizedReviewerName,
-                    tenantId > 0 ? tenantId : report.TenantId);
+                if (_moderationCaseRepository == null)
+                {
+                    await ExecuteActionAsync(
+                        report.TargetUserId,
+                        report.TargetUserName,
+                        actionType,
+                        dto.DurationHours,
+                        actionReason,
+                        report.Id,
+                        reviewerUserId,
+                        normalizedReviewerName,
+                        tenantId > 0 ? tenantId : report.TenantId);
+                }
+                else
+                {
+                    await _moderationCaseRepository.ApplyStandaloneUserActionAsync(
+                        new ContentModerationStandaloneUserActionCommand(
+                            tenantId > 0 ? tenantId : report.TenantId,
+                            report.TargetUserId,
+                            report.TargetUserName,
+                            (int)actionType,
+                            dto.DurationHours,
+                            actionReason,
+                            report.Id,
+                            $"legacy-review:{report.TenantId}:{report.Id}:{(int)actionType}",
+                            reviewerUserId,
+                            normalizedReviewerName,
+                            now));
+                }
             }
         });
 
@@ -368,8 +390,51 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             throw new BusinessException("目标用户不存在", 404, "Moderation.TargetUserNotFound", "error.moderation.target_user_not_found");
         }
 
+        if (targetUser.Id == operatorUserId)
+        {
+            throw new BusinessException(
+                "不能对自己执行治理动作",
+                403,
+                "Moderation.SelfActionForbidden",
+                "error.moderation.self_action_forbidden");
+        }
+
+        if (targetUser.RoleNames.Any(role =>
+                role.Equals("System", StringComparison.OrdinalIgnoreCase) ||
+                role.Equals("Admin", StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new BusinessException(
+                "受保护账号不能通过内容治理直接处置",
+                403,
+                "Moderation.ProtectedAccount",
+                "error.moderation.protected_account");
+        }
+
         var targetUserName = string.IsNullOrWhiteSpace(targetUser.UserName) ? $"User-{targetUser.Id}" : targetUser.UserName.Trim();
         var normalizedTenantId = tenantId > 0 ? tenantId : targetUser.TenantId;
+
+        if (dto.SourceReportId.HasValue)
+        {
+            var sourceReport = await _contentReportRepository.QueryFirstAsync(report =>
+                report.Id == dto.SourceReportId.Value && !report.IsDeleted);
+            if (sourceReport == null)
+            {
+                throw new BusinessException(
+                    "来源举报单不存在",
+                    404,
+                    "Moderation.ReportNotFound",
+                    "error.moderation.report_not_found");
+            }
+
+            if (sourceReport.TenantId != normalizedTenantId || sourceReport.TargetUserId != targetUser.Id)
+            {
+                throw new BusinessException(
+                    "来源举报单与当前治理目标不匹配",
+                    409,
+                    "Moderation.SourceReportMismatch",
+                    "error.moderation.source_report_mismatch");
+            }
+        }
 
         if (actionType == ModerationActionTypeEnum.Mute && (!dto.DurationHours.HasValue || dto.DurationHours.Value <= 0))
         {
@@ -382,6 +447,24 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         }
 
         var actionReason = string.IsNullOrWhiteSpace(dto.Reason) ? "管理员手动操作" : dto.Reason.Trim();
+
+        if (_moderationCaseRepository != null)
+        {
+            var result = await _moderationCaseRepository.ApplyStandaloneUserActionAsync(
+                new ContentModerationStandaloneUserActionCommand(
+                    normalizedTenantId,
+                    targetUser.Id,
+                    targetUserName,
+                    (int)actionType,
+                    dto.DurationHours,
+                    actionReason,
+                    dto.SourceReportId,
+                    $"legacy-manual:{Guid.NewGuid():N}",
+                    operatorUserId,
+                    normalizedOperatorName,
+                    DateTime.UtcNow));
+            return MapAction(result.Action);
+        }
 
         return actionType switch
         {
@@ -424,6 +507,24 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         if (userId <= 0)
         {
             return new UserModerationStatusVo { VoUserId = userId };
+        }
+
+        if (_moderationCaseRepository != null)
+        {
+            var states = await _moderationCaseRepository.QueryUserStatesAsync(-1, userId);
+            var nowUtc = DateTime.UtcNow;
+            var mute = states.FirstOrDefault(item => item.PolicyType == (int)UserModerationPolicyType.Mute);
+            var ban = states.FirstOrDefault(item => item.PolicyType == (int)UserModerationPolicyType.Ban);
+            var muteEffective = IsStateEffective(mute, nowUtc);
+            var banEffective = IsStateEffective(ban, nowUtc);
+            return new UserModerationStatusVo
+            {
+                VoUserId = userId,
+                VoIsMuted = muteEffective,
+                VoMutedUntil = muteEffective ? mute?.EffectiveUntil : null,
+                VoIsBanned = banEffective,
+                VoBannedUntil = banEffective ? ban?.EffectiveUntil : null
+            };
         }
 
         var actions = await _moderationActionRepository.QueryAsync(a =>
@@ -473,6 +574,14 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             VoIsBanned = activeBans.Count > 0,
             VoBannedUntil = ResolveUntil(activeBans)
         };
+    }
+
+    private static bool IsStateEffective(UserModerationState? state, DateTime nowUtc)
+    {
+        return state is
+        {
+            State: (int)UserModerationStateValue.Active
+        } && (!state.EffectiveUntil.HasValue || state.EffectiveUntil.Value > nowUtc);
     }
 
     public async Task<ContentModerationPermissionVo> GetPublishPermissionAsync(long userId)

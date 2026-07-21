@@ -127,3 +127,110 @@ public class ApplyUserModerationActionDto
     /// <summary>关联举报单 ID</summary>
     public long? SourceReportId { get; set; }
 }
+
+/// <summary>本人举报分页查询。</summary>
+public sealed class MyContentReportQueryDto
+{
+    public int PageIndex { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}
+
+/// <summary>治理案件队列查询。</summary>
+public sealed class ContentModerationCaseQueueDto
+{
+    public int? Status { get; set; }
+
+    [StringLength(30)]
+    public string? TargetType { get; set; }
+
+    [StringLength(100)]
+    public string? Keyword { get; set; }
+
+    public int PageIndex { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}
+
+/// <summary>追加治理证据。</summary>
+public sealed class CaptureContentModerationEvidenceDto
+{
+    [Required, StringLength(40)]
+    public string CasePublicId { get; set; } = string.Empty;
+
+    [Range(1, int.MaxValue)]
+    public int ExpectedVersion { get; set; }
+
+    [Range(2, 3)]
+    public int EvidenceType { get; set; }
+
+    [StringLength(200)]
+    public string? SnapshotTitle { get; set; }
+
+    [StringLength(500)]
+    public string? SnapshotSummary { get; set; }
+}
+
+/// <summary>登记案件决定与可选用户动作。</summary>
+public sealed class ReviewContentModerationCaseDto
+{
+    [Required, StringLength(40)]
+    public string CasePublicId { get; set; } = string.Empty;
+
+    [Range(1, int.MaxValue)]
+    public int ExpectedVersion { get; set; }
+
+    [Range(1, 3)]
+    public int Decision { get; set; }
+
+    [Range(1, 3)]
+    public int TargetDisposition { get; set; }
+
+    /// <summary>目标内容当前版本；Post/Comment 使用 EditCount，Product 使用 Version。</summary>
+    [Range(0, int.MaxValue)]
+    public int? ExpectedTargetVersion { get; set; }
+
+    [Required, StringLength(50)]
+    public string PublicResultCode { get; set; } = string.Empty;
+
+    [StringLength(1000)]
+    public string? InternalRemark { get; set; }
+
+    public ContentModerationCaseUserActionDto? UserAction { get; set; }
+
+    [Required, StringLength(160, MinimumLength = 8)]
+    public string OperationKey { get; set; } = string.Empty;
+}
+
+/// <summary>案件内用户治理动作。</summary>
+public sealed class ContentModerationCaseUserActionDto
+{
+    [Range(1, 4)]
+    public int ActionType { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int ExpectedStateVersion { get; set; }
+
+    [Range(1, 24 * 30)]
+    public int? DurationHours { get; set; }
+
+    [Required, StringLength(500)]
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>对已结案件追加用户状态纠正动作。</summary>
+public sealed class ApplyContentModerationCorrectiveActionDto
+{
+    [Required, StringLength(40)]
+    public string CasePublicId { get; set; } = string.Empty;
+
+    [Range(1, int.MaxValue)]
+    public int ExpectedVersion { get; set; }
+
+    [Required]
+    public ContentModerationCaseUserActionDto UserAction { get; set; } = new();
+
+    [Required, StringLength(160, MinimumLength = 8)]
+    public string OperationKey { get; set; } = string.Empty;
+
+    [Required, StringLength(500)]
+    public string Remark { get; set; } = string.Empty;
+}

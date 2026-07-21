@@ -89,6 +89,26 @@ export {
   WikiReviewAction,
 } from './wiki-authoring-contract';
 
+export type {
+  ModerationLongId,
+  ContentModerationTargetType,
+  ContentModerationCaseStatus,
+  ContentModerationDecision,
+  ContentModerationTargetDisposition,
+  ContentReportReceiptVo,
+  ContentModerationCaseQueueItemVo,
+  ContentModerationCaseReportVo,
+  ContentModerationEvidenceVo,
+  ContentModerationCaseEventVo,
+  UserModerationStateVo,
+  ContentModerationCaseDetailVo,
+  CaptureContentModerationEvidenceRequest,
+  ContentModerationCaseUserActionRequest,
+  ReviewContentModerationCaseRequest,
+  ContentModerationCaseReviewResultVo,
+  ApplyContentModerationCorrectiveActionRequest,
+} from './content-moderation-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

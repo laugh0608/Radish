@@ -4,6 +4,8 @@
 @TargetUserId = 20002
 @ReportTargetPostId = 1
 @ReviewReportId = 1
+@ReportPublicId = rpt_replace_me
+@ModerationCasePublicId = mod_replace_me
 
 ### 关注用户
 POST {{Gateway_HostAddress}}/api/v1/UserFollow/Follow
@@ -13,6 +15,16 @@ Authorization: Bearer {{Access_Token}}
 {
   "targetUserId": {{TargetUserId}}
 }
+
+### 获取我的举报结果
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyReports?pageIndex=1&pageSize=20
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的单份举报结果
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyReport/{{ReportPublicId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
 
 ### 获取关注状态
 GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetFollowStatus?targetUserId={{TargetUserId}}
@@ -89,6 +101,49 @@ Authorization: Bearer {{Access_Token}}
 GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetReviewQueue?status=0&pageIndex=1&pageSize=10
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
+
+### 管理端：获取治理案件队列
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetCaseQueue?status=0&pageIndex=1&pageSize=20
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：获取治理案件详情
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetCase/{{ModerationCasePublicId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：追加当前目标快照
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/CaptureEvidence
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "casePublicId": "{{ModerationCasePublicId}}",
+  "expectedVersion": 1,
+  "evidenceType": 2
+}
+
+### 管理端：登记违规决定、限制目标并禁言
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ReviewCase
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "casePublicId": "{{ModerationCasePublicId}}",
+  "expectedVersion": 2,
+  "decision": 2,
+  "targetDisposition": 2,
+  "expectedTargetVersion": 0,
+  "publicResultCode": "MeasuresTaken",
+  "internalRemark": "证据确认违规",
+  "userAction": {
+    "actionType": 1,
+    "expectedStateVersion": 0,
+    "durationHours": 24,
+    "reason": "违规内容处置"
+  },
+  "operationKey": "moderation-case-demo-001"
+}
 
 ### 管理端：审核举报并禁言 24 小时
 POST {{Gateway_HostAddress}}/api/v1/ContentModeration/Review

@@ -112,6 +112,12 @@ public static class NotificationDefinitionRegistry
         yield return Define(NotificationType.WikiReviewUpdated, NotificationCategory.Knowledge,
             NotificationPriority.Normal, NotificationTargetKind.DocsAuthorDraft, active: true,
             requiredTemplateArguments: ["targetTitle", "reviewAction"]);
+        yield return Define(NotificationType.ContentReportResolved, NotificationCategory.Governance,
+            NotificationPriority.Normal, NotificationTargetKind.None, active: true,
+            requiredTemplateArguments: ["resultCode"]);
+        yield return Define(NotificationType.UserModerationChanged, NotificationCategory.Governance,
+            NotificationPriority.High, NotificationTargetKind.None, active: true,
+            requiredTemplateArguments: ["actionType"]);
         yield return Define(NotificationType.PurchaseSucceeded, NotificationCategory.Commerce,
             NotificationPriority.Normal, NotificationTargetKind.ShopOrder, active: true, retentionDays: 365,
             requiredTemplateArguments: ["productName"]);

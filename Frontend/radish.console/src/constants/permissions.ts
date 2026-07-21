@@ -55,6 +55,7 @@ export const CONSOLE_PERMISSIONS = {
   stickersBatchUpload: 'console.stickers.batch-upload',
   moderationView: 'console.moderation.view',
   moderationReview: 'console.moderation.review',
+  moderationAction: 'console.moderation.action',
   coinsView: 'console.coins.view',
   coinsAdjust: 'console.coins.adjust',
   experienceView: 'console.experience.view',

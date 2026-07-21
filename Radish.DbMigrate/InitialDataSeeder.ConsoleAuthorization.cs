@@ -1,4 +1,5 @@
 using System.Data;
+using Radish.Common;
 using Radish.Common.PermissionTool;
 using Radish.Model;
 using SqlSugar;
@@ -81,6 +82,7 @@ internal static partial class InitialDataSeeder
         new(61076, 61070, ConsolePermissions.StickersBatchUpload, "批量上传表情包", "Button", "stickers", null, 86, false, false),
         new(61110, 0, ConsolePermissions.ModerationView, "内容治理", "Page", "moderation", "/moderation", 82, true, true, "举报审核与治理动作页面"),
         new(61111, 61110, ConsolePermissions.ModerationReview, "审核治理", "Button", "moderation", null, 83, false, false),
+        new(61112, 61110, ConsolePermissions.ModerationAction, "执行治理动作", "Button", "moderation", null, 84, false, false),
         new(61120, 0, ConsolePermissions.CoinsView, "胡萝卜管理", "Page", "coins", "/coins", 84, true, true, "用户胡萝卜查询与调账页面"),
         new(61121, 61120, ConsolePermissions.CoinsAdjust, "调整胡萝卜", "Button", "coins", null, 85, false, false),
         new(61130, 0, ConsolePermissions.ExperienceView, "经验等级", "Page", "experience", "/experience", 86, true, true, "用户经验与等级配置页面"),
@@ -185,8 +187,15 @@ internal static partial class InitialDataSeeder
         new(61072, "/api/v1/Sticker/CheckStickerCode", "Action"),
         new(61110, "/api/v1/ContentModeration/GetReviewQueue", "View"),
         new(61110, "/api/v1/ContentModeration/GetActionLogs", "View"),
+        new(61110, "/api/v1/ContentModeration/GetCaseQueue", "View"),
+        new(61110, "/api/v1/ContentModeration/GetCase/.+", "View"),
+        new(61110, "/api/v1/ContentModeration/GetCaseEvents", "View"),
         new(61111, "/api/v1/ContentModeration/Review", "Action"),
-        new(61111, "/api/v1/ContentModeration/ApplyUserAction", "Action"),
+        new(61111, "/api/v1/ContentModeration/CaptureEvidence", "Action"),
+        new(61111, "/api/v1/ContentModeration/ReviewCase", "Action"),
+        new(61112, "/api/v1/ContentModeration/ApplyUserAction", "Action"),
+        new(61112, "/api/v1/ContentModeration/ReviewCase", "Action"),
+        new(61112, "/api/v1/ContentModeration/ApplyCorrectiveAction", "Action"),
         new(61120, "/api/v1/Coin/GetBalanceByUserId", "View"),
         new(61120, "/api/v1/Coin/AdminGetTransactions", "View"),
         new(61121, "/api/v1/Coin/AdminAdjustBalance", "Action"),
@@ -338,6 +347,36 @@ internal static partial class InitialDataSeeder
                 })
                 .Where(item => item.Id == existing.Id)
                 .ExecuteCommandAsync();
+        }
+
+        if (resourceMap.TryGetValue(ConsolePermissions.ModerationReview, out var moderationReviewResource) &&
+            resourceMap.TryGetValue(ConsolePermissions.ModerationAction, out var moderationActionResource))
+        {
+            var reviewRoleIds = await db.Queryable<RoleConsoleResource>()
+                .Where(item => item.ConsoleResourceId == moderationReviewResource.Id && !item.IsDeleted)
+                .Select(item => item.RoleId)
+                .Distinct()
+                .ToListAsync();
+            foreach (var roleId in reviewRoleIds)
+            {
+                var existingActionGrant = await db.Queryable<RoleConsoleResource>()
+                    .FirstAsync(item => item.RoleId == roleId && item.ConsoleResourceId == moderationActionResource.Id);
+                if (existingActionGrant == null)
+                {
+                    await db.Insertable(new RoleConsoleResource
+                    {
+                        Id = SnowFlakeSingle.Instance.NextId(),
+                        RoleId = roleId,
+                        ConsoleResourceId = moderationActionResource.Id,
+                        IsDeleted = false,
+                        CreateBy = "System",
+                        CreateId = 0,
+                        ModifyBy = "System",
+                        ModifyId = 0,
+                        ModifyTime = DateTime.UtcNow
+                    }).ExecuteCommandAsync();
+                }
+            }
         }
 
         var defaultRoleIds = new[] { 10000L, 10001L };

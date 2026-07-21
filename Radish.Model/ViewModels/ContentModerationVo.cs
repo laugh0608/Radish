@@ -268,3 +268,100 @@ public class ContentModerationPermissionVo
     /// <summary>拒绝原因</summary>
     public string? VoDenyReason { get; set; }
 }
+
+/// <summary>举报收件与本人可见结果。</summary>
+public sealed class ContentReportReceiptVo
+{
+    public string VoReportPublicId { get; set; } = string.Empty;
+    public string VoTargetType { get; set; } = "Unknown";
+    public string? VoTargetSnapshotTitle { get; set; }
+    public string VoReporterState { get; set; } = "Submitted";
+    public string? VoPublicResultCode { get; set; }
+    public DateTime VoSubmittedAt { get; set; }
+    public DateTime? VoResolvedAt { get; set; }
+    public bool VoIsDuplicate { get; set; }
+}
+
+/// <summary>治理案件队列项。</summary>
+public sealed class ContentModerationCaseQueueItemVo
+{
+    public string VoCasePublicId { get; set; } = string.Empty;
+    public string VoTargetType { get; set; } = "Unknown";
+    public long VoTargetContentId { get; set; }
+    public long VoTargetUserId { get; set; }
+    public string VoStatus { get; set; } = "Open";
+    public string VoDecision { get; set; } = "None";
+    public string VoTargetDisposition { get; set; } = "None";
+    public int VoVersion { get; set; }
+    public int VoReportCount { get; set; }
+    public DateTime VoOpenedAt { get; set; }
+    public DateTime? VoModifiedAt { get; set; }
+}
+
+/// <summary>治理案件详情。</summary>
+public sealed class ContentModerationCaseDetailVo
+{
+    public ContentModerationCaseQueueItemVo VoCase { get; set; } = new();
+    public List<ContentModerationCaseReportVo> VoReports { get; set; } = [];
+    public List<ContentModerationEvidenceVo> VoEvidence { get; set; } = [];
+    public List<ContentModerationCaseEventVo> VoEvents { get; set; } = [];
+    public List<UserModerationStateVo> VoUserStates { get; set; } = [];
+    public string? VoPublicResultCode { get; set; }
+    public string? VoInternalRemark { get; set; }
+    public DateTime? VoResolvedAt { get; set; }
+}
+
+public sealed class ContentModerationCaseReportVo
+{
+    public string VoReportPublicId { get; set; } = string.Empty;
+    public long VoReporterUserId { get; set; }
+    public string VoReporterUserName { get; set; } = string.Empty;
+    public string VoReasonType { get; set; } = string.Empty;
+    public string? VoReasonDetail { get; set; }
+    public DateTime VoCreateTime { get; set; }
+}
+
+public sealed class ContentModerationEvidenceVo
+{
+    public int VoSequence { get; set; }
+    public string VoEvidenceType { get; set; } = string.Empty;
+    public string VoTargetState { get; set; } = string.Empty;
+    public string? VoSnapshotTitle { get; set; }
+    public string? VoSnapshotSummary { get; set; }
+    public string VoSnapshotHash { get; set; } = string.Empty;
+    public DateTime VoCapturedAt { get; set; }
+}
+
+public sealed class ContentModerationCaseEventVo
+{
+    public int VoSequence { get; set; }
+    public string VoEventType { get; set; } = string.Empty;
+    public int VoExpectedCaseVersion { get; set; }
+    public int VoResultCaseVersion { get; set; }
+    public string? VoResultCode { get; set; }
+    public string? VoRemark { get; set; }
+    public long VoActorUserId { get; set; }
+    public string VoActorName { get; set; } = string.Empty;
+    public DateTime VoCreateTime { get; set; }
+}
+
+public sealed class UserModerationStateVo
+{
+    public string VoPolicyType { get; set; } = string.Empty;
+    public string VoState { get; set; } = string.Empty;
+    public bool VoIsEffective { get; set; }
+    public DateTime? VoEffectiveUntil { get; set; }
+    public int VoVersion { get; set; }
+}
+
+public sealed class ContentModerationCaseReviewResultVo
+{
+    public string VoCasePublicId { get; set; } = string.Empty;
+    public string VoStatus { get; set; } = string.Empty;
+    public string VoDecision { get; set; } = string.Empty;
+    public string VoTargetDisposition { get; set; } = string.Empty;
+    public int VoVersion { get; set; }
+    public long? VoUserActionId { get; set; }
+    public int? VoUserStateVersion { get; set; }
+    public bool VoIsIdempotentReplay { get; set; }
+}

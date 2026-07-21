@@ -915,6 +915,60 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50114L,
+                ApiModuleName = "Get moderation case queue",
+                LinkUrl = "/api/v1/ContentModeration/GetCaseQueue",
+                ControllerName = "ContentModeration",
+                ActionName = "GetCaseQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50115L,
+                ApiModuleName = "Get moderation case",
+                LinkUrl = "/api/v1/ContentModeration/GetCase/.+",
+                ControllerName = "ContentModeration",
+                ActionName = "GetCase",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50116L,
+                ApiModuleName = "Capture moderation evidence",
+                LinkUrl = "/api/v1/ContentModeration/CaptureEvidence",
+                ControllerName = "ContentModeration",
+                ActionName = "CaptureEvidence",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50117L,
+                ApiModuleName = "Review moderation case",
+                LinkUrl = "/api/v1/ContentModeration/ReviewCase",
+                ControllerName = "ContentModeration",
+                ActionName = "ReviewCase",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50118L,
+                ApiModuleName = "Apply moderation corrective action",
+                LinkUrl = "/api/v1/ContentModeration/ApplyCorrectiveAction",
+                ControllerName = "ContentModeration",
+                ActionName = "ApplyCorrectiveAction",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50119L,
+                ApiModuleName = "Get moderation case events",
+                LinkUrl = "/api/v1/ContentModeration/GetCaseEvents",
+                ControllerName = "ContentModeration",
+                ActionName = "GetCaseEvents",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50120L,
                 ApiModuleName = "Get coin balance by user id",
                 LinkUrl = "/api/v1/Coin/GetBalanceByUserId",

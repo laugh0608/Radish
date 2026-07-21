@@ -13,6 +13,7 @@ public static class ReliableTaskTypes
     public const string HighlightBonusReward = "CommentHighlightBonusQualified";
     public const string NotificationRequested = "NotificationRequested";
     public const string ChatAttachmentBinding = "ChatAttachmentBinding";
+    public const string ContentModerationChatRecall = "ContentModerationChatRecall";
 }
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
@@ -72,3 +73,11 @@ public sealed record ChatAttachmentBindingTaskPayload(
     long AttachmentId,
     long UploaderId,
     string UploaderName);
+
+public sealed record ContentModerationChatRecallTaskPayload(
+    long TenantId,
+    long CaseId,
+    long MessageId,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName);

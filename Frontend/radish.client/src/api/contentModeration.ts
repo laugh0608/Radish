@@ -1,4 +1,9 @@
-import { apiPost, configureApiClient, createApiResponseError } from '@radish/http';
+import {
+  apiPost,
+  configureApiClient,
+  createApiResponseError,
+  type ContentReportReceiptVo,
+} from '@radish/http';
 import { getApiBaseUrl } from '@/config/env';
 
 configureApiClient({
@@ -17,8 +22,8 @@ export interface SubmitContentReportRequest {
 export async function submitContentReport(
   request: SubmitContentReportRequest,
   fallbackMessage: string,
-): Promise<string> {
-  const response = await apiPost<string>('/api/v1/ContentModeration/Report', request, { withAuth: true });
+): Promise<ContentReportReceiptVo> {
+  const response = await apiPost<ContentReportReceiptVo>('/api/v1/ContentModeration/Report', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throw createApiResponseError(response, fallbackMessage);

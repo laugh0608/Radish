@@ -288,6 +288,30 @@
   <data name="error.moderation.concurrent_review_conflict" xml:space="preserve">
     <value>The report was processed by another request. Refresh the review queue.</value>
   </data>
+  <data name="error.moderation.target_unavailable" xml:space="preserve">
+    <value>The reported target was not found or is no longer available.</value>
+  </data>
+  <data name="error.moderation.case_not_found" xml:space="preserve">
+    <value>The moderation case was not found.</value>
+  </data>
+  <data name="error.moderation.case_version_conflict" xml:space="preserve">
+    <value>The moderation case was updated by another operation. Refresh and try again.</value>
+  </data>
+  <data name="error.moderation.operation_conflict" xml:space="preserve">
+    <value>This operation key was already used for a different moderation request.</value>
+  </data>
+  <data name="error.moderation.target_action_conflict" xml:space="preserve">
+    <value>The target changed or cannot be moderated now. Refresh the evidence and try again.</value>
+  </data>
+  <data name="error.moderation.self_action_forbidden" xml:space="preserve">
+    <value>You cannot apply a moderation action to your own account.</value>
+  </data>
+  <data name="error.moderation.protected_account" xml:space="preserve">
+    <value>A protected account cannot be actioned through a content moderation case.</value>
+  </data>
+  <data name="error.moderation.source_report_mismatch" xml:space="preserve">
+    <value>The source report does not match the moderation target.</value>
+  </data>
   <data name="error.wiki.validation_failed" xml:space="preserve">
     <value>The document request is invalid. Check the submitted values and try again.</value>
   </data>

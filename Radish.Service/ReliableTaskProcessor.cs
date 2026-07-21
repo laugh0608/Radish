@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Radish.Common;
 using Radish.IRepository.Base;
+using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -17,6 +18,9 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
     private readonly IChatAttachmentBindingService _chatAttachmentBindingService;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
+    private readonly IChannelMessageRepository? _channelMessageRepository;
+    private readonly IContentModerationCaseRepository? _contentModerationCaseRepository;
+    private readonly IContentModerationRealtimeNotifier? _contentModerationRealtimeNotifier;
 
     public ReliableTaskProcessor(
         ICoinRewardService coinRewardService,
@@ -25,7 +29,10 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         INotificationService notificationService,
         IChatAttachmentBindingService chatAttachmentBindingService,
         IBaseRepository<Post> postRepository,
-        IBaseRepository<Comment> commentRepository)
+        IBaseRepository<Comment> commentRepository,
+        IChannelMessageRepository? channelMessageRepository = null,
+        IContentModerationCaseRepository? contentModerationCaseRepository = null,
+        IContentModerationRealtimeNotifier? contentModerationRealtimeNotifier = null)
     {
         _coinRewardService = coinRewardService;
         _coinService = coinService;
@@ -34,6 +41,9 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         _chatAttachmentBindingService = chatAttachmentBindingService;
         _postRepository = postRepository;
         _commentRepository = commentRepository;
+        _channelMessageRepository = channelMessageRepository;
+        _contentModerationCaseRepository = contentModerationCaseRepository;
+        _contentModerationRealtimeNotifier = contentModerationRealtimeNotifier;
     }
 
     public async Task ProcessAsync(ReliableOutboxSnapshot message, CancellationToken cancellationToken = default)
@@ -100,9 +110,59 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 await _chatAttachmentBindingService.BindAsync(
                     Deserialize<ChatAttachmentBindingTaskPayload>(message));
                 break;
+            case ReliableTaskTypes.ContentModerationChatRecall:
+                await ProcessContentModerationChatRecallAsync(
+                    Deserialize<ContentModerationChatRecallTaskPayload>(message));
+                break;
             default:
                 throw new PermanentReliableTaskException($"未知可靠任务类型：{message.TaskType}");
         }
+    }
+
+    private async Task ProcessContentModerationChatRecallAsync(ContentModerationChatRecallTaskPayload payload)
+    {
+        if (_channelMessageRepository == null || _contentModerationCaseRepository == null)
+        {
+            throw new PermanentReliableTaskException("内容治理 Chat 动作处理依赖未注册");
+        }
+
+        var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(item =>
+            item.Id == payload.MessageId && item.TenantId == payload.TenantId);
+        var resultCode = "TargetUnavailable";
+        if (message != null)
+        {
+            if (message.IsDeleted)
+            {
+                resultCode = "AlreadyRestricted";
+            }
+            else
+            {
+                var result = await _channelMessageRepository.RecallWithEffectsAsync(
+                    payload.MessageId,
+                    payload.OperatorUserId,
+                    payload.OperatorName,
+                    DateTime.UtcNow);
+                resultCode = result.AffectedRows > 0 ? "Restricted" : "AlreadyRestricted";
+                if (result.AffectedRows > 0 && _contentModerationRealtimeNotifier != null)
+                {
+                    await _contentModerationRealtimeNotifier.NotifyChatMessageRecalledAsync(
+                        payload.TenantId,
+                        result.ChannelId,
+                        payload.MessageId);
+                }
+            }
+        }
+
+        await _contentModerationCaseRepository.CompleteChatTargetActionAsync(
+            new ContentModerationChatActionCompletionCommand(
+                payload.TenantId,
+                payload.CaseId,
+                payload.OperationKey,
+                true,
+                resultCode,
+                payload.OperatorUserId,
+                payload.OperatorName,
+                DateTime.UtcNow));
     }
 
     private async Task ProcessPostPublishedAsync(PostPublishedTaskPayload payload)

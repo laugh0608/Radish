@@ -59,6 +59,7 @@ public static class ConsolePermissions
     public const string StickersBatchUpload = "console.stickers.batch-upload";
     public const string ModerationView = "console.moderation.view";
     public const string ModerationReview = "console.moderation.review";
+    public const string ModerationAction = "console.moderation.action";
     public const string CoinsView = "console.coins.view";
     public const string CoinsAdjust = "console.coins.adjust";
     public const string ExperienceView = "console.experience.view";
@@ -153,8 +154,14 @@ public static class ConsolePermissions
             ["/api/v1/Sticker/DeleteSticker/.+"] = new[] { StickersDelete },
             ["/api/v1/Sticker/BatchUpdateSort"] = new[] { StickersSort },
             ["/api/v1/ContentModeration/GetReviewQueue"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetCaseQueue"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetCase/.+"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetCaseEvents"] = new[] { ModerationView },
             ["/api/v1/ContentModeration/Review"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/CaptureEvidence"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/ReviewCase"] = new[] { ModerationReview },
             ["/api/v1/ContentModeration/ApplyUserAction"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/ApplyCorrectiveAction"] = new[] { ModerationAction },
             ["/api/v1/ContentModeration/GetActionLogs"] = new[] { ModerationView },
             ["/api/v1/Coin/GetBalanceByUserId"] = new[] { CoinsView },
             ["/api/v1/Coin/AdminGetTransactions"] = new[] { CoinsView },
@@ -243,6 +250,7 @@ public static class ConsolePermissions
         StickersBatchUpload,
         ModerationView,
         ModerationReview,
+        ModerationAction,
         CoinsView,
         CoinsAdjust,
         ExperienceView,
