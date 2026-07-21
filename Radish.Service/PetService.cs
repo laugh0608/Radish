@@ -18,6 +18,25 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
     private const int MinStatValue = 0;
     private const string DefaultPetName = "小萝卜";
 
+    private static readonly HashSet<string> PublicSpeciesKeys = new(StringComparer.Ordinal)
+    {
+        "radish"
+    };
+
+    private static readonly HashSet<string> PublicShapeKeys = new(StringComparer.Ordinal)
+    {
+        "sprout"
+    };
+
+    private static readonly HashSet<string> PublicMoodKeys = new(StringComparer.Ordinal)
+    {
+        PetMoodTypes.Happy,
+        PetMoodTypes.Calm,
+        PetMoodTypes.Tired,
+        PetMoodTypes.Hungry,
+        PetMoodTypes.Messy
+    };
+
     private static readonly IReadOnlyDictionary<string, PetCareRule> CareRules = new Dictionary<string, PetCareRule>
     {
         [PetCareActionTypes.Feed] = new(PetCareActionTypes.Feed, 3, 30, 24, 0, -4, 5, "小萝卜吃饱了一些。"),
@@ -44,6 +63,22 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
         EnsureUser(userId);
         var pet = await GetActivePetAsync(userId);
         return pet == null ? null : await BuildPetVoAsync(pet);
+    }
+
+    public async Task<PetPublicCardVo?> GetPublicCardAsync(long userId, long tenantId)
+    {
+        if (userId <= 0 || tenantId < 0)
+        {
+            return null;
+        }
+
+        var pet = await _petRepository.QueryFirstAsync(item =>
+            item.UserId == userId &&
+            item.TenantId == tenantId &&
+            item.IsPublic &&
+            !item.IsDeleted);
+
+        return pet == null ? null : BuildPublicCard(pet);
     }
 
     public async Task<PetProfileVo> ClaimAsync(long userId, string operatorName, long tenantId, PetClaimDto request)
@@ -293,6 +328,36 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
         var vo = Mapper.Map<PetProfileVo>(pet);
         vo.VoCareActions = await BuildCareActionStatesAsync(pet);
         return vo;
+    }
+
+    private static PetPublicCardVo? BuildPublicCard(PetProfile pet)
+    {
+        var publicId = pet.PublicId?.Trim().ToLowerInvariant();
+        var name = pet.Name?.Trim();
+        var speciesKey = pet.SpeciesKey?.Trim();
+        var shapeKey = pet.ShapeKey?.Trim();
+        var mood = pet.Mood?.Trim();
+
+        if (!PetProfile.HasPublicIdFormat(publicId) ||
+            string.IsNullOrWhiteSpace(name) ||
+            !PublicSpeciesKeys.Contains(speciesKey ?? string.Empty) ||
+            !PublicShapeKeys.Contains(shapeKey ?? string.Empty) ||
+            !PublicMoodKeys.Contains(mood ?? string.Empty) ||
+            pet.GrowthStage is < 1 or > 4)
+        {
+            return null;
+        }
+
+        return new PetPublicCardVo
+        {
+            VoPublicId = publicId!,
+            VoName = name,
+            VoSpeciesKey = speciesKey!,
+            VoShapeKey = shapeKey!,
+            VoGrowthStage = pet.GrowthStage,
+            VoMood = mood!,
+            VoAdornment = null
+        };
     }
 
     private async Task<List<PetCareActionStateVo>> BuildCareActionStatesAsync(PetProfile pet)

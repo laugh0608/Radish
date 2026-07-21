@@ -45,6 +45,7 @@ public class UserController : ControllerBase
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly IUserAdornmentService _userAdornmentService;
+    private readonly IPetService _petService;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -56,7 +57,8 @@ public class UserController : ControllerBase
         IUserTimePreferenceService userTimePreferenceService,
         IAttachmentService attachmentService,
         IOptions<TimeOptions> timeOptions,
-        IUserAdornmentService userAdornmentService)
+        IUserAdornmentService userAdornmentService,
+        IPetService petService)
     {
         _userService = userService;
         _currentUserAccessor = currentUserAccessor;
@@ -67,6 +69,7 @@ public class UserController : ControllerBase
         _attachmentService = attachmentService;
         _timeOptions = timeOptions.Value;
         _userAdornmentService = userAdornmentService;
+        _petService = petService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -662,6 +665,7 @@ public class UserController : ControllerBase
 
         var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
         var adornment = await _userAdornmentService.GetUserAdornmentAsync(user.Uuid);
+        var pet = await _petService.GetPublicCardAsync(user.Uuid, user.VoTenantId);
 
         var profile = new UserPublicProfileVo
         {
@@ -674,7 +678,8 @@ public class UserController : ControllerBase
             VoCreateTime = user.VoCreateTime,
             VoAvatarUrl = avatar?.Url,
             VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,
-            VoAdornment = adornment
+            VoAdornment = adornment,
+            VoPet = pet
         };
 
         return new MessageModel

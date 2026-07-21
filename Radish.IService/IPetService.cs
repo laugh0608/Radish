@@ -10,6 +10,8 @@ public interface IPetService : IBaseService<PetProfile, PetProfileVo>
 {
     Task<PetProfileVo?> GetMyPetAsync(long userId);
 
+    Task<PetPublicCardVo?> GetPublicCardAsync(long userId, long tenantId);
+
     Task<PetProfileVo> ClaimAsync(long userId, string operatorName, long tenantId, PetClaimDto request);
 
     Task<PetProfileVo> UpdateProfileAsync(long userId, string operatorName, UpdatePetProfileDto request);

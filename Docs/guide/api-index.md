@@ -218,6 +218,8 @@
 
 Pet 高频失败使用稳定 `Pet.*` Code 与 `error.pet.*` MessageKey；Client 通过 `ApiResponseError` 保留 status、Code、MessageKey 和 TraceId，不匹配中英文消息决定未领取、次数耗尽或冷却状态。成长阶段、心情和动作展示只读取稳定字段，宠物名称保持用户原文。
 
+公开宠物名片复用匿名 `GET /api/v1/User/GetPublicProfile?identifier=...`：响应中的可空 `voPet` 只包含宠物 PublicId、名称、物种 / 形态键、成长阶段、心情和可空安全装扮摘要。服务端使用已解析用户的内部身份与租户查询，不接受客户端提交宠物 LongId 或租户；未公开、未领取、软删除、跨租户与非法展示键统一返回 `voPet: null`。
+
 ### 附件与上传
 
 - `Radish.Api.Attachment.Upload.http`

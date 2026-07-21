@@ -8,9 +8,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-H-A 功能完成线候选复核与专题裁决`
-- **产品下一顺位**：`从 F4-G-A 未选候选及其他既有业务域中，只选择一个长期价值与权威边界清楚的完整专题`
-- **复核日期**：`2026-07-20`
+- **工程第一顺位**：`F4-H-C 电子宠物公开名片 Pencil 与正式 Web`
+- **产品下一顺位**：`在既有公开个人主页消费服务端 VoPet；先更新 PC / mobile Pencil，再实现页面`
+- **复核日期**：`2026-07-21`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
@@ -96,6 +96,8 @@
   - 2026-07-20 F4-G-B 已完成：显式 Main ledger migration、Owner / Draft / Collaborator / Review Event、草稿与正式正文 CAS、协作者条件状态转换、Author / Console API、`console.docs.review`、可靠通知、证据详情与 90 天终态正文清理已落地；后端全量 `954` 项通过、`25` 项环境用例按配置跳过，详细见 [服务端权威契约完成记录](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20)。下一顺位进入 F4-G-C。
   - 2026-07-20 F4-G-C 已完成：Author PC / mobile 画板与正式 `/docs/mine|compose|edit|revisions` 已迁移到 Owner / Collaborator、草稿 CAS、提交 / 撤回、冲突恢复和审核时间线；Console 现有 `/documents` 增加待审队列、双栏正文证据和 RequestChanges / Reject / Apply，Apply 与 Publish 保持分离。WebOS 兼容写入复用同一 Author API，旧作者直写 HTTP 入口已删除；前端 `548` 项、Wiki 后端定向 `47` 项、两端生产构建、解决方案构建、Baseline Quick 和仓库卫生通过。详见 [F4-G-C 正式页面完成记录](/records/f4-g-c-wiki-author-console-pages-2026-07-20)，下一顺位进入 F4-G-D。
   - 2026-07-20 F4-G-D 已完成并关闭专题：种子所有者、临时协作者 / 无权用户与种子 Console 审核者在 Gateway 正式路径覆盖 `zh / en × PC / mobile`、邀请接受 / 拒绝 / 撤销、CAS 冲突、提交 / 撤回 / 下一稿、请求修改 / 驳回 / Apply / 独立 Publish 和公开隔离；四个共同根因已修复并补测试。临时数据残留为 `0`，六库完整性与严格 verify 通过。详见 [F4-G-D 成组验收记录](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20)，工程第一顺位进入 F4-H-A 候选复核与专题裁决。
+  - 2026-07-21 F4-H-A 已完成：交叉审计真实 Pet 模型 / Service / Controller、公开用户资料和正式 `/u/:id` 页面后，裁决[电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap)为唯一当前专题。设计固定公开用户资料聚合、独立字段白名单 VO、关闭后后续请求即时隐藏、租户 / 软删除隔离、安全装扮注册边界、A-D 批次与停止线；本批未修改接口、模型、Pencil 或业务代码。下一顺位进入 F4-H-B。
+  - 2026-07-21 F4-H-B 已完成：`PetPublicCardVo / PetPublicAdornmentVo`、Pet Service 权威公开读取、`UserPublicProfileVo.VoPet` 聚合与 client 类型已落地；未公开 / 未领取 / 软删除 / 跨租户统一为 `null`，公开字段经过服务端白名单，未注册装扮不透传。后端全量 `966` 项通过、`25` 项环境用例按配置跳过，client type-check 通过；本批没有 migration、Pencil 或页面修改。同期新增 `check-docs` 全量编码 / 乱码入口并修复两份历史日志的确定性文本问题。详见 [F4-H-B 完成记录](/records/f4-h-b-pet-public-card-server-contract-2026-07-21)，下一顺位进入 F4-H-C。
 
 ## V1 产品与发布范围
 
@@ -186,7 +188,7 @@ Radish V1 的产品定位固定为：
 5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A-D 批已完成并关闭，权威 ACL、目标状态幂等、20 条上限、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过。
 6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭，唯一持久游标、隐私裁剪、发送者受限读取、活跃阅读面、正式 Web / WebOS 与三普通账号成组验收全部通过。
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A-D 批已完成并关闭；Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply、独立 Publish、公开隔离与临时数据清理均已通过。
-8. 下一顺位进入 `F4-H-A 功能完成线候选复核与专题裁决`；只读复核 F4-G-A 未选候选和其他既有业务域，不并行实施多个候选。
+8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A / B 批设计与服务端权威契约；下一顺位进入 F4-H-C，先更新公开个人主页 PC / mobile Pencil，再实现正式 Web 名片，不提前执行 Gateway 成组验收。
 
 ## 昨日事项（2026-07-18）
 
@@ -236,13 +238,13 @@ Radish V1 的产品定位固定为：
 25. 已完成 F4-G-C Author / Console 正式页面：两份 Pencil 设计源覆盖 PC / mobile 作者协作、冲突恢复和审核证据；正式 Author 页面只认服务端 `VoCan*`、Draft / Review 状态与 CAS 版本，Console 在既有 `/documents` 内完成审核闭环，WebOS 写入经同一 Author API 兼容转发，旧 `Create / Update` HTTP 入口删除。前端 `548` 项、Wiki 后端定向 `47` 项、lint、type-check、两端生产构建、解决方案构建、Baseline Quick 与仓库卫生通过；未启动服务或执行浏览器 smoke。
 26. 已完成 F4-G-D Gateway 成组验收：邀请响应、协作者失权、CAS 冲突、提交 / 撤回 / 下一稿、请求修改 / 驳回 / Apply / Publish、未审核与驳回正文公开隔离全部通过；四个共同根因已修复，临时数据残留为 `0`，六库完整性与严格 verify 通过，F4-G 正式关闭。
 
-## 明日事项（2026-07-21）
+## 今日事项（2026-07-21）
 
-1. 进入 `F4-H-A 功能完成线候选复核与专题裁决`，优先向用户确认是否采用“电子宠物公开名片与隐私闭环”作为唯一当前专题。
-2. 推荐依据是 `/pet` 已持久化 `PetProfile.IsPublic` 和 `pet_` PublicId，页面允许开启“公开展示宠物名片”，但匿名公开读取与公开个人主页消费面均不存在；圈子当前职责已完整，治理主链路与评论回复锚点已落地，宠物经济仍明确后置。
-3. 获批后先更新 [电子宠物开发计划](/features/radish-pet-roadmap)，固定公开卡片字段、即时隐藏、PublicId / 租户 / 软删除、公开个人主页归属、A-D 批次和验收矩阵，再进入服务端契约。
-4. 公开卡片只展示名称、形态、成长阶段、心情和安全装扮摘要；不暴露三项私域状态、成长值、最后照顾时间、流水、动作资格或内部 LongId。
-5. 不扩展宠物经济、商城物品、社区任务、通知、独立宠物 SEO 页面、WebOS 新功能、Flutter 或 Tauri；未获批准前不修改接口、模型、Pencil 或业务代码，也不重启主动生产证据采集。
+1. `F4-H-A / B` 已完成权威设计、服务端公开字段白名单、公开资料聚合、client 类型和定向 / 全量后端回归。
+2. 已新增 `./scripts/check-docs.sh` 与 `npm run check:docs`，全量阻断非法 UTF-8、BOM、`U+FFFD`、常见乱码和换行问题；首次扫描发现的两份历史日志问题已修复。
+3. 下一批进入 `F4-H-C`：先更新公开个人主页 PC / mobile Pencil，再在正式 `/u/:id` 消费 `VoPet`；无公开宠物时整块不渲染。
+4. 页面只展示名称、形态、成长阶段、心情与可用安全装扮摘要，不展示私域状态、照顾入口、内部标识或隐藏原因。
+5. F4-H-C 按停止线不启动服务或执行 Gateway 成组验收；不扩展通知、独立宠物 SEO、WebOS、Flutter、Tauri 或宠物经济。
 
 ## 并行维护线
 

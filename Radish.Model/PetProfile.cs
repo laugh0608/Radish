@@ -23,6 +23,14 @@ public class PetProfile : RootEntityTKey<long>, IHasUserId, ITenantEntity, IDele
         return $"{PublicIdPrefix}{Guid.CreateVersion7():N}";
     }
 
+    public static bool HasPublicIdFormat(string? value)
+    {
+        var normalized = value?.Trim();
+        return normalized is { Length: 36 } &&
+               normalized.StartsWith(PublicIdPrefix, StringComparison.OrdinalIgnoreCase) &&
+               normalized[PublicIdPrefix.Length..].All(Uri.IsHexDigit);
+    }
+
     /// <summary>公开标识</summary>
     [SugarColumn(Length = 36, IsNullable = false)]
     public string PublicId { get; set; }

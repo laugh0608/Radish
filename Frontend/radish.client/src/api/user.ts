@@ -69,6 +69,22 @@ export interface PublicUserProfile {
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
   voAdornment?: UserAdornment | null;
+  voPet?: PublicPetCard | null;
+}
+
+export interface PublicPetAdornment {
+  voBackgroundKey?: string | null;
+  voToyKey?: string | null;
+}
+
+export interface PublicPetCard {
+  voPublicId: string;
+  voName: string;
+  voSpeciesKey: string;
+  voShapeKey: string;
+  voGrowthStage: number;
+  voMood: string;
+  voAdornment?: PublicPetAdornment | null;
 }
 
 export interface PublicUserStats {
