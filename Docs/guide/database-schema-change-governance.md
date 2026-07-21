@@ -9,6 +9,7 @@
 - `doctor` 与 `verify` 严格只读；前者报告配置、结构、ledger 与 pending，后者把 Warning / Error 作为非零退出门禁。`apply` 负责迁移、seed，并在末尾自动严格 verify。
 - 首个基线为 `20260712_000_baseline`；首个正式业务迁移为 `20260712_001_experience_natural_dates`，用于证明 SQLite / PostgreSQL 的结构与数据补丁可以共享同一 ledger 顺序。
 - 自然日 migration 的业务含义、异常历史值拒绝和 API `DateOnly` 边界见 [时间语义与业务自然日](/guide/time-semantics)。
+- `20260721_008_content_moderation_case` 是多表结构与历史事实迁移范例：同一 migration 创建案件 / 证据 / 事件 / 当前状态，回填历史举报和动作，并由 doctor / verify 检查来源错配、开放唯一性、序号、状态与业务键。
 - migration 在事务内取得 provider 锁并二次读取 ledger：SQLite 使用 non-deferred 写事务，PostgreSQL 使用 transaction-scoped advisory lock。
 - migration SQL 和结构审计必须通过数据库元数据解析实际表名、列名并按 provider 正确引用；不得假设 PostgreSQL 物理标识符保留 C# / SqlSugar 配置中的大小写。
 - baseline 接管分表实体时，以数据库中实际存在的物理分表族为准，不要求并不存在的逻辑模板表；接管前仍须逐表核对必要列与结构。

@@ -52,6 +52,7 @@
 - [密码安全](/guide/password-security)
 - [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
 - [用户承诺与公开边界](/guide/user-commitments)
+- [内容治理系统说明](/guide/content-moderation)
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
 - [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)

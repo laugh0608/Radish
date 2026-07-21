@@ -2,7 +2,7 @@
 
 > **状态**：F4-B-A / F4-B-B / F4-B-C / F4-B-D 已完成；F4-B 已关闭
 >
-> **复核日期**：2026-07-20
+> **复核日期**：2026-07-21
 >
 > **适用主线**：正式 Web `/notifications`；WebOS `/desktop` 仅复用，Flutter 仅做既有 MVP 兼容
 
@@ -10,7 +10,7 @@
 
 F4-B 已把通知中心收口为“社区事件复访与处理入口”，不是第二套私信箱。当前实现使用稳定通知定义、结构化目标、用户通知分组和权威摘要状态：业务事件经可靠 Outbox 进入 Message 库，数据库事务形成事件、接收关系、分组和摘要；HTTP API 返回可本地化的权威列表，SignalR 只发送带 revision 的变更提示。
 
-正式 Web `/notifications`、Workbench、导航角标和 WebOS 复用面均以服务端 summary / revision 为准；偏好、聚合、容量清理、跨标签、断线和 cursor 恢复围绕同一数据真相源运行。F4-G 后 Knowledge 分类已注册 Wiki 协作者邀请与审核结果生产者，并使用 `DocsAuthorDraft` 结构化目标；旧通知 API 暂时保留，删除前需另做消费者和 Flutter 兼容审计。
+正式 Web `/notifications`、Workbench、导航角标和 WebOS 复用面均以服务端 summary / revision 为准；偏好、聚合、容量清理、跨标签、断线和 cursor 恢复围绕同一数据真相源运行。Knowledge 分类已注册 Wiki 协作者邀请与审核结果生产者，并使用 `DocsAuthorDraft` 结构化目标；Governance 分类已注册举报结案与账号限制变化生产者，并使用 `None` 目标保护治理隐私。旧通知 API 暂时保留，删除前需另做消费者和 Flutter 兼容审计。
 
 ## 目录
 
@@ -148,7 +148,7 @@ F4-B 后续批次必须同时治理这五个边界，不能继续通过标题关
 | `Relationship` | 关注与关系变化 | `Followed` |
 | `Commerce` | 订单、背包和权益 | 新增 `PurchaseSucceeded`、`BenefitExpired` |
 | `Growth` | 等级、奖励和萝卜币 | `LevelUp`、`LotteryWon`、`GodComment`、`Sofa`、`CoinBalanceChanged` |
-| `Governance` | 举报、审核和申诉 | 首批保留分类，不在没有生产者时显示设置项 |
+| `Governance` | 举报结果与账号治理状态变化 | `ContentReportResolved`、`UserModerationChanged` |
 | `Knowledge` | Docs 与知识协作 | `WikiCollaboratorInvited`、`WikiReviewUpdated` |
 | `System` | 公告和账号安全 | `SystemAnnouncement`、`AccountSecurity` |
 
@@ -160,6 +160,7 @@ F4-B 后续批次必须同时治理这五个边界，不能继续通过标题关
 - 当前 chat `Mentioned` 迁移为 `ChatMentioned`；未来 forum 提及必须使用独立类型，不能再让目标反推语义。
 - `PURCHASE_SUCCESS` 和 `BENEFIT_EXPIRED` 分别改为注册表常量 `PurchaseSucceeded`、`BenefitExpired`。
 - 未接入生产者的 `GodComment / Sofa / CoinBalanceChanged / SystemAnnouncement / AccountSecurity` 可保留定义，但 API 的可配置分类只返回当前真正支持的类型集合。
+- `ContentReportResolved` 只保存举报者可见的精简 `resultCode`；`UserModerationChanged` 只保存被处置用户可见的动作类型摘要。两者固定使用 `None` 目标，不暴露案件、举报者、证据、内部备注或治理人员身份。
 - 业务事件幂等键与聚合键彻底分离。点赞事件键至少包含目标、点赞者和该次可靠写身份；聚合键由收件箱服务按目标和时间窗口计算。
 
 ### 3.4 结构化目标

@@ -284,8 +284,8 @@ Open -> Reviewing -> Resolved
 | 权限 | 能力 |
 | --- | --- |
 | `console.moderation.view` | 查看案件队列、安全证据、精简用户状态和动作日志 |
-| `console.moderation.review` | 接手案件、追加管理员备注、登记决定 |
-| `console.moderation.action` | 限制 / 恢复目标、禁言 / 封禁 / 解除用户 |
+| `console.moderation.review` | 接手案件、追加管理员备注、登记决定和目标处置 |
+| `console.moderation.action` | 禁言 / 封禁 / 解除用户，以及结案后用户状态纠正 |
 
 现有 `console.moderation.review` 在迁移时为已拥有该权限的角色补同范围 `console.moderation.action`，保持当前部署能力不静默丢失；之后管理员可显式拆分。System / Admin 默认权限列表、路由映射、Controller attribute 和按钮级能力必须使用同一稳定权限键。
 

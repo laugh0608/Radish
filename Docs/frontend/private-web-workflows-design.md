@@ -133,10 +133,12 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - D62 后 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/:orderId` 和 `/shop/inventory` 已补任务流说明、对象上下文 rail 和移动单列承载；订单 / 商品 / 资产流水仍服务社区购买、权益回看和复访，不扩成完整售后或资产风控平台。
 - E5-A 后资产、订单列表、订单详情和背包页面加载失败必须提供重试与复制诊断。诊断只包含模块、阶段、当前路径、错误摘要、目标 ID、筛选或分页状态，不包含支付口令、token、完整请求体或资产隐私正文。
 
-### 消息 / 通知 / 宠物 / 圈子
+### 消息 / 通知 / 治理结果 / 宠物 / 圈子
 
-- `/messages`、`/notifications`、`/pet` 和 `/circle` 作为正式 Web 私域复访入口。
+- `/messages`、`/notifications`、`/me/reports`、`/pet` 和 `/circle` 作为正式 Web 私域复访入口。
 - 通知目标必须分流到正式 Web 路由，例如公开帖子、订单详情、文档详情和消息会话。
+- `/me/reports` 只展示当前用户提交的举报收件编号、目标摘要、提交 / 结案时间和精简结果；不展示 Case 内部 ID、其他举报者、证据、内部备注、治理人员或具体处罚，也不提供撤回、催办、附件追加和管理员对话。
+- 治理结案通知不直接携带案件目标；页面通过 `GetMyReports / GetMyReport` 回源，目标仍可访问时才使用既有结构化导航，失效时保留提交摘要和不可打开说明。
 - 宠物只承接领取、命名、基础照顾、状态反馈和变化流水，不扩展经济系统或商城道具。
 - 圈子展示关注动态、关系链和公开主页跳转，来源返回语义保持在正式 Web 内。
 

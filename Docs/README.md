@@ -63,6 +63,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [文档作者协作与审核使用说明](./guide/docs-author-collaboration.md)
 - [Docs / Wiki 普通作者贡献与协作设计](./features/wiki-author-contribution-collaboration-design.md)
 - [内容治理案件、证据与动作一致性](./features/content-moderation-case-evidence-action-design.md)
+- [内容治理系统说明](./guide/content-moderation.md)
 - [个人圈子](./features/circle.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)
