@@ -190,6 +190,22 @@
 - Console 治理接口必须走 `console.docs.*` 权限映射，权限覆盖见 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
 - 固定文档 `SourceType=builtin` 只读，不允许通过作者入口或 Console 回写仓库 `Docs/` 源文件。
 
+### 内容治理
+
+- 用户举报与结果：
+  - `POST ContentModeration/Report`：返回举报公开标识和精简收件状态
+  - `GET ContentModeration/GetMyReports`
+  - `GET ContentModeration/GetMyReport/{reportPublicId}`
+  - `GET ContentModeration/GetMyModerationStatus`
+  - `GET ContentModeration/GetMyPublishPermission`
+- Console 案件工作台：
+  - `GetCaseQueue / GetCase/{casePublicId} / GetCaseEvents` 使用 `console.moderation.view`
+  - `CaptureEvidence / ReviewCase` 使用 `console.moderation.review`；`ReviewCase` 携带用户动作时还要求 `console.moderation.action`
+  - `ApplyCorrectiveAction` 使用 `console.moderation.action`
+- 旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` 仅保留到 F4-I-C 消费者迁移完成；新页面不得继续以旧举报单或 `IsActive` 动作流水作为当前状态真相源。
+- LongId 在 HTTP / TypeScript 边界保持字符串；案件、举报和动作写入使用版本与 `operationKey` 保护，稳定 `Code / MessageKey` 处理冲突和目标失效。
+- 手工回归入口：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http`；权威边界见[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)。
+
 ### 公开榜单
 
 公开榜单以 Scalar / OpenAPI 和 [排行榜系统](/features/leaderboard) 为准。当前重点接口包括：

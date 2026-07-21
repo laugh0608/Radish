@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-07-02
+> 最后更新：2026-07-21
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -50,7 +50,7 @@
 | Documents | `/documents` | `console.docs.view` | `console.docs.review/publish/archive/delete/restore/permissions/rollback/import/export` | `Wiki/AdminGetReviewQueue`、`AdminGetDraftById/\\d+`、`AdminReviewDraft/\\d+`、`AdminGetList`、`AdminGetTree`、`AdminGetById/\\d+`、`GetRevisionList/\\d+`、`GetRevisionDetail/\\d+`、`Publish/\\d+`、`Unpublish/\\d+`、`Archive/\\d+`、`Delete/\\d+`、`Restore/\\d+`、`UpdateAccessPolicy/\\d+`、`Rollback/\\d+`、`ImportMarkdown`、`ExportMarkdown/\\d+` | ✅ | Console 承接草稿审核与文档治理；`review` 只负责 RequestChanges / Reject / Apply，Publish 继续独立授权；作者正文创建 / 编辑归正式 Web Author 入口 |
 | Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
-| Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review` | `ContentModeration/GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | 当前已纳管 `Post / Comment / PostQuickReply / ChatMessage / Product` 举报审核链路，并支持创建时快照、当前状态、回看与失效降级并列展示 |
+| Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review`、`console.moderation.action` | `ContentModeration/GetCaseQueue`、`GetCase/.+`、`GetCaseEvents`、`CaptureEvidence`、`ReviewCase`、`ApplyCorrectiveAction`；迁移期兼容 `GetReviewQueue`、`Review`、`ApplyUserAction`、`GetActionLogs` | ✅ | F4-I-B 已完成 Case API 与 View / Review / Action 分权；`ReviewCase` 携带用户动作时同时要求 Action。正式页面仍待 F4-I-C 迁移，旧写资源将在消费者清零后删除 |
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 管理端查询指定用户余额、交易流水与调账能力；流水支持按业务类型 / 业务 ID 定位订单扣款；调账后同页刷新 `ADMIN_ADJUST` 流水用于人工复核 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
 | SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | `CreateConfig` 兼容旧路由但拒绝新增未知设置；`DeleteConfig` 兼容旧路由并收敛为恢复默认；Medium 设置要求原因与确认参数；favicon 上传 / 恢复默认和编辑抽屉 handler 会复核 `console.system-config.edit` 与可编辑状态 |
