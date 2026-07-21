@@ -22682,6 +22682,402 @@
                 },
                 {
                   "type": "frame",
+                  "id": "u4BE0",
+                  "name": "Public Pet Card",
+                  "width": "fill_container",
+                  "height": 194,
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 8,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 18,
+                  "padding": 18,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "eHu5s",
+                      "name": "Pet Portrait",
+                      "width": 118,
+                      "height": 158,
+                      "fill": "$rx-brand-soft",
+                      "cornerRadius": 8,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 8,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "yr3H4",
+                          "name": "Pet Sprout Icon",
+                          "width": 34,
+                          "height": 34,
+                          "icon": "psychiatry",
+                          "library": "Material Symbols Rounded",
+                          "fill": "$rx-brand-primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "uOpYg",
+                          "name": "Pet Portrait Mark",
+                          "fill": "$rx-brand-primary",
+                          "content": "萝",
+                          "lineHeight": 1,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 30,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "b40qGD",
+                      "name": "Pet Card Body",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "njDMf",
+                          "name": "Pet Card Kicker",
+                          "fill": "$rx-brand-primary",
+                          "content": "公开陪伴名片",
+                          "lineHeight": 1.3,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "800",
+                          "letterSpacing": 1.2
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lZ185",
+                          "name": "Pet Title Row",
+                          "width": "fill_container",
+                          "gap": 12,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Zwupe",
+                              "name": "Pet Name Block",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 3,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "YtyXT",
+                                  "name": "Pet Long Name",
+                                  "fill": "$rx-text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "小萝卜与一整个春天的散步日记·特别长名字示例",
+                                  "lineHeight": 1.15,
+                                  "fontFamily": "$rx-font-heading",
+                                  "fontSize": 23,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "YCWip",
+                              "name": "Public Pet Badge",
+                              "fill": "$rx-brand-soft",
+                              "cornerRadius": 999,
+                              "gap": 5,
+                              "padding": [
+                                6,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "S2OqID",
+                                  "name": "Public Pet Badge Icon",
+                                  "width": 15,
+                                  "height": 15,
+                                  "icon": "visibility",
+                                  "library": "Material Symbols Rounded",
+                                  "fill": "$rx-brand-primary"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "zFgas",
+                                  "name": "Public Pet Badge Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "主人已公开",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "nowWI",
+                          "name": "Pet Public Metadata",
+                          "width": "fill_container",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Epa0I",
+                              "name": "Pet Meta 物种",
+                              "width": "fill_container",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 5,
+                              "padding": [
+                                9,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "FExKG",
+                                  "name": "Pet Meta 物种 Label Row",
+                                  "gap": 5,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "m3aIO",
+                                      "name": "Pet Meta 物种 Icon",
+                                      "width": 14,
+                                      "height": 14,
+                                      "icon": "eco",
+                                      "library": "Material Symbols Rounded",
+                                      "fill": "$rx-text-muted"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "JcqQK",
+                                      "name": "Pet Meta 物种 Label",
+                                      "fill": "$rx-text-muted",
+                                      "content": "物种",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "ZH69O",
+                                  "name": "Pet Meta 物种 Value",
+                                  "fill": "$rx-text-primary",
+                                  "content": "Radish 萝卜",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "N8uGn",
+                              "name": "Pet Meta 形态",
+                              "width": "fill_container",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 5,
+                              "padding": [
+                                9,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "LR899",
+                                  "name": "Pet Meta 形态 Label Row",
+                                  "gap": 5,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "bkKcH",
+                                      "name": "Pet Meta 形态 Icon",
+                                      "width": 14,
+                                      "height": 14,
+                                      "icon": "spa",
+                                      "library": "Material Symbols Rounded",
+                                      "fill": "$rx-text-muted"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "jodLp",
+                                      "name": "Pet Meta 形态 Label",
+                                      "fill": "$rx-text-muted",
+                                      "content": "形态",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "BEfzs",
+                                  "name": "Pet Meta 形态 Value",
+                                  "fill": "$rx-text-primary",
+                                  "content": "幼芽形态",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "eFu2U",
+                              "name": "Pet Meta 成长阶段",
+                              "width": "fill_container",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 5,
+                              "padding": [
+                                9,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "cdmED",
+                                  "name": "Pet Meta 成长阶段 Label Row",
+                                  "gap": 5,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "iz4IK",
+                                      "name": "Pet Meta 成长阶段 Icon",
+                                      "width": 14,
+                                      "height": 14,
+                                      "icon": "monitoring",
+                                      "library": "Material Symbols Rounded",
+                                      "fill": "$rx-text-muted"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "RPyaj",
+                                      "name": "Pet Meta 成长阶段 Label",
+                                      "fill": "$rx-text-muted",
+                                      "content": "成长阶段",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "E3AaDl",
+                                  "name": "Pet Meta 成长阶段 Value",
+                                  "fill": "$rx-text-primary",
+                                  "content": "舒展期",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "LuIEh",
+                              "name": "Pet Meta 心情",
+                              "width": "fill_container",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 5,
+                              "padding": [
+                                9,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "KiqWk",
+                                  "name": "Pet Meta 心情 Label Row",
+                                  "gap": 5,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "NOgmk",
+                                      "name": "Pet Meta 心情 Icon",
+                                      "width": 14,
+                                      "height": 14,
+                                      "icon": "mood",
+                                      "library": "Material Symbols Rounded",
+                                      "fill": "$rx-text-muted"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "wIZqm",
+                                      "name": "Pet Meta 心情 Label",
+                                      "fill": "$rx-text-muted",
+                                      "content": "心情",
+                                      "lineHeight": 1.3,
+                                      "fontFamily": "$rx-font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "P7v59g",
+                                  "name": "Pet Meta 心情 Value",
+                                  "fill": "$rx-text-primary",
+                                  "content": "开心",
+                                  "lineHeight": 1.3,
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 13,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "m3uDe",
+                          "name": "Pet Public Boundary",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "只读展示主人主动公开的基础形态、成长阶段与心情，不提供照顾或管理入口。",
+                          "lineHeight": 1.4,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
                   "id": "kCUiO",
                   "name": "Profile Tabs",
                   "width": "fill_container",
@@ -23976,6 +24372,264 @@
             },
             {
               "type": "frame",
+              "id": "A29QE",
+              "name": "Mobile Public Pet Card",
+              "width": 358,
+              "height": 146,
+              "fill": "$rx-bg-surface",
+              "cornerRadius": 8,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ZpxTc",
+                  "name": "Mobile Pet Top",
+                  "width": "fill_container",
+                  "height": 64,
+                  "gap": 12,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "IjG3V",
+                      "name": "Mobile Pet Portrait",
+                      "width": 64,
+                      "height": 64,
+                      "fill": "$rx-brand-soft",
+                      "cornerRadius": 8,
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 3,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Ik6nA",
+                          "name": "Mobile Pet Sprout Icon",
+                          "width": 24,
+                          "height": 24,
+                          "icon": "psychiatry",
+                          "library": "Material Symbols Rounded",
+                          "fill": "$rx-brand-primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Y4NFqD",
+                          "name": "Mobile Pet Portrait Mark",
+                          "fill": "$rx-brand-primary",
+                          "content": "萝",
+                          "lineHeight": 1,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 18,
+                          "fontWeight": "900"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZC15t",
+                      "name": "Mobile Pet Identity",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 4,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Y3g6U",
+                          "name": "Mobile Pet Kicker",
+                          "fill": "$rx-brand-primary",
+                          "content": "公开陪伴名片 · 主人已公开",
+                          "lineHeight": 1.3,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 10,
+                          "fontWeight": "800",
+                          "letterSpacing": 0.6
+                        },
+                        {
+                          "type": "text",
+                          "id": "sMO4R",
+                          "name": "Mobile Pet Long Name",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "小萝卜和它的长长名字·春日散步伙伴",
+                          "lineHeight": 1.15,
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 18,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZfK5P",
+                  "name": "Mobile Pet Public Metadata",
+                  "width": "fill_container",
+                  "height": 44,
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "VmsMU",
+                      "name": "Mobile Pet Meta 物种",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "N9yEy",
+                          "name": "Mobile Pet Meta 物种 Label",
+                          "fill": "$rx-text-muted",
+                          "content": "物种",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZhbNo",
+                          "name": "Mobile Pet Meta 物种 Value",
+                          "fill": "$rx-text-primary",
+                          "content": "萝卜",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "UVzXg",
+                      "name": "Mobile Pet Meta 形态",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "UWNdi",
+                          "name": "Mobile Pet Meta 形态 Label",
+                          "fill": "$rx-text-muted",
+                          "content": "形态",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qX4Hb",
+                          "name": "Mobile Pet Meta 形态 Value",
+                          "fill": "$rx-text-primary",
+                          "content": "幼芽",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "X1msil",
+                      "name": "Mobile Pet Meta 阶段",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YO4Hz",
+                          "name": "Mobile Pet Meta 阶段 Label",
+                          "fill": "$rx-text-muted",
+                          "content": "阶段",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "aD333",
+                          "name": "Mobile Pet Meta 阶段 Value",
+                          "fill": "$rx-text-primary",
+                          "content": "舒展期",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zFU68",
+                      "name": "Mobile Pet Meta 心情",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 8,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "syPna",
+                          "name": "Mobile Pet Meta 心情 Label",
+                          "fill": "$rx-text-muted",
+                          "content": "心情",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "E6vyiy",
+                          "name": "Mobile Pet Meta 心情 Value",
+                          "fill": "$rx-text-primary",
+                          "content": "开心",
+                          "lineHeight": 1.2,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
               "id": "WW27q",
               "name": "Profile Tabs",
               "gap": 6,
@@ -24188,77 +24842,6 @@
                           "textGrowth": "fixed-width",
                           "width": "fill_container",
                           "content": "文档 · 更新于今日",
-                          "lineHeight": 1.3,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 12,
-                          "fontWeight": "500"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "type": "frame",
-              "id": "QSMq4",
-              "name": "Doc 神评展示方式讨论",
-              "width": 358,
-              "height": 82,
-              "fill": "$rx-bg-surface",
-              "cornerRadius": 8,
-              "stroke": "$rx-border-soft",
-              "strokeWidth": 1,
-              "layout": "vertical",
-              "gap": 8,
-              "padding": 12,
-              "children": [
-                {
-                  "type": "frame",
-                  "id": "WG0ck",
-                  "name": "Doc Row",
-                  "width": "fill_container",
-                  "gap": 10,
-                  "children": [
-                    {
-                      "type": "icon",
-                      "id": "ta7Zj",
-                      "name": "Doc Icon",
-                      "width": 20,
-                      "height": 20,
-                      "icon": "file",
-                      "library": "lucide",
-                      "fill": "$rx-accent-ink"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "z3SaLT",
-                      "name": "Doc Body",
-                      "width": 296,
-                      "layout": "vertical",
-                      "gap": 5,
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "tcZNl",
-                          "name": "Doc Title",
-                          "fill": "$rx-text-primary",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "神评展示方式讨论",
-                          "lineHeight": 1.3,
-                          "fontFamily": "$rx-font-body",
-                          "fontSize": 14,
-                          "fontWeight": "800"
-                        },
-                        {
-                          "type": "text",
-                          "id": "xO0GU",
-                          "name": "Doc Desc",
-                          "fill": "$rx-text-secondary",
-                          "textGrowth": "fixed-width",
-                          "width": "fill_container",
-                          "content": "评论 · 精选参与",
                           "lineHeight": 1.3,
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,

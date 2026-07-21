@@ -47,6 +47,7 @@ import {
   resolvePublicProfilePostForumTarget,
   resolvePublicProfileRouteIdentifier,
 } from './publicProfileNavigation';
+import { PublicPetCard } from './PublicPetCard';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { UserAdornment } from '@/components/UserAdornment';
 import styles from './PublicProfileApp.module.css';
@@ -793,6 +794,8 @@ export const PublicProfileApp = ({
                   </div>
                 </div>
               </section>
+
+              {profile?.voPet ? <PublicPetCard pet={profile.voPet} /> : null}
 
               <section className={styles.contentCard}>
                 <div className={styles.contentHeader}>

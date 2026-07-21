@@ -46,6 +46,14 @@ const moodTranslationKeys: Record<string, string> = {
   messy: 'pet.mood.messy',
 };
 
+const speciesTranslationKeys: Record<string, string> = {
+  radish: 'pet.species.radish',
+};
+
+const shapeTranslationKeys: Record<string, string> = {
+  sprout: 'pet.shape.sprout',
+};
+
 export function formatPetNumber(value: number | string, language?: string): string {
   const locale = getIntlLocale(language);
   if (typeof value === 'number') {
@@ -98,6 +106,14 @@ export function resolvePetGrowthStageTranslationKey(growthStage: number): string
 
 export function resolvePetMoodTranslationKey(mood: string): string {
   return moodTranslationKeys[mood] ?? 'pet.mood.calm';
+}
+
+export function resolvePetSpeciesTranslationKey(speciesKey: string): string {
+  return speciesTranslationKeys[speciesKey] ?? 'pet.species.unknown';
+}
+
+export function resolvePetShapeTranslationKey(shapeKey: string): string {
+  return shapeTranslationKeys[shapeKey] ?? 'pet.shape.unknown';
 }
 
 export function resolvePetActionTranslationKey(actionType: string): string {

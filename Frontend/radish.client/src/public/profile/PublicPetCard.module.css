@@ -1,0 +1,196 @@
+.card {
+  display: grid;
+  grid-template-columns: 7.4rem minmax(0, 1fr);
+  grid-template-areas:
+    "portrait identity"
+    "portrait description"
+    "portrait metadata";
+  align-items: center;
+  gap: 0.75rem 1.15rem;
+  min-width: 0;
+  padding: 1.15rem;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 8% 18%, color-mix(in srgb, var(--theme-brand-soft) 72%, transparent) 0%, transparent 32%),
+    color-mix(in srgb, var(--theme-bg-surface) 95%, transparent);
+  box-shadow: var(--theme-shadow-soft);
+}
+
+.portrait {
+  grid-area: portrait;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 9rem;
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 26%, var(--theme-border-soft) 74%);
+  border-radius: 1.35rem;
+  background: color-mix(in srgb, var(--theme-brand-soft) 76%, var(--theme-surface-highlight) 24%);
+  color: var(--theme-brand-primary);
+}
+
+.portrait[data-mood="happy"] {
+  color: color-mix(in srgb, var(--theme-accent-jade) 76%, var(--theme-text-primary) 24%);
+}
+
+.portrait[data-mood="hungry"],
+.portrait[data-mood="messy"],
+.portrait[data-mood="tired"] {
+  color: var(--theme-accent-earth);
+}
+
+.portrait span {
+  font-family: var(--theme-font-serif);
+  font-size: 1.75rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.identity {
+  grid-area: identity;
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.kicker,
+.name,
+.description,
+.metadata,
+.metadataLabel,
+.metadataValue {
+  margin: 0;
+}
+
+.kicker {
+  color: var(--theme-brand-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  min-width: 0;
+}
+
+.name {
+  min-width: 0;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-serif);
+  font-size: clamp(1.3rem, 2.2vw, 1.7rem);
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.publicBadge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: var(--theme-brand-soft);
+  color: var(--theme-brand-primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.description {
+  grid-area: description;
+  color: var(--theme-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.metadata {
+  grid-area: metadata;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.metadataItem {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.65rem 0.7rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%);
+}
+
+.metadataLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  color: var(--theme-text-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.metadataValue {
+  color: var(--theme-text-primary);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .card {
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+    grid-template-areas:
+      "portrait identity"
+      "description description"
+      "metadata metadata";
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 1.2rem;
+  }
+
+  .portrait {
+    align-self: center;
+    width: 4.25rem;
+    min-height: 4.25rem;
+    border-radius: 1rem;
+  }
+
+  .portrait span {
+    font-size: 1.15rem;
+  }
+
+  .titleRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .name {
+    font-size: 1.2rem;
+  }
+
+  .metadata {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  .card {
+    padding: 0.9rem;
+  }
+
+  .metadataItem {
+    padding: 0.6rem;
+  }
+}

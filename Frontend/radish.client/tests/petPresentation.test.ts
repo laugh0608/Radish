@@ -11,6 +11,8 @@ import {
   resolvePetGrowthStageTranslationKey,
   resolvePetLogMessageTranslationKey,
   resolvePetMoodTranslationKey,
+  resolvePetShapeTranslationKey,
+  resolvePetSpeciesTranslationKey,
   resolvePetStatLevel,
   resolvePetStatusInsight,
 } from '../src/pet/petPresentation.ts';
@@ -33,6 +35,10 @@ test('宠物系统派生内容应从稳定字段映射本地词元', () => {
   assert.equal(resolvePetGrowthStageTranslationKey(4), 'pet.growthStage.mature');
   assert.equal(resolvePetMoodTranslationKey('hungry'), 'pet.mood.hungry');
   assert.equal(resolvePetMoodTranslationKey('unknown'), 'pet.mood.calm');
+  assert.equal(resolvePetSpeciesTranslationKey('radish'), 'pet.species.radish');
+  assert.equal(resolvePetSpeciesTranslationKey('unknown'), 'pet.species.unknown');
+  assert.equal(resolvePetShapeTranslationKey('sprout'), 'pet.shape.sprout');
+  assert.equal(resolvePetShapeTranslationKey('unknown'), 'pet.shape.unknown');
   assert.equal(resolvePetActionTranslationKey('feed'), 'pet.care.action.feed');
   assert.equal(resolvePetActionTranslationKey('unknown'), 'pet.care.action.unknown');
   assert.equal(resolvePetLogMessageTranslationKey('rest'), 'pet.logs.message.rest');
