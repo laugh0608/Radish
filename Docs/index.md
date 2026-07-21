@@ -85,6 +85,7 @@ features:
 - [文档系统方案](/guide/document-system)
 - [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
 - [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
+- [内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)
 - [Radish 电子宠物系统](/guide/radish-pet-system)
