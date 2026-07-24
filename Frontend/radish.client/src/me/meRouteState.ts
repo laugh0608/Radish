@@ -5,6 +5,7 @@ export const ME_CONTENT_PATH = '/me/content';
 export const ME_HISTORY_PATH = '/me/history';
 export const ME_ATTACHMENTS_PATH = '/me/attachments';
 export const ME_EXPERIENCE_PATH = '/me/experience';
+export const ME_REPORTS_PATH = '/me/reports';
 
 export type MeContentTab = 'posts' | 'comments' | 'quick-replies';
 export type MeAttachmentBusinessType = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
@@ -44,6 +45,11 @@ export interface MeExperienceRoute {
   page: number;
 }
 
+export interface MeReportsRoute {
+  kind: 'reports';
+  page: number;
+}
+
 export type MeRoute =
   | MeDashboardRoute
   | MeAssetsRoute
@@ -51,7 +57,8 @@ export type MeRoute =
   | MeContentRoute
   | MeHistoryRoute
   | MeAttachmentsRoute
-  | MeExperienceRoute;
+  | MeExperienceRoute
+  | MeReportsRoute;
 
 const CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies']);
 const ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
@@ -158,6 +165,13 @@ export function parseMeRoute(pathname: string, search: string = ''): MeRoute | n
     };
   }
 
+  if (pathname === ME_REPORTS_PATH || pathname === `${ME_REPORTS_PATH}/`) {
+    return {
+      kind: 'reports',
+      page: normalizePage(params.get('page'))
+    };
+  }
+
   return null;
 }
 
@@ -193,6 +207,12 @@ export function buildMePath(route: MeRoute = createDefaultMeRoute()): string {
 
   if (route.kind === 'experience') {
     return `${ME_EXPERIENCE_PATH}${buildQuery({
+      page: route.page
+    })}`;
+  }
+
+  if (route.kind === 'reports') {
+    return `${ME_REPORTS_PATH}${buildQuery({
       page: route.page
     })}`;
   }

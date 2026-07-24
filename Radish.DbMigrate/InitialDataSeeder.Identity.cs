@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HelpTool;
@@ -199,6 +200,7 @@ internal static partial class InitialDataSeeder
     {
         // 为当前用户与角色管理主链路建立 ApiModule 与 RoleModulePermission
         // 便于通过 RadishAuthPolicy 与 Console 权限快照进行验证。
+        await RetireObsoleteContentModerationApiModulesAsync(db);
 
         var apiModules = new[]
         {
@@ -879,42 +881,6 @@ internal static partial class InitialDataSeeder
             },
             new
             {
-                ApiModuleId = 50110L,
-                ApiModuleName = "Get moderation review queue",
-                LinkUrl = "/api/v1/ContentModeration/GetReviewQueue",
-                ControllerName = "ContentModeration",
-                ActionName = "GetReviewQueue",
-                Roles = new[] { 10000L, 10001L }
-            },
-            new
-            {
-                ApiModuleId = 50111L,
-                ApiModuleName = "Review moderation report",
-                LinkUrl = "/api/v1/ContentModeration/Review",
-                ControllerName = "ContentModeration",
-                ActionName = "Review",
-                Roles = new[] { 10000L, 10001L }
-            },
-            new
-            {
-                ApiModuleId = 50112L,
-                ApiModuleName = "Apply moderation action",
-                LinkUrl = "/api/v1/ContentModeration/ApplyUserAction",
-                ControllerName = "ContentModeration",
-                ActionName = "ApplyUserAction",
-                Roles = new[] { 10000L, 10001L }
-            },
-            new
-            {
-                ApiModuleId = 50113L,
-                ApiModuleName = "Get moderation action logs",
-                LinkUrl = "/api/v1/ContentModeration/GetActionLogs",
-                ControllerName = "ContentModeration",
-                ActionName = "GetActionLogs",
-                Roles = new[] { 10000L, 10001L }
-            },
-            new
-            {
                 ApiModuleId = 50114L,
                 ApiModuleName = "Get moderation case queue",
                 LinkUrl = "/api/v1/ContentModeration/GetCaseQueue",
@@ -1288,6 +1254,48 @@ internal static partial class InitialDataSeeder
         await EnsureRoleApiPermissionAsync(db, adminRoleId, 50000, "Admin");
         await EnsureRoleApiPermissionAsync(db, testRoleId, 50000, "Test");
         await RestrictTestRoleApiPermissionsAsync(db);
+    }
+
+    private static async Task RetireObsoleteContentModerationApiModulesAsync(ISqlSugarClient db)
+    {
+        long[] obsoleteApiModuleIds = [50110L, 50111L, 50112L, 50113L];
+        var retiredAt = DateTime.UtcNow;
+
+        await db.Updateable<ConsoleResourceApiModule>()
+            .SetColumns(item => new ConsoleResourceApiModule
+            {
+                IsDeleted = true,
+                DeletedAt = retiredAt,
+                DeletedBy = "System",
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = retiredAt
+            })
+            .Where(item => obsoleteApiModuleIds.Contains(item.ApiModuleId) && !item.IsDeleted)
+            .ExecuteCommandAsync();
+
+        await db.Updateable<RoleModulePermission>()
+            .SetColumns(item => new RoleModulePermission
+            {
+                IsDeleted = true,
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = retiredAt
+            })
+            .Where(item => obsoleteApiModuleIds.Contains(item.ApiModuleId) && !item.IsDeleted)
+            .ExecuteCommandAsync();
+
+        await db.Updateable<ApiModule>()
+            .SetColumns(item => new ApiModule
+            {
+                IsEnabled = false,
+                IsDeleted = true,
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = retiredAt
+            })
+            .Where(item => obsoleteApiModuleIds.Contains(item.Id) && !item.IsDeleted)
+            .ExecuteCommandAsync();
     }
 
     private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,

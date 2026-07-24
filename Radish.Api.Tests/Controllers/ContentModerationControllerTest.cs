@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Localization;
@@ -73,28 +75,27 @@ public class ContentModerationControllerTest
     }
 
     [Fact]
-    public async Task GetReviewQueue_Should_Return_Paged_Result()
+    public async Task GetCaseQueue_Should_Return_Paged_Result()
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetReportQueueAsync(It.Is<ContentReportQueueQueryDto>(query =>
-                query.Status == (int)ContentReportStatusEnum.Pending &&
+            .Setup(s => s.GetCaseQueueAsync(It.Is<ContentModerationCaseQueueDto>(query =>
+                query.Status == 0 &&
                 query.TargetType == "Comment" &&
-                query.ReasonType == "Spam" &&
-                query.NavigationStatus == "Fallback" &&
                 query.Keyword == "9527" &&
                 query.PageIndex == 1 &&
-                query.PageSize == 20)))
-            .ReturnsAsync(new VoPagedResult<ContentReportQueueItemVo>
+                query.PageSize == 20),
+                0))
+            .ReturnsAsync(new VoPagedResult<ContentModerationCaseQueueItemVo>
             {
                 VoItems =
                 [
-                    new ContentReportQueueItemVo
+                    new ContentModerationCaseQueueItemVo
                     {
-                        VoReportId = 80001,
-                        VoTargetType = "Post",
+                        VoCasePublicId = "case_demo",
+                        VoTargetType = "Comment",
                         VoTargetContentId = 9527,
-                        VoStatus = "Pending"
+                        VoStatus = "Open"
                     }
                 ],
                 VoTotal = 1,
@@ -103,12 +104,10 @@ public class ContentModerationControllerTest
             });
 
         var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetReviewQueue(new ContentReportQueueQueryDto
+        var result = await controller.GetCaseQueue(new ContentModerationCaseQueueDto
         {
-            Status = (int)ContentReportStatusEnum.Pending,
+            Status = 0,
             TargetType = "Comment",
-            ReasonType = "Spam",
-            NavigationStatus = "Fallback",
             Keyword = "9527",
             PageIndex = 1,
             PageSize = 20
@@ -116,40 +115,28 @@ public class ContentModerationControllerTest
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
-        var payload = Assert.IsType<VoPagedResult<ContentReportQueueItemVo>>(result.ResponseData);
+        var payload = Assert.IsType<VoPagedResult<ContentModerationCaseQueueItemVo>>(result.ResponseData);
         Assert.Single(payload.VoItems);
-        Assert.Equal(80001, payload.VoItems[0].VoReportId);
+        Assert.Equal("case_demo", payload.VoItems[0].VoCasePublicId);
     }
 
     [Fact]
-    public async Task Review_Should_Return_NotFound_When_Report_Not_Exists()
+    public void Controller_Should_Expose_Only_Case_Based_Console_Actions()
     {
-        var serviceMock = CreateServiceMock();
-        serviceMock
-            .Setup(s => s.ReviewReportAsync(
-                It.Is<ReviewContentReportDto>(dto => dto.ReportId == 99999),
-                10001,
-                "Tester",
-                0))
-            .ThrowsAsync(new BusinessException(
-                "举报单不存在",
-                404,
-                "Moderation.ReportNotFound",
-                "error.moderation.report_not_found"));
+        var actionNames = typeof(ContentModerationController)
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
+            .Select(method => method.Name)
+            .ToArray();
 
-        var controller = CreateController(serviceMock.Object);
-        var result = await controller.Review(new ReviewContentReportDto
-        {
-            ReportId = 99999,
-            IsApproved = true,
-            ActionType = 1,
-            DurationHours = 24
-        });
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(404, result.StatusCode);
-        Assert.Equal("Moderation.ReportNotFound", result.Code);
-        Assert.Equal("error.moderation.report_not_found", result.MessageKey);
+        Assert.Contains(nameof(ContentModerationController.GetCaseQueue), actionNames);
+        Assert.Contains(nameof(ContentModerationController.GetCase), actionNames);
+        Assert.Contains(nameof(ContentModerationController.CaptureEvidence), actionNames);
+        Assert.Contains(nameof(ContentModerationController.ReviewCase), actionNames);
+        Assert.Contains(nameof(ContentModerationController.ApplyCorrectiveAction), actionNames);
+        Assert.DoesNotContain("GetReviewQueue", actionNames);
+        Assert.DoesNotContain("Review", actionNames);
+        Assert.DoesNotContain("ApplyUserAction", actionNames);
+        Assert.DoesNotContain("GetActionLogs", actionNames);
     }
 
     [Fact]
@@ -175,98 +162,6 @@ public class ContentModerationControllerTest
         var payload = Assert.IsType<ContentModerationPermissionVo>(result.ResponseData);
         Assert.False(payload.VoCanPublish);
         Assert.True(payload.VoIsMuted);
-    }
-
-    [Fact]
-    public async Task ApplyUserAction_Should_Forward_Request_And_Return_Action_Result()
-    {
-        var serviceMock = CreateServiceMock();
-        serviceMock
-            .Setup(s => s.ApplyUserActionAsync(
-                It.Is<ApplyUserModerationActionDto>(dto =>
-                    dto.TargetUserId == 20002 &&
-                    dto.ActionType == 3 &&
-                    dto.DurationHours == null &&
-                    dto.SourceReportId == 70003 &&
-                    dto.Reason == "人工复核后解除禁言"),
-                10001,
-                "Tester",
-                0))
-            .ReturnsAsync(new UserModerationActionVo
-            {
-                VoActionId = 82011,
-                VoTargetUserId = 20002,
-                VoActionType = "Unmute",
-                VoSourceReportId = 70003,
-                VoIsActive = false
-            });
-
-        var controller = CreateController(serviceMock.Object);
-        var result = await controller.ApplyUserAction(new ApplyUserModerationActionDto
-        {
-            TargetUserId = 20002,
-            ActionType = 3,
-            SourceReportId = 70003,
-            Reason = "人工复核后解除禁言"
-        });
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
-        var payload = Assert.IsType<UserModerationActionVo>(result.ResponseData);
-        Assert.Equal(82011, payload.VoActionId);
-        Assert.Equal("Unmute", payload.VoActionType);
-        Assert.False(payload.VoIsActive);
-    }
-
-    [Fact]
-    public async Task GetActionLogs_Should_Return_Paged_Result_With_Source_Report_Navigation()
-    {
-        var serviceMock = CreateServiceMock();
-        serviceMock
-            .Setup(s => s.GetActionLogsAsync(It.Is<ContentModerationActionLogQueryDto>(query =>
-                query.PageIndex == 1 &&
-                query.PageSize == 20 &&
-                query.TargetUserId == null &&
-                query.SourceReportId == 70003 &&
-                query.ActionType == "Mute" &&
-                query.IsActive == true &&
-                query.Keyword == "reviewer")))
-            .ReturnsAsync(new VoPagedResult<UserModerationActionVo>
-            {
-                VoItems =
-                [
-                    new UserModerationActionVo
-                    {
-                        VoActionId = 81001,
-                        VoSourceReportId = 70003,
-                        VoSourceReportTargetType = "ChatMessage",
-                        VoSourceReportTargetContentId = 90004,
-                        VoSourceReportTargetChannelId = 108,
-                        VoSourceReportTargetMessageId = 90004
-                    }
-                ],
-                VoTotal = 1,
-                VoPageIndex = 1,
-                VoPageSize = 20
-            });
-
-        var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetActionLogs(new ContentModerationActionLogQueryDto
-        {
-            PageIndex = 1,
-            PageSize = 20,
-            SourceReportId = 70003,
-            ActionType = "Mute",
-            IsActive = true,
-            Keyword = "reviewer"
-        });
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
-        var payload = Assert.IsType<VoPagedResult<UserModerationActionVo>>(result.ResponseData);
-        Assert.Single(payload.VoItems);
-        Assert.Equal(108, payload.VoItems[0].VoSourceReportTargetChannelId);
-        Assert.Equal(90004, payload.VoItems[0].VoSourceReportTargetMessageId);
     }
 
     private static ContentModerationController CreateController(IContentModerationService moderationService)

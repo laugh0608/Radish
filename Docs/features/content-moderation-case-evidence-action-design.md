@@ -1,8 +1,8 @@
 # F4-I 内容治理案件、证据与动作一致性
 
-> **状态**：F4-I-A-B 设计与服务端权威契约已完成；下一顺位进入 F4-I-C Pencil 与正式页面
+> **状态**：F4-I-A-C 已完成；下一顺位进入 F4-I-D 成组验收与专题关闭
 >
-> **复核日期**：2026-07-21（Asia/Shanghai）
+> **复核日期**：2026-07-24（Asia/Shanghai）
 >
 > **适用范围**：正式 Web 举报入口、Main 库内容治理对象与服务、Console `/moderation`；WebOS 只复用既有举报入口，Flutter 不新增治理页面
 >
@@ -323,7 +323,7 @@ Open -> Reviewing -> Resolved
 | `POST` | `/api/v1/ContentModeration/ApplyCorrectiveAction` | `moderation.action` |
 | `GET` | `/api/v1/ContentModeration/GetCaseEvents` | `moderation.view` |
 
-旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` 在 F4-I-C 消费者迁移完成前保持兼容；新 Console 全部切换后删除旧写入口，旧读入口只在确有兼容消费者时保留。不得让新旧写接口同时长期维护两套状态。
+F4-I-C 已确认仓库内消费者全部迁移到 Case API，并删除旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口。服务内部的历史兼容映射只服务迁移与既有数据解释，不再形成第二套公开治理接口。
 
 ## 十一、迁移与兼容
 
@@ -395,14 +395,16 @@ F4-I-C 在既有 `P02 / P07` 上更新 Pencil，不新建平行治理应用：
 - 建立新用户侧 / Console API 与 `@radish/http` 契约；保留旧消费者所需兼容读写边界。
 - 按停止线不修改 Pencil 或正式页面结构。
 
-完成事实与验证证据见 [F4-I-B 服务端权威契约完成记录](/records/f4-i-b-content-moderation-server-contract-2026-07-21)。旧 `Review / ApplyUserAction` 在消费者迁移前已复用同一 `UserModerationState` 原子写入边界，不再形成第二套当前状态；新页面完成迁移后仍按原计划删除旧写入口。
+完成事实与验证证据见 [F4-I-B 服务端权威契约完成记录](/records/f4-i-b-content-moderation-server-contract-2026-07-21)。旧 `Review / ApplyUserAction` 在消费者迁移前已复用同一 `UserModerationState` 原子写入边界，不再形成第二套当前状态；对应 HTTP 入口已在 F4-I-C 消费者迁移后删除。
 
-### F4-I-C：Pencil 与正式页面
+### F4-I-C：Pencil 与正式页面（已完成）
 
 - 更新 Console `P02 / P07` 的案件工作台和移动流程。
 - 将 `/moderation` 迁入新 Case API，覆盖筛选、证据、决定、动作、冲突和失败恢复。
 - 新增 `/me/reports` 私域精简状态页和可靠通知目标。
 - 删除旧 Console 写消费者后关闭旧写 API；WebOS 只复用举报弹窗，不新增治理工作台。
+
+完成事实与验证证据见 [F4-I-C 正式页面完成记录](/records/f4-i-c-content-moderation-case-web-workspace-2026-07-24)。Console `P02 / P07` 与 `/me/reports` PC / mobile Pencil 已更新；正式页面、权限分离、冲突草稿保留、目标失效回看和双语契约已落地，旧四个 HTTP 入口已退役。本批只完成静态与代码侧门禁，Gateway 多角色、五目标运行态矩阵仍严格保留到 F4-I-D。
 
 ### F4-I-D：成组验收与专题关闭
 

@@ -1,4 +1,5 @@
 import {
+  apiGet,
   apiPost,
   configureApiClient,
   createApiResponseError,
@@ -17,6 +18,34 @@ export interface SubmitContentReportRequest {
   targetContentId: string;
   reasonType: string;
   reasonDetail?: string;
+}
+
+export interface MyContentReportPage {
+  voItems: ContentReportReceiptVo[];
+  voTotal: number;
+  voPageIndex: number;
+  voPageSize: number;
+}
+
+export async function getMyContentReports(
+  pageIndex: number,
+  pageSize: number,
+  fallbackMessage: string,
+): Promise<MyContentReportPage> {
+  const search = new URLSearchParams({
+    pageIndex: String(pageIndex),
+    pageSize: String(pageSize),
+  });
+  const response = await apiGet<MyContentReportPage>(
+    `/api/v1/ContentModeration/GetMyReports?${search.toString()}`,
+    { withAuth: true },
+  );
+
+  if (!response.ok || response.data === undefined) {
+    throw createApiResponseError(response, fallbackMessage);
+  }
+
+  return response.data;
 }
 
 export async function submitContentReport(

@@ -274,7 +274,16 @@ public sealed class ContentReportReceiptVo
 {
     public string VoReportPublicId { get; set; } = string.Empty;
     public string VoTargetType { get; set; } = "Unknown";
+    public long VoTargetContentId { get; set; }
+    public long? VoTargetPostId { get; set; }
+    public long? VoTargetCommentId { get; set; }
+    public long? VoTargetChannelId { get; set; }
+    public long? VoTargetMessageId { get; set; }
+    public string VoTargetNavigationStatus { get; set; } = "Unavailable";
+    public string? VoTargetNavigationMessage { get; set; }
     public string? VoTargetSnapshotTitle { get; set; }
+    public string? VoTargetSnapshotSummary { get; set; }
+    public string VoReasonType { get; set; } = string.Empty;
     public string VoReporterState { get; set; } = "Submitted";
     public string? VoPublicResultCode { get; set; }
     public DateTime VoSubmittedAt { get; set; }
@@ -328,6 +337,8 @@ public sealed class ContentModerationEvidenceVo
     public string VoTargetState { get; set; } = string.Empty;
     public string? VoSnapshotTitle { get; set; }
     public string? VoSnapshotSummary { get; set; }
+    public int? VoContentRevision { get; set; }
+    public DateTime? VoTargetModifiedAt { get; set; }
     public string VoSnapshotHash { get; set; } = string.Empty;
     public DateTime VoCapturedAt { get; set; }
 }

@@ -1,4 +1,14 @@
-import { apiGet, apiPost, createApiResponseError } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  createApiResponseError,
+  type ApplyContentModerationCorrectiveActionRequest,
+  type CaptureContentModerationEvidenceRequest,
+  type ContentModerationCaseDetailVo,
+  type ContentModerationCaseQueueItemVo,
+  type ContentModerationCaseReviewResultVo,
+  type ReviewContentModerationCaseRequest,
+} from '@radish/http';
 
 export type ConsoleLongId = string;
 
@@ -9,95 +19,17 @@ export interface VoPagedResult<T> {
   voPageSize: number;
 }
 
-export interface ContentReportQueueItemVo {
-  voReportId: ConsoleLongId;
-  voTargetType: string;
-  voTargetContentId: ConsoleLongId;
-  voTargetPostId?: ConsoleLongId | null;
-  voTargetCommentId?: ConsoleLongId | null;
-  voTargetChannelId?: ConsoleLongId | null;
-  voTargetMessageId?: ConsoleLongId | null;
-  voTargetNavigationStatus: string;
-  voTargetNavigationMessage?: string | null;
-  voTargetSnapshotTitle?: string | null;
-  voTargetSnapshotSummary?: string | null;
-  voTargetSnapshotIsPersisted: boolean;
-  voTargetUserId: ConsoleLongId;
-  voTargetUserName?: string | null;
-  voReporterUserId: ConsoleLongId;
-  voReporterUserName: string;
-  voReasonType: string;
-  voReasonDetail?: string | null;
-  voStatus: string;
-  voReviewActionType: string;
-  voReviewDurationHours?: number | null;
-  voReviewRemark?: string | null;
-  voReviewedByName?: string | null;
-  voReviewedAt?: string | null;
-  voCreateTime: string;
-}
-
-export interface UserModerationActionVo {
-  voActionId: ConsoleLongId;
-  voTargetUserId: ConsoleLongId;
-  voTargetUserName?: string | null;
-  voActionType: string;
-  voReason: string;
-  voSourceReportId?: ConsoleLongId | null;
-  voSourceReportTargetType?: string | null;
-  voSourceReportTargetContentId?: ConsoleLongId | null;
-  voSourceReportTargetPostId?: ConsoleLongId | null;
-  voSourceReportTargetCommentId?: ConsoleLongId | null;
-  voSourceReportTargetChannelId?: ConsoleLongId | null;
-  voSourceReportTargetMessageId?: ConsoleLongId | null;
-  voSourceReportTargetNavigationStatus: string;
-  voSourceReportTargetNavigationMessage?: string | null;
-  voSourceReportTargetSnapshotTitle?: string | null;
-  voSourceReportTargetSnapshotSummary?: string | null;
-  voSourceReportTargetSnapshotIsPersisted: boolean;
-  voDurationHours?: number | null;
-  voStartTime: string;
-  voEndTime?: string | null;
-  voIsActive: boolean;
-  voOperatorUserName: string;
-  voCreateTime: string;
-}
-
-export interface ReviewContentReportRequest {
-  reportId: ConsoleLongId;
-  isApproved: boolean;
-  actionType: number;
-  durationHours?: number | null;
-  reviewRemark?: string;
-}
-
-export interface ApplyUserModerationActionRequest {
-  targetUserId: ConsoleLongId;
-  actionType: number;
-  durationHours?: number | null;
-  reason?: string;
-  sourceReportId?: ConsoleLongId | null;
-}
-
-export interface ContentModerationActionLogQuery {
-  pageIndex?: number;
-  pageSize?: number;
-  targetUserId?: ConsoleLongId;
-  sourceReportId?: ConsoleLongId;
-  actionType?: string;
-  isActive?: boolean;
-  keyword?: string;
-}
-
-export async function getReviewQueue(params: {
+export interface ContentModerationCaseQueueQuery {
   status?: number;
   targetType?: string;
-  reasonType?: string;
-  navigationStatus?: string;
   keyword?: string;
   pageIndex?: number;
   pageSize?: number;
-}): Promise<VoPagedResult<ContentReportQueueItemVo>> {
+}
+
+export async function getCaseQueue(
+  params: ContentModerationCaseQueueQuery,
+): Promise<VoPagedResult<ContentModerationCaseQueueItemVo>> {
   const searchParams = new URLSearchParams();
   searchParams.set('pageIndex', String(params.pageIndex ?? 1));
   searchParams.set('pageSize', String(params.pageSize ?? 20));
@@ -107,73 +39,73 @@ export async function getReviewQueue(params: {
   if (params.targetType?.trim()) {
     searchParams.set('targetType', params.targetType.trim());
   }
-  if (params.reasonType?.trim()) {
-    searchParams.set('reasonType', params.reasonType.trim());
-  }
-  if (params.navigationStatus?.trim()) {
-    searchParams.set('navigationStatus', params.navigationStatus.trim());
-  }
   if (params.keyword?.trim()) {
     searchParams.set('keyword', params.keyword.trim());
   }
 
-  const response = await apiGet<VoPagedResult<ContentReportQueueItemVo>>(
-    `/api/v1/ContentModeration/GetReviewQueue?${searchParams.toString()}`,
-    { withAuth: true }
+  const response = await apiGet<VoPagedResult<ContentModerationCaseQueueItemVo>>(
+    `/api/v1/ContentModeration/GetCaseQueue?${searchParams.toString()}`,
+    { withAuth: true },
   );
-
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '获取审核队列失败');
+    throw createApiResponseError(response, '获取治理案件队列失败');
   }
 
   return response.data;
 }
 
-export async function reviewReport(request: ReviewContentReportRequest): Promise<ContentReportQueueItemVo> {
-  const response = await apiPost<ContentReportQueueItemVo>('/api/v1/ContentModeration/Review', request, { withAuth: true });
-  if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '审核举报失败');
-  }
-
-  return response.data;
-}
-
-export async function applyUserModerationAction(request: ApplyUserModerationActionRequest): Promise<UserModerationActionVo> {
-  const response = await apiPost<UserModerationActionVo>('/api/v1/ContentModeration/ApplyUserAction', request, { withAuth: true });
-  if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '执行治理动作失败');
-  }
-
-  return response.data;
-}
-
-export async function getActionLogs(params: ContentModerationActionLogQuery): Promise<VoPagedResult<UserModerationActionVo>> {
-  const searchParams = new URLSearchParams();
-  searchParams.set('pageIndex', String(params.pageIndex ?? 1));
-  searchParams.set('pageSize', String(params.pageSize ?? 20));
-  if (params.targetUserId) {
-    searchParams.set('targetUserId', String(params.targetUserId));
-  }
-  if (params.sourceReportId) {
-    searchParams.set('sourceReportId', String(params.sourceReportId));
-  }
-  if (params.actionType?.trim()) {
-    searchParams.set('actionType', params.actionType.trim());
-  }
-  if (params.isActive !== undefined) {
-    searchParams.set('isActive', String(params.isActive));
-  }
-  if (params.keyword?.trim()) {
-    searchParams.set('keyword', params.keyword.trim());
-  }
-
-  const response = await apiGet<VoPagedResult<UserModerationActionVo>>(
-    `/api/v1/ContentModeration/GetActionLogs?${searchParams.toString()}`,
-    { withAuth: true }
+export async function getModerationCase(casePublicId: string): Promise<ContentModerationCaseDetailVo> {
+  const response = await apiGet<ContentModerationCaseDetailVo>(
+    `/api/v1/ContentModeration/GetCase/${encodeURIComponent(casePublicId)}`,
+    { withAuth: true },
   );
-
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '获取治理动作日志失败');
+    throw createApiResponseError(response, '获取治理案件详情失败');
+  }
+
+  return response.data;
+}
+
+export async function captureModerationEvidence(
+  request: CaptureContentModerationEvidenceRequest,
+): Promise<ContentModerationCaseDetailVo> {
+  const response = await apiPost<ContentModerationCaseDetailVo>(
+    '/api/v1/ContentModeration/CaptureEvidence',
+    request,
+    { withAuth: true },
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '追加治理证据失败');
+  }
+
+  return response.data;
+}
+
+export async function reviewModerationCase(
+  request: ReviewContentModerationCaseRequest,
+): Promise<ContentModerationCaseReviewResultVo> {
+  const response = await apiPost<ContentModerationCaseReviewResultVo>(
+    '/api/v1/ContentModeration/ReviewCase',
+    request,
+    { withAuth: true },
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '提交治理案件决定失败');
+  }
+
+  return response.data;
+}
+
+export async function applyModerationCorrectiveAction(
+  request: ApplyContentModerationCorrectiveActionRequest,
+): Promise<ContentModerationCaseReviewResultVo> {
+  const response = await apiPost<ContentModerationCaseReviewResultVo>(
+    '/api/v1/ContentModeration/ApplyCorrectiveAction',
+    request,
+    { withAuth: true },
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '执行治理纠正动作失败');
   }
 
   return response.data;

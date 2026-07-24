@@ -15,6 +15,7 @@ import {
   ME_ENTRY_PATH,
   ME_EXPERIENCE_PATH,
   ME_HISTORY_PATH,
+  ME_REPORTS_PATH,
   type MeAttachmentBusinessType,
   type MeContentTab,
 } from '../me/meRouteState.ts';
@@ -90,6 +91,7 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       || pathname === ME_HISTORY_PATH
       || pathname === ME_ATTACHMENTS_PATH
       || pathname === ME_EXPERIENCE_PATH
+      || pathname === ME_REPORTS_PATH
     ) {
       return normalizeMeReturnPath(url, pathname);
     }
@@ -413,7 +415,10 @@ function normalizeMeContentReturnPath(url: URL): string | null {
   });
 }
 
-function normalizeMePagedReturnPath(pathname: typeof ME_HISTORY_PATH | typeof ME_EXPERIENCE_PATH, url: URL): string | null {
+function normalizeMePagedReturnPath(
+  pathname: typeof ME_HISTORY_PATH | typeof ME_EXPERIENCE_PATH | typeof ME_REPORTS_PATH,
+  url: URL,
+): string | null {
   if (
     !hasOnlySearchParams(url, new Set(['page']))
     || hasDuplicateSearchParams(url, ['page'])
@@ -426,10 +431,15 @@ function normalizeMePagedReturnPath(pathname: typeof ME_HISTORY_PATH | typeof ME
     return null;
   }
 
-  return buildMePath({
-    kind: pathname === ME_HISTORY_PATH ? 'history' : 'experience',
-    page
-  });
+  if (pathname === ME_HISTORY_PATH) {
+    return buildMePath({ kind: 'history', page });
+  }
+
+  if (pathname === ME_REPORTS_PATH) {
+    return buildMePath({ kind: 'reports', page });
+  }
+
+  return buildMePath({ kind: 'experience', page });
 }
 
 function normalizeMeAttachmentsReturnPath(url: URL): string | null {
@@ -471,7 +481,7 @@ function normalizeMeReturnPath(url: URL, pathname: string): string | null {
     return normalizeMeContentReturnPath(url);
   }
 
-  if (pathname === ME_HISTORY_PATH || pathname === ME_EXPERIENCE_PATH) {
+  if (pathname === ME_HISTORY_PATH || pathname === ME_EXPERIENCE_PATH || pathname === ME_REPORTS_PATH) {
     return normalizeMePagedReturnPath(pathname, url);
   }
 
@@ -713,6 +723,18 @@ export function buildMeExperienceReturnPath(route: { page?: number | string } = 
 
   return buildMePath({
     kind: 'experience',
+    page
+  });
+}
+
+export function buildMeReportsReturnPath(route: { page?: number | string } = {}): string | null {
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'reports',
     page
   });
 }

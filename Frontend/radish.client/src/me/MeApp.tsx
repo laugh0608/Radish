@@ -53,6 +53,7 @@ import {
   buildMeAssetsReturnPath,
   buildMeContentReturnPath,
   buildMeExperienceReturnPath,
+  buildMeReportsReturnPath,
   buildMeHistoryReturnPath,
   buildMeReturnPath,
 } from '@/services/authReturnPath';
@@ -63,6 +64,7 @@ import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { getIntlLocale } from '@/locales/language';
 import { MeAssetsPage } from './MeAssetsPage';
+import { MeReportsPage } from './MeReportsPage';
 import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
 
@@ -351,6 +353,10 @@ function buildMeRouteReturnPath(route: MeRoute): string {
     return buildMeExperienceReturnPath({ page: route.page }) ?? buildMeReturnPath();
   }
 
+  if (route.kind === 'reports') {
+    return buildMeReportsReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
   return buildMeReturnPath();
 }
 
@@ -419,6 +425,8 @@ export const MeApp = () => {
               ? t('me.attachments.title')
               : route.kind === 'experience'
                 ? t('me.experience.detailTitle')
+                : route.kind === 'reports'
+                  ? t('me.reports.title')
                 : t('me.title');
     document.title = `${title} · Radish`;
   }, [route.kind, t]);
@@ -665,6 +673,13 @@ export const MeApp = () => {
         label: t('me.experience.detailTitle'),
         route: route.kind === 'experience' ? route : { kind: 'experience', page: 1 },
         active: route.kind === 'experience',
+      },
+      {
+        key: 'reports',
+        icon: 'mdi:shield-check-outline',
+        label: t('me.reports.title'),
+        route: route.kind === 'reports' ? route : { kind: 'reports', page: 1 },
+        active: route.kind === 'reports',
       },
     ];
 
@@ -1322,6 +1337,16 @@ export const MeApp = () => {
 
     if (route.kind === 'experience') {
       return renderExperiencePage();
+    }
+
+    if (route.kind === 'reports') {
+      return (
+        <MeReportsPage
+          page={route.page}
+          onNavigate={(page) => navigateToMeRoute({ kind: 'reports', page })}
+          onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
+        />
+      );
     }
 
     return (

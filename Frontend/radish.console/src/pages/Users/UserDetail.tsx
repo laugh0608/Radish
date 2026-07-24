@@ -170,26 +170,13 @@ export const UserDetail = () => {
     navigate(`/coins?${searchParams.toString()}`);
   };
 
-  const handleViewModerationLogs = () => {
+  const handleViewModerationCases = () => {
     if (!userId) {
       return;
     }
 
     navigate(buildModerationPath({
-      section: 'logs',
-      targetUserId: userId,
-      returnTo: getCurrentReturnTo(),
-    }));
-  };
-
-  const handleOpenManualModeration = () => {
-    if (!userId) {
-      return;
-    }
-
-    navigate(buildModerationPath({
-      section: 'manual',
-      targetUserId: userId,
+      keyword: userId,
       returnTo: getCurrentReturnTo(),
     }));
   };
@@ -800,13 +787,8 @@ export const UserDetail = () => {
           <p className="admin-feature-subtle">{t('users.detail.summary.description')}</p>
           <div className="user-detail-case-actions">
             {canViewModeration ? (
-              <Button icon={<SafetyOutlined />} onClick={handleViewModerationLogs}>
+              <Button icon={<SafetyOutlined />} onClick={handleViewModerationCases}>
                 {t('users.detail.summary.viewModeration')}
-              </Button>
-            ) : null}
-            {canReviewModeration ? (
-              <Button variant="primary" icon={<SafetyOutlined />} onClick={handleOpenManualModeration}>
-                {t('users.detail.summary.manualModeration')}
               </Button>
             ) : null}
           </div>

@@ -50,6 +50,14 @@ test('parseMeRoute 应解析我的状态和资产正式 Web 路由', () => {
     kind: 'experience',
     page: 5,
   });
+  assert.deepEqual(parseMeRoute('/me/reports', '?page=2'), {
+    kind: 'reports',
+    page: 2,
+  });
+  assert.deepEqual(parseMeRoute('/me/reports', '?page=0'), {
+    kind: 'reports',
+    page: 1,
+  });
 });
 
 test('parseMeRoute 应拒绝未知我的状态子路径', () => {
@@ -74,6 +82,8 @@ test('buildMePath 应稳定回写我的状态和资产正式 Web 路径', () => 
   );
   assert.equal(buildMePath({ kind: 'experience', page: 1 }), '/me/experience');
   assert.equal(buildMePath({ kind: 'experience', page: 6 }), '/me/experience?page=6');
+  assert.equal(buildMePath({ kind: 'reports', page: 1 }), '/me/reports');
+  assert.equal(buildMePath({ kind: 'reports', page: 3 }), '/me/reports?page=3');
 });
 
 test('isMePathname 应识别我的状态和资产正式 Web 路径', () => {
@@ -84,6 +94,7 @@ test('isMePathname 应识别我的状态和资产正式 Web 路径', () => {
   assert.equal(isMePathname('/me/history'), true);
   assert.equal(isMePathname('/me/attachments'), true);
   assert.equal(isMePathname('/me/experience'), true);
+  assert.equal(isMePathname('/me/reports'), true);
   assert.equal(isMePathname('/me/assets/history'), false);
   assert.equal(isMePathname('/desktop'), false);
 });

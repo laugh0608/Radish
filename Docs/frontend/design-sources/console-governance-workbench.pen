@@ -16857,7 +16857,7 @@
       "id": "nWDRW",
       "x": 0,
       "y": 4720,
-      "name": "P07 - Mobile Content Moderation - Review Flow",
+      "name": "P07 - Mobile Content Moderation - Case Flow",
       "clip": true,
       "width": 390,
       "height": 980,
@@ -16967,7 +16967,7 @@
                           "id": "kvU2d",
                           "name": "Eyebrow",
                           "fill": "$rx-brand-deep",
-                          "content": "Review Flow",
+                          "content": "CASE FLOW",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "800"
@@ -16977,7 +16977,7 @@
                           "id": "W8T7K",
                           "name": "Title",
                           "fill": "$rx-ink",
-                          "content": "内容审核任务流",
+                          "content": "治理案件移动流程",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 20,
                           "fontWeight": "850"
@@ -17003,7 +17003,7 @@
                           "id": "vIlKW",
                           "name": "Header Badge Label",
                           "fill": "$rx-warning",
-                          "content": "SLA 01:12",
+                          "content": "Reviewing · v3",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17019,7 +17019,7 @@
                   "fill": "$rx-text-secondary",
                   "textGrowth": "fixed-width",
                   "width": 340,
-                  "content": "移动端按任务流组织，不复刻 PC 三栏。",
+                  "content": "队列 → 证据 → 决定 → 动作 → 留痕，单列完成低风险治理。",
                   "fontFamily": "$rx-font-body",
                   "fontSize": 11,
                   "fontWeight": "500"
@@ -17056,7 +17056,7 @@
                       "id": "x1uG5",
                       "name": "Metric Label",
                       "fill": "$rx-text-secondary",
-                      "content": "待审核",
+                      "content": "开放案件",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
                       "fontWeight": "700"
@@ -17117,7 +17117,7 @@
                       "id": "QZ954",
                       "name": "Metric Label",
                       "fill": "$rx-text-secondary",
-                      "content": "高风险",
+                      "content": "证据失效",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
                       "fontWeight": "700"
@@ -17178,7 +17178,7 @@
                       "id": "jjNDP",
                       "name": "Metric Label",
                       "fill": "$rx-text-secondary",
-                      "content": "SLA",
+                      "content": "动作失败",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 10,
                       "fontWeight": "700"
@@ -17222,7 +17222,7 @@
             {
               "type": "frame",
               "id": "IZZRI",
-              "name": "Current Case Card",
+              "name": "Current Moderation Case",
               "width": "fill_container",
               "height": 128,
               "fill": "$rx-surface-paper",
@@ -17270,7 +17270,7 @@
                           "id": "LOwaZ",
                           "name": "Risk Label",
                           "fill": "$rx-danger",
-                          "content": "High",
+                          "content": "Reviewing",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17355,7 +17355,7 @@
                           "id": "NW9Vu",
                           "name": "Reports Label",
                           "fill": "$rx-text-secondary",
-                          "content": "12 人举报",
+                          "content": "12 份举报",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17381,7 +17381,7 @@
                           "id": "uy23c",
                           "name": "Replay Label",
                           "fill": "$rx-warning",
-                          "content": "已降权",
+                          "content": "目标已修改",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17395,7 +17395,7 @@
             {
               "type": "frame",
               "id": "n6MC8I",
-              "name": "Evidence Matrix",
+              "name": "Append-only Evidence Timeline",
               "clip": true,
               "width": "fill_container",
               "height": 178,
@@ -17423,7 +17423,7 @@
                       "id": "jOMmS",
                       "name": "Evidence Title",
                       "fill": "$rx-text-primary",
-                      "content": "关键证据",
+                      "content": "证据时间线",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 14,
                       "fontWeight": "850"
@@ -17447,7 +17447,7 @@
                           "id": "KjVnx",
                           "name": "Scope Label",
                           "fill": "$rx-info",
-                          "content": "当前目标",
+                          "content": "举报固化 / 当前采集",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17476,7 +17476,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 88,
-                      "content": "辱骂关键词",
+                      "content": "举报时快照",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17488,7 +17488,7 @@
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 128,
-                      "content": "2 处命中",
+                      "content": "可用 · 09:31 固化",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17512,7 +17512,7 @@
                           "id": "TDgIx",
                           "name": "Evidence Status Label",
                           "fill": "$rx-danger",
-                          "content": "命中",
+                          "content": "原始证据",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17541,7 +17541,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 88,
-                      "content": "重复外链",
+                      "content": "当前目标快照",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17553,7 +17553,7 @@
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 128,
-                      "content": "同域 5 次",
+                      "content": "已修改 · 09:42 采集",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17577,7 +17577,7 @@
                           "id": "jtf0g",
                           "name": "Evidence Status Label",
                           "fill": "$rx-danger",
-                          "content": "命中",
+                          "content": "需确认",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17606,7 +17606,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 88,
-                      "content": "用户历史",
+                      "content": "举报聚合",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17618,7 +17618,7 @@
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 128,
-                      "content": "7 日 4 次处罚",
+                      "content": "12 份 · 4 类原因",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17642,7 +17642,7 @@
                           "id": "XZWqZ",
                           "name": "Evidence Status Label",
                           "fill": "$rx-warning",
-                          "content": "待确认",
+                          "content": "只读",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17671,7 +17671,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 88,
-                      "content": "举报可信度",
+                      "content": "目标状态",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17683,7 +17683,7 @@
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 128,
-                      "content": "9/12 高可信",
+                      "content": "Available · revision 7",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17707,7 +17707,7 @@
                           "id": "ubs83",
                           "name": "Evidence Status Label",
                           "fill": "$rx-success",
-                          "content": "通过",
+                          "content": "可导航",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17736,7 +17736,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 88,
-                      "content": "自动处置",
+                      "content": "事件留痕",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17748,7 +17748,7 @@
                       "fill": "$rx-text-primary",
                       "textGrowth": "fixed-width",
                       "width": 128,
-                      "content": "临时降权",
+                      "content": "ReviewStarted · v2→v3",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "650"
@@ -17772,7 +17772,7 @@
                           "id": "iKyAh",
                           "name": "Evidence Status Label",
                           "fill": "$rx-warning",
-                          "content": "待确认",
+                          "content": "追加式",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17786,7 +17786,7 @@
             {
               "type": "frame",
               "id": "S8vHea",
-              "name": "Decision Stack",
+              "name": "Decision and Permission Boundary",
               "width": "fill_container",
               "height": 208,
               "fill": "$rx-surface-paper",
@@ -17810,7 +17810,7 @@
                       "id": "LThJZ",
                       "name": "Decision Title",
                       "fill": "$rx-text-primary",
-                      "content": "处理动作",
+                      "content": "决定与动作",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 14,
                       "fontWeight": "850"
@@ -17834,7 +17834,7 @@
                           "id": "xUjRY",
                           "name": "Guard Label",
                           "fill": "$rx-danger",
-                          "content": "需原因",
+                          "content": "冲突保留草稿",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 10,
                           "fontWeight": "750"
@@ -17846,7 +17846,7 @@
                 {
                   "type": "frame",
                   "id": "b3IKd",
-                  "name": "Action - 确认违规并处罚",
+                  "name": "Decision - Violation and Restrict Target",
                   "width": "fill_container",
                   "height": 38,
                   "fill": "$rx-brand",
@@ -17872,7 +17872,7 @@
                       "id": "FKBgV",
                       "name": "Action Label",
                       "fill": "#FFFFFF",
-                      "content": "确认违规并处罚",
+                      "content": "确认违规 · 限制目标",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
                       "fontWeight": "800"
@@ -17882,7 +17882,7 @@
                 {
                   "type": "frame",
                   "id": "CdstZ",
-                  "name": "Action - 确认无异常并归档",
+                  "name": "Decision - No Violation and Keep Target",
                   "width": "fill_container",
                   "height": 38,
                   "fill": "#FBF8F1",
@@ -17908,7 +17908,7 @@
                       "id": "z4aaa",
                       "name": "Action Label",
                       "fill": "$rx-success",
-                      "content": "确认无异常并归档",
+                      "content": "未发现违规 · 保持目标",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
                       "fontWeight": "800"
@@ -17918,7 +17918,7 @@
                 {
                   "type": "frame",
                   "id": "vunEZ",
-                  "name": "Action - 转入 24h 观察",
+                  "name": "Decision - Insufficient Evidence",
                   "width": "fill_container",
                   "height": 38,
                   "fill": "$rx-surface-muted",
@@ -17944,7 +17944,7 @@
                       "id": "Q18y5",
                       "name": "Action Label",
                       "fill": "$rx-text-primary",
-                      "content": "转入 24h 观察",
+                      "content": "证据不足 · 保持 / 不可用",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
                       "fontWeight": "800"
@@ -17954,7 +17954,7 @@
                 {
                   "type": "frame",
                   "id": "hw9oW",
-                  "name": "Action - 封禁作者 7 天",
+                  "name": "Optional User Action Permission Gate",
                   "width": "fill_container",
                   "height": 38,
                   "fill": "#FBF8F1",
@@ -17980,7 +17980,7 @@
                       "id": "SK6ea",
                       "name": "Action Label",
                       "fill": "$rx-danger",
-                      "content": "封禁作者 7 天 · 二次确认",
+                      "content": "用户动作需 moderation.action",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
                       "fontWeight": "800"
@@ -17992,7 +17992,7 @@
             {
               "type": "frame",
               "id": "zdV8q",
-              "name": "Audit Snapshot",
+              "name": "Case Event Timeline",
               "width": "fill_container",
               "height": 96,
               "fill": "$rx-surface-paper",
@@ -18008,7 +18008,7 @@
                   "id": "LjY4J",
                   "name": "Audit Title",
                   "fill": "$rx-text-primary",
-                  "content": "最近留痕",
+                  "content": "案件留痕",
                   "fontFamily": "$rx-font-body",
                   "fontSize": 14,
                   "fontWeight": "850"
@@ -18041,7 +18041,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 260,
-                      "content": "MOD-10270 已禁言 24h",
+                      "content": "证据快照已追加 · v3",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -18076,7 +18076,7 @@
                       "fill": "$rx-text-secondary",
                       "textGrowth": "fixed-width",
                       "width": 260,
-                      "content": "MOD-10263 转观察",
+                      "content": "举报已聚合到案件",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 11,
                       "fontWeight": "500"
@@ -25570,7 +25570,7 @@
       "id": "vVnYm",
       "x": 3920,
       "y": 0,
-      "name": "P02 - Console Content Moderation - Review Desk",
+      "name": "P02 - Console Content Moderation - Case Desk",
       "clip": true,
       "width": 1920,
       "height": 1080,
@@ -26864,7 +26864,7 @@
                   "id": "e9e3YN",
                   "name": "Crumb Title",
                   "fill": "$rx-ink",
-                  "content": "内容审核 Review Desk",
+                  "content": "治理案件 Case Desk",
                   "fontFamily": "$rx-font-body",
                   "fontSize": 22,
                   "fontWeight": "800"
@@ -26914,7 +26914,7 @@
                       "fill": "$rx-text-muted",
                       "textGrowth": "fixed-width",
                       "width": 220,
-                      "content": "案件号 / 用户 / URL",
+                      "content": "案件号 / 目标 / 用户",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
                       "fontWeight": "500"
@@ -27006,7 +27006,7 @@
                       "id": "raRLX",
                       "name": "Primary Label",
                       "fill": "#FFFFFF",
-                      "content": "刷新队列",
+                      "content": "刷新案件",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 13,
                       "fontWeight": "700"
@@ -27056,7 +27056,7 @@
                       "id": "CwGRF",
                       "name": "Desk Label",
                       "fill": "$rx-brand-deep",
-                      "content": "P02 REVIEW DESK",
+                      "content": "P02 CASE DESK",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 12,
                       "fontWeight": "800"
@@ -27066,7 +27066,7 @@
                       "id": "Tw3Gm",
                       "name": "Desk Title",
                       "fill": "$rx-ink",
-                      "content": "内容审核工作台",
+                      "content": "内容治理案件工作台",
                       "fontFamily": "$rx-font-body",
                       "fontSize": 28,
                       "fontWeight": "800"
@@ -27099,7 +27099,7 @@
                           "id": "idrdr",
                           "name": "Mode Label",
                           "fill": "$rx-info",
-                          "content": "Compact queue",
+                          "content": "Case queue + evidence",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27126,7 +27126,7 @@
                           "id": "N8NKa",
                           "name": "Audit Label",
                           "fill": "$rx-success",
-                          "content": "动作必留痕",
+                          "content": "决定与动作分离",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27175,7 +27175,7 @@
                           "id": "TtvOn",
                           "name": "Metric Label",
                           "fill": "$rx-text-secondary",
-                          "content": "待审核",
+                          "content": "开放案件",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27251,7 +27251,7 @@
                           "id": "BmdaZ",
                           "name": "Metric Label",
                           "fill": "$rx-text-secondary",
-                          "content": "高风险目标",
+                          "content": "证据待确认",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27276,7 +27276,7 @@
                               "id": "Itt4N",
                               "name": "Metric Tag Label",
                               "fill": "$rx-danger",
-                              "content": "High",
+                              "content": "Reviewing",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -27327,7 +27327,7 @@
                           "id": "gUuNM",
                           "name": "Metric Label",
                           "fill": "$rx-text-secondary",
-                          "content": "SLA < 2h",
+                          "content": "动作失败",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27352,7 +27352,7 @@
                               "id": "d99xo",
                               "name": "Metric Tag Label",
                               "fill": "$rx-warning",
-                              "content": "Urgent",
+                              "content": "Retry",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -27403,7 +27403,7 @@
                           "id": "yZTmJ",
                           "name": "Metric Label",
                           "fill": "$rx-text-secondary",
-                          "content": "今日处理",
+                          "content": "今日结案",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27428,7 +27428,7 @@
                               "id": "NQXM1",
                               "name": "Metric Tag Label",
                               "fill": "$rx-success",
-                              "content": "Live",
+                              "content": "Resolved",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -27479,7 +27479,7 @@
                           "id": "hbbcw",
                           "name": "Metric Label",
                           "fill": "$rx-text-secondary",
-                          "content": "复议中",
+                          "content": "处理中",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27504,7 +27504,7 @@
                               "id": "qVU7T",
                               "name": "Metric Tag Label",
                               "fill": "$rx-info",
-                              "content": "Watch",
+                              "content": "Reviewing",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -27570,7 +27570,7 @@
                           "id": "Q8raS",
                           "name": "Status Label",
                           "fill": "$rx-brand-deep",
-                          "content": "状态: 待审核",
+                          "content": "状态: Open / Reviewing",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27624,7 +27624,7 @@
                           "id": "FWDp9",
                           "name": "Reason Label",
                           "fill": "$rx-text-secondary",
-                          "content": "原因: 广告/辱骂/侵权",
+                          "content": "证据: 可用 / 失效",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27651,7 +27651,7 @@
                           "id": "QpAVM",
                           "name": "Replay Label",
                           "fill": "$rx-warning",
-                          "content": "回看: 未完成",
+                          "content": "动作: 待处理 / 失败",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27686,7 +27686,7 @@
                           "id": "pbuiF",
                           "name": "Bulk Label",
                           "fill": "$rx-text-secondary",
-                          "content": "批量转观察",
+                          "content": "仅处理当前案件",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27713,7 +27713,7 @@
                           "id": "QswGU",
                           "name": "Export Label",
                           "fill": "$rx-text-primary",
-                          "content": "导出审计",
+                          "content": "查看案件留痕",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
@@ -27735,7 +27735,7 @@
                 {
                   "type": "frame",
                   "id": "EY3Bo",
-                  "name": "Queue Rail - Reports",
+                  "name": "Queue Rail - Cases",
                   "width": 430,
                   "height": "fill_container",
                   "fill": "$rx-surface-paper",
@@ -27759,7 +27759,7 @@
                           "id": "VEcDR",
                           "name": "Queue Title",
                           "fill": "$rx-text-primary",
-                          "content": "举报队列",
+                          "content": "案件队列",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 15,
                           "fontWeight": "800"
@@ -27784,7 +27784,7 @@
                               "id": "jD9HJ",
                               "name": "Queue Count Label",
                               "fill": "$rx-brand-deep",
-                              "content": "36 open",
+                              "content": "36 open cases",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -27850,7 +27850,7 @@
                                   "id": "MAcnm",
                                   "name": "Risk Label",
                                   "fill": "$rx-danger",
-                                  "content": "High",
+                                  "content": "Open",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -27866,7 +27866,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "辱骂争议帖 · 等待复核",
+                          "content": "辱骂争议帖 · 等待决定",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -27878,7 +27878,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "forum/post · 12 人举报 · 01:12 SLA",
+                          "content": "Post · 12 份举报 · v3",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -27942,7 +27942,7 @@
                                   "id": "Wvn1s",
                                   "name": "Risk Label",
                                   "fill": "$rx-warning",
-                                  "content": "Medium",
+                                  "content": "Reviewing",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -27958,7 +27958,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "疑似广告评论串",
+                          "content": "疑似广告评论 · 证据可用",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -27970,7 +27970,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "comment · 自动规则命中 · 03:40",
+                          "content": "Comment · 4 份举报 · v2",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -28034,7 +28034,7 @@
                                   "id": "HljqJ",
                                   "name": "Risk Label",
                                   "fill": "$rx-info",
-                                  "content": "Low",
+                                  "content": "ActionPending",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28050,7 +28050,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "文档页外链异常",
+                          "content": "聊天消息导流 · 动作待执行",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -28062,7 +28062,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "docs/wiki · 用户申诉 · 06:10",
+                          "content": "ChatMessage · 2 份举报 · v4",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -28126,7 +28126,7 @@
                                   "id": "At48Q",
                                   "name": "Risk Label",
                                   "fill": "$rx-danger",
-                                  "content": "High",
+                                  "content": "Conflict",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28142,7 +28142,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "头像与昵称冒充",
+                          "content": "商品描述误导 · 目标已修改",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -28154,7 +28154,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "profile · 复议中 · 02:44",
+                          "content": "Product · 3 份举报 · 冲突",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -28218,7 +28218,7 @@
                                   "id": "VeMLF",
                                   "name": "Risk Label",
                                   "fill": "$rx-warning",
-                                  "content": "Medium",
+                                  "content": "Open",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28234,7 +28234,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "重复刷屏回复",
+                          "content": "重复刷屏轻回应",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -28246,7 +28246,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "comment · 巡检命中 · 08:02",
+                          "content": "PostQuickReply · 7 份举报",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -28310,7 +28310,7 @@
                                   "id": "HFNmb",
                                   "name": "Risk Label",
                                   "fill": "$rx-danger",
-                                  "content": "High",
+                                  "content": "ActionFailed",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28326,7 +28326,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "帖子正文侵权投诉",
+                          "content": "帖子侵权 · 动作失败",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -28338,7 +28338,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "forum/post · 权利人提交 · 04:18",
+                          "content": "Post · 5 份举报 · 可重试",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -28402,7 +28402,7 @@
                                   "id": "CVNvf",
                                   "name": "Risk Label",
                                   "fill": "$rx-warning",
-                                  "content": "Medium",
+                                  "content": "Reviewing",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28418,7 +28418,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "轻回应低质刷屏",
+                          "content": "评论人身攻击",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "700"
@@ -28430,7 +28430,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "quick-reply · 10 条命中",
+                          "content": "Comment · 6 份举报 · Reviewing",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 11,
                           "fontWeight": "500"
@@ -28494,7 +28494,7 @@
                                   "id": "ADaOv",
                                   "name": "Risk Label",
                                   "fill": "$rx-info",
-                                  "content": "Low",
+                                  "content": "Resolved",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28701,7 +28701,7 @@
                                   "id": "uFPpi",
                                   "name": "Target Status Label",
                                   "fill": "$rx-warning",
-                                  "content": "已降权回看",
+                                  "content": "Available · revision 7",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28846,7 +28846,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 160,
-                              "content": "辱骂关键词",
+                              "content": "举报时快照",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -28858,7 +28858,7 @@
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
                               "width": 360,
-                              "content": "2 处命中，1 处疑似变体",
+                              "content": "可用 · 09:31 固化",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -28883,7 +28883,7 @@
                                   "id": "O64B6v",
                                   "name": "Evidence Status Label",
                                   "fill": "$rx-danger",
-                                  "content": "命中",
+                                  "content": "原始证据",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28912,7 +28912,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 160,
-                              "content": "重复外链",
+                              "content": "当前目标快照",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -28924,7 +28924,7 @@
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
                               "width": 360,
-                              "content": "同域名 5 次，跨帖 3 次",
+                              "content": "已修改 · revision 7",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -28949,7 +28949,7 @@
                                   "id": "dLVqK",
                                   "name": "Evidence Status Label",
                                   "fill": "$rx-danger",
-                                  "content": "命中",
+                                  "content": "需确认",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -28978,7 +28978,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 160,
-                              "content": "用户历史",
+                              "content": "举报聚合",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -28990,7 +28990,7 @@
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
                               "width": 360,
-                              "content": "近 7 日 4 次轻处罚",
+                              "content": "12 份 · 4 类原因",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -29015,7 +29015,7 @@
                                   "id": "R3Nlv",
                                   "name": "Evidence Status Label",
                                   "fill": "$rx-warning",
-                                  "content": "待确认",
+                                  "content": "只读",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29044,7 +29044,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 160,
-                              "content": "举报可信度",
+                              "content": "目标版本",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -29056,7 +29056,7 @@
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
                               "width": 360,
-                              "content": "12 人举报，9 人高可信",
+                              "content": "EditCount 7 · 09:42",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -29081,7 +29081,7 @@
                                   "id": "QWCeE",
                                   "name": "Evidence Status Label",
                                   "fill": "$rx-success",
-                                  "content": "通过",
+                                  "content": "可处置",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29110,7 +29110,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 160,
-                              "content": "自动处置",
+                              "content": "事件留痕",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -29122,7 +29122,7 @@
                               "fill": "$rx-text-primary",
                               "textGrowth": "fixed-width",
                               "width": 360,
-                              "content": "已临时降权，未封禁",
+                              "content": "ReviewStarted · v2→v3",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "650"
@@ -29147,7 +29147,7 @@
                                   "id": "k5yTw9",
                                   "name": "Evidence Status Label",
                                   "fill": "$rx-warning",
-                                  "content": "待确认",
+                                  "content": "追加式",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29185,7 +29185,7 @@
                               "id": "mxE2a",
                               "name": "Timeline Title",
                               "fill": "$rx-text-primary",
-                              "content": "证据时间线",
+                              "content": "案件证据与事件时间线",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 14,
                               "fontWeight": "800"
@@ -29210,7 +29210,7 @@
                                   "id": "Vi7GZ",
                                   "name": "Timeline Filter Label",
                                   "fill": "$rx-info",
-                                  "content": "当前目标相关",
+                                  "content": "举报快照 / 当前快照 / 留痕",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29264,7 +29264,7 @@
                                   "id": "M131d",
                                   "name": "Timeline Type Label",
                                   "fill": "$rx-text-secondary",
-                                  "content": "系统",
+                                  "content": "证据",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29278,7 +29278,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 500,
-                              "content": "自动降权回看已完成，等待人工确认",
+                              "content": "追加当前目标快照，原举报证据保持不变",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -29344,7 +29344,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 500,
-                              "content": "新增 3 条辱骂原因举报",
+                              "content": "第 12 份举报已聚合到同一开放案件",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -29396,7 +29396,7 @@
                                   "id": "IshjO",
                                   "name": "Timeline Type Label",
                                   "fill": "$rx-text-secondary",
-                                  "content": "规则",
+                                  "content": "案件",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29410,7 +29410,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 500,
-                              "content": "重复外链规则命中，置信 0.82",
+                              "content": "审核员接手，CaseVersion v2 → v3",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -29528,7 +29528,7 @@
                                   "id": "d4B2im",
                                   "name": "Timeline Type Label",
                                   "fill": "$rx-text-secondary",
-                                  "content": "内容",
+                                  "content": "目标",
                                   "fontFamily": "$rx-font-body",
                                   "fontSize": 11,
                                   "fontWeight": "700"
@@ -29542,7 +29542,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 500,
-                              "content": "目标帖子发布并进入公开流",
+                              "content": "目标内容已修改，需要重新确认版本",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -29580,7 +29580,7 @@
                           "id": "nDMVJ",
                           "name": "Decision Title",
                           "fill": "$rx-text-primary",
-                          "content": "处理动作",
+                          "content": "案件决定",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 15,
                           "fontWeight": "800"
@@ -29605,7 +29605,7 @@
                               "id": "nFgSv",
                               "name": "Decision Guard Label",
                               "fill": "$rx-danger",
-                              "content": "需原因",
+                              "content": "决定与动作分区",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 11,
                               "fontWeight": "700"
@@ -29643,7 +29643,7 @@
                           "id": "M9PBCr",
                           "name": "Primary Text",
                           "fill": "#FFFFFF",
-                          "content": "确认违规并处罚",
+                          "content": "确认违规 · 限制目标",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 13,
                           "fontWeight": "800"
@@ -29679,7 +29679,7 @@
                           "id": "gs07o",
                           "name": "Secondary Text",
                           "fill": "$rx-text-primary",
-                          "content": "转入 24h 观察",
+                          "content": "证据不足 · 保持目标",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 13,
                           "fontWeight": "700"
@@ -29715,7 +29715,7 @@
                           "id": "QNRuO",
                           "name": "Normal Text",
                           "fill": "$rx-success",
-                          "content": "确认无异常并归档",
+                          "content": "未发现违规 · 保持目标",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 13,
                           "fontWeight": "800"
@@ -29751,7 +29751,7 @@
                           "id": "Rbr9o",
                           "name": "Danger Text",
                           "fill": "$rx-danger",
-                          "content": "封禁作者 7 天",
+                          "content": "附加用户动作（需 action 权限）",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 13,
                           "fontWeight": "700"
@@ -29777,7 +29777,7 @@
                           "id": "iWNHT",
                           "name": "Reason Label",
                           "fill": "$rx-text-primary",
-                          "content": "处理原因",
+                          "content": "内部备注（冲突时保留草稿）",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "800"
@@ -29789,7 +29789,7 @@
                           "fill": "$rx-text-secondary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "必须说明证据、处罚范围、是否通知用户。",
+                          "content": "记录证据判断；并发冲突刷新案件但不清空此处。",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "500"
@@ -29842,7 +29842,7 @@
                           "id": "lK0yx",
                           "name": "Guard Title",
                           "fill": "$rx-warning",
-                          "content": "权限与影响范围",
+                          "content": "权限与提交边界",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "800"
@@ -29854,7 +29854,7 @@
                           "fill": "$rx-text-primary",
                           "textGrowth": "fixed-width",
                           "width": 330,
-                          "content": "封禁动作需要 Moderation.Ban 和二次确认；降权只影响公开分发，不删除原内容。",
+                          "content": "review 可提交无动作决定；只有 moderation.action 才能发送禁言 / 封禁 / 解除 payload。",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 12,
                           "fontWeight": "500"
@@ -29880,7 +29880,7 @@
                           "id": "eeGj6",
                           "name": "Log Title",
                           "fill": "$rx-text-primary",
-                          "content": "最近留痕",
+                          "content": "案件留痕",
                           "fontFamily": "$rx-font-body",
                           "fontSize": 13,
                           "fontWeight": "800"
@@ -29917,7 +29917,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 260,
-                              "content": "MOD-10270 已禁言 24h",
+                              "content": "MOD-10270 决定已保存，动作待执行",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -29956,7 +29956,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 260,
-                              "content": "MOD-10263 转观察",
+                              "content": "MOD-10263 证据快照已追加",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -29995,7 +29995,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 260,
-                              "content": "MOD-10251 等待复议",
+                              "content": "MOD-10251 动作失败，可重试",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"
@@ -30034,7 +30034,7 @@
                               "fill": "$rx-text-secondary",
                               "textGrowth": "fixed-width",
                               "width": 260,
-                              "content": "MOD-10230 已归档",
+                              "content": "MOD-10230 已结案并通知举报者",
                               "fontFamily": "$rx-font-body",
                               "fontSize": 12,
                               "fontWeight": "500"

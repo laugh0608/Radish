@@ -77,7 +77,8 @@ public partial class ContentModerationService
             normalizedReasonType,
             string.IsNullOrWhiteSpace(dto.ReasonDetail) ? null : dto.ReasonDetail.Trim(),
             DateTime.UtcNow));
-        return MapReceipt(result.Report, result.Case, result.IsDuplicate);
+        var navigation = (await BuildReportQueueItemsAsync([result.Report])).SingleOrDefault();
+        return MapReceipt(result.Report, result.Case, result.IsDuplicate, navigation);
     }
 
     public async Task<VoPagedResult<ContentReportReceiptVo>> GetMyReportsAsync(
@@ -99,12 +100,15 @@ public partial class ContentModerationService
                 reports.Where(report => report.CaseId.HasValue).Select(report => report.CaseId!.Value).ToArray()))
             .ToDictionary(item => item.Id);
         var items = new List<ContentReportReceiptVo>(reports.Count);
+        var navigationByReportId = (await BuildReportQueueItemsAsync(reports))
+            .ToDictionary(item => item.VoReportId);
         foreach (var report in reports)
         {
             var moderationCase = report.CaseId.HasValue && caseById.TryGetValue(report.CaseId.Value, out var matchedCase)
                 ? matchedCase
                 : null;
-            items.Add(MapReceipt(report, moderationCase, false));
+            navigationByReportId.TryGetValue(report.Id, out var navigation);
+            items.Add(MapReceipt(report, moderationCase, false, navigation));
         }
 
         return new VoPagedResult<ContentReportReceiptVo>
@@ -140,7 +144,8 @@ public partial class ContentModerationService
         var moderationCase = report.CaseId.HasValue
             ? await repository.QueryCaseByIdAsync(Math.Max(tenantId, 0), report.CaseId.Value)
             : null;
-        return MapReceipt(report, moderationCase, false);
+        var navigation = (await BuildReportQueueItemsAsync([report])).SingleOrDefault();
+        return MapReceipt(report, moderationCase, false, navigation);
     }
 
     public async Task<VoPagedResult<ContentModerationCaseQueueItemVo>> GetCaseQueueAsync(
@@ -488,13 +493,23 @@ public partial class ContentModerationService
     private static ContentReportReceiptVo MapReceipt(
         ContentReport report,
         ContentModerationCase? moderationCase,
-        bool isDuplicate)
+        bool isDuplicate,
+        ContentReportQueueItemVo? navigation)
     {
         return new ContentReportReceiptVo
         {
             VoReportPublicId = report.PublicId ?? string.Empty,
             VoTargetType = ToReportTargetTypeName(report.ReportTargetType),
-            VoTargetSnapshotTitle = report.TargetSnapshotTitle,
+            VoTargetContentId = report.TargetContentId,
+            VoTargetPostId = navigation?.VoTargetPostId,
+            VoTargetCommentId = navigation?.VoTargetCommentId,
+            VoTargetChannelId = navigation?.VoTargetChannelId,
+            VoTargetMessageId = navigation?.VoTargetMessageId,
+            VoTargetNavigationStatus = navigation?.VoTargetNavigationStatus ?? "Unavailable",
+            VoTargetNavigationMessage = navigation?.VoTargetNavigationMessage,
+            VoTargetSnapshotTitle = navigation?.VoTargetSnapshotTitle ?? report.TargetSnapshotTitle,
+            VoTargetSnapshotSummary = navigation?.VoTargetSnapshotSummary ?? report.TargetSnapshotSummary,
+            VoReasonType = report.ReasonType,
             VoReporterState = report.ReporterState,
             VoPublicResultCode = moderationCase?.PublicResultCode,
             VoSubmittedAt = report.CreateTime,
@@ -561,6 +576,8 @@ public partial class ContentModerationService
                 VoTargetState = ((ContentModerationTargetState)item.TargetState).ToString(),
                 VoSnapshotTitle = item.SnapshotTitle,
                 VoSnapshotSummary = item.SnapshotSummary,
+                VoContentRevision = item.ContentRevision,
+                VoTargetModifiedAt = item.TargetModifiedAt,
                 VoSnapshotHash = item.SnapshotHash,
                 VoCapturedAt = item.CapturedAt
             }).ToList(),

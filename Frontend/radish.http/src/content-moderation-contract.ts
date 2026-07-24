@@ -13,7 +13,16 @@ export type ContentModerationTargetDisposition =
 export interface ContentReportReceiptVo {
   voReportPublicId: string;
   voTargetType: ContentModerationTargetType | 'Unknown';
+  voTargetContentId: ModerationLongId;
+  voTargetPostId?: ModerationLongId | null;
+  voTargetCommentId?: ModerationLongId | null;
+  voTargetChannelId?: ModerationLongId | null;
+  voTargetMessageId?: ModerationLongId | null;
+  voTargetNavigationStatus: 'Ready' | 'Fallback' | 'Unavailable' | 'Unsupported';
+  voTargetNavigationMessage?: string | null;
   voTargetSnapshotTitle?: string | null;
+  voTargetSnapshotSummary?: string | null;
+  voReasonType: string;
   voReporterState: 'Submitted' | 'Resolved';
   voPublicResultCode?: string | null;
   voSubmittedAt: string;
@@ -50,6 +59,8 @@ export interface ContentModerationEvidenceVo {
   voTargetState: 'Available' | 'Deleted' | 'Recalled' | 'Disabled' | 'Unavailable';
   voSnapshotTitle?: string | null;
   voSnapshotSummary?: string | null;
+  voContentRevision?: number | null;
+  voTargetModifiedAt?: string | null;
   voSnapshotHash: string;
   voCapturedAt: string;
 }
