@@ -15,6 +15,7 @@
 @WikiRevisionId = 1
 @WikiDraftId = 1
 @WikiDraftVersion = 1
+@WikiAttachmentId = 1
 
 ### 1. 获取公开文档列表（匿名，只返回 Published + Public）
 GET {{Gateway_HostAddress}}/api/v1/Wiki/PublicGetList?pageIndex=1&pageSize=20
@@ -141,3 +142,45 @@ Accept: application/json
 POST {{Gateway_HostAddress}}/api/v1/Wiki/Rollback/{{WikiRevisionId}}
 Authorization: Bearer {{Admin_Access_Token}}
 Accept: application/json
+
+### 19. 上传 Wiki 图片（新记录立即私有，未绑定时仅上传者可读）
+POST {{Gateway_HostAddress}}/api/v1/Attachment/UploadImage
+Authorization: Bearer {{Access_Token}}
+Content-Type: multipart/form-data; boundary=RadishWikiAttachmentBoundary
+
+--RadishWikiAttachmentBoundary
+Content-Disposition: form-data; name="businessType"
+
+Wiki
+--RadishWikiAttachmentBoundary
+Content-Disposition: form-data; name="file"; filename="wiki-private-sample.png"
+Content-Type: image/png
+
+< ./wiki-private-sample.png
+--RadishWikiAttachmentBoundary--
+
+### 20. 保存带权威附件引用的作者草稿
+PUT {{Gateway_HostAddress}}/api/v1/Wiki/AuthorSaveDraft/{{WikiDraftId}}
+Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "title": "Wiki 附件隐私示例",
+  "slug": "wiki-attachment-privacy",
+  "summary": "验证草稿引用与附件权限",
+  "markdownContent": "# Wiki 附件隐私示例\n\n![私有图片](attachment://{{WikiAttachmentId}})",
+  "coverAttachmentId": {{WikiAttachmentId}},
+  "changeSummary": "绑定 Wiki 私有附件",
+  "expectedDraftVersion": {{WikiDraftVersion}}
+}
+
+### 21. 读取 Wiki 附件原图（按当前文档 / 草稿 ACL；拒绝统一 404）
+GET {{Gateway_HostAddress}}/_assets/attachments/{{WikiAttachmentId}}
+Authorization: Bearer {{Access_Token}}
+
+### 22. 读取 Wiki 附件缩略图（与原图使用相同 ACL）
+GET {{Gateway_HostAddress}}/_assets/attachments/{{WikiAttachmentId}}/thumbnail
+Authorization: Bearer {{Access_Token}}
+
+### 23. 匿名读取已发布 Public 文档当前附件（其他状态预期 404）
+GET {{Gateway_HostAddress}}/_assets/attachments/{{WikiAttachmentId}}

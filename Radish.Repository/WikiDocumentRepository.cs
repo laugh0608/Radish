@@ -216,16 +216,69 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
             return 0;
         }
 
-        return await ExecuteDbOperationAsync(() => DbProtectedClient.Updateable<WikiDocumentDraft>()
-            .SetColumns(draft => new WikiDocumentDraft
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var ownsTransaction = DbProtectedClient.Ado.Transaction == null;
+            if (ownsTransaction)
             {
-                MarkdownContent = string.Empty,
-                PayloadPurgedAt = nowUtc,
-                ModifyTime = nowUtc,
-                ModifyBy = "System"
-            })
-            .Where(draft => candidateIds.Contains(draft.Id) && draft.PayloadPurgedAt == null)
-            .ExecuteCommandAsync());
+                DbProtectedClient.Ado.BeginTran();
+            }
+
+            try
+            {
+                var purgedCount = await DbProtectedClient.Updateable<WikiDocumentDraft>()
+                    .SetColumns(draft => new WikiDocumentDraft
+                    {
+                        MarkdownContent = string.Empty,
+                        PayloadPurgedAt = nowUtc,
+                        ModifyTime = nowUtc,
+                        ModifyBy = "System"
+                    })
+                    .Where(draft => candidateIds.Contains(draft.Id) && draft.PayloadPurgedAt == null)
+                    .ExecuteCommandAsync();
+                if (purgedCount <= 0)
+                {
+                    if (ownsTransaction)
+                    {
+                        DbProtectedClient.Ado.CommitTran();
+                    }
+                    return 0;
+                }
+
+                var draftKinds = new[]
+                {
+                    (int)Radish.Shared.CustomEnum.WikiAttachmentReferenceKind.DraftContent,
+                    (int)Radish.Shared.CustomEnum.WikiAttachmentReferenceKind.DraftCover
+                };
+                await DbProtectedClient.Updateable<WikiAttachmentReference>()
+                    .SetColumns(reference => new WikiAttachmentReference
+                    {
+                        IsDeleted = true,
+                        DeletedAt = nowUtc,
+                        DeletedBy = "System",
+                        ModifyTime = nowUtc,
+                        ModifyBy = "System"
+                    })
+                    .Where(reference =>
+                        candidateIds.Contains(reference.ReferenceSourceId) &&
+                        draftKinds.Contains(reference.ReferenceKind) &&
+                        !reference.IsDeleted)
+                    .ExecuteCommandAsync();
+                if (ownsTransaction)
+                {
+                    DbProtectedClient.Ado.CommitTran();
+                }
+                return purgedCount;
+            }
+            catch
+            {
+                if (ownsTransaction)
+                {
+                    DbProtectedClient.Ado.RollbackTran();
+                }
+                throw;
+            }
+        });
     }
 
     public async Task<WikiDocument?> QueryByIdIncludingDeletedAsync(long id)

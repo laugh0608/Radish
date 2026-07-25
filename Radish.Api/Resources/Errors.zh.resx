@@ -354,6 +354,27 @@
   <data name="error.wiki.author_publishing_blocked" xml:space="preserve">
     <value>当前账号暂时不能新建或提交文档贡献。</value>
   </data>
+  <data name="error.wiki_attachment.invalid_reference" xml:space="preserve">
+    <value>文档引用的附件不存在、已停用或不属于当前租户。</value>
+  </data>
+  <data name="error.wiki_attachment.reference_forbidden" xml:space="preserve">
+    <value>当前账号无权把该附件引用到文档中。</value>
+  </data>
+  <data name="error.wiki_attachment.cross_tenant" xml:space="preserve">
+    <value>文档与附件不属于同一租户。</value>
+  </data>
+  <data name="error.wiki_attachment.type_mismatch" xml:space="preserve">
+    <value>该附件业务类型不能用于文档。</value>
+  </data>
+  <data name="error.wiki_attachment.reference_conflict" xml:space="preserve">
+    <value>文档附件引用已经变化，请重新载入后重试。</value>
+  </data>
+  <data name="error.wiki_attachment.source_not_found" xml:space="preserve">
+    <value>文档附件引用来源不存在。</value>
+  </data>
+  <data name="error.wiki_attachment.access_unavailable" xml:space="preserve">
+    <value>文档附件当前不可访问。</value>
+  </data>
   <data name="error.wiki.invalid_review_action" xml:space="preserve">
     <value>不支持该文档审核动作。</value>
   </data>

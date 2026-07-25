@@ -118,6 +118,12 @@ public partial class WikiDocumentService
         var title = NormalizeRequired(dto.Title, nameof(dto.Title));
         var slug = await EnsureUniqueSlugForCreateAsync(dto.Slug, title);
         await ValidateParentDocumentAsync(dto.ProposedParentId, null);
+        await ValidateWikiAttachmentReferencesAsync(
+            tenantId,
+            null,
+            dto.MarkdownContent,
+            dto.CoverAttachmentId,
+            userId);
         var document = new WikiDocument
         {
             TenantId = tenantId,
@@ -163,6 +169,7 @@ public partial class WikiDocumentService
             throw Conflict("文档草稿状态已变化", "Wiki.DraftStateConflict", "error.wiki.draft_state_conflict");
         }
         document.ActiveDraftId = draft.Id;
+        await SyncDraftAttachmentReferencesAsync(document, draft, userId, userName, now);
         return BuildDraftDetail(document, draft, "Owner");
     }
 
@@ -187,6 +194,12 @@ public partial class WikiDocumentService
             throw Conflict("文档已有活跃草稿", "Wiki.ActiveDraftAlreadyExists", "error.wiki.active_draft_exists");
         }
         await EnsureOwnedDraftCapacityAsync(document.OwnerUserId ?? userId);
+        await ValidateWikiAttachmentReferencesAsync(
+            tenantId,
+            document.Id,
+            document.MarkdownContent,
+            document.CoverAttachmentId,
+            userId);
         var now = DateTime.UtcNow;
         var draft = new WikiDocumentDraft
         {
@@ -212,6 +225,7 @@ public partial class WikiDocumentService
             throw Conflict("文档草稿状态已变化", "Wiki.DraftStateConflict", "error.wiki.draft_state_conflict");
         }
         document.ActiveDraftId = draft.Id;
+        await SyncDraftAttachmentReferencesAsync(document, draft, userId, userName, now);
         return BuildDraftDetail(document, draft, role);
     }
 
@@ -234,6 +248,12 @@ public partial class WikiDocumentService
         var title = NormalizeRequired(dto.Title, nameof(dto.Title));
         var slug = await EnsureUniqueSlugForUpdateAsync(dto.Slug, title, document.Id);
         await ValidateParentDocumentAsync(dto.ProposedParentId, document.Id);
+        await ValidateWikiAttachmentReferencesAsync(
+            tenantId,
+            document.Id,
+            dto.MarkdownContent,
+            dto.CoverAttachmentId,
+            userId);
         var affected = await _wikiDocumentRepository.SaveDraftAsync(new WikiDraftSaveCommand(
             draft.Id, tenantId, dto.ExpectedDraftVersion, title, slug, NormalizeOptional(dto.Summary),
             NormalizeRequired(dto.MarkdownContent, nameof(dto.MarkdownContent)), dto.CoverAttachmentId,
@@ -248,6 +268,20 @@ public partial class WikiDocumentService
             }
             throw Conflict("草稿版本已变化", "Wiki.DraftVersionConflict", "error.wiki.draft_version_conflict");
         }
+        draft.Title = title;
+        draft.Slug = slug;
+        draft.Summary = NormalizeOptional(dto.Summary);
+        draft.MarkdownContent = NormalizeRequired(dto.MarkdownContent, nameof(dto.MarkdownContent));
+        draft.CoverAttachmentId = dto.CoverAttachmentId;
+        draft.ProposedParentId = dto.ProposedParentId;
+        draft.ChangeSummary = NormalizeOptional(dto.ChangeSummary);
+        draft.DraftVersion = dto.ExpectedDraftVersion + 1;
+        await SyncDraftAttachmentReferencesAsync(
+            document,
+            draft,
+            userId,
+            userName,
+            DateTime.UtcNow);
         draft = await _wikiDraftRepository!.QueryByIdAsync(draft.Id)
             ?? throw AuthorNotFound();
         return BuildDraftDetail(document, draft, role);
@@ -682,6 +716,12 @@ public partial class WikiDocumentService
                 return BuildDraftDetail(document, draft, "Reviewer");
             }
             await ValidateParentDocumentAsync(dto.FinalParentId, document.Id);
+            await ValidateWikiAttachmentReferencesAsync(
+                tenantId,
+                document.Id,
+                draft.MarkdownContent,
+                draft.CoverAttachmentId,
+                reviewerId);
             var normalizedSlug = await EnsureUniqueSlugForUpdateAsync(draft.Slug, draft.Title, document.Id);
             draft.Slug = normalizedSlug;
             var applied = await _wikiDocumentRepository.ApplyDraftToDocumentAsync(new WikiDraftApplyCommand(
@@ -706,6 +746,11 @@ public partial class WikiDocumentService
             document.CoverAttachmentId = draft.CoverAttachmentId;
             document.ParentId = dto.FinalParentId;
             document.Version = dto.ExpectedDocumentVersion + 1;
+            await SyncDocumentAttachmentReferencesAsync(
+                document,
+                reviewerId,
+                reviewerNameValue,
+                now);
             await AddRevisionAsync(document, draft.ChangeSummary, document.SourceType, reviewerId, reviewerNameValue);
         }
         else

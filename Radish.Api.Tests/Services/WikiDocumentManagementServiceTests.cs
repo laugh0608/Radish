@@ -15,6 +15,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Shouldly;
 using Xunit;
@@ -191,10 +192,113 @@ public class WikiDocumentManagementServiceTests
         exception.Message.ShouldBe("固定文档为只读内容，请修改 Docs 目录中的源文件");
     }
 
+    [Fact(DisplayName = "Revision 附件引用冲突应返回稳定 WikiAttachment 错误")]
+    public async Task CreateDocumentAsync_ShouldMapRevisionReferenceConflict()
+    {
+        var documentRepository = new Mock<IWikiDocumentRepository>();
+        documentRepository
+            .Setup(repository => repository.QueryExistsAsync(
+                It.IsAny<Expression<Func<WikiDocument, bool>>>()))
+            .ReturnsAsync(false);
+        documentRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<WikiDocument>()))
+            .ReturnsAsync(20001);
+        var revisionRepository = new Mock<IBaseRepository<WikiDocumentRevision>>();
+        revisionRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<WikiDocumentRevision>()))
+            .ReturnsAsync(30001);
+        var attachmentReferences = new Mock<IWikiAttachmentReferenceRepository>();
+        attachmentReferences
+            .Setup(repository => repository.SyncSourceAsync(
+                It.IsAny<WikiAttachmentReferenceSyncCommand>()))
+            .Returns(Task.CompletedTask);
+        attachmentReferences
+            .Setup(repository => repository.AppendRevisionAsync(
+                It.IsAny<WikiAttachmentReferenceSyncCommand>()))
+            .ThrowsAsync(new WikiAttachmentReferenceConflictException());
+        var service = CreateService(
+            documentRepository,
+            revisionRepository,
+            attachmentReferences);
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            service.CreateDocumentAsync(
+                new CreateWikiDocumentDto
+                {
+                    Title = "Conflict",
+                    MarkdownContent = "body"
+                },
+                1001,
+                "Editor",
+                0));
+
+        exception.ErrorCode.ShouldBe(WikiAttachmentErrorCodes.ReferenceConflict);
+        exception.MessageKey.ShouldBe("error.wiki_attachment.reference_conflict");
+    }
+
+    [Fact(DisplayName = "回滚 Revision 前应重新校验附件是否仍可引用")]
+    public async Task RollbackAsync_ShouldRejectUnavailableRevisionAttachment()
+    {
+        var documentRepository = new Mock<IWikiDocumentRepository>();
+        documentRepository
+            .Setup(repository => repository.QueryByIdAsync(20001))
+            .ReturnsAsync(new WikiDocument
+            {
+                Id = 20001,
+                TenantId = 9,
+                Title = "Current",
+                Slug = "current",
+                MarkdownContent = "current body",
+                SourceType = "Custom",
+                Version = 2
+            });
+        var revisionRepository = new Mock<IBaseRepository<WikiDocumentRevision>>();
+        revisionRepository
+            .Setup(repository => repository.QueryByIdAsync(30001))
+            .ReturnsAsync(new WikiDocumentRevision
+            {
+                Id = 30001,
+                TenantId = 9,
+                DocumentId = 20001,
+                Version = 1,
+                Title = "Previous",
+                MarkdownContent = "![removed](attachment://40001)"
+            });
+        var attachmentRepository = new Mock<IBaseRepository<Attachment>>();
+        attachmentRepository
+            .Setup(repository => repository.QueryAsync(
+                It.IsAny<Expression<Func<Attachment, bool>>>()))
+            .ReturnsAsync([]);
+        var service = CreateService(
+            documentRepository,
+            revisionRepository,
+            new Mock<IWikiAttachmentReferenceRepository>(),
+            attachmentRepository);
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            service.RollbackAsync(30001, 1001, "Editor"));
+
+        exception.ErrorCode.ShouldBe(WikiAttachmentErrorCodes.InvalidReference);
+        documentRepository.Verify(
+            repository => repository.UpdateAsync(It.IsAny<WikiDocument>()),
+            Times.Never);
+    }
+
     private static WikiDocumentService CreateService(Mock<IWikiDocumentRepository> wikiDocumentRepository)
     {
+        return CreateService(
+            wikiDocumentRepository,
+            new Mock<IBaseRepository<WikiDocumentRevision>>(),
+            new Mock<IWikiAttachmentReferenceRepository>());
+    }
+
+    private static WikiDocumentService CreateService(
+        Mock<IWikiDocumentRepository> wikiDocumentRepository,
+        Mock<IBaseRepository<WikiDocumentRevision>> revisionRepository,
+        Mock<IWikiAttachmentReferenceRepository> attachmentReferences,
+        Mock<IBaseRepository<Attachment>>? attachmentRepository = null)
+    {
         var mapper = new Mock<IMapper>();
-        var revisionRepository = new Mock<IBaseRepository<WikiDocumentRevision>>();
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         consoleAuthorizationService
             .Setup(service => service.GetPermissionKeysByRolesAsync(It.IsAny<IReadOnlyCollection<string>>()))
@@ -203,6 +307,8 @@ public class WikiDocumentManagementServiceTests
             mapper.Object,
             wikiDocumentRepository.Object,
             revisionRepository.Object,
+            attachmentRepository?.Object ?? Mock.Of<IBaseRepository<Attachment>>(),
+            attachmentReferences.Object,
             consoleAuthorizationService.Object,
             Options.Create(new DocumentOptions()));
     }

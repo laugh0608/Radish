@@ -99,6 +99,9 @@ export {
   WikiReviewAction,
 } from './wiki-authoring-contract';
 
+export type { WikiAttachmentErrorCodeValue } from './wiki-attachment-contract';
+export { WikiAttachmentErrorCode } from './wiki-attachment-contract';
+
 export type {
   ModerationLongId,
   ContentModerationTargetType,

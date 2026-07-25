@@ -354,6 +354,27 @@
   <data name="error.wiki.author_publishing_blocked" xml:space="preserve">
     <value>This account cannot create or submit document contributions right now.</value>
   </data>
+  <data name="error.wiki_attachment.invalid_reference" xml:space="preserve">
+    <value>A referenced document attachment is missing, disabled, or belongs to another tenant.</value>
+  </data>
+  <data name="error.wiki_attachment.reference_forbidden" xml:space="preserve">
+    <value>The current account cannot attach this file to the document.</value>
+  </data>
+  <data name="error.wiki_attachment.cross_tenant" xml:space="preserve">
+    <value>The document and attachment belong to different tenants.</value>
+  </data>
+  <data name="error.wiki_attachment.type_mismatch" xml:space="preserve">
+    <value>This attachment type cannot be used by documents.</value>
+  </data>
+  <data name="error.wiki_attachment.reference_conflict" xml:space="preserve">
+    <value>The document attachment references changed. Reload and try again.</value>
+  </data>
+  <data name="error.wiki_attachment.source_not_found" xml:space="preserve">
+    <value>The document attachment source was not found.</value>
+  </data>
+  <data name="error.wiki_attachment.access_unavailable" xml:space="preserve">
+    <value>The document attachment is not currently accessible.</value>
+  </data>
   <data name="error.wiki.invalid_review_action" xml:space="preserve">
     <value>This document review action is not supported.</value>
   </data>

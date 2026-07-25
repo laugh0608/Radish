@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using AutoMapper;
 using Microsoft.Extensions.Options;
+using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
@@ -26,6 +27,8 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
     private readonly IWikiDocumentRepository _wikiDocumentRepository;
     private readonly IBaseRepository<WikiDocumentRevision> _wikiDocumentRevisionRepository;
+    private readonly IBaseRepository<Attachment> _attachmentRepository;
+    private readonly IWikiAttachmentReferenceRepository _wikiAttachmentReferenceRepository;
     private readonly IConsoleAuthorizationService _consoleAuthorizationService;
     private readonly IMapper _mapper;
     private readonly DocumentOptions _documentOptions;
@@ -40,6 +43,8 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         IMapper mapper,
         IWikiDocumentRepository wikiDocumentRepository,
         IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
+        IBaseRepository<Attachment> attachmentRepository,
+        IWikiAttachmentReferenceRepository wikiAttachmentReferenceRepository,
         IConsoleAuthorizationService consoleAuthorizationService,
         IOptions<DocumentOptions> documentOptions,
         IBaseRepository<WikiDocumentDraft>? wikiDraftRepository = null,
@@ -53,6 +58,8 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         _mapper = mapper;
         _wikiDocumentRepository = wikiDocumentRepository;
         _wikiDocumentRevisionRepository = wikiDocumentRevisionRepository;
+        _attachmentRepository = attachmentRepository;
+        _wikiAttachmentReferenceRepository = wikiAttachmentReferenceRepository;
         _consoleAuthorizationService = consoleAuthorizationService;
         _documentOptions = documentOptions.Value;
         _wikiDraftRepository = wikiDraftRepository;
@@ -519,6 +526,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return document == null ? null : _mapper.Map<WikiDocumentDetailVo>(document);
     }
 
+    [UseTran]
     public async Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId)
     {
         if (createDto == null)
@@ -532,6 +540,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         ValidateAccessPolicy(createDto.Visibility, createDto.AllowedRoles, createDto.AllowedPermissions);
 
         await ValidateParentDocumentAsync(createDto.ParentId, null);
+        await ValidateWikiAttachmentReferencesAsync(
+            tenantId,
+            null,
+            markdownContent,
+            createDto.CoverAttachmentId,
+            operatorId);
 
         var document = new WikiDocument
         {
@@ -558,10 +572,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var id = await AddAsync(document);
         document.Id = id;
 
+        await SyncDocumentAttachmentReferencesAsync(document, operatorId, operatorName, DateTime.UtcNow);
         await AddRevisionAsync(document, null, "Custom", operatorId, operatorName);
         return id;
     }
 
+    [UseTran]
     public async Task<bool> UpdateDocumentAsync(long id, UpdateWikiDocumentDto updateDto, long operatorId, string operatorName)
     {
         if (id <= 0)
@@ -588,6 +604,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         ValidateAccessPolicy(updateDto.Visibility, updateDto.AllowedRoles, updateDto.AllowedPermissions);
 
         await ValidateParentDocumentAsync(updateDto.ParentId, id);
+        await ValidateWikiAttachmentReferencesAsync(
+            document.TenantId,
+            document.Id,
+            markdownContent,
+            updateDto.CoverAttachmentId,
+            operatorId);
 
         var hasMeaningfulChanges =
             document.Title != title ||
@@ -621,6 +643,14 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         }
 
         var updated = await UpdateAsync(document);
+        if (updated)
+        {
+            await SyncDocumentAttachmentReferencesAsync(
+                document,
+                operatorId,
+                operatorName,
+                document.ModifyTime ?? DateTime.UtcNow);
+        }
         if (updated && hasMeaningfulChanges)
         {
             await AddRevisionAsync(document, NormalizeOptional(updateDto.ChangeSummary), document.SourceType, operatorId, operatorName);
@@ -826,6 +856,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return MapRevisionDetail(revision, document.Version);
     }
 
+    [UseTran]
     public async Task<bool> RollbackAsync(long revisionId, long operatorId, string operatorName)
     {
         if (revisionId <= 0)
@@ -856,6 +887,13 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             throw new BusinessException($"当前文档已是 v{revision.Version} 的内容，无需回滚", 409, "Wiki.RevisionAlreadyCurrent", "error.wiki.revision_already_current");
         }
 
+        await ValidateWikiAttachmentReferencesAsync(
+            document.TenantId,
+            document.Id,
+            revision.MarkdownContent,
+            document.CoverAttachmentId,
+            operatorId);
+
         document.Title = revision.Title;
         document.MarkdownContent = revision.MarkdownContent;
         document.Version += 1;
@@ -869,10 +907,16 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             return false;
         }
 
+        await SyncDocumentAttachmentReferencesAsync(
+            document,
+            operatorId,
+            operatorName,
+            document.ModifyTime ?? DateTime.UtcNow);
         await AddRevisionAsync(document, $"回滚到 v{revision.Version}", "Rollback", operatorId, operatorName);
         return true;
     }
 
+    [UseTran]
     public async Task<long> ImportMarkdownAsync(WikiMarkdownImportDto importDto, long operatorId, string operatorName, long tenantId)
     {
         if (importDto == null)
@@ -906,6 +950,12 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         ValidateAccessPolicy(importDto.Visibility, importDto.AllowedRoles, importDto.AllowedPermissions);
 
         await ValidateParentDocumentAsync(importDto.ParentId, null);
+        await ValidateWikiAttachmentReferencesAsync(
+            tenantId,
+            null,
+            markdownContent,
+            null,
+            operatorId);
 
         var status = importDto.PublishAfterImport
             ? (int)WikiDocumentStatusEnum.Published
@@ -935,6 +985,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         var id = await AddAsync(document);
         document.Id = id;
+        await SyncDocumentAttachmentReferencesAsync(document, operatorId, operatorName, DateTime.UtcNow);
         await AddRevisionAsync(document, "导入 Markdown 文档", "Imported", operatorId, operatorName);
         return id;
     }
@@ -977,7 +1028,13 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             CreateTime = DateTime.Now
         };
 
-        await _wikiDocumentRevisionRepository.AddAsync(revision);
+        revision.Id = await _wikiDocumentRevisionRepository.AddAsync(revision);
+        await SyncRevisionAttachmentReferencesAsync(
+            document,
+            revision,
+            operatorId,
+            operatorName,
+            revision.CreateTime);
     }
 
     private async Task<string> EnsureUniqueSlugForCreateAsync(string? requestedSlug, string titleSeed)

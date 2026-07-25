@@ -8,15 +8,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-L-B Wiki 附件服务端权威契约`
-- **产品下一顺位**：`建立 Main WikiAttachmentReference、私有默认、动态 ACL、事务同步、迁移与清理权威链`
+- **工程第一顺位**：`F4-L-C 正式 Web 受保护资源`
+- **产品下一顺位**：`接入 Author、受限 Docs、Revision 与 Console 审核的认证附件加载和 object URL 生命周期`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
   - 2026-07-25 F4-K-A / B 已完成：专题固定 Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制与旧字段迁移；服务端权威模型、operation ledger、统一关系策略、稳定错误、HTTP 与 `@radish/http` 契约均已落地，详见 [F4-K-B 服务端权威契约记录](/records/f4-k-b-user-block-server-contract-2026-07-25)。
   - 2026-07-25 F4-K-C / D 已完成并关闭专题：正式 Web 已接入公开主页、圈子、消息、通知和本人屏蔽列表；三账号 Gateway 矩阵覆盖关系、Direct 全状态、通知抑制、Outbox 失败重试、双语、PC / mobile 与恢复路径。验收修复 Direct 取消归档 SQL 谓词，临时数据残留为 `0`，六库完整性和严格 verify 通过；详见 [F4-K-D 成组验收记录](/records/f4-k-d-user-block-stage-acceptance-2026-07-25)，下一顺位进入 F4-L-A。
-  - 2026-07-25 F4-L-A 已完成：交叉复核匿名公开聊天、论坛作者版本恢复、内容赞赏与既有附件缺口后，选定 [Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)。设计固定 Main `WikiAttachmentReference`、私有默认、动态 Wiki ACL、草稿 / Apply 同事务同步、令牌先鉴权后消费、清理引用权威、历史迁移及 A-D 批次；下一顺位进入 F4-L-B。
+  - 2026-07-25 F4-L-A / B 已完成：候选审计选定 [Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)，随后落地 Main `WikiAttachmentReference`、Wiki 私有默认、动态 Wiki ACL、草稿 / Apply 同事务同步、令牌先鉴权后消费、清理权威和 `20260725_012` migration；通用 Document 保持独立边界。详见 [F4-L-B 服务端权威契约记录](/records/f4-l-b-wiki-attachment-server-contract-2026-07-25)，下一顺位进入 F4-L-C。
   - 2026-07-11 Q0-A 已完成：npm / NuGet High / Critical 清零，NuGet 审计恢复，`Dependency Security` 已纳入 Repo Quality workflow，并由用户确认配置到远程 `master` ruleset。
   - 2026-07-11 Q0-B 已完整关闭：生产性能基准、Weather、敏感配置、事务演示、测试租户写入与手动未读推送入口已删除，正常租户查询与正式通知能力保留，精确防回归契约已建立。
   - 2026-07-11 Q0-C 已完成：API JWT 启用 `radish-api` audience，完整 Claims 与成功鉴权高频日志已删除，Auth transport security 受 Development 显式配置和 Gateway 单跳 Forwarded Proto 契约约束。
@@ -200,7 +200,7 @@ Radish V1 的产品定位固定为：
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
 10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-D 批并关闭；独立申诉、部分支持、五类来源保护恢复、用户状态纠正、正式页面与六角色成组验收全部通过。
-11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成 A-D 批并关闭；[F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成候选审计和权威设计，下一顺位进入 F4-L-B。
+11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成 A-D 批并关闭；[F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A / B 批，下一顺位进入 F4-L-C。
 
 ## 昨日事项（2026-07-18）
 
@@ -261,18 +261,18 @@ Radish V1 的产品定位固定为：
 7. `F4-J-C` 已完成两份 Pencil 设计源、正式 `/me/appeals`、通知深链、Console 申诉工作台、权限裁剪、冲突草稿与双语响应式页面。
 8. `F4-J-D` 已完成六角色、五类目标、主要申诉状态、Chat 失败恢复与双语 PC / mobile 成组验收；四项共同根因修复、临时数据清理、六库完整性和严格 migration verify 均通过，F4-J 关闭。
 9. `F4-K-A / B` 已完成候选审计、Main 权威模型与迁移、专属 Repository、统一关系策略、关注事务、Direct 兼容、Chat 互动隔离、通知抑制、稳定错误和客户端协议。
-10. `F4-K-C / D` 已完成正式 Web 与成组验收并关闭专题；`F4-L-A` 已完成候选审计并选定 Wiki 附件隐私与生命周期权威闭环，固定私有默认、权威引用、动态 ACL、事务同步、令牌、清理、迁移及 A-D 批次。
+10. `F4-K-C / D` 已完成正式 Web 与成组验收并关闭专题；`F4-L-A / B` 已完成候选审计和服务端权威契约，Main 引用、私有默认、动态 ACL、事务同步、令牌、清理与迁移均已落地。
 
-## 下一事项（F4-L-B）
+## 下一事项（F4-L-C）
 
-1. 先接口后实现，新增 Main `WikiAttachmentReference` 权威模型、专属 Repository、migration、doctor / apply / verify，并把 `Wiki / Document` 上传切换为私有默认。
-2. 将草稿保存与 Apply 的引用同步纳入各自 Main 事务，统一公开正文、作者 / 审核、令牌访问和清理链路的动态 Wiki ACL，补稳定错误、HTTP 与 `@radish/http` 契约。
-3. 覆盖 SQLite / PostgreSQL 的迁移、Repository、Service、事务、并发、历史回填和恢复验证；本批不开发正式页面、不修改 Pencil，也不扩展匿名公开聊天、论坛回滚或内容赞赏。
+1. 在既有 Author、Authenticated / Restricted Docs、Revision 与 Console 审核页面接入认证二进制加载，不新增页面族，也不修改 Pencil。
+2. 图片、灯箱原图和普通文件统一建立 object URL 生命周期；上传预览、保存失败、文档 / 账号切换、失权和卸载必须及时回收，不退回匿名直链。
+3. 补中英文稳定状态、PC / mobile、键盘与无障碍静态回归；运行态成组矩阵、临时数据清理和专题关闭保留到 F4-L-D。
 
 ## 并行维护线
 
 - 公开 head、动态 sitemap、head snapshot 与生产公开域名配置。
-- 附件可靠性剩余项：F4-L 已回拉 `Wiki / Document` ACL 与历史迁移；分片 attachment correlation、durable quota settlement、多实例共享临时存储 / 分布式锁继续分开后置，Chat 附件可靠绑定已在私聊批次 B 完成。
+- 附件可靠性剩余项：F4-L 已回拉 Wiki ACL 与历史兼容迁移，通用 Document 不属于 Wiki 产品域；分片 attachment correlation、durable quota settlement、多实例共享临时存储 / 分布式锁继续分开后置，Chat 附件可靠绑定已在私聊批次 B 完成。
 - HTTP 认证恢复边界：关键非幂等写入需要幂等 / 去重保护，client 附件 XHR 的 URL 配置来源需收敛到 `getApiClientConfig()`。
 - 镜像漏洞门禁分层：Critical 与可修复 High / Critical 保持阻断，无修复 High 转为可追溯维护项与定期复核。
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`。

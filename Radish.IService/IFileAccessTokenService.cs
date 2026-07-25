@@ -19,7 +19,9 @@ public interface IFileAccessTokenService
         CreateFileAccessTokenDto dto,
         long userId,
         bool canManageAll,
-        string publicBaseUrl);
+        string publicBaseUrl,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null);
 
     /// <summary>
     /// 验证并使用令牌
@@ -28,7 +30,12 @@ public interface IFileAccessTokenService
     /// <param name="userId">访问用户ID（可选）</param>
     /// <param name="ipAddress">访问IP地址</param>
     /// <returns>附件ID，如果验证失败返回null</returns>
-    Task<long?> ValidateAndUseTokenAsync(string token, long? userId, string ipAddress);
+    Task<long?> ValidateAndUseTokenAsync(
+        string token,
+        long? userId,
+        string ipAddress,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null);
 
     /// <summary>
     /// 撤销令牌
@@ -36,10 +43,20 @@ public interface IFileAccessTokenService
     /// <param name="tokenId">令牌记录 ID</param>
     /// <param name="userId">用户ID</param>
     /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
-    Task RevokeTokenAsync(long tokenId, long userId, bool canManageAll);
+    Task RevokeTokenAsync(
+        long tokenId,
+        long userId,
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null);
 
     /// <summary>按原始 token 撤销，供旧调用兼容一个发布周期。</summary>
-    Task RevokeTokenAsync(string rawToken, long userId, bool canManageAll);
+    Task RevokeTokenAsync(
+        string rawToken,
+        long userId,
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null);
 
     /// <summary>
     /// 获取令牌信息
@@ -48,7 +65,12 @@ public interface IFileAccessTokenService
     /// <param name="userId">用户ID</param>
     /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
     /// <returns>令牌信息</returns>
-    Task<FileAccessTokenSummaryVo?> GetTokenInfoAsync(string rawToken, long userId, bool canManageAll);
+    Task<FileAccessTokenSummaryVo?> GetTokenInfoAsync(
+        string rawToken,
+        long userId,
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null);
 
     /// <summary>
     /// 获取附件的所有有效令牌
@@ -57,7 +79,12 @@ public interface IFileAccessTokenService
     /// <param name="userId">用户ID</param>
     /// <param name="canManageAll">是否具有 System / Admin 代管权限</param>
     /// <returns>令牌列表</returns>
-    Task<List<FileAccessTokenSummaryVo>> GetAttachmentTokensAsync(long attachmentId, long userId, bool canManageAll);
+    Task<List<FileAccessTokenSummaryVo>> GetAttachmentTokensAsync(
+        long attachmentId,
+        long userId,
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null);
 
     /// <summary>
     /// 清理过期令牌（定时任务调用）

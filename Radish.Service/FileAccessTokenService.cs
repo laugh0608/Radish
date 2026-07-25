@@ -19,15 +19,18 @@ public class FileAccessTokenService : IFileAccessTokenService
     private const int MaxValidHours = 168;
     private readonly IFileAccessTokenRepository _tokenRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
+    private readonly IWikiAttachmentAccessService _wikiAttachmentAccessService;
     private readonly TimeProvider _timeProvider;
 
     public FileAccessTokenService(
         IFileAccessTokenRepository tokenRepository,
         IBaseRepository<Attachment> attachmentRepository,
+        IWikiAttachmentAccessService wikiAttachmentAccessService,
         TimeProvider timeProvider)
     {
         _tokenRepository = tokenRepository;
         _attachmentRepository = attachmentRepository;
+        _wikiAttachmentAccessService = wikiAttachmentAccessService;
         _timeProvider = timeProvider;
     }
 
@@ -35,10 +38,17 @@ public class FileAccessTokenService : IFileAccessTokenService
         CreateFileAccessTokenDto dto,
         long userId,
         bool canManageAll,
-        string publicBaseUrl)
+        string publicBaseUrl,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         ValidateCreateTokenRequest(dto);
-        await EnsureCanManageAttachmentAsync(dto.AttachmentId, userId, canManageAll);
+        await EnsureCanManageAttachmentAsync(
+            dto.AttachmentId,
+            userId,
+            canManageAll,
+            tenantId,
+            roleNames);
 
         var rawToken = FileAccessTokenHashing.GenerateRawToken();
         var now = GetUtcNow();
@@ -67,7 +77,12 @@ public class FileAccessTokenService : IFileAccessTokenService
         return MapCreatedVo(tokenEntity, rawToken, publicBaseUrl, now);
     }
 
-    public async Task<long?> ValidateAndUseTokenAsync(string rawToken, long? userId, string ipAddress)
+    public async Task<long?> ValidateAndUseTokenAsync(
+        string rawToken,
+        long? userId,
+        string ipAddress,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (string.IsNullOrWhiteSpace(rawToken))
         {
@@ -78,6 +93,36 @@ public class FileAccessTokenService : IFileAccessTokenService
         var normalizedIp = NormalizeAuthorizedIp(ipAddress);
         var tokenHash = FileAccessTokenHashing.HashToken(rawToken);
         var now = GetUtcNow();
+        var candidate = await _tokenRepository.GetByHashAsync(tokenHash);
+        if (candidate == null ||
+            candidate.IsRevoked ||
+            candidate.ExpiresAt <= now ||
+            (candidate.AuthorizedUserId.HasValue && candidate.AuthorizedUserId != userId) ||
+            (!string.IsNullOrWhiteSpace(candidate.AuthorizedIp) && candidate.AuthorizedIp != normalizedIp) ||
+            (candidate.MaxAccessCount > 0 && candidate.AccessCount >= candidate.MaxAccessCount))
+        {
+            Log.Warning("[FileAccessToken] 令牌校验失败: {TokenHashPreview}", MaskHash(tokenHash));
+            return null;
+        }
+
+        var attachment = await _attachmentRepository.QueryByIdAsync(candidate.AttachmentId);
+        if (attachment == null || attachment.IsDeleted || !attachment.IsEnabled)
+        {
+            return null;
+        }
+        if (await _wikiAttachmentAccessService.IsWikiControlledAsync(attachment) &&
+            !await _wikiAttachmentAccessService.CanReadAsync(
+                attachment,
+                tenantId,
+                userId,
+                roleNames))
+        {
+            Log.Warning(
+                "[FileAccessToken] Wiki 附件当前访问策略拒绝令牌消费: {TokenId}",
+                candidate.Id);
+            return null;
+        }
+
         var consumedToken = await _tokenRepository.TryConsumeAsync(tokenHash, userId, normalizedIp, now);
         if (consumedToken == null)
         {
@@ -93,7 +138,12 @@ public class FileAccessTokenService : IFileAccessTokenService
         return consumedToken.AttachmentId;
     }
 
-    public async Task RevokeTokenAsync(long tokenId, long userId, bool canManageAll)
+    public async Task RevokeTokenAsync(
+        long tokenId,
+        long userId,
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (tokenId <= 0)
         {
@@ -102,7 +152,12 @@ public class FileAccessTokenService : IFileAccessTokenService
 
         var tokenEntity = await _tokenRepository.QueryByIdAsync(tokenId)
             ?? throw NotFoundError();
-        await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
+        await EnsureCanManageTokenAsync(
+            tokenEntity,
+            userId,
+            canManageAll,
+            tenantId,
+            roleNames);
 
         var revoked = await _tokenRepository.TryRevokeByIdAsync(tokenId, GetUtcNow());
         if (!revoked)
@@ -113,7 +168,12 @@ public class FileAccessTokenService : IFileAccessTokenService
         Log.Information("[FileAccessToken] 撤销令牌记录 {TokenId}", tokenId);
     }
 
-    public async Task RevokeTokenAsync(string rawToken, long userId, bool canManageAll)
+    public async Task RevokeTokenAsync(
+        string rawToken,
+        long userId,
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (string.IsNullOrWhiteSpace(rawToken))
         {
@@ -123,7 +183,12 @@ public class FileAccessTokenService : IFileAccessTokenService
         var tokenHash = FileAccessTokenHashing.HashToken(rawToken);
         var tokenEntity = await _tokenRepository.GetByHashAsync(tokenHash)
             ?? throw NotFoundError();
-        await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
+        await EnsureCanManageTokenAsync(
+            tokenEntity,
+            userId,
+            canManageAll,
+            tenantId,
+            roleNames);
 
         var revoked = await _tokenRepository.TryRevokeByHashAsync(tokenHash, GetUtcNow());
         if (!revoked)
@@ -137,7 +202,9 @@ public class FileAccessTokenService : IFileAccessTokenService
     public async Task<FileAccessTokenSummaryVo?> GetTokenInfoAsync(
         string rawToken,
         long userId,
-        bool canManageAll)
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null)
     {
         if (string.IsNullOrWhiteSpace(rawToken))
         {
@@ -150,16 +217,28 @@ public class FileAccessTokenService : IFileAccessTokenService
             return null;
         }
 
-        await EnsureCanManageTokenAsync(tokenEntity, userId, canManageAll);
+        await EnsureCanManageTokenAsync(
+            tokenEntity,
+            userId,
+            canManageAll,
+            tenantId,
+            roleNames);
         return MapSummaryVo(tokenEntity, GetUtcNow());
     }
 
     public async Task<List<FileAccessTokenSummaryVo>> GetAttachmentTokensAsync(
         long attachmentId,
         long userId,
-        bool canManageAll)
+        bool canManageAll,
+        long tenantId = 0,
+        IReadOnlyCollection<string>? roleNames = null)
     {
-        await EnsureCanManageAttachmentAsync(attachmentId, userId, canManageAll);
+        await EnsureCanManageAttachmentAsync(
+            attachmentId,
+            userId,
+            canManageAll,
+            tenantId,
+            roleNames);
         var now = GetUtcNow();
         var tokens = await _tokenRepository.QueryAsync(token =>
             token.AttachmentId == attachmentId &&
@@ -186,15 +265,33 @@ public class FileAccessTokenService : IFileAccessTokenService
         }
     }
 
-    private async Task EnsureCanManageTokenAsync(FileAccessToken token, long userId, bool canManageAll)
+    private async Task EnsureCanManageTokenAsync(
+        FileAccessToken token,
+        long userId,
+        bool canManageAll,
+        long tenantId,
+        IReadOnlyCollection<string>? roleNames)
     {
-        if (canManageAll || token.CreatedBy == userId)
+        var attachment = await _attachmentRepository.QueryByIdAsync(token.AttachmentId);
+        if (attachment == null)
         {
+            throw ForbiddenError();
+        }
+
+        if (await _wikiAttachmentAccessService.IsWikiControlledAsync(attachment))
+        {
+            if (!await _wikiAttachmentAccessService.CanManageAsync(
+                    attachment,
+                    tenantId,
+                    userId,
+                    roleNames))
+            {
+                throw ForbiddenError();
+            }
             return;
         }
 
-        var attachment = await _attachmentRepository.QueryByIdAsync(token.AttachmentId);
-        if (attachment?.UploaderId != userId)
+        if (!canManageAll && token.CreatedBy != userId && attachment.UploaderId != userId)
         {
             throw ForbiddenError();
         }
@@ -205,12 +302,30 @@ public class FileAccessTokenService : IFileAccessTokenService
         return _timeProvider.GetUtcNow().UtcDateTime;
     }
 
-    private async Task EnsureCanManageAttachmentAsync(long attachmentId, long userId, bool canManageAll)
+    private async Task EnsureCanManageAttachmentAsync(
+        long attachmentId,
+        long userId,
+        bool canManageAll,
+        long tenantId,
+        IReadOnlyCollection<string>? roleNames)
     {
         var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
         if (attachment == null)
         {
             throw new BusinessException("附件不存在", 404, "Attachment.NotFound", "error.attachment.not_found");
+        }
+
+        if (await _wikiAttachmentAccessService.IsWikiControlledAsync(attachment))
+        {
+            if (!await _wikiAttachmentAccessService.CanManageAsync(
+                    attachment,
+                    tenantId,
+                    userId,
+                    roleNames))
+            {
+                throw ForbiddenError();
+            }
+            return;
         }
 
         if (!canManageAll && attachment.UploaderId != userId)

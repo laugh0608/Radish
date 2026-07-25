@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -12,6 +13,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Xunit;
 
@@ -208,6 +210,43 @@ public sealed class WikiAuthoringServiceTest
             Times.Never);
     }
 
+    [Fact]
+    public async Task AuthorSaveDraft_ShouldSynchronizeContentAndCoverReferencesAfterCompareAndSet()
+    {
+        var fixture = CreateFixture();
+        fixture.Documents
+            .Setup(item => item.QueryExistsAsync(
+                It.IsAny<Expression<Func<WikiDocument, bool>>>()))
+            .ReturnsAsync(false);
+        fixture.Documents
+            .Setup(item => item.SaveDraftAsync(It.IsAny<WikiDraftSaveCommand>()))
+            .ReturnsAsync(1);
+
+        var result = await fixture.Service.AuthorSaveDraftAsync(
+            30001,
+            new SaveWikiAuthorDraftDto
+            {
+                Title = "Draft",
+                Slug = "draft",
+                MarkdownContent = "![asset](attachment://8001)",
+                ExpectedDraftVersion = 1
+            },
+            10001,
+            "Owner",
+            0);
+
+        Assert.Equal(2, result.VoDraftVersion);
+        fixture.AttachmentReferences.Verify(repository => repository.SyncSourceAsync(
+            It.Is<WikiAttachmentReferenceSyncCommand>(command =>
+                command.ReferenceKind == (int)WikiAttachmentReferenceKind.DraftContent &&
+                command.ReferenceSourceId == 30001 &&
+                command.AttachmentIds.SequenceEqual(new long[] { 8001 }))), Times.Once);
+        fixture.AttachmentReferences.Verify(repository => repository.SyncSourceAsync(
+            It.Is<WikiAttachmentReferenceSyncCommand>(command =>
+                command.ReferenceKind == (int)WikiAttachmentReferenceKind.DraftCover &&
+                command.AttachmentIds.Count == 0)), Times.Once);
+    }
+
     private static Fixture CreateFixture(
         long ownerUserId = 10001,
         WikiDocumentDraftState draftState = WikiDocumentDraftState.Editing,
@@ -223,6 +262,22 @@ public sealed class WikiAuthoringServiceTest
         var collaborators = new Mock<IBaseRepository<WikiDocumentCollaborator>>(MockBehavior.Strict);
         var reviewEvents = new Mock<IBaseRepository<WikiDocumentReviewEvent>>(MockBehavior.Strict);
         var users = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        var attachments = new Mock<IBaseRepository<Attachment>>();
+        var attachmentReferences = new Mock<IWikiAttachmentReferenceRepository>();
+        var attachment = new Attachment
+        {
+            Id = 8001,
+            TenantId = 0,
+            UploaderId = ownerUserId,
+            BusinessType = AttachmentBusinessTypes.Wiki,
+            IsEnabled = true
+        };
+        attachments
+            .Setup(item => item.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
+            .ReturnsAsync((Expression<Func<Attachment, bool>>? expression) =>
+                expression == null || expression.Compile()(attachment)
+                    ? [attachment]
+                    : []);
         var document = new WikiDocument
         {
             Id = 20001,
@@ -265,13 +320,21 @@ public sealed class WikiAuthoringServiceTest
             mapper,
             documents.Object,
             revisions.Object,
+            attachments.Object,
+            attachmentReferences.Object,
             consoleAuthorization.Object,
             Options.Create(new DocumentOptions()),
             drafts.Object,
             collaborators.Object,
             reviewEvents.Object,
             users.Object);
-        return new Fixture(service, documents, drafts, collaborators, reviewEvents);
+        return new Fixture(
+            service,
+            documents,
+            drafts,
+            collaborators,
+            reviewEvents,
+            attachmentReferences);
     }
 
     private sealed record Fixture(
@@ -279,5 +342,6 @@ public sealed class WikiAuthoringServiceTest
         Mock<IWikiDocumentRepository> Documents,
         Mock<IBaseRepository<WikiDocumentDraft>> Drafts,
         Mock<IBaseRepository<WikiDocumentCollaborator>> Collaborators,
-        Mock<IBaseRepository<WikiDocumentReviewEvent>> ReviewEvents);
+        Mock<IBaseRepository<WikiDocumentReviewEvent>> ReviewEvents,
+        Mock<IWikiAttachmentReferenceRepository> AttachmentReferences);
 }

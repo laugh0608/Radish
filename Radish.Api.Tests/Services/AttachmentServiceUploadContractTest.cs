@@ -628,6 +628,55 @@ public class AttachmentServiceUploadContractTest
     }
 
     [Fact]
+    public async Task UploadFileAsync_ShouldCreateWikiAttachmentAsPrivateDraft()
+    {
+        var repository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        repository
+            .Setup(item => item.AddAsync(It.Is<Attachment>(attachment =>
+                attachment.BusinessType == AttachmentBusinessTypes.Wiki &&
+                attachment.BusinessId == null &&
+                !attachment.IsPublic &&
+                attachment.UploaderId == 10001)))
+            .ReturnsAsync(45);
+        var fileStorage = new Mock<IFileStorage>(MockBehavior.Strict);
+        fileStorage
+            .Setup(storage => storage.UploadAsync(
+                It.IsAny<Stream>(),
+                "test.png",
+                It.Is<FileUploadOptionsDto>(options =>
+                    options.BusinessType == AttachmentBusinessTypes.Wiki)))
+            .ReturnsAsync(FileUploadResult.Ok(
+                "stored.png",
+                "Wiki/stored.png",
+                4,
+                "image/png"));
+        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+        mapper
+            .Setup(item => item.Map<AttachmentVo>(It.Is<Attachment>(attachment =>
+                attachment.Id == 45 && !attachment.IsPublic)))
+            .Returns(new AttachmentVo { VoId = 45, VoIsPublic = false });
+        var service = CreateService(
+            fileStorage.Object,
+            attachmentRepository: repository.Object,
+            mapper: mapper.Object);
+        var options = CreateUploadOptions();
+        options.BusinessType = AttachmentBusinessTypes.Wiki;
+
+        var result = await service.UploadFileAsync(
+            CreateImageFormFile(),
+            options,
+            10001,
+            "Tester");
+
+        Assert.NotNull(result);
+        Assert.Equal(45, result.VoId);
+        Assert.False(result.VoIsPublic);
+        repository.VerifyAll();
+        fileStorage.VerifyAll();
+        mapper.VerifyAll();
+    }
+
+    [Fact]
     public async Task GetAccessibleByIdAsync_ShouldNotAllowAdminToBypassBoundChatAttachmentPolicy()
     {
         var attachment = CreateAvatarAttachment(id: 44, uploaderId: 10001, businessId: 90001);
@@ -843,6 +892,7 @@ public class AttachmentServiceUploadContractTest
             imageProcessor ?? Mock.Of<IImageProcessor>(),
             Mock.Of<IAttachmentUrlResolver>(),
             chatChannelAccessService ?? Mock.Of<IChatChannelAccessService>(),
+            Mock.Of<IWikiAttachmentAccessService>(),
             Options.Create(fileStorageOptions ?? new FileStorageOptions()));
     }
 

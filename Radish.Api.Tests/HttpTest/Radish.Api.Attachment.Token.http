@@ -7,6 +7,13 @@
 @TokenToRevoke = <要撤销的 token>
 @TargetUserId = 20001
 
+###############################################################################
+# Wiki 附件补充契约：
+# 1. 创建、列表、撤销必须拥有当前 Wiki 附件管理权；
+# 2. DownloadByToken 不会把 token 升级为匿名分享权限，仍按当前 Wiki ACL；
+# 3. Wiki ACL 拒绝时不消费 MaxAccessCount。
+###############################################################################
+
 ### 为附件创建临时访问令牌
 POST {{Api_HostAddress}}/api/v1/Attachment/CreateAccessToken
 Authorization: Bearer {{Access_Token}}
@@ -21,6 +28,13 @@ Content-Type: application/json
 }
 
 ### 使用令牌下载文件
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token={{AccessToken}}
+
+### 登录态使用 Wiki 附件令牌（Authenticated / Restricted 按当前文档 ACL）
+GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token={{AccessToken}}
+Authorization: Bearer {{Access_Token}}
+
+### 匿名使用非 Public Wiki 附件令牌（预期 403，且不增加访问次数）
 GET {{Api_HostAddress}}/api/v1/Attachment/DownloadByToken?token={{AccessToken}}
 
 ### 创建限制访问次数的令牌

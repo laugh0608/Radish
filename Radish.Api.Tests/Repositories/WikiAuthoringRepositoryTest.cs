@@ -78,6 +78,18 @@ public sealed class WikiAuthoringRepositoryTest
                 draft.ReviewedAt = DateTime.UtcNow.AddDays(-91);
                 draft.ModifyTime = draft.ReviewedAt;
                 db.Updateable(draft).ExecuteCommand();
+                db.Insertable(new WikiAttachmentReference
+                {
+                    Id = 50001,
+                    TenantId = 0,
+                    DocumentId = draft.DocumentId,
+                    AttachmentId = 60001,
+                    ReferenceKind = (int)WikiAttachmentReferenceKind.DraftContent,
+                    ReferenceSourceId = draft.Id,
+                    CreateTime = DateTime.UtcNow,
+                    CreateBy = "Author",
+                    CreateId = 10001
+                }).ExecuteCommand();
 
                 var now = DateTime.UtcNow;
                 Assert.Equal(1, await repository.PurgeTerminalDraftPayloadsAsync(now.AddDays(-90), 100, now));
@@ -86,6 +98,7 @@ public sealed class WikiAuthoringRepositoryTest
                 var stored = db.Queryable<WikiDocumentDraft>().Single();
                 Assert.Equal(string.Empty, stored.MarkdownContent);
                 Assert.Equal(now, stored.PayloadPurgedAt);
+                Assert.True(db.Queryable<WikiAttachmentReference>().Single().IsDeleted);
             }
             finally
             {
@@ -175,6 +188,7 @@ public sealed class WikiAuthoringRepositoryTest
     {
         db.CodeFirst.InitTables<WikiDocument>();
         db.CodeFirst.InitTables<WikiDocumentDraft>();
+        db.CodeFirst.InitTables<WikiAttachmentReference>();
         var document = new WikiDocument
         {
             Id = 20001,
