@@ -20,6 +20,35 @@ namespace Radish.Api.Tests.Services;
 
 public class ContentModerationServiceTest
 {
+    [Theory]
+    [InlineData((int)ContentModerationDecision.NoViolation, (int)ContentModerationTargetDisposition.Keep, "MeasuresTaken")]
+    [InlineData((int)ContentModerationDecision.Violation, (int)ContentModerationTargetDisposition.Restricted, "NoViolation")]
+    [InlineData((int)ContentModerationDecision.InsufficientEvidence, (int)ContentModerationTargetDisposition.Unavailable, "MeasuresTaken")]
+    public async Task ReviewCaseAsync_ShouldRejectPublicResultCodeThatDoesNotMatchDecision(
+        int decision,
+        int targetDisposition,
+        string publicResultCode)
+    {
+        var service = CreateService();
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.ReviewCaseAsync(
+                new ReviewContentModerationCaseDto
+                {
+                    CasePublicId = "mod_test_public_result",
+                    ExpectedVersion = 1,
+                    Decision = decision,
+                    TargetDisposition = targetDisposition,
+                    PublicResultCode = publicResultCode,
+                    OperationKey = "moderation-public-result-test"
+                },
+                9001,
+                "reviewer",
+                0));
+
+        exception.Message.ShouldBe("公开结果分类与案件决定不一致");
+    }
+
     [Fact]
     public async Task SubmitReportAsync_Should_Persist_Comment_Target_Snapshot_On_Create()
     {

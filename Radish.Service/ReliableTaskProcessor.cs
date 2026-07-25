@@ -126,9 +126,9 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             throw new PermanentReliableTaskException("内容治理 Chat 动作处理依赖未注册");
         }
 
+        var resultCode = "TargetUnavailable";
         var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(item =>
             item.Id == payload.MessageId && item.TenantId == payload.TenantId);
-        var resultCode = "TargetUnavailable";
         if (message != null)
         {
             if (message.IsDeleted)

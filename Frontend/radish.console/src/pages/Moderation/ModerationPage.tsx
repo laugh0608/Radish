@@ -467,6 +467,7 @@ export const ModerationPage = () => {
       <section className="admin-feature-card moderation-case-filters">
         <Select
           value={statusFilter}
+          aria-label={t('moderation.case.filter.allStatuses')}
           className="moderation-filter-control moderation-filter-control--md"
           options={[
             { value: -1, label: t('moderation.case.filter.allStatuses') },
@@ -479,6 +480,7 @@ export const ModerationPage = () => {
         <Select
           allowClear
           value={targetTypeFilter}
+          aria-label={t('moderation.case.filter.targetType')}
           placeholder={t('moderation.case.filter.targetType')}
           className="moderation-filter-control moderation-filter-control--md"
           options={['Post', 'Comment', 'PostQuickReply', 'ChatMessage', 'Product'].map((value) => ({
@@ -489,6 +491,7 @@ export const ModerationPage = () => {
         />
         <Input
           value={keywordInput}
+          aria-label={t('moderation.case.filter.keyword')}
           className="moderation-filter-control moderation-filter-control--xl"
           placeholder={t('moderation.case.filter.keyword')}
           onChange={(event) => setKeywordInput(event.target.value)}

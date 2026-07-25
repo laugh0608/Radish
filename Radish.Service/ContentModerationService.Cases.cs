@@ -641,6 +641,21 @@ public partial class ContentModerationService
         {
             throw new ArgumentException("确认违规时必须明确至少一项处置");
         }
+
+        var expectedPublicResultCode = dto.Decision switch
+        {
+            (int)ContentModerationDecision.NoViolation => "NoViolation",
+            (int)ContentModerationDecision.Violation => "MeasuresTaken",
+            (int)ContentModerationDecision.InsufficientEvidence => "InsufficientEvidence",
+            _ => throw new ArgumentException("案件决定无效")
+        };
+        if (!string.Equals(
+                dto.PublicResultCode?.Trim(),
+                expectedPublicResultCode,
+                StringComparison.Ordinal))
+        {
+            throw new ArgumentException("公开结果分类与案件决定不一致");
+        }
     }
 
     private static void ValidateUserAction(ContentModerationCaseUserActionDto action)

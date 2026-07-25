@@ -8,9 +8,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-I-D 内容治理多角色成组验收与专题关闭`
-- **产品下一顺位**：`在 Gateway 正式路径验证五类目标、五种角色、双语与 PC / mobile 的治理闭环`
-- **复核日期**：`2026-07-24`
+- **工程第一顺位**：`F4-J-A 下一完整功能专题候选复核与权威设计`
+- **产品下一顺位**：`从内容、关系、贡献、治理与复访主轴复核剩余真实缺口，只选择一个边界稳定的完整专题`
+- **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
@@ -102,7 +102,8 @@
   - 2026-07-21 F4-H-D 已完成并关闭专题：主人 / 访客 / 匿名在 Gateway 正式路径覆盖显隐切换、跨标签、软删除、用户失效、跨租户、无宠物、公开字段白名单、`zh / en`、PC / mobile 与四主题代表矩阵；JSON-LD 和 sitemap 未包含宠物信息。临时宠物、主题权益与激活指针已清理，访客凭据恢复并匹配基线，六库完整性和严格 verify 通过。详见 [F4-H-D 成组验收记录](/records/f4-h-d-pet-public-card-stage-acceptance-2026-07-21)，工程第一顺位进入 F4-I-A 下一专题候选复核与权威设计。
   - 2026-07-21 F4-I-A 已完成：同口径复核圈子关系与治理候选后，裁决[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)为唯一当前专题。圈子已有关注、关注流、关系列表、公开主页回跳和可靠通知，新增关系隐私需另行定义政策；治理现有多举报孤立、审核与动作重复真相、来源关联缺校验、活跃动作无唯一状态和目标处置无权威结果，优先进入系统一致性治理。权威设计已固定 Case / Evidence / Event / UserModerationState、目标适配、权限、迁移、A-D 批次与停止线；下一顺位进入 F4-I-B。
   - 2026-07-21 F4-I-B 已完成：`20260721_008_content_moderation_case` 建立 Case / Evidence / Event / UserModerationState 及历史映射，专属 Repository 落地案件聚合、追加证据、Case / State CAS、决定与动作幂等、五类目标处置、Chat 跨库可靠任务、治理通知和旧写入口过渡兼容；新用户侧 / Console API、Action 独立权限与 `@radish/http` 契约已建立。SQLite 与 PostgreSQL 17 migration 重入、后端全量 `973` 项、前端生产构建和静态契约通过，未修改 Pencil 或正式页面。详见 [F4-I-B 服务端权威契约完成记录](/records/f4-i-b-content-moderation-server-contract-2026-07-21)，下一顺位进入 F4-I-C。
-  - 2026-07-24 F4-I-C 已完成：Console `P02 / P07` 与 `/me/reports` PC / mobile Pencil、正式 `/moderation` Case 工作台、私域本人举报结果、权限分离、冲突草稿保留、目标失效摘要和双语均已落地；旧四个 HTTP 入口及权限种子已退役。静态与代码侧门禁通过，未启动服务或执行 Gateway smoke；下一顺位进入 F4-I-D 多角色、五目标成组验收。
+  - 2026-07-24 F4-I-C 已完成：Console `P02 / P07` 与 `/me/reports` PC / mobile Pencil、正式 `/moderation` Case 工作台、私域本人举报结果、权限分离、冲突草稿保留、目标失效摘要和双语均已落地；旧四个 HTTP 入口及权限种子已退役。静态与代码侧门禁通过，未启动服务或执行 Gateway smoke。
+  - 2026-07-25 F4-I-D 已完成并关闭专题：五种角色、五类目标、聚合 / 并发 / 幂等、目标变化、用户治理状态、Chat 跨库失败 / 重试、`zh / en × PC / mobile` 和四主题代表矩阵均已通过；验收发现的联表表达式、结果码和异步异常传播契约已按共同根因修正。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-I-D 成组验收记录](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25)，工程第一顺位进入 F4-J-A 候选复核与权威设计。
 
 ## V1 产品与发布范围
 
@@ -195,7 +196,8 @@ Radish V1 的产品定位固定为：
 6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭，唯一持久游标、隐私裁剪、发送者受限读取、活跃阅读面、正式 Web / WebOS 与三普通账号成组验收全部通过。
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A-D 批已完成并关闭；Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply、独立 Publish、公开隔离与临时数据清理均已通过。
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
-9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-C 批设计、服务端契约、Pencil 与正式页面；下一顺位进入 `F4-I-D` 多角色、五目标、双语与 PC / mobile 成组验收，完成清理、数据库完整性和专题关闭。
+9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
+10. 下一顺位进入 `F4-J-A`：按同一口径复核内容、关系、贡献、治理与复访主轴的剩余真实缺口，核对现有专题文档与实际代码，只选择一个长期价值、权限 / 数据边界和失败恢复均可稳定定义的完整专题；先完成权威设计和 A-D 批次边界，不并行实施其他候选。
 
 ## 昨日事项（2026-07-18）
 
@@ -245,20 +247,19 @@ Radish V1 的产品定位固定为：
 25. 已完成 F4-G-C Author / Console 正式页面：两份 Pencil 设计源覆盖 PC / mobile 作者协作、冲突恢复和审核证据；正式 Author 页面只认服务端 `VoCan*`、Draft / Review 状态与 CAS 版本，Console 在既有 `/documents` 内完成审核闭环，WebOS 写入经同一 Author API 兼容转发，旧 `Create / Update` HTTP 入口删除。前端 `548` 项、Wiki 后端定向 `47` 项、lint、type-check、两端生产构建、解决方案构建、Baseline Quick 与仓库卫生通过；未启动服务或执行浏览器 smoke。
 26. 已完成 F4-G-D Gateway 成组验收：邀请响应、协作者失权、CAS 冲突、提交 / 撤回 / 下一稿、请求修改 / 驳回 / Apply / Publish、未审核与驳回正文公开隔离全部通过；四个共同根因已修复，临时数据残留为 `0`，六库完整性与严格 verify 通过，F4-G 正式关闭。
 
-## 今日事项（2026-07-24）
+## 今日事项（2026-07-25）
 
-1. `F4-I-C` 已完成：Console `P02 / P07` 与私域 `/me/reports` PC / mobile Pencil 均已更新并通过布局检查。
-2. Console `/moderation` 已全面迁移到 Case API，覆盖案件队列、详情、追加式证据、决定 / 动作权限分离、纠正动作、事件留痕和 `409` 冲突草稿保留。
-3. 正式 Web 已新增 `/me/reports`，只展示本人举报收件、目标摘要与精简结果；目标失效仍保留提交摘要，不提供撤回、催办、附件或管理员对话。
-4. 仓库内消费者迁移完成后，旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口已删除；后端接口退役测试固定新旧边界。
-5. `@radish/http`、共享 UI、client、Console、后端测试、两端 production build、解决方案构建与 `Baseline Quick` 已通过；本批未启动服务、未执行 Gateway smoke。
+1. `F4-I-D` 已使用五种角色覆盖 `Post / Comment / PostQuickReply / ChatMessage / Product`，并完成聚合、并发、目标变化、用户治理状态和跨租户矩阵。
+2. Gateway 正式路径已完成 `/console/moderation`、`/me/reports` 的双语、PC / mobile、四主题、Back / Forward、键盘与无障碍复核。
+3. 验收暴露的 Repository 联表参数、SQL 投影、结果码严格匹配和非泛型 `Task` 异常传播问题已按根因修正并补回归。
+4. 临时业务数据、通知、授权、作业和审计记录已清理；六库完整性、DbMigrate doctor / verify、全量后端与前端静态门禁通过。
 
-## 下一事项（F4-I-D）
+## 下一事项（F4-J-A）
 
-1. 先按项目启动规则确认 Gateway、API、Auth、client 与 Console 的命令、端口、运行影响并取得当轮明确授权，再开始真实联调。
-2. 使用举报者、被举报者、只读治理员、审核员和动作执行员覆盖 `Post / Comment / PostQuickReply / ChatMessage / Product`。
-3. 覆盖多举报聚合、重复提交、并发结案、目标编辑 / 删除 / 撤回、动作失败 / 重试、禁言 / 封禁 / 解除 / 到期及跨租户隔离。
-4. 完成 `zh / en × PC / mobile`、Back / Forward、长文本、键盘、无障碍和主题代表矩阵；随后清理临时数据并检查相关数据库完整性与严格 migration verify。
+1. 盘点内容、关系、贡献、治理与复访主轴尚未关闭的设计和实现缺口，交叉核对 `Docs/`、实体 / migration、Service / API、正式页面和测试。
+2. 依据用户主路径价值、现有能力缺口、数据与权限边界、失败恢复、迁移风险和可验收性对候选做同口径比较，只裁决一个专题。
+3. 为选定专题补齐定位、用户旅程、状态真相源、接口 / 页面、权限与隐私、并发 / 幂等、容量、恢复、Pencil、验证矩阵和停止线。
+4. 固定 A-D 批次后再进入代码，不并行展开其余候选，也不重启主动生产证据采集。
 
 ## 并行维护线
 

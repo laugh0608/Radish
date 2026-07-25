@@ -187,6 +187,21 @@ public sealed class ContentModerationCaseRepositoryTest
         Assert.Single(harness.Db.Queryable<ReliableOutboxMessage>().ToList());
         Assert.Equal("Submitted", Assert.Single(harness.Db.Queryable<ContentReport>().ToList()).ReporterState);
 
+        var failed = await harness.Repository.CompleteChatTargetActionAsync(
+            new ContentModerationChatActionCompletionCommand(
+                9,
+                submitted.Case.Id,
+                command.OperationKey,
+                false,
+                "RecallFailed",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(2)));
+
+        Assert.Equal((int)ContentModerationCaseStatus.Reviewing, failed.Status);
+        Assert.Equal((int)ContentModerationTargetDisposition.ActionFailed, failed.TargetDisposition);
+        Assert.Equal("Submitted", Assert.Single(harness.Db.Queryable<ContentReport>().ToList()).ReporterState);
+
         var completed = await harness.Repository.CompleteChatTargetActionAsync(
             new ContentModerationChatActionCompletionCommand(
                 9,
@@ -196,7 +211,7 @@ public sealed class ContentModerationCaseRepositoryTest
                 "Restricted",
                 9001,
                 "reviewer",
-                NowUtc.AddMinutes(2)));
+                NowUtc.AddMinutes(3)));
 
         Assert.Equal((int)ContentModerationCaseStatus.Resolved, completed.Status);
         Assert.Equal((int)ContentModerationTargetDisposition.Restricted, completed.TargetDisposition);
