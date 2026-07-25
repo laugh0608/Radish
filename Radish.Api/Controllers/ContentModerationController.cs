@@ -289,6 +289,128 @@ public class ContentModerationController : ControllerBase
         }
     }
 
+    [HttpGet]
+    public async Task<MessageModel> GetMyAppealableDecisions(
+        [FromQuery] ContentModerationAppealQueryDto? query = null)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.GetMyAppealableDecisionsAsync(
+                query ?? new ContentModerationAppealQueryDto(), Current.UserId, Current.TenantId));
+    }
+
+    [HttpGet]
+    public async Task<MessageModel> GetMyAppeals([FromQuery] ContentModerationAppealQueryDto? query = null)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.GetMyAppealsAsync(
+                query ?? new ContentModerationAppealQueryDto(), Current.UserId, Current.TenantId));
+    }
+
+    [HttpGet("{appealPublicId}")]
+    public async Task<MessageModel> GetMyAppeal(string appealPublicId)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.GetAppealAsync(
+                appealPublicId, Current.TenantId, Current.UserId));
+    }
+
+    [HttpPost]
+    public async Task<MessageModel> SubmitAppeal([FromBody] SubmitContentModerationAppealDto dto)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.SubmitAppealAsync(
+                dto, Current.UserId, Current.UserName, Current.TenantId));
+    }
+
+    [HttpPost]
+    public async Task<MessageModel> WithdrawAppeal(
+        [FromBody] ContentModerationAppealVersionedOperationDto dto)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.WithdrawAppealAsync(dto, Current.UserId, Current.TenantId));
+    }
+
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ModerationView)]
+    public async Task<MessageModel> GetAppealQueue(
+        [FromQuery] ContentModerationAppealQueryDto? query = null)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.GetAppealQueueAsync(
+                query ?? new ContentModerationAppealQueryDto(), Current.TenantId));
+    }
+
+    [HttpGet("{appealPublicId}")]
+    [RequireConsolePermission(ConsolePermissions.ModerationAppeal)]
+    public async Task<MessageModel> GetAppeal(string appealPublicId)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.GetAppealAsync(appealPublicId, Current.TenantId));
+    }
+
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ModerationAppeal)]
+    public async Task<MessageModel> GetAppealEvents([FromQuery] string appealPublicId)
+    {
+        return await ExecuteAppealRequestAsync(async () =>
+            (await _contentModerationService.GetAppealAsync(appealPublicId, Current.TenantId)).VoEvents);
+    }
+
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ModerationAppeal)]
+    public async Task<MessageModel> StartAppealReview(
+        [FromBody] ContentModerationAppealVersionedOperationDto dto)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.StartAppealReviewAsync(
+                dto, Current.UserId, Current.UserName, Current.TenantId));
+    }
+
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ModerationAppeal)]
+    public async Task<MessageModel> CaptureAppealEvidence(
+        [FromBody] CaptureContentModerationAppealEvidenceDto dto)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.CaptureAppealEvidenceAsync(
+                dto, Current.UserId, Current.UserName, Current.TenantId));
+    }
+
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ModerationAppeal)]
+    public async Task<MessageModel> ReviewAppeal([FromBody] ReviewContentModerationAppealDto dto)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.ReviewAppealAsync(
+                dto, Current.UserId, Current.UserName, Current.TenantId));
+    }
+
+    [HttpPost]
+    [RequireConsolePermission(ConsolePermissions.ModerationAction)]
+    public async Task<MessageModel> ExecuteAppealRelief(
+        [FromBody] ContentModerationAppealVersionedOperationDto dto)
+    {
+        return await ExecuteAppealRequestAsync(() =>
+            _contentModerationService.ExecuteAppealReliefAsync(
+                dto, Current.UserId, Current.UserName, Current.TenantId));
+    }
+
+    private async Task<MessageModel> ExecuteAppealRequestAsync<T>(Func<Task<T>> action)
+    {
+        try
+        {
+            return BuildSuccess(await action());
+        }
+        catch (ArgumentException)
+        {
+            return BuildValidationError();
+        }
+        catch (BusinessException ex)
+        {
+            return BuildError((HttpStatusCodeEnum)ex.StatusCode, ex.Message, ex.ErrorCode, ex.MessageKey);
+        }
+    }
+
     private MessageModel BuildValidationError()
     {
         return BuildError(

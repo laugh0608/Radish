@@ -376,3 +376,59 @@ public sealed class ContentModerationCaseReviewResultVo
     public int? VoUserStateVersion { get; set; }
     public bool VoIsIdempotentReplay { get; set; }
 }
+
+public sealed class ContentModerationDecisionNoticeVo
+{
+    public string VoCasePublicId { get; set; } = string.Empty;
+    public string VoTargetType { get; set; } = string.Empty;
+    public long VoTargetContentId { get; set; }
+    public string? VoPublicResultCode { get; set; }
+    public int VoEligibleScope { get; set; }
+    public DateTime VoResolvedAt { get; set; }
+    public DateTime VoEligibleUntilUtc { get; set; }
+    public string? VoAppealPublicId { get; set; }
+    public string? VoAppealStatus { get; set; }
+}
+
+public sealed class ContentModerationAppealVo
+{
+    public string VoAppealPublicId { get; set; } = string.Empty;
+    public string VoCasePublicId { get; set; } = string.Empty;
+    public string VoStatus { get; set; } = string.Empty;
+    public string VoOutcome { get; set; } = string.Empty;
+    public int VoEligibleScope { get; set; }
+    public int VoGrantedScope { get; set; }
+    public int VoVersion { get; set; }
+    public string VoStatement { get; set; } = string.Empty;
+    public string? VoPublicResultCode { get; set; }
+    public string? VoPublicResultSummary { get; set; }
+    public string? VoInternalRemark { get; set; }
+    public DateTime VoSubmittedAt { get; set; }
+    public DateTime VoEligibleUntilUtc { get; set; }
+    public DateTime? VoResolvedAt { get; set; }
+    public List<ContentModerationAppealEventVo> VoEvents { get; set; } = [];
+    public List<ContentModerationTargetActionVo> VoTargetActions { get; set; } = [];
+    public List<UserModerationActionVo> VoUserActions { get; set; } = [];
+    public bool VoIsIdempotentReplay { get; set; }
+}
+
+public sealed class ContentModerationAppealEventVo
+{
+    public int VoSequence { get; set; }
+    public string VoEventType { get; set; } = string.Empty;
+    public string? VoResultCode { get; set; }
+    public string? VoRemark { get; set; }
+    public long VoActorUserId { get; set; }
+    public string VoActorName { get; set; } = string.Empty;
+    public DateTime VoCreateTime { get; set; }
+}
+
+public sealed class ContentModerationTargetActionVo
+{
+    public string VoActionType { get; set; } = string.Empty;
+    public string VoStatus { get; set; } = string.Empty;
+    public string? VoResultCode { get; set; }
+    public bool VoChangedTargetState { get; set; }
+    public DateTime VoRequestedAt { get; set; }
+    public DateTime? VoCompletedAt { get; set; }
+}

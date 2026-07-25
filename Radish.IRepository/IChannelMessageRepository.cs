@@ -15,6 +15,15 @@ public sealed record ChannelMessageRecallWriteResult(
     bool PinsChanged,
     long PinRevision);
 
+/// <summary>治理申诉恢复 Chat 消息及联动状态的事务结果。</summary>
+public sealed record ChannelMessageRestoreWriteResult(
+    int AffectedRows,
+    long ChannelId,
+    bool ReactionsChanged,
+    long ReactionRevision,
+    bool PinsChanged,
+    long PinRevision);
+
 /// <summary>陌生私聊请求首条消息已被其他写入占用。</summary>
 public sealed class DirectConversationRequestClaimException : Exception
 {
@@ -39,6 +48,15 @@ public interface IChannelMessageRepository : IBaseRepository<ChannelMessage>
     /// <summary>在 Chat 单事务内撤回消息并软删除其全部活跃回应与置顶。</summary>
     Task<ChannelMessageRecallWriteResult> RecallWithEffectsAsync(
         long messageId,
+        long operatorId,
+        string operatorName,
+        DateTime nowUtc,
+        long? moderationTargetActionId = null);
+
+    /// <summary>仅恢复仍由指定治理限制动作持有的消息、回应和置顶。</summary>
+    Task<ChannelMessageRestoreWriteResult> RestoreModeratedWithEffectsAsync(
+        long messageId,
+        long sourceTargetActionId,
         long operatorId,
         string operatorName,
         DateTime nowUtc);

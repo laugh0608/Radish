@@ -376,7 +376,18 @@ public sealed partial class ContentModerationCaseRepository
 
                     var existingState = existingAction == null ? null : await QueryActionStateAsync(existingAction);
                     DbProtectedClient.Ado.CommitTran();
-                    return new ContentModerationCaseReviewWriteResult(moderationCase, existingAction, existingState, true);
+                    var existingTargetAction = await DbProtectedClient.Queryable<ContentModerationTargetAction>()
+                        .Where(item =>
+                            item.TenantId == command.TenantId &&
+                            item.CaseId == moderationCase.Id &&
+                            item.OperationKey == command.OperationKey)
+                        .FirstAsync();
+                    return new ContentModerationCaseReviewWriteResult(
+                        moderationCase,
+                        existingAction,
+                        existingState,
+                        existingTargetAction,
+                        true);
                 }
 
                 if (existingAction != null || await DbProtectedClient.Queryable<ContentModerationCase>()
@@ -396,6 +407,7 @@ public sealed partial class ContentModerationCaseRepository
 
                 UserModerationAction? action = null;
                 UserModerationState? state = null;
+                ContentModerationTargetAction? targetAction = null;
                 if (command.UserAction != null)
                 {
                     (action, state) = await ApplyUserActionAsync(moderationCase, command);
@@ -404,19 +416,49 @@ public sealed partial class ContentModerationCaseRepository
                 var targetActionResult = "Kept";
                 if (command.TargetDisposition == (int)ContentModerationTargetDisposition.Restricted)
                 {
+                    targetAction = CreateTargetAction(
+                        moderationCase,
+                        appealId: null,
+                        ContentModerationTargetActionType.Restrict,
+                        sourceTargetActionId: null,
+                        command.OperationKey,
+                        command.ExpectedTargetVersion,
+                        command.OperatorUserId,
+                        command.OperatorName,
+                        command.NowUtc);
+                    await DbProtectedClient.Insertable(targetAction).ExecuteCommandAsync();
                     if (moderationCase.TargetType == (int)ContentReportTargetTypeEnum.ChatMessage)
                     {
-                        await EnqueueChatRecallAsync(moderationCase, command);
-                        var pendingCase = await SavePendingChatDecisionAsync(moderationCase, command, action);
+                        await EnqueueChatRecallAsync(moderationCase, targetAction, command);
+                        var pendingCase = await SavePendingChatDecisionAsync(
+                            moderationCase,
+                            command,
+                            action,
+                            targetAction);
                         if (action != null)
                         {
                             await EnqueueUserActionNotificationAsync(action, command.OperationKey, command.NowUtc);
                         }
                         DbProtectedClient.Ado.CommitTran();
-                        return new ContentModerationCaseReviewWriteResult(pendingCase, action, state, false);
+                        return new ContentModerationCaseReviewWriteResult(
+                            pendingCase,
+                            action,
+                            state,
+                            targetAction,
+                            false);
                     }
 
-                    targetActionResult = await RestrictMainTargetAsync(moderationCase, command);
+                    targetActionResult = await RestrictMainTargetAsync(
+                        moderationCase,
+                        targetAction.Id,
+                        command);
+                    CompleteTargetAction(
+                        targetAction,
+                        targetActionResult,
+                        targetActionResult == "Restricted",
+                        command.ExpectedTargetVersion,
+                        command.NowUtc);
+                    await DbProtectedClient.Updateable(targetAction).ExecuteCommandAsync();
                 }
 
                 var nextVersion = moderationCase.Version + 1;
@@ -466,6 +508,7 @@ public sealed partial class ContentModerationCaseRepository
                     command.OperatorUserId,
                     command.OperatorName,
                     relatedActionId: action?.Id,
+                    relatedTargetActionId: targetAction?.Id,
                     fromStatus: moderationCase.Status,
                     toStatus: (int)ContentModerationCaseStatus.Resolved,
                     resultCode: targetActionResult,
@@ -485,6 +528,14 @@ public sealed partial class ContentModerationCaseRepository
                     await EnqueueUserActionNotificationAsync(action, command.OperationKey, command.NowUtc);
                 }
                 await EnqueueReportResultNotificationsAsync(moderationCase, command.PublicResultCode, command.OperationKey, command.NowUtc);
+                if (command.Decision == (int)ContentModerationDecision.Violation &&
+                    (targetAction?.ChangedTargetState == true || action != null))
+                {
+                    await EnqueueDecisionAvailableNotificationAsync(
+                        moderationCase,
+                        command.OperationKey,
+                        command.NowUtc);
+                }
 
                 moderationCase.Status = (int)ContentModerationCaseStatus.Resolved;
                 moderationCase.Decision = command.Decision;
@@ -498,7 +549,12 @@ public sealed partial class ContentModerationCaseRepository
                 moderationCase.ResolvedById = command.OperatorUserId;
                 moderationCase.ResolvedByName = command.OperatorName;
                 DbProtectedClient.Ado.CommitTran();
-                return new ContentModerationCaseReviewWriteResult(moderationCase, action, state, false);
+                return new ContentModerationCaseReviewWriteResult(
+                    moderationCase,
+                    action,
+                    state,
+                    targetAction,
+                    false);
             }
             catch
             {
@@ -529,6 +585,27 @@ public sealed partial class ContentModerationCaseRepository
                     DbProtectedClient.Ado.CommitTran();
                     return moderationCase;
                 }
+
+                var targetAction = await DbProtectedClient.Queryable<ContentModerationTargetAction>()
+                    .Where(item =>
+                        item.TenantId == command.TenantId &&
+                        item.Id == command.TargetActionId &&
+                        item.CaseId == command.CaseId &&
+                        item.ActionType == (int)ContentModerationTargetActionType.Restrict)
+                    .FirstAsync();
+                if (targetAction == null)
+                {
+                    throw new ContentModerationTargetActionException("TargetActionNotFound");
+                }
+
+                CompleteTargetAction(
+                    targetAction,
+                    command.ResultCode,
+                    command.Succeeded && command.ResultCode == "Restricted",
+                    resultTargetVersion: null,
+                    command.NowUtc,
+                    command.Succeeded);
+                await DbProtectedClient.Updateable(targetAction).ExecuteCommandAsync();
 
                 var nextVersion = moderationCase.Version + 1;
                 var finalDisposition = command.Succeeded
@@ -577,6 +654,17 @@ public sealed partial class ContentModerationCaseRepository
                         moderationCase.PublicResultCode ?? command.ResultCode,
                         command.OperationKey,
                         command.NowUtc);
+                    if (targetAction.ChangedTargetState ||
+                        await DbProtectedClient.Queryable<UserModerationAction>()
+                            .AnyAsync(item =>
+                                item.TenantId == command.TenantId &&
+                                item.CaseId == command.CaseId))
+                    {
+                        await EnqueueDecisionAvailableNotificationAsync(
+                            moderationCase,
+                            command.OperationKey,
+                            command.NowUtc);
+                    }
                 }
 
                 await DbProtectedClient.Insertable(CreateEvent(
@@ -585,6 +673,7 @@ public sealed partial class ContentModerationCaseRepository
                     command.Succeeded ? "ActionSucceeded" : "ActionFailed",
                     command.OperatorUserId,
                     command.OperatorName,
+                    relatedTargetActionId: targetAction.Id,
                     resultCode: command.ResultCode,
                     fromStatus: moderationCase.Status,
                     toStatus: command.Succeeded
@@ -656,7 +745,12 @@ public sealed partial class ContentModerationCaseRepository
 
                     var existingState = await QueryActionStateAsync(existingAction);
                     DbProtectedClient.Ado.CommitTran();
-                    return new ContentModerationCaseReviewWriteResult(moderationCase, existingAction, existingState, true);
+                    return new ContentModerationCaseReviewWriteResult(
+                        moderationCase,
+                        existingAction,
+                        existingState,
+                        null,
+                        true);
                 }
 
                 if (moderationCase.Status != (int)ContentModerationCaseStatus.Resolved ||
@@ -700,7 +794,12 @@ public sealed partial class ContentModerationCaseRepository
                 moderationCase.ModifyBy = command.OperatorName;
                 moderationCase.ModifyId = command.OperatorUserId;
                 DbProtectedClient.Ado.CommitTran();
-                return new ContentModerationCaseReviewWriteResult(moderationCase, action, state, false);
+                return new ContentModerationCaseReviewWriteResult(
+                    moderationCase,
+                    action,
+                    state,
+                    null,
+                    false);
             }
             catch
             {
@@ -854,20 +953,22 @@ public sealed partial class ContentModerationCaseRepository
 
     private async Task<string> RestrictMainTargetAsync(
         ContentModerationCase moderationCase,
+        long targetActionId,
         ContentModerationCaseReviewWriteCommand command)
     {
         return (ContentReportTargetTypeEnum)moderationCase.TargetType switch
         {
-            ContentReportTargetTypeEnum.Post => await RestrictPostAsync(moderationCase, command),
-            ContentReportTargetTypeEnum.Comment => await RestrictCommentAsync(moderationCase, command),
-            ContentReportTargetTypeEnum.PostQuickReply => await RestrictQuickReplyAsync(moderationCase, command),
-            ContentReportTargetTypeEnum.Product => await RestrictProductAsync(moderationCase, command),
+            ContentReportTargetTypeEnum.Post => await RestrictPostAsync(moderationCase, targetActionId, command),
+            ContentReportTargetTypeEnum.Comment => await RestrictCommentAsync(moderationCase, targetActionId, command),
+            ContentReportTargetTypeEnum.PostQuickReply => await RestrictQuickReplyAsync(moderationCase, targetActionId, command),
+            ContentReportTargetTypeEnum.Product => await RestrictProductAsync(moderationCase, targetActionId, command),
             _ => throw new ContentModerationTargetActionException("Unsupported")
         };
     }
 
     private async Task<string> RestrictPostAsync(
         ContentModerationCase moderationCase,
+        long targetActionId,
         ContentModerationCaseReviewWriteCommand command)
     {
         var post = await DbProtectedClient.Queryable<Post>()
@@ -892,6 +993,7 @@ public sealed partial class ContentModerationCaseRepository
             .SetColumns(item => new Post
             {
                 IsDeleted = true,
+                ModerationTargetActionId = targetActionId,
                 DeletedAt = command.NowUtc,
                 DeletedBy = command.OperatorName,
                 ModifyTime = command.NowUtc,
@@ -914,6 +1016,7 @@ public sealed partial class ContentModerationCaseRepository
 
     private async Task<string> RestrictCommentAsync(
         ContentModerationCase moderationCase,
+        long targetActionId,
         ContentModerationCaseReviewWriteCommand command)
     {
         var comment = await DbProtectedClient.Queryable<Comment>()
@@ -938,6 +1041,7 @@ public sealed partial class ContentModerationCaseRepository
             .SetColumns(item => new Comment
             {
                 IsDeleted = true,
+                ModerationTargetActionId = targetActionId,
                 ModifyTime = command.NowUtc,
                 ModifyBy = command.OperatorName,
                 ModifyId = command.OperatorUserId
@@ -958,6 +1062,7 @@ public sealed partial class ContentModerationCaseRepository
 
     private async Task<string> RestrictQuickReplyAsync(
         ContentModerationCase moderationCase,
+        long targetActionId,
         ContentModerationCaseReviewWriteCommand command)
     {
         var quickReply = await DbProtectedClient.Queryable<PostQuickReply>()
@@ -977,6 +1082,7 @@ public sealed partial class ContentModerationCaseRepository
             .SetColumns(item => new PostQuickReply
             {
                 IsDeleted = true,
+                ModerationTargetActionId = targetActionId,
                 DeletedAt = command.NowUtc,
                 DeletedBy = command.OperatorName,
                 ModifyTime = command.NowUtc,
@@ -998,6 +1104,7 @@ public sealed partial class ContentModerationCaseRepository
 
     private async Task<string> RestrictProductAsync(
         ContentModerationCase moderationCase,
+        long targetActionId,
         ContentModerationCaseReviewWriteCommand command)
     {
         var product = await DbProtectedClient.Queryable<Product>()
@@ -1022,6 +1129,7 @@ public sealed partial class ContentModerationCaseRepository
             .SetColumns(item => new Product
             {
                 IsOnSale = false,
+                ModerationTargetActionId = targetActionId,
                 OffSaleTime = command.NowUtc,
                 Version = item.Version + 1,
                 ModifyTime = command.NowUtc,
@@ -1045,11 +1153,13 @@ public sealed partial class ContentModerationCaseRepository
 
     private async Task EnqueueChatRecallAsync(
         ContentModerationCase moderationCase,
+        ContentModerationTargetAction targetAction,
         ContentModerationCaseReviewWriteCommand command)
     {
         var payload = new ContentModerationChatRecallTaskPayload(
             command.TenantId,
             moderationCase.Id,
+            targetAction.Id,
             moderationCase.TargetContentId,
             command.OperationKey,
             command.OperatorUserId,
@@ -1157,6 +1267,50 @@ public sealed partial class ContentModerationCaseRepository
             nowUtc);
     }
 
+    private Task EnqueueDecisionAvailableNotificationAsync(
+        ContentModerationCase moderationCase,
+        string operationKey,
+        DateTime nowUtc)
+    {
+        if (moderationCase.TargetUserId <= 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var operationFingerprint = BuildOperationFingerprint(operationKey);
+        var resultCode = moderationCase.PublicResultCode ?? "MeasuresTaken";
+        var notification = new CreateNotificationDto
+        {
+            NotificationId = SnowFlakeSingle.Instance.NextId(),
+            BusinessKey = $"notification:moderation-decision:{moderationCase.Id}:receiver:{moderationCase.TargetUserId}",
+            Type = NotificationType.ContentModerationDecisionAvailable,
+            Title = "内容治理决定可查看",
+            Content = resultCode,
+            Priority = (int)NotificationPriority.Normal,
+            BusinessType = BusinessType.System,
+            BusinessId = moderationCase.Id,
+            ReceiverUserIds = [moderationCase.TargetUserId],
+            TenantId = moderationCase.TenantId,
+            TemplateArguments = new Dictionary<string, string?>(StringComparer.Ordinal)
+            {
+                ["resultCode"] = resultCode
+            },
+            TargetKind = NotificationTargetKind.GovernanceDecision,
+            Target = new NotificationTargetData
+            {
+                GovernanceCasePublicId = moderationCase.PublicId
+            },
+            OccurredAtUtc = nowUtc
+        };
+        return EnqueueNotificationAsync(
+            moderationCase.TenantId,
+            $"moderation-decision:{moderationCase.Id}:{operationFingerprint}",
+            "ContentModerationCase",
+            moderationCase.Id,
+            notification,
+            nowUtc);
+    }
+
     private async Task EnqueueNotificationAsync(
         long tenantId,
         string idempotencyKey,
@@ -1186,7 +1340,8 @@ public sealed partial class ContentModerationCaseRepository
     private async Task<ContentModerationCase> SavePendingChatDecisionAsync(
         ContentModerationCase moderationCase,
         ContentModerationCaseReviewWriteCommand command,
-        UserModerationAction? userAction)
+        UserModerationAction? userAction,
+        ContentModerationTargetAction targetAction)
     {
         var nextVersion = moderationCase.Version + 1;
         var affected = await DbProtectedClient.Updateable<ContentModerationCase>()
@@ -1219,6 +1374,7 @@ public sealed partial class ContentModerationCaseRepository
             command.OperatorUserId,
             command.OperatorName,
             relatedActionId: userAction?.Id,
+            relatedTargetActionId: targetAction.Id,
             fromStatus: moderationCase.Status,
             toStatus: (int)ContentModerationCaseStatus.Reviewing,
             resultCode: command.PublicResultCode,
@@ -1230,6 +1386,7 @@ public sealed partial class ContentModerationCaseRepository
             "ActionRequested",
             command.OperatorUserId,
             command.OperatorName,
+            relatedTargetActionId: targetAction.Id,
             resultCode: "ChatRecallQueued",
             resultVersion: nextVersion)).ExecuteCommandAsync();
 
@@ -1256,7 +1413,8 @@ public sealed partial class ContentModerationCaseRepository
         string operationKey,
         long operatorUserId,
         string operatorName,
-        DateTime nowUtc)
+        DateTime nowUtc,
+        long? appealId = null)
     {
         var policyType = GetPolicyType(actionType);
         var currentVersion = state?.Version ?? 0;
@@ -1271,6 +1429,7 @@ public sealed partial class ContentModerationCaseRepository
             Id = SnowFlakeSingle.Instance.NextId(),
             TenantId = tenantId,
             CaseId = caseId,
+            AppealId = appealId,
             SourceReportId = sourceReportId,
             OperationKey = operationKey,
             PreviousStateVersion = currentVersion,

@@ -14,6 +14,7 @@ public static class ReliableTaskTypes
     public const string NotificationRequested = "NotificationRequested";
     public const string ChatAttachmentBinding = "ChatAttachmentBinding";
     public const string ContentModerationChatRecall = "ContentModerationChatRecall";
+    public const string ContentModerationChatRestore = "ContentModerationChatRestore";
 }
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
@@ -77,6 +78,17 @@ public sealed record ChatAttachmentBindingTaskPayload(
 public sealed record ContentModerationChatRecallTaskPayload(
     long TenantId,
     long CaseId,
+    long TargetActionId,
+    long MessageId,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName);
+
+public sealed record ContentModerationChatRestoreTaskPayload(
+    long TenantId,
+    long AppealId,
+    long TargetActionId,
+    long SourceTargetActionId,
     long MessageId,
     string OperationKey,
     long OperatorUserId,

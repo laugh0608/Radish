@@ -16,6 +16,10 @@ public class UserModerationAction : RootEntityTKey<long>, ITenantEntity, IDelete
     [SugarColumn(IsNullable = true)]
     public long? CaseId { get; set; }
 
+    /// <summary>来源治理申诉 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? AppealId { get; set; }
+
     /// <summary>动作幂等业务键；历史迁移前允许为空。</summary>
     [SugarColumn(Length = 160, IsNullable = true)]
     public string? OperationKey { get; set; }

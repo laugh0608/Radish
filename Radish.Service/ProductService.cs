@@ -612,6 +612,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => new Product
                 {
                     IsOnSale = true,
+                    ModerationTargetActionId = null,
                     OnSaleTime = DateTime.Now,
                     Version = p.Version + 1,
                     ModifyTime = DateTime.Now
@@ -795,6 +796,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 p => new Product
                 {
                     IsOnSale = false,
+                    ModerationTargetActionId = null,
                     OffSaleTime = DateTime.Now,
                     Version = p.Version + 1,
                     ModifyTime = DateTime.Now
@@ -925,6 +927,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
 
             product.IsDeleted = true;
             product.IsOnSale = false;
+            product.ModerationTargetActionId = null;
             product.OffSaleTime = DateTime.Now;
             product.ModifyTime = DateTime.Now;
             product.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();

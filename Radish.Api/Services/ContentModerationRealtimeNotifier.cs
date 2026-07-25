@@ -16,4 +16,14 @@ public sealed class ContentModerationRealtimeNotifier(IHubContext<ChatHub> hubCo
         return hubContext.Clients.Group(ChatHub.BuildChannelGroup(tenantId, channelId))
             .SendAsync("MessageRecalled", new { channelId, messageId }, cancellationToken);
     }
+
+    public Task NotifyChatMessageRestoredAsync(
+        long tenantId,
+        long channelId,
+        long messageId,
+        CancellationToken cancellationToken = default)
+    {
+        return hubContext.Clients.Group(ChatHub.BuildChannelGroup(tenantId, channelId))
+            .SendAsync("MessageRestored", new { channelId, messageId }, cancellationToken);
+    }
 }

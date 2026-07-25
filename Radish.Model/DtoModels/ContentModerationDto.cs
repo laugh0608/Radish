@@ -234,3 +234,55 @@ public sealed class ApplyContentModerationCorrectiveActionDto
     [Required, StringLength(500)]
     public string Remark { get; set; } = string.Empty;
 }
+
+public sealed class ContentModerationAppealQueryDto
+{
+    public int? Status { get; set; }
+    [StringLength(30)]
+    public string? TargetType { get; set; }
+    [StringLength(100)]
+    public string? Keyword { get; set; }
+    public int PageIndex { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+}
+
+public sealed class SubmitContentModerationAppealDto
+{
+    [Required, StringLength(40)]
+    public string CasePublicId { get; set; } = string.Empty;
+    [Required, StringLength(1000, MinimumLength = 20)]
+    public string Statement { get; set; } = string.Empty;
+    [Required, StringLength(160, MinimumLength = 8)]
+    public string OperationKey { get; set; } = string.Empty;
+}
+
+public class ContentModerationAppealVersionedOperationDto
+{
+    [Required, StringLength(40)]
+    public string AppealPublicId { get; set; } = string.Empty;
+    [Range(1, int.MaxValue)]
+    public int ExpectedVersion { get; set; }
+    [Required, StringLength(160, MinimumLength = 8)]
+    public string OperationKey { get; set; } = string.Empty;
+}
+
+public sealed class ReviewContentModerationAppealDto : ContentModerationAppealVersionedOperationDto
+{
+    [Range(1, 3)]
+    public int Outcome { get; set; }
+    [Range(0, 7)]
+    public int GrantedScope { get; set; }
+    [Required, StringLength(1000)]
+    public string PublicResultSummary { get; set; } = string.Empty;
+    [StringLength(1000)]
+    public string? InternalRemark { get; set; }
+}
+
+public sealed class CaptureContentModerationAppealEvidenceDto
+    : ContentModerationAppealVersionedOperationDto
+{
+    [StringLength(200)]
+    public string? SnapshotTitle { get; set; }
+    [StringLength(500)]
+    public string? SnapshotSummary { get; set; }
+}

@@ -10,6 +10,8 @@ public sealed class ContentModerationEvidence : RootEntityTKey<long>, ITenantEnt
 {
     public long TenantId { get; set; }
     public long CaseId { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? AppealId { get; set; }
     public int EvidenceSequence { get; set; }
     public int EvidenceType { get; set; }
     [SugarColumn(IsNullable = true)]

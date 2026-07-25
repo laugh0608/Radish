@@ -213,6 +213,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
                 NotificationTargetKind.DocsAuthorDraft => ResolveAuthorDraftTarget(
                     target, tenantId, userId, authorDraftById, authorDocumentById, accessibleAuthorDocumentIds),
                 NotificationTargetKind.GovernanceCase => Unavailable(ForbiddenReason),
+                NotificationTargetKind.GovernanceDecision => Map(target, NotificationTargetKind.GovernanceDecision),
+                NotificationTargetKind.GovernanceAppeal => Map(target, NotificationTargetKind.GovernanceAppeal),
                 NotificationTargetKind.ChatConversation => await ResolveChatTargetAsync(
                     target,
                     tenantId,
@@ -449,7 +451,9 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
             VoDocumentSlug = target.DocumentSlug,
             VoDocumentId = ToId(target.DocumentId),
             VoDraftId = ToId(target.DraftId),
-            VoGovernanceCaseId = ToId(target.GovernanceCaseId)
+            VoGovernanceCaseId = ToId(target.GovernanceCaseId),
+            VoGovernanceCasePublicId = target.GovernanceCasePublicId,
+            VoGovernanceAppealPublicId = target.GovernanceAppealPublicId
         };
     }
 

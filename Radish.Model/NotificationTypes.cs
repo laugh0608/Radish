@@ -51,6 +51,10 @@ public static class NotificationType
 
     public const string UserModerationChanged = "UserModerationChanged";
 
+    public const string ContentModerationDecisionAvailable = "ContentModerationDecisionAvailable";
+
+    public const string ContentModerationAppealUpdated = "ContentModerationAppealUpdated";
+
     #endregion
 
     #region 成就类通知（P2 后续实现）
@@ -140,6 +144,8 @@ public static class NotificationTargetKind
     public const string DocsDocument = "DocsDocument";
     public const string DocsAuthorDraft = "DocsAuthorDraft";
     public const string GovernanceCase = "GovernanceCase";
+    public const string GovernanceDecision = "GovernanceDecision";
+    public const string GovernanceAppeal = "GovernanceAppeal";
 }
 
 /// <summary>通知优先级枚举</summary>

@@ -105,22 +105,42 @@ public sealed class ReliableOutboxExecutionJob
         ReliableOutboxSnapshot message,
         Exception exception)
     {
-        if (message.TaskType != ReliableTaskTypes.ContentModerationChatRecall)
+        if (message.TaskType is not
+            (ReliableTaskTypes.ContentModerationChatRecall or ReliableTaskTypes.ContentModerationChatRestore))
         {
             return;
         }
 
-        var payload = JsonSerializer.Deserialize<ContentModerationChatRecallTaskPayload>(message.PayloadJson)
-            ?? throw new JsonException("内容治理 Chat 回收任务载荷为空");
-        await _contentModerationCaseRepository.CompleteChatTargetActionAsync(
-            new ContentModerationChatActionCompletionCommand(
-                payload.TenantId,
-                payload.CaseId,
-                payload.OperationKey,
+        if (message.TaskType == ReliableTaskTypes.ContentModerationChatRecall)
+        {
+            var payload = JsonSerializer.Deserialize<ContentModerationChatRecallTaskPayload>(message.PayloadJson)
+                ?? throw new JsonException("内容治理 Chat 回收任务载荷为空");
+            await _contentModerationCaseRepository.CompleteChatTargetActionAsync(
+                new ContentModerationChatActionCompletionCommand(
+                    payload.TenantId,
+                    payload.CaseId,
+                    payload.TargetActionId,
+                    payload.OperationKey,
+                    false,
+                    exception.GetType().Name,
+                    payload.OperatorUserId,
+                    payload.OperatorName,
+                    DateTime.UtcNow));
+            return;
+        }
+
+        var restorePayload = JsonSerializer.Deserialize<ContentModerationChatRestoreTaskPayload>(
+            message.PayloadJson) ?? throw new JsonException("内容治理 Chat 恢复任务载荷为空");
+        await _contentModerationCaseRepository.CompleteChatReliefAsync(
+            new ContentModerationChatReliefCompletionCommand(
+                restorePayload.TenantId,
+                restorePayload.AppealId,
+                restorePayload.TargetActionId,
+                restorePayload.OperationKey,
                 false,
                 exception.GetType().Name,
-                payload.OperatorUserId,
-                payload.OperatorName,
+                restorePayload.OperatorUserId,
+                restorePayload.OperatorName,
                 DateTime.UtcNow));
     }
 }

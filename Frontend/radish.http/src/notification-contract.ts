@@ -18,7 +18,9 @@ export type NotificationTargetKind =
   | 'Inventory'
   | 'Experience'
   | 'DocsDocument'
-  | 'GovernanceCase';
+  | 'GovernanceCase'
+  | 'GovernanceDecision'
+  | 'GovernanceAppeal';
 
 export interface NotificationTargetVo {
   voKind: NotificationTargetKind;
@@ -33,6 +35,8 @@ export interface NotificationTargetVo {
   voBenefitId: string | null;
   voDocumentSlug: string | null;
   voGovernanceCaseId: string | null;
+  voGovernanceCasePublicId: string | null;
+  voGovernanceAppealPublicId: string | null;
   voUnavailableReason: string | null;
 }
 

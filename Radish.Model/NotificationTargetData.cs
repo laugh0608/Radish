@@ -18,6 +18,8 @@ public sealed class NotificationTargetData
     public long? DocumentId { get; set; }
     public long? DraftId { get; set; }
     public long? GovernanceCaseId { get; set; }
+    public string? GovernanceCasePublicId { get; set; }
+    public string? GovernanceAppealPublicId { get; set; }
 
     public string ToJson() => JsonSerializer.Serialize(this);
 
@@ -45,6 +47,8 @@ public sealed class NotificationTargetData
             NotificationTargetKind.DocsDocument => $"doc:{DocumentSlug}",
             NotificationTargetKind.DocsAuthorDraft => $"doc:{DocumentId}:draft:{DraftId}",
             NotificationTargetKind.GovernanceCase => $"case:{GovernanceCaseId}",
+            NotificationTargetKind.GovernanceDecision => $"decision:{GovernanceCasePublicId}",
+            NotificationTargetKind.GovernanceAppeal => $"appeal:{GovernanceAppealPublicId}",
             _ => NotificationTargetKind.None
         };
     }

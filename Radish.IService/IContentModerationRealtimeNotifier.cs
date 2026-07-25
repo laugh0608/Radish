@@ -4,4 +4,5 @@ namespace Radish.IService;
 public interface IContentModerationRealtimeNotifier
 {
     Task NotifyChatMessageRecalledAsync(long tenantId, long channelId, long messageId, CancellationToken cancellationToken = default);
+    Task NotifyChatMessageRestoredAsync(long tenantId, long channelId, long messageId, CancellationToken cancellationToken = default);
 }

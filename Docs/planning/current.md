@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-J-B 内容治理申诉与处置纠正服务端权威契约`
-- **产品下一顺位**：`建立本人决定通知、独立申诉复核、五类目标恢复和用户状态纠正`
+- **工程第一顺位**：`F4-J-C 内容治理申诉 Pencil 与正式页面`
+- **产品下一顺位**：`建立本人决定 / 申诉页、通知深链和 Console 申诉工作台`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -105,6 +105,7 @@
   - 2026-07-24 F4-I-C 已完成：Console `P02 / P07` 与 `/me/reports` PC / mobile Pencil、正式 `/moderation` Case 工作台、私域本人举报结果、权限分离、冲突草稿保留、目标失效摘要和双语均已落地；旧四个 HTTP 入口及权限种子已退役。静态与代码侧门禁通过，未启动服务或执行 Gateway smoke。
   - 2026-07-25 F4-I-D 已完成并关闭专题：五种角色、五类目标、聚合 / 并发 / 幂等、目标变化、用户治理状态、Chat 跨库失败 / 重试、`zh / en × PC / mobile` 和四主题代表矩阵均已通过；验收发现的联表表达式、结果码和异步异常传播契约已按共同根因修正。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-I-D 成组验收记录](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25)，工程第一顺位进入 F4-J-A 候选复核与权威设计。
   - 2026-07-25 F4-J-A 已完成：交叉复核治理申诉、圈子全局屏蔽、公开聊天和论坛作者回滚后，选定[内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)为唯一当前专题。设计固定独立 Appeal / Event / TargetAction、原案件不可变、一次申诉、部分采纳、五类目标对称恢复、用户状态来源保护、独立权限、Main / Chat 迁移、正式页面、A-D 批次与停止线；下一顺位进入 F4-J-B。
+  - 2026-07-25 F4-J-B 已完成服务端权威契约：Main / Chat migration、独立 Appeal / Event / TargetAction、本人决定与一次申诉、部分采纳、五类来源保护恢复、Mute / Ban 纠正、Chat 可靠任务、独立权限、通知和 HTTP / `@radish/http` 契约均已落地。后端全量 `991` 项通过、`26` 项 PostgreSQL 环境用例按配置跳过；详见 [F4-J-B 服务端权威契约记录](/records/f4-j-b-content-moderation-appeal-server-contract-2026-07-25)，下一顺位进入 F4-J-C。
 
 ## V1 产品与发布范围
 
@@ -256,13 +257,14 @@ Radish V1 的产品定位固定为：
 3. 验收暴露的 Repository 联表参数、SQL 投影、结果码严格匹配和非泛型 `Task` 异常传播问题已按根因修正并补回归。
 4. 临时业务数据、通知、授权、作业和审计记录已清理；六库完整性、DbMigrate doctor / verify、全量后端与前端静态门禁通过。
 5. `F4-J-A` 已完成四候选同口径审计并选定内容治理申诉与处置纠正；原案件不可变、独立申诉复核、目标动作来源、五类恢复、用户状态纠正、权限、迁移和 A-D 批次已经固定。
+6. `F4-J-B` 已完成 Main / Chat 迁移、独立申诉聚合、五类来源保护恢复、用户状态纠正、可靠任务、权限、通知与服务端契约。
 
-## 下一事项（F4-J-B）
+## 下一事项（F4-J-C）
 
-1. 增加 Main / Chat schema ledger migration，建立 Appeal / AppealEvent / TargetAction、来源标记、历史 Restrict 回填及 doctor / verify。
-2. 建立专属 Repository 与事务边界，完成本人决定列表、一次申诉、撤回、独立复核、全部 / 部分采纳和 Appeal CAS / operation key。
-3. 完成 Post / Comment / PostQuickReply / Product 的 Main 恢复、Chat 可靠恢复，以及 Mute / Ban 当前来源保护下的纠正动作。
-4. 建立独立 Appeal 权限、决定 / 申诉通知、稳定错误、HTTP 示例、`@radish/http` 契约和服务端定向回归；本批不修改 Pencil 或正式页面。
+1. 先更新 `/me/appeals` PC / mobile 与 Console `P02 / P07` Pencil 设计源，固定决定列表、申诉详情、部分采纳和动作状态的信息层级。
+2. 实现本人决定 / 申诉页、提交 / 撤回、状态与纠正结果，并接通 Decision / Appeal 通知深链。
+3. 在既有 `/moderation` 内实现申诉队列、受权详情、复核决定和 PC 动作执行；mobile 保持只读。
+4. 完成 View / Appeal / Action 权限裁剪、冲突草稿保留、中英文、键盘、无障碍与四主题适配；本批不执行完整 Gateway 成组验收。
 
 ## 并行维护线
 

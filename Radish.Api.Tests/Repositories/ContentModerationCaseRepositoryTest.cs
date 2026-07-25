@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Radish.IRepository;
@@ -76,7 +77,7 @@ public sealed class ContentModerationCaseRepositoryTest
         Assert.Equal(1, state.Version);
         Assert.Equal(NowUtc.AddHours(24).AddMinutes(1), state.EffectiveUntil);
         Assert.Equal("Resolved", Assert.Single(harness.Db.Queryable<ContentReport>().ToList()).ReporterState);
-        Assert.Equal(2, harness.Db.Queryable<ReliableOutboxMessage>().Count());
+        Assert.Equal(3, harness.Db.Queryable<ReliableOutboxMessage>().Count());
     }
 
     [Fact]
@@ -191,6 +192,7 @@ public sealed class ContentModerationCaseRepositoryTest
             new ContentModerationChatActionCompletionCommand(
                 9,
                 submitted.Case.Id,
+                pending.TargetAction!.Id,
                 command.OperationKey,
                 false,
                 "RecallFailed",
@@ -206,6 +208,7 @@ public sealed class ContentModerationCaseRepositoryTest
             new ContentModerationChatActionCompletionCommand(
                 9,
                 submitted.Case.Id,
+                pending.TargetAction!.Id,
                 command.OperationKey,
                 true,
                 "Restricted",
@@ -216,7 +219,7 @@ public sealed class ContentModerationCaseRepositoryTest
         Assert.Equal((int)ContentModerationCaseStatus.Resolved, completed.Status);
         Assert.Equal((int)ContentModerationTargetDisposition.Restricted, completed.TargetDisposition);
         Assert.Equal("Resolved", Assert.Single(harness.Db.Queryable<ContentReport>().ToList()).ReporterState);
-        Assert.Equal(2, harness.Db.Queryable<ReliableOutboxMessage>().Count());
+        Assert.Equal(3, harness.Db.Queryable<ReliableOutboxMessage>().Count());
     }
 
     [Fact]
@@ -265,6 +268,94 @@ public sealed class ContentModerationCaseRepositoryTest
         Assert.Equal(2, harness.Db.Queryable<ReliableOutboxMessage>().Count());
     }
 
+    [Fact]
+    public async Task AppealRelief_ShouldRestoreOnlyTargetOwnedByOriginalRestriction()
+    {
+        using var harness = new RepositoryHarness();
+        harness.Db.Insertable(new Post
+        {
+            Id = 7001,
+            TenantId = 9,
+            Title = "reported",
+            Content = "content",
+            AuthorId = 5001,
+            AuthorName = "target",
+            EditCount = 0,
+            IsPublished = true,
+            PublishTime = NowUtc,
+            CreateTime = NowUtc,
+            CreateBy = "target",
+            CreateId = 5001
+        }).ExecuteCommand();
+        var submitted = await harness.Repository.SubmitReportAsync(CreateReportCommand(1001));
+        var reviewed = await harness.Repository.ReviewCaseAsync(
+            new ContentModerationCaseReviewWriteCommand(
+                9,
+                submitted.Case.PublicId,
+                1,
+                (int)ContentModerationDecision.Violation,
+                (int)ContentModerationTargetDisposition.Restricted,
+                0,
+                "MeasuresTaken",
+                null,
+                null,
+                "case-review-for-appeal",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(1)));
+        var submittedAppeal = await harness.Repository.SubmitAppealAsync(
+            new ContentModerationAppealSubmitCommand(
+                9,
+                submitted.Case.PublicId,
+                5001,
+                "target",
+                "请求复核治理决定及内容处置",
+                "appeal-submit-5001",
+                NowUtc.AddMinutes(2)));
+
+        await Assert.ThrowsAsync<ContentModerationAppealAlreadyExistsException>(() =>
+            harness.Repository.SubmitAppealAsync(
+                new ContentModerationAppealSubmitCommand(
+                    9,
+                    submitted.Case.PublicId,
+                    5001,
+                    "target",
+                    "再次提交同一案件申诉",
+                    "appeal-submit-duplicate",
+                    NowUtc.AddMinutes(3))));
+
+        var decision = await harness.Repository.ReviewAppealAsync(
+            new ContentModerationAppealReviewCommand(
+                9,
+                submittedAppeal.Appeal.PublicId,
+                1,
+                (int)ContentModerationAppealOutcome.Granted,
+                (int)ContentModerationReliefScope.TargetContent,
+                "Granted",
+                "原内容处置予以纠正",
+                null,
+                "appeal-decision-5001",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(4)));
+        var relief = await harness.Repository.ExecuteAppealReliefAsync(
+            new ContentModerationAppealReliefCommand(
+                9,
+                decision.Appeal.PublicId,
+                decision.Appeal.Version,
+                "appeal-relief-5001",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(5)));
+
+        var post = harness.Db.Queryable<Post>().InSingle(7001)!;
+        Assert.False(post.IsDeleted);
+        Assert.Null(post.ModerationTargetActionId);
+        Assert.Equal((int)ContentModerationAppealStatus.Resolved, relief.Appeal.Status);
+        Assert.Equal(2, harness.Db.Queryable<ContentModerationTargetAction>().Count());
+        Assert.Equal(reviewed.TargetAction!.Id, relief.TargetActions.Single().SourceTargetActionId);
+    }
+
     private static ContentModerationReportWriteCommand CreateReportCommand(long reporterUserId)
     {
         return new ContentModerationReportWriteCommand(
@@ -306,8 +397,14 @@ public sealed class ContentModerationCaseRepositoryTest
                 ContentReport,
                 ContentModerationEvidence,
                 ContentModerationCaseEvent,
-                UserModerationAction>();
-            Db.CodeFirst.InitTables<UserModerationState, ReliableOutboxMessage, Post, Comment, PostQuickReply>();
+                ContentModerationAppeal>();
+            Db.CodeFirst.InitTables<
+                ContentModerationAppealEvent,
+                ContentModerationTargetAction,
+                UserModerationAction,
+                UserModerationState,
+                ReliableOutboxMessage>();
+            Db.CodeFirst.InitTables<Post, Comment, PostQuickReply>();
             Db.CodeFirst.InitTables<Product>();
             Repository = new ContentModerationCaseRepository(
                 new UnitOfWorkManage(Db, NullLogger<UnitOfWorkManage>.Instance));

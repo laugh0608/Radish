@@ -19,7 +19,141 @@ public interface IContentModerationCaseRepository
     Task<ContentModerationCaseReviewWriteResult> ApplyCorrectiveUserActionAsync(ContentModerationCorrectiveActionCommand command);
     Task<ContentModerationStandaloneUserActionWriteResult> ApplyStandaloneUserActionAsync(ContentModerationStandaloneUserActionCommand command);
     Task<IReadOnlyList<UserModerationState>> QueryUserStatesAsync(long tenantId, long targetUserId);
+    Task<(List<ContentModerationDecisionCandidate> data, int totalCount)> QueryMyAppealableDecisionsAsync(
+        long tenantId,
+        long appellantUserId,
+        int pageIndex,
+        int pageSize,
+        DateTime nowUtc);
+    Task<(List<ContentModerationAppeal> data, int totalCount)> QueryMyAppealsAsync(
+        long tenantId,
+        long appellantUserId,
+        int pageIndex,
+        int pageSize);
+    Task<ContentModerationAppealAggregate?> QueryAppealAggregateAsync(
+        long tenantId,
+        string appealPublicId,
+        long? appellantUserId = null);
+    Task<(List<ContentModerationAppeal> data, int totalCount)> QueryAppealQueueAsync(
+        ContentModerationAppealQueueCommand command);
+    Task<ContentModerationAppealWriteResult> SubmitAppealAsync(ContentModerationAppealSubmitCommand command);
+    Task<ContentModerationAppealWriteResult> WithdrawAppealAsync(ContentModerationAppealWithdrawCommand command);
+    Task<ContentModerationAppealWriteResult> StartAppealReviewAsync(ContentModerationAppealStartReviewCommand command);
+    Task<ContentModerationAppealWriteResult> AppendAppealEvidenceAsync(ContentModerationAppealEvidenceCommand command);
+    Task<ContentModerationAppealWriteResult> ReviewAppealAsync(ContentModerationAppealReviewCommand command);
+    Task<ContentModerationAppealReliefWriteResult> ExecuteAppealReliefAsync(ContentModerationAppealReliefCommand command);
+    Task<ContentModerationAppeal> CompleteChatReliefAsync(ContentModerationChatReliefCompletionCommand command);
 }
+
+public sealed record ContentModerationDecisionCandidate(
+    ContentModerationCase Case,
+    ContentModerationAppeal? Appeal,
+    IReadOnlyList<ContentModerationTargetAction> TargetActions,
+    IReadOnlyList<UserModerationAction> UserActions);
+
+public sealed record ContentModerationAppealAggregate(
+    ContentModerationAppeal Appeal,
+    ContentModerationCase Case,
+    IReadOnlyList<ContentModerationEvidence> Evidence,
+    IReadOnlyList<ContentModerationAppealEvent> Events,
+    IReadOnlyList<ContentModerationTargetAction> TargetActions,
+    IReadOnlyList<UserModerationAction> UserActions,
+    IReadOnlyList<UserModerationState> UserStates);
+
+public sealed record ContentModerationAppealQueueCommand(
+    long TenantId,
+    int? Status,
+    int? TargetType,
+    string? Keyword,
+    int PageIndex,
+    int PageSize);
+
+public sealed record ContentModerationAppealSubmitCommand(
+    long TenantId,
+    string CasePublicId,
+    long AppellantUserId,
+    string AppellantName,
+    string Statement,
+    string OperationKey,
+    DateTime NowUtc);
+
+public sealed record ContentModerationAppealWithdrawCommand(
+    long TenantId,
+    string AppealPublicId,
+    long AppellantUserId,
+    int ExpectedAppealVersion,
+    string OperationKey,
+    DateTime NowUtc);
+
+public sealed record ContentModerationAppealStartReviewCommand(
+    long TenantId,
+    string AppealPublicId,
+    int ExpectedAppealVersion,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName,
+    DateTime NowUtc);
+
+public sealed record ContentModerationAppealEvidenceCommand(
+    long TenantId,
+    string AppealPublicId,
+    int ExpectedAppealVersion,
+    int TargetState,
+    string? SnapshotTitle,
+    string? SnapshotSummary,
+    long? TargetPostId,
+    long? TargetCommentId,
+    long? TargetChannelId,
+    long? TargetMessageId,
+    string SnapshotHash,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName,
+    DateTime NowUtc);
+
+public sealed record ContentModerationAppealReviewCommand(
+    long TenantId,
+    string AppealPublicId,
+    int ExpectedAppealVersion,
+    int Outcome,
+    int GrantedScope,
+    string PublicResultCode,
+    string PublicResultSummary,
+    string? InternalRemark,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName,
+    DateTime NowUtc);
+
+public sealed record ContentModerationAppealReliefCommand(
+    long TenantId,
+    string AppealPublicId,
+    int ExpectedAppealVersion,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName,
+    DateTime NowUtc);
+
+public sealed record ContentModerationAppealWriteResult(
+    ContentModerationAppeal Appeal,
+    bool IsIdempotentReplay);
+
+public sealed record ContentModerationAppealReliefWriteResult(
+    ContentModerationAppeal Appeal,
+    IReadOnlyList<ContentModerationTargetAction> TargetActions,
+    IReadOnlyList<UserModerationAction> UserActions,
+    bool IsIdempotentReplay);
+
+public sealed record ContentModerationChatReliefCompletionCommand(
+    long TenantId,
+    long AppealId,
+    long TargetActionId,
+    string OperationKey,
+    bool Succeeded,
+    string ResultCode,
+    long OperatorUserId,
+    string OperatorName,
+    DateTime NowUtc);
 
 public sealed record ContentModerationReportWriteCommand(
     long TenantId,
@@ -110,11 +244,13 @@ public sealed record ContentModerationCaseReviewWriteResult(
     ContentModerationCase Case,
     UserModerationAction? UserAction,
     UserModerationState? UserState,
+    ContentModerationTargetAction? TargetAction,
     bool IsIdempotentReplay);
 
 public sealed record ContentModerationChatActionCompletionCommand(
     long TenantId,
     long CaseId,
+    long TargetActionId,
     string OperationKey,
     bool Succeeded,
     string ResultCode,
@@ -158,6 +294,15 @@ public sealed class ContentModerationConcurrencyException : Exception;
 public sealed class ContentModerationIdempotencyConflictException : Exception;
 
 public sealed class ContentModerationTargetActionException(string resultCode) : Exception
+{
+    public string ResultCode { get; } = resultCode;
+}
+
+public sealed class ContentModerationAppealNotFoundException : Exception;
+
+public sealed class ContentModerationAppealAlreadyExistsException : Exception;
+
+public sealed class ContentModerationAppealEligibilityException(string resultCode) : Exception
 {
     public string ResultCode { get; } = resultCode;
 }

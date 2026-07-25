@@ -72,6 +72,10 @@ public class ChannelMessage : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>当前撤回由治理目标动作造成时记录对应动作 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? ModerationTargetActionId { get; set; }
+
     /// <summary>删除时间（撤回时间）</summary>
     [SugarColumn(IsNullable = true)]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]

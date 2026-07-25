@@ -118,6 +118,12 @@ public static class NotificationDefinitionRegistry
         yield return Define(NotificationType.UserModerationChanged, NotificationCategory.Governance,
             NotificationPriority.High, NotificationTargetKind.None, active: true,
             requiredTemplateArguments: ["actionType"]);
+        yield return Define(NotificationType.ContentModerationDecisionAvailable, NotificationCategory.Governance,
+            NotificationPriority.Normal, NotificationTargetKind.GovernanceDecision, active: true,
+            requiredTemplateArguments: ["resultCode"]);
+        yield return Define(NotificationType.ContentModerationAppealUpdated, NotificationCategory.Governance,
+            NotificationPriority.Normal, NotificationTargetKind.GovernanceAppeal, active: true,
+            requiredTemplateArguments: ["appealStatus", "resultCode"]);
         yield return Define(NotificationType.PurchaseSucceeded, NotificationCategory.Commerce,
             NotificationPriority.Normal, NotificationTargetKind.ShopOrder, active: true, retentionDays: 365,
             requiredTemplateArguments: ["productName"]);

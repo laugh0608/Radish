@@ -109,7 +109,8 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
         long messageId,
         long operatorId,
         string operatorName,
-        DateTime nowUtc)
+        DateTime nowUtc,
+        long? moderationTargetActionId = null)
     {
         var sqliteLockHeld = await ChatMessagePinTransactionLock.EnterSqliteAsync(DbProtectedClient);
         try
@@ -141,6 +142,7 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
                     .SetColumns(message => new ChannelMessage
                     {
                         IsDeleted = true,
+                        ModerationTargetActionId = moderationTargetActionId,
                         SearchText = null,
                         DeletedAt = nowUtc,
                         DeletedBy = operatorName
@@ -153,6 +155,7 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
                         .SetColumns(reaction => new ChatMessageReaction
                         {
                             IsDeleted = true,
+                            ModerationTargetActionId = moderationTargetActionId,
                             DeletedAt = nowUtc,
                             DeletedBy = operatorName,
                             ModifyTime = nowUtc,
@@ -171,6 +174,7 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
                         .SetColumns(pin => new ChatMessagePin
                         {
                             IsDeleted = true,
+                            ModerationTargetActionId = moderationTargetActionId,
                             DeletedAt = nowUtc,
                             DeletedBy = operatorName,
                             DeletedByUserId = operatorId,
@@ -211,6 +215,142 @@ public class ChannelMessageRepository : BaseRepository<ChannelMessage>, IChannel
                     affected,
                     messageSnapshot.ChannelId,
                     pinsChanged,
+                    pinRevision);
+            }
+            catch
+            {
+                DbProtectedClient.Ado.RollbackTran();
+                throw;
+            }
+        }
+        finally
+        {
+            ChatMessagePinTransactionLock.ExitSqlite(sqliteLockHeld);
+        }
+    }
+
+    public async Task<ChannelMessageRestoreWriteResult> RestoreModeratedWithEffectsAsync(
+        long messageId,
+        long sourceTargetActionId,
+        long operatorId,
+        string operatorName,
+        DateTime nowUtc)
+    {
+        var sqliteLockHeld = await ChatMessagePinTransactionLock.EnterSqliteAsync(DbProtectedClient);
+        try
+        {
+            DbProtectedClient.Ado.BeginTran();
+            try
+            {
+                var snapshot = await DbProtectedClient.Queryable<ChannelMessage>()
+                    .Where(message =>
+                        message.Id == messageId &&
+                        message.IsDeleted &&
+                        message.ModerationTargetActionId == sourceTargetActionId)
+                    .FirstAsync();
+                if (snapshot == null)
+                {
+                    DbProtectedClient.Ado.CommitTran();
+                    return new ChannelMessageRestoreWriteResult(0, 0, false, 0, false, 0);
+                }
+
+                await ChatMessagePinTransactionLock.AcquirePostgreSqlAsync(
+                    DbProtectedClient,
+                    snapshot.TenantId,
+                    snapshot.ChannelId);
+                var affected = await DbProtectedClient.Updateable<ChannelMessage>()
+                    .SetColumns(message => new ChannelMessage
+                    {
+                        IsDeleted = false,
+                        ModerationTargetActionId = null,
+                        SearchText = ChatMessageSearchTextNormalizer.Normalize(snapshot.Content),
+                        DeletedAt = null,
+                        DeletedBy = null
+                    })
+                    .Where(message =>
+                        message.Id == messageId &&
+                        message.IsDeleted &&
+                        message.ModerationTargetActionId == sourceTargetActionId)
+                    .ExecuteCommandAsync();
+                if (affected != 1)
+                {
+                    DbProtectedClient.Ado.CommitTran();
+                    return new ChannelMessageRestoreWriteResult(0, snapshot.ChannelId, false, 0, false, 0);
+                }
+
+                var affectedReactions = await DbProtectedClient.Updateable<ChatMessageReaction>()
+                    .SetColumns(reaction => new ChatMessageReaction
+                    {
+                        IsDeleted = false,
+                        ModerationTargetActionId = null,
+                        DeletedAt = null,
+                        DeletedBy = null,
+                        ModifyTime = nowUtc,
+                        ModifyBy = operatorName,
+                        ModifyId = operatorId
+                    })
+                    .Where(reaction =>
+                        reaction.MessageId == messageId &&
+                        reaction.IsDeleted &&
+                        reaction.ModerationTargetActionId == sourceTargetActionId)
+                    .ExecuteCommandAsync();
+                var reactionRevision = snapshot.ReactionRevision;
+                if (affectedReactions > 0)
+                {
+                    await DbProtectedClient.Updateable<ChannelMessage>()
+                        .SetColumns(message => message.ReactionRevision == message.ReactionRevision + 1)
+                        .Where(message => message.Id == messageId && !message.IsDeleted)
+                        .ExecuteCommandAsync();
+                    reactionRevision++;
+                }
+
+                var affectedPins = await DbProtectedClient.Updateable<ChatMessagePin>()
+                    .SetColumns(pin => new ChatMessagePin
+                    {
+                        IsDeleted = false,
+                        ModerationTargetActionId = null,
+                        DeletedAt = null,
+                        DeletedBy = null,
+                        DeletedByUserId = null,
+                        ModifyTime = nowUtc,
+                        ModifyBy = operatorName,
+                        ModifyId = operatorId
+                    })
+                    .Where(pin =>
+                        pin.TenantId == snapshot.TenantId &&
+                        pin.ChannelId == snapshot.ChannelId &&
+                        pin.MessageId == messageId &&
+                        pin.IsDeleted &&
+                        pin.ModerationTargetActionId == sourceTargetActionId)
+                    .ExecuteCommandAsync();
+                var pinRevision = 0L;
+                if (affectedPins > 0)
+                {
+                    var affectedChannel = await DbProtectedClient.Updateable<Channel>()
+                        .SetColumns(channel => channel.PinRevision == channel.PinRevision + 1)
+                        .Where(channel =>
+                            channel.Id == snapshot.ChannelId &&
+                            channel.TenantId == snapshot.TenantId &&
+                            !channel.IsDeleted)
+                        .ExecuteCommandAsync();
+                    if (affectedChannel != 1)
+                    {
+                        throw new InvalidOperationException("恢复治理消息时递增置顶 revision 失败。");
+                    }
+
+                    pinRevision = await DbProtectedClient.Queryable<Channel>()
+                        .Where(channel => channel.Id == snapshot.ChannelId)
+                        .Select(channel => channel.PinRevision)
+                        .FirstAsync();
+                }
+
+                DbProtectedClient.Ado.CommitTran();
+                return new ChannelMessageRestoreWriteResult(
+                    affected,
+                    snapshot.ChannelId,
+                    affectedReactions > 0,
+                    reactionRevision,
+                    affectedPins > 0,
                     pinRevision);
             }
             catch

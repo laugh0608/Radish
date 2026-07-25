@@ -3,26 +3,27 @@ using SqlSugar;
 
 namespace Radish.Model;
 
-/// <summary>治理案件的追加式状态与动作事件。</summary>
-[SugarTable("ContentModerationCaseEvent")]
-[SugarIndex("idx_moderation_event_case_sequence", nameof(TenantId), OrderByType.Asc, nameof(CaseId), OrderByType.Asc, nameof(EventSequence), OrderByType.Asc, IsUnique = true)]
-public sealed class ContentModerationCaseEvent : RootEntityTKey<long>, ITenantEntity
+/// <summary>治理申诉的追加式状态、决定与纠正事件。</summary>
+[SugarTable("ContentModerationAppealEvent")]
+[SugarIndex("idx_moderation_appeal_event_sequence", nameof(TenantId), OrderByType.Asc, nameof(AppealId), OrderByType.Asc, nameof(EventSequence), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_moderation_appeal_event_operation", nameof(TenantId), OrderByType.Asc, nameof(OperationKey), OrderByType.Asc, IsUnique = true)]
+public sealed class ContentModerationAppealEvent : RootEntityTKey<long>, ITenantEntity
 {
     public long TenantId { get; set; }
-    public long CaseId { get; set; }
+    public long AppealId { get; set; }
     public int EventSequence { get; set; }
     [SugarColumn(Length = 40, IsNullable = false)]
     public string EventType { get; set; } = string.Empty;
-    public int ExpectedCaseVersion { get; set; }
-    public int ResultCaseVersion { get; set; }
+    [SugarColumn(Length = 160, IsNullable = true)]
+    public string? OperationKey { get; set; }
+    public int ExpectedAppealVersion { get; set; }
+    public int ResultAppealVersion { get; set; }
     [SugarColumn(IsNullable = true)]
-    public long? RelatedReportId { get; set; }
-    [SugarColumn(IsNullable = true)]
-    public long? RelatedActionId { get; set; }
-    [SugarColumn(IsNullable = true)]
-    public long? RelatedAppealId { get; set; }
+    public long? RelatedEvidenceId { get; set; }
     [SugarColumn(IsNullable = true)]
     public long? RelatedTargetActionId { get; set; }
+    [SugarColumn(IsNullable = true)]
+    public long? RelatedUserActionId { get; set; }
     [SugarColumn(IsNullable = true)]
     public int? FromStatus { get; set; }
     [SugarColumn(IsNullable = true)]

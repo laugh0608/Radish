@@ -67,6 +67,7 @@
 ## 七、专题清单与一次性观察
 
 - F4-I 内容治理：[D 成组验收](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25) · [C 正式页面](/records/f4-i-c-content-moderation-case-web-workspace-2026-07-24) · [B 服务端权威契约](/records/f4-i-b-content-moderation-server-contract-2026-07-21) · [当日日终回顾](/records/f4-day-end-doc-review-2026-07-21)
+- F4-J 治理申诉与处置纠正：[B 服务端权威契约](/records/f4-j-b-content-moderation-appeal-server-contract-2026-07-25)
 - F4-G Wiki 作者协作：[D 成组验收](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20) · [C 正式页面](/records/f4-g-c-wiki-author-console-pages-2026-07-20) · [B 服务端契约](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20) · [当日日终回顾](/records/f4-day-end-doc-review-2026-07-20)
 - [f4-day-end-doc-review-2026-07-19](/records/f4-day-end-doc-review-2026-07-19)
 - [f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)
@@ -296,5 +297,4 @@
 
 - 找“今天改完要跑什么”：先看 [专题回归索引](/guide/regression-index)
 - 找“怎么写一页规范化回归记录”：先看 [变更回归记录模板](/records/change-regression-record-template)
-- 找“某批 Flutter Android MVP 到底留了哪些验证事实”：优先看 [flutter-android-mvp-validation-index-2026-05-02](/records/flutter-android-mvp-validation-index-2026-05-02)
-- 找“发布 / 部署 / 回滚的历史事实”：优先看本页第四部分
+- 找 Flutter Android MVP 验证事实或发布 / 部署 / 回滚历史：分别看 [Flutter 验证索引](/records/flutter-android-mvp-validation-index-2026-05-02)与本页第四部分

@@ -935,6 +935,69 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50167L,
+                ApiModuleName = "Get moderation appeal queue",
+                LinkUrl = "/api/v1/ContentModeration/GetAppealQueue",
+                ControllerName = "ContentModeration",
+                ActionName = "GetAppealQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50168L,
+                ApiModuleName = "Get moderation appeal",
+                LinkUrl = "/api/v1/ContentModeration/GetAppeal/.+",
+                ControllerName = "ContentModeration",
+                ActionName = "GetAppeal",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50169L,
+                ApiModuleName = "Get moderation appeal events",
+                LinkUrl = "/api/v1/ContentModeration/GetAppealEvents",
+                ControllerName = "ContentModeration",
+                ActionName = "GetAppealEvents",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50170L,
+                ApiModuleName = "Start moderation appeal review",
+                LinkUrl = "/api/v1/ContentModeration/StartAppealReview",
+                ControllerName = "ContentModeration",
+                ActionName = "StartAppealReview",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50171L,
+                ApiModuleName = "Capture moderation appeal evidence",
+                LinkUrl = "/api/v1/ContentModeration/CaptureAppealEvidence",
+                ControllerName = "ContentModeration",
+                ActionName = "CaptureAppealEvidence",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50172L,
+                ApiModuleName = "Review moderation appeal",
+                LinkUrl = "/api/v1/ContentModeration/ReviewAppeal",
+                ControllerName = "ContentModeration",
+                ActionName = "ReviewAppeal",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50173L,
+                ApiModuleName = "Execute moderation appeal relief",
+                LinkUrl = "/api/v1/ContentModeration/ExecuteAppealRelief",
+                ControllerName = "ContentModeration",
+                ActionName = "ExecuteAppealRelief",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50120L,
                 ApiModuleName = "Get coin balance by user id",
                 LinkUrl = "/api/v1/Coin/GetBalanceByUserId",

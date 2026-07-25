@@ -170,6 +170,7 @@ public class ReliableOutboxJobTest
         var payload = new ContentModerationChatRecallTaskPayload(
             9,
             7001,
+            7501,
             8001,
             "moderation-chat-recall:test:7001",
             9001,

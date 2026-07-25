@@ -19,6 +19,8 @@ public sealed class NotificationTargetVo
     public string? VoDocumentId { get; set; }
     public string? VoDraftId { get; set; }
     public string? VoGovernanceCaseId { get; set; }
+    public string? VoGovernanceCasePublicId { get; set; }
+    public string? VoGovernanceAppealPublicId { get; set; }
     public string? VoUnavailableReason { get; set; }
 }
 

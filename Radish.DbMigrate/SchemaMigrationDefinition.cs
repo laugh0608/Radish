@@ -40,6 +40,8 @@ internal static class SchemaMigrationRegistry
         ChatReadReceiptSchemaMigration.Instance,
         WikiAuthorCollaborationSchemaMigration.Instance,
         ContentModerationCaseSchemaMigration.Instance,
+        ContentModerationAppealSchemaMigration.Instance,
+        ChatModerationReliefSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance
     ];

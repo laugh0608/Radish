@@ -53,3 +53,45 @@ public enum UserModerationStateValue
     Inactive = 0,
     Active = 1
 }
+
+public enum ContentModerationAppealStatus
+{
+    Submitted = 0,
+    Reviewing = 1,
+    ReliefPending = 2,
+    ReliefFailed = 3,
+    Resolved = 4,
+    Withdrawn = 5
+}
+
+public enum ContentModerationAppealOutcome
+{
+    None = 0,
+    Upheld = 1,
+    PartiallyGranted = 2,
+    Granted = 3
+}
+
+[Flags]
+public enum ContentModerationReliefScope
+{
+    None = 0,
+    TargetContent = 1,
+    Mute = 2,
+    Ban = 4
+}
+
+public enum ContentModerationTargetActionType
+{
+    Restrict = 1,
+    Restore = 2
+}
+
+public enum ContentModerationTargetActionStatus
+{
+    Pending = 0,
+    Succeeded = 1,
+    Failed = 2,
+    Superseded = 3,
+    NoEffect = 4
+}

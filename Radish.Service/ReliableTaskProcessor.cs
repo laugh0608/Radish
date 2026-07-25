@@ -114,6 +114,10 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 await ProcessContentModerationChatRecallAsync(
                     Deserialize<ContentModerationChatRecallTaskPayload>(message));
                 break;
+            case ReliableTaskTypes.ContentModerationChatRestore:
+                await ProcessContentModerationChatRestoreAsync(
+                    Deserialize<ContentModerationChatRestoreTaskPayload>(message));
+                break;
             default:
                 throw new PermanentReliableTaskException($"未知可靠任务类型：{message.TaskType}");
         }
@@ -141,7 +145,8 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                     payload.MessageId,
                     payload.OperatorUserId,
                     payload.OperatorName,
-                    DateTime.UtcNow);
+                    DateTime.UtcNow,
+                    payload.TargetActionId);
                 resultCode = result.AffectedRows > 0 ? "Restricted" : "AlreadyRestricted";
                 if (result.AffectedRows > 0 && _contentModerationRealtimeNotifier != null)
                 {
@@ -157,6 +162,42 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             new ContentModerationChatActionCompletionCommand(
                 payload.TenantId,
                 payload.CaseId,
+                payload.TargetActionId,
+                payload.OperationKey,
+                true,
+                resultCode,
+                payload.OperatorUserId,
+                payload.OperatorName,
+                DateTime.UtcNow));
+    }
+
+    private async Task ProcessContentModerationChatRestoreAsync(ContentModerationChatRestoreTaskPayload payload)
+    {
+        if (_channelMessageRepository == null || _contentModerationCaseRepository == null)
+        {
+            throw new PermanentReliableTaskException("内容治理 Chat 纠正处理依赖未注册");
+        }
+
+        var result = await _channelMessageRepository.RestoreModeratedWithEffectsAsync(
+            payload.MessageId,
+            payload.SourceTargetActionId,
+            payload.OperatorUserId,
+            payload.OperatorName,
+            DateTime.UtcNow);
+        var resultCode = result.AffectedRows == 1 ? "Restored" : "TargetChanged";
+        if (result.AffectedRows == 1 && _contentModerationRealtimeNotifier != null)
+        {
+            await _contentModerationRealtimeNotifier.NotifyChatMessageRestoredAsync(
+                payload.TenantId,
+                result.ChannelId,
+                payload.MessageId);
+        }
+
+        await _contentModerationCaseRepository.CompleteChatReliefAsync(
+            new ContentModerationChatReliefCompletionCommand(
+                payload.TenantId,
+                payload.AppealId,
+                payload.TargetActionId,
                 payload.OperationKey,
                 true,
                 resultCode,

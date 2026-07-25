@@ -1,6 +1,6 @@
 # F4-J 内容治理申诉与处置纠正
 
-> **状态**：F4-J-A 现状审计与权威设计已完成；下一顺位进入 F4-J-B 服务端权威契约
+> **状态**：F4-J-A / B 已完成；下一顺位进入 F4-J-C Pencil 与正式页面
 >
 > **复核日期**：2026-07-25（Asia/Shanghai）
 >
@@ -452,7 +452,7 @@ F4-J-C 必须先更新 Pencil，再实现正式页面。F4-J-A / B 不提前修�
 - 固定对象、状态、恢复矩阵、权限、API、迁移、页面、通知、失败恢复、验证和停止线。
 - 本批不修改业务代码、migration、Pencil 或正式页面。
 
-### F4-J-B：服务端权威契约
+### F4-J-B：服务端权威契约（已完成）
 
 - 完成 Main / Chat migration、历史来源回填、doctor / verify 和双数据库回归。
 - 增加 Appeal / Event / TargetAction 专属 Repository，禁止 Service 直接访问 Db。

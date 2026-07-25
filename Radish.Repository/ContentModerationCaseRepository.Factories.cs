@@ -97,6 +97,8 @@ public sealed partial class ContentModerationCaseRepository
         string actorName,
         long? relatedReportId = null,
         long? relatedActionId = null,
+        long? relatedAppealId = null,
+        long? relatedTargetActionId = null,
         int? fromStatus = null,
         int? toStatus = null,
         string? resultCode = null,
@@ -114,6 +116,8 @@ public sealed partial class ContentModerationCaseRepository
             ResultCaseVersion = resultVersion ?? moderationCase.Version,
             RelatedReportId = relatedReportId,
             RelatedActionId = relatedActionId,
+            RelatedAppealId = relatedAppealId,
+            RelatedTargetActionId = relatedTargetActionId,
             FromStatus = fromStatus,
             ToStatus = toStatus,
             ResultCode = resultCode,
@@ -122,6 +126,59 @@ public sealed partial class ContentModerationCaseRepository
             ActorName = actorName,
             CreateTime = DateTime.UtcNow
         };
+    }
+
+    private static ContentModerationTargetAction CreateTargetAction(
+        ContentModerationCase moderationCase,
+        long? appealId,
+        ContentModerationTargetActionType actionType,
+        long? sourceTargetActionId,
+        string operationKey,
+        int? expectedTargetVersion,
+        long operatorUserId,
+        string operatorName,
+        DateTime nowUtc)
+    {
+        return new ContentModerationTargetAction
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            TenantId = moderationCase.TenantId,
+            CaseId = moderationCase.Id,
+            AppealId = appealId,
+            TargetType = moderationCase.TargetType,
+            TargetContentId = moderationCase.TargetContentId,
+            TargetUserId = moderationCase.TargetUserId,
+            ActionType = (int)actionType,
+            SourceTargetActionId = sourceTargetActionId,
+            OperationKey = operationKey,
+            Status = (int)ContentModerationTargetActionStatus.Pending,
+            ExpectedTargetVersion = expectedTargetVersion,
+            RequestedAt = nowUtc,
+            OperatorUserId = operatorUserId,
+            OperatorName = operatorName,
+            CreateTime = nowUtc,
+            CreateBy = operatorName,
+            CreateId = operatorUserId
+        };
+    }
+
+    private static void CompleteTargetAction(
+        ContentModerationTargetAction action,
+        string resultCode,
+        bool changedTargetState,
+        int? resultTargetVersion,
+        DateTime nowUtc,
+        bool succeeded = true)
+    {
+        action.Status = !succeeded
+            ? (int)ContentModerationTargetActionStatus.Failed
+            : changedTargetState
+                ? (int)ContentModerationTargetActionStatus.Succeeded
+                : (int)ContentModerationTargetActionStatus.NoEffect;
+        action.ResultCode = resultCode;
+        action.ChangedTargetState = changedTargetState;
+        action.ResultTargetVersion = resultTargetVersion;
+        action.CompletedAt = nowUtc;
     }
 
     private static bool IsSameOperation(

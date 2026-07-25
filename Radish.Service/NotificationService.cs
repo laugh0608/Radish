@@ -546,6 +546,8 @@ public sealed class NotificationService : INotificationService
             NotificationTargetKind.DocsDocument => !string.IsNullOrWhiteSpace(target?.DocumentSlug),
             NotificationTargetKind.DocsAuthorDraft => target is { DocumentId: > 0 },
             NotificationTargetKind.GovernanceCase => target is { GovernanceCaseId: > 0 },
+            NotificationTargetKind.GovernanceDecision => !string.IsNullOrWhiteSpace(target?.GovernanceCasePublicId),
+            NotificationTargetKind.GovernanceAppeal => !string.IsNullOrWhiteSpace(target?.GovernanceAppealPublicId),
             _ => false
         };
         if (!isValid)

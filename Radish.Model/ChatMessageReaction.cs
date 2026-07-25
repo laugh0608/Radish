@@ -34,6 +34,10 @@ public sealed class ChatMessageReaction : RootEntityTKey<long>, ITenantEntity, I
 
     public bool IsDeleted { get; set; }
 
+    /// <summary>当前软删除由消息治理动作联动造成时记录对应动作 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? ModerationTargetActionId { get; set; }
+
     [SugarColumn(IsNullable = true)]
     public DateTime? DeletedAt { get; set; }
 

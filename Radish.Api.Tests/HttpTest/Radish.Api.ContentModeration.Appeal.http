@@ -1,0 +1,77 @@
+@gateway = https://localhost:5000
+@token = {{$processEnv RADISH_ACCESS_TOKEN}}
+@appealReviewerToken = {{$processEnv RADISH_APPEAL_REVIEWER_TOKEN}}
+@actionOperatorToken = {{$processEnv RADISH_ACTION_OPERATOR_TOKEN}}
+@casePublicId = case_replace_me
+@appealPublicId = apl_replace_me
+
+### 本人可申诉决定
+GET {{gateway}}/api/v1/ContentModeration/GetMyAppealableDecisions?pageIndex=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### 提交一次申诉
+POST {{gateway}}/api/v1/ContentModeration/SubmitAppeal
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "casePublicId": "{{casePublicId}}",
+  "statement": "请结合目标当前状态和原决定重新复核本次处置。",
+  "operationKey": "appeal-submit-replace-me"
+}
+
+### 本人申诉详情
+GET {{gateway}}/api/v1/ContentModeration/GetMyAppeal/{{appealPublicId}}
+Authorization: Bearer {{token}}
+
+### Console 申诉队列
+GET {{gateway}}/api/v1/ContentModeration/GetAppealQueue?pageIndex=1&pageSize=20
+Authorization: Bearer {{appealReviewerToken}}
+
+### 受理复核
+POST {{gateway}}/api/v1/ContentModeration/StartAppealReview
+Authorization: Bearer {{appealReviewerToken}}
+Content-Type: application/json
+
+{
+  "appealPublicId": "{{appealPublicId}}",
+  "expectedVersion": 1,
+  "operationKey": "appeal-start-review-replace-me"
+}
+
+### 采集申诉复核时点快照
+POST {{gateway}}/api/v1/ContentModeration/CaptureAppealEvidence
+Authorization: Bearer {{appealReviewerToken}}
+Content-Type: application/json
+
+{
+  "appealPublicId": "{{appealPublicId}}",
+  "expectedVersion": 2,
+  "operationKey": "appeal-evidence-replace-me"
+}
+
+### 登记全部采纳决定；grantedScope 为 TargetContent / Mute / Ban 位掩码
+POST {{gateway}}/api/v1/ContentModeration/ReviewAppeal
+Authorization: Bearer {{appealReviewerToken}}
+Content-Type: application/json
+
+{
+  "appealPublicId": "{{appealPublicId}}",
+  "expectedVersion": 3,
+  "outcome": 3,
+  "grantedScope": 1,
+  "publicResultSummary": "复核后决定纠正原目标内容处置。",
+  "internalRemark": "仅供受权治理人员查看。",
+  "operationKey": "appeal-decision-replace-me"
+}
+
+### 执行纠正
+POST {{gateway}}/api/v1/ContentModeration/ExecuteAppealRelief
+Authorization: Bearer {{actionOperatorToken}}
+Content-Type: application/json
+
+{
+  "appealPublicId": "{{appealPublicId}}",
+  "expectedVersion": 4,
+  "operationKey": "appeal-relief-replace-me"
+}

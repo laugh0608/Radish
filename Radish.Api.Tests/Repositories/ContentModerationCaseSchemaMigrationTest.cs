@@ -101,6 +101,93 @@ public sealed class ContentModerationCaseSchemaMigrationTest
         }
     }
 
+    [Fact(Timeout = 10_000)]
+    public void AppealMigrations_ShouldRemainRepeatableOnSqlite()
+    {
+        var mainPath = Path.Combine(Path.GetTempPath(), $"radish-appeal-main-{Guid.NewGuid():N}.db");
+        var chatPath = Path.Combine(Path.GetTempPath(), $"radish-appeal-chat-{Guid.NewGuid():N}.db");
+        using var services = CreateServices();
+        try
+        {
+            using (var main = CreateClient(mainPath))
+            {
+                ContentModerationCaseSchemaMigration.Instance.Apply(main, services);
+                main.CodeFirst.InitTables<Post>();
+                main.Insertable(new Post
+                {
+                    Id = 7001,
+                    TenantId = 9,
+                    Title = "legacy restricted",
+                    Content = "content",
+                    AuthorId = 5001,
+                    AuthorName = "target",
+                    IsPublished = true,
+                    PublishTime = DateTime.UtcNow,
+                    IsDeleted = true,
+                    CreateTime = DateTime.UtcNow,
+                    CreateBy = "target",
+                    CreateId = 5001
+                }).ExecuteCommand();
+                main.Insertable(new ContentModerationCase
+                {
+                    Id = 7101,
+                    TenantId = 9,
+                    PublicId = "case_legacy_restricted",
+                    OpenTargetKey = "1:7001",
+                    TargetType = (int)ContentReportTargetTypeEnum.Post,
+                    TargetContentId = 7001,
+                    TargetUserId = 5001,
+                    Status = (int)ContentModerationCaseStatus.Resolved,
+                    Decision = (int)ContentModerationDecision.Violation,
+                    TargetDisposition = (int)ContentModerationTargetDisposition.Restricted,
+                    ResolvedAt = DateTime.UtcNow,
+                    ResolvedById = 9001,
+                    ResolvedByName = "reviewer",
+                    CreateTime = DateTime.UtcNow,
+                    CreateBy = "reviewer",
+                    CreateId = 9001
+                }).ExecuteCommand();
+                main.Insertable(new ContentModerationCaseEvent
+                {
+                    Id = 7201,
+                    TenantId = 9,
+                    CaseId = 7101,
+                    EventSequence = 1,
+                    EventType = "DecisionRecorded",
+                    ResultCode = "Restricted",
+                    ActorUserId = 9001,
+                    ActorName = "reviewer",
+                    CreateTime = DateTime.UtcNow
+                }).ExecuteCommand();
+                ContentModerationAppealSchemaMigration.Instance.Apply(main, services);
+                ContentModerationAppealSchemaMigration.Instance.Apply(main, services);
+                Assert.Empty(ContentModerationAppealSchemaMigration.Instance.Verify(main, services));
+                var source = Assert.Single(main.Queryable<ContentModerationTargetAction>().ToList());
+                Assert.True(source.ChangedTargetState);
+                Assert.Equal(source.Id, main.Queryable<Post>().InSingle(7001).ModerationTargetActionId);
+            }
+
+            using (var chat = CreateClient(chatPath))
+            {
+                ChatModerationReliefSchemaMigration.Instance.Apply(chat, services);
+                ChatModerationReliefSchemaMigration.Instance.Apply(chat, services);
+                Assert.Empty(ChatModerationReliefSchemaMigration.Instance.Verify(chat, services));
+            }
+        }
+        finally
+        {
+            if (File.Exists(mainPath))
+            {
+                File.Delete(mainPath);
+            }
+
+            if (File.Exists(chatPath))
+            {
+                File.Delete(chatPath);
+            }
+        }
+    }
+
     private static ContentReport CreatePendingReport(long id, long reporterUserId) => new()
     {
         Id = id,

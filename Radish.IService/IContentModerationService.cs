@@ -33,6 +33,26 @@ public interface IContentModerationService : IBaseService<ContentReport, Content
         long operatorUserId,
         string operatorName,
         long tenantId);
+    Task<VoPagedResult<ContentModerationDecisionNoticeVo>> GetMyAppealableDecisionsAsync(
+        ContentModerationAppealQueryDto query, long appellantUserId, long tenantId);
+    Task<VoPagedResult<ContentModerationAppealVo>> GetMyAppealsAsync(
+        ContentModerationAppealQueryDto query, long appellantUserId, long tenantId);
+    Task<ContentModerationAppealVo> GetAppealAsync(
+        string appealPublicId, long tenantId, long? appellantUserId = null);
+    Task<VoPagedResult<ContentModerationAppealVo>> GetAppealQueueAsync(
+        ContentModerationAppealQueryDto query, long tenantId);
+    Task<ContentModerationAppealVo> SubmitAppealAsync(
+        SubmitContentModerationAppealDto dto, long appellantUserId, string appellantName, long tenantId);
+    Task<ContentModerationAppealVo> WithdrawAppealAsync(
+        ContentModerationAppealVersionedOperationDto dto, long appellantUserId, long tenantId);
+    Task<ContentModerationAppealVo> StartAppealReviewAsync(
+        ContentModerationAppealVersionedOperationDto dto, long operatorUserId, string operatorName, long tenantId);
+    Task<ContentModerationAppealVo> CaptureAppealEvidenceAsync(
+        CaptureContentModerationAppealEvidenceDto dto, long operatorUserId, string operatorName, long tenantId);
+    Task<ContentModerationAppealVo> ReviewAppealAsync(
+        ReviewContentModerationAppealDto dto, long operatorUserId, string operatorName, long tenantId);
+    Task<ContentModerationAppealVo> ExecuteAppealReliefAsync(
+        ContentModerationAppealVersionedOperationDto dto, long operatorUserId, string operatorName, long tenantId);
 
     /// <summary>分页获取审核队列</summary>
     Task<VoPagedResult<ContentReportQueueItemVo>> GetReportQueueAsync(ContentReportQueueQueryDto query);
