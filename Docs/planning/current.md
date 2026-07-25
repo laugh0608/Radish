@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-J-A 下一完整功能专题候选复核与权威设计`
-- **产品下一顺位**：`从内容、关系、贡献、治理与复访主轴复核剩余真实缺口，只选择一个边界稳定的完整专题`
+- **工程第一顺位**：`F4-J-B 内容治理申诉与处置纠正服务端权威契约`
+- **产品下一顺位**：`建立本人决定通知、独立申诉复核、五类目标恢复和用户状态纠正`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -104,6 +104,7 @@
   - 2026-07-21 F4-I-B 已完成：`20260721_008_content_moderation_case` 建立 Case / Evidence / Event / UserModerationState 及历史映射，专属 Repository 落地案件聚合、追加证据、Case / State CAS、决定与动作幂等、五类目标处置、Chat 跨库可靠任务、治理通知和旧写入口过渡兼容；新用户侧 / Console API、Action 独立权限与 `@radish/http` 契约已建立。SQLite 与 PostgreSQL 17 migration 重入、后端全量 `973` 项、前端生产构建和静态契约通过，未修改 Pencil 或正式页面。详见 [F4-I-B 服务端权威契约完成记录](/records/f4-i-b-content-moderation-server-contract-2026-07-21)，下一顺位进入 F4-I-C。
   - 2026-07-24 F4-I-C 已完成：Console `P02 / P07` 与 `/me/reports` PC / mobile Pencil、正式 `/moderation` Case 工作台、私域本人举报结果、权限分离、冲突草稿保留、目标失效摘要和双语均已落地；旧四个 HTTP 入口及权限种子已退役。静态与代码侧门禁通过，未启动服务或执行 Gateway smoke。
   - 2026-07-25 F4-I-D 已完成并关闭专题：五种角色、五类目标、聚合 / 并发 / 幂等、目标变化、用户治理状态、Chat 跨库失败 / 重试、`zh / en × PC / mobile` 和四主题代表矩阵均已通过；验收发现的联表表达式、结果码和异步异常传播契约已按共同根因修正。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-I-D 成组验收记录](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25)，工程第一顺位进入 F4-J-A 候选复核与权威设计。
+  - 2026-07-25 F4-J-A 已完成：交叉复核治理申诉、圈子全局屏蔽、公开聊天和论坛作者回滚后，选定[内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)为唯一当前专题。设计固定独立 Appeal / Event / TargetAction、原案件不可变、一次申诉、部分采纳、五类目标对称恢复、用户状态来源保护、独立权限、Main / Chat 迁移、正式页面、A-D 批次与停止线；下一顺位进入 F4-J-B。
 
 ## V1 产品与发布范围
 
@@ -161,6 +162,7 @@ Radish V1 的产品定位固定为：
 - [F4-F-C 聊天轻量阅读回执正式 Web 完成记录](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)
 - [F4-F-D 聊天轻量阅读回执成组验收记录](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)
 - [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
+- [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 - [F2 主题系统专题验收记录](/records/f2-theme-system-stage-acceptance-2026-07-14)
 - [产品版本与发布标识治理](/guide/version-governance)
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)
@@ -197,7 +199,7 @@ Radish V1 的产品定位固定为：
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A-D 批已完成并关闭；Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply、独立 Publish、公开隔离与临时数据清理均已通过。
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
-10. 下一顺位进入 `F4-J-A`：按同一口径复核内容、关系、贡献、治理与复访主轴的剩余真实缺口，核对现有专题文档与实际代码，只选择一个长期价值、权限 / 数据边界和失败恢复均可稳定定义的完整专题；先完成权威设计和 A-D 批次边界，不并行实施其他候选。
+10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A 批候选审计与权威设计；下一顺位进入 B 批 Main / Chat migration、申诉聚合、目标动作来源、五类恢复、用户状态纠正、可靠任务与 API 契约。
 
 ## 昨日事项（2026-07-18）
 
@@ -253,13 +255,14 @@ Radish V1 的产品定位固定为：
 2. Gateway 正式路径已完成 `/console/moderation`、`/me/reports` 的双语、PC / mobile、四主题、Back / Forward、键盘与无障碍复核。
 3. 验收暴露的 Repository 联表参数、SQL 投影、结果码严格匹配和非泛型 `Task` 异常传播问题已按根因修正并补回归。
 4. 临时业务数据、通知、授权、作业和审计记录已清理；六库完整性、DbMigrate doctor / verify、全量后端与前端静态门禁通过。
+5. `F4-J-A` 已完成四候选同口径审计并选定内容治理申诉与处置纠正；原案件不可变、独立申诉复核、目标动作来源、五类恢复、用户状态纠正、权限、迁移和 A-D 批次已经固定。
 
-## 下一事项（F4-J-A）
+## 下一事项（F4-J-B）
 
-1. 盘点内容、关系、贡献、治理与复访主轴尚未关闭的设计和实现缺口，交叉核对 `Docs/`、实体 / migration、Service / API、正式页面和测试。
-2. 依据用户主路径价值、现有能力缺口、数据与权限边界、失败恢复、迁移风险和可验收性对候选做同口径比较，只裁决一个专题。
-3. 为选定专题补齐定位、用户旅程、状态真相源、接口 / 页面、权限与隐私、并发 / 幂等、容量、恢复、Pencil、验证矩阵和停止线。
-4. 固定 A-D 批次后再进入代码，不并行展开其余候选，也不重启主动生产证据采集。
+1. 增加 Main / Chat schema ledger migration，建立 Appeal / AppealEvent / TargetAction、来源标记、历史 Restrict 回填及 doctor / verify。
+2. 建立专属 Repository 与事务边界，完成本人决定列表、一次申诉、撤回、独立复核、全部 / 部分采纳和 Appeal CAS / operation key。
+3. 完成 Post / Comment / PostQuickReply / Product 的 Main 恢复、Chat 可靠恢复，以及 Mute / Ban 当前来源保护下的纠正动作。
+4. 建立独立 Appeal 权限、决定 / 申诉通知、稳定错误、HTTP 示例、`@radish/http` 契约和服务端定向回归；本批不修改 Pencil 或正式页面。
 
 ## 并行维护线
 

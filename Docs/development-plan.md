@@ -8,8 +8,8 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-J-A 下一完整功能专题候选复核与权威设计`
-- **产品下一顺位**：`从内容、关系、贡献、治理与复访主轴复核剩余真实缺口，只选择一个边界稳定的完整专题`
+- **工程第一顺位**：`F4-J-B 内容治理申诉与处置纠正服务端权威契约`
+- **产品下一顺位**：`建立本人决定通知、独立申诉复核、五类目标恢复和用户状态纠正`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
 - **复核日期**：`2026-07-25`
 - **当前结论**：
@@ -33,6 +33,7 @@
   - F4-I-B 已完成服务端权威契约：Main ledger migration、历史映射、专属 Repository、案件 / 证据 / 当前状态事务、五类目标处置、Chat 跨库可靠任务、治理通知、新 API、独立动作权限和旧写入口过渡兼容均已落地。
   - F4-I-C 已完成 Pencil 与正式页面：Console `P02 / P07`、`/moderation` Case 工作台、私域 `/me/reports`、权限分离、冲突草稿保留、双语和目标失效摘要均已收口，旧四个治理 HTTP 入口已退役。
   - F4-I-D 已完成并关闭专题：五种角色、五类目标、并发与幂等、目标变化、用户治理状态、Chat 跨库失败 / 重试、双语、PC / mobile 和四主题代表矩阵均已通过；临时数据清理、六库完整性与严格 migration verify 完成。下一顺位进入 F4-J-A 候选复核与权威设计。
+  - F4-J-A 已完成候选审计与权威设计：治理申诉相较圈子全局屏蔽、公开聊天和论坛作者回滚，更直接补齐现有高权限治理的对称复核与恢复路径；专题固定独立 Appeal / Event / TargetAction、一次申诉、部分采纳、五类恢复、用户状态来源保护、独立权限、迁移、页面和 A-D 批次。下一顺位进入 F4-J-B。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -116,7 +117,7 @@ Radish V1 固定为：
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 已完成 A-D 批并关闭，普通作者、协作者、审核者、双版本 CAS、独立发布与公开隔离均通过。
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；公开字段白名单、即时显隐、身份 / 租户 / 软删除隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过，移动系统通知继续后置。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件、证据、决定、动作、用户状态、五类目标、多角色正式页面和运行态验收全部通过。
-10. 下一顺位进入 `F4-J-A`：交叉复核内容、关系、贡献、治理与复访主轴的剩余真实缺口，只选择一个长期价值、系统边界和验收口径明确的完整专题，先完成权威设计与 A-D 批次边界。
+10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A 批候选审计与权威设计；下一顺位进入 B 批服务端权威契约。
 
 ## P3-12-F 门禁分层
 
@@ -169,6 +170,7 @@ Radish V1 固定为：
 - [F4-A 首批真实使用证据整理与反馈归因记录（冻结）](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)
 - [F4-B 通知中心深化与通知治理](/features/notification-center-deepening)
 - [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
+- [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 
 ## 文档规则
 
