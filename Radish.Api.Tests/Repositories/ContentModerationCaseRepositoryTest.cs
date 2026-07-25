@@ -356,6 +356,201 @@ public sealed class ContentModerationCaseRepositoryTest
         Assert.Equal(reviewed.TargetAction!.Id, relief.TargetActions.Single().SourceTargetActionId);
     }
 
+    [Fact]
+    public async Task AppealReviewPreparation_ShouldCompleteOnSqliteAndReplayOperations()
+    {
+        using var harness = new RepositoryHarness();
+        var submitted = await harness.Repository.SubmitReportAsync(CreateReportCommand(1001));
+        await harness.Repository.ReviewCaseAsync(
+            new ContentModerationCaseReviewWriteCommand(
+                9,
+                submitted.Case.PublicId,
+                1,
+                (int)ContentModerationDecision.Violation,
+                (int)ContentModerationTargetDisposition.Keep,
+                null,
+                "MeasuresTaken",
+                null,
+                new ContentModerationUserActionWriteCommand(
+                    5001,
+                    "target",
+                    (int)ModerationActionTypeEnum.Mute,
+                    0,
+                    24,
+                    "appeal preparation"),
+                "case-review-for-preparation",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(1)));
+        var submittedAppeal = await harness.Repository.SubmitAppealAsync(
+            new ContentModerationAppealSubmitCommand(
+                9,
+                submitted.Case.PublicId,
+                5001,
+                "target",
+                "请求复核原治理决定与用户限制动作",
+                "appeal-submit-for-preparation",
+                NowUtc.AddMinutes(2)));
+        var startCommand = new ContentModerationAppealStartReviewCommand(
+            9,
+            submittedAppeal.Appeal.PublicId,
+            1,
+            "appeal-start-review",
+            9002,
+            "appeal-reviewer",
+            NowUtc.AddMinutes(3));
+
+        var started = await harness.Repository.StartAppealReviewAsync(startCommand);
+        var startReplay = await harness.Repository.StartAppealReviewAsync(startCommand);
+        var evidenceCommand = new ContentModerationAppealEvidenceCommand(
+            9,
+            submittedAppeal.Appeal.PublicId,
+            started.Appeal.Version,
+            (int)ContentModerationTargetState.Available,
+            "current target",
+            "current target summary",
+            7001,
+            null,
+            null,
+            null,
+            new string('b', 64),
+            "appeal-capture-evidence",
+            9002,
+            "appeal-reviewer",
+            NowUtc.AddMinutes(4));
+        var captured = await harness.Repository.AppendAppealEvidenceAsync(evidenceCommand);
+        var evidenceReplay = await harness.Repository.AppendAppealEvidenceAsync(evidenceCommand);
+
+        Assert.Equal((int)ContentModerationAppealStatus.Reviewing, started.Appeal.Status);
+        Assert.True(startReplay.IsIdempotentReplay);
+        Assert.Equal(2, started.Appeal.Version);
+        Assert.Equal((int)ContentModerationAppealStatus.Reviewing, captured.Appeal.Status);
+        Assert.True(evidenceReplay.IsIdempotentReplay);
+        Assert.Equal(3, captured.Appeal.Version);
+        Assert.Equal(
+            ["Submitted", "ReviewStarted", "EvidenceCaptured"],
+            harness.Db.Queryable<ContentModerationAppealEvent>()
+                .OrderBy(item => item.EventSequence)
+                .Select(item => item.EventType)
+                .ToList());
+    }
+
+    [Fact]
+    public async Task ChatAppealRelief_ShouldRecoverFromFailedOutboxAttempt()
+    {
+        using var harness = new RepositoryHarness();
+        var submitted = await harness.Repository.SubmitReportAsync(CreateReportCommand(1001) with
+        {
+            TargetType = (int)ContentReportTargetTypeEnum.ChatMessage,
+            TargetContentId = 8001,
+            TargetPostId = null,
+            TargetChannelId = 8101
+        });
+        var reviewed = await harness.Repository.ReviewCaseAsync(
+            new ContentModerationCaseReviewWriteCommand(
+                9,
+                submitted.Case.PublicId,
+                1,
+                (int)ContentModerationDecision.Violation,
+                (int)ContentModerationTargetDisposition.Restricted,
+                null,
+                "MeasuresTaken",
+                null,
+                null,
+                "case-review-chat-for-appeal",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(1)));
+        await harness.Repository.CompleteChatTargetActionAsync(
+            new ContentModerationChatActionCompletionCommand(
+                9,
+                submitted.Case.Id,
+                reviewed.TargetAction!.Id,
+                "case-review-chat-for-appeal",
+                true,
+                "Restricted",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(2)));
+        var submittedAppeal = await harness.Repository.SubmitAppealAsync(
+            new ContentModerationAppealSubmitCommand(
+                9,
+                submitted.Case.PublicId,
+                5001,
+                "target",
+                "请求复核并恢复聊天消息及关联状态",
+                "appeal-submit-chat",
+                NowUtc.AddMinutes(3)));
+        var decision = await harness.Repository.ReviewAppealAsync(
+            new ContentModerationAppealReviewCommand(
+                9,
+                submittedAppeal.Appeal.PublicId,
+                1,
+                (int)ContentModerationAppealOutcome.Granted,
+                (int)ContentModerationReliefScope.TargetContent,
+                "Granted",
+                "准予恢复聊天消息",
+                null,
+                "appeal-decision-chat",
+                9002,
+                "appeal-reviewer",
+                NowUtc.AddMinutes(4)));
+        var relief = await harness.Repository.ExecuteAppealReliefAsync(
+            new ContentModerationAppealReliefCommand(
+                9,
+                submittedAppeal.Appeal.PublicId,
+                decision.Appeal.Version,
+                "appeal-relief-chat",
+                9003,
+                "action-executor",
+                NowUtc.AddMinutes(5)));
+        var restoreAction = Assert.Single(relief.TargetActions);
+        var failureCommand = new ContentModerationChatReliefCompletionCommand(
+            9,
+            submittedAppeal.Appeal.Id,
+            restoreAction.Id,
+            "appeal-relief-chat",
+            false,
+            "SqliteException",
+            9003,
+            "action-executor",
+            NowUtc.AddMinutes(6));
+
+        var failed = await harness.Repository.CompleteChatReliefAsync(failureCommand);
+        var failureReplay = await harness.Repository.CompleteChatReliefAsync(failureCommand);
+        var completed = await harness.Repository.CompleteChatReliefAsync(
+            failureCommand with
+            {
+                Succeeded = true,
+                ResultCode = "Restored",
+                NowUtc = NowUtc.AddMinutes(7)
+            });
+        var completionReplay = await harness.Repository.CompleteChatReliefAsync(
+            failureCommand with
+            {
+                Succeeded = true,
+                ResultCode = "Restored",
+                NowUtc = NowUtc.AddMinutes(8)
+            });
+
+        Assert.Equal((int)ContentModerationAppealStatus.ReliefFailed, failed.Status);
+        Assert.Equal(failed.Version, failureReplay.Version);
+        Assert.Equal((int)ContentModerationAppealStatus.Resolved, completed.Status);
+        Assert.Equal(completed.Version, completionReplay.Version);
+        var persistedAction = harness.Db.Queryable<ContentModerationTargetAction>()
+            .InSingle(restoreAction.Id)!;
+        Assert.Equal((int)ContentModerationTargetActionStatus.Succeeded, persistedAction.Status);
+        Assert.Equal(
+            ["ReliefFailed", "ReliefCompleted"],
+            harness.Db.Queryable<ContentModerationAppealEvent>()
+                .Where(item =>
+                    item.AppealId == submittedAppeal.Appeal.Id &&
+                    (item.EventType == "ReliefFailed" || item.EventType == "ReliefCompleted"))
+                .OrderBy(item => item.EventSequence)
+                .Select(item => item.EventType)
+                .ToList());
+    }
+
     private static ContentModerationReportWriteCommand CreateReportCommand(long reporterUserId)
     {
         return new ContentModerationReportWriteCommand(

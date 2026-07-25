@@ -410,7 +410,7 @@ public sealed partial class ContentModerationCaseRepository
                 await AcquireTransactionLockAsync(
                     $"moderation-appeal:{command.TenantId}:{command.AppealPublicId}");
                 var appeal = await QueryAppealForWriteAsync(command.TenantId, command.AppealPublicId);
-                var existingEvent = await QueryAppealEventByOperationAsync(command.TenantId, command.OperationKey);
+                var existingEvent = await QueryAppealEventByOperationCoreAsync(command.TenantId, command.OperationKey);
                 if (existingEvent != null)
                 {
                     if (existingEvent.AppealId != appeal.Id || existingEvent.EventType != "ReviewStarted")
@@ -483,7 +483,7 @@ public sealed partial class ContentModerationCaseRepository
                 await AcquireTransactionLockAsync(
                     $"moderation-appeal:{command.TenantId}:{command.AppealPublicId}");
                 var appeal = await QueryAppealForWriteAsync(command.TenantId, command.AppealPublicId);
-                var existingEvent = await QueryAppealEventByOperationAsync(command.TenantId, command.OperationKey);
+                var existingEvent = await QueryAppealEventByOperationCoreAsync(command.TenantId, command.OperationKey);
                 if (existingEvent != null)
                 {
                     if (existingEvent.AppealId != appeal.Id || existingEvent.EventType != "EvidenceCaptured")
@@ -737,14 +737,18 @@ public sealed partial class ContentModerationCaseRepository
         return await query.FirstAsync() ?? throw new ContentModerationAppealNotFoundException();
     }
 
-    private Task<ContentModerationAppealEvent?> QueryAppealEventByOperationAsync(
+    /// <summary>
+    /// 查询事务内的申诉幂等事件。调用方必须已经通过 ExecuteDbOperationAsync
+    /// 取得 SQLite 串行锁，避免在同一异步流程中重复等待不可重入的信号量。
+    /// </summary>
+    private async Task<ContentModerationAppealEvent?> QueryAppealEventByOperationCoreAsync(
         long tenantId,
         string operationKey)
     {
-        return ExecuteDbOperationAsync(async () => (ContentModerationAppealEvent?)await DbProtectedClient
+        return await DbProtectedClient
             .Queryable<ContentModerationAppealEvent>()
             .Where(item => item.TenantId == tenantId && item.OperationKey == operationKey)
-            .FirstAsync());
+            .FirstAsync();
     }
 
     private async Task EnsureAppealOperationAvailableAsync(

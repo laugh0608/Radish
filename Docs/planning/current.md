@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-J-D 内容治理申诉成组验收与专题关闭`
-- **产品下一顺位**：`覆盖六角色、五类目标、申诉状态机、纠正失败恢复与双语多主题正式路径`
+- **工程第一顺位**：`F4-K-A 下一完整功能候选复核与权威设计`
+- **产品下一顺位**：`交叉复核圈子全局屏蔽、公开聊天与论坛作者回滚，选定唯一完整专题`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -29,9 +29,6 @@
   - 2026-07-11 Q1-A 已完成实现收口：14 处裸 `_ = Task.Run` 已按不可丢失业务写、可重算派生数据和 best-effort 实时推送完成迁移；Main / Chat 源库 Outbox、Hangfire 领取与租约恢复、目标写幂等、Message 通知事务、DeadLetter 与受权人工重放 API 已落地。订单权益 / 背包核心写仍保持同步事务，未扩入 Q1-B、Q2、Q3 或页面工作。
   - 2026-07-11 Q1-A 候选级验证已通过：PostgreSQL 源事务回滚、双 Worker 原子领取、租约恢复、通知两表事务与业务键幂等均由环境驱动集成测试覆盖；DbMigrate 首次建库、重入与 verify 通过，真实 API + PostgreSQL Hangfire 已恢复 `Pending` 和过期 `Processing` 重复任务且只生成一份持久通知。验证中发现的 Chat 种子 PostgreSQL 重入阻断与 ReliableOutbox 权限契约缺口已修复。
   - 2026-07-11 Q1-B 已完成：保留 `MessageModel` 并接入全局异常安全边界、稳定错误码、`TraceId / X-Correlation-ID`、模型校验、认证权限与限流统一响应；关键发布 Controller 已同步真实 HTTP 状态，问答、投票、抽奖、轻回应、治理和 Wiki 的异常文案状态分类已清零，HTTP / client / console 与 588 项后端测试通过。
-  - Q1 已形成独立提交：Q1-A `33e4690f / 86466308`、Q1-B `873c5ea5`、Q1-C `ef370884`；后续 `9733e73c` 仅完成稳定主线 ancestry 回灌，不改变这些专题提交边界。
-  - 2026-07-12 Q1-C 已完整关闭：原始 token 一次返回、原列 SHA-256 Base64Url hash、历史 token 原位迁移、原子消费 / 撤销、列表脱敏、权限、可信代理与日志凭据脱敏均已落地；本地 Main SQLite 已在备份后完成 `DbMigrate apply / verify`，迁移前后完整性检查通过，PostgreSQL 双 Worker 原子额度竞争用例通过 `1/1`。Q1 Release Go 必要子集至此完成，工程第一顺位进入 Q2-A。
-  - 2026-07-12 Q2-A Release Go 高风险子集已收口：统一 UTC `TimeProvider` 与系统业务日，迁移 token、幂等、支付、限流、投票 / 抽奖、订单 / 权益、清理、Hangfire 与经验 / 登录自然日；API 自然日改用 `DateOnly`，DbMigrate 能只读报告列类型与异常。SQLite verify、隔离 PostgreSQL 17 集成测试、609 项后端测试与 Baseline Quick 均通过；物理 `date` 改列按职责移交 Q2-B schema ledger。
   - 2026-07-12 Q2-B ledger / OpenIddict 首批已由提交 `7ac68c75` 收口：Main / Log / Message / Chat 引入 `RadishSchemaVersion` baseline 与 checksum drift 门禁，`apply` 接入前置 doctor、OpenIddict 显式迁移、seed 与严格 verify；OpenIddict 持久化边界已从 Auth 宿主拆出，SQLite / PostgreSQL 独立 migration assembly、空库迁移、重入和旧 `EnsureCreated` schema adoption 均已验证，EF Design 传递依赖已安全钉住且 High / Critical 为 `0`。
   - Q2-B 首个业务迁移 `20260712_001_experience_natural_dates` 已完成实现与回归：三处经验自然日改为物理 `date`，SQLite 重建保留索引，PostgreSQL 同时覆盖 `timestamp with/without time zone`，异常历史值拒绝、重入和 ledger 记账通过；全量后端 `615` 通过、`6` 个环境用例跳过，隔离 PostgreSQL 17 定向用例另行实跑通过。
   - 2026-07-12 Q2-B Release Go 必要子集已完整关闭：SQLite non-deferred 写事务、PostgreSQL transaction-scoped advisory lock 与 ledger 二次检查已阻止首次 baseline / 后续 migration 的并发重复执行；baseline 后禁止 Code First / 旧补丁静默修复。SQLite 文件备份恢复自动化测试和 PostgreSQL `pg_dump → 前滚 → pg_restore → 再前滚` 生产相似演练通过；最终全量后端 `618` 通过、`7` 个环境用例跳过，依赖 High / Critical 为 `0`，临时容器已清理。工程第一顺位进入 Q2-C。
@@ -107,6 +104,7 @@
   - 2026-07-25 F4-J-A 已完成：交叉复核治理申诉、圈子全局屏蔽、公开聊天和论坛作者回滚后，选定[内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)为唯一当前专题。设计固定独立 Appeal / Event / TargetAction、原案件不可变、一次申诉、部分采纳、五类目标对称恢复、用户状态来源保护、独立权限、Main / Chat 迁移、正式页面、A-D 批次与停止线；下一顺位进入 F4-J-B。
   - 2026-07-25 F4-J-B 已完成服务端权威契约：Main / Chat migration、独立 Appeal / Event / TargetAction、本人决定与一次申诉、部分采纳、五类来源保护恢复、Mute / Ban 纠正、Chat 可靠任务、独立权限、通知和 HTTP / `@radish/http` 契约均已落地。后端全量 `991` 项通过、`26` 项 PostgreSQL 环境用例按配置跳过；详见 [F4-J-B 服务端权威契约记录](/records/f4-j-b-content-moderation-appeal-server-contract-2026-07-25)，下一顺位进入 F4-J-C。
   - 2026-07-25 F4-J-C 已完成 Pencil 与正式页面：`/me/appeals` PC / mobile 决定与申诉页、组件内存陈述草稿、提交 / 撤回、超期保留、通知深链、状态与纠正摘要已落地；Console 在既有 `/moderation` 内增加申诉队列、受权详情、原案件证据、复核与纠正，mobile 固定只读。View 队列服务端同步裁剪敏感详情，冲突刷新保留草稿；详见 [F4-J-C 正式页面记录](/records/f4-j-c-content-moderation-appeal-web-workspace-2026-07-25)，下一顺位进入 F4-J-D。
+  - 2026-07-25 F4-J-D 已完成并关闭专题：六种角色、五类目标、全采纳 / 部分采纳 / 维持 / 撤回 / 超期、重复申诉、用户状态来源保护、Chat 跨库失败重试和双语 PC / mobile 正式路径均已通过；验收发现的 SQLite 复核死锁、Chat 完成事件 operation key 冲突、失败动作不可重试及用户端动作语义已按共同根因修复。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-J-D 成组验收记录](/records/f4-j-d-content-moderation-appeal-stage-acceptance-2026-07-25)，工程第一顺位进入 F4-K-A 下一完整功能候选复核与权威设计。
 
 ## V1 产品与发布范围
 
@@ -201,7 +199,8 @@ Radish V1 的产品定位固定为：
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A-D 批已完成并关闭；Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply、独立 Publish、公开隔离与临时数据清理均已通过。
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
-10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-C 批设计、服务端契约、Pencil 与正式页面；下一顺位进入 D 批六角色、五类目标、失败恢复与正式路径成组验收。
+10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-D 批并关闭；独立申诉、部分支持、五类来源保护恢复、用户状态纠正、正式页面与六角色成组验收全部通过。
+11. 下一顺位进入 `F4-K-A`，交叉复核圈子全局屏蔽、公开聊天与论坛作者回滚等剩余候选；先明确关系政策、隐私、通知、历史内容和 Direct 影响，只选定一个完整专题。
 
 ## 昨日事项（2026-07-18）
 
@@ -260,13 +259,14 @@ Radish V1 的产品定位固定为：
 5. `F4-J-A` 已完成四候选同口径审计并选定内容治理申诉与处置纠正；原案件不可变、独立申诉复核、目标动作来源、五类恢复、用户状态纠正、权限、迁移和 A-D 批次已经固定。
 6. `F4-J-B` 已完成 Main / Chat 迁移、独立申诉聚合、五类来源保护恢复、用户状态纠正、可靠任务、权限、通知与服务端契约。
 7. `F4-J-C` 已完成两份 Pencil 设计源、正式 `/me/appeals`、通知深链、Console 申诉工作台、权限裁剪、冲突草稿与双语响应式页面。
+8. `F4-J-D` 已完成六角色、五类目标、主要申诉状态、Chat 失败恢复与双语 PC / mobile 成组验收；四项共同根因修复、临时数据清理、六库完整性和严格 migration verify 均通过，F4-J 关闭。
 
-## 下一事项（F4-J-D）
+## 下一事项（F4-K-A）
 
-1. 启动当前任务的前后端后，按申诉人、举报者、原审核员、申诉审核员、动作执行员和只读治理员覆盖 View / Appeal / Action 权限矩阵。
-2. 覆盖五类目标、Mute / Ban、维持 / 部分支持 / 全部支持、撤回 / 超期、并发 / 幂等，以及目标变化、自然到期和后续案件替代。
-3. 覆盖 Main 事务回滚、Chat 纠正失败 / 重试、通知失败恢复、深链与 Back / Forward，并复核 `zh / en × PC / mobile`、键盘、无障碍和四主题代表矩阵。
-4. 成组修复共同根因，清理临时申诉、动作、通知、账号和来源标记，检查数据库完整性与严格 migration verify 后关闭 F4-J。
+1. 只读审计现有关注、关系列表、公开主页、通知、Direct 会话与内容可见性契约，确认“屏蔽”不能退化为单一关系布尔值。
+2. 与公开聊天、论坛作者回滚等候选按长期价值、真实缺口、数据边界、迁移风险和正式 Web 主路径同口径比较，选定唯一专题。
+3. 若圈子全局屏蔽胜出，专题设计必须明确双向关注处理、历史内容可见性、公开主页状态、Direct 请求 / 既有会话、通知抑制、解除屏蔽与跨租户边界。
+4. 先形成 `Docs/features/` 权威专题、A-D 批次、迁移 / 权限 / 页面 / 验收口径与停止线，经确认后再进入业务实现。
 
 ## 并行维护线
 

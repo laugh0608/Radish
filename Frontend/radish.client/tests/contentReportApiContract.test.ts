@@ -42,6 +42,8 @@ test('我的申诉应使用本人契约、受控深链与内存草稿，不暴�
   const apiSource = readFileSync(resolve(clientRoot, 'src/api/contentModeration.ts'), 'utf8');
   const appealsSource = readFileSync(resolve(clientRoot, 'src/me/MeAppealsPage.tsx'), 'utf8');
   const navigationSource = readFileSync(resolve(clientRoot, 'src/utils/notificationNavigation.ts'), 'utf8');
+  const zhAccountSource = readFileSync(resolve(clientRoot, 'src/locales/zh/account.ts'), 'utf8');
+  const enAccountSource = readFileSync(resolve(clientRoot, 'src/locales/en/account.ts'), 'utf8');
 
   assert.match(apiSource, /ContentModeration\/GetMyAppealableDecisions/);
   assert.match(apiSource, /ContentModeration\/GetMyAppeals/);
@@ -52,9 +54,17 @@ test('我的申诉应使用本人契约、受控深链与内存草稿，不暴�
   assert.match(appealsSource, /voCanAppeal/);
   assert.match(appealsSource, /voTargetSnapshotSummary/);
   assert.match(appealsSource, /voUserActionSummaries/);
+  assert.match(
+    appealsSource,
+    /voActionType === 'Restrict' && action\.voStatus === 'Succeeded'[\s\S]*OriginalRestrictionSucceeded/,
+  );
   assert.doesNotMatch(appealsSource, /Date\.now\(\)/);
   assert.doesNotMatch(appealsSource, /voTargetContentId/);
   assert.match(navigationSource, /GovernanceDecision[\s\S]*\/me\/appeals/);
   assert.match(navigationSource, /GovernanceAppeal[\s\S]*\/me\/appeals/);
   assert.doesNotMatch(appealsSource, /ReviewAppeal|ExecuteAppealRelief|CaptureAppealEvidence/);
+  for (const eventType of ['ReliefRequested', 'ReliefApplied', 'ReliefNoEffect']) {
+    assert.match(zhAccountSource, new RegExp(`me\\.appeals\\.event\\.${eventType}`));
+    assert.match(enAccountSource, new RegExp(`me\\.appeals\\.event\\.${eventType}`));
+  }
 });

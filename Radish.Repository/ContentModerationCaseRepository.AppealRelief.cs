@@ -298,7 +298,13 @@ public sealed partial class ContentModerationCaseRepository
                         item.AppealId == appeal.Id &&
                         item.ActionType == (int)ContentModerationTargetActionType.Restore)
                     .FirstAsync() ?? throw new ContentModerationTargetActionException("ActionNotFound");
-                if (action.Status != (int)ContentModerationTargetActionStatus.Pending)
+                var actionStatus = (ContentModerationTargetActionStatus)action.Status;
+                var completionAlreadyRecorded =
+                    actionStatus is ContentModerationTargetActionStatus.Succeeded
+                        or ContentModerationTargetActionStatus.Superseded
+                        or ContentModerationTargetActionStatus.NoEffect ||
+                    actionStatus == ContentModerationTargetActionStatus.Failed && !command.Succeeded;
+                if (completionAlreadyRecorded)
                 {
                     DbProtectedClient.Ado.CommitTran();
                     return appeal;
@@ -341,7 +347,7 @@ public sealed partial class ContentModerationCaseRepository
                     appeal,
                     await GetNextAppealEventSequenceAsync(appeal.Id),
                     command.Succeeded ? "ReliefCompleted" : "ReliefFailed",
-                    command.OperationKey,
+                    null,
                     command.OperatorUserId,
                     command.OperatorName,
                     relatedTargetActionId: action.Id,

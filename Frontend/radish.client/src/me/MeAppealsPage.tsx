@@ -72,6 +72,13 @@ function actionTone(status: ContentModerationTargetActionVo['voStatus']): string
   return 'neutral';
 }
 
+function targetActionStatusKey(action: ContentModerationTargetActionVo): string {
+  if (action.voActionType === 'Restrict' && action.voStatus === 'Succeeded') {
+    return 'OriginalRestrictionSucceeded';
+  }
+  return action.voStatus;
+}
+
 export function MeAppealsPage({ route, onNavigate, onBack }: MeAppealsPageProps) {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -433,7 +440,7 @@ export function MeAppealsPage({ route, onNavigate, onBack }: MeAppealsPageProps)
                           <div key={`${action.voRequestedAt}-${index}`}>
                             <span>{t(`me.appeals.action.${action.voActionType}`)}</span>
                             <strong data-tone={actionTone(action.voStatus)}>
-                              {t(`me.appeals.actionStatus.${action.voStatus}`)}
+                              {t(`me.appeals.actionStatus.${targetActionStatusKey(action)}`)}
                             </strong>
                           </div>
                         ))}
