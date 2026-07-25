@@ -32,6 +32,7 @@
 
 - 不在 Api / Gateway 启动时自动调用 `InitTables`。
 - 测试 / 生产数据库必须先备份，再运行同一 `DbMigrate apply` 迁移链；禁止宿主启动自动改 schema。
+- 生产环境固定使用 `Deploy/deploy-production.sh` 编排不可变镜像、停止写入、六库备份、显式 `apply`、独立 `verify` 和应用发布；不得用普通 `docker compose up -d` 代替该顺序。
 - 默认只前滚；应用回退必须与数据库备份恢复配套，不能依赖未经演练的 Down SQL。
 - 每个发布候选至少覆盖旧基线升级、重复 apply、严格 verify、异常拒绝和备份恢复。
 
@@ -41,7 +42,7 @@
 2. 同步修改实体 / EF 模型和业务调用，确保新库当前结构与旧库前滚结果一致。
 3. 在隔离 SQLite 与 PostgreSQL 基线库执行 `doctor → apply → verify`，同时覆盖“旧结构 + pending migration”、重入、已迁移结构和异常历史值拒绝；不得只测试空库当前结构。
 4. 对既有数据库制作可恢复备份并完成恢复演练；保留批次级验证记录。
-5. 部署时先运行 `Radish.DbMigrate apply`，成功后再启动 Api / Auth / Gateway；宿主只读校验 schema 就绪状态。
+5. 生产部署通过固定发布脚本先停止业务写入、完成六库备份，再运行 `Radish.DbMigrate apply` 与独立 `verify`，成功后启动 Api / Auth / Gateway；宿主只读校验 schema 就绪状态。
 
 ## 显式结构补丁口径
 
@@ -79,5 +80,6 @@
 ## 相关入口
 
 - [部署指南：数据库初始化与迁移](/deployment/guide#数据库初始化与迁移radishdbmigrate)
+- [生产数据库迁移与发布编排](/guide/production-database-migration-deployment)
 - [架构框架：数据与持久化策略](/architecture/framework#数据与持久化策略)
 - [架构规范：新增实体与字段的标准流程](/architecture/specifications#新增实体与字段的标准流程)

@@ -63,6 +63,7 @@
 - [API 说明索引](/guide/api-index)
 - [M14 宿主运行与最小可观测性基线](/guide/m14-host-runtime-observability-baseline)
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [生产数据库迁移与发布编排](/guide/production-database-migration-deployment)
 - [产品版本与发布标识治理](/guide/version-governance)
 
 ### 文档、通知与控制台

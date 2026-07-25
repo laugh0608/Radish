@@ -288,6 +288,12 @@ const steps = [
     args: ['run', 'check:version-contract:self-test'],
   },
   {
+    title: '生产迁移发布编排合约测试',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:production-deploy'],
+  },
+  {
     title: '前端 TypeScript 类型检查',
     phase: 'baseline',
     command: npmCommand,

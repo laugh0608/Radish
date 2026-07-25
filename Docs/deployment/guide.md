@@ -6,6 +6,7 @@
 当前若要按仓库现实执行发版、部署、发布后最小复核与回滚，请优先参考：
 
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [生产数据库迁移与发布编排](/guide/production-database-migration-deployment)
 - [M15 v26.7.1.1204-release 生产部署记录](/records/m15-release-record-v26.7.1.1204-2026-07-12)
 - [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
 - [M14 宿主运行与最小可观测性基线（重定义）](/guide/m14-host-runtime-observability-baseline)
@@ -79,66 +80,16 @@
 
 ## 仓库发版与合并流程
 
-当前仓库已启用 `master` 分支保护，默认约束如下：
+`master` 只通过 Pull Request 合并，禁止直接 push、force push 与删除；日常开发和必要验证在 `dev` 或功能分支完成。PR 合并后必须先把最新 `origin/master` 回灌到 `dev`，再开始下一轮开发。
 
-- 禁止直接 push 到 `master`
-- 禁止 force push
-- 禁止删除 `master`
-- `master` 只允许通过 Pull Request 合并
-- 合并前需通过仓库检查：
-  - `Repo Hygiene`
-  - `Frontend Lint`
-  - `Baseline Quick`
-  - `Identity Guard`
-- 合并前需至少完成 1 次审批，并解决全部 review 对话
-- 管理员当前仅允许“通过 Pull Request 绕过”，不开放直接 push
+正式发布还必须满足：
 
-### 推荐分支路径
+- 按 [M15 交付与部署基线](/guide/m15-delivery-baseline)完成本地与 CI 门禁。
+- 按[产品版本与发布标识治理](/guide/version-governance)校验机器可读发布记录、候选提交和 tag。
+- 等待 `Docker Images` 为 DbMigrate、Api、Auth、Gateway、Frontend 产出同一固定 tag 的镜像。
+- 生产部署只消费该固定 tag，不以 `release-latest` 或 `latest` 作为可追溯版本。
 
-- 日常开发：在 `dev` 或功能分支完成开发与自检
-- 准备发版：从 `dev` 向 `master` 发起 Pull Request
-- 合并发布：PR 检查通过后，以 `merge` 或 `rebase` 方式合并到 `master`
-- 发布记录：合并完成后创建 Git tag，并补一份仓库内发布记录；如需 GitHub Release，可复用同一套发布事实
-
-### 最小发版顺序
-
-1. 在 `dev` 完成代码、文档与必要验证
-2. 本地至少执行：
-
-   ```bash
-   npm run validate:baseline:quick
-   ```
-
-3. 发起 `dev -> master` 的 PR
-4. 等待 GitHub Actions 中的 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 全部通过
-5. 完成审批与会话收束后合并到 `master`
-6. 合并后创建版本标签，例如：
-
-   ```bash
-   git checkout master
-   git pull origin master
-   git tag -a v26.3.2-release -m "Release v26.3.2"
-   git push origin v26.3.2-release
-   ```
-
-7. 等待 `Docker Images` 工作流完成本次镜像产出；若当前标签为 `v*-release`，`GHCR` 会同步产出：
-   - `ghcr.io/<owner>/radish-dbmigrate:<tag>` / `release-latest` / `latest`
-   - `ghcr.io/<owner>/radish-api:<tag>` / `release-latest` / `latest`
-   - `ghcr.io/<owner>/radish-auth:<tag>` / `release-latest` / `latest`
-   - `ghcr.io/<owner>/radish-gateway:<tag>` / `release-latest` / `latest`
-   - `ghcr.io/<owner>/radish-frontend:<tag>` / `release-latest` / `latest`
-
-8. 补一份仓库内发布记录；如需 GitHub Release，可同步复用同一套说明、已知风险与回滚信息
-
-当前真实样例见：
-
-- [M15 发布记录（v26.3.2-release，2026-04-06）](/records/m15-release-record-2026-04-06)
-
-### 现阶段说明
-
-- 当前团队仅 1 人开发，因此规则允许管理员以 PR 方式完成自审 / 自合并
-- 这不改变 `master` 禁止直接 push 的原则
-- 后续若团队扩展，可再把审批数从 `1` 提升到 `2`，或补充 `CODEOWNERS`
+发布记录入口见[记录与验收索引](/records/)。
 
 ## 先决条件
 - Docker Engine ≥ 24，能够拉取 `mcr.microsoft.com/dotnet/*` 官方镜像。
@@ -290,85 +241,43 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 
 ### 测试 / 生产部署
 
-先在服务器上拉取仓库，再进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`，并至少替换以下真实值：
-
-- `RADISH_IMAGE_TRACK`：测试部署使用 `test`，生产部署使用 `release`；默认会分别拉取 `test-latest` 或 `release-latest`
-- `RADISH_IMAGE_TAG`：默认注释；只有需要固定到明确 `v*-test` 或 `v*-release` tag 时再启用
-- `RADISH_PUBLIC_URL`
-- `RADISH_DEPLOYMENT_STAGE`：生产使用 `production`；受控测试环境只有在确需开发默认账号时才设为 `test`
-- `RADISH_POSTGRES_PASSWORD`
-- `RADISH_REDIS_PASSWORD`
-- `RADISH_POSTGRES_DATA_PATH / RADISH_REDIS_DATA_PATH / RADISH_AUTH_CERTS_PATH`：默认分别为 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`
-- `RADISH_SEED_DEVELOPER_DEFAULTS_ENABLED`：生产必须保持 `false`；受控测试环境若显式设置 `RADISH_DEPLOYMENT_STAGE=test`，可按需开启开发默认账号种子
-- `RADISH_AUTH_SIGNING_CERT_PASSWORD`：建议部署前用 `openssl rand -hex 32` 生成
-- `RADISH_AUTH_ENCRYPTION_CERT_PASSWORD`：建议部署前另行用 `openssl rand -hex 32` 生成
-
-`RADISH_POSTGRES_MAIN_DB / RADISH_POSTGRES_LOG_DB / RADISH_POSTGRES_MESSAGE_DB / RADISH_POSTGRES_CHAT_DB / RADISH_POSTGRES_OPENIDDICT_DB / RADISH_POSTGRES_HANGFIRE_DB` 可按需改名；不改时会使用 `.env.example` 中的默认库名。
+复制 `.env.example` 为 `.env`，设置 `600` 权限，并按真实环境替换镜像、外部 HTTPS 地址、PostgreSQL、Redis、持久化目录与 Auth 证书配置：
 
 ```bash
 git clone https://github.com/laugh0608/Radish.git
-cd Radish/Deploy
-mkdir -p ../DeployData/Postgres ../DeployData/Redis ../DeployData/AuthCerts
-mkdir -p ../DataBases ../Logs
-cp .env.example .env
-# 编辑 .env 后执行：
+cd Radish
+mkdir -p DeployData/Postgres DeployData/Redis DeployData/AuthCerts
+mkdir -p DeployBackups DataBases Logs
+cp Deploy/.env.example Deploy/.env
+chmod 600 Deploy/.env
+```
+
+测试环境使用 `RADISH_IMAGE_TRACK=test`，可按测试策略选择固定 `v*-test` tag；生产环境必须使用 `release` track、与发布记录一致的不可变 `v*-release` tag、`production` stage、关闭开发种子，并设置专用 `RADISH_BACKUP_PATH`。
+
+```bash
+# 测试环境
+cd Deploy
 docker compose config
 docker compose pull
 docker compose up -d
+
+# 生产环境（回到仓库根目录）
+cd ..
+./Deploy/deploy-production.sh --preflight-only
+./Deploy/deploy-production.sh --confirm-production
 ```
 
-部署态默认约定如下：
-
-- `postgres / redis` 会先完成健康检查，随后 `dbmigrate` 执行一次 `apply`，自动初始化 / 补齐共享业务库表结构与基础数据
-- 默认 `RadishDeployment__Stage=production` 且 `Seed__DeveloperDefaultsEnabled=false`，`dbmigrate apply` 不会创建默认 `admin` 账号、默认密码或 `system / test` 开发账号
-- 若误把 `Seed__DeveloperDefaultsEnabled=true` 带入生产或未配置安全阶段，`dbmigrate apply` 会直接失败退出；不要通过改阶段绕过生产防护
-- 已发布的 `v26.7.1.1204-release` 只在进入聊天、通知、圈子等当时已接入 `BootstrapGate` 的入口时触发首次管理员检查；该固定 tag 的行为保持不变。`dev` 已改为由 `BrowserAppRouter` 统一覆盖公开路由、Workbench、私域、WebOS Root 和 OIDC 回调，待包含该提交的新版本发布后，首次部署验收应从任一产品入口确认都会先进入同一初始化门禁；部署固定旧 tag 时仍按旧行为验收
-- 首个管理员初始化只能在“尚无管理员”状态下使用；初始化完成后该入口会关闭，后续按正常 OIDC 登录和管理流程进入系统
-- `RADISH_IMAGE_REGISTRY / RADISH_IMAGE_TRACK / RADISH_IMAGE_TAG` 共同决定五个 `GHCR` 镜像地址；未设置 `RADISH_IMAGE_TAG` 时按 `RADISH_IMAGE_TRACK` 使用浮动别名，设置后优先使用固定版本 tag
-- `GatewayService__PublicUrl`、前端运行时公开地址回退值，以及 Auth 的 `Issuer / CORS` 都通过 `RADISH_PUBLIC_URL` 对齐真实外部域名
-- `Api / Auth / Gateway` 三个宿主的部署态 CORS 允许来源都会优先从 `RADISH_PUBLIC_URL` 推导，启动日志应保持一致
-- `Auth` 中官方 OIDC 客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址也会跟随 `OpenIddict__Server__Issuer` 对齐，因此 `RADISH_PUBLIC_URL` 必须与真实外部 HTTPS 域名保持一致
-- 部署态不要直接用 `http://localhost:5000` 做登录验证；若访问协议、域名或端口与 `RADISH_PUBLIC_URL` 不一致，OpenIddict 会因 `redirect_uri` 不匹配而拒绝请求
-- `Gateway` 容器内部监听 `http://+:5000`
-- `GatewayRuntime__EnableHttpsRedirection=false`
-- `Databases` 中的 `Main / Log / Message / Chat`、`OpenIddict:Database` 与 `Hangfire` 都会通过环境变量覆盖为 PostgreSQL 连接；`Deploy/postgres-init/create-radish-databases.sh` 会在首次初始化 PostgreSQL 数据目录时补齐 `Log / Message / Chat / OpenIddict / Hangfire` 等非主库数据库
-- `Redis__Enable=true`，缓存层默认走 Redis，不再回落到内存缓存
-- 登录页不再暴露内置测试账号提示；未开启开发默认用户种子的测试环境和所有生产环境，必须通过首个管理员初始化或已有真实账号登录
-- `PostgreSQL / Redis / Auth 证书` 默认持久化到宿主机 `../DeployData/Postgres`、`../DeployData/Redis`、`../DeployData/AuthCerts`，不再使用 Docker 命名卷；`../DataBases` 仍只作为 Radish 应用运行数据目录挂载到 `/app/DataBases`
-- 首次部署前建议手动创建 `../DeployData/*`、`../DataBases` 与 `../Logs`；Docker 也可能自动创建 bind mount 目录，但测试 / 生产环境不要依赖该行为。若容器启动时报权限错误，再按容器日志调整对应目录 owner / 权限
-- `Auth` 会把 OIDC signing / encryption 证书写入 `RADISH_AUTH_CERTS_PATH`，`Api` 只读复用同一份 signing 证书做本地 JWT 验签
-- 若 `RADISH_AUTH_CERT_AUTO_GENERATE=true` 且目标证书文件不存在，`Auth` 会在首次启动时自动生成 OIDC 证书；默认有效期为 `RADISH_AUTH_CERT_VALID_DAYS=7300` 天，后续启动直接复用同一组证书
-- TLS 由外部 Nginx / Traefik / Caddy 终止，再转发到容器内 HTTP 端口；仓库已提供可直接落地的 `Deploy/nginx.prod.conf`
-- 不要再额外覆盖 `Cors__AllowedOrigins__0` 之类的单索引数组项；部署态统一以 `RADISH_PUBLIC_URL` 为准，避免旧 `localhost` 端口残留
+部署态由环境变量把 Main、Log、Message、Chat、OpenIddict 与 Hangfire 指向 PostgreSQL，并启用 Redis；公开地址、Gateway、Issuer、CORS 与 OIDC 回调统一服从 `RADISH_PUBLIC_URL`。TLS 在外部反向代理终止，容器内保持 HTTP。持久化目录、证书生成和生产 migration 的完整契约分别见[配置管理](/guide/configuration)、[OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)和[生产数据库迁移与发布编排](/guide/production-database-migration-deployment)。
 
 ### 最小回滚入口
 
-当前仓库默认不提供自动回滚脚本；测试与生产环境都统一按 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 执行最小回滚：
-
-1. 找到上一版已知可用的 `v*-test` 或 `v*-release` tag
-2. 把 `Deploy/.env` 中的 `RADISH_IMAGE_TAG` 改回该 tag
-3. 重新执行 `pull + up -d`
-4. 按 `M14` 顺序复跑 `check:host-runtime`、维护记录汇总与部署后最小复核
+测试环境可按 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 切回已知可用 tag。生产环境必须先判断 migration 是否开始以及新旧 schema 是否兼容，不能默认只回退镜像；停止线、整批六库恢复和人工授权边界见[生产数据库迁移与发布编排](/guide/production-database-migration-deployment)。
 
 **附件与分片部署边界**：
 
 - `${FileStorage:Local:BasePath}`（默认 `DataBases/Uploads`）与 `ChunkedUpload:TempChunkPath`（默认 `DataBases/Temp/Chunks`）都必须位于持久化挂载内；Gateway 和外层反向代理只放行 `/_assets/attachments/**` 与可信 `DefaultIco` 路由，不映射整个 `/uploads/**`。
 - 当前会话互斥使用进程内 `AsyncKeyedLock`，启用分片上传的 `Radish.Api` 必须保持单实例；扩容前需同时具备共享临时存储、按会话分布式锁和故障切换验收，粘性会话不能作为一致性保证。细节见[文件上传与附件管理](/features/file-upload-design)。
 - 合并到 `master` 前至少盘点历史 `/uploads/**` 直链；阶段验收取得启动授权后，再通过真实 Gateway 验证用户上传静态路径不可达、`DefaultIco` 可达及受控附件状态 / 私有访问规则。
-
-如需分别单独运行镜像，可参考：
-
-```bash
-docker run -d --name radish-api \
-  -p 5100:5100 \
-  -v /data/radish/db:/app/DataBases \
-  -v /data/radish/logs:/app/Logs \
-  -e ASPNETCORE_ENVIRONMENT=Production \
-  -e ASPNETCORE_URLS="http://+:5100" \
-  ghcr.io/laugh0608/radish-api:latest
-```
-
-将实际数据库凭据、安全密钥与公开入口等以环境变量方式注入。上面的镜像地址仅用于说明当前 GHCR 命名；正式发布仍建议通过 `RADISH_IMAGE_TAG` 固定到明确的 `v*-release` tag。日志可通过 `docker logs -f <container>` 追踪；若需热重载，请继续使用宿主机 `dotnet watch` / `npm run dev`。
 
 ## Docker Compose 示例
 仓库根目录已提供真实可用的基础编排与环境覆盖文件，推荐按环境组合使用：
@@ -387,7 +296,7 @@ docker compose up -d
 当前 Compose 口径如下：
 
 - 本地容器验证默认使用仓库共享配置中的 SQLite 与内存缓存；测试与生产默认启用 PostgreSQL / Redis。
-- 本地容器验证和部署态编排都会先执行 `dbmigrate apply`，再启动 `api / auth / gateway`，避免首次部署时因为共享业务库缺表而直接在登录链路报错；部署态会先等待 `postgres / redis` 健康检查通过。
+- 本地容器验证和测试 Compose 会在依赖健康后执行 `dbmigrate apply`，再启动 `api / auth / gateway`；生产环境改由固定脚本显式执行备份、`apply`、独立 `verify` 和应用发布。
 - `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留本地 SQLite、上传文件与运行日志。
 - `Frontend` 运行的是预构建镜像；该镜像在 `CI` 中统一构建，并同时托管 `radish.client` 与 `radish.console`。
 - `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
@@ -400,118 +309,24 @@ docker compose up -d
 
 ## 数据库初始化与迁移（Radish.DbMigrate）
 
-> 适用于：新环境第一次部署数据库，或在已有数据库上按版本执行结构迁移。
->
-> 当前 `Radish.DbMigrate` 管辖范围内的正式上线前数据库结构真相源是 `SqlSugar Code First + Radish.DbMigrate`；已有正式数据库后再补发布 SQL。完整协作边界见 [数据库结构变更协作口径](/guide/database-schema-change-governance)。
+`Radish.DbMigrate` 是业务库与 OpenIddict schema 的唯一写入入口。`doctor` 和 `verify` 只读；`apply` 对空库执行初始化，对已有库按 ledger 顺序前滚 migration，并执行安全的幂等 seed 和严格校验。
 
-### 快速开始：一键初始化（推荐）
-
-对于全新环境或本地开发，推荐直接使用默认命令（或显式传入 `apply`），它会自动完成表结构初始化和数据填充：
-
-在执行前，建议先用 `doctor` 做一次只读自检：
+本地或隔离测试环境：
 
 ```bash
 dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
+dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- verify
 ```
 
-`doctor` / `verify` 只会检查当前环境名、`MainDb`、已启用连接、关键 `ConnId` 与主库业务表状态，不会执行 `init` 或 `seed`。
+本地需要单独检查结构初始化时可以显式使用 `init`；生产环境不单独调用 `init / seed`，只通过发布脚本执行 `apply` 与独立 `verify`：
 
 ```bash
-# 通过启动脚本（推荐）
-pwsh ./start.ps1  # 或 ./start.sh
-# 选择 7 (DbMigrate)，直接按回车选择默认的 apply
-
-# 或直接运行
-dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj
-# 或
-dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
+./Deploy/deploy-production.sh --preflight-only
+./Deploy/deploy-production.sh --confirm-production
 ```
 
-**apply 命令会自动：**
-1. 检查数据库表结构是否存在
-2. 如果表不存在，自动执行 `init` 创建表结构
-3. 填充初始数据（角色、租户、部门、用户等）
-
-这样您无需手动先执行 `init` 再执行 `seed`，一条命令即可完成所有初始化。
-
-### 本地/测试环境：仅初始化数据库结构
-
-如果您只需要创建表结构而不填充数据，可以单独使用 `init` 命令：
-
-1. 确认 `Radish.Api/appsettings.Local.json` 或部署环境变量已配置好数据库连接：
-   - SQLite 场景：只需指定数据库文件名（如 `Radish.db`）。
-   - PostgreSQL 场景：配置好 `Host/Port/Database/Username/Password`。
-2. 在仓库根目录执行：
-
-   ```bash
-   dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
-   dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
-   ```
-
-   - 该命令会：
-     - 先只读检查当前配置与连接状态；
-     - 根据当前配置创建数据库（若不存在）；
-     - 扫描 `Radish.Model` 中的实体类型并执行 SqlSugar Code First（`InitTables`），自动创建/补全表结构。
-3. 使用数据库客户端确认结构是否符合预期（表/字段/索引）。
-
-### 生成发布 SQL 并应用到生产
-
-> 当前项目尚未进入正式生产数据库阶段；上线前本地 / 测试 SQLite 可按当前实体和 `DbMigrate` 重新初始化，不维护历史发布脚本。以下流程只在已有需要保护的测试 / 生产数据库后启用。
-
-1. 在一套用于对比的测试库上执行 `DbMigrate init`，让其结构同步到最新代码。
-2. 使用数据库工具导出“从当前生产版本 → 新版本”的发布 SQL，并作为本次发布材料保存、审核。
-3. 在发布新版本前，由 DBA 或 CI/CD 流水线在生产数据库上执行本次版本对应的发布 SQL：
-   - 顺序执行所有未执行过的脚本；
-   - 执行完成后再滚动升级/重启 API 与 Gateway。
-4. 对于需要回填的数据（例如为历史记录设置新字段的默认值），可以：
-   - 在发布 SQL 中添加 `UPDATE` 语句，或
-   - 后续在 `Radish.DbMigrate` 项目中实现 `seed` 子命令统一处理。
-
-> 建议：生产环境中**不要**在 Api/Gateway 启动时自动调用 `InitTables`，避免意外结构变更；所有结构更新应通过经审核的发布 SQL 或专门的迁移任务执行。
-
-### 初始化基础数据（seed 子命令）
-
-`Radish.DbMigrate` 中的 `seed` 子命令用于初始化一批基础数据，当前默认会按步骤执行：
-
-- 角色
-- 租户
-- 部门
-- 开发默认用户 / 用户时区偏好 / 用户角色（仅 `RadishDeployment:Stage=local/test` 且 `Seed:DeveloperDefaultsEnabled=true` 时执行）
-- 角色 API 权限
-- 论坛分类 / 标签
-- Wiki 文档（当前仅输出步骤日志，未预置默认文档）
-- 聊天室默认频道
-- 等级配置
-- 商城分类 / 商品
-- 表情包默认数据（当前仅输出步骤日志，未预置默认数据）
-
-在仓库根目录执行：
-
-```bash
-# 通过启动脚本（推荐）
-pwsh ./start.ps1  # 或 ./start.sh
-# 选择 7 (DbMigrate)，直接按回车选择默认的 apply
-
-# 或直接运行
-dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- doctor
-dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- apply
-```
-
-**智能初始化**：`apply` 命令会自动检测数据库表结构，如果表不存在会先执行 `init` 创建表结构，然后再填充数据。因此对于全新环境，您只需运行 `apply` 即可完成所有初始化工作。
-
-**推荐顺序**：`doctor` → `apply`（全新环境）或 `doctor` → `init` → `seed`（需要先单独校验结构时）。
-
-实现位于 `Radish.DbMigrate/InitialDataSeeder.cs`，并按模块拆分为 `SeedRolesAsync`、`SeedTenantsAsync`、`SeedDepartmentsAsync`、`SeedUsersAsync` 等方法，支持后续按业务扩展更多种子数据。
-
-当前 `seed` 执行器具备以下特性：
-
-- **分类汇总日志**：正常执行时，每个种子分类只输出“完成 / 明细条数 / 耗时”；这里的明细条数表示被隐藏的内部日志行数，不等同于新增数据条数。
-- **失败明细保留**：某个分类失败时，会输出该分类失败前捕获到的明细日志，保留排障上下文。
-- **自动最终汇总**：命令结束后会按实际执行的分类数量和明细总数打印一行汇总，避免大量 `已存在 / 跳过创建` 日志刷屏。
-- **旧库幂等纠正**：针对开发默认用户（仅开启时）、用户时区偏好、聊天室默认频道、商城商品等固定种子数据，重复执行 `seed` 时会优先纠正旧记录，而不是直接因唯一键冲突失败。
-- **占位步骤显式可见**：如 Wiki 文档、表情包默认数据等当前尚未预置的模块，也会在日志中明确打印“跳过”，方便确认种子覆盖范围。
-
----
+新增表、字段、索引、约束与数据回填必须进入有序 migration；开发默认账号只允许在 `local/test` 且显式开启开发种子时创建。完整模型、ledger、双 provider 验证与恢复规则见[数据库结构变更协作口径](/guide/database-schema-change-governance)和[生产数据库迁移与发布编排](/guide/production-database-migration-deployment)。
 
 ## 反向代理配置
 
@@ -633,12 +448,11 @@ HTTP (5000/5100) → ASP.NET Core 应用
      - `X-Forwarded-Host`
    - 若使用 Nginx，可基于 `Deploy/nginx.prod.conf` 修改 `server_name` 与证书路径后再上线
 
-4. **启动部署态组合并做最小运行态检查**
+4. **执行生产发布编排并做运行态检查**
    - 推荐命令：
      ```bash
-     cd Deploy
-     docker compose pull
-     docker compose up -d
+     ./Deploy/deploy-production.sh --preflight-only
+     ./Deploy/deploy-production.sh --confirm-production
      ```
    - 启动后至少确认：
      - `/health` 可访问

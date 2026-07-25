@@ -5,6 +5,7 @@
 > 关联入口：
 >
 > - [部署与容器指南](/deployment/guide)
+> - [生产数据库迁移与发布编排](/guide/production-database-migration-deployment)
 > - [M14 宿主运行首轮执行清单](/records/m14-host-runtime-checklist)
 > - [验证基线说明](/guide/validation-baseline)
 > - [产品版本与发布标识治理](/guide/version-governance)
@@ -18,7 +19,8 @@
 
 ## 当前已确认事实
 
-- 测试 / 生产部署态已收束为共用 `Deploy/docker-compose.yaml`，默认通过 `RADISH_IMAGE_TRACK=test/release` 拉取 `test-latest` / `release-latest`；需要完全可复现部署或回滚时，再启用固定 `RADISH_IMAGE_TAG`
+- 测试 / 生产部署态共用 `Deploy/docker-compose.yaml`；测试环境可以按测试策略选择固定 tag，生产环境必须使用与发布记录一致的不可变 `v*-release` tag
+- 生产数据库迁移与应用发布统一由 `Deploy/deploy-production.sh` 编排，固定执行预检、停止写入、六库备份、`apply`、独立 `verify`、应用发布和外部健康检查
 - `M14` 的启动前、启动后与部署后最小复核已完成首轮真实闭环
 - 测试环境已完成首轮真实最小回滚演练：`v26.3.2-r1-test -> v26.3.2-test`
 - 生产环境当前已形成最小回滚预案，但尚未做真实回滚演练
@@ -63,17 +65,20 @@ docker compose up -d
 ### 生产部署
 
 1. 进入 `Deploy/` 目录，复制 `.env.example` 为 `.env`
-2. 设置 `RADISH_IMAGE_TRACK=release` 与生产域名 `RADISH_PUBLIC_URL`；如需完全可复现部署，再把 `RADISH_IMAGE_TAG` 固定到明确的 `v*-release` tag
-3. 执行：
+2. 设置 `RADISH_IMAGE_TRACK=release`、生产域名 `RADISH_PUBLIC_URL`，并把 `RADISH_IMAGE_TAG` 固定到与发布记录一致的 `v*-release` tag；设置 `.env` 权限为 `600`
+3. 先执行只读预检：
 
 ```bash
-cd Deploy
-docker compose config
-docker compose pull
-docker compose up -d
+./Deploy/deploy-production.sh --preflight-only
 ```
 
-4. 按 `M14` 顺序做最小复核
+4. 进入获批维护窗口后执行：
+
+```bash
+./Deploy/deploy-production.sh --confirm-production
+```
+
+5. 按 `M14` 顺序做发布后复核，并把备份路径、migration 与健康检查结论写入发布记录
 
 ## 发布后最小复核
 
@@ -109,12 +114,14 @@ npm run collect:m14-host-record
 
 ## 最小回滚基线
 
-当前最小可行回滚不是自动切换整套环境，而是：
+生产恢复必须先区分数据库 migration 是否已经开始：
 
-1. 找到上一版已知可用 tag
-2. 将 `Deploy/.env` 中的 `RADISH_IMAGE_TAG` 改回该 tag
-3. 重新拉取并更新容器
-4. 重新执行最小复核
+1. migration 尚未开始：可恢复此前运行的应用服务，数据库无需变更。
+2. migration 已开始但新 schema 与旧应用明确兼容：可评审固定回退到上一版已知可用 tag。
+3. migration 已开始且 schema 不兼容：保持应用停止，保留失败现场，按同一批次的 globals 与六库备份整批恢复，再启动兼容版本。
+4. 任一路径完成后重新执行严格 migration 校验和发布后复核。
+
+详细停止线与恢复原则见[生产数据库迁移与发布编排](/guide/production-database-migration-deployment)。
 
 ### 当前边界
 

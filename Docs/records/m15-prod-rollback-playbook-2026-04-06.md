@@ -2,6 +2,8 @@
 
 > 本页用于沉淀 `M15` 第二批的生产环境最小回滚预案。
 >
+> 本页保留 `2026-04-06` 的历史预案事实；数据库 migration 开始后的当前停止线与整批恢复口径已经由[生产数据库迁移与发布编排](/guide/production-database-migration-deployment)取代。
+>
 > 关联入口：
 >
 > - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
