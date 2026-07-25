@@ -4,6 +4,7 @@ import { isApiResponseNotFoundError } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
 import { getOrCreateDirectConversation } from '@/api/chat';
+import { blockUser, unblockUser } from '@/api/userBlock';
 import {
   getPublicProfile,
   getPublicUserComments,
@@ -16,6 +17,12 @@ import {
 } from '@/api/user';
 import { DEFAULT_TIME_ZONE, formatDateTimeByTimeZone, getBrowserTimeZoneId } from '@/utils/dateTime';
 import { redirectToLogin } from '@/services/auth';
+import {
+  completeUserInteractionOperation,
+  getStableUserInteractionOperationKey,
+  publishUserInteractionChanged,
+  subscribeUserInteractionChanged,
+} from '@/services/userInteractionSync';
 import {
   buildPublicProfileFollowReturnPath,
   buildPublicProfileMessageReturnPath,
@@ -236,6 +243,8 @@ export const PublicProfileApp = ({
   const profileRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
   const messageIntentHandledRef = useRef<string | null>(null);
+  const activeRouteUserIdRef = useRef(route.userId);
+  activeRouteUserIdRef.current = route.userId;
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const authAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const currentUserId = useUserStore((state) => state.userId);
@@ -257,6 +266,9 @@ export const PublicProfileApp = ({
   const [followError, setFollowError] = useState<string | null>(null);
   const [messageLoading, setMessageLoading] = useState(false);
   const [messageError, setMessageError] = useState<string | null>(null);
+  const [relationshipReloadToken, setRelationshipReloadToken] = useState(0);
+  const [relationshipAction, setRelationshipAction] = useState<'block' | 'unblock' | null>(null);
+  const [relationshipPending, setRelationshipPending] = useState(false);
 
   useEffect(() => {
     pageRef.current?.scrollTo({ top: 0, behavior: 'auto' });
@@ -265,7 +277,27 @@ export const PublicProfileApp = ({
   useEffect(() => {
     messageIntentHandledRef.current = null;
     setMessageError(null);
+    setRelationshipAction(null);
   }, [route.userId]);
+
+  useEffect(() => subscribeUserInteractionChanged(() => {
+    setRelationshipReloadToken((current) => current + 1);
+    setMessageError(null);
+  }), []);
+
+  useEffect(() => {
+    if (!relationshipAction) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !relationshipPending) {
+        setRelationshipAction(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [relationshipAction, relationshipPending]);
 
   useEffect(() => {
     const requestId = ++profileRequestIdRef.current;
@@ -365,7 +397,7 @@ export const PublicProfileApp = ({
     return () => {
       cancelled = true;
     };
-  }, [isOwnProfile, loggedIn, profile, t]);
+  }, [isOwnProfile, loggedIn, profile, relationshipReloadToken, t]);
 
   useEffect(() => {
     const requestId = ++contentRequestIdRef.current;
@@ -514,7 +546,12 @@ export const PublicProfileApp = ({
   const leaderboardHref = buildPublicLeaderboardPath(createDefaultPublicLeaderboardRoute());
 
   const handleStartMessage = useCallback(async () => {
-    if (!profile || messageLoading || isOwnProfile) {
+    if (
+      !profile
+      || messageLoading
+      || isOwnProfile
+      || (loggedIn && followStatus?.voCanDirectMessage !== true)
+    ) {
       return;
     }
 
@@ -545,7 +582,7 @@ export const PublicProfileApp = ({
     } finally {
       setMessageLoading(false);
     }
-  }, [isOwnProfile, loggedIn, messageLoading, profile, profileRouteIdentifier, t]);
+  }, [followStatus?.voCanDirectMessage, isOwnProfile, loggedIn, messageLoading, profile, profileRouteIdentifier, t]);
 
   useEffect(() => {
     if (route.intent !== 'message' || !profile || !loggedIn || isOwnProfile) {
@@ -587,7 +624,7 @@ export const PublicProfileApp = ({
   };
 
   const handleToggleFollow = async () => {
-    if (!profile || followLoading || isOwnProfile) {
+    if (!profile || followLoading || isOwnProfile || (loggedIn && followStatus?.voCanFollow !== true)) {
       return;
     }
 
@@ -618,6 +655,46 @@ export const PublicProfileApp = ({
       log.warn('PublicProfileApp', '更新公开主页关注状态失败', message);
     } finally {
       setFollowLoading(false);
+    }
+  };
+
+  const handleRelationshipAction = async () => {
+    const targetUserPublicId = profile?.voPublicId?.trim();
+    if (!targetUserPublicId || !relationshipAction || relationshipPending) {
+      return;
+    }
+
+    setRelationshipPending(true);
+    setFollowError(null);
+    const targetRouteUserId = route.userId;
+    try {
+      const operationKey = getStableUserInteractionOperationKey(relationshipAction, targetUserPublicId);
+      const result = relationshipAction === 'block'
+        ? await blockUser(targetUserPublicId, operationKey, t)
+        : await unblockUser(targetUserPublicId, operationKey, t);
+      completeUserInteractionOperation(relationshipAction, targetUserPublicId);
+      if (activeRouteUserIdRef.current === targetRouteUserId) {
+        setFollowStatus((current) => current ? {
+          ...current,
+          voIsFollowing: false,
+          voIsFollower: false,
+          voCanFollow: result.voCapabilities.voCanFollow,
+          voCanDirectMessage: result.voCapabilities.voCanDirectMessage,
+          voCanInteract: result.voCapabilities.voCanInteract,
+          voInteractionUnavailable: result.voCapabilities.voInteractionUnavailable,
+          voIsBlockedByCurrentUser: result.voCapabilities.voIsBlockedByCurrentUser,
+        } : current);
+        setRelationshipAction(null);
+      }
+      publishUserInteractionChanged({
+        voRelationshipVersion: result.voRelationshipVersion,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setFollowError(message);
+      log.warn('PublicProfileApp', '更新用户屏蔽关系失败', message);
+    } finally {
+      setRelationshipPending(false);
     }
   };
 
@@ -689,7 +766,7 @@ export const PublicProfileApp = ({
                         type="button"
                         className={styles.primaryButton}
                         onClick={() => void handleStartMessage()}
-                        disabled={messageLoading}
+                        disabled={messageLoading || (loggedIn && followStatus?.voCanDirectMessage !== true)}
                       >
                         <Icon icon={messageLoading ? 'mdi:progress-clock' : 'mdi:message-text-outline'} size={16} />
                         <span>
@@ -706,7 +783,7 @@ export const PublicProfileApp = ({
                         type="button"
                         className={styles.secondaryButton}
                         onClick={() => void handleToggleFollow()}
-                        disabled={followLoading}
+                        disabled={followLoading || (loggedIn && followStatus?.voCanFollow !== true)}
                         aria-pressed={loggedIn ? followStatus?.voIsFollowing === true : undefined}
                         title={followStatus?.voIsFollowing
                           ? t('profile.public.unfollowAction')
@@ -724,6 +801,30 @@ export const PublicProfileApp = ({
                         </span>
                       </button>
                     )}
+                    {!isOwnProfile && loggedIn && followStatus?.voIsBlockedByCurrentUser && (
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => setRelationshipAction('unblock')}
+                      >
+                        <Icon icon="mdi:shield-check-outline" size={16} />
+                        <span>{t('userBlock.action.unblock')}</span>
+                      </button>
+                    )}
+                    {!isOwnProfile
+                      && loggedIn
+                      && followStatus
+                      && !followStatus.voInteractionUnavailable
+                      && profile?.voPublicId && (
+                        <button
+                          type="button"
+                          className={styles.secondaryButton}
+                          onClick={() => setRelationshipAction('block')}
+                        >
+                          <Icon icon="mdi:account-cancel-outline" size={16} />
+                          <span>{t('userBlock.action.block')}</span>
+                        </button>
+                      )}
                     <button type="button" className={`${styles.secondaryButton} ${styles.shareButton}`} onClick={() => void copyShareLink()} disabled={shareBusy}>
                       <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={16} />
                       <span>{shareBusy ? t('profile.public.shareSubmitting') : t('profile.public.shareAction')}</span>
@@ -741,6 +842,11 @@ export const PublicProfileApp = ({
                 {messageError && (
                   <p className={styles.messageFeedback} role="alert">
                     {messageError} {t('profile.public.messageRetryHint')}
+                  </p>
+                )}
+                {!isOwnProfile && loggedIn && followStatus?.voInteractionUnavailable && (
+                  <p className={styles.relationshipFeedback} role="status">
+                    {t('userBlock.interactionUnavailable')}
                   </p>
                 )}
                 <p className={styles.summaryIntro}>{t('profile.public.intro')}</p>
@@ -1048,6 +1154,49 @@ export const PublicProfileApp = ({
           </div>
         )}
       </main>
+
+      {relationshipAction && (
+        <div className={styles.relationshipConfirmBackdrop} role="presentation">
+          <section
+            className={styles.relationshipConfirmDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-relationship-confirm-title"
+          >
+            <p className={styles.relationshipConfirmKicker}>{t('userBlock.confirm.kicker')}</p>
+            <h2 id="profile-relationship-confirm-title">
+              {t(relationshipAction === 'block'
+                ? 'userBlock.confirm.blockTitle'
+                : 'userBlock.confirm.unblockTitle', { name: displayName })}
+            </h2>
+            <p>
+              {t(relationshipAction === 'block'
+                ? 'userBlock.confirm.blockDescription'
+                : 'userBlock.confirm.unblockDescription')}
+            </p>
+            <ul>
+              <li>{t('userBlock.confirm.followImpact')}</li>
+              <li>{t('userBlock.confirm.directImpact')}</li>
+              <li>{t('userBlock.confirm.publicImpact')}</li>
+            </ul>
+            <div className={styles.relationshipConfirmActions}>
+              <button type="button" autoFocus disabled={relationshipPending} onClick={() => setRelationshipAction(null)}>
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                data-primary="true"
+                disabled={relationshipPending}
+                onClick={() => void handleRelationshipAction()}
+              >
+                {relationshipPending
+                  ? t('common.loading')
+                  : t(relationshipAction === 'block' ? 'userBlock.action.block' : 'userBlock.action.unblock')}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 };

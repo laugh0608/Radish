@@ -30,6 +30,8 @@
 >
 > 更新：2026-07-21（Asia/Shanghai）：F4-H-C 已在 `P09 / P14` 的身份摘要与公开内容之间加入只读电子宠物公开名片，覆盖 PC / mobile 长名称、物种、形态、成长阶段与心情；无公开宠物时不出现占位，照顾、管理、SEO 和私域状态继续留在公开页之外。
 >
+> 更新：2026-07-25（Asia/Shanghai）：F4-K-C 已新增 `P09B / P14B` 屏蔽确认和 `P09C / P14C` 通用不可互动状态；公开内容保持可见，关注、私信与屏蔽动作只消费服务端能力，目标用户视图不披露屏蔽方向。
+>
 > 状态：设计源 `P01-P16` 已补齐；`P09 / P14` 电子宠物公开名片已完成设计、正式 Web 与 Gateway 成组验收，F4-H 专题关闭；`P15 / P16` 仍仅作为后续公开聊天室参考
 
 ## 设计源
@@ -50,12 +52,12 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
 | `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流，首屏采用精选商品 + 多条商品行 + 状态 rail 的浏览密度 |
 | `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
-| `P09 - Public Profile` | `/u/:id` 公开个人主页、可空电子宠物公开名片、公开内容 tab、关注登录回流和来源返回 |
+| `P09 / P09B / P09C - Public Profile` | `/u/:id` 公开个人主页、可空电子宠物公开名片、公开内容 tab、屏蔽确认、通用不可互动状态、关注登录回流和来源返回 |
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
 | `P11 - Mobile Post Detail` | 移动端帖子详情、正文、轻回应、父评论神评、子回复沙发和登录评论 |
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Workbench` | 移动端 `/workbench` 功能地图、继续探索队列和公开低频入口承接；商城、榜单和聊天室只作为功能入口，不作为工作台页面主体 |
-| `P14 - Mobile Public Profile` | 移动端公开主页、可空电子宠物公开名片、公开内容 tab 和关注回流 |
+| `P14 / P14B / P14C - Mobile Public Profile` | 移动端公开主页、可空电子宠物公开名片、屏蔽确认、通用不可互动状态、公开内容 tab 和关注回流 |
 | `P15 - Public Chat Room` | 公开聊天室后置参考画板；正式 `/chat` / `/chat/:room` 需另补产品方案、实时协议、登录 / 匿名边界和治理策略 |
 | `P16 - Mobile Chat Reply Flow` | 移动端公开聊天室后置参考画板；跟随 `P15` 后续评审，不进入当前发布前范围 |
 

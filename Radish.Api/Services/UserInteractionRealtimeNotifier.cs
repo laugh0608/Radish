@@ -9,13 +9,16 @@ namespace Radish.Api.Services;
 public sealed class UserInteractionRealtimeNotifier : IUserInteractionRealtimeNotifier
 {
     private readonly IHubContext<ChatHub> _chatHubContext;
+    private readonly IHubContext<NotificationHub> _notificationHubContext;
     private readonly ILogger<UserInteractionRealtimeNotifier> _logger;
 
     public UserInteractionRealtimeNotifier(
         IHubContext<ChatHub> chatHubContext,
+        IHubContext<NotificationHub> notificationHubContext,
         ILogger<UserInteractionRealtimeNotifier> logger)
     {
         _chatHubContext = chatHubContext;
+        _notificationHubContext = notificationHubContext;
         _logger = logger;
     }
 
@@ -26,20 +29,38 @@ public sealed class UserInteractionRealtimeNotifier : IUserInteractionRealtimeNo
     {
         foreach (var userId in new[] { blockerUserId, blockedUserId }.Where(id => id > 0).Distinct())
         {
+            var change = new UserInteractionChangedVo
+            {
+                VoRelationshipVersion = relationshipVersion.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture)
+            };
+
             try
             {
                 await _chatHubContext.Clients.Group($"user:{userId}")
-                    .SendAsync("UserInteractionChanged", new UserInteractionChangedVo
-                    {
-                        VoRelationshipVersion = relationshipVersion.ToString(
-                            System.Globalization.CultureInfo.InvariantCulture)
-                    });
+                    .SendAsync("UserInteractionChanged", change);
             }
             catch (Exception exception)
             {
                 _logger.LogWarning(
                     exception,
-                    "用户关系失效推送失败，UserId={UserId}, RelationshipVersion={RelationshipVersion}",
+                    "用户关系失效推送失败，Hub={Hub}, UserId={UserId}, RelationshipVersion={RelationshipVersion}",
+                    nameof(ChatHub),
+                    userId,
+                    relationshipVersion);
+            }
+
+            try
+            {
+                await _notificationHubContext.Clients.Group($"user:{userId}")
+                    .SendAsync("UserInteractionChanged", change);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogWarning(
+                    exception,
+                    "用户关系失效推送失败，Hub={Hub}, UserId={UserId}, RelationshipVersion={RelationshipVersion}",
+                    nameof(NotificationHub),
                     userId,
                     relationshipVersion);
             }

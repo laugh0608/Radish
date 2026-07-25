@@ -12,6 +12,7 @@ import {
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
+import { subscribeUserInteractionChanged } from './userInteractionSync';
 
 const BROADCAST_CHANNEL_NAME = 'radish-notification-inbox';
 const STORAGE_EVENT_KEY = 'radish_notification_inbox_revision';
@@ -377,3 +378,9 @@ export const notificationInboxSync = {
     });
   },
 };
+
+subscribeUserInteractionChanged(() => {
+  void notificationInboxSync.reconcile({ refreshListWhenChanged: true }).catch((error) => {
+    log.warn('NotificationInboxSync', '关系变化后的通知权威状态对账失败', error);
+  });
+});

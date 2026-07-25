@@ -403,6 +403,67 @@
   line-height: 1.5;
 }
 
+.relationshipConfirmBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--theme-text-primary) 42%, transparent);
+}
+
+.relationshipConfirmDialog {
+  width: min(520px, 100%);
+  padding: 24px;
+  border: 1px solid var(--theme-border-strong);
+  border-radius: 12px;
+  background: var(--theme-bg-surface);
+  box-shadow: 0 24px 56px color-mix(in srgb, var(--theme-shadow-soft) 70%, transparent);
+}
+
+.relationshipConfirmDialog h2 {
+  margin: 4px 0 10px;
+  font-size: 1.35rem;
+}
+
+.relationshipConfirmDialog p,
+.relationshipConfirmDialog li {
+  color: var(--theme-text-secondary);
+  line-height: 1.6;
+}
+
+.relationshipConfirmKicker {
+  margin: 0;
+  color: var(--theme-brand-primary) !important;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.relationshipConfirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.relationshipConfirmActions button {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: var(--theme-bg-muted);
+  color: var(--theme-text-primary);
+  font-weight: 700;
+}
+
+.relationshipConfirmActions button[data-primary='true'] {
+  border-color: var(--theme-brand-primary);
+  background: var(--theme-brand-primary);
+  color: var(--theme-text-inverse);
+}
+
 .headerMain {
   display: flex;
   align-items: flex-start;

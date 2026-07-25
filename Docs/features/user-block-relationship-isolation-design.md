@@ -1,6 +1,6 @@
 # F4-K 用户屏蔽与关系交互隔离
 
-> **状态**：F4-K-B 已完成；下一顺位进入 F4-K-C Pencil 与正式 Web
+> **状态**：F4-K-C 已完成；下一顺位进入 F4-K-D 成组验收与专题关闭
 >
 > **复核日期**：2026-07-25（Asia/Shanghai）
 >
@@ -394,12 +394,13 @@ F4-K-C 在代码实现前更新现有公开主页、圈子和消息设计源，�
 - 按停止线不修改 Pencil 或正式页面。
 - 完成结论与验证证据见 [F4-K-B 服务端权威契约记录](/records/f4-k-b-user-block-server-contract-2026-07-25)。
 
-### F4-K-C：Pencil 与正式 Web
+### F4-K-C：Pencil 与正式 Web（已完成）
 
 - 先更新公开主页、`/circle`、`/messages` 和 `/me/blocked` PC / mobile 设计。
 - 实现屏蔽确认、本人屏蔽列表、解除屏蔽、Direct 只读和通用不可互动状态。
 - 完成关系与通知缓存失效、多标签 / 离线恢复、Back / Forward、中英文、键盘、无障碍和四主题。
 - 不新增 WebOS、Flutter 或 Tauri 功能，不执行完整 Gateway 成组验收。
+- 完成结论与验证证据见 [F4-K-C Pencil 与正式 Web 记录](/records/f4-k-c-user-block-web-2026-07-25)。
 
 ### F4-K-D：成组验收与专题关闭
 

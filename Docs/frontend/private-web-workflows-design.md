@@ -38,6 +38,8 @@
 >
 > 更新：2026-07-25（Asia/Shanghai）：F4-J-C 已新增 `P33 / P34` 本人决定与申诉 PC / mobile 画板，并落地 `/me/appeals`。页面保留历史决定回看、申诉资格、本人陈述、撤回、公开结果和处置纠正状态；内部备注、治理证据和管理员事件不进入本人视图。
 >
+> 更新：2026-07-25（Asia/Shanghai）：F4-K-C 已新增 `P13C / P27C` Direct 关系只读、`P14B / P28B` 圈子权威刷新和 `P35 / P36` `/me/blocked` PC / mobile 画板；页面只消费服务端能力与关系版本失效，不在本地推断屏蔽方向。
+>
 > 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；治理申诉的 Gateway PC / mobile 成组验收进入 F4-J-D，后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
 
 ## 设计源
@@ -62,8 +64,8 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P10 - Order Detail` | `/shop/order/:orderId` 支付、权益发放、商品回看和背包回流 |
 | `P11 - Inventory Benefits` | `/shop/inventory` 背包权益、来源订单、激活 / 停用 / 使用入口 |
 | `P12 / P12B - Notifications Center` | `/notifications` 权威分组、分类 / 未读筛选、聚合触发者、偏好与恢复状态 |
-| `P13 / P13B - Messages Workspace` | `/messages` 当前 / 已归档列表、请求动作、阻断状态、聊天正文和用户上下文 |
-| `P14 - Circle Feed` | `/circle` 关注动态、正在关注、关注者和公开详情来源返回 |
+| `P13 / P13B / P13C - Messages Workspace` | `/messages` 当前 / 已归档列表、请求动作、关系只读状态、聊天正文和用户上下文 |
+| `P14 / P14B - Circle Feed` | `/circle` 关注动态、正在关注、关注者、关系版本权威刷新和公开详情来源返回 |
 | `P15 - Pet Care` | `/pet` 宠物档案、基础照护动作、状态条和变化流水 |
 | `P16 - Forum Compose` | `/forum/compose` 论坛发帖编辑器、分类 / 标签、发布检查和提交反馈 |
 | `P17 - Forum Edit History` | `/forum/post/:id?intent=answer|edit|history` 作者编辑、问答回答和编辑历史 |
@@ -76,12 +78,14 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P24 - Mobile Assets Ledger` | 移动端 `/me/assets`、`/me/assets/transactions`，余额和近期流水 |
 | `P25 - Mobile Orders Inventory` | 移动端 `/shop/orders`、`/shop/order/:id`、`/shop/inventory` 订单背包任务 |
 | `P26 / P26B / P26C - Mobile Notifications` | 移动端 `/notifications`，权威摘要、分组目标、恢复状态和通知偏好 |
-| `P27 / P27B - Mobile Messages` | 移动端 `/messages` 会话列表与独立请求详情、返回和受限输入 |
+| `P27 / P27B / P27C - Mobile Messages` | 移动端 `/messages` 会话列表、独立请求详情、关系只读、返回和受限输入 |
+| `P28 / P28B - Mobile Circle` | 移动端 `/circle` 关系版本变化后的服务端权威重排与裁剪 |
 | `P28 - Mobile Circle` | 移动端 `/circle`，关注动态和关系链 |
 | `P29 - Mobile Pet` | 移动端 `/pet`，宠物状态、照护动作和状态流水 |
 | `P30 - Mobile Author` | 移动端 `/forum/compose`、`/docs/mine`、`/docs/edit/:id` 的继续创作入口 |
 | `P33 - My Decisions and Appeals / Desktop` | `/me/appeals` 本人决定、申诉资格、陈述提交、撤回、结果与纠正状态 |
 | `P34 - Mobile My Decisions and Appeals` | 移动端 `/me/appeals` 决定列表、申诉详情与受限动作单列流程 |
+| `P35 / P36 - My Blocked Users` | `/me/blocked` PC / mobile 本人屏蔽列表、分页、空态、失败重试和解除确认 |
 
 ## 目标
 

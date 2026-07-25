@@ -161,7 +161,9 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 VoFollowingCount = followingCount,
                 VoIsFollowing = false,
                 VoIsFollower = false,
-                VoCanFollow = currentUserId != targetUserId
+                VoCanFollow = currentUserId > 0 && currentUserId != targetUserId,
+                VoCanDirectMessage = currentUserId > 0 && currentUserId != targetUserId,
+                VoCanInteract = currentUserId > 0 && currentUserId != targetUserId
             };
         }
 
@@ -189,7 +191,10 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             VoIsFollowing = isFollowing,
             VoIsFollower = isFollower,
             VoCanFollow = policy.CanInteract,
-            VoInteractionUnavailable = policy.HasInteractionBarrier
+            VoCanDirectMessage = policy.CanInteract,
+            VoCanInteract = policy.CanInteract,
+            VoInteractionUnavailable = policy.HasInteractionBarrier,
+            VoIsBlockedByCurrentUser = policy.IsBlockedByCurrentUser
         };
     }
 

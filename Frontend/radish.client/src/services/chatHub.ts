@@ -3,12 +3,14 @@ import type {
   ChatMessagePinStateVo,
   ChatMessageReactionStateVo,
   ReadReceiptsChangedVo,
+  UserInteractionChangedVo,
 } from '@radish/http';
 import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
+import { handleRealtimeUserInteractionChanged } from './userInteractionSync';
 import type {
   ChannelMessageVo,
   ChannelUnreadChangedPayload,
@@ -283,6 +285,10 @@ class ChatHubService {
     this.connection.on('ConversationStateChanged', (payload: ConversationStateChangedPayload) => {
       useChatStore.getState().notifyConversationStateChanged();
       useChatStore.getState().invalidateReadReceipts(payload.channelId);
+    });
+
+    this.connection.on('UserInteractionChanged', (payload: UserInteractionChangedVo) => {
+      handleRealtimeUserInteractionChanged(payload);
     });
 
     this.connection.on('UserTyping', (payload: UserTypingPayload) => {

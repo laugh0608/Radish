@@ -29,6 +29,8 @@ export const enChat = {
   'chat.action.accept.failed': 'Failed to accept the message request',
   'chat.action.decline.failed': 'Failed to decline the message request',
   'chat.action.block.failed': 'Failed to block the conversation',
+  'chat.action.block.missingTarget': 'The peer public identifier is missing, so an authoritative block cannot be created.',
+  'chat.action.unblock.missingTarget': 'The peer public identifier is missing, so the authoritative block cannot be removed.',
   'chat.action.unblock.failed': 'Failed to unblock the conversation',
   'chat.action.archive.failed': 'Failed to archive the conversation',
   'chat.action.unarchive.failed': 'Failed to restore the conversation',

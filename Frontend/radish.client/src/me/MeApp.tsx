@@ -50,6 +50,7 @@ import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import {
   buildMeAttachmentsReturnPath,
   buildMeAppealsReturnPath,
+  buildMeBlockedReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
   buildMeContentReturnPath,
@@ -66,6 +67,7 @@ import { resolveMediaUrl } from '@/utils/media';
 import { getIntlLocale } from '@/locales/language';
 import { MeAssetsPage } from './MeAssetsPage';
 import { MeAppealsPage } from './MeAppealsPage';
+import { MeBlockedPage } from './MeBlockedPage';
 import { MeReportsPage } from './MeReportsPage';
 import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
@@ -367,6 +369,10 @@ function buildMeRouteReturnPath(route: MeRoute): string {
     }) ?? buildMeReturnPath();
   }
 
+  if (route.kind === 'blocked') {
+    return buildMeBlockedReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
   return buildMeReturnPath();
 }
 
@@ -439,6 +445,8 @@ export const MeApp = () => {
                   ? t('me.reports.title')
                   : route.kind === 'appeals'
                     ? t('me.appeals.title')
+                    : route.kind === 'blocked'
+                      ? t('userBlock.list.title')
                 : t('me.title');
     document.title = `${title} · Radish`;
   }, [route.kind, t]);
@@ -699,6 +707,13 @@ export const MeApp = () => {
         label: t('me.appeals.title'),
         route: route.kind === 'appeals' ? route : { kind: 'appeals', page: 1 },
         active: route.kind === 'appeals',
+      },
+      {
+        key: 'blocked',
+        icon: 'mdi:account-cancel-outline',
+        label: t('userBlock.list.title'),
+        route: route.kind === 'blocked' ? route : { kind: 'blocked', page: 1 },
+        active: route.kind === 'blocked',
       },
     ];
 
@@ -1373,6 +1388,16 @@ export const MeApp = () => {
         <MeAppealsPage
           route={route}
           onNavigate={navigateToMeRoute}
+          onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
+        />
+      );
+    }
+
+    if (route.kind === 'blocked') {
+      return (
+        <MeBlockedPage
+          page={route.page}
+          onNavigate={(page) => navigateToMeRoute({ kind: 'blocked', page })}
           onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
         />
       );

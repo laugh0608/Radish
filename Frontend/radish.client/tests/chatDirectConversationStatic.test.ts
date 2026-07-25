@@ -16,7 +16,8 @@ test('私聊正式 Web API 应覆盖权威列表、深链详情与完整会话�
   assert.match(apiSource, /GetList\?view=\$\{view\}/);
   assert.match(apiSource, /GetDetail\/\$\{normalizedChannelId\}/);
   assert.match(apiSource, /DirectConversation\/GetOrCreate/);
-  assert.match(apiSource, /'Accept' \| 'Decline' \| 'Block' \| 'Unblock'/);
+  assert.match(apiSource, /'Accept' \| 'Decline'/);
+  assert.doesNotMatch(apiSource, /DirectConversation\/\$\{action\}[\s\S]*operationKey/);
   assert.match(apiSource, /DirectConversation\/SetArchived\/\$\{normalizedChannelId\}/);
   assert.match(apiSource, /createApiResponseError/);
   assert.doesNotMatch(apiSource, /throw new Error\(response\.message/);
@@ -50,7 +51,8 @@ test('消息工作区应以服务端状态驱动分区、权限、动作和实�
   assert.match(chatSource, /activeChannel\?\.voCanSend/);
   assert.match(chatSource, /isDirectRequestFirstMessage[\s\S]*chat\.directRequestTextOnly/);
   assert.match(headerSource, /acceptDirectConversation[\s\S]*declineDirectConversation/);
-  assert.match(headerSource, /blockDirectConversation[\s\S]*unblockDirectConversation/);
+  assert.match(headerSource, /blockUser[\s\S]*unblockUser/);
+  assert.match(headerSource, /getStableUserInteractionOperationKey/);
   assert.match(headerSource, /setDirectConversationArchived/);
   assert.match(hubSource, /connection\.on\('ConversationStateChanged'/);
   assert.match(chatSource, /useActiveChatReadSurface/);

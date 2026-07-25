@@ -10,6 +10,7 @@ import {
   buildMePath,
   ME_ASSET_TRANSACTIONS_PATH,
   ME_APPEALS_PATH,
+  ME_BLOCKED_PATH,
   ME_ASSETS_PATH,
   ME_ATTACHMENTS_PATH,
   ME_CONTENT_PATH,
@@ -95,6 +96,7 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       || pathname === ME_EXPERIENCE_PATH
       || pathname === ME_REPORTS_PATH
       || pathname === ME_APPEALS_PATH
+      || pathname === ME_BLOCKED_PATH
     ) {
       return normalizeMeReturnPath(url, pathname);
     }
@@ -419,7 +421,7 @@ function normalizeMeContentReturnPath(url: URL): string | null {
 }
 
 function normalizeMePagedReturnPath(
-  pathname: typeof ME_HISTORY_PATH | typeof ME_EXPERIENCE_PATH | typeof ME_REPORTS_PATH,
+  pathname: typeof ME_HISTORY_PATH | typeof ME_EXPERIENCE_PATH | typeof ME_REPORTS_PATH | typeof ME_BLOCKED_PATH,
   url: URL,
 ): string | null {
   if (
@@ -440,6 +442,10 @@ function normalizeMePagedReturnPath(
 
   if (pathname === ME_REPORTS_PATH) {
     return buildMePath({ kind: 'reports', page });
+  }
+
+  if (pathname === ME_BLOCKED_PATH) {
+    return buildMePath({ kind: 'blocked', page });
   }
 
   return buildMePath({ kind: 'experience', page });
@@ -511,7 +517,12 @@ function normalizeMeReturnPath(url: URL, pathname: string): string | null {
     return normalizeMeContentReturnPath(url);
   }
 
-  if (pathname === ME_HISTORY_PATH || pathname === ME_EXPERIENCE_PATH || pathname === ME_REPORTS_PATH) {
+  if (
+    pathname === ME_HISTORY_PATH
+    || pathname === ME_EXPERIENCE_PATH
+    || pathname === ME_REPORTS_PATH
+    || pathname === ME_BLOCKED_PATH
+  ) {
     return normalizeMePagedReturnPath(pathname, url);
   }
 
@@ -770,6 +781,18 @@ export function buildMeReportsReturnPath(route: { page?: number | string } = {})
   return buildMePath({
     kind: 'reports',
     page
+  });
+}
+
+export function buildMeBlockedReturnPath(route: { page?: number | string } = {}): string | null {
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  if (!page) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'blocked',
+    page,
   });
 }
 

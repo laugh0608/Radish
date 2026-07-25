@@ -1,11 +1,12 @@
 import * as signalR from '@microsoft/signalr';
-import type { NotificationInboxChangedVo } from '@radish/http';
+import type { NotificationInboxChangedVo, UserInteractionChangedVo } from '@radish/http';
 import { notificationInboxSync } from '@/services/notificationInboxSync';
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useAuthStore } from '@/stores/authStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import { getSignalrHubUrl } from '@/config/env';
+import { handleRealtimeUserInteractionChanged } from './userInteractionSync';
 
 function getHubUrl(): string {
   // 使用统一的 SignalR Hub URL 配置
@@ -191,6 +192,10 @@ class NotificationHubService {
     this.connection.on('NotificationInboxChanged', (change: NotificationInboxChangedVo) => {
       log.debug('[NotificationHub] 收件箱 revision 更新:', change.voRevision);
       notificationInboxSync.handleInboxChanged(change);
+    });
+
+    this.connection.on('UserInteractionChanged', (change: UserInteractionChangedVo) => {
+      handleRealtimeUserInteractionChanged(change);
     });
 
     // 旧 Hub 事件在 F4-B-D 完成前继续兼容，但只触发权威摘要对账，不消费本地计数。

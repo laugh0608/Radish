@@ -70,6 +70,10 @@ test('parseMeRoute 应解析我的状态和资产正式 Web 路由', () => {
     casePublicId: undefined,
     appealPublicId: 'appeal_public',
   });
+  assert.deepEqual(parseMeRoute('/me/blocked', '?page=3'), {
+    kind: 'blocked',
+    page: 3,
+  });
 });
 
 test('parseMeRoute 应拒绝未知我的状态子路径', () => {
@@ -104,6 +108,8 @@ test('buildMePath 应稳定回写我的状态和资产正式 Web 路径', () => 
     buildMePath({ kind: 'appeals', page: 1, appealPublicId: 'appeal_public' }),
     '/me/appeals?appeal=appeal_public',
   );
+  assert.equal(buildMePath({ kind: 'blocked', page: 1 }), '/me/blocked');
+  assert.equal(buildMePath({ kind: 'blocked', page: 3 }), '/me/blocked?page=3');
 });
 
 test('isMePathname 应识别我的状态和资产正式 Web 路径', () => {
@@ -116,6 +122,7 @@ test('isMePathname 应识别我的状态和资产正式 Web 路径', () => {
   assert.equal(isMePathname('/me/experience'), true);
   assert.equal(isMePathname('/me/reports'), true);
   assert.equal(isMePathname('/me/appeals'), true);
+  assert.equal(isMePathname('/me/blocked'), true);
   assert.equal(isMePathname('/me/assets/history'), false);
   assert.equal(isMePathname('/desktop'), false);
 });

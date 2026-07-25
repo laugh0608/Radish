@@ -64,7 +64,13 @@ public class UserFollowStatusVo
 
     public bool VoCanFollow { get; set; } = true;
 
+    public bool VoCanDirectMessage { get; set; }
+
+    public bool VoCanInteract { get; set; } = true;
+
     public bool VoInteractionUnavailable { get; set; }
+
+    public bool VoIsBlockedByCurrentUser { get; set; }
 
     /// <summary>目标用户粉丝数</summary>
     public int VoFollowerCount { get; set; }

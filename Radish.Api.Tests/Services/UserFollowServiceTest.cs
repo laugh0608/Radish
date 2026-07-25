@@ -23,6 +23,29 @@ namespace Radish.Api.Tests.Services;
 public class UserFollowServiceTest
 {
     [Fact]
+    public async Task GetFollowStatusAsync_ShouldExposeAuthoritativeInteractionCapabilities()
+    {
+        var harness = CreateHarness();
+        harness.UserFollowRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<UserFollow, bool>>>()))
+            .ReturnsAsync(3);
+        harness.UserFollowRepository
+            .Setup(repository => repository.QueryExistsAsync(It.IsAny<Expression<Func<UserFollow, bool>>>()))
+            .ReturnsAsync(false);
+        harness.InteractionPolicy
+            .Setup(item => item.GetSnapshotAsync(9, 1001, 2002))
+            .ReturnsAsync(new UserInteractionPolicySnapshot(2002, true, true));
+
+        var result = await harness.Service.GetFollowStatusAsync(1001, 2002, 9);
+
+        Assert.False(result.VoCanFollow);
+        Assert.False(result.VoCanDirectMessage);
+        Assert.False(result.VoCanInteract);
+        Assert.True(result.VoInteractionUnavailable);
+        Assert.True(result.VoIsBlockedByCurrentUser);
+    }
+
+    [Fact]
     public async Task FollowAsync_ShouldRestoreSoftDeletedPairAndQueueNotification()
     {
         var outboxService = new Mock<IReliableOutboxService>();
@@ -279,12 +302,14 @@ public class UserFollowServiceTest
             service,
             userFollowRepository,
             userRepository,
-            attachmentRepository);
+            attachmentRepository,
+            interactionPolicy);
     }
 
     private sealed record UserFollowServiceHarness(
         UserFollowService Service,
         Mock<IUserFollowRepository> UserFollowRepository,
         Mock<IBaseRepository<User>> UserRepository,
-        Mock<IBaseRepository<Attachment>> AttachmentRepository);
+        Mock<IBaseRepository<Attachment>> AttachmentRepository,
+        Mock<IUserInteractionPolicyService> InteractionPolicy);
 }

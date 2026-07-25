@@ -7,6 +7,7 @@ export const ME_ATTACHMENTS_PATH = '/me/attachments';
 export const ME_EXPERIENCE_PATH = '/me/experience';
 export const ME_REPORTS_PATH = '/me/reports';
 export const ME_APPEALS_PATH = '/me/appeals';
+export const ME_BLOCKED_PATH = '/me/blocked';
 
 export type MeContentTab = 'posts' | 'comments' | 'quick-replies';
 export type MeAttachmentBusinessType = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
@@ -58,6 +59,11 @@ export interface MeAppealsRoute {
   appealPublicId?: string;
 }
 
+export interface MeBlockedRoute {
+  kind: 'blocked';
+  page: number;
+}
+
 export type MeRoute =
   | MeDashboardRoute
   | MeAssetsRoute
@@ -67,7 +73,8 @@ export type MeRoute =
   | MeAttachmentsRoute
   | MeExperienceRoute
   | MeReportsRoute
-  | MeAppealsRoute;
+  | MeAppealsRoute
+  | MeBlockedRoute;
 
 const CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies']);
 const ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
@@ -195,6 +202,13 @@ export function parseMeRoute(pathname: string, search: string = ''): MeRoute | n
     };
   }
 
+  if (pathname === ME_BLOCKED_PATH || pathname === `${ME_BLOCKED_PATH}/`) {
+    return {
+      kind: 'blocked',
+      page: normalizePage(params.get('page')),
+    };
+  }
+
   return null;
 }
 
@@ -246,6 +260,10 @@ export function buildMePath(route: MeRoute = createDefaultMeRoute()): string {
       case: route.casePublicId,
       appeal: route.appealPublicId,
     })}`;
+  }
+
+  if (route.kind === 'blocked') {
+    return `${ME_BLOCKED_PATH}${buildQuery({ page: route.page })}`;
   }
 
   return ME_ENTRY_PATH;

@@ -99,7 +99,7 @@ export async function getOrCreateDirectConversation(targetUserId: EntityIdValue)
 }
 
 async function mutateDirectConversation(
-  action: 'Accept' | 'Decline' | 'Block' | 'Unblock',
+  action: 'Accept' | 'Decline',
   channelId: EntityIdValue
 ): Promise<DirectConversationVo> {
   const normalizedChannelId = normalizeEntityId(channelId);
@@ -107,12 +107,9 @@ async function mutateDirectConversation(
     throw new Error('频道 Id 无效');
   }
 
-  const body = action === 'Block' || action === 'Unblock'
-    ? { operationKey: createDirectRelationshipOperationKey(action, normalizedChannelId) }
-    : undefined;
   const response = await apiPost<DirectConversationVo>(
     `/api/v1/DirectConversation/${action}/${normalizedChannelId}`,
-    body,
+    undefined,
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
@@ -122,19 +119,8 @@ async function mutateDirectConversation(
   return response.data;
 }
 
-function createDirectRelationshipOperationKey(
-  action: 'Block' | 'Unblock',
-  channelId: string,
-): string {
-  const nonce = globalThis.crypto?.randomUUID?.()
-    ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-  return `direct-${action.toLowerCase()}:${channelId}:${nonce}`;
-}
-
 export const acceptDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Accept', channelId);
 export const declineDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Decline', channelId);
-export const blockDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Block', channelId);
-export const unblockDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Unblock', channelId);
 
 export async function setDirectConversationArchived(
   channelId: EntityIdValue,
