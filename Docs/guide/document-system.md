@@ -2,9 +2,9 @@
 
 > 本文定义 Radish 统一文档体系的长期边界，覆盖 **固定文档挂载**、**在线文档管理**、**正式 Web Author 协作**、**Console 审核治理** 与 **Markdown 导入导出**。
 >
-> **状态**：公开阅读、普通作者协作、Console 审核与既有治理均已进入稳定维护
+> **状态**：公开阅读、普通作者协作与 Console 审核已进入稳定维护；附件隐私与生命周期进入 F4-L
 >
-> **最后更新**：2026-07-20
+> **最后更新**：2026-07-25
 >
 > **关联文档**：
 > - [前端设计文档](/frontend/design)
@@ -12,6 +12,7 @@
 > - [开发规范](/architecture/specifications)
 > - [文件上传功能设计](/features/file-upload-design)
 > - [作者协作使用说明](/guide/docs-author-collaboration)与 [权威设计](/features/wiki-author-contribution-collaboration-design)
+> - [Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)
 >
 > **一句话目标**：以仓库 `Docs/` 作为固定文档真相源，以公开 `/docs` 承接只读阅读，以正式 Web Author 入口承接普通作者与协作者的共享草稿，以 Console 承接审核应用、发布和治理，并保留 Markdown 导入导出作为迁移桥梁。
 ## 1. 背景与目标

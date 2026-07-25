@@ -1,6 +1,6 @@
 # 文件上传与附件管理（Radish.Api）
 
-> **最后更新**：2026-07-18
+> **最后更新**：2026-07-25
 
 本文档描述当前附件系统的真实实现口径，重点覆盖“附件如何落库、如何在正文中引用、如何在运行时解析 URL，以及更换域名时哪些数据不需要再人工修补”。
 
@@ -40,7 +40,7 @@
 - `GET /api/v1/Attachment/DownloadByToken` 也必须复用同一条附件访问判定链，不能因为携带了临时令牌就绕过 disabled 附件的阻断。
 - 普通上传与分片会话创建共用稳定的 `BusinessType` 白名单和资源权限判定；分片会话的查询、上传、合并与取消还必须匹配创建用户。
 - `Chat` 上传会直接写入 `IsPublic = false`，绑定消息后按频道与消息关系授权；上传者、`System / Admin` 身份都不能绕过私聊成员边界。未绑定的 Chat 附件只允许上传者读取；若消息已经引用附件而可靠绑定尚未回写，合法频道成员也可按该消息事实读取。
-- `20260718_002_chat_attachment_privacy` 已把历史 `BusinessType=Chat` 附件迁移为私有，并在 `verify` 中阻断仍公开的异常记录；可靠绑定任务还会拒绝租户、上传者、消息引用或既有绑定不匹配的数据。`Document / Wiki` 尚未接入文档公开性或访问名单，仍不具备完整私有附件语义，不应用于敏感文件。
+- `20260718_002_chat_attachment_privacy` 已把历史 `BusinessType=Chat` 附件迁移为私有，并在 `verify` 中阻断仍公开的异常记录；可靠绑定任务还会拒绝租户、上传者、消息引用或既有绑定不匹配的数据。`Document / Wiki` 当前运行时尚未接入文档公开性或访问名单；其私有默认、权威引用、动态 ACL、迁移与正式 Web 路线已由 [F4-L 权威设计](/features/wiki-attachment-privacy-lifecycle-design)固定，F4-L-B / C 完成前仍不得用于敏感文件。
 
 获取 `access_token`：参考 `Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http`。
 
@@ -305,7 +305,7 @@
 - 分片上传横向扩容前补共享临时存储、分布式会话互斥与跨实例回归；当前部署边界为单实例
 - 为附件持久化增加稳定的上传会话 correlation / 唯一约束，使“附件已落库但会话完成状态持续回写失败且响应丢失”的极端路径可在后续请求中找回既有附件
 - 为普通上传和分片上传增加持久化配额结算记录及可重放 outbox，避免缓存结算失败造成当日用量漏记或预留滞留
-- 继续建立 `Document` 与受限 `Wiki` 的领域可见性契约及历史数据迁移；`Chat` 已完成默认私有、频道成员授权和历史迁移
+- 按 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)建立 `Document / Wiki` 的私有默认、领域可见性、权威引用与历史迁移；`Chat` 已完成默认私有、频道成员授权和历史迁移
 - 临时令牌审计、管理界面与端到端验收覆盖
 - 盘点并迁移历史正文、Wiki revision 与 `Site.Branding.FaviconUrl` 中的 `/uploads/**` / 旧域名直链；完成生产数据抽样与运行态回归前，不得把关闭用户上传静态根目录视为历史数据已经收口
 - 专题验收时在取得启动授权后通过真实 API + Gateway 验证普通 `/uploads/<business>/...` 不可达、`/uploads/DefaultIco/...` 可达，以及受控路由的 deleted / disabled / private / thumbnail 行为；当前源码与配置断言不能替代该验证

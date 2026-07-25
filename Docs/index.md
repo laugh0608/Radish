@@ -85,6 +85,7 @@ features:
 - [文档系统方案](/guide/document-system)
 - [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
 - [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
+- [Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)
 - [内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
 - [内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 - [用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design)
