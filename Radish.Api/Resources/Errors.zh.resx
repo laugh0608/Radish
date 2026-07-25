@@ -663,4 +663,25 @@
   <data name="error.chat.receipt_cursor_invalid" xml:space="preserve">
     <value>读者分页条件、账号或会话权限已经变化，请重新打开读者列表。</value>
   </data>
+  <data name="error.user_block.self_not_allowed" xml:space="preserve">
+    <value>不能屏蔽自己。</value>
+  </data>
+  <data name="error.user_block.target_unavailable" xml:space="preserve">
+    <value>目标用户不存在或当前不可用。</value>
+  </data>
+  <data name="error.user_block.interaction_unavailable" xml:space="preserve">
+    <value>当前无法与该用户互动。</value>
+  </data>
+  <data name="error.user_block.operation_conflict" xml:space="preserve">
+    <value>该操作标识已用于不同的屏蔽操作。</value>
+  </data>
+  <data name="error.user_block.state_conflict" xml:space="preserve">
+    <value>用户屏蔽状态已变化，请刷新后重试。</value>
+  </data>
+  <data name="error.user_block.relationship_temporarily_unavailable" xml:space="preserve">
+    <value>用户关系服务暂时不可用，请稍后重试。</value>
+  </data>
+  <data name="error.user_block.operation_key_invalid" xml:space="preserve">
+    <value>操作标识无效。</value>
+  </data>
 </root>

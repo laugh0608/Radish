@@ -107,9 +107,12 @@ async function mutateDirectConversation(
     throw new Error('频道 Id 无效');
   }
 
+  const body = action === 'Block' || action === 'Unblock'
+    ? { operationKey: createDirectRelationshipOperationKey(action, normalizedChannelId) }
+    : undefined;
   const response = await apiPost<DirectConversationVo>(
     `/api/v1/DirectConversation/${action}/${normalizedChannelId}`,
-    undefined,
+    body,
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
@@ -117,6 +120,15 @@ async function mutateDirectConversation(
   }
 
   return response.data;
+}
+
+function createDirectRelationshipOperationKey(
+  action: 'Block' | 'Unblock',
+  channelId: string,
+): string {
+  const nonce = globalThis.crypto?.randomUUID?.()
+    ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  return `direct-${action.toLowerCase()}:${channelId}:${nonce}`;
 }
 
 export const acceptDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Accept', channelId);

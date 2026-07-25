@@ -20,6 +20,8 @@ public sealed class DirectConversationService : IDirectConversationService
     private readonly IBaseRepository<UserFollow> _userFollowRepository;
     private readonly IBaseRepository<Attachment> _attachmentRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly IUserInteractionPolicyService _interactionPolicyService;
+    private readonly IUserBlockService _userBlockService;
 
     public DirectConversationService(
         IDirectConversationRepository conversationRepository,
@@ -27,7 +29,9 @@ public sealed class DirectConversationService : IDirectConversationService
         IBaseRepository<User> userRepository,
         IBaseRepository<UserFollow> userFollowRepository,
         IBaseRepository<Attachment> attachmentRepository,
-        IAttachmentUrlResolver attachmentUrlResolver)
+        IAttachmentUrlResolver attachmentUrlResolver,
+        IUserInteractionPolicyService interactionPolicyService,
+        IUserBlockService userBlockService)
     {
         _conversationRepository = conversationRepository;
         _memberRepository = memberRepository;
@@ -35,6 +39,8 @@ public sealed class DirectConversationService : IDirectConversationService
         _userFollowRepository = userFollowRepository;
         _attachmentRepository = attachmentRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _interactionPolicyService = interactionPolicyService;
+        _userBlockService = userBlockService;
     }
 
     public async Task<DirectConversationMutationResult> GetOrCreateAsync(
@@ -63,6 +69,11 @@ public sealed class DirectConversationService : IDirectConversationService
         {
             throw NotFoundError("目标用户不存在或不可用", "Chat.DirectTargetUnavailable", "error.chat.direct_target_unavailable");
         }
+
+        await _interactionPolicyService.EnsureCanInteractAsync(
+            normalizedTenantId,
+            currentUserId,
+            targetUserId);
 
         var participantLowUserId = Math.Min(currentUserId, targetUserId);
         var participantHighUserId = Math.Max(currentUserId, targetUserId);
@@ -134,7 +145,7 @@ public sealed class DirectConversationService : IDirectConversationService
     {
         var conversation = await GetParticipantConversationAsync(tenantId, currentUserId, channelId);
         EnsureRequestReceiver(conversation, currentUserId);
-        EnsureNotBlocked(conversation);
+        await EnsureCanInteractWithPeerAsync(tenantId, currentUserId, conversation);
         if (conversation.RequestStatus == DirectConversationRequestStatus.Accepted)
         {
             return await UnchangedResultAsync(tenantId, currentUserId, channelId);
@@ -159,7 +170,6 @@ public sealed class DirectConversationService : IDirectConversationService
                 ModifyId = currentUserId
             },
             item => item.Id == conversation.Id &&
-                    item.BlockedByUserId == null &&
                     item.RequestedByUserId != currentUserId &&
                     item.RequestStatus != DirectConversationRequestStatus.Accepted &&
                     !item.IsDeleted);
@@ -175,7 +185,7 @@ public sealed class DirectConversationService : IDirectConversationService
     {
         var conversation = await GetParticipantConversationAsync(tenantId, currentUserId, channelId);
         EnsureRequestReceiver(conversation, currentUserId);
-        EnsureNotBlocked(conversation);
+        await EnsureCanInteractWithPeerAsync(tenantId, currentUserId, conversation);
         if (conversation.RequestStatus == DirectConversationRequestStatus.Declined)
         {
             return await UnchangedResultAsync(tenantId, currentUserId, channelId);
@@ -199,7 +209,6 @@ public sealed class DirectConversationService : IDirectConversationService
                 ModifyId = currentUserId
             },
             item => item.Id == conversation.Id &&
-                    item.BlockedByUserId == null &&
                     item.RequestedByUserId != currentUserId &&
                     item.RequestStatus == DirectConversationRequestStatus.Pending &&
                     !item.IsDeleted);
@@ -211,65 +220,45 @@ public sealed class DirectConversationService : IDirectConversationService
         long tenantId,
         long currentUserId,
         long channelId,
+        string operationKey,
         string operatorName)
     {
         var conversation = await GetParticipantConversationAsync(tenantId, currentUserId, channelId);
         EnsureVisibleToRequestReceiver(conversation, currentUserId);
-        if (conversation.BlockedByUserId == currentUserId)
-        {
-            return await UnchangedResultAsync(tenantId, currentUserId, channelId);
-        }
-
-        if (conversation.BlockedByUserId.HasValue)
-        {
-            throw ConflictError("会话已被对方阻断", "Chat.DirectBlockedByPeer", "error.chat.direct_blocked_by_peer");
-        }
-
-        var now = DateTime.UtcNow;
-        var affected = await _conversationRepository.UpdateColumnsAsync(
-            item => new DirectConversation
-            {
-                BlockedByUserId = currentUserId,
-                BlockedAt = now,
-                ModifyTime = now,
-                ModifyBy = NormalizeOperator(operatorName),
-                ModifyId = currentUserId
-            },
-            item => item.Id == conversation.Id && item.BlockedByUserId == null && !item.IsDeleted);
-
-        return await BuildMutationResultAsync(tenantId, currentUserId, channelId, affected > 0);
+        var peerUserId = GetPeerUserId(conversation, currentUserId);
+        var result = await _userBlockService.BlockByUserIdAsync(
+            tenantId,
+            currentUserId,
+            peerUserId,
+            operationKey,
+            operatorName);
+        return await BuildMutationResultAsync(
+            tenantId,
+            currentUserId,
+            channelId,
+            result.Result.VoChanged);
     }
 
     public async Task<DirectConversationMutationResult> UnblockAsync(
         long tenantId,
         long currentUserId,
         long channelId,
+        string operationKey,
         string operatorName)
     {
         var conversation = await GetParticipantConversationAsync(tenantId, currentUserId, channelId);
-        if (!conversation.BlockedByUserId.HasValue)
-        {
-            return await UnchangedResultAsync(tenantId, currentUserId, channelId);
-        }
-
-        if (conversation.BlockedByUserId != currentUserId)
-        {
-            throw ForbiddenError("只有执行阻断的一方可以解除", "Chat.DirectUnblockForbidden", "error.chat.direct_unblock_forbidden");
-        }
-
-        var now = DateTime.UtcNow;
-        var affected = await _conversationRepository.UpdateColumnsAsync(
-            item => new DirectConversation
-            {
-                BlockedByUserId = null,
-                BlockedAt = null,
-                ModifyTime = now,
-                ModifyBy = NormalizeOperator(operatorName),
-                ModifyId = currentUserId
-            },
-            item => item.Id == conversation.Id && item.BlockedByUserId == currentUserId && !item.IsDeleted);
-
-        return await BuildMutationResultAsync(tenantId, currentUserId, channelId, affected > 0);
+        var peerUserId = GetPeerUserId(conversation, currentUserId);
+        var result = await _userBlockService.UnblockByUserIdAsync(
+            tenantId,
+            currentUserId,
+            peerUserId,
+            operationKey,
+            operatorName);
+        return await BuildMutationResultAsync(
+            tenantId,
+            currentUserId,
+            channelId,
+            result.Result.VoChanged);
     }
 
     public async Task<DirectConversationMutationResult> SetArchivedAsync(
@@ -344,6 +333,10 @@ public sealed class DirectConversationService : IDirectConversationService
         var userMap = users.ToDictionary(user => user.Id);
         var activeUserIds = users.Where(user => user.IsEnable).Select(user => user.Id).ToHashSet();
         var mutualPeerIds = await GetMutualPeerIdsAsync(normalizedTenantId, currentUserId, peerUserIds);
+        var interactionPolicies = await _interactionPolicyService.GetSnapshotsAsync(
+            normalizedTenantId,
+            currentUserId,
+            peerUserIds);
         var avatarMap = await GetAvatarUrlMapAsync(peerUserIds);
         var result = new Dictionary<long, DirectConversationVo>(conversations.Count);
 
@@ -353,9 +346,11 @@ public sealed class DirectConversationService : IDirectConversationService
             userMap.TryGetValue(peerUserId, out var peerUser);
             memberMap.TryGetValue(conversation.ChannelId, out var member);
             var isRequestReceiver = conversation.RequestedByUserId != currentUserId;
-            var isBlockedByCurrentUser = conversation.BlockedByUserId == currentUserId;
+            interactionPolicies.TryGetValue(peerUserId, out var interactionPolicy);
+            var hasInteractionBarrier = interactionPolicy?.HasInteractionBarrier == true;
+            var isBlockedByCurrentUser = interactionPolicy?.IsBlockedByCurrentUser == true;
             var isPeerAvailable = activeUserIds.Contains(peerUserId);
-            var canSend = !conversation.BlockedByUserId.HasValue &&
+            var canSend = !hasInteractionBarrier &&
                           isPeerAvailable &&
                           (conversation.RequestStatus == DirectConversationRequestStatus.Accepted ||
                            conversation.RequestStatus == DirectConversationRequestStatus.Pending &&
@@ -378,12 +373,12 @@ public sealed class DirectConversationService : IDirectConversationService
                 VoCanSend = canSend,
                 VoCanAccept = isPeerAvailable &&
                               isRequestReceiver &&
-                              !conversation.BlockedByUserId.HasValue &&
+                              !hasInteractionBarrier &&
                               conversation.RequestStatus is DirectConversationRequestStatus.Pending or DirectConversationRequestStatus.Declined,
                 VoCanDecline = isRequestReceiver &&
-                               !conversation.BlockedByUserId.HasValue &&
+                               !hasInteractionBarrier &&
                                conversation.RequestStatus == DirectConversationRequestStatus.Pending,
-                VoCanBlock = !conversation.BlockedByUserId.HasValue,
+                VoCanBlock = !isBlockedByCurrentUser,
                 VoCanUnblock = isBlockedByCurrentUser,
                 VoIsBlockedByCurrentUser = isBlockedByCurrentUser,
                 VoIsArchived = member?.ArchivedAt.HasValue == true,
@@ -548,12 +543,15 @@ public sealed class DirectConversationService : IDirectConversationService
         }
     }
 
-    private static void EnsureNotBlocked(DirectConversation conversation)
+    private async Task EnsureCanInteractWithPeerAsync(
+        long tenantId,
+        long currentUserId,
+        DirectConversation conversation)
     {
-        if (conversation.BlockedByUserId.HasValue)
-        {
-            throw ConflictError("会话已被阻断", "Chat.DirectBlocked", "error.chat.direct_blocked");
-        }
+        await _interactionPolicyService.EnsureCanInteractAsync(
+            tenantId,
+            currentUserId,
+            GetPeerUserId(conversation, currentUserId));
     }
 
     private static void EnsureVisibleToRequestReceiver(DirectConversation conversation, long currentUserId)

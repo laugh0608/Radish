@@ -64,6 +64,10 @@ public sealed class ChatReadReceiptService : IChatReadReceiptService
         {
             throw ReadTargetUnavailable();
         }
+        if (access.IsDirectConversation && access.HasInteractionBarrier)
+        {
+            throw InteractionUnavailable();
+        }
 
         var message = await _messageRepository.QueryFirstIncludingDeletedAsync(candidate =>
             candidate.Id == request.ReadThroughMessageId &&
@@ -343,6 +347,7 @@ public sealed class ChatReadReceiptService : IChatReadReceiptService
         }
 
         return access.DirectRequestStatus == DirectConversationRequestStatus.Accepted &&
+               !access.HasInteractionBarrier &&
                access.DirectBlockedByUserId == null &&
                access.IsPeerAvailable
             ? ChatReadReceiptModes.Direct
@@ -422,6 +427,12 @@ public sealed class ChatReadReceiptService : IChatReadReceiptService
         StatusCodes.Status409Conflict,
         "Chat.ReceiptCursorInvalid",
         "error.chat.receipt_cursor_invalid");
+
+    private static BusinessException InteractionUnavailable() => new(
+        "当前无法与该用户互动",
+        StatusCodes.Status409Conflict,
+        "UserBlock.InteractionUnavailable",
+        "error.user_block.interaction_unavailable");
 
     private sealed record ReaderCursorPayload(
         int Version,

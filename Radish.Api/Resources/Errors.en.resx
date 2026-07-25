@@ -663,4 +663,25 @@
   <data name="error.chat.receipt_cursor_invalid" xml:space="preserve">
     <value>The reader page, account, or conversation permissions changed. Reopen the reader list.</value>
   </data>
+  <data name="error.user_block.self_not_allowed" xml:space="preserve">
+    <value>You cannot block yourself.</value>
+  </data>
+  <data name="error.user_block.target_unavailable" xml:space="preserve">
+    <value>The target user does not exist or is unavailable.</value>
+  </data>
+  <data name="error.user_block.interaction_unavailable" xml:space="preserve">
+    <value>You cannot interact with this user right now.</value>
+  </data>
+  <data name="error.user_block.operation_conflict" xml:space="preserve">
+    <value>This operation key was already used for a different block operation.</value>
+  </data>
+  <data name="error.user_block.state_conflict" xml:space="preserve">
+    <value>The user block state changed. Refresh and try again.</value>
+  </data>
+  <data name="error.user_block.relationship_temporarily_unavailable" xml:space="preserve">
+    <value>The user relationship service is temporarily unavailable. Try again later.</value>
+  </data>
+  <data name="error.user_block.operation_key_invalid" xml:space="preserve">
+    <value>The operation key is invalid.</value>
+  </data>
 </root>

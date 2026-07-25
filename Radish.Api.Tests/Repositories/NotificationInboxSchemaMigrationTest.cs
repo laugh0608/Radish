@@ -48,6 +48,9 @@ public sealed class NotificationInboxSchemaMigrationTest
             Assert.Empty(deliveryCleanup.Diagnose(db, services));
             deliveryCleanup.Apply(db, services);
             deliveryCleanup.Apply(db, services);
+            var userBlockSuppression = UserBlockNotificationSuppressionSchemaMigration.Instance;
+            userBlockSuppression.Apply(db, services);
+            Assert.Empty(userBlockSuppression.Verify(db, services));
             var currentNotification = new Notification(new NotificationInitializationOptions(
                 NotificationType.PostLiked,
                 "新通知")
@@ -291,6 +294,8 @@ public sealed class NotificationInboxSchemaMigrationTest
         db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_user_notification_group_unread\"");
         db.Ado.ExecuteCommand("ALTER TABLE \"UserNotification\" DROP COLUMN \"InboxGroupId\"");
         db.Ado.ExecuteCommand("ALTER TABLE \"UserNotification\" DROP COLUMN \"OccurredAtUtc\"");
+        db.Ado.ExecuteCommand("ALTER TABLE \"UserNotification\" DROP COLUMN \"SuppressedByUserBlock\"");
+        db.Ado.ExecuteCommand("ALTER TABLE \"UserNotification\" DROP COLUMN \"SuppressedAtUtc\"");
         foreach (var command in new[]
                  {
                      "ALTER TABLE \"UserNotification\" ADD COLUMN \"DeliveryStatus\" TEXT NOT NULL DEFAULT 'Created'",

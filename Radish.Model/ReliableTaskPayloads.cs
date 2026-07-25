@@ -15,6 +15,7 @@ public static class ReliableTaskTypes
     public const string ChatAttachmentBinding = "ChatAttachmentBinding";
     public const string ContentModerationChatRecall = "ContentModerationChatRecall";
     public const string ContentModerationChatRestore = "ContentModerationChatRestore";
+    public const string UserBlockRelationshipChanged = "UserBlockRelationshipChanged";
 }
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
@@ -93,3 +94,18 @@ public sealed record ContentModerationChatRestoreTaskPayload(
     string OperationKey,
     long OperatorUserId,
     string OperatorName);
+
+public static class UserBlockRelationshipEventTypes
+{
+    public const string Blocked = "Blocked";
+    public const string Unblocked = "Unblocked";
+}
+
+public sealed record UserBlockRelationshipChangedTaskPayload(
+    long TenantId,
+    long UserBlockId,
+    string EventType,
+    long BlockerUserId,
+    long BlockedUserId,
+    long RelationshipVersion,
+    DateTime OccurredAtUtc);

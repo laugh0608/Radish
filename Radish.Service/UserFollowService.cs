@@ -1,8 +1,9 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
-using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -25,6 +26,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
     private readonly ILogger<UserFollowService> _logger;
     private readonly FeedDistributionOptions _feedDistributionOptions;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly IUserInteractionPolicyService _interactionPolicyService;
 
     public UserFollowService(
         IMapper mapper,
@@ -36,6 +38,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         ILogger<UserFollowService> logger,
         IOptions<FeedDistributionOptions> feedDistributionOptions,
         IAttachmentUrlResolver attachmentUrlResolver,
+        IUserInteractionPolicyService interactionPolicyService,
         IReliableOutboxService? reliableOutboxService = null)
         : base(mapper, baseRepository)
     {
@@ -47,9 +50,9 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         _logger = logger;
         _feedDistributionOptions = feedDistributionOptions.Value;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _interactionPolicyService = interactionPolicyService;
     }
 
-    [UseTran]
     public async Task<bool> FollowAsync(long followerUserId, long targetUserId, long tenantId, string? operatorName)
     {
         if (followerUserId <= 0 || targetUserId <= 0)
@@ -62,65 +65,55 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             throw new ArgumentException("不能关注自己");
         }
 
-        var targetUser = await _userRepository.QueryFirstAsync(u => u.Id == targetUserId && u.IsEnable && !u.IsDeleted);
+        var normalizedTenantId = tenantId > 0 ? tenantId : 0;
+        var targetUser = await _userRepository.QueryFirstAsync(u =>
+            u.Id == targetUserId &&
+            u.TenantId == normalizedTenantId &&
+            u.IsEnable &&
+            !u.IsDeleted);
         if (targetUser == null)
         {
             throw new InvalidOperationException("目标用户不存在或不可用");
         }
 
-        var normalizedOperator = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
-        var normalizedTenantId = tenantId > 0 ? tenantId : 0;
-        var existing = await _userFollowRepository.QueryPairIncludingDeletedAsync(
+        await _interactionPolicyService.EnsureCanInteractAsync(
+            normalizedTenantId,
             followerUserId,
-            targetUserId,
-            normalizedTenantId);
+            targetUserId);
+        var normalizedOperator = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim();
         var now = DateTime.UtcNow;
-
-        if (existing != null)
+        bool changed;
+        try
         {
-            if (!existing.IsDeleted)
-            {
-                return false;
-            }
-
-            existing.IsDeleted = false;
-            existing.DeletedAt = null;
-            existing.DeletedBy = null;
-            existing.FollowTime = now;
-            existing.ModifyTime = now;
-            existing.ModifyBy = normalizedOperator;
-            existing.ModifyId = followerUserId;
-            if (existing.TenantId <= 0)
-            {
-                existing.TenantId = normalizedTenantId;
-            }
-
-            var restored = await _userFollowRepository.UpdateAsync(existing);
-            if (restored)
-            {
-                await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId, now);
-            }
-
-            return restored;
+            changed = await _userFollowRepository.FollowAsync(
+                normalizedTenantId,
+                followerUserId,
+                targetUserId,
+                normalizedOperator,
+                now);
+        }
+        catch (UserFollowInteractionBlockedException)
+        {
+            throw new BusinessException(
+                "当前无法与该用户互动",
+                StatusCodes.Status409Conflict,
+                "UserBlock.InteractionUnavailable",
+                "error.user_block.interaction_unavailable");
         }
 
-        await _userFollowRepository.AddAsync(new UserFollow
+        if (changed)
         {
-            FollowerUserId = followerUserId,
-            FollowingUserId = targetUserId,
-            FollowTime = now,
-            TenantId = normalizedTenantId,
-            CreateTime = now,
-            CreateBy = normalizedOperator,
-            CreateId = followerUserId
-        });
+            await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId, now);
+        }
 
-        await TrySendFollowNotificationAsync(followerUserId, targetUser, normalizedTenantId, now);
-
-        return true;
+        return changed;
     }
 
-    public async Task<bool> UnfollowAsync(long followerUserId, long targetUserId, string? operatorName)
+    public async Task<bool> UnfollowAsync(
+        long followerUserId,
+        long targetUserId,
+        long tenantId,
+        string? operatorName)
     {
         if (followerUserId <= 0 || targetUserId <= 0 || followerUserId == targetUserId)
         {
@@ -128,7 +121,10 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         }
 
         var existing = await _userFollowRepository.QueryFirstAsync(f =>
-            f.FollowerUserId == followerUserId && f.FollowingUserId == targetUserId && !f.IsDeleted);
+            f.TenantId == Math.Max(0, tenantId) &&
+            f.FollowerUserId == followerUserId &&
+            f.FollowingUserId == targetUserId &&
+            !f.IsDeleted);
         if (existing == null)
         {
             return false;
@@ -138,7 +134,13 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         return await _userFollowRepository.SoftDeleteByIdAsync(existing.Id, normalizedOperator);
     }
 
-    public async Task<UserFollowStatusVo> GetFollowStatusAsync(long currentUserId, long targetUserId)
+    public Task<UserFollowStatusVo> GetFollowStatusAsync(long currentUserId, long targetUserId) =>
+        GetFollowStatusAsync(currentUserId, targetUserId, 0);
+
+    public async Task<UserFollowStatusVo> GetFollowStatusAsync(
+        long currentUserId,
+        long targetUserId,
+        long tenantId)
     {
         if (targetUserId <= 0)
         {
@@ -146,9 +148,9 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         }
 
         var followerCount = await _userFollowRepository.QueryCountAsync(f =>
-            f.FollowingUserId == targetUserId && !f.IsDeleted);
+            f.TenantId == Math.Max(0, tenantId) && f.FollowingUserId == targetUserId && !f.IsDeleted);
         var followingCount = await _userFollowRepository.QueryCountAsync(f =>
-            f.FollowerUserId == targetUserId && !f.IsDeleted);
+            f.TenantId == Math.Max(0, tenantId) && f.FollowerUserId == targetUserId && !f.IsDeleted);
 
         if (currentUserId <= 0 || currentUserId == targetUserId)
         {
@@ -158,16 +160,23 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 VoFollowerCount = followerCount,
                 VoFollowingCount = followingCount,
                 VoIsFollowing = false,
-                VoIsFollower = false
+                VoIsFollower = false,
+                VoCanFollow = currentUserId != targetUserId
             };
         }
 
+        var policy = await _interactionPolicyService.GetSnapshotAsync(
+            tenantId,
+            currentUserId,
+            targetUserId);
         var isFollowing = await _userFollowRepository.QueryExistsAsync(f =>
+            f.TenantId == Math.Max(0, tenantId) &&
             f.FollowerUserId == currentUserId &&
             f.FollowingUserId == targetUserId &&
             !f.IsDeleted);
 
         var isFollower = await _userFollowRepository.QueryExistsAsync(f =>
+            f.TenantId == Math.Max(0, tenantId) &&
             f.FollowerUserId == targetUserId &&
             f.FollowingUserId == currentUserId &&
             !f.IsDeleted);
@@ -178,17 +187,33 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             VoFollowerCount = followerCount,
             VoFollowingCount = followingCount,
             VoIsFollowing = isFollowing,
-            VoIsFollower = isFollower
+            VoIsFollower = isFollower,
+            VoCanFollow = policy.CanInteract,
+            VoInteractionUnavailable = policy.HasInteractionBarrier
         };
     }
 
-    public async Task<VoPagedResult<UserFollowUserVo>> GetMyFollowersAsync(long userId, int pageIndex, int pageSize)
+    public Task<VoPagedResult<UserFollowUserVo>> GetMyFollowersAsync(
+        long userId,
+        int pageIndex,
+        int pageSize) =>
+        GetMyFollowersAsync(userId, 0, pageIndex, pageSize);
+
+    public async Task<VoPagedResult<UserFollowUserVo>> GetMyFollowersAsync(
+        long userId,
+        long tenantId,
+        int pageIndex,
+        int pageSize)
     {
         var safePageIndex = NormalizePageIndex(pageIndex);
         var safePageSize = NormalizePageSize(pageSize);
 
+        var barrierUserIds = (await _interactionPolicyService.GetBarrierUserIdsAsync(tenantId, userId)).ToList();
         var (relations, totalCount) = await _userFollowRepository.QueryPageAsync(
-            f => f.FollowingUserId == userId && !f.IsDeleted,
+            f => f.TenantId == Math.Max(0, tenantId) &&
+                 f.FollowingUserId == userId &&
+                 !barrierUserIds.Contains(f.FollowerUserId) &&
+                 !f.IsDeleted,
             safePageIndex,
             safePageSize,
             f => f.FollowTime,
@@ -200,14 +225,21 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         }
 
         var userIds = relations.Select(r => r.FollowerUserId).Distinct().ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
+        var users = await _userRepository.QueryAsync(u =>
+            u.TenantId == Math.Max(0, tenantId) &&
+            userIds.Contains(u.Id) &&
+            u.IsEnable &&
+            !u.IsDeleted);
         await EnsureFollowUserPublicIdsAsync(users);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
         var myFollowingIds = await _userFollowRepository.QueryDistinctAsync(
             f => f.FollowingUserId,
-            f => f.FollowerUserId == userId && userIds.Contains(f.FollowingUserId) && !f.IsDeleted);
+            f => f.TenantId == Math.Max(0, tenantId) &&
+                 f.FollowerUserId == userId &&
+                 userIds.Contains(f.FollowingUserId) &&
+                 !f.IsDeleted);
         var myFollowingSet = myFollowingIds.ToHashSet();
 
         var items = relations
@@ -228,13 +260,27 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         };
     }
 
-    public async Task<VoPagedResult<UserFollowUserVo>> GetMyFollowingAsync(long userId, int pageIndex, int pageSize)
+    public Task<VoPagedResult<UserFollowUserVo>> GetMyFollowingAsync(
+        long userId,
+        int pageIndex,
+        int pageSize) =>
+        GetMyFollowingAsync(userId, 0, pageIndex, pageSize);
+
+    public async Task<VoPagedResult<UserFollowUserVo>> GetMyFollowingAsync(
+        long userId,
+        long tenantId,
+        int pageIndex,
+        int pageSize)
     {
         var safePageIndex = NormalizePageIndex(pageIndex);
         var safePageSize = NormalizePageSize(pageSize);
 
+        var barrierUserIds = (await _interactionPolicyService.GetBarrierUserIdsAsync(tenantId, userId)).ToList();
         var (relations, totalCount) = await _userFollowRepository.QueryPageAsync(
-            f => f.FollowerUserId == userId && !f.IsDeleted,
+            f => f.TenantId == Math.Max(0, tenantId) &&
+                 f.FollowerUserId == userId &&
+                 !barrierUserIds.Contains(f.FollowingUserId) &&
+                 !f.IsDeleted,
             safePageIndex,
             safePageSize,
             f => f.FollowTime,
@@ -246,14 +292,21 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         }
 
         var userIds = relations.Select(r => r.FollowingUserId).Distinct().ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id) && u.IsEnable && !u.IsDeleted);
+        var users = await _userRepository.QueryAsync(u =>
+            u.TenantId == Math.Max(0, tenantId) &&
+            userIds.Contains(u.Id) &&
+            u.IsEnable &&
+            !u.IsDeleted);
         await EnsureFollowUserPublicIdsAsync(users);
         var userMap = users.ToDictionary(u => u.Id, u => u);
         var avatarMap = await LoadAvatarUrlMapAsync(userIds);
 
         var followedBackIds = await _userFollowRepository.QueryDistinctAsync(
             f => f.FollowerUserId,
-            f => f.FollowingUserId == userId && userIds.Contains(f.FollowerUserId) && !f.IsDeleted);
+            f => f.TenantId == Math.Max(0, tenantId) &&
+                 f.FollowingUserId == userId &&
+                 userIds.Contains(f.FollowerUserId) &&
+                 !f.IsDeleted);
         var followedBackSet = followedBackIds.ToHashSet();
 
         var items = relations
@@ -274,14 +327,28 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         };
     }
 
-    public async Task<VoPagedResult<PostVo>> GetMyFollowingFeedAsync(long userId, int pageIndex, int pageSize)
+    public Task<VoPagedResult<PostVo>> GetMyFollowingFeedAsync(
+        long userId,
+        int pageIndex,
+        int pageSize) =>
+        GetMyFollowingFeedAsync(userId, 0, pageIndex, pageSize);
+
+    public async Task<VoPagedResult<PostVo>> GetMyFollowingFeedAsync(
+        long userId,
+        long tenantId,
+        int pageIndex,
+        int pageSize)
     {
         var safePageIndex = NormalizePageIndex(pageIndex);
         var safePageSize = NormalizePageSize(pageSize);
 
+        var barrierUserIds = (await _interactionPolicyService.GetBarrierUserIdsAsync(tenantId, userId)).ToList();
         var followingIds = await _userFollowRepository.QueryDistinctAsync(
             f => f.FollowingUserId,
-            f => f.FollowerUserId == userId && !f.IsDeleted);
+            f => f.TenantId == Math.Max(0, tenantId) &&
+                 f.FollowerUserId == userId &&
+                 !barrierUserIds.Contains(f.FollowingUserId) &&
+                 !f.IsDeleted);
 
         if (followingIds.Count == 0)
         {
@@ -289,7 +356,10 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         }
 
         var (posts, totalCount) = await _postService.QueryPageAsync(
-            p => followingIds.Contains(p.AuthorId) && p.IsPublished && !p.IsDeleted,
+            p => p.TenantId == Math.Max(0, tenantId) &&
+                 followingIds.Contains(p.AuthorId) &&
+                 p.IsPublished &&
+                 !p.IsDeleted,
             safePageIndex,
             safePageSize,
             p => p.CreateTime,
@@ -304,16 +374,32 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         };
     }
 
-    public async Task<VoPagedResult<PostVo>> GetMyDistributionFeedAsync(long userId, string streamType, int pageIndex, int pageSize)
+    public Task<VoPagedResult<PostVo>> GetMyDistributionFeedAsync(
+        long userId,
+        string streamType,
+        int pageIndex,
+        int pageSize) =>
+        GetMyDistributionFeedAsync(userId, 0, streamType, pageIndex, pageSize);
+
+    public async Task<VoPagedResult<PostVo>> GetMyDistributionFeedAsync(
+        long userId,
+        long tenantId,
+        string streamType,
+        int pageIndex,
+        int pageSize)
     {
         var safePageIndex = NormalizePageIndex(pageIndex);
         var safePageSize = NormalizePageSize(pageSize);
         var normalizedStreamType = NormalizeStreamType(streamType);
 
+        var barrierUserIds = (await _interactionPolicyService.GetBarrierUserIdsAsync(tenantId, userId)).ToList();
         if (normalizedStreamType == "newest")
         {
             var (newestPosts, newestTotal) = await _postService.QueryPageAsync(
-                p => p.IsPublished && !p.IsDeleted,
+                p => p.TenantId == Math.Max(0, tenantId) &&
+                     p.IsPublished &&
+                     !barrierUserIds.Contains(p.AuthorId) &&
+                     !p.IsDeleted,
                 safePageIndex,
                 safePageSize,
                 p => new { p.IsTop, p.CreateTime },
@@ -328,7 +414,9 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
             };
         }
 
-        var candidates = await LoadDistributionCandidatesAsync();
+        var candidates = (await LoadDistributionCandidatesAsync(tenantId))
+            .Where(post => !barrierUserIds.Contains(post.VoAuthorId))
+            .ToList();
         if (candidates.Count == 0)
         {
             return BuildEmptyPagedResult<PostVo>(safePageIndex, safePageSize, 0);
@@ -347,7 +435,10 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         var followingIds = await _userFollowRepository.QueryDistinctAsync(
             f => f.FollowingUserId,
-            f => f.FollowerUserId == userId && !f.IsDeleted);
+            f => f.TenantId == Math.Max(0, tenantId) &&
+                 f.FollowerUserId == userId &&
+                 !barrierUserIds.Contains(f.FollowingUserId) &&
+                 !f.IsDeleted);
         var followingSet = followingIds.ToHashSet();
 
         var sortedRecommend = candidates
@@ -359,12 +450,15 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         return BuildPostPagedResult(sortedRecommend, safePageIndex, safePageSize);
     }
 
-    public async Task<UserFollowSummaryVo> GetMyFollowSummaryAsync(long userId)
+    public Task<UserFollowSummaryVo> GetMyFollowSummaryAsync(long userId) =>
+        GetMyFollowSummaryAsync(userId, 0);
+
+    public async Task<UserFollowSummaryVo> GetMyFollowSummaryAsync(long userId, long tenantId)
     {
         var followerCount = await _userFollowRepository.QueryCountAsync(f =>
-            f.FollowingUserId == userId && !f.IsDeleted);
+            f.TenantId == Math.Max(0, tenantId) && f.FollowingUserId == userId && !f.IsDeleted);
         var followingCount = await _userFollowRepository.QueryCountAsync(f =>
-            f.FollowerUserId == userId && !f.IsDeleted);
+            f.TenantId == Math.Max(0, tenantId) && f.FollowerUserId == userId && !f.IsDeleted);
 
         return new UserFollowSummaryVo
         {
@@ -424,7 +518,11 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
 
         try
         {
-            var follower = await _userRepository.QueryFirstAsync(u => u.Id == followerUserId && u.IsEnable && !u.IsDeleted);
+            var follower = await _userRepository.QueryFirstAsync(u =>
+                u.Id == followerUserId &&
+                u.TenantId == Math.Max(0, tenantId) &&
+                u.IsEnable &&
+                !u.IsDeleted);
             var followerName = follower?.UserName?.Trim();
             if (string.IsNullOrWhiteSpace(followerName))
             {
@@ -589,14 +687,17 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         };
     }
 
-    private async Task<List<PostVo>> LoadDistributionCandidatesAsync()
+    private async Task<List<PostVo>> LoadDistributionCandidatesAsync(long tenantId)
     {
         var maxCandidateCount = NormalizeMaxCandidateCount(_feedDistributionOptions.MaxCandidateCount);
         var hasWindow = _feedDistributionOptions.CandidateWindowDays > 0;
         var windowStart = DateTime.Now.AddDays(-_feedDistributionOptions.CandidateWindowDays);
 
         return await _postService.QueryWithOrderAsync(
-            p => p.IsPublished && !p.IsDeleted && (!hasWindow || p.CreateTime >= windowStart),
+            p => p.TenantId == Math.Max(0, tenantId) &&
+                 p.IsPublished &&
+                 !p.IsDeleted &&
+                 (!hasWindow || p.CreateTime >= windowStart),
             p => p.CreateTime,
             OrderByType.Desc,
             maxCandidateCount);

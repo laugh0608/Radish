@@ -1,6 +1,6 @@
 # F4-K 用户屏蔽与关系交互隔离
 
-> **状态**：F4-K-A 已完成；下一顺位进入 F4-K-B 服务端权威契约
+> **状态**：F4-K-B 已完成；下一顺位进入 F4-K-C Pencil 与正式 Web
 >
 > **复核日期**：2026-07-25（Asia/Shanghai）
 >
@@ -384,7 +384,7 @@ F4-K-C 在代码实现前更新现有公开主页、圈子和消息设计源，�
 - 固定真相源、交互矩阵、通知分类、Direct 兼容、迁移、接口、页面、验证和停止线。
 - 本批不修改业务代码、migration、Pencil 或正式页面。
 
-### F4-K-B：服务端权威契约
+### F4-K-B：服务端权威契约（已完成）
 
 - 完成 Main `UserBlock` migration、可靠 Outbox 任务类型、Chat 历史回填、doctor / apply / verify 与双数据库回归。
 - 新增专属 Repository 和 `IUserInteractionPolicyService`，建立 Block / Unblock 幂等与关注事务。
@@ -392,6 +392,7 @@ F4-K-C 在代码实现前更新现有公开主页、圈子和消息设计源，�
 - 迁移旧 Direct HTTP 行为并建立兼容退役证据，不提前删除旧字段。
 - 补充稳定错误、HTTP 示例、`@radish/http`、批量性能和服务端测试。
 - 按停止线不修改 Pencil 或正式页面。
+- 完成结论与验证证据见 [F4-K-B 服务端权威契约记录](/records/f4-k-b-user-block-server-contract-2026-07-25)。
 
 ### F4-K-C：Pencil 与正式 Web
 

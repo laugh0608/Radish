@@ -62,6 +62,10 @@ public class UserFollowStatusVo
     /// <summary>目标用户是否已关注当前用户</summary>
     public bool VoIsFollower { get; set; }
 
+    public bool VoCanFollow { get; set; } = true;
+
+    public bool VoInteractionUnavailable { get; set; }
+
     /// <summary>目标用户粉丝数</summary>
     public int VoFollowerCount { get; set; }
 

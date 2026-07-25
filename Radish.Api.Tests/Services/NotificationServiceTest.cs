@@ -355,11 +355,22 @@ public sealed class NotificationServiceTest
                 It.IsAny<IReadOnlyCollection<long>>()))
             .ReturnsAsync((long _, IReadOnlyCollection<long> userIds) =>
                 recipientValid ? userIds.ToList() : []);
+        var interactionPolicy = new Mock<IUserInteractionPolicyService>();
+        interactionPolicy
+            .Setup(item => item.GetBarrierUserIdsAsync(It.IsAny<long>(), It.IsAny<long>()))
+            .ReturnsAsync([]);
+        interactionPolicy
+            .Setup(item => item.ExcludeInteractionBarriersAsync(
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<IReadOnlyCollection<long>>()))
+            .ReturnsAsync((long _, long _, IReadOnlyCollection<long> userIds) => userIds.ToList());
         var service = new NotificationService(
             repository.Object,
             userRepository.Object,
             targetResolver.Object,
             pushService.Object,
+            interactionPolicy.Object,
             new FixedTimeProvider(new DateTimeOffset(NowUtc)),
             Mock.Of<ILogger<NotificationService>>());
         return new NotificationServiceHarness(service, repository, userRepository, pushService);

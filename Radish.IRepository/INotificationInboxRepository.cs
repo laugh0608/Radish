@@ -47,6 +47,10 @@ public sealed record NotificationInboxCleanupResult(
     int DeletedNotificationCount,
     IReadOnlyList<NotificationInboxCapacityWarning> CapacityWarnings);
 
+public sealed record NotificationInboxSuppressionResult(
+    int AffectedRows,
+    IReadOnlyList<NotificationInboxRecipientChange> RecipientChanges);
+
 public interface INotificationInboxRepository
 {
     Task<IReadOnlyDictionary<string, NotificationSetting>> GetPreferencesAsync(long tenantId, long userId);
@@ -101,4 +105,10 @@ public interface INotificationInboxRepository
         DateTime nowUtc,
         int batchSize,
         int softRelationLimitPerUser);
+
+    Task<NotificationInboxSuppressionResult> SuppressBlockedActorsAsync(
+        long tenantId,
+        long userId,
+        IReadOnlyCollection<long> blockedActorUserIds,
+        DateTime nowUtc);
 }

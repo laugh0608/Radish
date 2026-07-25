@@ -11,15 +11,18 @@ namespace Radish.Api.Hubs;
 public sealed class NotificationHub : Hub
 {
     private readonly INotificationPushService _notificationPushService;
+    private readonly INotificationService _notificationService;
     private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
     private readonly ILogger<NotificationHub> _logger;
 
     public NotificationHub(
         INotificationPushService notificationPushService,
+        INotificationService notificationService,
         IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
         ILogger<NotificationHub> logger)
     {
         _notificationPushService = notificationPushService;
+        _notificationService = notificationService;
         _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
         _logger = logger;
     }
@@ -33,7 +36,7 @@ public sealed class NotificationHub : Hub
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{current.UserId}");
-        var summary = await _notificationPushService.GetInboxSummaryAsync(current.TenantId, current.UserId);
+        var summary = await _notificationService.GetInboxSummaryAsync(current.TenantId, current.UserId);
         await Clients.Caller.SendAsync("NotificationInboxChanged", new NotificationInboxChangedVo
         {
             VoRevision = summary.VoRevision,

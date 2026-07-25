@@ -55,7 +55,7 @@ public class UserFollowControllerTest
             .Setup(s => s.FollowAsync(10001, 20002, 0, "Tester"))
             .ReturnsAsync(true);
         serviceMock
-            .Setup(s => s.GetFollowStatusAsync(10001, 20002))
+            .Setup(s => s.GetFollowStatusAsync(10001, 20002, 0))
             .ReturnsAsync(new UserFollowStatusVo
             {
                 VoTargetUserId = 20002,
@@ -80,7 +80,7 @@ public class UserFollowControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetMyFollowersAsync(10001, 1, 20))
+            .Setup(s => s.GetMyFollowersAsync(10001, 0, 1, 20))
             .ReturnsAsync(new VoPagedResult<UserFollowUserVo>
             {
                 VoItems =
@@ -111,7 +111,7 @@ public class UserFollowControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetMyFollowingFeedAsync(10001, 1, 20))
+            .Setup(s => s.GetMyFollowingFeedAsync(10001, 0, 1, 20))
             .ReturnsAsync(new VoPagedResult<PostVo>
             {
                 VoItems =
@@ -144,7 +144,7 @@ public class UserFollowControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetMyDistributionFeedAsync(10001, "hot", 1, 20))
+            .Setup(s => s.GetMyDistributionFeedAsync(10001, 0, "hot", 1, 20))
             .ReturnsAsync(new VoPagedResult<PostVo>
             {
                 VoItems =

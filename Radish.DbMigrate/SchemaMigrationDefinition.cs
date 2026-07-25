@@ -42,7 +42,9 @@ internal static class SchemaMigrationRegistry
         ContentModerationCaseSchemaMigration.Instance,
         ContentModerationAppealSchemaMigration.Instance,
         ChatModerationReliefSchemaMigration.Instance,
+        UserBlockAuthoritySchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
-        NotificationDeliveryCleanupSchemaMigration.Instance
+        NotificationDeliveryCleanupSchemaMigration.Instance,
+        UserBlockNotificationSuppressionSchemaMigration.Instance
     ];
 }

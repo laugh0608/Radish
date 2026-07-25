@@ -58,6 +58,7 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
 
         EnsureUserNotificationColumns(db);
         db.CodeFirst.InitTables<UserNotification>();
+        NormalizeUserBlockSuppression(db);
         if (HasLegacySettingSchema(db))
         {
             var settingId = DatabaseIdentifierResolver.ResolveColumn(db, SettingTable, "Id")
@@ -72,6 +73,26 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
         RestoreLegacySettings(db, legacySettings, nowUtc);
         BackfillGroupsAndRelations(db, notificationTables, nowUtc);
         RebuildStates(db, nowUtc);
+    }
+
+    private static void NormalizeUserBlockSuppression(ISqlSugarClient db)
+    {
+        var column = DatabaseIdentifierResolver.ResolveColumn(
+            db,
+            UserNotificationTable,
+            nameof(UserNotification.SuppressedByUserBlock));
+        if (column == null)
+        {
+            return;
+        }
+
+        var value = db.CurrentConnectionConfig.DbType == DbType.PostgreSQL ? "FALSE" : "0";
+        var invalidCondition = db.CurrentConnectionConfig.DbType == DbType.PostgreSQL
+            ? $"{Quote(column.ColumnName)} IS NULL"
+            : $"{Quote(column.ColumnName)} IS NULL OR typeof({Quote(column.ColumnName)}) <> 'integer'";
+        db.Ado.ExecuteCommand(
+            $"UPDATE {Quote(column.TableName)} SET {Quote(column.ColumnName)}={value} " +
+            $"WHERE {invalidCondition}");
     }
 
     public IReadOnlyList<string> Diagnose(ISqlSugarClient db, IServiceProvider services)
@@ -204,7 +225,21 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
 
         var groups = db.Queryable<NotificationInboxGroup>().ToList();
         var groupById = groups.ToDictionary(group => group.Id);
-        var relations = db.Queryable<UserNotification>().ToList();
+        var relations = db.Queryable<UserNotification>()
+            .Select(relation => new UserNotification
+            {
+                Id = relation.Id,
+                TenantId = relation.TenantId,
+                UserId = relation.UserId,
+                NotificationId = relation.NotificationId,
+                InboxGroupId = relation.InboxGroupId,
+                OccurredAtUtc = relation.OccurredAtUtc,
+                IsRead = relation.IsRead,
+                ReadAt = relation.ReadAt,
+                IsDeleted = relation.IsDeleted,
+                DeletedAt = relation.DeletedAt
+            })
+            .ToList();
         var notificationById = GetNotificationTables(db)
             .SelectMany(tableName => db.Queryable<Notification>().AS(tableName).ToList())
             .ToDictionary(notification => (notification.TenantId, notification.Id));
@@ -455,7 +490,21 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
             .SelectMany(tableName => db.Queryable<Notification>().AS(tableName).ToList())
             .GroupBy(notification => new { notification.TenantId, notification.Id })
             .ToDictionary(group => (group.Key.TenantId, group.Key.Id), group => group.Single());
-        var relations = db.Queryable<UserNotification>().ToList();
+        var relations = db.Queryable<UserNotification>()
+            .Select(relation => new LegacyUserNotificationRow
+            {
+                Id = relation.Id,
+                TenantId = relation.TenantId,
+                UserId = relation.UserId,
+                NotificationId = relation.NotificationId,
+                InboxGroupId = relation.InboxGroupId,
+                OccurredAtUtc = relation.OccurredAtUtc,
+                IsRead = relation.IsRead,
+                ReadAt = relation.ReadAt,
+                IsDeleted = relation.IsDeleted,
+                DeletedAt = relation.DeletedAt
+            })
+            .ToList();
         var existingGroupIds = db.Queryable<NotificationInboxGroup>()
             .ToList()
             .Select(group => group.Id)
@@ -493,9 +542,11 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
                 CreateBy = "DbMigrate"
             };
             db.Insertable(group).ExecuteCommand();
-            relation.InboxGroupId = group.Id;
-            relation.OccurredAtUtc = notification.OccurredAtUtc;
-            db.Updateable(relation).ExecuteCommand();
+            db.Updateable<UserNotification>()
+                .SetColumns(item => item.InboxGroupId == group.Id)
+                .SetColumns(item => item.OccurredAtUtc == notification.OccurredAtUtc)
+                .Where(item => item.Id == relation.Id)
+                .ExecuteCommand();
             existingGroupIds.Add(group.Id);
         }
     }
@@ -774,5 +825,19 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
         public bool IsEnabled { get; set; }
         public bool EnableInApp { get; set; }
         public bool EnableSound { get; set; }
+    }
+
+    private sealed class LegacyUserNotificationRow
+    {
+        public long Id { get; set; }
+        public long TenantId { get; set; }
+        public long UserId { get; set; }
+        public long NotificationId { get; set; }
+        public long InboxGroupId { get; set; }
+        public DateTime OccurredAtUtc { get; set; }
+        public bool IsRead { get; set; }
+        public DateTime? ReadAt { get; set; }
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
     }
 }

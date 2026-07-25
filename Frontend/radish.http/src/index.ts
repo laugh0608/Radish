@@ -30,6 +30,16 @@ export type {
 } from './notification-contract';
 
 export type {
+  UserBlockMutationRequest,
+  DirectConversationBlockMutationRequest,
+  UserInteractionCapabilityVo,
+  UserBlockMutationVo,
+  UserBlockListItemVo,
+  UserBlockPageVo,
+  UserInteractionChangedVo,
+} from './user-block-contract';
+
+export type {
   ChatMessageSearchScope,
   SearchChannelMessagesDto,
   ChannelMessageSearchItemVo,
