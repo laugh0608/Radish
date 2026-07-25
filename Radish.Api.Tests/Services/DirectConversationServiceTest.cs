@@ -157,6 +157,30 @@ public sealed class DirectConversationServiceTest
     }
 
     [Fact]
+    public async Task SetArchivedAsync_ShouldUnarchiveCurrentParticipantsMemberState()
+    {
+        var fixture = Fixture.CreateWithConversation(DirectConversationRequestStatus.Accepted);
+        fixture.Members[0].ArchivedAt = DateTime.UtcNow.AddMinutes(-1);
+        fixture.MemberRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<ChannelMember, ChannelMember>>>(),
+                It.IsAny<Expression<Func<ChannelMember, bool>>>()))
+            .Callback<Expression<Func<ChannelMember, ChannelMember>>, Expression<Func<ChannelMember, bool>>>((update, predicate) =>
+            {
+                Assert.True(predicate.Compile()(fixture.Members[0]));
+                var values = update.Compile()(fixture.Members[0]);
+                fixture.Members[0].ArchivedAt = values.ArchivedAt;
+            })
+            .ReturnsAsync(1);
+
+        var result = await fixture.Service.SetArchivedAsync(30000, 20002, 70001, false, "Receiver");
+
+        Assert.True(result.Changed);
+        Assert.Null(fixture.Members[0].ArchivedAt);
+        Assert.False(result.Conversation.VoIsArchived);
+    }
+
+    [Fact]
     public async Task AcceptAsync_ShouldHidePendingConversationFromReceiverBeforeFirstMessage()
     {
         var fixture = Fixture.CreateWithConversation(DirectConversationRequestStatus.Pending);

@@ -283,17 +283,30 @@ public sealed class DirectConversationService : IDirectConversationService
         }
 
         var now = DateTime.UtcNow;
-        var affected = await _memberRepository.UpdateColumnsAsync(
-            item => new ChannelMember
-            {
-                ArchivedAt = archived ? now : null,
-                ModifyTime = now,
-                ModifyBy = NormalizeOperator(operatorName),
-                ModifyId = currentUserId
-            },
-            item => item.Id == member.Id &&
-                    (archived ? item.ArchivedAt == null : item.ArchivedAt != null) &&
-                    !item.IsDeleted);
+        var normalizedOperator = NormalizeOperator(operatorName);
+        var affected = archived
+            ? await _memberRepository.UpdateColumnsAsync(
+                item => new ChannelMember
+                {
+                    ArchivedAt = now,
+                    ModifyTime = now,
+                    ModifyBy = normalizedOperator,
+                    ModifyId = currentUserId
+                },
+                item => item.Id == member.Id &&
+                        item.ArchivedAt == null &&
+                        !item.IsDeleted)
+            : await _memberRepository.UpdateColumnsAsync(
+                item => new ChannelMember
+                {
+                    ArchivedAt = null,
+                    ModifyTime = now,
+                    ModifyBy = normalizedOperator,
+                    ModifyId = currentUserId
+                },
+                item => item.Id == member.Id &&
+                        item.ArchivedAt != null &&
+                        !item.IsDeleted);
 
         return await BuildMutationResultAsync(tenantId, currentUserId, channelId, affected > 0);
     }

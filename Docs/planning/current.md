@@ -8,15 +8,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-K-D 成组验收与专题关闭`
-- **产品下一顺位**：`按三账号、关系状态、Direct 生命周期、通知分类与 PC / mobile 矩阵完成用户屏蔽专题验收`
+- **工程第一顺位**：`F4-L-A 下一完整功能候选复核与权威设计`
+- **产品下一顺位**：`交叉复核匿名公开聊天、论坛作者版本恢复及当前既有模块的真实缺口，只选定一个完整专题`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
   - 2026-07-25 F4-K-A 已完成：交叉复核用户屏蔽、匿名公开聊天和论坛作者版本恢复后，选定[用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design)为唯一当前专题。设计固定 Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制、旧字段迁移、公开内容边界、正式页面、A-D 批次与停止线；下一顺位进入 F4-K-B。
   - 2026-07-25 F4-K-B 已完成：Main `UserBlock` 与 operation ledger、旧 Direct 屏蔽幂等迁移、双方关注同事务解除、统一关系策略、互动入口和通知创建 / 读取 / 实时裁剪、稳定错误、HTTP 与 `@radish/http` 契约均已落地。后端全量 `1019` 项通过、`28` 项 PostgreSQL 环境用例按配置跳过；详见 [F4-K-B 服务端权威契约记录](/records/f4-k-b-user-block-server-contract-2026-07-25)，下一顺位进入 F4-K-C。
-  - 2026-07-25 F4-K-C 已完成：公开主页、圈子、消息与本人屏蔽列表的 PC / mobile Pencil 已补齐；正式 Web 已接入服务端能力、稳定 operation key、Direct 历史只读、关系版本失效、通知对账与跨标签恢复。未启动服务或执行 Gateway smoke；详见 [F4-K-C Pencil 与正式 Web 记录](/records/f4-k-c-user-block-web-2026-07-25)，下一顺位进入 F4-K-D。
+  - 2026-07-25 F4-K-C / D 已完成并关闭专题：正式 Web 已接入公开主页、圈子、消息、通知和本人屏蔽列表；三账号 Gateway 矩阵覆盖关系、Direct 全状态、通知抑制、Outbox 失败重试、双语、PC / mobile 与恢复路径。验收修复 Direct 取消归档 SQL 谓词，临时数据残留为 `0`，六库完整性和严格 verify 通过；详见 [F4-K-D 成组验收记录](/records/f4-k-d-user-block-stage-acceptance-2026-07-25)，下一顺位进入 F4-L-A。
   - 2026-07-11 Q0-A 已完成：npm / NuGet High / Critical 清零，NuGet 审计恢复，`Dependency Security` 已纳入 Repo Quality workflow，并由用户确认配置到远程 `master` ruleset。
   - 2026-07-11 Q0-B 已完整关闭：生产性能基准、Weather、敏感配置、事务演示、测试租户写入与手动未读推送入口已删除，正常租户查询与正式通知能力保留，精确防回归契约已建立。
   - 2026-07-11 Q0-C 已完成：API JWT 启用 `radish-api` audience，完整 Claims 与成功鉴权高频日志已删除，Auth transport security 受 Development 显式配置和 Gateway 单跳 Forwarded Proto 契约约束。
@@ -200,7 +200,7 @@ Radish V1 的产品定位固定为：
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
 10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-D 批并关闭；独立申诉、部分支持、五类来源保护恢复、用户状态纠正、正式页面与六角色成组验收全部通过。
-11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成服务端权威契约、PC / mobile Pencil 与正式 Web；下一顺位进入 F4-K-D，按三账号、关系状态、Direct 生命周期、通知分类、跨标签与四主题矩阵完成成组验收并关闭专题。
+11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成 A-D 批并关闭；Main 唯一真相、关系策略、Direct 历史只读、通知抑制、正式 Web 与三账号成组验收均已通过。下一顺位进入 F4-L-A，只读复核候选并选定一个完整专题。
 
 ## 昨日事项（2026-07-18）
 
@@ -261,13 +261,13 @@ Radish V1 的产品定位固定为：
 7. `F4-J-C` 已完成两份 Pencil 设计源、正式 `/me/appeals`、通知深链、Console 申诉工作台、权限裁剪、冲突草稿与双语响应式页面。
 8. `F4-J-D` 已完成六角色、五类目标、主要申诉状态、Chat 失败恢复与双语 PC / mobile 成组验收；四项共同根因修复、临时数据清理、六库完整性和严格 migration verify 均通过，F4-J 关闭。
 9. `F4-K-A / B` 已完成候选审计、Main 权威模型与迁移、专属 Repository、统一关系策略、关注事务、Direct 兼容、Chat 互动隔离、通知抑制、稳定错误和客户端协议。
-10. `F4-K-C` 已完成公开主页、圈子、消息和 `/me/blocked` 的 PC / mobile Pencil 与正式 Web：屏蔽确认、本人列表、解除屏蔽、Direct 只读、服务端能力消费、稳定 operation key、关系版本实时 / 多标签失效、通知对账、Back / Forward、双语、键盘和四主题均已接入；未启动服务或执行 Gateway smoke。
+10. `F4-K-C / D` 已完成正式 Web 与成组验收：三账号覆盖关系和 Direct 全状态，通知抑制、Outbox 失败恢复、匿名公开内容、双语 PC / mobile、多标签、离线、Back / Forward、键盘和主题矩阵通过；取消归档共同根因已修复，临时数据清理、六库完整性与严格 verify 完成，F4-K 关闭。
 
-## 下一事项（F4-K-D）
+## 下一事项（F4-L-A）
 
-1. 使用至少三名普通用户执行 A 屏蔽 B、B 屏蔽 A、双方屏蔽、解除单边和再次屏蔽的 Gateway 成组验收。
-2. 覆盖双方关注、无 Direct、Pending / Accepted / Declined / Archived、历史只读、Reaction、Pin、阅读回执、关系型 / 系统型通知和 Outbox 失败恢复。
-3. 覆盖 `zh / en × PC / mobile`、多标签、真实离线、Back / Forward、键盘、无障碍、四主题、匿名公开内容和跨租户；完成临时数据清理、六库完整性与严格 migration verify 后关闭 F4-K。
+1. 只读复核匿名公开聊天、论坛作者版本恢复，以及规划与现有实现中仍具长期价值的功能缺口。
+2. 对候选统一核对用户价值、既有基础、权威数据、权限与隐私、迁移、正式 Web、验证成本和停止线。
+3. 只选定一个完整专题并形成权威设计与 A-D 开发批次；不并行开发候选，也不把后置项直接当成既定结论。
 
 ## 并行维护线
 
