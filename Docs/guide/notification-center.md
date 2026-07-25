@@ -1,10 +1,10 @@
 # 通知中心使用说明
 
-> **文档版本**：v1.10
+> **文档版本**：v1.11
 >
-> **最后更新**：2026-07-21
+> **最后更新**：2026-07-25
 >
-> **当前状态**：F4-B 已完成并关闭。正式 Web、Workbench、导航角标与 WebOS 复用面均使用服务端权威收件箱、摘要、偏好、结构化目标和 revision 对账；Flutter 继续只维护既有 MVP。
+> **当前状态**：F4-B 权威收件箱已完成并关闭；后续 F4-G / J / K 的文档协作、治理申诉和用户屏蔽通知契约已并入同一注册表。正式 Web、Workbench、导航角标与 WebOS 复用面均使用服务端摘要、结构化目标和 revision 对账；Flutter 继续只维护既有 MVP。
 
 ## 架构定位
 
@@ -25,6 +25,7 @@
 - 通知按服务端 `NotificationCategory` 和稳定 `Kind` 展示，不扫描标题、正文、`businessType` 或 `ExtData` 猜分类。
 - Knowledge 分类当前包含 Wiki 协作者邀请和审核结果；偏好仍由服务端注册表决定可见类型。
 - Governance 分类当前包含举报结案和账号治理状态变化；举报通知只展示精简结果，账号通知只展示动作摘要，两者都不暴露内部案件材料。
+- Governance 分类同时包含被处置用户的决定通知与申诉结果；`GovernanceDecision / GovernanceAppeal` 只导航到本人 `/me/appeals`，不暴露 Console 案件或申诉内部材料。
 - 页面支持全部分类、具体分类和仅未读筛选。
 - 点赞等高频事件由服务端形成一个通知分组，展示事件数、去重触发者数和安全摘要。
 - 列表 cursor 绑定筛选条件和 revision；cursor 过期时刷新权威第一页并明确提示，不静默拼接旧页。
@@ -60,11 +61,21 @@
 | `DocsDocument` | `/docs/:slug` |
 | `DocsAuthorDraft` | 携带文档与可选草稿 ID；服务端先复核 Owner / Accepted Editor 权限，当前消费端未识别该目标时只保留通知摘要 |
 | `GovernanceCase` | 仅在存在正式受权目标时打开 |
+| `GovernanceDecision` | `/me/appeals?case=...`，只向被处置用户返回 |
+| `GovernanceAppeal` | `/me/appeals?appeal=...`，只向申诉人返回 |
 | `None` | 保留摘要和失效原因，不渲染伪造链接 |
 
 服务端返回目标前重新检查实体状态、所有权和 ACL；目标页面仍独立鉴权。历史 `ExtData` 只承担旧记录兼容，不是新消费者的导航依据。
 
 `ContentReportResolved / UserModerationChanged` 固定使用 `None`：举报者不能通过通知进入 Console 案件，被处置用户也不能从通知反查举报者或内部证据。需要查看当前限制时重新调用治理状态接口；通知正文不是权限真相源。
+
+### 用户屏蔽与关系型通知
+
+- `CommentReplied / PostCommented / PostQuickReplied / PostLiked / CommentLiked / ChatMentioned / DirectMessageRequested / Followed` 是关系型通知。任一方向存在有效 `UserBlock` 时，创建前由统一关系策略排除接收者。
+- 屏蔽生效前已经产生的双方关系型通知由 Main 可靠任务标记 `SuppressedByUserBlock`；列表、未读数和实时推送在任务完成前还会按当前关系二次裁剪。
+- 解除屏蔽不会恢复已抑制通知，也不会补发屏蔽期间没有创建的通知。
+- Knowledge、Governance、Commerce、Growth 以及系统 / 账号安全通知不因用户屏蔽被抑制。屏蔽只处理人与人互动，不能隐藏申诉结果、资产变动或安全事件。
+- 客户端不维护“屏蔽通知类型”白名单，也不根据标题或分类猜测；是否受屏蔽影响由服务端 `NotificationDefinitionRegistry` 的稳定定义决定。
 
 ## 实时与恢复
 

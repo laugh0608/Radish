@@ -2,7 +2,7 @@
 
 > 本文定义 Radish 统一文档体系的长期边界，覆盖 **固定文档挂载**、**在线文档管理**、**正式 Web Author 协作**、**Console 审核治理** 与 **Markdown 导入导出**。
 >
-> **状态**：公开阅读、普通作者协作与 Console 审核已进入稳定维护；附件隐私与生命周期进入 F4-L
+> **状态**：公开阅读、普通作者协作与 Console 审核已进入稳定维护；Wiki 附件服务端权威契约已完成，正式 Web 认证资源加载继续收口
 >
 > **最后更新**：2026-07-25
 >
@@ -26,7 +26,7 @@
 - `radish.client` 已落地公开 `/docs` 只读阅读与正式 Web 作者入口；
 - `radish.console` 已落地 `/documents` 文档治理入口；
 - `@radish/ui` 已提供可复用的 `MarkdownEditor` 与 `MarkdownRenderer`；
-- 后端已有成熟的附件上传体系，可复用图片/文档上传能力；
+- 后端已在通用附件体系上建立 Wiki 私有默认、权威引用、动态 ACL、令牌复核与生命周期清理；
 - 公开阅读、管理员治理与 F4-G 普通作者贡献协作均已完成；当前文档系统按既定权限、草稿、审核和公开隔离边界稳定维护。
 
 统一文档系统要解决的问题主要有：
@@ -106,7 +106,7 @@
 
 - 编辑器复用 `@radish/ui` 的 `MarkdownEditor`；
 - 渲染器复用 `@radish/ui` 的 `MarkdownRenderer`；
-- 附件与图片上传复用现有 `Attachment` / `AttachmentController`；
+- 附件与图片上传复用现有 `Attachment` / `AttachmentController`，引用真值由 `WikiAttachmentReference` 承接；
 - WebOS 集成复用现有 `AppRegistry` 与窗口系统。
 - 正式 Web 作者入口和公开 `/docs` 复用 `radish.client` 的公开壳层、登录回流和 route state 机制。
 - Console 治理入口复用 `radish.console` 的路由权限、按钮权限和 `ConsolePermissions` 资源映射。
@@ -123,7 +123,7 @@
 
 ### 3.5 安全优先
 
-固定文档静态资源必须最小暴露：只开放运行时真正需要的静态资源，不直接暴露 `Docs/**/*.md` 源文件或整个目录树。
+固定文档静态资源必须最小暴露：只开放运行时真正需要的静态资源，不直接暴露 `Docs/**/*.md` 源文件或整个目录树。在线 Wiki 附件默认私有，访问必须按当前文档、草稿或 Revision 关系动态授权；上传者、管理员角色和临时令牌都不能成为绕过 Wiki ACL 的第二条路径。
 
 ## 4. 总体架构
 
@@ -156,7 +156,7 @@ Radish.Api
 └─ Wiki 模块（内部实现命名暂保留）
    ├─ WikiController
    ├─ WikiDocumentService / Authoring Service
-   ├─ WikiDocument / Draft / Collaborator / ReviewEvent / Revision
+   ├─ WikiDocument / Draft / Collaborator / ReviewEvent / Revision / WikiAttachmentReference
    ├─ 固定文档启动同步
    └─ 附件系统复用（BusinessType = Wiki）
 
@@ -296,9 +296,15 @@ Markdown 导入导出不是固定文档主存储方式，而是 **迁移桥梁**
 - 仅支持单个 `.md` / `.markdown` / `.txt` 文本文件导入；
 - 导入后生成在线文档与首个版本快照；
 - 导出仅导出单篇 Markdown，不附带资源包；
-- 附件和图片继续复用现有附件系统，`BusinessType = Wiki`。
+- 附件和图片继续复用现有附件系统，`BusinessType = Wiki`；导入、保存、审核 Apply 与回滚同步权威引用，导出仍只输出 Markdown。
 
-### 7.1 本地源与在线编辑冲突后置专题
+### 7.1 在线文档附件边界
+
+- `BusinessType=Wiki` 新附件立即私有，未绑定时只允许上传者读取和管理；文档 / 草稿正文与封面、Revision 正文分别写入 `WikiAttachmentReference`，当前引用随业务写入同步，Revision 引用只追加。
+- 当前正文按发布状态、可见性、Owner / Accepted Editor 与 `console.docs.view` 授权，草稿按协作关系与 `console.docs.review`，Revision 按协作关系与 `console.docs.view`；绑定后的 token 管理只允许 Owner 或 `console.docs.permissions`，消费时仍按当前 ACL 复核。
+- 删除、恢复、回滚和孤立清理都以权威引用为准；历史 `BusinessType=Document` 只有能被 Wiki 内容明确证明引用时才进入兼容迁移，不把通用文档附件整体收编为 Wiki。
+
+### 7.2 本地源与在线编辑冲突后置专题
 
 若后续支持“本地文件镜像文档”或“重新从本地文件导入覆盖已有在线文档”，应先回拉 [文档本地源与在线编辑冲突治理](/planning/document-local-source-conflict-governance)。
 
@@ -337,7 +343,7 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - WebOS 文档应用下历史工作台阅读和管理能力；
 - 文档三层可见性：`公开可看 / 登录可看 / 指定权限可看`；
 - 文档内链按 Slug 跳转；
-- 图片与文档附件上传；
+- 图片与文档附件私有上传、权威引用、动态读取授权与历史 Revision 生命周期保护；
 - 父级下拉选择、子孙节点禁选与同级排序建议值；
 - 基于 Node 24 原生测试运行器的前端纯逻辑回归基线。
 - 文档应用已完成浅色化与侧栏/主内容区重排，提升目录浏览与阅读空间。
@@ -350,16 +356,8 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - 已知来源类型映射为本地文案，未知来源类型显示稳定原值。文档标题、摘要、Slug、Markdown 正文、允许角色 / 权限键、修订说明、导入文件名等内容保持原文，不做自动翻译。
 - 日期与数字按当前 locale 格式化；角色数、权限数、版本数等英文数量文案使用 i18next plural 规则。
 - Client Wiki API 与 Console Wiki 治理 API 统一通过 `@radish/http` 解析，并在失败时抛出保留 `httpStatus / code / messageKey / traceId` 的 `ApiResponseError`。页面通过状态码、`Code` 或数据状态决定 not-found、冲突和权限分支，不匹配 `MessageInfo` 文本。
-- Wiki 高频失败使用稳定 `Wiki.*` Code 与 `error.wiki.*` MessageKey：参数或导入校验为 `400`，文档 / 修订不存在或不可访问为 `404`，恢复或回滚冲突为 `409`；服务端双语 `MessageInfo` 仅作安全回退。
+- Wiki 高频失败使用稳定 `Wiki.*` Code 与 `error.wiki.*` MessageKey：参数或导入校验为 `400`，文档 / 修订不存在或不可访问为 `404`，恢复或回滚冲突为 `409`；附件引用使用 `WikiAttachment.InvalidReference / ReferenceForbidden / TypeMismatch / ReferenceConflict` 与 `error.wiki_attachment.*`，资源读取拒绝统一表现为 `404`。
 - Markdown 导入 / 导出等必须使用 `apiFetch` 的场景仍需解析 JSON 错误体并保留结构化字段，不能退回独立 fetch 错误约定。
-
-### 8.4 现阶段主要缺口
-
-当前仍需继续完善的能力：
-
-- 更完整的目录治理能力，例如批量重排、拖拽排序或同级自动插槽；
-- 更完整的前端自动化回归，例如覆盖组件交互与端到端场景；
-- 正文搜索、分享与治理增强能力的后续评估；
 
 ## 9. 权限与租户策略
 
@@ -439,6 +437,7 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - 落地普通作者 Owner / Collaborator、独立工作草稿、双版本 CAS、提交 / 撤回、冲突恢复和审核时间线。
 - 落地 Console `/documents` 待审队列、正文证据、RequestChanges / Reject / Apply，并与独立 `console.docs.review`、后端资源映射和种子数据对齐。
 - 落地 `20260720_007_wiki_author_collaboration` 显式迁移、可靠通知和终态草稿正文保留清理。
+- 落地 `20260725_012_wiki_attachment_authority`，完成 Wiki 私有默认、权威引用、动态 ACL、token 复核、孤立清理和 SQLite / PostgreSQL 历史回填。
 
 ### 11.2 当前稳定口径
 
@@ -449,7 +448,7 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - 作者库必须明确展示不可编辑原因：内置固定文档显示内置只读，已删除文档显示已删除只读，不用静默隐藏编辑入口掩盖数据态；
 - Console `/documents` 承接审核与治理动作，包括 RequestChanges / Reject / Apply、发布、下架、归档、删除、恢复、访问策略、版本回滚、Markdown 导入和导出；Apply 不自动 Publish；
 - 桌面 WebOS 文档应用当前以稳定维护和历史兼容为主，不再作为新增治理能力的默认扩展入口；
-- 文档源码 `Docs/` 仍是项目说明书 / Wiki 的唯一真相源，不允许运行时回写仓库文件；
+- 文档源码 `Docs/` 仍是项目说明书 / Wiki 的唯一真相源，不允许运行时回写仓库文件；在线 Wiki 附件以 `Attachment + WikiAttachmentReference` 为真相源，上传者身份、Markdown 扫描、绝对 URL 或临时 token 都不能替代当前引用与 ACL；
 - 公开文档详情仍按“阅读入口 -> 文档正文 -> 阅读说明”的顺序组织，正文前只展示标题、摘要、访问属性、文档属性和时间线；
 - 访问属性只展示可见性与发布状态；文档属性展示 slug 与来源类型；来源类型应使用可读文案，不把 `builtin / manual / imported` 等内部枚举直接暴露给普通用户；
 - 详情路径加载完成后如需要规范化 slug，应用内替换必须保留当前标签页的来源返回状态；从 `/discover`、`/me` 或搜索结果进入详情后，返回语义不能被 canonical 替换清空；

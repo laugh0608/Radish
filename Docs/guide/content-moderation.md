@@ -1,14 +1,14 @@
 # 内容治理系统说明
 
-> **适用范围**：帖子、评论、轻回应、聊天消息、商品的用户举报，Console 案件处理，以及禁言 / 封禁当前状态
+> **适用范围**：帖子、评论、轻回应、聊天消息、商品的用户举报，Console 案件与申诉处理，以及目标处置、禁言 / 封禁和纠正后的当前状态
 >
-> **最后更新**：2026-07-21（Asia/Shanghai）
+> **最后更新**：2026-07-25（Asia/Shanghai）
 >
-> **权威设计**：[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
+> **权威设计**：[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) · [内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 
 ## 系统定位
 
-内容治理使用“举报事实 → 案件 → 证据 → 决定 → 动作 → 结果”的可追溯链路。它是人工治理系统，不是机器审核、敏感词平台、自动处罚或私聊浏览工具。
+内容治理使用“举报事实 → 案件 → 证据 → 决定 → 动作 → 结果 → 申诉 → 纠正”的可追溯链路。它是人工治理系统，不是机器审核、敏感词平台、自动处罚或私聊浏览工具。
 
 核心原则：
 
@@ -16,6 +16,8 @@
 - 举报时快照、当前复核证据和动作结果只追加，不覆盖历史依据。
 - 决定、目标处置和用户限制是三个不同事实；决定成功不等于动作已经成功。
 - 禁言 / 封禁的当前状态只读取 `UserModerationState`，不扫描旧动作流水猜测。
+- 申诉是独立聚合，不重开或改写原案件；采纳申诉也不等于纠正动作已经成功。
+- 目标恢复只撤销仍由原治理动作造成的状态，不覆盖作者、商品管理员、其他案件或后续业务操作。
 - Console 权限、目标领域 ACL 和租户边界分别校验，管理员身份不自动获得未举报私聊的浏览权。
 
 ## 角色与可见范围
@@ -27,6 +29,7 @@
 | `console.moderation.view` | 案件队列、举报聚合、证据、事件和当前用户状态 | 决定或动作写入能力 |
 | `console.moderation.review` | View 范围，加上追加复核证据、登记案件决定和目标处置 | 没有 Action 权限时不能提交用户动作或纠正动作 |
 | `console.moderation.action` | 禁言 / 封禁 / 解除和结案后用户状态纠正 | 绕过 Review、目标 ACL、受保护账号或租户边界 |
+| `console.moderation.appeal` | 查看完整申诉陈述、追加申诉证据并登记复核结果 | 仅凭 Appeal 权限执行目标恢复或用户限制解除 |
 
 ## 举报者使用说明
 
@@ -56,6 +59,9 @@
 | `ContentModerationCase` | 同一目标本处理周期的状态、决定、版本、公开结果和内部备注 |
 | `ContentModerationEvidence` | 追加式举报快照、当前目标快照、治理备注和动作结果 |
 | `ContentModerationCaseEvent` | 案件状态、证据、决定、动作请求 / 结果、通知和纠正动作时间线 |
+| `ContentModerationTargetAction` | 五类目标 Restrict / Restore 的来源、版本、幂等键和执行结果 |
+| `ContentModerationAppeal` | 被处置用户的一次申诉、版本、复核结果、纠正范围和公开说明 |
+| `ContentModerationAppealEvent` | 申诉提交、接手、证据、决定、纠正、失败重试和通知时间线 |
 | `UserModerationAction` | 禁言、封禁、解除和迁移校准的不可变动作流水 |
 | `UserModerationState` | 用户某类限制的唯一当前状态、截止时间和版本 |
 
@@ -83,11 +89,23 @@
 - 自然到期由读取时按 UTC 实时派生，不修改历史动作流水。
 - 不能对自己或受保护的 System / Admin 账号执行限制。
 
+## 申诉与处置纠正
+
+被处置用户从 `/me/appeals` 查看本人可申诉决定、资格截止时间、实际影响范围和申诉结果。每个案件对目标用户只接受一次申诉，申诉陈述为 20–1000 字；决定登记前允许撤回，但撤回后不能重新提交同案申诉。
+
+- 申诉状态使用 `Submitted / Reviewing / ReliefPending / ReliefFailed / Resolved / Withdrawn`。
+- 复核结果使用 `Upheld / PartiallyGranted / Granted`；部分采纳必须明确 `TargetContent / Mute / Ban` 中的纠正范围。
+- Post、Comment、PostQuickReply、Product 在 Main 事务内按来源与版本恢复；ChatMessage 通过可靠 Outbox 恢复消息可见性、搜索投影以及由同一治理动作移除的 Reaction / Pin。
+- 用户限制只在 `UserModerationState.SourceCaseId` 仍指向原案件时解除；后续限制、自然到期或独立纠正不会被申诉反向覆盖。
+- `ReliefPending / ReliefFailed` 都不是“已纠正”；只有所有选定纠正项成功、已被后续状态替代或确认无需执行后才能进入终态。
+- 申诉正文、举报者、证据和操作员不向普通通知、举报者或无 `console.moderation.appeal` 权限的角色披露。
+
 ## 并发、幂等与失败恢复
 
 - 案件写入提交 `expectedVersion`；版本冲突后必须刷新证据和目标状态，保留尚未提交的决定、备注和动作草稿。
+- 申诉写入提交 `expectedAppealVersion`；冲突后保留申诉或审核草稿并刷新权威详情。
 - 用户动作提交 `expectedStateVersion`，防止两个治理人员覆盖同一类当前限制。
-- 决定和纠正动作提交 8–160 字符的 `operationKey`；同键同参数回放原结果，同键异参返回冲突。
+- 决定、申诉提交 / 撤回 / 复核和纠正动作提交 8–160 字符的 `operationKey`；同键同参数回放原结果，同键异参返回冲突。
 - Main 库动作失败时整个决定事务回滚；跨 Chat 动作失败保留失败事件和可重试任务。
 - 通知失败不回滚已经生效的治理动作，由可靠任务按稳定业务键重试。
 - 目标不存在、跨租户、来源举报与目标用户不匹配、目标版本变化和案件版本冲突均返回稳定 `Code / MessageKey`，调用方不得按展示文案分支。
@@ -98,8 +116,10 @@
 
 - `ContentReportResolved`：普通优先级，发送给案件内各举报者，只包含精简 `resultCode`。
 - `UserModerationChanged`：高优先级，发送给被处置用户，只包含动作类型摘要。
+- `ContentModerationDecisionAvailable`：发送给被处置用户，结构化导航到本人 `/me/appeals` 决定入口。
+- `ContentModerationAppealUpdated`：只发送给申诉人，提供申诉状态和精简公开结果。
 
-两类通知当前使用 `TargetKind=None`，不得构造 Console 案件链接，也不得在通知正文泄露案件、举报者、内部证据、内部备注或管理员身份。账号当前限制和截止时间应通过 `GetMyModerationStatus / GetMyPublishPermission` 重新读取，不能把通知正文当作状态真相源。
+举报结案和账号状态变化通知使用 `TargetKind=None`；决定与申诉通知使用 `GovernanceDecision / GovernanceAppeal` 结构化目标，但只能进入本人私域入口。任何通知都不得构造 Console 案件链接，也不得在正文泄露举报者、内部证据、内部备注、申诉陈述或管理员身份。账号限制、申诉和纠正状态必须重新读取权威接口，不能把通知正文当作状态真相源。
 
 ## API 与权限
 
@@ -108,16 +128,21 @@
 - `POST Report`
 - `GET GetMyReports / GetMyReport/{reportPublicId}`
 - `GET GetMyModerationStatus / GetMyPublishPermission`
+- `GET GetMyAppealableDecisions / GetMyAppeals / GetMyAppeal/{appealPublicId}`
+- `POST SubmitAppeal / WithdrawAppeal`
 
 Console：
 
 - View：`GetCaseQueue / GetCase/{casePublicId} / GetCaseEvents`
 - Review：`CaptureEvidence / ReviewCase`，包括案件决定和目标处置
 - Action：带用户动作的 `ReviewCase`、`ApplyCorrectiveAction`；不替代 Review
+- View：`GetAppealQueue`，只返回调度所需的脱敏摘要
+- Appeal：`GetAppeal / GetAppealEvents / StartAppealReview / CaptureAppealEvidence / ReviewAppeal`
+- Action：`ExecuteAppealRelief`，只执行已获准的纠正范围
 
-`GetReviewQueue / Review / ApplyUserAction / GetActionLogs` 是旧消费者兼容入口。旧写入口也复用 `UserModerationState`，不得形成第二套当前状态；新增页面和客户端只使用 Case API。
+旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口已在正式页面迁移后移除。案件、申诉和动作契约统一位于 `Frontend/radish.http/src/content-moderation-contract.ts`，不得恢复旧举报单写模型或另建 fetch / axios 封装。
 
-LongId 在 HTTP 和 TypeScript 边界保持字符串。前端共用契约位于 `Frontend/radish.http/src/content-moderation-contract.ts`，不得另建 fetch / axios 封装。
+LongId 在 HTTP 和 TypeScript 边界保持字符串；普通用户只接收 `mod_... / apl_...` 等公开标识和隐私裁剪后的字段。
 
 ## 数据库与迁移
 
@@ -128,22 +153,28 @@ Main migration `20260721_008_content_moderation_case`：
 - 把历史举报快照、决定和有效用户动作映射为追加式证据、事件和唯一当前状态。
 - `doctor / verify` 检查非法枚举、时间、来源错配、开放案件唯一性、序号、状态和业务键漂移。
 
+申诉与纠正由 Main `20260725_009_content_moderation_appeal` 和 Chat `20260725_010_chat_moderation_relief` 承接：
+
+- 创建 Appeal / AppealEvent / TargetAction，并为五类目标及用户动作补治理来源。
+- 只对可证明由原案件造成的历史限制回填可恢复来源；无法唯一证明的历史状态保持不可自动恢复。
+- Chat 迁移补消息、Reaction、Pin 的来源标记和跨库恢复校验，不补造申诉、不重开案件。
+
 已有数据库必须按 `doctor → 备份 → apply → verify` 前滚；不得依赖 API 启动或 Code First 静默补结构。详细规则见[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
 ## 实现入口与验证
 
 - Controller：`Radish.Api/Controllers/ContentModerationController.cs`
 - Service：`Radish.Service/ContentModerationService.cs`、`ContentModerationService.Cases.cs`
-- Repository：`Radish.Repository/ContentModerationCaseRepository*.cs`
-- Migration：`Radish.DbMigrate/ContentModerationCaseSchemaMigration.cs`
-- HTTP 示例：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http`
-- Repository / migration 测试：`Radish.Api.Tests/Repositories/ContentModerationCase*Test.cs`
+- Repository：`Radish.Repository/ContentModerationCaseRepository*.cs`，其中申诉与纠正分别位于 `.Appeals.cs / .AppealRelief.cs`
+- Migration：`Radish.DbMigrate/ContentModerationCaseSchemaMigration.cs`、`ContentModerationAppealSchemaMigration.cs`、`ChatModerationReliefSchemaMigration.cs`
+- HTTP 示例：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http`、`Radish.Api.ContentModeration.Appeal.http`
+- Repository / migration 测试：`Radish.Api.Tests/Repositories/ContentModerationCaseRepositoryTest.cs`、`ContentModerationCaseSchemaMigrationTest.cs`
 
-修改治理契约时，至少覆盖案件聚合、重复举报、Case / State 版本、操作键回放与冲突、五类目标处置、Chat 任务重试、通知隐私、旧入口一致状态和 SQLite / PostgreSQL migration。
+修改治理契约时，至少覆盖案件聚合、重复举报、Case / Appeal / State 版本、操作键回放与冲突、五类目标限制与恢复、Chat 任务重试、申诉资格、通知隐私和 SQLite / PostgreSQL migration。
 
 ## 不做范围
 
 - 不读取未举报私聊，不复制附件二进制，不扩大管理员数据可见范围。
 - 不建设机器审核、风险评分、自动封禁、敏感词平台或推荐降权。
-- 不提供申诉、工单、举报撤回、催办或管理员对话；这些需要独立产品与权限设计。
+- 不提供二次申诉、多级仲裁、工单、举报撤回、催办、申诉附件或管理员对话。
 - 不建立反射式通用治理适配器；五类真实目标保持明确、可测试的领域边界。

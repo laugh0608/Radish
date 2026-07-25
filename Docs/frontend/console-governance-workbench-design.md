@@ -58,7 +58,7 @@
 >
 > `2026-07-21` 更新：F4-I-A 已完成[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)权威设计。`P02 / P07` 后续从孤立举报单升级为“案件 → 证据 → 决定 → 动作 → 留痕”；A 批当时按停止线等待 F4-I-B 的 Case / Evidence / State 与权限契约，未提前修改 Pencil。
 >
-> `2026-07-21` 更新：F4-I-B 已完成 Case / Evidence / Event / UserModerationState、五类目标处置、Chat 可靠任务、新案件 API 与 `console.moderation.view / review / action` 分权。F4-I-C 应先更新 `P02 / P07`，再把 `/moderation` 迁入新契约；旧 `Review / ApplyUserAction` 只作为迁移期兼容入口，消费者完成迁移后退役。
+> `2026-07-21` 更新：F4-I-B 已完成 Case / Evidence / Event / UserModerationState、五类目标处置、Chat 可靠任务、新案件 API 与 `console.moderation.view / review / action` 分权。F4-I-C 随后已更新 `P02 / P07`、迁移 `/moderation` 并在消费者清零后删除旧 `Review / ApplyUserAction` 等 HTTP 入口。
 >
 > `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
 
@@ -197,7 +197,7 @@ D14 后 `radish.console` 页面级视觉结构优先复用以下组件：
 
 | 页面 | 文件 | 当前规模 | 主要结构 | 问题类型 |
 | --- | --- | ---: | --- | --- |
-| 内容治理 | `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx` | 当前约 `1100` 行 | 旧举报审核队列、手动治理动作、治理动作日志与迁移期 URL 状态 | F4-I-C 需按案件队列、详情、证据、决定和动作拆分，避免接入新契约后突破单文件硬上限 |
+| 内容治理 | `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx`、`ModerationAppealsWorkspace.tsx` | 案件与申诉工作区分文件维护 | 案件队列、证据、决定、动作、申诉复核、纠正与事件；URL 状态支持 `view=appeals` | Case / Appeal 已使用独立工作区；新增治理能力继续按聚合边界拆分，避免主页面重新膨胀 |
 | 经验治理 | `Frontend/radish.console/src/pages/Experience/ExperienceAdminPage.tsx` | 约 `1650` 行 | 用户查询、经验概览、每日统计、异常摘要、流水、复核、调经验、冻结、等级配置 | 业务链路长、inline 样式多、治理观察和执行动作混排、配置类内容与人工复核混在同页 |
 
 `P3-8-C1` 已完成首批结构治理：

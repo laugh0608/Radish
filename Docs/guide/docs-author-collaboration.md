@@ -1,6 +1,6 @@
 # 文档作者协作与审核使用说明
 
-> 最后更新：2026-07-20
+> 最后更新：2026-07-25
 >
 > 适用入口：正式 Web `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，以及 Console `/documents`。
 
@@ -66,17 +66,28 @@ Console 审核者在 `/documents` 依次查看待审队列、正式正文与草�
 
 Markdown 正文默认不超过 `1 MiB` UTF-8 字节。页面必须保留服务端 `Code / MessageKey / TraceId`，不能通过匹配中文提示决定恢复流程。
 
-## 6. 公开性、通知与保留
+## 6. 附件与封面
+
+- Wiki 图片和文档必须以 `BusinessType=Wiki` 上传；新附件默认私有，保存前的未绑定附件只有上传者本人可读。
+- 正文使用 `attachment://{id}`，封面提交 `coverAttachmentId`。保存文档或草稿时，服务端会在同一业务事务内校验租户、业务类型、上传者 / 既有文档关系并同步权威引用；不能引用其他用户未绑定的 Wiki 附件。
+- 附件一旦绑定，不再以“谁上传”决定长期读取。Owner、Accepted Editor、审核者和已发布文档读者按当前文档 / 草稿 ACL 读取；协作者被移除、文档删除或访问策略变化后，旧页面地址和临时 token 都不能绕过新权限。
+- 历史 Revision 的附件引用追加保留，以支持受权版本回看和回滚；清理任务以 `WikiAttachmentReference` 为准，不靠扫描当前 Markdown 猜测旧附件是否仍被使用。
+- 高频失败使用 `WikiAttachment.InvalidReference / ReferenceForbidden / TypeMismatch / ReferenceConflict` 和对应 `error.wiki_attachment.*` MessageKey。页面应保留本地草稿并显示可恢复错误，不删除正文或改写附件 URL。
+
+当前服务端已经提供私有上传、引用同步、原图 / 缩略图受控读取和 token 动态复核；正式 Web 在受保护图片与下载链接上必须发起认证请求并以 Blob URL 展示，不能把 `/_assets/attachments/{id}` 当成浏览器会自动附带 Bearer 的普通公开地址。
+
+## 7. 公开性、通知与保留
 
 - 公开 `/docs` 只读取 `Published + Public` 的权威正文；Editing、Submitted、ChangesRequested、Rejected、Withdrawn 及 Applied 但未发布的内容都不会公开。
 - 邀请和审核结果进入通知中心的 Knowledge 分类，服务端使用 `DocsAuthorDraft` 结构化目标并在返回前重新检查 Owner / Accepted Editor 权限。
 - 目标失效、草稿被清理或用户失权时，通知保留安全摘要但不应提供伪造链接。
 - 活跃草稿不自动过期；Applied、Rejected、Withdrawn 的正文载荷默认保留 `90` 天后小批次清空，审核事件和正式 Revision 继续保留。
 
-## 7. 常用入口
+## 8. 常用入口
 
 - [文档系统方案](/guide/document-system)
 - [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
+- [Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)
 - [API 说明索引：文档与 Wiki](/guide/api-index)
 - [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)
 - [通知中心使用说明](/guide/notification-center)

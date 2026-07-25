@@ -22,7 +22,7 @@
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Coins | ✅ 已接入 | 工具型页面 | `console.coins.*` | ✅ 已补齐 | 用户余额查询、业务流水筛选与管理员调账已接入 |
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
-| Moderation | ✅ 服务端案件契约；页面迁移中 | 治理工作台 | `console.moderation.view/review/action` | ✅ 已补齐 | F4-I-B Case API 与权限已落地；F4-I-C 迁移案件、证据、决定、动作和事件页面 |
+| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.view/review/appeal/action` | ✅ 已补齐 | 案件、证据、决定、动作、申诉复核、纠正和事件页面均使用权威 API |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
 | Documents | ✅ 已接入 | 审核证据 + 治理工作台 | `console.docs.*` | ✅ 已补齐 | 待审队列、审核应用、独立发布、访问策略、版本和导入导出已接入 |
 | Hangfire | ✅ 已接入 | 特殊入口 / 运维外壳 | `console.hangfire.view` | ✅ 已补齐 | React 外层页承载受保护 iframe，特殊入口授权过滤器校验 |
@@ -273,17 +273,18 @@
 
 ### 当前边界
 
-- 服务端已建立 Case / Evidence / Event / UserModerationState 权威契约，五类目标统一进入案件、证据、决定、动作和留痕链路。
-- 权限拆分为 `console.moderation.view / review / action`；无 Action 权限可以登记无动作决定，不能提交用户处置载荷或纠正动作。
-- 旧举报审核、手动禁言 / 封禁与动作日志 API 只作为 F4-I-C 页面迁移前的兼容消费者，不再作为长期契约。
+- 服务端已建立 Case / Evidence / Event / TargetAction / Appeal / AppealEvent / UserModerationState 权威契约，五类目标统一进入案件、决定、动作、申诉和纠正链路。
+- 权限拆分为 `console.moderation.view / review / appeal / action`：View 读取案件与脱敏申诉队列，Review 处理原案件，Appeal 查看申诉正文并复核，Action 执行用户动作和已获准的纠正。
+- 正式页面已经迁移到 Case / Appeal API；旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口已删除，不再作为兼容消费者。
 - 当前不新增批量治理、敏感词策略或自动化处罚平台。
 
 ### 当前状态
 
 - ✅ 已按治理工作台结构承载
-- ✅ F4-I-B 已完成案件聚合、追加式证据、Case / State 版本保护、五类目标处置、可靠通知和新 Case API
-- ⏳ F4-I-C 将现有举报单页面迁移为案件队列、详情、证据、决定、动作与事件工作台，并在消费者清零后退役旧写 API
+- ✅ 案件队列、详情、追加式证据、决定、动作、事件和本人举报均已接入 Case API
+- ✅ `/moderation` 已接申诉队列、正文与原决定证据、复核、纠正动作和事件；mobile 只读，决定与纠正保持 PC 工作台
 - ✅ 案件决定和用户当前状态分别使用版本保护；同一操作键支持幂等回放，同键异参返回冲突
+- ✅ 申诉与原案件保持独立版本和时间线，`Upheld / PartiallyGranted / Granted` 不覆盖原决定；目标恢复按治理来源与当前版本防止误恢复
 - ✅ 支持从用户详情或 URL 状态带入目标用户过滤，方便用户排障与内容治理串联
 - ✅ 内部提示、筛选区、表格列弱文本和手动治理动作区已迁入 CSS 与 Console token
 - ✅ 举报状态、目标类型和治理动作按稳定字段解析中英文词元，高频失败按结构化 status / Code 分支

@@ -187,6 +187,8 @@
 
 - 公开读取接口允许匿名进入，但服务端按文档状态、删除状态、可见性、登录态和角色过滤结果。
 - 作者入口不依赖 `console.docs.create` 或 `console.docs.edit`；LongId 在 `@radish/http/wiki-authoring-contract` 中保持字符串，保存与审核分别提交草稿 / 正文期望版本，旧 `Wiki/Create / Update` HTTP 写入口不得恢复。
+- Wiki 上传统一使用 `BusinessType=Wiki` 且默认私有。正文与封面引用在文档、草稿或 Revision 事务内同步到 `WikiAttachmentReference`；读取、下载和临时令牌消费都按当前文档 / 草稿 ACL 动态授权，上传者或 `System / Admin` 身份不能绕过 Wiki 关系。
+- Markdown 中的新附件引用使用 `attachment://{id}`。未绑定附件只允许上传者读取；公开正文、作者草稿和历史 Revision 分别按各自有效引用与当前权限读取，删除、失权或访问策略变化后不能继续依赖旧 URL 或 token。
 - Console 治理接口必须走 `console.docs.*` 权限映射，权限覆盖见 [Console 权限覆盖矩阵](/guide/console-permission-coverage-matrix)。
 - 固定文档 `SourceType=builtin` 只读，不允许通过作者入口或 Console 回写仓库 `Docs/` 源文件。
 
@@ -198,13 +200,29 @@
   - `GET ContentModeration/GetMyReport/{reportPublicId}`
   - `GET ContentModeration/GetMyModerationStatus`
   - `GET ContentModeration/GetMyPublishPermission`
+  - `GET ContentModeration/GetMyAppealableDecisions`
+  - `GET ContentModeration/GetMyAppeals / GetMyAppeal/{appealPublicId}`
+  - `POST ContentModeration/SubmitAppeal / WithdrawAppeal`
 - Console 案件工作台：
   - `GetCaseQueue / GetCase/{casePublicId} / GetCaseEvents` 使用 `console.moderation.view`
   - `CaptureEvidence / ReviewCase` 使用 `console.moderation.review`；`ReviewCase` 携带用户动作时还要求 `console.moderation.action`
   - `ApplyCorrectiveAction` 使用 `console.moderation.action`
-- 旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` 仅保留到 F4-I-C 消费者迁移完成；新页面不得继续以旧举报单或 `IsActive` 动作流水作为当前状态真相源。
-- LongId 在 HTTP / TypeScript 边界保持字符串；案件、举报和动作写入使用版本与 `operationKey` 保护，稳定 `Code / MessageKey` 处理冲突和目标失效。
-- 手工回归入口：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http`；权威边界见[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)。
+- Console 申诉工作台：
+  - `GetAppealQueue` 使用 `console.moderation.view`，只返回调度摘要
+  - `GetAppeal / GetAppealEvents / StartAppealReview / CaptureAppealEvidence / ReviewAppeal` 使用 `console.moderation.appeal`
+  - `ExecuteAppealRelief` 使用 `console.moderation.action`
+- 旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` 已在正式页面迁移后移除；不得恢复旧举报单或以 `IsActive` 动作流水作为当前状态真相源。
+- LongId 在 HTTP / TypeScript 边界保持字符串；案件、举报、申诉和动作写入使用版本与 `operationKey` 保护，稳定 `Code / MessageKey` 处理冲突、资格变化和目标失效。
+- 手工回归入口：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http`、`Radish.Api.ContentModeration.Appeal.http`；系统说明见[内容治理系统说明](/guide/content-moderation)。
+
+### 用户屏蔽与关系互动
+
+- `Radish.Api.UserBlock.http`
+- `POST UserBlock/Block`：以目标 `usr_...` PublicId 和 8–160 字符 `operationKey` 建立屏蔽；同键同参数幂等回放，同键异参冲突。
+- `POST UserBlock/Unblock`：只解除当前用户自己建立的方向关系；不恢复关注、Direct 请求、历史通知或其他关系状态。
+- `GET UserBlock/GetMine?pageIndex=&pageSize=`：只返回当前用户主动屏蔽的用户，不提供“谁屏蔽了我”查询。
+
+`UserBlock` 是 Main 库唯一真相源。任一方向存在有效屏蔽时，关注、圈子关系流、Direct 请求与发送、Reaction、Pin、阅读回执及关系型通知统一按服务端 `IUserInteractionPolicyService` 阻断或裁剪；公开资料和原本公开的论坛内容不会因此删除。旧 `DirectConversation/Block/{channelId}` 与 `Unblock/{channelId}` 只作为迁移兼容转发，新消费者使用 UserBlock API。前端统一从 `@radish/http` 消费 `user-block-contract.ts` 导出的契约；目标用户只接收通用 `UserBlock.InteractionUnavailable`，不能由响应推断屏蔽方向。
 
 ### 公开榜单
 
@@ -243,6 +261,8 @@ Pet 高频失败使用稳定 `Pet.*` Code 与 `error.pet.*` MessageKey；Client 
 - `Radish.Api.Attachment.Guardrail.http`
 - `Radish.Api.Attachment.Chunk.http`
 - `Radish.Api.Attachment.Token.http`
+
+Wiki 附件的上传、正文 / 封面绑定和受控资源读取示例同时收录在 `Radish.Api.Wiki.http`。令牌不是 ACL 快照：创建、列表、撤销和消费都要重新检查当前 Wiki 管理或读取权限；公开性、协作者关系或文档状态变化会立即影响后续访问。
 
 ### 限流与边界能力
 
