@@ -9,6 +9,7 @@ import {
 import {
   buildMePath,
   ME_ASSET_TRANSACTIONS_PATH,
+  ME_APPEALS_PATH,
   ME_ASSETS_PATH,
   ME_ATTACHMENTS_PATH,
   ME_CONTENT_PATH,
@@ -37,6 +38,7 @@ const ME_ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
 const PUBLIC_FORUM_POST_PUBLIC_ID_PATTERN = /^pst_[a-f0-9]{32}$/;
 const PUBLIC_USER_PUBLIC_ID_PATTERN = /^usr_[a-f0-9]{32}$/;
 const POSITIVE_LONG_ID_PATTERN = /^[1-9]\d*$/;
+const GOVERNANCE_PUBLIC_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/u;
 
 interface AuthReturnLocation {
   pathname: string;
@@ -92,6 +94,7 @@ export function normalizeAuthReturnPath(value: string | null | undefined): strin
       || pathname === ME_ATTACHMENTS_PATH
       || pathname === ME_EXPERIENCE_PATH
       || pathname === ME_REPORTS_PATH
+      || pathname === ME_APPEALS_PATH
     ) {
       return normalizeMeReturnPath(url, pathname);
     }
@@ -442,6 +445,33 @@ function normalizeMePagedReturnPath(
   return buildMePath({ kind: 'experience', page });
 }
 
+function normalizeMeAppealsReturnPath(url: URL): string | null {
+  if (
+    !hasOnlySearchParams(url, new Set(['page', 'case', 'appeal']))
+    || hasDuplicateSearchParams(url, ['page', 'case', 'appeal'])
+  ) {
+    return null;
+  }
+
+  const page = normalizePositivePage(url.searchParams.get('page'));
+  const casePublicId = url.searchParams.get('case')?.trim() || undefined;
+  const appealPublicId = url.searchParams.get('appeal')?.trim() || undefined;
+  if (
+    !page
+    || (casePublicId && !GOVERNANCE_PUBLIC_ID_PATTERN.test(casePublicId))
+    || (appealPublicId && !GOVERNANCE_PUBLIC_ID_PATTERN.test(appealPublicId))
+  ) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'appeals',
+    page,
+    casePublicId,
+    appealPublicId,
+  });
+}
+
 function normalizeMeAttachmentsReturnPath(url: URL): string | null {
   if (
     !hasOnlySearchParams(url, new Set(['businessType', 'keyword', 'page']))
@@ -483,6 +513,10 @@ function normalizeMeReturnPath(url: URL, pathname: string): string | null {
 
   if (pathname === ME_HISTORY_PATH || pathname === ME_EXPERIENCE_PATH || pathname === ME_REPORTS_PATH) {
     return normalizeMePagedReturnPath(pathname, url);
+  }
+
+  if (pathname === ME_APPEALS_PATH) {
+    return normalizeMeAppealsReturnPath(url);
   }
 
   if (pathname === ME_ATTACHMENTS_PATH) {
@@ -736,6 +770,30 @@ export function buildMeReportsReturnPath(route: { page?: number | string } = {})
   return buildMePath({
     kind: 'reports',
     page
+  });
+}
+
+export function buildMeAppealsReturnPath(route: {
+  page?: number | string;
+  casePublicId?: string;
+  appealPublicId?: string;
+} = {}): string | null {
+  const page = route.page == null ? 1 : normalizePositivePage(String(route.page).trim());
+  const casePublicId = route.casePublicId?.trim();
+  const appealPublicId = route.appealPublicId?.trim();
+  if (
+    !page
+    || (casePublicId && !GOVERNANCE_PUBLIC_ID_PATTERN.test(casePublicId))
+    || (appealPublicId && !GOVERNANCE_PUBLIC_ID_PATTERN.test(appealPublicId))
+  ) {
+    return null;
+  }
+
+  return buildMePath({
+    kind: 'appeals',
+    page,
+    casePublicId,
+    appealPublicId,
   });
 }
 

@@ -80,6 +80,15 @@ test('Console 内容治理入口应支持用户排障深链与来源返回', () 
     }),
     '/moderation?keyword=2042219067430928385',
   );
+
+  assert.equal(
+    buildModerationPath({
+      view: 'appeals',
+      appealPublicId: 'appeal_public',
+      returnTo: '/users/2042219067430928385?tab=moderation',
+    }),
+    '/moderation?view=appeals&appeal=appeal_public&returnTo=%2Fusers%2F2042219067430928385%3Ftab%3Dmoderation',
+  );
 });
 
 test('Console 用户详情应提供内容治理排障入口并复用治理 URL helper', () => {
@@ -134,6 +143,8 @@ test('Console 应提供安全的 client 来源返回入口与 Web 主线对象�
 
 test('Console 内容治理应只消费案件 API 并保留冲突草稿', () => {
   const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
+  const appealSource = readConsoleSource('src/pages/Moderation/ModerationAppealsWorkspace.tsx');
+  const appealStyles = readConsoleSource('src/pages/Moderation/ModerationAppealsWorkspace.css');
   const apiSource = readConsoleSource('src/api/moderationApi.ts');
 
   assert.match(apiSource, /ContentModeration\/GetCaseQueue/);
@@ -145,4 +156,21 @@ test('Console 内容治理应只消费案件 API 并保留冲突草稿', () => {
   assert.doesNotMatch(apiSource, /ContentModeration\/GetActionLogs/);
   assert.match(moderationSource, /loadCase\(casePublicId, false\)/);
   assert.match(moderationSource, /conflictDraftPreserved/);
+  assert.match(apiSource, /ContentModeration\/GetAppealQueue/);
+  assert.match(apiSource, /ContentModeration\/ReviewAppeal/);
+  assert.match(apiSource, /ContentModeration\/ExecuteAppealRelief/);
+  assert.match(apiSource, /ContentModerationAppealActionResultVo/);
+  assert.match(appealSource, /CONSOLE_PERMISSIONS\.moderationAppeal/);
+  assert.match(appealSource, /CONSOLE_PERMISSIONS\.moderationAction/);
+  assert.match(appealSource, /selectedSummary[\s\S]*canAction[\s\S]*executeModerationAppealRelief/);
+  assert.match(appealSource, /actionOnlyDescription/);
+  assert.match(appealSource, /caseDetail\.voCase\.voDecision/);
+  assert.match(appealSource, /caseDetail\.voCase\.voTargetDisposition/);
+  assert.match(appealSource, /caseDetail\?\.voPublicResultCode/);
+  assert.match(appealSource, /loadAppeal\(selectedAppealId, false\)/);
+  assert.match(appealSource, /conflictDraftPreserved/);
+  assert.match(appealSource, /linkedAppealId && canAppeal/);
+  assert.match(appealSource, /appealPublicId,[\s\S]*replace: true/);
+  assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-write-panel[\s\S]*display: none/);
+  assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-desktop-action[\s\S]*display: none/);
 });

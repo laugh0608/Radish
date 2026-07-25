@@ -17,11 +17,12 @@ public partial class ContentModerationService
         ArgumentNullException.ThrowIfNull(query);
         var pageIndex = NormalizePageIndex(query.PageIndex);
         var pageSize = NormalizePageSize(query.PageSize);
+        var nowUtc = DateTime.UtcNow;
         var (items, total) = await RequireCaseRepository().QueryMyAppealableDecisionsAsync(
-            Math.Max(tenantId, 0), appellantUserId, pageIndex, pageSize, DateTime.UtcNow);
+            Math.Max(tenantId, 0), appellantUserId, pageIndex, pageSize);
         return new VoPagedResult<ContentModerationDecisionNoticeVo>
         {
-            VoItems = items.Select(MapDecisionNotice).ToList(),
+            VoItems = items.Select(item => MapDecisionNotice(item, nowUtc)).ToList(),
             VoTotal = total,
             VoPageIndex = pageIndex,
             VoPageSize = pageSize
@@ -95,7 +96,7 @@ public partial class ContentModerationService
             var aggregate = await repository.QueryAppealAggregateAsync(item.TenantId, item.PublicId);
             if (aggregate != null)
             {
-                mapped.Add(MapAppeal(aggregate, includeInternal: true));
+                mapped.Add(MapAppealQueueItem(aggregate));
             }
         }
 
@@ -290,7 +291,7 @@ public partial class ContentModerationService
         }, tenantId);
     }
 
-    public async Task<ContentModerationAppealVo> ExecuteAppealReliefAsync(
+    public async Task<ContentModerationAppealActionResultVo> ExecuteAppealReliefAsync(
         ContentModerationAppealVersionedOperationDto dto,
         long operatorUserId,
         string operatorName,
@@ -303,9 +304,15 @@ public partial class ContentModerationService
                 Math.Max(tenantId, 0), dto.AppealPublicId.Trim(), dto.ExpectedVersion,
                 dto.OperationKey.Trim(), operatorUserId, NormalizeActorName(operatorName, operatorUserId),
                 DateTime.UtcNow));
-            var mapped = await GetAppealAsync(result.Appeal.PublicId, tenantId);
-            mapped.VoIsIdempotentReplay = result.IsIdempotentReplay;
-            return mapped;
+            return new ContentModerationAppealActionResultVo
+            {
+                VoAppealPublicId = result.Appeal.PublicId,
+                VoStatus = ((ContentModerationAppealStatus)result.Appeal.Status).ToString(),
+                VoOutcome = ((ContentModerationAppealOutcome)result.Appeal.Outcome).ToString(),
+                VoGrantedScope = result.Appeal.GrantedScope,
+                VoVersion = result.Appeal.Version,
+                VoIsIdempotentReplay = result.IsIdempotentReplay
+            };
         }
         catch (ContentModerationAppealNotFoundException)
         {
@@ -348,10 +355,14 @@ public partial class ContentModerationService
         ContentModerationAppealAggregate aggregate,
         bool includeInternal)
     {
+        var targetSnapshot = ResolveSafeTargetSnapshot(aggregate.Evidence);
         return new ContentModerationAppealVo
         {
             VoAppealPublicId = aggregate.Appeal.PublicId,
             VoCasePublicId = aggregate.Case.PublicId,
+            VoTargetType = ((ContentReportTargetTypeEnum)aggregate.Case.TargetType).ToString(),
+            VoTargetSnapshotTitle = targetSnapshot?.SnapshotTitle,
+            VoTargetSnapshotSummary = targetSnapshot?.SnapshotSummary,
             VoStatus = ((ContentModerationAppealStatus)aggregate.Appeal.Status).ToString(),
             VoOutcome = ((ContentModerationAppealOutcome)aggregate.Appeal.Outcome).ToString(),
             VoEligibleScope = aggregate.Appeal.EligibleScopeSnapshot,
@@ -383,38 +394,57 @@ public partial class ContentModerationService
                 VoRequestedAt = item.RequestedAt,
                 VoCompletedAt = item.CompletedAt
             }).ToList(),
-            VoUserActions = aggregate.UserActions
-                .Select(item => MapAppealUserAction(item, includeInternal))
+            VoUserActions = includeInternal
+                ? aggregate.UserActions.Select(MapAppealUserAction).ToList()
+                : [],
+            VoUserActionSummaries = aggregate.UserActions
+                .Select(MapAppealUserActionSummary)
                 .ToList()
         };
     }
 
-    private UserModerationActionVo MapAppealUserAction(
-        UserModerationAction action,
-        bool includeInternal)
+    private static ContentModerationAppealVo MapAppealQueueItem(
+        ContentModerationAppealAggregate aggregate)
     {
-        var result = Mapper.Map<UserModerationActionVo>(action);
-        if (includeInternal)
+        return new ContentModerationAppealVo
         {
-            return result;
-        }
+            VoAppealPublicId = aggregate.Appeal.PublicId,
+            VoCasePublicId = aggregate.Case.PublicId,
+            VoTargetType = ((ContentReportTargetTypeEnum)aggregate.Case.TargetType).ToString(),
+            VoStatus = ((ContentModerationAppealStatus)aggregate.Appeal.Status).ToString(),
+            VoOutcome = ((ContentModerationAppealOutcome)aggregate.Appeal.Outcome).ToString(),
+            VoEligibleScope = aggregate.Appeal.EligibleScopeSnapshot,
+            VoGrantedScope = aggregate.Appeal.GrantedScope,
+            VoVersion = aggregate.Appeal.Version,
+            VoPublicResultCode = aggregate.Appeal.PublicResultCode,
+            VoPublicResultSummary = aggregate.Appeal.PublicResultSummary,
+            VoSubmittedAt = aggregate.Appeal.SubmittedAt,
+            VoEligibleUntilUtc = aggregate.Appeal.EligibleUntilUtc,
+            VoResolvedAt = aggregate.Appeal.ResolvedAt
+        };
+    }
 
-        result.VoOperatorUserId = 0;
-        result.VoOperatorUserName = string.Empty;
-        result.VoSourceReportId = null;
-        result.VoSourceReportTargetType = null;
-        result.VoSourceReportTargetContentId = null;
-        result.VoSourceReportTargetPostId = null;
-        result.VoSourceReportTargetCommentId = null;
-        result.VoSourceReportTargetChannelId = null;
-        result.VoSourceReportTargetMessageId = null;
-        result.VoSourceReportTargetSnapshotTitle = null;
-        result.VoSourceReportTargetSnapshotSummary = null;
-        return result;
+    private UserModerationActionVo MapAppealUserAction(UserModerationAction action)
+    {
+        return Mapper.Map<UserModerationActionVo>(action);
+    }
+
+    private static ContentModerationUserActionSummaryVo MapAppealUserActionSummary(
+        UserModerationAction action)
+    {
+        return new ContentModerationUserActionSummaryVo
+        {
+            VoActionType = ((ModerationActionTypeEnum)action.ActionType).ToString(),
+            VoResultCode = action.ResultCode,
+            VoStartTime = action.StartTime,
+            VoEndTime = action.EndTime,
+            VoCreateTime = action.CreateTime
+        };
     }
 
     private static ContentModerationDecisionNoticeVo MapDecisionNotice(
-        ContentModerationDecisionCandidate candidate)
+        ContentModerationDecisionCandidate candidate,
+        DateTime nowUtc)
     {
         var scope = ContentModerationReliefScope.None;
         if (candidate.TargetActions.Any(item =>
@@ -433,20 +463,44 @@ public partial class ContentModerationService
             scope |= ContentModerationReliefScope.Ban;
         }
 
+        var eligibleUntilUtc = candidate.Case.ResolvedAt!.Value.AddDays(30);
+        var ineligibleReason = candidate.Appeal != null
+            ? "AlreadyAppealed"
+            : nowUtc > eligibleUntilUtc
+                ? "Expired"
+                : scope == ContentModerationReliefScope.None
+                    ? "NoEnforcement"
+                    : null;
+        var targetSnapshot = ResolveSafeTargetSnapshot(candidate.Evidence);
         return new ContentModerationDecisionNoticeVo
         {
             VoCasePublicId = candidate.Case.PublicId,
             VoTargetType = ((ContentReportTargetTypeEnum)candidate.Case.TargetType).ToString(),
-            VoTargetContentId = candidate.Case.TargetContentId,
+            VoTargetSnapshotTitle = targetSnapshot?.SnapshotTitle,
+            VoTargetSnapshotSummary = targetSnapshot?.SnapshotSummary,
             VoPublicResultCode = candidate.Case.PublicResultCode,
             VoEligibleScope = (int)scope,
             VoResolvedAt = candidate.Case.ResolvedAt!.Value,
-            VoEligibleUntilUtc = candidate.Case.ResolvedAt.Value.AddDays(30),
+            VoEligibleUntilUtc = eligibleUntilUtc,
+            VoCanAppeal = ineligibleReason == null,
+            VoIneligibleReason = ineligibleReason,
             VoAppealPublicId = candidate.Appeal?.PublicId,
             VoAppealStatus = candidate.Appeal == null
                 ? null
                 : ((ContentModerationAppealStatus)candidate.Appeal.Status).ToString()
         };
+    }
+
+    private static ContentModerationEvidence? ResolveSafeTargetSnapshot(
+        IEnumerable<ContentModerationEvidence> evidence)
+    {
+        return evidence
+            .Where(item =>
+                item.AppealId == null &&
+                (item.EvidenceType == (int)ContentModerationEvidenceType.ReportSnapshot ||
+                 item.EvidenceType == (int)ContentModerationEvidenceType.CurrentTargetSnapshot))
+            .OrderByDescending(item => item.EvidenceSequence)
+            .FirstOrDefault();
     }
 
     private static BusinessException AppealNotFound() => new(

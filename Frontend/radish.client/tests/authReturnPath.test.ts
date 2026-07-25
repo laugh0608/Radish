@@ -18,6 +18,7 @@ import {
   buildMeContentReturnPath,
   buildMeExperienceReturnPath,
   buildMeHistoryReturnPath,
+  buildMeAppealsReturnPath,
   buildMeReportsReturnPath,
   buildMeReturnPath,
   buildMessagesReturnPath,
@@ -92,6 +93,8 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   );
   assert.equal(normalizeAuthReturnPath('/me/experience?page=4'), '/me/experience?page=4');
   assert.equal(normalizeAuthReturnPath('/me/reports?page=2'), '/me/reports?page=2');
+  assert.equal(normalizeAuthReturnPath('/me/appeals?case=case_public&page=2'), '/me/appeals?page=2&case=case_public');
+  assert.equal(normalizeAuthReturnPath('/me/appeals?appeal=appeal_public'), '/me/appeals?appeal=appeal_public');
   assert.equal(normalizeAuthReturnPath('/pet'), '/pet');
   assert.equal(normalizeAuthReturnPath('/pet/'), '/pet');
   assert.equal(
@@ -164,6 +167,8 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/me/experience?tab=stats'), null);
   assert.equal(normalizeAuthReturnPath('/me/reports?page=0'), null);
   assert.equal(normalizeAuthReturnPath('/me/reports?status=resolved'), null);
+  assert.equal(normalizeAuthReturnPath('/me/appeals?case=bad%2Fid'), null);
+  assert.equal(normalizeAuthReturnPath('/me/appeals?appeal=a&appeal=b'), null);
   assert.equal(normalizeAuthReturnPath('/pet?from=me'), null);
   assert.equal(normalizeAuthReturnPath('/pet#care'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384'), null);
@@ -277,6 +282,16 @@ test('个人中心正式 Web 返回路径应只构造受控子入口', () => {
   assert.equal(buildMeReportsReturnPath(), '/me/reports');
   assert.equal(buildMeReportsReturnPath({ page: 3 }), '/me/reports?page=3');
   assert.equal(buildMeReportsReturnPath({ page: '0' }), null);
+  assert.equal(buildMeAppealsReturnPath(), '/me/appeals');
+  assert.equal(
+    buildMeAppealsReturnPath({ page: 2, casePublicId: 'case_public' }),
+    '/me/appeals?page=2&case=case_public',
+  );
+  assert.equal(
+    buildMeAppealsReturnPath({ appealPublicId: 'appeal_public' }),
+    '/me/appeals?appeal=appeal_public',
+  );
+  assert.equal(buildMeAppealsReturnPath({ appealPublicId: 'bad/id' }), null);
 });
 
 test('buildPetReturnPath 应构造电子宠物登录回流路径', () => {

@@ -51,7 +51,7 @@ public interface IContentModerationService : IBaseService<ContentReport, Content
         CaptureContentModerationAppealEvidenceDto dto, long operatorUserId, string operatorName, long tenantId);
     Task<ContentModerationAppealVo> ReviewAppealAsync(
         ReviewContentModerationAppealDto dto, long operatorUserId, string operatorName, long tenantId);
-    Task<ContentModerationAppealVo> ExecuteAppealReliefAsync(
+    Task<ContentModerationAppealActionResultVo> ExecuteAppealReliefAsync(
         ContentModerationAppealVersionedOperationDto dto, long operatorUserId, string operatorName, long tenantId);
 
     /// <summary>分页获取审核队列</summary>

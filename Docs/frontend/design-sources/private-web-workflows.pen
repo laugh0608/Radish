@@ -68984,6 +68984,2529 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "P7l3P",
+      "x": 9840,
+      "y": 7392,
+      "name": "P33 - My Decisions and Appeals / Desktop",
+      "clip": true,
+      "width": 1440,
+      "height": 1080,
+      "fill": "$rx-bg-app",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": [
+        28,
+        32
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "qB3L4",
+          "name": "F02 Private Shell Header",
+          "width": "fill_container",
+          "height": 82,
+          "fill": "$rx-bg-surface",
+          "cornerRadius": 8,
+          "stroke": "$rx-border-soft",
+          "strokeWidth": 1,
+          "padding": [
+            0,
+            22
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "fvAbe",
+              "name": "Radish Brand",
+              "width": 330,
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "i1Mqnq",
+                  "name": "Brand Mark",
+                  "width": 44,
+                  "height": 44,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "KSYn4",
+                      "name": "Brand Letter",
+                      "fill": "#ffffff",
+                      "content": "R",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 23,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YCgfX",
+                  "name": "Brand Copy",
+                  "width": 250,
+                  "layout": "vertical",
+                  "gap": 1,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "SLwrU",
+                      "name": "Brand Name",
+                      "fill": "$rx-text-primary",
+                      "content": "Radish",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-heading",
+                      "fontSize": 26,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "k8VF5Q",
+                      "name": "Brand Subline",
+                      "fill": "$rx-text-secondary",
+                      "content": "正式 Web 工作台",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "h4Gv67",
+              "name": "Private Navigation",
+              "fill": "$rx-bg-muted",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "gap": 6,
+              "padding": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "WUfZG",
+                  "name": "Nav - 工作台",
+                  "cornerRadius": 999,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    15
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "zVAUV",
+                      "name": "Nav Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "layout-dashboard",
+                      "library": "lucide",
+                      "fill": "$rx-text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "U9Czc1",
+                      "name": "Nav Label",
+                      "fill": "$rx-text-secondary",
+                      "content": "工作台",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ECNLD",
+                  "name": "Nav - 我的状态",
+                  "fill": "$rx-brand-soft",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-brand-primary",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    15
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "IHPHP",
+                      "name": "Nav Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "user",
+                      "library": "lucide",
+                      "fill": "$rx-brand-primary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NzSS8",
+                      "name": "Nav Label",
+                      "fill": "$rx-brand-primary",
+                      "content": "我的状态",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CHXBC",
+                  "name": "Nav - 资产",
+                  "cornerRadius": 999,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    15
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Hf5Go",
+                      "name": "Nav Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "wallet",
+                      "library": "lucide",
+                      "fill": "$rx-text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "trPrv",
+                      "name": "Nav Label",
+                      "fill": "$rx-text-secondary",
+                      "content": "资产",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "N4VrP",
+                  "name": "Nav - 创作",
+                  "cornerRadius": 999,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    15
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "COWbN",
+                      "name": "Nav Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "pen-line",
+                      "library": "lucide",
+                      "fill": "$rx-text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "q6vJu8",
+                      "name": "Nav Label",
+                      "fill": "$rx-text-secondary",
+                      "content": "创作",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R1Frza",
+                  "name": "Nav - 消息",
+                  "cornerRadius": 999,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    15
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "logNS",
+                      "name": "Nav Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "message-circle",
+                      "library": "lucide",
+                      "fill": "$rx-text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "xcVhL",
+                      "name": "Nav Label",
+                      "fill": "$rx-text-secondary",
+                      "content": "消息",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "m20Ts",
+              "name": "Identity Actions",
+              "fill": "$rx-bg-muted",
+              "cornerRadius": 999,
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "gap": 8,
+              "padding": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "vk28q",
+                  "name": "Button - 萝卜SAMA",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "IDp0x",
+                      "name": "Button Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "badge-check",
+                      "library": "lucide",
+                      "fill": "$rx-text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hiEhM",
+                      "name": "Button Label",
+                      "fill": "$rx-text-primary",
+                      "content": "萝卜SAMA",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aFIGR",
+                  "name": "Button - 设置",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": 999,
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "AnYAw",
+                      "name": "Button Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "settings",
+                      "library": "lucide",
+                      "fill": "$rx-text-secondary"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Q4UgB",
+                      "name": "Button Label",
+                      "fill": "$rx-text-primary",
+                      "content": "设置",
+                      "lineHeight": 1.32,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 14,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "OKVKh",
+          "name": "Appeals Page Body",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "yfh9f",
+              "name": "Appeals Authority Summary",
+              "width": "fill_container",
+              "height": 142,
+              "fill": "$rx-bg-surface",
+              "cornerRadius": "$rx-radius-card",
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "gap": 18,
+              "padding": 18,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "WVFRN",
+                  "name": "Appeals Introduction",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 7,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "iEE0l",
+                      "name": "Appeals Eyebrow",
+                      "fill": "$rx-brand-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "本人治理记录",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wV0ZP",
+                      "name": "Appeals Title",
+                      "fill": "$rx-text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "治理决定与申诉",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 25,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Yn03I",
+                      "name": "Appeals Description",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "查看与本人相关的治理决定、申诉期限和纠正结果。原决定会完整保留，申诉进度以权威状态为准。",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "g56vsw",
+                  "name": "Appeals Metrics",
+                  "height": "fill_container",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "L38tvW",
+                      "name": "Metric Appealable",
+                      "width": 142,
+                      "height": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 5,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hzjD6",
+                          "name": "Metric Appealable Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "可申诉",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "vUofl",
+                          "name": "Metric Appealable Value",
+                          "fill": "$rx-brand-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "1",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 27,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "E5DZTx",
+                      "name": "Metric Reviewing",
+                      "width": 142,
+                      "height": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 5,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JYjmC",
+                          "name": "Metric Reviewing Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "审理中",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZXB7h",
+                          "name": "Metric Reviewing Value",
+                          "fill": "$rx-accent-ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "1",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 27,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oma61",
+                      "name": "Metric Closed",
+                      "width": 142,
+                      "height": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 5,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "atUaE",
+                          "name": "Metric Closed Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "已完成",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "w544K",
+                          "name": "Metric Closed Value",
+                          "fill": "$rx-accent-jade",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "2",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 27,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "gniaf",
+              "name": "Appeals Workspace",
+              "width": "fill_container",
+              "height": "fill_container",
+              "gap": 18,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "TxZNU",
+                  "name": "Decision Inbox",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": "$rx-radius-card",
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "yKjSS",
+                      "name": "Decision Inbox Header",
+                      "width": "fill_container",
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "zTJgS",
+                          "name": "Decision Inbox Copy",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "yjIrb",
+                              "name": "Decision Inbox Title",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "本人决定",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 19,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "text",
+                              "id": "QVttL",
+                              "name": "Decision Inbox Hint",
+                              "fill": "$rx-text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "按决定时间排列；状态变化不会覆盖原始决定。",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UEzRo",
+                          "name": "Decision Filters",
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "MKg2k",
+                              "name": "Filter All",
+                              "fill": "$rx-brand-soft",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "zZdGc",
+                                  "name": "Filter All Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "全部",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ZKUzi",
+                              "name": "Filter Appealable",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "oxxg3",
+                                  "name": "Filter Appealable Label",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "可申诉",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "a9V4O4",
+                              "name": "Filter Progress",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "pjCmY",
+                                  "name": "Filter Progress Label",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "处理中",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "QDu8S",
+                      "name": "Decision Post",
+                      "width": "fill_container",
+                      "fill": "$rx-brand-soft",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-brand-primary",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 9,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "uCJjY",
+                          "name": "Decision Post Header",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Ys9VM",
+                              "name": "Decision Post Title",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": 390,
+                              "content": "帖子限制 · CASE-RX-0725-A91",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 15,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ZUsaC",
+                              "name": "Decision Post Status",
+                              "fill": "$rx-bg-surface",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "hXuGe",
+                                  "name": "Decision Post Status Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "可申诉",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "KMTBm",
+                          "name": "Decision Post Meta",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "今天 10:24 · 申诉截止 8 月 1 日",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "jNStZ",
+                          "name": "Decision Post Summary",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "帖子因违反社区规范被限制公开展示。可提交一次申诉。",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PCaFn",
+                      "name": "Decision Chat",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-surface",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 9,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "d02Dsc",
+                          "name": "Decision Chat Header",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "tXUHz",
+                              "name": "Decision Chat Title",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": 390,
+                              "content": "聊天消息撤回 · CASE-RX-0723-C17",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 15,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Xxe4E",
+                              "name": "Decision Chat Status",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "J8SYGB",
+                                  "name": "Decision Chat Status Label",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "审理中",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "LRhGP",
+                          "name": "Decision Chat Meta",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "7 月 23 日 · 已于 7 月 24 日提交",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "sk3KD",
+                          "name": "Decision Chat Summary",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "申诉已受理，原消息保持不可见，等待复核结论。",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hJT3B",
+                      "name": "Decision Product",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-surface",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 9,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "TT1Wv",
+                          "name": "Decision Product Header",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "N2F5Y",
+                              "name": "Decision Product Title",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": 390,
+                              "content": "商品下架 · CASE-RX-0719-P42",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 15,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "JGZrJ",
+                              "name": "Decision Product Status",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "j3Ik7",
+                                  "name": "Decision Product Status Label",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "部分采纳",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "k0xt9",
+                          "name": "Decision Product Meta",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "7 月 19 日 · 7 月 21 日结案",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "enPbu",
+                          "name": "Decision Product Summary",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "申诉部分采纳；商品未自动恢复，原因是后续业务状态已变化。",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P9YSW",
+                      "name": "Decision Comment",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-surface",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "layout": "vertical",
+                      "gap": 9,
+                      "padding": [
+                        14,
+                        16
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "n5vUtD",
+                          "name": "Decision Comment Header",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "OcMzh",
+                              "name": "Decision Comment Title",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": 390,
+                              "content": "评论限制 · CASE-RX-0716-M08",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 15,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "rdwkj",
+                              "name": "Decision Comment Status",
+                              "fill": "$rx-bg-muted",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ptXIu",
+                                  "name": "Decision Comment Status Label",
+                                  "fill": "$rx-text-secondary",
+                                  "content": "已结束",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "cro06",
+                          "name": "Decision Comment Meta",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "7 月 16 日 · 未提出申诉",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gCAMr",
+                          "name": "Decision Comment Summary",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "申诉期限已结束，仍可查看决定依据与执行结果。",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "t0aLoS",
+                  "name": "Appeal Detail Rail",
+                  "width": 438,
+                  "height": "fill_container",
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": "$rx-radius-card",
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 13,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "xKWhn",
+                      "name": "Selected Decision Header",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "K25MOQ",
+                          "name": "Selected Decision Identity",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "i1AOx",
+                              "name": "Selected Decision Case",
+                              "fill": "$rx-text-muted",
+                              "textGrowth": "fixed-width",
+                              "width": 230,
+                              "content": "CASE-RX-0725-A91",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "800"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Q6wCEq",
+                              "name": "Selected Decision Status",
+                              "fill": "$rx-brand-soft",
+                              "cornerRadius": "$rx-radius-control",
+                              "padding": [
+                                7,
+                                11
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "YJjpw",
+                                  "name": "Selected Decision Status Label",
+                                  "fill": "$rx-brand-primary",
+                                  "content": "可申诉",
+                                  "fontFamily": "$rx-font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "800"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "GEei0",
+                          "name": "Selected Decision Title",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "帖子限制决定",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 22,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "BM4M1",
+                          "name": "Selected Decision Time",
+                          "fill": "$rx-text-muted",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "决定时间：2026 年 7 月 25 日 10:24",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ZKHZq",
+                      "name": "Decision Basis",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": "$rx-radius-card",
+                      "layout": "vertical",
+                      "gap": 7,
+                      "padding": [
+                        12,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "izTU4",
+                          "name": "Decision Basis Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "决定摘要",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "CeyQH",
+                          "name": "Decision Basis Text",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "该帖子被判定包含重复推广内容，已停止公开展示。你仍可查看本决定和申诉结果。",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yHLLl",
+                      "name": "Decision Consequence",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "i9zFCf",
+                          "name": "Decision Consequence Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "当前影响",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "H3t8A",
+                          "name": "Decision Consequence Text",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "目标类型：帖子 · 当前状态：不可公开访问 · 账号状态未受限制",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "S9kT6",
+                      "name": "Appeal Deadline",
+                      "width": "fill_container",
+                      "fill": "$rx-brand-soft",
+                      "cornerRadius": "$rx-radius-card",
+                      "stroke": "$rx-brand-primary",
+                      "strokeWidth": 1,
+                      "gap": 9,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "MFrla",
+                          "name": "Appeal Deadline Icon",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "clock-3",
+                          "library": "lucide",
+                          "fill": "$rx-brand-primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LxK6v",
+                          "name": "Appeal Deadline Text",
+                          "fill": "$rx-brand-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "剩余 7 天，可提交一次申诉",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "V9bOBt",
+                      "name": "Appeal Reason Field",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "HGXyz",
+                          "name": "Appeal Reason Label",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "申诉理由",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "AtXvq",
+                          "name": "Appeal Reason Input",
+                          "width": "fill_container",
+                          "height": 118,
+                          "fill": "$rx-bg-app",
+                          "cornerRadius": "$rx-radius-card",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "padding": 12,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "KMsgP",
+                              "name": "Appeal Reason Placeholder",
+                              "fill": "$rx-text-muted",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "说明你认为决定需要复核的事实、上下文或补充材料。提交后不可再次申诉。",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HNxWp",
+                      "name": "Appeal Expectation Field",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 7,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Z3NAvZ",
+                          "name": "Appeal Expectation Label",
+                          "fill": "$rx-text-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "期望结果",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 12,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CcEkg",
+                          "name": "Appeal Expectation Control",
+                          "width": "fill_container",
+                          "fill": "$rx-bg-app",
+                          "cornerRadius": "$rx-radius-card",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "padding": [
+                            10,
+                            12
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "F9jAaz",
+                              "name": "Appeal Expectation Value",
+                              "fill": "$rx-text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "重新复核并恢复帖子",
+                              "lineHeight": 1.35,
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "F1Zy9E",
+                              "name": "Appeal Expectation Chevron",
+                              "width": 16,
+                              "height": 16,
+                              "icon": "chevron-down",
+                              "library": "lucide",
+                              "fill": "$rx-text-muted"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xdmnY",
+                      "name": "Appeal Privacy Note",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "lUBal",
+                          "name": "Appeal Privacy Icon",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "shield-check",
+                          "library": "lucide",
+                          "fill": "$rx-accent-jade"
+                        },
+                        {
+                          "type": "text",
+                          "id": "QYJMB",
+                          "name": "Appeal Privacy Text",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "这里只展示与你有关的决定和申诉进度，不公开举报来源或内部审核备注。",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "m0ESXr",
+                      "name": "Appeal Actions",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "e34HU1",
+                          "name": "Appeal Submit Button",
+                          "width": "fill_container",
+                          "height": 42,
+                          "fill": "$rx-brand-primary",
+                          "cornerRadius": "$rx-radius-control",
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "N2z9R",
+                              "name": "Appeal Submit Label",
+                              "fill": "#ffffff",
+                              "content": "提交申诉",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 13,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EMCDX",
+                          "name": "Appeal View Target Button",
+                          "height": 42,
+                          "fill": "$rx-bg-surface",
+                          "cornerRadius": "$rx-radius-control",
+                          "stroke": "$rx-border-soft",
+                          "strokeWidth": 1,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "o6w2s",
+                              "name": "Appeal View Target Label",
+                              "fill": "$rx-text-primary",
+                              "content": "查看目标",
+                              "fontFamily": "$rx-font-body",
+                              "fontSize": 13,
+                              "fontWeight": "800"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "VB70z",
+      "x": 11400,
+      "y": 7392,
+      "name": "P34 - Mobile My Decisions and Appeals",
+      "clip": true,
+      "width": 390,
+      "height": 1020,
+      "fill": "$rx-bg-app",
+      "layout": "vertical",
+      "gap": 14,
+      "padding": [
+        0,
+        0,
+        14,
+        0
+      ],
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "frame",
+          "id": "LtbQm",
+          "name": "Status Bar",
+          "width": "fill_container",
+          "height": 62,
+          "fill": "$rx-bg-app",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "wU4XE",
+              "name": "Time",
+              "fill": "$rx-text-primary",
+              "content": "9:41",
+              "lineHeight": 1.3,
+              "fontFamily": "$rx-font-body",
+              "fontSize": 15,
+              "fontWeight": "800"
+            },
+            {
+              "type": "frame",
+              "id": "VOg4H",
+              "name": "System Icons",
+              "gap": 6,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "MwZir",
+                  "name": "Signal",
+                  "fill": "$rx-text-muted",
+                  "content": "5G",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 11,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "icon",
+                  "id": "UGPNN",
+                  "name": "Battery",
+                  "width": 14,
+                  "height": 14,
+                  "icon": "battery",
+                  "library": "lucide",
+                  "fill": "$rx-text-muted"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Sc0Mu",
+          "name": "Mobile Appeals Content",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 10,
+          "padding": [
+            0,
+            18
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "TBMew",
+              "name": "Mobile Appeals Header",
+              "width": "fill_container",
+              "height": 56,
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "nxQRN",
+                  "name": "Mobile Appeals Header Left",
+                  "gap": 9,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ucwE4",
+                      "name": "Mobile Appeals Back",
+                      "width": 34,
+                      "height": 34,
+                      "fill": "$rx-bg-surface",
+                      "cornerRadius": "$rx-radius-control",
+                      "stroke": "$rx-border-soft",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "L8Dhui",
+                          "name": "Mobile Appeals Back Icon",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "arrow-left",
+                          "library": "lucide",
+                          "fill": "$rx-text-primary"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Mu6uG",
+                      "name": "Mobile Appeals Header Copy",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "i6Nj5",
+                          "name": "Mobile Appeals Title",
+                          "fill": "$rx-text-primary",
+                          "content": "治理决定与申诉",
+                          "fontFamily": "$rx-font-heading",
+                          "fontSize": 18,
+                          "fontWeight": "800"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LTuFj",
+                          "name": "Mobile Appeals Subtitle",
+                          "fill": "$rx-text-muted",
+                          "content": "本人可见的权威进度",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pJxtT",
+                  "name": "Mobile Appeals Count",
+                  "fill": "$rx-bg-muted",
+                  "cornerRadius": "$rx-radius-control",
+                  "padding": [
+                    6,
+                    9
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "C40sX7",
+                      "name": "Mobile Appeals Count Label",
+                      "fill": "$rx-text-secondary",
+                      "content": "4 条记录",
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U8Debv",
+              "name": "Mobile Appeals Summary",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": "$rx-radius-card",
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "wG5MF",
+                  "name": "Mobile Appeals Summary Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "unX1C",
+                      "name": "Mobile Appeals Summary Title",
+                      "fill": "$rx-text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "当前进度",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 13,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "text",
+                      "id": "bz26c",
+                      "name": "Mobile Appeals Deadline",
+                      "fill": "$rx-brand-primary",
+                      "textGrowth": "fixed-width",
+                      "width": 128,
+                      "content": "最近截止：8 月 1 日",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 9,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Z6ziBK",
+                  "name": "Mobile Appeals Metrics",
+                  "width": "fill_container",
+                  "gap": 7,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "WYu7X",
+                      "name": "Mobile Metric Appealable",
+                      "width": "fill_container",
+                      "fill": "$rx-brand-soft",
+                      "cornerRadius": 7,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        8,
+                        9
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NLuu3",
+                          "name": "Mobile Metric Appealable Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "可申诉",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "wCpKw",
+                          "name": "Mobile Metric Appealable Value",
+                          "fill": "$rx-brand-primary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "1",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 20,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nvOxm",
+                      "name": "Mobile Metric Reviewing",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 7,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        8,
+                        9
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XT4xH",
+                          "name": "Mobile Metric Reviewing Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "审理中",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "s4KAtL",
+                          "name": "Mobile Metric Reviewing Value",
+                          "fill": "$rx-accent-ink",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "1",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 20,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Q81mty",
+                      "name": "Mobile Metric Closed",
+                      "width": "fill_container",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": 7,
+                      "layout": "vertical",
+                      "gap": 2,
+                      "padding": [
+                        8,
+                        9
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "PBeoD",
+                          "name": "Mobile Metric Closed Label",
+                          "fill": "$rx-text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "已完成",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TDktb",
+                          "name": "Mobile Metric Closed Value",
+                          "fill": "$rx-accent-jade",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "2",
+                          "lineHeight": 1.35,
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 20,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "OkaIj",
+              "name": "Mobile Appeals Tabs",
+              "width": "fill_container",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Ooo0V",
+                  "name": "Mobile Decisions Tab",
+                  "width": "fill_container",
+                  "height": 36,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": "$rx-radius-control",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "zXsAp",
+                      "name": "Mobile Decisions Tab Label",
+                      "fill": "#ffffff",
+                      "content": "治理决定",
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "z9mFXg",
+                  "name": "Mobile Appeals Tab",
+                  "width": "fill_container",
+                  "height": 36,
+                  "fill": "$rx-bg-surface",
+                  "cornerRadius": "$rx-radius-control",
+                  "stroke": "$rx-border-soft",
+                  "strokeWidth": 1,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "tM1uM",
+                      "name": "Mobile Appeals Tab Label",
+                      "fill": "$rx-text-secondary",
+                      "content": "我的申诉",
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 11,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TxrkV",
+              "name": "Mobile Decision Post",
+              "width": "fill_container",
+              "fill": "$rx-brand-soft",
+              "cornerRadius": "$rx-radius-card",
+              "stroke": "$rx-brand-primary",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                11,
+                12
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "eiJHx",
+                  "name": "Mobile Decision Post Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kq5Jp",
+                      "name": "Mobile Decision Post Title",
+                      "fill": "$rx-text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": 224,
+                      "content": "帖子限制决定",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "j14bh",
+                      "name": "Mobile Decision Post Status",
+                      "fill": "$rx-brand-soft",
+                      "cornerRadius": "$rx-radius-control",
+                      "padding": [
+                        6,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Uu0V5",
+                          "name": "Mobile Decision Post Status Label",
+                          "fill": "$rx-brand-primary",
+                          "content": "可申诉",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 10,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "oOIlm",
+                  "name": "Mobile Decision Post Meta",
+                  "fill": "$rx-text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "今天 10:24 · 还剩 7 天",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 9,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "RUR9r",
+                  "name": "Mobile Decision Post Summary",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "停止公开展示，可提交一次申诉。",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "FWlY2",
+              "name": "Mobile Decision Chat",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": "$rx-radius-card",
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                11,
+                12
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "zlCBC",
+                  "name": "Mobile Decision Chat Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "COPKI",
+                      "name": "Mobile Decision Chat Title",
+                      "fill": "$rx-text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": 224,
+                      "content": "聊天消息撤回",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GARB0",
+                      "name": "Mobile Decision Chat Status",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": "$rx-radius-control",
+                      "padding": [
+                        6,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "R2VCv",
+                          "name": "Mobile Decision Chat Status Label",
+                          "fill": "$rx-text-secondary",
+                          "content": "审理中",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 10,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "YkLZC",
+                  "name": "Mobile Decision Chat Meta",
+                  "fill": "$rx-text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "7 月 23 日 · 已提交",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 9,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "bHVoL",
+                  "name": "Mobile Decision Chat Summary",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "已受理，等待复核结论。",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RjmE1",
+              "name": "Mobile Decision Product",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": "$rx-radius-card",
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                11,
+                12
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "A7idUT",
+                  "name": "Mobile Decision Product Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "M0DiE4",
+                      "name": "Mobile Decision Product Title",
+                      "fill": "$rx-text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": 224,
+                      "content": "商品下架决定",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ld2JE",
+                      "name": "Mobile Decision Product Status",
+                      "fill": "$rx-bg-muted",
+                      "cornerRadius": "$rx-radius-control",
+                      "padding": [
+                        6,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "QHb6t",
+                          "name": "Mobile Decision Product Status Label",
+                          "fill": "$rx-text-secondary",
+                          "content": "部分采纳",
+                          "fontFamily": "$rx-font-body",
+                          "fontSize": 10,
+                          "fontWeight": "800"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "b2H9D",
+                  "name": "Mobile Decision Product Meta",
+                  "fill": "$rx-text-muted",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "7 月 21 日结案",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 9,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "HuElB",
+                  "name": "Mobile Decision Product Summary",
+                  "fill": "$rx-text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "部分采纳，后续业务变化阻止自动恢复。",
+                  "lineHeight": 1.35,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "sDPZD",
+              "name": "Mobile Selected Appeal Action",
+              "width": "fill_container",
+              "fill": "$rx-bg-surface",
+              "cornerRadius": "$rx-radius-card",
+              "stroke": "$rx-border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "v0Zonb",
+                  "name": "Mobile Selected Appeal Notice",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Lna9r",
+                      "name": "Mobile Selected Appeal Notice Icon",
+                      "width": 16,
+                      "height": 16,
+                      "icon": "shield-check",
+                      "library": "lucide",
+                      "fill": "$rx-accent-jade"
+                    },
+                    {
+                      "type": "text",
+                      "id": "ELpkN",
+                      "name": "Mobile Selected Appeal Notice Text",
+                      "fill": "$rx-text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "举报来源与内部审核备注不会在此展示。",
+                      "lineHeight": 1.35,
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 10,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OIsFa",
+                  "name": "Mobile Appeal Primary Button",
+                  "width": "fill_container",
+                  "height": 40,
+                  "fill": "$rx-brand-primary",
+                  "cornerRadius": "$rx-radius-control",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "s3Cjc",
+                      "name": "Mobile Appeal Primary Label",
+                      "fill": "#ffffff",
+                      "content": "查看决定并提交申诉",
+                      "fontFamily": "$rx-font-body",
+                      "fontSize": 12,
+                      "fontWeight": "800"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Q1d2eI",
+          "name": "Mobile Bottom Tab",
+          "width": 358,
+          "height": 64,
+          "fill": "#fbf7f0cc",
+          "cornerRadius": 999,
+          "stroke": "$rx-border-soft",
+          "strokeWidth": 1,
+          "gap": 4,
+          "padding": 6,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "r4rNwN",
+              "name": "Tab - 工作台",
+              "width": 64,
+              "height": 52,
+              "fill": "#00000000",
+              "cornerRadius": 999,
+              "layout": "vertical",
+              "gap": 2,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "OC809",
+                  "name": "Tab Icon",
+                  "width": 19,
+                  "height": 19,
+                  "icon": "house",
+                  "library": "lucide",
+                  "fill": "$rx-text-muted"
+                },
+                {
+                  "type": "text",
+                  "id": "z9MRs",
+                  "name": "Tab Label",
+                  "fill": "$rx-text-muted",
+                  "content": "工作台",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cQu5h",
+              "name": "Tab - 资产",
+              "width": 64,
+              "height": 52,
+              "fill": "#00000000",
+              "cornerRadius": 999,
+              "layout": "vertical",
+              "gap": 2,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "Z8lulf",
+                  "name": "Tab Icon",
+                  "width": 19,
+                  "height": 19,
+                  "icon": "wallet",
+                  "library": "lucide",
+                  "fill": "$rx-text-muted"
+                },
+                {
+                  "type": "text",
+                  "id": "OoNvj",
+                  "name": "Tab Label",
+                  "fill": "$rx-text-muted",
+                  "content": "资产",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ErAvv",
+              "name": "Tab - 创作",
+              "width": 64,
+              "height": 52,
+              "fill": "#00000000",
+              "cornerRadius": 999,
+              "layout": "vertical",
+              "gap": 2,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "BnfcG",
+                  "name": "Tab Icon",
+                  "width": 19,
+                  "height": 19,
+                  "icon": "pen-line",
+                  "library": "lucide",
+                  "fill": "$rx-text-muted"
+                },
+                {
+                  "type": "text",
+                  "id": "Gz7EM",
+                  "name": "Tab Label",
+                  "fill": "$rx-text-muted",
+                  "content": "创作",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ppzkr",
+              "name": "Tab - 消息",
+              "width": 64,
+              "height": 52,
+              "fill": "#00000000",
+              "cornerRadius": 999,
+              "layout": "vertical",
+              "gap": 2,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "XvruN",
+                  "name": "Tab Icon",
+                  "width": 19,
+                  "height": 19,
+                  "icon": "message-circle",
+                  "library": "lucide",
+                  "fill": "$rx-text-muted"
+                },
+                {
+                  "type": "text",
+                  "id": "r6zsDS",
+                  "name": "Tab Label",
+                  "fill": "$rx-text-muted",
+                  "content": "消息",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "800"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "zWr3w",
+              "name": "Tab - 我的",
+              "width": 64,
+              "height": 52,
+              "fill": "$rx-brand-soft",
+              "cornerRadius": 999,
+              "layout": "vertical",
+              "gap": 2,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "G6MTD",
+                  "name": "Tab Icon",
+                  "width": 19,
+                  "height": 19,
+                  "icon": "user",
+                  "library": "lucide",
+                  "fill": "$rx-brand-primary"
+                },
+                {
+                  "type": "text",
+                  "id": "HmO5o",
+                  "name": "Tab Label",
+                  "fill": "$rx-brand-primary",
+                  "content": "我的",
+                  "lineHeight": 1.3,
+                  "fontFamily": "$rx-font-body",
+                  "fontSize": 10,
+                  "fontWeight": "800"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {

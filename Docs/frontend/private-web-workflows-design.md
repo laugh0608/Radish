@@ -36,7 +36,9 @@
 >
 > 更新：2026-07-20（Asia/Shanghai）：F4-G 已把 `P18 / P19 / P20` 更新为 Owner / Collaborator、共享工作草稿、审核状态、冲突恢复和正式 Revision 边界，并补齐同结构 mobile 作者任务流；普通作者不再直接写正式正文或执行发布。
 >
-> 状态：设计源 `P01-P30` 与 Docs 作者协作扩展已完成代码和成组验收；后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
+> 更新：2026-07-25（Asia/Shanghai）：F4-J-C 已新增 `P33 / P34` 本人决定与申诉 PC / mobile 画板，并落地 `/me/appeals`。页面保留历史决定回看、申诉资格、本人陈述、撤回、公开结果和处置纠正状态；内部备注、治理证据和管理员事件不进入本人视图。
+>
+> 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；治理申诉的 Gateway PC / mobile 成组验收进入 F4-J-D，后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
 
 ## 设计源
 
@@ -78,6 +80,8 @@ Docs/frontend/design-sources/private-web-workflows.pen
 | `P28 - Mobile Circle` | 移动端 `/circle`，关注动态和关系链 |
 | `P29 - Mobile Pet` | 移动端 `/pet`，宠物状态、照护动作和状态流水 |
 | `P30 - Mobile Author` | 移动端 `/forum/compose`、`/docs/mine`、`/docs/edit/:id` 的继续创作入口 |
+| `P33 - My Decisions and Appeals / Desktop` | `/me/appeals` 本人决定、申诉资格、陈述提交、撤回、结果与纠正状态 |
+| `P34 - Mobile My Decisions and Appeals` | 移动端 `/me/appeals` 决定列表、申诉详情与受限动作单列流程 |
 
 ## 目标
 

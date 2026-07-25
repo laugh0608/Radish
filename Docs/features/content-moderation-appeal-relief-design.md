@@ -1,6 +1,6 @@
 # F4-J 内容治理申诉与处置纠正
 
-> **状态**：F4-J-A / B 已完成；下一顺位进入 F4-J-C Pencil 与正式页面
+> **状态**：F4-J-A / B / C 已完成；下一顺位进入 F4-J-D 成组验收与专题关闭
 >
 > **复核日期**：2026-07-25（Asia/Shanghai）
 >
@@ -234,7 +234,7 @@ F4-I 已经让治理人员可以汇总举报、保存证据、登记决定并真
 
 目标已经被后续修改、用户限制已经到期或被新动作替代，不阻止提交申诉；这些事实影响纠正结果，但不剥夺对原决定的复核权。
 
-`GetMyAppealableDecisions` 返回服务端派生的 `voEligibleUntilUtc / voEligibleScopes / voIneligibleReason`。前端不得自行按本地时间或目标状态猜测资格。
+`GetMyAppealableDecisions` 返回服务端派生的 `voEligibleUntilUtc / voEligibleScope / voCanAppeal / voIneligibleReason`。前端不得自行按本地时间或目标状态猜测资格；目标只返回从案件证据裁剪的安全标题 / 摘要，不返回目标 LongId 或由前端拼接详情路径。
 
 ### 7.2 状态转换
 
@@ -330,16 +330,18 @@ Chat 恢复不通过 Main 直接连接 Chat 库。可靠任务必须包含 `Tena
 
 不返回 LongId、举报者、证据正文、内部备注、操作员、用户动作的内部原因或其他 Case。
 
+Mute / Ban 及其纠正结果通过专用公开摘要返回，只包含动作类型、稳定结果码和时间；不得复用包含动作 ID、目标用户 ID、内部原因或操作员的 Console `UserModerationActionVo`。
+
 ### 9.2 Console API
 
 View：
 
 - `GET GetAppealQueue`
-- `GET GetAppeal/{appealPublicId}`
-- `GET GetAppealEvents`
 
 Appeal：
 
+- `GET GetAppeal/{appealPublicId}`
+- `GET GetAppealEvents`
 - `POST StartAppealReview`
 - `POST CaptureAppealEvidence`
 - `POST ReviewAppeal`
@@ -347,7 +349,8 @@ Appeal：
 Action：
 
 - `POST ExecuteAppealRelief`
-- `POST RetryAppealRelief`
+
+`GetAppealQueue` 只返回调度所需的公开标识、状态、范围、版本与时间，不返回 `Statement / InternalRemark / Events / TargetActions / UserActions`。`ExecuteAppealRelief` 只返回独立 `ContentModerationAppealActionResultVo`，不得通过写入响应向 Action-only 角色泄露申诉正文或内部复核信息；同时具备 Appeal 权限的客户端执行后重新读取完整详情。重试纠正复用该入口的版本与幂等契约，不维护第二个 Retry HTTP 入口。
 
 所有 LongId 在 HTTP / TypeScript 边界保持字符串。前端契约继续放在 `@radish/http` 的内容治理模块，不新增 fetch / axios 封装。
 
@@ -461,7 +464,7 @@ F4-J-C 必须先更新 Pencil，再实现正式页面。F4-J-A / B 不提前修�
 - 增加权限种子、稳定错误、HTTP 示例、`@radish/http` 契约和服务端测试。
 - 按停止线不修改 Pencil 或正式页面。
 
-### F4-J-C：Pencil 与正式页面
+### F4-J-C：Pencil 与正式页面（已完成）
 
 - 更新 `/me/appeals` PC / mobile 设计源和 Console `P02 / P07` 申诉工作台。
 - 实现本人决定 / 申诉页、通知深链、提交 / 撤回、状态与纠正结果。

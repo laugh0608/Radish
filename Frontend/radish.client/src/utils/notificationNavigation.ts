@@ -38,6 +38,16 @@ function buildGovernanceTarget(caseId: string): string {
   return `/console/moderation?${search.toString()}`;
 }
 
+function buildGovernanceDecisionTarget(casePublicId: string): string {
+  const search = new URLSearchParams({ case: casePublicId });
+  return `/me/appeals?${search.toString()}`;
+}
+
+function buildGovernanceAppealTarget(appealPublicId: string): string {
+  const search = new URLSearchParams({ appeal: appealPublicId });
+  return `/me/appeals?${search.toString()}`;
+}
+
 export function resolveWebNotificationNavigation(
   target: NotificationTargetVo | null | undefined,
 ): NotificationWebNavigationTarget | null {
@@ -114,6 +124,18 @@ export function resolveWebNotificationNavigation(
       const caseId = normalizePositiveIntegerString(target.voGovernanceCaseId);
       return caseId
         ? { surface: 'console', href: buildGovernanceTarget(caseId) }
+        : null;
+    }
+    case 'GovernanceDecision': {
+      const casePublicId = normalizeOpaqueIdentifier(target.voGovernanceCasePublicId);
+      return casePublicId
+        ? { surface: 'web', href: buildGovernanceDecisionTarget(casePublicId) }
+        : null;
+    }
+    case 'GovernanceAppeal': {
+      const appealPublicId = normalizeOpaqueIdentifier(target.voGovernanceAppealPublicId);
+      return appealPublicId
+        ? { surface: 'web', href: buildGovernanceAppealTarget(appealPublicId) }
         : null;
     }
   }

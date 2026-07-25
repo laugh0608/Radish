@@ -1,10 +1,10 @@
 # Console 治理工作台设计端点
 
-> 状态：`P00-P18` 设计与 Console 首轮视觉 / 交互治理已收口；文档治理 `P11 / P16` 已承接待审队列，内容治理服务端 Case / Evidence / State 与权限契约已完成，下一批更新 `P02 / P07` 并迁移正式案件工作台；移动 Console 继续只作为响应式管理后台参考
+> 状态：`P00-P18` 设计与 Console 首轮视觉 / 交互治理已收口；`P02 / P07` 已承接内容治理案件与申诉复核工作台，正式页面已完成 Case / Evidence / Appeal / Relief 契约迁移；移动 Console 继续只作为响应式只读管理后台参考
 >
 > 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 最近更新：2026-07-21（Asia/Shanghai）
+> 最近更新：2026-07-25（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
 >
@@ -59,6 +59,8 @@
 > `2026-07-21` 更新：F4-I-A 已完成[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)权威设计。`P02 / P07` 后续从孤立举报单升级为“案件 → 证据 → 决定 → 动作 → 留痕”；A 批当时按停止线等待 F4-I-B 的 Case / Evidence / State 与权限契约，未提前修改 Pencil。
 >
 > `2026-07-21` 更新：F4-I-B 已完成 Case / Evidence / Event / UserModerationState、五类目标处置、Chat 可靠任务、新案件 API 与 `console.moderation.view / review / action` 分权。F4-I-C 应先更新 `P02 / P07`，再把 `/moderation` 迁入新契约；旧 `Review / ApplyUserAction` 只作为迁移期兼容入口，消费者完成迁移后退役。
+>
+> `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
 
 ## 目标
 
@@ -91,12 +93,12 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 | --- | --- | --- |
 | `P00` | `Console Shell Common Components` | 公共 Console 壳层规范：`ConsoleShell`、`ConsoleSidebar`、`ConsoleTopbar`、`PageToolbar`、`MobileShell` |
 | `P01` | `Console Shell Foundation - Layout System` | Console 专用纸感壳层、侧栏、84 高命令栏、指标、表格样板、动作层级和状态槽 |
-| `P02` | `Console Content Moderation - Review Desk` | 内容审核队列、目标证据、治理动作和最近留痕三栏工作台 |
+| `P02` | `Console Content Moderation - Cases and Appeals Desk` | 案件 / 申诉队列、目标与原决定证据、复核动作、纠正执行和事件留痕工作台 |
 | `P03` | `Console Experience Governance - Ledger Desk` | 经验观察候选、用户摘要、趋势证据、流水定位和复核动作 |
 | `P04` | `Console Governance Overview - Dispatch Center` | 文档、内容、经验等跨模块治理负载和今日分派中心；完整内部调度中心后置 |
 | `P05` | `Console Table CRUD - User Management` | 高频对象管理页，保留工具条、表格和选中对象摘要侧栏 |
 | `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面，采用分组导航、设置列和影响范围侧栏 |
-| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核单列流程、纸感状态槽和底部 tab |
+| `P07` | `Mobile Content Moderation - Appeal Read-only Flow` | 移动端申诉队列、公开摘要与权限说明只读流程；写操作回到桌面工作台 |
 | `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验复核单列流程、趋势 / 流水和底部 tab |
 | `P09` | `Console Full Navigation & Permission IA` | 真实 Console 路由分组、功能覆盖矩阵和权限信息架构 |
 | `P10` | `Console Commerce Operations - Products & Orders` | 商品、订单、胡萝卜等交易 / 资产运营代表页 |

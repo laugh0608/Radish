@@ -17,13 +17,11 @@ public sealed partial class ContentModerationCaseRepository
             long tenantId,
             long appellantUserId,
             int pageIndex,
-            int pageSize,
-            DateTime nowUtc)
+            int pageSize)
     {
         return await ExecuteDbOperationAsync(async () =>
         {
             RefAsync<int> totalCount = 0;
-            var earliestResolvedAt = nowUtc.Subtract(AppealWindow);
             var cases = await DbProtectedClient.Queryable<ContentModerationCase>()
                 .Where(item =>
                     item.TenantId == tenantId &&
@@ -31,7 +29,6 @@ public sealed partial class ContentModerationCaseRepository
                     item.Status == (int)ContentModerationCaseStatus.Resolved &&
                     item.Decision == (int)ContentModerationDecision.Violation &&
                     item.ResolvedAt != null &&
-                    item.ResolvedAt >= earliestResolvedAt &&
                     !item.IsDeleted)
                 .Where(item =>
                     SqlFunc.Subqueryable<ContentModerationTargetAction>()
@@ -63,6 +60,15 @@ public sealed partial class ContentModerationCaseRepository
                     item.AppellantUserId == appellantUserId &&
                     caseIds.Contains(item.CaseId))
                 .ToListAsync();
+            var evidence = await DbProtectedClient.Queryable<ContentModerationEvidence>()
+                .Where(item =>
+                    item.TenantId == tenantId &&
+                    caseIds.Contains(item.CaseId) &&
+                    item.AppealId == null &&
+                    (item.EvidenceType == (int)ContentModerationEvidenceType.ReportSnapshot ||
+                     item.EvidenceType == (int)ContentModerationEvidenceType.CurrentTargetSnapshot))
+                .OrderBy(item => item.EvidenceSequence)
+                .ToListAsync();
             var targetActions = await DbProtectedClient.Queryable<ContentModerationTargetAction>()
                 .Where(item => item.TenantId == tenantId && caseIds.Contains(item.CaseId))
                 .OrderBy(item => item.CreateTime)
@@ -75,6 +81,7 @@ public sealed partial class ContentModerationCaseRepository
             var data = cases.Select(item => new ContentModerationDecisionCandidate(
                 item,
                 appealByCaseId.GetValueOrDefault(item.Id),
+                evidence.Where(snapshot => snapshot.CaseId == item.Id).ToList(),
                 targetActions.Where(action => action.CaseId == item.Id).ToList(),
                 userActions.Where(action => action.CaseId == item.Id).ToList())).ToList();
             return (data, totalCount.Value);

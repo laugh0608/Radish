@@ -34,6 +34,8 @@ import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
+import { ModerationAppealsWorkspace } from './ModerationAppealsWorkspace';
+import { buildModerationPath } from './moderationPageUrlState';
 import './index.css';
 import '../adminFeature.css';
 
@@ -132,7 +134,7 @@ const resolveUserStateVersion = (
   return detail.voUserStates.find((item) => item.voPolicyType === policyType)?.voVersion ?? 0;
 };
 
-export const ModerationPage = () => {
+const ModerationCasesWorkspace = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -446,6 +448,9 @@ export const ModerationPage = () => {
                 {t('moderation.backToSource')}
               </Button>
             ) : null}
+            <Button onClick={() => navigate(buildModerationPath({ view: 'appeals', returnTo }))}>
+              {t('moderation.case.openAppeals')}
+            </Button>
             <Button
               icon={<ReloadOutlined />}
               disabled={loadingQueue || loadingDetail}
@@ -874,4 +879,20 @@ export const ModerationPage = () => {
       </section>
     </div>
   );
+};
+
+export const ModerationPage = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
+
+  if (searchParams.get('view') === 'appeals') {
+    return (
+      <ModerationAppealsWorkspace
+        onOpenCases={() => navigate(buildModerationPath({ returnTo }))}
+      />
+    );
+  }
+
+  return <ModerationCasesWorkspace />;
 };

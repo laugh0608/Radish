@@ -8,8 +8,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-J-C 内容治理申诉 Pencil 与正式页面`
-- **产品下一顺位**：`建立本人决定 / 申诉页、通知深链和 Console 申诉工作台`
+- **工程第一顺位**：`F4-J-D 内容治理申诉成组验收与专题关闭`
+- **产品下一顺位**：`覆盖六角色、五类目标、申诉状态机、纠正失败恢复与双语多主题正式路径`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
@@ -106,6 +106,7 @@
   - 2026-07-25 F4-I-D 已完成并关闭专题：五种角色、五类目标、聚合 / 并发 / 幂等、目标变化、用户治理状态、Chat 跨库失败 / 重试、`zh / en × PC / mobile` 和四主题代表矩阵均已通过；验收发现的联表表达式、结果码和异步异常传播契约已按共同根因修正。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-I-D 成组验收记录](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25)，工程第一顺位进入 F4-J-A 候选复核与权威设计。
   - 2026-07-25 F4-J-A 已完成：交叉复核治理申诉、圈子全局屏蔽、公开聊天和论坛作者回滚后，选定[内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)为唯一当前专题。设计固定独立 Appeal / Event / TargetAction、原案件不可变、一次申诉、部分采纳、五类目标对称恢复、用户状态来源保护、独立权限、Main / Chat 迁移、正式页面、A-D 批次与停止线；下一顺位进入 F4-J-B。
   - 2026-07-25 F4-J-B 已完成服务端权威契约：Main / Chat migration、独立 Appeal / Event / TargetAction、本人决定与一次申诉、部分采纳、五类来源保护恢复、Mute / Ban 纠正、Chat 可靠任务、独立权限、通知和 HTTP / `@radish/http` 契约均已落地。后端全量 `991` 项通过、`26` 项 PostgreSQL 环境用例按配置跳过；详见 [F4-J-B 服务端权威契约记录](/records/f4-j-b-content-moderation-appeal-server-contract-2026-07-25)，下一顺位进入 F4-J-C。
+  - 2026-07-25 F4-J-C 已完成 Pencil 与正式页面：`/me/appeals` PC / mobile 决定与申诉页、组件内存陈述草稿、提交 / 撤回、超期保留、通知深链、状态与纠正摘要已落地；Console 在既有 `/moderation` 内增加申诉队列、受权详情、原案件证据、复核与纠正，mobile 固定只读。View 队列服务端同步裁剪敏感详情，冲突刷新保留草稿；详见 [F4-J-C 正式页面记录](/records/f4-j-c-content-moderation-appeal-web-workspace-2026-07-25)，下一顺位进入 F4-J-D。
 
 ## V1 产品与发布范围
 
@@ -200,7 +201,7 @@ Radish V1 的产品定位固定为：
 7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 的 A-D 批已完成并关闭；Owner / Collaborator / Unauthorized / Reviewer、PC / mobile、中英文、冲突、失权、Apply、独立 Publish、公开隔离与临时数据清理均已通过。
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
-10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A 批候选审计与权威设计；下一顺位进入 B 批 Main / Chat migration、申诉聚合、目标动作来源、五类恢复、用户状态纠正、可靠任务与 API 契约。
+10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-C 批设计、服务端契约、Pencil 与正式页面；下一顺位进入 D 批六角色、五类目标、失败恢复与正式路径成组验收。
 
 ## 昨日事项（2026-07-18）
 
@@ -258,13 +259,14 @@ Radish V1 的产品定位固定为：
 4. 临时业务数据、通知、授权、作业和审计记录已清理；六库完整性、DbMigrate doctor / verify、全量后端与前端静态门禁通过。
 5. `F4-J-A` 已完成四候选同口径审计并选定内容治理申诉与处置纠正；原案件不可变、独立申诉复核、目标动作来源、五类恢复、用户状态纠正、权限、迁移和 A-D 批次已经固定。
 6. `F4-J-B` 已完成 Main / Chat 迁移、独立申诉聚合、五类来源保护恢复、用户状态纠正、可靠任务、权限、通知与服务端契约。
+7. `F4-J-C` 已完成两份 Pencil 设计源、正式 `/me/appeals`、通知深链、Console 申诉工作台、权限裁剪、冲突草稿与双语响应式页面。
 
-## 下一事项（F4-J-C）
+## 下一事项（F4-J-D）
 
-1. 先更新 `/me/appeals` PC / mobile 与 Console `P02 / P07` Pencil 设计源，固定决定列表、申诉详情、部分采纳和动作状态的信息层级。
-2. 实现本人决定 / 申诉页、提交 / 撤回、状态与纠正结果，并接通 Decision / Appeal 通知深链。
-3. 在既有 `/moderation` 内实现申诉队列、受权详情、复核决定和 PC 动作执行；mobile 保持只读。
-4. 完成 View / Appeal / Action 权限裁剪、冲突草稿保留、中英文、键盘、无障碍与四主题适配；本批不执行完整 Gateway 成组验收。
+1. 启动当前任务的前后端后，按申诉人、举报者、原审核员、申诉审核员、动作执行员和只读治理员覆盖 View / Appeal / Action 权限矩阵。
+2. 覆盖五类目标、Mute / Ban、维持 / 部分支持 / 全部支持、撤回 / 超期、并发 / 幂等，以及目标变化、自然到期和后续案件替代。
+3. 覆盖 Main 事务回滚、Chat 纠正失败 / 重试、通知失败恢复、深链与 Back / Forward，并复核 `zh / en × PC / mobile`、键盘、无障碍和四主题代表矩阵。
+4. 成组修复共同根因，清理临时申诉、动作、通知、账号和来源标记，检查数据库完整性与严格 migration verify 后关闭 F4-J。
 
 ## 并行维护线
 

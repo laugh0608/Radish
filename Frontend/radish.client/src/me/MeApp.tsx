@@ -49,6 +49,7 @@ import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import {
   buildMeAttachmentsReturnPath,
+  buildMeAppealsReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
   buildMeContentReturnPath,
@@ -64,6 +65,7 @@ import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { getIntlLocale } from '@/locales/language';
 import { MeAssetsPage } from './MeAssetsPage';
+import { MeAppealsPage } from './MeAppealsPage';
 import { MeReportsPage } from './MeReportsPage';
 import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
@@ -357,6 +359,14 @@ function buildMeRouteReturnPath(route: MeRoute): string {
     return buildMeReportsReturnPath({ page: route.page }) ?? buildMeReturnPath();
   }
 
+  if (route.kind === 'appeals') {
+    return buildMeAppealsReturnPath({
+      page: route.page,
+      casePublicId: route.casePublicId,
+      appealPublicId: route.appealPublicId,
+    }) ?? buildMeReturnPath();
+  }
+
   return buildMeReturnPath();
 }
 
@@ -427,6 +437,8 @@ export const MeApp = () => {
                 ? t('me.experience.detailTitle')
                 : route.kind === 'reports'
                   ? t('me.reports.title')
+                  : route.kind === 'appeals'
+                    ? t('me.appeals.title')
                 : t('me.title');
     document.title = `${title} · Radish`;
   }, [route.kind, t]);
@@ -680,6 +692,13 @@ export const MeApp = () => {
         label: t('me.reports.title'),
         route: route.kind === 'reports' ? route : { kind: 'reports', page: 1 },
         active: route.kind === 'reports',
+      },
+      {
+        key: 'appeals',
+        icon: 'mdi:shield-refresh-outline',
+        label: t('me.appeals.title'),
+        route: route.kind === 'appeals' ? route : { kind: 'appeals', page: 1 },
+        active: route.kind === 'appeals',
       },
     ];
 
@@ -1344,6 +1363,16 @@ export const MeApp = () => {
         <MeReportsPage
           page={route.page}
           onNavigate={(page) => navigateToMeRoute({ kind: 'reports', page })}
+          onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
+        />
+      );
+    }
+
+    if (route.kind === 'appeals') {
+      return (
+        <MeAppealsPage
+          route={route}
+          onNavigate={navigateToMeRoute}
           onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
         />
       );

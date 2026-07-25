@@ -155,11 +155,14 @@ export type ContentModerationReliefScope = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 export interface ContentModerationDecisionNoticeVo {
   voCasePublicId: string;
   voTargetType: ContentModerationTargetType;
-  voTargetContentId: ModerationLongId;
+  voTargetSnapshotTitle?: string | null;
+  voTargetSnapshotSummary?: string | null;
   voPublicResultCode?: string | null;
   voEligibleScope: ContentModerationReliefScope;
   voResolvedAt: string;
   voEligibleUntilUtc: string;
+  voCanAppeal: boolean;
+  voIneligibleReason?: 'AlreadyAppealed' | 'Expired' | 'NoEnforcement' | null;
   voAppealPublicId?: string | null;
   voAppealStatus?: ContentModerationAppealStatus | null;
 }
@@ -183,9 +186,20 @@ export interface ContentModerationTargetActionVo {
   voCompletedAt?: string | null;
 }
 
+export interface ContentModerationUserActionSummaryVo {
+  voActionType: 'Mute' | 'Ban' | 'Unmute' | 'Unban';
+  voResultCode?: string | null;
+  voStartTime: string;
+  voEndTime?: string | null;
+  voCreateTime: string;
+}
+
 export interface ContentModerationAppealVo {
   voAppealPublicId: string;
   voCasePublicId: string;
+  voTargetType: ContentModerationTargetType;
+  voTargetSnapshotTitle?: string | null;
+  voTargetSnapshotSummary?: string | null;
   voStatus: ContentModerationAppealStatus;
   voOutcome: ContentModerationAppealOutcome;
   voEligibleScope: ContentModerationReliefScope;
@@ -201,6 +215,16 @@ export interface ContentModerationAppealVo {
   voEvents: ContentModerationAppealEventVo[];
   voTargetActions: ContentModerationTargetActionVo[];
   voUserActions: unknown[];
+  voUserActionSummaries: ContentModerationUserActionSummaryVo[];
+  voIsIdempotentReplay: boolean;
+}
+
+export interface ContentModerationAppealActionResultVo {
+  voAppealPublicId: string;
+  voStatus: ContentModerationAppealStatus;
+  voOutcome: ContentModerationAppealOutcome;
+  voGrantedScope: ContentModerationReliefScope;
+  voVersion: number;
   voIsIdempotentReplay: boolean;
 }
 

@@ -107,6 +107,19 @@ export type {
   ReviewContentModerationCaseRequest,
   ContentModerationCaseReviewResultVo,
   ApplyContentModerationCorrectiveActionRequest,
+  ContentModerationAppealStatus,
+  ContentModerationAppealOutcome,
+  ContentModerationReliefScope,
+  ContentModerationDecisionNoticeVo,
+  ContentModerationAppealEventVo,
+  ContentModerationTargetActionVo,
+  ContentModerationUserActionSummaryVo,
+  ContentModerationAppealVo,
+  ContentModerationAppealActionResultVo,
+  SubmitContentModerationAppealRequest,
+  ContentModerationAppealVersionedOperationRequest,
+  ReviewContentModerationAppealRequest,
+  CaptureContentModerationAppealEvidenceRequest,
 } from './content-moderation-contract';
 
 export type { ApiClientConfig } from './client';

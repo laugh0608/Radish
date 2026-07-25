@@ -23,8 +23,7 @@ public interface IContentModerationCaseRepository
         long tenantId,
         long appellantUserId,
         int pageIndex,
-        int pageSize,
-        DateTime nowUtc);
+        int pageSize);
     Task<(List<ContentModerationAppeal> data, int totalCount)> QueryMyAppealsAsync(
         long tenantId,
         long appellantUserId,
@@ -48,6 +47,7 @@ public interface IContentModerationCaseRepository
 public sealed record ContentModerationDecisionCandidate(
     ContentModerationCase Case,
     ContentModerationAppeal? Appeal,
+    IReadOnlyList<ContentModerationEvidence> Evidence,
     IReadOnlyList<ContentModerationTargetAction> TargetActions,
     IReadOnlyList<UserModerationAction> UserActions);
 

@@ -381,11 +381,14 @@ public sealed class ContentModerationDecisionNoticeVo
 {
     public string VoCasePublicId { get; set; } = string.Empty;
     public string VoTargetType { get; set; } = string.Empty;
-    public long VoTargetContentId { get; set; }
+    public string? VoTargetSnapshotTitle { get; set; }
+    public string? VoTargetSnapshotSummary { get; set; }
     public string? VoPublicResultCode { get; set; }
     public int VoEligibleScope { get; set; }
     public DateTime VoResolvedAt { get; set; }
     public DateTime VoEligibleUntilUtc { get; set; }
+    public bool VoCanAppeal { get; set; }
+    public string? VoIneligibleReason { get; set; }
     public string? VoAppealPublicId { get; set; }
     public string? VoAppealStatus { get; set; }
 }
@@ -394,6 +397,9 @@ public sealed class ContentModerationAppealVo
 {
     public string VoAppealPublicId { get; set; } = string.Empty;
     public string VoCasePublicId { get; set; } = string.Empty;
+    public string VoTargetType { get; set; } = string.Empty;
+    public string? VoTargetSnapshotTitle { get; set; }
+    public string? VoTargetSnapshotSummary { get; set; }
     public string VoStatus { get; set; } = string.Empty;
     public string VoOutcome { get; set; } = string.Empty;
     public int VoEligibleScope { get; set; }
@@ -409,6 +415,26 @@ public sealed class ContentModerationAppealVo
     public List<ContentModerationAppealEventVo> VoEvents { get; set; } = [];
     public List<ContentModerationTargetActionVo> VoTargetActions { get; set; } = [];
     public List<UserModerationActionVo> VoUserActions { get; set; } = [];
+    public List<ContentModerationUserActionSummaryVo> VoUserActionSummaries { get; set; } = [];
+    public bool VoIsIdempotentReplay { get; set; }
+}
+
+public sealed class ContentModerationUserActionSummaryVo
+{
+    public string VoActionType { get; set; } = string.Empty;
+    public string? VoResultCode { get; set; }
+    public DateTime VoStartTime { get; set; }
+    public DateTime? VoEndTime { get; set; }
+    public DateTime VoCreateTime { get; set; }
+}
+
+public sealed class ContentModerationAppealActionResultVo
+{
+    public string VoAppealPublicId { get; set; } = string.Empty;
+    public string VoStatus { get; set; } = string.Empty;
+    public string VoOutcome { get; set; } = string.Empty;
+    public int VoGrantedScope { get; set; }
+    public int VoVersion { get; set; }
     public bool VoIsIdempotentReplay { get; set; }
 }
 
