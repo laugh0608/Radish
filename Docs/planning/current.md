@@ -253,21 +253,21 @@ Radish V1 的产品定位固定为：
 ## 今日事项（2026-07-25）
 
 1. `F4-I-D` 已使用五种角色覆盖 `Post / Comment / PostQuickReply / ChatMessage / Product`，并完成聚合、并发、目标变化、用户治理状态和跨租户矩阵。
-2. Gateway 正式路径已完成 `/console/moderation`、`/me/reports` 的双语、PC / mobile、四主题、Back / Forward、键盘与无障碍复核。
-3. 验收暴露的 Repository 联表参数、SQL 投影、结果码严格匹配和非泛型 `Task` 异常传播问题已按根因修正并补回归。
-4. 临时业务数据、通知、授权、作业和审计记录已清理；六库完整性、DbMigrate doctor / verify、全量后端与前端静态门禁通过。
-5. `F4-J-A` 已完成四候选同口径审计并选定内容治理申诉与处置纠正；原案件不可变、独立申诉复核、目标动作来源、五类恢复、用户状态纠正、权限、迁移和 A-D 批次已经固定。
-6. `F4-J-B` 已完成 Main / Chat 迁移、独立申诉聚合、五类来源保护恢复、用户状态纠正、可靠任务、权限、通知与服务端契约。
-7. `F4-J-C` 已完成两份 Pencil 设计源、正式 `/me/appeals`、通知深链、Console 申诉工作台、权限裁剪、冲突草稿与双语响应式页面。
-8. `F4-J-D` 已完成六角色、五类目标、主要申诉状态、Chat 失败恢复与双语 PC / mobile 成组验收；四项共同根因修复、临时数据清理、六库完整性和严格 migration verify 均通过，F4-J 关闭。
-9. `F4-K-A / B` 已完成候选审计、Main 权威模型与迁移、专属 Repository、统一关系策略、关注事务、Direct 兼容、Chat 互动隔离、通知抑制、稳定错误和客户端协议。
-10. `F4-K-C / D` 已完成正式 Web 与成组验收并关闭专题；`F4-L-A / B` 已完成候选审计和服务端权威契约，Main 引用、私有默认、动态 ACL、事务同步、令牌、清理与迁移均已落地。
+2. Gateway 正式路径已完成 `/console/moderation`、`/me/reports` 的双语、PC / mobile、四主题、Back / Forward、键盘与无障碍复核；验收暴露的 Repository 联表、SQL 投影、结果码和异步异常传播问题已按根因修正，临时数据清理、六库完整性与严格 verify 通过，F4-I 关闭。
+3. `F4-J-A / B` 已完成候选审计、独立申诉与事件、目标动作来源、五类来源保护恢复、用户状态纠正、Main / Chat migration、可靠任务、权限、通知和服务端契约。
+4. `F4-J-C / D` 已完成两份 Pencil 设计源、正式 `/me/appeals`、Console 申诉工作台和六角色成组验收；Chat 失败恢复、共同根因修复、数据清理、六库完整性和严格 verify 通过，F4-J 关闭。
+5. 生产数据库迁移发布已固定为 `Deploy/deploy-production.sh` 单一入口，覆盖不可变 tag、停止写入、六库备份、显式 apply、独立 verify、分阶段启动、外部健康检查和迁移失败停止线，并纳入 Baseline Quick。
+6. `F4-K-A / B` 已完成候选审计、Main 权威模型与迁移、专属 Repository、统一关系策略、关注事务、Direct 兼容、Chat 互动隔离、通知抑制、稳定错误和客户端协议。
+7. `F4-K-C / D` 已完成正式 Web 与三账号成组验收；Direct 取消归档共同根因已修复，临时数据清理、六库完整性和严格 verify 通过，F4-K 关闭。
+8. `F4-L-A / B` 已完成候选审计和服务端权威契约，Main 引用、Wiki 私有默认、动态 ACL、事务同步、令牌、清理与历史 Document 显式兼容迁移均已落地。
 
-## 下一事项（F4-L-C）
+## 明日事项（2026-07-26，F4-L-C）
 
-1. 在既有 Author、Authenticated / Restricted Docs、Revision 与 Console 审核页面接入认证二进制加载，不新增页面族，也不修改 Pencil。
-2. 图片、灯箱原图和普通文件统一建立 object URL 生命周期；上传预览、保存失败、文档 / 账号切换、失权和卸载必须及时回收，不退回匿名直链。
-3. 补中英文稳定状态、PC / mobile、键盘与无障碍静态回归；运行态成组矩阵、临时数据清理和专题关闭保留到 F4-L-D。
+1. 先审计 `MarkdownRenderer`、现有 `loadAttachmentObjectUrl`、Author / 公开 Docs / Revision / Console 审核消费者和上传预览的真实调用边界，固定受保护图片、封面、灯箱原图与普通文件的加载责任；不新增页面族、不修改 Pencil，也不把认证依赖下沉到 `@radish/ui`。
+2. 为 `@radish/ui` 建立宿主注入的受保护附件解析契约，由 `radish.client` 与 `radish.console` 通过统一 HTTP 配置和认证请求取得 Blob；公开 Published 资源保持稳定 URL，Authenticated / Restricted、Draft 与 Revision 不退回匿名 `<img>` 或新建 fetch 封装。
+3. 将契约接入 `/docs` 受限阅读、`/docs/mine`、编辑 / 创建、Revision 回看和既有 Console 文档审核面，完整覆盖正文图片、封面、灯箱、文件下载、上传后未保存预览与保存失败保留，不扩展新的治理动作、页面导航或 WebOS 专属实现。
+4. 由文档域宿主持有请求取消、结果代次与 object URL 注册表；在内容替换、文档 / Revision / 账号切换、失权、加载失败、重试和卸载时成组撤销请求并释放 URL，避免旧请求回写新页面、内存泄漏或把内部资源路径写入日志和用户文案。
+5. 补共享 UI、Client、Console 与 `@radish/http` 的定向测试，覆盖公开 / 受限分流、图片与文件、灯箱、Abort、竞态、URL 回收、双语错误、PC / mobile、键盘和无障碍；完成 type-check、测试、两端生产构建、后端受影响回归、Baseline Quick、文档和仓库卫生。Gateway 六身份运行态矩阵、临时数据清理、严格 migration verify 与专题关闭保留到 F4-L-D。
 
 ## 并行维护线
 

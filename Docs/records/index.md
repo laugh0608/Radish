@@ -66,6 +66,7 @@
 
 ## 七、专题清单与一次性观察
 
+- [F4 2026-07-25 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-25)
 - F4-L Wiki 附件隐私与生命周期：[B 服务端权威契约](/records/f4-l-b-wiki-attachment-server-contract-2026-07-25)
 - F4-K 用户屏蔽与关系交互隔离：[D 成组验收](/records/f4-k-d-user-block-stage-acceptance-2026-07-25) · [C 正式 Web](/records/f4-k-c-user-block-web-2026-07-25) · [B 服务端权威契约](/records/f4-k-b-user-block-server-contract-2026-07-25)
 - F4-I 内容治理：[D 成组验收](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25) · [C 正式页面](/records/f4-i-c-content-moderation-case-web-workspace-2026-07-24) · [B 服务端权威契约](/records/f4-i-b-content-moderation-server-contract-2026-07-21) · [当日日终回顾](/records/f4-day-end-doc-review-2026-07-21)
