@@ -87,6 +87,7 @@ features:
 - [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
 - [内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
 - [内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
+- [用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design)
 - [内容治理系统说明](/guide/content-moderation)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)

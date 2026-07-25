@@ -8,14 +8,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`发布后长期维护与功能完成`
-- **工程第一顺位**：`F4-K-A 下一完整功能候选复核与权威设计`
-- **产品下一顺位**：`交叉复核圈子全局屏蔽、公开聊天与论坛作者回滚，选定唯一完整专题`
+- **工程第一顺位**：`F4-K-B 用户屏蔽服务端权威契约`
+- **产品下一顺位**：`建立 UserBlock 唯一真相、关系策略、Direct 历史迁移与通知抑制`
 - **复核日期**：`2026-07-25`
 - **当前判断**：
   - 纯 Web 已成为唯一正式产品主线并覆盖 PC / mobile 浏览器；`/desktop` 仅保留 WebOS 历史兼容入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。
   - `P3-12-A-D` 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
   - `P3-12-E1-E7` 已完成首批产品成熟度硬化；E8 首日已回拉主导航、用户语言、页面滚动、聊天工作区和公开文档可见口径。
   - 2026-07-25 生产数据库迁移发布编排已完成契约修正：生产固定不可变 release tag、停止写入后备份 globals 与六库、显式 `apply`、独立 `verify`、分阶段发布和外部健康检查；迁移开始后失败保持应用停止并保留恢复锚点。该维护项不改变产品顺位，下一步仍进入 F4-K-A。
+  - 2026-07-25 F4-K-A 已完成：交叉复核用户屏蔽、匿名公开聊天和论坛作者版本恢复后，选定[用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design)为唯一当前专题。设计固定 Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制、旧字段迁移、公开内容边界、正式页面、A-D 批次与停止线；下一顺位进入 F4-K-B。
   - 2026-07-11 Q0-A 已完成：npm / NuGet High / Critical 清零，NuGet 审计恢复，`Dependency Security` 已纳入 Repo Quality workflow，并由用户确认配置到远程 `master` ruleset。
   - 2026-07-11 Q0-B 已完整关闭：生产性能基准、Weather、敏感配置、事务演示、测试租户写入与手动未读推送入口已删除，正常租户查询与正式通知能力保留，精确防回归契约已建立。
   - 2026-07-11 Q0-C 已完成：API JWT 启用 `radish-api` audience，完整 Claims 与成功鉴权高频日志已删除，Auth transport security 受 Development 显式配置和 Gateway 单跳 Forwarded Proto 契约约束。
@@ -104,7 +105,6 @@
   - 2026-07-25 F4-J-A 已完成：交叉复核治理申诉、圈子全局屏蔽、公开聊天和论坛作者回滚后，选定[内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)为唯一当前专题。设计固定独立 Appeal / Event / TargetAction、原案件不可变、一次申诉、部分采纳、五类目标对称恢复、用户状态来源保护、独立权限、Main / Chat 迁移、正式页面、A-D 批次与停止线；下一顺位进入 F4-J-B。
   - 2026-07-25 F4-J-B 已完成服务端权威契约：Main / Chat migration、独立 Appeal / Event / TargetAction、本人决定与一次申诉、部分采纳、五类来源保护恢复、Mute / Ban 纠正、Chat 可靠任务、独立权限、通知和 HTTP / `@radish/http` 契约均已落地。后端全量 `991` 项通过、`26` 项 PostgreSQL 环境用例按配置跳过；详见 [F4-J-B 服务端权威契约记录](/records/f4-j-b-content-moderation-appeal-server-contract-2026-07-25)，下一顺位进入 F4-J-C。
   - 2026-07-25 F4-J-C 已完成 Pencil 与正式页面：`/me/appeals` PC / mobile 决定与申诉页、组件内存陈述草稿、提交 / 撤回、超期保留、通知深链、状态与纠正摘要已落地；Console 在既有 `/moderation` 内增加申诉队列、受权详情、原案件证据、复核与纠正，mobile 固定只读。View 队列服务端同步裁剪敏感详情，冲突刷新保留草稿；详见 [F4-J-C 正式页面记录](/records/f4-j-c-content-moderation-appeal-web-workspace-2026-07-25)，下一顺位进入 F4-J-D。
-  - 2026-07-25 F4-J-D 已完成并关闭专题：六种角色、五类目标、全采纳 / 部分采纳 / 维持 / 撤回 / 超期、重复申诉、用户状态来源保护、Chat 跨库失败重试和双语 PC / mobile 正式路径均已通过；验收发现的 SQLite 复核死锁、Chat 完成事件 operation key 冲突、失败动作不可重试及用户端动作语义已按共同根因修复。临时数据残留为 `0`，六库完整性与严格 migration verify 通过。详见 [F4-J-D 成组验收记录](/records/f4-j-d-content-moderation-appeal-stage-acceptance-2026-07-25)，工程第一顺位进入 F4-K-A 下一完整功能候选复核与权威设计。
 
 ## V1 产品与发布范围
 
@@ -200,7 +200,7 @@ Radish V1 的产品定位固定为：
 8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；权威聚合、公开字段白名单、即时显隐、身份隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过。
 9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件聚合、追加式证据、唯一用户治理状态、五类目标、正式页面、多角色运行态矩阵和临时数据清理全部通过。
 10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-D 批并关闭；独立申诉、部分支持、五类来源保护恢复、用户状态纠正、正式页面与六角色成组验收全部通过。
-11. 下一顺位进入 `F4-K-A`，交叉复核圈子全局屏蔽、公开聊天与论坛作者回滚等剩余候选；先明确关系政策、隐私、通知、历史内容和 Direct 影响，只选定一个完整专题。
+11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成候选复核与权威设计；下一顺位进入 F4-K-B，先实现 Main 真相源、关系策略、关注事务、Direct 兼容迁移与通知抑制，不提前修改 Pencil 或正式页面。
 
 ## 昨日事项（2026-07-18）
 
@@ -260,13 +260,14 @@ Radish V1 的产品定位固定为：
 6. `F4-J-B` 已完成 Main / Chat 迁移、独立申诉聚合、五类来源保护恢复、用户状态纠正、可靠任务、权限、通知与服务端契约。
 7. `F4-J-C` 已完成两份 Pencil 设计源、正式 `/me/appeals`、通知深链、Console 申诉工作台、权限裁剪、冲突草稿与双语响应式页面。
 8. `F4-J-D` 已完成六角色、五类目标、主要申诉状态、Chat 失败恢复与双语 PC / mobile 成组验收；四项共同根因修复、临时数据清理、六库完整性和严格 migration verify 均通过，F4-J 关闭。
+9. `F4-K-A` 已完成三项候选同口径审计并选定用户屏蔽与关系交互隔离；Main `UserBlock`、关注事务、Direct 历史只读、通知分类与抑制、公开内容边界、旧字段迁移和 A-D 批次已经固定。
 
-## 下一事项（F4-K-A）
+## 下一事项（F4-K-B）
 
-1. 只读审计现有关注、关系列表、公开主页、通知、Direct 会话与内容可见性契约，确认“屏蔽”不能退化为单一关系布尔值。
-2. 与公开聊天、论坛作者回滚等候选按长期价值、真实缺口、数据边界、迁移风险和正式 Web 主路径同口径比较，选定唯一专题。
-3. 若圈子全局屏蔽胜出，专题设计必须明确双向关注处理、历史内容可见性、公开主页状态、Direct 请求 / 既有会话、通知抑制、解除屏蔽与跨租户边界。
-4. 先形成 `Docs/features/` 权威专题、A-D 批次、迁移 / 权限 / 页面 / 验收口径与停止线，经确认后再进入业务实现。
+1. 完成 Main `UserBlock` migration 与可靠 Outbox 任务类型，建立空库、旧 Direct 屏蔽回填、异常 doctor、apply / verify、重入和恢复契约。
+2. 新增专属 Repository 与统一关系策略服务，让 Block / Unblock、双方关注解除、幂等和跨租户约束保持事务一致。
+3. 接入关注、圈子、Direct、Reaction、Pin、阅读回执与通知创建 / 读取；旧 Direct 接口只转发统一服务，不再写旧字段。
+4. 补充稳定错误、HTTP 示例、`@radish/http`、SQLite / PostgreSQL 定向测试与静态门禁；本批不提前修改 Pencil 或正式页面。
 
 ## 并行维护线
 
