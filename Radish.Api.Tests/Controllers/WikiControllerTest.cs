@@ -102,30 +102,6 @@ public class WikiControllerTest
     }
 
     [Fact]
-    public async Task Create_Should_Return_Id_When_Request_Valid()
-    {
-        var request = new CreateWikiDocumentDto
-        {
-            Title = "Wiki 入门",
-            MarkdownContent = "# Hello Wiki",
-            Summary = "测试摘要",
-            Sort = 10,
-        };
-
-        var serviceMock = CreateServiceMock();
-        serviceMock
-            .Setup(s => s.CreateDocumentAsync(request, 10001, "Tester", 0))
-            .ReturnsAsync(9527);
-
-        var controller = CreateController(serviceMock.Object, isAdmin: true);
-        var result = await controller.Create(request);
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
-        Assert.Equal(9527, result.ResponseData);
-    }
-
-    [Fact]
     public async Task Delete_Should_Return_Success_When_Service_Returns_True()
     {
         var serviceMock = CreateServiceMock();

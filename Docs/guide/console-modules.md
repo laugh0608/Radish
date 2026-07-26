@@ -22,9 +22,9 @@
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Coins | ✅ 已接入 | 工具型页面 | `console.coins.*` | ✅ 已补齐 | 用户余额查询、业务流水筛选与管理员调账已接入 |
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
-| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.*` | ✅ 已补齐 | 举报审核、手动治理、治理日志和用户过滤 URL 状态已接入 |
+| Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.view/review/appeal/action` | ✅ 已补齐 | 案件、证据、决定、动作、申诉复核、纠正和事件页面均使用权威 API |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
-| Documents | ✅ 已接入 | 治理工作台 + 详情 | `console.docs.*` | ✅ 已补齐 | 文档列表、状态治理、访问策略、版本和导入导出已接入 |
+| Documents | ✅ 已接入 | 审核证据 + 治理工作台 | `console.docs.*` | ✅ 已补齐 | 待审队列、审核应用、独立发布、访问策略、版本和导入导出已接入 |
 | Hangfire | ✅ 已接入 | 特殊入口 / 运维外壳 | `console.hangfire.view` | ✅ 已补齐 | React 外层页承载受保护 iframe，特殊入口授权过滤器校验 |
 
 页面类型只描述 UI 承载方式，不改变权限键、API 契约或业务动作语义。新增页面时先确认权限模型，再按页面类型选择布局基座。
@@ -273,14 +273,18 @@
 
 ### 当前边界
 
-- 举报审核、目标回看、手动禁言 / 封禁和治理动作日志保留既有 API 与权限语义。
+- 服务端已建立 Case / Evidence / Event / TargetAction / Appeal / AppealEvent / UserModerationState 权威契约，五类目标统一进入案件、决定、动作、申诉和纠正链路。
+- 权限拆分为 `console.moderation.view / review / appeal / action`：View 读取案件与脱敏申诉队列，Review 处理原案件，Appeal 查看申诉正文并复核，Action 执行用户动作和已获准的纠正。
+- 正式页面已经迁移到 Case / Appeal API；旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口已删除，不再作为兼容消费者。
 - 当前不新增批量治理、敏感词策略或自动化处罚平台。
 
 ### 当前状态
 
 - ✅ 已按治理工作台结构承载
-- ✅ 审核队列、手动动作区和治理日志保留同页人工复核工作流
-- ✅ 审核动作只允许处理 `Pending` 举报单，服务端按状态条件更新，避免多个管理员覆盖同一举报单结果
+- ✅ 案件队列、详情、追加式证据、决定、动作、事件和本人举报均已接入 Case API
+- ✅ `/moderation` 已接申诉队列、正文与原决定证据、复核、纠正动作和事件；mobile 只读，决定与纠正保持 PC 工作台
+- ✅ 案件决定和用户当前状态分别使用版本保护；同一操作键支持幂等回放，同键异参返回冲突
+- ✅ 申诉与原案件保持独立版本和时间线，`Upheld / PartiallyGranted / Granted` 不覆盖原决定；目标恢复按治理来源与当前版本防止误恢复
 - ✅ 支持从用户详情或 URL 状态带入目标用户过滤，方便用户排障与内容治理串联
 - ✅ 内部提示、筛选区、表格列弱文本和手动治理动作区已迁入 CSS 与 Console token
 - ✅ 举报状态、目标类型和治理动作按稳定字段解析中英文词元，高频失败按结构化 status / Code 分支
@@ -303,6 +307,7 @@
 ### 当前边界
 
 - 查看：`console.docs.view`
+- 审核：`console.docs.review`，只允许 RequestChanges / Reject / Apply
 - 发布 / 下架：`console.docs.publish`
 - 归档：`console.docs.archive`
 - 删除 / 恢复：`console.docs.delete` / `console.docs.restore`
@@ -310,10 +315,11 @@
 
 ### 当前状态
 
+- ✅ 待审队列、正式正文 / 草稿证据、协作者与审核时间线已经接入；Apply 只更新权威正文并生成 Revision，不自动 Publish
 - ✅ 文档治理列表、详情、状态与访问策略、版本回看 / 回滚、Markdown 导入 / 导出均已接入
 - ✅ 状态、可见性和来源类型按稳定字段解析中英文词元，标题、正文、Slug、角色 / 权限键和修订说明保留原文
 - ✅ 日期、数量和英文复数按当前 locale 展示；Wiki API 失败统一保留 HTTP status、`Wiki.*` Code 和 `error.wiki.*` MessageKey
-- ✅ 正式 Web 作者入口、Console 治理和公开阅读保持既有职责分层，不把 Console 动作混入作者态
+- ✅ 正式 Web Author 入口、Console 审核 / 治理和公开阅读保持职责分层，不把审核或发布动作混入作者态
 
 ## 3.16 Hangfire
 

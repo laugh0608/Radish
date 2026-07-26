@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Moq;
@@ -124,16 +125,7 @@ public class AttachmentReferenceInspectorTest
                     StickerAttachmentId = 84001
                 }
             }),
-            wikiDocumentRepository: CreateRepositoryMock(new List<WikiDocument>
-            {
-                new()
-                {
-                    Id = 12,
-                    Title = "文档",
-                    Slug = "doc",
-                    CoverAttachmentId = 85001
-                }
-            }),
+            wikiAttachmentIds: [85001],
             browseHistoryRepository: CreateRepositoryMock(new List<UserBrowseHistory>
             {
                 new()
@@ -237,30 +229,7 @@ public class AttachmentReferenceInspectorTest
     [Fact]
     public async Task GetReferencedAttachmentIdsAsync_Should_Collect_Current_And_Rollbackable_Wiki_Content_References()
     {
-        var inspector = CreateInspector(
-            wikiDocumentRepository: CreateRepositoryMock(new List<WikiDocument>
-            {
-                new()
-                {
-                    Id = 101,
-                    Title = "当前文档",
-                    Slug = "current",
-                    MarkdownContent = "![current](attachment://93001)",
-                    IsDeleted = false
-                }
-            }),
-            wikiDocumentRevisionRepository: CreateRepositoryMock(new List<WikiDocumentRevision>
-            {
-                new()
-                {
-                    Id = 201,
-                    DocumentId = 101,
-                    Version = 1,
-                    Title = "历史版本",
-                    MarkdownContent = "[rollback](attachment://93002)",
-                    SourceType = "Custom"
-                }
-            }));
+        var inspector = CreateInspector(wikiAttachmentIds: [93001, 93002]);
 
         var referencedIds = await inspector.GetReferencedAttachmentIdsAsync(new long[] { 93001, 93002, 93999 });
 
@@ -279,8 +248,7 @@ public class AttachmentReferenceInspectorTest
         Mock<IBaseRepository<LevelConfig>>? levelConfigRepository = null,
         Mock<IBaseRepository<StickerGroup>>? stickerGroupRepository = null,
         Mock<IBaseRepository<Reaction>>? reactionRepository = null,
-        Mock<IBaseRepository<WikiDocument>>? wikiDocumentRepository = null,
-        Mock<IBaseRepository<WikiDocumentRevision>>? wikiDocumentRevisionRepository = null,
+        IReadOnlyCollection<long>? wikiAttachmentIds = null,
         Mock<IBaseRepository<UserBrowseHistory>>? browseHistoryRepository = null,
         Mock<IBaseRepository<UserBenefit>>? userBenefitRepository = null,
         Mock<IBaseRepository<UserInventory>>? userInventoryRepository = null,
@@ -299,13 +267,24 @@ public class AttachmentReferenceInspectorTest
             (levelConfigRepository ?? CreateRepositoryMock(new List<LevelConfig>())).Object,
             (stickerGroupRepository ?? CreateRepositoryMock(new List<StickerGroup>())).Object,
             (reactionRepository ?? CreateRepositoryMock(new List<Reaction>())).Object,
-            (wikiDocumentRepository ?? CreateRepositoryMock(new List<WikiDocument>())).Object,
-            (wikiDocumentRevisionRepository ?? CreateRepositoryMock(new List<WikiDocumentRevision>())).Object,
+            CreateWikiAttachmentReferenceRepositoryMock(wikiAttachmentIds ?? []).Object,
             (browseHistoryRepository ?? CreateRepositoryMock(new List<UserBrowseHistory>())).Object,
             (userBenefitRepository ?? CreateRepositoryMock(new List<UserBenefit>())).Object,
             (userInventoryRepository ?? CreateRepositoryMock(new List<UserInventory>())).Object,
             (orderRepository ?? CreateRepositoryMock(new List<Order>())).Object,
             (systemConfigRepository ?? CreateSystemConfigRepositoryMock()).Object);
+    }
+
+    private static Mock<IWikiAttachmentReferenceRepository> CreateWikiAttachmentReferenceRepositoryMock(
+        IReadOnlyCollection<long> referencedIds)
+    {
+        var referencedSet = referencedIds.ToHashSet();
+        var repository = new Mock<IWikiAttachmentReferenceRepository>(MockBehavior.Strict);
+        repository
+            .Setup(item => item.GetReferencedAttachmentIdsAsync(It.IsAny<IReadOnlyCollection<long>>()))
+            .ReturnsAsync((IReadOnlyCollection<long> candidates) =>
+                candidates.Where(referencedSet.Contains).ToHashSet());
+        return repository;
     }
 
     private static Mock<IBaseRepository<TEntity>> CreateRepositoryMock<TEntity>(List<TEntity> result)

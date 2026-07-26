@@ -21,6 +21,275 @@ namespace Radish.Api.Tests.Services;
 public class ContentModerationServiceTest
 {
     [Fact]
+    public async Task GetAppealQueueAsync_ShouldReturnRedactedItemsForViewPermission()
+    {
+        var repository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        var appeal = new ContentModerationAppeal
+        {
+            Id = 73001,
+            TenantId = 5,
+            CaseId = 72001,
+            PublicId = "appeal_public",
+            Status = (int)ContentModerationAppealStatus.Reviewing,
+            Outcome = (int)ContentModerationAppealOutcome.None,
+            EligibleScopeSnapshot = (int)ContentModerationReliefScope.TargetContent,
+            GrantedScope = (int)ContentModerationReliefScope.None,
+            Version = 3,
+            Statement = "仅复核人员可读取的完整申诉陈述",
+            InternalRemark = "仅复核人员可读取的内部备注",
+            SubmittedAt = new DateTime(2026, 7, 25, 1, 0, 0, DateTimeKind.Utc),
+            EligibleUntilUtc = new DateTime(2026, 8, 1, 1, 0, 0, DateTimeKind.Utc)
+        };
+        var aggregate = new ContentModerationAppealAggregate(
+            appeal,
+            new ContentModerationCase { Id = 72001, TenantId = 5, PublicId = "case_public" },
+            [],
+            [
+                new ContentModerationAppealEvent
+                {
+                    EventSequence = 1,
+                    EventType = "Submitted",
+                    Remark = "内部事件备注",
+                    ActorUserId = 61001,
+                    ActorName = "appellant"
+                }
+            ],
+            [],
+            [],
+            []);
+        repository
+            .Setup(item => item.QueryAppealQueueAsync(It.Is<ContentModerationAppealQueueCommand>(
+                command => command.TenantId == 5 && command.PageIndex == 1 && command.PageSize == 20)))
+            .ReturnsAsync((new List<ContentModerationAppeal> { appeal }, 1));
+        repository
+            .Setup(item => item.QueryAppealAggregateAsync(5, "appeal_public", null))
+            .ReturnsAsync(aggregate);
+        var service = CreateService(moderationCaseRepository: repository);
+
+        var result = await service.GetAppealQueueAsync(new ContentModerationAppealQueryDto(), 5);
+
+        var item = result.VoItems.ShouldHaveSingleItem();
+        item.VoAppealPublicId.ShouldBe("appeal_public");
+        item.VoCasePublicId.ShouldBe("case_public");
+        item.VoStatement.ShouldBeEmpty();
+        item.VoInternalRemark.ShouldBeNull();
+        item.VoEvents.ShouldBeEmpty();
+        item.VoTargetActions.ShouldBeEmpty();
+        item.VoUserActions.ShouldBeEmpty();
+        item.VoUserActionSummaries.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetMyAppealableDecisionsAsync_ShouldReturnServerEligibilityAndSafeSnapshot()
+    {
+        var repository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        var eligibleCase = new ContentModerationCase
+        {
+            Id = 72011,
+            TenantId = 5,
+            PublicId = "case_eligible",
+            TargetType = (int)ContentReportTargetTypeEnum.Post,
+            TargetContentId = 91001,
+            TargetUserId = 61001,
+            Status = (int)ContentModerationCaseStatus.Resolved,
+            Decision = (int)ContentModerationDecision.Violation,
+            ResolvedAt = new DateTime(2099, 7, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+        var expiredCase = new ContentModerationCase
+        {
+            Id = 72012,
+            TenantId = 5,
+            PublicId = "case_expired",
+            TargetType = (int)ContentReportTargetTypeEnum.Comment,
+            TargetContentId = 91002,
+            TargetUserId = 61001,
+            Status = (int)ContentModerationCaseStatus.Resolved,
+            Decision = (int)ContentModerationDecision.Violation,
+            ResolvedAt = new DateTime(2020, 7, 1, 0, 0, 0, DateTimeKind.Utc)
+        };
+        repository
+            .Setup(item => item.QueryMyAppealableDecisionsAsync(
+                5,
+                61001,
+                1,
+                20))
+            .ReturnsAsync((
+                new List<ContentModerationDecisionCandidate>
+                {
+                    new(
+                        eligibleCase,
+                        null,
+                        [
+                            new ContentModerationEvidence
+                            {
+                                EvidenceSequence = 2,
+                                EvidenceType = (int)ContentModerationEvidenceType.CurrentTargetSnapshot,
+                                SnapshotTitle = "安全目标标题",
+                                SnapshotSummary = "安全目标摘要"
+                            }
+                        ],
+                        [
+                            new ContentModerationTargetAction
+                            {
+                                ActionType = (int)ContentModerationTargetActionType.Restrict,
+                                ChangedTargetState = true
+                            }
+                        ],
+                        []),
+                    new(
+                        expiredCase,
+                        null,
+                        [],
+                        [
+                            new ContentModerationTargetAction
+                            {
+                                ActionType = (int)ContentModerationTargetActionType.Restrict,
+                                ChangedTargetState = true
+                            }
+                        ],
+                        [])
+                },
+                2));
+        var service = CreateService(moderationCaseRepository: repository);
+
+        var result = await service.GetMyAppealableDecisionsAsync(
+            new ContentModerationAppealQueryDto(),
+            61001,
+            5);
+
+        result.VoItems.Count.ShouldBe(2);
+        result.VoItems[0].VoCanAppeal.ShouldBeTrue();
+        result.VoItems[0].VoIneligibleReason.ShouldBeNull();
+        result.VoItems[0].VoTargetSnapshotTitle.ShouldBe("安全目标标题");
+        result.VoItems[0].VoTargetSnapshotSummary.ShouldBe("安全目标摘要");
+        result.VoItems[1].VoCanAppeal.ShouldBeFalse();
+        result.VoItems[1].VoIneligibleReason.ShouldBe("Expired");
+    }
+
+    [Fact]
+    public async Task GetAppealAsync_ForAppellant_ShouldReturnSafeUserActionSummariesOnly()
+    {
+        var repository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        var aggregate = new ContentModerationAppealAggregate(
+            new ContentModerationAppeal
+            {
+                Id = 73003,
+                TenantId = 5,
+                CaseId = 72013,
+                AppellantUserId = 61001,
+                PublicId = "appeal_personal",
+                Statement = "本人申诉陈述"
+            },
+            new ContentModerationCase { Id = 72013, TenantId = 5, PublicId = "case_personal" },
+            [],
+            [],
+            [],
+            [
+                new UserModerationAction
+                {
+                    Id = 74001,
+                    ActionType = (int)ModerationActionTypeEnum.Unmute,
+                    ResultCode = "StateDeactivated",
+                    Reason = "内部纠正原因",
+                    TargetUserId = 61001,
+                    TargetUserName = "appellant",
+                    CreateId = 62001,
+                    CreateBy = "operator",
+                    StartTime = new DateTime(2026, 7, 25, 2, 0, 0, DateTimeKind.Utc),
+                    CreateTime = new DateTime(2026, 7, 25, 2, 0, 0, DateTimeKind.Utc)
+                }
+            ],
+            []);
+        repository
+            .Setup(item => item.QueryAppealAggregateAsync(5, "appeal_personal", 61001))
+            .ReturnsAsync(aggregate);
+        var service = CreateService(moderationCaseRepository: repository);
+
+        var result = await service.GetAppealAsync("appeal_personal", 5, 61001);
+
+        result.VoUserActions.ShouldBeEmpty();
+        var summary = result.VoUserActionSummaries.ShouldHaveSingleItem();
+        summary.VoActionType.ShouldBe(nameof(ModerationActionTypeEnum.Unmute));
+        summary.VoResultCode.ShouldBe("StateDeactivated");
+    }
+
+    [Fact]
+    public async Task ExecuteAppealReliefAsync_ShouldReturnActionResultWithoutAppealDetail()
+    {
+        var repository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        var appeal = new ContentModerationAppeal
+        {
+            Id = 73002,
+            TenantId = 5,
+            PublicId = "appeal_action_result",
+            Status = (int)ContentModerationAppealStatus.Resolved,
+            Outcome = (int)ContentModerationAppealOutcome.Granted,
+            GrantedScope = (int)ContentModerationReliefScope.TargetContent,
+            Version = 6,
+            Statement = "动作执行权限不应通过写入响应读取此申诉陈述",
+            InternalRemark = "动作执行权限不应通过写入响应读取此内部备注"
+        };
+        repository
+            .Setup(item => item.ExecuteAppealReliefAsync(It.Is<ContentModerationAppealReliefCommand>(
+                command =>
+                    command.TenantId == 5
+                    && command.AppealPublicId == "appeal_action_result"
+                    && command.ExpectedAppealVersion == 5
+                    && command.OperationKey == "appeal-action-operation"
+                    && command.OperatorUserId == 62001
+                    && command.OperatorName == "action-operator")))
+            .ReturnsAsync(new ContentModerationAppealReliefWriteResult(appeal, [], [], true));
+        var service = CreateService(moderationCaseRepository: repository);
+
+        var result = await service.ExecuteAppealReliefAsync(
+            new ContentModerationAppealVersionedOperationDto
+            {
+                AppealPublicId = " appeal_action_result ",
+                ExpectedVersion = 5,
+                OperationKey = " appeal-action-operation "
+            },
+            62001,
+            "action-operator",
+            5);
+
+        result.VoAppealPublicId.ShouldBe("appeal_action_result");
+        result.VoStatus.ShouldBe(nameof(ContentModerationAppealStatus.Resolved));
+        result.VoOutcome.ShouldBe(nameof(ContentModerationAppealOutcome.Granted));
+        result.VoGrantedScope.ShouldBe((int)ContentModerationReliefScope.TargetContent);
+        result.VoVersion.ShouldBe(6);
+        result.VoIsIdempotentReplay.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData((int)ContentModerationDecision.NoViolation, (int)ContentModerationTargetDisposition.Keep, "MeasuresTaken")]
+    [InlineData((int)ContentModerationDecision.Violation, (int)ContentModerationTargetDisposition.Restricted, "NoViolation")]
+    [InlineData((int)ContentModerationDecision.InsufficientEvidence, (int)ContentModerationTargetDisposition.Unavailable, "MeasuresTaken")]
+    public async Task ReviewCaseAsync_ShouldRejectPublicResultCodeThatDoesNotMatchDecision(
+        int decision,
+        int targetDisposition,
+        string publicResultCode)
+    {
+        var service = CreateService();
+
+        var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
+            service.ReviewCaseAsync(
+                new ReviewContentModerationCaseDto
+                {
+                    CasePublicId = "mod_test_public_result",
+                    ExpectedVersion = 1,
+                    Decision = decision,
+                    TargetDisposition = targetDisposition,
+                    PublicResultCode = publicResultCode,
+                    OperationKey = "moderation-public-result-test"
+                },
+                9001,
+                "reviewer",
+                0));
+
+        exception.Message.ShouldBe("公开结果分类与案件决定不一致");
+    }
+
+    [Fact]
     public async Task SubmitReportAsync_Should_Persist_Comment_Target_Snapshot_On_Create()
     {
         var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
@@ -695,7 +964,8 @@ public class ContentModerationServiceTest
         Mock<IBaseRepository<Post>>? postRepository = null,
         Mock<IBaseRepository<Comment>>? commentRepository = null,
         Mock<IChannelMessageRepository>? channelMessageRepository = null,
-        Mock<IBaseRepository<PostQuickReply>>? postQuickReplyRepository = null)
+        Mock<IBaseRepository<PostQuickReply>>? postQuickReplyRepository = null,
+        Mock<IContentModerationCaseRepository>? moderationCaseRepository = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var basePostRepository = postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
@@ -713,6 +983,7 @@ public class ContentModerationServiceTest
             (channelMessageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict)).Object,
             productRepository.Object,
             basePostQuickReplyRepository.Object,
-            userRepository.Object);
+            userRepository.Object,
+            moderationCaseRepository: moderationCaseRepository?.Object);
     }
 }

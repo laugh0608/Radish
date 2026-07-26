@@ -501,7 +501,12 @@ public class AttachmentControllerTest
             .ReturnsAsync(((Stream?)null, (AttachmentAssetDto?)null));
         var tokenService = new Mock<IFileAccessTokenService>(MockBehavior.Strict);
         tokenService
-            .Setup(service => service.ValidateAndUseTokenAsync("valid-token", 10001, It.IsAny<string>()))
+            .Setup(service => service.ValidateAndUseTokenAsync(
+                "valid-token",
+                10001,
+                It.IsAny<string>(),
+                0,
+                It.Is<IReadOnlyCollection<string>>(roles => roles.SequenceEqual(new[] { "Operator" }))))
             .ReturnsAsync(42);
         var controller = CreateController(
             attachmentServiceMock.Object,

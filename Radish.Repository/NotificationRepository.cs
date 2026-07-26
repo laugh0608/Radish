@@ -498,6 +498,98 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
         });
     }
 
+    public Task<NotificationInboxSuppressionResult> SuppressBlockedActorsAsync(
+        long tenantId,
+        long userId,
+        IReadOnlyCollection<long> blockedActorUserIds,
+        DateTime nowUtc)
+    {
+        var actorIds = blockedActorUserIds
+            .Where(id => id > 0 && id != userId)
+            .Distinct()
+            .ToList();
+        if (userId <= 0 || actorIds.Count == 0)
+        {
+            return Task.FromResult(new NotificationInboxSuppressionResult(0, []));
+        }
+
+        var suppressibleKinds = NotificationDefinitionRegistry.All
+            .Where(definition => definition.SuppressWhenInteractionBlocked)
+            .Select(definition => definition.Kind)
+            .ToList();
+        return ExecuteDbOperationAsync(async () =>
+        {
+            DbProtectedClient.Ado.BeginTran();
+            try
+            {
+                await AcquireTransactionLockAsync($"inbox:{tenantId}:{userId}");
+                var candidateRelations = await DbProtectedClient.Queryable<UserNotification>()
+                    .Where(relation =>
+                        relation.TenantId == tenantId &&
+                        relation.UserId == userId &&
+                        !relation.IsDeleted &&
+                        !relation.SuppressedByUserBlock)
+                    .ToListAsync();
+                if (candidateRelations.Count == 0)
+                {
+                    DbProtectedClient.Ado.CommitTran();
+                    return new NotificationInboxSuppressionResult(0, []);
+                }
+
+                var candidateNotificationIds = candidateRelations
+                    .Select(relation => relation.NotificationId)
+                    .Distinct()
+                    .ToList();
+                var suppressedNotificationIds = await DbProtectedClient.Queryable<Notification>()
+                    .SplitTable()
+                    .Where(notification =>
+                        notification.TenantId == tenantId &&
+                        candidateNotificationIds.Contains(notification.Id) &&
+                        notification.TriggerId.HasValue &&
+                        actorIds.Contains(notification.TriggerId.Value) &&
+                        suppressibleKinds.Contains(notification.Type))
+                    .Select(notification => notification.Id)
+                    .ToListAsync();
+                if (suppressedNotificationIds.Count == 0)
+                {
+                    DbProtectedClient.Ado.CommitTran();
+                    return new NotificationInboxSuppressionResult(0, []);
+                }
+
+                var affectedRelations = candidateRelations
+                    .Where(relation => suppressedNotificationIds.Contains(relation.NotificationId))
+                    .ToList();
+                var relationIds = affectedRelations.Select(relation => relation.Id).ToList();
+                var affectedRows = await DbProtectedClient.Updateable<UserNotification>()
+                    .SetColumns(relation => new UserNotification
+                    {
+                        SuppressedByUserBlock = true,
+                        SuppressedAtUtc = nowUtc
+                    })
+                    .Where(relation =>
+                        relationIds.Contains(relation.Id) &&
+                        !relation.SuppressedByUserBlock)
+                    .ExecuteCommandAsync();
+                var groupIds = affectedRelations.Select(relation => relation.InboxGroupId).Distinct().ToList();
+                foreach (var groupId in groupIds)
+                {
+                    await RebuildGroupAfterSuppressionAsync(tenantId, userId, groupId, nowUtc);
+                }
+
+                var summary = await RebuildStateAsync(tenantId, userId, nowUtc, incrementRevision: true);
+                DbProtectedClient.Ado.CommitTran();
+                return new NotificationInboxSuppressionResult(
+                    affectedRows,
+                    [new NotificationInboxRecipientChange(userId, 0, false, summary)]);
+            }
+            catch
+            {
+                DbProtectedClient.Ado.RollbackTran();
+                throw;
+            }
+        });
+    }
+
     private async Task<IReadOnlyList<NotificationInboxGroup>> QueryCleanupCandidatesAsync(
         DateTime nowUtc,
         int batchSize)
@@ -641,6 +733,7 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                             relation.UserId == userId &&
                             relation.InboxGroupId == group.Id &&
                             !relation.IsDeleted &&
+                            !relation.SuppressedByUserBlock &&
                             !relation.IsRead &&
                             relation.OccurredAtUtc <= group.LastOccurredAtUtc)
                         .ExecuteCommandAsync();
@@ -651,6 +744,7 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                             relation.UserId == userId &&
                             relation.InboxGroupId == group.Id &&
                             !relation.IsDeleted &&
+                            !relation.SuppressedByUserBlock &&
                             !relation.IsRead)
                         .CountAsync();
                     group.ReadAtUtc = group.UnreadOccurrenceCount == 0 ? nowUtc : null;
@@ -718,6 +812,70 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
         }
 
         return ToSummary(state, unreadGroups);
+    }
+
+    private async Task RebuildGroupAfterSuppressionAsync(
+        long tenantId,
+        long userId,
+        long groupId,
+        DateTime nowUtc)
+    {
+        var group = await DbProtectedClient.Queryable<NotificationInboxGroup>()
+            .Where(item =>
+                item.Id == groupId &&
+                item.TenantId == tenantId &&
+                item.UserId == userId)
+            .FirstAsync();
+        if (group == null)
+        {
+            return;
+        }
+
+        var visibleRelations = await DbProtectedClient.Queryable<UserNotification>()
+            .Where(relation =>
+                relation.TenantId == tenantId &&
+                relation.UserId == userId &&
+                relation.InboxGroupId == groupId &&
+                !relation.IsDeleted &&
+                !relation.SuppressedByUserBlock)
+            .ToListAsync();
+        if (visibleRelations.Count == 0)
+        {
+            group.OccurrenceCount = 0;
+            group.UnreadOccurrenceCount = 0;
+            group.DistinctTriggerCount = 0;
+            group.IsDeleted = true;
+            group.DeletedAtUtc = nowUtc;
+            group.ReadAtUtc = nowUtc;
+            group.ModifyTime = nowUtc;
+            await DbProtectedClient.Updateable(group).ExecuteCommandAsync();
+            return;
+        }
+
+        var notificationIds = visibleRelations.Select(relation => relation.NotificationId).Distinct().ToList();
+        var notifications = await DbProtectedClient.Queryable<Notification>()
+            .SplitTable()
+            .Where(notification => notificationIds.Contains(notification.Id))
+            .ToListAsync();
+        var latest = notifications
+            .OrderByDescending(notification => notification.OccurredAtUtc)
+            .ThenByDescending(notification => notification.Id)
+            .First();
+        group.LatestNotificationId = latest.Id;
+        group.OccurrenceCount = visibleRelations.Count;
+        group.UnreadOccurrenceCount = visibleRelations.Count(relation => !relation.IsRead);
+        group.DistinctTriggerCount = notifications
+            .Where(notification => notification.TriggerId.HasValue)
+            .Select(notification => notification.TriggerId!.Value)
+            .Distinct()
+            .LongCount();
+        group.FirstOccurredAtUtc = visibleRelations.Min(relation => relation.OccurredAtUtc);
+        group.LastOccurredAtUtc = visibleRelations.Max(relation => relation.OccurredAtUtc);
+        group.IsDeleted = false;
+        group.DeletedAtUtc = null;
+        group.ReadAtUtc = group.UnreadOccurrenceCount == 0 ? nowUtc : null;
+        group.ModifyTime = nowUtc;
+        await DbProtectedClient.Updateable(group).ExecuteCommandAsync();
     }
 
     private async Task<NotificationInboxSummarySnapshot> ReadSummaryAsync(long tenantId, long userId)
@@ -835,7 +993,9 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
             .Where(relation =>
                 relation.TenantId == group.TenantId &&
                 relation.UserId == group.UserId &&
-                relation.InboxGroupId == group.Id)
+                relation.InboxGroupId == group.Id &&
+                !relation.IsDeleted &&
+                !relation.SuppressedByUserBlock)
             .Select(relation => relation.NotificationId)
             .ToListAsync();
         if (existingNotificationIds.Count == 0)

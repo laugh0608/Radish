@@ -185,6 +185,7 @@ internal static class InternalAsyncHelper
         catch (Exception ex)
         {
             exception = ex;
+            throw;
         }
         finally
         {

@@ -5,6 +5,9 @@ export const ME_CONTENT_PATH = '/me/content';
 export const ME_HISTORY_PATH = '/me/history';
 export const ME_ATTACHMENTS_PATH = '/me/attachments';
 export const ME_EXPERIENCE_PATH = '/me/experience';
+export const ME_REPORTS_PATH = '/me/reports';
+export const ME_APPEALS_PATH = '/me/appeals';
+export const ME_BLOCKED_PATH = '/me/blocked';
 
 export type MeContentTab = 'posts' | 'comments' | 'quick-replies';
 export type MeAttachmentBusinessType = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
@@ -44,6 +47,23 @@ export interface MeExperienceRoute {
   page: number;
 }
 
+export interface MeReportsRoute {
+  kind: 'reports';
+  page: number;
+}
+
+export interface MeAppealsRoute {
+  kind: 'appeals';
+  page: number;
+  casePublicId?: string;
+  appealPublicId?: string;
+}
+
+export interface MeBlockedRoute {
+  kind: 'blocked';
+  page: number;
+}
+
 export type MeRoute =
   | MeDashboardRoute
   | MeAssetsRoute
@@ -51,7 +71,10 @@ export type MeRoute =
   | MeContentRoute
   | MeHistoryRoute
   | MeAttachmentsRoute
-  | MeExperienceRoute;
+  | MeExperienceRoute
+  | MeReportsRoute
+  | MeAppealsRoute
+  | MeBlockedRoute;
 
 const CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies']);
 const ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
@@ -91,6 +114,11 @@ function normalizeAttachmentBusinessType(value: string | null | undefined): MeAt
 
 function normalizeKeyword(value: string | null | undefined): string {
   return value?.trim() ?? '';
+}
+
+function normalizePublicIdentifier(value: string | null | undefined): string | undefined {
+  const normalized = value?.trim() ?? '';
+  return /^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$/u.test(normalized) ? normalized : undefined;
 }
 
 function buildQuery(params: Record<string, string | number | null | undefined>): string {
@@ -158,6 +186,29 @@ export function parseMeRoute(pathname: string, search: string = ''): MeRoute | n
     };
   }
 
+  if (pathname === ME_REPORTS_PATH || pathname === `${ME_REPORTS_PATH}/`) {
+    return {
+      kind: 'reports',
+      page: normalizePage(params.get('page'))
+    };
+  }
+
+  if (pathname === ME_APPEALS_PATH || pathname === `${ME_APPEALS_PATH}/`) {
+    return {
+      kind: 'appeals',
+      page: normalizePage(params.get('page')),
+      casePublicId: normalizePublicIdentifier(params.get('case')),
+      appealPublicId: normalizePublicIdentifier(params.get('appeal')),
+    };
+  }
+
+  if (pathname === ME_BLOCKED_PATH || pathname === `${ME_BLOCKED_PATH}/`) {
+    return {
+      kind: 'blocked',
+      page: normalizePage(params.get('page')),
+    };
+  }
+
   return null;
 }
 
@@ -195,6 +246,24 @@ export function buildMePath(route: MeRoute = createDefaultMeRoute()): string {
     return `${ME_EXPERIENCE_PATH}${buildQuery({
       page: route.page
     })}`;
+  }
+
+  if (route.kind === 'reports') {
+    return `${ME_REPORTS_PATH}${buildQuery({
+      page: route.page
+    })}`;
+  }
+
+  if (route.kind === 'appeals') {
+    return `${ME_APPEALS_PATH}${buildQuery({
+      page: route.page,
+      case: route.casePublicId,
+      appeal: route.appealPublicId,
+    })}`;
+  }
+
+  if (route.kind === 'blocked') {
+    return `${ME_BLOCKED_PATH}${buildQuery({ page: route.page })}`;
   }
 
   return ME_ENTRY_PATH;

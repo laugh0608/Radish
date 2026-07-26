@@ -20,6 +20,11 @@ export interface UserFollowStatus {
   voIsFollower: boolean;
   voFollowerCount: number;
   voFollowingCount: number;
+  voCanFollow: boolean;
+  voCanDirectMessage: boolean;
+  voCanInteract: boolean;
+  voInteractionUnavailable: boolean;
+  voIsBlockedByCurrentUser: boolean;
 }
 
 export interface UserFollowSummary {

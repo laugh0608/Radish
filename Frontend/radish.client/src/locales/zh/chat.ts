@@ -29,6 +29,8 @@ export const zhChat = {
   'chat.action.accept.failed': '接受私信请求失败',
   'chat.action.decline.failed': '拒绝私信请求失败',
   'chat.action.block.failed': '阻断会话失败',
+  'chat.action.block.missingTarget': '缺少对方公开标识，无法建立权威屏蔽操作',
+  'chat.action.unblock.missingTarget': '缺少对方公开标识，无法解除权威屏蔽',
   'chat.action.unblock.failed': '解除会话阻断失败',
   'chat.action.archive.failed': '归档会话失败',
   'chat.action.unarchive.failed': '取消归档失败',

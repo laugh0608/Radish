@@ -97,6 +97,86 @@ public class PetServiceTest
     }
 
     [Fact]
+    public async Task GetPublicCardAsync_Should_Return_Only_Public_Whitelist_Projection()
+    {
+        var pet = CreatePet();
+        pet.TenantId = 9;
+        pet.IsPublic = true;
+        pet.GrowthStage = 3;
+        pet.Mood = PetMoodTypes.Happy;
+        pet.Satiety = 11;
+        pet.Cleanliness = 22;
+        pet.Energy = 33;
+        pet.GrowthValue = 144;
+        pet.LastCareTime = DateTime.UtcNow;
+        pet.EquippedBackgroundKey = "unregistered-background";
+        pet.EquippedToyKey = "unregistered-toy";
+        var mapper = CreateMapper();
+        var petRepository = CreatePetRepository(pet);
+        var logRepository = CreateLogRepository();
+        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+
+        var result = await service.GetPublicCardAsync(1001, 9);
+
+        Assert.NotNull(result);
+        Assert.Equal(pet.PublicId, result.VoPublicId);
+        Assert.Equal("小萝卜", result.VoName);
+        Assert.Equal("radish", result.VoSpeciesKey);
+        Assert.Equal("sprout", result.VoShapeKey);
+        Assert.Equal(3, result.VoGrowthStage);
+        Assert.Equal(PetMoodTypes.Happy, result.VoMood);
+        Assert.Null(result.VoAdornment);
+        Assert.DoesNotContain(typeof(Radish.Model.ViewModels.PetPublicCardVo).GetProperties(), property =>
+            property.Name is "VoId" or "VoUserId" or "VoSatiety" or "VoCleanliness" or
+                "VoEnergy" or "VoGrowthValue" or "VoLastCareTime" or "VoCareActions");
+    }
+
+    [Theory]
+    [InlineData(false, false, 9)]
+    [InlineData(true, true, 9)]
+    [InlineData(true, false, 10)]
+    public async Task GetPublicCardAsync_Should_Hide_NonPublic_Deleted_Or_CrossTenant_Pet(
+        bool isPublic,
+        bool isDeleted,
+        long requestedTenantId)
+    {
+        var pet = CreatePet();
+        pet.TenantId = 9;
+        pet.IsPublic = isPublic;
+        pet.IsDeleted = isDeleted;
+        var mapper = CreateMapper();
+        var petRepository = CreatePetRepository(pet);
+        var service = new PetService(mapper, petRepository.Object, CreateLogRepository().Object);
+
+        var result = await service.GetPublicCardAsync(1001, requestedTenantId);
+
+        Assert.Null(result);
+    }
+
+    [Theory]
+    [InlineData("pet_not-a-valid-id", "radish", "sprout")]
+    [InlineData("pet_018f6b6f7c7d70008f8f8f8f8f8f8f8f", "custom-species", "sprout")]
+    [InlineData("pet_018f6b6f7c7d70008f8f8f8f8f8f8f8f", "radish", "custom-shape")]
+    public async Task GetPublicCardAsync_Should_Hide_Unregistered_Public_Identity(
+        string publicId,
+        string speciesKey,
+        string shapeKey)
+    {
+        var pet = CreatePet();
+        pet.IsPublic = true;
+        pet.PublicId = publicId;
+        pet.SpeciesKey = speciesKey;
+        pet.ShapeKey = shapeKey;
+        var mapper = CreateMapper();
+        var petRepository = CreatePetRepository(pet);
+        var service = new PetService(mapper, petRepository.Object, CreateLogRepository().Object);
+
+        var result = await service.GetPublicCardAsync(1001, 0);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task CareAsync_Should_Update_Pet_And_Write_Log()
     {
         var pet = CreatePet();
@@ -484,6 +564,16 @@ public class PetServiceTest
                 return (data, filtered.Count);
             });
         return logRepository;
+    }
+
+    private static Mock<IBaseRepository<PetProfile>> CreatePetRepository(PetProfile pet)
+    {
+        var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
+        petRepository
+            .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
+            .ReturnsAsync((Expression<Func<PetProfile, bool>>? predicate) =>
+                predicate == null || predicate.Compile()(pet) ? pet : null);
+        return petRepository;
     }
 
     private static List<PetStatLog> QueryLogs(

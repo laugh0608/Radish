@@ -9,7 +9,7 @@ namespace Radish.Model;
 [Tenant(configId: "Message")]
 [SugarTable("UserNotification")]
 [SugarIndex("idx_user_notification_tenant_user_notification", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(NotificationId), OrderByType.Asc, IsUnique = true)]
-[SugarIndex("idx_user_notification_group_unread", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(InboxGroupId), OrderByType.Asc, nameof(IsRead), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc)]
+[SugarIndex("idx_user_notification_group_unread", nameof(TenantId), OrderByType.Asc, nameof(UserId), OrderByType.Asc, nameof(InboxGroupId), OrderByType.Asc, nameof(IsRead), OrderByType.Asc, nameof(SuppressedByUserBlock), OrderByType.Asc, nameof(IsDeleted), OrderByType.Asc)]
 public class UserNotification : RootEntityTKey<long>, ITenantEntity
 {
     public UserNotification()
@@ -49,6 +49,12 @@ public class UserNotification : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(IsNullable = true, ColumnDescription = "已读时间")]
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
     public DateTime? ReadAt { get; set; }
+
+    [SugarColumn(IsNullable = false, ColumnDescription = "是否被用户屏蔽关系抑制")]
+    public bool SuppressedByUserBlock { get; set; }
+
+    [SugarColumn(IsNullable = true, ColumnDescription = "用户屏蔽抑制时间")]
+    public DateTime? SuppressedAtUtc { get; set; }
 
     [SugarColumn(IsNullable = false, ColumnDescription = "是否已删除")]
     public bool IsDeleted { get; set; }

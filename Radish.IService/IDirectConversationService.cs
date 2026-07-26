@@ -32,12 +32,14 @@ public interface IDirectConversationService
         long tenantId,
         long currentUserId,
         long channelId,
+        string operationKey,
         string operatorName);
 
     Task<DirectConversationMutationResult> UnblockAsync(
         long tenantId,
         long currentUserId,
         long channelId,
+        string operationKey,
         string operatorName);
 
     Task<DirectConversationMutationResult> SetArchivedAsync(

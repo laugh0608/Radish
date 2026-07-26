@@ -99,7 +99,7 @@ export async function getOrCreateDirectConversation(targetUserId: EntityIdValue)
 }
 
 async function mutateDirectConversation(
-  action: 'Accept' | 'Decline' | 'Block' | 'Unblock',
+  action: 'Accept' | 'Decline',
   channelId: EntityIdValue
 ): Promise<DirectConversationVo> {
   const normalizedChannelId = normalizeEntityId(channelId);
@@ -121,8 +121,6 @@ async function mutateDirectConversation(
 
 export const acceptDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Accept', channelId);
 export const declineDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Decline', channelId);
-export const blockDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Block', channelId);
-export const unblockDirectConversation = (channelId: EntityIdValue) => mutateDirectConversation('Unblock', channelId);
 
 export async function setDirectConversationArchived(
   channelId: EntityIdValue,

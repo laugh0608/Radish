@@ -14,7 +14,7 @@ namespace Radish.Api.Tests.Repositories;
 public sealed class ChannelMessageRepositoryTest
 {
     [Fact]
-    public async Task RecallWithEffectsAsync_ShouldSoftDeleteMessageReactionsAndPinTogether()
+    public async Task ModerationRecallAndRestore_ShouldKeepMessageReactionsPinAndSearchProjectionTogether()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-message-recall-{Guid.NewGuid():N}.db");
         using var db = CreateClient(path);
@@ -65,7 +65,8 @@ public sealed class ChannelMessageRepositoryTest
                 message.Id,
                 20001,
                 "Requester",
-                recalledAt);
+                recalledAt,
+                moderationTargetActionId: 76010);
 
             Assert.Equal(1, result.AffectedRows);
             Assert.Equal(message.ChannelId, result.ChannelId);
@@ -76,6 +77,7 @@ public sealed class ChannelMessageRepositoryTest
             var recalledPin = chatDb.Queryable<ChatMessagePin>().InSingle(75010);
             Assert.True(recalledMessage.IsDeleted);
             Assert.Null(recalledMessage.SearchText);
+            Assert.Equal(76010, recalledMessage.ModerationTargetActionId);
             Assert.Equal(recalledAt, recalledMessage.DeletedAt);
             Assert.True(recalledReaction.IsDeleted);
             Assert.Equal(recalledAt, recalledReaction.DeletedAt);
@@ -84,6 +86,26 @@ public sealed class ChannelMessageRepositoryTest
             Assert.Equal(recalledAt, recalledPin.DeletedAt);
             Assert.Equal(20001, recalledPin.DeletedByUserId);
             Assert.Equal(5, chatDb.Queryable<Channel>().InSingle(channel.Id).PinRevision);
+
+            var restoredAt = recalledAt.AddMinutes(1);
+            var restored = await repository.RestoreModeratedWithEffectsAsync(
+                message.Id,
+                76010,
+                20003,
+                "AppealOperator",
+                restoredAt);
+
+            Assert.Equal(1, restored.AffectedRows);
+            Assert.True(restored.ReactionsChanged);
+            Assert.Equal(1, restored.ReactionRevision);
+            Assert.True(restored.PinsChanged);
+            Assert.Equal(6, restored.PinRevision);
+            var restoredMessage = chatDb.Queryable<ChannelMessage>().InSingle(message.Id);
+            Assert.False(restoredMessage.IsDeleted);
+            Assert.Equal("recall me", restoredMessage.SearchText);
+            Assert.Null(restoredMessage.ModerationTargetActionId);
+            Assert.False(chatDb.Queryable<ChatMessageReaction>().InSingle(74010).IsDeleted);
+            Assert.False(chatDb.Queryable<ChatMessagePin>().InSingle(75010).IsDeleted);
         }
         finally
         {

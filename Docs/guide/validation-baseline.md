@@ -17,6 +17,7 @@
 根目录现提供以下命令：
 ```bash
 npm run setup:hooks
+npm run check:docs
 npm run check:repo-hygiene
 npm run check:repo-hygiene:candidate
 npm run check:repo-hygiene:changed
@@ -53,6 +54,9 @@ npm run validate:candidate
 - `setup:hooks`
   - 将 Git `core.hooksPath` 指向仓库内的 `.githooks`
   - 启用 `pre-commit` 与 `commit-msg` 本地拦截
+- `check:docs`
+  - 通过 `./scripts/check-docs.sh` 全量扫描 `Docs/`，包含未跟踪的新文档
+  - 复用仓库卫生检查器，阻断非法 UTF-8、UTF-8 BOM、`U+FFFD`、常见乱码特征、错误换行和缺失末尾换行；该专用入口不输出篇幅治理提醒
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用

@@ -23,6 +23,8 @@ function target(kind: NotificationTargetKind, fields: Partial<NotificationTarget
     voBenefitId: null,
     voDocumentSlug: null,
     voGovernanceCaseId: null,
+    voGovernanceCasePublicId: null,
+    voGovernanceAppealPublicId: null,
     voUnavailableReason: null,
     ...fields,
   };
@@ -83,6 +85,18 @@ test('治理 target 只使用结构化 case id 并带通知返回路径', () => 
       href: '/console/moderation?sourceReportId=2042219067430928393&backTo=%2Fnotifications',
     },
   );
+  assert.deepEqual(
+    resolveWebNotificationNavigation(target('GovernanceDecision', {
+      voGovernanceCasePublicId: 'case_public',
+    })),
+    { surface: 'web', href: '/me/appeals?case=case_public' },
+  );
+  assert.deepEqual(
+    resolveWebNotificationNavigation(target('GovernanceAppeal', {
+      voGovernanceAppealPublicId: 'appeal_public',
+    })),
+    { surface: 'web', href: '/me/appeals?appeal=appeal_public' },
+  );
 });
 
 test('无效 target 不回退到泛化页面，也不从内容猜测', () => {
@@ -92,4 +106,6 @@ test('无效 target 不回退到泛化页面，也不从内容猜测', () => {
   assert.equal(resolveWebNotificationNavigation(target('ShopOrder')), null);
   assert.equal(resolveWebNotificationNavigation(target('DocsDocument', { voDocumentSlug: ' ' })), null);
   assert.equal(resolveWebNotificationNavigation(target('GovernanceCase', { voGovernanceCaseId: 'bad' })), null);
+  assert.equal(resolveWebNotificationNavigation(target('GovernanceDecision')), null);
+  assert.equal(resolveWebNotificationNavigation(target('GovernanceAppeal')), null);
 });

@@ -13,6 +13,9 @@ public static class ReliableTaskTypes
     public const string HighlightBonusReward = "CommentHighlightBonusQualified";
     public const string NotificationRequested = "NotificationRequested";
     public const string ChatAttachmentBinding = "ChatAttachmentBinding";
+    public const string ContentModerationChatRecall = "ContentModerationChatRecall";
+    public const string ContentModerationChatRestore = "ContentModerationChatRestore";
+    public const string UserBlockRelationshipChanged = "UserBlockRelationshipChanged";
 }
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
@@ -72,3 +75,37 @@ public sealed record ChatAttachmentBindingTaskPayload(
     long AttachmentId,
     long UploaderId,
     string UploaderName);
+
+public sealed record ContentModerationChatRecallTaskPayload(
+    long TenantId,
+    long CaseId,
+    long TargetActionId,
+    long MessageId,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName);
+
+public sealed record ContentModerationChatRestoreTaskPayload(
+    long TenantId,
+    long AppealId,
+    long TargetActionId,
+    long SourceTargetActionId,
+    long MessageId,
+    string OperationKey,
+    long OperatorUserId,
+    string OperatorName);
+
+public static class UserBlockRelationshipEventTypes
+{
+    public const string Blocked = "Blocked";
+    public const string Unblocked = "Unblocked";
+}
+
+public sealed record UserBlockRelationshipChangedTaskPayload(
+    long TenantId,
+    long UserBlockId,
+    string EventType,
+    long BlockerUserId,
+    long BlockedUserId,
+    long RelationshipVersion,
+    DateTime OccurredAtUtc);

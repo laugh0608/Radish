@@ -59,6 +59,32 @@ public class PetProfileVo
     public List<PetCareActionStateVo> VoCareActions { get; set; } = new();
 }
 
+/// <summary>公开个人主页使用的宠物名片</summary>
+public class PetPublicCardVo
+{
+    public string VoPublicId { get; set; } = string.Empty;
+
+    public string VoName { get; set; } = string.Empty;
+
+    public string VoSpeciesKey { get; set; } = string.Empty;
+
+    public string VoShapeKey { get; set; } = string.Empty;
+
+    public int VoGrowthStage { get; set; }
+
+    public string VoMood { get; set; } = PetMoodTypes.Calm;
+
+    public PetPublicAdornmentVo? VoAdornment { get; set; }
+}
+
+/// <summary>服务端确认可公开的宠物装扮摘要</summary>
+public class PetPublicAdornmentVo
+{
+    public string? VoBackgroundKey { get; set; }
+
+    public string? VoToyKey { get; set; }
+}
+
 /// <summary>宠物照顾动作状态视图模型</summary>
 public class PetCareActionStateVo
 {

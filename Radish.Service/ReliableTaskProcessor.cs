@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Radish.Common;
 using Radish.IRepository.Base;
+using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -17,6 +18,12 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
     private readonly IChatAttachmentBindingService _chatAttachmentBindingService;
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
+    private readonly IChannelMessageRepository? _channelMessageRepository;
+    private readonly IContentModerationCaseRepository? _contentModerationCaseRepository;
+    private readonly IContentModerationRealtimeNotifier? _contentModerationRealtimeNotifier;
+    private readonly INotificationInboxRepository? _notificationInboxRepository;
+    private readonly INotificationPushService? _notificationPushService;
+    private readonly IUserInteractionRealtimeNotifier? _userInteractionRealtimeNotifier;
 
     public ReliableTaskProcessor(
         ICoinRewardService coinRewardService,
@@ -25,7 +32,13 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         INotificationService notificationService,
         IChatAttachmentBindingService chatAttachmentBindingService,
         IBaseRepository<Post> postRepository,
-        IBaseRepository<Comment> commentRepository)
+        IBaseRepository<Comment> commentRepository,
+        IChannelMessageRepository? channelMessageRepository = null,
+        IContentModerationCaseRepository? contentModerationCaseRepository = null,
+        IContentModerationRealtimeNotifier? contentModerationRealtimeNotifier = null,
+        INotificationInboxRepository? notificationInboxRepository = null,
+        INotificationPushService? notificationPushService = null,
+        IUserInteractionRealtimeNotifier? userInteractionRealtimeNotifier = null)
     {
         _coinRewardService = coinRewardService;
         _coinService = coinService;
@@ -34,6 +47,12 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         _chatAttachmentBindingService = chatAttachmentBindingService;
         _postRepository = postRepository;
         _commentRepository = commentRepository;
+        _channelMessageRepository = channelMessageRepository;
+        _contentModerationCaseRepository = contentModerationCaseRepository;
+        _contentModerationRealtimeNotifier = contentModerationRealtimeNotifier;
+        _notificationInboxRepository = notificationInboxRepository;
+        _notificationPushService = notificationPushService;
+        _userInteractionRealtimeNotifier = userInteractionRealtimeNotifier;
     }
 
     public async Task ProcessAsync(ReliableOutboxSnapshot message, CancellationToken cancellationToken = default)
@@ -100,9 +119,154 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 await _chatAttachmentBindingService.BindAsync(
                     Deserialize<ChatAttachmentBindingTaskPayload>(message));
                 break;
+            case ReliableTaskTypes.ContentModerationChatRecall:
+                await ProcessContentModerationChatRecallAsync(
+                    Deserialize<ContentModerationChatRecallTaskPayload>(message));
+                break;
+            case ReliableTaskTypes.ContentModerationChatRestore:
+                await ProcessContentModerationChatRestoreAsync(
+                    Deserialize<ContentModerationChatRestoreTaskPayload>(message));
+                break;
+            case ReliableTaskTypes.UserBlockRelationshipChanged:
+                await ProcessUserBlockRelationshipChangedAsync(
+                    Deserialize<UserBlockRelationshipChangedTaskPayload>(message));
+                break;
             default:
                 throw new PermanentReliableTaskException($"未知可靠任务类型：{message.TaskType}");
         }
+    }
+
+    private async Task ProcessUserBlockRelationshipChangedAsync(
+        UserBlockRelationshipChangedTaskPayload payload)
+    {
+        if (_notificationInboxRepository == null || _notificationPushService == null)
+        {
+            throw new PermanentReliableTaskException("用户屏蔽关系收口依赖未注册");
+        }
+
+        if (payload.EventType == UserBlockRelationshipEventTypes.Blocked)
+        {
+            foreach (var (recipientUserId, actorUserId) in new[]
+                     {
+                         (payload.BlockerUserId, payload.BlockedUserId),
+                         (payload.BlockedUserId, payload.BlockerUserId)
+                     })
+            {
+                var result = await _notificationInboxRepository.SuppressBlockedActorsAsync(
+                    payload.TenantId,
+                    recipientUserId,
+                    [actorUserId],
+                    payload.OccurredAtUtc);
+                foreach (var change in result.RecipientChanges)
+                {
+                    await _notificationPushService.PushInboxChangedAsync(
+                        change.UserId,
+                        new Radish.Model.ViewModels.NotificationInboxChangedVo
+                        {
+                            VoRevision = change.Summary.Revision,
+                            VoUnreadGroupCount = change.Summary.UnreadGroupCount,
+                            VoUnreadOccurrenceCount = change.Summary.UnreadOccurrenceCount,
+                            VoReason = "UserBlockSuppressed",
+                            VoRealtimePreviewAllowed = false
+                        });
+                }
+            }
+        }
+        else if (payload.EventType != UserBlockRelationshipEventTypes.Unblocked)
+        {
+            throw new PermanentReliableTaskException($"未知用户屏蔽关系事件：{payload.EventType}");
+        }
+
+        if (_userInteractionRealtimeNotifier != null)
+        {
+            await _userInteractionRealtimeNotifier.NotifyRelationshipChangedAsync(
+                payload.BlockerUserId,
+                payload.BlockedUserId,
+                payload.RelationshipVersion);
+        }
+    }
+
+    private async Task ProcessContentModerationChatRecallAsync(ContentModerationChatRecallTaskPayload payload)
+    {
+        if (_channelMessageRepository == null || _contentModerationCaseRepository == null)
+        {
+            throw new PermanentReliableTaskException("内容治理 Chat 动作处理依赖未注册");
+        }
+
+        var resultCode = "TargetUnavailable";
+        var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(item =>
+            item.Id == payload.MessageId && item.TenantId == payload.TenantId);
+        if (message != null)
+        {
+            if (message.IsDeleted)
+            {
+                resultCode = "AlreadyRestricted";
+            }
+            else
+            {
+                var result = await _channelMessageRepository.RecallWithEffectsAsync(
+                    payload.MessageId,
+                    payload.OperatorUserId,
+                    payload.OperatorName,
+                    DateTime.UtcNow,
+                    payload.TargetActionId);
+                resultCode = result.AffectedRows > 0 ? "Restricted" : "AlreadyRestricted";
+                if (result.AffectedRows > 0 && _contentModerationRealtimeNotifier != null)
+                {
+                    await _contentModerationRealtimeNotifier.NotifyChatMessageRecalledAsync(
+                        payload.TenantId,
+                        result.ChannelId,
+                        payload.MessageId);
+                }
+            }
+        }
+
+        await _contentModerationCaseRepository.CompleteChatTargetActionAsync(
+            new ContentModerationChatActionCompletionCommand(
+                payload.TenantId,
+                payload.CaseId,
+                payload.TargetActionId,
+                payload.OperationKey,
+                true,
+                resultCode,
+                payload.OperatorUserId,
+                payload.OperatorName,
+                DateTime.UtcNow));
+    }
+
+    private async Task ProcessContentModerationChatRestoreAsync(ContentModerationChatRestoreTaskPayload payload)
+    {
+        if (_channelMessageRepository == null || _contentModerationCaseRepository == null)
+        {
+            throw new PermanentReliableTaskException("内容治理 Chat 纠正处理依赖未注册");
+        }
+
+        var result = await _channelMessageRepository.RestoreModeratedWithEffectsAsync(
+            payload.MessageId,
+            payload.SourceTargetActionId,
+            payload.OperatorUserId,
+            payload.OperatorName,
+            DateTime.UtcNow);
+        var resultCode = result.AffectedRows == 1 ? "Restored" : "TargetChanged";
+        if (result.AffectedRows == 1 && _contentModerationRealtimeNotifier != null)
+        {
+            await _contentModerationRealtimeNotifier.NotifyChatMessageRestoredAsync(
+                payload.TenantId,
+                result.ChannelId,
+                payload.MessageId);
+        }
+
+        await _contentModerationCaseRepository.CompleteChatReliefAsync(
+            new ContentModerationChatReliefCompletionCommand(
+                payload.TenantId,
+                payload.AppealId,
+                payload.TargetActionId,
+                payload.OperationKey,
+                true,
+                resultCode,
+                payload.OperatorUserId,
+                payload.OperatorName,
+                DateTime.UtcNow));
     }
 
     private async Task ProcessPostPublishedAsync(PostPublishedTaskPayload payload)

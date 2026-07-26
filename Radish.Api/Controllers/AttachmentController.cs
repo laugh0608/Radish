@@ -757,7 +757,9 @@ public class AttachmentController : ControllerBase
                 dto,
                 userId,
                 Current.IsSystemOrAdmin(),
-                baseUrl);
+                baseUrl,
+                Current.TenantId,
+                Current.Roles);
 
             return new MessageModel
             {
@@ -794,7 +796,12 @@ public class AttachmentController : ControllerBase
             var ipAddress = ResolveClientIpAddress();
 
             // 验证令牌
-            var attachmentId = await _fileAccessTokenService.ValidateAndUseTokenAsync(token, userId, ipAddress);
+            var attachmentId = await _fileAccessTokenService.ValidateAndUseTokenAsync(
+                token,
+                userId > 0 ? userId : null,
+                ipAddress,
+                Current.TenantId,
+                Current.Roles);
             if (!attachmentId.HasValue)
             {
                 return StatusCode(403, new MessageModel
@@ -858,7 +865,12 @@ public class AttachmentController : ControllerBase
         try
         {
             var userId = Current.UserId;
-            await _fileAccessTokenService.RevokeTokenAsync(token, userId, Current.IsSystemOrAdmin());
+            await _fileAccessTokenService.RevokeTokenAsync(
+                token,
+                userId,
+                Current.IsSystemOrAdmin(),
+                Current.TenantId,
+                Current.Roles);
 
             return new MessageModel
             {
@@ -886,7 +898,9 @@ public class AttachmentController : ControllerBase
         await _fileAccessTokenService.RevokeTokenAsync(
             dto.TokenId,
             Current.UserId,
-            Current.IsSystemOrAdmin());
+            Current.IsSystemOrAdmin(),
+            Current.TenantId,
+            Current.Roles);
 
         return MessageModel.Success("撤销令牌成功");
     }
@@ -908,7 +922,9 @@ public class AttachmentController : ControllerBase
             var tokens = await _fileAccessTokenService.GetAttachmentTokensAsync(
                 attachmentId,
                 userId,
-                Current.IsSystemOrAdmin());
+                Current.IsSystemOrAdmin(),
+                Current.TenantId,
+                Current.Roles);
 
             return new MessageModel
             {

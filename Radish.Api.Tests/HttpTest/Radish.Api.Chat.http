@@ -73,10 +73,20 @@ Authorization: Bearer {{Access_Token}}
 ### 8. 阻断会话
 POST {{Gateway_HostAddress}}/api/v1/DirectConversation/Block/{{ChannelId}}
 Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "operationKey": "direct-block-http-20260725-001"
+}
 
 ### 9. 解除当前用户发起的阻断
 POST {{Gateway_HostAddress}}/api/v1/DirectConversation/Unblock/{{ChannelId}}
 Authorization: Bearer {{Access_Token}}
+Content-Type: application/json
+
+{
+  "operationKey": "direct-unblock-http-20260725-001"
+}
 
 ### 10. 归档会话
 PUT {{Gateway_HostAddress}}/api/v1/DirectConversation/SetArchived/{{ChannelId}}

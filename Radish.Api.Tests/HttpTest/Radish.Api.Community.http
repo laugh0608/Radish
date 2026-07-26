@@ -4,6 +4,8 @@
 @TargetUserId = 20002
 @ReportTargetPostId = 1
 @ReviewReportId = 1
+@ReportPublicId = rpt_replace_me
+@ModerationCasePublicId = mod_replace_me
 
 ### 关注用户
 POST {{Gateway_HostAddress}}/api/v1/UserFollow/Follow
@@ -13,6 +15,16 @@ Authorization: Bearer {{Access_Token}}
 {
   "targetUserId": {{TargetUserId}}
 }
+
+### 获取我的举报结果
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyReports?pageIndex=1&pageSize=20
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 获取我的单份举报结果
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyReport/{{ReportPublicId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
 
 ### 获取关注状态
 GET {{Gateway_HostAddress}}/api/v1/UserFollow/GetFollowStatus?targetUserId={{TargetUserId}}
@@ -85,55 +97,48 @@ GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetMyPublishPermission
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
-### 管理端：获取举报审核队列
-GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetReviewQueue?status=0&pageIndex=1&pageSize=10
+### 管理端：获取治理案件队列
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetCaseQueue?status=0&pageIndex=1&pageSize=20
 Accept: application/json
 Authorization: Bearer {{Access_Token}}
 
-### 管理端：审核举报并禁言 24 小时
-POST {{Gateway_HostAddress}}/api/v1/ContentModeration/Review
+### 管理端：获取治理案件详情
+GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetCase/{{ModerationCasePublicId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 管理端：追加当前目标快照
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/CaptureEvidence
 Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "reportId": {{ReviewReportId}},
-  "isApproved": true,
-  "actionType": 1,
-  "durationHours": 24,
-  "reviewRemark": "违规灌水，禁言 24 小时"
+  "casePublicId": "{{ModerationCasePublicId}}",
+  "expectedVersion": 1,
+  "evidenceType": 2
 }
 
-### 管理端：手动封禁用户
-POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ApplyUserAction
+### 管理端：登记违规决定、限制目标并禁言
+POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ReviewCase
 Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "targetUserId": {{TargetUserId}},
-  "actionType": 2,
-  "reason": "多次发布违规内容"
+  "casePublicId": "{{ModerationCasePublicId}}",
+  "expectedVersion": 2,
+  "decision": 2,
+  "targetDisposition": 2,
+  "expectedTargetVersion": 0,
+  "publicResultCode": "MeasuresTaken",
+  "internalRemark": "证据确认违规",
+  "userAction": {
+    "actionType": 1,
+    "expectedStateVersion": 0,
+    "durationHours": 24,
+    "reason": "违规内容处置"
+  },
+  "operationKey": "moderation-case-demo-001"
 }
-
-### 管理端：手动解除禁言
-POST {{Gateway_HostAddress}}/api/v1/ContentModeration/ApplyUserAction
-Content-Type: application/json
-Authorization: Bearer {{Access_Token}}
-
-{
-  "targetUserId": {{TargetUserId}},
-  "actionType": 3,
-  "reason": "人工复核后解除禁言"
-}
-
-### 管理端：获取治理动作记录
-GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10
-Accept: application/json
-Authorization: Bearer {{Access_Token}}
-
-### 管理端：按举报单 / 动作类型 / 生效状态筛选治理动作记录
-GET {{Gateway_HostAddress}}/api/v1/ContentModeration/GetActionLogs?pageIndex=1&pageSize=10&sourceReportId={{ReviewReportId}}&actionType=Mute&isActive=true&keyword=reviewer
-Accept: application/json
-Authorization: Bearer {{Access_Token}}
 
 @ShopAdminProductId = 1
 @ShopAdminOrderId = 1

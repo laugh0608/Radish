@@ -19,13 +19,15 @@ const markdownConsumerPaths = [
   'src/apps/forum/components/PublishPostModal.tsx',
   'src/apps/forum/components/EditPostModal.tsx',
   'src/apps/forum/components/PostDetail.tsx',
-  'src/docs/DocsAuthorApp.tsx',
+  'src/docs/DocsAuthorEditorPage.tsx',
   'src/apps/wiki/WikiApp.tsx',
 ];
 
 test('正式页面中的 MarkdownEditor 消费者注入词元、真实上传进度和错误处理', () => {
   for (const relativePath of markdownConsumerPaths) {
-    const source = readSource(relativePath);
+    const source = relativePath === 'src/docs/DocsAuthorEditorPage.tsx'
+      ? `${readSource('src/docs/DocsAuthorApp.tsx')}\n${readSource(relativePath)}`
+      : readSource(relativePath);
     assert.match(source, /createMarkdownEditorLabels\(/, `${relativePath} 缺少宿主 labels`);
     assert.match(source, /labels=\{markdownEditorLabels\}/, `${relativePath} 未向编辑器传入 labels`);
     assert.match(source, /onImageUpload=\{[^}]+\}/, `${relativePath} 缺少图片上传消费者`);
@@ -60,7 +62,7 @@ test('MarkdownEditor 正式消费者在上传中阻止提交和会卸载编辑�
   assert.match(postDetailViewSource, /onClick=\{handleBack\} disabled=\{isAnswerEditorUploading\}/);
   assert.match(postDetailViewSource, /onAnswerEditorUploadingChange=\{handleAnswerEditorUploadingChange\}/);
 
-  const docsAuthorSource = readSource('src/docs/DocsAuthorApp.tsx');
+  const docsAuthorSource = `${readSource('src/docs/DocsAuthorApp.tsx')}\n${readSource('src/docs/DocsAuthorEditorPage.tsx')}`;
   const docsAuthorNavigationSource = readSource('src/docs/useDocsAuthorNavigation.ts');
   assert.match(docsAuthorSource, /if \(isEditorUploading\) \{\s*event\.preventDefault\(\);/);
   assert.match(docsAuthorSource, /onSubmit=\{handleEditorSubmit\}/);

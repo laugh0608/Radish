@@ -30,6 +30,16 @@ export type {
 } from './notification-contract';
 
 export type {
+  UserBlockMutationRequest,
+  DirectConversationBlockMutationRequest,
+  UserInteractionCapabilityVo,
+  UserBlockMutationVo,
+  UserBlockListItemVo,
+  UserBlockPageVo,
+  UserInteractionChangedVo,
+} from './user-block-contract';
+
+export type {
   ChatMessageSearchScope,
   SearchChannelMessagesDto,
   ChannelMessageSearchItemVo,
@@ -67,6 +77,63 @@ export type {
   ReadReceiptsChangedVo,
 } from './chat-read-receipt-contract';
 export { ChatReadReceiptModes } from './chat-read-receipt-contract';
+
+export type {
+  WikiLongId,
+  WikiDraftReviewStateValue,
+  WikiCollaboratorStateValue,
+  WikiReviewActionValue,
+  WikiAuthorDocumentVo,
+  WikiDocumentCollaboratorVo,
+  WikiDocumentReviewEventVo,
+  WikiAuthorDraftDetailVo,
+  WikiReviewQueueItemVo,
+  CreateWikiAuthorDraftRequest,
+  SaveWikiAuthorDraftRequest,
+  SubmitWikiDraftRequest,
+  ReviewWikiDraftRequest,
+} from './wiki-authoring-contract';
+export {
+  WikiDraftReviewState,
+  WikiCollaboratorState,
+  WikiReviewAction,
+} from './wiki-authoring-contract';
+
+export type { WikiAttachmentErrorCodeValue } from './wiki-attachment-contract';
+export { WikiAttachmentErrorCode } from './wiki-attachment-contract';
+
+export type {
+  ModerationLongId,
+  ContentModerationTargetType,
+  ContentModerationCaseStatus,
+  ContentModerationDecision,
+  ContentModerationTargetDisposition,
+  ContentReportReceiptVo,
+  ContentModerationCaseQueueItemVo,
+  ContentModerationCaseReportVo,
+  ContentModerationEvidenceVo,
+  ContentModerationCaseEventVo,
+  UserModerationStateVo,
+  ContentModerationCaseDetailVo,
+  CaptureContentModerationEvidenceRequest,
+  ContentModerationCaseUserActionRequest,
+  ReviewContentModerationCaseRequest,
+  ContentModerationCaseReviewResultVo,
+  ApplyContentModerationCorrectiveActionRequest,
+  ContentModerationAppealStatus,
+  ContentModerationAppealOutcome,
+  ContentModerationReliefScope,
+  ContentModerationDecisionNoticeVo,
+  ContentModerationAppealEventVo,
+  ContentModerationTargetActionVo,
+  ContentModerationUserActionSummaryVo,
+  ContentModerationAppealVo,
+  ContentModerationAppealActionResultVo,
+  SubmitContentModerationAppealRequest,
+  ContentModerationAppealVersionedOperationRequest,
+  ReviewContentModerationAppealRequest,
+  CaptureContentModerationAppealEvidenceRequest,
+} from './content-moderation-contract';
 
 export type { ApiClientConfig } from './client';
 export {

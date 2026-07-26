@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Moq;
 using Radish.IRepository;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Radish.Service;
 using Xunit;
@@ -81,7 +82,7 @@ public sealed class ChatChannelAccessServiceTest
     }
 
     [Fact]
-    public async Task GetAccessAsync_ShouldKeepHistoryVisibleButStopSendingWhenDirectConversationIsBlocked()
+    public async Task GetAccessAsync_ShouldNotTreatLegacyDirectFieldAsRuntimeAuthority()
     {
         var channelRepository = CreateRepository(new Channel
         {
@@ -105,16 +106,22 @@ public sealed class ChatChannelAccessServiceTest
             BlockedByUserId = 20001,
             TenantId = 30000
         });
-        var service = CreateService(channelRepository, memberRepository, directRepository);
+        var userRepository = CreateRepository(new User
+        {
+            Id = 20001,
+            TenantId = 30000,
+            IsEnable = true
+        });
+        var service = CreateService(channelRepository, memberRepository, directRepository, userRepository);
 
         var result = await service.GetAccessAsync(30000, 20002, 100);
 
         Assert.True(result.CanView);
-        Assert.False(result.CanSend);
+        Assert.True(result.CanSend);
         Assert.True(result.CanJoinRealtime);
-        Assert.False(result.CanViewMembers);
-        Assert.False(result.CanReact);
-        Assert.False(result.CanPinMessages);
+        Assert.True(result.CanViewMembers);
+        Assert.True(result.CanReact);
+        Assert.True(result.CanPinMessages);
     }
 
     [Theory]
@@ -338,12 +345,27 @@ public sealed class ChatChannelAccessServiceTest
         Mock<IBaseRepository<User>>? userRepository = null,
         IChannelMessageRepository? messageRepository = null)
     {
+        var interactionPolicy = new Mock<IUserInteractionPolicyService>();
+        interactionPolicy
+            .Setup(item => item.GetSnapshotAsync(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>()))
+            .ReturnsAsync((long _, long _, long otherUserId) =>
+                new UserInteractionPolicySnapshot(otherUserId, false, false));
+        interactionPolicy
+            .Setup(item => item.GetSnapshotsAsync(
+                It.IsAny<long>(),
+                It.IsAny<long>(),
+                It.IsAny<IReadOnlyCollection<long>>()))
+            .ReturnsAsync((long _, long _, IReadOnlyCollection<long> userIds) =>
+                (IReadOnlyDictionary<long, UserInteractionPolicySnapshot>)userIds.ToDictionary(
+                    id => id,
+                    id => new UserInteractionPolicySnapshot(id, false, false)));
         return new ChatChannelAccessService(
             channelRepository.Object,
             memberRepository.Object,
             directRepository.Object,
             userRepository?.Object ?? Mock.Of<IBaseRepository<User>>(),
-            messageRepository ?? Mock.Of<IChannelMessageRepository>());
+            messageRepository ?? Mock.Of<IChannelMessageRepository>(),
+            interactionPolicy.Object);
     }
 
     private static Mock<IBaseRepository<TEntity>> CreateRepository<TEntity>(params TEntity[] entities)

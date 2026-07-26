@@ -11,6 +11,7 @@
 ## 1. 模块边界
 
 - 正式调用直接从 `@radish/http` 导入。
+- 跨 client / Console 的稳定业务 DTO 放在共享包内；Wiki Author / Review 当前统一使用 `wiki-authoring-contract.ts` 的 LongId 字符串、状态常量和版本请求类型，页面不得各自复制数字 ID 契约。
 - `@radish/ui` 只为旧调用保留兼容 re-export，新代码不得继续从 UI 包导入 HTTP API。
 - 页面和业务模块不得再创建平行 fetch / axios 封装。
 - 上传进度等必须使用 `XMLHttpRequest` 的场景，也要通过 `getApiClientConfig()` 读取统一 base URL、timeout、token、语言和消息翻译配置，并复用结构化响应解析。Console 附件适配器已遵循该边界；client 附件适配器当前仍单独从 `getApiBaseUrl()` 拼 URL，后续应在附件维护批次收敛，不能据此扩散第二套配置来源。

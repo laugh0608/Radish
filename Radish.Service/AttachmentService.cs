@@ -29,6 +29,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly IImageProcessor _imageProcessor;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly IChatChannelAccessService _chatChannelAccessService;
+    private readonly IWikiAttachmentAccessService _wikiAttachmentAccessService;
     private readonly FileStorageOptions _fileStorageOptions;
     private readonly string _tempPath;
 
@@ -39,6 +40,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         IImageProcessor imageProcessor,
         IAttachmentUrlResolver attachmentUrlResolver,
         IChatChannelAccessService chatChannelAccessService,
+        IWikiAttachmentAccessService wikiAttachmentAccessService,
         IOptions<FileStorageOptions> fileStorageOptions)
         : base(mapper, baseRepository)
     {
@@ -47,6 +49,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         _imageProcessor = imageProcessor;
         _attachmentUrlResolver = attachmentUrlResolver;
         _chatChannelAccessService = chatChannelAccessService;
+        _wikiAttachmentAccessService = wikiAttachmentAccessService;
         _fileStorageOptions = fileStorageOptions.Value;
         _tempPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Temp");
 
@@ -246,7 +249,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 // 上传只创建未绑定附件；业务归属必须由对应域服务在目标对象校验后设置。
                 BusinessId = null,
                 TenantId = normalizedTenantId,
-                IsPublic = normalizedBusinessType != AttachmentBusinessTypes.Chat,
+                IsPublic = normalizedBusinessType != AttachmentBusinessTypes.Chat &&
+                           normalizedBusinessType != AttachmentBusinessTypes.Wiki,
                 DownloadCount = 0
             };
 
@@ -686,6 +690,15 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                        requestUserId.Value,
                        attachment.Id,
                        attachment.BusinessId.Value);
+        }
+
+        if (await _wikiAttachmentAccessService.IsWikiControlledAsync(attachment))
+        {
+            return await _wikiAttachmentAccessService.CanReadAsync(
+                attachment,
+                NormalizeTenantId(tenantId),
+                requestUserId,
+                requestUserRoles);
         }
 
         return attachment.IsPublic || isUploader || UserRoleHelper.IsSystemOrAdmin(requestUserRoles);

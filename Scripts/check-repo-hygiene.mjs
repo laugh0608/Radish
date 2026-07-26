@@ -426,9 +426,11 @@ async function main() {
       failures.push({ file, issues });
     }
 
-    const lengthWarning = getDocumentationLengthWarning(file);
-    if (lengthWarning) {
-      warnings.push({ file, warning: lengthWarning });
+    if (!args.has('--skip-document-length-warnings')) {
+      const lengthWarning = getDocumentationLengthWarning(file);
+      if (lengthWarning) {
+        warnings.push({ file, warning: lengthWarning });
+      }
     }
   }
 

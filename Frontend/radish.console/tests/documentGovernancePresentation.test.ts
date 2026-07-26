@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
+import { resolve } from 'node:path';
 import i18next from 'i18next';
 import type { WikiDocumentVo } from '../src/api/wikiGovernanceApi.ts';
 import {
@@ -81,4 +83,20 @@ test('文档治理日期格式应跟随语言区域且保留非法原值', () =>
   assert.match(formatDocumentDateTime('2026-07-15T08:30:00Z', 'en'), /2026/);
   assert.match(formatDocumentDateTime('2026-07-15T08:30:00Z', 'zh'), /2026/);
   assert.equal(formatDocumentDateTime('legacy-time', 'en'), 'legacy-time');
+});
+
+test('文档审核工作台应复用权威审核契约并与发布动作分离', () => {
+  const consoleRoot = resolve(import.meta.dirname, '..');
+  const pageSource = readFileSync(resolve(consoleRoot, 'src/pages/Documents/DocumentGovernancePage.tsx'), 'utf8');
+  const apiSource = readFileSync(resolve(consoleRoot, 'src/api/wikiGovernanceApi.ts'), 'utf8');
+
+  assert.match(apiSource, /Wiki\/AdminGetReviewQueue/);
+  assert.match(apiSource, /Wiki\/AdminGetDraftById/);
+  assert.match(apiSource, /Wiki\/AdminReviewDraft/);
+  assert.match(pageSource, /expectedDraftVersion: reviewDraft\.voDraftVersion/);
+  assert.match(pageSource, /expectedDocumentVersion: reviewDraft\.voDocumentVersion/);
+  assert.match(pageSource, /WikiReviewAction\.Apply/);
+  assert.match(pageSource, /publishWikiDocument/);
+  assert.match(pageSource, /reviewAccountEpochRef\.current \+= 1/);
+  assert.match(pageSource, /accountEpoch !== reviewAccountEpochRef\.current/);
 });

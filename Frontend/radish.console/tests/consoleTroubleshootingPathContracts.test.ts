@@ -6,8 +6,6 @@ import { fileURLToPath } from 'node:url';
 import {
   buildModerationPath,
   buildModerationSearchParams,
-  parseModerationLongIdQuery,
-  parseModerationSectionQuery,
 } from '../src/pages/Moderation/moderationPageUrlState.ts';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
@@ -68,28 +66,28 @@ test('Console 深层写入 handler 应复核权限态', () => {
 
 test('Console 内容治理入口应支持用户排障深链与来源返回', () => {
   const searchParams = buildModerationSearchParams({
-    section: 'manual',
-    targetUserId: '2042219067430928385',
-    sourceReportId: '2042219067430928386',
+    keyword: '2042219067430928385',
     returnTo: '/users/2042219067430928385?tab=moderation',
   });
 
-  assert.equal(searchParams.get('section'), 'manual');
-  assert.equal(searchParams.get('targetUserId'), '2042219067430928385');
-  assert.equal(searchParams.get('sourceReportId'), '2042219067430928386');
+  assert.equal(searchParams.get('keyword'), '2042219067430928385');
   assert.equal(searchParams.get('returnTo'), '/users/2042219067430928385?tab=moderation');
-  assert.equal(parseModerationSectionQuery('logs'), 'logs');
-  assert.equal(parseModerationSectionQuery('unknown'), undefined);
-  assert.equal(parseModerationLongIdQuery('2042219067430928385'), '2042219067430928385');
-  assert.equal(parseModerationLongIdQuery('02042219067430928385'), undefined);
 
   assert.equal(
     buildModerationPath({
-      section: 'logs',
-      targetUserId: '2042219067430928385',
+      keyword: '2042219067430928385',
       returnTo: 'https://radishx.com/console/users',
     }),
-    '/moderation?section=logs&targetUserId=2042219067430928385',
+    '/moderation?keyword=2042219067430928385',
+  );
+
+  assert.equal(
+    buildModerationPath({
+      view: 'appeals',
+      appealPublicId: 'appeal_public',
+      returnTo: '/users/2042219067430928385?tab=moderation',
+    }),
+    '/moderation?view=appeals&appeal=appeal_public&returnTo=%2Fusers%2F2042219067430928385%3Ftab%3Dmoderation',
   );
 });
 
@@ -98,16 +96,17 @@ test('Console 用户详情应提供内容治理排障入口并复用治理 URL h
   const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
 
   assert.match(userDetailSource, /buildModerationPath/);
-  assert.match(userDetailSource, /section: 'logs'/);
-  assert.match(userDetailSource, /section: 'manual'/);
-  assert.match(moderationSource, /parseModerationSectionQuery/);
-  assert.match(moderationSource, /parseModerationLongIdQuery/);
+  assert.match(userDetailSource, /keyword: userId/);
+  assert.doesNotMatch(userDetailSource, /section: 'manual'/);
+  assert.doesNotMatch(userDetailSource, /section: 'logs'/);
+  assert.match(moderationSource, /searchParams\.get\('keyword'\)/);
   assert.match(moderationSource, /t\('moderation\.backToSource'\)/);
 });
 
 test('Console 移动边界应固定高频导航与低风险治理顺序', () => {
   const layoutSource = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
   const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
+  const moderationStyles = readConsoleSource('src/pages/Moderation/index.css');
 
   assert.match(layoutSource, /label: t\('console\.mobile\.overview'\)/);
   assert.match(layoutSource, /label: t\('console\.mobile\.governance'\)/);
@@ -116,9 +115,9 @@ test('Console 移动边界应固定高频导航与低风险治理顺序', () => 
   assert.match(layoutSource, /label: t\('console\.mobile\.more'\)/);
   assert.match(layoutSource, /aria-label=\{t\('console\.mobile\.navLabel'\)\}/);
   assert.match(layoutSource, /t\('console\.mobile\.allDescription'\)/);
-  assert.match(moderationSource, /aria-label=\{t\('moderation\.mobile\.label'\)\}/);
-  assert.match(moderationSource, /t\('moderation\.mobile\.description'\)/);
-  assert.match(moderationSource, /t\('moderation\.mobile\.queue'\)/);
+  assert.match(moderationSource, /canAction \? 'warning' : 'neutral'/);
+  assert.match(moderationStyles, /@media \(max-width: 1100px\)[\s\S]*grid-template-columns: 1fr/);
+  assert.match(moderationStyles, /@media \(max-width: 768px\)[\s\S]*moderation-case-form-grid/);
 });
 
 test('Console 应提供安全的 client 来源返回入口与 Web 主线对象回看', () => {
@@ -128,7 +127,7 @@ test('Console 应提供安全的 client 来源返回入口与 Web 主线对象�
   const loginSource = readConsoleSource('src/pages/Login/Login.tsx');
   const oidcCallbackSource = readConsoleSource('src/pages/OidcCallback/OidcCallback.tsx');
   const routerComponentsSource = readConsoleSource('src/router/routerComponents.tsx');
-  const moderationHelpersSource = readConsoleSource('src/pages/Moderation/moderationPageHelpers.ts');
+  const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
 
   assert.match(mainSource, /rememberClientBackTo\(window\.location\.search\)/);
   assert.match(layoutSource, /<ClientBackLink \/>/);
@@ -138,6 +137,40 @@ test('Console 应提供安全的 client 来源返回入口与 Web 主线对象�
   assert.match(loginSource, /<ClientBackLink \/>/);
   assert.match(oidcCallbackSource, /error \? <ClientBackLink \/>/);
   assert.match(routerComponentsSource, /<ClientBackLink \/>/);
-  assert.match(moderationHelpersSource, /new URL\('\/messages', getApiBaseUrl\(\)\)/);
-  assert.doesNotMatch(moderationHelpersSource, /new URL\('\/desktop'/);
+  assert.match(moderationSource, /normalizeConsoleReturnTo/);
+  assert.doesNotMatch(moderationSource, /new URL\('\/desktop'/);
+});
+
+test('Console 内容治理应只消费案件 API 并保留冲突草稿', () => {
+  const moderationSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
+  const appealSource = readConsoleSource('src/pages/Moderation/ModerationAppealsWorkspace.tsx');
+  const appealStyles = readConsoleSource('src/pages/Moderation/ModerationAppealsWorkspace.css');
+  const apiSource = readConsoleSource('src/api/moderationApi.ts');
+
+  assert.match(apiSource, /ContentModeration\/GetCaseQueue/);
+  assert.match(apiSource, /ContentModeration\/ReviewCase/);
+  assert.match(apiSource, /ContentModeration\/ApplyCorrectiveAction/);
+  assert.doesNotMatch(apiSource, /ContentModeration\/GetReviewQueue/);
+  assert.doesNotMatch(apiSource, /ContentModeration\/Review['"`]/);
+  assert.doesNotMatch(apiSource, /ContentModeration\/ApplyUserAction/);
+  assert.doesNotMatch(apiSource, /ContentModeration\/GetActionLogs/);
+  assert.match(moderationSource, /loadCase\(casePublicId, false\)/);
+  assert.match(moderationSource, /conflictDraftPreserved/);
+  assert.match(apiSource, /ContentModeration\/GetAppealQueue/);
+  assert.match(apiSource, /ContentModeration\/ReviewAppeal/);
+  assert.match(apiSource, /ContentModeration\/ExecuteAppealRelief/);
+  assert.match(apiSource, /ContentModerationAppealActionResultVo/);
+  assert.match(appealSource, /CONSOLE_PERMISSIONS\.moderationAppeal/);
+  assert.match(appealSource, /CONSOLE_PERMISSIONS\.moderationAction/);
+  assert.match(appealSource, /selectedSummary[\s\S]*canAction[\s\S]*executeModerationAppealRelief/);
+  assert.match(appealSource, /actionOnlyDescription/);
+  assert.match(appealSource, /caseDetail\.voCase\.voDecision/);
+  assert.match(appealSource, /caseDetail\.voCase\.voTargetDisposition/);
+  assert.match(appealSource, /caseDetail\?\.voPublicResultCode/);
+  assert.match(appealSource, /loadAppeal\(selectedAppealId, false\)/);
+  assert.match(appealSource, /conflictDraftPreserved/);
+  assert.match(appealSource, /linkedAppealId && canAppeal/);
+  assert.match(appealSource, /appealPublicId,[\s\S]*replace: true/);
+  assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-write-panel[\s\S]*display: none/);
+  assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-desktop-action[\s\S]*display: none/);
 });

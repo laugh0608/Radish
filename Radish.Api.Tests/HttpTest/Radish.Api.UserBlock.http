@@ -1,0 +1,46 @@
+@gateway = https://localhost:5000
+@token = {{$processEnv RADISH_ACCESS_TOKEN}}
+@targetUserPublicId = usr_replace_me
+@channelId = 1
+
+### 屏蔽用户；重复提交必须复用同一 operationKey
+POST {{gateway}}/api/v1/UserBlock/Block
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "targetUserPublicId": "{{targetUserPublicId}}",
+  "operationKey": "user-block-replace-me"
+}
+
+### 查询当前用户本人建立的有效屏蔽
+GET {{gateway}}/api/v1/UserBlock/GetMine?pageIndex=1&pageSize=20
+Authorization: Bearer {{token}}
+
+### 解除屏蔽；不会恢复关注、Direct 请求或历史通知
+POST {{gateway}}/api/v1/UserBlock/Unblock
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "targetUserPublicId": "{{targetUserPublicId}}",
+  "operationKey": "user-unblock-replace-me"
+}
+
+### 迁移兼容入口：Direct Block 转发到 UserBlock
+POST {{gateway}}/api/v1/DirectConversation/Block/{{channelId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operationKey": "direct-block-replace-me"
+}
+
+### 迁移兼容入口：Direct Unblock 转发到 UserBlock
+POST {{gateway}}/api/v1/DirectConversation/Unblock/{{channelId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "operationKey": "direct-unblock-replace-me"
+}

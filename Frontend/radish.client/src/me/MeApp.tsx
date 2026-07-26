@@ -49,10 +49,13 @@ import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import {
   buildMeAttachmentsReturnPath,
+  buildMeAppealsReturnPath,
+  buildMeBlockedReturnPath,
   buildMeAssetTransactionsReturnPath,
   buildMeAssetsReturnPath,
   buildMeContentReturnPath,
   buildMeExperienceReturnPath,
+  buildMeReportsReturnPath,
   buildMeHistoryReturnPath,
   buildMeReturnPath,
 } from '@/services/authReturnPath';
@@ -63,6 +66,9 @@ import { log } from '@/utils/logger';
 import { resolveMediaUrl } from '@/utils/media';
 import { getIntlLocale } from '@/locales/language';
 import { MeAssetsPage } from './MeAssetsPage';
+import { MeAppealsPage } from './MeAppealsPage';
+import { MeBlockedPage } from './MeBlockedPage';
+import { MeReportsPage } from './MeReportsPage';
 import { buildMePath, createDefaultMeRoute, parseMeRoute, type MeContentTab, type MeRoute } from './meRouteState';
 import styles from './MeApp.module.css';
 
@@ -351,6 +357,22 @@ function buildMeRouteReturnPath(route: MeRoute): string {
     return buildMeExperienceReturnPath({ page: route.page }) ?? buildMeReturnPath();
   }
 
+  if (route.kind === 'reports') {
+    return buildMeReportsReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'appeals') {
+    return buildMeAppealsReturnPath({
+      page: route.page,
+      casePublicId: route.casePublicId,
+      appealPublicId: route.appealPublicId,
+    }) ?? buildMeReturnPath();
+  }
+
+  if (route.kind === 'blocked') {
+    return buildMeBlockedReturnPath({ page: route.page }) ?? buildMeReturnPath();
+  }
+
   return buildMeReturnPath();
 }
 
@@ -419,6 +441,12 @@ export const MeApp = () => {
               ? t('me.attachments.title')
               : route.kind === 'experience'
                 ? t('me.experience.detailTitle')
+                : route.kind === 'reports'
+                  ? t('me.reports.title')
+                  : route.kind === 'appeals'
+                    ? t('me.appeals.title')
+                    : route.kind === 'blocked'
+                      ? t('userBlock.list.title')
                 : t('me.title');
     document.title = `${title} · Radish`;
   }, [route.kind, t]);
@@ -665,6 +693,27 @@ export const MeApp = () => {
         label: t('me.experience.detailTitle'),
         route: route.kind === 'experience' ? route : { kind: 'experience', page: 1 },
         active: route.kind === 'experience',
+      },
+      {
+        key: 'reports',
+        icon: 'mdi:shield-check-outline',
+        label: t('me.reports.title'),
+        route: route.kind === 'reports' ? route : { kind: 'reports', page: 1 },
+        active: route.kind === 'reports',
+      },
+      {
+        key: 'appeals',
+        icon: 'mdi:shield-refresh-outline',
+        label: t('me.appeals.title'),
+        route: route.kind === 'appeals' ? route : { kind: 'appeals', page: 1 },
+        active: route.kind === 'appeals',
+      },
+      {
+        key: 'blocked',
+        icon: 'mdi:account-cancel-outline',
+        label: t('userBlock.list.title'),
+        route: route.kind === 'blocked' ? route : { kind: 'blocked', page: 1 },
+        active: route.kind === 'blocked',
       },
     ];
 
@@ -1322,6 +1371,36 @@ export const MeApp = () => {
 
     if (route.kind === 'experience') {
       return renderExperiencePage();
+    }
+
+    if (route.kind === 'reports') {
+      return (
+        <MeReportsPage
+          page={route.page}
+          onNavigate={(page) => navigateToMeRoute({ kind: 'reports', page })}
+          onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
+        />
+      );
+    }
+
+    if (route.kind === 'appeals') {
+      return (
+        <MeAppealsPage
+          route={route}
+          onNavigate={navigateToMeRoute}
+          onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
+        />
+      );
+    }
+
+    if (route.kind === 'blocked') {
+      return (
+        <MeBlockedPage
+          page={route.page}
+          onNavigate={(page) => navigateToMeRoute({ kind: 'blocked', page })}
+          onBack={() => navigateToMeRoute({ kind: 'dashboard' })}
+        />
+      );
     }
 
     return (

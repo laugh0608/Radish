@@ -288,6 +288,30 @@
   <data name="error.moderation.concurrent_review_conflict" xml:space="preserve">
     <value>The report was processed by another request. Refresh the review queue.</value>
   </data>
+  <data name="error.moderation.target_unavailable" xml:space="preserve">
+    <value>The reported target was not found or is no longer available.</value>
+  </data>
+  <data name="error.moderation.case_not_found" xml:space="preserve">
+    <value>The moderation case was not found.</value>
+  </data>
+  <data name="error.moderation.case_version_conflict" xml:space="preserve">
+    <value>The moderation case was updated by another operation. Refresh and try again.</value>
+  </data>
+  <data name="error.moderation.operation_conflict" xml:space="preserve">
+    <value>This operation key was already used for a different moderation request.</value>
+  </data>
+  <data name="error.moderation.target_action_conflict" xml:space="preserve">
+    <value>The target changed or cannot be moderated now. Refresh the evidence and try again.</value>
+  </data>
+  <data name="error.moderation.self_action_forbidden" xml:space="preserve">
+    <value>You cannot apply a moderation action to your own account.</value>
+  </data>
+  <data name="error.moderation.protected_account" xml:space="preserve">
+    <value>A protected account cannot be actioned through a content moderation case.</value>
+  </data>
+  <data name="error.moderation.source_report_mismatch" xml:space="preserve">
+    <value>The source report does not match the moderation target.</value>
+  </data>
   <data name="error.wiki.validation_failed" xml:space="preserve">
     <value>The document request is invalid. Check the submitted values and try again.</value>
   </data>
@@ -296,6 +320,66 @@
   </data>
   <data name="error.wiki.document_not_accessible" xml:space="preserve">
     <value>The document was not found or the current account cannot access it.</value>
+  </data>
+  <data name="error.wiki.draft_not_found" xml:space="preserve">
+    <value>The document draft was not found or the current account cannot access it.</value>
+  </data>
+  <data name="error.wiki.draft_version_conflict" xml:space="preserve">
+    <value>The draft was updated by another operation. Reload it before continuing.</value>
+  </data>
+  <data name="error.wiki.document_version_conflict" xml:space="preserve">
+    <value>The approved document version changed. Review the draft against the current content.</value>
+  </data>
+  <data name="error.wiki.draft_state_conflict" xml:space="preserve">
+    <value>The draft or invitation state changed. Refresh and try again.</value>
+  </data>
+  <data name="error.wiki.active_draft_exists" xml:space="preserve">
+    <value>This document already has an active draft.</value>
+  </data>
+  <data name="error.wiki.active_draft_limit" xml:space="preserve">
+    <value>This account has reached its active draft limit.</value>
+  </data>
+  <data name="error.wiki.collaborator_exists" xml:space="preserve">
+    <value>This user is already the document owner or an active collaborator.</value>
+  </data>
+  <data name="error.wiki.collaborator_limit" xml:space="preserve">
+    <value>This document has reached its collaborator limit.</value>
+  </data>
+  <data name="error.wiki.markdown_too_large" xml:space="preserve">
+    <value>The Markdown content exceeds the allowed size.</value>
+  </data>
+  <data name="error.wiki.review_comment_required" xml:space="preserve">
+    <value>A review comment is required when requesting changes or rejecting a draft.</value>
+  </data>
+  <data name="error.wiki.author_publishing_blocked" xml:space="preserve">
+    <value>This account cannot create or submit document contributions right now.</value>
+  </data>
+  <data name="error.wiki_attachment.invalid_reference" xml:space="preserve">
+    <value>A referenced document attachment is missing, disabled, or belongs to another tenant.</value>
+  </data>
+  <data name="error.wiki_attachment.reference_forbidden" xml:space="preserve">
+    <value>The current account cannot attach this file to the document.</value>
+  </data>
+  <data name="error.wiki_attachment.cross_tenant" xml:space="preserve">
+    <value>The document and attachment belong to different tenants.</value>
+  </data>
+  <data name="error.wiki_attachment.type_mismatch" xml:space="preserve">
+    <value>This attachment type cannot be used by documents.</value>
+  </data>
+  <data name="error.wiki_attachment.reference_conflict" xml:space="preserve">
+    <value>The document attachment references changed. Reload and try again.</value>
+  </data>
+  <data name="error.wiki_attachment.source_not_found" xml:space="preserve">
+    <value>The document attachment source was not found.</value>
+  </data>
+  <data name="error.wiki_attachment.access_unavailable" xml:space="preserve">
+    <value>The document attachment is not currently accessible.</value>
+  </data>
+  <data name="error.wiki.invalid_review_action" xml:space="preserve">
+    <value>This document review action is not supported.</value>
+  </data>
+  <data name="error.wiki.read_only_source" xml:space="preserve">
+    <value>Documents from fixed sources are read only and cannot have author drafts.</value>
   </data>
   <data name="error.wiki.restore_rejected" xml:space="preserve">
     <value>The document was not found or cannot be restored from its current state.</value>
@@ -599,5 +683,26 @@
   </data>
   <data name="error.chat.receipt_cursor_invalid" xml:space="preserve">
     <value>The reader page, account, or conversation permissions changed. Reopen the reader list.</value>
+  </data>
+  <data name="error.user_block.self_not_allowed" xml:space="preserve">
+    <value>You cannot block yourself.</value>
+  </data>
+  <data name="error.user_block.target_unavailable" xml:space="preserve">
+    <value>The target user does not exist or is unavailable.</value>
+  </data>
+  <data name="error.user_block.interaction_unavailable" xml:space="preserve">
+    <value>You cannot interact with this user right now.</value>
+  </data>
+  <data name="error.user_block.operation_conflict" xml:space="preserve">
+    <value>This operation key was already used for a different block operation.</value>
+  </data>
+  <data name="error.user_block.state_conflict" xml:space="preserve">
+    <value>The user block state changed. Refresh and try again.</value>
+  </data>
+  <data name="error.user_block.relationship_temporarily_unavailable" xml:space="preserve">
+    <value>The user relationship service is temporarily unavailable. Try again later.</value>
+  </data>
+  <data name="error.user_block.operation_key_invalid" xml:space="preserve">
+    <value>The operation key is invalid.</value>
   </data>
 </root>

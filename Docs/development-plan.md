@@ -8,10 +8,10 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-G-A 功能完成线候选审计与专题裁决`
-- **产品下一顺位**：`从既有业务域选择一个长期价值与权威边界清楚的完整专题`
+- **工程第一顺位**：`F4-L-C 正式 Web 受保护资源`
+- **产品下一顺位**：`接入 Author、受限 Docs、Revision 与 Console 审核的认证附件加载和 object URL 生命周期`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
-- **复核日期**：`2026-07-19`
+- **复核日期**：`2026-07-25`
 - **当前结论**：
   - 第二开发阶段完成公开 Web、Flutter Android MVP、Tauri + WebOS 验证与多端裁决；2026-07-12 起纯 Web 成为唯一正式主线，Flutter 条件维护，Tauri 冻结实验。
   - 第三阶段 P3-1 至 P3-11 已完成公开增长基础、PublicId 试点、复访链路、Web-first 信息架构、身份语义、写操作可靠性和发布候选路径验收。
@@ -20,13 +20,25 @@
   - Q0-A 至 Q0-D、Q0 成组运行态补验和 E8-B 七项有限产品矩阵已于 2026-07-11 完成，项目已进入 P3-12-F。
   - Q1、Q2、Q3 与候选运行态验收均已完成；1201 至 1203 暴露的镜像、PostgreSQL migration、OpenIddict provider / model 与候选 DateTime 参数阻断均已按不可变 tag 逐次前滚收口。
   - PR `#63` 已合并，`master / dev / origin` 已统一到 `53539556`；`v26.7.1.1204-release` 五镜像和固定 tag 生产部署成功，首个管理员已创建，服务运行正常。
-  - `P3-12-F` 正式发布执行已经关闭。受控试用转为发布后的早期真实使用观察；首次管理员入口门禁不一致已登记为非阻断维护首项，产品顺位进入商城商品效力与权益履约。
+  - `P3-12-F` 正式发布执行已经关闭；生产数据库迁移发布现已固定为不可变 release tag、停止写入、六库备份、显式 `apply`、独立 `verify`、应用发布和外部健康检查，迁移开始后的失败不会自动执行破坏性恢复。
   - F1 商城、F2 主题、F3 i18n 与一对一私聊批次 A-D 均已完成；私聊已通过 SQLite / PostgreSQL 定向回归及双账号 `zh / en × PC / mobile` 运行态矩阵并关闭。
   - F4-B-A-D 已完成稳定定义、结构化目标、偏好、分组 / 摘要 revision、正式 Web 通知工作区和三普通账号 `zh / en × PC / mobile` 成组验收；SQLite / PostgreSQL、离线 / 多标签、cursor、目标失效与临时数据清理均通过，通知中心深化专题已关闭。
   - F4-C-A-D 已完成 Chat 权威检索、跨库 migration、正式 Web / WebOS 搜索工作区和双账号 `zh / en × PC / mobile` 成组验收；共同根因修复、临时数据清理、六库完整性与迁移 verify 均通过，专题关闭。
   - F4-D-A-D 已完成 Chat 专属 Reaction 设计、服务端权威契约、PC / mobile Pencil、正式 Web 与三普通账号成组验收：`CanReact`、目标状态 operation ledger、消息 revision、完整 Hub 快照、撤回一致性、真实离线重连和首批不通知边界均通过；临时数据清理、六库完整性与 migration verify 完成，专题关闭。
   - F4-E-A-D 已完成并关闭：独立 `ChatMessagePin`、频道 `PinRevision`、20 条上限、目标状态、完整 Hub 快照、权限矩阵、撤回一致性、SQLite / PostgreSQL migration、正式 Web / WebOS 和三普通账号成组验收全部通过。
   - F4-F-A-D 已完成并关闭：唯一持久已读游标、原子单调推进、隐私裁剪聚合、发送者受限读取、活跃阅读面、正式 Web / WebOS 和三普通账号成组验收全部通过；验收发现的频道最后消息投影共同根因已修复。
+  - F4-G-A-D 已完成并关闭：普通作者所有权、协作者邀请、独立工作草稿、审核应用、草稿 / 正文双版本 CAS、正式 Author / Console 页面和 Gateway 成组验收形成闭环；未审核与驳回正文公开隔离、临时数据清理、六库完整性与严格 migration verify 均通过。
+  - F4-H-A-D 已完成并关闭：电子宠物公开名片的权威设计、独立公开 VO、服务端用户 / 租户 / 公开 / 软删除查询、`UserPublicProfileVo.VoPet` 聚合、PC / mobile Pencil、正式 `/u/:id` 只读名片，以及主人 / 访客 / 匿名、显隐、失效、双语、响应式与四主题代表矩阵均已通过；临时数据清理、六库完整性和严格 verify 完成。
+  - F4-I-A 已完成圈子关系与治理候选复核，并裁决内容治理案件、证据与动作一致性为唯一当前专题；权威设计固定案件聚合、追加式证据、决定 / 动作分离、用户治理唯一当前状态、五类目标适配、迁移兼容、权限、A-D 批次与停止线。
+  - F4-I-B 已完成服务端权威契约：Main ledger migration、历史映射、专属 Repository、案件 / 证据 / 当前状态事务、五类目标处置、Chat 跨库可靠任务、治理通知、新 API、独立动作权限和旧写入口过渡兼容均已落地。
+  - F4-I-C 已完成 Pencil 与正式页面：Console `P02 / P07`、`/moderation` Case 工作台、私域 `/me/reports`、权限分离、冲突草稿保留、双语和目标失效摘要均已收口，旧四个治理 HTTP 入口已退役。
+  - F4-I-D 已完成并关闭专题：五种角色、五类目标、并发与幂等、目标变化、用户治理状态、Chat 跨库失败 / 重试、双语、PC / mobile 和四主题代表矩阵均已通过；临时数据清理、六库完整性与严格 migration verify 完成。下一顺位进入 F4-J-A 候选复核与权威设计。
+  - F4-J-A 已完成候选审计与权威设计：治理申诉相较圈子全局屏蔽、公开聊天和论坛作者回滚，更直接补齐现有高权限治理的对称复核与恢复路径；专题固定独立 Appeal / Event / TargetAction、一次申诉、部分采纳、五类恢复、用户状态来源保护、独立权限、迁移、页面和 A-D 批次。下一顺位进入 F4-J-B。
+  - F4-J-B 已完成服务端权威契约：Main / Chat migration、独立申诉聚合、一次申诉与部分采纳、五类来源保护恢复、Mute / Ban 纠正、Chat 可靠任务、权限、通知、HTTP 与 `@radish/http` 契约已落地。下一顺位进入 F4-J-C。
+  - F4-J-C 已完成 Pencil 与正式页面：正式 `/me/appeals`、提交 / 撤回、超期决定回看、通知深链与纠正摘要，以及既有 `/moderation` 内的申诉队列、受权详情、复核和 PC 纠正执行均已落地；View 队列服务端脱敏、mobile 只读、冲突草稿和双语响应式边界同步收口。下一顺位进入 F4-J-D。
+  - F4-J-D 已完成并关闭：六角色、五类目标、主要申诉状态、五类来源保护恢复、用户状态纠正、Chat 跨库失败重试与双语 PC / mobile 正式路径均已通过；共同根因修复、临时数据清理、六库完整性与严格 migration verify 完成。下一顺位进入 F4-K-A。
+  - F4-K 已完成 A-D 批并关闭：Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制、旧字段迁移、正式 Web 和三账号 Gateway 矩阵均已通过；验收共同根因修复、临时数据清理、六库完整性与严格 verify 完成。
+  - F4-L-A / B 已完成候选审计、权威设计与服务端契约：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、清理权威、历史 Document 显式兼容迁移和稳定错误均已落地；通用 Document 不进入 Wiki 域。下一顺位进入 F4-L-C。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -46,9 +58,9 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-F 均已关闭。下一顺位先执行 F4-G-A 候选审计与专题裁决，不并行实施多个候选功能。
+- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-K 均已关闭，F4-L-A / B 已完成。下一顺位执行 F4-L-C 正式 Web 受保护资源。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
-- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B / C / D / E / F 已关闭，功能完成线当前进入 F4-G-A 候选审计与专题裁决。
+- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B 至 F4-K 已关闭，功能完成线当前进入 F4-L-C。
 - Q4、公开 head、WebOS 和 Flutter 继续按触达范围或真实问题维护，不与正式 Web 功能主线争夺顺位。
 - 主动生产使用数据采集只在计划内功能全部完成、没有其他明确任务、产品进入最终完成体复核且用户确认后重启；不得因旧记录、观察周期或新会话频繁重新排期。
 
@@ -107,7 +119,12 @@ Radish V1 固定为：
 4. [F4-D 聊天消息 Reaction](/features/chat-message-reaction-design) 的 A-D 批已完成，权威 ACL、目标状态幂等、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过，专题关闭。
 5. [F4-E 聊天消息置顶](/features/chat-message-pin-design) 的 A-D 批已完成并关闭，权威 ACL、目标状态幂等、20 条上限、revision 实时快照、正式 Web / WebOS 与三普通账号成组验收均通过。
 6. [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭，唯一持久游标、隐私矩阵、正式 Web / WebOS 和三普通账号运行态矩阵均已通过。
-7. 下一顺位进入 `F4-G-A 功能完成线候选审计与专题裁决`：从既有业务域只读确认一个完整功能专题的用户价值、真实缺口、长期边界和开发批次，获批后再进入设计或实现。移动系统通知继续后置。
+7. [F4-G Docs / Wiki 普通作者贡献与协作](/features/wiki-author-contribution-collaboration-design) 已完成 A-D 批并关闭，普通作者、协作者、审核者、双版本 CAS、独立发布与公开隔离均通过。
+8. [F4-H 电子宠物公开名片与隐私闭环](/features/radish-pet-roadmap) 已完成 A-D 批并关闭；公开字段白名单、即时显隐、身份 / 租户 / 软删除隔离、PC / mobile Pencil、正式 Web、双语与四主题代表矩阵均已通过，移动系统通知继续后置。
+9. [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) 已完成 A-D 批并关闭；案件、证据、决定、动作、用户状态、五类目标、多角色正式页面和运行态验收全部通过。
+10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-D 批并关闭；独立申诉、部分支持、五类恢复、用户状态纠正、正式页面和六角色成组验收均已通过。
+11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成 A-D 批并关闭；Main 唯一真相、关系策略、关注事务、Direct 迁移兼容、通知抑制、正式 Web 和成组验收均已通过。
+12. [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A / B 批；Main 权威引用、私有默认、动态 ACL、事务同步、令牌、清理和迁移链已落地，下一顺位进入 F4-L-C 正式 Web 受保护资源。
 
 ## P3-12-F 门禁分层
 
@@ -159,6 +176,8 @@ Radish V1 固定为：
 - [正式 Web 一对一私聊与会话管理设计](/features/chat-direct-conversation-design)
 - [F4-A 首批真实使用证据整理与反馈归因记录（冻结）](/records/f4-a-first-real-usage-evidence-attribution-2026-07-18)
 - [F4-B 通知中心深化与通知治理](/features/notification-center-deepening)
+- [F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)
+- [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 
 ## 文档规则
 

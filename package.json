@@ -9,6 +9,7 @@
     "Frontend/radish.ui"
   ],
   "scripts": {
+    "check:docs": "./scripts/check-docs.sh",
     "check:repo-hygiene": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:candidate": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z --baseline=Scripts/repo-hygiene-baseline.json",
     "check:repo-hygiene:changed": "node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-repo-hygiene.mjs --stdin-z",
@@ -19,6 +20,7 @@
     "check:time-semantics": "node Scripts/check-time-semantics.mjs",
     "check:version-contract": "node Scripts/version-contract.mjs",
     "check:version-contract:self-test": "node --test Scripts/version-contract.test.mjs",
+    "check:production-deploy": "node --test Scripts/production-deploy-contract.test.mjs",
     "version:sync": "node Scripts/version-contract.mjs --sync",
     "update:time-semantics-baseline": "node Scripts/check-time-semantics.mjs --write-baseline",
     "check:dependency-security": "node Scripts/check-dependency-security.mjs",

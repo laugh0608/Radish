@@ -22,12 +22,14 @@ public sealed class NotificationService : INotificationService
     private readonly INotificationPushService _pushService;
     private readonly TimeProvider _timeProvider;
     private readonly ILogger<NotificationService> _logger;
+    private readonly IUserInteractionPolicyService _interactionPolicyService;
 
     public NotificationService(
         INotificationInboxRepository inboxRepository,
         IUserRepository userRepository,
         INotificationTargetResolver targetResolver,
         INotificationPushService pushService,
+        IUserInteractionPolicyService interactionPolicyService,
         TimeProvider timeProvider,
         ILogger<NotificationService> logger)
     {
@@ -35,6 +37,7 @@ public sealed class NotificationService : INotificationService
         _userRepository = userRepository;
         _targetResolver = targetResolver;
         _pushService = pushService;
+        _interactionPolicyService = interactionPolicyService;
         _timeProvider = timeProvider;
         _logger = logger;
     }
@@ -70,6 +73,19 @@ public sealed class NotificationService : INotificationService
         if (tenantId < 0)
         {
             throw new ArgumentException("租户 ID 不能小于 0。", nameof(dto));
+        }
+
+        if (definition.SuppressWhenInteractionBlocked && dto.TriggerId is > 0)
+        {
+            receiverIds = (await _interactionPolicyService.ExcludeInteractionBarriersAsync(
+                    tenantId,
+                    dto.TriggerId.Value,
+                    receiverIds))
+                .ToList();
+            if (receiverIds.Count == 0)
+            {
+                return dto.NotificationId ?? SnowFlakeSingle.Instance.NextId();
+            }
         }
 
         var activeRecipientIds = await _userRepository.GetActiveUserIdsAsync(tenantId, receiverIds);
@@ -149,6 +165,7 @@ public sealed class NotificationService : INotificationService
         NotificationInboxQueryDto query)
     {
         ArgumentNullException.ThrowIfNull(query);
+        await ApplyInteractionReadBarrierAsync(tenantId, userId);
         ValidateCategory(query.Category, allowEmpty: true);
         var currentSummary = await _inboxRepository.GetSummaryAsync(tenantId, userId);
         var cursor = DecodeCursor(query.Cursor);
@@ -198,6 +215,7 @@ public sealed class NotificationService : INotificationService
 
     public async Task<NotificationInboxSummaryVo> GetInboxSummaryAsync(long tenantId, long userId)
     {
+        await ApplyInteractionReadBarrierAsync(tenantId, userId);
         return MapSummary(await _inboxRepository.GetSummaryAsync(tenantId, userId));
     }
 
@@ -303,6 +321,7 @@ public sealed class NotificationService : INotificationService
         long userId,
         NotificationListQueryDto query)
     {
+        await ApplyInteractionReadBarrierAsync(tenantId, userId);
         var category = ResolveLegacyCategory(query.Type);
         var result = await _inboxRepository.QueryAsync(
             tenantId,
@@ -328,6 +347,7 @@ public sealed class NotificationService : INotificationService
 
     public async Task<long> GetUnreadCountAsync(long tenantId, long userId)
     {
+        await ApplyInteractionReadBarrierAsync(tenantId, userId);
         return (await _inboxRepository.GetSummaryAsync(tenantId, userId)).UnreadGroupCount;
     }
 
@@ -362,6 +382,7 @@ public sealed class NotificationService : INotificationService
 
     public async Task<UnreadCountDto> GetUnreadCountDetailAsync(long tenantId, long userId)
     {
+        await ApplyInteractionReadBarrierAsync(tenantId, userId);
         var summary = await _inboxRepository.GetSummaryAsync(tenantId, userId);
         return new UnreadCountDto
         {
@@ -382,6 +403,25 @@ public sealed class NotificationService : INotificationService
             VoLatestGroupId = change.GroupId,
             VoRealtimePreviewAllowed = change.RealtimePreviewAllowed
         });
+    }
+
+    private async Task ApplyInteractionReadBarrierAsync(long tenantId, long userId)
+    {
+        var blockedActorIds = await _interactionPolicyService.GetBarrierUserIdsAsync(tenantId, userId);
+        if (blockedActorIds.Count == 0)
+        {
+            return;
+        }
+
+        var result = await _inboxRepository.SuppressBlockedActorsAsync(
+            tenantId,
+            userId,
+            blockedActorIds,
+            GetUtcNow());
+        foreach (var change in result.RecipientChanges)
+        {
+            await PushChangedAsync(change, "UserBlockSuppressed");
+        }
     }
 
     private async Task PushMutationAsync(
@@ -544,7 +584,10 @@ public sealed class NotificationService : INotificationService
             NotificationTargetKind.Inventory => target is { BenefitId: > 0 },
             NotificationTargetKind.Experience => target is { UserId: > 0 },
             NotificationTargetKind.DocsDocument => !string.IsNullOrWhiteSpace(target?.DocumentSlug),
+            NotificationTargetKind.DocsAuthorDraft => target is { DocumentId: > 0 },
             NotificationTargetKind.GovernanceCase => target is { GovernanceCaseId: > 0 },
+            NotificationTargetKind.GovernanceDecision => !string.IsNullOrWhiteSpace(target?.GovernanceCasePublicId),
+            NotificationTargetKind.GovernanceAppeal => !string.IsNullOrWhiteSpace(target?.GovernanceAppealPublicId),
             _ => false
         };
         if (!isValid)
@@ -631,6 +674,14 @@ public sealed class NotificationService : INotificationService
             (NotificationType.DirectMessageRequested, false) => ("新的私信请求", $"{actor} 向你发送了私信请求"),
             (NotificationType.Followed, true) => ("New follower", $"{actor} followed you."),
             (NotificationType.Followed, false) => ("新增关注", $"{actor} 关注了你"),
+            (NotificationType.WikiCollaboratorInvited, true) => ("Document collaboration invite", $"{actor} invited you to edit {target}."),
+            (NotificationType.WikiCollaboratorInvited, false) => ("文档协作邀请", $"{actor} 邀请你协作编辑《{target}》"),
+            (NotificationType.WikiReviewUpdated, true) => ("Document review updated", $"{target}: {Arg("reviewAction", "Updated")}."),
+            (NotificationType.WikiReviewUpdated, false) => ("文档审核状态更新", $"《{target}》：{Arg("reviewAction", "状态已更新")}"),
+            (NotificationType.ContentReportResolved, true) => ("Report updated", $"Your report was resolved: {Arg("resultCode", "Updated")}."),
+            (NotificationType.ContentReportResolved, false) => ("举报处理结果", $"你的举报已处理：{Arg("resultCode", "状态已更新")}"),
+            (NotificationType.UserModerationChanged, true) => ("Account moderation updated", $"Your account moderation state changed: {Arg("actionType", "Updated")}."),
+            (NotificationType.UserModerationChanged, false) => ("账号治理状态更新", $"你的账号治理状态已变更：{Arg("actionType", "状态已更新")}"),
             (NotificationType.PurchaseSucceeded, true) => ("Purchase complete", $"You purchased {Arg("productName", "an item")}."),
             (NotificationType.PurchaseSucceeded, false) => ("购买成功", $"你已成功购买 {Arg("productName", "商品")}"),
             (NotificationType.BenefitExpired, true) => ("Benefit expired", $"Your benefit {Arg("benefitName", "") } has expired."),

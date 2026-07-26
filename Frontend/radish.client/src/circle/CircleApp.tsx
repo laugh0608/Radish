@@ -27,6 +27,7 @@ import {
 } from '@/public/publicRouteNavigation';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import { redirectToLogin } from '@/services/auth';
+import { subscribeUserInteractionChanged } from '@/services/userInteractionSync';
 import { buildCircleReturnPath } from '@/services/authReturnPath';
 import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
@@ -235,6 +236,12 @@ export const CircleApp = () => {
 
     void loadCircleData(route);
   }, [authReady, loadCircleData, loggedIn, route]);
+
+  useEffect(() => subscribeUserInteractionChanged(() => {
+    if (authReady && loggedIn) {
+      void loadCircleData(resolveInitialCircleRoute());
+    }
+  }), [authReady, loadCircleData, loggedIn]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const mutualUserCount = userItems.filter(item => item.voIsMutualFollow).length;

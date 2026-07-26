@@ -418,14 +418,30 @@ public partial class ContentModerationService
                 ProductType = product.ProductType,
                 BenefitType = product.BenefitType,
                 ConsumableType = product.ConsumableType,
-                SnapshotTitle = string.IsNullOrWhiteSpace(product.Name) ? null : product.Name.Trim(),
-                SnapshotSummary = BuildTextSnapshot(product.Description)
+                SnapshotTitle = product.Name,
+                SnapshotSummary = product.Description
             },
             (product, _, _) => normalizedProductIds.Contains(product.Id));
 
         return items
             .GroupBy(item => item.ProductId)
-            .ToDictionary(group => group.Key, group => group.First());
+            .ToDictionary(group => group.Key, group =>
+            {
+                var item = group.First();
+                return new ProductNavigationRecord
+                {
+                    ProductId = item.ProductId,
+                    IsEnabled = item.IsEnabled,
+                    IsDeleted = item.IsDeleted,
+                    ProductType = item.ProductType,
+                    BenefitType = item.BenefitType,
+                    ConsumableType = item.ConsumableType,
+                    SnapshotTitle = string.IsNullOrWhiteSpace(item.SnapshotTitle)
+                        ? null
+                        : item.SnapshotTitle.Trim(),
+                    SnapshotSummary = BuildTextSnapshot(item.SnapshotSummary)
+                };
+            });
     }
 
     private async Task<Dictionary<long, ForumCommentNavigationRecord>> BuildCommentNavigationMapAsync(IEnumerable<long> commentIds)
@@ -452,8 +468,8 @@ public partial class ContentModerationService
                 RootCommentId = comment.ParentId == null ? comment.Id : comment.RootId ?? comment.ParentId ?? comment.Id,
                 IsCommentAvailable = !comment.IsDeleted && comment.IsEnabled,
                 IsPostAvailable = post.Id > 0 && !post.IsDeleted,
-                SnapshotTitle = string.IsNullOrWhiteSpace(post.Title) ? null : post.Title.Trim(),
-                SnapshotSummary = BuildTextSnapshot(comment.Content)
+                SnapshotTitle = post.Title,
+                SnapshotSummary = comment.Content
             },
             (comment, _, _) => normalizedCommentIds.Contains(comment.Id));
 
@@ -476,8 +492,10 @@ public partial class ContentModerationService
                     IsCommentAvailable = item.IsCommentAvailable,
                     IsRootCommentAvailable = isRootCommentAvailable,
                     IsPostAvailable = item.IsPostAvailable,
-                    SnapshotTitle = item.SnapshotTitle,
-                    SnapshotSummary = item.SnapshotSummary
+                    SnapshotTitle = string.IsNullOrWhiteSpace(item.SnapshotTitle)
+                        ? null
+                        : item.SnapshotTitle.Trim(),
+                    SnapshotSummary = BuildTextSnapshot(item.SnapshotSummary)
                 };
             });
     }
@@ -534,14 +552,28 @@ public partial class ContentModerationService
                 PostId = reply.PostId,
                 IsQuickReplyAvailable = !reply.IsDeleted,
                 IsPostAvailable = post.Id > 0 && !post.IsDeleted,
-                SnapshotTitle = string.IsNullOrWhiteSpace(post.Title) ? null : post.Title.Trim(),
-                SnapshotSummary = BuildTextSnapshot(reply.Content)
+                SnapshotTitle = post.Title,
+                SnapshotSummary = reply.Content
             },
             (reply, _, _) => normalizedQuickReplyIds.Contains(reply.Id));
 
         return items
             .GroupBy(item => item.QuickReplyId)
-            .ToDictionary(group => group.Key, group => group.First());
+            .ToDictionary(group => group.Key, group =>
+            {
+                var item = group.First();
+                return new ForumQuickReplyNavigationRecord
+                {
+                    QuickReplyId = item.QuickReplyId,
+                    PostId = item.PostId,
+                    IsQuickReplyAvailable = item.IsQuickReplyAvailable,
+                    IsPostAvailable = item.IsPostAvailable,
+                    SnapshotTitle = string.IsNullOrWhiteSpace(item.SnapshotTitle)
+                        ? null
+                        : item.SnapshotTitle.Trim(),
+                    SnapshotSummary = BuildTextSnapshot(item.SnapshotSummary)
+                };
+            });
     }
 
     private static long? ResolveSnapshotPostId(ContentReport report, long? currentPostId = null)

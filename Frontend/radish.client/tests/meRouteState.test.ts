@@ -50,6 +50,30 @@ test('parseMeRoute 应解析我的状态和资产正式 Web 路由', () => {
     kind: 'experience',
     page: 5,
   });
+  assert.deepEqual(parseMeRoute('/me/reports', '?page=2'), {
+    kind: 'reports',
+    page: 2,
+  });
+  assert.deepEqual(parseMeRoute('/me/reports', '?page=0'), {
+    kind: 'reports',
+    page: 1,
+  });
+  assert.deepEqual(parseMeRoute('/me/appeals', '?case=case_public&page=2'), {
+    kind: 'appeals',
+    page: 2,
+    casePublicId: 'case_public',
+    appealPublicId: undefined,
+  });
+  assert.deepEqual(parseMeRoute('/me/appeals', '?appeal=appeal_public'), {
+    kind: 'appeals',
+    page: 1,
+    casePublicId: undefined,
+    appealPublicId: 'appeal_public',
+  });
+  assert.deepEqual(parseMeRoute('/me/blocked', '?page=3'), {
+    kind: 'blocked',
+    page: 3,
+  });
 });
 
 test('parseMeRoute 应拒绝未知我的状态子路径', () => {
@@ -74,6 +98,18 @@ test('buildMePath 应稳定回写我的状态和资产正式 Web 路径', () => 
   );
   assert.equal(buildMePath({ kind: 'experience', page: 1 }), '/me/experience');
   assert.equal(buildMePath({ kind: 'experience', page: 6 }), '/me/experience?page=6');
+  assert.equal(buildMePath({ kind: 'reports', page: 1 }), '/me/reports');
+  assert.equal(buildMePath({ kind: 'reports', page: 3 }), '/me/reports?page=3');
+  assert.equal(
+    buildMePath({ kind: 'appeals', page: 2, casePublicId: 'case_public' }),
+    '/me/appeals?page=2&case=case_public',
+  );
+  assert.equal(
+    buildMePath({ kind: 'appeals', page: 1, appealPublicId: 'appeal_public' }),
+    '/me/appeals?appeal=appeal_public',
+  );
+  assert.equal(buildMePath({ kind: 'blocked', page: 1 }), '/me/blocked');
+  assert.equal(buildMePath({ kind: 'blocked', page: 3 }), '/me/blocked?page=3');
 });
 
 test('isMePathname 应识别我的状态和资产正式 Web 路径', () => {
@@ -84,6 +120,9 @@ test('isMePathname 应识别我的状态和资产正式 Web 路径', () => {
   assert.equal(isMePathname('/me/history'), true);
   assert.equal(isMePathname('/me/attachments'), true);
   assert.equal(isMePathname('/me/experience'), true);
+  assert.equal(isMePathname('/me/reports'), true);
+  assert.equal(isMePathname('/me/appeals'), true);
+  assert.equal(isMePathname('/me/blocked'), true);
   assert.equal(isMePathname('/me/assets/history'), false);
   assert.equal(isMePathname('/desktop'), false);
 });

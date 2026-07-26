@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HelpTool;
@@ -199,6 +200,7 @@ internal static partial class InitialDataSeeder
     {
         // 为当前用户与角色管理主链路建立 ApiModule 与 RoleModulePermission
         // 便于通过 RadishAuthPolicy 与 Console 权限快照进行验证。
+        await RetireObsoleteContentModerationApiModulesAsync(db);
 
         var apiModules = new[]
         {
@@ -879,38 +881,119 @@ internal static partial class InitialDataSeeder
             },
             new
             {
-                ApiModuleId = 50110L,
-                ApiModuleName = "Get moderation review queue",
-                LinkUrl = "/api/v1/ContentModeration/GetReviewQueue",
+                ApiModuleId = 50114L,
+                ApiModuleName = "Get moderation case queue",
+                LinkUrl = "/api/v1/ContentModeration/GetCaseQueue",
                 ControllerName = "ContentModeration",
-                ActionName = "GetReviewQueue",
+                ActionName = "GetCaseQueue",
                 Roles = new[] { 10000L, 10001L }
             },
             new
             {
-                ApiModuleId = 50111L,
-                ApiModuleName = "Review moderation report",
-                LinkUrl = "/api/v1/ContentModeration/Review",
+                ApiModuleId = 50115L,
+                ApiModuleName = "Get moderation case",
+                LinkUrl = "/api/v1/ContentModeration/GetCase/.+",
                 ControllerName = "ContentModeration",
-                ActionName = "Review",
+                ActionName = "GetCase",
                 Roles = new[] { 10000L, 10001L }
             },
             new
             {
-                ApiModuleId = 50112L,
-                ApiModuleName = "Apply moderation action",
-                LinkUrl = "/api/v1/ContentModeration/ApplyUserAction",
+                ApiModuleId = 50116L,
+                ApiModuleName = "Capture moderation evidence",
+                LinkUrl = "/api/v1/ContentModeration/CaptureEvidence",
                 ControllerName = "ContentModeration",
-                ActionName = "ApplyUserAction",
+                ActionName = "CaptureEvidence",
                 Roles = new[] { 10000L, 10001L }
             },
             new
             {
-                ApiModuleId = 50113L,
-                ApiModuleName = "Get moderation action logs",
-                LinkUrl = "/api/v1/ContentModeration/GetActionLogs",
+                ApiModuleId = 50117L,
+                ApiModuleName = "Review moderation case",
+                LinkUrl = "/api/v1/ContentModeration/ReviewCase",
                 ControllerName = "ContentModeration",
-                ActionName = "GetActionLogs",
+                ActionName = "ReviewCase",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50118L,
+                ApiModuleName = "Apply moderation corrective action",
+                LinkUrl = "/api/v1/ContentModeration/ApplyCorrectiveAction",
+                ControllerName = "ContentModeration",
+                ActionName = "ApplyCorrectiveAction",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50119L,
+                ApiModuleName = "Get moderation case events",
+                LinkUrl = "/api/v1/ContentModeration/GetCaseEvents",
+                ControllerName = "ContentModeration",
+                ActionName = "GetCaseEvents",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50167L,
+                ApiModuleName = "Get moderation appeal queue",
+                LinkUrl = "/api/v1/ContentModeration/GetAppealQueue",
+                ControllerName = "ContentModeration",
+                ActionName = "GetAppealQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50168L,
+                ApiModuleName = "Get moderation appeal",
+                LinkUrl = "/api/v1/ContentModeration/GetAppeal/.+",
+                ControllerName = "ContentModeration",
+                ActionName = "GetAppeal",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50169L,
+                ApiModuleName = "Get moderation appeal events",
+                LinkUrl = "/api/v1/ContentModeration/GetAppealEvents",
+                ControllerName = "ContentModeration",
+                ActionName = "GetAppealEvents",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50170L,
+                ApiModuleName = "Start moderation appeal review",
+                LinkUrl = "/api/v1/ContentModeration/StartAppealReview",
+                ControllerName = "ContentModeration",
+                ActionName = "StartAppealReview",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50171L,
+                ApiModuleName = "Capture moderation appeal evidence",
+                LinkUrl = "/api/v1/ContentModeration/CaptureAppealEvidence",
+                ControllerName = "ContentModeration",
+                ActionName = "CaptureAppealEvidence",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50172L,
+                ApiModuleName = "Review moderation appeal",
+                LinkUrl = "/api/v1/ContentModeration/ReviewAppeal",
+                ControllerName = "ContentModeration",
+                ActionName = "ReviewAppeal",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50173L,
+                ApiModuleName = "Execute moderation appeal relief",
+                LinkUrl = "/api/v1/ContentModeration/ExecuteAppealRelief",
+                ControllerName = "ContentModeration",
+                ActionName = "ExecuteAppealRelief",
                 Roles = new[] { 10000L, 10001L }
             },
             new
@@ -1155,6 +1238,33 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Wiki",
                 ActionName = "ExportMarkdown",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50164L,
+                ApiModuleName = "Admin get wiki review queue",
+                LinkUrl = "/api/v1/Wiki/AdminGetReviewQueue",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetReviewQueue",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50165L,
+                ApiModuleName = "Admin get wiki draft evidence",
+                LinkUrl = "/api/v1/Wiki/AdminGetDraftById/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetDraftById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50166L,
+                ApiModuleName = "Admin review wiki draft",
+                LinkUrl = "/api/v1/Wiki/AdminReviewDraft/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminReviewDraft",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 
@@ -1207,6 +1317,48 @@ internal static partial class InitialDataSeeder
         await EnsureRoleApiPermissionAsync(db, adminRoleId, 50000, "Admin");
         await EnsureRoleApiPermissionAsync(db, testRoleId, 50000, "Test");
         await RestrictTestRoleApiPermissionsAsync(db);
+    }
+
+    private static async Task RetireObsoleteContentModerationApiModulesAsync(ISqlSugarClient db)
+    {
+        long[] obsoleteApiModuleIds = [50110L, 50111L, 50112L, 50113L];
+        var retiredAt = DateTime.UtcNow;
+
+        await db.Updateable<ConsoleResourceApiModule>()
+            .SetColumns(item => new ConsoleResourceApiModule
+            {
+                IsDeleted = true,
+                DeletedAt = retiredAt,
+                DeletedBy = "System",
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = retiredAt
+            })
+            .Where(item => obsoleteApiModuleIds.Contains(item.ApiModuleId) && !item.IsDeleted)
+            .ExecuteCommandAsync();
+
+        await db.Updateable<RoleModulePermission>()
+            .SetColumns(item => new RoleModulePermission
+            {
+                IsDeleted = true,
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = retiredAt
+            })
+            .Where(item => obsoleteApiModuleIds.Contains(item.ApiModuleId) && !item.IsDeleted)
+            .ExecuteCommandAsync();
+
+        await db.Updateable<ApiModule>()
+            .SetColumns(item => new ApiModule
+            {
+                IsEnabled = false,
+                IsDeleted = true,
+                ModifyBy = "System",
+                ModifyId = 0,
+                ModifyTime = retiredAt
+            })
+            .Where(item => obsoleteApiModuleIds.Contains(item.Id) && !item.IsDeleted)
+            .ExecuteCommandAsync();
     }
 
     private static async Task EnsureRoleApiPermissionAsync(ISqlSugarClient db, long roleId, long apiModuleId,

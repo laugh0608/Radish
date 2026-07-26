@@ -355,9 +355,9 @@ export const PublicDocsApp = ({
   onNavigate
 }: PublicDocsAppProps) => {
   const { t } = useTranslation();
-  const roles = useUserStore((state) => state.roles || []);
+  const userId = useUserStore((state) => state.userId);
   const [displayTimeZone] = useState(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE));
-  const showAuthorTools = useMemo(() => canUseDocsAuthorTools(roles), [roles]);
+  const showAuthorTools = useMemo(() => canUseDocsAuthorTools(userId), [userId]);
   const pageRef = useRef<HTMLDivElement>(null);
   const previousRouteRef = useRef<PublicDocsRoute>(route);
   const browseScrollSnapshotRef = useRef<{ routeKey: string; scrollTop: number } | null>(null);

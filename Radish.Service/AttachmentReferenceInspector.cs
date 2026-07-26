@@ -22,8 +22,7 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly IBaseRepository<StickerGroup> _stickerGroupRepository;
     private readonly IBaseRepository<Reaction> _reactionRepository;
-    private readonly IBaseRepository<WikiDocument> _wikiDocumentRepository;
-    private readonly IBaseRepository<WikiDocumentRevision> _wikiDocumentRevisionRepository;
+    private readonly IWikiAttachmentReferenceRepository _wikiAttachmentReferenceRepository;
     private readonly IBaseRepository<UserBrowseHistory> _userBrowseHistoryRepository;
     private readonly IBaseRepository<UserBenefit> _userBenefitRepository;
     private readonly IBaseRepository<UserInventory> _userInventoryRepository;
@@ -42,8 +41,7 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         IBaseRepository<LevelConfig> levelConfigRepository,
         IBaseRepository<StickerGroup> stickerGroupRepository,
         IBaseRepository<Reaction> reactionRepository,
-        IBaseRepository<WikiDocument> wikiDocumentRepository,
-        IBaseRepository<WikiDocumentRevision> wikiDocumentRevisionRepository,
+        IWikiAttachmentReferenceRepository wikiAttachmentReferenceRepository,
         IBaseRepository<UserBrowseHistory> userBrowseHistoryRepository,
         IBaseRepository<UserBenefit> userBenefitRepository,
         IBaseRepository<UserInventory> userInventoryRepository,
@@ -61,8 +59,7 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         _levelConfigRepository = levelConfigRepository;
         _stickerGroupRepository = stickerGroupRepository;
         _reactionRepository = reactionRepository;
-        _wikiDocumentRepository = wikiDocumentRepository;
-        _wikiDocumentRevisionRepository = wikiDocumentRevisionRepository;
+        _wikiAttachmentReferenceRepository = wikiAttachmentReferenceRepository;
         _userBrowseHistoryRepository = userBrowseHistoryRepository;
         _userBenefitRepository = userBenefitRepository;
         _userInventoryRepository = userInventoryRepository;
@@ -86,6 +83,8 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
 
         await UnionStructuredReferencesAsync(referencedAttachmentIds, candidateIds);
         await UnionSystemConfigReferencesAsync(referencedAttachmentIds, candidateIds);
+        referencedAttachmentIds.UnionWith(
+            await _wikiAttachmentReferenceRepository.GetReferencedAttachmentIdsAsync(candidateIds));
 
         await UnionReferencedAttachmentIdsFromContentAsync(
             referencedAttachmentIds,
@@ -104,19 +103,6 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
             _postAnswerRepository,
             static answer => answer.Content,
             static answer => !answer.IsDeleted && answer.Content != null && answer.Content != string.Empty);
-
-        await UnionReferencedAttachmentIdsFromContentAsync(
-            referencedAttachmentIds,
-            _wikiDocumentRepository,
-            static document => document.MarkdownContent,
-            static document => !document.IsDeleted && document.MarkdownContent != string.Empty);
-
-        // Wiki 版本支持回滚；历史版本正文仍是可恢复业务真值，不能按临时附件清理。
-        await UnionReferencedAttachmentIdsFromContentAsync(
-            referencedAttachmentIds,
-            _wikiDocumentRevisionRepository,
-            static revision => revision.MarkdownContent,
-            static revision => revision.MarkdownContent != string.Empty);
 
         return referencedAttachmentIds;
     }
@@ -189,12 +175,6 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
             reaction.StickerAttachmentId.HasValue &&
             candidateIds.Contains(reaction.StickerAttachmentId.Value));
         UnionNullableIds(referencedAttachmentIds, reactions.Select(reaction => reaction.StickerAttachmentId));
-
-        var wikiDocuments = await _wikiDocumentRepository.QueryAsync(document =>
-            !document.IsDeleted &&
-            document.CoverAttachmentId.HasValue &&
-            candidateIds.Contains(document.CoverAttachmentId.Value));
-        UnionNullableIds(referencedAttachmentIds, wikiDocuments.Select(document => document.CoverAttachmentId));
 
         var browseHistories = await _userBrowseHistoryRepository.QueryAsync(item =>
             !item.IsDeleted &&

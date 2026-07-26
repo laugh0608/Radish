@@ -11,6 +11,7 @@ public sealed record NotificationDefinition(
     bool IsProducerActive,
     bool CanDisableInApp = true,
     bool CanDisableRealtimePreview = true,
+    bool SuppressWhenInteractionBlocked = false,
     TimeSpan? AggregationWindow = null,
     int RetentionDays = 180);
 
@@ -84,28 +85,54 @@ public static class NotificationDefinitionRegistry
     {
         yield return Define(NotificationType.CommentReplied, NotificationCategory.Discussion,
             NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
             requiredTemplateArguments: ["actorName"]);
         yield return Define(NotificationType.PostCommented, NotificationCategory.Discussion,
             NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
             requiredTemplateArguments: ["actorName"]);
         yield return Define(NotificationType.PostQuickReplied, NotificationCategory.Discussion,
             NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
             aggregationWindow: TimeSpan.FromHours(2), requiredTemplateArguments: ["targetTitle"]);
         yield return Define(NotificationType.PostLiked, NotificationCategory.Reaction,
             NotificationPriority.Low, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
             aggregationWindow: TimeSpan.FromHours(6), requiredTemplateArguments: ["targetTitle"]);
         yield return Define(NotificationType.CommentLiked, NotificationCategory.Reaction,
             NotificationPriority.Low, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
             aggregationWindow: TimeSpan.FromHours(6));
         yield return Define(NotificationType.ChatMentioned, NotificationCategory.Message,
             NotificationPriority.High, NotificationTargetKind.ChatConversation, active: true,
+            suppressWhenInteractionBlocked: true,
             requiredTemplateArguments: ["actorName", "channelName"]);
         yield return Define(NotificationType.DirectMessageRequested, NotificationCategory.Message,
             NotificationPriority.Normal, NotificationTargetKind.ChatConversation, active: true,
+            suppressWhenInteractionBlocked: true,
             requiredTemplateArguments: ["actorName"]);
         yield return Define(NotificationType.Followed, NotificationCategory.Relationship,
             NotificationPriority.Normal, NotificationTargetKind.UserProfile, active: true,
+            suppressWhenInteractionBlocked: true,
             requiredTemplateArguments: ["actorName"]);
+        yield return Define(NotificationType.WikiCollaboratorInvited, NotificationCategory.Knowledge,
+            NotificationPriority.Normal, NotificationTargetKind.DocsAuthorDraft, active: true,
+            requiredTemplateArguments: ["actorName", "targetTitle"]);
+        yield return Define(NotificationType.WikiReviewUpdated, NotificationCategory.Knowledge,
+            NotificationPriority.Normal, NotificationTargetKind.DocsAuthorDraft, active: true,
+            requiredTemplateArguments: ["targetTitle", "reviewAction"]);
+        yield return Define(NotificationType.ContentReportResolved, NotificationCategory.Governance,
+            NotificationPriority.Normal, NotificationTargetKind.None, active: true,
+            requiredTemplateArguments: ["resultCode"]);
+        yield return Define(NotificationType.UserModerationChanged, NotificationCategory.Governance,
+            NotificationPriority.High, NotificationTargetKind.None, active: true,
+            requiredTemplateArguments: ["actionType"]);
+        yield return Define(NotificationType.ContentModerationDecisionAvailable, NotificationCategory.Governance,
+            NotificationPriority.Normal, NotificationTargetKind.GovernanceDecision, active: true,
+            requiredTemplateArguments: ["resultCode"]);
+        yield return Define(NotificationType.ContentModerationAppealUpdated, NotificationCategory.Governance,
+            NotificationPriority.Normal, NotificationTargetKind.GovernanceAppeal, active: true,
+            requiredTemplateArguments: ["appealStatus", "resultCode"]);
         yield return Define(NotificationType.PurchaseSucceeded, NotificationCategory.Commerce,
             NotificationPriority.Normal, NotificationTargetKind.ShopOrder, active: true, retentionDays: 365,
             requiredTemplateArguments: ["productName"]);
@@ -146,6 +173,7 @@ public static class NotificationDefinitionRegistry
         NotificationPriority priority,
         string targetKind,
         bool active,
+        bool suppressWhenInteractionBlocked = false,
         TimeSpan? aggregationWindow = null,
         int retentionDays = 180,
         params string[] requiredTemplateArguments)
@@ -158,6 +186,7 @@ public static class NotificationDefinitionRegistry
             new HashSet<string>(StringComparer.Ordinal) { targetKind },
             new HashSet<string>(requiredTemplateArguments, StringComparer.Ordinal),
             active,
+            SuppressWhenInteractionBlocked: suppressWhenInteractionBlocked,
             AggregationWindow: aggregationWindow,
             RetentionDays: retentionDays);
     }

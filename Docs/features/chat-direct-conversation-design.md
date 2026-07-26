@@ -2,18 +2,18 @@
 
 > 状态：批次 A / B / C / D 已完成，专题已关闭
 >
-> 最后更新：2026-07-19（Asia/Shanghai）
+> 最后更新：2026-07-25（Asia/Shanghai）
 >
-> 本文是一对一私聊专题的实现与验收依据。聊天室公共能力继续以 [聊天室系统设计](./chat-system.md) 为准，正式 Web 路由与壳层边界继续以 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 为准；私聊完成后的 [消息搜索](./chat-message-search-design.md)、[消息 Reaction](./chat-message-reaction-design.md)、[消息置顶](./chat-message-pin-design.md) 与 [轻量阅读回执](./chat-message-read-receipt-design.md) 分别由独立权威专题约束。
+> 本文是一对一私聊专题的实现与验收依据。聊天室公共能力继续以 [聊天室系统设计](./chat-system.md) 为准，正式 Web 路由与壳层边界继续以 [纯 Web 私域复访入口设计说明](/frontend/private-web-revisit) 为准；私聊完成后的 [消息搜索](./chat-message-search-design.md)、[消息 Reaction](./chat-message-reaction-design.md)、[消息置顶](./chat-message-pin-design.md) 与 [轻量阅读回执](./chat-message-read-receipt-design.md) 分别由独立权威专题约束。F4-K 后屏蔽真相与跨域交互隔离统一以 [用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 为准。
 
 ## 摘要
 
 - 一对一私聊复用现有 `Channel / ChannelMember / ChannelMessage / ChatHub / ChatApp`，不新增平行的 `PrivateMessage` 消息体系。
-- 新增 `DirectConversation` 只保存参与者、请求和阻断状态；`Channel.Type=Private` 仍是消息容器，是否为一对一会话只由 `DirectConversation.ChannelId` 判定。
-- 陌生人不能直接连续发送消息：非互关用户创建的是待处理请求，发起人只能发送一条纯文本请求；接收人接受后才能正常互发，也可以拒绝或阻断。
+- `DirectConversation` 只保存参与者、请求和归档关联；旧阻断字段保留迁移兼容读取，新运行时屏蔽只写 Main `UserBlock`。`Channel.Type=Private` 仍是消息容器，是否为一对一会话只由 `DirectConversation.ChannelId` 判定。
+- 陌生人不能直接连续发送消息：非互关用户创建的是待处理请求，发起人只能发送一条纯文本请求；接收人接受后才能正常互发，也可以拒绝或通过统一用户屏蔽进入对称只读。
 - 私聊成员授权必须覆盖列表、详情、历史、发送、撤回、已读、在线成员、Hub 加组、消息定位、举报和附件访问。不能只在页面隐藏入口。
 - `/messages` 和公开个人页是正式 Web 唯一新增产品入口；WebOS 只保持兼容，Flutter、Tauri 和公开聊天室不在本专题范围。
-- F4-C 至 F4-F 后续专题已经完成，但没有改变本专题的 `DirectConversation`、成员 ACL、请求 / 阻断和附件隐私真相源；搜索、回应、置顶和回执只在既有会话状态允许时工作。
+- F4-C 至 F4-F 保持本专题的 `DirectConversation`、成员 ACL、请求和附件隐私边界；F4-K 将阻断真相迁移到 Main `UserBlock`，搜索、回应、置顶和回执统一叠加 `IUserInteractionPolicyService` 的当前关系判断。
 
 ## 1. 专题定位
 
@@ -37,7 +37,7 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 | 消息授权 | 历史、窗口、发送、加入和已读当前未校验私有成员 | 所有读写与 Hub 操作统一经过服务端访问策略 |
 | 会话分区 | 前端已有 `voConversationKind` 可选字段，但后端未返回 | 后端权威返回 `public / mutual / stranger / group` |
 | 发起入口 | 公开个人页只有关注和分享 | 增加“发消息”，登录后幂等创建或恢复会话 |
-| 陌生人治理 | 没有请求、拒绝或阻断状态 | 增加请求生命周期和会话级阻断 |
+| 陌生人治理 | 没有请求、拒绝或阻断状态 | 增加请求生命周期；当时的会话级阻断已由 F4-K 迁入统一用户屏蔽 |
 | 发送恢复 | `clientRequestId` 目前只回显 | 持久化并建立唯一约束，相同请求返回原消息 |
 | 聊天附件 | Chat 上传默认公开；非公开附件只允许上传者或管理员 | Chat 附件默认不公开，按频道访问权授权，管理员角色不自动穿透私聊 |
 | Console | 举报队列可回看聊天目标 | 只允许查看用户主动举报形成的快照，不提供私聊浏览器 |
@@ -71,7 +71,7 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 - 接收人可以接受、拒绝或阻断：
   - 接受后状态变为 `Accepted`，双方可以正常互发；
   - 拒绝后保留请求和历史，发起人不能再次发送；接收人以后仍可主动接受；
-  - 阻断后双方都不能发送，只有执行阻断的一方可以解除。
+  - 屏蔽后双方都不能发送，只有执行屏蔽的一方可以解除自己建立的关系；对方若也已屏蔽，单边解除后仍保持隔离。
 - 待处理请求只产生一条不含正文预览的站内通知，目标仍为 `/messages?channelId=...&messageId=...`。
 
 ### 3.4 复访、未读与归档
@@ -112,8 +112,8 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 | `RequestMessageId` | `long?` | 陌生请求的首条消息；用于事务内原子声明“仅一条” |
 | `AcceptedAt` | `DateTime?` | 接受时间，统一 UTC |
 | `DeclinedAt` | `DateTime?` | 拒绝时间，统一 UTC |
-| `BlockedByUserId` | `long?` | 当前阻断人；为空表示未阻断 |
-| `BlockedAt` | `DateTime?` | 阻断时间，统一 UTC |
+| `BlockedByUserId` | `long?` | 旧迁移兼容字段；新运行时不写，不是屏蔽真相源 |
+| `BlockedAt` | `DateTime?` | 旧迁移兼容时间；只用于将可证明历史状态回填到 Main `UserBlock` |
 | `TenantId` | `long` | 租户边界 |
 | 审计字段 | 现有规范 | 创建、修改信息 |
 
@@ -122,7 +122,7 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 - 唯一索引：`(TenantId, ParticipantLowUserId, ParticipantHighUserId)`；
 - 唯一索引：`(TenantId, ChannelId)`；
 - `ParticipantLowUserId < ParticipantHighUserId`；
-- `RequestedByUserId`、`BlockedByUserId` 必须是两名参与者之一；
+- `RequestedByUserId` 必须是两名参与者之一；历史 `BlockedByUserId` 非空时也必须是参与者，否则 user-block doctor 阻断迁移；
 - `ChannelId` 对应的频道必须为 `ChannelType.Private`。
 
 规范化用户对由服务端完成，客户端不得传 `Low / High` 字段。并发创建依靠 Chat 数据库事务与唯一约束收敛到同一会话；命中唯一冲突后重新读取并返回既有记录。
@@ -175,10 +175,10 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 | `Public` | 当前租户登录用户 | 当前租户登录用户 | 允许 | 允许 |
 | `Announcement` | 当前租户登录用户 | 仅既有授权角色 | 允许 | 允许 |
 | 私有群组 | 有效成员 | 按成员角色 | 有效成员 | 有效成员 |
-| 一对一 `Accepted` | 两名参与者 | 未阻断且目标可用 | 两名参与者 | 两名参与者 |
+| 一对一 `Accepted` | 两名参与者 | 双方无有效屏蔽且目标可用 | 两名参与者 | 双方无有效屏蔽时展示 |
 | 一对一 `Pending` | 发起人；接收人在首条消息后可读 | 发起人仅一条纯文本；接收人接受前不可发送 | 可读方 | 不展示在线成员 |
 | 一对一 `Declined` | 两名参与者 | 不允许 | 两名参与者 | 不展示在线成员 |
-| 一对一被阻断 | 两名参与者可保留历史和举报 | 不允许 | 两名参与者 | 不展示在线成员 |
+| 一对一存在用户屏蔽 | 两名参与者可保留历史和举报 | 不允许 | 两名参与者 | 不展示在线成员 |
 
 所有按 `channelId` 或 `messageId` 的入口先解析频道，再执行同一策略。不存在“列表不可见但猜到 ID 可以读取”的旁路。
 
@@ -209,8 +209,8 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 | POST | `/api/v1/DirectConversation/GetOrCreate` | `targetUserId` | 幂等返回会话和当前状态 |
 | POST | `/api/v1/DirectConversation/Accept/{channelId}` | 无 | 接收人接受请求 |
 | POST | `/api/v1/DirectConversation/Decline/{channelId}` | 无 | 接收人拒绝请求 |
-| POST | `/api/v1/DirectConversation/Block/{channelId}` | 无 | 当前参与者阻断会话 |
-| POST | `/api/v1/DirectConversation/Unblock/{channelId}` | 无 | 仅阻断人解除 |
+| POST | `/api/v1/DirectConversation/Block/{channelId}` | `operationKey` | 迁移兼容转发到 Main `UserBlock` |
+| POST | `/api/v1/DirectConversation/Unblock/{channelId}` | `operationKey` | 迁移兼容解除当前用户建立的 `UserBlock` |
 | PUT | `/api/v1/DirectConversation/SetArchived/{channelId}` | `archived` | 修改当前成员的归档状态 |
 
 `GetOrCreate` 只创建会话，不代替消息发送。非互关会话在首条请求消息落库前不向接收人显示。
@@ -220,7 +220,7 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 - `Channel/GetList?view=active|archived`：只返回当前用户可见频道。`active` 返回公开频道和未归档私有会话，`archived` 只返回当前用户已归档的一对一会话；服务端装配会话分区、对方资料、请求状态和可用动作。
 - `Channel/GetDetail`：执行访问判定并返回同一会话元数据。
 - `ChannelMessage/GetHistory`、`GetMessageWindow`：无权访问统一返回 `404`，不泄露频道或消息是否存在。
-- `ChannelMessage/Send`：执行会话状态、阻断、附件、回复来源和持久化幂等检查。
+- `ChannelMessage/Send`：执行会话状态、统一用户交互策略、附件、回复来源和持久化幂等检查。
 - `ChannelMessage/Recall`：先校验消息所属频道访问权，再校验发送者和时间窗口。
 - `ChatHub.JoinChannel / StartTyping` 与 REST `ChannelReadState/Advance`：全部执行同一服务端访问策略；未授权时拒绝，不加入组、不推进游标、不更新成员。
 
@@ -232,7 +232,7 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 - `VoPeerUserId / VoPeerPublicId / VoPeerDisplayName / VoPeerAvatarUrl`；
 - `VoDirectRequestStatus`：`pending / accepted / declined / null`；
 - `VoCanSend / VoCanAccept / VoCanDecline / VoCanBlock / VoCanUnblock`；
-- `VoIsBlockedByCurrentUser / VoIsArchived / VoIsPeerAvailable`。
+- `VoIsBlockedByCurrentUser / VoIsArchived / VoIsPeerAvailable`；屏蔽方向只在当前用户是执行者时通过前一字段披露，对端以 `VoCan*` 能力关闭表达通用不可互动。
 
 所有动作可用性由服务端返回，前端不根据关注文案、频道名称或本地角色自行推导权限。
 
@@ -310,7 +310,7 @@ WebOS：
 - 语音、视频、端到端加密和原生系统推送；
 - 管理员私聊浏览、私聊关键词扫描或常态内容审查；
 - Flutter、Tauri 专属实现；
-- 全局用户拉黑体系。当前阻断只作用于对应一对一会话，后续如扩展为全站关系能力必须另立专题。
+- 本专题不自行维护全局屏蔽真相；跨关注、Direct、通知和关系分发的屏蔽统一服从 [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design)。
 
 ## 10. 实施批次
 

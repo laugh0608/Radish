@@ -165,6 +165,10 @@ public class Product : RootEntityTKey<long>, ITenantEntity
     [SugarColumn(IsNullable = false, ColumnDescription = "是否上架")]
     public bool IsOnSale { get; set; } = false;
 
+    /// <summary>当前下架由治理目标动作造成时记录对应动作 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? ModerationTargetActionId { get; set; }
+
     /// <summary>是否启用</summary>
     /// <remarks>禁用后不显示在商城</remarks>
     [SugarColumn(IsNullable = false, ColumnDescription = "是否启用")]

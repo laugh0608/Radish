@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { AntModal, AntInput } from '@radish/ui';
 import { SearchOutlined } from '@radish/ui';
 import { useUser } from '@/hooks/useUser';

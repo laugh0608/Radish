@@ -405,6 +405,7 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   const browserRouterSource = readFileSync(resolve(clientRoot, 'src/bootstrap/BrowserAppRouter.tsx'), 'utf8');
   const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
   const docsAuthorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorApp.tsx'), 'utf8');
+  const docsAuthorEditorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorPage.tsx'), 'utf8');
 
   assert.match(mainSource, /import \{ BrowserAppRouter \} from '@\/bootstrap\/BrowserAppRouter';/);
   assert.match(browserRouterSource, /const DocsAuthorEntry = lazy/);
@@ -412,14 +413,19 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.match(entryRouteSource, /if \(isDocsAuthorPathname\(pathname\)\) \{\s*return 'docs-author';\s*\}[\s\S]*if \(isPublicContentPathname\(pathname\)\) \{\s*return 'public';/);
   assert.match(entryRouteSource, /pathname\.startsWith\('\/docs\/'\) && !isDocsAuthorPathname\(pathname\)/);
   assert.match(docsAuthorSource, /buildDocsAuthorMineReturnPath/);
-  assert.match(docsAuthorSource, /createWikiDocument/);
-  assert.match(docsAuthorSource, /updateWikiDocument/);
+  assert.match(docsAuthorSource, /createWikiAuthorDraft/);
+  assert.match(docsAuthorSource, /saveWikiAuthorDraft/);
+  assert.match(docsAuthorSource, /submitWikiAuthorDraft/);
+  assert.match(docsAuthorSource, /inviteWikiAuthorCollaborator/);
+  assert.match(docsAuthorSource, /buildSaveAuthorDraftRequest\(editorState\.draft, currentDocument\.voDraftVersion\)/);
+  assert.match(docsAuthorSource, /accountEpochRef\.current \+= 1;/);
+  assert.match(docsAuthorSource, /accountEpoch !== accountEpochRef\.current/);
   assert.match(docsAuthorSource, /getWikiRevisionList/);
   assert.match(docsAuthorSource, /const treeRef = useRef<WikiDocumentTreeNodeVo\[\]>\(\[\]\);/);
   assert.match(docsAuthorSource, /treeRef\.current = collectionState\.tree;/);
-  assert.match(docsAuthorSource, /preventNavigationWhileUploading\(event\);[\s\S]*onNavigate\(event, \{ kind: 'revisions', documentId: route\.documentId \}\);/);
-  assert.match(docsAuthorSource, /const publicReadHref = state\.document && !state\.document\.voIsDeleted && state\.document\.voSlug\.trim\(\)/);
-  assert.match(docsAuthorSource, /href=\{publicReadHref\}/);
+  assert.match(docsAuthorEditorSource, /preventNavigationWhileUploading\(event\);[\s\S]*onNavigate\(event, \{ kind: 'revisions', documentId: route\.documentId \}\);/);
+  assert.match(docsAuthorEditorSource, /const publicReadHref = state\.document && state\.document\.voDocumentVersion > 0 && state\.document\.voSlug\.trim\(\)/);
+  assert.match(docsAuthorEditorSource, /href=\{publicReadHref\}/);
   assert.doesNotMatch(docsAuthorSource, /publishWikiDocument/);
   assert.doesNotMatch(docsAuthorSource, /unpublishWikiDocument/);
   assert.doesNotMatch(docsAuthorSource, /archiveWikiDocument/);

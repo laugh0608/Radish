@@ -43,6 +43,18 @@ public static class NotificationType
     /// <remarks>优先级：普通（2）</remarks>
     public const string DirectMessageRequested = "DirectMessageRequested";
 
+    public const string WikiCollaboratorInvited = "WikiCollaboratorInvited";
+
+    public const string WikiReviewUpdated = "WikiReviewUpdated";
+
+    public const string ContentReportResolved = "ContentReportResolved";
+
+    public const string UserModerationChanged = "UserModerationChanged";
+
+    public const string ContentModerationDecisionAvailable = "ContentModerationDecisionAvailable";
+
+    public const string ContentModerationAppealUpdated = "ContentModerationAppealUpdated";
+
     #endregion
 
     #region 成就类通知（P2 后续实现）
@@ -130,7 +142,10 @@ public static class NotificationTargetKind
     public const string Inventory = "Inventory";
     public const string Experience = "Experience";
     public const string DocsDocument = "DocsDocument";
+    public const string DocsAuthorDraft = "DocsAuthorDraft";
     public const string GovernanceCase = "GovernanceCase";
+    public const string GovernanceDecision = "GovernanceDecision";
+    public const string GovernanceAppeal = "GovernanceAppeal";
 }
 
 /// <summary>通知优先级枚举</summary>

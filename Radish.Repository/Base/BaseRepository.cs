@@ -303,6 +303,26 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             : Expression.Lambda<Func<T, T2, T3, bool>>(body, parameter1, parameter2, parameter3);
     }
 
+    private static Expression<TDelegate> RebindLambdaParameters<TDelegate>(
+        Expression<TDelegate> expression,
+        IReadOnlyList<ParameterExpression> parameters)
+    {
+        if (expression.Parameters.Count != parameters.Count)
+        {
+            throw new ArgumentException("联查表达式参数数量不一致。", nameof(parameters));
+        }
+
+        Dictionary<ParameterExpression, ParameterExpression> replacements = expression.Parameters
+            .Select((parameter, index) => new KeyValuePair<ParameterExpression, ParameterExpression>(
+                parameter,
+                parameters[index]))
+            .ToDictionary(pair => pair.Key, pair => pair.Value);
+        Expression body = new ParameterReplaceVisitor(replacements).Visit(expression.Body)
+            ?? throw new InvalidOperationException("联查表达式参数归一化失败。");
+
+        return Expression.Lambda<TDelegate>(body, parameters);
+    }
+
     private static Expression? AppendTenantCondition(Expression? current, ParameterExpression parameter, long tenantId)
     {
         if (!typeof(ITenantEntity).IsAssignableFrom(parameter.Type))
@@ -319,6 +339,17 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
             : Expression.Equal(tenantProperty, zeroExpression);
 
         return current == null ? tenantCondition : Expression.AndAlso(current, tenantCondition);
+    }
+
+    private sealed class ParameterReplaceVisitor(
+        IReadOnlyDictionary<ParameterExpression, ParameterExpression> replacements) : ExpressionVisitor
+    {
+        protected override Expression VisitParameter(ParameterExpression node)
+        {
+            return replacements.TryGetValue(node, out ParameterExpression? replacement)
+                ? replacement
+                : base.VisitParameter(node);
+        }
     }
 
     #region 增
@@ -1007,18 +1038,22 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         return await ExecuteDbOperationAsync(() =>
         {
             var query = DbClientBase.Queryable(joinExpression);
-            var tenantFilter = BuildTenantJoinFilterExpression<T, T2, T3>();
+            IReadOnlyList<ParameterExpression> parameters = joinExpression.Parameters;
+            Expression<Func<T, T2, T3, bool>>? tenantFilter =
+                BuildTenantJoinFilterExpression<T, T2, T3>();
             if (tenantFilter != null)
             {
-                query = query.Where(tenantFilter);
+                query = query.Where(RebindLambdaParameters(tenantFilter, parameters));
             }
 
             if (whereLambda != null)
             {
-                query = query.Where(whereLambda);
+                query = query.Where(RebindLambdaParameters(whereLambda, parameters));
             }
 
-            return query.Select(selectExpression).ToListAsync();
+            return query
+                .Select(RebindLambdaParameters(selectExpression, parameters))
+                .ToListAsync();
         });
     }
 

@@ -81,9 +81,85 @@ public sealed class NotificationTargetResolverTest
         result[7002].VoUnavailableReason.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "Wiki 草稿通知只向所有者或有效邀请关系返回结构化目标")]
+    public async Task ResolveAsync_ShouldAuthorizeWikiDraftTargetFromCurrentRelation()
+    {
+        var documentRepository = new Mock<IBaseRepository<WikiDocument>>(MockBehavior.Strict);
+        var draftRepository = new Mock<IBaseRepository<WikiDocumentDraft>>(MockBehavior.Strict);
+        var collaboratorRepository = new Mock<IBaseRepository<WikiDocumentCollaborator>>(MockBehavior.Strict);
+        documentRepository
+            .Setup(item => item.QueryByIdsAsync(It.IsAny<List<long>>()))
+            .ReturnsAsync([new WikiDocument { Id = 8001, TenantId = 9, OwnerUserId = 1001 }]);
+        draftRepository
+            .Setup(item => item.QueryByIdsAsync(It.IsAny<List<long>>()))
+            .ReturnsAsync([new WikiDocumentDraft { Id = 8101, DocumentId = 8001, TenantId = 9 }]);
+        collaboratorRepository
+            .Setup(item => item.QueryAsync(It.IsAny<System.Linq.Expressions.Expression<Func<WikiDocumentCollaborator, bool>>?>()))
+            .ReturnsAsync([]);
+        var resolver = CreateResolver(
+            Mock.Of<IBaseRepository<Post>>(),
+            Mock.Of<IBaseRepository<Comment>>(),
+            documentRepository.Object,
+            draftRepository.Object,
+            collaboratorRepository.Object);
+
+        var result = await resolver.ResolveAsync(9, 1001,
+        [
+            CreateWikiNotification(7003, new NotificationTargetData
+            {
+                DocumentId = 8001,
+                DraftId = 8101
+            })
+        ]);
+
+        result[7003].VoKind.ShouldBe(NotificationTargetKind.DocsAuthorDraft);
+        result[7003].VoDocumentId.ShouldBe("8001");
+        result[7003].VoDraftId.ShouldBe("8101");
+        result[7003].VoUnavailableReason.ShouldBeNull();
+    }
+
+    [Fact(DisplayName = "Wiki 草稿通知在关系失效后不得继续返回可点击目标")]
+    public async Task ResolveAsync_ShouldRejectWikiDraftTargetAfterAccessRevoked()
+    {
+        var documentRepository = new Mock<IBaseRepository<WikiDocument>>(MockBehavior.Strict);
+        var draftRepository = new Mock<IBaseRepository<WikiDocumentDraft>>(MockBehavior.Strict);
+        var collaboratorRepository = new Mock<IBaseRepository<WikiDocumentCollaborator>>(MockBehavior.Strict);
+        documentRepository
+            .Setup(item => item.QueryByIdsAsync(It.IsAny<List<long>>()))
+            .ReturnsAsync([new WikiDocument { Id = 8001, TenantId = 9, OwnerUserId = 2001 }]);
+        draftRepository
+            .Setup(item => item.QueryByIdsAsync(It.IsAny<List<long>>()))
+            .ReturnsAsync([new WikiDocumentDraft { Id = 8101, DocumentId = 8001, TenantId = 9 }]);
+        collaboratorRepository
+            .Setup(item => item.QueryAsync(It.IsAny<System.Linq.Expressions.Expression<Func<WikiDocumentCollaborator, bool>>?>()))
+            .ReturnsAsync([]);
+        var resolver = CreateResolver(
+            Mock.Of<IBaseRepository<Post>>(),
+            Mock.Of<IBaseRepository<Comment>>(),
+            documentRepository.Object,
+            draftRepository.Object,
+            collaboratorRepository.Object);
+
+        var result = await resolver.ResolveAsync(9, 1001,
+        [
+            CreateWikiNotification(7004, new NotificationTargetData
+            {
+                DocumentId = 8001,
+                DraftId = 8101
+            })
+        ]);
+
+        result[7004].VoKind.ShouldBe(NotificationTargetKind.None);
+        result[7004].VoUnavailableReason.ShouldBe("Notification.Target.Forbidden");
+        result[7004].VoDocumentId.ShouldBeNull();
+    }
+
     private static NotificationTargetResolver CreateResolver(
         IBaseRepository<Post> postRepository,
-        IBaseRepository<Comment> commentRepository)
+        IBaseRepository<Comment> commentRepository,
+        IBaseRepository<WikiDocument>? documentRepository = null,
+        IBaseRepository<WikiDocumentDraft>? draftRepository = null,
+        IBaseRepository<WikiDocumentCollaborator>? collaboratorRepository = null)
     {
         return new NotificationTargetResolver(
             postRepository,
@@ -91,7 +167,9 @@ public sealed class NotificationTargetResolverTest
             Mock.Of<IBaseRepository<User>>(),
             Mock.Of<IBaseRepository<Order>>(),
             Mock.Of<IBaseRepository<UserBenefit>>(),
-            Mock.Of<IBaseRepository<WikiDocument>>(),
+            documentRepository ?? Mock.Of<IBaseRepository<WikiDocument>>(),
+            draftRepository ?? Mock.Of<IBaseRepository<WikiDocumentDraft>>(),
+            collaboratorRepository ?? Mock.Of<IBaseRepository<WikiDocumentCollaborator>>(),
             Mock.Of<IChannelMessageRepository>(),
             Mock.Of<IChatChannelAccessService>());
     }
@@ -110,6 +188,24 @@ public sealed class NotificationTargetResolverTest
         {
             Id = id,
             BusinessKey = $"notification:test:{id}",
+            CreateTime = DateTime.UtcNow
+        };
+    }
+
+    private static Notification CreateWikiNotification(long id, NotificationTargetData target)
+    {
+        return new Notification(new NotificationInitializationOptions(NotificationType.WikiReviewUpdated, "审核状态更新")
+        {
+            Category = NotificationCategory.Knowledge,
+            TemplateKey = "notification.WikiReviewUpdated",
+            TargetKind = NotificationTargetKind.DocsAuthorDraft,
+            TargetDataJson = target.ToJson(),
+            OccurredAtUtc = DateTime.UtcNow,
+            TenantId = 9
+        })
+        {
+            Id = id,
+            BusinessKey = $"notification:wiki-test:{id}",
             CreateTime = DateTime.UtcNow
         };
     }

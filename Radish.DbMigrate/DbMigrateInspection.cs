@@ -1,6 +1,6 @@
+using System.Data.Common;
 using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
-using Radish.Common.DbTool;
 
 namespace Radish.DbMigrate;
 
@@ -26,13 +26,14 @@ internal static class DbMigrateInspection
             probeDb = sqlSugarScope.GetConnectionScope(mainDbConnId.ToLowerInvariant());
         }
 
-        var mainConfig = BaseDbConfig.AllConfigs.FirstOrDefault(config =>
-            string.Equals(config.ConfigId?.ToString(), mainDbConnId, StringComparison.OrdinalIgnoreCase));
+        var mainConfig = probeDb.CurrentConnectionConfig;
 
         if (mainConfig?.DbType == SqlSugar.DbType.Sqlite)
         {
             var databaseFilePath = ExtractSqliteFilePath(mainConfig.ConnectionString);
-            if (!string.IsNullOrWhiteSpace(databaseFilePath) && !File.Exists(databaseFilePath))
+            if (!string.IsNullOrWhiteSpace(databaseFilePath) &&
+                !string.Equals(databaseFilePath, ":memory:", StringComparison.OrdinalIgnoreCase) &&
+                !File.Exists(databaseFilePath))
             {
                 return new SeedInspectionResult(Array.Empty<string>(), Array.Empty<string>(), true, databaseFilePath);
             }
@@ -62,10 +63,19 @@ internal static class DbMigrateInspection
             return null;
         }
 
-        const string prefix = "DataSource=";
-        return connectionString.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-            ? connectionString[prefix.Length..]
-            : connectionString;
+        if (!connectionString.Contains('='))
+        {
+            return connectionString;
+        }
+
+        var builder = new DbConnectionStringBuilder
+        {
+            ConnectionString = connectionString
+        };
+        return builder.TryGetValue("Data Source", out var dataSource) ||
+               builder.TryGetValue("DataSource", out dataSource)
+            ? dataSource?.ToString()
+            : null;
     }
 
     private static IReadOnlyList<string> InspectMissingColumns(

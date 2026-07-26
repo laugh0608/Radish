@@ -1,437 +1,127 @@
 # Hangfire 定时任务指南
 
-> **状态**：✅ 已实现
-> **最后更新**：2025-12-22
-> **维护者**：Radish Team
+> 状态：当前运行说明
+>
+> 最后更新：2026-07-20
 
-## 📋 概述
+Hangfire 是 `Radish.Api` 的后台任务调度与执行设施。任务定义与注册以 `Radish.Api/Program.cs` 为准，Hangfire 自有存储只保存调度和执行状态，不进入业务库 `RadishSchemaVersion` ledger。
 
-Hangfire 是一个开源的 .NET 后台作业处理框架，支持定时任务、延迟任务和 recurring 任务。Radish 项目集成 Hangfire 用于执行文件清理等维护性任务。
+## 1. 入口与权限
 
-**核心特性**：
-- ⏰ 支持多种任务类型（Fire-and-forget、Delayed、Recurring、Continuations）
-- 📊 内置 Dashboard 界面，便于监控和管理任务
-- 💾 SQLite 存储，无需额外数据库服务
-- 🔒 基于角色的权限控制
-- 🛡️ 自动重试和错误处理
+- API 直连：`http://localhost:5100/hangfire`
+- Gateway：`https://localhost:5000/hangfire`
+- Console：Gateway `/console/hangfire` 页面承载受保护的 Dashboard 外壳
 
-**适用场景**：
-- 定期清理临时文件
-- 数据库维护任务
-- 报表生成
-- 邮件发送
-- 缓存预热
+本地回环请求允许进入 Dashboard。远程请求必须完成认证，并满足以下任一条件：
 
----
+- 当前用户为 `System / Admin`；
+- 当前角色具备 `console.hangfire.view`。
 
-## 🚀 快速开始
+Dashboard 只用于查看、诊断和按权限执行 Hangfire 自带操作，不代表项目已经实现独立任务编排平台。生产环境应继续通过 Gateway、可信代理和访问控制限制入口。
 
-### 访问 Dashboard
+## 2. 当前 recurring jobs
 
-Hangfire Dashboard 已集成到 Gateway 和 Console 项目中：
+| Job ID | 默认计划 | 时区 | 职责 |
+| --- | --- | --- | --- |
+| `reliable-outbox-dispatch` | `*/1 * * * *` | UTC | 分派可靠 Outbox 事件 |
+| `cleanup-chat-reaction-operations` | `15 4 * * *` | UTC | 清理 Chat Reaction 幂等操作事实 |
+| `cleanup-notification-inbox` | `30 3 * * *` | UTC | 按保留与容量规则清理已读 / 已删除通知数据，不删除未读事实 |
+| `cleanup-wiki-terminal-draft-payloads` | `45 3 * * *` | UTC | 清空超过保留期的终态 Wiki 草稿正文载荷 |
+| `cleanup-deleted-files` | `0 3 * * *` | 应用默认时区 | 清理超过保留期的软删除附件 |
+| `cleanup-temp-files` | `0 * * * *` | 应用默认时区 | 清理临时文件 |
+| `cleanup-recycle-bin` | `0 4 * * *` | 应用默认时区 | 清理回收站文件 |
+| `cleanup-orphan-attachments` | `0 5 * * *` | 应用默认时区 | 清理孤立附件 |
+| `cleanup-expired-upload-sessions` | `*/15 * * * *` | 应用默认时区 | 回收过期分片上传会话与容量预留 |
+| `cleanup-expired-access-tokens` | `0 7 * * *` | 应用默认时区 | 清理过期文件访问令牌 |
+| `comment-highlight-stat` | `0 1 * * *` | 应用默认时区 | 统计神评 / 沙发 |
+| `retention-reward` | `0 2 * * 0` | 应用默认时区 | 发放神评 / 沙发保留奖励 |
+| `forum-post-lottery-auto-draw` | `*/1 * * * *` | 应用默认时区 | 为到期论坛抽奖自动开奖 |
+| `shop-cancel-timeout-orders` | `*/10 * * * *` | 应用默认时区 | 取消超时未支付订单 |
+| `shop-mark-expired-benefits` | `0 0 * * *` | 应用默认时区 | 标记过期权益 |
+| `shop-daily-stats` | `0 1 * * *` | 应用默认时区 | 生成商城日统计 |
 
-- **Gateway 环境**：访问 `https://localhost:5000/hangfire`
-- **Console 环境**：访问 `http://localhost:3100/hangfire`
-- **直接访问 API**：`http://localhost:5100/hangfire`
+除前两项固定注册外，多数任务受对应 `Enable` 配置控制。实际计划应在启动日志和 Dashboard Recurring Jobs 页复核，不能只依赖本文默认值。
 
-**权限要求**：
-- 本地访问（localhost）无限制
-- 远程访问需要登录且角色为 `Admin` 或 `System`
+## 3. 配置边界
 
-### 查看系统任务
-
-在 Dashboard 中可以看到以下系统任务：
-
-1. **cleanup-deleted-files**：清理软删除文件（每天凌晨 3 点）
-2. **cleanup-temp-files**：清理临时文件（每小时）
-3. **cleanup-recycle-bin**：清理回收站文件（每天凌晨 3 点）
-4. **cleanup-orphan-attachments**：清理孤立附件（每小时）
-
----
-
-## ⚙️ 配置说明
-
-### Hangfire 基础配置
-
-在 `appsettings.json` 中配置 Hangfire：
+Hangfire 基础配置位于 `Radish.Api/appsettings.json` 的 `Hangfire` 节点：
 
 ```json
 {
   "Hangfire": {
-    // SQLite 数据库文件路径
+    "DbType": 2,
     "ConnectionString": "Data Source=DataBases/Radish.Hangfire.db",
-
-    // Dashboard 配置
+    "Server": {
+      "WorkerCount": 1
+    },
     "Dashboard": {
-      "Enable": true,              // 是否启用 Dashboard
-      "RoutePrefix": "/hangfire",  // Dashboard 路由前缀
-      "AllowLocalOnly": false      // 是否仅允许本地访问（未实现）
+      "Enable": true,
+      "RoutePrefix": "/hangfire",
+      "AllowLocalOnly": true
+    },
+    "NotificationInboxCleanup": {
+      "Enable": true,
+      "Schedule": "30 3 * * *",
+      "BatchSize": 200,
+      "SoftRelationLimitPerUser": 5000
+    },
+    "WikiDraftPayloadCleanup": {
+      "Enable": true,
+      "Schedule": "45 3 * * *",
+      "BatchSize": 200
     }
   }
 }
 ```
 
-### 文件清理任务配置
+- `DbType=2` 使用 SQLite，`DbType=4` 使用 PostgreSQL；生产连接串通过本地覆盖或环境变量提供。
+- SQLite 本地默认单 worker，避免后台任务并发写入冲突。
+- recurring 配置键统一使用 `Schedule`，不是旧文档中的 `Cron`。
+- `Time.DefaultTimeZoneId` 决定“应用默认时区”任务的 Cron 解释；Outbox、通知、Wiki 与 Chat Reaction 清理显式使用 UTC。
+- `Dashboard.AllowLocalOnly` 是部署意图配置；当前实际授权仍以 `HangfireAuthorizationFilter` 的本地 / 身份 / 权限判断为准。
 
-```json
-{
-  "Hangfire": {
-    "FileCleanup": {
-      // 软删除文件清理
-      "DeletedFiles": {
-        "Enable": true,
-        "Cron": "0 3 * * *",        // 每天凌晨 3 点（Cron 表达式）
-        "RetentionDays": 30         // 保留 30 天
-      },
+完整配置加载与环境变量规则见 [配置管理](/guide/configuration)，时间语义见 [时间语义与业务自然日](/guide/time-semantics)。
 
-      // 临时文件清理
-      "TempFiles": {
-        "Enable": true,
-        "Cron": "0 * * * *",        // 每小时
-        "RetentionHours": 2         // 保留 2 小时
-      },
+## 4. Wiki 终态草稿正文清理
 
-      // 回收站清理
-      "RecycleBin": {
-        "Enable": true,
-        "Cron": "0 3 * * *",        // 每天凌晨 3 点
-        "RetentionDays": 90         // 保留 90 天
-      },
+`cleanup-wiki-terminal-draft-payloads` 由 `WikiDraftPayloadCleanupJob` 执行：
 
-      // 孤立附件清理
-      "OrphanAttachments": {
-        "Enable": true,
-        "Cron": "0 * * * *",        // 每小时
-        "RetentionHours": 24        // 保留 24 小时
-      }
-    }
-  }
-}
-```
+- 保留天数读取 `Document.Authoring.TerminalDraftRetentionDays`，默认 `90`；
+- 批次大小读取 `Hangfire.WikiDraftPayloadCleanup.BatchSize`，默认 `200`；
+- 只选择 `Applied / Rejected / Withdrawn`、尚未清理且超过 cutoff 的草稿；
+- 只把 `MarkdownContent` 清空并写入 `PayloadPurgedAt`，不删除草稿记录、审核事件或正式 Revision；
+- 活跃 `Editing / Submitted / ChangesRequested` 草稿不进入清理；
+- Repository 按批次和 `PayloadPurgedAt == null` 条件更新，任务可安全重跑；
+- 任务失败最多自动重试两次，延迟为 `60 / 300` 秒。
 
----
+这项任务落实的是用户内容保留边界，不是数据库物理级联清理。修改保留天数、终态定义或清理字段时，必须同步 [文档作者协作设计](/features/wiki-author-contribution-collaboration-design) 与回归测试。
 
-## 🔧 任务实现
+## 5. 任务设计规则
 
-### 自定义任务类
+- Job 必须可重入；业务正确性由数据库条件更新、唯一键、幂等键或事务保证，不能依赖“计划不会重复触发”。
+- Cron 只负责触发。超时、过期、锁定和清理 cutoff 使用注入的 `TimeProvider` UTC 时刻；业务自然日使用 `BusinessCalendar`。
+- 大数据量任务按稳定排序和有限批次处理，不一次性加载整表。
+- 失败必须抛回 Hangfire 形成 Failed / Retry 状态，不能吞异常后伪装成功。
+- 日志记录 Job 名称、处理数量和安全参数，不记录正文、凭据、连接串或用户敏感信息。
+- 新增 recurring job 时同步注册、默认配置、权限 / 运行影响、定向测试和本文任务表。
 
-所有定时任务都继承自 `FileCleanupJob` 类：
+## 6. 排障顺序
 
-```csharp
-/// <summary>
-/// 文件清理定时任务
-/// </summary>
-public class FileCleanupJob
-{
-    private readonly ILogger<FileCleanupJob> _logger;
-    private readonly IAttachmentService _attachmentService;
-    private readonly IFileStorage _fileStorage;
+任务未出现或未执行时依次检查：
 
-    public FileCleanupJob(
-        ILogger<FileCleanupJob> logger,
-        IAttachmentService attachmentService,
-        IFileStorage fileStorage)
-    {
-        _logger = logger;
-        _attachmentService = attachmentService;
-        _fileStorage = fileStorage;
-    }
+1. `Radish.Api` 是否成功启动，启动日志是否打印对应“已注册”消息。
+2. 对应 `Enable / Schedule / BatchSize / Retention*` 是否来自预期配置层。
+3. Dashboard 的 Recurring Jobs、Retries 和 Failed Jobs 是否记录异常。
+4. Hangfire 存储连接是否可用；SQLite 是否误启多个 Server / worker，PostgreSQL 连接与 schema 是否正确。
+5. 任务时区是 UTC 还是 `Time.DefaultTimeZoneId`，避免把计划时间误读为本地时间。
+6. 业务库结构是否已经由 `Radish.DbMigrate apply` 前滚；Job 不负责补业务 schema。
 
-    /// <summary>
-    /// 清理软删除的文件
-    /// </summary>
-    public async Task CleanupDeletedFilesAsync(int retentionDays = 30)
-    {
-        var cutoffDate = _timeProvider.GetUtcNow().UtcDateTime.AddDays(-retentionDays);
+涉及 Wiki 清理时，额外确认终态时间、`PayloadPurgedAt`、保留天数与批次大小。正文为空但审核事件和 Revision 仍存在是预期结果。
 
-        // 查询超过保留期的软删除文件
-        var filesToDelete = await _attachmentService.QueryAsync(
-            a => a.IsDeleted && a.DeleteTime < cutoffDate);
+## 相关文档
 
-        foreach (var file in filesToDelete)
-        {
-            try
-            {
-                // 删除物理文件
-                await _fileStorage.DeleteAsync(file.StoragePath);
-
-                // 删除缩略图
-                if (!string.IsNullOrEmpty(file.ThumbnailPath))
-                {
-                    await _fileStorage.DeleteAsync(file.ThumbnailPath);
-                }
-
-                // 记录日志
-                _logger.LogInformation("已删除过期文件: {FileName}", file.StoragePath);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "删除文件失败: {FileName}", file.StoragePath);
-            }
-        }
-
-        _logger.LogInformation("清理软删除文件完成，共处理 {Count} 个文件", filesToDelete.Count);
-    }
-
-    /// <summary>
-    /// 清理临时文件
-    /// </summary>
-    public async Task CleanupTempFilesAsync(int retentionHours = 2)
-    {
-        // 实现逻辑...
-    }
-
-    /// <summary>
-    /// 清理回收站
-    /// </summary>
-    public async Task CleanupRecycleBinAsync(int retentionDays = 90)
-    {
-        // 实现逻辑...
-    }
-
-    /// <summary>
-    /// 清理孤立附件
-    /// </summary>
-    public async Task CleanupOrphanAttachmentsAsync(int retentionHours = 24)
-    {
-        // 实现逻辑...
-    }
-}
-```
-
-### 任务注册
-
-在 `Program.cs` 中注册定时任务：
-
-```csharp
-// 读取配置
-var fileCleanupConfig = builder.Configuration.GetSection("Hangfire:FileCleanup");
-
-// 注册软删除文件清理任务
-var deletedFilesConfig = fileCleanupConfig.GetSection("DeletedFiles");
-if (deletedFilesConfig.GetValue<bool>("Enable"))
-{
-    var retentionDays = deletedFilesConfig.GetValue<int>("RetentionDays");
-    var schedule = deletedFilesConfig.GetValue<string>("Cron");
-
-    RecurringJob.AddOrUpdate<FileCleanupJob>(
-        "cleanup-deleted-files",
-        job => job.CleanupDeletedFilesAsync(retentionDays),
-        schedule,
-        new RecurringJobOptions { TimeZone = TimeZoneInfo.Local });
-}
-
-// 注册其他任务...
-```
-
----
-
-## 🔐 权限控制
-
-### Dashboard 授权过滤器
-
-```csharp
-/// <summary>
-/// Hangfire Dashboard 授权过滤器
-/// </summary>
-public class HangfireAuthorizationFilter : IDashboardAuthorizationFilter
-{
-    public bool Authorize(DashboardContext context)
-    {
-        var httpContext = context.GetHttpContext();
-
-        // 本地访问允许
-        if (httpContext.Request.IsLocal())
-        {
-            return true;
-        }
-
-        // 远程访问需要验证身份和权限
-        if (!httpContext.User.Identity?.IsAuthenticated ?? false)
-        {
-            return false;
-        }
-
-        // 仅 Admin 和 System 角色可访问
-        return httpContext.User.IsInRole("Admin") || httpContext.User.IsInRole("System");
-    }
-}
-```
-
-### 配置 Dashboard 权限
-
-```csharp
-var dashboardEnabled = builder.Configuration.GetValue<bool>("Hangfire:Dashboard:Enable", true);
-if (dashboardEnabled)
-{
-    var routePrefix = builder.Configuration["Hangfire:Dashboard:RoutePrefix"] ?? "/hangfire";
-
-    app.UseHangfireDashboard(routePrefix, new DashboardOptions
-    {
-        Authorization = new[] { new HangfireAuthorizationFilter() }
-    });
-}
-```
-
----
-
-## 📊 任务监控
-
-### Dashboard 功能
-
-Hangfire Dashboard 提供以下功能：
-
-1. **仪表板**：显示任务统计信息
-2. **任务列表**：查看所有任务的状态
-3. **重试任务**：手动重试失败的任务
-4. **删除任务**：删除不需要的任务
-5. **任务详情**：查看任务执行日志
-
-### 任务状态说明
-
-- **Enqueued**：等待执行
-- **Processing**：正在执行
-- **Succeeded**：执行成功
-- **Failed**：执行失败（会自动重试）
-- **Deleted**：已删除
-
-### 日志记录
-
-所有任务执行都会记录到日志系统：
-
-```csharp
-_logger.LogInformation("任务开始执行: {JobId}", BackgroundJob.Id);
-_logger.LogInformation("任务执行完成: {JobId}, 处理文件数: {Count}", BackgroundJob.Id, count);
-_logger.LogError(ex, "任务执行失败: {JobId}", BackgroundJob.Id);
-```
-
----
-
-## 🔄 Cron 表达式
-
-### 常用表达式
-
-| 表达式 | 说明 | 示例 |
-|--------|------|------|
-| `0 * * * *` | 每小时执行 | 整点清理临时文件 |
-| `0 3 * * *` | 每天凌晨 3 点 | 清理过期文件 |
-| `0 0 * * 0` | 每周日午夜 | 周报生成 |
-| `0 0 1 * *` | 每月 1 日午夜 | 月度统计 |
-| `*/5 * * * *` | 每 5 分钟 | 心跳检查 |
-
-### 在线工具
-
-推荐使用 [Cron-Generator](https://www.cron-generator.org/) 生成和测试 Cron 表达式。
-
----
-
-## 🛠️ 最佳实践
-
-### 时间与业务日契约
-
-- Cron 表达式只负责触发任务；任务内部的超时、过期、锁定与清理 cutoff 使用注入的 `TimeProvider` UTC 时刻。
-- 每日经验、评论神评 / 沙发、商城日统计、上传日额度与回收目录使用 `BusinessCalendar` 的系统业务日，不使用服务器 `DateTime.Today`。
-- 需要“下一业务日失效”的缓存使用 `BusinessCalendar.GetTimeUntilNextDate()`，不能固定写成 24 小时。
-- Job 测试应注入可控时钟，覆盖 UTC / 业务日边界；完整规则见 [时间语义与业务自然日](/guide/time-semantics)。
-
-### 1. 任务设计原则
-
-- **幂等性**：任务可以安全地重复执行
-- **异常处理**：捕获并记录所有异常
-- **日志记录**：记录任务执行的关键信息
-- **超时控制**：避免长时间运行的任务
-
-### 2. 性能优化
-
-```csharp
-// 批量处理，避免逐条查询
-var filesToDelete = await _attachmentService.QueryAsync(
-    a => a.IsDeleted && a.DeleteTime < cutoffDate,
-    pageSize: 1000);
-
-// 并行处理（谨慎使用）
-await Parallel.ForEachAsync(filesToDelete, async (file, token) =>
-{
-    await ProcessFileAsync(file);
-});
-```
-
-### 3. 错误恢复
-
-```csharp
-public async Task CleanupDeletedFilesAsync(int retentionDays = 30)
-{
-    try
-    {
-        // 主要逻辑
-        await ProcessFilesAsync(retentionDays);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "文件清理任务失败");
-
-        // 可选：发送告警通知
-        await SendAlertAsync("文件清理任务失败", ex.Message);
-
-        // 重新抛出异常，让 Hangfire 记录失败
-        throw;
-    }
-}
-```
-
-### 4. 配置管理
-
-- 使用配置文件管理所有参数
-- 提供合理的默认值
-- 支持运行时修改（可选）
-
----
-
-## 🔍 故障排查
-
-### 常见问题
-
-#### 1. Dashboard 403 错误
-
-**原因**：权限不足或未登录
-
-**解决方案**：
-- 本地访问使用 `localhost` 或 `127.0.0.1`
-- 远程访问确保已登录且角色为 `Admin` 或 `System`
-
-#### 2. 任务不执行
-
-**原因**：Cron 表达式错误或任务未注册
-
-**解决方案**：
-- 验证 Cron 表达式格式
-- 检查 `Program.cs` 中的任务注册代码
-- 查看 Hangfire 日志
-
-#### 3. SQLite 数据库锁定
-
-**原因**：多个实例同时访问 SQLite 文件
-
-**解决方案**：
-- 确保只有一个 Hangfire Server 实例
-- 使用 SQL Server 或 PostgreSQL（生产环境）
-
-### 调试技巧
-
-1. **查看任务日志**：在 Dashboard 中点击任务查看详细日志
-2. **手动触发任务**：使用 Dashboard 的手动触发功能
-3. **查看 Hangfire 日志**：配置详细的日志级别
-
----
-
-## 📚 参考资料
-
-- [Hangfire 官方文档](https://docs.hangfire.io/en/latest/)
-- [Cron 表达式教程](https://crontab.guru/)
-- [ASP.NET Core 后台任务](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/host/hosted-services)
-
----
-
-**文档状态**：已完成
-**最后更新**：2025-12-22
-**版本**：v1.0
+- [配置管理](/guide/configuration)
+- [数据库总览](/guide/database-overview)
+- [时间语义与业务自然日](/guide/time-semantics)
+- [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
+- [通知中心使用说明](/guide/notification-center)

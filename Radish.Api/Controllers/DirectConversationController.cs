@@ -83,12 +83,15 @@ public sealed class DirectConversationController : ControllerBase
 
     /// <summary>阻断当前一对一会话</summary>
     [HttpPost("{channelId:long}")]
-    public async Task<MessageModel> Block(long channelId)
+    public async Task<MessageModel> Block(
+        long channelId,
+        [FromBody] DirectConversationBlockMutationDto request)
     {
         var result = await _directConversationService.BlockAsync(
             Current.TenantId,
             Current.UserId,
             channelId,
+            request.OperationKey,
             Current.UserName);
         await PushMutationAsync(result);
         return Success("阻断会话成功", result.Conversation);
@@ -96,12 +99,15 @@ public sealed class DirectConversationController : ControllerBase
 
     /// <summary>解除当前用户发起的会话阻断</summary>
     [HttpPost("{channelId:long}")]
-    public async Task<MessageModel> Unblock(long channelId)
+    public async Task<MessageModel> Unblock(
+        long channelId,
+        [FromBody] DirectConversationBlockMutationDto request)
     {
         var result = await _directConversationService.UnblockAsync(
             Current.TenantId,
             Current.UserId,
             channelId,
+            request.OperationKey,
             Current.UserName);
         await PushMutationAsync(result);
         return Success("解除会话阻断成功", result.Conversation);

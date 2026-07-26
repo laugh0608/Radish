@@ -107,16 +107,28 @@ public sealed class DirectConversationServiceTest
     }
 
     [Fact]
-    public async Task UnblockAsync_ShouldRejectParticipantWhoDidNotBlockConversation()
+    public async Task UnblockAsync_ShouldUseUnifiedBlockStateInsteadOfLegacyDirectField()
     {
         var fixture = Fixture.CreateWithConversation(DirectConversationRequestStatus.Accepted);
         fixture.Conversations[0].BlockedByUserId = 20001;
+        fixture.UserBlockService
+            .Setup(service => service.UnblockByUserIdAsync(
+                30000,
+                20002,
+                20001,
+                "unblock-test",
+                "Receiver"))
+            .ThrowsAsync(new BusinessException(
+                "用户屏蔽状态已变化，请刷新后重试",
+                StatusCodes.Status409Conflict,
+                "UserBlock.StateConflict",
+                "error.user_block.state_conflict"));
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() =>
-            fixture.Service.UnblockAsync(30000, 20002, 70001, "Receiver"));
+            fixture.Service.UnblockAsync(30000, 20002, 70001, "unblock-test", "Receiver"));
 
-        Assert.Equal(StatusCodes.Status403Forbidden, exception.StatusCode);
-        Assert.Equal("Chat.DirectUnblockForbidden", exception.ErrorCode);
+        Assert.Equal(StatusCodes.Status409Conflict, exception.StatusCode);
+        Assert.Equal("UserBlock.StateConflict", exception.ErrorCode);
         fixture.ConversationRepository.Verify(repository => repository.UpdateColumnsAsync(
             It.IsAny<Expression<Func<DirectConversation, DirectConversation>>>(),
             It.IsAny<Expression<Func<DirectConversation, bool>>>()), Times.Never);
@@ -145,6 +157,30 @@ public sealed class DirectConversationServiceTest
     }
 
     [Fact]
+    public async Task SetArchivedAsync_ShouldUnarchiveCurrentParticipantsMemberState()
+    {
+        var fixture = Fixture.CreateWithConversation(DirectConversationRequestStatus.Accepted);
+        fixture.Members[0].ArchivedAt = DateTime.UtcNow.AddMinutes(-1);
+        fixture.MemberRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<ChannelMember, ChannelMember>>>(),
+                It.IsAny<Expression<Func<ChannelMember, bool>>>()))
+            .Callback<Expression<Func<ChannelMember, ChannelMember>>, Expression<Func<ChannelMember, bool>>>((update, predicate) =>
+            {
+                Assert.True(predicate.Compile()(fixture.Members[0]));
+                var values = update.Compile()(fixture.Members[0]);
+                fixture.Members[0].ArchivedAt = values.ArchivedAt;
+            })
+            .ReturnsAsync(1);
+
+        var result = await fixture.Service.SetArchivedAsync(30000, 20002, 70001, false, "Receiver");
+
+        Assert.True(result.Changed);
+        Assert.Null(fixture.Members[0].ArchivedAt);
+        Assert.False(result.Conversation.VoIsArchived);
+    }
+
+    [Fact]
     public async Task AcceptAsync_ShouldHidePendingConversationFromReceiverBeforeFirstMessage()
     {
         var fixture = Fixture.CreateWithConversation(DirectConversationRequestStatus.Pending);
@@ -167,6 +203,7 @@ public sealed class DirectConversationServiceTest
         public Mock<IBaseRepository<UserFollow>> FollowRepository { get; } = new(MockBehavior.Loose);
         public Mock<IBaseRepository<Attachment>> AttachmentRepository { get; } = new(MockBehavior.Loose);
         public Mock<IAttachmentUrlResolver> AttachmentUrlResolver { get; } = new(MockBehavior.Loose);
+        public Mock<IUserBlockService> UserBlockService { get; } = new(MockBehavior.Loose);
         public List<DirectConversation> Conversations { get; } = [];
         public List<ChannelMember> Members { get; } = [];
         public List<User> Users { get; } = [];
@@ -209,13 +246,31 @@ public sealed class DirectConversationServiceTest
             AttachmentRepository
                 .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<Attachment, bool>>?>()))
                 .ReturnsAsync([]);
+            var interactionPolicy = new Mock<IUserInteractionPolicyService>();
+            interactionPolicy
+                .Setup(service => service.EnsureCanInteractAsync(
+                    It.IsAny<long>(),
+                    It.IsAny<long>(),
+                    It.IsAny<long>()))
+                .Returns(Task.CompletedTask);
+            interactionPolicy
+                .Setup(service => service.GetSnapshotsAsync(
+                    It.IsAny<long>(),
+                    It.IsAny<long>(),
+                    It.IsAny<IReadOnlyCollection<long>>()))
+                .ReturnsAsync((long _, long _, IReadOnlyCollection<long> userIds) =>
+                    (IReadOnlyDictionary<long, UserInteractionPolicySnapshot>)userIds.ToDictionary(
+                        id => id,
+                        id => new UserInteractionPolicySnapshot(id, false, false)));
             Service = new DirectConversationService(
                 ConversationRepository.Object,
                 MemberRepository.Object,
                 UserRepository.Object,
                 FollowRepository.Object,
                 AttachmentRepository.Object,
-                AttachmentUrlResolver.Object);
+                AttachmentUrlResolver.Object,
+                interactionPolicy.Object,
+                UserBlockService.Object);
         }
 
         public static Fixture CreateWithConversation(DirectConversationRequestStatus status)

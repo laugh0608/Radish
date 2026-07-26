@@ -76,6 +76,15 @@ public sealed class ChatMessageReactionService : IChatMessageReactionService
         var emojiType = NormalizeEmojiType(request.EmojiType);
         var emojiValue = NormalizeEmojiValue(emojiType, request.EmojiValue);
         var access = await RequireReadableChannelAsync(tenantId, userId, request.ChannelId);
+        if (access.IsDirectConversation && access.HasInteractionBarrier)
+        {
+            throw new BusinessException(
+                "当前无法与该用户互动",
+                StatusCodes.Status409Conflict,
+                "UserBlock.InteractionUnavailable",
+                "error.user_block.interaction_unavailable");
+        }
+
         if (!access.CanReact)
         {
             throw new BusinessException(

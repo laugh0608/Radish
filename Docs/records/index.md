@@ -1,7 +1,6 @@
 # 记录与验收索引
 
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
-
 ## 一、通用模板与总索引
 
 - [专题回归索引](/guide/regression-index)
@@ -48,10 +47,10 @@
 - [m15-release-record-template](/records/m15-release-record-template)
 - [m15-release-record-2026-04-06](/records/m15-release-record-2026-04-06)
 - [m15-release-record-2026-07-12](/records/m15-release-record-2026-07-12)
-- [m15-release-record-v26.7.1.1201-2026-07-12](/records/m15-release-record-v26.7.1.1201-2026-07-12)
-- [m15-release-record-v26.7.1.1202-2026-07-12](/records/m15-release-record-v26.7.1.1202-2026-07-12)
+- [m15-release-record-v26.7.1.1201-2026-07-12](/records/m15-release-record-v26.7.1.1201-2026-07-12) / [1202](/records/m15-release-record-v26.7.1.1202-2026-07-12)
 - [m15-release-record-v26.7.1.1203-2026-07-12](/records/m15-release-record-v26.7.1.1203-2026-07-12)
 - [m15-release-record-v26.7.1.1204-2026-07-12](/records/m15-release-record-v26.7.1.1204-2026-07-12)
+- [production-database-migration-deployment-orchestration-2026-07-25](/records/production-database-migration-deployment-orchestration-2026-07-25)
 - [m15-test-rollback-rehearsal-2026-04-06](/records/m15-test-rollback-rehearsal-2026-04-06)
 - [m15-prod-rollback-playbook-2026-04-06](/records/m15-prod-rollback-playbook-2026-04-06)
 
@@ -67,10 +66,14 @@
 
 ## 七、专题清单与一次性观察
 
+- [F4 2026-07-25 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-25)
+- F4-L Wiki 附件隐私与生命周期：[B 服务端权威契约](/records/f4-l-b-wiki-attachment-server-contract-2026-07-25)
+- F4-K 用户屏蔽与关系交互隔离：[D 成组验收](/records/f4-k-d-user-block-stage-acceptance-2026-07-25) · [C 正式 Web](/records/f4-k-c-user-block-web-2026-07-25) · [B 服务端权威契约](/records/f4-k-b-user-block-server-contract-2026-07-25)
+- F4-I 内容治理：[D 成组验收](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25) · [C 正式页面](/records/f4-i-c-content-moderation-case-web-workspace-2026-07-24) · [B 服务端权威契约](/records/f4-i-b-content-moderation-server-contract-2026-07-21) · [当日日终回顾](/records/f4-day-end-doc-review-2026-07-21)
+- F4-J 治理申诉与处置纠正：[D 成组验收](/records/f4-j-d-content-moderation-appeal-stage-acceptance-2026-07-25) · [C 正式页面](/records/f4-j-c-content-moderation-appeal-web-workspace-2026-07-25) · [B 服务端权威契约](/records/f4-j-b-content-moderation-appeal-server-contract-2026-07-25)
+- F4-G Wiki 作者协作：[D 成组验收](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20) · [C 正式页面](/records/f4-g-c-wiki-author-console-pages-2026-07-20) · [B 服务端契约](/records/f4-g-b-wiki-author-collaboration-server-contract-2026-07-20) · [当日日终回顾](/records/f4-day-end-doc-review-2026-07-20)
 - [f4-day-end-doc-review-2026-07-19](/records/f4-day-end-doc-review-2026-07-19)
-- [f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)
-- [f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19)
-- [f4-f-b-chat-message-read-receipt-server-contract-2026-07-19](/records/f4-f-b-chat-message-read-receipt-server-contract-2026-07-19)
+- F4-F 聊天轻量阅读回执：[D 成组验收](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19) · [C 正式页面](/records/f4-f-c-chat-message-read-receipt-web-workspace-2026-07-19) · [B 服务端权威契约](/records/f4-f-b-chat-message-read-receipt-server-contract-2026-07-19)
 - [f4-e-d-chat-message-pin-stage-acceptance-2026-07-19](/records/f4-e-d-chat-message-pin-stage-acceptance-2026-07-19)
 - [f4-e-c-chat-message-pin-web-workspace-2026-07-19](/records/f4-e-c-chat-message-pin-web-workspace-2026-07-19)
 - [f4-e-b-chat-message-pin-server-contract-2026-07-19](/records/f4-e-b-chat-message-pin-server-contract-2026-07-19)
@@ -290,10 +293,8 @@
 - [shop-console-management-acceptance-record-2026-05-12](/records/shop-console-management-acceptance-record-2026-05-12)
 - [comment-tree-compat-retirement-checklist](/records/comment-tree-compat-retirement-checklist)
 - [react-capacitor-tauri-spike-record-2026-05-04](/records/react-capacitor-tauri-spike-record-2026-05-04)
-
 ## 使用建议
 
 - 找“今天改完要跑什么”：先看 [专题回归索引](/guide/regression-index)
 - 找“怎么写一页规范化回归记录”：先看 [变更回归记录模板](/records/change-regression-record-template)
-- 找“某批 Flutter Android MVP 到底留了哪些验证事实”：优先看 [flutter-android-mvp-validation-index-2026-05-02](/records/flutter-android-mvp-validation-index-2026-05-02)
-- 找“发布 / 部署 / 回滚的历史事实”：优先看本页第四部分
+- 找 Flutter Android MVP 验证事实或发布 / 部署 / 回滚历史：分别看 [Flutter 验证索引](/records/flutter-android-mvp-validation-index-2026-05-02)与本页第四部分

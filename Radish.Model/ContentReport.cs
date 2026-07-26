@@ -10,8 +10,22 @@ namespace Radish.Model;
 [SugarIndex("idx_contentreport_status", nameof(TenantId), OrderByType.Asc, nameof(Status), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_contentreport_target", nameof(TenantId), OrderByType.Asc, nameof(ReportTargetType), OrderByType.Asc, nameof(TargetContentId), OrderByType.Asc)]
 [SugarIndex("idx_contentreport_reporter", nameof(TenantId), OrderByType.Asc, nameof(ReporterUserId), OrderByType.Asc, nameof(Status), OrderByType.Asc)]
+[SugarIndex("idx_contentreport_public_id", nameof(PublicId), OrderByType.Asc, IsUnique = true)]
+[SugarIndex("idx_contentreport_case_reporter", nameof(TenantId), OrderByType.Asc, nameof(CaseId), OrderByType.Asc, nameof(ReporterUserId), OrderByType.Asc, IsUnique = true)]
 public class ContentReport : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
+    /// <summary>所属治理案件 ID；历史迁移前允许为空。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CaseId { get; set; }
+
+    /// <summary>面向举报者的稳定公开标识。</summary>
+    [SugarColumn(Length = 40, IsNullable = true)]
+    public string? PublicId { get; set; }
+
+    /// <summary>举报者可见状态（Submitted/Resolved）。</summary>
+    [SugarColumn(Length = 20, IsNullable = false)]
+    public string ReporterState { get; set; } = "Submitted";
+
     /// <summary>租户 ID</summary>
     [SugarColumn(IsNullable = false)]
     public long TenantId { get; set; } = 0;

@@ -1,10 +1,10 @@
 # Console 治理工作台设计端点
 
-> 状态：`P3-12-D5` 已完成 Console 治理设计源 `P00-P18` 设计收口；`P3-12-D14-D35` 已完成 `radish.console` 首轮视觉迁移、静态收口、局部运行态复核、数据补验和表格交互代码侧治理；`P3-12-D38` 已裁决完整内部调度 / 运维 Jobs 平台后置，移动 Console 画板作为响应式验收参考；D44-D45 已补深层动作权限态与系统设置移动溢出收口；D55-D57 已补共享页头、工具条、筛选控件、治理工作台、权限矩阵、文档治理移动表格和深层弹窗 / 真实数据态复核边界；D63 已补内容治理、经验治理、商业运营、文档治理、用户管理和权限矩阵任务面；E2/E3-A 已补 Console 404 真实搜索、ErrorBoundary 诊断复制和内容治理移动处理顺序；E7-A 已补正式后台首页密度和移动高频入口
+> 状态：`P00-P18` 设计与 Console 首轮视觉 / 交互治理已收口；`P02 / P07` 已承接内容治理案件与申诉复核工作台，正式页面已完成 Case / Evidence / Appeal / Relief 契约迁移；移动 Console 继续只作为响应式只读管理后台参考
 >
 > 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 最近更新：2026-07-07（Asia/Shanghai）
+> 最近更新：2026-07-25（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
 >
@@ -53,6 +53,14 @@
 > `2026-07-05` 更新：D63 已将治理 / 运营 / 文档 / 用户 / 权限代表页补成任务面：页面顶部展示任务流、指标和对象上下文，右侧 rail 解释证据、订单 / 商品回看、版本证据、用户对象和授权证据；E2/E3-A 明确 Console 移动端先按响应式治理视图承接内容治理，不开发独立移动 Console App。
 >
 > `2026-07-07` 更新：E7-A 已将 `/console/` Dashboard 调整为正式后台首页：首屏优先展示社区治理、交易复核、权限边界、全部功能面板和最近订单，移动端通过 `总览 / 治理 / 交易 / 权限 / 更多` 承接高频任务与完整路由入口；本批不新增 API、权限、后端调度平台或独立移动 Console App。
+>
+> `2026-07-20` 更新：F4-G 将 `P11` 更新为文档审核队列、正式正文 / 草稿证据、版本与协作者上下文、RequestChanges / Reject / Apply 和独立 Publish；`P16` 固定移动处理顺序为“队列 → 正文证据 → 版本与权限 → 审核动作 → 留痕”。
+>
+> `2026-07-21` 更新：F4-I-A 已完成[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design)权威设计。`P02 / P07` 后续从孤立举报单升级为“案件 → 证据 → 决定 → 动作 → 留痕”；A 批当时按停止线等待 F4-I-B 的 Case / Evidence / State 与权限契约，未提前修改 Pencil。
+>
+> `2026-07-21` 更新：F4-I-B 已完成 Case / Evidence / Event / UserModerationState、五类目标处置、Chat 可靠任务、新案件 API 与 `console.moderation.view / review / action` 分权。F4-I-C 随后已更新 `P02 / P07`、迁移 `/moderation` 并在消费者清零后删除旧 `Review / ApplyUserAction` 等 HTTP 入口。
+>
+> `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
 
 ## 目标
 
@@ -85,21 +93,21 @@ Docs/frontend/design-sources/console-governance-workbench.pen
 | --- | --- | --- |
 | `P00` | `Console Shell Common Components` | 公共 Console 壳层规范：`ConsoleShell`、`ConsoleSidebar`、`ConsoleTopbar`、`PageToolbar`、`MobileShell` |
 | `P01` | `Console Shell Foundation - Layout System` | Console 专用纸感壳层、侧栏、84 高命令栏、指标、表格样板、动作层级和状态槽 |
-| `P02` | `Console Content Moderation - Review Desk` | 内容审核队列、目标证据、治理动作和最近留痕三栏工作台 |
+| `P02` | `Console Content Moderation - Cases and Appeals Desk` | 案件 / 申诉队列、目标与原决定证据、复核动作、纠正执行和事件留痕工作台 |
 | `P03` | `Console Experience Governance - Ledger Desk` | 经验观察候选、用户摘要、趋势证据、流水定位和复核动作 |
 | `P04` | `Console Governance Overview - Dispatch Center` | 文档、内容、经验等跨模块治理负载和今日分派中心；完整内部调度中心后置 |
 | `P05` | `Console Table CRUD - User Management` | 高频对象管理页，保留工具条、表格和选中对象摘要侧栏 |
 | `P06` | `Console Settings - Governance Policy` | 设置 / 权限 / 配置型页面，采用分组导航、设置列和影响范围侧栏 |
-| `P07` | `Mobile Content Moderation - Review Flow` | 移动端内容审核单列流程、纸感状态槽和底部 tab |
+| `P07` | `Mobile Content Moderation - Appeal Read-only Flow` | 移动端申诉队列、公开摘要与权限说明只读流程；写操作回到桌面工作台 |
 | `P08` | `Mobile Experience Governance - Ledger Flow` | 移动端经验复核单列流程、趋势 / 流水和底部 tab |
 | `P09` | `Console Full Navigation & Permission IA` | 真实 Console 路由分组、功能覆盖矩阵和权限信息架构 |
 | `P10` | `Console Commerce Operations - Products & Orders` | 商品、订单、胡萝卜等交易 / 资产运营代表页 |
-| `P11` | `Console Document Governance - Publishing & Access` | 文档治理、发布、访问策略和版本回滚代表页 |
+| `P11` | `Console Document Governance - Review Evidence & Publish` | 待审队列、正文证据、审核动作、独立发布及既有访问 / 版本治理代表页 |
 | `P12` | `Console RBAC Permission Matrix` | 角色列表、权限矩阵、高危授权和审计上下文 |
 | `P13` | `Console Operations Tools - System Config & Jobs` | 系统配置与外部 Hangfire 外壳为当前发布前代表页；内部 Jobs 平台后置 |
 | `P14` | `Mobile Console Hub - Routes & Alerts` | 移动端 Console 路由 Hub、告警和待办队列 |
 | `P15` | `Mobile Commerce Operations - Order Flow` | 移动端订单 / 商品任务卡和履约动作 |
-| `P16` | `Mobile Document Governance - Publish Flow` | 移动端文档发布、访问策略和回滚动作 |
+| `P16` | `Mobile Document Governance - Review Flow` | 移动端待审队列、正文证据、版本权限、审核动作和留痕 |
 | `P17` | `Mobile RBAC Permission - Approval Flow` | 移动端角色权限审批，矩阵转为权限分组确认 |
 | `P18` | `Mobile Operations Jobs - Retry Flow` | 移动端运维参考流；内部任务失败重试、配置覆盖和审计流后置 |
 
@@ -189,7 +197,7 @@ D14 后 `radish.console` 页面级视觉结构优先复用以下组件：
 
 | 页面 | 文件 | 当前规模 | 主要结构 | 问题类型 |
 | --- | --- | ---: | --- | --- |
-| 内容治理 | `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx` | 约 `1760` 行 | 举报审核队列、手动治理动作、治理动作日志、审核弹窗 | 单页承载过多状态、表格动作区过宽、筛选 / 详情 / 动作缺少稳定工作台分区 |
+| 内容治理 | `Frontend/radish.console/src/pages/Moderation/ModerationPage.tsx`、`ModerationAppealsWorkspace.tsx` | 案件与申诉工作区分文件维护 | 案件队列、证据、决定、动作、申诉复核、纠正与事件；URL 状态支持 `view=appeals` | Case / Appeal 已使用独立工作区；新增治理能力继续按聚合边界拆分，避免主页面重新膨胀 |
 | 经验治理 | `Frontend/radish.console/src/pages/Experience/ExperienceAdminPage.tsx` | 约 `1650` 行 | 用户查询、经验概览、每日统计、异常摘要、流水、复核、调经验、冻结、等级配置 | 业务链路长、inline 样式多、治理观察和执行动作混排、配置类内容与人工复核混在同页 |
 
 `P3-8-C1` 已完成首批结构治理：
@@ -237,6 +245,7 @@ D14 后 `radish.console` 页面级视觉结构优先复用以下组件：
 - D63 任务面：`ModerationPage`、`ExperienceAdminPage`、`OrderList`、`ProductList`、`DocumentGovernancePage`、`UserList` 和 `RolePermissionPage` 已补 `governance-task-flow` 任务说明和证据 / 上下文 rail；任务面只解释“定位对象 -> 回看证据 -> 执行动作 -> 留痕复核”的处理顺序，不改变 API、权限键、表格列、提交载荷或审计语义。
 - E2/E3-A 信任治理补强：`NotFound` 从无效搜索提示改为真实 Console 路由搜索；`ErrorBoundary` 增加诊断编号和复制动作；内容治理移动视图新增处理顺序，固定为队列筛选、目标证据、处理动作和留痕回看。
 - E7-A 正式后台密度：`Dashboard` 已从普通统计面板调整为 Console 调度台，首屏组织高频处理队列、命令组、完整功能面板和最近订单；移动端高频底栏为 `总览 / 治理 / 交易 / 权限 / 更多`，`更多` 面板按当前账号权限展示完整页面组。本批只调整信息结构、导航承载和移动确认效率，不改变统计 API、权限键、路由契约或后端运行行为。
+- F4-G 文档审核：`DocumentGovernancePage` 在既有 `/documents` 内增加待审队列、正式正文 / 草稿双栏证据、审核时间线和 RequestChanges / Reject / Apply；`console.docs.review` 与 Publish、访问策略和其他治理权限保持分离。
 
 后续评估：
 
@@ -250,29 +259,30 @@ Console 治理工作台按四段组织：
 
 1. **筛选与队列**
    - 固定在主内容左侧或顶部首屏。
-   - 内容治理展示举报队列；经验治理展示用户搜索结果 / 异常候选。
+   - 内容治理展示案件队列和举报聚合摘要；经验治理展示用户搜索结果 / 异常候选。
    - 支持状态、类型、风险等级、回看状态、时间、关键词等筛选。
 2. **目标详情与证据**
    - 展示被举报 / 被观察对象的快照、来源、回看状态、公开地址、相关用户。
-   - 内容治理重点是目标快照和举报原因。
+   - 内容治理重点是举报时固化证据、当前复核证据、目标状态和举报聚合摘要。
    - 经验治理重点是近 7 / 30 天趋势、规则命中、经验流水定位。
 3. **动作区**
-   - 将审核、禁言、封禁、解除、冻结、解冻、复核结论作为同一类“治理动作”承载。
+   - 内容治理将决定与目标 / 用户动作分区；经验治理继续承载冻结、解冻和复核结论。
    - 动作区需要明确权限禁用、必填项、持续时间、原因说明和提交反馈。
 4. **留痕与回跳**
    - 动作执行后必须能回到队列 / 目标 / 日志。
-   - 日志区按目标用户、来源举报单、动作类型、状态和关键词筛选。
+   - 内容治理时间线统一回看举报、证据、决定、动作、通知和纠正动作；经验日志继续按用户、动作和状态筛选。
 
 ### 移动治理顺序
 
 移动端 Console 当前不拆独立 App，也不把 PC 三栏硬压到手机宽度。内容治理移动视图按以下顺序承接：
 
-1. 队列筛选：先看到审核状态、目标类型、举报原因、回看状态和关键词。
-2. 目标证据：展示可回看目标、快照、举报原因和无法直接回看时的原因。
-3. 处理动作：审核、治理动作、持续时间和备注必须保留必填说明与权限状态。
-4. 留痕回看：处理后能回到举报单、目标快照和治理动作记录。
+1. 案件队列：先看到案件状态、目标类型、举报数量、证据可用性、动作结果和关键词。
+2. 目标与证据：区分举报时固化证据和当前重新采集证据，并说明删除、撤回或禁用状态。
+3. 决定：登记结论、原因分类和内部备注；并发冲突时保留草稿并要求刷新案件。
+4. 动作：目标处置随 `console.moderation.review` 提交；禁言、封禁、解除和结案后用户状态纠正按 `console.moderation.action` 单独裁剪。
+5. 留痕回看：处理后能回到案件、目标、证据和追加式事件时间线。
 
-订单、商品、文档、用户和权限页的移动视图继续按响应式表格、任务卡、证据 rail 和弹窗动作观察，不承诺移动端完整后台体验。
+订单、商品、用户和权限页的移动视图继续按响应式表格、任务卡、证据 rail 和弹窗动作观察，不承诺移动端完整后台体验。文档审核移动视图按 `P16` 保留队列、正文证据、版本与权限、审核动作和留痕五段，不把 Apply 与 Publish 合并。
 
 E7-A 后移动端 Console 的一级底栏只放高频任务：`总览` 回到 Dashboard，`治理` 优先进入内容 / 经验治理，`交易` 优先进入订单 / 商品 / 胡萝卜相关页面，`权限` 优先进入用户 / 角色，`更多` 展示完整可访问路由。不要把所有 Console 页面继续挤进一级底栏。
 
@@ -284,7 +294,7 @@ E7-A 后移动端 Console 的一级底栏只放高频任务：`总览` 回到 Da
 ┌─────────────────────────────────────────────────────────────┐
 │ 标题 / 当前端点 / 刷新 / 记录动作                            │
 ├─────────────────────────────────────────────────────────────┤
-│ 内容举报 | 经验异常 | 动作留痕                                │
+│ 内容案件 | 经验异常 | 动作留痕                                │
 ├───────────────┬─────────────────────────┬───────────────────┤
 │ 筛选 + 队列    │ 目标详情 + 证据           │ 动作 + 留痕摘要     │
 │               │                         │                   │
@@ -303,18 +313,19 @@ E7-A 后移动端 Console 的一级底栏只放高频任务：`总览` 回到 Da
 
 首屏应保留：
 
-- 顶部摘要：待审核、目标已降级、今日处理、生效中动作。
-- 队列筛选：审核状态、目标类型、举报原因、回看状态、关键词。
-- 队列表格：举报单、目标、举报人、原因、状态、创建时间、主操作。
-- 详情区：目标快照、目标用户、举报详情、回看状态、打开目标。
-- 动作区：审核结果、治理动作、持续时间、备注。
-- 日志摘要：来源举报单、目标用户、生效状态、快速解除。
+- 顶部摘要：待处理案件、动作待完成、今日结案、生效中用户限制。
+- 队列筛选：案件状态、目标类型、原因分类、证据可用性、动作结果和关键词。
+- 队列表格：案件、目标、举报数、最近证据、状态、动作结果和更新时间。
+- 详情区：目标身份、举报聚合、固化 / 当前证据、目标状态和打开目标。
+- 决定区：结论、原因分类、内部备注、案件版本和独立提交反馈。
+- 动作区：目标处置随 Review 权限裁剪；用户限制、持续时间和结案后用户状态纠正按 Action 权限裁剪；两类结果分别展示。
+- 事件区：举报、证据、决定、动作、通知和纠正动作的追加式时间线。
 
 当前不做：
 
-- 不新增后端字段。
-- 不改变审核 / 禁言 / 封禁 API。
-- 不把所有日志完整搬到首屏，只保留当前目标相关摘要和跳转入口。
+- 不新建平行治理 App，不改变 F4-I-B 已冻结的数据、权限或 API 契约。
+- 不把决定成功显示成动作成功，不用前端缓存或旧动作 `IsActive` 推导当前状态。
+- 不扩展批量治理、机器审核、敏感词策略、申诉 / 工单或未举报私聊读取。
 
 ## 经验治理端点
 

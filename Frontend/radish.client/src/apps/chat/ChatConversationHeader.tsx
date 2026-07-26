@@ -1,14 +1,18 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import {
   acceptDirectConversation,
-  blockDirectConversation,
   declineDirectConversation,
   setDirectConversationArchived,
-  unblockDirectConversation,
 } from '@/api/chat';
+import { blockUser, unblockUser } from '@/api/userBlock';
+import {
+  completeUserInteractionOperation,
+  getStableUserInteractionOperationKey,
+  publishUserInteractionChanged,
+} from '@/services/userInteractionSync';
 import type { ChannelVo, DirectConversationAction, EntityIdValue } from '@/types/chat';
 import { normalizeEntityId } from '@/types/chat';
 import { getErrorMessage } from './chatApp.helpers';
@@ -46,11 +50,27 @@ export function ChatConversationHeader({
 }: ChatConversationHeaderProps) {
   const { t } = useTranslation();
   const [pendingAction, setPendingAction] = useState<DirectConversationAction | null>(null);
+  const [confirmAction, setConfirmAction] = useState<'block' | 'unblock' | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const isDirect = isDirectConversationChannel(activeChannel);
   const noticeKey = resolveConversationNoticeKey(activeChannel);
   const peerUserId = normalizeEntityId(activeChannel?.voPeerUserId);
   const channelName = activeChannel?.voPeerDisplayName?.trim() || activeChannel?.voName;
+  const peerPublicId = activeChannel?.voPeerPublicId?.trim() ?? '';
+
+  useEffect(() => {
+    if (!confirmAction) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && pendingAction === null) {
+        setConfirmAction(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [confirmAction, pendingAction]);
 
   const performAction = async (action: DirectConversationAction) => {
     if (!activeChannel || pendingAction) {
@@ -68,10 +88,30 @@ export function ChatConversationHeader({
           await declineDirectConversation(activeChannel.voId);
           break;
         case 'block':
-          await blockDirectConversation(activeChannel.voId);
+          if (!peerPublicId) {
+            throw new Error(t('chat.action.block.missingTarget'));
+          }
+          {
+            const operationKey = getStableUserInteractionOperationKey('block', peerPublicId);
+            const result = await blockUser(peerPublicId, operationKey, t);
+            completeUserInteractionOperation('block', peerPublicId);
+            publishUserInteractionChanged({
+              voRelationshipVersion: result.voRelationshipVersion,
+            });
+          }
           break;
         case 'unblock':
-          await unblockDirectConversation(activeChannel.voId);
+          if (!peerPublicId) {
+            throw new Error(t('chat.action.unblock.missingTarget'));
+          }
+          {
+            const operationKey = getStableUserInteractionOperationKey('unblock', peerPublicId);
+            const result = await unblockUser(peerPublicId, operationKey, t);
+            completeUserInteractionOperation('unblock', peerPublicId);
+            publishUserInteractionChanged({
+              voRelationshipVersion: result.voRelationshipVersion,
+            });
+          }
           break;
         case 'archive':
           await setDirectConversationArchived(activeChannel.voId, true);
@@ -82,6 +122,7 @@ export function ChatConversationHeader({
       }
 
       toast.success(t(`chat.action.${action}.success`));
+      setConfirmAction(null);
       await onConversationChanged(action);
     } catch (error) {
       const message = getErrorMessage(error, t(`chat.action.${action}.failed`));
@@ -161,8 +202,8 @@ export function ChatConversationHeader({
                   <Icon icon={activeChannel.voIsArchived ? 'mdi:archive-arrow-up-outline' : 'mdi:archive-outline'} size={17} />
                   <span>{t(activeChannel.voIsArchived ? 'chat.action.unarchive' : 'chat.action.archive')}</span>
                 </button>
-                {activeChannel.voCanBlock && (
-                  <button type="button" disabled={pendingAction !== null} onClick={() => void performAction('block')}>
+                {activeChannel.voCanBlock && peerPublicId && (
+                  <button type="button" disabled={pendingAction !== null} onClick={() => setConfirmAction('block')}>
                     <Icon icon="mdi:shield-off-outline" size={17} />
                     <span>{t('chat.action.block')}</span>
                   </button>
@@ -203,8 +244,8 @@ export function ChatConversationHeader({
       ) : noticeKey ? (
         <div className={styles.conversationNotice} data-tone="neutral" role="status">
           <span>{t(noticeKey)}</span>
-          {activeChannel?.voCanUnblock && (
-            <button type="button" disabled={pendingAction !== null} onClick={() => void performAction('unblock')}>
+          {activeChannel?.voCanUnblock && peerPublicId && (
+            <button type="button" disabled={pendingAction !== null} onClick={() => setConfirmAction('unblock')}>
               {t(pendingAction === 'unblock' ? 'chat.action.processing' : 'chat.action.unblock')}
             </button>
           )}
@@ -212,6 +253,47 @@ export function ChatConversationHeader({
       ) : null}
 
       {actionError && <div className={styles.conversationActionError} role="alert">{actionError}</div>}
+
+      {confirmAction && (
+        <div className={styles.relationshipConfirmBackdrop} role="presentation">
+          <section
+            className={styles.relationshipConfirmDialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="chat-relationship-confirm-title"
+          >
+            <p className={styles.relationshipConfirmKicker}>{t('userBlock.confirm.kicker')}</p>
+            <h2 id="chat-relationship-confirm-title">
+              {t(confirmAction === 'block' ? 'userBlock.confirm.blockTitle' : 'userBlock.confirm.unblockTitle', {
+                name: channelName,
+              })}
+            </h2>
+            <p>
+              {t(confirmAction === 'block'
+                ? 'userBlock.confirm.blockDescription'
+                : 'userBlock.confirm.unblockDescription')}
+            </p>
+            <ul>
+              <li>{t('userBlock.confirm.followImpact')}</li>
+              <li>{t('userBlock.confirm.directImpact')}</li>
+              <li>{t('userBlock.confirm.publicImpact')}</li>
+            </ul>
+            <div className={styles.relationshipConfirmActions}>
+              <button type="button" autoFocus disabled={pendingAction !== null} onClick={() => setConfirmAction(null)}>
+                {t('common.cancel')}
+              </button>
+              <button
+                type="button"
+                data-primary="true"
+                disabled={pendingAction !== null}
+                onClick={() => void performAction(confirmAction)}
+              >
+                {t(pendingAction ? 'chat.action.processing' : `chat.action.${confirmAction}`)}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
 
       {activeChannel && connectionHint && (
         <div className={styles.connectionBanner}>

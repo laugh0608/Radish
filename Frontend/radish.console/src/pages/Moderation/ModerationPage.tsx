@@ -1,666 +1,445 @@
-import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate, useSearchParams } from 'react-router';
+import {
+  ApiResponseError,
+  type ContentModerationCaseDetailVo,
+  type ContentModerationCaseQueueItemVo,
+  type ContentModerationCaseUserActionRequest,
+} from '@radish/http';
 import {
   AntInput as Input,
-  AntModal as Modal,
   AntSelect as Select,
   Button,
-  Form,
   InputNumber,
   Space,
-  Table,
   message,
 } from '@radish/ui';
 import { ReloadOutlined, SafetyOutlined } from '@radish/ui';
 import {
-  applyUserModerationAction,
-  getActionLogs,
-  getReviewQueue,
-  reviewReport,
-  type ContentReportQueueItemVo,
-  type UserModerationActionVo,
+  applyModerationCorrectiveAction,
+  captureModerationEvidence,
+  getCaseQueue,
+  getModerationCase,
+  reviewModerationCase,
 } from '@/api/moderationApi';
-import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import {
   ConsoleMetricCard,
   ConsoleMetricGrid,
   ConsolePageHeader,
   ConsoleStatusChip,
 } from '@/components/ConsolePage';
+import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
-import {
-  MANUAL_ACTION_TYPE,
-  buildManualModerationStatusSnapshot,
-  buildQueueTargetDisplayInput,
-  getActionLogActionTypeOptions,
-  getActionLogStatusOptions,
-  getActionOptions,
-  getActionTypeText,
-  getReasonTypeLabel,
-  getReasonTypeOptions,
-  getReviewStatusOptions,
-  getTargetNavigationStatusOptions,
-  getTargetTypeLabel,
-  getTargetTypeOptions,
-  hasPositiveLongId,
-  resolveNavigationStatusLabel,
-  resolveMissingTargetMessage,
-  resolveOpenTarget,
-  toOptionalString,
-  toPositiveLongString,
-  type ActionLogActiveFilter,
-  type ActionLogPreset,
-  type ManualActionPreset,
-  type ManualModerationStatusSnapshot,
-  type ModerationTargetNavigationStateInput,
-  type QueuePreset,
-} from './moderationPageHelpers';
-import {
-  parseModerationLongIdQuery,
-  parseModerationSectionQuery,
-} from './moderationPageUrlState';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
-import { ModerationTargetDisplay } from './moderationPageRenderers';
-import {
-  createModerationLogColumns,
-  createModerationQueueColumns,
-} from './moderationPageColumns';
-import { ManualModerationActionSection } from './ManualModerationActionSection';
+import { ModerationAppealsWorkspace } from './ModerationAppealsWorkspace';
+import { buildModerationPath } from './moderationPageUrlState';
 import './index.css';
 import '../adminFeature.css';
 
-export const ModerationPage = () => {
+type DecisionValue = 1 | 2 | 3;
+type TargetDispositionValue = 1 | 2 | 3;
+type UserActionValue = 1 | 2 | 3 | 4;
+
+interface DecisionDraft {
+  decision: DecisionValue;
+  targetDisposition: TargetDispositionValue;
+  internalRemark: string;
+  includeUserAction: boolean;
+  userActionType: UserActionValue;
+  durationHours: number | null;
+  userActionReason: string;
+  operationKey: string;
+}
+
+interface CorrectiveDraft {
+  actionType: UserActionValue;
+  durationHours: number | null;
+  reason: string;
+  operationKey: string;
+}
+
+const createOperationKey = (scope: string) => `${scope}:${crypto.randomUUID()}`;
+
+const createDecisionDraft = (): DecisionDraft => ({
+  decision: 1,
+  targetDisposition: 1,
+  internalRemark: '',
+  includeUserAction: false,
+  userActionType: 1,
+  durationHours: 24,
+  userActionReason: '',
+  operationKey: createOperationKey('moderation-case-review'),
+});
+
+const createCorrectiveDraft = (): CorrectiveDraft => ({
+  actionType: 3,
+  durationHours: null,
+  reason: '',
+  operationKey: createOperationKey('moderation-case-corrective'),
+});
+
+const publicResultCodeByDecision: Record<DecisionValue, string> = {
+  1: 'NoViolation',
+  2: 'MeasuresTaken',
+  3: 'InsufficientEvidence',
+};
+
+const statusTone = (status: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' => {
+  if (status === 'Resolved') {
+    return 'success';
+  }
+  if (status === 'Reviewing') {
+    return 'warning';
+  }
+  return 'info';
+};
+
+const dispositionTone = (disposition: string): 'neutral' | 'info' | 'success' | 'warning' | 'danger' => {
+  if (disposition === 'ActionFailed') {
+    return 'danger';
+  }
+  if (disposition === 'ActionPending') {
+    return 'warning';
+  }
+  if (disposition === 'Restricted') {
+    return 'success';
+  }
+  return 'neutral';
+};
+
+const isConflictError = (error: unknown) => (
+  error instanceof ApiResponseError
+  && [409].includes(error.httpStatus ?? error.statusCode ?? 0)
+);
+
+const resolveLatestTargetRevision = (detail: ContentModerationCaseDetailVo | null): number | null => {
+  if (!detail) {
+    return null;
+  }
+
+  const evidence = [...detail.voEvidence]
+    .reverse()
+    .find((item) => item.voContentRevision != null);
+  return evidence?.voContentRevision ?? null;
+};
+
+const resolveUserStateVersion = (
+  detail: ContentModerationCaseDetailVo,
+  actionType: UserActionValue,
+): number => {
+  const policyType = actionType === 1 || actionType === 3 ? 'Mute' : 'Ban';
+  return detail.voUserStates.find((item) => item.voPolicyType === policyType)?.voVersion ?? 0;
+};
+
+const ModerationCasesWorkspace = () => {
   const { t, i18n } = useTranslation();
-  const language = i18n.resolvedLanguage ?? i18n.language;
-  useDocumentTitle(t('moderation.title'));
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const querySection = parseModerationSectionQuery(searchParams.get('section'));
-  const queryTargetUserId = parseModerationLongIdQuery(searchParams.get('targetUserId'));
-  const querySourceReportId = parseModerationLongIdQuery(searchParams.get('sourceReportId'));
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const linkedKeyword = searchParams.get('keyword')?.trim() ?? '';
   const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
-
-  const [form] = Form.useForm();
-  const [manualActionForm] = Form.useForm();
-  const queueSectionRef = useRef<HTMLElement | null>(null);
-  const manualActionSectionRef = useRef<HTMLElement | null>(null);
-  const logSectionRef = useRef<HTMLElement | null>(null);
-  const manualStatusRequestIdRef = useRef(0);
-  const appliedUrlPresetRef = useRef<string | null>(null);
-  const [loadingQueue, setLoadingQueue] = useState(false);
-  const [loadingLogs, setLoadingLogs] = useState(false);
-  const [queueItems, setQueueItems] = useState<ContentReportQueueItemVo[]>([]);
+  useDocumentTitle(t('moderation.case.title'));
+  const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
+  const canAction = usePermission(CONSOLE_PERMISSIONS.moderationAction);
+  const [queueItems, setQueueItems] = useState<ContentModerationCaseQueueItemVo[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
   const [queuePageIndex, setQueuePageIndex] = useState(1);
   const [queuePageSize, setQueuePageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState(-1);
-  const [queueTargetTypeFilter, setQueueTargetTypeFilter] = useState<string | undefined>();
-  const [queueReasonTypeFilter, setQueueReasonTypeFilter] = useState<string | undefined>();
-  const [queueNavigationStatusFilter, setQueueNavigationStatusFilter] = useState<string | undefined>();
-  const [queueKeywordInput, setQueueKeywordInput] = useState('');
-  const [queueKeyword, setQueueKeyword] = useState('');
-  const [queueContextHint, setQueueContextHint] = useState<string | null>(null);
-  const [logItems, setLogItems] = useState<UserModerationActionVo[]>([]);
-  const [logTotal, setLogTotal] = useState(0);
-  const [logPageIndex, setLogPageIndex] = useState(1);
-  const [logPageSize, setLogPageSize] = useState(10);
-  const [logTargetUserIdInput, setLogTargetUserIdInput] = useState('');
-  const [logTargetUserId, setLogTargetUserId] = useState('');
-  const [logSourceReportIdInput, setLogSourceReportIdInput] = useState('');
-  const [logSourceReportId, setLogSourceReportId] = useState('');
-  const [logActionTypeFilter, setLogActionTypeFilter] = useState<string | undefined>();
-  const [logIsActiveFilter, setLogIsActiveFilter] = useState<ActionLogActiveFilter | undefined>();
-  const [logKeywordInput, setLogKeywordInput] = useState('');
-  const [logKeyword, setLogKeyword] = useState('');
-  const [logContextHint, setLogContextHint] = useState<string | null>(null);
-  const [manualActionContextHint, setManualActionContextHint] = useState<string | null>(null);
-  const [manualStatusLoading, setManualStatusLoading] = useState(false);
-  const [manualStatusError, setManualStatusError] = useState<string | null>(null);
-  const [manualStatusSnapshot, setManualStatusSnapshot] = useState<ManualModerationStatusSnapshot | null>(null);
-  const [reviewingItem, setReviewingItem] = useState<ContentReportQueueItemVo | null>(null);
-  const [submittingReview, setSubmittingReview] = useState(false);
-  const [submittingManualAction, setSubmittingManualAction] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<number>(-1);
+  const [targetTypeFilter, setTargetTypeFilter] = useState<string>();
+  const [keywordInput, setKeywordInput] = useState(linkedKeyword);
+  const [keyword, setKeyword] = useState(linkedKeyword);
+  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<ContentModerationCaseDetailVo | null>(null);
+  const [loadingQueue, setLoadingQueue] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [capturing, setCapturing] = useState(false);
+  const [conflictNotice, setConflictNotice] = useState(false);
+  const [decisionDraft, setDecisionDraft] = useState<DecisionDraft>(createDecisionDraft);
+  const [correctiveDraft, setCorrectiveDraft] = useState<CorrectiveDraft>(createCorrectiveDraft);
+  const draftCaseIdRef = useRef<string | null>(null);
 
-  const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
-
-  const focusQueueSection = () => {
-    queueSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const focusManualActionSection = () => {
-    manualActionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const focusLogSection = () => {
-    logSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
-  const handleOpenTarget = (input: ModerationTargetNavigationStateInput) => {
-    const target = resolveOpenTarget(input, t);
-    if (!target) {
-      message.error(resolveMissingTargetMessage(input.targetType, input.navigationMessage, t));
-      return;
+  const formatDateTime = useCallback((value?: string | null) => {
+    if (!value) {
+      return '-';
     }
+    return new Intl.DateTimeFormat(language.startsWith('zh') ? 'zh-CN' : 'en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
+  }, [language]);
 
-    window.open(target.url, '_blank', 'noopener');
-  };
-
-  const loadQueue = async (
-    targetPageIndex = queuePageIndex,
-    targetPageSize = queuePageSize,
-    overrides?: {
-      status?: number;
-      targetType?: string;
-      reasonType?: string;
-      navigationStatus?: string;
-      keyword?: string;
-    }
-  ) => {
+  const loadCase = useCallback(async (casePublicId: string, initializeDraft = true) => {
+    setLoadingDetail(true);
     try {
-      setLoadingQueue(true);
-      const nextStatusFilter = overrides?.status ?? statusFilter;
-      const nextTargetTypeFilter = overrides?.targetType ?? queueTargetTypeFilter;
-      const nextReasonTypeFilter = overrides?.reasonType ?? queueReasonTypeFilter;
-      const nextNavigationStatusFilter = overrides?.navigationStatus ?? queueNavigationStatusFilter;
-      const nextKeyword = overrides?.keyword ?? queueKeyword;
-      let page = await getReviewQueue({
-        status: nextStatusFilter,
-        targetType: nextTargetTypeFilter,
-        reasonType: nextReasonTypeFilter,
-        navigationStatus: nextNavigationStatusFilter,
-        keyword: nextKeyword,
-        pageIndex: targetPageIndex,
-        pageSize: targetPageSize,
-      });
-
-      if (page.voItems.length === 0 && page.voTotal > 0 && targetPageIndex > 1) {
-        page = await getReviewQueue({
-          status: nextStatusFilter,
-          targetType: nextTargetTypeFilter,
-          reasonType: nextReasonTypeFilter,
-          navigationStatus: nextNavigationStatusFilter,
-          keyword: nextKeyword,
-          pageIndex: targetPageIndex - 1,
-          pageSize: targetPageSize,
+      const nextDetail = await getModerationCase(casePublicId);
+      setDetail(nextDetail);
+      setSelectedCaseId(casePublicId);
+      if (initializeDraft && draftCaseIdRef.current !== casePublicId) {
+        draftCaseIdRef.current = casePublicId;
+        setDecisionDraft({
+          ...createDecisionDraft(),
+          internalRemark: nextDetail.voInternalRemark ?? '',
         });
+        setCorrectiveDraft(createCorrectiveDraft());
+        setConflictNotice(false);
       }
+    } catch (error) {
+      log.error('ModerationPage', 'Failed to load moderation case detail:', error);
+      message.error(t('moderation.case.loadDetailFailed'));
+    } finally {
+      setLoadingDetail(false);
+    }
+  }, [t]);
 
+  const loadQueue = useCallback(async (requestedPage = queuePageIndex) => {
+    setLoadingQueue(true);
+    try {
+      const page = await getCaseQueue({
+        status: statusFilter >= 0 ? statusFilter : undefined,
+        targetType: targetTypeFilter,
+        keyword,
+        pageIndex: requestedPage,
+        pageSize: queuePageSize,
+      });
       setQueueItems(page.voItems);
       setQueueTotal(page.voTotal);
       setQueuePageIndex(page.voPageIndex);
       setQueuePageSize(page.voPageSize);
+
+      const selectedStillVisible = selectedCaseId
+        && page.voItems.some((item) => item.voCasePublicId === selectedCaseId);
+      const nextCaseId = selectedStillVisible ? selectedCaseId : page.voItems[0]?.voCasePublicId;
+      if (nextCaseId && nextCaseId !== selectedCaseId) {
+        await loadCase(nextCaseId);
+      }
+      if (!nextCaseId) {
+        setSelectedCaseId(null);
+        setDetail(null);
+      }
     } catch (error) {
-      log.error('ModerationPage', 'Failed to load moderation review queue:', error);
-      message.error(t('moderation.loadQueueFailed'));
+      log.error('ModerationPage', 'Failed to load moderation case queue:', error);
+      message.error(t('moderation.case.loadQueueFailed'));
     } finally {
       setLoadingQueue(false);
     }
+  }, [
+    keyword,
+    loadCase,
+    queuePageIndex,
+    queuePageSize,
+    selectedCaseId,
+    statusFilter,
+    t,
+    targetTypeFilter,
+  ]);
+
+  useEffect(() => {
+    void loadQueue(1);
+    // The callback owns the current filter snapshot and intentionally resets pagination.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, targetTypeFilter, keyword, queuePageSize]);
+
+  const latestTargetRevision = useMemo(() => resolveLatestTargetRevision(detail), [detail]);
+  const latestEvidence = detail?.voEvidence.at(-1) ?? null;
+  const actionFailedCount = queueItems.filter((item) => item.voTargetDisposition === 'ActionFailed').length;
+  const reviewingCount = queueItems.filter((item) => item.voStatus === 'Reviewing').length;
+
+  const updateDecision = (decision: DecisionValue) => {
+    setDecisionDraft((current) => ({
+      ...current,
+      decision,
+      targetDisposition: decision === 2 ? 2 : 1,
+      includeUserAction: decision === 2 ? current.includeUserAction : false,
+    }));
   };
 
-  const loadLogs = async (
-    targetPageIndex = logPageIndex,
-    targetPageSize = logPageSize,
-    overrides?: Partial<{
-      targetUserId: string;
-      sourceReportId: string;
-      actionType: string;
-      isActive: ActionLogActiveFilter;
-      keyword: string;
-    }>
-  ) => {
-    try {
-      setLoadingLogs(true);
-      const targetUserIdText = overrides?.targetUserId ?? logTargetUserId;
-      const sourceReportIdText = overrides?.sourceReportId ?? logSourceReportId;
-      const targetUserId = toPositiveLongString(targetUserIdText ?? '');
-      const sourceReportId = toPositiveLongString(sourceReportIdText ?? '');
-      const actionType = overrides?.actionType ?? logActionTypeFilter;
-      const isActiveFilter = overrides?.isActive ?? logIsActiveFilter;
-      const keyword = overrides?.keyword ?? logKeyword;
-      const page = await getActionLogs({
-        pageIndex: targetPageIndex,
-        pageSize: targetPageSize,
-        targetUserId,
-        sourceReportId,
-        actionType: actionType || undefined,
-        isActive: isActiveFilter === 'active' ? true : isActiveFilter === 'inactive' ? false : undefined,
-        keyword: keyword || undefined,
-      });
+  const buildUserAction = (
+    actionType: UserActionValue,
+    durationHours: number | null,
+    reason: string,
+  ): ContentModerationCaseUserActionRequest | null => {
+    if (!detail || !reason.trim()) {
+      return null;
+    }
 
-      setLogItems(page.voItems);
-      setLogTotal(page.voTotal);
-      setLogPageIndex(page.voPageIndex);
-      setLogPageSize(page.voPageSize);
+    return {
+      actionType,
+      expectedStateVersion: resolveUserStateVersion(detail, actionType),
+      durationHours: actionType === 1 || actionType === 2 ? durationHours : null,
+      reason: reason.trim(),
+    };
+  };
+
+  const handleConflict = async (casePublicId: string) => {
+    setConflictNotice(true);
+    await loadCase(casePublicId, false);
+    setDecisionDraft((current) => ({
+      ...current,
+      operationKey: createOperationKey('moderation-case-review'),
+    }));
+    setCorrectiveDraft((current) => ({
+      ...current,
+      operationKey: createOperationKey('moderation-case-corrective'),
+    }));
+  };
+
+  const submitDecision = async () => {
+    if (!detail || !canReview) {
+      return;
+    }
+    if (!decisionDraft.internalRemark.trim()) {
+      message.error(t('moderation.case.internalRemarkRequired'));
+      return;
+    }
+    if (decisionDraft.includeUserAction && !canAction) {
+      message.error(t('moderation.case.actionPermissionRequired'));
+      return;
+    }
+
+    const userAction = decisionDraft.includeUserAction
+      ? buildUserAction(
+          decisionDraft.userActionType,
+          decisionDraft.durationHours,
+          decisionDraft.userActionReason,
+        )
+      : null;
+    if (decisionDraft.includeUserAction && !userAction) {
+      message.error(t('moderation.case.userActionReasonRequired'));
+      return;
+    }
+
+    const requiresTargetRevision = ['Post', 'Comment', 'Product'].includes(detail.voCase.voTargetType);
+    if (
+      decisionDraft.targetDisposition === 2
+      && requiresTargetRevision
+      && latestTargetRevision == null
+    ) {
+      message.error(t('moderation.case.captureBeforeRestrict'));
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await reviewModerationCase({
+        casePublicId: detail.voCase.voCasePublicId,
+        expectedVersion: detail.voCase.voVersion,
+        decision: decisionDraft.decision,
+        targetDisposition: decisionDraft.targetDisposition,
+        expectedTargetVersion: latestTargetRevision,
+        publicResultCode: publicResultCodeByDecision[decisionDraft.decision],
+        internalRemark: decisionDraft.internalRemark.trim(),
+        userAction,
+        operationKey: decisionDraft.operationKey,
+      });
+      message.success(t('moderation.case.reviewSuccess'));
+      draftCaseIdRef.current = null;
+      setConflictNotice(false);
+      await loadQueue(queuePageIndex);
+      await loadCase(detail.voCase.voCasePublicId);
     } catch (error) {
-      log.error('ModerationPage', 'Failed to load moderation action logs:', error);
-      message.error(t('moderation.loadLogsFailed'));
-    } finally {
-      setLoadingLogs(false);
-    }
-  };
-
-  useEffect(() => {
-    void loadQueue(1, queuePageSize);
-    // Queue loader reads current filters and pagination defaults; keeping this effect state-scoped avoids pagination changes replaying a filter reset.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, queueTargetTypeFilter, queueReasonTypeFilter, queueNavigationStatusFilter, queueKeyword, queuePageSize]);
-
-  useEffect(() => {
-    void loadLogs(1, logPageSize);
-    // Initial log load should not replay whenever the non-memoized loader captures table state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const applyQueueKeywordSearch = () => {
-    const nextKeyword = queueKeywordInput.trim();
-    setQueueContextHint(null);
-    if (nextKeyword === queueKeyword) {
-      void loadQueue(1, queuePageSize);
-      return;
-    }
-
-    setQueueKeyword(nextKeyword);
-  };
-
-  const resetQueueFilters = () => {
-    setQueueContextHint(null);
-    const shouldReloadImmediately =
-      statusFilter === -1 &&
-      !queueTargetTypeFilter &&
-      !queueReasonTypeFilter &&
-      !queueNavigationStatusFilter &&
-      queueKeyword.length === 0 &&
-      queueKeywordInput.length === 0;
-
-    setStatusFilter(-1);
-    setQueueTargetTypeFilter(undefined);
-    setQueueReasonTypeFilter(undefined);
-    setQueueNavigationStatusFilter(undefined);
-    setQueueKeywordInput('');
-    setQueueKeyword('');
-
-    if (shouldReloadImmediately) {
-      void loadQueue(1, queuePageSize);
-    }
-  };
-
-  const applyQueuePreset = (preset: QueuePreset) => {
-    setStatusFilter(preset.status ?? -1);
-    setQueueTargetTypeFilter(preset.targetType);
-    setQueueReasonTypeFilter(preset.reasonType);
-    setQueueNavigationStatusFilter(preset.navigationStatus);
-    setQueueKeywordInput(preset.keyword ?? '');
-    setQueueKeyword(preset.keyword ?? '');
-    setQueueContextHint(preset.hint);
-    focusQueueSection();
-  };
-
-  const applyLogFilters = () => {
-    const nextTargetUserId = logTargetUserIdInput.trim();
-    const nextSourceReportId = logSourceReportIdInput.trim();
-    const normalizedTargetUserId = nextTargetUserId.length > 0 ? toPositiveLongString(nextTargetUserId) : '';
-    const normalizedSourceReportId = nextSourceReportId.length > 0 ? toPositiveLongString(nextSourceReportId) : '';
-    if (nextTargetUserId.length > 0 && !normalizedTargetUserId) {
-      message.error(t('moderation.invalidTargetUserId'));
-      return;
-    }
-
-    if (nextSourceReportId.length > 0 && !normalizedSourceReportId) {
-      message.error(t('moderation.invalidSourceReportId'));
-      return;
-    }
-
-    const nextKeyword = logKeywordInput.trim();
-    setLogTargetUserId(normalizedTargetUserId || '');
-    setLogSourceReportId(normalizedSourceReportId || '');
-    setLogKeyword(nextKeyword);
-    setLogContextHint(null);
-    void loadLogs(1, logPageSize, {
-      targetUserId: normalizedTargetUserId || '',
-      sourceReportId: normalizedSourceReportId || '',
-      actionType: logActionTypeFilter,
-      isActive: logIsActiveFilter,
-      keyword: nextKeyword,
-    });
-  };
-
-  const resetLogFilters = () => {
-    setLogTargetUserIdInput('');
-    setLogTargetUserId('');
-    setLogSourceReportIdInput('');
-    setLogSourceReportId('');
-    setLogActionTypeFilter(undefined);
-    setLogIsActiveFilter(undefined);
-    setLogKeywordInput('');
-    setLogKeyword('');
-    setLogContextHint(null);
-    void loadLogs(1, logPageSize, {
-      targetUserId: '',
-      sourceReportId: '',
-      actionType: undefined,
-      isActive: undefined,
-      keyword: '',
-    });
-  };
-
-  const applyActionLogPreset = (preset: ActionLogPreset) => {
-    const normalizedTargetUserId = preset.targetUserId ? (toPositiveLongString(preset.targetUserId) ?? '') : '';
-    const normalizedSourceReportId = preset.sourceReportId ? (toPositiveLongString(preset.sourceReportId) ?? '') : '';
-    const nextKeyword = preset.keyword?.trim() ?? '';
-    setLogTargetUserIdInput(normalizedTargetUserId);
-    setLogTargetUserId(normalizedTargetUserId);
-    setLogSourceReportIdInput(normalizedSourceReportId);
-    setLogSourceReportId(normalizedSourceReportId);
-    setLogActionTypeFilter(preset.actionType);
-    setLogIsActiveFilter(preset.isActive);
-    setLogKeywordInput(nextKeyword);
-    setLogKeyword(nextKeyword);
-    setLogContextHint(preset.hint);
-    focusLogSection();
-    void loadLogs(1, logPageSize, {
-      targetUserId: normalizedTargetUserId,
-      sourceReportId: normalizedSourceReportId,
-      actionType: preset.actionType,
-      isActive: preset.isActive,
-      keyword: nextKeyword,
-    });
-  };
-
-  const loadManualActionStatus = async (targetUserIdText?: string) => {
-    const normalizedTargetUserId = toPositiveLongString(targetUserIdText?.trim() ?? '');
-    if (!normalizedTargetUserId) {
-      manualStatusRequestIdRef.current += 1;
-      setManualStatusLoading(false);
-      setManualStatusSnapshot(null);
-      setManualStatusError(null);
-      return;
-    }
-
-    const requestId = ++manualStatusRequestIdRef.current;
-    try {
-      setManualStatusLoading(true);
-      setManualStatusError(null);
-      const page = await getActionLogs({
-        pageIndex: 1,
-        pageSize: 20,
-        targetUserId: normalizedTargetUserId,
-        isActive: true,
-      });
-      if (requestId !== manualStatusRequestIdRef.current) {
-        return;
-      }
-
-      setManualStatusSnapshot(buildManualModerationStatusSnapshot(normalizedTargetUserId, page.voItems));
-    } catch (error) {
-      log.error('ModerationPage', 'Failed to load current manual moderation status:', error);
-      if (requestId !== manualStatusRequestIdRef.current) {
-        return;
-      }
-
-      setManualStatusSnapshot(null);
-      setManualStatusError(t('moderation.loadStatusFailed'));
-    } finally {
-      if (requestId === manualStatusRequestIdRef.current) {
-        setManualStatusLoading(false);
-      }
-    }
-  };
-
-  const refreshManualActionStatus = () => {
-    const targetUserIdValue = manualActionForm.getFieldValue('targetUserId');
-    void loadManualActionStatus(typeof targetUserIdValue === 'string' ? targetUserIdValue : String(targetUserIdValue ?? ''));
-  };
-
-  const applyManualActionPreset = (preset: ManualActionPreset) => {
-    const normalizedTargetUserId = preset.targetUserId ? (toPositiveLongString(preset.targetUserId) ?? '') : '';
-    const normalizedSourceReportId = preset.sourceReportId ? (toPositiveLongString(preset.sourceReportId) ?? '') : '';
-    manualActionForm.setFieldsValue({
-      targetUserId: normalizedTargetUserId,
-      sourceReportId: normalizedSourceReportId,
-      actionType: preset.actionType,
-      durationHours: preset.durationHours ?? undefined,
-      reason: preset.reason ?? '',
-    });
-    setManualActionContextHint(preset.hint);
-    focusManualActionSection();
-    void loadManualActionStatus(normalizedTargetUserId);
-  };
-
-  useEffect(() => {
-    if (!querySection && !queryTargetUserId && !querySourceReportId) {
-      return;
-    }
-
-    const presetKey = [
-      querySection ?? 'logs',
-      queryTargetUserId ?? '',
-      querySourceReportId ?? '',
-      returnTo ?? '',
-    ].join(':');
-    if (appliedUrlPresetRef.current === presetKey) {
-      return;
-    }
-
-    appliedUrlPresetRef.current = presetKey;
-
-    if (querySection === 'queue') {
-      if (!querySourceReportId) {
-        focusQueueSection();
-        return;
-      }
-
-      applyQueuePreset({
-        keyword: querySourceReportId,
-        hint: t('moderation.hint.queueFromRoute', { reportId: querySourceReportId }),
-      });
-      return;
-    }
-
-    if (querySection === 'manual') {
-      applyManualActionPreset({
-        targetUserId: queryTargetUserId,
-        sourceReportId: querySourceReportId,
-        hint: queryTargetUserId
-          ? t('moderation.hint.manualFromRoute', { userId: queryTargetUserId })
-          : t('moderation.hint.manualRouteEmpty'),
-      });
-      return;
-    }
-
-    applyActionLogPreset({
-      targetUserId: queryTargetUserId,
-      sourceReportId: querySourceReportId,
-      hint: queryTargetUserId
-        ? t('moderation.hint.logsFromRoute', { userId: queryTargetUserId })
-        : t('moderation.hint.logsRouteEmpty'),
-    });
-    // URL presets are applied once per query key; depending on non-memoized page commands would replay them on every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [querySection, querySourceReportId, queryTargetUserId, returnTo, t]);
-
-  const resetManualActionForm = () => {
-    manualActionForm.resetFields();
-    setManualActionContextHint(null);
-    manualStatusRequestIdRef.current += 1;
-    setManualStatusLoading(false);
-    setManualStatusSnapshot(null);
-    setManualStatusError(null);
-  };
-
-  const handleManualActionTargetUserInputChange = () => {
-    setManualActionContextHint(null);
-    manualStatusRequestIdRef.current += 1;
-    setManualStatusLoading(false);
-    setManualStatusSnapshot(null);
-    setManualStatusError(null);
-  };
-
-  const openReviewModal = (item: ContentReportQueueItemVo) => {
-    setReviewingItem(item);
-    form.setFieldsValue({
-      isApproved: true,
-      actionType: 0,
-      durationHours: undefined,
-      reviewRemark: '',
-    });
-  };
-
-  const handleSubmitReview = async () => {
-    if (!reviewingItem) {
-      return;
-    }
-
-    try {
-      const reviewedItem = reviewingItem;
-      const values = await form.validateFields();
-      setSubmittingReview(true);
-      await reviewReport({
-        reportId: reviewedItem.voReportId,
-        isApproved: values.isApproved,
-        actionType: values.actionType,
-        durationHours: values.actionType === 0 ? null : values.durationHours,
-        reviewRemark: values.reviewRemark,
-      });
-
-      message.success(t('moderation.reviewSuccess'));
-      setReviewingItem(null);
-      await loadQueue();
-      if (values.isApproved && values.actionType > 0) {
-        applyActionLogPreset({
-          targetUserId: hasPositiveLongId(reviewedItem.voTargetUserId) ? String(reviewedItem.voTargetUserId) : undefined,
-          sourceReportId: String(reviewedItem.voReportId),
-          actionType: values.actionType === 1 ? 'Mute' : values.actionType === 2 ? 'Ban' : undefined,
-          isActive: 'active',
-          hint: t('moderation.hint.reviewResult', { reportId: reviewedItem.voReportId }),
-        });
+      if (isConflictError(error)) {
+        await handleConflict(detail.voCase.voCasePublicId);
+        message.warning(t('moderation.case.conflictDraftPreserved'));
       } else {
-        await loadLogs();
+        log.error('ModerationPage', 'Failed to review moderation case:', error);
+        message.error(t('moderation.case.reviewFailed'));
       }
-    } catch (error) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
-        return;
-      }
-
-      log.error('ModerationPage', 'Failed to submit moderation review:', error);
-      message.error(t('moderation.reviewFailed'));
     } finally {
-      setSubmittingReview(false);
+      setSubmitting(false);
     }
   };
 
-  const handleSubmitManualAction = async () => {
+  const captureCurrentEvidence = async () => {
+    if (!detail || !canReview) {
+      return;
+    }
+
+    setCapturing(true);
     try {
-      const values = await manualActionForm.validateFields();
-      const targetUserIdText = values.targetUserId?.trim() ?? '';
-      const sourceReportIdText = values.sourceReportId?.trim() ?? '';
-      const normalizedTargetUserId = toPositiveLongString(targetUserIdText);
-      const normalizedSourceReportId = sourceReportIdText.length > 0
-        ? toPositiveLongString(sourceReportIdText)
-        : undefined;
-
-      if (!normalizedTargetUserId) {
-        message.error(t('moderation.invalidTargetUserId'));
-        return;
-      }
-
-      if (sourceReportIdText.length > 0 && !normalizedSourceReportId) {
-        message.error(t('moderation.invalidSourceReportId'));
-        return;
-      }
-
-      setSubmittingManualAction(true);
-      const result = await applyUserModerationAction({
-        targetUserId: normalizedTargetUserId,
-        actionType: values.actionType,
-        durationHours: values.actionType === MANUAL_ACTION_TYPE.mute || values.actionType === MANUAL_ACTION_TYPE.ban
-          ? values.durationHours ?? null
-          : null,
-        reason: toOptionalString(values.reason),
-        sourceReportId: normalizedSourceReportId ?? null,
+      const nextDetail = await captureModerationEvidence({
+        casePublicId: detail.voCase.voCasePublicId,
+        expectedVersion: detail.voCase.voVersion,
+        evidenceType: 2,
       });
-
-      const actionText = getActionTypeText(result.voActionType, t);
-      message.success(t('moderation.manualSuccess', { action: actionText }));
-      manualActionForm.setFieldsValue({
-        targetUserId: normalizedTargetUserId,
-        sourceReportId: normalizedSourceReportId ?? '',
-        actionType: undefined,
-        durationHours: undefined,
-        reason: '',
-      });
-      setManualActionContextHint(t('moderation.hint.executed', { action: actionText, actionId: result.voActionId }));
-      void loadManualActionStatus(normalizedTargetUserId);
-      applyActionLogPreset({
-        targetUserId: String(result.voTargetUserId),
-        sourceReportId: result.voSourceReportId ? String(result.voSourceReportId) : undefined,
-        actionType: result.voActionType,
-        isActive: result.voIsActive ? 'active' : 'inactive',
-        hint: t('moderation.hint.executedLog', { action: actionText, actionId: result.voActionId }),
-      });
+      setDetail(nextDetail);
+      setConflictNotice(false);
+      message.success(t('moderation.case.captureSuccess'));
+      await loadQueue(queuePageIndex);
     } catch (error) {
-      if (error && typeof error === 'object' && 'errorFields' in error) {
-        return;
+      if (isConflictError(error)) {
+        await handleConflict(detail.voCase.voCasePublicId);
+        message.warning(t('moderation.case.conflictDraftPreserved'));
+      } else {
+        log.error('ModerationPage', 'Failed to capture moderation evidence:', error);
+        message.error(t('moderation.case.captureFailed'));
       }
-
-      log.error('ModerationPage', 'Failed to apply manual moderation action:', error);
-      message.error(t('moderation.manualFailed'));
     } finally {
-      setSubmittingManualAction(false);
+      setCapturing(false);
     }
   };
 
-  const queueColumns = createModerationQueueColumns({
-    canReview,
-    onOpenTarget: handleOpenTarget,
-    onApplyActionLogPreset: applyActionLogPreset,
-    onApplyManualActionPreset: applyManualActionPreset,
-    onOpenReviewModal: openReviewModal,
-  }, t, language);
+  const submitCorrectiveAction = async () => {
+    if (!detail || !canAction || !correctiveDraft.reason.trim()) {
+      message.error(t('moderation.case.userActionReasonRequired'));
+      return;
+    }
 
-  const logColumns = createModerationLogColumns({
-    canReview,
-    onOpenTarget: handleOpenTarget,
-    onApplyQueuePreset: applyQueuePreset,
-    onApplyManualActionPreset: applyManualActionPreset,
-  }, t, language);
-  const activeQueueFilterCount = [
-    statusFilter !== -1 ? 'status' : undefined,
-    queueTargetTypeFilter,
-    queueReasonTypeFilter,
-    queueNavigationStatusFilter,
-    queueKeyword,
-  ].filter(Boolean).length;
-  const activeLogFilterCount = [
-    logTargetUserId,
-    logSourceReportId,
-    logActionTypeFilter,
-    logIsActiveFilter,
-    logKeyword,
-  ].filter(Boolean).length;
-  const primaryQueueItem = queueItems[0] ?? null;
-  const latestActionLog = logItems[0] ?? null;
-  const activeActionLogCount = logItems.filter((item) => item.voIsActive).length;
-  const primaryQueueTargetInput = primaryQueueItem
-    ? buildQueueTargetDisplayInput(primaryQueueItem)
-    : null;
-  const primaryQueueNavigationLabel = primaryQueueItem
-    ? resolveNavigationStatusLabel(primaryQueueItem.voTargetNavigationStatus, t)
-    : { label: t('moderation.notSelected') };
+    const userAction = buildUserAction(
+      correctiveDraft.actionType,
+      correctiveDraft.durationHours,
+      correctiveDraft.reason,
+    );
+    if (!userAction) {
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await applyModerationCorrectiveAction({
+        casePublicId: detail.voCase.voCasePublicId,
+        expectedVersion: detail.voCase.voVersion,
+        userAction,
+        operationKey: correctiveDraft.operationKey,
+        remark: correctiveDraft.reason.trim(),
+      });
+      message.success(t('moderation.case.correctiveSuccess'));
+      setCorrectiveDraft(createCorrectiveDraft());
+      await loadCase(detail.voCase.voCasePublicId, false);
+      await loadQueue(queuePageIndex);
+    } catch (error) {
+      if (isConflictError(error)) {
+        await handleConflict(detail.voCase.voCasePublicId);
+        message.warning(t('moderation.case.conflictDraftPreserved'));
+      } else {
+        log.error('ModerationPage', 'Failed to apply corrective moderation action:', error);
+        message.error(t('moderation.case.correctiveFailed'));
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
-    <div className="admin-feature-page">
+    <div className="admin-feature-page moderation-case-page">
       <ConsolePageHeader
         eyebrow={t('moderation.title')}
-        title={t('moderation.title')}
-        description={t('moderation.description')}
+        title={t('moderation.case.title')}
+        description={t('moderation.case.description')}
         icon={<SafetyOutlined />}
         status={(
-          <ConsoleStatusChip tone={canReview ? 'success' : 'neutral'}>
-            {t(canReview ? 'moderation.canReview' : 'moderation.readOnly')}
-          </ConsoleStatusChip>
+          <Space wrap>
+            <ConsoleStatusChip tone={canReview ? 'success' : 'neutral'}>
+              {t(canReview ? 'moderation.case.canReview' : 'moderation.readOnly')}
+            </ConsoleStatusChip>
+            <ConsoleStatusChip tone={canAction ? 'warning' : 'neutral'}>
+              {t(canAction ? 'moderation.case.canAction' : 'moderation.case.noActionPermission')}
+            </ConsoleStatusChip>
+          </Space>
         )}
         actions={(
           <Space wrap>
@@ -669,432 +448,451 @@ export const ModerationPage = () => {
                 {t('moderation.backToSource')}
               </Button>
             ) : null}
-            <Button icon={<ReloadOutlined />} onClick={() => {
-              void Promise.all([loadQueue(), loadLogs()]);
-            }}>
-              {t('moderation.refresh')}
+            <Button onClick={() => navigate(buildModerationPath({ view: 'appeals', returnTo }))}>
+              {t('moderation.case.openAppeals')}
+            </Button>
+            <Button
+              icon={<ReloadOutlined />}
+              disabled={loadingQueue || loadingDetail}
+              onClick={() => void loadQueue(queuePageIndex)}
+            >
+              {loadingQueue || loadingDetail ? t('moderation.loading') : t('moderation.refresh')}
             </Button>
           </Space>
         )}
       />
 
-      <ConsoleMetricGrid label={t('moderation.metrics.label')}>
-        <ConsoleMetricCard label={t('moderation.metrics.queue')} value={queueTotal} description={t('moderation.metrics.queueDescription')} tone="info" />
-        <ConsoleMetricCard label={t('moderation.metrics.page')} value={queueItems.length} description={t('moderation.metrics.pageDescription')} />
-        <ConsoleMetricCard label={t('moderation.metrics.logs')} value={logTotal} description={t('moderation.metrics.logsDescription')} tone="success" />
-        <ConsoleMetricCard
-          label={t('moderation.metrics.filters')}
-          value={activeQueueFilterCount + activeLogFilterCount}
-          description={t('moderation.metrics.filtersDescription')}
-          tone={activeQueueFilterCount + activeLogFilterCount > 0 ? 'warning' : 'neutral'}
-        />
+      <ConsoleMetricGrid label={t('moderation.case.metricsLabel')}>
+        <ConsoleMetricCard label={t('moderation.case.metric.total')} value={queueTotal} tone="info" />
+        <ConsoleMetricCard label={t('moderation.case.metric.reviewing')} value={reviewingCount} tone="warning" />
+        <ConsoleMetricCard label={t('moderation.case.metric.actionFailed')} value={actionFailedCount} tone={actionFailedCount ? 'danger' : 'neutral'} />
+        <ConsoleMetricCard label={t('moderation.case.metric.visible')} value={queueItems.length} />
       </ConsoleMetricGrid>
 
-      <div className="admin-feature-banner">
-        {t('moderation.banner')}
-      </div>
-
-      <section className="governance-task-flow" aria-label={t('moderation.flow.label')}>
-        <div className="governance-task-flow__item">
-          <span>1</span>
-          <strong>{t('moderation.flow.queueTitle')}</strong>
-          <p>{t('moderation.flow.queue', { total: queueTotal, visible: queueItems.length })}</p>
-        </div>
-        <div className="governance-task-flow__item">
-          <span>2</span>
-          <strong>{t('moderation.flow.evidenceTitle')}</strong>
-          <p>{primaryQueueItem ? `${getTargetTypeLabel(primaryQueueItem.voTargetType, t)} · ${getReasonTypeLabel(primaryQueueItem.voReasonType, t)}` : t('moderation.flow.evidenceEmpty')}</p>
-        </div>
-        <div className="governance-task-flow__item">
-          <span>3</span>
-          <strong>{t('moderation.flow.actionTitle')}</strong>
-          <p>{t(canReview ? 'moderation.flow.actionAllowed' : 'moderation.flow.actionReadOnly')}</p>
-        </div>
-        <div className="governance-task-flow__item">
-          <span>4</span>
-          <strong>{t('moderation.flow.logTitle')}</strong>
-          <p>{t('moderation.flow.log', { total: logTotal, active: activeActionLogCount })}</p>
-        </div>
+      <section className="admin-feature-card moderation-case-filters">
+        <Select
+          value={statusFilter}
+          aria-label={t('moderation.case.filter.allStatuses')}
+          className="moderation-filter-control moderation-filter-control--md"
+          options={[
+            { value: -1, label: t('moderation.case.filter.allStatuses') },
+            { value: 0, label: t('moderation.case.status.Open') },
+            { value: 1, label: t('moderation.case.status.Reviewing') },
+            { value: 2, label: t('moderation.case.status.Resolved') },
+          ]}
+          onChange={setStatusFilter}
+        />
+        <Select
+          allowClear
+          value={targetTypeFilter}
+          aria-label={t('moderation.case.filter.targetType')}
+          placeholder={t('moderation.case.filter.targetType')}
+          className="moderation-filter-control moderation-filter-control--md"
+          options={['Post', 'Comment', 'PostQuickReply', 'ChatMessage', 'Product'].map((value) => ({
+            value,
+            label: t(`moderation.targetType.${value}`),
+          }))}
+          onChange={setTargetTypeFilter}
+        />
+        <Input
+          value={keywordInput}
+          aria-label={t('moderation.case.filter.keyword')}
+          className="moderation-filter-control moderation-filter-control--xl"
+          placeholder={t('moderation.case.filter.keyword')}
+          onChange={(event) => setKeywordInput(event.target.value)}
+          onPressEnter={() => setKeyword(keywordInput.trim())}
+        />
+        <Button variant="primary" onClick={() => setKeyword(keywordInput.trim())}>
+          {t('moderation.query')}
+        </Button>
+        <Button onClick={() => {
+          setStatusFilter(-1);
+          setTargetTypeFilter(undefined);
+          setKeywordInput('');
+          setKeyword('');
+        }}>
+          {t('moderation.reset')}
+        </Button>
       </section>
 
-      <section className="moderation-mobile-operations" aria-label={t('moderation.mobile.label')}>
-        <div>
-          <span className="moderation-mobile-operations__eyebrow">{t('moderation.mobile.eyebrow')}</span>
-          <h3>{t('moderation.mobile.title')}</h3>
-          <p>
-            {t('moderation.mobile.description')}
-          </p>
-        </div>
-        <Space wrap>
-          <Button size="small" onClick={focusQueueSection}>
-            {t('moderation.mobile.queue')}
-          </Button>
-          {canReview ? (
-            <Button size="small" onClick={focusManualActionSection}>
-              {t('moderation.mobile.manual')}
-            </Button>
-          ) : null}
-          <Button size="small" onClick={focusLogSection}>
-            {t('moderation.mobile.logs')}
-          </Button>
-        </Space>
-      </section>
-
-      <div className={canReview ? 'governance-workbench' : 'governance-workbench governance-workbench--without-actions'}>
-        <div className="governance-workbench__queue">
-          <section className="admin-feature-card" ref={queueSectionRef}>
-            <div className="admin-feature-header">
-              <div>
-                <h3>{t('moderation.queue.title')}</h3>
-                <p className="admin-feature-subtle">{t('moderation.queue.description')}</p>
-              </div>
-              <Space wrap>
-                <Select
-                  value={statusFilter}
-                  className="moderation-filter-control moderation-filter-control--sm"
-                  options={getReviewStatusOptions(t)}
-                  onChange={(value) => {
-                    setQueueContextHint(null);
-                    setStatusFilter(value);
-                  }}
-                />
-                <Select
-                  value={queueTargetTypeFilter}
-                  className="moderation-filter-control moderation-filter-control--sm"
-                  options={getTargetTypeOptions(t)}
-                  allowClear
-                  placeholder={t('moderation.queue.targetType')}
-                  onChange={(value) => {
-                    setQueueContextHint(null);
-                    setQueueTargetTypeFilter(toOptionalString(value));
-                  }}
-                />
-                <Select
-                  value={queueReasonTypeFilter}
-                  className="moderation-filter-control moderation-filter-control--sm"
-                  options={getReasonTypeOptions(t)}
-                  allowClear
-                  placeholder={t('moderation.queue.reason')}
-                  onChange={(value) => {
-                    setQueueContextHint(null);
-                    setQueueReasonTypeFilter(toOptionalString(value));
-                  }}
-                />
-                <Select
-                  value={queueNavigationStatusFilter}
-                  className="moderation-filter-control moderation-filter-control--sm"
-                  options={getTargetNavigationStatusOptions(t)}
-                  allowClear
-                  placeholder={t('moderation.queue.navigationStatus')}
-                  onChange={(value) => {
-                    setQueueContextHint(null);
-                    setQueueNavigationStatusFilter(toOptionalString(value));
-                  }}
-                />
-                <Input
-                  allowClear
-                  placeholder={t('moderation.queue.search')}
-                  value={queueKeywordInput}
-                  onChange={(event) => {
-                    setQueueContextHint(null);
-                    setQueueKeywordInput(event.target.value);
-                  }}
-                  onPressEnter={applyQueueKeywordSearch}
-                  className="moderation-filter-control moderation-filter-control--xl"
-                />
-                <Button
-                  variant="primary"
-                  onClick={applyQueueKeywordSearch}
-                >
-                  {t('moderation.query')}
-                </Button>
-                <Button onClick={resetQueueFilters}>
-                  {t('moderation.reset')}
-                </Button>
-              </Space>
+      <section className="moderation-case-workbench">
+        <aside className="moderation-case-queue" aria-label={t('moderation.case.queueTitle')}>
+          <div className="moderation-case-section-heading">
+            <div>
+              <h2>{t('moderation.case.queueTitle')}</h2>
+              <p>{t('moderation.case.queueDescription')}</p>
             </div>
-
-            {queueContextHint ? (
-              <div className="admin-feature-banner moderation-section-banner">
-                {queueContextHint}
-              </div>
-            ) : null}
-
-            <Table<ContentReportQueueItemVo>
-              rowKey="voReportId"
-              columns={queueColumns}
-              dataSource={queueItems}
-              loading={loadingQueue}
-              pagination={{
-                current: queuePageIndex,
-                pageSize: queuePageSize,
-                total: queueTotal,
-                showSizeChanger: true,
-                showQuickJumper: true,
-                onChange: (page, size) => {
-                  void loadQueue(page, size);
-                },
-              }}
-              scroll={{ x: 1580 }}
-            />
-          </section>
-        </div>
-
-        {canReview ? (
-          <div className="governance-workbench__actions">
-            <section className="admin-feature-rail" aria-label={t('moderation.evidence.label')}>
-              <div className="admin-feature-rail__header">
-                <div>
-                  <span className="admin-feature-rail__eyebrow">{t('moderation.evidence.eyebrow')}</span>
-                  <h3>{t('moderation.evidence.title')}</h3>
-                </div>
-                <ConsoleStatusChip tone={primaryQueueItem ? 'info' : 'neutral'}>
-                  {primaryQueueNavigationLabel.label}
-                </ConsoleStatusChip>
-              </div>
-
-              {primaryQueueItem && primaryQueueTargetInput ? (
-                <>
-                  <ModerationTargetDisplay
-                    input={{
-                      ...primaryQueueTargetInput,
-                      showTargetUser: true,
-                    }}
-                  />
-                  <div className="admin-feature-rail__list">
-                    <div className="admin-feature-rail__item">
-                      <span>{t('moderation.evidence.report')}</span>
-                      <strong>#{primaryQueueItem.voReportId}</strong>
-                    </div>
-                    <div className="admin-feature-rail__item">
-                      <span>{t('moderation.evidence.reporter')}</span>
-                      <strong>{primaryQueueItem.voReporterUserName || `#${primaryQueueItem.voReporterUserId}`}</strong>
-                    </div>
-                    <div className="admin-feature-rail__item">
-                      <span>{t('moderation.evidence.reason')}</span>
-                      <strong>{getReasonTypeLabel(primaryQueueItem.voReasonType, t)}</strong>
-                    </div>
-                  </div>
-                  <div className="admin-feature-rail__actions">
-                    <Button size="small" onClick={() => handleOpenTarget(primaryQueueTargetInput)}>
-                      {t('moderation.evidence.open')}
-                    </Button>
-                    <Button
-                      size="small"
-                      onClick={() => applyActionLogPreset({
-                        targetUserId: hasPositiveLongId(primaryQueueItem.voTargetUserId) ? String(primaryQueueItem.voTargetUserId) : undefined,
-                        sourceReportId: String(primaryQueueItem.voReportId),
-                        hint: t('moderation.hint.evidenceLogs', { reportId: primaryQueueItem.voReportId }),
-                      })}
-                    >
-                      {t('moderation.evidence.logs')}
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <p className="admin-feature-rail__empty">
-                  {t('moderation.evidence.empty')}
-                </p>
-              )}
-            </section>
-
-            <ManualModerationActionSection
-              sectionRef={manualActionSectionRef}
-              form={manualActionForm}
-              contextHint={manualActionContextHint}
-              submitting={submittingManualAction}
-              statusLoading={manualStatusLoading}
-              statusError={manualStatusError}
-              statusSnapshot={manualStatusSnapshot}
-              onResetForm={resetManualActionForm}
-              onSubmit={() => {
-                void handleSubmitManualAction();
-              }}
-              onRefreshStatus={refreshManualActionStatus}
-              onTargetUserInputChange={handleManualActionTargetUserInputChange}
-              onApplyActionLogPreset={applyActionLogPreset}
-              onApplyManualActionPreset={applyManualActionPreset}
-            />
+            <ConsoleStatusChip tone="info">{queueTotal}</ConsoleStatusChip>
           </div>
-        ) : null}
-
-        <div className="governance-workbench__detail">
-          <section className="admin-feature-card" ref={logSectionRef}>
-            <div className="admin-feature-header">
-              <div>
-                <h3>{t('moderation.logs.title')}</h3>
-                <p className="admin-feature-subtle">{t('moderation.logs.description')}</p>
-              </div>
-              <Space wrap>
-                <Input
-                  placeholder={t('moderation.logs.targetUserId')}
-                  value={logTargetUserIdInput}
-                  onChange={(event) => {
-                    setLogContextHint(null);
-                    setLogTargetUserIdInput(event.target.value);
-                  }}
-                  className="moderation-filter-control moderation-filter-control--md"
-                />
-                <Input
-                  placeholder={t('moderation.logs.sourceReportId')}
-                  value={logSourceReportIdInput}
-                  onChange={(event) => {
-                    setLogContextHint(null);
-                    setLogSourceReportIdInput(event.target.value);
-                  }}
-                  className="moderation-filter-control moderation-filter-control--md"
-                />
-                <Select
-                  value={logActionTypeFilter}
-                  className="moderation-filter-control moderation-filter-control--sm"
-                  options={getActionLogActionTypeOptions(t)}
-                  allowClear
-                  placeholder={t('moderation.logs.action')}
-                  onChange={(value) => {
-                    setLogContextHint(null);
-                    setLogActionTypeFilter(toOptionalString(value));
-                  }}
-                />
-                <Select
-                  value={logIsActiveFilter}
-                  className="moderation-filter-control moderation-filter-control--sm"
-                  options={getActionLogStatusOptions(t)}
-                  allowClear
-                  placeholder={t('moderation.logs.status')}
-                  onChange={(value) => {
-                    setLogContextHint(null);
-                    setLogIsActiveFilter((value === 'active' || value === 'inactive') ? value : undefined);
-                  }}
-                />
-                <Input
-                  allowClear
-                  placeholder={t('moderation.logs.search')}
-                  value={logKeywordInput}
-                  onChange={(event) => {
-                    setLogContextHint(null);
-                    setLogKeywordInput(event.target.value);
-                  }}
-                  onPressEnter={applyLogFilters}
-                  className="moderation-filter-control moderation-filter-control--lg"
-                />
-                <Button
-                  variant="primary"
-                  onClick={applyLogFilters}
-                >
-                  {t('moderation.query')}
-                </Button>
-                <Button onClick={resetLogFilters}>
-                  {t('moderation.reset')}
-                </Button>
-              </Space>
-            </div>
-
-            {logContextHint ? (
-              <div className="admin-feature-banner moderation-section-banner">
-                {logContextHint}
-              </div>
-            ) : null}
-
-            {latestActionLog ? (
-              <div className="admin-feature-inline-context">
-                <span>{t('moderation.logs.latest', { id: latestActionLog.voActionId })}</span>
-                <strong>{getActionTypeText(latestActionLog.voActionType, t)}</strong>
-                <span>{t(latestActionLog.voIsActive ? 'moderation.action.active' : 'moderation.action.inactive')}</span>
-                <span>{latestActionLog.voOperatorUserName}</span>
-              </div>
-            ) : null}
-
-            <Table<UserModerationActionVo>
-              rowKey="voActionId"
-              columns={logColumns}
-              dataSource={logItems}
-              loading={loadingLogs}
-              pagination={{
-                current: logPageIndex,
-                pageSize: logPageSize,
-                total: logTotal,
-                showSizeChanger: true,
-                onChange: (page, size) => {
-                  void loadLogs(page, size);
-                },
-              }}
-              scroll={{ x: 1780 }}
-            />
-          </section>
-        </div>
-      </div>
-
-      <Modal
-        title={reviewingItem
-          ? t('moderation.review.titleWithId', { id: reviewingItem.voReportId })
-          : t('moderation.review.title')}
-        open={!!reviewingItem}
-        onOk={handleSubmitReview}
-        onCancel={() => setReviewingItem(null)}
-        confirmLoading={submittingReview}
-        destroyOnHidden
-      >
-        <Form form={form} layout="vertical">
-          {reviewingItem ? (
-            <div className="moderation-review-preview">
-              <div className="moderation-review-preview__label">{t('moderation.review.target')}</div>
-              <ModerationTargetDisplay
-                input={{
-                  ...buildQueueTargetDisplayInput(reviewingItem),
-                  showTargetUser: true,
-                }}
-              />
-            </div>
-          ) : null}
-
-          <Form.Item
-            name="isApproved"
-            label={t('moderation.review.result')}
-            rules={[{ required: true, message: t('moderation.review.resultRequired') }]}
-          >
-            <Select
-              options={[
-                { label: t('moderation.review.approve'), value: true },
-                { label: t('moderation.review.reject'), value: false },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="actionType"
-            label={t('moderation.review.action')}
-            rules={[{ required: true, message: t('moderation.review.actionRequired') }]}
-          >
-            <Select options={getActionOptions(t)} />
-          </Form.Item>
-
-          <Form.Item
-            noStyle
-            shouldUpdate={(prev, next) => prev.actionType !== next.actionType}
-          >
-            {({ getFieldValue }) => (
-              <Form.Item
-                name="durationHours"
-                label={t('moderation.review.duration')}
-                rules={getFieldValue('actionType') > 0
-                  ? [{ required: true, message: t('moderation.review.durationRequired') }]
-                  : []}
+          <div className="moderation-case-queue-list">
+            {queueItems.map((item) => (
+              <button
+                key={item.voCasePublicId}
+                type="button"
+                className="moderation-case-queue-item"
+                data-active={item.voCasePublicId === selectedCaseId}
+                onClick={() => void loadCase(item.voCasePublicId)}
               >
-                <InputNumber min={1} max={720} className="moderation-full-width-control" disabled={getFieldValue('actionType') === 0} />
-              </Form.Item>
-            )}
-          </Form.Item>
+                <span className="moderation-case-queue-item__topline">
+                  <strong>{item.voCasePublicId}</strong>
+                  <ConsoleStatusChip tone={statusTone(item.voStatus)}>
+                    {t(`moderation.case.status.${item.voStatus}`)}
+                  </ConsoleStatusChip>
+                </span>
+                <span>{t(`moderation.targetType.${item.voTargetType}`)} · #{item.voTargetContentId}</span>
+                <span>{t('moderation.case.reportCount', { count: item.voReportCount })}</span>
+                <span className="moderation-case-queue-item__bottomline">
+                  <small>{formatDateTime(item.voModifiedAt ?? item.voOpenedAt)}</small>
+                  <ConsoleStatusChip tone={dispositionTone(item.voTargetDisposition)}>
+                    {t(`moderation.case.disposition.${item.voTargetDisposition}`)}
+                  </ConsoleStatusChip>
+                </span>
+              </button>
+            ))}
+            {!loadingQueue && queueItems.length === 0 ? (
+              <p className="admin-feature-rail__empty">{t('moderation.case.queueEmpty')}</p>
+            ) : null}
+          </div>
+          <div className="moderation-case-pagination">
+            <Button
+              disabled={queuePageIndex <= 1}
+              onClick={() => void loadQueue(queuePageIndex - 1)}
+            >
+              {t('moderation.case.previous')}
+            </Button>
+            <span>{queuePageIndex}</span>
+            <Button
+              disabled={queuePageIndex * queuePageSize >= queueTotal}
+              onClick={() => void loadQueue(queuePageIndex + 1)}
+            >
+              {t('moderation.case.next')}
+            </Button>
+          </div>
+        </aside>
 
-          <Form.Item name="reviewRemark" label={t('moderation.review.remark')}>
-            <Input.TextArea
-              rows={4}
-              maxLength={500}
-              showCount
-              placeholder={t('moderation.review.remarkPlaceholder')}
-            />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <main className="moderation-case-detail">
+          {!detail ? (
+            <div className="admin-feature-card">
+              <p className="admin-feature-rail__empty">{t('moderation.case.selectCase')}</p>
+            </div>
+          ) : (
+            <>
+              <section className="admin-feature-card moderation-case-summary">
+                <div className="moderation-case-section-heading">
+                  <div>
+                    <span className="admin-feature-rail__eyebrow">{detail.voCase.voCasePublicId}</span>
+                    <h2>{latestEvidence?.voSnapshotTitle || `${detail.voCase.voTargetType} #${detail.voCase.voTargetContentId}`}</h2>
+                    <p>{latestEvidence?.voSnapshotSummary || t('moderation.case.snapshotUnavailable')}</p>
+                  </div>
+                  <Space wrap>
+                    <ConsoleStatusChip tone={statusTone(detail.voCase.voStatus)}>
+                      {t(`moderation.case.status.${detail.voCase.voStatus}`)} · v{detail.voCase.voVersion}
+                    </ConsoleStatusChip>
+                    <ConsoleStatusChip tone={dispositionTone(detail.voCase.voTargetDisposition)}>
+                      {t(`moderation.case.disposition.${detail.voCase.voTargetDisposition}`)}
+                    </ConsoleStatusChip>
+                  </Space>
+                </div>
+                <div className="moderation-case-summary-grid">
+                  <span><strong>{t('moderation.case.targetType')}</strong>{t(`moderation.targetType.${detail.voCase.voTargetType}`)}</span>
+                  <span><strong>{t('moderation.case.targetUser')}</strong>#{detail.voCase.voTargetUserId}</span>
+                  <span><strong>{t('moderation.case.reportTotal')}</strong>{detail.voReports.length}</span>
+                  <span><strong>{t('moderation.case.targetRevision')}</strong>{latestTargetRevision ?? '-'}</span>
+                </div>
+              </section>
+
+              {conflictNotice ? (
+                <div className="moderation-case-conflict" role="alert">
+                  <strong>{t('moderation.case.conflictTitle')}</strong>
+                  <span>{t('moderation.case.conflictDraftPreserved')}</span>
+                </div>
+              ) : null}
+
+              <section className="admin-feature-card">
+                <div className="moderation-case-section-heading">
+                  <div>
+                    <h3>{t('moderation.case.evidenceTitle')}</h3>
+                    <p>{t('moderation.case.evidenceDescription')}</p>
+                  </div>
+                  {canReview && detail.voCase.voStatus !== 'Resolved' ? (
+                    <Button disabled={capturing} onClick={() => void captureCurrentEvidence()}>
+                      {capturing ? t('moderation.loading') : t('moderation.case.captureCurrent')}
+                    </Button>
+                  ) : null}
+                </div>
+                <div className="moderation-case-timeline">
+                  {detail.voEvidence.map((item) => (
+                    <article key={item.voSequence}>
+                      <div>
+                        <strong>#{item.voSequence} · {t(`moderation.case.evidenceType.${item.voEvidenceType}`)}</strong>
+                        <ConsoleStatusChip tone={item.voTargetState === 'Available' ? 'success' : 'warning'}>
+                          {t(`moderation.case.targetState.${item.voTargetState}`)}
+                        </ConsoleStatusChip>
+                      </div>
+                      <h4>{item.voSnapshotTitle || t('moderation.case.untitledEvidence')}</h4>
+                      <p>{item.voSnapshotSummary || t('moderation.case.noEvidenceSummary')}</p>
+                      <small>
+                        {formatDateTime(item.voCapturedAt)}
+                        {item.voContentRevision != null ? ` · revision ${item.voContentRevision}` : ''}
+                      </small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              <section className="admin-feature-card">
+                <div className="moderation-case-section-heading">
+                  <div>
+                    <h3>{t('moderation.case.reportsTitle')}</h3>
+                    <p>{t('moderation.case.reportsDescription')}</p>
+                  </div>
+                </div>
+                <div className="moderation-case-report-list">
+                  {detail.voReports.map((report) => (
+                    <article key={report.voReportPublicId}>
+                      <strong>{report.voReporterUserName}</strong>
+                      <span>{report.voReasonType}</span>
+                      <p>{report.voReasonDetail || t('moderation.case.noReasonDetail')}</p>
+                      <small>{formatDateTime(report.voCreateTime)}</small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+
+              {detail.voCase.voStatus !== 'Resolved' ? (
+                <section className="admin-feature-card moderation-case-decision">
+                  <div className="moderation-case-section-heading">
+                    <div>
+                      <h3>{t('moderation.case.decisionTitle')}</h3>
+                      <p>{t('moderation.case.decisionDescription')}</p>
+                    </div>
+                    <ConsoleStatusChip tone={canAction ? 'warning' : 'neutral'}>
+                      {t(canAction ? 'moderation.case.actionPayloadAllowed' : 'moderation.case.decisionOnly')}
+                    </ConsoleStatusChip>
+                  </div>
+                  <div className="moderation-case-form-grid">
+                    <label>
+                      <span>{t('moderation.case.decision')}</span>
+                      <Select
+                        value={decisionDraft.decision}
+                        options={[
+                          { value: 1, label: t('moderation.case.decision.NoViolation') },
+                          { value: 2, label: t('moderation.case.decision.Violation') },
+                          { value: 3, label: t('moderation.case.decision.InsufficientEvidence') },
+                        ]}
+                        onChange={updateDecision}
+                      />
+                    </label>
+                    <label>
+                      <span>{t('moderation.case.targetDisposition')}</span>
+                      <Select
+                        value={decisionDraft.targetDisposition}
+                        options={
+                          decisionDraft.decision === 2
+                            ? [
+                                { value: 2, label: t('moderation.case.disposition.Restricted') },
+                                { value: 1, label: t('moderation.case.disposition.Keep') },
+                              ]
+                            : decisionDraft.decision === 3
+                              ? [
+                                  { value: 1, label: t('moderation.case.disposition.Keep') },
+                                  { value: 3, label: t('moderation.case.disposition.Unavailable') },
+                                ]
+                              : [{ value: 1, label: t('moderation.case.disposition.Keep') }]
+                        }
+                        onChange={(value: TargetDispositionValue) => {
+                          setDecisionDraft((current) => ({ ...current, targetDisposition: value }));
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <label className="moderation-case-field">
+                    <span>{t('moderation.case.internalRemark')}</span>
+                    <Input.TextArea
+                      rows={4}
+                      maxLength={1000}
+                      value={decisionDraft.internalRemark}
+                      placeholder={t('moderation.case.internalRemarkPlaceholder')}
+                      onChange={(event) => {
+                        setDecisionDraft((current) => ({ ...current, internalRemark: event.target.value }));
+                      }}
+                    />
+                  </label>
+
+                  {canAction && decisionDraft.decision === 2 ? (
+                    <div className="moderation-case-user-action">
+                      <label className="moderation-case-action-toggle">
+                        <input
+                          type="checkbox"
+                          checked={decisionDraft.includeUserAction}
+                          onChange={(event) => {
+                            setDecisionDraft((current) => ({
+                              ...current,
+                              includeUserAction: event.target.checked,
+                            }));
+                          }}
+                        />
+                        <span>{t('moderation.case.includeUserAction')}</span>
+                      </label>
+                      {decisionDraft.includeUserAction ? (
+                        <>
+                          <div className="moderation-case-form-grid">
+                            <label>
+                              <span>{t('moderation.case.userAction')}</span>
+                              <Select
+                                value={decisionDraft.userActionType}
+                                options={[1, 2, 3, 4].map((value) => ({
+                                  value,
+                                  label: t(`moderation.case.userAction.${value}`),
+                                }))}
+                                onChange={(value: UserActionValue) => {
+                                  setDecisionDraft((current) => ({ ...current, userActionType: value }));
+                                }}
+                              />
+                            </label>
+                            <label>
+                              <span>{t('moderation.case.durationHours')}</span>
+                              <InputNumber
+                                min={1}
+                                max={720}
+                                disabled={decisionDraft.userActionType === 3 || decisionDraft.userActionType === 4}
+                                value={decisionDraft.durationHours}
+                                onChange={(value) => {
+                                  setDecisionDraft((current) => ({
+                                    ...current,
+                                    durationHours: typeof value === 'number' ? value : null,
+                                  }));
+                                }}
+                              />
+                            </label>
+                          </div>
+                          <label className="moderation-case-field">
+                            <span>{t('moderation.case.userActionReason')}</span>
+                            <Input.TextArea
+                              rows={3}
+                              maxLength={500}
+                              value={decisionDraft.userActionReason}
+                              onChange={(event) => {
+                                setDecisionDraft((current) => ({
+                                  ...current,
+                                  userActionReason: event.target.value,
+                                }));
+                              }}
+                            />
+                          </label>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <Button
+                    variant="primary"
+                    disabled={!canReview || submitting}
+                    onClick={() => void submitDecision()}
+                  >
+                    {submitting ? t('moderation.loading') : t('moderation.case.submitDecision')}
+                  </Button>
+                </section>
+              ) : null}
+
+              {detail.voCase.voStatus === 'Resolved' && canAction ? (
+                <section className="admin-feature-card moderation-case-decision">
+                  <div className="moderation-case-section-heading">
+                    <div>
+                      <h3>{t('moderation.case.correctiveTitle')}</h3>
+                      <p>{t('moderation.case.correctiveDescription')}</p>
+                    </div>
+                  </div>
+                  <div className="moderation-case-form-grid">
+                    <label>
+                      <span>{t('moderation.case.userAction')}</span>
+                      <Select
+                        value={correctiveDraft.actionType}
+                        options={[1, 2, 3, 4].map((value) => ({
+                          value,
+                          label: t(`moderation.case.userAction.${value}`),
+                        }))}
+                        onChange={(value: UserActionValue) => {
+                          setCorrectiveDraft((current) => ({ ...current, actionType: value }));
+                        }}
+                      />
+                    </label>
+                    <label>
+                      <span>{t('moderation.case.durationHours')}</span>
+                      <InputNumber
+                        min={1}
+                        max={720}
+                        disabled={correctiveDraft.actionType === 3 || correctiveDraft.actionType === 4}
+                        value={correctiveDraft.durationHours}
+                        onChange={(value) => {
+                          setCorrectiveDraft((current) => ({
+                            ...current,
+                            durationHours: typeof value === 'number' ? value : null,
+                          }));
+                        }}
+                      />
+                    </label>
+                  </div>
+                  <label className="moderation-case-field">
+                    <span>{t('moderation.case.correctiveRemark')}</span>
+                    <Input.TextArea
+                      rows={3}
+                      maxLength={500}
+                      value={correctiveDraft.reason}
+                      onChange={(event) => {
+                        setCorrectiveDraft((current) => ({ ...current, reason: event.target.value }));
+                      }}
+                    />
+                  </label>
+                  <Button
+                    variant="danger"
+                    disabled={submitting}
+                    onClick={() => void submitCorrectiveAction()}
+                  >
+                    {submitting ? t('moderation.loading') : t('moderation.case.submitCorrective')}
+                  </Button>
+                </section>
+              ) : null}
+
+              <section className="admin-feature-card">
+                <div className="moderation-case-section-heading">
+                  <div>
+                    <h3>{t('moderation.case.eventsTitle')}</h3>
+                    <p>{t('moderation.case.eventsDescription')}</p>
+                  </div>
+                </div>
+                <div className="moderation-case-timeline moderation-case-timeline--events">
+                  {detail.voEvents.map((event) => (
+                    <article key={event.voSequence}>
+                      <div>
+                        <strong>#{event.voSequence} · {event.voEventType}</strong>
+                        <small>v{event.voExpectedCaseVersion} → v{event.voResultCaseVersion}</small>
+                      </div>
+                      <p>{event.voRemark || event.voResultCode || t('moderation.case.noEventRemark')}</p>
+                      <small>{event.voActorName} · {formatDateTime(event.voCreateTime)}</small>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </main>
+      </section>
     </div>
   );
+};
+
+export const ModerationPage = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
+
+  if (searchParams.get('view') === 'appeals') {
+    return (
+      <ModerationAppealsWorkspace
+        onOpenCases={() => navigate(buildModerationPath({ returnTo }))}
+      />
+    );
+  }
+
+  return <ModerationCasesWorkspace />;
 };

@@ -46,11 +46,13 @@
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
 - [日志规范与实现说明](/guide/logging)
+- [Hangfire 定时任务指南](/guide/hangfire-scheduled-jobs)
 - [日志敏感数据与查询凭据保护](/guide/logging-sensitive-data)
 - [前端日志与敏感字段脱敏](/guide/frontend-logging)
 - [密码安全](/guide/password-security)
 - [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)
 - [用户承诺与公开边界](/guide/user-commitments)
+- [内容治理系统说明](/guide/content-moderation)
 - [支付与转账幂等治理](/guide/payment-idempotency-governance)
 - [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
 - [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)
@@ -61,11 +63,13 @@
 - [API 说明索引](/guide/api-index)
 - [M14 宿主运行与最小可观测性基线](/guide/m14-host-runtime-observability-baseline)
 - [M15 最小交付与部署基线](/guide/m15-delivery-baseline)
+- [生产数据库迁移与发布编排](/guide/production-database-migration-deployment)
 - [产品版本与发布标识治理](/guide/version-governance)
 
 ### 文档、通知与控制台
 
 - [文档系统方案](/guide/document-system)
+- [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
 - [正式 Web 聊天工作区使用说明](/guide/chat-workspace)
 - [通知系统 API 文档](/guide/notification-api)
 - [通知中心设计说明](/guide/notification-center)

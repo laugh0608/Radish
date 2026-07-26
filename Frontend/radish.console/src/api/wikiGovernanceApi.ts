@@ -7,6 +7,9 @@ import {
   parseApiResponseWithI18n,
   type ApiResponse,
   type ParsedApiResponse,
+  type ReviewWikiDraftRequest,
+  type WikiAuthorDraftDetailVo,
+  type WikiReviewQueueItemVo,
 } from '@radish/http';
 import type { TFunction } from 'i18next';
 
@@ -171,6 +174,31 @@ export async function getWikiRevisionDetail(revisionId: LongId, t: TFunction): P
 
 export async function rollbackWikiRevision(revisionId: LongId, t: TFunction): Promise<void> {
   await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${encodeURIComponent(revisionId)}`, undefined, { withAuth: true }), t('documents.feedback.rollbackFailed'));
+}
+
+export async function getWikiReviewQueue(t: TFunction): Promise<WikiPageModel<WikiReviewQueueItemVo>> {
+  return await ensureOk(
+    apiGet<WikiPageModel<WikiReviewQueueItemVo>>('/api/v1/Wiki/AdminGetReviewQueue?pageIndex=1&pageSize=100', { withAuth: true }),
+    t('documents.review.feedback.loadQueueFailed'),
+  );
+}
+
+export async function getWikiReviewDraft(draftId: LongId, t: TFunction): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiGet<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AdminGetDraftById/${encodeURIComponent(draftId)}`, { withAuth: true }),
+    t('documents.review.feedback.loadDraftFailed'),
+  );
+}
+
+export async function reviewWikiDraft(
+  draftId: LongId,
+  request: ReviewWikiDraftRequest,
+  t: TFunction,
+): Promise<WikiAuthorDraftDetailVo> {
+  return await ensureOk(
+    apiPost<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AdminReviewDraft/${encodeURIComponent(draftId)}`, request, { withAuth: true }),
+    t('documents.review.feedback.actionFailed'),
+  );
 }
 
 export async function importWikiMarkdown(file: File, t: TFunction): Promise<LongId> {

@@ -118,7 +118,15 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-F 聊天轻量阅读回执](/features/chat-message-read-receipt-design) 已完成 A-D 批并关闭：`ChannelMember.LastReadMessageId` 保持唯一持久游标，原子单调写入、隐私裁剪聚合、读者 cursor、REST、无个人数据 Hub 失效、活跃阅读面、Direct 单一边界、普通 Private PC / mobile 详情和三普通账号运行态矩阵均已通过。
 
-下一顺位进入 `F4-G-A 功能完成线候选审计与专题裁决`。先从既有业务域只读比较真实能力缺口、长期用户价值、数据 / 权限 / 页面边界和维护成本，只选择一个专题推进；移动系统通知继续后置。
+`F4-G Docs / Wiki 普通作者贡献与协作` 已完成 A-D 批并关闭：[权威专题](/features/wiki-author-contribution-collaboration-design) 固定“已批准正文 + 独立工作草稿”、显式所有者 / 协作者、审核应用、双版本 CAS、可靠通知和保留策略；服务端、Author / Console 页面及 Gateway 多角色 `zh / en × PC / mobile` 成组验收均通过。
+
+`F4-H 电子宠物公开名片与隐私闭环` 已完成 A-D 批并关闭：公开用户资料聚合、独立字段白名单 VO、即时显隐、租户 / 软删除 / 用户失效隔离、PC / mobile Pencil、正式 Web 和主人 / 访客 / 匿名成组验收均已通过；移动系统通知与宠物经济继续后置。
+
+`F4-I 内容治理案件、证据与动作一致性` 已完成 A-D 批并关闭：[权威专题](/features/content-moderation-case-evidence-action-design)固定案件聚合、追加式证据、决定 / 动作分离、用户治理唯一当前状态和五类目标适配；服务端、Pencil、正式页面及五种角色 `zh / en × PC / mobile` 成组验收均通过，临时数据清理、六库完整性和严格 migration verify 完成。
+
+`F4-J 内容治理申诉与处置纠正` 与 `F4-K 用户屏蔽与关系交互隔离` 均已完成 A-D 批并关闭：申诉形成独立复核、五类来源保护恢复和用户状态纠正；屏蔽形成 Main 唯一真相、双向互动隔离、关注事务、Direct 兼容和通知抑制。两项专题的正式 Web、多角色运行态、失败恢复、临时数据清理和严格 migration verify 均已通过。
+
+当前唯一功能专题为 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)。A / B 批已完成候选设计、Main 权威引用、Wiki 私有默认、动态 ACL、事务同步、令牌、清理和历史兼容迁移；下一顺位进入 F4-L-C，在既有正式 Web 页面接入受保护资源与 object URL 生命周期，不新增页面族或并行启动其他专题。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

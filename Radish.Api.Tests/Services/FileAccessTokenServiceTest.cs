@@ -7,6 +7,7 @@ using Radish.Common.Exceptions;
 using Radish.Common.Security;
 using Radish.IRepository;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
@@ -100,6 +101,15 @@ public class FileAccessTokenServiceTest
         var storedHash = FileAccessTokenHashing.HashToken(rawToken);
         var tokenRepository = new Mock<IFileAccessTokenRepository>(MockBehavior.Strict);
         tokenRepository
+            .Setup(repository => repository.GetByHashAsync(storedHash))
+            .ReturnsAsync(new FileAccessToken
+            {
+                Id = 9001,
+                TokenHash = storedHash,
+                AttachmentId = 1001,
+                ExpiresAt = FixedNow.AddHours(1)
+            });
+        tokenRepository
             .Setup(repository => repository.TryConsumeAsync(storedHash, 77, "127.0.0.1", FixedNow))
             .ReturnsAsync(new FileAccessToken
             {
@@ -108,7 +118,7 @@ public class FileAccessTokenServiceTest
                 AttachmentId = 1001,
                 AccessCount = 1
             });
-        var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        var attachmentRepository = CreateAttachmentRepository(1001, 77);
         var service = CreateService(tokenRepository, attachmentRepository);
 
         var attachmentId = await service.ValidateAndUseTokenAsync(rawToken, 77, "127.0.0.1");
@@ -132,6 +142,51 @@ public class FileAccessTokenServiceTest
             It.IsAny<long?>(),
             It.IsAny<string?>(),
             It.IsAny<DateTime>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ValidateAndUseTokenAsync_ShouldNotConsumeWhenCurrentWikiAclRejects()
+    {
+        const string rawToken = "wiki-token-that-must-not-be-consumed";
+        var storedHash = FileAccessTokenHashing.HashToken(rawToken);
+        var tokenRepository = new Mock<IFileAccessTokenRepository>(MockBehavior.Strict);
+        tokenRepository
+            .Setup(repository => repository.GetByHashAsync(storedHash))
+            .ReturnsAsync(new FileAccessToken
+            {
+                Id = 9002,
+                TokenHash = storedHash,
+                AttachmentId = 1001,
+                ExpiresAt = FixedNow.AddHours(1)
+            });
+        var attachmentRepository = CreateAttachmentRepository(1001, 42);
+        var wikiAccess = new Mock<IWikiAttachmentAccessService>(MockBehavior.Strict);
+        wikiAccess
+            .Setup(service => service.IsWikiControlledAsync(It.IsAny<Attachment>()))
+            .ReturnsAsync(true);
+        wikiAccess
+            .Setup(service => service.CanReadAsync(
+                It.IsAny<Attachment>(),
+                9,
+                77,
+                It.IsAny<IReadOnlyCollection<string>>()))
+            .ReturnsAsync(false);
+        var service = CreateService(tokenRepository, attachmentRepository, wikiAccess);
+
+        var attachmentId = await service.ValidateAndUseTokenAsync(
+            rawToken,
+            77,
+            "127.0.0.1",
+            9,
+            ["Reader"]);
+
+        Assert.Null(attachmentId);
+        tokenRepository.Verify(repository => repository.TryConsumeAsync(
+            It.IsAny<string>(),
+            It.IsAny<long?>(),
+            It.IsAny<string?>(),
+            It.IsAny<DateTime>()), Times.Never);
+        wikiAccess.VerifyAll();
     }
 
     [Fact]
@@ -188,7 +243,7 @@ public class FileAccessTokenServiceTest
     }
 
     [Fact]
-    public async Task RevokeTokenAsync_ShouldAllowTokenCreatorWithoutLoadingAttachment()
+    public async Task RevokeTokenAsync_ShouldAllowTokenCreatorForOwnedAttachment()
     {
         var token = new FileAccessToken
         {
@@ -200,13 +255,49 @@ public class FileAccessTokenServiceTest
         var tokenRepository = new Mock<IFileAccessTokenRepository>(MockBehavior.Strict);
         tokenRepository.Setup(repository => repository.QueryByIdAsync(9001)).ReturnsAsync(token);
         tokenRepository.Setup(repository => repository.TryRevokeByIdAsync(9001, FixedNow)).ReturnsAsync(true);
-        var attachmentRepository = new Mock<IBaseRepository<Attachment>>(MockBehavior.Strict);
+        var attachmentRepository = CreateAttachmentRepository(1001, 42);
         var service = CreateService(tokenRepository, attachmentRepository);
 
         await service.RevokeTokenAsync(9001, 42, false);
 
-        attachmentRepository.Verify(repository => repository.QueryByIdAsync(It.IsAny<long>()), Times.Never);
+        attachmentRepository.VerifyAll();
         tokenRepository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task RevokeTokenAsync_ShouldRequireCurrentWikiManagementEvenForCreatorOrAdmin()
+    {
+        var token = new FileAccessToken
+        {
+            Id = 9003,
+            TokenHash = FileAccessTokenHashing.HashToken("wiki-managed-token"),
+            AttachmentId = 1001,
+            CreatedBy = 42
+        };
+        var tokenRepository = new Mock<IFileAccessTokenRepository>(MockBehavior.Strict);
+        tokenRepository.Setup(repository => repository.QueryByIdAsync(9003)).ReturnsAsync(token);
+        var attachmentRepository = CreateAttachmentRepository(1001, 42);
+        var wikiAccess = new Mock<IWikiAttachmentAccessService>(MockBehavior.Strict);
+        wikiAccess
+            .Setup(service => service.IsWikiControlledAsync(It.IsAny<Attachment>()))
+            .ReturnsAsync(true);
+        wikiAccess
+            .Setup(service => service.CanManageAsync(
+                It.IsAny<Attachment>(),
+                9,
+                42,
+                It.IsAny<IReadOnlyCollection<string>>()))
+            .ReturnsAsync(false);
+        var service = CreateService(tokenRepository, attachmentRepository, wikiAccess);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.RevokeTokenAsync(9003, 42, true, 9, ["Admin"]));
+
+        Assert.Equal("FileToken.Forbidden", exception.ErrorCode);
+        tokenRepository.Verify(repository => repository.TryRevokeByIdAsync(
+            It.IsAny<long>(),
+            It.IsAny<DateTime>()), Times.Never);
+        wikiAccess.VerifyAll();
     }
 
     [Fact]
@@ -255,11 +346,13 @@ public class FileAccessTokenServiceTest
 
     private static FileAccessTokenService CreateService(
         Mock<IFileAccessTokenRepository> tokenRepository,
-        Mock<IBaseRepository<Attachment>> attachmentRepository)
+        Mock<IBaseRepository<Attachment>> attachmentRepository,
+        Mock<IWikiAttachmentAccessService>? wikiAttachmentAccessService = null)
     {
         return new FileAccessTokenService(
             tokenRepository.Object,
             attachmentRepository.Object,
+            wikiAttachmentAccessService?.Object ?? Mock.Of<IWikiAttachmentAccessService>(),
             new FixedTimeProvider(FixedNow));
     }
 

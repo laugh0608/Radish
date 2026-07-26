@@ -324,6 +324,8 @@ builder.Services.AddSignalR(options =>
 
 // 注册通知推送服务（基于 SignalR）
 builder.Services.AddScoped<INotificationPushService, Radish.Api.Services.NotificationPushService>();
+builder.Services.AddScoped<IUserInteractionRealtimeNotifier, Radish.Api.Services.UserInteractionRealtimeNotifier>();
+builder.Services.AddScoped<IContentModerationRealtimeNotifier, Radish.Api.Services.ContentModerationRealtimeNotifier>();
 builder.Services.AddScoped<CommentRealtimePushService>();
 
 // 注册 SqlSugar 服务
@@ -533,6 +535,7 @@ builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxDispatcherJob>();
 builder.Services.AddScoped<Radish.Api.Services.ReliableOutboxExecutionJob>();
 builder.Services.AddScoped<NotificationInboxCleanupJob>();
 builder.Services.AddScoped<ChatMessageReactionOperationCleanupJob>();
+builder.Services.AddScoped<WikiDraftPayloadCleanupJob>();
 
 // 注册 Serilog 服务
 builder.Host.AddSerilogSetup();
@@ -699,6 +702,28 @@ RecurringJob.AddOrUpdate<ChatMessageReactionOperationCleanupJob>(
     });
 
 Log.Information("[Hangfire] 已注册 Chat 消息回应幂等事实清理任务: cleanup-chat-reaction-operations");
+
+var wikiDraftCleanupConfig = builder.Configuration.GetSection("Hangfire:WikiDraftPayloadCleanup");
+if (wikiDraftCleanupConfig.GetValue<bool>("Enable", true))
+{
+    var schedule = wikiDraftCleanupConfig["Schedule"] ?? "45 3 * * *";
+    var batchSize = wikiDraftCleanupConfig.GetValue<int>("BatchSize", 200);
+    var retentionDays = builder.Configuration.GetValue<int>("Document:Authoring:TerminalDraftRetentionDays", 90);
+    RecurringJob.AddOrUpdate<WikiDraftPayloadCleanupJob>(
+        "cleanup-wiki-terminal-draft-payloads",
+        job => job.ExecuteAsync(retentionDays, batchSize),
+        schedule,
+        new RecurringJobOptions
+        {
+            TimeZone = TimeZoneInfo.Utc
+        });
+
+    Log.Information(
+        "[Hangfire] 已注册 Wiki 终态草稿正文清理任务: cleanup-wiki-terminal-draft-payloads (保留: {RetentionDays} 天, 批次: {BatchSize}, 计划: {Schedule})",
+        retentionDays,
+        batchSize,
+        schedule);
+}
 
 var notificationCleanupConfig = builder.Configuration.GetSection("Hangfire:NotificationInboxCleanup");
 if (notificationCleanupConfig.GetValue<bool>("Enable", true))

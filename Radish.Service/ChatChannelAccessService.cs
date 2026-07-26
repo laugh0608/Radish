@@ -13,19 +13,22 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
     private readonly IBaseRepository<DirectConversation> _directConversationRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IChannelMessageRepository _messageRepository;
+    private readonly IUserInteractionPolicyService _interactionPolicyService;
 
     public ChatChannelAccessService(
         IBaseRepository<Channel> channelRepository,
         IBaseRepository<ChannelMember> memberRepository,
         IBaseRepository<DirectConversation> directConversationRepository,
         IBaseRepository<User> userRepository,
-        IChannelMessageRepository messageRepository)
+        IChannelMessageRepository messageRepository,
+        IUserInteractionPolicyService interactionPolicyService)
     {
         _channelRepository = channelRepository;
         _memberRepository = memberRepository;
         _directConversationRepository = directConversationRepository;
         _userRepository = userRepository;
         _messageRepository = messageRepository;
+        _interactionPolicyService = interactionPolicyService;
     }
 
     public async Task<ChatChannelAccessResult> GetAccessAsync(
@@ -77,6 +80,14 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
                 candidate.IsEnable &&
                 !candidate.IsDeleted) != null;
         }
+        var hasInteractionBarrier = directConversation != null &&
+                                    (await _interactionPolicyService.GetSnapshotAsync(
+                                        directConversation.TenantId,
+                                        userId,
+                                        directConversation.ParticipantLowUserId == userId
+                                            ? directConversation.ParticipantHighUserId
+                                            : directConversation.ParticipantLowUserId))
+                                    .HasInteractionBarrier;
 
         return BuildAccessResult(
             channel,
@@ -86,6 +97,7 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
             canManageChannel,
             hasMessages,
             peerAvailable,
+            hasInteractionBarrier,
             tenantId);
     }
 
@@ -139,6 +151,10 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
                 !user.IsDeleted))
             .Select(user => user.Id)
             .ToHashSet();
+        var interactionPolicies = await _interactionPolicyService.GetSnapshotsAsync(
+            tenantId,
+            userId,
+            peerUserIds);
         var result = new List<ReadableChatChannelSnapshotItem>(channels.Count);
 
         foreach (var channel in channels)
@@ -149,6 +165,14 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
                                 (conversation.ParticipantLowUserId == userId
                                     ? activePeerUserIds.Contains(conversation.ParticipantHighUserId)
                                     : activePeerUserIds.Contains(conversation.ParticipantLowUserId));
+            var peerUserId = conversation == null
+                ? 0
+                : conversation.ParticipantLowUserId == userId
+                    ? conversation.ParticipantHighUserId
+                    : conversation.ParticipantLowUserId;
+            var hasInteractionBarrier = peerUserId > 0 &&
+                                        interactionPolicies.TryGetValue(peerUserId, out var policy) &&
+                                        policy.HasInteractionBarrier;
             var access = BuildAccessResult(
                 channel,
                 member,
@@ -157,6 +181,7 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
                 false,
                 channelIdsWithMessages.Contains(channel.Id),
                 peerAvailable,
+                hasInteractionBarrier,
                 tenantId);
             if (access.CanView)
             {
@@ -209,6 +234,7 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
         bool canManageChannel,
         bool hasMessages,
         bool peerAvailable,
+        bool hasInteractionBarrier = false,
         long? tenantId = null)
     {
         if (channel.Type == ChannelType.Public)
@@ -258,7 +284,6 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
             ? directConversation.ParticipantHighUserId
             : directConversation.ParticipantLowUserId;
         var isRequester = directConversation.RequestedByUserId == userId;
-        var isBlocked = directConversation.BlockedByUserId.HasValue;
         var canView = directConversation.RequestStatus switch
         {
             DirectConversationRequestStatus.Pending => isRequester || hasMessages,
@@ -273,23 +298,24 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
             DirectConversationRequestStatus.Declined => false,
             _ => false
         };
-        canSend = canSend && !isBlocked && peerAvailable;
+        canSend = canSend && !hasInteractionBarrier && peerAvailable;
         return new ChatChannelAccessResult(
             true,
             channel.Type,
             canView,
             canSend,
             canView,
-            directConversation.RequestStatus == DirectConversationRequestStatus.Accepted && !isBlocked,
+            directConversation.RequestStatus == DirectConversationRequestStatus.Accepted && !hasInteractionBarrier,
             true,
             directConversation.RequestStatus,
             directConversation.RequestedByUserId,
-            directConversation.BlockedByUserId,
+            null,
             peerUserId,
             directConversation.Id,
             hasMessages,
             peerAvailable,
             member.Role,
-            false);
+            false,
+            hasInteractionBarrier);
     }
 }

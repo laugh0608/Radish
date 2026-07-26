@@ -42,6 +42,7 @@ public static class ConsolePermissions
     public const string TagsSort = "console.tags.sort";
     public const string DocsView = "console.docs.view";
     public const string DocsPublish = "console.docs.publish";
+    public const string DocsReview = "console.docs.review";
     public const string DocsArchive = "console.docs.archive";
     public const string DocsDelete = "console.docs.delete";
     public const string DocsRestore = "console.docs.restore";
@@ -58,6 +59,8 @@ public static class ConsolePermissions
     public const string StickersBatchUpload = "console.stickers.batch-upload";
     public const string ModerationView = "console.moderation.view";
     public const string ModerationReview = "console.moderation.review";
+    public const string ModerationAppeal = "console.moderation.appeal";
+    public const string ModerationAction = "console.moderation.action";
     public const string CoinsView = "console.coins.view";
     public const string CoinsAdjust = "console.coins.adjust";
     public const string ExperienceView = "console.experience.view";
@@ -124,6 +127,9 @@ public static class ConsolePermissions
             ["/api/v1/Wiki/AdminGetList"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetTree"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetById/\\d+"] = new[] { DocsView },
+            ["/api/v1/Wiki/AdminGetReviewQueue"] = new[] { DocsReview },
+            ["/api/v1/Wiki/AdminGetDraftById/\\d+"] = new[] { DocsReview },
+            ["/api/v1/Wiki/AdminReviewDraft/\\d+"] = new[] { DocsReview },
             ["/api/v1/Wiki/GetRevisionList/\\d+"] = new[] { DocsView },
             ["/api/v1/Wiki/GetRevisionDetail/\\d+"] = new[] { DocsView },
             ["/api/v1/Wiki/Publish/\\d+"] = new[] { DocsPublish },
@@ -148,10 +154,19 @@ public static class ConsolePermissions
             ["/api/v1/Sticker/UpdateSticker/.+"] = new[] { StickersEdit },
             ["/api/v1/Sticker/DeleteSticker/.+"] = new[] { StickersDelete },
             ["/api/v1/Sticker/BatchUpdateSort"] = new[] { StickersSort },
-            ["/api/v1/ContentModeration/GetReviewQueue"] = new[] { ModerationView },
-            ["/api/v1/ContentModeration/Review"] = new[] { ModerationReview },
-            ["/api/v1/ContentModeration/ApplyUserAction"] = new[] { ModerationReview },
-            ["/api/v1/ContentModeration/GetActionLogs"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetCaseQueue"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetCase/.+"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetCaseEvents"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/CaptureEvidence"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/ReviewCase"] = new[] { ModerationReview },
+            ["/api/v1/ContentModeration/GetAppealQueue"] = new[] { ModerationView },
+            ["/api/v1/ContentModeration/GetAppeal/.+"] = new[] { ModerationAppeal },
+            ["/api/v1/ContentModeration/GetAppealEvents"] = new[] { ModerationAppeal },
+            ["/api/v1/ContentModeration/StartAppealReview"] = new[] { ModerationAppeal },
+            ["/api/v1/ContentModeration/CaptureAppealEvidence"] = new[] { ModerationAppeal },
+            ["/api/v1/ContentModeration/ReviewAppeal"] = new[] { ModerationAppeal },
+            ["/api/v1/ContentModeration/ExecuteAppealRelief"] = new[] { ModerationAction },
+            ["/api/v1/ContentModeration/ApplyCorrectiveAction"] = new[] { ModerationAction },
             ["/api/v1/Coin/GetBalanceByUserId"] = new[] { CoinsView },
             ["/api/v1/Coin/AdminGetTransactions"] = new[] { CoinsView },
             ["/api/v1/Coin/AdminAdjustBalance"] = new[] { CoinsAdjust },
@@ -222,6 +237,7 @@ public static class ConsolePermissions
         TagsSort,
         DocsView,
         DocsPublish,
+        DocsReview,
         DocsArchive,
         DocsDelete,
         DocsRestore,
@@ -238,6 +254,8 @@ public static class ConsolePermissions
         StickersBatchUpload,
         ModerationView,
         ModerationReview,
+        ModerationAppeal,
+        ModerationAction,
         CoinsView,
         CoinsAdjust,
         ExperienceView,

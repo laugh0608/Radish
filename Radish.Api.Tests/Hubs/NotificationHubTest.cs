@@ -46,7 +46,8 @@ public sealed class NotificationHubTest
         var clients = new Mock<IHubCallerClients>(MockBehavior.Strict);
         clients.SetupGet(item => item.Caller).Returns(caller.Object);
         var push = new Mock<INotificationPushService>(MockBehavior.Strict);
-        push.Setup(item => item.GetInboxSummaryAsync(9, 1001))
+        var notifications = new Mock<INotificationService>(MockBehavior.Strict);
+        notifications.Setup(item => item.GetInboxSummaryAsync(9, 1001))
             .ReturnsAsync(new NotificationInboxSummaryVo
             {
                 VoRevision = 7,
@@ -55,6 +56,7 @@ public sealed class NotificationHubTest
             });
         var hub = new NotificationHub(
             push.Object,
+            notifications.Object,
             new ClaimsPrincipalNormalizer(),
             NullLogger<NotificationHub>.Instance)
         {
@@ -67,7 +69,7 @@ public sealed class NotificationHubTest
 
         groups.VerifyAll();
         caller.VerifyAll();
-        push.VerifyAll();
+        notifications.VerifyAll();
     }
 
     [Fact]

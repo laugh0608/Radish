@@ -1,4 +1,6 @@
 using Hangfire;
+using System.Text.Json;
+using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 
@@ -57,15 +59,18 @@ public sealed class ReliableOutboxExecutionJob
 {
     private readonly IReliableOutboxService _outboxService;
     private readonly IReliableTaskProcessor _processor;
+    private readonly IContentModerationCaseRepository _contentModerationCaseRepository;
     private readonly ILogger<ReliableOutboxExecutionJob> _logger;
 
     public ReliableOutboxExecutionJob(
         IReliableOutboxService outboxService,
         IReliableTaskProcessor processor,
+        IContentModerationCaseRepository contentModerationCaseRepository,
         ILogger<ReliableOutboxExecutionJob> logger)
     {
         _outboxService = outboxService;
         _processor = processor;
+        _contentModerationCaseRepository = contentModerationCaseRepository;
         _logger = logger;
     }
 
@@ -86,6 +91,7 @@ public sealed class ReliableOutboxExecutionJob
         catch (Exception ex)
         {
             await _outboxService.MarkFailedAsync(sourceDatabase, outboxId, ex, DateTime.UtcNow);
+            await RecordContentModerationFailureAsync(message, ex);
             _logger.LogError(
                 ex,
                 "[ReliableOutbox] 任务执行失败：Source={Source}, OutboxId={OutboxId}, TaskType={TaskType}",
@@ -93,5 +99,48 @@ public sealed class ReliableOutboxExecutionJob
                 outboxId,
                 message.TaskType);
         }
+    }
+
+    private async Task RecordContentModerationFailureAsync(
+        ReliableOutboxSnapshot message,
+        Exception exception)
+    {
+        if (message.TaskType is not
+            (ReliableTaskTypes.ContentModerationChatRecall or ReliableTaskTypes.ContentModerationChatRestore))
+        {
+            return;
+        }
+
+        if (message.TaskType == ReliableTaskTypes.ContentModerationChatRecall)
+        {
+            var payload = JsonSerializer.Deserialize<ContentModerationChatRecallTaskPayload>(message.PayloadJson)
+                ?? throw new JsonException("内容治理 Chat 回收任务载荷为空");
+            await _contentModerationCaseRepository.CompleteChatTargetActionAsync(
+                new ContentModerationChatActionCompletionCommand(
+                    payload.TenantId,
+                    payload.CaseId,
+                    payload.TargetActionId,
+                    payload.OperationKey,
+                    false,
+                    exception.GetType().Name,
+                    payload.OperatorUserId,
+                    payload.OperatorName,
+                    DateTime.UtcNow));
+            return;
+        }
+
+        var restorePayload = JsonSerializer.Deserialize<ContentModerationChatRestoreTaskPayload>(
+            message.PayloadJson) ?? throw new JsonException("内容治理 Chat 恢复任务载荷为空");
+        await _contentModerationCaseRepository.CompleteChatReliefAsync(
+            new ContentModerationChatReliefCompletionCommand(
+                restorePayload.TenantId,
+                restorePayload.AppealId,
+                restorePayload.TargetActionId,
+                restorePayload.OperationKey,
+                false,
+                exception.GetType().Name,
+                restorePayload.OperatorUserId,
+                restorePayload.OperatorName,
+                DateTime.UtcNow));
     }
 }

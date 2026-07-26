@@ -685,6 +685,15 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         long? replyToId,
         long? attachmentId)
     {
+        if (access.HasInteractionBarrier)
+        {
+            throw new BusinessException(
+                "当前无法与该用户互动",
+                StatusCodes.Status409Conflict,
+                "UserBlock.InteractionUnavailable",
+                "error.user_block.interaction_unavailable");
+        }
+
         if (access.DirectBlockedByUserId.HasValue)
         {
             throw new BusinessException(

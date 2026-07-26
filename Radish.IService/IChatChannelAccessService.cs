@@ -19,7 +19,8 @@ public sealed record ChatChannelAccessResult(
     bool HasMessages = false,
     bool IsPeerAvailable = true,
     MemberRole? ChannelMemberRole = null,
-    bool CanManageChannel = false)
+    bool CanManageChannel = false,
+    bool HasInteractionBarrier = false)
 {
     public static ChatChannelAccessResult Unavailable { get; } =
         new(false, null, false, false, false, false, false);
@@ -32,6 +33,7 @@ public sealed record ChatChannelAccessResult(
         Model.ChannelType.Private when !IsDirectConversation => true,
         Model.ChannelType.Private =>
             DirectRequestStatus == DirectConversationRequestStatus.Accepted &&
+            !HasInteractionBarrier &&
             DirectBlockedByUserId == null &&
             IsPeerAvailable,
         _ => false
@@ -46,6 +48,7 @@ public sealed record ChatChannelAccessResult(
             ChannelMemberRole is MemberRole.Moderator or MemberRole.Owner,
         Model.ChannelType.Private =>
             DirectRequestStatus == DirectConversationRequestStatus.Accepted &&
+            !HasInteractionBarrier &&
             DirectBlockedByUserId == null &&
             IsPeerAvailable,
         _ => false

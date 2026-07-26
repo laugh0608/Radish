@@ -1,6 +1,6 @@
 # 文件上传与附件管理（Radish.Api）
 
-> **最后更新**：2026-07-18
+> **最后更新**：2026-07-25
 
 本文档描述当前附件系统的真实实现口径，重点覆盖“附件如何落库、如何在正文中引用、如何在运行时解析 URL，以及更换域名时哪些数据不需要再人工修补”。
 
@@ -13,7 +13,7 @@
 - **`AttachmentVo.VoUrl` / `VoThumbnailUrl` 是运行时派生字段**。后端通过 `IAttachmentUrlResolver` 把附件 Id 解析成相对资源路径：
   - 原图：`/_assets/attachments/{id}`
   - 缩略图：`/_assets/attachments/{id}/thumbnail`
-- **新写入与已迁移正文中的图片 / 文档引用统一保存为 `attachment://{id}` 协议**。论坛帖子、评论、Wiki 等场景不再把新上传的完整 URL 写入 Markdown / 富文本正文；孤立清理会扫描当前正文，Wiki 历史版本因支持回滚也持续视为有效引用。
+- **新写入与已迁移正文中的图片 / 文档引用统一保存为 `attachment://{id}` 协议**。论坛帖子、评论、Wiki 等场景不再把新上传的完整 URL 写入 Markdown / 富文本正文；通用业务由引用检查器判断存活，Wiki 则以 Main `WikiAttachmentReference` 的正文、草稿、封面和 Revision 引用作为权威清理依据。
 - **采用 `attachmentId / attachment://` 的数据在更换域名时无需更新附件类字段**。历史正文、Wiki revision、系统配置或外部缓存若仍保存 `/uploads/**` 或旧域名绝对 URL，必须先盘点和迁移。
 
 ---
@@ -36,11 +36,11 @@
 - 默认所有管理型接口需要登录（`Authorization: Bearer <access_token>`）。
 - `GET /api/v1/Attachment/DownloadByToken` 允许匿名访问，但必须携带有效 `token`。
 - `GET /_assets/attachments/{id}` 与 `GET /_assets/attachments/{id}/thumbnail` 会根据附件启用状态、公开性与当前用户权限决定是否允许访问；`IsEnabled = false` 或 `IsDeleted = true` 的附件必须统一阻断。
-- 临时访问令牌的创建 / 撤销 / 列表允许附件上传者或 `System / Admin`；审计展示与管理界面仍待补充。
+- 临时访问令牌的创建 / 撤销 / 列表通常允许附件上传者或 `System / Admin`；Wiki 控制的附件改按当前文档 Owner 或 `console.docs.permissions` 判断，角色名和原上传者身份不能绕过已经建立的 Wiki 关系。
 - `GET /api/v1/Attachment/DownloadByToken` 也必须复用同一条附件访问判定链，不能因为携带了临时令牌就绕过 disabled 附件的阻断。
 - 普通上传与分片会话创建共用稳定的 `BusinessType` 白名单和资源权限判定；分片会话的查询、上传、合并与取消还必须匹配创建用户。
 - `Chat` 上传会直接写入 `IsPublic = false`，绑定消息后按频道与消息关系授权；上传者、`System / Admin` 身份都不能绕过私聊成员边界。未绑定的 Chat 附件只允许上传者读取；若消息已经引用附件而可靠绑定尚未回写，合法频道成员也可按该消息事实读取。
-- `20260718_002_chat_attachment_privacy` 已把历史 `BusinessType=Chat` 附件迁移为私有，并在 `verify` 中阻断仍公开的异常记录；可靠绑定任务还会拒绝租户、上传者、消息引用或既有绑定不匹配的数据。`Document / Wiki` 尚未接入文档公开性或访问名单，仍不具备完整私有附件语义，不应用于敏感文件。
+- `20260718_002_chat_attachment_privacy` 已把历史 `BusinessType=Chat` 附件迁移为私有，并在 `verify` 中阻断仍公开的异常记录；可靠绑定任务还会拒绝租户、上传者、消息引用或既有绑定不匹配的数据。文档 App 使用 `BusinessType=Wiki`，F4-L-B 已接入私有默认、Main 权威引用、动态 Wiki ACL、令牌与清理链；通用 `BusinessType=Document` 不属于 Wiki 产品域，只有被 Wiki 内容明确引用的历史记录才进入兼容迁移。正式 Web 认证资源加载继续由 [F4-L-C](/features/wiki-attachment-privacy-lifecycle-design)推进。
 
 获取 `access_token`：参考 `Radish.Api.Tests/HttpTest/Radish.Api.AuthFlow.http`。
 
@@ -99,6 +99,15 @@
 - `ChatChannelAccessService` 是频道详情、历史、发送、Hub 加组和附件读取的共同授权入口。附件控制器、下载接口和临时令牌消费都复用 `AttachmentService` 的同一判定，不允许通过换入口绕过。
 - Console 管理员只能查看用户主动举报形成的证据快照，不因角色身份获得任意私聊附件浏览权。
 
+#### Wiki 附件授权
+
+- `BusinessType=Wiki` 的新附件一律私有。未绑定时仅上传者可读、可管理；写入文档、草稿、封面或 Revision 后，`WikiAttachmentReference` 成为引用关系的唯一真相源。
+- 文档当前正文 / 封面允许 Owner、Accepted Editor、`console.docs.view` 和满足已发布文档当前可见性规则的读者读取；草稿附件只允许 Owner、Accepted Editor 与 `console.docs.review`；Revision 附件只允许 Owner、Accepted Editor 与 `console.docs.view`。
+- 附件管理权与读取权分开：绑定后只有文档 Owner 或 `console.docs.permissions` 可以创建、列表和撤销临时令牌。`System / Admin` 角色本身、附件原上传者或曾经拥有的协作关系都不是长期旁路。
+- `DownloadByToken` 先验证令牌约束，再按消费时的 Wiki 当前 ACL 复核。文档删除、访问策略变化、协作者被移除或权限回收后，旧 token 不再提供访问。
+- Wiki 保存、审核 Apply、回滚、导入、删除 / 恢复与引用同步处于各自明确事务边界；删除引用会软删除关系，Revision 引用保持追加式并继续保护可回滚附件。
+- 孤立清理读取 `WikiAttachmentReference`，不会重新扫描 Wiki Markdown 猜测存活；`20260725_012_wiki_attachment_authority` 负责历史 `Wiki` 私有化、可证明的 `Document` 兼容回填以及 doctor / verify。
+
 ### 3) 上传限流（UploadRateLimit）
 
 - 触发位置：`UploadImage`、`UploadDocument` 与 `ChunkedUpload/CreateSession`
@@ -153,7 +162,7 @@
   - body：`CreateFileAccessTokenDto`
   - 返回：原始 token 与 `accessUrl` 只在创建响应出现一次；数据库仅保存 SHA-256 Base64Url hash
   - 创建参数边界：
-    - `AttachmentId` 必须大于 `0`，且调用者必须拥有该附件或具有 `System / Admin` 身份
+    - `AttachmentId` 必须大于 `0`；通用附件要求调用者拥有附件或具有 `System / Admin` 身份，Wiki 控制附件要求当前文档 Owner 或 `console.docs.permissions`
     - `ValidHours` 必须在 `1-168` 小时之间
     - `MaxAccessCount` 必须大于等于 `0`，`0` 表示不限制次数
     - `AuthorizedUserId` 如传入，必须大于 `0`
@@ -181,6 +190,7 @@
 - 创建、过期、撤销、消费与清理统一使用注入的 `TimeProvider` UTC 时刻；`ValidHours` 表示从创建 UTC 时刻起的持续时长，不按服务器本地时间或业务自然日截断。
 - 空 token 不应继续查询数据库；不存在、撤销、过期、次数耗尽、用户不匹配与 IP 不匹配都应安全失败。
 - `AuthorizedIp` 是令牌自身的访问限制，不是附件业务真值；为空表示不限 IP。
+- Wiki token 不是创建时 ACL 快照；每次消费都重新检查当前文档、草稿或 Revision 关系与可见性，不允许用仍未过期的 token 穿透失权。
 
 > `accessUrl` 优先使用 `GatewayService:PublicUrl / RADISH_PUBLIC_URL` 生成；未配置时才回退到当前请求入口。IP 解析只信任直连地址、loopback 或 `FileAccessToken:TrustedProxyAddresses` 显式登记代理提供的首个转发地址，不直接信任公网请求伪造的 `X-Forwarded-For`；未登记代理会按其连接地址校验并安全失败。
 
@@ -305,7 +315,7 @@
 - 分片上传横向扩容前补共享临时存储、分布式会话互斥与跨实例回归；当前部署边界为单实例
 - 为附件持久化增加稳定的上传会话 correlation / 唯一约束，使“附件已落库但会话完成状态持续回写失败且响应丢失”的极端路径可在后续请求中找回既有附件
 - 为普通上传和分片上传增加持久化配额结算记录及可重放 outbox，避免缓存结算失败造成当日用量漏记或预留滞留
-- 继续建立 `Document` 与受限 `Wiki` 的领域可见性契约及历史数据迁移；`Chat` 已完成默认私有、频道成员授权和历史迁移
+- 按 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)继续完成正式 Web 认证资源加载与成组验收；服务端私有默认、领域可见性、权威引用与历史迁移已完成，通用 Document 保持独立附件分类，`Chat` 已完成默认私有、频道成员授权和历史迁移
 - 临时令牌审计、管理界面与端到端验收覆盖
 - 盘点并迁移历史正文、Wiki revision 与 `Site.Branding.FaviconUrl` 中的 `/uploads/**` / 旧域名直链；完成生产数据抽样与运行态回归前，不得把关闭用户上传静态根目录视为历史数据已经收口
 - 专题验收时在取得启动授权后通过真实 API + Gateway 验证普通 `/uploads/<business>/...` 不可达、`/uploads/DefaultIco/...` 可达，以及受控路由的 deleted / disabled / private / thumbnail 行为；当前源码与配置断言不能替代该验证

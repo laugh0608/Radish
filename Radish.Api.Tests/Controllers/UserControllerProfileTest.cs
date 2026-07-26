@@ -9,12 +9,73 @@ using Radish.Common.OptionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
+using Radish.Model.ViewModels;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
 
 public class UserControllerProfileTest
 {
+    [Fact]
+    public async Task GetPublicProfile_Should_Aggregate_Authoritative_Public_Pet_Card()
+    {
+        const string userPublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f";
+        var user = new UserVo
+        {
+            Uuid = 1001,
+            VoPublicId = userPublicId,
+            VoUserName = "tester",
+            VoDisplayName = "Tester",
+            VoTenantId = 9
+        };
+        var petCard = new PetPublicCardVo
+        {
+            VoPublicId = "pet_018f6b6f7c7d70008f8f8f8f8f8f8f8f",
+            VoName = "小萝卜",
+            VoSpeciesKey = "radish",
+            VoShapeKey = "sprout",
+            VoGrowthStage = 2,
+            VoMood = "happy"
+        };
+        var userService = new Mock<IUserService>(MockBehavior.Strict);
+        userService
+            .Setup(service => service.GetPublicUserByIdentifierAsync(userPublicId))
+            .ReturnsAsync(user);
+        var attachmentService = new Mock<IAttachmentService>(MockBehavior.Strict);
+        attachmentService
+            .Setup(service => service.GetLatestAvatarAssetAsync(1001))
+            .ReturnsAsync((AttachmentAssetDto?)null);
+        var adornmentService = new Mock<IUserAdornmentService>(MockBehavior.Strict);
+        adornmentService
+            .Setup(service => service.GetUserAdornmentAsync(1001))
+            .ReturnsAsync((UserAdornmentVo?)null);
+        var petService = new Mock<IPetService>(MockBehavior.Strict);
+        petService
+            .Setup(service => service.GetPublicCardAsync(1001, 9))
+            .ReturnsAsync(petCard);
+        var controller = new UserController(
+            userService.Object,
+            Mock.Of<ICurrentUserAccessor>(),
+            Mock.Of<IPostService>(),
+            Mock.Of<ICommentService>(),
+            Mock.Of<IUserBrowseHistoryService>(),
+            Mock.Of<IUserTimePreferenceService>(),
+            attachmentService.Object,
+            Options.Create(new TimeOptions()),
+            adornmentService.Object,
+            petService.Object);
+
+        var result = await controller.GetPublicProfile(userPublicId);
+
+        Assert.True(result.IsSuccess);
+        var profile = Assert.IsType<UserPublicProfileVo>(result.ResponseData);
+        Assert.Same(petCard, profile.VoPet);
+        userService.VerifyAll();
+        attachmentService.VerifyAll();
+        adornmentService.VerifyAll();
+        petService.VerifyAll();
+    }
+
     [Fact]
     public async Task UpdateMyProfile_ShouldDelegateDisplayNameChangeToUserService()
     {
@@ -53,7 +114,8 @@ public class UserControllerProfileTest
             Mock.Of<IUserTimePreferenceService>(),
             Mock.Of<IAttachmentService>(),
             Options.Create(new TimeOptions()),
-            Mock.Of<IUserAdornmentService>());
+            Mock.Of<IUserAdornmentService>(),
+            Mock.Of<IPetService>());
 
         var result = await controller.UpdateMyProfile(new UpdateMyProfileDto
         {
@@ -104,7 +166,8 @@ public class UserControllerProfileTest
             Mock.Of<IUserTimePreferenceService>(),
             attachmentService.Object,
             Options.Create(new TimeOptions()),
-            Mock.Of<IUserAdornmentService>());
+            Mock.Of<IUserAdornmentService>(),
+            Mock.Of<IPetService>());
 
         var result = await controller.SetMyAvatar(new SetMyAvatarDto { AttachmentId = attachmentId });
 

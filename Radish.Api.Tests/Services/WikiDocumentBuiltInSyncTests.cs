@@ -353,6 +353,8 @@ public class WikiDocumentBuiltInSyncTests
                 mapper.Object,
                 DocumentRepository.Object,
                 RevisionRepository.Object,
+                Mock.Of<IBaseRepository<Attachment>>(),
+                Mock.Of<IWikiAttachmentReferenceRepository>(),
                 consoleAuthorizationService.Object,
                 Options.Create(new DocumentOptions
                 {

@@ -1,8 +1,8 @@
 # Radish 电子宠物系统说明
 
-> 状态：Phase B 登录态 Web 主链路已上线并进入稳定维护
+> 状态：Phase B 登录态 Web 主链路已上线并进入稳定维护；F4-H 公开名片与隐私闭环已完成 A-D 批并关闭
 >
-> 最后更新：2026-07-15（Asia/Shanghai）
+> 最后更新：2026-07-21（Asia/Shanghai）
 >
 > 长期边界与后续阶段见 [Radish 电子宠物开发计划](/features/radish-pet-roadmap)。
 
@@ -22,6 +22,7 @@ Radish 电子宠物是服务社区复访与轻陪伴的登录态玩法，不是�
 - 未领取时，`GetMy` 返回明确空态，不隐式创建宠物。
 - `Claim` 创建默认宠物；重复领取返回已有宠物，不创建第二只。
 - 用户可修改宠物名称和公开展示开关。
+- 公开展示开关已接入 `User/GetPublicProfile` 的服务端字段白名单投影；正式 `/u/:id` 在身份摘要与公开内容之间直接消费同一次响应中的 `VoPet`，为空时整块不渲染。
 - 照顾动作固定为 `feed / clean / play / rest`，分别表示喂食、清洁、互动和休息。
 - 服务端计算饱食度、清洁度、精力、成长值、成长阶段、心情、每日次数、冷却和状态上下限。
 - 每次有效照顾写入 `PetStatLog`，记录动作、变化前后数值、成长变化、来源、幂等键和时间。
@@ -42,6 +43,8 @@ Radish 电子宠物是服务社区复访与轻陪伴的登录态玩法，不是�
 
 `PetProfileVo` 返回 `VoPublicId`、名称、形态、成长阶段、心情、三项状态、成长值、公开开关、最后照顾时间和 `VoCareActions`。对外标识继续使用 `VoPublicId`；内部 LongId 在前端保持字符串。
 
+匿名公开读取不新增 Pet Controller 接口，而是由 `GET /api/v1/User/GetPublicProfile?identifier=...` 聚合可空 `VoPet`。`PetPublicCardVo` 只返回 `VoPublicId / VoName / VoSpeciesKey / VoShapeKey / VoGrowthStage / VoMood / VoAdornment`；隐藏、未领取、软删除、跨租户或公开字段非法时统一为 `null`，不暴露原因。当前没有正式宠物装扮注册来源，`VoAdornment` 保持 `null`。
+
 ## 4. 多语言与内容边界
 
 - 成长阶段、心情、动作名、状态洞察和流水动作说明按 `voGrowthStage / voMood / voActionType` 等稳定字段解析 client 词元。
@@ -50,6 +53,8 @@ Radish 电子宠物是服务社区复访与轻陪伴的登录态玩法，不是�
 - 未填写领取名称时，client 按当前语言提交默认名称；该名称一经创建即按普通用户内容持久化，切换语言不会重写。
 - 成长值、状态值、剩余次数和分页数量按当前 locale 格式化；日期时间结合用户时区和当前 locale 展示；英文分钟、小时、次数与流水数量使用 i18next plural 规则。
 - `/me` 宠物摘要复用同一 presentation 规则，不读取服务端中文 display 字段重新推导状态。
+- `/u/:id` 的公开宠物名片复用物种、形态、成长阶段和心情的稳定词元；不显示私域状态、成长值、照顾时间、动作资格或流水，也不进入 public head、JSON-LD 与 sitemap。
+- Gateway 成组验收已覆盖主人 / 访客 / 匿名、显隐切换、软删除、用户失效、跨租户、无宠物、`zh / en`、PC / mobile 与四主题代表矩阵；后续新增宠物能力不得绕过同一公开投影和隐私语义。
 
 ## 5. 错误契约
 

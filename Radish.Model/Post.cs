@@ -314,6 +314,10 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public bool IsDeleted { get; set; } = false;
 
+    /// <summary>当前软删除由治理目标动作造成时记录对应动作 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? ModerationTargetActionId { get; set; }
+
     /// <summary>删除时间</summary>
     /// <remarks>可空，软删除时自动设置，恢复时清空</remarks>
     [SugarColumn(IsNullable = true)]

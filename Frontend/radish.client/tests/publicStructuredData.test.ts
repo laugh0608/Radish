@@ -162,6 +162,14 @@ test('buildProfilePageStructuredData 应生成 ProfilePage JSON-LD 且不使用�
       voUserName: 'radish-user',
       voDisplayName: '萝卜用户',
       voCreateTime: '2026-05-01T10:00:00+08:00',
+      voPet: {
+        voPublicId: 'pet_019ea76872bf787981ad3e9d3c6a3417',
+        voName: '不会进入结构化数据的小萝卜',
+        voSpeciesKey: 'radish',
+        voShapeKey: 'sprout',
+        voGrowthStage: 2,
+        voMood: 'happy',
+      },
     },
     stats: {
       voPostCount: 8,
@@ -175,6 +183,8 @@ test('buildProfilePageStructuredData 应生成 ProfilePage JSON-LD 且不使用�
   assert.equal(data['@type'], 'ProfilePage');
   assert.equal(data.name, '萝卜用户 - Radish 用户公开主页');
   assert.equal(JSON.stringify(data).includes('"name":"2042219067430928384"'), false);
+  assert.equal(JSON.stringify(data).includes('不会进入结构化数据的小萝卜'), false);
+  assert.equal(JSON.stringify(data).includes('pet_019ea76872bf787981ad3e9d3c6a3417'), false);
 });
 
 test('buildPublicRouteStructuredData 应为公开发现和榜单生成聚合页 JSON-LD', () => {

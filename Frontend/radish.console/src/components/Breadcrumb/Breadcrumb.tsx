@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link } from 'react-router';
 import { Breadcrumb, HomeOutlined } from '@radish/ui';
 import type { BreadcrumbProps } from '@radish/ui';
 import { useTranslation } from 'react-i18next';

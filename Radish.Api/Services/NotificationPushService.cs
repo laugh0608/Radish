@@ -46,17 +46,4 @@ public sealed class NotificationPushService : INotificationPushService
         }
     }
 
-    public async Task<NotificationInboxSummaryVo> GetInboxSummaryAsync(long tenantId, long userId)
-    {
-        var summary = await _inboxRepository.GetSummaryAsync(tenantId, userId);
-        return new NotificationInboxSummaryVo
-        {
-            VoRevision = summary.Revision,
-            VoUnreadGroupCount = summary.UnreadGroupCount,
-            VoUnreadOccurrenceCount = summary.UnreadOccurrenceCount,
-            VoUnreadGroupCountByCategory = summary.UnreadGroupCountByCategory
-                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal),
-            VoLastChangedAtUtc = summary.LastChangedAtUtc
-        };
-    }
 }

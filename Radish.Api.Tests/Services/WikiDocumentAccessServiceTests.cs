@@ -228,6 +228,8 @@ public class WikiDocumentAccessServiceTests
             mapper.Object,
             wikiDocumentRepository.Object,
             revisionRepository.Object,
+            Mock.Of<IBaseRepository<Attachment>>(),
+            Mock.Of<IWikiAttachmentReferenceRepository>(),
             consoleAuthorizationService.Object,
             Options.Create(new DocumentOptions()));
     }

@@ -2,13 +2,13 @@
 
 > Radish 登录态个人圈子 `/circle` 的产品边界、职责分工与维护约束。
 >
-> **最后更新**: 2026.07.15
+> **最后更新**: 2026.07.25
 
 ## 定位
 
 `/circle` 是登录用户的关系链复访入口，回答“我关注的人最近有什么动态”。
 
-它不是公开发现页，也不是另一个论坛列表。首批只复用既有 `UserFollow` 与 `Post` 数据，承接关注动态、我的关注和我的粉丝。
+它不是公开发现页，也不是另一个论坛列表。当前复用 `UserFollow`、`UserBlock` 与 `Post` 数据，承接关注动态、我的关注和我的粉丝，并由统一关系策略裁剪不可互动用户。
 
 ## 职责分工
 
@@ -60,6 +60,8 @@
 - `GET /api/v1/UserFollow/GetMyFollowing`：我的关注
 - `GET /api/v1/UserFollow/GetMyFollowers`：我的粉丝
 - `GET /api/v1/UserFollow/GetMySummary`：关系链汇总
+- `POST /api/v1/UserBlock/Block`、`POST /api/v1/UserBlock/Unblock`：从公开主页建立或解除当前用户拥有的屏蔽
+- `GET /api/v1/UserBlock/GetMine`：本人 `/me/blocked` 的屏蔽列表
 
 对象标识规则：
 
@@ -88,7 +90,15 @@ Radish.Service/UserFollowService.cs
 Radish.Api/Controllers/UserFollowController.cs
 ```
 
-`UserFollowService` 会在关注 / 粉丝列表读取时补齐旧用户的 `PublicId`，保证圈子用户列表能稳定进入公开个人页。
+`UserFollowService` 会在关注 / 粉丝列表读取时补齐旧用户的 `PublicId`，并通过 `IUserInteractionPolicyService` 排除任一方向存在有效屏蔽的用户。关注写入、屏蔽写入和列表读取都以 Main 当前关系为准，不由前端拼接状态。
+
+## 屏蔽与关系隔离
+
+- `UserBlock` 是方向明确的私人关系，但任一方向存在有效记录时，双方的关注、关系流和关系型通知都进入对称隔离。
+- 屏蔽与双方已有 `UserFollow` 软删除处于同一 Main 事务；解除屏蔽不会恢复任何一方关注，也不会恢复屏蔽前的 feed、通知或私信请求。
+- `feed / following / followers`、关系摘要和关系推荐都排除任一方向屏蔽。屏蔽期间新关注请求使用稳定 `UserBlock.InteractionUnavailable` 拒绝。
+- 屏蔽不删除公开主页、帖子或评论。执行者本人可以在 `/me/blocked` 查看方向和时间；目标用户及公共接口只得到通用不可互动状态，不能得知谁执行了屏蔽。
+- 关系版本变化后页面重新读取摘要、列表和动作能力；Back / Forward 或本地缓存不能恢复旧的可写状态。
 
 ## 维护约束
 
@@ -96,6 +106,7 @@ Radish.Api/Controllers/UserFollowController.cs
 - 不在圈子页内重写帖子详情、评论、点赞、神评或分类搜索。
 - 不把推荐 / 热门 / 最新公共分发流并入圈子主职责；公共分发仍归 `/discover` 或 forum 分发接口。
 - 不直接实现 ActivityPub / WebFinger。若后续进入联邦方向，先单独评审对象标识、隐私边界和协议映射。
+- 不把 `UserBlock` 合并进 `UserFollow`，也不在圈子页面另存屏蔽方向、理由或本地用户黑名单。
 - Flutter 后续可承接同一关系链契约，但不要求复刻 Web 页面结构。
 
 ## 验证要点
@@ -108,4 +119,6 @@ Radish.Api/Controllers/UserFollowController.cs
 - 从圈子进入公开帖子详情或公开个人页后，应能返回原来的圈子 tab/page；新开标签和复制链接仍只保留公开 URL。
 - 公开主页 `/u/usr_...` 能被入口白名单识别并进入公开壳层。
 - 中英文切换后，圈子日期、数字、结果数量与 UserFollow 失败反馈应跟随当前语言；用户内容保持原文。
+- A 屏蔽 B 后双方关注立即消失，双方 feed / following / followers 均不再包含对方；解除后不会自动恢复。
+- 目标用户只看到通用不可互动状态，本人 `/me/blocked` 才显示自己建立的屏蔽并允许解除。
 - `radish.client` 构建、路由 / 回流测试、`UserFollow` 后端测试通过。

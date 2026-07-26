@@ -71,7 +71,10 @@ public class UserFollowController : ControllerBase
                 dto.TargetUserId,
                 Current.TenantId,
                 Current.UserName);
-            var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, dto.TargetUserId);
+            var status = await _userFollowService.GetFollowStatusAsync(
+                Current.UserId,
+                dto.TargetUserId,
+                Current.TenantId);
 
             return new MessageModel
             {
@@ -126,8 +129,12 @@ public class UserFollowController : ControllerBase
         var changed = await _userFollowService.UnfollowAsync(
             Current.UserId,
             dto.TargetUserId,
+            Current.TenantId,
             Current.UserName);
-        var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, dto.TargetUserId);
+        var status = await _userFollowService.GetFollowStatusAsync(
+            Current.UserId,
+            dto.TargetUserId,
+            Current.TenantId);
 
         return new MessageModel
         {
@@ -153,7 +160,10 @@ public class UserFollowController : ControllerBase
                 "error.user_follow.invalid_target_user");
         }
 
-        var status = await _userFollowService.GetFollowStatusAsync(Current.UserId, targetUserId);
+        var status = await _userFollowService.GetFollowStatusAsync(
+            Current.UserId,
+            targetUserId,
+            Current.TenantId);
         return new MessageModel
         {
             IsSuccess = true,
@@ -168,7 +178,11 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyFollowers(int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _userFollowService.GetMyFollowersAsync(Current.UserId, pageIndex, pageSize);
+        var result = await _userFollowService.GetMyFollowersAsync(
+            Current.UserId,
+            Current.TenantId,
+            pageIndex,
+            pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -183,7 +197,11 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyFollowing(int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _userFollowService.GetMyFollowingAsync(Current.UserId, pageIndex, pageSize);
+        var result = await _userFollowService.GetMyFollowingAsync(
+            Current.UserId,
+            Current.TenantId,
+            pageIndex,
+            pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -198,7 +216,11 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMyFollowingFeed(int pageIndex = 1, int pageSize = 20)
     {
-        var result = await _userFollowService.GetMyFollowingFeedAsync(Current.UserId, pageIndex, pageSize);
+        var result = await _userFollowService.GetMyFollowingFeedAsync(
+            Current.UserId,
+            Current.TenantId,
+            pageIndex,
+            pageSize);
         return new MessageModel
         {
             IsSuccess = true,
@@ -226,6 +248,7 @@ public class UserFollowController : ControllerBase
 
         var result = await _userFollowService.GetMyDistributionFeedAsync(
             Current.UserId,
+            Current.TenantId,
             normalizedStreamType,
             pageIndex,
             pageSize);
@@ -244,7 +267,9 @@ public class UserFollowController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetMySummary()
     {
-        var summary = await _userFollowService.GetMyFollowSummaryAsync(Current.UserId);
+        var summary = await _userFollowService.GetMyFollowSummaryAsync(
+            Current.UserId,
+            Current.TenantId);
         return new MessageModel
         {
             IsSuccess = true,

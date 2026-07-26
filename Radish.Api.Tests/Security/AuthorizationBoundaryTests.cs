@@ -49,11 +49,27 @@ public class AuthorizationBoundaryTests
     [InlineData("/api/v1/Experience/GetUserTransactions/10001", ConsolePermissions.ExperienceView)]
     [InlineData("/api/v1/Wiki/AdminGetById/10001", ConsolePermissions.DocsView)]
     [InlineData("/api/v1/Wiki/UpdateAccessPolicy/10001", ConsolePermissions.DocsPermissions)]
+    [InlineData("/api/v1/ContentModeration/GetCaseQueue", ConsolePermissions.ModerationView)]
+    [InlineData("/api/v1/ContentModeration/CaptureEvidence", ConsolePermissions.ModerationReview)]
+    [InlineData("/api/v1/ContentModeration/GetAppealQueue", ConsolePermissions.ModerationView)]
+    [InlineData("/api/v1/ContentModeration/ReviewAppeal", ConsolePermissions.ModerationAppeal)]
+    [InlineData("/api/v1/ContentModeration/ExecuteAppealRelief", ConsolePermissions.ModerationAction)]
+    [InlineData("/api/v1/ContentModeration/ApplyCorrectiveAction", ConsolePermissions.ModerationAction)]
     public void ConsolePermissions_ShouldResolveConsoleApiMappings(string apiUrl, string expectedPermission)
     {
         var permissions = ConsolePermissions.GetPermissionsByApiUrl(apiUrl);
 
         permissions.ShouldContain(expectedPermission);
+    }
+
+    [Theory]
+    [InlineData("/api/v1/ContentModeration/GetReviewQueue")]
+    [InlineData("/api/v1/ContentModeration/Review")]
+    [InlineData("/api/v1/ContentModeration/ApplyUserAction")]
+    [InlineData("/api/v1/ContentModeration/GetActionLogs")]
+    public void ConsolePermissions_ShouldNotResolveRetiredModerationApiMappings(string apiUrl)
+    {
+        ConsolePermissions.GetPermissionsByApiUrl(apiUrl).ShouldBeEmpty();
     }
 
     [Theory]
