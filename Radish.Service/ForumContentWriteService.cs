@@ -42,15 +42,18 @@ public class ForumContentWriteService : IForumContentWriteService
     private readonly IContentSubmissionService _contentSubmissionService;
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
+    private readonly IForumContentRevisionService? _contentRevisionService;
 
     public ForumContentWriteService(
         IContentSubmissionService contentSubmissionService,
         IPostService postService,
-        ICommentService commentService)
+        ICommentService commentService,
+        IForumContentRevisionService? contentRevisionService = null)
     {
         _contentSubmissionService = contentSubmissionService;
         _postService = postService;
         _commentService = commentService;
+        _contentRevisionService = contentRevisionService;
     }
 
     [UseTran]
@@ -105,6 +108,15 @@ public class ForumContentWriteService : IForumContentWriteService
             isQuestion,
             tagNames,
             allowCreateTag);
+        if (_contentRevisionService != null)
+        {
+            await _contentRevisionService.AppendPostRevisionAsync(
+                createdPostId,
+                ForumContentRevisionSourceTypes.Baseline,
+                null,
+                post.AuthorId,
+                post.AuthorName);
+        }
 
         await CompleteSuccessAsync(
             beginResult,
@@ -160,6 +172,15 @@ public class ForumContentWriteService : IForumContentWriteService
         EnsureStarted(beginResult);
 
         var (createdCommentId, createdHighlightRecheckResult) = await _commentService.AddCommentAsync(comment);
+        if (_contentRevisionService != null)
+        {
+            await _contentRevisionService.AppendCommentRevisionAsync(
+                createdCommentId,
+                ForumContentRevisionSourceTypes.Baseline,
+                null,
+                comment.AuthorId,
+                comment.AuthorName);
+        }
 
         await CompleteSuccessAsync(
             beginResult,
@@ -235,13 +256,14 @@ public class ForumContentWriteService : IForumContentWriteService
         long operatorId,
         string operatorName,
         bool isAdmin,
-        string? clientSubmissionId)
+        string? clientSubmissionId,
+        int expectedContentRevision = 1)
     {
         var currentPost = await _postService.GetPostDetailAsync(postId, operatorId);
         var effectiveCategoryId = categoryId ?? currentPost?.VoCategoryId;
         var snapshot = _contentSubmissionService.CreateRequestSnapshot(
-            BuildPostEditRequestValues(postId, title, content, effectiveCategoryId, tagNames),
-            BuildPostEditFingerprintValues(postId, title, content, effectiveCategoryId, tagNames));
+            BuildPostEditRequestValues(postId, title, content, effectiveCategoryId, tagNames, expectedContentRevision),
+            BuildPostEditFingerprintValues(postId, title, content, effectiveCategoryId, tagNames, expectedContentRevision));
         var beginResult = await _contentSubmissionService.BeginAsync(new ContentSubmissionBeginRequest
         {
             TenantId = tenantId,
@@ -256,14 +278,35 @@ public class ForumContentWriteService : IForumContentWriteService
             DuplicateWindowSeconds = EditDuplicateWindowSeconds
         });
 
+        if (_contentRevisionService != null &&
+            TryResolveReplay(beginResult, ContentSubmissionResultTypes.PostContentRevision, out var replayRevisionId))
+        {
+            var detail = await _contentRevisionService.GetPostRevisionDetailAsync(
+                replayRevisionId,
+                operatorId,
+                isAdmin);
+            var replayResult = new PostEditResult
+            {
+                PostId = detail.VoPostId,
+                RevisionId = replayRevisionId,
+                ContentRevision = detail.VoSummary.VoRevisionNumber
+            };
+            return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
+                ? ContentWriteResult<PostEditResult>.DuplicateContentResult(replayResult, beginResult.Message)
+                : ContentWriteResult<PostEditResult>.ReplayedResult(replayResult, beginResult.Message);
+        }
+
         if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.Post, out var replayPostId))
         {
+            var replayRevision = _contentRevisionService == null
+                ? null
+                : await _contentRevisionService.GetCurrentPostRevisionAsync(replayPostId);
             return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
                 ? ContentWriteResult<PostEditResult>.DuplicateContentResult(
-                    new PostEditResult { PostId = replayPostId },
+                    BuildPostEditResult(replayPostId, replayRevision),
                     beginResult.Message)
                 : ContentWriteResult<PostEditResult>.ReplayedResult(
-                    new PostEditResult { PostId = replayPostId },
+                    BuildPostEditResult(replayPostId, replayRevision),
                     beginResult.Message);
         }
 
@@ -271,9 +314,12 @@ public class ForumContentWriteService : IForumContentWriteService
 
         if (IsPostEditNoChange(currentPost, title, content, effectiveCategoryId, tagNames))
         {
+            var currentRevision = _contentRevisionService == null
+                ? null
+                : await _contentRevisionService.GetCurrentPostRevisionAsync(postId);
             await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
             return ContentWriteResult<PostEditResult>.NoChangeResult(
-                new PostEditResult { PostId = postId },
+                BuildPostEditResult(postId, currentRevision),
                 "内容没有变化，无需保存");
         }
 
@@ -286,10 +332,25 @@ public class ForumContentWriteService : IForumContentWriteService
             allowCreateTag,
             operatorId,
             operatorName,
-            isAdmin);
+            isAdmin,
+            expectedContentRevision);
 
-        await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Post, postId, currentPost?.VoPublicId);
-        return ContentWriteResult<PostEditResult>.CreatedResult(new PostEditResult { PostId = postId });
+        var revision = _contentRevisionService == null
+            ? null
+            : await _contentRevisionService.AppendPostRevisionAsync(
+                postId,
+                ForumContentRevisionSourceTypes.Edit,
+                null,
+                operatorId,
+                operatorName);
+        await CompleteSuccessAsync(
+            beginResult,
+            revision == null
+                ? ContentSubmissionResultTypes.Post
+                : ContentSubmissionResultTypes.PostContentRevision,
+            revision?.VoRevisionId ?? postId,
+            revision == null ? currentPost?.VoPublicId : null);
+        return ContentWriteResult<PostEditResult>.CreatedResult(BuildPostEditResult(postId, revision));
     }
 
     [UseTran]
@@ -300,12 +361,13 @@ public class ForumContentWriteService : IForumContentWriteService
         long operatorId,
         string operatorName,
         bool isAdmin,
-        string? clientSubmissionId)
+        string? clientSubmissionId,
+        int expectedContentRevision = 1)
     {
         var currentComment = await _commentService.QueryFirstAsync(comment => comment.Id == commentId && !comment.IsDeleted);
         var snapshot = _contentSubmissionService.CreateRequestSnapshot(
-            BuildCommentEditRequestValues(commentId, content),
-            BuildCommentEditFingerprintValues(commentId, content));
+            BuildCommentEditRequestValues(commentId, content, expectedContentRevision),
+            BuildCommentEditFingerprintValues(commentId, content, expectedContentRevision));
         var beginResult = await _contentSubmissionService.BeginAsync(new ContentSubmissionBeginRequest
         {
             TenantId = tenantId,
@@ -320,14 +382,34 @@ public class ForumContentWriteService : IForumContentWriteService
             DuplicateWindowSeconds = EditDuplicateWindowSeconds
         });
 
+        if (_contentRevisionService != null &&
+            TryResolveReplay(beginResult, ContentSubmissionResultTypes.CommentContentRevision, out var replayRevisionId))
+        {
+            var detail = await _contentRevisionService.GetCommentRevisionDetailAsync(
+                replayRevisionId,
+                operatorId,
+                isAdmin);
+            var replayResult = new CommentEditResult
+            {
+                CommentId = detail.VoCommentId,
+                PostId = detail.VoPostId,
+                ParentId = currentComment?.VoParentId,
+                RevisionId = replayRevisionId,
+                ContentRevision = detail.VoSummary.VoRevisionNumber
+            };
+            return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
+                ? ContentWriteResult<CommentEditResult>.DuplicateContentResult(replayResult, beginResult.Message)
+                : ContentWriteResult<CommentEditResult>.ReplayedResult(replayResult, beginResult.Message);
+        }
+
         if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.Comment, out var replayCommentId))
         {
             return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
                 ? ContentWriteResult<CommentEditResult>.DuplicateContentResult(
-                    BuildCommentEditResult(replayCommentId, currentComment),
+                    await BuildCommentEditResultAsync(replayCommentId, currentComment),
                     beginResult.Message)
                 : ContentWriteResult<CommentEditResult>.ReplayedResult(
-                    BuildCommentEditResult(replayCommentId, currentComment),
+                    await BuildCommentEditResultAsync(replayCommentId, currentComment),
                     beginResult.Message);
         }
 
@@ -337,7 +419,7 @@ public class ForumContentWriteService : IForumContentWriteService
         {
             await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
             return ContentWriteResult<CommentEditResult>.NoChangeResult(
-                BuildCommentEditResult(commentId, currentComment),
+                await BuildCommentEditResultAsync(commentId, currentComment),
                 "内容没有变化，无需保存");
         }
 
@@ -346,14 +428,153 @@ public class ForumContentWriteService : IForumContentWriteService
             content,
             operatorId,
             operatorName,
-            isAdmin);
+            isAdmin,
+            expectedContentRevision);
         if (!success)
         {
             throw new InvalidOperationException(message);
         }
 
-        await CompleteSuccessAsync(beginResult, ContentSubmissionResultTypes.Comment, commentId, null);
-        return ContentWriteResult<CommentEditResult>.CreatedResult(BuildCommentEditResult(commentId, currentComment), message);
+        var revision = _contentRevisionService == null
+            ? null
+            : await _contentRevisionService.AppendCommentRevisionAsync(
+                commentId,
+                ForumContentRevisionSourceTypes.Edit,
+                null,
+                operatorId,
+                operatorName);
+        await CompleteSuccessAsync(
+            beginResult,
+            revision == null
+                ? ContentSubmissionResultTypes.Comment
+                : ContentSubmissionResultTypes.CommentContentRevision,
+            revision?.VoRevisionId ?? commentId,
+            null);
+        return ContentWriteResult<CommentEditResult>.CreatedResult(
+            BuildCommentEditResult(commentId, currentComment, revision),
+            message);
+    }
+
+    [UseTran]
+    public async Task<ContentWriteResult<PostEditResult>> RestorePostRevisionAsync(
+        long tenantId,
+        long postId,
+        long revisionId,
+        int expectedContentRevision,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId)
+    {
+        var revisionService = RequireRevisionService();
+        var snapshot = _contentSubmissionService.CreateRequestSnapshot(
+            BuildRestoreRequestValues(postId, revisionId, expectedContentRevision),
+            BuildRestoreRequestValues(postId, revisionId, expectedContentRevision));
+        var beginResult = await _contentSubmissionService.BeginAsync(new ContentSubmissionBeginRequest
+        {
+            TenantId = tenantId,
+            UserId = operatorId,
+            OperationType = ContentSubmissionOperationTypes.ForumPostRevisionRestore,
+            ClientSubmissionId = clientSubmissionId,
+            TargetType = PostTargetType,
+            TargetId = postId,
+            RequestDigest = snapshot.RequestDigest,
+            RequestSummary = snapshot.RequestSummary,
+            ContentFingerprint = snapshot.ContentFingerprint,
+            DuplicateWindowSeconds = EditDuplicateWindowSeconds
+        });
+
+        if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.PostContentRevision, out var replayRevisionId))
+        {
+            var detail = await revisionService.GetPostRevisionDetailAsync(replayRevisionId, operatorId, isAdmin);
+            var replayResult = new PostEditResult
+            {
+                PostId = detail.VoPostId,
+                RevisionId = replayRevisionId,
+                ContentRevision = detail.VoSummary.VoRevisionNumber
+            };
+            return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
+                ? ContentWriteResult<PostEditResult>.DuplicateContentResult(replayResult, beginResult.Message)
+                : ContentWriteResult<PostEditResult>.ReplayedResult(replayResult, beginResult.Message);
+        }
+
+        EnsureRestoreStarted(beginResult);
+        var restored = await revisionService.RestorePostAsync(
+            postId,
+            revisionId,
+            expectedContentRevision,
+            operatorId,
+            operatorName,
+            isAdmin);
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.PostContentRevision,
+            restored.VoRevisionId,
+            null);
+        return ContentWriteResult<PostEditResult>.CreatedResult(BuildPostEditResult(postId, restored));
+    }
+
+    [UseTran]
+    public async Task<ContentWriteResult<CommentEditResult>> RestoreCommentRevisionAsync(
+        long tenantId,
+        long commentId,
+        long revisionId,
+        int expectedContentRevision,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId)
+    {
+        var revisionService = RequireRevisionService();
+        var currentComment = await _commentService.QueryFirstAsync(comment => comment.Id == commentId && !comment.IsDeleted);
+        var snapshot = _contentSubmissionService.CreateRequestSnapshot(
+            BuildRestoreRequestValues(commentId, revisionId, expectedContentRevision),
+            BuildRestoreRequestValues(commentId, revisionId, expectedContentRevision));
+        var beginResult = await _contentSubmissionService.BeginAsync(new ContentSubmissionBeginRequest
+        {
+            TenantId = tenantId,
+            UserId = operatorId,
+            OperationType = ContentSubmissionOperationTypes.ForumCommentRevisionRestore,
+            ClientSubmissionId = clientSubmissionId,
+            TargetType = CommentTargetType,
+            TargetId = commentId,
+            RequestDigest = snapshot.RequestDigest,
+            RequestSummary = snapshot.RequestSummary,
+            ContentFingerprint = snapshot.ContentFingerprint,
+            DuplicateWindowSeconds = EditDuplicateWindowSeconds
+        });
+
+        if (TryResolveReplay(beginResult, ContentSubmissionResultTypes.CommentContentRevision, out var replayRevisionId))
+        {
+            var detail = await revisionService.GetCommentRevisionDetailAsync(replayRevisionId, operatorId, isAdmin);
+            var replayResult = new CommentEditResult
+            {
+                CommentId = detail.VoCommentId,
+                PostId = detail.VoPostId,
+                ParentId = currentComment?.VoParentId,
+                RevisionId = replayRevisionId,
+                ContentRevision = detail.VoSummary.VoRevisionNumber
+            };
+            return beginResult.Status == ContentSubmissionBeginStatus.DuplicateContent
+                ? ContentWriteResult<CommentEditResult>.DuplicateContentResult(replayResult, beginResult.Message)
+                : ContentWriteResult<CommentEditResult>.ReplayedResult(replayResult, beginResult.Message);
+        }
+
+        EnsureRestoreStarted(beginResult);
+        var restored = await revisionService.RestoreCommentAsync(
+            commentId,
+            revisionId,
+            expectedContentRevision,
+            operatorId,
+            operatorName,
+            isAdmin);
+        await CompleteSuccessAsync(
+            beginResult,
+            ContentSubmissionResultTypes.CommentContentRevision,
+            restored.VoRevisionId,
+            null);
+        return ContentWriteResult<CommentEditResult>.CreatedResult(
+            BuildCommentEditResult(commentId, currentComment, restored));
     }
 
     private async Task<PostQuestionVo> ResolveQuestionAsync(long postId, long viewerUserId)
@@ -685,6 +906,21 @@ public class ForumContentWriteService : IForumContentWriteService
         };
     }
 
+    private static void EnsureRestoreStarted(ContentSubmissionBeginResult beginResult)
+    {
+        if (beginResult.Status == ContentSubmissionBeginStatus.Conflict)
+        {
+            throw new BusinessException(
+                beginResult.Message ?? "该恢复操作标识已用于其他请求，请刷新后重试",
+                (int)HttpStatusCodeEnum.Conflict,
+                ForumContentRevisionErrorCodes.RestoreKeyConflict,
+                ForumContentRevisionErrorCodes.ResolveMessageKey(
+                    ForumContentRevisionErrorCodes.RestoreKeyConflict));
+        }
+
+        EnsureStarted(beginResult);
+    }
+
     private async Task CompleteSuccessAsync(
         ContentSubmissionBeginResult beginResult,
         string resultType,
@@ -783,7 +1019,8 @@ public class ForumContentWriteService : IForumContentWriteService
         string title,
         string content,
         long? categoryId,
-        List<string>? tagNames)
+        List<string>? tagNames,
+        int expectedContentRevision)
     {
         return new Dictionary<string, object?>
         {
@@ -791,7 +1028,8 @@ public class ForumContentWriteService : IForumContentWriteService
             ["title"] = title,
             ["content"] = content,
             ["categoryId"] = categoryId,
-            ["tagNames"] = NormalizeTagNames(tagNames)
+            ["tagNames"] = NormalizeTagNames(tagNames),
+            ["expectedContentRevision"] = expectedContentRevision
         };
     }
 
@@ -800,23 +1038,31 @@ public class ForumContentWriteService : IForumContentWriteService
         string title,
         string content,
         long? categoryId,
-        List<string>? tagNames)
+        List<string>? tagNames,
+        int expectedContentRevision)
     {
-        return BuildPostEditRequestValues(postId, title, content, categoryId, tagNames);
+        return BuildPostEditRequestValues(postId, title, content, categoryId, tagNames, expectedContentRevision);
     }
 
-    private static IReadOnlyDictionary<string, object?> BuildCommentEditRequestValues(long commentId, string content)
+    private static IReadOnlyDictionary<string, object?> BuildCommentEditRequestValues(
+        long commentId,
+        string content,
+        int expectedContentRevision)
     {
         return new Dictionary<string, object?>
         {
             ["commentId"] = commentId,
-            ["content"] = content
+            ["content"] = content,
+            ["expectedContentRevision"] = expectedContentRevision
         };
     }
 
-    private static IReadOnlyDictionary<string, object?> BuildCommentEditFingerprintValues(long commentId, string content)
+    private static IReadOnlyDictionary<string, object?> BuildCommentEditFingerprintValues(
+        long commentId,
+        string content,
+        int expectedContentRevision)
     {
-        return BuildCommentEditRequestValues(commentId, content);
+        return BuildCommentEditRequestValues(commentId, content, expectedContentRevision);
     }
 
     private static bool IsPostEditNoChange(
@@ -844,13 +1090,57 @@ public class ForumContentWriteService : IForumContentWriteService
             string.Equals(currentComment.VoContent?.Trim(), content.Trim(), StringComparison.Ordinal);
     }
 
-    private static CommentEditResult BuildCommentEditResult(long commentId, CommentVo? currentComment)
+    private async Task<CommentEditResult> BuildCommentEditResultAsync(long commentId, CommentVo? currentComment)
+    {
+        var revision = _contentRevisionService == null
+            ? null
+            : await _contentRevisionService.GetCurrentCommentRevisionAsync(commentId);
+        return BuildCommentEditResult(commentId, currentComment, revision);
+    }
+
+    private static CommentEditResult BuildCommentEditResult(
+        long commentId,
+        CommentVo? currentComment,
+        ForumContentRevisionWriteResult? revision)
     {
         return new CommentEditResult
         {
             CommentId = commentId,
             PostId = currentComment?.VoPostId ?? 0,
-            ParentId = currentComment?.VoParentId
+            ParentId = currentComment?.VoParentId,
+            RevisionId = revision?.VoRevisionId ?? 0,
+            ContentRevision = revision?.VoContentRevision ?? currentComment?.VoContentRevision ?? 1
+        };
+    }
+
+    private static PostEditResult BuildPostEditResult(
+        long postId,
+        ForumContentRevisionWriteResult? revision)
+    {
+        return new PostEditResult
+        {
+            PostId = postId,
+            RevisionId = revision?.VoRevisionId ?? 0,
+            ContentRevision = revision?.VoContentRevision ?? 1
+        };
+    }
+
+    private IForumContentRevisionService RequireRevisionService()
+    {
+        return _contentRevisionService
+            ?? throw new InvalidOperationException("论坛内容版本服务未注册");
+    }
+
+    private static IReadOnlyDictionary<string, object?> BuildRestoreRequestValues(
+        long targetId,
+        long revisionId,
+        int expectedContentRevision)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["targetId"] = targetId,
+            ["revisionId"] = revisionId,
+            ["expectedContentRevision"] = expectedContentRevision
         };
     }
 

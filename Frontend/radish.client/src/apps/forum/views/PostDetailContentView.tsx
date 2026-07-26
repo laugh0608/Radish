@@ -75,7 +75,11 @@ interface PostDetailContentViewProps {
   onDeleteQuickReply: (quickReplyId: LongId) => Promise<void>;
   onCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   onDeleteComment: (commentId: LongId) => void;
-  onEditComment: (commentId: LongId, newContent: string) => Promise<void>;
+  onEditComment: (
+    commentId: LongId,
+    newContent: string,
+    expectedContentRevision: number
+  ) => Promise<void>;
   onCancelEditComment: () => void;
   onViewCommentHistory: (commentId: LongId) => void;
   onLikeComment: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;

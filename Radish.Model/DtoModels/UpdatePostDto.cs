@@ -23,6 +23,10 @@ public class UpdatePostDto
     [StringLength(50000, MinimumLength = 1, ErrorMessage = "帖子内容长度必须在1-50000个字符之间")]
     public string Content { get; set; } = string.Empty;
 
+    /// <summary>提交时看到的当前内容版本号，用于防止并发覆盖</summary>
+    [Range(1, int.MaxValue, ErrorMessage = "expectedContentRevision 必须大于0")]
+    public int ExpectedContentRevision { get; set; }
+
     /// <summary>客户端提交意图 ID，用于网络重试和重复提交保护</summary>
     [StringLength(80, ErrorMessage = "clientSubmissionId 长度不能超过 80 个字符")]
     public string? ClientSubmissionId { get; set; }

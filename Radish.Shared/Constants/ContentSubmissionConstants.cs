@@ -8,6 +8,8 @@ public static class ContentSubmissionOperationTypes
     public const string ForumAnswerCreate = "ForumAnswerCreate";
     public const string ForumPostEdit = "ForumPostEdit";
     public const string ForumCommentEdit = "ForumCommentEdit";
+    public const string ForumPostRevisionRestore = "ForumPostRevisionRestore";
+    public const string ForumCommentRevisionRestore = "ForumCommentRevisionRestore";
 }
 
 /// <summary>论坛内容提交处理状态。</summary>
@@ -24,4 +26,6 @@ public static class ContentSubmissionResultTypes
     public const string Post = "Post";
     public const string Comment = "Comment";
     public const string PostQuestion = "PostQuestion";
+    public const string PostContentRevision = "PostContentRevision";
+    public const string CommentContentRevision = "CommentContentRevision";
 }

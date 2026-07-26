@@ -1162,11 +1162,23 @@ export const PublicForumDetail = ({
     categoryId: LongId,
     tagNames: string[]
   ) => {
+    if (!post || !isSameLongId(post.voId, targetPostId)) {
+      throw new Error(t('forum.public.postEditFailed'));
+    }
+
+    const expectedContentRevision = post.voContentRevision;
     const normalizedTagNames = normalizeTagNames(tagNames);
     const submissionState = createClientSubmissionState(
       postEditSubmissionRef.current,
       'forum-post-edit',
-      buildPostEditSubmissionFingerprint(targetPostId, title, content, categoryId, normalizedTagNames)
+      buildPostEditSubmissionFingerprint(
+        targetPostId,
+        title,
+        content,
+        categoryId,
+        normalizedTagNames,
+        expectedContentRevision
+      )
     );
     postEditSubmissionRef.current = submissionState;
 
@@ -1177,7 +1189,8 @@ export const PublicForumDetail = ({
         content,
         clientSubmissionId: submissionState.clientSubmissionId,
         categoryId,
-        tagNames: normalizedTagNames
+        tagNames: normalizedTagNames,
+        expectedContentRevision
       }, t);
       postEditSubmissionRef.current = null;
       setIsEditModalOpen(false);
@@ -1188,7 +1201,7 @@ export const PublicForumDetail = ({
       toast.error(message || t('forum.public.postEditFailed'));
       throw error;
     }
-  }, [normalizeTagNames, t]);
+  }, [normalizeTagNames, post, t]);
 
   useEffect(() => {
     if (!post?.voId || (intent !== 'answer' && intent !== 'edit' && intent !== 'history')) {
@@ -1295,6 +1308,7 @@ export const PublicForumDetail = ({
         voId: createdCommentId,
         voPostId: post.voId,
         voContent: normalizedContent,
+        voContentRevision: 1,
         voAuthorId: currentUserId || '0',
         voAuthorName: currentUserName?.trim() || t('common.unknownUser'),
         voAuthorAvatarUrl: currentUserAvatarUrl,

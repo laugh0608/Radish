@@ -705,4 +705,37 @@
   <data name="error.user_block.operation_key_invalid" xml:space="preserve">
     <value>The operation key is invalid.</value>
   </data>
+  <data name="error.forum.revision_not_found" xml:space="preserve">
+    <value>The content revision does not exist.</value>
+  </data>
+  <data name="error.forum.revision_access_denied" xml:space="preserve">
+    <value>This account cannot view or restore the content revision.</value>
+  </data>
+  <data name="error.forum.revision_incomplete" xml:space="preserve">
+    <value>This historical revision is incomplete and cannot be restored.</value>
+  </data>
+  <data name="error.forum.revision_conflict" xml:space="preserve">
+    <value>The content changed. Refresh and try again.</value>
+  </data>
+  <data name="error.forum.revision_category_unavailable" xml:space="preserve">
+    <value>The category referenced by this revision is unavailable.</value>
+  </data>
+  <data name="error.forum.revision_tag_unavailable" xml:space="preserve">
+    <value>One or more tags referenced by this revision are unavailable.</value>
+  </data>
+  <data name="error.forum.revision_attachment_unavailable" xml:space="preserve">
+    <value>One or more attachments referenced by this revision are unavailable.</value>
+  </data>
+  <data name="error.forum.revision_content_rejected" xml:space="preserve">
+    <value>This revision does not satisfy the current content rules.</value>
+  </data>
+  <data name="error.forum.revision_edit_limit_reached" xml:space="preserve">
+    <value>The content has reached its edit limit.</value>
+  </data>
+  <data name="error.forum.comment_revision_window_expired" xml:space="preserve">
+    <value>The comment is outside the allowed edit and restore window.</value>
+  </data>
+  <data name="error.forum.revision_restore_key_conflict" xml:space="preserve">
+    <value>This restore operation key was already used for another request. Refresh and try again.</value>
+  </data>
 </root>

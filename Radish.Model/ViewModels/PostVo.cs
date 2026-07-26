@@ -136,6 +136,11 @@ public class PostVo
     public int VoCommentCount { get; set; }
 
     /// <summary>
+    /// 当前作者内容版本号
+    /// </summary>
+    public int VoContentRevision { get; set; }
+
+    /// <summary>
     /// 收藏次数
     /// </summary>
     public int VoCollectCount { get; set; }

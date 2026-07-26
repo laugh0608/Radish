@@ -27,7 +27,11 @@ interface CommentNodeProps {
   pageSize?: number; // 每次加载子评论数量
   isGodComment?: boolean; // 是否是神评
   onDelete?: (commentId: LongId) => void;
-  onEdit?: (commentId: LongId, newContent: string) => Promise<void>;
+  onEdit?: (
+    commentId: LongId,
+    newContent: string,
+    expectedContentRevision: number
+  ) => Promise<void>;
   onCancelEdit?: () => void;
   onViewHistory?: (commentId: LongId) => void;
   onLike?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
@@ -464,7 +468,7 @@ export const CommentNode = ({
 
     setIsSubmitting(true);
     try {
-      await onEdit(node.voId, editContent.trim());
+      await onEdit(node.voId, editContent.trim(), node.voContentRevision);
       setEditError(null);
       setIsEditing(false);
     } catch (error) {

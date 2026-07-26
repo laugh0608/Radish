@@ -1,6 +1,8 @@
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 
 namespace Radish.Service;
 
@@ -19,7 +21,10 @@ public partial class PostService
         bool allowCreateTag,
         long operatorId,
         string operatorName,
-        bool isAdmin = false)
+        bool isAdmin = false,
+        int expectedContentRevision = 1,
+        bool updateCover = false,
+        long? coverAttachmentId = null)
     {
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -39,10 +44,22 @@ public partial class PostService
             throw new InvalidOperationException("帖子不存在");
         }
 
+        if (expectedContentRevision <= 0 || post.ContentRevision != expectedContentRevision)
+        {
+            throw CreateRevisionConflictException();
+        }
+
         var trimmedTitle = title.Trim();
         var trimmedContent = content.Trim();
         var targetCategoryId = categoryId ?? post.CategoryId;
-        if (await IsPostEditNoChangeAsync(post, trimmedTitle, trimmedContent, targetCategoryId, normalizedTagNames))
+        if (await IsPostEditNoChangeAsync(
+                post,
+                trimmedTitle,
+                trimmedContent,
+                targetCategoryId,
+                normalizedTagNames,
+                updateCover,
+                coverAttachmentId))
         {
             return;
         }
@@ -50,9 +67,7 @@ public partial class PostService
         var contentSettings = await ValidatePostContentSettingsAsync(trimmedTitle, trimmedContent);
 
         var postOptions = _editHistoryOptions.Post;
-        var historyEnabled = _editHistoryOptions.Enable && postOptions.EnableHistory;
-        var historyEditCount = await _postEditHistoryRepository.QueryCountAsync(h => h.PostId == postId);
-        var existingEditCount = Math.Max(post.EditCount, historyEditCount);
+        var existingEditCount = post.EditCount;
 
         if (!isAdmin || !_editHistoryOptions.AdminOverride.BypassEditCountLimit)
         {
@@ -62,7 +77,18 @@ public partial class PostService
             }
         }
 
-        if (targetCategoryId > 0 && targetCategoryId != post.CategoryId)
+        if (targetCategoryId <= 0)
+        {
+            throw new InvalidOperationException("帖子分类不存在或不可用");
+        }
+
+        var targetCategory = await _categoryRepository.QueryByIdAsync(targetCategoryId);
+        if (targetCategory == null || targetCategory.IsDeleted || !targetCategory.IsEnabled)
+        {
+            throw new InvalidOperationException("帖子分类不存在或不可用");
+        }
+
+        if (targetCategoryId != post.CategoryId)
         {
             var oldCategory = await _categoryRepository.QueryByIdAsync(post.CategoryId);
             if (oldCategory != null)
@@ -71,54 +97,52 @@ public partial class PostService
                 await _categoryRepository.UpdateAsync(oldCategory);
             }
 
-            var newCategory = await _categoryRepository.QueryByIdAsync(targetCategoryId);
-            if (newCategory != null)
-            {
-                newCategory.PostCount++;
-                await _categoryRepository.UpdateAsync(newCategory);
-            }
+            targetCategory.PostCount++;
+            await _categoryRepository.UpdateAsync(targetCategory);
         }
 
         var safeOperatorName = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName;
         var nextEditSequence = existingEditCount + 1;
-
-        if (historyEnabled && nextEditSequence <= Math.Max(0, postOptions.HistorySaveEditCount))
-        {
-            await _postEditHistoryRepository.AddAsync(new PostEditHistory
-            {
-                PostId = postId,
-                EditSequence = nextEditSequence,
-                OldTitle = post.Title,
-                NewTitle = trimmedTitle,
-                OldContent = post.Content,
-                NewContent = trimmedContent,
-                EditorId = operatorId,
-                EditorName = safeOperatorName,
-                EditedAt = DateTime.Now,
-                TenantId = post.TenantId,
-                CreateTime = DateTime.Now,
-                CreateBy = safeOperatorName,
-                CreateId = operatorId
-            });
-        }
 
         post.Title = trimmedTitle;
         post.Content = trimmedContent;
         ApplyPostSummarySettings(post, contentSettings);
         post.CategoryId = targetCategoryId;
         post.EditCount = nextEditSequence;
+        post.ContentRevision = expectedContentRevision + 1;
+        if (updateCover)
+        {
+            post.CoverAttachmentId = coverAttachmentId;
+        }
         post.ModifyTime = DateTime.Now;
         post.ModifyBy = safeOperatorName;
         post.ModifyId = operatorId;
 
-        await _postRepository.UpdateAsync(post);
+        var affectedRows = await _postRepository.UpdateColumnsAsync(
+            current => new Post
+            {
+                Title = post.Title,
+                Content = post.Content,
+                Summary = post.Summary,
+                CategoryId = post.CategoryId,
+                CoverAttachmentId = post.CoverAttachmentId,
+                EditCount = post.EditCount,
+                ContentRevision = post.ContentRevision,
+                ModifyTime = post.ModifyTime,
+                ModifyBy = post.ModifyBy,
+                ModifyId = post.ModifyId
+            },
+            current =>
+                current.Id == postId &&
+                !current.IsDeleted &&
+                current.ContentRevision == expectedContentRevision);
+        if (affectedRows != 1)
+        {
+            throw CreateRevisionConflictException();
+        }
+
         await BindReferencedAttachmentsAsync(trimmedContent, BusinessType.Post, postId, operatorId, safeOperatorName, post.TenantId);
         await SyncPostTagsAsync(postId, operatorId, safeOperatorName, normalizedTagNames, allowCreateTag);
-
-        if (historyEnabled)
-        {
-            await TrimPostHistoryAsync(postId, Math.Max(1, postOptions.MaxHistoryRecords));
-        }
     }
 
     private async Task<bool> IsPostEditNoChangeAsync(
@@ -126,11 +150,14 @@ public partial class PostService
         string trimmedTitle,
         string trimmedContent,
         long targetCategoryId,
-        List<string> normalizedTagNames)
+        List<string> normalizedTagNames,
+        bool updateCover,
+        long? coverAttachmentId)
     {
         if (!string.Equals(post.Title?.Trim(), trimmedTitle, StringComparison.Ordinal) ||
             !string.Equals(post.Content?.Trim(), trimmedContent, StringComparison.Ordinal) ||
-            post.CategoryId != targetCategoryId)
+            post.CategoryId != targetCategoryId ||
+            (updateCover && post.CoverAttachmentId != coverAttachmentId))
         {
             return false;
         }
@@ -159,6 +186,15 @@ public partial class PostService
             .ToList();
 
         return existingTagNames.SequenceEqual(requestedTagNames, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static BusinessException CreateRevisionConflictException()
+    {
+        return new BusinessException(
+            "内容已被更新，请刷新后重试",
+            409,
+            ForumContentRevisionErrorCodes.Conflict,
+            ForumContentRevisionErrorCodes.ResolveMessageKey(ForumContentRevisionErrorCodes.Conflict));
     }
 
     public async Task<(List<PostEditHistoryVo> histories, int total)> GetPostEditHistoryPageAsync(long postId, int pageIndex, int pageSize)

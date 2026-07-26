@@ -1617,7 +1617,7 @@ public class PostServiceTest
     }
 
     [Fact]
-    public async Task UpdatePostAsync_Should_Create_EditHistory_When_QuestionPostIsUpdated()
+    public async Task UpdatePostAsync_Should_UseContentRevisionCas_When_QuestionPostIsUpdated()
     {
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var userPostLikeRepository = new Mock<IBaseRepository<UserPostLike>>(MockBehavior.Strict);
@@ -1661,14 +1661,18 @@ public class PostServiceTest
             .Setup(repository => repository.QueryByIdAsync(2001))
             .ReturnsAsync(post);
         postRepository
-            .Setup(repository => repository.UpdateAsync(It.Is<Post>(item =>
-                item.Id == 2001 &&
-                item.Title == "更新后的问题标题" &&
-                item.Content == "更新后的问题内容已经补充完整" &&
-                item.EditCount == 1 &&
-                item.ModifyBy == "Owner" &&
-                item.ModifyId == 9527)))
-            .ReturnsAsync(true);
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Post, Post>>>(),
+                It.IsAny<Expression<Func<Post, bool>>>()))
+            .ReturnsAsync(1);
+        categoryRepository
+            .Setup(repository => repository.QueryByIdAsync(101))
+            .ReturnsAsync(new Category("问答")
+            {
+                Id = 101,
+                IsEnabled = true,
+                IsDeleted = false
+            });
 
         postTagRepository
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>()))
@@ -1690,39 +1694,6 @@ public class PostServiceTest
                 var predicate = expression.Compile();
                 return tags.Where(predicate).ToList();
             });
-
-        postEditHistoryRepository
-            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<PostEditHistory, bool>>?>()))
-            .ReturnsAsync(0);
-        postEditHistoryRepository
-            .Setup(repository => repository.AddAsync(It.Is<PostEditHistory>(history =>
-                history.PostId == 2001 &&
-                history.EditSequence == 1 &&
-                history.OldTitle == "原问题标题" &&
-                history.NewTitle == "更新后的问题标题" &&
-                history.OldContent == "原问题内容" &&
-                history.NewContent == "更新后的问题内容已经补充完整" &&
-                history.EditorId == 9527 &&
-                history.EditorName == "Owner" &&
-                history.TenantId == 9 &&
-                history.CreateBy == "Owner" &&
-                history.CreateId == 9527)))
-            .ReturnsAsync(7001);
-        postEditHistoryRepository
-            .Setup(repository => repository.QueryWithOrderAsync(
-                It.IsAny<Expression<Func<PostEditHistory, bool>>?>(),
-                It.IsAny<Expression<Func<PostEditHistory, object>>>(),
-                OrderByType.Desc,
-                0))
-            .ReturnsAsync(
-            [
-                new PostEditHistory
-                {
-                    Id = 7001,
-                    PostId = 2001,
-                    EditSequence = 1
-                }
-            ]);
 
         var service = new PostService(
             mapper.Object,
@@ -1770,6 +1741,9 @@ public class PostServiceTest
         postTagRepository.VerifyAll();
         tagRepository.VerifyAll();
         postEditHistoryRepository.VerifyAll();
+        postEditHistoryRepository.Verify(
+            repository => repository.AddAsync(It.IsAny<PostEditHistory>()),
+            Times.Never);
     }
 
     [Fact]

@@ -44,6 +44,7 @@ internal static class SchemaMigrationRegistry
         ChatModerationReliefSchemaMigration.Instance,
         UserBlockAuthoritySchemaMigration.Instance,
         WikiAttachmentAuthoritySchemaMigration.Instance,
+        ForumContentRevisionSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance,
         UserBlockNotificationSuppressionSchemaMigration.Instance

@@ -874,7 +874,8 @@ public class PostControllerTest
             .ReturnsAsync(new PostVo
             {
                 VoId = 9527,
-                VoTitle = "问答帖"
+                VoTitle = "问答帖",
+                VoAuthorId = 10001
             });
         postServiceMock
             .Setup(service => service.GetPostEditHistoryPageAsync(9527, 1, 10))

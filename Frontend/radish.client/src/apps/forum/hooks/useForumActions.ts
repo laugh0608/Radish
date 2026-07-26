@@ -119,7 +119,11 @@ export interface ForumActionsHandlers {
   handleReplyComment: (target: CommentReplyTarget) => void;
   handleCancelReply: () => void;
   handleCommentLike: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
-  handleEditComment: (commentId: LongId, newContent: string) => Promise<void>;
+  handleEditComment: (
+    commentId: LongId,
+    newContent: string,
+    expectedContentRevision: number
+  ) => Promise<void>;
   handleCancelCommentEdit: () => void;
   handleViewCommentHistory: (commentId: LongId) => Promise<void>;
   handleDeleteComment: (commentId: LongId) => void;
@@ -693,13 +697,25 @@ export const useForumActions = (
 
   // 保存编辑
   const handleSaveEdit = async (postId: LongId, title: string, content: string, categoryId: LongId, tagNames: string[]) => {
+    if (!selectedPost || String(selectedPost.voId) !== String(postId)) {
+      throw new Error('帖子详情已变化，请刷新后重试');
+    }
+
+    const expectedContentRevision = selectedPost.voContentRevision;
     setError(null);
     try {
       const normalizedTagNames = normalizeTagNames(tagNames);
       const submissionState = createClientSubmissionState(
         postEditSubmissionRef.current,
         'forum-post-edit',
-        buildPostEditSubmissionFingerprint(postId, title, content, categoryId, normalizedTagNames)
+        buildPostEditSubmissionFingerprint(
+          postId,
+          title,
+          content,
+          categoryId,
+          normalizedTagNames,
+          expectedContentRevision
+        )
       );
       postEditSubmissionRef.current = submissionState;
 
@@ -710,7 +726,8 @@ export const useForumActions = (
           content,
           clientSubmissionId: submissionState.clientSubmissionId,
           categoryId,
-          tagNames: normalizedTagNames
+          tagNames: normalizedTagNames,
+          expectedContentRevision
         },
         t
       );
@@ -928,6 +945,7 @@ export const useForumActions = (
         voId: commentId,
         voPostId: selectedPost.voId,
         voContent: content.trim(),
+        voContentRevision: 1,
         voAuthorId: userId,
         voAuthorName: authorName,
         voAuthorAvatarUrl: authorAvatarUrl,
@@ -1002,7 +1020,11 @@ export const useForumActions = (
   };
 
   // 编辑评论
-  const handleEditComment = async (commentId: LongId, newContent: string): Promise<void> => {
+  const handleEditComment = async (
+    commentId: LongId,
+    newContent: string,
+    expectedContentRevision: number
+  ): Promise<void> => {
     if (!selectedPost) {
       setError('请先选择帖子');
       throw new Error('未选择帖子');
@@ -1013,7 +1035,7 @@ export const useForumActions = (
       const submissionState = createClientSubmissionState(
         commentEditSubmissionRef.current,
         'forum-comment-edit',
-        buildCommentEditSubmissionFingerprint(commentId, newContent)
+        buildCommentEditSubmissionFingerprint(commentId, newContent, expectedContentRevision)
       );
       commentEditSubmissionRef.current = submissionState;
 
@@ -1021,7 +1043,8 @@ export const useForumActions = (
         {
           commentId,
           content: newContent,
-          clientSubmissionId: submissionState.clientSubmissionId
+          clientSubmissionId: submissionState.clientSubmissionId,
+          expectedContentRevision
         },
         t
       );

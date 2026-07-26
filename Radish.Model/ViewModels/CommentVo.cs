@@ -96,6 +96,11 @@ public class CommentVo
     public int VoReplyCount { get; set; }
 
     /// <summary>
+    /// 当前作者内容版本号
+    /// </summary>
+    public int VoContentRevision { get; set; }
+
+    /// <summary>
     /// 是否置顶
     /// </summary>
     public bool VoIsTop { get; set; }

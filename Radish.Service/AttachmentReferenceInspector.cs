@@ -28,6 +28,7 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
     private readonly IBaseRepository<UserInventory> _userInventoryRepository;
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly ISystemConfigRepository _systemConfigRepository;
+    private readonly IBaseRepository<ForumContentRevisionAttachment>? _forumRevisionAttachmentRepository;
 
     public AttachmentReferenceInspector(
         IBaseRepository<Sticker> stickerRepository,
@@ -46,7 +47,8 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         IBaseRepository<UserBenefit> userBenefitRepository,
         IBaseRepository<UserInventory> userInventoryRepository,
         IBaseRepository<Order> orderRepository,
-        ISystemConfigRepository systemConfigRepository)
+        ISystemConfigRepository systemConfigRepository,
+        IBaseRepository<ForumContentRevisionAttachment>? forumRevisionAttachmentRepository = null)
     {
         _stickerRepository = stickerRepository;
         _postRepository = postRepository;
@@ -65,6 +67,7 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         _userInventoryRepository = userInventoryRepository;
         _orderRepository = orderRepository;
         _systemConfigRepository = systemConfigRepository;
+        _forumRevisionAttachmentRepository = forumRevisionAttachmentRepository;
     }
 
     public async Task<HashSet<long>> GetReferencedAttachmentIdsAsync(IReadOnlyCollection<long> attachmentIds)
@@ -82,6 +85,12 @@ public class AttachmentReferenceInspector : IAttachmentReferenceInspector
         var referencedAttachmentIds = new HashSet<long>();
 
         await UnionStructuredReferencesAsync(referencedAttachmentIds, candidateIds);
+        if (_forumRevisionAttachmentRepository != null)
+        {
+            var revisionReferences = await _forumRevisionAttachmentRepository.QueryAsync(
+                reference => candidateIds.Contains(reference.AttachmentId));
+            referencedAttachmentIds.UnionWith(revisionReferences.Select(reference => reference.AttachmentId));
+        }
         await UnionSystemConfigReferencesAsync(referencedAttachmentIds, candidateIds);
         referencedAttachmentIds.UnionWith(
             await _wikiAttachmentReferenceRepository.GetReferencedAttachmentIdsAsync(candidateIds));

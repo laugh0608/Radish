@@ -137,6 +137,25 @@ export type {
   CaptureContentModerationAppealEvidenceRequest,
 } from './content-moderation-contract';
 
+export type {
+  ForumContentLongId,
+  ForumContentRevisionSourceType,
+  ForumContentRevisionIntegrityStatus,
+  ForumContentRevisionErrorCodeValue,
+  ForumContentRevisionTagVo,
+  ForumContentRevisionSummaryVo,
+  ForumContentRevisionListVo,
+  PostContentRevisionSummaryVo,
+  CommentContentRevisionSummaryVo,
+  PostContentRevisionListVo,
+  CommentContentRevisionListVo,
+  PostContentRevisionDetailVo,
+  CommentContentRevisionDetailVo,
+  RestoreForumContentRevisionRequest,
+  ForumContentRevisionWriteResult,
+} from './forum-content-revision-contract';
+export { ForumContentRevisionErrorCode } from './forum-content-revision-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,
