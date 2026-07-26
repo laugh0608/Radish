@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { message } from '@radish/ui';
 import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';

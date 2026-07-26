@@ -17,6 +17,17 @@ namespace Radish.Api.Tests.Repositories;
 
 public sealed class SchemaMigrationLedgerTest
 {
+    [Theory]
+    [InlineData("DataSource=/tmp/radish.db", "/tmp/radish.db")]
+    [InlineData("Data Source=/tmp/radish.db;Default Timeout=10", "/tmp/radish.db")]
+    [InlineData("/tmp/radish.db", "/tmp/radish.db")]
+    public void ExtractSqliteFilePath_ShouldSupportRuntimeConnectionStringFormats(
+        string connectionString,
+        string expectedPath)
+    {
+        Assert.Equal(expectedPath, DbMigrateInspection.ExtractSqliteFilePath(connectionString));
+    }
+
     [Fact]
     public async Task EnsureBusinessSchemaAsync_ShouldApplyPendingLedgerBeforeSeedReadinessInspection()
     {

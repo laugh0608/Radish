@@ -1,5 +1,5 @@
 import { createElement, lazy, type ReactNode } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router';
 import {
   AuthenticatedLayout,
   GuardedRoute,

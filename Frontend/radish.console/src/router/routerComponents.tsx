@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet } from 'react-router';
 import { AdminLayout } from '../components/AdminLayout';
 import { ClientBackLink } from '../components/ClientBackLink';
 import { RouteGuard } from '../components/PermissionGuard';
