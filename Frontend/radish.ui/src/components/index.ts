@@ -30,9 +30,19 @@ export { GlassPanel } from './GlassPanel/GlassPanel';
 export type { GlassPanelProps } from './GlassPanel/GlassPanel';
 
 export { MarkdownRenderer } from './MarkdownRenderer/MarkdownRenderer';
-export type { MarkdownLinkHrefResolver, MarkdownStickerItem, MarkdownStickerMap } from './MarkdownRenderer/MarkdownRenderer';
+export type {
+  MarkdownLinkHrefResolver,
+  MarkdownRendererProps,
+  MarkdownStickerItem,
+  MarkdownStickerMap,
+} from './MarkdownRenderer/MarkdownRenderer';
+export type {
+  ProtectedMarkdownAttachmentBlobLoader,
+  ProtectedMarkdownAttachmentLabels,
+  ProtectedMarkdownAttachmentOptions,
+} from './MarkdownRenderer/useProtectedMarkdownAttachments';
 export { ImageLightbox } from './ImageLightbox/ImageLightbox';
-export type { LightboxImageItem } from './ImageLightbox/ImageLightbox';
+export type { ImageLightboxLabels, LightboxImageItem } from './ImageLightbox/ImageLightbox';
 
 export { MarkdownEditor } from './MarkdownEditor/MarkdownEditor';
 export type {

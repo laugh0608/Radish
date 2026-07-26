@@ -5,12 +5,12 @@
 import {
   ApiResponseError,
   apiDelete,
-  apiFetch,
   apiGet,
   apiPost,
   configureApiClient,
   createApiResponseError,
   getApiClientConfig,
+  loadAttachmentAssetBlob,
   parseApiResponseWithI18n,
   type ApiClientConfig,
   type ApiResponse,
@@ -610,25 +610,7 @@ export async function loadAttachmentObjectUrl(
   variant: 'original' | 'thumbnail' = 'original',
   signal?: AbortSignal,
 ): Promise<string> {
-  const suffix = variant === 'thumbnail' ? '/thumbnail' : '';
-  const response = await apiFetch(
-    `/_assets/attachments/${encodeURIComponent(id)}${suffix}`,
-    {
-      method: 'GET',
-      withAuth: true,
-      headers: { Accept: 'image/*' },
-      signal,
-    },
-  );
-  if (!response.ok) {
-    throw new Error(`Attachment asset request failed with status ${response.status}`);
-  }
-
-  const blob = await response.blob();
-  if (blob.size === 0) {
-    throw new Error('Attachment asset response was empty');
-  }
-
+  const blob = await loadAttachmentAssetBlob(id, variant, signal);
   return URL.createObjectURL(blob);
 }
 

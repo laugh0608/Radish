@@ -8,7 +8,11 @@ import type {
   StickerPickerLabels,
   StickerPickerSelection,
 } from '../StickerPicker/StickerPicker';
-import { MarkdownRenderer, type MarkdownStickerMap } from '../MarkdownRenderer/MarkdownRenderer';
+import {
+  MarkdownRenderer,
+  type MarkdownStickerMap,
+} from '../MarkdownRenderer/MarkdownRenderer';
+import type { ProtectedMarkdownAttachmentOptions } from '../MarkdownRenderer/useProtectedMarkdownAttachments';
 import { UserMention } from '../UserMention/UserMention';
 import type { UserMentionLabels, UserMentionOption } from '../UserMention/UserMention';
 import {
@@ -225,6 +229,8 @@ export interface MarkdownEditorProps {
   onStickerSelect?: (selection: StickerPickerSelection) => void;
   /** 搜索 @ 提及用户（传入后启用 @ 提及能力） */
   onUserMentionSearch?: (keyword: string) => Promise<UserMentionOption[]>;
+  /** 由宿主注入的认证附件预览契约。 */
+  protectedAttachments?: ProtectedMarkdownAttachmentOptions;
 }
 
 type ToolbarAction = 'bold' | 'italic' | 'strikethrough' | 'heading' | 'quote' | 'code' | 'codeblock' | 'ul' | 'ol' | 'link' | 'image' | 'document' | 'hr';
@@ -258,6 +264,7 @@ export const MarkdownEditor = ({
   stickerMap,
   onStickerSelect,
   onUserMentionSearch,
+  protectedAttachments,
 }: MarkdownEditorProps) => {
   const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(
     defaultMode ?? (typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit')
@@ -1022,7 +1029,11 @@ export const MarkdownEditor = ({
         {(mode === 'preview' || mode === 'split') && (
           <div className={`${styles.previewPane} ${mode === 'split' ? styles.paneSplit : ''}`}>
             {value ? (
-              <MarkdownRenderer content={value} stickerMap={mergedStickerMap} />
+              <MarkdownRenderer
+                content={value}
+                stickerMap={mergedStickerMap}
+                protectedAttachments={protectedAttachments}
+              />
             ) : (
               <p className={styles.previewEmpty}>{labels.previewEmpty}</p>
             )}

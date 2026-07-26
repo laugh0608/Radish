@@ -5,7 +5,7 @@ import { Icon } from '@radish/ui/icon';
 import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { toast } from '@radish/ui/toast';
 import {
-  buildAttachmentAssetUrl,
+  type ProtectedMarkdownAttachmentOptions,
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
@@ -71,6 +71,7 @@ import {
   validateDocsAuthorDraft,
 } from './docsAuthorPresentation';
 import { DocsAuthorEditorPage, type DocsAuthorEditorState } from './DocsAuthorEditorPage';
+import { createDocsProtectedAttachmentOptions } from './docsProtectedAttachments';
 import {
   buildDocsAuthorPath,
   createDefaultDocsAuthorRoute,
@@ -209,6 +210,8 @@ export function DocsAuthorApp() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const userId = useUserStore((state) => state.userId);
   const userPublicId = useUserStore((state) => state.publicId || '');
+  const userRoleScope = useUserStore((state) => (state.roles || []).join(','));
+  const userPermissionScope = useUserStore((state) => (state.permissions || []).join(','));
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
@@ -217,6 +220,33 @@ export function DocsAuthorApp() {
   const [isEditorUploading, setIsEditorUploading] = useState(false);
   const { route, navigateToRoute } = useDocsAuthorNavigation(isEditorUploading);
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
+  const protectedAttachmentRouteDocumentId = route.kind === 'edit' || route.kind === 'revisions'
+    ? route.documentId
+    : 'none';
+  const protectedAttachments = useMemo(() => {
+    const documentEpoch = editorState.document
+      ? [
+          editorState.document.voDocumentId,
+          editorState.document.voDocumentVersion,
+          editorState.document.voDraftVersion,
+          editorState.document.voCanEdit,
+          editorState.document.voReviewState,
+        ].join(':')
+      : 'none';
+    return createDocsProtectedAttachmentOptions(
+      t,
+      `author:${userId || 'anonymous'}:${userRoleScope}:${userPermissionScope}:${route.kind}:${protectedAttachmentRouteDocumentId}:${documentEpoch}:${revisionState.selectedRevisionId ?? 'none'}`,
+    );
+  }, [
+    editorState.document,
+    protectedAttachmentRouteDocumentId,
+    revisionState.selectedRevisionId,
+    route.kind,
+    t,
+    userId,
+    userPermissionScope,
+    userRoleScope,
+  ]);
   const treeRef = useRef<WikiDocumentTreeNodeVo[]>([]);
   const accountEpochRef = useRef(0);
 
@@ -526,7 +556,6 @@ export function DocsAuthorApp() {
     return {
       attachmentId: attachment.voId,
       displayVariant: 'original',
-      previewUrl: buildAttachmentAssetUrl(attachment.voId, 'original'),
     };
   };
 
@@ -836,6 +865,7 @@ export function DocsAuthorApp() {
           onCopyConflictContent={() => void handleCopyConflictContent()}
           onDownloadConflictContent={handleDownloadConflictContent}
           onReloadServerDraft={() => void refreshEditorDetail()}
+          protectedAttachments={protectedAttachments}
         />
       );
     }
@@ -847,6 +877,7 @@ export function DocsAuthorApp() {
           language={i18n.resolvedLanguage}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
           onSelectRevision={(revisionId) => void loadRevisionDetail(revisionId)}
+          protectedAttachments={protectedAttachments}
         />
       );
     }
@@ -1242,9 +1273,16 @@ interface DocsRevisionsPageProps {
   language?: string;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
   onSelectRevision: (revisionId: LongId) => void;
+  protectedAttachments: ProtectedMarkdownAttachmentOptions;
 }
 
-function DocsRevisionsPage({ state, language, onBack, onSelectRevision }: DocsRevisionsPageProps) {
+function DocsRevisionsPage({
+  state,
+  language,
+  onBack,
+  onSelectRevision,
+  protectedAttachments,
+}: DocsRevisionsPageProps) {
   const { t } = useTranslation();
   const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
     ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
@@ -1332,7 +1370,11 @@ function DocsRevisionsPage({ state, language, onBack, onSelectRevision }: DocsRe
                     <span className={styles.metaChip}>{formatWikiTime(state.selectedRevision.voCreateTime, language)}</span>
                   </div>
                 </div>
-                <MarkdownRenderer content={state.selectedRevision.voMarkdownContent} className={styles.markdownContent} />
+                <MarkdownRenderer
+                  content={state.selectedRevision.voMarkdownContent}
+                  className={styles.markdownContent}
+                  protectedAttachments={protectedAttachments}
+                />
               </>
             ) : (
               <StatusPanel

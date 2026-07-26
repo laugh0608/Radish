@@ -7,11 +7,18 @@ export interface LightboxImageItem {
   alt?: string;
 }
 
+export interface ImageLightboxLabels {
+  close: string;
+  previous: string;
+  next: string;
+}
+
 interface ImageLightboxProps {
   isOpen: boolean;
   images: LightboxImageItem[];
   initialIndex?: number;
   onClose: () => void;
+  labels?: ImageLightboxLabels;
 }
 
 export const ImageLightbox = ({
@@ -19,6 +26,11 @@ export const ImageLightbox = ({
   images,
   initialIndex = 0,
   onClose,
+  labels = {
+    close: '关闭预览',
+    previous: '上一张',
+    next: '下一张',
+  },
 }: ImageLightboxProps) => {
   const safeInitialIndex = useMemo(() => {
     if (images.length === 0) return 0;
@@ -81,16 +93,16 @@ export const ImageLightbox = ({
           className={styles.image}
         />
 
-        <button type="button" className={styles.close} onClick={onClose} aria-label="关闭预览">
+        <button type="button" className={styles.close} onClick={onClose} aria-label={labels.close}>
           <Icon icon="mdi:close" size={18} />
         </button>
 
         {images.length > 1 && (
           <>
-            <button type="button" className={`${styles.nav} ${styles.navLeft}`} onClick={handlePrev} aria-label="上一张">
+            <button type="button" className={`${styles.nav} ${styles.navLeft}`} onClick={handlePrev} aria-label={labels.previous}>
               <Icon icon="mdi:chevron-left" size={22} />
             </button>
-            <button type="button" className={`${styles.nav} ${styles.navRight}`} onClick={handleNext} aria-label="下一张">
+            <button type="button" className={`${styles.nav} ${styles.navRight}`} onClick={handleNext} aria-label={labels.next}>
               <Icon icon="mdi:chevron-right" size={22} />
             </button>
             <div className={styles.counter}>{currentIndex + 1} / {images.length}</div>

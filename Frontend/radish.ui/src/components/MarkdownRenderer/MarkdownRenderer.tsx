@@ -17,8 +17,20 @@ import {
   parseAttachmentMarkdownUrl,
   resolveSanitizedMarkdownLinkHref,
   resolveConfiguredMediaUrl,
+  sanitizeMarkdownLinkHref,
 } from '../../utils';
+import {
+  buildProtectedMarkdownAttachmentKey,
+  useProtectedMarkdownAttachments,
+  type ProtectedMarkdownAttachmentOptions,
+} from './useProtectedMarkdownAttachments';
 import styles from './MarkdownRenderer.module.css';
+
+export type {
+  ProtectedMarkdownAttachmentBlobLoader,
+  ProtectedMarkdownAttachmentLabels,
+  ProtectedMarkdownAttachmentOptions,
+} from './useProtectedMarkdownAttachments';
 
 export interface MarkdownStickerItem {
   imageUrl: string;
@@ -30,7 +42,7 @@ export type MarkdownStickerMap = Record<string, MarkdownStickerItem>;
 
 export type MarkdownLinkHrefResolver = (href: string) => string | null | undefined;
 
-interface MarkdownRendererProps {
+export interface MarkdownRendererProps {
   /** Markdown 内容 */
   content: string;
   /** 自定义类名 */
@@ -41,6 +53,8 @@ interface MarkdownRendererProps {
   stickerMap?: MarkdownStickerMap;
   /** 自定义链接地址解析，用于公开页面将业务内链转换为可分享 URL */
   resolveLinkHref?: MarkdownLinkHrefResolver;
+  /** 由宿主注入的认证附件二进制加载与本地化契约。 */
+  protectedAttachments?: ProtectedMarkdownAttachmentOptions;
 }
 
 interface ParsedImageMeta {
@@ -174,7 +188,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   enableImageLightbox = true,
   stickerMap,
   resolveLinkHref,
+  protectedAttachments,
 }) => {
+  const [attachmentReloadToken, setAttachmentReloadToken] = useState(0);
+  const protectedAssets = useProtectedMarkdownAttachments(
+    content,
+    protectedAttachments,
+    attachmentReloadToken,
+  );
   const imageCollection = useMemo(() => {
     const regex = /!\[[^\]]*\]\(([^)]+)\)/g;
     const images: { src: string; alt?: string }[] = [];
@@ -185,11 +206,22 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
       if (!src) continue;
       if (parseStickerUri(src)) continue;
       const parsed = parseImageMeta(src);
+      const attachmentMeta = parseAttachmentMarkdownUrl(src);
+      if (protectedAttachments && attachmentMeta) {
+        const asset = protectedAssets.get(
+          buildProtectedMarkdownAttachmentKey(attachmentMeta.attachmentId, 'original'),
+        );
+        if (asset?.status === 'ready' && asset.url) {
+          images.push({ src: asset.url });
+        }
+        continue;
+      }
+
       images.push({ src: parsed.fullSrc });
     }
 
     return images;
-  }, [content]);
+  }, [content, protectedAssets, protectedAttachments]);
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -216,6 +248,45 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           components={{
             // 自定义链接行为：在新标签页打开外部链接
             a: (props) => {
+              const safeHref = sanitizeMarkdownLinkHref(props.href);
+              const protectedAttachmentMeta = safeHref
+                ? parseAttachmentMarkdownUrl(safeHref)
+                : null;
+              if (protectedAttachments && protectedAttachmentMeta) {
+                const asset = protectedAssets.get(
+                  buildProtectedMarkdownAttachmentKey(protectedAttachmentMeta.attachmentId, 'original'),
+                );
+                if (asset?.status === 'ready' && asset.url) {
+                  return (
+                    <a
+                      {...props}
+                      href={asset.url}
+                      download=""
+                      aria-label={protectedAttachments.labels.download}
+                    />
+                  );
+                }
+
+                if (asset?.status === 'error') {
+                  return (
+                    <span className={styles.attachmentState} role="alert">
+                      <span>{props.children}</span>
+                      <span>{protectedAttachments.labels.loadFailed}</span>
+                      <button type="button" onClick={() => setAttachmentReloadToken((current) => current + 1)}>
+                        {protectedAttachments.labels.retry}
+                      </button>
+                    </span>
+                  );
+                }
+
+                return (
+                  <span className={styles.attachmentState} role="status" aria-live="polite">
+                    <span>{props.children}</span>
+                    <span>{protectedAttachments.labels.loading}</span>
+                  </span>
+                );
+              }
+
               let safeSourceHref = '';
               let customResolvedHref: string | null | undefined;
               const resolvedHref = resolveSanitizedMarkdownLinkHref(props.href, (sourceHref) => {
@@ -281,6 +352,75 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               }
 
               const parsed = parseImageMeta(rawSrc);
+              const protectedAttachmentMeta = parseAttachmentMarkdownUrl(rawSrc);
+              if (protectedAttachments && protectedAttachmentMeta) {
+                const displayAsset = protectedAssets.get(
+                  buildProtectedMarkdownAttachmentKey(
+                    protectedAttachmentMeta.attachmentId,
+                    protectedAttachmentMeta.displayVariant,
+                  ),
+                );
+                const fullAsset = protectedAssets.get(
+                  buildProtectedMarkdownAttachmentKey(protectedAttachmentMeta.attachmentId, 'original'),
+                );
+
+                if (displayAsset?.status === 'error' || fullAsset?.status === 'error') {
+                  return (
+                    <span className={styles.attachmentImageState} role="alert">
+                      <span>{protectedAttachments.labels.loadFailed}</span>
+                      <button type="button" onClick={() => setAttachmentReloadToken((current) => current + 1)}>
+                        {protectedAttachments.labels.retry}
+                      </button>
+                    </span>
+                  );
+                }
+
+                if (
+                  displayAsset?.status !== 'ready'
+                  || !displayAsset.url
+                  || fullAsset?.status !== 'ready'
+                  || !fullAsset.url
+                ) {
+                  return (
+                    <span className={styles.attachmentImageState} role="status" aria-live="polite">
+                      {protectedAttachments.labels.loading}
+                    </span>
+                  );
+                }
+
+                const fullSourceUrl = fullAsset.url;
+                return (
+                  <img
+                    {...props}
+                    src={displayAsset.url}
+                    data-full-src={fullAsset.url}
+                    style={
+                      parsed.scalePercent
+                        ? {
+                            width: `${parsed.scalePercent}%`,
+                            maxWidth: '100%',
+                          }
+                        : undefined
+                    }
+                    className={`${styles.markdownImage} ${enableImageLightbox ? styles.clickableImage : ''}`}
+                    role={enableImageLightbox ? 'button' : undefined}
+                    tabIndex={enableImageLightbox ? 0 : undefined}
+                    aria-label={enableImageLightbox ? protectedAttachments.labels.openImage : props.alt}
+                    onClick={() => {
+                      if (enableImageLightbox) {
+                        openLightbox(fullSourceUrl);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (!enableImageLightbox || (event.key !== 'Enter' && event.key !== ' ')) {
+                        return;
+                      }
+                      event.preventDefault();
+                      openLightbox(fullSourceUrl);
+                    }}
+                  />
+                );
+              }
 
               return (
                 <img
@@ -296,8 +436,17 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
                       : undefined
                   }
                   className={`${styles.markdownImage} ${enableImageLightbox ? styles.clickableImage : ''}`}
+                  role={enableImageLightbox ? 'button' : undefined}
+                  tabIndex={enableImageLightbox ? 0 : undefined}
                   onClick={() => {
                     if (!enableImageLightbox) return;
+                    openLightbox(parsed.fullSrc);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!enableImageLightbox || (event.key !== 'Enter' && event.key !== ' ')) {
+                      return;
+                    }
+                    event.preventDefault();
                     openLightbox(parsed.fullSrc);
                   }}
                 />
@@ -327,6 +476,11 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           images={imageCollection}
           initialIndex={lightboxIndex}
           onClose={() => setLightboxOpen(false)}
+          labels={protectedAttachments ? {
+            close: protectedAttachments.labels.lightboxClose,
+            previous: protectedAttachments.labels.lightboxPrevious,
+            next: protectedAttachments.labels.lightboxNext,
+          } : undefined}
         />
       )}
     </>

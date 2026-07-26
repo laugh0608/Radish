@@ -387,13 +387,14 @@ test('公开文档浏览和详情返回应提供公开链接并保留壳层导�
   assert.match(stylesSource, /\.docCard[\s\S]*text-decoration: none;/);
 });
 
-test('公开文档数据源应固定使用服务端公开契约且不携带认证信息', () => {
+test('Docs 阅读数据源应使用允许匿名且支持当前身份的统一读取契约', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/docs/publicDocsApi.ts'), 'utf8');
 
-  assert.match(source, /Wiki\/PublicGetList/);
-  assert.match(source, /Wiki\/PublicGetTree/);
-  assert.match(source, /Wiki\/PublicGetBySlug/);
-  assert.match(source, /withAuth: false/g);
+  assert.match(source, /Wiki\/GetList/);
+  assert.match(source, /Wiki\/GetTree/);
+  assert.match(source, /Wiki\/GetBySlug/);
+  assert.match(source, /withAuth: true/g);
+  assert.doesNotMatch(source, /Wiki\/PublicGet/);
   assert.doesNotMatch(source, /tokenService/);
   assert.doesNotMatch(source, /resolveReadWithAuth/);
   assert.doesNotMatch(source, /filterPublicReadableTree/);

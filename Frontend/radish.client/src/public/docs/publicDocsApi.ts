@@ -22,7 +22,7 @@ async function ensureOk<T>(request: Promise<ParsedApiResponse<T>>, fallbackMessa
   return response.data;
 }
 
-function buildPublicWikiListUrl(query: WikiListQuery): string {
+function buildReadableWikiListUrl(query: WikiListQuery): string {
   const params = new URLSearchParams();
   params.set('pageIndex', String(query.pageIndex ?? 1));
   params.set('pageSize', String(query.pageSize ?? 100));
@@ -35,26 +35,26 @@ function buildPublicWikiListUrl(query: WikiListQuery): string {
     params.set('parentId', String(query.parentId));
   }
 
-  return `/api/v1/Wiki/PublicGetList?${params.toString()}`;
+  return `/api/v1/Wiki/GetList?${params.toString()}`;
 }
 
 export async function getPublicWikiTree(): Promise<WikiDocumentTreeNodeVo[]> {
   return await ensureOk(
-    apiGet<WikiDocumentTreeNodeVo[]>('/api/v1/Wiki/PublicGetTree', { withAuth: false }),
+    apiGet<WikiDocumentTreeNodeVo[]>('/api/v1/Wiki/GetTree', { withAuth: true }),
     '加载公开文档目录失败'
   );
 }
 
 export async function getPublicWikiList(query: WikiListQuery = {}): Promise<WikiPageModel<WikiDocumentVo>> {
   return await ensureOk(
-    apiGet<WikiPageModel<WikiDocumentVo>>(buildPublicWikiListUrl(query), { withAuth: false }),
+    apiGet<WikiPageModel<WikiDocumentVo>>(buildReadableWikiListUrl(query), { withAuth: true }),
     '加载公开文档列表失败'
   );
 }
 
 export async function getPublicWikiDocumentBySlug(slug: string): Promise<WikiDocumentDetailVo> {
   return await ensureOk(
-    apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/PublicGetBySlug/${encodeURIComponent(slug)}`, { withAuth: false }),
+    apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }),
     '加载公开文档详情失败'
   );
 }

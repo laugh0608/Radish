@@ -1,8 +1,8 @@
 # F4-L Wiki 附件隐私与生命周期权威闭环
 
-> **状态**：F4-L-A / B 已完成；下一顺位进入 F4-L-C 正式 Web 受保护资源
+> **状态**：F4-L-A / B / C 已完成；下一顺位进入 F4-L-D 成组验收与专题关闭
 >
-> **复核日期**：2026-07-25（Asia/Shanghai）
+> **复核日期**：2026-07-26（Asia/Shanghai）
 >
 > **适用范围**：Main 库 `Attachment` 与 Wiki 聚合、正式 `/docs`、`/docs/mine|compose|edit|revisions`、Console `/documents`、受控附件资源路由和 `@radish/http`
 >
@@ -318,11 +318,12 @@ doctor / verify 至少检查：
 - 补稳定错误、HTTP、`@radish/http` 类型与 SQLite / PostgreSQL 测试。
 - 不修改正式页面和 Pencil。
 
-### F4-L-C：正式 Web 受保护资源
+### F4-L-C：正式 Web 受保护资源（已完成）
 
 - 接入 Author、Authenticated / Restricted Docs、Revision 和 Console 审核的认证资源加载。
 - 覆盖图片、灯箱、普通文件、加载失败、失权、账号切换和 object URL 回收。
 - 完成中英文、PC / mobile、键盘和无障碍；不新增页面族或 Pencil。
+- 完成结果见 [F4-L-C 正式 Web 受保护资源记录](/records/f4-l-c-wiki-attachment-web-protected-assets-2026-07-26)。
 
 ### F4-L-D：成组验收与专题关闭
 

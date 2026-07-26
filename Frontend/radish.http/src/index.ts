@@ -101,6 +101,8 @@ export {
 
 export type { WikiAttachmentErrorCodeValue } from './wiki-attachment-contract';
 export { WikiAttachmentErrorCode } from './wiki-attachment-contract';
+export type { AttachmentAssetVariant } from './attachment-asset';
+export { loadAttachmentAssetBlob } from './attachment-asset';
 
 export type {
   ModerationLongId,

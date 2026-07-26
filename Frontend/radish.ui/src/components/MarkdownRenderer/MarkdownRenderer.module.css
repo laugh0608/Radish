@@ -256,6 +256,44 @@
   cursor: zoom-in;
 }
 
+.markdownBody .clickableImage:focus-visible {
+  outline: 2px solid var(--link-color, #2563eb);
+  outline-offset: 3px;
+}
+
+.attachmentState {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--text-secondary, #6b7280);
+}
+
+.attachmentState button,
+.attachmentImageState button {
+  padding: 2px 8px;
+  color: var(--link-color, #2563eb);
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.attachmentImageState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 96px;
+  margin: 10px 0;
+  padding: 14px;
+  color: var(--text-secondary, #6b7280);
+  background: var(--blockquote-bg, #f8fafc);
+  border: 1px dashed var(--border-color, #dbe4f0);
+  border-radius: 8px;
+}
+
 .markdownBody .stickerInline {
   display: inline-block;
   width: 2em;

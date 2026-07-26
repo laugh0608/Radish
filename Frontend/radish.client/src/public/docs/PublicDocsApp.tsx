@@ -9,7 +9,9 @@ import type {
   WikiDocumentTreeNodeVo,
   WikiDocumentVo,
 } from '@/apps/wiki/types/wiki';
+import { WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 import { canUseDocsAuthorTools, isBuiltInWikiDocument } from '@/docs/docsAuthorAccess';
+import { createDocsProtectedAttachmentOptions } from '@/docs/docsProtectedAttachments';
 import { buildDocsAuthorPath } from '@/docs/docsAuthorRouteState';
 import { useUserStore } from '@/stores/userStore';
 import {
@@ -1198,11 +1200,31 @@ const PublicDocsDetail = ({
   onOpenDocument
 }: PublicDocsDetailProps) => {
   const { t } = useTranslation();
+  const userId = useUserStore((state) => state.userId);
+  const userRoleScope = useUserStore((state) => (state.roles || []).join(','));
+  const userPermissionScope = useUserStore((state) => (state.permissions || []).join(','));
   const [documentDetail, setDocumentDetail] = useState<WikiDocumentDetailVo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
   const [reloadToken, setReloadToken] = useState(0);
+  const protectedAttachments = useMemo(
+    () => createDocsProtectedAttachmentOptions(
+      t,
+      `reader:${userId || 'anonymous'}:${userRoleScope}:${userPermissionScope}:${route.slug}:${documentDetail?.voId ?? 'none'}:${documentDetail?.voVersion ?? 0}:${documentDetail?.voVisibility ?? 0}:${reloadToken}`,
+    ),
+    [
+      documentDetail?.voId,
+      documentDetail?.voVersion,
+      documentDetail?.voVisibility,
+      reloadToken,
+      route.slug,
+      t,
+      userId,
+      userPermissionScope,
+      userRoleScope,
+    ],
+  );
   const articleBodyRef = useRef<HTMLDivElement>(null);
   const currentDocsPath = buildPublicDocsPath({
     kind: 'detail',
@@ -1254,7 +1276,11 @@ const PublicDocsDetail = ({
   }, [reloadToken, route.slug]);
 
   const publicHeadSnapshot = useMemo(() => {
-    if (!documentDetail || !isCurrentDocsHeadSource(route, documentDetail)) {
+    if (
+      !documentDetail
+      || documentDetail.voVisibility !== WikiDocumentVisibility.Public
+      || !isCurrentDocsHeadSource(route, documentDetail)
+    ) {
       return null;
     }
 
@@ -1484,10 +1510,26 @@ const PublicDocsDetail = ({
                 </div>
 
                 <div ref={articleBodyRef} className={styles.articleBody} onClick={handleMarkdownLinkClick}>
+                  {documentDetail.voCoverAttachmentId ? (
+                    <MarkdownRenderer
+                      content={`![${documentDetail.voTitle}](attachment://${documentDetail.voCoverAttachmentId})`}
+                      className={styles.markdownContent}
+                      protectedAttachments={
+                        documentDetail.voVisibility === WikiDocumentVisibility.Public
+                          ? undefined
+                          : protectedAttachments
+                      }
+                    />
+                  ) : null}
                   <MarkdownRenderer
                     content={articleMarkdownContent}
                     className={styles.markdownContent}
                     resolveLinkHref={resolveArticleLinkHref}
+                    protectedAttachments={
+                      documentDetail.voVisibility === WikiDocumentVisibility.Public
+                        ? undefined
+                        : protectedAttachments
+                    }
                   />
                 </div>
               </article>
