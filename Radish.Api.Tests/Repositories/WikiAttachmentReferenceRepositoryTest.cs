@@ -237,8 +237,7 @@ public sealed class WikiAttachmentReferenceRepositoryTest
                 ConnectionString = connectionString,
                 DbType = DbType.PostgreSQL,
                 IsAutoCloseConnection = true,
-                InitKeyType = InitKeyType.Attribute,
-                MoreSettings = new ConnMoreSettings { PgSqlIsAutoToLower = false }
+                InitKeyType = InitKeyType.Attribute
             });
             db.CodeFirst.InitTables<WikiAttachmentReference>();
             var repository = new WikiAttachmentReferenceRepository(
@@ -262,8 +261,7 @@ public sealed class WikiAttachmentReferenceRepositoryTest
                 ConnectionString = connectionString,
                 DbType = DbType.PostgreSQL,
                 IsAutoCloseConnection = true,
-                InitKeyType = InitKeyType.Attribute,
-                MoreSettings = new ConnMoreSettings { PgSqlIsAutoToLower = false }
+                InitKeyType = InitKeyType.Attribute
             });
             var secondRepository = new WikiAttachmentReferenceRepository(
                 new UnitOfWorkManage(secondDb, NullLogger<UnitOfWorkManage>.Instance));

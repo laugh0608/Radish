@@ -955,7 +955,7 @@ export const DocumentGovernancePage = () => {
             </div>
           </ConsoleToolbar>
 
-          <section className="admin-table-panel">
+          <section className="admin-table-panel document-governance-table-panel">
             <Table
               rowKey="voId"
               loading={loading}

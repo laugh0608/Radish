@@ -260,8 +260,7 @@ public sealed class WikiAttachmentAuthoritySchemaMigrationTest
                 ConnectionString = connectionString,
                 DbType = DbType.PostgreSQL,
                 IsAutoCloseConnection = true,
-                InitKeyType = InitKeyType.Attribute,
-                MoreSettings = new ConnMoreSettings { PgSqlIsAutoToLower = false }
+                InitKeyType = InitKeyType.Attribute
             });
             using var services = CreateServices(db);
             Seed(db);
