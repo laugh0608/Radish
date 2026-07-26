@@ -45,7 +45,7 @@ import {
   type PublicRouteDescriptor,
   type PublicRouteSourceState,
 } from '@/public/publicRouteNavigation';
-import { redirectToLogin } from '@/services/auth';
+import { logout, redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import {
   buildMeAttachmentsReturnPath,
@@ -1486,6 +1486,10 @@ export const MeApp = () => {
                 <Icon icon="mdi:leaf" size={18} />
                 <span>{t('me.openPet')}</span>
               </a>
+              <button type="button" className={styles.secondaryButton} onClick={logout}>
+                <Icon icon="mdi:logout" size={18} />
+                <span>{t('auth.logout')}</span>
+              </button>
             </div>
           </div>
         </section>

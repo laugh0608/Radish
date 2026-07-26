@@ -66,6 +66,63 @@ public sealed class ForumContentRevisionServiceTest
     }
 
     [Fact]
+    public async Task GetPostRevisionListAsync_ShouldUseCurrentRevisionUtcTimeInPublicSummary()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var revisionRepository = new Mock<IBaseRepository<PostContentRevision>>(MockBehavior.Strict);
+        var post = new Post("已编辑帖子", "当前正文")
+        {
+            Id = 104,
+            AuthorId = 304,
+            TenantId = 9,
+            EditCount = 2,
+            ContentRevision = 3,
+            ModifyTime = new DateTime(2026, 7, 26, 13, 0, 0),
+            IsDeleted = false
+        };
+        var currentRevisionTime = new DateTime(2026, 7, 26, 5, 0, 0, DateTimeKind.Utc);
+        postRepository.Setup(repository => repository.QueryByIdAsync(post.Id)).ReturnsAsync(post);
+        revisionRepository
+            .Setup(repository => repository.QueryFirstAsync(
+                It.IsAny<Expression<Func<PostContentRevision, bool>>?>()))
+            .ReturnsAsync(new PostContentRevision
+            {
+                Id = 903,
+                PostId = post.Id,
+                RevisionNumber = post.ContentRevision,
+                CreateTime = currentRevisionTime
+            });
+
+        var service = CreateService(
+            postRepository: postRepository,
+            postRevisionRepository: revisionRepository);
+
+        var result = await service.GetPostRevisionListAsync(
+            post.Id,
+            viewerId: 999,
+            isAdmin: false,
+            pageIndex: 1,
+            pageSize: 20);
+
+        result.VoIsEdited.ShouldBeTrue();
+        result.VoEditCount.ShouldBe(2);
+        result.VoCurrentContentRevision.ShouldBe(3);
+        result.VoLastEditedAt.ShouldBe(currentRevisionTime);
+        result.VoCanViewDetails.ShouldBeFalse();
+        result.VoItems.ShouldBeEmpty();
+        revisionRepository.Verify(
+            repository => repository.QueryPageAsync(
+                It.IsAny<Expression<Func<PostContentRevision, bool>>?>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<Expression<Func<PostContentRevision, object>>?>(),
+                It.IsAny<SqlSugar.OrderByType>()),
+            Times.Never);
+        postRepository.VerifyAll();
+        revisionRepository.VerifyAll();
+    }
+
+    [Fact]
     public async Task GetCommentRevisionListAsync_ShouldExposeOnlyPublicSummaryToOtherUsers()
     {
         var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
@@ -81,7 +138,18 @@ public sealed class ForumContentRevisionServiceTest
             ModifyTime = new DateTime(2026, 7, 26, 12, 0, 0),
             IsDeleted = false
         };
+        var currentRevisionTime = new DateTime(2026, 7, 26, 4, 0, 0, DateTimeKind.Utc);
         commentRepository.Setup(repository => repository.QueryByIdAsync(comment.Id)).ReturnsAsync(comment);
+        revisionRepository
+            .Setup(repository => repository.QueryFirstAsync(
+                It.IsAny<Expression<Func<CommentContentRevision, bool>>?>()))
+            .ReturnsAsync(new CommentContentRevision
+            {
+                Id = 902,
+                CommentId = comment.Id,
+                RevisionNumber = comment.ContentRevision,
+                CreateTime = currentRevisionTime
+            });
 
         var service = CreateService(commentRepository: commentRepository, commentRevisionRepository: revisionRepository);
 
@@ -95,6 +163,7 @@ public sealed class ForumContentRevisionServiceTest
         result.VoIsEdited.ShouldBeTrue();
         result.VoEditCount.ShouldBe(3);
         result.VoCurrentContentRevision.ShouldBe(4);
+        result.VoLastEditedAt.ShouldBe(currentRevisionTime);
         result.VoCanViewDetails.ShouldBeFalse();
         result.VoItems.ShouldBeEmpty();
         revisionRepository.Verify(
@@ -106,6 +175,7 @@ public sealed class ForumContentRevisionServiceTest
                 It.IsAny<SqlSugar.OrderByType>()),
             Times.Never);
         commentRepository.VerifyAll();
+        revisionRepository.VerifyAll();
     }
 
     [Fact]
@@ -143,15 +213,17 @@ public sealed class ForumContentRevisionServiceTest
     }
 
     private static ForumContentRevisionService CreateService(
-        Mock<IBaseRepository<Comment>> commentRepository,
-        Mock<IBaseRepository<CommentContentRevision>> commentRevisionRepository)
+        Mock<IBaseRepository<Comment>>? commentRepository = null,
+        Mock<IBaseRepository<CommentContentRevision>>? commentRevisionRepository = null,
+        Mock<IBaseRepository<Post>>? postRepository = null,
+        Mock<IBaseRepository<PostContentRevision>>? postRevisionRepository = null)
     {
         return new ForumContentRevisionService(
-            Mock.Of<IBaseRepository<Post>>(),
-            commentRepository.Object,
-            Mock.Of<IBaseRepository<PostContentRevision>>(),
+            postRepository?.Object ?? Mock.Of<IBaseRepository<Post>>(),
+            commentRepository?.Object ?? Mock.Of<IBaseRepository<Comment>>(),
+            postRevisionRepository?.Object ?? Mock.Of<IBaseRepository<PostContentRevision>>(),
             Mock.Of<IBaseRepository<PostContentRevisionTag>>(),
-            commentRevisionRepository.Object,
+            commentRevisionRepository?.Object ?? Mock.Of<IBaseRepository<CommentContentRevision>>(),
             Mock.Of<IBaseRepository<ForumContentRevisionAttachment>>(),
             Mock.Of<IBaseRepository<PostTag>>(),
             Mock.Of<IBaseRepository<Tag>>(),

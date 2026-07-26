@@ -80,3 +80,11 @@ test('正式论坛应同时接入帖子、根评论与子评论版本入口和�
   assert.match(postModalSource, /matchingRevisionDraft\?\.voTitle/);
   assert.match(postModalSource, /matchingRevisionDraft\.voTags/);
 });
+
+test('正式个人中心应提供统一登出入口以支持版本验收账号切换', () => {
+  const meSource = readClientSource('src/me/MeApp.tsx');
+
+  assert.match(meSource, /import \{ logout, redirectToLogin \} from '@\/services\/auth';/);
+  assert.match(meSource, /onClick=\{logout\}/);
+  assert.match(meSource, /t\('auth\.logout'\)/);
+});

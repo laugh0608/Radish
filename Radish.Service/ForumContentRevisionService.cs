@@ -246,13 +246,22 @@ public sealed class ForumContentRevisionService : IForumContentRevisionService
             throw CreateException("帖子不存在", 404, ForumContentRevisionErrorCodes.NotFound);
         }
 
+        DateTime? lastEditedAt = null;
+        if (post.EditCount > 0)
+        {
+            var currentRevision = await _postRevisionRepository.QueryFirstAsync(
+                revision => revision.PostId == postId && revision.RevisionNumber == post.ContentRevision)
+                ?? throw CreateException("帖子当前版本不存在", 409, ForumContentRevisionErrorCodes.Incomplete);
+            lastEditedAt = currentRevision.CreateTime;
+        }
+
         var authorized = isAdmin || (viewerId > 0 && post.AuthorId == viewerId);
         var result = new PostContentRevisionListVo
         {
             VoIsEdited = post.EditCount > 0,
             VoEditCount = post.EditCount,
             VoCurrentContentRevision = post.ContentRevision,
-            VoLastEditedAt = post.ModifyTime,
+            VoLastEditedAt = lastEditedAt,
             VoCanViewDetails = authorized,
             VoPageIndex = NormalizePageIndex(pageIndex),
             VoPageSize = NormalizePageSize(pageSize)
@@ -286,13 +295,22 @@ public sealed class ForumContentRevisionService : IForumContentRevisionService
             throw CreateException("评论不存在", 404, ForumContentRevisionErrorCodes.NotFound);
         }
 
+        DateTime? lastEditedAt = null;
+        if (comment.EditCount > 0)
+        {
+            var currentRevision = await _commentRevisionRepository.QueryFirstAsync(
+                revision => revision.CommentId == commentId && revision.RevisionNumber == comment.ContentRevision)
+                ?? throw CreateException("评论当前版本不存在", 409, ForumContentRevisionErrorCodes.Incomplete);
+            lastEditedAt = currentRevision.CreateTime;
+        }
+
         var authorized = isAdmin || (viewerId > 0 && comment.AuthorId == viewerId);
         var result = new CommentContentRevisionListVo
         {
             VoIsEdited = comment.EditCount > 0,
             VoEditCount = comment.EditCount,
             VoCurrentContentRevision = comment.ContentRevision,
-            VoLastEditedAt = comment.ModifyTime,
+            VoLastEditedAt = lastEditedAt,
             VoCanViewDetails = authorized,
             VoPageIndex = NormalizePageIndex(pageIndex),
             VoPageSize = NormalizePageSize(pageSize)
