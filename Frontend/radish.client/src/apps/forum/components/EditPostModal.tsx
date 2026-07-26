@@ -9,7 +9,12 @@ import {
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
-import { getAllTags, type Category, type PostDetail } from '@/api/forum';
+import {
+  getAllTags,
+  type Category,
+  type PostContentRevisionDetailVo,
+  type PostDetail,
+} from '@/api/forum';
 import { searchUsersForMention } from '@/api/user';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
@@ -23,6 +28,7 @@ import styles from './EditPostModal.module.css';
 interface EditPostModalProps {
   isOpen: boolean;
   post: PostDetail | null;
+  revisionDraft?: PostContentRevisionDetailVo | null;
   categories: Category[];
   onClose: () => void;
   onSave: (postId: LongId, title: string, content: string, categoryId: LongId, tagNames: string[]) => Promise<void>;
@@ -36,7 +42,14 @@ const MarkdownEditor = lazy(() =>
   import('@radish/ui/markdown-editor').then((module) => ({ default: module.MarkdownEditor }))
 );
 
-export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: EditPostModalProps) => {
+export const EditPostModal = ({
+  isOpen,
+  post,
+  revisionDraft = null,
+  categories,
+  onClose,
+  onSave,
+}: EditPostModalProps) => {
   const { t, i18n } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const markdownEditorLabels = useMemo(
@@ -83,23 +96,30 @@ export const EditPostModal = ({ isOpen, post, categories, onClose, onSave }: Edi
   // 当 post 改变时更新表单
   useEffect(() => {
     if (post) {
-      setTitle(post.voTitle);
-      setContent(post.voContent);
-      const initialTags = post.voTagNames && post.voTagNames.length > 0
-        ? post.voTagNames
-        : (post.voTags || '')
+      const matchingRevisionDraft = revisionDraft
+        && String(revisionDraft.voPostId) === String(post.voId)
+        ? revisionDraft
+        : null;
+      setTitle(matchingRevisionDraft?.voTitle ?? post.voTitle);
+      setContent(matchingRevisionDraft?.voContent ?? post.voContent);
+      const initialTags = matchingRevisionDraft
+        ? matchingRevisionDraft.voTags.map(tag => tag.voTagName)
+        : post.voTagNames && post.voTagNames.length > 0
+          ? post.voTagNames
+          : (post.voTags || '')
             .split(',')
             .map(tag => tag.trim())
             .filter(Boolean);
+      const initialCategoryId = matchingRevisionDraft?.voCategoryId ?? post.voCategoryId ?? null;
 
       setSelectedTags(initialTags);
-      setCategoryId(post.voCategoryId ?? null);
+      setCategoryId(initialCategoryId == null ? null : String(initialCategoryId));
       setTagInput('');
       setTagError(null);
       setCategoryError(null);
       setError(null);
     }
-  }, [post]);
+  }, [post, revisionDraft]);
 
   useEffect(() => {
     if (!isOpen) {

@@ -2,7 +2,15 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
-import type { PostDetail, CommentNode, CommentReplyTarget, PostQuickReply, QuestionAnswerSort, QuestionAnswerFilter } from '@/api/forum';
+import type {
+  CommentContentRevisionDetailVo,
+  PostDetail,
+  CommentNode,
+  CommentReplyTarget,
+  PostQuickReply,
+  QuestionAnswerSort,
+  QuestionAnswerFilter,
+} from '@/api/forum';
 import type { LongId } from '@/api/user';
 import type { UserFollowStatus } from '@/api/userFollow';
 import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constants/detailTools';
@@ -57,6 +65,7 @@ interface PostDetailContentViewProps {
     navigationKey: string;
   } | null;
   commentTypingUserNames?: string[];
+  commentRevisionDraft?: CommentContentRevisionDetailVo | null;
 
   onBack: () => void;
   onLike: (postId: LongId) => void;
@@ -149,6 +158,7 @@ export const PostDetailContentView = ({
   followLoading,
   commentNavigationTarget = null,
   commentTypingUserNames = [],
+  commentRevisionDraft = null,
   onBack,
   onLike,
   onVotePoll,
@@ -491,6 +501,7 @@ export const PostDetailContentView = ({
               onEditComment={onEditComment}
               onCancelEditComment={onCancelEditComment}
               onViewCommentHistory={onViewCommentHistory}
+              commentRevisionDraft={commentRevisionDraft}
               onLikeComment={onLikeComment}
               onReplyComment={(target) => {
                 onReplyComment(target);

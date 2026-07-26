@@ -1,6 +1,6 @@
 # F4-M 论坛内容版本完整性与作者恢复
 
-> **状态**：F4-M-A / B 已完成；下一顺位进入 F4-M-C Pencil 与正式页面
+> **状态**：F4-M-A / B / C 已完成；下一顺位进入 F4-M-D 成组验收与专题关闭
 >
 > **复核日期**：2026-07-26（Asia/Shanghai）
 >
@@ -467,7 +467,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 - 固定本文的用户路径、数据模型、兼容迁移、CAS、权限、恢复事务、页面、失败恢复、停止线和验证口径。
 - 不修改模型、接口、业务代码或 Pencil。
 
-### F4-M-B：服务端权威契约
+### F4-M-B：服务端权威契约（已完成）
 
 - 新增 Revision、RevisionTag、RevisionAttachment 和当前 `ContentRevision`。
 - 实现 `20260726_013_forum_content_revision` 的 SQLite / PostgreSQL doctor、apply、重入、verify 和历史基线。
@@ -475,7 +475,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 - 新增受权列表 / 详情 / 恢复 API、稳定错误和 `@radish/http` 契约。
 - 补 Repository、Service、Controller、迁移、并发、幂等和附件存续测试。
 
-### F4-M-C：Pencil 与正式页面
+### F4-M-C：Pencil 与正式页面（已完成）
 
 - 先更新 PC / mobile Pencil 的帖子和评论版本工作流。
 - 正式 Web 接入公开摘要、作者版本列表、详情对比、恢复确认、冲突保留和“使用此版本编辑”。

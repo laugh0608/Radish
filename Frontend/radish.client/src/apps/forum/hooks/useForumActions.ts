@@ -23,8 +23,6 @@ import {
   deleteComment,
   deletePostQuickReply,
   getChildComments,
-  getPostEditHistory,
-  getCommentEditHistory,
   type CommentNode,
   type CommentReplyTarget,
   type PostDetail,
@@ -32,8 +30,6 @@ import {
   type CreatePollRequest,
   type CreateLotteryRequest,
   type PostLottery,
-  type PostEditHistory,
-  type CommentEditHistory,
   type ForumPostSortBy,
   type QuestionAnswerSort,
   type QuestionAnswerFilter
@@ -65,19 +61,11 @@ export interface ForumActionsState {
   // 点赞状态
   likedPosts: Set<string>;
 
-  // 历史弹窗状态
+  // 内容版本弹窗状态
   isPostHistoryOpen: boolean;
   isCommentHistoryOpen: boolean;
-  postHistories: PostEditHistory[];
-  commentHistories: CommentEditHistory[];
-  postHistoryTotal: number;
-  commentHistoryTotal: number;
-  postHistoryPageIndex: number;
-  commentHistoryPageIndex: number;
-  postHistoryLoading: boolean;
-  commentHistoryLoading: boolean;
-  postHistoryError: string | null;
-  commentHistoryError: string | null;
+  activePostRevisionPostId: LongId | null;
+  activeCommentRevisionCommentId: LongId | null;
 }
 
 export interface ForumActionsHandlers {
@@ -141,9 +129,7 @@ export interface ForumActionsHandlers {
   handleCommentSortChange: (sortBy: 'newest' | 'hottest') => void;
   handleSearchChange: (keyword: string) => void;
 
-  // 历史分页与关闭
-  handlePostHistoryPageChange: (pageIndex: number) => Promise<void>;
-  handleCommentHistoryPageChange: (pageIndex: number) => Promise<void>;
+  // 内容版本关闭
   closePostHistory: () => void;
   closeCommentHistory: () => void;
 }
@@ -239,19 +225,6 @@ export const useForumActions = (
   const answerSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const postEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
-  const [postHistories, setPostHistories] = useState<PostEditHistory[]>([]);
-  const [commentHistories, setCommentHistories] = useState<CommentEditHistory[]>([]);
-  const [postHistoryTotal, setPostHistoryTotal] = useState(0);
-  const [commentHistoryTotal, setCommentHistoryTotal] = useState(0);
-  const [postHistoryPageIndex, setPostHistoryPageIndex] = useState(1);
-  const [commentHistoryPageIndex, setCommentHistoryPageIndex] = useState(1);
-  const [postHistoryLoading, setPostHistoryLoading] = useState(false);
-  const [commentHistoryLoading, setCommentHistoryLoading] = useState(false);
-  const [postHistoryError, setPostHistoryError] = useState<string | null>(null);
-  const [commentHistoryError, setCommentHistoryError] = useState<string | null>(null);
-
-  const postHistoryPageSize = 10;
-  const commentHistoryPageSize = 10;
   const [activePostHistoryPostId, setActivePostHistoryPostId] = useState<LongId | null>(null);
   const [activeCommentHistoryCommentId, setActiveCommentHistoryCommentId] = useState<LongId | null>(null);
 
@@ -285,38 +258,6 @@ export const useForumActions = (
     }
 
     return normalized;
-  };
-
-  const loadPostHistory = async (postId: LongId, pageIndex: number) => {
-    setPostHistoryLoading(true);
-    setPostHistoryError(null);
-    try {
-      const data = await getPostEditHistory(postId, pageIndex, postHistoryPageSize, t);
-      setPostHistories(data.voItems || []);
-      setPostHistoryTotal(data.voTotal || 0);
-      setPostHistoryPageIndex(data.voPageIndex || pageIndex);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setPostHistoryError(message);
-    } finally {
-      setPostHistoryLoading(false);
-    }
-  };
-
-  const loadCommentHistory = async (commentId: LongId, pageIndex: number) => {
-    setCommentHistoryLoading(true);
-    setCommentHistoryError(null);
-    try {
-      const data = await getCommentEditHistory(commentId, pageIndex, commentHistoryPageSize, t);
-      setCommentHistories(data.voItems || []);
-      setCommentHistoryTotal(data.voTotal || 0);
-      setCommentHistoryPageIndex(data.voPageIndex || pageIndex);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      setCommentHistoryError(message);
-    } finally {
-      setCommentHistoryLoading(false);
-    }
   };
 
   // 选择帖子
@@ -692,7 +633,6 @@ export const useForumActions = (
   const handleViewPostHistory = async (postId: LongId) => {
     setActivePostHistoryPostId(postId);
     setIsPostHistoryOpen(true);
-    await loadPostHistory(postId, 1);
   };
 
   // 保存编辑
@@ -1060,7 +1000,6 @@ export const useForumActions = (
   const handleViewCommentHistory = async (commentId: LongId): Promise<void> => {
     setActiveCommentHistoryCommentId(commentId);
     setIsCommentHistoryOpen(true);
-    await loadCommentHistory(commentId, 1);
   };
 
   // 删除评论
@@ -1134,36 +1073,14 @@ export const useForumActions = (
     [setSearchKeyword, setCurrentPage]
   );
 
-  const handlePostHistoryPageChange = async (pageIndex: number) => {
-    if (!activePostHistoryPostId) {
-      return;
-    }
-    await loadPostHistory(activePostHistoryPostId, pageIndex);
-  };
-
-  const handleCommentHistoryPageChange = async (pageIndex: number) => {
-    if (!activeCommentHistoryCommentId) {
-      return;
-    }
-    await loadCommentHistory(activeCommentHistoryCommentId, pageIndex);
-  };
-
   const closePostHistory = () => {
     setIsPostHistoryOpen(false);
     setActivePostHistoryPostId(null);
-    setPostHistories([]);
-    setPostHistoryTotal(0);
-    setPostHistoryPageIndex(1);
-    setPostHistoryError(null);
   };
 
   const closeCommentHistory = () => {
     setIsCommentHistoryOpen(false);
     setActiveCommentHistoryCommentId(null);
-    setCommentHistories([]);
-    setCommentHistoryTotal(0);
-    setCommentHistoryPageIndex(1);
-    setCommentHistoryError(null);
   };
 
   return {
@@ -1178,16 +1095,8 @@ export const useForumActions = (
     likedPosts,
     isPostHistoryOpen,
     isCommentHistoryOpen,
-    postHistories,
-    commentHistories,
-    postHistoryTotal,
-    commentHistoryTotal,
-    postHistoryPageIndex,
-    commentHistoryPageIndex,
-    postHistoryLoading,
-    commentHistoryLoading,
-    postHistoryError,
-    commentHistoryError,
+    activePostRevisionPostId: activePostHistoryPostId,
+    activeCommentRevisionCommentId: activeCommentHistoryCommentId,
 
     // 操作
     setIsPublishModalOpen,
@@ -1226,8 +1135,6 @@ export const useForumActions = (
     handleSortChange,
     handleCommentSortChange,
     handleSearchChange,
-    handlePostHistoryPageChange,
-    handleCommentHistoryPageChange,
     closePostHistory,
     closeCommentHistory
   };

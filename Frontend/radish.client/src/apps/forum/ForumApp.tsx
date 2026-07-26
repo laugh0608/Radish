@@ -9,6 +9,7 @@ import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { commentHub, type CommentTypingRealtimeEvent } from '@/services/commentHub';
 import { ConfirmDialog } from '@radish/ui/confirm-dialog';
 import { ContentReportModal } from '@/components/ContentReportModal';
+import { toast } from '@radish/ui/toast';
 import {
   getPostList,
   getCurrentGodCommentsBatch,
@@ -17,6 +18,8 @@ import {
   type PostItem,
   type CommentHighlight,
   type CommentNode,
+  type CommentContentRevisionDetailVo,
+  type PostContentRevisionDetailVo,
 } from '@/api/forum';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import {
@@ -37,6 +40,7 @@ import {
   updateCommentLikeCount,
   upsertCommentInTree
 } from './utils/commentRealtimeTree';
+import { findForumCommentById } from './utils/forumCommentTree';
 import { CategoryList } from './components/CategoryList';
 import { TagSection } from './components/TagSection';
 import { TrendingSidebar } from './components/TrendingSidebar';
@@ -58,8 +62,8 @@ const PostDetailContentView = lazy(() =>
   import('./views/PostDetailContentView').then((module) => ({ default: module.PostDetailContentView }))
 );
 
-const EditHistoryModal = lazy(() =>
-  import('./components/EditHistoryModal').then((module) => ({ default: module.EditHistoryModal }))
+const ContentRevisionModal = lazy(() =>
+  import('./components/ContentRevisionModal').then((module) => ({ default: module.ContentRevisionModal }))
 );
 
 const SEARCH_PAGE_SIZE = 20;
@@ -137,6 +141,8 @@ export const ForumApp = () => {
   const [searchPostGodComments, setSearchPostGodComments] = useState<Map<string, CommentHighlight>>(new Map());
   const [loadingSearchPosts, setLoadingSearchPosts] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: LongId } | null>(null);
+  const [postRevisionDraft, setPostRevisionDraft] = useState<PostContentRevisionDetailVo | null>(null);
+  const [commentRevisionDraft, setCommentRevisionDraft] = useState<CommentContentRevisionDetailVo | null>(null);
   const [commentNavigationTarget, setCommentNavigationTarget] = useState<ForumCommentNavigationTarget | null>(null);
   const [commentNavigationNotice, setCommentNavigationNotice] = useState<string | null>(null);
   const [commentTypingUserNames, setCommentTypingUserNames] = useState<string[]>([]);
@@ -292,6 +298,11 @@ export const ForumApp = () => {
     setSelectedTagName,
   } = dataState;
 
+  useEffect(() => {
+    setPostRevisionDraft(null);
+    setCommentRevisionDraft(null);
+  }, [loggedIn, selectedPost?.voId, userId]);
+
   const applySearchGodCommentPreviewUpdate = useCallback((postId: LongId, highlight: CommentHighlight | null) => {
     const postKey = String(postId);
     setSearchPostGodComments(prev => {
@@ -372,6 +383,42 @@ export const ForumApp = () => {
     resetCommentSort: dataState.resetCommentSort
   });
   const { handleSelectPost } = actionsState;
+  const activeRevisionComment = findForumCommentById(
+    dataState.comments,
+    actionsState.activeCommentRevisionCommentId
+  );
+  const postRevisionTarget = actionsState.isPostHistoryOpen
+    && dataState.selectedPost
+    && isSameLongId(dataState.selectedPost.voId, actionsState.activePostRevisionPostId)
+    ? {
+        kind: 'post' as const,
+        targetId: dataState.selectedPost.voId,
+        currentContentRevision: dataState.selectedPost.voContentRevision,
+      }
+    : null;
+  const commentRevisionTarget = actionsState.isCommentHistoryOpen
+    && actionsState.activeCommentRevisionCommentId
+    ? {
+        kind: 'comment' as const,
+        targetId: actionsState.activeCommentRevisionCommentId,
+        currentContentRevision: activeRevisionComment?.voContentRevision ?? 1,
+      }
+    : null;
+
+  const refreshSelectedPostAfterRevisionWrite = async () => {
+    if (!dataState.selectedPost?.voId) {
+      return;
+    }
+
+    await Promise.all([
+      actionsState.handleSelectPost(dataState.selectedPost.voId),
+      dataState.loadPosts(),
+    ]);
+    setPostRevisionDraft(null);
+    setCommentRevisionDraft(null);
+    toast.success(t('forum.revision.restoreSuccess'));
+  };
+
   const handleDetailAnswerEditorUploadingChange = useCallback((uploading: boolean) => {
     detailAnswerEditorUploadingRef.current = uploading;
     setIsDetailAnswerEditorUploading(uploading);
@@ -949,6 +996,7 @@ export const ForumApp = () => {
                 followLoading={followLoading}
                 commentNavigationTarget={commentNavigationTarget}
                 commentTypingUserNames={commentTypingUserNames}
+                commentRevisionDraft={commentRevisionDraft}
                 onBack={handleClosePostDetail}
                 onLike={actionsState.handleLikePost}
                 onVotePoll={actionsState.handleVotePoll}
@@ -967,7 +1015,10 @@ export const ForumApp = () => {
                 onDeleteQuickReply={actionsState.handleDeleteQuickReply}
                 onCommentSortChange={actionsState.handleCommentSortChange}
                 onDeleteComment={actionsState.handleDeleteComment}
-                onEditComment={actionsState.handleEditComment}
+                onEditComment={async (commentId, content, expectedContentRevision) => {
+                  await actionsState.handleEditComment(commentId, content, expectedContentRevision);
+                  setCommentRevisionDraft(null);
+                }}
                 onCancelEditComment={actionsState.handleCancelCommentEdit}
                 onViewCommentHistory={actionsState.handleViewCommentHistory}
                 onLikeComment={actionsState.handleCommentLike}
@@ -1107,9 +1158,16 @@ export const ForumApp = () => {
             <EditPostModal
               isOpen={actionsState.isEditModalOpen}
               post={dataState.selectedPost}
+              revisionDraft={postRevisionDraft}
               categories={dataState.categories}
-              onClose={() => actionsState.setIsEditModalOpen(false)}
-              onSave={actionsState.handleSaveEdit}
+              onClose={() => {
+                setPostRevisionDraft(null);
+                actionsState.setIsEditModalOpen(false);
+              }}
+              onSave={async (...args) => {
+                await actionsState.handleSaveEdit(...args);
+                setPostRevisionDraft(null);
+              }}
             />
           </Suspense>
         )}
@@ -1140,25 +1198,17 @@ export const ForumApp = () => {
 
         {actionsState.isPostHistoryOpen && (
           <Suspense fallback={null}>
-            <EditHistoryModal
+            <ContentRevisionModal
               isOpen={actionsState.isPostHistoryOpen}
-              title={dataState.selectedPost?.voIsQuestion ? t('forum.questionHistoryTitle') : t('forum.postHistoryTitle')}
-              loading={actionsState.postHistoryLoading}
-              error={actionsState.postHistoryError}
-              items={actionsState.postHistories}
-              total={actionsState.postHistoryTotal}
-              pageIndex={actionsState.postHistoryPageIndex}
-              pageSize={10}
+              target={postRevisionTarget}
+              sessionKey={loggedIn ? String(userId || '0') : 'anonymous'}
               onClose={actionsState.closePostHistory}
-              onPageChange={actionsState.handlePostHistoryPageChange}
-              renderContent={(item) => {
-                const history = item as import('@/types/forum').PostEditHistory;
-                return {
-                  beforeTitle: history.voOldTitle,
-                  afterTitle: history.voNewTitle,
-                  before: history.voOldContent,
-                  after: history.voNewContent
-                };
+              onRestored={refreshSelectedPostAfterRevisionWrite}
+              onUseInEditor={(detail) => {
+                if ('voTitle' in detail) {
+                  setPostRevisionDraft(detail);
+                  actionsState.setIsEditModalOpen(true);
+                }
               }}
             />
           </Suspense>
@@ -1166,23 +1216,16 @@ export const ForumApp = () => {
 
         {actionsState.isCommentHistoryOpen && (
           <Suspense fallback={null}>
-            <EditHistoryModal
+            <ContentRevisionModal
               isOpen={actionsState.isCommentHistoryOpen}
-              title={t('forum.commentHistoryTitle')}
-              loading={actionsState.commentHistoryLoading}
-              error={actionsState.commentHistoryError}
-              items={actionsState.commentHistories}
-              total={actionsState.commentHistoryTotal}
-              pageIndex={actionsState.commentHistoryPageIndex}
-              pageSize={10}
+              target={commentRevisionTarget}
+              sessionKey={loggedIn ? String(userId || '0') : 'anonymous'}
               onClose={actionsState.closeCommentHistory}
-              onPageChange={actionsState.handleCommentHistoryPageChange}
-              renderContent={(item) => {
-                const history = item as import('@/types/forum').CommentEditHistory;
-                return {
-                  before: history.voOldContent,
-                  after: history.voNewContent
-                };
+              onRestored={refreshSelectedPostAfterRevisionWrite}
+              onUseInEditor={(detail) => {
+                if (!('voTitle' in detail)) {
+                  setCommentRevisionDraft(detail);
+                }
               }}
             />
           </Suspense>

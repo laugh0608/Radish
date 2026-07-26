@@ -8,7 +8,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(testDir, '..');
 
 function readLocaleResources(): string {
-  const domainNames = ['core', 'shell', 'discover', 'community', 'chat', 'account', 'commerce', 'docs'];
+  const domainNames = ['core', 'shell', 'discover', 'community', 'forumRevision', 'chat', 'account', 'commerce', 'docs'];
   return ['en', 'zh']
     .flatMap((language) => domainNames.map((domain) =>
       readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
@@ -656,6 +656,10 @@ test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器
 test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
   const postDetailSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PostDetail.tsx'), 'utf8');
+  const revisionModalSource = readFileSync(
+    resolve(clientRoot, 'src/apps/forum/components/ContentRevisionModal.tsx'),
+    'utf8'
+  );
 
   assert.match(detailSource, /intent: 'answer'/);
   assert.match(detailSource, /intent: 'edit'/);
@@ -673,7 +677,9 @@ test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指�
   assert.match(detailSource, /answerQuestion\(/);
   assert.match(detailSource, /acceptQuestionAnswer\(/);
   assert.match(detailSource, /updatePost\(/);
-  assert.match(detailSource, /getPostEditHistory\(/);
+  assert.match(detailSource, /ContentRevisionModal/);
+  assert.match(revisionModalSource, /getPostEditHistory\(/);
+  assert.match(revisionModalSource, /getCommentEditHistory\(/);
   assert.match(detailSource, /buildAnswerSubmissionFingerprint/);
   assert.match(detailSource, /buildPostEditSubmissionFingerprint/);
   assert.doesNotMatch(detailSource, /buildDesktopForumPostReturnPath/);

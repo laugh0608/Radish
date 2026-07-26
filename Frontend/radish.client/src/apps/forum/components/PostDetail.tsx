@@ -188,6 +188,9 @@ export const PostDetail = ({
   const isLotteryPost = !!post?.voHasLottery && !!lottery;
   const canAnswerQuestion = isAuthenticated && !isSubmittingAnswer && !!onAnswerQuestion;
   const canViewQuestionHistory = isQuestionPost && !!onViewHistory;
+  const canViewPostVersions = !isQuestionPost
+    && !!onViewHistory
+    && (isAuthor || (post?.voContentRevision ?? 1) > 1);
   const totalAnswerCount = question?.voAnswerCount ?? post?.voAnswerCount ?? 0;
   const drawTimeValue = lottery?.voDrawTime ? new Date(lottery.voDrawTime) : null;
   const postCreateTimeValue = post?.voCreateTime ? new Date(post.voCreateTime) : null;
@@ -1039,7 +1042,8 @@ export const PostDetail = ({
 
           {!isReadOnly && (
             canToggleTop
-            || (isAuthor && (onEdit || onDelete || (!isQuestionPost && onViewHistory)))
+            || (isAuthor && (onEdit || onDelete))
+            || canViewPostVersions
           ) && (
             <div className={styles.authorActions}>
               {canToggleTop && (
@@ -1086,18 +1090,18 @@ export const PostDetail = ({
                       {t('forum.postDetail.action.delete')}
                     </button>
                   )}
-                  {!isQuestionPost && onViewHistory && (
-                    <button
-                      type="button"
-                      onClick={() => onViewHistory(post.voId)}
-                      className={styles.historyButton}
-                      title={t('forum.postDetail.action.historyTitle')}
-                    >
-                      <Icon icon="mdi:history" size={18} />
-                      {t('forum.postDetail.action.history')}
-                    </button>
-                  )}
                 </>
+              )}
+              {canViewPostVersions && (
+                <button
+                  type="button"
+                  onClick={() => onViewHistory(post.voId)}
+                  className={styles.historyButton}
+                  title={t('forum.postDetail.action.historyTitle')}
+                >
+                  <Icon icon="mdi:history" size={18} />
+                  {t('forum.postDetail.action.history')}
+                </button>
               )}
             </div>
           )}

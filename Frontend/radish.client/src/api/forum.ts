@@ -606,7 +606,7 @@ export async function updatePost(
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '编辑帖子失败');
+    throw createApiResponseError(response, '编辑帖子失败');
   }
 
   return response.data;
@@ -654,7 +654,7 @@ export async function updateComment(
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '编辑评论失败');
+    throw createApiResponseError(response, '编辑评论失败');
   }
 
   return response.data;
@@ -670,7 +670,7 @@ export async function getPostRevisionList(
     { withAuth: Boolean(tokenService.getAccessToken()), timeout: FORUM_READ_TIMEOUT_MS }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取帖子版本列表失败');
+    throw createApiResponseError(response, '获取帖子版本列表失败');
   }
   return response.data;
 }
@@ -683,7 +683,7 @@ export async function getPostRevisionDetail(
     { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取帖子版本详情失败');
+    throw createApiResponseError(response, '获取帖子版本详情失败');
   }
   return response.data;
 }
@@ -697,7 +697,7 @@ export async function restorePostRevision(
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '恢复帖子版本失败');
+    throw createApiResponseError(response, '恢复帖子版本失败');
   }
   return response.data;
 }
@@ -712,7 +712,7 @@ export async function getCommentRevisionList(
     { withAuth: Boolean(tokenService.getAccessToken()), timeout: FORUM_READ_TIMEOUT_MS }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取评论版本列表失败');
+    throw createApiResponseError(response, '获取评论版本列表失败');
   }
   return response.data;
 }
@@ -725,7 +725,7 @@ export async function getCommentRevisionDetail(
     { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取评论版本详情失败');
+    throw createApiResponseError(response, '获取评论版本详情失败');
   }
   return response.data;
 }
@@ -739,7 +739,7 @@ export async function restoreCommentRevision(
     { withAuth: true }
   );
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '恢复评论版本失败');
+    throw createApiResponseError(response, '恢复评论版本失败');
   }
   return response.data;
 }

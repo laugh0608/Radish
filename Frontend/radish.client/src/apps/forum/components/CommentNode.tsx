@@ -4,7 +4,12 @@ import { createReactionBarLabels } from '../utils/reactionBarLabels';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
+import type {
+  CommentContentRevisionDetailVo,
+  CommentNode as CommentNodeType,
+  CommentReplyTarget,
+  ReactionSummaryVo,
+} from '@/api/forum';
 import type { LongId } from '@/api/user';
 import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { resolveMediaUrl } from '@/utils/media';
@@ -34,6 +39,7 @@ interface CommentNodeProps {
   ) => Promise<void>;
   onCancelEdit?: () => void;
   onViewHistory?: (commentId: LongId) => void;
+  revisionDraft?: CommentContentRevisionDetailVo | null;
   onLike?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReply?: (target: CommentReplyTarget) => void;
   onTyping?: (commentId: LongId) => void;
@@ -266,6 +272,7 @@ export const CommentNode = ({
   onEdit,
   onCancelEdit,
   onViewHistory,
+  revisionDraft,
   onLike,
   onReply,
   onTyping,
@@ -381,6 +388,16 @@ export const CommentNode = ({
 
     setIsExpanded(true);
   }, [expandedRootCommentId, level, node.voId]);
+
+  useEffect(() => {
+    if (!revisionDraft || !isSameLongId(String(revisionDraft.voCommentId), node.voId)) {
+      return;
+    }
+
+    setEditContent(revisionDraft.voContent);
+    setEditError(null);
+    setIsEditing(true);
+  }, [node.voId, revisionDraft]);
 
   // 若后端只返回 childrenTotal（不带 children 列表），为了“收起态也能看到一条回复”，这里自动预加载第一页子评论
   useEffect(() => {
@@ -641,9 +658,9 @@ export const CommentNode = ({
         {level === 1 && node.voIsSofa && (
           <span className={styles.sofaBadge}>{t('forum.comment.sofa')}</span>
         )}
-        {isAuthor && (
+        {(isAuthor || (onViewHistory && node.voContentRevision > 1)) && (
           <div className={styles.authorActions}>
-            {canEdit && onEdit && (
+            {isAuthor && canEdit && onEdit && (
               <button
                 type="button"
                 onClick={handleEdit}
@@ -654,7 +671,7 @@ export const CommentNode = ({
                 <Icon icon="mdi:pencil" size={14} />
               </button>
             )}
-            {onViewHistory && (
+            {onViewHistory && (isAuthor || node.voContentRevision > 1) && (
               <button
                 type="button"
                 onClick={() => onViewHistory(node.voId)}
@@ -665,7 +682,7 @@ export const CommentNode = ({
                 <Icon icon="mdi:history" size={14} />
               </button>
             )}
-            {onDelete && (
+            {isAuthor && onDelete && (
               <button
                 type="button"
                 onClick={() => onDelete(node.voId)}
@@ -864,6 +881,8 @@ export const CommentNode = ({
                   onDelete={onDelete}
                   onEdit={onEdit}
                   onCancelEdit={onCancelEdit}
+                  onViewHistory={onViewHistory}
+                  revisionDraft={revisionDraft}
                   onLike={onLike}
                   onReply={onReply}
                   onTyping={onTyping}
