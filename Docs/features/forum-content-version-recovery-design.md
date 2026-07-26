@@ -1,6 +1,6 @@
 # F4-M 论坛内容版本完整性与作者恢复
 
-> **状态**：F4-M-A / B / C / D 已完成，专题关闭
+> **状态**：F4-M-A / B / C / D 已完成，专题关闭；下一顺位进入 [F4-N 论坛内容赞赏](/features/forum-content-reward)
 >
 > **复核日期**：2026-07-26（Asia/Shanghai）
 >
@@ -157,7 +157,7 @@ F4-M 选择“论坛内容版本完整性与作者恢复”为当前唯一完整
 - `CategoryNameSnapshot`
 - `CoverAttachmentId`
 - `EditorId / EditorName`
-- `CreatedAt`
+- `CreateTime`（UTC）
 - 标准创建审计字段
 
 约束与索引：
@@ -196,7 +196,7 @@ F4-M 选择“论坛内容版本完整性与作者恢复”为当前唯一完整
 - `IntegrityStatus`
 - `Content`
 - `EditorId / EditorName`
-- `CreatedAt`
+- `CreateTime`（UTC）
 - 标准创建审计字段
 
 唯一 `(TenantId, CommentId, RevisionNumber)`，列表索引 `(TenantId, CommentId, RevisionNumber DESC)`。恢复来源必须属于同评论、同租户。
@@ -279,7 +279,7 @@ doctor 至少报告：
 - F4-M-B 新增 Revision API 后，旧 `GetEditHistory` 暂时保留供 F4-M-C 迁移。
 - 旧接口的完整正文读取改为作者 / 管理员受权访问，不继续保留匿名全文契约。
 - F4-M-C 正式页面只消费 Revision 摘要与详情；旧历史以“早期编辑记录，仅供查看”独立展示，不提供恢复动作。
-- F4-M-D 验收确认无正式消费者后，决定删除旧 HTTP 入口或保留受权只读兼容；无论选择哪种，新写入都不得继续双写旧历史表。
+- F4-M-D 最终保留旧 HTTP 入口作为作者 / Admin / System 受权只读兼容，正式版本弹窗按需展示早期记录；新写入只追加完整 Revision，不再双写旧历史表。
 
 ## 八、普通编辑写入契约
 
@@ -388,6 +388,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 匿名 / 普通读者只获得公开摘要：
 
 - 是否编辑、编辑次数、最近编辑时间；
+- 最近编辑时间只读取当前 `ContentRevision` 对应 Revision 的 UTC `CreateTime`；当前 Revision 缺失时返回稳定 `Incomplete`，不得回退到实体 `ModifyTime` 形成第二套时间真相；
 - 不返回 Revision Id、旧正文、旧标题、分类标签或附件。
 
 作者 / 管理员获得分页版本摘要：
@@ -437,6 +438,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 - 长正文使用受控滚动区；屏幕阅读器能区分目标版本与当前版本。
 - 不在日志、URL、Analytics 或错误消息中记录旧正文、附件 URL 或完整快照。
 - 账号切换、登出、目标失权和窗口关闭时清除内存中的 Revision 详情。
+- 正式 `/me` 复用统一 `logout` 作为正常账号切换入口，不依赖 WebOS 历史入口清理身份状态。
 
 ### 11.3 壳层边界
 
@@ -474,6 +476,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 - 普通编辑接入 CAS、完整 Revision 与附件引用，不再写入旧 EditHistory。
 - 新增受权列表 / 详情 / 恢复 API、稳定错误和 `@radish/http` 契约。
 - 补 Repository、Service、Controller、迁移、并发、幂等和附件存续测试。
+- 完成结果见 [F4-M-B 服务端权威契约记录](/records/f4-m-b-forum-content-revision-server-contract-2026-07-26)。
 
 ### F4-M-C：Pencil 与正式页面（已完成）
 
@@ -481,6 +484,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 - 正式 Web 接入公开摘要、作者版本列表、详情对比、恢复确认、冲突保留和“使用此版本编辑”。
 - 收口旧匿名全文历史，覆盖双语、四主题、键盘、长正文和失权清理。
 - 不新增 Console、Flutter、WebOS 或 Tauri 专属实现。
+- 完成结果见 [F4-M-C 正式 Web 记录](/records/f4-m-c-forum-content-revision-web-2026-07-26)。
 
 ### F4-M-D：成组验收与专题关闭（已完成）
 
@@ -491,6 +495,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 - 覆盖中英文、PC / mobile、键盘、长正文、Back / Forward 和账号切换。
 - 完成临时数据清理、六库完整性、Main SQLite / PostgreSQL migration 严格 verify。
 - 真实浏览器验收前重新说明启动命令、Gateway / API / Auth / Frontend 端口与清理方式并取得当前任务授权；验收优先使用浏览器插件。
+- 完成结果见 [F4-M-D 成组验收记录](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)。
 
 ## 十四、验证基线
 
@@ -518,7 +523,7 @@ Long ID 继续按字符串传输。帖子与评论分别使用新的稳定操作
 
 ### 14.3 运行态验收
 
-按 [浏览器 Smoke 规则](/guide/browser-smoke) 经 Gateway 同时覆盖 PC 与移动视图。真实 smoke 只在 F4-M-D 成组验收执行，不在 A / B / C 日常连续开发中重复启动服务。
+已按[浏览器 Smoke 规则](/guide/browser-smoke)经 Gateway 覆盖 PC / mobile、多身份、双语、代表主题、双标签 CAS 与账号切换，结果见 [F4-M-D 成组验收记录](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)。后续维护仍只在成组验收或用户明确要求时启动真实 smoke。
 
 ## 十五、完成标准
 
@@ -557,3 +562,6 @@ F4-M 只有同时满足以下条件才可关闭：
 - [浏览器 Smoke 规则](/guide/browser-smoke)
 - [验证基线说明](/guide/validation-baseline)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
+- [F4-M-B 服务端权威契约记录](/records/f4-m-b-forum-content-revision-server-contract-2026-07-26)
+- [F4-M-C 正式 Web 记录](/records/f4-m-c-forum-content-revision-web-2026-07-26)
+- [F4-M-D 成组验收记录](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)

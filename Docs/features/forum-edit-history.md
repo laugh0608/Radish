@@ -155,11 +155,10 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 
 客户端：`Frontend/radish.client`
 
-- 帖子详情新增“历史”按钮，弹窗分页查看帖子编辑历史。
-- 评论节点新增“历史”按钮，弹窗分页查看评论编辑历史。
-- 展示内容：
-  - 帖子：编辑前后标题 + 编辑前后正文。
-  - 评论：编辑前后正文。
+- F4-M 后帖子与评论的正式入口统一显示为“版本”，主时间线读取完整 Revision。
+- 旧 `PostEditHistory / CommentEditHistory` 只在版本弹窗的“早期编辑记录”折叠区按需分页读取。
+- 旧历史正文仅允许目标作者与 Admin / System 查看；匿名与其他读者只获得是否编辑、次数和最近编辑时间摘要。
+- 旧记录继续展示帖子编辑前后标题 / 正文或评论编辑前后正文，但不提供恢复动作。
 
 ---
 
@@ -174,6 +173,8 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 5. 历史记录超过 `MaxHistoryRecords` 后自动裁剪。
 6. 帖子 / 评论编辑无变化时不写历史、不递增编辑次数。
 7. 同一 `ClientSubmissionId` 成功重试不新增历史，同 key 不同请求摘要返回冲突。
+8. 匿名与其他读者不能读取旧历史全文；作者与 Admin / System 可以在版本弹窗查看受权兼容记录。
+9. F4-M 后的新编辑只创建完整 Revision，不再新增旧历史记录。
 
 ### 联调文件
 
