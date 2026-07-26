@@ -1,6 +1,6 @@
 # F4-L Wiki 附件隐私与生命周期权威闭环
 
-> **状态**：F4-L-A / B / C / D 已完成，专题关闭；下一顺位进入 F4-M-A
+> **状态**：F4-L-A / B / C / D 已完成，专题关闭；后续 F4-M-A 已选定 [论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design)
 >
 > **复核日期**：2026-07-26（Asia/Shanghai）
 >

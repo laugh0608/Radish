@@ -315,7 +315,7 @@
 - 分片上传横向扩容前补共享临时存储、分布式会话互斥与跨实例回归；当前部署边界为单实例
 - 为附件持久化增加稳定的上传会话 correlation / 唯一约束，使“附件已落库但会话完成状态持续回写失败且响应丢失”的极端路径可在后续请求中找回既有附件
 - 为普通上传和分片上传增加持久化配额结算记录及可重放 outbox，避免缓存结算失败造成当日用量漏记或预留滞留
-- 按 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)继续完成正式 Web 认证资源加载与成组验收；服务端私有默认、领域可见性、权威引用与历史迁移已完成，通用 Document 保持独立附件分类，`Chat` 已完成默认私有、频道成员授权和历史迁移
+- [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成正式 Web 认证资源加载与成组验收；后续变更继续保持私有默认、动态领域可见性、权威引用、历史迁移和通用 Document 独立边界，`Chat` 保持默认私有与频道成员授权
 - 临时令牌审计、管理界面与端到端验收覆盖
 - 盘点并迁移历史正文、Wiki revision 与 `Site.Branding.FaviconUrl` 中的 `/uploads/**` / 旧域名直链；完成生产数据抽样与运行态回归前，不得把关闭用户上传静态根目录视为历史数据已经收口
 - 专题验收时在取得启动授权后通过真实 API + Gateway 验证普通 `/uploads/<business>/...` 不可达、`/uploads/DefaultIco/...` 可达，以及受控路由的 deleted / disabled / private / thumbnail 行为；当前源码与配置断言不能替代该验证
