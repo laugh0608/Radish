@@ -6,9 +6,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-N-A 论坛内容赞赏权威设计文档修订`
-- **产品下一顺位**：`按已批准裁决校准首版对象、资产事务、审计投影、通知、治理与停止线`
-- **复核日期**：`2026-07-26`
+- **工程第一顺位**：`等待明确批准进入 F4-N-B 服务端与 migration`
+- **产品下一顺位**：`实现 Post / Comment 固定 1 胡萝卜赞赏的 Main 原子事务、Log 幂等投影与逐笔通知`
+- **复核日期**：`2026-07-27`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
@@ -18,16 +18,17 @@
 - [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)已完成 A-D 批并关闭：Main 权威引用、Wiki 私有默认、动态 ACL、受保护资源、六身份 Gateway 矩阵及 SQLite / PostgreSQL 验证形成闭环。
 - [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design)已完成 A-D 批并关闭：Post / Comment Revision、CAS、完整快照、旧历史受权兼容、安全恢复、正式 Web 与多身份 PC / mobile 矩阵均通过。
 - F4-M-D 验收修正了版本摘要时间双真相和正式 `/me` 缺少退出入口的共同根因；临时数据残留为 `0`，六库完整性与严格 migration verify 通过。
-- F4-N-A 现状审计已完成，设计方向已于 2026-07-26 获得批准；今晚只完成日终文档收口，不进入模型、接口、页面或 migration。
+- [F4-N 论坛内容赞赏](/features/forum-content-reward)权威设计已完成修订：首批只支持 `Post / Comment` 和预设理由；Main 原子提交资产真相与 Outbox，Log `BalanceChangeLog` 作为可靠幂等审计投影；通知固定为 `ContentRewardReceived + Reaction + ForumPost`。
+- F4-N-A 已补齐账号、治理、双向屏蔽、目标可见性、确定性余额锁序、`BusinessCalendar` 半开区间、失败恢复、API、A-D 批次、验证矩阵和停止线；进入模型、接口、migration 或页面前等待明确批准。
 
-## 明日事项（2026-07-27，F4-N-A）
+## 下一事项（F4-N-B，待批准）
 
-1. 修订[论坛内容赞赏](/features/forum-content-reward)权威专题，首批只支持 `Post / Comment`；`PostAnswer` 在回答通知定位与内容治理形成完整边界前后置。
-2. 首批只保留预设理由，不开放自定义理由文本；后者必须作为具备举报、隐藏和证据链的独立治理增强再评估。
-3. 固定 Main 资产真相：`ContentReward`、双方余额、`TIP` 流水、幂等终态和 Reliable Outbox 在专属 Repository 事务中原子提交；不复用需要支付密码的通用转账接口。
-4. 将 Log DB 的 `BalanceChangeLog` 明确定义为可靠、幂等的审计投影，不再宣称与 Main 主账跨库同事务；现有通用转账的跨库日志假设保留为独立维护债。
-5. 固定发送者 / 接收者账号状态、治理状态和双向屏蔽资格矩阵；通知使用 `ContentRewardReceived + Reaction + ForumPost`，逐笔投递、不聚合并受屏蔽策略抑制。
-6. 补齐 API、失败恢复、SQLite / PostgreSQL 并发、正式 Web PC / mobile、A-D 批次、验证矩阵和停止线；完成文档后汇报差异，进入 F4-N-B 代码前再次等待明确批准。
+1. 新增 `ContentReward`、DTO / Vo、常量、映射、专属 Service / Repository 和 schema ledger migration。
+2. 在 Main 同一事务提交 `ContentReward`、双方余额、`TIP` 流水、成功幂等终态及审计 / 通知 Outbox，不复用通用转账入口。
+3. 实现确定性余额锁序、同目标唯一约束、`BusinessCalendar` 业务日上限和 SQLite / PostgreSQL 并发保护。
+4. 为 Log `BalanceChangeLog` 增加稳定投影键与唯一保护，实现可重试、可 replay 的两条审计分录。
+5. 注册逐笔 `ContentRewardReceived` 通知，使用 `Reaction` 分类、`ForumPost` 定位和双向屏蔽抑制。
+6. 完成 B 批定向测试与 migration doctor / apply / verify；B 批不提前实现 Pencil 或正式 Web 页面。
 
 ## 当前执行入口
 
@@ -48,7 +49,7 @@
 
 ## 当前不做
 
-- 不提前实现 F4-N 模型、API、migration、Pencil 或页面。
+- 未获得本轮明确批准前，不实现 F4-N 模型、API、migration、Pencil 或页面。
 - 不把 `BalanceChangeLog` 跨库写入包装成分布式事务，也不顺手重构现有通用转账。
 - 不在首批扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。
