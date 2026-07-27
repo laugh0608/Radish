@@ -19,7 +19,7 @@
 
 权威结论如下：
 
-1. 首批目标仅为 `Post / Comment`；回答级定位和治理闭环完成前不支持 `PostAnswer`。
+1. 首批目标仅为 `Post / Comment`；F4-O-B 已补齐回答级服务端定位与治理，但 F4-O-C / D 尚未完成正式 Web 和成组验收，因此关闭后的首批仍不自动扩展到 `PostAnswer`。
 2. 首批理由仅为预设码，不保存用户自定义文本，不扩张举报和文本治理面。
 3. `ContentReward`、双方 `UserBalance`、`TIP` 类型 `CoinTransaction`、成功幂等终态和两类 Outbox 请求在 Main 同一事务中提交。
 4. `BalanceChangeLog` 由 Log DB 消费者按稳定投影键写入；重复投递不得生成重复分录，投影失败不得回滚或改写 Main 资产事实。
@@ -68,7 +68,7 @@
 
 目标必须属于当前租户、真实存在、未删除、未被治理隐藏，且当前访问者具备读取权限。评论所属帖子也必须满足同样条件。接收者必须由服务端根据目标内容解析，客户端不得提交作者 ID。
 
-`PostAnswer` 明确后置，直到以下能力同时形成闭环：
+`PostAnswer` 明确后置，直到以下能力同时形成闭环。F4-O-B 已完成前两项的服务端权威，后两项及整体产品边界仍需在 F4-O-C / D 之后重新评审：
 
 - `NotificationTargetData` 和正式 Web 支持回答级 canonical 定位、高亮与失效处理；
 - 内容治理、举报、证据和申诉支持 `PostAnswer`；

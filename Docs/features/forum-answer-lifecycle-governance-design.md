@@ -12,7 +12,9 @@
 
 F4-O 选择“论坛问答回答生命周期与治理闭环”为当前唯一功能专题。
 
-现有问答已经能发布问题、提交回答和采纳答案，也具备提交意图去重与正式 Web 入口；但 `PostAnswer` 仍是早期 MVP 内容对象：所有回答随帖子详情一次性加载，写入继续寄居 `PostService`，没有独立附件类型、公开标识、编辑 / 删除、版本恢复、举报治理、可靠通知和采纳变更审计。继续增加排序、奖励或独立问答页会放大这层权威缺口。
+F4-O-A 审计时，问答已经能发布问题、提交回答和采纳答案，也具备提交意图去重与正式 Web 入口；但 `PostAnswer` 仍是早期 MVP 内容对象：所有回答随帖子详情一次性加载，写入继续寄居 `PostService`，没有独立附件类型、公开标识、编辑 / 删除、版本恢复、举报治理、可靠通知和采纳变更审计。继续增加排序、奖励或独立问答页会放大这层权威缺口。
+
+F4-O-B 已完成上述服务端权威补齐。当前剩余工作属于 B -> C 外部契约复核、Pencil、正式 Web 和 D 批运行态验收，不应再把本节的 A 批历史基线误读为当前实现状态。
 
 核心裁决如下：
 
@@ -39,7 +41,9 @@ F4-O 选择“论坛问答回答生命周期与治理闭环”为当前唯一功
 | 个人圈子深化 | 关注动态、关注 / 粉丝、屏蔽隔离和回流已完整 | 推荐、转发和联邦不是当前职责 | 容易与发现页、论坛和未来联邦重复 | 保持现有边界 |
 | 匿名公开聊天 | 登录态聊天搜索、Reaction、Pin 和回执已闭环 | 没有匿名实时讨论面 | 与论坛讨论重叠，并引入匿名身份、限流、滥用和 SEO 风险 | 不回拉 |
 
-### 2.1 已确认的代码事实
+### 2.1 A 批审计时确认的代码事实
+
+以下条目记录选题时的历史基线，用于解释 F4-O 的治理方向；B 批完成后的现行契约以第七、十、十二和十三节的完成状态为准。
 
 - `QuestionController.Answer` 通过 `ForumContentWriteService` 提供创建意图去重，但采纳仍直接调用 `IPostService.AcceptAnswerAsync`。
 - `PostService.Interaction` 分别写 `PostAnswer`、`PostQuestion.AnswerCount` 和采纳字段；没有专属 Repository 保护问题聚合。
@@ -328,24 +332,24 @@ QuestionController
 
 ## 十、API 与 HTTP 契约
 
-正式新契约使用字符串标识：
+F4-O-B 实际落地的 Controller / `@radish/http` 契约如下。Controller 继续沿用仓库现有 action route，不能按设计草案推断成资源式 `PUT / DELETE`：
 
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
-| `GET` | `/Question/GetSummary?postIdentifier=...` | 问题与采纳摘要 |
-| `GET` | `/Question/GetAnswers?postIdentifier=...&pageIndex=1&pageSize=20&sort=default` | 回答分页 |
-| `POST` | `/Question/Answer` | 创建回答 |
-| `PUT` | `/Question/Answer/{answerPublicId}` | CAS 编辑回答 |
-| `DELETE` | `/Question/Answer/{answerPublicId}` | 幂等软删除 |
-| `GET` | `/Question/Answer/{answerPublicId}/Revisions` | 受权版本列表 |
-| `GET` | `/Question/Answer/{answerPublicId}/Revisions/{revisionNumber}` | 受权版本详情 |
-| `POST` | `/Question/Answer/{answerPublicId}/Restore` | CAS 恢复为新版本 |
-| `PUT` | `/Question/Acceptance` | 采纳或替换 |
-| `DELETE` | `/Question/Acceptance` | 撤销采纳 |
+| `GET` | `/api/v1/Question/Page?postIdentifier=...&pageIndex=1&pageSize=20&sort=default` | 回答分页，同时返回问题解决态与采纳摘要 |
+| `POST` | `/api/v1/Question/Answer` | 创建回答；当前兼容请求仍提交 `postId` |
+| `POST` | `/api/v1/Question/Edit` | 按 `answerPublicId` CAS 编辑回答 |
+| `POST` | `/api/v1/Question/Delete` | 按 `answerPublicId` 幂等软删除 |
+| `GET` | `/api/v1/Question/Revisions?answerPublicId=...` | 受权版本列表 |
+| `GET` | `/api/v1/Question/Revision?answerPublicId=...&revisionNumber=...` | 受权版本详情 |
+| `POST` | `/api/v1/Question/Restore` | 按 `answerPublicId` CAS 恢复为新版本 |
+| `POST` | `/api/v1/Question/Accept` | 采纳或替换 |
+| `POST` | `/api/v1/Question/Revoke` | 撤销采纳 |
 
 DTO 规则：
 
-- 正式 Web 提交 `postIdentifier / answerPublicId`，不新增 LongId 暴露。
+- 分页、采纳和撤销提交 `postIdentifier`；回答编辑、删除、历史和恢复提交 `answerPublicId`。
+- B 批为兼容既有回答入口，`Answer` 暂时继续使用 `CreateAnswerDto.PostId`。C 批接入前必须明确收敛到 `postIdentifier`，或把该 LongId 严格隔离在既有详情内部状态，不能扩散为新 URL、通知或页面持久化契约。
 - 创建 / 编辑 / 恢复 / 采纳均携带 `clientSubmissionId`。
 - 编辑 / 删除 / 恢复携带 `expectedContentRevision`。
 - 采纳 / 替换 / 撤销携带 `expectedAcceptanceRevision`。
@@ -402,6 +406,8 @@ Verify：
 - 回答附件不再以新写入形式占用 `Comment` 业务类型；
 - SQLite / PostgreSQL 重复 apply 无额外副作用。
 
+B 批 migration 的当前 `Verify` 已覆盖必要表列、PublicId 格式、当前 Revision 和既有采纳版本基线；唯一索引、采纳指向 / `IsAccepted` 一致性、`AnswerCount` 重建一致性和历史附件归属检查仍是专题关闭前的 strict verify 目标。它们不阻断 C 批页面开发，但必须在 D 批真实 migration 验收前补齐，不能把普通 CodeFirst 建表成功当作严格验证已经完成。
+
 ### 12.2 运行时兼容
 
 - 先 apply / verify，再部署读取新字段的应用。
@@ -421,6 +427,7 @@ Verify：
 ### F4-O-B：服务端与 migration
 
 - **完成状态（2026-07-27）**：模型、事务、migration、治理申诉、可靠通知、HTTP 契约与专项回归已落地；SQLite 与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
+- **B -> C 复核项**：创建回答仍保留兼容 `PostId`；migration strict verify 仍需补采纳一致性、可见回答数、附件归属和索引检查。两项已经进入 2026-07-28 明天事项，不在日终用文档措辞掩盖。
 - 新增模型字段、Revision / Event、专属 Service / Repository 和 migration；
 - 完成分页、创建、CAS 编辑 / 删除 / 恢复、采纳 / 替换 / 撤销；
 - 扩展回答附件、治理、申诉、通知 Outbox、HTTP 与 `@radish/http`；
@@ -442,6 +449,7 @@ B 批不安装或更新依赖，不修改 Pencil 和 `radish.client` 页面；�
 
 ### F4-O-C：Pencil 与正式 Web
 
+- 先收口 B -> C 外部标识契约，避免新页面继续扩大兼容 LongId；
 - 先更新 PC / mobile 权威 Pencil；
 - 实现回答分页、作者生命周期、采纳变更、历史恢复、举报和通知定位；
 - 覆盖四主题、双语、键盘、焦点、窄屏、长正文、附件与冲突态；

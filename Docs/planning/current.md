@@ -23,12 +23,13 @@
 - [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A/B 批：`PostAnswer` 已具备 PublicId、服务端分页、独立 Revision、附件引用、CAS 编辑 / 删除 / 恢复与采纳事件。
 - F4-O-B 已把回答接入第六类内容治理目标、申诉恢复、Main Reliable Outbox、answer-level 通知定位、`@radish/http` 和 `20260727_015_forum_answer_lifecycle` migration；SQLite 回归与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
 
-## 下一事项（F4-O-C，待批准）
+## 明天事项（2026-07-28，F4-O-C，待批准）
 
-1. 先更新 PC / mobile 权威 Pencil，固定回答分页、作者动作、采纳变更、历史恢复、举报和通知定位的页面状态。
-2. 在正式 `/forum/post/:postPublicId` 接入回答分页与 `@radish/http` 权威契约，移除页面对一次性全量回答和旧写入入口的依赖。
-3. 实现回答作者与问题所有者动作、Revision 历史 / 恢复、CAS 冲突、治理不可用和 answer-level 回访定位。
-4. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文与附件状态；C 批只做代码侧验证，不提前启动服务或执行 Gateway smoke。
+1. 先完成 B -> C 契约复核：决定回答创建如何从兼容 `PostId` 收敛到 `postIdentifier`，并把 migration strict verify 尚未覆盖的采纳一致性、可见回答数、附件归属和索引检查列入 D 批前门禁。
+2. 更新 PC / mobile 权威 Pencil，固定回答分页、作者动作、采纳变更、历史恢复、举报和通知定位的页面状态。
+3. 在正式 `/forum/post/:postPublicId` 接入回答分页与 `@radish/http` 权威契约，移除页面对一次性全量回答和旧写入入口的依赖。
+4. 实现回答作者与问题所有者动作、Revision 历史 / 恢复、CAS 冲突、治理不可用和 answer-level 回访定位。
+5. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文与附件状态；C 批只做代码侧验证，不提前启动服务或执行 Gateway smoke。
 
 ## 当前执行入口
 
@@ -37,6 +38,7 @@
 - [F4-N 论坛内容赞赏](/features/forum-content-reward)
 - [F4-N-D 论坛内容赞赏成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)
 - [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)
+- [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
 - [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)
 - [F4-L-D Wiki 附件成组验收](/records/f4-l-d-wiki-attachment-stage-acceptance-2026-07-26)
 - [2026-07-26 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-26)
