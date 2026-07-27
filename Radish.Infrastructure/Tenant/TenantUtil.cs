@@ -92,6 +92,8 @@ public static class TenantUtil
             {
                 IsAutoRemoveDataCache = true,
                 SqlServerCodeFirstNvarchar = true,
+                PgSqlIsAutoToLower = true,
+                PgSqlIsAutoToLowerCodeFirst = true,
             },
         };
     }

@@ -231,7 +231,7 @@ public sealed class WikiAttachmentReferenceRepositoryTest
         {
             var connectionString =
                 $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
-            using var db = new SqlSugarScope(new ConnectionConfig
+            using var db = PostgreSqlIntegrationSqlSugarFactory.CreateScope(new ConnectionConfig
             {
                 ConfigId = "main",
                 ConnectionString = connectionString,
@@ -255,7 +255,7 @@ public sealed class WikiAttachmentReferenceRepositoryTest
             Assert.Equal(101, Assert.Single(active).AttachmentId);
             Assert.Equal(2, db.Queryable<WikiAttachmentReference>().Count());
 
-            using var secondDb = new SqlSugarScope(new ConnectionConfig
+            using var secondDb = PostgreSqlIntegrationSqlSugarFactory.CreateScope(new ConnectionConfig
             {
                 ConfigId = "main",
                 ConnectionString = connectionString,

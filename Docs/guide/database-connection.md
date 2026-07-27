@@ -372,9 +372,15 @@ var config = new ConnectionConfig()
     {
         IsAutoRemoveDataCache = true,
         SqlServerCodeFirstNvarchar = true,
+        PgSqlIsAutoToLower = true,
+        PgSqlIsAutoToLowerCodeFirst = true,
     }
 };
 ```
+
+Radish 的 PostgreSQL 物理表名、列名与 Code First 索引列统一使用小写。两个
+`PgSqlIsAutoToLower*` 选项必须保持显式开启，避免实体索引特性在建表时引用
+PascalCase 列名。
 
 ## 相关文档
 

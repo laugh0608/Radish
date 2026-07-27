@@ -5,6 +5,7 @@ import process from 'node:process';
 import {
   BACKEND_GUARD_CHECK_NAME,
   BACKEND_GUARD_VALIDATE_ARGS,
+  CANDIDATE_QUALITY_REQUIRED_CHECK_NAME,
   CHECK_DEPENDENCY_SECURITY_PACKAGE_SCRIPT,
   CHECK_REPO_QUALITY_CONTRACT_PACKAGE_SCRIPT,
   IDENTITY_GUARD_CHECK_NAME,
@@ -271,7 +272,7 @@ if (workflowName !== REPO_QUALITY_WORKFLOW_NAME) {
 compareExactArray(
   '.github/rulesets/master-protection.json required checks',
   rulesetRequiredChecks,
-  REPO_QUALITY_REQUIRED_CHECKS,
+  [...REPO_QUALITY_REQUIRED_CHECKS, CANDIDATE_QUALITY_REQUIRED_CHECK_NAME],
   failures
 );
 
@@ -327,15 +328,23 @@ assertPackageScript(
 );
 
 for (const requiredFragment of [
+  'pull_request:',
+  'branches:',
+  '- master',
   'workflow_call:',
   'workflow_dispatch:',
-  'schedule:',
   'image: postgres:17',
   'RADISH_TEST_POSTGRES_CONNECTION_STRING:',
   'run: npm run validate:candidate',
 ]) {
   if (!candidateWorkflowContent.includes(requiredFragment)) {
     failures.push(`Candidate Quality workflow 缺少候选门禁片段: ${requiredFragment}`);
+  }
+}
+
+for (const forbiddenFragment of ['schedule:', 'cron:']) {
+  if (candidateWorkflowContent.includes(forbiddenFragment)) {
+    failures.push(`Candidate Quality workflow 不应保留定时触发: ${forbiddenFragment}`);
   }
 }
 
@@ -460,7 +469,12 @@ if (failures.length > 0) {
 
 console.log('[repo-quality-contract] 校验通过。');
 console.log(`- workflow: ${workflowName}`);
-console.log(`- required checks: ${REPO_QUALITY_REQUIRED_CHECKS.join(', ')}`);
+console.log(
+  `- master required checks: ${[
+    ...REPO_QUALITY_REQUIRED_CHECKS,
+    CANDIDATE_QUALITY_REQUIRED_CHECK_NAME,
+  ].join(', ')}`
+);
 console.log(`- workflow job 名: ${workflowJobNames.join(', ')}`);
 console.log(`- 本地 validate:ci contract: ${localCheckNames.join(', ')}`);
 console.log(`- CI-only checks: ${REPO_QUALITY_CI_ONLY_CHECKS.join(', ')}`);

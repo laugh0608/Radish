@@ -61,6 +61,9 @@
           },
           {
             "context": "Identity Guard"
+          },
+          {
+            "context": "Candidate Quality"
           }
         ],
         "strict_required_status_checks_policy": true

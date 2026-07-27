@@ -168,7 +168,8 @@ npm run validate:candidate
   - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
 - `validate:candidate`
   - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline、外部 LongId 字符串安全与联网依赖安全审计
-  - `.github/workflows/candidate-quality.yml` 提供手动、每周定期和 Docker 镜像发布前复用入口，并在 PostgreSQL 17 服务下运行环境集成测试
+  - `.github/workflows/candidate-quality.yml` 作为 `PR -> master` 的 required check，并保留手动与 Docker 镜像发布前复用入口；不再定时运行
+  - 远程门禁在 PostgreSQL 17 服务下运行环境集成测试，确保数据库迁移与 Repository 专题不会因普通本地入口缺少连接而被跳过
   - Docker 镜像先进行本地单平台构建与 High / Critical 漏洞扫描；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像
 
 ## 分层使用建议

@@ -220,8 +220,13 @@ public sealed class NotificationInboxSchemaMigrationTest
 
             db.CodeFirst.InitTables<UserNotification>();
             db.Ado.ExecuteCommand("DROP INDEX IF EXISTS idx_user_notification_group_unread");
-            DropColumn(db, "UserNotification", "InboxGroupId");
-            DropColumn(db, "UserNotification", "OccurredAtUtc");
+            foreach (var columnName in new[]
+                     {
+                         "InboxGroupId", "OccurredAtUtc", "SuppressedByUserBlock", "SuppressedAtUtc"
+                     })
+            {
+                DropColumn(db, "UserNotification", columnName);
+            }
             var relationId = DatabaseIdentifierResolver.ResolveColumn(db, "UserNotification", "Id")
                              ?? throw new InvalidOperationException("UserNotification.Id 不存在");
             var lowercase = relationId.ColumnName == relationId.ColumnName.ToLowerInvariant();

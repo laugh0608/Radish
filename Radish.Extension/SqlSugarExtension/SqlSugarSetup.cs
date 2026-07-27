@@ -55,6 +55,8 @@ public static class SqlSugarSetup
                 {
                     IsAutoRemoveDataCache = true,
                     SqlServerCodeFirstNvarchar = true,
+                    PgSqlIsAutoToLower = true,
+                    PgSqlIsAutoToLowerCodeFirst = true,
                 },
                 // 通过自定义特性使用 SqlSugar 缓存服务
                 ConfigureExternalServices = new ConfigureExternalServices()

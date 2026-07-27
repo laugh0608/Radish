@@ -1,10 +1,12 @@
 using Microsoft.Extensions.Hosting;
 using Radish.DbMigrate;
+using Radish.Api.Tests.TestCollections;
 using Shouldly;
 using Xunit;
 
 namespace Radish.Api.Tests.DbMigrate;
 
+[Collection(AppSettingsStateCollection.CollectionName)]
 public sealed class DbMigrateBootstrapTests
 {
     [Fact(Timeout = 10_000, DisplayName = "DbMigrate 应通过显式配置完成 Host 初始化")]

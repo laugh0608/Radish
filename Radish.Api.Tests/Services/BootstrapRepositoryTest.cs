@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Common;
+using Radish.Api.Tests.TestCollections;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.Models;
@@ -15,6 +16,7 @@ using Xunit;
 
 namespace Radish.Api.Tests.Services;
 
+[Collection(AppSettingsStateCollection.CollectionName)]
 public sealed class BootstrapRepositoryTest
 {
     [Fact]
