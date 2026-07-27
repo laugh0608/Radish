@@ -4,6 +4,7 @@ public static class ForumContentRevisionTargetTypes
 {
     public const string Post = "Post";
     public const string Comment = "Comment";
+    public const string PostAnswer = "PostAnswer";
 }
 
 public static class ForumContentRevisionSourceTypes

@@ -157,6 +157,37 @@ export type {
 export { ForumContentRevisionErrorCode } from './forum-content-revision-contract';
 
 export type {
+  ForumQuestionErrorCodeValue,
+  PostAnswerSort,
+  PostAnswerVo,
+  GetPostAnswerPageRequest,
+  CreatePostAnswerRequest,
+  PostAnswerPageVo,
+  UpdatePostAnswerRequest,
+  DeletePostAnswerRequest,
+  RestorePostAnswerRevisionRequest,
+  ChangePostAnswerAcceptanceRequest,
+  RevokePostAnswerAcceptanceRequest,
+  PostAnswerMutationVo,
+  PostAnswerAcceptanceMutationVo,
+  PostAnswerRevisionSummaryVo,
+  PostAnswerRevisionListVo,
+  PostAnswerRevisionDetailVo,
+} from './forum-question-contract';
+export { ForumQuestionErrorCode } from './forum-question-contract';
+export {
+  getPostAnswerPage,
+  createPostAnswer,
+  updatePostAnswer,
+  deletePostAnswer,
+  getPostAnswerRevisions,
+  getPostAnswerRevision,
+  restorePostAnswerRevision,
+  acceptPostAnswer,
+  revokePostAnswerAcceptance,
+} from './forum-question-client';
+
+export type {
   ContentRewardLongId,
   ContentRewardTargetType,
   ContentRewardReasonCode,

@@ -1,6 +1,6 @@
 # F4-O 论坛问答回答生命周期与治理闭环
 
-> **状态**：F4-O-A 候选审计与权威设计已完成；等待批准进入 F4-O-B 服务端与 migration
+> **状态**：F4-O-A/B 已完成；等待批准进入 F4-O-C Pencil 与正式 Web
 >
 > **复核日期**：2026-07-27（Asia/Shanghai）
 >
@@ -420,6 +420,7 @@ Verify：
 
 ### F4-O-B：服务端与 migration
 
+- **完成状态（2026-07-27）**：模型、事务、migration、治理申诉、可靠通知、HTTP 契约与专项回归已落地；SQLite 与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
 - 新增模型字段、Revision / Event、专属 Service / Repository 和 migration；
 - 完成分页、创建、CAS 编辑 / 删除 / 恢复、采纳 / 替换 / 撤销；
 - 扩展回答附件、治理、申诉、通知 Outbox、HTTP 与 `@radish/http`；

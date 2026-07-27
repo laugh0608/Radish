@@ -27,6 +27,8 @@ export interface NotificationTargetVo {
   voPostId: string | null;
   voPostPublicId: string | null;
   voCommentId: string | null;
+  voAnswerId: string | null;
+  voAnswerPublicId: string | null;
   voChannelId: string | null;
   voMessageId: string | null;
   voUserId: string | null;

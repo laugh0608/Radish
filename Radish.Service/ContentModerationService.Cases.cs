@@ -230,6 +230,7 @@ public partial class ContentModerationService
         var targetState = ContentModerationTargetState.Available;
         long? targetPostId = null;
         long? targetChannelId = null;
+        int? contentRevision = null;
         if (dto.EvidenceType == (int)ContentModerationEvidenceType.CurrentTargetSnapshot)
         {
             try
@@ -241,6 +242,7 @@ public partial class ContentModerationService
                 summary = snapshot.SnapshotSummary;
                 targetPostId = snapshot.TargetPostId;
                 targetChannelId = snapshot.TargetChannelId;
+                contentRevision = snapshot.ContentRevision;
             }
             catch (InvalidOperationException)
             {
@@ -274,7 +276,7 @@ public partial class ContentModerationService
                 moderationCase.TargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                     ? moderationCase.TargetContentId
                     : null,
-                null,
+                contentRevision,
                 null,
                 ComputeSnapshotHash(
                     moderationCase.TargetType,

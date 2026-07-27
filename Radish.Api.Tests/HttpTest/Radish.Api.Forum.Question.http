@@ -2,7 +2,10 @@
 @Gateway_HostAddress = https://localhost:5000
 
 @ForumQuestion_PostId = 在这里填入问答帖的 postId
-@ForumQuestion_AnswerId = 在这里填入待采纳回答的 answerId
+@ForumQuestion_PostPublicId = 在这里填入问答帖的 postPublicId
+@ForumQuestion_AnswerPublicId = 在这里填入回答的 ans_ PublicId
+@ForumQuestion_AnswerRevision = 1
+@ForumQuestion_AcceptanceRevision = 0
 @ForumQuestion_AnsweredKeyword = 论坛问答 MVP 验收帖
 
 ### 发布问答帖
@@ -65,7 +68,47 @@ Authorization: Bearer {{Access_Token}}
 
 {
   "postId": {{ForumQuestion_PostId}},
-  "content": "先检查配置、连接串和日志输出，再定位具体异常。"
+  "content": "先检查配置、连接串和日志输出，再定位具体异常。",
+  "clientSubmissionId": "question-answer-create-{{$guid}}"
+}
+
+### 服务端分页查询回答
+GET {{Gateway_HostAddress}}/api/v1/Question/Page?postIdentifier={{ForumQuestion_PostPublicId}}&pageIndex=1&pageSize=20&sort=default
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 作者编辑回答（ContentRevision CAS）
+POST {{Gateway_HostAddress}}/api/v1/Question/Edit
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "answerPublicId": "{{ForumQuestion_AnswerPublicId}}",
+  "content": "先检查配置和连接串，再结合结构化日志定位具体异常。",
+  "expectedContentRevision": {{ForumQuestion_AnswerRevision}},
+  "clientSubmissionId": "question-answer-edit-{{$guid}}"
+}
+
+### 作者查询回答版本
+GET {{Gateway_HostAddress}}/api/v1/Question/Revisions?answerPublicId={{ForumQuestion_AnswerPublicId}}
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 作者查询回答版本详情
+GET {{Gateway_HostAddress}}/api/v1/Question/Revision?answerPublicId={{ForumQuestion_AnswerPublicId}}&revisionNumber=1
+Accept: application/json
+Authorization: Bearer {{Access_Token}}
+
+### 作者恢复回答版本（生成新 Revision）
+POST {{Gateway_HostAddress}}/api/v1/Question/Restore
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "answerPublicId": "{{ForumQuestion_AnswerPublicId}}",
+  "revisionNumber": 1,
+  "expectedContentRevision": {{ForumQuestion_AnswerRevision}},
+  "clientSubmissionId": "question-answer-restore-{{$guid}}"
 }
 
 ### 提问者采纳回答
@@ -74,18 +117,32 @@ Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "postId": {{ForumQuestion_PostId}},
-  "answerId": {{ForumQuestion_AnswerId}}
+  "postIdentifier": "{{ForumQuestion_PostPublicId}}",
+  "answerPublicId": "{{ForumQuestion_AnswerPublicId}}",
+  "expectedAcceptanceRevision": {{ForumQuestion_AcceptanceRevision}},
+  "clientSubmissionId": "question-answer-accept-{{$guid}}"
 }
 
-### 重复采纳回答（预期失败）
-POST {{Gateway_HostAddress}}/api/v1/Question/Accept
+### 提问者撤销采纳
+POST {{Gateway_HostAddress}}/api/v1/Question/Revoke
 Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "postId": {{ForumQuestion_PostId}},
-  "answerId": {{ForumQuestion_AnswerId}}
+  "postIdentifier": "{{ForumQuestion_PostPublicId}}",
+  "expectedAcceptanceRevision": {{ForumQuestion_AcceptanceRevision}},
+  "clientSubmissionId": "question-answer-revoke-{{$guid}}"
+}
+
+### 作者删除未采纳回答
+POST {{Gateway_HostAddress}}/api/v1/Question/Delete
+Content-Type: application/json
+Authorization: Bearer {{Access_Token}}
+
+{
+  "answerPublicId": "{{ForumQuestion_AnswerPublicId}}",
+  "expectedContentRevision": {{ForumQuestion_AnswerRevision}},
+  "clientSubmissionId": "question-answer-delete-{{$guid}}"
 }
 
 ### 普通帖提交回答（预期失败）

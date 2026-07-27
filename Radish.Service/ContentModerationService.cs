@@ -31,6 +31,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IChannelMessageRepository _channelMessageRepository;
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
+    private readonly IBaseRepository<PostAnswer>? _postAnswerRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
     private readonly IContentModerationCaseRepository? _moderationCaseRepository;
@@ -46,7 +47,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IBaseRepository<PostQuickReply> postQuickReplyRepository,
         IBaseRepository<User> userRepository,
         IUnitOfWorkManage? unitOfWorkManage = null,
-        IContentModerationCaseRepository? moderationCaseRepository = null)
+        IContentModerationCaseRepository? moderationCaseRepository = null,
+        IBaseRepository<PostAnswer>? postAnswerRepository = null)
         : base(mapper, baseRepository)
     {
         _contentReportRepository = baseRepository;
@@ -56,6 +58,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         _channelMessageRepository = channelMessageRepository;
         _productRepository = productRepository;
         _postQuickReplyRepository = postQuickReplyRepository;
+        _postAnswerRepository = postAnswerRepository;
         _userRepository = userRepository;
         _unitOfWorkManage = unitOfWorkManage;
         _moderationCaseRepository = moderationCaseRepository;
@@ -839,7 +842,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             "chatmessage" => ContentReportTargetTypeEnum.ChatMessage,
             "product" => ContentReportTargetTypeEnum.Product,
             "postquickreply" => ContentReportTargetTypeEnum.PostQuickReply,
-            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、ChatMessage、Product 或 PostQuickReply")
+            "postanswer" => ContentReportTargetTypeEnum.PostAnswer,
+            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、PostAnswer、ChatMessage、Product 或 PostQuickReply")
         };
     }
 
@@ -991,6 +995,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             (int)ContentReportTargetTypeEnum.ChatMessage => "ChatMessage",
             (int)ContentReportTargetTypeEnum.Product => "Product",
             (int)ContentReportTargetTypeEnum.PostQuickReply => "PostQuickReply",
+            (int)ContentReportTargetTypeEnum.PostAnswer => "PostAnswer",
             _ => "Unknown"
         };
     }

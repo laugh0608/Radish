@@ -26,6 +26,14 @@ public class PostQuestion : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public int AnswerCount { get; set; } = 0;
 
+    /// <summary>采纳状态 CAS 版本</summary>
+    [SugarColumn(IsNullable = false)]
+    public int AcceptanceRevision { get; set; }
+
+    /// <summary>采纳时回答正文版本</summary>
+    [SugarColumn(IsNullable = true)]
+    public int? AcceptedAnswerContentRevision { get; set; }
+
     /// <summary>租户 ID</summary>
     [SugarColumn(IsNullable = false)]
     public long TenantId { get; set; } = 0;

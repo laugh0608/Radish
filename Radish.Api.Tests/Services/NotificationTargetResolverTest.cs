@@ -81,6 +81,57 @@ public sealed class NotificationTargetResolverTest
         result[7002].VoUnavailableReason.ShouldBeNull();
     }
 
+    [Fact(DisplayName = "回答通知应保留 answer PublicId，目标失效后安全降级到问题帖子")]
+    public async Task ResolveAsync_ShouldResolveOrDegradeForumAnswerTarget()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        var commentRepository = new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
+        var answerRepository = new Mock<IBaseRepository<PostAnswer>>(MockBehavior.Strict);
+        postRepository
+            .Setup(item => item.QueryByIdsAsync(It.IsAny<List<long>>()))
+            .ReturnsAsync([new Post { Id = 5001, TenantId = 9, PublicId = "pst_5001" }]);
+        answerRepository
+            .SetupSequence(item => item.QueryByIdsAsync(It.IsAny<List<long>>()))
+            .ReturnsAsync([new PostAnswer
+            {
+                Id = 6101,
+                PublicId = "ans_0123456789abcdef0123456789abcdef",
+                PostId = 5001,
+                TenantId = 9,
+                IsEnabled = true
+            }])
+            .ReturnsAsync([new PostAnswer
+            {
+                Id = 6101,
+                PublicId = "ans_0123456789abcdef0123456789abcdef",
+                PostId = 5001,
+                TenantId = 9,
+                IsEnabled = false
+            }]);
+        var resolver = CreateResolver(
+            postRepository.Object,
+            commentRepository.Object,
+            answerRepository: answerRepository.Object);
+        var notification = CreateNotification(7005, new NotificationTargetData
+        {
+            PostId = 5001,
+            PostPublicId = "pst_5001",
+            AnswerId = 6101,
+            AnswerPublicId = "ans_0123456789abcdef0123456789abcdef"
+        });
+
+        var valid = await resolver.ResolveAsync(9, 1001, [notification]);
+        valid[7005].VoKind.ShouldBe(NotificationTargetKind.ForumPost);
+        valid[7005].VoAnswerId.ShouldBe("6101");
+        valid[7005].VoAnswerPublicId.ShouldBe("ans_0123456789abcdef0123456789abcdef");
+
+        var degraded = await resolver.ResolveAsync(9, 1001, [notification]);
+        degraded[7005].VoKind.ShouldBe(NotificationTargetKind.ForumPost);
+        degraded[7005].VoPostId.ShouldBe("5001");
+        degraded[7005].VoAnswerId.ShouldBeNull();
+        degraded[7005].VoAnswerPublicId.ShouldBeNull();
+    }
+
     [Fact(DisplayName = "Wiki 草稿通知只向所有者或有效邀请关系返回结构化目标")]
     public async Task ResolveAsync_ShouldAuthorizeWikiDraftTargetFromCurrentRelation()
     {
@@ -159,7 +210,8 @@ public sealed class NotificationTargetResolverTest
         IBaseRepository<Comment> commentRepository,
         IBaseRepository<WikiDocument>? documentRepository = null,
         IBaseRepository<WikiDocumentDraft>? draftRepository = null,
-        IBaseRepository<WikiDocumentCollaborator>? collaboratorRepository = null)
+        IBaseRepository<WikiDocumentCollaborator>? collaboratorRepository = null,
+        IBaseRepository<PostAnswer>? answerRepository = null)
     {
         return new NotificationTargetResolver(
             postRepository,
@@ -171,7 +223,8 @@ public sealed class NotificationTargetResolverTest
             draftRepository ?? Mock.Of<IBaseRepository<WikiDocumentDraft>>(),
             collaboratorRepository ?? Mock.Of<IBaseRepository<WikiDocumentCollaborator>>(),
             Mock.Of<IChannelMessageRepository>(),
-            Mock.Of<IChatChannelAccessService>());
+            Mock.Of<IChatChannelAccessService>(),
+            answerRepository);
     }
 
     private static Notification CreateNotification(long id, NotificationTargetData target)

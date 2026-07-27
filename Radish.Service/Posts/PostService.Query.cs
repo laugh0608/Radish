@@ -881,8 +881,11 @@ public partial class PostService
         }
 
         var questionVo = Mapper.Map<PostQuestionVo>(question);
-        var answers = await _postAnswerRepository.QueryAsync(answer => answer.PostId == postId && !answer.IsDeleted);
         var normalizedAnswerSort = answerSort?.Trim().ToLowerInvariant() ?? "default";
+        var answers = await _postAnswerRepository.QueryAsync(answer =>
+            answer.PostId == postId &&
+            !answer.IsDeleted &&
+            answer.IsEnabled);
         var orderedAnswers = normalizedAnswerSort switch
         {
             "latest" => answers
@@ -895,8 +898,12 @@ public partial class PostService
         };
 
         questionVo.VoAnswers = orderedAnswers
+            .Take(20)
             .Select(answer => Mapper.Map<PostAnswerVo>(answer))
             .ToList();
+        questionVo.VoAcceptedAnswerPublicId = questionVo.VoAnswers
+            .FirstOrDefault(answer => answer.VoAnswerId == question.AcceptedAnswerId)
+            ?.VoPublicId;
 
         return questionVo;
     }

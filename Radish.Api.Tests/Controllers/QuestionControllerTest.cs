@@ -1,4 +1,3 @@
-using System;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
@@ -14,178 +13,68 @@ using Xunit;
 namespace Radish.Api.Tests.Controllers;
 
 [TestSubject(typeof(QuestionController))]
-public class QuestionControllerTest
+public sealed class QuestionControllerTest
 {
     [Fact]
-    public async Task Answer_Should_Return_UpdatedQuestionDetail_When_RequestIsValid()
+    public async Task Answer_ShouldReturnAnswerMutation_WhenRequestIsValid()
     {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        moderationServiceMock
-            .Setup(service => service.GetPublishPermissionAsync(10001))
-            .ReturnsAsync(new ContentModerationPermissionVo
-            {
-                VoUserId = 10001,
-                VoCanPublish = true
-            });
-        postServiceMock
-            .Setup(service => service.AddAnswerAsync(9527, "给出排查步骤", 10001, "Tester", 0))
-            .ReturnsAsync(new PostQuestionVo
-            {
-                VoPostId = 9527,
-                VoIsSolved = false,
-                VoAnswerCount = 1,
-                VoAnswers =
-                [
-                    new PostAnswerVo
-                    {
-                        VoAnswerId = 3001,
-                        VoPostId = 9527,
-                        VoAuthorId = 10001,
-                        VoAuthorName = "Tester",
-                        VoContent = "给出排查步骤",
-                        VoIsAccepted = false
-                    }
-                ]
-            });
-
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
-        var result = await controller.Answer(new CreateAnswerDto
-        {
-            PostId = 9527,
-            Content = "给出排查步骤"
-        });
-
-        Assert.True(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
-
-        var question = Assert.IsType<PostQuestionVo>(result.ResponseData);
-        Assert.Equal(9527, question.VoPostId);
-        Assert.Single(question.VoAnswers);
-        Assert.Equal("给出排查步骤", question.VoAnswers[0].VoContent);
-    }
-
-    [Fact]
-    public async Task Answer_Should_Return_BadRequest_When_PostIsNotQuestion()
-    {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        moderationServiceMock
-            .Setup(service => service.GetPublishPermissionAsync(10001))
-            .ReturnsAsync(new ContentModerationPermissionVo
-            {
-                VoUserId = 10001,
-                VoCanPublish = true
-            });
-        postServiceMock
-            .Setup(service => service.AddAnswerAsync(9528, "普通帖不能回答", 10001, "Tester", 0))
-            .ThrowsAsync(new BusinessException("当前帖子不是问答帖", 400, "Forum.NotQuestionPost"));
-
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
-        var result = await controller.Answer(new CreateAnswerDto
-        {
-            PostId = 9528,
-            Content = "普通帖不能回答"
-        });
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
-        Assert.Contains("当前帖子不是问答帖", result.MessageInfo);
-    }
-
-    [Fact]
-    public async Task Answer_Should_Unwrap_AggregateException_To_NotFound_When_PostDoesNotExist()
-    {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        moderationServiceMock
-            .Setup(service => service.GetPublishPermissionAsync(10001))
-            .ReturnsAsync(new ContentModerationPermissionVo
-            {
-                VoUserId = 10001,
-                VoCanPublish = true
-            });
-        postServiceMock
-            .Setup(service => service.AddAnswerAsync(9999, "帖子已经不存在", 10001, "Tester", 0))
-            .ThrowsAsync(new AggregateException(new BusinessException(
-                "问答帖不存在",
-                404,
-                "Forum.QuestionNotFound",
-                "error.forum.question_not_found")));
-
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
-        var result = await controller.Answer(new CreateAnswerDto
-        {
-            PostId = 9999,
-            Content = "帖子已经不存在"
-        });
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(404, result.StatusCode);
-        Assert.Contains("问答帖不存在", result.MessageInfo);
-        Assert.Equal("Forum.QuestionNotFound", result.Code);
-        Assert.Equal("error.forum.question_not_found", result.MessageKey);
-        Assert.Null(result.MessageArguments);
-    }
-
-    [Theory]
-    [InlineData(
-        409,
-        ForumPublishErrorCodes.SubmissionProcessing,
-        "error.forum.publish_submission_processing",
-        null)]
-    [InlineData(
-        429,
-        ForumPublishErrorCodes.RateLimited,
-        "error.forum.publish_rate_limited",
-        17L)]
-    public async Task Answer_Should_Preserve_BusinessErrorContract(
-        int statusCode,
-        string errorCode,
-        string messageKey,
-        long? retryAfterSeconds)
-    {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-        var forumContentWriteServiceMock = new Mock<IForumContentWriteService>(MockBehavior.Strict);
-
-        moderationServiceMock
-            .Setup(service => service.GetPublishPermissionAsync(10001))
-            .ReturnsAsync(new ContentModerationPermissionVo
-            {
-                VoUserId = 10001,
-                VoCanPublish = true
-            });
-
-        var messageArguments = retryAfterSeconds.HasValue
-            ? new object[] { retryAfterSeconds.Value }
-            : [];
-        forumContentWriteServiceMock
-            .Setup(service => service.AddAnswerAsync(
+        var questionService = new Mock<IForumQuestionService>(MockBehavior.Strict);
+        var moderationService = AllowPublishing();
+        questionService
+            .Setup(service => service.CreateAnswerAsync(
+                0,
                 9527,
                 "给出排查步骤",
                 10001,
                 "Tester",
+                "answer-submission-1"))
+            .ReturnsAsync(new PostAnswerMutationVo
+            {
+                VoPostPublicId = "pst_question",
+                VoAnswerCount = 1,
+                VoAnswer = new PostAnswerVo
+                {
+                    VoAnswerId = 3001,
+                    VoPublicId = "ans_0123456789abcdef0123456789abcdef",
+                    VoContent = "给出排查步骤",
+                    VoContentRevision = 1
+                }
+            });
+
+        var controller = CreateController(moderationService.Object, questionService.Object);
+        var result = await controller.Answer(new CreateAnswerDto
+        {
+            PostId = 9527,
+            Content = "给出排查步骤",
+            ClientSubmissionId = "answer-submission-1"
+        });
+
+        Assert.True(result.IsSuccess);
+        var mutation = Assert.IsType<PostAnswerMutationVo>(result.ResponseData);
+        Assert.Equal("ans_0123456789abcdef0123456789abcdef", mutation.VoAnswer.VoPublicId);
+        Assert.Equal(1, mutation.VoAnswer.VoContentRevision);
+    }
+
+    [Fact]
+    public async Task Answer_ShouldPreserveBusinessErrorContract()
+    {
+        var questionService = new Mock<IForumQuestionService>(MockBehavior.Strict);
+        var moderationService = AllowPublishing();
+        questionService
+            .Setup(service => service.CreateAnswerAsync(
                 0,
+                9527,
+                "给出排查步骤",
+                10001,
+                "Tester",
                 "answer-submission-1"))
             .ThrowsAsync(new BusinessException(
-                "操作暂时无法完成",
-                statusCode,
-                errorCode,
-                messageKey,
-                messageArguments));
+                "请求正在处理中",
+                409,
+                ForumQuestionErrorCodes.Conflict,
+                ForumQuestionErrorCodes.ResolveMessageKey(ForumQuestionErrorCodes.Conflict)));
 
-        var controller = CreateController(
-            postServiceMock.Object,
-            moderationServiceMock.Object,
-            forumContentWriteServiceMock.Object);
-
+        var controller = CreateController(moderationService.Object, questionService.Object);
         var result = await controller.Answer(new CreateAnswerDto
         {
             PostId = 9527,
@@ -194,19 +83,17 @@ public class QuestionControllerTest
         });
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(statusCode, result.StatusCode);
-        Assert.Equal(errorCode, result.Code);
-        Assert.Equal(messageKey, result.MessageKey);
-        Assert.Equal(messageArguments.Length == 0 ? null : messageArguments, result.MessageArguments);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(ForumQuestionErrorCodes.Conflict, result.Code);
+        Assert.Equal("error.forum.answer_revision_conflict", result.MessageKey);
     }
 
     [Fact]
-    public async Task Answer_Should_Return_Forbidden_When_PublishPermissionIsDenied()
+    public async Task Answer_ShouldNotWrite_WhenPublishPermissionIsDenied()
     {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        moderationServiceMock
+        var questionService = new Mock<IForumQuestionService>(MockBehavior.Strict);
+        var moderationService = new Mock<IContentModerationService>(MockBehavior.Strict);
+        moderationService
             .Setup(service => service.GetPublishPermissionAsync(10001))
             .ReturnsAsync(new ContentModerationPermissionVo
             {
@@ -215,8 +102,7 @@ public class QuestionControllerTest
                 VoDenyReason = "当前状态无法发布内容"
             });
 
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
+        var controller = CreateController(moderationService.Object, questionService.Object);
         var result = await controller.Answer(new CreateAnswerDto
         {
             PostId = 9527,
@@ -225,155 +111,108 @@ public class QuestionControllerTest
 
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
-        Assert.Contains("当前状态无法发布内容", result.MessageInfo);
-
-        postServiceMock.Verify(
-            service => service.AddAnswerAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<long>(), It.IsAny<string>(), It.IsAny<long>()),
-            Times.Never);
+        questionService.VerifyNoOtherCalls();
     }
 
     [Fact]
-    public async Task Accept_Should_Return_UpdatedQuestionDetail_When_RequestIsValid()
+    public async Task Accept_ShouldUsePublicIdAndAcceptanceCas()
     {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        postServiceMock
-            .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
-            .ReturnsAsync(new PostQuestionVo
+        var questionService = new Mock<IForumQuestionService>(MockBehavior.Strict);
+        var moderationService = new Mock<IContentModerationService>(MockBehavior.Strict);
+        questionService
+            .Setup(service => service.AcceptAnswerAsync(
+                0,
+                "pst_question",
+                "ans_0123456789abcdef0123456789abcdef",
+                2,
+                10001,
+                "Tester",
+                "accept-operation-1"))
+            .ReturnsAsync(new PostAnswerAcceptanceMutationVo
             {
-                VoPostId = 9527,
-                VoIsSolved = true,
-                VoAcceptedAnswerId = 3001,
-                VoAnswerCount = 2,
-                VoAnswers =
-                [
-                    new PostAnswerVo
-                    {
-                        VoAnswerId = 3001,
-                        VoPostId = 9527,
-                        VoAuthorId = 20001,
-                        VoAuthorName = "Alice",
-                        VoContent = "最终方案",
-                        VoIsAccepted = true
-                    }
-                ]
+                VoPostPublicId = "pst_question",
+                VoAcceptedAnswerPublicId = "ans_0123456789abcdef0123456789abcdef",
+                VoAcceptanceRevision = 3,
+                VoIsSolved = true
             });
 
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
-        var result = await controller.Accept(new AcceptAnswerDto
+        var controller = CreateController(moderationService.Object, questionService.Object);
+        var result = await controller.Accept(new ChangePostAnswerAcceptanceDto
         {
-            PostId = 9527,
-            AnswerId = 3001
+            PostIdentifier = "pst_question",
+            AnswerPublicId = "ans_0123456789abcdef0123456789abcdef",
+            ExpectedAcceptanceRevision = 2,
+            ClientSubmissionId = "accept-operation-1"
         });
 
         Assert.True(result.IsSuccess);
-        Assert.Equal(200, result.StatusCode);
-
-        var question = Assert.IsType<PostQuestionVo>(result.ResponseData);
-        Assert.True(question.VoIsSolved);
-        Assert.Equal(3001, question.VoAcceptedAnswerId);
-        Assert.True(question.VoAnswers[0].VoIsAccepted);
+        var mutation = Assert.IsType<PostAnswerAcceptanceMutationVo>(result.ResponseData);
+        Assert.Equal(3, mutation.VoAcceptanceRevision);
+        Assert.True(mutation.VoIsSolved);
     }
 
     [Fact]
-    public async Task Accept_Should_Return_Forbidden_When_CurrentUserIsNotOwner()
+    public async Task Accept_ShouldPreserveAcceptanceConflict()
     {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        postServiceMock
-            .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
+        var questionService = new Mock<IForumQuestionService>(MockBehavior.Strict);
+        var moderationService = new Mock<IContentModerationService>(MockBehavior.Strict);
+        questionService
+            .Setup(service => service.AcceptAnswerAsync(
+                0,
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                1,
+                10001,
+                "Tester",
+                It.IsAny<string>()))
             .ThrowsAsync(new BusinessException(
-                "只有提问者可以采纳答案",
-                403,
-                "Forum.AnswerAcceptForbidden",
-                "error.forum.answer_accept_forbidden"));
+                "采纳状态已被其他请求修改，请刷新后重试",
+                409,
+                ForumQuestionErrorCodes.AcceptanceConflict,
+                ForumQuestionErrorCodes.ResolveMessageKey(ForumQuestionErrorCodes.AcceptanceConflict)));
 
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
-        var result = await controller.Accept(new AcceptAnswerDto
+        var controller = CreateController(moderationService.Object, questionService.Object);
+        var result = await controller.Accept(new ChangePostAnswerAcceptanceDto
         {
-            PostId = 9527,
-            AnswerId = 3001
+            PostIdentifier = "pst_question",
+            AnswerPublicId = "ans_0123456789abcdef0123456789abcdef",
+            ExpectedAcceptanceRevision = 1,
+            ClientSubmissionId = "accept-operation-2"
         });
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(403, result.StatusCode);
-        Assert.Contains("只有提问者可以采纳答案", result.MessageInfo);
-        Assert.Equal("Forum.AnswerAcceptForbidden", result.Code);
-        Assert.Equal("error.forum.answer_accept_forbidden", result.MessageKey);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(ForumQuestionErrorCodes.AcceptanceConflict, result.Code);
     }
 
-    [Fact]
-    public async Task Accept_Should_Unwrap_AggregateException_To_BadRequest_When_AcceptingOwnAnswer()
+    private static Mock<IContentModerationService> AllowPublishing()
     {
-        var postServiceMock = new Mock<IPostService>(MockBehavior.Strict);
-        var moderationServiceMock = new Mock<IContentModerationService>(MockBehavior.Strict);
-
-        postServiceMock
-            .Setup(service => service.AcceptAnswerAsync(9527, 3001, 10001, "Tester"))
-            .ThrowsAsync(new AggregateException(new BusinessException(
-                "不能采纳自己的回答",
-                400,
-                "Forum.CannotAcceptOwnAnswer",
-                "error.forum.cannot_accept_own_answer")));
-
-        var controller = CreateController(postServiceMock.Object, moderationServiceMock.Object);
-
-        var result = await controller.Accept(new AcceptAnswerDto
-        {
-            PostId = 9527,
-            AnswerId = 3001
-        });
-
-        Assert.False(result.IsSuccess);
-        Assert.Equal(400, result.StatusCode);
-        Assert.Contains("不能采纳自己的回答", result.MessageInfo);
-        Assert.Equal("Forum.CannotAcceptOwnAnswer", result.Code);
-        Assert.Equal("error.forum.cannot_accept_own_answer", result.MessageKey);
+        var moderationService = new Mock<IContentModerationService>(MockBehavior.Strict);
+        moderationService
+            .Setup(service => service.GetPublishPermissionAsync(10001))
+            .ReturnsAsync(new ContentModerationPermissionVo
+            {
+                VoUserId = 10001,
+                VoCanPublish = true
+            });
+        return moderationService;
     }
 
     private static QuestionController CreateController(
-        IPostService postService,
         IContentModerationService moderationService,
-        IForumContentWriteService? forumContentWriteService = null)
+        IForumQuestionService forumQuestionService)
     {
-        var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
-        currentUserAccessorMock.SetupGet(accessor => accessor.Current).Returns(new CurrentUser
+        var currentUserAccessor = new Mock<ICurrentUserAccessor>();
+        currentUserAccessor.SetupGet(accessor => accessor.Current).Returns(new CurrentUser
         {
             UserId = 10001,
             UserName = "Tester",
             TenantId = 0
         });
-        var forumContentWriteServiceMock = new Mock<IForumContentWriteService>(MockBehavior.Strict);
-        forumContentWriteServiceMock
-            .Setup(service => service.AddAnswerAsync(
-                It.IsAny<long>(),
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<string>(),
-                It.IsAny<long>(),
-                It.IsAny<string?>()))
-            .Returns(async (
-                long postId,
-                string content,
-                long authorId,
-                string authorName,
-                long tenantId,
-                string? _) =>
-                ContentWriteResult<PostQuestionVo>.CreatedResult(await postService.AddAnswerAsync(
-                    postId,
-                    content,
-                    authorId,
-                    authorName,
-                    tenantId)));
-
         return new QuestionController(
-            postService,
+            Mock.Of<IPostService>(),
             moderationService,
-            currentUserAccessorMock.Object,
-            forumContentWriteService ?? forumContentWriteServiceMock.Object);
+            currentUserAccessor.Object,
+            forumQuestionService);
     }
 }

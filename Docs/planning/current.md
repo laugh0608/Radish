@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`等待批准进入 F4-O-B 服务端权威契约与 migration`
-- **产品下一顺位**：`把 PostAnswer 补成可分页、可版本恢复、可治理、可通知和可审计采纳的正式内容对象`
+- **工程第一顺位**：`等待批准进入 F4-O-C Pencil 与正式 Web`
+- **产品下一顺位**：`把已完成的 PostAnswer 服务端生命周期接入 PC / mobile 正式论坛页面`
 - **复核日期**：`2026-07-27`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
@@ -20,15 +20,15 @@
 - F4-M-D 验收修正了版本摘要时间双真相和正式 `/me` 缺少退出入口的共同根因；临时数据残留为 `0`，六库完整性与严格 migration verify 通过。
 - [F4-N-D 成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)已通过并关闭专题：Post / Comment 登录回流、资产守恒、Outbox、Log 双分录、通知定位及 PC / mobile 代表矩阵形成闭环。
 - D 批修正了 `reward` 登录返回意图缺失和 Reliable Task camelCase payload 反序列化契约根因；测试数据、运行设置、浏览器、服务和备份均已清理，六库严格 migration verify 通过。
-- [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A 批候选审计与权威设计：相较投票 / 抽奖深化、圈子扩张和匿名公开聊天，回答是 V1 社区核心中仍未成为正式治理对象的现有缺口。
-- F4-O 固定 `PostAnswer` PublicId、分页、独立 Revision、附件类型、CAS 编辑 / 恢复、采纳事件、治理申诉、可靠通知和正式 Web 边界；不扩入回答投票、悬赏、萝卜币或独立问答 App。
+- [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A/B 批：`PostAnswer` 已具备 PublicId、服务端分页、独立 Revision、附件引用、CAS 编辑 / 删除 / 恢复与采纳事件。
+- F4-O-B 已把回答接入第六类内容治理目标、申诉恢复、Main Reliable Outbox、answer-level 通知定位、`@radish/http` 和 `20260727_015_forum_answer_lifecycle` migration；SQLite 回归与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
 
-## 下一事项（F4-O-B，待批准）
+## 下一事项（F4-O-C，待批准）
 
-1. 新增 `PostAnswer` PublicId / 版本 / 可见字段、Answer Revision / Acceptance Event 和 `20260727_015` Main migration。
-2. 新增专属 `IForumQuestionService / Repository`，完成回答分页、创建、CAS 编辑 / 删除 / 恢复和采纳 / 替换 / 撤销事务。
-3. 把 `PostAnswer` 接入独立附件类型、内容治理 / 申诉、Reliable Outbox 通知与 answer-level canonical 定位。
-4. 补 SQLite / PostgreSQL migration、租户 / 屏蔽、并发、幂等、回滚、通知和严格 verify 回归；B 批不提前实现正式页面。
+1. 先更新 PC / mobile 权威 Pencil，固定回答分页、作者动作、采纳变更、历史恢复、举报和通知定位的页面状态。
+2. 在正式 `/forum/post/:postPublicId` 接入回答分页与 `@radish/http` 权威契约，移除页面对一次性全量回答和旧写入入口的依赖。
+3. 实现回答作者与问题所有者动作、Revision 历史 / 恢复、CAS 冲突、治理不可用和 answer-level 回访定位。
+4. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文与附件状态；C 批只做代码侧验证，不提前启动服务或执行 Gateway smoke。
 
 ## 当前执行入口
 
@@ -51,7 +51,7 @@
 
 ## 当前不做
 
-- 未获得新一轮明确批准前，不进入 F4-O-B 代码与 migration。
+- 未获得新一轮明确批准前，不修改 F4-O-C Pencil 或 `radish.client` 正式页面。
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。

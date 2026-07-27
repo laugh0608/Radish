@@ -18,6 +18,7 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
 
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
+    private readonly IBaseRepository<PostAnswer>? _postAnswerRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IBaseRepository<Order> _orderRepository;
     private readonly IBaseRepository<UserBenefit> _benefitRepository;
@@ -37,10 +38,12 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         IBaseRepository<WikiDocumentDraft> wikiDraftRepository,
         IBaseRepository<WikiDocumentCollaborator> wikiCollaboratorRepository,
         IChannelMessageRepository messageRepository,
-        IChatChannelAccessService chatAccessService)
+        IChatChannelAccessService chatAccessService,
+        IBaseRepository<PostAnswer>? postAnswerRepository = null)
     {
         _postRepository = postRepository;
         _commentRepository = commentRepository;
+        _postAnswerRepository = postAnswerRepository;
         _userRepository = userRepository;
         _orderRepository = orderRepository;
         _benefitRepository = benefitRepository;
@@ -93,6 +96,27 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         var commentIds = forumTargets.Where(item => item.CommentId.HasValue).Select(item => item.CommentId!.Value).Distinct().ToList();
         var comments = commentIds.Count == 0 ? [] : await _commentRepository.QueryByIdsAsync(commentIds);
         comments = comments.Where(item => item.IsEnabled && !item.IsDeleted).ToList();
+        var answerIds = forumTargets
+            .Where(item => item.AnswerId.HasValue)
+            .Select(item => item.AnswerId!.Value)
+            .Distinct()
+            .ToList();
+        var answerPublicIds = forumTargets
+            .Where(item => !item.AnswerId.HasValue)
+            .Select(item => item.AnswerPublicId?.Trim())
+            .Where(item => !string.IsNullOrWhiteSpace(item))
+            .Cast<string>()
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        var answers = _postAnswerRepository == null || answerIds.Count == 0
+            ? []
+            : await _postAnswerRepository.QueryByIdsAsync(answerIds);
+        if (_postAnswerRepository != null && answerPublicIds.Count > 0)
+        {
+            answers.AddRange(await _postAnswerRepository.QueryAsync(item =>
+                answerPublicIds.Contains(item.PublicId)));
+        }
+        answers = answers.Where(item => item.IsEnabled && !item.IsDeleted).ToList();
         var userIds = parsedTargets.Values
             .Where(item => item.UserId.HasValue)
             .Select(item => item.UserId!.Value)
@@ -170,6 +194,10 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
             .DistinctBy(item => item.PublicId, StringComparer.Ordinal)
             .ToDictionary(item => item.PublicId!, StringComparer.Ordinal);
         var commentById = comments.ToDictionary(item => item.Id);
+        var answerById = answers.DistinctBy(item => item.Id).ToDictionary(item => item.Id);
+        var answerByPublicId = answers
+            .DistinctBy(item => item.PublicId, StringComparer.Ordinal)
+            .ToDictionary(item => item.PublicId, StringComparer.Ordinal);
         var userById = users.DistinctBy(item => item.Id).ToDictionary(item => item.Id);
         var userByPublicId = users
             .Where(item => !string.IsNullOrWhiteSpace(item.PublicId))
@@ -200,7 +228,9 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
                     tenantId,
                     postById,
                     postByPublicId,
-                    commentById),
+                    commentById,
+                    answerById,
+                    answerByPublicId),
                 NotificationTargetKind.UserProfile => ResolveUserTarget(
                     target,
                     tenantId,
@@ -233,7 +263,9 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
         long tenantId,
         IReadOnlyDictionary<long, Post> postById,
         IReadOnlyDictionary<string, Post> postByPublicId,
-        IReadOnlyDictionary<long, Comment> commentById)
+        IReadOnlyDictionary<long, Comment> commentById,
+        IReadOnlyDictionary<long, PostAnswer> answerById,
+        IReadOnlyDictionary<string, PostAnswer> answerByPublicId)
     {
         Post? post = null;
         if (target.PostId.HasValue)
@@ -260,6 +292,26 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
             (!commentById.TryGetValue(target.CommentId.Value, out var comment) || comment.PostId != post.Id))
         {
             return Unavailable(DeletedReason);
+        }
+
+        PostAnswer? answer = null;
+        if (target.AnswerId.HasValue)
+        {
+            answerById.TryGetValue(target.AnswerId.Value, out answer);
+        }
+        else if (!string.IsNullOrWhiteSpace(target.AnswerPublicId))
+        {
+            answerByPublicId.TryGetValue(target.AnswerPublicId.Trim(), out answer);
+        }
+        if ((target.AnswerId.HasValue || !string.IsNullOrWhiteSpace(target.AnswerPublicId)) &&
+            (answer == null || answer.PostId != post.Id))
+        {
+            var fallback = new NotificationTargetData
+            {
+                PostId = post.Id,
+                PostPublicId = post.PublicId
+            };
+            return Map(fallback, NotificationTargetKind.ForumPost);
         }
 
         return Map(target, NotificationTargetKind.ForumPost);
@@ -442,6 +494,8 @@ public sealed class NotificationTargetResolver : INotificationTargetResolver
             VoPostId = ToId(target.PostId),
             VoPostPublicId = target.PostPublicId,
             VoCommentId = ToId(target.CommentId),
+            VoAnswerId = ToId(target.AnswerId),
+            VoAnswerPublicId = target.AnswerPublicId,
             VoChannelId = ToId(target.ChannelId),
             VoMessageId = ToId(target.MessageId),
             VoUserId = ToId(target.UserId),

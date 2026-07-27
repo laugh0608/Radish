@@ -18,6 +18,7 @@ public partial class ContentModerationService
             ContentReportTargetTypeEnum.ChatMessage => await ResolveChatMessageTargetSnapshotAsync(targetContentId),
             ContentReportTargetTypeEnum.Product => await ResolveProductTargetSnapshotAsync(targetContentId),
             ContentReportTargetTypeEnum.PostQuickReply => await ResolvePostQuickReplyTargetSnapshotAsync(targetContentId),
+            ContentReportTargetTypeEnum.PostAnswer => await ResolvePostAnswerTargetSnapshotAsync(targetContentId),
             _ => throw new ArgumentException("不支持的举报目标类型")
         };
     }
@@ -56,7 +57,8 @@ public partial class ContentModerationService
             TargetUserName = comment.AuthorName,
             TargetPostId = comment.PostId > 0 ? comment.PostId : null,
             SnapshotTitle = postTitle,
-            SnapshotSummary = BuildTextSnapshot(comment.Content)
+            SnapshotSummary = BuildTextSnapshot(comment.Content),
+            ContentRevision = comment.ContentRevision
         };
     }
 
@@ -114,6 +116,32 @@ public partial class ContentModerationService
         };
     }
 
+    private async Task<ResolvedReportTargetSnapshot> ResolvePostAnswerTargetSnapshotAsync(long answerId)
+    {
+        if (_postAnswerRepository == null)
+        {
+            throw new InvalidOperationException("回答治理仓储未注册");
+        }
+        var answer = await _postAnswerRepository.QueryFirstAsync(item =>
+            item.Id == answerId &&
+            !item.IsDeleted &&
+            item.IsEnabled);
+        if (answer == null)
+        {
+            throw new InvalidOperationException("目标回答不存在");
+        }
+
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = answer.AuthorId,
+            TargetUserName = answer.AuthorName,
+            TargetPostId = answer.PostId > 0 ? answer.PostId : null,
+            SnapshotTitle = await ResolvePostTitleAsync(answer.PostId),
+            SnapshotSummary = BuildTextSnapshot(answer.Content),
+            ContentRevision = answer.ContentRevision
+        };
+    }
+
     private async Task<string?> ResolvePostTitleAsync(long postId)
     {
         if (postId <= 0)
@@ -138,6 +166,7 @@ public partial class ContentModerationService
         public long? TargetChannelId { get; init; }
         public string? SnapshotTitle { get; init; }
         public string? SnapshotSummary { get; init; }
+        public int? ContentRevision { get; init; }
     }
 
     private sealed class ReportTargetNavigationSnapshot
@@ -179,6 +208,16 @@ public partial class ContentModerationService
         public long QuickReplyId { get; init; }
         public long PostId { get; init; }
         public bool IsQuickReplyAvailable { get; init; }
+        public bool IsPostAvailable { get; init; }
+        public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
+    }
+
+    private sealed class ForumAnswerNavigationRecord
+    {
+        public long AnswerId { get; init; }
+        public long PostId { get; init; }
+        public bool IsAnswerAvailable { get; init; }
         public bool IsPostAvailable { get; init; }
         public string? SnapshotTitle { get; init; }
         public string? SnapshotSummary { get; init; }
@@ -289,6 +328,10 @@ public partial class ContentModerationService
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostQuickReply
                 ? report.TargetContentId
                 : 0));
+        var answerNavigationMap = await BuildAnswerNavigationMapAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostAnswer
+                ? report.TargetContentId
+                : 0));
         var productMap = await BuildProductNavigationMapAsync(reports.Select(report =>
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
                 ? report.TargetContentId
@@ -302,6 +345,7 @@ public partial class ContentModerationService
                 chatMessageMap,
                 commentNavigationMap,
                 quickReplyNavigationMap,
+                answerNavigationMap,
                 productMap));
     }
 
@@ -323,6 +367,10 @@ public partial class ContentModerationService
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostQuickReply
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
+        var answerNavigationMap = await BuildAnswerNavigationMapAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostAnswer
+                ? new[] { report.TargetContentId }
+                : Array.Empty<long>());
         var productMap = await BuildProductNavigationMapAsync(
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
                 ? new[] { report.TargetContentId }
@@ -334,6 +382,7 @@ public partial class ContentModerationService
             chatMessageMap,
             commentNavigationMap,
             quickReplyNavigationMap,
+            answerNavigationMap,
             productMap);
     }
 
@@ -576,6 +625,53 @@ public partial class ContentModerationService
             });
     }
 
+    private async Task<Dictionary<long, ForumAnswerNavigationRecord>> BuildAnswerNavigationMapAsync(
+        IEnumerable<long> answerIds)
+    {
+        var normalizedAnswerIds = answerIds
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+        if (normalizedAnswerIds.Count == 0 || _postAnswerRepository == null)
+        {
+            return new Dictionary<long, ForumAnswerNavigationRecord>();
+        }
+
+        var items = await _postAnswerRepository.QueryMuchAsync<PostAnswer, Post, User, ForumAnswerNavigationRecord>(
+            (answer, post, user) => new object[]
+            {
+                JoinType.Left, answer.PostId == post.Id,
+                JoinType.Left, answer.AuthorId == user.Id
+            },
+            (answer, post, _) => new ForumAnswerNavigationRecord
+            {
+                AnswerId = answer.Id,
+                PostId = answer.PostId,
+                IsAnswerAvailable = !answer.IsDeleted && answer.IsEnabled,
+                IsPostAvailable = post.Id > 0 && !post.IsDeleted,
+                SnapshotTitle = post.Title,
+                SnapshotSummary = answer.Content
+            },
+            (answer, _, _) => normalizedAnswerIds.Contains(answer.Id));
+        return items
+            .GroupBy(item => item.AnswerId)
+            .ToDictionary(group => group.Key, group =>
+            {
+                var item = group.First();
+                return new ForumAnswerNavigationRecord
+                {
+                    AnswerId = item.AnswerId,
+                    PostId = item.PostId,
+                    IsAnswerAvailable = item.IsAnswerAvailable,
+                    IsPostAvailable = item.IsPostAvailable,
+                    SnapshotTitle = string.IsNullOrWhiteSpace(item.SnapshotTitle)
+                        ? null
+                        : item.SnapshotTitle.Trim(),
+                    SnapshotSummary = BuildTextSnapshot(item.SnapshotSummary)
+                };
+            });
+    }
+
     private static long? ResolveSnapshotPostId(ContentReport report, long? currentPostId = null)
     {
         if (currentPostId.HasValue && currentPostId.Value > 0)
@@ -633,6 +729,7 @@ public partial class ContentModerationService
         IReadOnlyDictionary<long, ChatMessageNavigationRecord>? chatMessageMap = null,
         IReadOnlyDictionary<long, ForumCommentNavigationRecord>? commentNavigationMap = null,
         IReadOnlyDictionary<long, ForumQuickReplyNavigationRecord>? quickReplyNavigationMap = null,
+        IReadOnlyDictionary<long, ForumAnswerNavigationRecord>? answerNavigationMap = null,
         IReadOnlyDictionary<long, ProductNavigationRecord>? productMap = null)
     {
         var targetType = (ContentReportTargetTypeEnum)report.ReportTargetType;
@@ -746,6 +843,50 @@ public partial class ContentModerationService
                 NavigationMessage = navigationMessage,
                 SnapshotTitle = ResolveSnapshotTitle(report, quickReplyNavigation.SnapshotTitle),
                 SnapshotSummary = ResolveSnapshotSummary(report, quickReplyNavigation.SnapshotSummary)
+            };
+        }
+
+        if (targetType == ContentReportTargetTypeEnum.PostAnswer)
+        {
+            var snapshotPostId = ResolveSnapshotPostId(report);
+            if (answerNavigationMap?.TryGetValue(report.TargetContentId, out var matchedAnswer) != true ||
+                matchedAnswer == null)
+            {
+                return new ReportTargetNavigationSnapshot
+                {
+                    TargetTypeName = targetTypeName,
+                    TargetContentId = report.TargetContentId,
+                    TargetPostId = snapshotPostId,
+                    NavigationStatus = snapshotPostId.HasValue
+                        ? TargetNavigationStatusFallback
+                        : TargetNavigationStatusUnavailable,
+                    NavigationMessage = snapshotPostId.HasValue
+                        ? "回答已限制或不存在，已降级为所属问题回看"
+                        : "回答及所属问题不可用",
+                    SnapshotTitle = ResolveSnapshotTitle(report, null),
+                    SnapshotSummary = ResolveSnapshotSummary(report, null)
+                };
+            }
+
+            var navigationStatus = matchedAnswer.IsPostAvailable
+                ? matchedAnswer.IsAnswerAvailable
+                    ? TargetNavigationStatusReady
+                    : TargetNavigationStatusFallback
+                : TargetNavigationStatusUnavailable;
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                TargetPostId = ResolveSnapshotPostId(report, matchedAnswer.PostId),
+                NavigationStatus = navigationStatus,
+                NavigationMessage = navigationStatus switch
+                {
+                    TargetNavigationStatusFallback => "回答已限制或删除，已降级为所属问题回看",
+                    TargetNavigationStatusUnavailable => "所属问题已删除或不存在",
+                    _ => null
+                },
+                SnapshotTitle = ResolveSnapshotTitle(report, matchedAnswer.SnapshotTitle),
+                SnapshotSummary = ResolveSnapshotSummary(report, matchedAnswer.SnapshotSummary)
             };
         }
 

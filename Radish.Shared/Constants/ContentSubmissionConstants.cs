@@ -6,6 +6,10 @@ public static class ContentSubmissionOperationTypes
     public const string ForumPostCreate = "ForumPostCreate";
     public const string ForumCommentCreate = "ForumCommentCreate";
     public const string ForumAnswerCreate = "ForumAnswerCreate";
+    public const string ForumAnswerEdit = "ForumAnswerEdit";
+    public const string ForumAnswerDelete = "ForumAnswerDelete";
+    public const string ForumAnswerRevisionRestore = "ForumAnswerRevisionRestore";
+    public const string ForumAnswerAcceptanceChange = "ForumAnswerAcceptanceChange";
     public const string ForumPostEdit = "ForumPostEdit";
     public const string ForumCommentEdit = "ForumCommentEdit";
     public const string ForumPostRevisionRestore = "ForumPostRevisionRestore";
@@ -26,6 +30,9 @@ public static class ContentSubmissionResultTypes
     public const string Post = "Post";
     public const string Comment = "Comment";
     public const string PostQuestion = "PostQuestion";
+    public const string PostAnswer = "PostAnswer";
+    public const string PostAnswerContentRevision = "PostAnswerContentRevision";
+    public const string PostAnswerAcceptanceEvent = "PostAnswerAcceptanceEvent";
     public const string PostContentRevision = "PostContentRevision";
     public const string CommentContentRevision = "CommentContentRevision";
 }

@@ -1,5 +1,11 @@
 export type ModerationLongId = string;
-export type ContentModerationTargetType = 'Post' | 'Comment' | 'PostQuickReply' | 'ChatMessage' | 'Product';
+export type ContentModerationTargetType =
+  | 'Post'
+  | 'Comment'
+  | 'PostAnswer'
+  | 'PostQuickReply'
+  | 'ChatMessage'
+  | 'Product';
 export type ContentModerationCaseStatus = 'Open' | 'Reviewing' | 'Resolved';
 export type ContentModerationDecision = 'None' | 'NoViolation' | 'Violation' | 'InsufficientEvidence';
 export type ContentModerationTargetDisposition =
