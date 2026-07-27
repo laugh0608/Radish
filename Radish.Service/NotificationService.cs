@@ -9,6 +9,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -656,6 +657,9 @@ public sealed class NotificationService : INotificationService
         var english = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en";
         var actor = Arg("actorName", english ? "Someone" : "有人");
         var target = Arg("targetTitle", english ? "your content" : "你的内容");
+        var contentRewardReason = ContentRewardReasonCodes.GetLabelOrDefault(
+            Arg("reasonCode"),
+            english);
         return (notification.Type, english) switch
         {
             (NotificationType.PostLiked, true) => ("Post liked", $"{target} received {occurrenceCount} like(s)."),
@@ -674,6 +678,12 @@ public sealed class NotificationService : INotificationService
             (NotificationType.DirectMessageRequested, false) => ("新的私信请求", $"{actor} 向你发送了私信请求"),
             (NotificationType.Followed, true) => ("New follower", $"{actor} followed you."),
             (NotificationType.Followed, false) => ("新增关注", $"{actor} 关注了你"),
+            (NotificationType.ContentRewardReceived, true) => (
+                "Content rewarded",
+                $"{actor} sent 1 carrot for {contentRewardReason} on {target}."),
+            (NotificationType.ContentRewardReceived, false) => (
+                "收到内容赞赏",
+                $"{actor} 因“{contentRewardReason}”向《{target}》送出了 1 胡萝卜"),
             (NotificationType.WikiCollaboratorInvited, true) => ("Document collaboration invite", $"{actor} invited you to edit {target}."),
             (NotificationType.WikiCollaboratorInvited, false) => ("文档协作邀请", $"{actor} 邀请你协作编辑《{target}》"),
             (NotificationType.WikiReviewUpdated, true) => ("Document review updated", $"{target}: {Arg("reviewAction", "Updated")}."),

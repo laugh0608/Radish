@@ -43,6 +43,9 @@ public static class NotificationType
     /// <remarks>优先级：普通（2）</remarks>
     public const string DirectMessageRequested = "DirectMessageRequested";
 
+    /// <summary>内容作者收到一笔固定金额赞赏。</summary>
+    public const string ContentRewardReceived = "ContentRewardReceived";
+
     public const string WikiCollaboratorInvited = "WikiCollaboratorInvited";
 
     public const string WikiReviewUpdated = "WikiReviewUpdated";
@@ -193,4 +196,7 @@ public static class BusinessType
 
     /// <summary>Wiki 文档</summary>
     public const string Wiki = "Wiki";
+
+    /// <summary>论坛内容赞赏。</summary>
+    public const string ContentReward = "ContentReward";
 }

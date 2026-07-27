@@ -137,6 +137,10 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         record.ErrorCode = request.ErrorCode;
         record.ErrorMessage = Truncate(request.ErrorMessage, 500);
         record.CompleteTime = now;
+        if (request.ExtendRetentionFromCompletion)
+        {
+            record.ExpiresAt = now.AddHours(RetentionHours);
+        }
         record.ModifyTime = now;
         record.ModifyBy = "System";
         record.ModifyId = 0;
@@ -189,6 +193,23 @@ public class OperationIdempotencyService : IOperationIdempotencyService
     {
         if (record.ExpiresAt <= now)
         {
+            if (record.Status == OperationIdempotencyStatuses.Processing &&
+                !request.AllowExpiredProcessingReset)
+            {
+                if (!string.Equals(record.RequestHash, request.RequestHash, StringComparison.Ordinal))
+                {
+                    return Conflict("幂等键已被不同请求使用");
+                }
+
+                return new OperationIdempotencyBeginResult
+                {
+                    Status = OperationIdempotencyBeginStatus.Processing,
+                    RecordId = record.Id,
+                    Message = "请求处理已超时，需要先核对权威业务事实",
+                    IsExpiredProcessing = true
+                };
+            }
+
             await ResetToProcessingAsync(record, request, now);
             return Started(record.Id);
         }

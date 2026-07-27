@@ -24,6 +24,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
     private readonly INotificationInboxRepository? _notificationInboxRepository;
     private readonly INotificationPushService? _notificationPushService;
     private readonly IUserInteractionRealtimeNotifier? _userInteractionRealtimeNotifier;
+    private readonly IContentRewardAuditProjectionRepository? _contentRewardAuditProjectionRepository;
 
     public ReliableTaskProcessor(
         ICoinRewardService coinRewardService,
@@ -38,7 +39,8 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         IContentModerationRealtimeNotifier? contentModerationRealtimeNotifier = null,
         INotificationInboxRepository? notificationInboxRepository = null,
         INotificationPushService? notificationPushService = null,
-        IUserInteractionRealtimeNotifier? userInteractionRealtimeNotifier = null)
+        IUserInteractionRealtimeNotifier? userInteractionRealtimeNotifier = null,
+        IContentRewardAuditProjectionRepository? contentRewardAuditProjectionRepository = null)
     {
         _coinRewardService = coinRewardService;
         _coinService = coinService;
@@ -53,6 +55,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         _notificationInboxRepository = notificationInboxRepository;
         _notificationPushService = notificationPushService;
         _userInteractionRealtimeNotifier = userInteractionRealtimeNotifier;
+        _contentRewardAuditProjectionRepository = contentRewardAuditProjectionRepository;
     }
 
     public async Task ProcessAsync(ReliableOutboxSnapshot message, CancellationToken cancellationToken = default)
@@ -131,8 +134,70 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
                 await ProcessUserBlockRelationshipChangedAsync(
                     Deserialize<UserBlockRelationshipChangedTaskPayload>(message));
                 break;
+            case ReliableTaskTypes.ContentRewardAuditProjection:
+                await ProcessContentRewardAuditProjectionAsync(
+                    Deserialize<ContentRewardAuditProjectionTaskPayload>(message),
+                    message.TenantId,
+                    message.OccurredAtUtc);
+                break;
             default:
                 throw new PermanentReliableTaskException($"未知可靠任务类型：{message.TaskType}");
+        }
+    }
+
+    private async Task ProcessContentRewardAuditProjectionAsync(
+        ContentRewardAuditProjectionTaskPayload payload,
+        long outboxTenantId,
+        DateTime outboxOccurredAtUtc)
+    {
+        if (_contentRewardAuditProjectionRepository == null)
+        {
+            throw new PermanentReliableTaskException("内容赞赏审计投影 Repository 未注册");
+        }
+        if (payload.TenantId != outboxTenantId || payload.OccurredAtUtc != outboxOccurredAtUtc)
+        {
+            throw new PermanentReliableTaskException("内容赞赏审计投影与 Outbox 权威上下文不一致");
+        }
+        if (payload.ContentRewardId <= 0 ||
+            payload.IdempotencyRecordId <= 0 ||
+            payload.CoinTransactionId <= 0)
+        {
+            throw new PermanentReliableTaskException("内容赞赏审计投影缺少权威业务标识");
+        }
+
+        try
+        {
+            await _contentRewardAuditProjectionRepository.ProjectAsync(
+                new ContentRewardAuditProjectionCommand(
+                    outboxTenantId,
+                    payload.ContentRewardId,
+                    payload.CoinTransactionId,
+                    outboxOccurredAtUtc,
+                    payload.OperatorName,
+                    payload.OperatorId,
+                    new ContentRewardAuditEntry(
+                        payload.SenderEntry.UserId,
+                        payload.SenderEntry.ChangeAmount,
+                        payload.SenderEntry.BalanceBefore,
+                        payload.SenderEntry.BalanceAfter,
+                        payload.SenderEntry.ChangeType,
+                        payload.SenderEntry.SourceEventKey),
+                    new ContentRewardAuditEntry(
+                        payload.RecipientEntry.UserId,
+                        payload.RecipientEntry.ChangeAmount,
+                        payload.RecipientEntry.BalanceBefore,
+                        payload.RecipientEntry.BalanceAfter,
+                        payload.RecipientEntry.ChangeType,
+                        payload.RecipientEntry.SourceEventKey)));
+        }
+        catch (ContentRewardAuditProjectionConflictException)
+        {
+            throw new PermanentReliableTaskException("内容赞赏审计投影键对应载荷不一致");
+        }
+        catch (ArgumentException exception)
+        {
+            throw new PermanentReliableTaskException(
+                $"内容赞赏审计投影载荷无效：{exception.Message}");
         }
     }
 

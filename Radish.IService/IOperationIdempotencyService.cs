@@ -23,6 +23,7 @@ public sealed class OperationIdempotencyRequestSnapshot
     public string RequestHash { get; init; } = string.Empty;
 
     public string RequestSummary { get; init; } = string.Empty;
+
 }
 
 public sealed class OperationIdempotencyBeginRequest
@@ -38,6 +39,8 @@ public sealed class OperationIdempotencyBeginRequest
     public string RequestHash { get; init; } = string.Empty;
 
     public string RequestSummary { get; init; } = string.Empty;
+
+    public bool AllowExpiredProcessingReset { get; init; } = true;
 }
 
 public enum OperationIdempotencyBeginStatus
@@ -62,6 +65,8 @@ public sealed class OperationIdempotencyBeginResult
     public string? ErrorMessage { get; init; }
 
     public string? Message { get; init; }
+
+    public bool IsExpiredProcessing { get; init; }
 }
 
 public sealed class OperationIdempotencyCompletionRequest
@@ -79,4 +84,6 @@ public sealed class OperationIdempotencyCompletionRequest
     public string? ErrorMessage { get; init; }
 
     public string ResponsePayload { get; init; } = string.Empty;
+
+    public bool ExtendRetentionFromCompletion { get; init; }
 }

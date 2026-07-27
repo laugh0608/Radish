@@ -1,12 +1,12 @@
 # 论坛内容赞赏（胡萝卜 +1）设计方案
 
-> **状态**：F4-N-A 权威设计已完成；等待批准进入 F4-N-B
+> **状态**：F4-N-B 服务端与 migration 已完成；等待批准进入 F4-N-C
 >
 > **更新日期**：2026-07-27
 >
 > **适用主线**：正式 Web 论坛；PC / mobile 浏览器共同验收
 >
-> **阶段关系**：F4-N 当前唯一功能专题；进入模型、API、migration、Pencil 或页面前必须再次取得明确批准
+> **阶段关系**：F4-N 当前唯一功能专题；服务端权威链路已完成，进入 Pencil 或正式 Web 前必须再次取得明确批准
 
 > [!IMPORTANT]
 > 首批只支持 `Post / Comment` 和预设理由。`PostAnswer`、自定义理由文本、自定义金额、重复赞赏、排行榜和独立赞赏中心均不进入首批。Main DB 保存唯一资产真相，Log DB 的 `BalanceChangeLog` 只是由 Reliable Outbox 驱动的可靠、幂等审计投影，不参与 Main 资产事务。
@@ -347,7 +347,7 @@ Repository 命令必须携带服务端解析后的租户、当前用户、目标
 
 Main 成功事务写入一条审计投影 Outbox，payload 固化：
 
-- `TenantId`、`ContentRewardId`、`CoinTransactionId`；
+- `TenantId`、`ContentRewardId`、`IdempotencyRecordId`、`CoinTransactionId`；
 - 发送者与接收者 ID；
 - 双方 `BalanceBefore / BalanceAfter / ChangeAmount`；
 - 发送方 `ChangeType = TRANSFER_OUT`；
@@ -441,6 +441,7 @@ POST /api/v1/ContentReward/GetTargetStates
 |---:|---|---|
 | 400 | `ContentReward.InvalidArgument` | 目标类型、ID、理由或幂等键无效 |
 | 401 | 统一未认证错误 | 需要登录 |
+| 503 | `ContentReward.Unavailable` | schema 尚未部署完成或功能开关关闭 |
 | 404 | `ContentReward.TargetUnavailable` | 目标不存在、不可读、跨租户或治理隐藏 |
 | 409 | `ContentReward.SelfNotAllowed` | 不允许赞赏自己的内容 |
 | 409 | `ContentReward.AlreadyRewarded` | 同一用户已赞赏该目标 |
@@ -529,6 +530,8 @@ POST /api/v1/ContentReward/GetTargetStates
 - 覆盖 SQLite / PostgreSQL 的事务、并发、重试、投影和严格 verify；
 - B 批不提前实现正式 Web 页面。
 
+完成事实：Main 权威事务、过期 `Processing` 成功事实核对与修复回放、Log 双分录幂等投影、逐笔通知、默认关闭的发布开关、Main / Log migration、HTTP 示例和定向测试均已落地；PostgreSQL migration 用例进入环境门禁，F4-N-C 获批前不实现页面。
+
 ### F4-N-C：Pencil 与正式 Web
 
 - 先更新权威 Pencil 的 PC / mobile 论坛详情状态；
@@ -601,7 +604,7 @@ POST /api/v1/ContentReward/GetTargetStates
 - 不把 `Mute / Ban` 扩张为未定义的资产冻结；
 - 不新增独立赞赏中心；
 - 不为 Flutter、Tauri 或 WebOS 建立第二套服务契约；
-- 不在 F4-N-A 后直接进入代码，必须先汇报范围并等待批准；
+- 不在 F4-N-B 后直接进入 Pencil 或正式 Web，必须先汇报范围并等待批准；
 - 不因单独专题文档频繁创建 `dev -> master` PR，待形成完整功能或成组维护批次后统一集成。
 
 ## 16. 关联文档

@@ -16,6 +16,11 @@ namespace Radish.Model;
 [SugarTable($@"{nameof(BalanceChangeLog)}_{{year}}{{month}}{{day}}")] // 标准格式：BalanceChangeLog_20260103
 [SugarIndex("idx_user_time", nameof(UserId), OrderByType.Asc, nameof(CreateTime), OrderByType.Desc)]
 [SugarIndex("idx_transaction", nameof(TransactionId), OrderByType.Asc)]
+[SugarIndex(
+    "idx_balance_change_source_event",
+    nameof(TenantId), OrderByType.Asc,
+    nameof(SourceEventKey), OrderByType.Asc,
+    IsUnique = true)]
 public class BalanceChangeLog : RootEntityTKey<long>, ITenantEntity
 {
     /// <summary>初始化默认余额变动日志实例</summary>
@@ -33,6 +38,7 @@ public class BalanceChangeLog : RootEntityTKey<long>, ITenantEntity
         BalanceBefore = 0;
         BalanceAfter = 0;
         ChangeType = string.Empty;
+        SourceEventKey = null;
         TenantId = 0;
         CreateTime = DateTime.Now;
         CreateBy = "System";
@@ -79,6 +85,10 @@ public class BalanceChangeLog : RootEntityTKey<long>, ITenantEntity
     /// </remarks>
     [SugarColumn(Length = 50, IsNullable = false, ColumnDescription = "变动类型")]
     public string ChangeType { get; set; } = string.Empty;
+
+    /// <summary>可靠投影来源事件键；旧同步写入保持为空。</summary>
+    [SugarColumn(Length = 220, IsNullable = true, ColumnDescription = "来源事件幂等键")]
+    public string? SourceEventKey { get; set; }
 
     #endregion
 

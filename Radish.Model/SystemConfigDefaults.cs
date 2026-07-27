@@ -453,6 +453,57 @@ public static class SystemConfigDefaults
             EffectiveMode = SystemConfigEffectiveMode.Immediate,
             IsEditable = true,
             IsSensitive = false
+        },
+        new()
+        {
+            Id = 25,
+            Category = ForumAssetInteractionCategory,
+            Key = ContentRewardDailyTotalLimitKey,
+            Name = "内容赞赏每日总上限",
+            Description = "同一用户在单个业务自然日内最多允许成功赞赏的内容数量。",
+            ImpactSummary = "影响论坛内容赞赏的每日总频率限制；只统计 Main 中已成功提交的 ContentReward。",
+            ValueType = "number",
+            DefaultValue = DefaultContentRewardDailyTotalLimit,
+            MinNumberValue = 1,
+            MaxNumberValue = 1000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 26,
+            Category = ForumAssetInteractionCategory,
+            Key = ContentRewardDailyRecipientLimitKey,
+            Name = "内容赞赏单作者每日上限",
+            Description = "同一用户在单个业务自然日内向同一内容作者最多允许成功赞赏的次数。",
+            ImpactSummary = "影响论坛内容赞赏向单一作者的集中度限制；不得高于每日总上限。",
+            ValueType = "number",
+            DefaultValue = DefaultContentRewardDailyRecipientLimit,
+            MinNumberValue = 1,
+            MaxNumberValue = 1000,
+            RequiresInteger = true,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
+        },
+        new()
+        {
+            Id = 27,
+            Category = ForumAssetInteractionCategory,
+            Key = ContentRewardEnabledKey,
+            Name = "内容赞赏功能开关",
+            Description = "控制论坛内容赞赏创建入口是否可用；关闭时仍允许查询既有成功事实。",
+            ImpactSummary = "影响内容赞赏写入与正式 Web 入口，不删除、不隐藏、不回滚既有资产事实。",
+            ValueType = "boolean",
+            DefaultValue = DefaultContentRewardEnabled,
+            RiskLevel = SystemConfigRiskLevel.Medium,
+            EffectiveMode = SystemConfigEffectiveMode.Immediate,
+            IsEditable = true,
+            IsSensitive = false
         }
     ];
 
@@ -482,6 +533,9 @@ public static class SystemConfigDefaults
 
     /// <summary>评论互动分类</summary>
     public const string CommentInteractionCategory = "评论互动";
+
+    /// <summary>论坛资产互动分类</summary>
+    public const string ForumAssetInteractionCategory = "论坛资产互动";
 
     /// <summary>展示名最小长度配置键</summary>
     public const string DisplayNameMinLengthKey = "UserIdentity.DisplayName.MinLength";
@@ -546,6 +600,15 @@ public static class SystemConfigDefaults
     /// <summary>神评替换最小点赞领先数配置键</summary>
     public const string CommentHighlightReplacementMinLikeDeltaKey = "Comment.Highlight.ReplacementMinLikeDelta";
 
+    /// <summary>内容赞赏每日总上限配置键</summary>
+    public const string ContentRewardDailyTotalLimitKey = "Forum.ContentReward.DailyTotalLimit";
+
+    /// <summary>内容赞赏单作者每日上限配置键</summary>
+    public const string ContentRewardDailyRecipientLimitKey = "Forum.ContentReward.DailyRecipientLimit";
+
+    /// <summary>内容赞赏功能开关配置键</summary>
+    public const string ContentRewardEnabledKey = "Forum.ContentReward.Enabled";
+
     /// <summary>默认帖子标题最小长度</summary>
     public const string DefaultPostTitleMinLength = "3";
 
@@ -608,6 +671,15 @@ public static class SystemConfigDefaults
 
     /// <summary>默认神评替换最小点赞领先数</summary>
     public const string DefaultCommentHighlightReplacementMinLikeDelta = "2";
+
+    /// <summary>默认内容赞赏每日总上限</summary>
+    public const string DefaultContentRewardDailyTotalLimit = "20";
+
+    /// <summary>默认内容赞赏单作者每日上限</summary>
+    public const string DefaultContentRewardDailyRecipientLimit = "5";
+
+    /// <summary>默认关闭内容赞赏，完成 schema 部署后再显式启用</summary>
+    public const string DefaultContentRewardEnabled = "false";
 
     /// <summary>已注册系统设置定义</summary>
     public static IReadOnlyList<SystemConfigDefinition> Definitions => DefinitionItems;

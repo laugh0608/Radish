@@ -45,6 +45,8 @@ internal static class SchemaMigrationRegistry
         UserBlockAuthoritySchemaMigration.Instance,
         WikiAttachmentAuthoritySchemaMigration.Instance,
         ForumContentRevisionSchemaMigration.Instance,
+        ContentRewardSchemaMigration.Instance,
+        ContentRewardAuditProjectionSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance,
         UserBlockNotificationSuppressionSchemaMigration.Instance

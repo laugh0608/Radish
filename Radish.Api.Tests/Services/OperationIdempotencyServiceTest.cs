@@ -168,6 +168,41 @@ public class OperationIdempotencyServiceTest
     }
 
     [Fact]
+    public async Task BeginAsync_ShouldExposeExpiredProcessingWithoutReset_WhenCallerRequiresRecovery()
+    {
+        var existing = new OperationIdempotencyRecord
+        {
+            Id = 9005,
+            TenantId = 0,
+            UserId = 9527,
+            OperationType = OperationIdempotencyOperationTypes.ContentReward,
+            IdempotencyKey = "content-reward:abc",
+            RequestHash = "hash-a",
+            RequestSummary = "{}",
+            Status = OperationIdempotencyStatuses.Processing,
+            ExpiresAt = FixedNow.AddMinutes(-1)
+        };
+        var repository = CreateRepositoryReturning(existing);
+        var service = CreateService(repository);
+
+        var result = await service.BeginAsync(new OperationIdempotencyBeginRequest
+        {
+            TenantId = 0,
+            UserId = 9527,
+            OperationType = OperationIdempotencyOperationTypes.ContentReward,
+            IdempotencyKey = "content-reward:abc",
+            RequestHash = "hash-a",
+            RequestSummary = "{}",
+            AllowExpiredProcessingReset = false
+        });
+
+        Assert.Equal(OperationIdempotencyBeginStatus.Processing, result.Status);
+        Assert.True(result.IsExpiredProcessing);
+        Assert.Equal(9005, result.RecordId);
+        repository.Verify(r => r.UpdateAsync(It.IsAny<OperationIdempotencyRecord>()), Times.Never);
+    }
+
+    [Fact]
     public async Task BeginAsync_ShouldRejectInvalidKey()
     {
         var repository = new Mock<IBaseRepository<OperationIdempotencyRecord>>(MockBehavior.Strict);
