@@ -156,6 +156,25 @@ export type {
 } from './forum-content-revision-contract';
 export { ForumContentRevisionErrorCode } from './forum-content-revision-contract';
 
+export type {
+  ContentRewardLongId,
+  ContentRewardTargetType,
+  ContentRewardReasonCode,
+  ContentRewardErrorCodeValue,
+  CreateContentRewardRequest,
+  ContentRewardTargetRequest,
+  GetContentRewardTargetStatesRequest,
+  ContentRewardMutationVo,
+  ContentRewardTargetStateVo,
+  ContentRewardRecordVo,
+  ContentRewardTargetPageVo,
+} from './content-reward-contract';
+export {
+  ContentRewardTargetTypes,
+  ContentRewardReasonCodes,
+  ContentRewardErrorCode,
+} from './content-reward-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,

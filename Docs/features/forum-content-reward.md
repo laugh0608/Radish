@@ -1,12 +1,12 @@
 # 论坛内容赞赏（胡萝卜 +1）设计方案
 
-> **状态**：F4-N-B 服务端与 migration 已完成；等待批准进入 F4-N-C
+> **状态**：F4-N-A / B / C / D 已完成；专题关闭
 >
 > **更新日期**：2026-07-27
 >
 > **适用主线**：正式 Web 论坛；PC / mobile 浏览器共同验收
 >
-> **阶段关系**：F4-N 当前唯一功能专题；服务端权威链路已完成，进入 Pencil 或正式 Web 前必须再次取得明确批准
+> **阶段关系**：F4-N 已完成权威设计、服务端、Pencil、正式 Web 与 Gateway 成组验收；下一专题需重新完成候选裁决
 
 > [!IMPORTANT]
 > 首批只支持 `Post / Comment` 和预设理由。`PostAnswer`、自定义理由文本、自定义金额、重复赞赏、排行榜和独立赞赏中心均不进入首批。Main DB 保存唯一资产真相，Log DB 的 `BalanceChangeLog` 只是由 Reliable Outbox 驱动的可靠、幂等审计投影，不参与 Main 资产事务。
@@ -429,7 +429,7 @@ GET /api/v1/ContentReward/GetTargetRewards
 POST /api/v1/ContentReward/GetTargetStates
 ```
 
-批量接口用于帖子详情和评论树避免 N+1，限制单次目标数量并只接受 `Post / Comment`。响应包含目标累计数量和当前登录用户是否已赞赏；匿名读取时 `viewerRewarded=false`。
+批量接口用于帖子详情和评论树避免 N+1，限制单次目标数量并只接受 `Post / Comment`。响应包含目标累计数量、当前登录用户是否已赞赏和 `VoCreateEnabled` 服务端有效开关；匿名读取时 `viewerRewarded=false`。页面不得根据“接口存在”猜测功能已开放，也不得仅靠前端常量决定是否展示创建入口。
 
 公开记录只返回发送者公开资料白名单、`reasonCode` 和时间，不返回内部用户 ID、余额、交易流水号、幂等键或 Log 投影键。目标变为不可读后，公开查询按目标不可用处理。
 
@@ -451,6 +451,7 @@ POST /api/v1/ContentReward/GetTargetStates
 | 409 | `UserBlock.InteractionUnavailable` | 双向屏蔽；不暴露方向 |
 | 409 | `ContentReward.Processing` | 同一幂等请求处理中 |
 | 409 | `ContentReward.IdempotencyConflict` | 同键异摘要 |
+| 409 | `ContentReward.ReplayUnavailable` | 无法安全恢复既有幂等结果，需要使用新键重新发起 |
 | 503 | `ContentReward.ConcurrentConflict` | 有界重试后仍存在数据库并发冲突 |
 | 503 | `UserBlock.RelationshipTemporarilyUnavailable` | 无法确认关系真相，失败关闭 |
 
@@ -530,7 +531,7 @@ POST /api/v1/ContentReward/GetTargetStates
 - 覆盖 SQLite / PostgreSQL 的事务、并发、重试、投影和严格 verify；
 - B 批不提前实现正式 Web 页面。
 
-完成事实：Main 权威事务、过期 `Processing` 成功事实核对与修复回放、Log 双分录幂等投影、逐笔通知、默认关闭的发布开关、Main / Log migration、HTTP 示例和定向测试均已落地；PostgreSQL migration 用例进入环境门禁，F4-N-C 获批前不实现页面。
+完成事实：Main 权威事务、过期 `Processing` 成功事实核对与修复回放、Log 双分录幂等投影、逐笔通知、默认关闭的发布开关、Main / Log migration、HTTP 示例和定向测试均已落地；PostgreSQL migration 用例进入环境门禁。
 
 ### F4-N-C：Pencil 与正式 Web
 
@@ -540,6 +541,8 @@ POST /api/v1/ContentReward/GetTargetStates
 - 覆盖四主题、i18n、键盘、焦点、窄屏、长名字、空态、错误态和 reduced-motion；
 - 正式路由与 WebOS 复用同一实现，不建设壳层分叉。
 
+完成事实：权威 Pencil 已在 `P04 / P11` 接入帖子与评论入口，并新增 `P04B / P11B` PC / mobile 确认和状态画板；服务端状态响应显式提供 `VoCreateEnabled`，`@radish/http` 固定 Long ID、理由和结构化错误契约；正式 Web 与 WebOS 复用 `ContentRewardPanel`、批量目标状态、公开记录分页、余额确认、稳定幂等键、受控登录回流、双语和语义主题 token。开发期构建、type-check、前端全量测试及内容赞赏定向后端测试已通过，运行态结论留待 D 批。
+
 ### F4-N-D：Gateway 成组验收
 
 - 在当前任务重新取得服务启动授权后执行；
@@ -548,6 +551,8 @@ POST /api/v1/ContentReward/GetTargetStates
 - 复核并发、响应丢失重试、通知抑制、Outbox replay、Log 防重和资产总量；
 - 清理临时用户、余额、赞赏、交易、通知、Outbox、Log 投影、凭据、浏览器状态和备份；
 - 检查六库完整性并执行严格 migration verify，形成批次级验收记录。
+
+完成事实：匿名、发送者与接收者的 Post / Comment 登录回流、创建、自赞赏失败、公开记录、资产守恒、Outbox、Log 双分录、通知定位和 PC / mobile 代表矩阵均已通过。验收修正了 `reward` 登录返回意图缺失及 Reliable Task camelCase payload 反序列化契约根因；测试数据、设置、浏览器、服务和备份已清理，六库严格 migration verify 通过。完整证据见 [F4-N-D 成组验收记录](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)。
 
 ## 14. 验证矩阵
 
@@ -604,7 +609,7 @@ POST /api/v1/ContentReward/GetTargetStates
 - 不把 `Mute / Ban` 扩张为未定义的资产冻结；
 - 不新增独立赞赏中心；
 - 不为 Flutter、Tauri 或 WebOS 建立第二套服务契约；
-- 不在 F4-N-B 后直接进入 Pencil 或正式 Web，必须先汇报范围并等待批准；
+- 不在 F4-N-C 后直接启动服务或执行 Gateway 成组验收，必须先汇报范围并等待批准；
 - 不因单独专题文档频繁创建 `dev -> master` PR，待形成完整功能或成组维护批次后统一集成。
 
 ## 16. 关联文档
@@ -622,3 +627,4 @@ POST /api/v1/ContentReward/GetTargetStates
 - [论坛轻回应墙设计](/features/forum-quick-reaction-wall)
 - [论坛问答 MVP 设计](/features/forum-qa-mvp)
 - [浏览器 Smoke 规则](/guide/browser-smoke)
+- [F4-N-D 成组验收记录](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)

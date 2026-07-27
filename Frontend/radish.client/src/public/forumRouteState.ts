@@ -1,7 +1,7 @@
 export type PublicListSort = 'newest' | 'hottest';
 export type PublicForumRouteSort = 'newest' | 'hottest' | 'pending' | 'answers' | 'votes' | 'deadline';
 export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
-export type PublicForumDetailIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history';
+export type PublicForumDetailIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history' | 'reward';
 
 export interface PublicForumListRoute {
   kind: 'list';
@@ -130,6 +130,7 @@ function normalizeDetailIntent(value: string | null): PublicForumDetailIntent | 
     || value === 'answer'
     || value === 'edit'
     || value === 'history'
+    || value === 'reward'
     ? value
     : undefined;
 }

@@ -18,6 +18,7 @@ public sealed class ContentRewardTargetStateVo
     public long VoTargetId { get; set; }
     public long VoTotalCount { get; set; }
     public bool VoViewerRewarded { get; set; }
+    public bool VoCreateEnabled { get; set; }
 }
 
 public sealed class ContentRewardRecordVo
@@ -36,6 +37,7 @@ public sealed class ContentRewardTargetPageVo
     public long VoTargetId { get; set; }
     public long VoTotalCount { get; set; }
     public bool VoViewerRewarded { get; set; }
+    public bool VoCreateEnabled { get; set; }
     public List<ContentRewardRecordVo> VoItems { get; set; } = [];
     public int VoPageIndex { get; set; }
     public int VoPageSize { get; set; }

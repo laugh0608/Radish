@@ -79,9 +79,7 @@ public sealed class ContentRewardService : IContentRewardService
         }
 
         var idempotencyKey = NormalizeIdempotencyKey(request.IdempotencyKey);
-        var enabledValue = await _systemSettingProvider.GetEffectiveValueAsync(
-            SystemConfigDefaults.ContentRewardEnabledKey);
-        if (!bool.TryParse(enabledValue, out var contentRewardEnabled) || !contentRewardEnabled)
+        if (!await IsCreateEnabledAsync())
         {
             throw Unavailable();
         }
@@ -256,6 +254,7 @@ public sealed class ContentRewardService : IContentRewardService
         var userMap = users.ToDictionary(user => user.Id);
         var avatarMap = await LoadAvatarMapAsync(
             users.Where(user => user.IsEnable && !user.IsDeleted).Select(user => user.Id).ToList());
+        var createEnabled = await IsCreateEnabledAsync();
         return new ContentRewardTargetPageVo
         {
             VoTargetType = normalizedTargetType,
@@ -268,6 +267,7 @@ public sealed class ContentRewardService : IContentRewardService
                                    currentUserId,
                                    normalizedTargetType,
                                    targetId),
+            VoCreateEnabled = createEnabled,
             VoItems = items.Select(item =>
             {
                 userMap.TryGetValue(item.SenderUserId, out var sender);
@@ -323,13 +323,22 @@ public sealed class ContentRewardService : IContentRewardService
             normalizedTenantId,
             currentUserId,
             targets);
+        var createEnabled = await IsCreateEnabledAsync();
         return targets.Select(target => new ContentRewardTargetStateVo
         {
             VoTargetType = target.TargetType,
             VoTargetId = target.TargetId,
             VoTotalCount = countMap.GetValueOrDefault(target),
-            VoViewerRewarded = rewarded.Contains(target)
+            VoViewerRewarded = rewarded.Contains(target),
+            VoCreateEnabled = createEnabled
         }).ToList();
+    }
+
+    private async Task<bool> IsCreateEnabledAsync()
+    {
+        var enabledValue = await _systemSettingProvider.GetEffectiveValueAsync(
+            SystemConfigDefaults.ContentRewardEnabledKey);
+        return bool.TryParse(enabledValue, out var enabled) && enabled;
     }
 
     private ContentRewardMutationVo? ResolveBeginResult(OperationIdempotencyBeginResult beginResult)

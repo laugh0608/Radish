@@ -128,7 +128,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A-D 批并关闭：Main 权威引用、Wiki 私有默认、动态 ACL、事务同步、令牌、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证均通过。
 
-[F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 已完成 A-D 批并关闭：Post / Comment Revision、CAS、完整快照、旧历史兼容、安全恢复、正式 Web、多身份 Gateway 矩阵、清理与 SQLite / PostgreSQL 验证形成闭环。[F4-N 论坛内容赞赏](/features/forum-content-reward)已完成 B 批：Main 原子资产事务、过期幂等恢复、Log 幂等审计投影、逐笔屏蔽抑制通知和 migration 已落地；等待批准进入 F4-N-C Pencil 与正式 Web。
+[F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 与 [F4-N 论坛内容赞赏](/features/forum-content-reward)均已完成 A-D 批并关闭。F4-N 的 Main 原子资产事务、过期幂等恢复、Log 幂等审计投影、逐笔屏蔽抑制通知、migration、Pencil、正式 Web、多身份 Gateway 矩阵与清理形成闭环；下一顺位等待批准进入 F4-O-A 只读候选审计。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

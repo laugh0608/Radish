@@ -48,7 +48,7 @@ interface AuthReturnLocation {
 }
 
 export type CircleReturnTab = 'feed' | 'following' | 'followers';
-export type PublicForumPostReturnIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history';
+export type PublicForumPostReturnIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history' | 'reward';
 
 function getSessionStorage(): Storage | null {
   if (typeof window === 'undefined') {
@@ -238,11 +238,12 @@ function normalizePublicForumPostReturnPath(url: URL, normalizedPathname: string
     && intent !== 'answer'
     && intent !== 'edit'
     && intent !== 'history'
+    && intent !== 'reward'
   ) {
     return null;
   }
 
-  if (commentId && intent !== 'comment' && intent !== 'quickReply') {
+  if (commentId && intent !== 'comment' && intent !== 'quickReply' && intent !== 'reward') {
     return null;
   }
 
@@ -993,6 +994,7 @@ export function buildPublicForumPostReturnPath(target: {
     && target.intent !== 'answer'
     && target.intent !== 'edit'
     && target.intent !== 'history'
+    && target.intent !== 'reward'
   ) {
     return null;
   }
@@ -1010,7 +1012,12 @@ export function buildPublicForumPostReturnPath(target: {
     return null;
   }
 
-  if (normalizedCommentId && target.intent !== 'comment' && target.intent !== 'quickReply') {
+  if (
+    normalizedCommentId
+    && target.intent !== 'comment'
+    && target.intent !== 'quickReply'
+    && target.intent !== 'reward'
+  ) {
     return null;
   }
 

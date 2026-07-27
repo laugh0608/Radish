@@ -1,5 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type {
+  ContentRewardTargetRequest,
+  ContentRewardTargetStateVo,
+  ContentRewardTargetType,
+} from '@radish/http';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
 import type {
   CommentContentRevisionDetailVo,
@@ -56,6 +61,13 @@ interface CommentTreeProps {
   onReportComment?: (commentId: LongId) => void;
   registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
   onNavigateToComment?: (commentId: LongId) => Promise<void> | void;
+  contentRewardStateMap?: Record<string, ContentRewardTargetStateVo>;
+  onContentRewardStateChange?: (state: ContentRewardTargetStateVo) => void;
+  onContentRewardTargetsVisible?: (targets: ContentRewardTargetRequest[]) => void;
+  onRequireContentRewardLogin?: (
+    targetType: ContentRewardTargetType,
+    targetId: LongId,
+  ) => void;
 }
 
 export const CommentTree = ({
@@ -97,6 +109,10 @@ export const CommentTree = ({
   onReportComment,
   registerCommentAnchor,
   onNavigateToComment,
+  contentRewardStateMap = {},
+  onContentRewardStateChange,
+  onContentRewardTargetsVisible,
+  onRequireContentRewardLogin,
 }: CommentTreeProps) => {
   const { t } = useTranslation();
   // 找出所有神评（后端标记的）
@@ -202,6 +218,10 @@ export const CommentTree = ({
             onReport={onReportComment}
             registerCommentAnchor={registerCommentAnchor}
             onNavigateToComment={onNavigateToComment}
+            contentRewardStateMap={contentRewardStateMap}
+            onContentRewardStateChange={onContentRewardStateChange}
+            onContentRewardTargetsVisible={onContentRewardTargetsVisible}
+            onRequireContentRewardLogin={onRequireContentRewardLogin}
             density={density}
           />
         ))}

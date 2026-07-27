@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContentRewardTargetStateVo } from '@radish/http';
 import { createReactionBarLabels } from '../utils/reactionBarLabels';
 import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { UserAdornment } from '@/components/UserAdornment';
@@ -19,6 +20,7 @@ import {
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { MarkdownRenderer, type MarkdownStickerMap } from '@radish/ui/markdown-renderer';
+import { ContentRewardPanel } from './ContentRewardPanel';
 import styles from './PostDetail.module.css';
 
 const MarkdownEditor = lazy(() =>
@@ -71,6 +73,9 @@ interface PostDetailProps {
   onPollClick?: () => void;
   onLotteryClick?: () => void;
   onReport?: (postId: LongId) => void;
+  contentRewardState?: ContentRewardTargetStateVo;
+  onContentRewardStateChange?: (state: ContentRewardTargetStateVo) => void;
+  onRequireContentRewardLogin?: () => void;
 }
 
 const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
@@ -141,6 +146,9 @@ export const PostDetail = ({
   onPollClick,
   onLotteryClick,
   onReport,
+  contentRewardState,
+  onContentRewardStateChange,
+  onRequireContentRewardLogin,
 }: PostDetailProps) => {
   const { t, i18n } = useTranslation();
   const reactionLabels = useMemo(() => createReactionBarLabels(t), [t]);
@@ -1106,6 +1114,17 @@ export const PostDetail = ({
             </div>
           )}
         </div>
+        {contentRewardState && onContentRewardStateChange && onRequireContentRewardLogin && (
+          <ContentRewardPanel
+            targetType="Post"
+            targetId={post.voId}
+            state={contentRewardState}
+            displayTimeZone={displayTimeZone}
+            isAuthenticated={isAuthenticated}
+            onRequireLogin={onRequireContentRewardLogin}
+            onStateChange={onContentRewardStateChange}
+          />
+        )}
       </div>
     </div>
   );

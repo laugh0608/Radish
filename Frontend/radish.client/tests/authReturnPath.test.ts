@@ -126,6 +126,14 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
     normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=history'),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=history',
   );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward&commentId=2042219067430928385'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=reward',
+  );
   assert.equal(normalizeAuthReturnPath('/forum/compose'), '/forum/compose');
   assert.equal(normalizeAuthReturnPath('/forum/compose?category=2042219067430928384'), '/forum/compose?category=2042219067430928384');
   assert.equal(normalizeAuthReturnPath('/docs/mine'), '/docs/mine');
@@ -484,6 +492,21 @@ test('公开论坛返回路径只支持受控发帖、评论和作者态登录�
       intent: 'history',
     }),
     '/forum/post/2042219067430928384?intent=history',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      intent: 'reward',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      commentId: '2042219067430928385',
+      intent: 'reward',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=reward',
   );
   assert.equal(buildPublicForumPostReturnPath({ postId: '0', intent: 'comment' }), null);
   assert.equal(buildPublicForumPostReturnPath({ postPublicId: 'post-42', intent: 'comment' }), null);

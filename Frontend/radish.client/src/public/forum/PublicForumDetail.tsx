@@ -1,6 +1,9 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { isApiResponseNotFoundError } from '@radish/http';
+import {
+  isApiResponseNotFoundError,
+  type ContentRewardTargetType,
+} from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import type { ContentReportTargetType } from '@/api/contentModeration';
@@ -50,6 +53,8 @@ import {
   buildPostEditSubmissionFingerprint,
 } from '@/apps/forum/utils/forumSubmissionFingerprint';
 import { findForumCommentById } from '@/apps/forum/utils/forumCommentTree';
+import { useContentRewardStates } from '@/apps/forum/hooks/useContentRewardStates';
+import { buildContentRewardTargetKey } from '@/apps/forum/utils/contentRewardState';
 import {
   applyCommentHighlightEvent,
   removeCommentFromTree,
@@ -201,6 +206,17 @@ export const PublicForumDetail = ({
         currentContentRevision: activeRevisionComment?.voContentRevision ?? 1,
       }
     : null;
+  const {
+    stateMap: contentRewardStateMap,
+    handleStateChange: handleContentRewardStateChange,
+    handleTargetsVisible: handleContentRewardTargetsVisible,
+  } = useContentRewardStates({
+    postId: post?.voId ?? null,
+    comments,
+    viewerKey: `${isAuthenticated}:${String(currentUserId ?? '0')}`,
+    t,
+    logSource: 'PublicForumDetail',
+  });
 
   const {
     handleBackWhileEditorIdle,
@@ -780,6 +796,22 @@ export const PublicForumDetail = ({
 
     redirectToLogin({ returnPath });
   }, [sourceState]);
+
+  const handleRequireContentRewardLogin = useCallback((
+    targetType: ContentRewardTargetType,
+    targetId: LongId,
+  ) => {
+    if (!post) {
+      return;
+    }
+
+    redirectToDetailLogin(buildPublicForumPostReturnPath({
+      postId: String(post.voId),
+      postPublicId: post.voPublicId,
+      ...(targetType === 'Comment' ? { commentId: String(targetId) } : {}),
+      intent: 'reward',
+    }));
+  }, [post, redirectToDetailLogin]);
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -1565,6 +1597,15 @@ export const PublicForumDetail = ({
               onPollClick={handleOpenPollWhileEditorIdle}
               onLotteryClick={handleOpenLotteryWhileEditorIdle}
               onReport={(targetId) => handleOpenReport('Post', targetId)}
+              contentRewardState={post
+                ? contentRewardStateMap[buildContentRewardTargetKey('Post', post.voId)]
+                : undefined}
+              onContentRewardStateChange={handleContentRewardStateChange}
+              onRequireContentRewardLogin={() => {
+                if (post?.voId) {
+                  handleRequireContentRewardLogin('Post', post.voId);
+                }
+              }}
             />
 
             <section className={styles.reactionStrip} aria-label={t('forum.public.postReactionsTitle')}>
@@ -1870,6 +1911,10 @@ export const PublicForumDetail = ({
                       `inline:${postId}:${targetCommentId}:${Date.now()}`
                     )}
                     onReportComment={(targetId) => handleOpenReport('Comment', targetId)}
+                    contentRewardStateMap={contentRewardStateMap}
+                    onContentRewardStateChange={handleContentRewardStateChange}
+                    onContentRewardTargetsVisible={handleContentRewardTargetsVisible}
+                    onRequireContentRewardLogin={handleRequireContentRewardLogin}
                   />
                 </>
               )}

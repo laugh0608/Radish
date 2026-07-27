@@ -352,6 +352,18 @@ test('parsePublicForumRoute 应解析公开论坛发帖入口与受控作者态�
     postId: '2042219067430928384',
     intent: 'history',
   });
+  assert.deepEqual(
+    parsePublicForumRoute(
+      '/forum/post/2042219067430928384',
+      '?commentId=2042219067430928385&intent=reward',
+    ),
+    {
+      kind: 'detail',
+      postId: '2042219067430928384',
+      commentId: '2042219067430928385',
+      intent: 'reward',
+    },
+  );
 });
 
 test('buildPublicForumPath 应稳定回写公开帖子详情 intent 参数', () => {
@@ -373,6 +385,15 @@ test('buildPublicForumPath 应稳定回写公开帖子详情 intent 参数', () 
       intent: 'history',
     }),
     '/forum/post/2042219067430928384?intent=history'
+  );
+  assert.equal(
+    buildPublicForumPath({
+      kind: 'detail',
+      postId: '2042219067430928384',
+      commentId: '2042219067430928385',
+      intent: 'reward',
+    }),
+    '/forum/post/2042219067430928384?commentId=2042219067430928385&intent=reward'
   );
   assert.equal(
     buildPublicForumPath({

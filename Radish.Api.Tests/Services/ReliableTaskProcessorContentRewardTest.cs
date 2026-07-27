@@ -103,7 +103,9 @@ public sealed class ReliableTaskProcessorContentRewardTest
             "task:content-reward:8001:audit",
             BusinessType.ContentReward,
             "8001",
-            JsonSerializer.Serialize(payload),
+            JsonSerializer.Serialize(
+                payload,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)),
             ReliableOutboxStatuses.Processing,
             1,
             6,

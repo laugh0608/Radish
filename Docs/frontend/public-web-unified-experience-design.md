@@ -32,6 +32,10 @@
 >
 > 更新：2026-07-25（Asia/Shanghai）：F4-K-C 已新增 `P09B / P14B` 屏蔽确认和 `P09C / P14C` 通用不可互动状态；公开内容保持可见，关注、私信与屏蔽动作只消费服务端能力，目标用户视图不披露屏蔽方向。
 >
+> 更新：2026-07-27（Asia/Shanghai）：F4-N-C 已在 `P04 / P11` 接入 Post / Comment 内容赞赏摘要与入口，并新增 `P04B / P11B` PC / mobile 确认及成功、余额不足、重复、处理中状态；固定 `1 胡萝卜`、预设理由、服务端创建开关与正式 Web / WebOS 共享实现。
+>
+> 更新：2026-07-27（Asia/Shanghai）：F4-N-D 已通过匿名 / 多身份 Gateway 代表矩阵，确认登录回流、资产守恒、审计投影、通知定位与 PC / mobile 响应式路径；专题关闭。
+>
 > 状态：设计源 `P01-P16` 已补齐；`P09 / P14` 电子宠物公开名片已完成设计、正式 Web 与 Gateway 成组验收，F4-H 专题关闭；`P15 / P16` 仍仅作为后续公开聊天室参考
 
 ## 设计源
@@ -47,14 +51,14 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P01 - Public App Home` | 公开 App 首页概念层；发布前由 `/discover` 承接，不新增独立 `PublicHomeApp` |
 | `P02 - Discover Content Stream` | `/discover` 社区内容优先流，以帖子、问答和真实互动为主体；Docs、商城、榜单只作为相关内容或“更多”入口，不在首屏并列铺开完整领域列表 |
 | `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction，首屏按紧凑 5 条列表密度设计 |
-| `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子级轻回应、紧凑评论树、父评论神评、子回复沙发、表情反应和登录评论 |
+| `P04 / P04B - Forum Thread Detail / Content Reward` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子与评论内容赞赏、帖子级轻回应、紧凑评论树、父评论神评、子回复沙发、表情反应、登录评论，以及 PC 赞赏确认和主要状态 |
 | `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
 | `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流，首屏采用精选商品 + 多条商品行 + 状态 rail 的浏览密度 |
 | `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
 | `P09 / P09B / P09C - Public Profile` | `/u/:id` 公开个人主页、可空电子宠物公开名片、公开内容 tab、屏蔽确认、通用不可互动状态、关注登录回流和来源返回 |
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
-| `P11 - Mobile Post Detail` | 移动端帖子详情、正文、轻回应、父评论神评、子回复沙发和登录评论 |
+| `P11 / P11B - Mobile Post Detail / Content Reward` | 移动端帖子详情、正文、帖子与评论内容赞赏、轻回应、父评论神评、子回复沙发、登录评论，以及 Bottom Sheet 赞赏确认和主要状态 |
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Workbench` | 移动端 `/workbench` 功能地图、继续探索队列和公开低频入口承接；商城、榜单和聊天室只作为功能入口，不作为工作台页面主体 |
 | `P14 / P14B / P14C - Mobile Public Profile` | 移动端公开主页、可空电子宠物公开名片、屏蔽确认、通用不可互动状态、公开内容 tab 和关注回流 |
@@ -122,6 +126,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 论坛详情的阅读说明属于辅助区，应位于正文、帖子级轻回应、评论入口和评论区之后，不插在正文与互动任务之间。
 - 论坛详情的“神评”“沙发”只作为评论树内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露；神评属于父评论高亮，沙发属于子回复 / 楼中楼首条回复语境。
 - 帖子详情必须表达帖子级轻回应、评论级轻回应、表情 reaction、回复入口、引用回复和登录评论回流。
+- 内容赞赏位于帖子正文操作区之后，并在评论操作区使用紧凑入口；固定 `1 胡萝卜` 和预设理由，先展示权威余额再确认，不做乐观资产更新。匿名用户通过受控 forum 路径登录回流；创建入口由服务端 `VoCreateEnabled` 决定，累计与公开记录在创建关闭时仍可阅读。
 - 登录参与和作者态入口只承接受控 `intent`：`quickReply`、`comment`、`answer`、`edit`、`history`。这些 intent 只用于当前标签页工作区恢复或登录回流，不进入 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
 - 评论树视觉应优先表达父子层级：父评论是完整评论卡，子回复缩进并保留引用 chip、回复、点赞和举报动作。
 - forum 作者态入口通过正式 Web 路由承接，文档作者态入口通过正式 Web 作者页承接。

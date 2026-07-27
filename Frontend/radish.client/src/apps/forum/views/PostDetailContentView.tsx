@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
+import type { ContentRewardTargetType } from '@radish/http';
 import type {
   CommentContentRevisionDetailVo,
   PostDetail,
@@ -17,7 +18,10 @@ import { FORUM_DETAIL_TOOL_EVENT, type ForumDetailToolAction } from '../constant
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
 import { useReactions } from '../hooks/useReactions';
 import { buildDesktopForumPostReturnPath } from '@/services/authReturnPath';
+import { redirectToLogin } from '@/services/auth';
 import type { ForumWorkspaceIntent } from '@/utils/forumNavigation';
+import { useContentRewardStates } from '../hooks/useContentRewardStates';
+import { buildContentRewardTargetKey } from '../utils/contentRewardState';
 import styles from './PostDetailContentView.module.css';
 
 const PostDetailComponent = lazy(() =>
@@ -224,6 +228,31 @@ export const PostDetailContentView = ({
     }),
     [post.voId, post.voPublicId, replyTo?.targetCommentId],
   );
+
+  const {
+    stateMap: contentRewardStateMap,
+    handleStateChange: handleContentRewardStateChange,
+    handleTargetsVisible: handleContentRewardTargetsVisible,
+  } = useContentRewardStates({
+    postId: post.voId,
+    comments,
+    viewerKey: `${isAuthenticated}:${String(currentUserId)}`,
+    t,
+    logSource: 'PostDetailContentView',
+  });
+
+  const handleRequireContentRewardLogin = useCallback((
+    targetType: ContentRewardTargetType,
+    targetId: LongId,
+  ) => {
+    redirectToLogin({
+      returnPath: buildDesktopForumPostReturnPath({
+        postId: post.voId,
+        postPublicId: post.voPublicId,
+        commentId: targetType === 'Comment' ? targetId : undefined,
+      }),
+    });
+  }, [post.voId, post.voPublicId]);
   const commentTypingText = useMemo(() => {
     if (commentTypingUserNames.length === 0) {
       return '';
@@ -447,6 +476,13 @@ export const PostDetailContentView = ({
               onToggleFollow={onToggleFollow}
               onAuthorClick={onAuthorClick}
               onReport={onReportPost}
+              contentRewardState={contentRewardStateMap[
+                buildContentRewardTargetKey('Post', post.voId)
+              ]}
+              onContentRewardStateChange={handleContentRewardStateChange}
+              onRequireContentRewardLogin={() => (
+                handleRequireContentRewardLogin('Post', post.voId)
+              )}
             />
           </Suspense>
 
@@ -520,6 +556,10 @@ export const PostDetailContentView = ({
               onAuthorClick={onAuthorClick}
               onReportComment={onReportComment}
               onNavigateToComment={onNavigateToComment}
+              contentRewardStateMap={contentRewardStateMap}
+              onContentRewardStateChange={handleContentRewardStateChange}
+              onContentRewardTargetsVisible={handleContentRewardTargetsVisible}
+              onRequireContentRewardLogin={handleRequireContentRewardLogin}
             />
           </Suspense>
         </div>

@@ -11,6 +11,9 @@ namespace Radish.Service;
 
 public sealed class ReliableTaskProcessor : IReliableTaskProcessor
 {
+    private static readonly JsonSerializerOptions ReliableTaskJsonOptions =
+        new(JsonSerializerDefaults.Web);
+
     private readonly ICoinRewardService _coinRewardService;
     private readonly ICoinService _coinService;
     private readonly IExperienceService _experienceService;
@@ -107,7 +110,9 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
             case ReliableTaskTypes.NotificationRequested:
                 try
                 {
-                    var requestedNotification = Deserialize<NotificationRequestedTaskPayload>(message).Notification;
+                    var requestedNotification =
+                        Deserialize<NotificationRequestedTaskPayload>(message).Notification
+                        ?? throw new PermanentReliableTaskException("通知可靠任务缺少通知载荷");
                     requestedNotification.TenantId = message.TenantId;
                     requestedNotification.OccurredAtUtc = message.OccurredAtUtc;
                     await _notificationService.CreateNotificationAsync(requestedNotification);
@@ -651,7 +656,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
 
     private static TPayload Deserialize<TPayload>(ReliableOutboxSnapshot message)
     {
-        return JsonSerializer.Deserialize<TPayload>(message.PayloadJson)
+        return JsonSerializer.Deserialize<TPayload>(message.PayloadJson, ReliableTaskJsonOptions)
             ?? throw new PermanentReliableTaskException($"可靠任务载荷为空：{message.TaskType}");
     }
 }
