@@ -504,7 +504,13 @@ internal sealed class WikiAttachmentAuthoritySchemaMigration : ISchemaMigration
             return db.DbMaintenance.IsAnyIndex(indexName);
         }
 
-        return db.DbMaintenance.GetIndexList(tableName)
+        var physicalTableName = DatabaseIdentifierResolver.ResolveColumn(
+                                    db,
+                                    tableName,
+                                    nameof(WikiAttachmentReference.Id))
+                                ?.TableName
+                                ?? tableName;
+        return db.DbMaintenance.GetIndexList(physicalTableName)
             .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
     }
 

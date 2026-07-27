@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.DbMigrate;
+using Radish.Model;
 using SqlSugar;
 using Xunit;
 
@@ -105,9 +106,9 @@ public sealed class ShopEntitlementOperationSchemaMigrationTest
             migration.Apply(db, services);
 
             Assert.Empty(migration.Verify(db, services));
-            Assert.Equal(1, db.Ado.GetInt("SELECT COUNT(*) FROM \"ShopEntitlementOperation\" WHERE \"Id\" = 1"));
+            Assert.Equal(1, db.Queryable<ShopEntitlementOperation>().Count(operation => operation.Id == 1));
             InsertBenefitOperation(db, 3);
-            Assert.Equal(1, db.Ado.GetInt("SELECT COUNT(*) FROM \"ShopEntitlementOperation\" WHERE \"Id\" = 3"));
+            Assert.Equal(1, db.Queryable<ShopEntitlementOperation>().Count(operation => operation.Id == 3));
         }
         finally
         {
