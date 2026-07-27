@@ -39,12 +39,34 @@ public interface IForumContentWriteService
         long operatorId,
         string operatorName,
         bool isAdmin,
-        string? clientSubmissionId);
+        string? clientSubmissionId,
+        int expectedContentRevision = 1);
 
     Task<ContentWriteResult<CommentEditResult>> UpdateCommentAsync(
         long tenantId,
         long commentId,
         string content,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId,
+        int expectedContentRevision = 1);
+
+    Task<ContentWriteResult<PostEditResult>> RestorePostRevisionAsync(
+        long tenantId,
+        long postId,
+        long revisionId,
+        int expectedContentRevision,
+        long operatorId,
+        string operatorName,
+        bool isAdmin,
+        string? clientSubmissionId);
+
+    Task<ContentWriteResult<CommentEditResult>> RestoreCommentRevisionAsync(
+        long tenantId,
+        long commentId,
+        long revisionId,
+        int expectedContentRevision,
         long operatorId,
         string operatorName,
         bool isAdmin,
@@ -122,6 +144,10 @@ public sealed class CommentCreateResult
 public sealed class PostEditResult
 {
     public long PostId { get; init; }
+
+    public long RevisionId { get; init; }
+
+    public int ContentRevision { get; init; }
 }
 
 public sealed class CommentEditResult
@@ -131,4 +157,8 @@ public sealed class CommentEditResult
     public long PostId { get; init; }
 
     public long? ParentId { get; init; }
+
+    public long RevisionId { get; init; }
+
+    public int ContentRevision { get; init; }
 }

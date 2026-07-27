@@ -352,6 +352,7 @@ export const useForumData = (t: TFunction): ForumDataState & ForumDataActions =>
           allGodComments.push({
             voId: topGodComment.voCommentId,
             voContent: topGodComment.voContentSnapshot || '',
+            voContentRevision: 1,
             voAuthorId: topGodComment.voAuthorId,
             voAuthorName: topGodComment.voAuthorName,
             voCreateTime: topGodComment.voCreateTime,

@@ -101,6 +101,8 @@ export {
 
 export type { WikiAttachmentErrorCodeValue } from './wiki-attachment-contract';
 export { WikiAttachmentErrorCode } from './wiki-attachment-contract';
+export type { AttachmentAssetVariant } from './attachment-asset';
+export { loadAttachmentAssetBlob } from './attachment-asset';
 
 export type {
   ModerationLongId,
@@ -134,6 +136,25 @@ export type {
   ReviewContentModerationAppealRequest,
   CaptureContentModerationAppealEvidenceRequest,
 } from './content-moderation-contract';
+
+export type {
+  ForumContentLongId,
+  ForumContentRevisionSourceType,
+  ForumContentRevisionIntegrityStatus,
+  ForumContentRevisionErrorCodeValue,
+  ForumContentRevisionTagVo,
+  ForumContentRevisionSummaryVo,
+  ForumContentRevisionListVo,
+  PostContentRevisionSummaryVo,
+  CommentContentRevisionSummaryVo,
+  PostContentRevisionListVo,
+  CommentContentRevisionListVo,
+  PostContentRevisionDetailVo,
+  CommentContentRevisionDetailVo,
+  RestoreForumContentRevisionRequest,
+  ForumContentRevisionWriteResult,
+} from './forum-content-revision-contract';
+export { ForumContentRevisionErrorCode } from './forum-content-revision-contract';
 
 export type { ApiClientConfig } from './client';
 export {

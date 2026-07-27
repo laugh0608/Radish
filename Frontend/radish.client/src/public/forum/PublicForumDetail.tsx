@@ -11,17 +11,18 @@ import {
   createComment,
   createPostQuickReply,
   getReactionSummary,
-  getPostEditHistory,
   getCommentNavigation,
   getChildComments,
   getPostById,
   getPostQuickReplyWall,
   getRootCommentsPage,
   getTopCategories,
+  updateComment,
   updatePost,
   type Category,
+  type CommentContentRevisionDetailVo,
   type CommentNode,
-  type PostEditHistory,
+  type PostContentRevisionDetailVo,
   type PostDetail,
   type PostQuickReply,
   type ReactionSummaryVo,
@@ -44,9 +45,11 @@ import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetai
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import {
   buildAnswerSubmissionFingerprint,
+  buildCommentEditSubmissionFingerprint,
   buildCommentSubmissionFingerprint,
   buildPostEditSubmissionFingerprint,
 } from '@/apps/forum/utils/forumSubmissionFingerprint';
+import { findForumCommentById } from '@/apps/forum/utils/forumCommentTree';
 import {
   applyCommentHighlightEvent,
   removeCommentFromTree,
@@ -92,8 +95,8 @@ const EditPostModal = lazy(() =>
   import('@/apps/forum/components/EditPostModal').then((module) => ({ default: module.EditPostModal }))
 );
 
-const EditHistoryModal = lazy(() =>
-  import('@/apps/forum/components/EditHistoryModal').then((module) => ({ default: module.EditHistoryModal }))
+const ContentRevisionModal = lazy(() =>
+  import('@/apps/forum/components/ContentRevisionModal').then((module) => ({ default: module.ContentRevisionModal }))
 );
 
 const ContentReportModal = lazy(() =>
@@ -158,11 +161,9 @@ export const PublicForumDetail = ({
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isPostHistoryOpen, setIsPostHistoryOpen] = useState(false);
-  const [postHistories, setPostHistories] = useState<PostEditHistory[]>([]);
-  const [postHistoryTotal, setPostHistoryTotal] = useState(0);
-  const [postHistoryPageIndex, setPostHistoryPageIndex] = useState(1);
-  const [postHistoryLoading, setPostHistoryLoading] = useState(false);
-  const [postHistoryError, setPostHistoryError] = useState<string | null>(null);
+  const [activeCommentRevisionId, setActiveCommentRevisionId] = useState<LongId | null>(null);
+  const [postRevisionDraft, setPostRevisionDraft] = useState<PostContentRevisionDetailVo | null>(null);
+  const [commentRevisionDraft, setCommentRevisionDraft] = useState<CommentContentRevisionDetailVo | null>(null);
   const [reportTarget, setReportTarget] = useState<{
     targetType: ContentReportTargetType;
     targetId: LongId;
@@ -181,10 +182,25 @@ export const PublicForumDetail = ({
   const commentSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const answerSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const postEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
+  const commentEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentPageSize = 20;
-  const postHistoryPageSize = 10;
   const isAuthenticated = authStoreAuthenticated && isUserAuthenticated();
   const isCurrentUserAuthor = !!post && !!currentUserId && isSameLongId(post.voAuthorId, currentUserId);
+  const activeRevisionComment = findForumCommentById(comments, activeCommentRevisionId);
+  const postRevisionTarget = isPostHistoryOpen && post
+    ? {
+        kind: 'post' as const,
+        targetId: post.voId,
+        currentContentRevision: post.voContentRevision,
+      }
+    : null;
+  const commentRevisionTarget = activeCommentRevisionId
+    ? {
+        kind: 'comment' as const,
+        targetId: activeCommentRevisionId,
+        currentContentRevision: activeRevisionComment?.voContentRevision ?? 1,
+      }
+    : null;
 
   const {
     handleBackWhileEditorIdle,
@@ -202,6 +218,15 @@ export const PublicForumDetail = ({
     onOpenPoll,
     onOpenLottery,
   });
+
+  useEffect(() => {
+    setIsPostHistoryOpen(false);
+    setActiveCommentRevisionId(null);
+    setPostRevisionDraft(null);
+    setCommentRevisionDraft(null);
+    postEditSubmissionRef.current = null;
+    commentEditSubmissionRef.current = null;
+  }, [currentUserId, isAuthenticated, post?.voId]);
 
   const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: LongId) => {
     if (!isAuthenticated) {
@@ -1000,22 +1025,6 @@ export const PublicForumDetail = ({
     }
   }, [categories, t]);
 
-  const loadPostHistory = useCallback(async (targetPostId: LongId, pageIndex: number) => {
-    setPostHistoryLoading(true);
-    setPostHistoryError(null);
-    try {
-      const data = await getPostEditHistory(targetPostId, pageIndex, postHistoryPageSize, t);
-      setPostHistories(data.voItems || []);
-      setPostHistoryTotal(data.voTotal || 0);
-      setPostHistoryPageIndex(data.voPageIndex || pageIndex);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setPostHistoryError(message);
-    } finally {
-      setPostHistoryLoading(false);
-    }
-  }, [postHistoryPageSize, t]);
-
   const handleAnswerAction = useCallback(() => {
     if (!post?.voId || !answerReturnPath) {
       return;
@@ -1051,6 +1060,7 @@ export const PublicForumDetail = ({
 
     try {
       await loadCategoriesForEdit();
+      setPostRevisionDraft(null);
       setIsEditModalOpen(true);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -1067,30 +1077,13 @@ export const PublicForumDetail = ({
   ]);
 
   const handleViewPostHistory = useCallback(async () => {
-    if (!post?.voId || !historyReturnPath) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      redirectToDetailLogin(historyReturnPath);
-      return;
-    }
-
-    if (!isCurrentUserAuthor) {
-      toast.error(t('forum.public.authorOnlyAction'));
+    if (!post?.voId) {
       return;
     }
 
     setIsPostHistoryOpen(true);
-    await loadPostHistory(post.voId, 1);
   }, [
-    historyReturnPath,
-    isAuthenticated,
-    isCurrentUserAuthor,
-    loadPostHistory,
     post?.voId,
-    redirectToDetailLogin,
-    t
   ]);
 
   const handleAnswerQuestion = useCallback(async (content: string) => {
@@ -1162,11 +1155,23 @@ export const PublicForumDetail = ({
     categoryId: LongId,
     tagNames: string[]
   ) => {
+    if (!post || !isSameLongId(post.voId, targetPostId)) {
+      throw new Error(t('forum.public.postEditFailed'));
+    }
+
+    const expectedContentRevision = post.voContentRevision;
     const normalizedTagNames = normalizeTagNames(tagNames);
     const submissionState = createClientSubmissionState(
       postEditSubmissionRef.current,
       'forum-post-edit',
-      buildPostEditSubmissionFingerprint(targetPostId, title, content, categoryId, normalizedTagNames)
+      buildPostEditSubmissionFingerprint(
+        targetPostId,
+        title,
+        content,
+        categoryId,
+        normalizedTagNames,
+        expectedContentRevision
+      )
     );
     postEditSubmissionRef.current = submissionState;
 
@@ -1177,7 +1182,8 @@ export const PublicForumDetail = ({
         content,
         clientSubmissionId: submissionState.clientSubmissionId,
         categoryId,
-        tagNames: normalizedTagNames
+        tagNames: normalizedTagNames,
+        expectedContentRevision
       }, t);
       postEditSubmissionRef.current = null;
       setIsEditModalOpen(false);
@@ -1188,7 +1194,64 @@ export const PublicForumDetail = ({
       toast.error(message || t('forum.public.postEditFailed'));
       throw error;
     }
-  }, [normalizeTagNames, t]);
+  }, [normalizeTagNames, post, t]);
+
+  const handleEditComment = useCallback(async (
+    targetCommentId: LongId,
+    content: string,
+    expectedContentRevision: number
+  ) => {
+    const normalizedContent = content.trim();
+    const submissionState = createClientSubmissionState(
+      commentEditSubmissionRef.current,
+      'forum-comment-edit',
+      buildCommentEditSubmissionFingerprint(
+        targetCommentId,
+        normalizedContent,
+        expectedContentRevision
+      )
+    );
+    commentEditSubmissionRef.current = submissionState;
+
+    try {
+      await updateComment({
+        commentId: targetCommentId,
+        content: normalizedContent,
+        expectedContentRevision,
+        clientSubmissionId: submissionState.clientSubmissionId,
+      }, t);
+      commentEditSubmissionRef.current = null;
+      setCommentRevisionDraft(null);
+      toast.success(t('forum.comment.editSuccess'));
+      setReloadToken((current) => current + 1);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t('forum.comment.editFailedRetry'));
+      throw error;
+    }
+  }, [t]);
+
+  const handleViewCommentRevisions = useCallback((targetCommentId: LongId) => {
+    setActiveCommentRevisionId(targetCommentId);
+  }, []);
+
+  const handleRevisionRestored = useCallback(() => {
+    setPostRevisionDraft(null);
+    setCommentRevisionDraft(null);
+    setReloadToken((current) => current + 1);
+    toast.success(t('forum.revision.restoreSuccess'));
+  }, [t]);
+
+  const handleUsePostRevision = useCallback(async (detail: PostContentRevisionDetailVo) => {
+    try {
+      await loadCategoriesForEdit();
+      setPostRevisionDraft(detail);
+      setIsEditModalOpen(true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message || t('forum.public.composeCategoriesErrorDescription'));
+    }
+  }, [loadCategoriesForEdit, t]);
 
   useEffect(() => {
     if (!post?.voId || (intent !== 'answer' && intent !== 'edit' && intent !== 'history')) {
@@ -1295,6 +1358,7 @@ export const PublicForumDetail = ({
         voId: createdCommentId,
         voPostId: post.voId,
         voContent: normalizedContent,
+        voContentRevision: 1,
         voAuthorId: currentUserId || '0',
         voAuthorName: currentUserName?.trim() || t('common.unknownUser'),
         voAuthorAvatarUrl: currentUserAvatarUrl,
@@ -1793,6 +1857,9 @@ export const PublicForumDetail = ({
                     onSortChange={setCommentSortBy}
                     onLoadMoreChildren={handleLoadMoreChildren}
                     onLoadMoreRootComments={handleLoadMoreComments}
+                    onEditComment={handleEditComment}
+                    onViewCommentHistory={handleViewCommentRevisions}
+                    commentRevisionDraft={commentRevisionDraft}
                     isAuthenticated={isAuthenticated}
                     showTitle={false}
                     density="compact"
@@ -1813,36 +1880,50 @@ export const PublicForumDetail = ({
                 <EditPostModal
                   isOpen={isEditModalOpen}
                   post={post}
+                  revisionDraft={postRevisionDraft}
                   categories={categories}
-                  onClose={() => setIsEditModalOpen(false)}
-                  onSave={handleSavePostEdit}
+                  onClose={() => {
+                    setPostRevisionDraft(null);
+                    setIsEditModalOpen(false);
+                  }}
+                  onSave={async (...args) => {
+                    await handleSavePostEdit(...args);
+                    setPostRevisionDraft(null);
+                  }}
                 />
               </Suspense>
             )}
 
             {isPostHistoryOpen && (
               <Suspense fallback={null}>
-                <EditHistoryModal
+                <ContentRevisionModal
                   isOpen={isPostHistoryOpen}
-                  title={t('forum.postDetail.action.history')}
-                  loading={postHistoryLoading}
-                  error={postHistoryError}
-                  items={postHistories}
-                  total={postHistoryTotal}
-                  pageIndex={postHistoryPageIndex}
-                  pageSize={postHistoryPageSize}
+                  target={postRevisionTarget}
+                  sessionKey={isAuthenticated ? String(currentUserId || '0') : 'anonymous'}
                   onClose={() => setIsPostHistoryOpen(false)}
-                  onPageChange={(nextPageIndex) => {
-                    if (post?.voId) {
-                      void loadPostHistory(post.voId, nextPageIndex);
+                  onRestored={handleRevisionRestored}
+                  onUseInEditor={(detail) => {
+                    if ('voTitle' in detail) {
+                      void handleUsePostRevision(detail);
                     }
                   }}
-                  renderContent={(item) => ({
-                    before: item.voOldContent,
-                    after: item.voNewContent,
-                    beforeTitle: 'voOldTitle' in item ? item.voOldTitle : undefined,
-                    afterTitle: 'voNewTitle' in item ? item.voNewTitle : undefined
-                  })}
+                />
+              </Suspense>
+            )}
+
+            {activeCommentRevisionId && (
+              <Suspense fallback={null}>
+                <ContentRevisionModal
+                  isOpen={true}
+                  target={commentRevisionTarget}
+                  sessionKey={isAuthenticated ? String(currentUserId || '0') : 'anonymous'}
+                  onClose={() => setActiveCommentRevisionId(null)}
+                  onRestored={handleRevisionRestored}
+                  onUseInEditor={(detail) => {
+                    if (!('voTitle' in detail)) {
+                      setCommentRevisionDraft(detail);
+                    }
+                  }}
                 />
               </Suspense>
             )}

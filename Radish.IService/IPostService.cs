@@ -165,6 +165,9 @@ public interface IPostService : IBaseService<Post, PostVo>
     /// <param name="operatorId">操作者 Id</param>
     /// <param name="operatorName">操作者名称</param>
     /// <param name="isAdmin">是否管理员</param>
+    /// <param name="expectedContentRevision">客户端读取到的内容版本号</param>
+    /// <param name="updateCover">是否同步更新封面附件</param>
+    /// <param name="coverAttachmentId">目标封面附件 Id</param>
     Task UpdatePostAsync(
         long postId,
         string title,
@@ -174,7 +177,10 @@ public interface IPostService : IBaseService<Post, PostVo>
         bool allowCreateTag,
         long operatorId,
         string operatorName,
-        bool isAdmin = false);
+        bool isAdmin = false,
+        int expectedContentRevision = 1,
+        bool updateCover = false,
+        long? coverAttachmentId = null);
 
     /// <summary>
     /// 更新帖子浏览次数

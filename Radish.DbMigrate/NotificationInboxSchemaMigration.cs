@@ -57,8 +57,8 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
         }
 
         EnsureUserNotificationColumns(db);
-        db.CodeFirst.InitTables<UserNotification>();
         NormalizeUserBlockSuppression(db);
+        db.CodeFirst.InitTables<UserNotification>();
         if (HasLegacySettingSchema(db))
         {
             var settingId = DatabaseIdentifierResolver.ResolveColumn(db, SettingTable, "Id")
@@ -364,6 +364,36 @@ internal sealed class NotificationInboxSchemaMigration : ISchemaMigration
                 : "'1970-01-01 00:00:00'";
             db.Ado.ExecuteCommand(
                 $"ALTER TABLE {Quote(idColumn.TableName)} ADD COLUMN {Quote(columnName)} {dataType} NOT NULL DEFAULT {defaultValue}");
+        }
+
+        if (DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                UserNotificationTable,
+                nameof(UserNotification.SuppressedByUserBlock)) == null)
+        {
+            var columnName = lowercase
+                ? nameof(UserNotification.SuppressedByUserBlock).ToLowerInvariant()
+                : nameof(UserNotification.SuppressedByUserBlock);
+            var dataType = db.CurrentConnectionConfig.DbType == DbType.PostgreSQL ? "boolean" : "integer";
+            var defaultValue = db.CurrentConnectionConfig.DbType == DbType.PostgreSQL ? "FALSE" : "0";
+            db.Ado.ExecuteCommand(
+                $"ALTER TABLE {Quote(idColumn.TableName)} ADD COLUMN {Quote(columnName)} " +
+                $"{dataType} NOT NULL DEFAULT {defaultValue}");
+        }
+
+        if (DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                UserNotificationTable,
+                nameof(UserNotification.SuppressedAtUtc)) == null)
+        {
+            var columnName = lowercase
+                ? nameof(UserNotification.SuppressedAtUtc).ToLowerInvariant()
+                : nameof(UserNotification.SuppressedAtUtc);
+            var dataType = db.CurrentConnectionConfig.DbType == DbType.PostgreSQL
+                ? "timestamp with time zone"
+                : "datetime";
+            db.Ado.ExecuteCommand(
+                $"ALTER TABLE {Quote(idColumn.TableName)} ADD COLUMN {Quote(columnName)} {dataType} NULL");
         }
     }
 

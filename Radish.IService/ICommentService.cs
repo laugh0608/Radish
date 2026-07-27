@@ -104,8 +104,15 @@ public interface ICommentService : IBaseService<Comment, CommentVo>
     /// <param name="userId">操作用户 Id</param>
     /// <param name="userName">操作用户名称</param>
     /// <param name="isAdmin">是否管理员</param>
+    /// <param name="expectedContentRevision">客户端读取到的内容版本号</param>
     /// <returns>更新结果（是否成功，错误信息）</returns>
-    Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName, bool isAdmin = false);
+    Task<(bool success, string message)> UpdateCommentAsync(
+        long commentId,
+        string newContent,
+        long userId,
+        string userName,
+        bool isAdmin = false,
+        int expectedContentRevision = 1);
 
     /// <summary>
     /// 分页获取评论编辑历史

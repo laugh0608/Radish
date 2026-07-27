@@ -45,5 +45,9 @@ internal static class PostgreSqlIntegrationSqlSugarFactory
         {
             throw new ArgumentException("该工厂只允许创建 PostgreSQL 集成测试连接。", nameof(config));
         }
+
+        config.MoreSettings ??= new ConnMoreSettings();
+        config.MoreSettings.PgSqlIsAutoToLower = true;
+        config.MoreSettings.PgSqlIsAutoToLowerCodeFirst = true;
     }
 }

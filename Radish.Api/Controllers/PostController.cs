@@ -681,13 +681,15 @@ public class PostController : ControllerBase
                 operatorId: Current.UserId,
                 operatorName: Current.UserName,
                 isAdmin: isAdmin,
-                clientSubmissionId: request.ClientSubmissionId);
+                clientSubmissionId: request.ClientSubmissionId,
+                expectedContentRevision: request.ExpectedContentRevision);
 
             return new MessageModel
             {
                 IsSuccess = true,
                 StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = editResult.Message ?? "编辑成功"
+                MessageInfo = editResult.Message ?? "编辑成功",
+                ResponseData = editResult.Result
             };
         }
         catch (InvalidOperationException ex)
@@ -734,6 +736,16 @@ public class PostController : ControllerBase
             };
         }
 
+        if (post.VoAuthorId != Current.UserId && !Current.IsSystemOrAdmin())
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权查看此帖子的完整编辑历史"
+            };
+        }
+
         var (histories, total) = await _postService.GetPostEditHistoryPageAsync(postId, pageIndex, pageSize);
 
         return new MessageModel
@@ -748,6 +760,73 @@ public class PostController : ControllerBase
                 VoPageIndex = pageIndex < 1 ? 1 : pageIndex,
                 VoPageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100)
             }
+        };
+    }
+
+    /// <summary>获取帖子版本列表；未授权访问者只获得公开编辑摘要。</summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<MessageModel> GetRevisionList(
+        long postId,
+        [FromServices] IForumContentRevisionService revisionService,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var result = await revisionService.GetPostRevisionListAsync(
+            postId,
+            Current.UserId,
+            Current.IsSystemOrAdmin(),
+            pageIndex,
+            pageSize);
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
+    }
+
+    /// <summary>获取作者或管理员可见的帖子版本快照。</summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<MessageModel> GetRevisionDetail(
+        long revisionId,
+        [FromServices] IForumContentRevisionService revisionService)
+    {
+        var result = await revisionService.GetPostRevisionDetailAsync(
+            revisionId,
+            Current.UserId,
+            Current.IsSystemOrAdmin());
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
+    }
+
+    /// <summary>将帖子作者内容恢复为指定完整版本，并生成新的不可变版本。</summary>
+    [HttpPost]
+    [Authorize]
+    public async Task<MessageModel> RestoreRevision([FromBody] RestoreForumContentRevisionDto request)
+    {
+        var result = await _forumContentWriteService.RestorePostRevisionAsync(
+            Current.TenantId,
+            request.TargetId,
+            request.RevisionId,
+            request.ExpectedContentRevision,
+            Current.UserId,
+            Current.UserName,
+            Current.IsSystemOrAdmin(),
+            request.ClientSubmissionId);
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = result.Message ?? "恢复成功",
+            ResponseData = result.Result
         };
     }
 

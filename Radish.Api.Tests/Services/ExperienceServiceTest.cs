@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.CacheTool;
 using Radish.Common;
+using Radish.Api.Tests.TestCollections;
 using Radish.Common.OptionTool;
 using Radish.Common.TimeTool;
 using Radish.IRepository.Base;
@@ -26,6 +27,7 @@ using Xunit;
 
 namespace Radish.Api.Tests.Services;
 
+[Collection(AppSettingsStateCollection.CollectionName)]
 public class ExperienceServiceTest
 {
     [Fact]

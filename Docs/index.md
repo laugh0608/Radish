@@ -90,6 +90,7 @@ features:
 - [内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 - [用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design)
 - [内容治理系统说明](/guide/content-moderation)
+- [论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design)
 - [公开内容 SEO 与分享基线](/frontend/public-seo-sharing)
 - [纯 Web 私域复访入口](/frontend/private-web-revisit)
 - [Radish 电子宠物系统](/guide/radish-pet-system)

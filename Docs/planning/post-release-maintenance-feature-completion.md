@@ -126,7 +126,9 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 `F4-J 内容治理申诉与处置纠正` 与 `F4-K 用户屏蔽与关系交互隔离` 均已完成 A-D 批并关闭：申诉形成独立复核、五类来源保护恢复和用户状态纠正；屏蔽形成 Main 唯一真相、双向互动隔离、关注事务、Direct 兼容和通知抑制。两项专题的正式 Web、多角色运行态、失败恢复、临时数据清理和严格 migration verify 均已通过。
 
-当前唯一功能专题为 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)。A / B 批已完成候选设计、Main 权威引用、Wiki 私有默认、动态 ACL、事务同步、令牌、清理和历史兼容迁移；下一顺位进入 F4-L-C，在既有正式 Web 页面接入受保护资源与 object URL 生命周期，不新增页面族或并行启动其他专题。
+[F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A-D 批并关闭：Main 权威引用、Wiki 私有默认、动态 ACL、事务同步、令牌、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证均通过。
+
+[F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 已完成 A-D 批并关闭：Post / Comment Revision、CAS、完整快照、旧历史兼容、安全恢复、正式 Web、多身份 Gateway 矩阵、清理与 SQLite / PostgreSQL 验证形成闭环。F4-N-A 已完成[论坛内容赞赏](/features/forum-content-reward)现状审计并获批首批收束方向，下一步先修订权威设计，不提前进入代码。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

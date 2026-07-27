@@ -76,6 +76,7 @@ export async function apiFetch(
     baseUrl,
     timeout,
     headers,
+    signal: externalSignal,
     ...restOptions
   } = options;
 
@@ -111,6 +112,12 @@ export async function apiFetch(
   const timeoutMs = timeout || currentConfig.timeout;
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const handleExternalAbort = () => controller.abort(externalSignal?.reason);
+  if (externalSignal?.aborted) {
+    handleExternalAbort();
+  } else {
+    externalSignal?.addEventListener('abort', handleExternalAbort, { once: true });
+  }
 
   try {
     const response = await fetch(url, {
@@ -136,6 +143,7 @@ export async function apiFetch(
         const retryResponse = await fetch(url, {
           ...fetchOptions,
           headers: retryHeaders,
+          signal: controller.signal,
         });
 
         // 响应拦截器
@@ -161,14 +169,15 @@ export async function apiFetch(
 
     return response;
   } catch (error) {
-    clearTimeout(timeoutId);
-
     // 错误拦截器
     if (error instanceof Error) {
       currentConfig.onError?.(error);
     }
 
     throw error;
+  } finally {
+    clearTimeout(timeoutId);
+    externalSignal?.removeEventListener('abort', handleExternalAbort);
   }
 }
 

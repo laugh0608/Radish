@@ -45,6 +45,7 @@ public class CommentEditHistoryServiceTest
             AuthorId = 3001,
             AuthorName = "test-user",
             Content = "old-content",
+            EditCount = 2,
             CreateTime = DateTime.Now.AddMinutes(-1),
             IsDeleted = false,
             TenantId = 1
@@ -124,6 +125,7 @@ public class CommentEditHistoryServiceTest
             AuthorId = 3001,
             AuthorName = "test-user",
             Content = "old-content",
+            EditCount = 2,
             CreateTime = DateTime.Now.AddMinutes(-1),
             IsDeleted = false,
             TenantId = 1
@@ -180,7 +182,11 @@ public class CommentEditHistoryServiceTest
         // Assert
         success.ShouldBeFalse();
         message.ShouldContain("编辑次数已达上限");
-        commentRepository.Verify(r => r.UpdateAsync(It.IsAny<Comment>()), Times.Never);
+        commentRepository.Verify(
+            r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Comment, Comment>>>(),
+                It.IsAny<Expression<Func<Comment, bool>>>()),
+            Times.Never);
     }
 
     [Fact(DisplayName = "历史保存次数不足时仍应按编辑次数上限拦截")]
@@ -296,8 +302,10 @@ public class CommentEditHistoryServiceTest
             .ReturnsAsync(comment);
 
         commentRepository
-            .Setup(r => r.UpdateAsync(It.IsAny<Comment>()))
-            .ReturnsAsync(true);
+            .Setup(r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Comment, Comment>>>(),
+                It.IsAny<Expression<Func<Comment, bool>>>()))
+            .ReturnsAsync(1);
 
         commentEditHistoryRepository
             .Setup(r => r.QueryCountAsync(It.IsAny<System.Linq.Expressions.Expression<Func<CommentEditHistory, bool>>?>()))
@@ -358,7 +366,11 @@ public class CommentEditHistoryServiceTest
         // Assert
         success.ShouldBeTrue();
         message.ShouldBe("编辑成功");
-        commentRepository.Verify(r => r.UpdateAsync(It.IsAny<Comment>()), Times.Once);
+        commentRepository.Verify(
+            r => r.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<Comment, Comment>>>(),
+                It.IsAny<Expression<Func<Comment, bool>>>()),
+            Times.Once);
     }
 
     [Fact(DisplayName = "评论超过系统设置最大长度应失败")]

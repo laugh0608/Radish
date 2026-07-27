@@ -705,4 +705,37 @@
   <data name="error.user_block.operation_key_invalid" xml:space="preserve">
     <value>操作标识无效。</value>
   </data>
+  <data name="error.forum.revision_not_found" xml:space="preserve">
+    <value>内容版本不存在。</value>
+  </data>
+  <data name="error.forum.revision_access_denied" xml:space="preserve">
+    <value>无权查看或恢复该内容版本。</value>
+  </data>
+  <data name="error.forum.revision_incomplete" xml:space="preserve">
+    <value>该历史版本不完整，不能恢复。</value>
+  </data>
+  <data name="error.forum.revision_conflict" xml:space="preserve">
+    <value>内容已被更新，请刷新后重试。</value>
+  </data>
+  <data name="error.forum.revision_category_unavailable" xml:space="preserve">
+    <value>目标版本的分类已不可用。</value>
+  </data>
+  <data name="error.forum.revision_tag_unavailable" xml:space="preserve">
+    <value>目标版本包含已不可用的标签。</value>
+  </data>
+  <data name="error.forum.revision_attachment_unavailable" xml:space="preserve">
+    <value>目标版本引用的附件已不可用。</value>
+  </data>
+  <data name="error.forum.revision_content_rejected" xml:space="preserve">
+    <value>目标版本不符合当前内容规则。</value>
+  </data>
+  <data name="error.forum.revision_edit_limit_reached" xml:space="preserve">
+    <value>内容编辑次数已达上限。</value>
+  </data>
+  <data name="error.forum.comment_revision_window_expired" xml:space="preserve">
+    <value>评论已超出允许编辑和恢复的时间窗口。</value>
+  </data>
+  <data name="error.forum.revision_restore_key_conflict" xml:space="preserve">
+    <value>该恢复操作标识已用于其他请求，请刷新后重试。</value>
+  </data>
 </root>

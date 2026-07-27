@@ -573,7 +573,8 @@ public class CommentController : ControllerBase
                 Current.UserId,
                 Current.UserName,
                 isAdmin,
-                request.ClientSubmissionId);
+                request.ClientSubmissionId,
+                request.ExpectedContentRevision);
         }
         catch (InvalidOperationException ex)
         {
@@ -609,7 +610,8 @@ public class CommentController : ControllerBase
         {
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = editResult.Message ?? "编辑成功"
+            MessageInfo = editResult.Message ?? "编辑成功",
+            ResponseData = editResult.Result
         };
     }
 
@@ -637,6 +639,16 @@ public class CommentController : ControllerBase
             };
         }
 
+        if (comment.VoAuthorId != Current.UserId && !Current.IsSystemOrAdmin())
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.Forbidden,
+                MessageInfo = "无权查看此评论的完整编辑历史"
+            };
+        }
+
         var (histories, total) = await _commentService.GetCommentEditHistoryPageAsync(commentId, pageIndex, pageSize);
 
         return new MessageModel
@@ -651,6 +663,87 @@ public class CommentController : ControllerBase
                 VoPageIndex = pageIndex < 1 ? 1 : pageIndex,
                 VoPageSize = pageSize <= 0 ? 20 : Math.Min(pageSize, 100)
             }
+        };
+    }
+
+    /// <summary>获取评论版本列表；未授权访问者只获得公开编辑摘要。</summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public async Task<MessageModel> GetRevisionList(
+        long commentId,
+        [FromServices] IForumContentRevisionService revisionService,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var result = await revisionService.GetCommentRevisionListAsync(
+            commentId,
+            Current.UserId,
+            Current.IsSystemOrAdmin(),
+            pageIndex,
+            pageSize);
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
+    }
+
+    /// <summary>获取作者或管理员可见的评论版本快照。</summary>
+    [HttpGet]
+    [Authorize]
+    public async Task<MessageModel> GetRevisionDetail(
+        long revisionId,
+        [FromServices] IForumContentRevisionService revisionService)
+    {
+        var result = await revisionService.GetCommentRevisionDetailAsync(
+            revisionId,
+            Current.UserId,
+            Current.IsSystemOrAdmin());
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = result
+        };
+    }
+
+    /// <summary>将评论作者内容恢复为指定完整版本，并生成新的不可变版本。</summary>
+    [HttpPost]
+    [Authorize]
+    public async Task<MessageModel> RestoreRevision([FromBody] RestoreForumContentRevisionDto request)
+    {
+        var result = await _forumContentWriteService.RestoreCommentRevisionAsync(
+            Current.TenantId,
+            request.TargetId,
+            request.RevisionId,
+            request.ExpectedContentRevision,
+            Current.UserId,
+            Current.UserName,
+            Current.IsSystemOrAdmin(),
+            request.ClientSubmissionId);
+
+        if (result.Mutated)
+        {
+            var updatedComment = await _commentService.GetCommentDetailAsync(request.TargetId, Current.UserId);
+            if (updatedComment != null)
+            {
+                var highlightRecheckResult = await _commentService.TriggerHighlightRecheckAsync(
+                    updatedComment.VoPostId,
+                    updatedComment.VoParentId);
+                await _commentRealtimePushService.PushUpdatedAsync(updatedComment);
+                await _commentRealtimePushService.PushHighlightChangedAsync(highlightRecheckResult);
+            }
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = result.Message ?? "恢复成功",
+            ResponseData = result.Result
         };
     }
 }

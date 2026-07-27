@@ -218,6 +218,22 @@ const bundle = await rolldown({
           export const configureApiClient = (next) => Object.assign(harness.config, next);
           export const createApiResponseError = harness.createApiResponseError;
           export const getApiClientConfig = () => harness.config;
+          export const loadAttachmentAssetBlob = async (id, variant = 'original', signal) => {
+            const suffix = variant === 'thumbnail' ? '/thumbnail' : '';
+            const response = await harness.apiFetch(
+              '/_assets/attachments/' + encodeURIComponent(id) + suffix,
+              {
+                method: 'GET',
+                withAuth: true,
+                headers: { Accept: '*/*' },
+                signal,
+              },
+            );
+            if (!response.ok) throw new Error('Attachment asset request failed with status ' + response.status);
+            const blob = await response.blob();
+            if (blob.size === 0) throw new Error('Attachment asset response was empty');
+            return blob;
+          };
           export const parseApiResponseWithI18n = harness.parseApiResponseWithI18n;
         `;
       }

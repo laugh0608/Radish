@@ -11,6 +11,14 @@ import {
   configureApiClient,
   createApiResponseError,
 } from '@radish/http';
+import type {
+  CommentContentRevisionDetailVo,
+  CommentContentRevisionListVo,
+  ForumContentRevisionWriteResult,
+  PostContentRevisionDetailVo,
+  PostContentRevisionListVo,
+  RestoreForumContentRevisionRequest,
+} from '@radish/http';
 import type { TFunction } from 'i18next';
 import type { LongId } from './user';
 import type {
@@ -122,6 +130,15 @@ export type {
   ReactionSummaryVo,
   ToggleReactionRequest,
   BatchGetReactionSummaryRequest
+};
+
+export type {
+  CommentContentRevisionDetailVo,
+  CommentContentRevisionListVo,
+  ForumContentRevisionWriteResult,
+  PostContentRevisionDetailVo,
+  PostContentRevisionListVo,
+  RestoreForumContentRevisionRequest,
 };
 
 /**
@@ -577,13 +594,22 @@ export async function toggleCommentLike(commentId: LongId, t: TFunction): Promis
  * 编辑帖子
  * @param request 编辑请求
  */
-export async function updatePost(request: UpdatePostRequest, t: TFunction): Promise<void> {
+export async function updatePost(
+  request: UpdatePostRequest,
+  t: TFunction
+): Promise<ForumContentRevisionWriteResult> {
   void t;
-  const response = await apiPut<null>('/api/v1/Post/Update', request, { withAuth: true });
+  const response = await apiPut<ForumContentRevisionWriteResult>(
+    '/api/v1/Post/Update',
+    request,
+    { withAuth: true }
+  );
 
-  if (!response.ok) {
-    throw new Error(response.message || '编辑帖子失败');
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '编辑帖子失败');
   }
+
+  return response.data;
 }
 
 /**
@@ -619,13 +645,103 @@ export async function deletePost(postId: LongId, t: TFunction): Promise<void> {
 export async function updateComment(
   request: UpdateCommentRequest,
   t: TFunction
-): Promise<void> {
+): Promise<ForumContentRevisionWriteResult> {
   void t;
-  const response = await apiPut<null>('/api/v1/Comment/Update', request, { withAuth: true });
+  const response = await apiPut<ForumContentRevisionWriteResult>(
+    '/api/v1/Comment/Update',
+    request,
+    { withAuth: true }
+  );
 
-  if (!response.ok) {
-    throw new Error(response.message || '编辑评论失败');
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '编辑评论失败');
   }
+
+  return response.data;
+}
+
+export async function getPostRevisionList(
+  postId: LongId,
+  pageIndex = 1,
+  pageSize = 20
+): Promise<PostContentRevisionListVo> {
+  const response = await apiGet<PostContentRevisionListVo>(
+    `/api/v1/Post/GetRevisionList?postId=${postId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: Boolean(tokenService.getAccessToken()), timeout: FORUM_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '获取帖子版本列表失败');
+  }
+  return response.data;
+}
+
+export async function getPostRevisionDetail(
+  revisionId: LongId
+): Promise<PostContentRevisionDetailVo> {
+  const response = await apiGet<PostContentRevisionDetailVo>(
+    `/api/v1/Post/GetRevisionDetail?revisionId=${revisionId}`,
+    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '获取帖子版本详情失败');
+  }
+  return response.data;
+}
+
+export async function restorePostRevision(
+  request: RestoreForumContentRevisionRequest
+): Promise<ForumContentRevisionWriteResult> {
+  const response = await apiPost<ForumContentRevisionWriteResult>(
+    '/api/v1/Post/RestoreRevision',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '恢复帖子版本失败');
+  }
+  return response.data;
+}
+
+export async function getCommentRevisionList(
+  commentId: LongId,
+  pageIndex = 1,
+  pageSize = 20
+): Promise<CommentContentRevisionListVo> {
+  const response = await apiGet<CommentContentRevisionListVo>(
+    `/api/v1/Comment/GetRevisionList?commentId=${commentId}&pageIndex=${pageIndex}&pageSize=${pageSize}`,
+    { withAuth: Boolean(tokenService.getAccessToken()), timeout: FORUM_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '获取评论版本列表失败');
+  }
+  return response.data;
+}
+
+export async function getCommentRevisionDetail(
+  revisionId: LongId
+): Promise<CommentContentRevisionDetailVo> {
+  const response = await apiGet<CommentContentRevisionDetailVo>(
+    `/api/v1/Comment/GetRevisionDetail?revisionId=${revisionId}`,
+    { withAuth: true, timeout: FORUM_READ_TIMEOUT_MS }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '获取评论版本详情失败');
+  }
+  return response.data;
+}
+
+export async function restoreCommentRevision(
+  request: RestoreForumContentRevisionRequest
+): Promise<ForumContentRevisionWriteResult> {
+  const response = await apiPost<ForumContentRevisionWriteResult>(
+    '/api/v1/Comment/RestoreRevision',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, '恢复评论版本失败');
+  }
+  return response.data;
 }
 
 /**

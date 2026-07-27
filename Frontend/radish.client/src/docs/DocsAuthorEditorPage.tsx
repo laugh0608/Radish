@@ -4,7 +4,13 @@ import type { TFunction } from 'i18next';
 import { Icon } from '@radish/ui/icon';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
 import { toast } from '@radish/ui/toast';
-import type { MarkdownDocumentUploadResult, MarkdownImageUploadResult } from '@radish/ui';
+import {
+  MarkdownRenderer,
+  buildAttachmentMarkdownUrl,
+  type MarkdownDocumentUploadResult,
+  type MarkdownImageUploadResult,
+  type ProtectedMarkdownAttachmentOptions,
+} from '@radish/ui';
 import {
   WikiCollaboratorState,
   WikiDraftReviewState,
@@ -66,6 +72,7 @@ interface DocsAuthorEditorPageProps {
   onCopyConflictContent: () => void;
   onDownloadConflictContent: () => void;
   onReloadServerDraft: () => void;
+  protectedAttachments: ProtectedMarkdownAttachmentOptions;
 }
 
 function buildParentOptions(tree: WikiDocumentTreeNodeVo[], documentId: LongId | null): ParentOption[] {
@@ -146,6 +153,7 @@ export function DocsAuthorEditorPage({
   onCopyConflictContent,
   onDownloadConflictContent,
   onReloadServerDraft,
+  protectedAttachments,
 }: DocsAuthorEditorPageProps) {
   const { t, i18n } = useTranslation();
   const [invitePublicId, setInvitePublicId] = useState('');
@@ -288,6 +296,15 @@ export function DocsAuthorEditorPage({
               <span>{t('wiki.author.form.coverAttachmentId')}</span>
               <input className={styles.input} value={state.draft.coverAttachmentId} disabled={readOnly || state.submitting} onChange={(event) => onSetDraft((current) => ({ ...current, coverAttachmentId: event.target.value }))} placeholder={t('wiki.author.form.optional')} />
             </label>
+            {/^[1-9]\d*$/.test(state.draft.coverAttachmentId.trim()) ? (
+              <div className={`${styles.field} ${styles.fieldFull}`}>
+                <span>{t('wiki.author.form.coverPreview')}</span>
+                <MarkdownRenderer
+                  content={`![${t('wiki.author.form.coverPreview')}](${buildAttachmentMarkdownUrl(state.draft.coverAttachmentId.trim())})`}
+                  protectedAttachments={protectedAttachments}
+                />
+              </div>
+            ) : null}
             {route.kind === 'edit' ? (
               <label className={styles.field}>
                 <span>{t('wiki.author.form.changeSummary')}</span>
@@ -311,6 +328,7 @@ export function DocsAuthorEditorPage({
             onDocumentUpload={onDocumentUpload}
             onUploadError={handleEditorUploadError}
             onUploadingChange={onEditorUploadingChange}
+            protectedAttachments={protectedAttachments}
           />
 
           {state.conflict ? (

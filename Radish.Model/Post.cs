@@ -62,6 +62,7 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
         LikeCount = 0;
         CommentCount = 0;
         EditCount = 0;
+        ContentRevision = 1;
         CollectCount = 0;
         ShareCount = 0;
         IsPublished = false;
@@ -352,6 +353,10 @@ public class Post : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = false)]
     public int EditCount { get; set; } = 0;
+
+    /// <summary>当前作者内容版本号</summary>
+    [SugarColumn(IsNullable = false)]
+    public int ContentRevision { get; set; } = 1;
 
     /// <summary>收藏次数</summary>
     /// <remarks>不可为空，默认为 0</remarks>

@@ -56,6 +56,7 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
         LikeCount = 0;
         ReplyCount = 0;
         EditCount = 0;
+        ContentRevision = 1;
         IsTop = false;
         IsEnabled = true;
         IsDeleted = false;
@@ -268,6 +269,10 @@ public class Comment : RootEntityTKey<long>, ITenantEntity
     /// <remarks>不可为空，默认为 0</remarks>
     [SugarColumn(IsNullable = false)]
     public int EditCount { get; set; } = 0;
+
+    /// <summary>当前作者内容版本号</summary>
+    [SugarColumn(IsNullable = false)]
+    public int ContentRevision { get; set; } = 1;
 
     #endregion
 

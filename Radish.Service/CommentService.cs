@@ -4,6 +4,7 @@ using AutoMapper;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
 using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -12,6 +13,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Serilog;
 using SqlSugar;
 
@@ -730,7 +732,13 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     /// <summary>
     /// 更新评论内容
     /// </summary>
-    public async Task<(bool success, string message)> UpdateCommentAsync(long commentId, string newContent, long userId, string userName, bool isAdmin = false)
+    public async Task<(bool success, string message)> UpdateCommentAsync(
+        long commentId,
+        string newContent,
+        long userId,
+        string userName,
+        bool isAdmin = false,
+        int expectedContentRevision = 1)
     {
         // 1. 查询评论
         var comment = await _commentRepository.QueryByIdAsync(commentId);
@@ -745,6 +753,11 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return (false, "只有作者本人可以编辑评论");
         }
 
+        if (expectedContentRevision <= 0 || comment.ContentRevision != expectedContentRevision)
+        {
+            throw CreateCommentRevisionConflictException();
+        }
+
         if (string.IsNullOrWhiteSpace(newContent))
         {
             return (false, "评论内容不能为空");
@@ -757,9 +770,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
 
         var commentOptions = _editHistoryOptions.Comment;
-        var historyEnabled = _editHistoryOptions.Enable && commentOptions.EnableHistory;
-        var historyEditCount = await _commentEditHistoryRepository.QueryCountAsync(h => h.CommentId == commentId);
-        var existingEditCount = Math.Max(comment.EditCount, historyEditCount);
+        var existingEditCount = comment.EditCount;
 
         // 3. 检查时间窗口
         var editWindowMinutes = Math.Max(0, commentOptions.EditWindowMinutes);
@@ -790,43 +801,44 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;
         var nextEditSequence = existingEditCount + 1;
 
-        if (historyEnabled)
-        {
-            if (nextEditSequence <= Math.Max(0, commentOptions.HistorySaveEditCount))
-            {
-                await _commentEditHistoryRepository.AddAsync(new CommentEditHistory
-                {
-                    CommentId = comment.Id,
-                    PostId = comment.PostId,
-                    EditSequence = nextEditSequence,
-                    OldContent = comment.Content ?? string.Empty,
-                    NewContent = trimmedContent,
-                    EditorId = userId,
-                    EditorName = safeUserName,
-                    EditedAt = DateTime.Now,
-                    TenantId = comment.TenantId,
-                    CreateTime = DateTime.Now,
-                    CreateBy = safeUserName,
-                    CreateId = userId
-                });
-            }
-        }
-
         // 5. 更新评论
         comment.Content = trimmedContent;
         comment.EditCount = nextEditSequence;
+        comment.ContentRevision = expectedContentRevision + 1;
         comment.ModifyTime = DateTime.Now;
         comment.ModifyBy = safeUserName;
         comment.ModifyId = userId;
-        await _commentRepository.UpdateAsync(comment);
-        await BindReferencedAttachmentsAsync(trimmedContent, BusinessType.Comment, commentId, userId, safeUserName, comment.TenantId);
-
-        if (historyEnabled)
+        var affectedRows = await _commentRepository.UpdateColumnsAsync(
+            current => new Comment
+            {
+                Content = comment.Content,
+                EditCount = comment.EditCount,
+                ContentRevision = comment.ContentRevision,
+                ModifyTime = comment.ModifyTime,
+                ModifyBy = comment.ModifyBy,
+                ModifyId = comment.ModifyId
+            },
+            current =>
+                current.Id == commentId &&
+                !current.IsDeleted &&
+                current.ContentRevision == expectedContentRevision);
+        if (affectedRows != 1)
         {
-            await TrimCommentHistoryAsync(commentId, Math.Max(1, commentOptions.MaxHistoryRecords));
+            throw CreateCommentRevisionConflictException();
         }
 
+        await BindReferencedAttachmentsAsync(trimmedContent, BusinessType.Comment, commentId, userId, safeUserName, comment.TenantId);
+
         return (true, "编辑成功");
+    }
+
+    private static BusinessException CreateCommentRevisionConflictException()
+    {
+        return new BusinessException(
+            "内容已被更新，请刷新后重试",
+            409,
+            ForumContentRevisionErrorCodes.Conflict,
+            ForumContentRevisionErrorCodes.ResolveMessageKey(ForumContentRevisionErrorCodes.Conflict));
     }
 
     public async Task<(List<CommentEditHistoryVo> histories, int total)> GetCommentEditHistoryPageAsync(long commentId, int pageIndex, int pageSize)

@@ -6,11 +6,14 @@ import {
   AntModal as Modal,
   AntSelect as Select,
   Button,
+  MarkdownRenderer,
   Popconfirm,
   Space,
   Table,
   Tag,
+  buildAttachmentMarkdownUrl,
   message,
+  type ProtectedMarkdownAttachmentOptions,
   type TableColumnsType,
 } from '@radish/ui';
 import {
@@ -29,6 +32,7 @@ import {
 import {
   WikiDraftReviewState,
   WikiReviewAction,
+  loadAttachmentAssetBlob,
   type WikiAuthorDraftDetailVo,
   type WikiReviewActionValue,
   type WikiReviewQueueItemVo,
@@ -218,6 +222,40 @@ export const DocumentGovernancePage = () => {
   const canExport = usePermission(CONSOLE_PERMISSIONS.docsExport);
   const canReview = usePermission(CONSOLE_PERMISSIONS.docsReview);
   const reviewAccountKey = user?.voUserId ?? '';
+  const protectedAttachments = useMemo<ProtectedMarkdownAttachmentOptions>(() => ({
+    loadBlob: loadAttachmentAssetBlob,
+    scopeKey: [
+      'console-reviewer',
+      reviewAccountKey || 'anonymous',
+      canView,
+      canReview,
+      detailDocument?.voId ?? 'no-detail',
+      detailDocument?.voVersion ?? 0,
+      reviewDraft?.voDraftId ?? 'no-draft',
+      reviewDraft?.voDraftVersion ?? 0,
+      revisionDetail?.voId ?? 'no-revision',
+    ].join(':'),
+    labels: {
+      loading: t('documents.attachments.loading'),
+      loadFailed: t('documents.attachments.loadFailed'),
+      retry: t('documents.attachments.retry'),
+      download: t('documents.attachments.download'),
+      openImage: t('documents.attachments.openImage'),
+      lightboxClose: t('documents.attachments.lightboxClose'),
+      lightboxPrevious: t('documents.attachments.lightboxPrevious'),
+      lightboxNext: t('documents.attachments.lightboxNext'),
+    },
+  }), [
+    canReview,
+    canView,
+    detailDocument?.voId,
+    detailDocument?.voVersion,
+    reviewAccountKey,
+    reviewDraft?.voDraftId,
+    reviewDraft?.voDraftVersion,
+    revisionDetail?.voId,
+    t,
+  ]);
 
   const includeDeleted = deletedFilter === 'all' || deletedFilter === 'deleted';
   const deletedOnly = deletedFilter === 'deleted';
@@ -917,7 +955,7 @@ export const DocumentGovernancePage = () => {
             </div>
           </ConsoleToolbar>
 
-          <section className="admin-table-panel">
+          <section className="admin-table-panel document-governance-table-panel">
             <Table
               rowKey="voId"
               loading={loading}
@@ -1096,7 +1134,20 @@ export const DocumentGovernancePage = () => {
                 </span>
               </div>
             </div>
-            <Input.TextArea value={detailDocument.voMarkdownContent} readOnly rows={12} />
+            {detailDocument.voCoverAttachmentId ? (
+              <div className="document-protected-markdown">
+                <MarkdownRenderer
+                  content={`![${t('documents.detail.cover')}](${buildAttachmentMarkdownUrl(detailDocument.voCoverAttachmentId)})`}
+                  protectedAttachments={protectedAttachments}
+                />
+              </div>
+            ) : null}
+            <div className="document-protected-markdown">
+              <MarkdownRenderer
+                content={detailDocument.voMarkdownContent}
+                protectedAttachments={protectedAttachments}
+              />
+            </div>
           </Space>
         ) : null}
       </Modal>
@@ -1149,14 +1200,36 @@ export const DocumentGovernancePage = () => {
                   <strong>{t('documents.review.officialContent')}</strong>
                   <Tag>v{reviewOfficialDocument?.voVersion ?? reviewDraft.voDocumentVersion}</Tag>
                 </div>
-                <pre>{reviewOfficialDocument?.voMarkdownContent || t('documents.review.noOfficialContent')}</pre>
+                <div className="document-protected-markdown">
+                  {reviewOfficialDocument?.voCoverAttachmentId ? (
+                    <MarkdownRenderer
+                      content={`![${t('documents.detail.cover')}](${buildAttachmentMarkdownUrl(reviewOfficialDocument.voCoverAttachmentId)})`}
+                      protectedAttachments={protectedAttachments}
+                    />
+                  ) : null}
+                  <MarkdownRenderer
+                    content={reviewOfficialDocument?.voMarkdownContent || t('documents.review.noOfficialContent')}
+                    protectedAttachments={protectedAttachments}
+                  />
+                </div>
               </article>
               <article>
                 <div className="document-review-evidence__panel-title">
                   <strong>{t('documents.review.draftContent')}</strong>
                   {getReviewStateTag(reviewDraft.voReviewState, t)}
                 </div>
-                <pre>{reviewDraft.voMarkdownContent}</pre>
+                <div className="document-protected-markdown">
+                  {reviewDraft.voCoverAttachmentId ? (
+                    <MarkdownRenderer
+                      content={`![${t('documents.detail.cover')}](${buildAttachmentMarkdownUrl(reviewDraft.voCoverAttachmentId)})`}
+                      protectedAttachments={protectedAttachments}
+                    />
+                  ) : null}
+                  <MarkdownRenderer
+                    content={reviewDraft.voMarkdownContent}
+                    protectedAttachments={protectedAttachments}
+                  />
+                </div>
               </article>
             </section>
 
@@ -1334,7 +1407,12 @@ export const DocumentGovernancePage = () => {
               <Space orientation="vertical" size="middle" className="admin-feature-modal-stack">
                 <Tag color={revisionDetail.voIsCurrent ? 'success' : 'default'}>v{revisionDetail.voVersion}</Tag>
                 <p className="admin-feature-subtle">{revisionDetail.voChangeSummary || t('documents.revision.noSummary')}</p>
-                <Input.TextArea value={revisionDetail.voMarkdownContent} readOnly rows={12} />
+                <div className="document-protected-markdown">
+                  <MarkdownRenderer
+                    content={revisionDetail.voMarkdownContent}
+                    protectedAttachments={protectedAttachments}
+                  />
+                </div>
               </Space>
             ) : (
               <p className="admin-feature-subtle">{t('documents.revision.select')}</p>

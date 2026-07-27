@@ -2,9 +2,11 @@
 
 > Radish 论坛编辑历史能力专题文档
 >
-> **版本**: v26.1.1
+> **版本**: v26.7.1
 >
-> **最后更新**: 2026.06.20
+> **最后更新**: 2026.07.26
+
+> **后续权威口径**：F4-M 已将“可恢复版本”从本页的编辑差异记录中分离，完整 Revision、CAS、旧历史兼容与作者恢复统一以 [论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 为准。本页继续说明 F4-M 前 `PostEditHistory / CommentEditHistory` 的兼容行为，不再作为恢复实现依据。
 
 ---
 
@@ -17,7 +19,7 @@
 - **配置化限制**：通过后端配置控制编辑次数上限、历史写入次数、历史保留上限。
 - **管理员覆盖**：普通用户达到上限后禁止继续编辑，管理员可按配置绕过。
 
-该能力首期仅提供“记录 + 查询”，**不提供版本回滚**。
+该能力首期仅提供“记录 + 查询”，**不提供版本恢复**。F4-M 后新编辑的版本真相迁入独立 Revision；旧历史只保留兼容证据。
 
 `2026-06-20` 补充：论坛发布、评论、回答和编辑重试语义已进入 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)。本页继续作为 `PostEditHistory` / `CommentEditHistory` 的功能说明；提交意图去重、短窗口内容指纹和频率限制以治理专题为准。
 
@@ -153,11 +155,10 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 
 客户端：`Frontend/radish.client`
 
-- 帖子详情新增“历史”按钮，弹窗分页查看帖子编辑历史。
-- 评论节点新增“历史”按钮，弹窗分页查看评论编辑历史。
-- 展示内容：
-  - 帖子：编辑前后标题 + 编辑前后正文。
-  - 评论：编辑前后正文。
+- F4-M 后帖子与评论的正式入口统一显示为“版本”，主时间线读取完整 Revision。
+- 旧 `PostEditHistory / CommentEditHistory` 只在版本弹窗的“早期编辑记录”折叠区按需分页读取。
+- 旧历史正文仅允许目标作者与 Admin / System 查看；匿名与其他读者只获得是否编辑、次数和最近编辑时间摘要。
+- 旧记录继续展示帖子编辑前后标题 / 正文或评论编辑前后正文，但不提供恢复动作。
 
 ---
 
@@ -172,6 +173,8 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 5. 历史记录超过 `MaxHistoryRecords` 后自动裁剪。
 6. 帖子 / 评论编辑无变化时不写历史、不递增编辑次数。
 7. 同一 `ClientSubmissionId` 成功重试不新增历史，同 key 不同请求摘要返回冲突。
+8. 匿名与其他读者不能读取旧历史全文；作者与 Admin / System 可以在版本弹窗查看受权兼容记录。
+9. F4-M 后的新编辑只创建完整 Revision，不再新增旧历史记录。
 
 ### 联调文件
 

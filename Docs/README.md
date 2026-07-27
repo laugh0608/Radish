@@ -68,6 +68,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [用户屏蔽与关系交互隔离](./features/user-block-relationship-isolation-design.md)
 - [内容治理系统说明](./guide/content-moderation.md)
 - [个人圈子](./features/circle.md)
+- [论坛内容版本完整性与作者恢复](./features/forum-content-version-recovery-design.md)
 - [论坛投票 MVP 设计方案](./features/forum-poll-mvp.md)
 - [论坛问答 MVP 设计方案](./features/forum-qa-mvp.md)
 - [论坛内容赞赏（胡萝卜 +1）设计方案](./features/forum-content-reward.md)

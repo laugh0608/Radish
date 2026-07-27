@@ -8,7 +8,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(testDir, '..');
 
 function readLocaleResources(): string {
-  const domainNames = ['core', 'shell', 'discover', 'community', 'chat', 'account', 'commerce', 'docs'];
+  const domainNames = ['core', 'shell', 'discover', 'community', 'forumRevision', 'chat', 'account', 'commerce', 'docs'];
   return ['en', 'zh']
     .flatMap((language) => domainNames.map((domain) =>
       readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
@@ -387,13 +387,14 @@ test('公开文档浏览和详情返回应提供公开链接并保留壳层导�
   assert.match(stylesSource, /\.docCard[\s\S]*text-decoration: none;/);
 });
 
-test('公开文档数据源应固定使用服务端公开契约且不携带认证信息', () => {
+test('Docs 阅读数据源应使用允许匿名且支持当前身份的统一读取契约', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/docs/publicDocsApi.ts'), 'utf8');
 
-  assert.match(source, /Wiki\/PublicGetList/);
-  assert.match(source, /Wiki\/PublicGetTree/);
-  assert.match(source, /Wiki\/PublicGetBySlug/);
-  assert.match(source, /withAuth: false/g);
+  assert.match(source, /Wiki\/GetList/);
+  assert.match(source, /Wiki\/GetTree/);
+  assert.match(source, /Wiki\/GetBySlug/);
+  assert.match(source, /withAuth: true/g);
+  assert.doesNotMatch(source, /Wiki\/PublicGet/);
   assert.doesNotMatch(source, /tokenService/);
   assert.doesNotMatch(source, /resolveReadWithAuth/);
   assert.doesNotMatch(source, /filterPublicReadableTree/);
@@ -655,6 +656,10 @@ test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器
 test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
   const postDetailSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PostDetail.tsx'), 'utf8');
+  const revisionModalSource = readFileSync(
+    resolve(clientRoot, 'src/apps/forum/components/ContentRevisionModal.tsx'),
+    'utf8'
+  );
 
   assert.match(detailSource, /intent: 'answer'/);
   assert.match(detailSource, /intent: 'edit'/);
@@ -672,7 +677,9 @@ test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指�
   assert.match(detailSource, /answerQuestion\(/);
   assert.match(detailSource, /acceptQuestionAnswer\(/);
   assert.match(detailSource, /updatePost\(/);
-  assert.match(detailSource, /getPostEditHistory\(/);
+  assert.match(detailSource, /ContentRevisionModal/);
+  assert.match(revisionModalSource, /getPostEditHistory\(/);
+  assert.match(revisionModalSource, /getCommentEditHistory\(/);
   assert.match(detailSource, /buildAnswerSubmissionFingerprint/);
   assert.match(detailSource, /buildPostEditSubmissionFingerprint/);
   assert.doesNotMatch(detailSource, /buildDesktopForumPostReturnPath/);

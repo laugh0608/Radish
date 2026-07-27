@@ -3,6 +3,7 @@ import type {
   CreateLotteryRequest,
   CreatePollRequest,
 } from '@/api/forum';
+import type { ForumContentLongId } from '@radish/http';
 import type { LongId } from '@/api/user';
 
 export function buildPostSubmissionFingerprint(
@@ -52,20 +53,41 @@ export function buildPostEditSubmissionFingerprint(
   title: string,
   content: string,
   categoryId: LongId,
-  tagNames: string[]
+  tagNames: string[],
+  expectedContentRevision: number
 ): string {
   return JSON.stringify({
     postId: String(postId),
     title: title.trim(),
     content: content.trim(),
     categoryId: String(categoryId),
-    tagNames: [...tagNames].map(tag => tag.trim()).sort()
+    tagNames: [...tagNames].map(tag => tag.trim()).sort(),
+    expectedContentRevision
   });
 }
 
-export function buildCommentEditSubmissionFingerprint(commentId: LongId, content: string): string {
+export function buildCommentEditSubmissionFingerprint(
+  commentId: LongId,
+  content: string,
+  expectedContentRevision: number
+): string {
   return JSON.stringify({
     commentId: String(commentId),
-    content: content.trim()
+    content: content.trim(),
+    expectedContentRevision
+  });
+}
+
+export function buildContentRevisionRestoreFingerprint(
+  targetKind: 'post' | 'comment',
+  targetId: ForumContentLongId,
+  revisionId: ForumContentLongId,
+  expectedContentRevision: number
+): string {
+  return JSON.stringify({
+    targetKind,
+    targetId: String(targetId),
+    revisionId: String(revisionId),
+    expectedContentRevision
   });
 }

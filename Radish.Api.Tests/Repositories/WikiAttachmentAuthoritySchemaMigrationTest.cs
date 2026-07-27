@@ -254,14 +254,13 @@ public sealed class WikiAttachmentAuthoritySchemaMigrationTest
         {
             var connectionString =
                 $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
-            using var db = new SqlSugarScope(new ConnectionConfig
+            using var db = PostgreSqlIntegrationSqlSugarFactory.CreateScope(new ConnectionConfig
             {
                 ConfigId = "main",
                 ConnectionString = connectionString,
                 DbType = DbType.PostgreSQL,
                 IsAutoCloseConnection = true,
-                InitKeyType = InitKeyType.Attribute,
-                MoreSettings = new ConnMoreSettings { PgSqlIsAutoToLower = false }
+                InitKeyType = InitKeyType.Attribute
             });
             using var services = CreateServices(db);
             Seed(db);

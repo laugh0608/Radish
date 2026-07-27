@@ -292,6 +292,7 @@ export interface PostDetail {
   voSummary?: string | null;
   voContent: string;
   voContentType?: string;
+  voContentRevision: number;
   voCoverImage?: string | null;
   voCategoryId: LongId;
   voCategoryName?: string | null;
@@ -335,6 +336,7 @@ export interface CommentNode {
   voId: LongId;
   voPostId: LongId;
   voContent: string;
+  voContentRevision: number;
   voAuthorId: LongId;
   voAuthorPublicId?: string | null;
   voAuthorName: string;
@@ -552,6 +554,7 @@ export interface UpdatePostRequest {
   clientSubmissionId?: string;
   categoryId?: LongId;
   tagNames: string[];
+  expectedContentRevision: number;
 }
 
 /**
@@ -583,6 +586,7 @@ export interface UpdateCommentRequest {
   commentId: LongId;
   content: string;
   clientSubmissionId?: string;
+  expectedContentRevision: number;
 }
 
 /**

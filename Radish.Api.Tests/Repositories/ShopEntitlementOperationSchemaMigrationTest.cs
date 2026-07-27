@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.DbMigrate;
+using Radish.Model;
 using SqlSugar;
 using Xunit;
 
@@ -105,9 +106,9 @@ public sealed class ShopEntitlementOperationSchemaMigrationTest
             migration.Apply(db, services);
 
             Assert.Empty(migration.Verify(db, services));
-            Assert.Equal(1, db.Ado.GetInt("SELECT COUNT(*) FROM \"ShopEntitlementOperation\" WHERE \"Id\" = 1"));
+            Assert.Equal(1, db.Queryable<ShopEntitlementOperation>().Count(operation => operation.Id == 1));
             InsertBenefitOperation(db, 3);
-            Assert.Equal(1, db.Ado.GetInt("SELECT COUNT(*) FROM \"ShopEntitlementOperation\" WHERE \"Id\" = 3"));
+            Assert.Equal(1, db.Queryable<ShopEntitlementOperation>().Count(operation => operation.Id == 3));
         }
         finally
         {
@@ -117,11 +118,13 @@ public sealed class ShopEntitlementOperationSchemaMigrationTest
 
     private static void InsertOperation(ISqlSugarClient db, long id)
     {
+        var target = ResolveInsertTarget(
+            db,
+            "Id", "TenantId", "UserId", "InventoryId", "OperationType",
+            "ConsumableType", "Quantity", "ItemValue", "IdempotencyKey", "RequestHash",
+            "EffectType", "EffectValue", "ResultPayload", "CreateTime", "CreateBy", "CreateId");
         db.Ado.ExecuteCommand(
-            "INSERT INTO \"ShopEntitlementOperation\" " +
-            "(\"Id\", \"TenantId\", \"UserId\", \"InventoryId\", \"OperationType\", " +
-            "\"ConsumableType\", \"Quantity\", \"ItemValue\", \"IdempotencyKey\", \"RequestHash\", " +
-            "\"EffectType\", \"EffectValue\", \"ResultPayload\", \"CreateTime\", \"CreateBy\", \"CreateId\") VALUES " +
+            $"INSERT INTO {target.Table} ({target.Columns}) VALUES " +
             "(@Id, 1, 100, 200, 'Use', 4, 1, '100', 'same-key', 'request-hash', " +
             "'ExperienceGrant', '100', '{}', '2026-07-13 08:00:00', 'test', 100)",
             new SugarParameter("@Id", id));
@@ -129,14 +132,31 @@ public sealed class ShopEntitlementOperationSchemaMigrationTest
 
     private static void InsertBenefitOperation(ISqlSugarClient db, long id)
     {
+        var target = ResolveInsertTarget(
+            db,
+            "Id", "TenantId", "UserId", "BenefitId", "OperationType",
+            "BenefitType", "BenefitValue", "IdempotencyKey", "RequestHash",
+            "EffectType", "EffectValue", "ResultPayload", "CreateTime", "CreateBy", "CreateId");
         db.Ado.ExecuteCommand(
-            "INSERT INTO \"ShopEntitlementOperation\" " +
-            "(\"Id\", \"TenantId\", \"UserId\", \"BenefitId\", \"OperationType\", " +
-            "\"BenefitType\", \"BenefitValue\", \"IdempotencyKey\", \"RequestHash\", " +
-            "\"EffectType\", \"EffectValue\", \"ResultPayload\", \"CreateTime\", \"CreateBy\", \"CreateId\") VALUES " +
+            $"INSERT INTO {target.Table} ({target.Columns}) VALUES " +
             "(@Id, 1, 100, 300, 'Activate', 1, 'badge-veteran', 'benefit-key', 'request-hash', " +
             "'BenefitSelection', 'badge-veteran', '{}', '2026-07-14 08:00:00', 'test', 100)",
             new SugarParameter("@Id", id));
+    }
+
+    private static (string Table, string Columns) ResolveInsertTarget(
+        ISqlSugarClient db,
+        params string[] configuredColumnNames)
+    {
+        var columns = configuredColumnNames
+            .Select(columnName =>
+                DatabaseIdentifierResolver.ResolveColumn(db, "ShopEntitlementOperation", columnName)
+                ?? throw new InvalidOperationException(
+                    $"ShopEntitlementOperation.{columnName} 不存在"))
+            .ToArray();
+        return (
+            QuoteIdentifier(columns[0].TableName),
+            string.Join(", ", columns.Select(column => QuoteIdentifier(column.ColumnName))));
     }
 
     private static bool IsSqliteColumnNullable(ISqlSugarClient db, string columnName)

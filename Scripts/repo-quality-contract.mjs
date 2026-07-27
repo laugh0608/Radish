@@ -1,4 +1,5 @@
 export const REPO_QUALITY_WORKFLOW_NAME = 'Repo Quality';
+export const CANDIDATE_QUALITY_REQUIRED_CHECK_NAME = 'Candidate Quality';
 
 export const REPO_QUALITY_REQUIRED_CHECKS = [
   'Repo Hygiene',

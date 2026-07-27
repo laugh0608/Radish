@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { MarkdownStickerMap } from '@radish/ui/markdown-renderer';
-import type { CommentNode as CommentNodeType, CommentReplyTarget, ReactionSummaryVo } from '@/api/forum';
+import type {
+  CommentContentRevisionDetailVo,
+  CommentNode as CommentNodeType,
+  CommentReplyTarget,
+  ReactionSummaryVo,
+} from '@/api/forum';
 import type { LongId } from '@/api/user';
 import type { ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
@@ -25,9 +30,14 @@ interface CommentTreeProps {
   rootCommentPageSize?: number;
   sortBy?: 'newest' | 'hottest' | null; // null表示默认排序
   onDeleteComment?: (commentId: LongId) => void;
-  onEditComment?: (commentId: LongId, newContent: string) => Promise<void>;
+  onEditComment?: (
+    commentId: LongId,
+    newContent: string,
+    expectedContentRevision: number
+  ) => Promise<void>;
   onCancelEditComment?: () => void;
   onViewCommentHistory?: (commentId: LongId) => void;
+  commentRevisionDraft?: CommentContentRevisionDetailVo | null;
   onLikeComment?: (commentId: LongId) => Promise<{ isLiked: boolean; likeCount: number }>;
   onReplyComment?: (target: CommentReplyTarget) => void;
   onCommentTyping?: (commentId: LongId) => void;
@@ -68,6 +78,7 @@ export const CommentTree = ({
   onEditComment,
   onCancelEditComment,
   onViewCommentHistory,
+  commentRevisionDraft,
   onLikeComment,
   onReplyComment,
   onCommentTyping,
@@ -174,6 +185,7 @@ export const CommentTree = ({
             onEdit={onEditComment}
             onCancelEdit={onCancelEditComment}
             onViewHistory={onViewCommentHistory}
+            revisionDraft={commentRevisionDraft}
             onLike={onLikeComment}
             onReply={onReplyComment}
             onTyping={onCommentTyping}
