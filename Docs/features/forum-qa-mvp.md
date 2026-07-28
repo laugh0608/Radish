@@ -1,7 +1,7 @@
 # 论坛问答 MVP 设计方案
 
 > [!IMPORTANT]
-> 本页记录早期 MVP 与 `P4-ext` 首轮事实，不再描述当前回答模型和 API。F4-O-A/B 已完成回答生命周期、PublicId、版本恢复、采纳审计、治理与通知的服务端权威；后续 Pencil、正式 Web 和验收边界统一查看 [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)。
+> 本页记录早期 MVP 与 `P4-ext` 首轮事实，不再描述当前回答模型和 API。F4-O A-D 已于 2026-07-28 完成回答生命周期、PublicId、分页、版本恢复、采纳审计、治理、通知、正式 Web、strict migration 与 Gateway 成组验收；现行权威统一查看 [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)。
 
 > 面向 **P4 首个候选功能：问答最小首版** 的实现方案。
 >

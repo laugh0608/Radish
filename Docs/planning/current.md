@@ -27,11 +27,12 @@
 - [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A 批候选审计与权威设计：新增私有 Bookmark 关系作为 Main 唯一真相，`CollectCount` 只作可重建投影，写入使用显式目标状态。
 - F4-P 固定帖子详情收藏与 `/me/content?tab=bookmarks` 两条正式 Web 路径；收藏不通知作者、不发奖励、不公开收藏者，也不扩收藏夹、推荐或跨对象收藏。
 
-## 下一事项（F4-P-B，等待批准）
+## 明天事项（2026-07-29，F4-P-B，等待批准）
 
-1. 新增 `UserPostBookmark`、专属 Repository / Service、显式状态写入、个人分页与不可用目标移除。
-2. 增加 Main migration 和 strict verify，覆盖 PublicId、唯一关系、租户、孤立目标与 `CollectCount` 投影一致性。
-3. 接入 `@radish/http` 并完成服务端、HTTP、SQLite 与 PostgreSQL 条件回归；B 批不提前修改正式页面。
+1. 新会话先复核 [F4-P 权威设计](/features/forum-post-bookmark-personal-library-design) 的权威对象、Post 行锁顺序、接口和停止线；确认下一个未占用 Main migration ID，并汇报 B 批预计修改范围，获得明确批准后再进入代码。
+2. 新增 `UserPostBookmark`、专属 Repository / Service、显式状态写入、个人分页与不可用目标移除；所有收藏写入口统一按“Post -> Bookmark”锁顺序执行。
+3. 增加 Main migration 和 strict verify，覆盖 PublicId、唯一关系、租户、孤立目标、稳定分页索引与 `CollectCount` 投影一致性。
+4. 接入 `@radish/http`，完成服务端、HTTP、SQLite 与 PostgreSQL 条件回归；B 批不提前修改正式页面，也不启动服务或执行浏览器 smoke。
 
 ## 当前执行入口
 
@@ -42,6 +43,7 @@
 - [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)
 - [F4-O-D 论坛回答生命周期成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)
 - [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)
+- [2026-07-28 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-28)
 - [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
 - [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)
 - [F4-L-D Wiki 附件成组验收](/records/f4-l-d-wiki-attachment-stage-acceptance-2026-07-26)

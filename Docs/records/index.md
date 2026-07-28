@@ -66,7 +66,7 @@
 
 ## 七、专题清单与一次性观察
 
-- [F4 2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27) · [F4-N 论坛内容赞赏 D 成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27) · [2026-07-26](/records/f4-day-end-doc-review-2026-07-26) · [2026-07-25](/records/f4-day-end-doc-review-2026-07-25)
+- [F4 2026-07-28 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-28) · [F4-O 论坛回答生命周期 D 成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28) · [2026-07-27](/records/f4-day-end-doc-review-2026-07-27) · [F4-N D 成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27) · [2026-07-26](/records/f4-day-end-doc-review-2026-07-26) · [2026-07-25](/records/f4-day-end-doc-review-2026-07-25)
 - F4-M 论坛内容版本完整性与作者恢复：[D 成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26) · [C 正式 Web](/records/f4-m-c-forum-content-revision-web-2026-07-26) · [B 服务端权威契约](/records/f4-m-b-forum-content-revision-server-contract-2026-07-26)；F4-L Wiki 附件隐私与生命周期：[D 成组验收](/records/f4-l-d-wiki-attachment-stage-acceptance-2026-07-26) · [C 正式 Web 受保护资源](/records/f4-l-c-wiki-attachment-web-protected-assets-2026-07-26) · [B 服务端权威契约](/records/f4-l-b-wiki-attachment-server-contract-2026-07-25)
 - F4-K 用户屏蔽与关系交互隔离：[D 成组验收](/records/f4-k-d-user-block-stage-acceptance-2026-07-25) · [C 正式 Web](/records/f4-k-c-user-block-web-2026-07-25) · [B 服务端权威契约](/records/f4-k-b-user-block-server-contract-2026-07-25)
 - F4-I 内容治理：[D 成组验收](/records/f4-i-d-content-moderation-case-stage-acceptance-2026-07-25) · [C 正式页面](/records/f4-i-c-content-moderation-case-web-workspace-2026-07-24) · [B 服务端权威契约](/records/f4-i-b-content-moderation-server-contract-2026-07-21) · [当日日终回顾](/records/f4-day-end-doc-review-2026-07-21)

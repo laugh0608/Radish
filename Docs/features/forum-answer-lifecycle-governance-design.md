@@ -407,7 +407,7 @@ Verify：
 - 回答附件不再以新写入形式占用 `Comment` 业务类型；
 - SQLite / PostgreSQL 重复 apply 无额外副作用。
 
-D 批 `20260728_016_forum_answer_lifecycle_strict` 已补 `(TenantId, PostId, IsDeleted, IsEnabled, IsAccepted, CreateTime, Id)` 稳定分页索引与 `(TenantId, AuthorId, IsDeleted, CreateTime)` 作者历史索引，并检查 PublicId / Revision / 采纳事件唯一性、当前 Revision 归属、恢复来源、采纳指针与 `IsAccepted` 投影、`AnswerCount` 重建值、旧 `Comment` 附件残留及 Answer Revision 附件引用。SQLite 空库重复 Apply、有效基线和故障注入专项回归已通过；PostgreSQL 条件回归与真实账本 Verify 留到具备运行环境的 D 批候选门禁。
+D 批 `20260728_016_forum_answer_lifecycle_strict` 已补 `(TenantId, PostId, IsDeleted, IsEnabled, IsAccepted, CreateTime, Id)` 稳定分页索引与 `(TenantId, AuthorId, IsDeleted, CreateTime)` 作者历史索引，并检查 PublicId / Revision / 采纳事件唯一性、当前 Revision 归属、恢复来源、采纳指针与 `IsAccepted` 投影、`AnswerCount` 重建值、旧 `Comment` 附件残留及 Answer Revision 附件引用。SQLite 空库重复 Apply、有效基线和故障注入专项回归已通过，真实 Main migration 账本 Apply / Verify 与重入检查也已完成；当前机器未配置 PostgreSQL 集成测试环境，相关条件用例继续由具备数据库服务的候选门禁覆盖。
 
 ### 12.2 运行时兼容
 
@@ -423,7 +423,7 @@ D 批 `20260728_016_forum_answer_lifecycle_strict` 已补 `(TenantId, PostId, Is
 - 对比问答、投票、抽奖、圈子和匿名公开聊天候选；
 - 核对回答模型、写入、附件、治理、通知、正式 Web 和 migration 事实；
 - 固定本文的数据、接口、事务、页面、验证与停止线；
-- 完成后汇报，等待明确批准进入 F4-O-B。
+- A 批完成后已按流程汇报并获得批准，再进入 F4-O-B。
 
 ### F4-O-B：服务端与 migration
 
@@ -450,7 +450,7 @@ B 批不安装或更新依赖，不修改 Pencil 和 `radish.client` 页面；�
 
 ### F4-O-C：Pencil 与正式 Web
 
-- **完成状态（2026-07-28）**：B -> C 外部标识已收敛，PC / mobile 权威 Pencil 与正式 `/forum/post/:postPublicId` 回答生命周期均已落地；代码侧构建、类型检查和定向契约 / 路由 / 通知 / 控制器 / 仓储回归通过，尚未启动服务或执行 Gateway smoke。
+- **完成状态（2026-07-28）**：B -> C 外部标识已收敛，PC / mobile 权威 Pencil 与正式 `/forum/post/:postPublicId` 回答生命周期均已落地；C 批代码侧构建、类型检查和定向契约 / 路由 / 通知 / 控制器 / 仓储回归通过，随后已由 D 批完成 Gateway smoke。
 - 新页面只通过 `postIdentifier + answerPublicId` 读写和定位；Controller 内部保留旧 `PostId` 兼容解析，不向外扩散。
 - 服务端分页把已采纳回答独立返回并从普通分页排除，页面保持一次展示、受控页码 / 排序与 Back / Forward 状态。
 - 共享 `PostAnswerLifecycleSection` 覆盖创建、编辑、历史、恢复、软删除、举报、采纳 / 替换 / 撤销、CAS 冲突、附件上传锁和目标不可用。
