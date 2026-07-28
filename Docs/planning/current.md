@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-O-D 已验收并关闭；进入 F4-P-A 候选只读审计`
-- **产品下一顺位**：`比较既有功能缺口、长期价值与稳定边界，先裁决下一完整专题，不直接编码`
+- **工程第一顺位**：`F4-P-A 权威设计已完成；等待批准进入 B 批服务端与 migration`
+- **产品下一顺位**：`以私有帖子收藏补齐“阅读 -> 保存 -> 回访”，先落权威关系与幂等写入`
 - **复核日期**：`2026-07-28`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
@@ -24,12 +24,14 @@
 - [F4-O-D 成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)已通过：匿名、问题作者兼管理员、回答作者的 PC / mobile 代表矩阵覆盖创建、编辑、恢复、采纳与撤销；其余权限、失败和治理边界由自动化回归覆盖。
 - D 批修正 migration 前置校验加载未来字段、正式 Web 新旧回答区重复渲染两项共同根因；临时帖子、回答、Revision、事件、通知、Outbox、浏览历史和经验副作用均已清理，六库完整性与严格 verify 通过。
 - 当前机器未配置 PostgreSQL 集成测试环境，相关条件用例保持显式跳过，不把 SQLite 结果表述为 PostgreSQL 实跑。
+- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A 批候选审计与权威设计：新增私有 Bookmark 关系作为 Main 唯一真相，`CollectCount` 只作可重建投影，写入使用显式目标状态。
+- F4-P 固定帖子详情收藏与 `/me/content?tab=bookmarks` 两条正式 Web 路径；收藏不通知作者、不发奖励、不公开收藏者，也不扩收藏夹、推荐或跨对象收藏。
 
-## 下一事项（F4-P-A，候选只读审计）
+## 下一事项（F4-P-B，等待批准）
 
-1. 只读复核现有功能专题、公开 / 私域主路径与可执行技术债，排除已有可用闭环、后置扩张和生产证据采集。
-2. 选择一个直接服务内容、关系、贡献、治理或复访主轴的完整候选，明确用户路径、长期价值、权威对象、权限、失败恢复和停止线。
-3. 更新或新建对应专题文档并汇报预计 A-D 范围；取得明确批准后再进入代码。
+1. 新增 `UserPostBookmark`、专属 Repository / Service、显式状态写入、个人分页与不可用目标移除。
+2. 增加 Main migration 和 strict verify，覆盖 PublicId、唯一关系、租户、孤立目标与 `CollectCount` 投影一致性。
+3. 接入 `@radish/http` 并完成服务端、HTTP、SQLite 与 PostgreSQL 条件回归；B 批不提前修改正式页面。
 
 ## 当前执行入口
 
@@ -39,6 +41,7 @@
 - [F4-N-D 论坛内容赞赏成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)
 - [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)
 - [F4-O-D 论坛回答生命周期成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)
+- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)
 - [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
 - [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)
 - [F4-L-D Wiki 附件成组验收](/records/f4-l-d-wiki-attachment-stage-acceptance-2026-07-26)
@@ -48,7 +51,7 @@
 ## 并行维护线
 
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
-- 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-P 候选审计并行扩张。
+- 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-P 主专题并行扩张。
 - WebOS 只处理阻断级兼容；Flutter 只维护既有 MVP 的阻断、安全和认证兼容。
 - 主动生产使用数据采集继续冻结到计划内功能完成、没有明确维护任务且用户确认的最终收尾阶段。
 
@@ -56,7 +59,7 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-P 候选裁决前不直接编码，不把投票 / 抽奖运营、推荐、匿名公开聊天或全量 PublicId 当作默认下一项。
+- 未取得 B 批明确批准前不进入代码；不把 F4-P 扩成收藏夹、推荐、公开收藏主页、跨对象收藏或通知奖励。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
 
