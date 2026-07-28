@@ -701,6 +701,10 @@ test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指�
   assert.match(postDetailSource, /questionAnswerSection\?: ReactNode;/);
   assert.match(postDetailSource, /isQuestionPost && questionAnswerSection/);
   assert.match(postDetailSource, /isQuestionPost && !questionAnswerSection/);
+  assert.match(
+    postDetailSource,
+    /\{isQuestionPost && !questionAnswerSection && \(\s*<section className=\{styles\.questionCard\}>/
+  );
   assert.match(postDetailSource, /!isReadOnly && onAnswerQuestion/);
   assert.match(postDetailSource, /!isReadOnly && onLike/);
 });

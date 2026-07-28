@@ -758,7 +758,7 @@ export const PostDetail = ({
           </section>
         )}
 
-        {isQuestionPost && (
+        {isQuestionPost && !questionAnswerSection && (
           <section className={styles.questionCard}>
             <div className={styles.questionHeader}>
               <div>
