@@ -6,7 +6,7 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`等待批准进入 F4-O-D strict verify 与 Gateway 成组验收`
+- **工程第一顺位**：`F4-O-D strict verify 已落地；等待服务启动授权后执行 Gateway 成组验收`
 - **产品下一顺位**：`按多身份 PC / mobile 矩阵验收完整回答生命周期并关闭 F4-O`
 - **复核日期**：`2026-07-28`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
@@ -24,14 +24,14 @@
 - F4-O-B 已把回答接入第六类内容治理目标、申诉恢复、Main Reliable Outbox、answer-level 通知定位、`@radish/http` 和 `20260727_015_forum_answer_lifecycle` migration；SQLite 回归与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
 - F4-O-C 已完成 B -> C 外部标识收敛：新回答创建只生成 `postIdentifier` 契约，`PostId` 仅留在 Controller 旧客户端兼容边界；已采纳回答独立返回且不在普通分页重复。
 - `P04 / P11 / P26 / P27` 已固定 PC / mobile 回答层级与动作状态；正式论坛已接入分页、作者历史 / 恢复 / 删除、采纳变更、举报、附件、CAS 冲突和 answer-level 通知回访定位，代码侧验证通过，未提前执行 Gateway smoke。
+- F4-O-D 已新增不可变顺序 migration `20260728_016_forum_answer_lifecycle_strict`：补齐回答稳定分页与作者历史索引，严格验证 PublicId / Revision 唯一性、采纳指针与投影、可见回答计数、采纳事件及历史附件归属；SQLite 正反向专项回归通过，PostgreSQL 条件回归等待可用环境。
 
-## 下一事项（F4-O-D，待批准）
+## 下一事项（F4-O-D，等待服务启动授权）
 
-1. 先补 migration strict verify：唯一索引、采纳指向 / `IsAccepted` 一致性、`AnswerCount` 可见回答重建一致性和历史附件归属。
-2. 重新取得当前任务的服务启动授权，明确启动命令、端口、持续时间和清理方式后再执行 Gateway smoke。
-3. 按匿名、提问者、回答者、第三方、管理员、申诉处理者及被屏蔽双方，成组验收 PC / mobile 创建、分页、编辑、恢复、删除、采纳 / 替换 / 撤销、治理限制 / 恢复和通知定位。
-4. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文、附件、并发冲突与目标失效；核对 Main / Message / Log / Auth / OpenIddict / Tenant 六库完整性。
-5. 清理测试帖子、回答、Revision、事件、举报、通知、Outbox、附件、浏览器和备份，形成批次验收记录后关闭 F4-O。
+1. 取得当前任务的服务启动授权，明确启动命令、端口、持续时间和清理方式后执行 Gateway smoke。
+2. 按匿名、提问者、回答者、第三方、管理员、申诉处理者及被屏蔽双方，成组验收 PC / mobile 创建、分页、编辑、恢复、删除、采纳 / 替换 / 撤销、治理限制 / 恢复和通知定位。
+3. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文、附件、并发冲突与目标失效；核对 Main / Message / Log / Auth / OpenIddict / Tenant 六库完整性和 strict migration verify。
+4. 清理测试帖子、回答、Revision、事件、举报、通知、Outbox、附件、浏览器和备份，形成批次验收记录后关闭 F4-O。
 
 ## 当前执行入口
 
@@ -55,7 +55,7 @@
 
 ## 当前不做
 
-- 未获得新一轮明确批准前，不启动 F4-O-D 服务、不执行 Gateway smoke，也不把 C 批代码侧完成误记为运行态验收通过。
+- 未获得当前任务的服务启动授权前，不启动 F4-O-D 服务、不执行 Gateway smoke，也不把代码侧完成误记为运行态验收通过。
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。

@@ -78,8 +78,15 @@ public sealed class ForumAnswerLifecycleSchemaMigrationTest
             var migration = ForumAnswerLifecycleSchemaMigration.Instance;
             migration.Apply(db, services);
             migration.Apply(db, services);
+            var strictMigration = ForumAnswerLifecycleStrictSchemaMigration.Instance;
+            strictMigration.Apply(db, services);
+            strictMigration.Apply(db, services);
 
             Assert.Empty(migration.Verify(db, services));
+            Assert.Empty(strictMigration.Verify(db, services));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_postanswer_public_id"));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_postanswer_tenant_post_visibility_page"));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_postanswer_tenant_author_history"));
             var answer = db.Queryable<PostAnswer>().Single();
             Assert.True(PostAnswer.HasPublicIdFormat(answer.PublicId));
             Assert.Equal(1, answer.ContentRevision);
@@ -95,6 +102,105 @@ public sealed class ForumAnswerLifecycleSchemaMigrationTest
             Assert.Equal(
                 AttachmentBusinessTypes.PostAnswer,
                 db.Queryable<Attachment>().Single().BusinessType);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    public void StrictVerify_ShouldReportAcceptanceCountAndAttachmentOwnershipDrift()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"radish-forum-answer-lifecycle-strict-{Guid.NewGuid():N}.db");
+        using var db = new SqlSugarScope(new ConnectionConfig
+        {
+            ConfigId = "main",
+            ConnectionString = $"Data Source={path}",
+            DbType = DbType.Sqlite,
+            IsAutoCloseConnection = true,
+            InitKeyType = InitKeyType.Attribute
+        });
+        using var services = new ServiceCollection()
+            .AddSingleton<ISqlSugarClient>(db)
+            .BuildServiceProvider();
+        try
+        {
+            db.CodeFirst.InitTables<PostAnswer>();
+            db.CodeFirst.InitTables<PostQuestion>();
+            db.CodeFirst.InitTables<Attachment>();
+            db.Insertable(new PostAnswer
+            {
+                Id = 3101,
+                PublicId = PostAnswer.GeneratePublicId(),
+                PostId = 2101,
+                AuthorId = 1101,
+                AuthorName = "Answerer",
+                Content = "回答 ![证据](attachment://5101)",
+                IsAccepted = true,
+                ContentRevision = 1,
+                TenantId = 9,
+                CreateBy = "Answerer",
+                CreateId = 1101
+            }).ExecuteCommand();
+            db.Insertable(new PostQuestion
+            {
+                Id = 4101,
+                PostId = 2101,
+                IsSolved = true,
+                AcceptedAnswerId = 3101,
+                AnswerCount = 1,
+                TenantId = 9,
+                CreateBy = "Owner",
+                CreateId = 2101
+            }).ExecuteCommand();
+            db.Insertable(new Attachment
+            {
+                Id = 5101,
+                TenantId = 9,
+                UploaderId = 1101,
+                BusinessType = AttachmentBusinessTypes.PostAnswer,
+                BusinessId = 3101,
+                CreateBy = "Answerer",
+                CreateId = 1101
+            }).ExecuteCommand();
+
+            ForumAnswerLifecycleSchemaMigration.Instance.Apply(db, services);
+            ForumAnswerLifecycleStrictSchemaMigration.Instance.Apply(db, services);
+            Assert.Empty(ForumAnswerLifecycleStrictSchemaMigration.Instance.Verify(db, services));
+
+            db.Updateable<PostQuestion>()
+                .SetColumns(question => new PostQuestion
+                {
+                    IsSolved = false,
+                    AnswerCount = 4
+                })
+                .Where(question => question.Id == 4101)
+                .ExecuteCommand();
+            db.Updateable<PostAnswer>()
+                .SetColumns(answer => new PostAnswer { IsAccepted = false })
+                .Where(answer => answer.Id == 3101)
+                .ExecuteCommand();
+            db.Updateable<Attachment>()
+                .SetColumns(attachment => new Attachment
+                {
+                    BusinessType = AttachmentBusinessTypes.Comment
+                })
+                .Where(attachment => attachment.Id == 5101)
+                .ExecuteCommand();
+
+            var issues = ForumAnswerLifecycleStrictSchemaMigration.Instance.Verify(db, services);
+
+            Assert.Contains(issues, issue => issue.Contains("可见回答重建值", StringComparison.Ordinal));
+            Assert.Contains(issues, issue => issue.Contains("当前采纳指向或状态投影", StringComparison.Ordinal));
+            Assert.Contains(issues, issue => issue.Contains("IsAccepted 与 PostQuestion 指针", StringComparison.Ordinal));
+            Assert.Contains(issues, issue => issue.Contains("仍占用 Comment 业务类型", StringComparison.Ordinal));
+            Assert.Contains(issues, issue => issue.Contains("缺少有效归属或持久引用", StringComparison.Ordinal));
         }
         finally
         {
@@ -145,8 +251,11 @@ public sealed class ForumAnswerLifecycleSchemaMigrationTest
 
             ForumAnswerLifecycleSchemaMigration.Instance.Apply(db, services);
             ForumAnswerLifecycleSchemaMigration.Instance.Apply(db, services);
+            ForumAnswerLifecycleStrictSchemaMigration.Instance.Apply(db, services);
+            ForumAnswerLifecycleStrictSchemaMigration.Instance.Apply(db, services);
 
             Assert.Empty(ForumAnswerLifecycleSchemaMigration.Instance.Verify(db, services));
+            Assert.Empty(ForumAnswerLifecycleStrictSchemaMigration.Instance.Verify(db, services));
         }
         finally
         {

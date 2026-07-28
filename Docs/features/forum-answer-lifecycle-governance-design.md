@@ -1,6 +1,6 @@
 # F4-O 论坛问答回答生命周期与治理闭环
 
-> **状态**：F4-O-A/B/C 已完成；等待批准进入 F4-O-D Gateway 成组验收
+> **状态**：F4-O-A/B/C 已完成，D 批 strict verify 已落地；等待服务启动授权与 Gateway 成组验收
 >
 > **复核日期**：2026-07-28（Asia/Shanghai）
 >
@@ -14,7 +14,7 @@ F4-O 选择“论坛问答回答生命周期与治理闭环”为当前唯一功
 
 F4-O-A 审计时，问答已经能发布问题、提交回答和采纳答案，也具备提交意图去重与正式 Web 入口；但 `PostAnswer` 仍是早期 MVP 内容对象：所有回答随帖子详情一次性加载，写入继续寄居 `PostService`，没有独立附件类型、公开标识、编辑 / 删除、版本恢复、举报治理、可靠通知和采纳变更审计。继续增加排序、奖励或独立问答页会放大这层权威缺口。
 
-F4-O-B 已完成服务端权威补齐，F4-O-C 已完成外部标识收敛、PC / mobile Pencil 和正式 Web 接入。当前剩余工作是 D 批 strict verify 与 Gateway 成组验收，不应再把本节的 A 批历史基线误读为当前实现状态。
+F4-O-B 已完成服务端权威补齐，F4-O-C 已完成外部标识收敛、PC / mobile Pencil 和正式 Web 接入，F4-O-D 已补 strict migration 代码门禁。当前剩余工作是取得服务启动授权并执行 Gateway 成组验收，不应再把本节的 A 批历史基线误读为当前实现状态。
 
 核心裁决如下：
 
@@ -383,7 +383,7 @@ DTO 规则：
 
 ### 12.1 Main migration
 
-计划 migration：`20260727_015_forum_answer_lifecycle`。
+基础 migration 为 `20260727_015_forum_answer_lifecycle`。由于 migration 进入账本后必须保持 checksum 与 Apply 不可变，D 批新增顺序 migration `20260728_016_forum_answer_lifecycle_strict`，负责补稳定分页 / 作者历史索引并执行严格一致性校验。
 
 Apply：
 
@@ -407,7 +407,7 @@ Verify：
 - 回答附件不再以新写入形式占用 `Comment` 业务类型；
 - SQLite / PostgreSQL 重复 apply 无额外副作用。
 
-B 批 migration 的当前 `Verify` 已覆盖必要表列、PublicId 格式、当前 Revision 和既有采纳版本基线；唯一索引、采纳指向 / `IsAccepted` 一致性、`AnswerCount` 重建一致性和历史附件归属检查仍是专题关闭前的 strict verify 目标。它们不阻断 C 批页面开发，但必须在 D 批真实 migration 验收前补齐，不能把普通 CodeFirst 建表成功当作严格验证已经完成。
+D 批 `20260728_016_forum_answer_lifecycle_strict` 已补 `(TenantId, PostId, IsDeleted, IsEnabled, IsAccepted, CreateTime, Id)` 稳定分页索引与 `(TenantId, AuthorId, IsDeleted, CreateTime)` 作者历史索引，并检查 PublicId / Revision / 采纳事件唯一性、当前 Revision 归属、恢复来源、采纳指针与 `IsAccepted` 投影、`AnswerCount` 重建值、旧 `Comment` 附件残留及 Answer Revision 附件引用。SQLite 空库重复 Apply、有效基线和故障注入专项回归已通过；PostgreSQL 条件回归与真实账本 Verify 留到具备运行环境的 D 批候选门禁。
 
 ### 12.2 运行时兼容
 
@@ -428,7 +428,7 @@ B 批 migration 的当前 `Verify` 已覆盖必要表列、PublicId 格式、当
 ### F4-O-B：服务端与 migration
 
 - **完成状态（2026-07-27）**：模型、事务、migration、治理申诉、可靠通知、HTTP 契约与专项回归已落地；SQLite 与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
-- **B -> C 复核项**：创建回答仍保留兼容 `PostId`；migration strict verify 仍需补采纳一致性、可见回答数、附件归属和索引检查。两项已经进入 2026-07-28 明天事项，不在日终用文档措辞掩盖。
+- **B -> C 复核项已收口（2026-07-28）**：创建回答新契约已改为 `postIdentifier`，`PostId` 仅留在 Controller 兼容边界；strict verify 由不可变顺序 migration `20260728_016_forum_answer_lifecycle_strict` 补齐。
 - 新增模型字段、Revision / Event、专属 Service / Repository 和 migration；
 - 完成分页、创建、CAS 编辑 / 删除 / 恢复、采纳 / 替换 / 撤销；
 - 扩展回答附件、治理、申诉、通知 Outbox、HTTP 与 `@radish/http`；
@@ -460,6 +460,7 @@ B 批不安装或更新依赖，不修改 Pencil 和 `radish.client` 页面；�
 
 ### F4-O-D：Gateway 成组验收
 
+- **代码门禁状态（2026-07-28）**：strict migration 与 SQLite 正反向专项回归已完成；尚未启动服务、执行 Gateway smoke 或形成运行态验收结论。
 - 重新取得当前任务服务启动授权；
 - 覆盖匿名、提问者、回答者、第三方、管理员、申诉处理者和被屏蔽双方；
 - 验收创建、分页、编辑、恢复、删除、采纳 / 替换 / 撤销、治理限制 / 恢复和通知定位；
