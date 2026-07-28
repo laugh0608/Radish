@@ -26,12 +26,19 @@ test('问答回答契约固定 PublicId、双 CAS 与结构化错误码', () => 
     'Forum.QuestionAcceptanceConflict',
   );
   assert.match(contractSource, /answerPublicId: string;/);
+  assert.match(contractSource, /interface CreatePostAnswerRequest[\s\S]*postIdentifier: string;/);
+  assert.doesNotMatch(
+    contractSource.match(/interface CreatePostAnswerRequest[\s\S]*?\n}/)?.[0] ?? '',
+    /postId:/,
+  );
   assert.match(contractSource, /expectedContentRevision: number;/);
   assert.match(contractSource, /expectedAcceptanceRevision: number;/);
 });
 
 test('回答分页和治理契约显式支持 PostAnswer', () => {
   assert.match(contractSource, /interface PostAnswerPageVo[\s\S]*voItems: PostAnswerVo\[\];/);
+  assert.match(contractSource, /voAcceptedAnswer\?: PostAnswerVo \| null;/);
+  assert.match(contractSource, /voOtherTotal: number;/);
   assert.match(moderationSource, /\| 'PostAnswer'/);
 });
 

@@ -48,6 +48,61 @@ export function buildAnswerSubmissionFingerprint(postId: LongId, content: string
   });
 }
 
+export function buildAnswerCreateFingerprint(postIdentifier: string, content: string): string {
+  return JSON.stringify({
+    postIdentifier: postIdentifier.trim().toLowerCase(),
+    content: content.trim(),
+  });
+}
+
+export function buildAnswerEditFingerprint(
+  answerPublicId: string,
+  content: string,
+  expectedContentRevision: number,
+): string {
+  return JSON.stringify({
+    answerPublicId: answerPublicId.trim().toLowerCase(),
+    content: content.trim(),
+    expectedContentRevision,
+  });
+}
+
+export function buildAnswerDeleteFingerprint(
+  answerPublicId: string,
+  expectedContentRevision: number,
+): string {
+  return JSON.stringify({
+    answerPublicId: answerPublicId.trim().toLowerCase(),
+    expectedContentRevision,
+  });
+}
+
+export function buildAnswerRestoreFingerprint(
+  answerPublicId: string,
+  revisionNumber: number,
+  expectedContentRevision: number,
+): string {
+  return JSON.stringify({
+    answerPublicId: answerPublicId.trim().toLowerCase(),
+    revisionNumber,
+    expectedContentRevision,
+  });
+}
+
+export function buildAnswerAcceptanceFingerprint(
+  postIdentifier: string,
+  answerPublicId: string,
+  expectedAcceptanceRevision: number,
+  action: 'accept' | 'revoke',
+): string {
+  return JSON.stringify({
+    postIdentifier: postIdentifier.trim().toLowerCase(),
+    answerPublicId: answerPublicId.trim().toLowerCase(),
+    expectedAcceptanceRevision,
+    action,
+  });
+}
+
 export function buildPostEditSubmissionFingerprint(
   postId: LongId,
   title: string,

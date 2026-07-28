@@ -45,7 +45,7 @@ export interface GetPostAnswerPageRequest {
 }
 
 export interface CreatePostAnswerRequest {
-  postId: ForumContentLongId;
+  postIdentifier: string;
   content: string;
   clientSubmissionId: string;
 }
@@ -54,8 +54,10 @@ export interface PostAnswerPageVo {
   voPostPublicId: string;
   voIsSolved: boolean;
   voAcceptedAnswerPublicId?: string | null;
+  voAcceptedAnswer?: PostAnswerVo | null;
   voAcceptanceRevision: number;
   voTotal: number;
+  voOtherTotal: number;
   voPageIndex: number;
   voPageSize: number;
   voItems: PostAnswerVo[];

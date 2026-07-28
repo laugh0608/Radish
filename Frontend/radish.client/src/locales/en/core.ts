@@ -46,6 +46,7 @@ export const enCore = {
   'common.confirm': 'Confirm',
   'common.save': 'Save',
   'common.delete': 'Delete',
+  'common.edit': 'Edit',
   'common.show': 'Show',
   'common.hide': 'Hide',
   'common.retry': 'Retry',

@@ -3,6 +3,7 @@
 
 @ForumQuestion_PostId = 在这里填入问答帖的 postId
 @ForumQuestion_PostPublicId = 在这里填入问答帖的 postPublicId
+@ForumQuestion_NonQuestionPostPublicId = 在这里填入普通帖的 postPublicId
 @ForumQuestion_AnswerPublicId = 在这里填入回答的 ans_ PublicId
 @ForumQuestion_AnswerRevision = 1
 @ForumQuestion_AcceptanceRevision = 0
@@ -67,7 +68,7 @@ Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "postId": {{ForumQuestion_PostId}},
+  "postIdentifier": "{{ForumQuestion_PostPublicId}}",
   "content": "先检查配置、连接串和日志输出，再定位具体异常。",
   "clientSubmissionId": "question-answer-create-{{$guid}}"
 }
@@ -151,6 +152,6 @@ Content-Type: application/json
 Authorization: Bearer {{Access_Token}}
 
 {
-  "postId": 1,
+  "postIdentifier": "{{ForumQuestion_NonQuestionPostPublicId}}",
   "content": "普通帖不应允许走问答回答接口。"
 }

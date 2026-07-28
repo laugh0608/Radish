@@ -110,6 +110,7 @@ test('MarkdownEditor 正式消费者在上传中阻止提交和会卸载编辑�
 
 test('公开论坛回答上传状态覆盖详情退出、浏览器历史与顶层入口切换', () => {
   const postDetailSource = readSource('src/apps/forum/components/PostDetail.tsx');
+  const answerLifecycleSource = readSource('src/apps/forum/components/PostAnswerLifecycleSection.tsx');
   const publicDetailSource = readSource('src/public/forum/PublicForumDetail.tsx');
   const publicDetailNavigationGuardSource = readSource('src/public/forum/usePublicForumDetailNavigationGuard.ts');
   const publicAppSource = readSource('src/public/forum/PublicForumApp.tsx');
@@ -121,7 +122,11 @@ test('公开论坛回答上传状态覆盖详情退出、浏览器历史与顶�
   const webShellStylesSource = readSource('src/components/web-shell/WebShellHeader.module.css');
 
   assert.match(postDetailSource, /onAnswerEditorUploadingChange\?\.\(uploading\)/);
-  assert.match(publicDetailSource, /onAnswerEditorUploadingChange=\{onAnswerEditorUploadingChange\}/);
+  assert.match(
+    answerLifecycleSource,
+    /onUploadingChange\?\.\(composerUploading \|\| editUploading\)/,
+  );
+  assert.match(publicDetailSource, /onUploadingChange=\{onAnswerEditorUploadingChange\}/);
   assert.match(publicDetailSource, /usePublicForumDetailNavigationGuard\(\{/);
   assert.match(publicDetailSource, /navigationLocked: isAnswerEditorUploading/);
   assert.ok(

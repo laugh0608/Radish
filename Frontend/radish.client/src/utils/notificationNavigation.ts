@@ -30,6 +30,11 @@ function normalizeOpaqueIdentifier(value: string | null | undefined): string | n
   return normalized.length > 0 ? normalized : null;
 }
 
+function normalizeAnswerPublicId(value: string | null | undefined): string | null {
+  const normalized = value?.trim().toLowerCase() ?? '';
+  return /^ans_[a-f0-9]{32}$/.test(normalized) ? normalized : null;
+}
+
 function buildGovernanceTarget(caseId: string): string {
   const search = new URLSearchParams({
     sourceReportId: caseId,
@@ -65,6 +70,7 @@ export function resolveWebNotificationNavigation(
       }
 
       const commentId = normalizePositiveIntegerString(target.voCommentId);
+      const answerPublicId = normalizeAnswerPublicId(target.voAnswerPublicId);
       return {
         surface: 'web',
         href: buildPublicForumPath({
@@ -72,6 +78,7 @@ export function resolveWebNotificationNavigation(
           postId: routeId,
           ...(postPublicId ? { postPublicId } : {}),
           ...(commentId ? { commentId } : {}),
+          ...(answerPublicId ? { answerPublicId } : {}),
         }),
         sourceState: {
           forumDetailSourceRoute: notificationsSourceRoute,

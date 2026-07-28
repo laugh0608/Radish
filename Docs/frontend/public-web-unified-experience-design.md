@@ -36,7 +36,9 @@
 >
 > 更新：2026-07-27（Asia/Shanghai）：F4-N-D 已通过匿名 / 多身份 Gateway 代表矩阵，确认登录回流、资产守恒、审计投影、通知定位与 PC / mobile 响应式路径；专题关闭。
 >
-> 状态：设计源 `P01-P16` 已补齐；`P09 / P14` 电子宠物公开名片已完成设计、正式 Web 与 Gateway 成组验收，F4-H 专题关闭；`P15 / P16` 仍仅作为后续公开聊天室参考
+> 更新：2026-07-28（Asia/Shanghai）：F4-O-C 已更新 `P04 / P11` 回答信息层级，并新增 `P26 / P27` PC / mobile 回答编辑、历史恢复、删除、采纳变更、CAS 冲突与目标不可用状态；正式 Web 代码侧已对齐，Gateway 成组验收留待 F4-O-D。
+>
+> 状态：设计源核心页面 `P01-P16` 已补齐，并包含按专题追加的状态画板；`P09 / P14` 电子宠物公开名片已完成设计、正式 Web 与 Gateway 成组验收，F4-H 专题关闭；`P15 / P16` 仍仅作为后续公开聊天室参考
 
 ## 设计源
 
@@ -51,14 +53,14 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P01 - Public App Home` | 公开 App 首页概念层；发布前由 `/discover` 承接，不新增独立 `PublicHomeApp` |
 | `P02 - Discover Content Stream` | `/discover` 社区内容优先流，以帖子、问答和真实互动为主体；Docs、商城、榜单只作为相关内容或“更多”入口，不在首屏并列铺开完整领域列表 |
 | `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction，首屏按紧凑 5 条列表密度设计 |
-| `P04 / P04B - Forum Thread Detail / Content Reward` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子与评论内容赞赏、帖子级轻回应、紧凑评论树、父评论神评、子回复沙发、表情反应、登录评论，以及 PC 赞赏确认和主要状态 |
+| `P04 / P04B / P26 - Forum Thread Detail / Content Reward / Answer Lifecycle` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子与评论内容赞赏、问答状态、已采纳回答、其他回答分页、回答作者生命周期、采纳变更、帖子级轻回应、紧凑评论树、表情反应，以及 PC Dialog 主要状态 |
 | `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
 | `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流，首屏采用精选商品 + 多条商品行 + 状态 rail 的浏览密度 |
 | `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
 | `P09 / P09B / P09C - Public Profile` | `/u/:id` 公开个人主页、可空电子宠物公开名片、公开内容 tab、屏蔽确认、通用不可互动状态、关注登录回流和来源返回 |
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
-| `P11 / P11B - Mobile Post Detail / Content Reward` | 移动端帖子详情、正文、帖子与评论内容赞赏、轻回应、父评论神评、子回复沙发、登录评论，以及 Bottom Sheet 赞赏确认和主要状态 |
+| `P11 / P11B / P27 - Mobile Post Detail / Content Reward / Answer Lifecycle` | 移动端帖子详情、正文、帖子与评论内容赞赏、问答回答分页与作者 / 所有者动作、轻回应、评论，以及 Bottom Sheet 赞赏和回答生命周期主要状态 |
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Workbench` | 移动端 `/workbench` 功能地图、继续探索队列和公开低频入口承接；商城、榜单和聊天室只作为功能入口，不作为工作台页面主体 |
 | `P14 / P14B / P14C - Mobile Public Profile` | 移动端公开主页、可空电子宠物公开名片、屏蔽确认、通用不可互动状态、公开内容 tab 和关注回流 |

@@ -23,7 +23,7 @@ public sealed class QuestionControllerTest
         questionService
             .Setup(service => service.CreateAnswerAsync(
                 0,
-                9527,
+                "pst_question",
                 "给出排查步骤",
                 10001,
                 "Tester",
@@ -44,7 +44,7 @@ public sealed class QuestionControllerTest
         var controller = CreateController(moderationService.Object, questionService.Object);
         var result = await controller.Answer(new CreateAnswerDto
         {
-            PostId = 9527,
+            PostIdentifier = "pst_question",
             Content = "给出排查步骤",
             ClientSubmissionId = "answer-submission-1"
         });
@@ -63,7 +63,7 @@ public sealed class QuestionControllerTest
         questionService
             .Setup(service => service.CreateAnswerAsync(
                 0,
-                9527,
+                "pst_question",
                 "给出排查步骤",
                 10001,
                 "Tester",
@@ -77,7 +77,7 @@ public sealed class QuestionControllerTest
         var controller = CreateController(moderationService.Object, questionService.Object);
         var result = await controller.Answer(new CreateAnswerDto
         {
-            PostId = 9527,
+            PostIdentifier = "pst_question",
             Content = "给出排查步骤",
             ClientSubmissionId = "answer-submission-1"
         });
@@ -105,13 +105,53 @@ public sealed class QuestionControllerTest
         var controller = CreateController(moderationService.Object, questionService.Object);
         var result = await controller.Answer(new CreateAnswerDto
         {
-            PostId = 9527,
+            PostIdentifier = "pst_question",
             Content = "这条回答不会被提交"
         });
 
         Assert.False(result.IsSuccess);
         Assert.Equal(403, result.StatusCode);
         questionService.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task Answer_ShouldKeepLegacyLongIdInsideControllerCompatibilityBoundary()
+    {
+        var questionService = new Mock<IForumQuestionService>(MockBehavior.Strict);
+        var moderationService = AllowPublishing();
+        questionService
+            .Setup(service => service.CreateAnswerAsync(
+                0,
+                "9527",
+                "兼容旧客户端",
+                10001,
+                "Tester",
+                "legacy-answer-submission"))
+            .ReturnsAsync(new PostAnswerMutationVo
+            {
+                VoPostPublicId = "pst_question",
+                VoAnswerCount = 1,
+                VoAnswer = new PostAnswerVo
+                {
+                    VoAnswerId = 2042219067430928384,
+                    VoPublicId = "ans_0123456789abcdef0123456789abcdef",
+                    VoPostId = 9527,
+                    VoAuthorId = 10001,
+                    VoAuthorName = "Tester",
+                    VoContent = "兼容旧客户端"
+                }
+            });
+
+        var controller = CreateController(moderationService.Object, questionService.Object);
+        var result = await controller.Answer(new CreateAnswerDto
+        {
+            PostId = 9527,
+            Content = "兼容旧客户端",
+            ClientSubmissionId = "legacy-answer-submission"
+        });
+
+        Assert.True(result.IsSuccess);
+        questionService.VerifyAll();
     }
 
     [Fact]

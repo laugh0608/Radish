@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContentRewardTargetStateVo } from '@radish/http';
 import { createReactionBarLabels } from '../utils/reactionBarLabels';
@@ -50,6 +50,7 @@ interface PostDetailProps {
   onAnswerSortChange?: (sortBy: QuestionAnswerSort) => Promise<void>;
   onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
   answerAutoFocusKey?: string | null;
+  questionAnswerSection?: ReactNode;
   isAuthenticated?: boolean;
   currentUserId?: LongId;
   canToggleTop?: boolean;
@@ -123,6 +124,7 @@ export const PostDetail = ({
   onAnswerSortChange,
   onAnswerFilterChange,
   answerAutoFocusKey,
+  questionAnswerSection,
   isAuthenticated = false,
   currentUserId = '0',
   canToggleTop = false,
@@ -465,7 +467,9 @@ export const PostDetail = ({
       {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
         {renderPostTitle(post.voTitle, postTitleHeadingLevel)}
-        {isQuestionPost && (
+        {isQuestionPost && questionAnswerSection}
+
+        {isQuestionPost && !questionAnswerSection && (
           <div className={styles.statusRow}>
             {onQuestionClick ? (
               <button

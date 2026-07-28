@@ -14,7 +14,7 @@ public interface IForumQuestionService
 
     Task<PostAnswerMutationVo> CreateAnswerAsync(
         long tenantId,
-        long postId,
+        string postIdentifier,
         string content,
         long authorId,
         string authorName,

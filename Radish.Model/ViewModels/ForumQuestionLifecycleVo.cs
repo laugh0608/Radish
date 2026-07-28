@@ -5,8 +5,10 @@ public sealed class PostAnswerPageVo
     public string VoPostPublicId { get; set; } = string.Empty;
     public bool VoIsSolved { get; set; }
     public string? VoAcceptedAnswerPublicId { get; set; }
+    public PostAnswerVo? VoAcceptedAnswer { get; set; }
     public int VoAcceptanceRevision { get; set; }
     public int VoTotal { get; set; }
+    public int VoOtherTotal { get; set; }
     public int VoPageIndex { get; set; }
     public int VoPageSize { get; set; }
     public List<PostAnswerVo> VoItems { get; set; } = [];

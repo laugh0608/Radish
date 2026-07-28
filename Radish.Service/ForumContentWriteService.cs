@@ -211,7 +211,7 @@ public class ForumContentWriteService : IForumContentWriteService
         {
             var mutation = await _forumQuestionService.CreateAnswerAsync(
                 tenantId,
-                postId,
+                postId.ToString(),
                 content,
                 authorId,
                 authorName,

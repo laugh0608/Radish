@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
+using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -22,17 +23,26 @@ public sealed class ForumQuestionService : IForumQuestionService
     private readonly IContentSubmissionService _contentSubmissionService;
     private readonly IUserInteractionPolicyService _interactionPolicyService;
     private readonly IReliableOutboxService _reliableOutboxService;
+    private readonly IAttachmentService? _attachmentService;
+    private readonly IBaseRepository<User>? _userRepository;
+    private readonly IUserAdornmentService? _userAdornmentService;
 
     public ForumQuestionService(
         IForumQuestionRepository repository,
         IContentSubmissionService contentSubmissionService,
         IUserInteractionPolicyService interactionPolicyService,
-        IReliableOutboxService reliableOutboxService)
+        IReliableOutboxService reliableOutboxService,
+        IAttachmentService? attachmentService = null,
+        IBaseRepository<User>? userRepository = null,
+        IUserAdornmentService? userAdornmentService = null)
     {
         _repository = repository;
         _contentSubmissionService = contentSubmissionService;
         _interactionPolicyService = interactionPolicyService;
         _reliableOutboxService = reliableOutboxService;
+        _attachmentService = attachmentService;
+        _userRepository = userRepository;
+        _userAdornmentService = userAdornmentService;
     }
 
     public async Task<PostAnswerPageVo> GetAnswerPageAsync(
@@ -47,43 +57,51 @@ public sealed class ForumQuestionService : IForumQuestionService
         var page = await _repository.QueryAnswerPageAsync(
             tenantId,
             context.Post.Id,
+            context.Question.AcceptedAnswerId,
             pageIndex,
             pageSize,
             sort);
-        var acceptedPublicId = page.Items
-            .FirstOrDefault(item => item.Id == context.Question.AcceptedAnswerId)?.PublicId;
-        if (acceptedPublicId == null && context.Question.AcceptedAnswerId.HasValue)
+        PostAnswer? accepted = null;
+        if (context.Question.AcceptedAnswerId.HasValue)
         {
-            var accepted = await _repository.QueryAnswerByIdAsync(
+            accepted = await _repository.QueryAnswerByIdAsync(
                 tenantId,
                 context.Question.AcceptedAnswerId.Value);
-            acceptedPublicId = accepted?.PublicId;
         }
+
+        var acceptedVo = accepted == null ? null : MapAnswer(accepted, currentUserId);
+        var itemVos = page.Items.Select(item => MapAnswer(item, currentUserId)).ToList();
+        var visibleAnswers = acceptedVo == null
+            ? itemVos
+            : itemVos.Prepend(acceptedVo).ToList();
+        await EnrichAnswerAuthorsAsync(visibleAnswers);
 
         return new PostAnswerPageVo
         {
             VoPostPublicId = context.Post.PublicId ?? string.Empty,
             VoIsSolved = context.Question.IsSolved,
-            VoAcceptedAnswerPublicId = acceptedPublicId,
+            VoAcceptedAnswerPublicId = accepted?.PublicId,
+            VoAcceptedAnswer = acceptedVo,
             VoAcceptanceRevision = context.Question.AcceptanceRevision,
-            VoTotal = page.Total,
+            VoTotal = context.Question.AnswerCount,
+            VoOtherTotal = page.Total,
             VoPageIndex = Math.Max(1, pageIndex),
             VoPageSize = Math.Clamp(pageSize, 1, 100),
-            VoItems = page.Items.Select(item => MapAnswer(item, currentUserId)).ToList()
+            VoItems = itemVos
         };
     }
 
     [UseTran]
     public async Task<PostAnswerMutationVo> CreateAnswerAsync(
         long tenantId,
-        long postId,
+        string postIdentifier,
         string content,
         long authorId,
         string authorName,
         string? clientSubmissionId)
     {
         var normalizedContent = NormalizeContent(content);
-        var context = await RequireQuestionAsync(tenantId, postId.ToString());
+        var context = await RequireQuestionAsync(tenantId, postIdentifier);
         if (context.Post.AuthorId != authorId)
         {
             await _interactionPolicyService.EnsureCanInteractAsync(tenantId, authorId, context.Post.AuthorId);
@@ -95,10 +113,10 @@ public sealed class ForumQuestionService : IForumQuestionService
             ContentSubmissionOperationTypes.ForumAnswerCreate,
             clientSubmissionId,
             "Post",
-            postId,
+            context.Post.Id,
             new Dictionary<string, object?>
             {
-                ["postId"] = postId,
+                ["postPublicId"] = context.Post.PublicId,
                 ["content"] = normalizedContent
             },
             CreateDuplicateWindowSeconds,
@@ -669,12 +687,73 @@ public sealed class ForumQuestionService : IForumQuestionService
     {
         var latestContext = await _repository.QueryQuestionAsync(context.Post.TenantId, context.Post.Id.ToString())
                             ?? context;
+        var answerVo = MapAnswer(answer, currentUserId);
+        await EnrichAnswerAuthorsAsync([answerVo]);
         return new PostAnswerMutationVo
         {
             VoPostPublicId = context.Post.PublicId ?? string.Empty,
-            VoAnswer = MapAnswer(answer, currentUserId),
+            VoAnswer = answerVo,
             VoAnswerCount = latestContext.Question.AnswerCount
         };
+    }
+
+    private async Task EnrichAnswerAuthorsAsync(IReadOnlyCollection<PostAnswerVo> answers)
+    {
+        var authorIds = answers
+            .Select(answer => answer.VoAuthorId)
+            .Where(authorId => authorId > 0)
+            .Distinct()
+            .ToList();
+        if (authorIds.Count == 0)
+        {
+            return;
+        }
+
+        Dictionary<long, string> avatarMap = new();
+        if (_attachmentService != null)
+        {
+            avatarMap = (await _attachmentService.GetLatestAvatarAssetMapAsync(authorIds))
+                .Where(entry => !string.IsNullOrWhiteSpace(entry.Value.Url))
+                .ToDictionary(entry => entry.Key, entry => entry.Value.Url);
+        }
+
+        Dictionary<long, string> displayNameMap = new();
+        Dictionary<long, string> publicIdMap = new();
+        if (_userRepository != null)
+        {
+            var users = await _userRepository.QueryAsync(user =>
+                authorIds.Contains(user.Id) &&
+                !user.IsDeleted);
+            displayNameMap = ForumDisplayNameHelper.BuildMap(users);
+            publicIdMap = users
+                .Where(user => !string.IsNullOrWhiteSpace(user.PublicId))
+                .GroupBy(user => user.Id)
+                .ToDictionary(group => group.Key, group => group.First().PublicId!.Trim());
+        }
+
+        IReadOnlyDictionary<long, UserAdornmentVo> adornmentMap =
+            new Dictionary<long, UserAdornmentVo>();
+        if (_userAdornmentService != null)
+        {
+            adornmentMap = await _userAdornmentService.GetUserAdornmentsAsync(authorIds);
+        }
+
+        foreach (var answer in answers)
+        {
+            if (publicIdMap.TryGetValue(answer.VoAuthorId, out var publicId))
+            {
+                answer.VoAuthorPublicId = publicId;
+            }
+            if (displayNameMap.TryGetValue(answer.VoAuthorId, out var displayName))
+            {
+                answer.VoAuthorName = displayName;
+            }
+            if (avatarMap.TryGetValue(answer.VoAuthorId, out var avatarUrl))
+            {
+                answer.VoAuthorAvatarUrl = avatarUrl;
+            }
+            answer.VoAuthorAdornment = adornmentMap.GetValueOrDefault(answer.VoAuthorId);
+        }
     }
 
     private static PostAnswerVo MapAnswer(PostAnswer answer, long currentUserId)

@@ -17,6 +17,7 @@ public interface IForumQuestionRepository
     Task<(IReadOnlyList<PostAnswer> Items, int Total)> QueryAnswerPageAsync(
         long tenantId,
         long postId,
+        long? excludedAnswerId,
         int pageIndex,
         int pageSize,
         string sort);

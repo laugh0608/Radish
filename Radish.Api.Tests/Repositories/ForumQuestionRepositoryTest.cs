@@ -72,7 +72,7 @@ public sealed class ForumQuestionRepositoryTest : IDisposable
             CreateId = 3001
         });
 
-        var page = await _repository.QueryAnswerPageAsync(9, 2001, 1, 20, "default");
+        var page = await _repository.QueryAnswerPageAsync(9, 2001, null, 1, 20, "default");
         Assert.Equal(1, page.Total);
         Assert.Equal(answer.PublicId, Assert.Single(page.Items).PublicId);
 
@@ -123,6 +123,15 @@ public sealed class ForumQuestionRepositoryTest : IDisposable
             "Owner",
             1001,
             DateTime.UtcNow));
+        var otherAnswers = await _repository.QueryAnswerPageAsync(
+            9,
+            2001,
+            answer.Id,
+            1,
+            20,
+            "default");
+        Assert.Equal(0, otherAnswers.Total);
+        Assert.Empty(otherAnswers.Items);
         Assert.False(await _repository.ChangeAcceptanceAsync(
             context,
             null,

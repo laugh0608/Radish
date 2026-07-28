@@ -535,7 +535,12 @@ test('Docs 与 Forum 详情应以 keyed remount 和实体身份校验形成 head
   assert.match(docsSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
   assert.match(docsSource, /buildLocalizedPublicRouteHead\(\{ app: 'docs', route: canonicalRoute \}, t\)/);
   assert.match(docsSource, /buildPublicDocsHeadSnapshot\(documentDetail, route\.anchor, \{/);
-  assert.equal(forumAppSource.includes("key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.intent ?? 'read'}`}"), true);
+  assert.equal(
+    forumAppSource.includes(
+      "key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.answerPublicId ?? 'none'}-${route.intent ?? 'read'}`}"
+    ),
+    true,
+  );
   assert.match(forumDetailSource, /isCurrentForumPostHeadSource\(postId, post\)/);
   assert.match(forumDetailSource, /buildLocalizedPublicRouteHead\(\{/);
 });
@@ -656,6 +661,10 @@ test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器
 test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
   const postDetailSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PostDetail.tsx'), 'utf8');
+  const answerLifecycleSource = readFileSync(
+    resolve(clientRoot, 'src/apps/forum/components/PostAnswerLifecycleSection.tsx'),
+    'utf8'
+  );
   const revisionModalSource = readFileSync(
     resolve(clientRoot, 'src/apps/forum/components/ContentRevisionModal.tsx'),
     'utf8'
@@ -674,17 +683,24 @@ test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指�
   assert.match(detailSource, /handlePublicForumLinkClick\(event, \(\) => void handleEditPostAction\(\)\)/);
   assert.match(detailSource, /handlePublicForumLinkClick\(event, \(\) => void handleViewPostHistory\(\)\)/);
   assert.match(detailSource, /handlePublicForumLinkClick\(event, handleCommentAction\)/);
-  assert.match(detailSource, /answerQuestion\(/);
-  assert.match(detailSource, /acceptQuestionAnswer\(/);
+  assert.match(detailSource, /getPostAnswerPage\(/);
+  assert.match(detailSource, /<PostAnswerLifecycleSection/);
+  assert.match(answerLifecycleSource, /createPostAnswer\(/);
+  assert.match(answerLifecycleSource, /acceptPostAnswer\(/);
+  assert.match(answerLifecycleSource, /revokePostAnswerAcceptance\(/);
   assert.match(detailSource, /updatePost\(/);
   assert.match(detailSource, /ContentRevisionModal/);
   assert.match(revisionModalSource, /getPostEditHistory\(/);
   assert.match(revisionModalSource, /getCommentEditHistory\(/);
-  assert.match(detailSource, /buildAnswerSubmissionFingerprint/);
+  assert.match(answerLifecycleSource, /buildAnswerCreateFingerprint/);
+  assert.match(answerLifecycleSource, /buildAnswerAcceptanceFingerprint/);
   assert.match(detailSource, /buildPostEditSubmissionFingerprint/);
   assert.doesNotMatch(detailSource, /buildDesktopForumPostReturnPath/);
   assert.doesNotMatch(detailSource, /openApp/);
   assert.match(postDetailSource, /answerAutoFocusKey\?: string \| null;/);
+  assert.match(postDetailSource, /questionAnswerSection\?: ReactNode;/);
+  assert.match(postDetailSource, /isQuestionPost && questionAnswerSection/);
+  assert.match(postDetailSource, /isQuestionPost && !questionAnswerSection/);
   assert.match(postDetailSource, /!isReadOnly && onAnswerQuestion/);
   assert.match(postDetailSource, /!isReadOnly && onLike/);
 });
@@ -696,6 +712,7 @@ test('公开论坛详情应复用统一举报组件覆盖帖子、轻回应和�
   assert.match(source, /handleOpenReport\('Post', targetId\)/);
   assert.match(source, /handleOpenReport\('PostQuickReply', targetId\)/);
   assert.match(source, /handleOpenReport\('Comment', targetId\)/);
+  assert.match(source, /handleOpenReport\('PostAnswer', targetId\)/);
   assert.match(source, /toast\.error\(t\('report\.loginRequired'\)\)/);
   assert.match(source, /<ContentReportModal/);
 });

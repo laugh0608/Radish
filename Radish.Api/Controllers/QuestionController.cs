@@ -56,13 +56,19 @@ public class QuestionController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status429TooManyRequests)]
     public async Task<MessageModel> Answer([FromBody] CreateAnswerDto request)
     {
-        if (request.PostId <= 0)
+        var postIdentifier = request.PostIdentifier?.Trim();
+        if (string.IsNullOrWhiteSpace(postIdentifier) && request.PostId > 0)
+        {
+            postIdentifier = request.PostId.Value.ToString();
+        }
+
+        if (string.IsNullOrWhiteSpace(postIdentifier))
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "帖子ID必须大于0"
+                MessageInfo = "帖子标识不能为空"
             };
         }
 
@@ -91,7 +97,7 @@ public class QuestionController : ControllerBase
         {
             var answerResult = await _forumQuestionService.CreateAnswerAsync(
                 Current.TenantId,
-                request.PostId,
+                postIdentifier,
                 request.Content,
                 Current.UserId,
                 Current.UserName,

@@ -68,6 +68,7 @@ public sealed class ForumQuestionRepository : BaseRepository<PostAnswer>, IForum
     public async Task<(IReadOnlyList<PostAnswer> Items, int Total)> QueryAnswerPageAsync(
         long tenantId,
         long postId,
+        long? excludedAnswerId,
         int pageIndex,
         int pageSize,
         string sort)
@@ -80,6 +81,10 @@ public sealed class ForumQuestionRepository : BaseRepository<PostAnswer>, IForum
                 item.PostId == postId &&
                 !item.IsDeleted &&
                 item.IsEnabled);
+        if (excludedAnswerId.HasValue)
+        {
+            query = query.Where(item => item.Id != excludedAnswerId.Value);
+        }
         var total = await query.CountAsync();
         query = string.Equals(sort, "latest", StringComparison.OrdinalIgnoreCase)
             ? query.OrderBy(item => item.CreateTime, OrderByType.Desc)

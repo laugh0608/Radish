@@ -1,16 +1,17 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  createApiResponseError,
+  getPostAnswerPage,
   isApiResponseNotFoundError,
   type ContentRewardTargetType,
+  type PostAnswerPageVo,
 } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import {
-  acceptQuestionAnswer,
-  answerQuestion,
   createComment,
   createPostQuickReply,
   getReactionSummary,
@@ -45,9 +46,9 @@ import {
 import { CommentTree } from '@/apps/forum/components/CommentTree';
 import { CreateCommentForm } from '@/apps/forum/components/CreateCommentForm';
 import { PostDetail as ForumPostDetail } from '@/apps/forum/components/PostDetail';
+import { PostAnswerLifecycleSection } from '@/apps/forum/components/PostAnswerLifecycleSection';
 import { PostQuickReplyWall } from '@/apps/forum/components/PostQuickReplyWall';
 import {
-  buildAnswerSubmissionFingerprint,
   buildCommentEditSubmissionFingerprint,
   buildCommentSubmissionFingerprint,
   buildPostEditSubmissionFingerprint,
@@ -90,6 +91,7 @@ import styles from './PublicForumApp.module.css';
 
 type RootCommentSort = 'newest' | 'hottest' | null;
 const COMMENT_NAVIGATION_CHILD_PAGE_SIZE = 5;
+const ANSWER_PAGE_SIZE = 10;
 const QUICK_REPLY_SECTION_ID = 'public-forum-quick-replies';
 const COMMENT_SECTION_ID = 'public-forum-comments';
 
@@ -115,6 +117,9 @@ const buildRootCommentIdSet = (rootComments: CommentNode[]): Set<string> => (
 export const PublicForumDetail = ({
   postId,
   commentId,
+  answerPublicId,
+  answerPage: answerPageIndex = 1,
+  answerSort = 'default',
   intent,
   sourceState,
   displayTimeZone,
@@ -123,6 +128,7 @@ export const PublicForumDetail = ({
   onBack,
   isAnswerEditorUploading,
   onAnswerEditorUploadingChange,
+  onAnswerStateChange,
   onOpenAuthorProfile,
   onOpenTag,
   onOpenQuestion,
@@ -138,6 +144,10 @@ export const PublicForumDetail = ({
   const [post, setPost] = useState<PostDetail | null>(null);
   const [comments, setComments] = useState<CommentNode[]>([]);
   const [quickReplies, setQuickReplies] = useState<PostQuickReply[]>([]);
+  const [answerPageData, setAnswerPageData] = useState<PostAnswerPageVo | null>(null);
+  const [loadingAnswers, setLoadingAnswers] = useState(false);
+  const [answerError, setAnswerError] = useState<string | null>(null);
+  const [answerTargetUnavailable, setAnswerTargetUnavailable] = useState(false);
   const [postReactionItems, setPostReactionItems] = useState<ReactionSummaryVo[]>([]);
   const [quickReplyTotal, setQuickReplyTotal] = useState(0);
   const [commentTotal, setCommentTotal] = useState(0);
@@ -174,7 +184,10 @@ export const PublicForumDetail = ({
     targetId: LongId;
   } | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [answerReloadToken, setAnswerReloadToken] = useState(0);
   const requestIdRef = useRef(0);
+  const answerRequestIdRef = useRef(0);
+  const handledAnswerTargetRef = useRef<string | null>(null);
   const commentAnchorMapRef = useRef(new Map<string, HTMLDivElement>());
   const handledCommentNavigationRef = useRef<string | null>(null);
   const handledAuthorIntentRef = useRef<string | null>(null);
@@ -185,7 +198,6 @@ export const PublicForumDetail = ({
   const countedRootCommentIdsRef = useRef(new Set<string>());
   const deletedRootCommentIdsRef = useRef(new Set<string>());
   const commentSubmissionRef = useRef<ClientSubmissionState | null>(null);
-  const answerSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const postEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentEditSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const commentPageSize = 20;
@@ -565,6 +577,126 @@ export const PublicForumDetail = ({
     syncCountedRootComments,
     syncPostCommentCount,
     t
+  ]);
+
+  useEffect(() => {
+    handledAnswerTargetRef.current = null;
+    setAnswerTargetUnavailable(false);
+  }, [answerPublicId]);
+
+  useEffect(() => {
+    if (!post?.voIsQuestion) {
+      setAnswerPageData(null);
+      setAnswerError(null);
+      setLoadingAnswers(false);
+      setAnswerTargetUnavailable(false);
+      return;
+    }
+
+    const requestId = ++answerRequestIdRef.current;
+    const postIdentifier = post.voPublicId?.trim() || postId;
+    const safeRequestedPage = Math.max(1, answerPageIndex);
+
+    const requestPage = async (pageIndex: number): Promise<PostAnswerPageVo> => {
+      const response = await getPostAnswerPage({
+        postIdentifier,
+        pageIndex,
+        pageSize: ANSWER_PAGE_SIZE,
+        sort: answerSort,
+      });
+      if (!response.ok || !response.data) {
+        throw createApiResponseError(response, t('forum.answerLifecycle.loadFailed'));
+      }
+      return response.data;
+    };
+
+    const loadAnswers = async () => {
+      setLoadingAnswers(true);
+      setAnswerError(null);
+      try {
+        const shouldLocateTarget = (
+          Boolean(answerPublicId)
+          && handledAnswerTargetRef.current !== answerPublicId
+        );
+
+        if (shouldLocateTarget && answerPublicId) {
+          let candidatePage = 1;
+          let totalPages = 1;
+          do {
+            const candidate = await requestPage(candidatePage);
+            if (requestId !== answerRequestIdRef.current) {
+              return;
+            }
+            totalPages = Math.max(
+              1,
+              Math.ceil(candidate.voOtherTotal / Math.max(1, candidate.voPageSize)),
+            );
+            const found = (
+              candidate.voAcceptedAnswer?.voPublicId === answerPublicId
+              || candidate.voItems.some((answer) => answer.voPublicId === answerPublicId)
+            );
+            if (found) {
+              handledAnswerTargetRef.current = answerPublicId;
+              setAnswerTargetUnavailable(false);
+              setAnswerPageData(candidate);
+              if (candidatePage !== safeRequestedPage) {
+                onAnswerStateChange(candidatePage, answerSort, true);
+              }
+              return;
+            }
+            candidatePage += 1;
+          } while (candidatePage <= totalPages);
+
+          handledAnswerTargetRef.current = answerPublicId;
+          setAnswerTargetUnavailable(true);
+        }
+
+        let page = await requestPage(safeRequestedPage);
+        if (requestId !== answerRequestIdRef.current) {
+          return;
+        }
+        const totalPages = Math.max(
+          1,
+          Math.ceil(page.voOtherTotal / Math.max(1, page.voPageSize)),
+        );
+        if (safeRequestedPage > totalPages) {
+          page = await requestPage(totalPages);
+          if (requestId !== answerRequestIdRef.current) {
+            return;
+          }
+          onAnswerStateChange(totalPages, answerSort, true);
+        }
+        setAnswerPageData(page);
+      } catch (answerLoadError) {
+        if (requestId !== answerRequestIdRef.current) {
+          return;
+        }
+        setAnswerPageData(null);
+        setAnswerError(
+          answerLoadError instanceof Error
+            ? answerLoadError.message
+            : t('forum.answerLifecycle.loadFailed'),
+        );
+      } finally {
+        if (requestId === answerRequestIdRef.current) {
+          setLoadingAnswers(false);
+        }
+      }
+    };
+
+    void loadAnswers();
+  }, [
+    answerPageIndex,
+    answerPublicId,
+    answerReloadToken,
+    answerSort,
+    currentUserId,
+    isAuthenticated,
+    onAnswerStateChange,
+    post?.voIsQuestion,
+    post?.voPublicId,
+    postId,
+    t,
   ]);
 
   useEffect(() => {
@@ -1118,68 +1250,6 @@ export const PublicForumDetail = ({
     post?.voId,
   ]);
 
-  const handleAnswerQuestion = useCallback(async (content: string) => {
-    const normalizedContent = content.trim();
-    if (!normalizedContent || !post?.voId) {
-      return;
-    }
-
-    if (!post.voIsQuestion) {
-      throw new Error(t('forum.public.answerQuestionOnly'));
-    }
-
-    if (!isAuthenticated) {
-      redirectToDetailLogin(answerReturnPath);
-      throw new Error(t('forum.loginRequiredToReact'));
-    }
-
-    const submissionState = createClientSubmissionState(
-      answerSubmissionRef.current,
-      'forum-answer',
-      buildAnswerSubmissionFingerprint(post.voId, normalizedContent)
-    );
-    answerSubmissionRef.current = submissionState;
-
-    try {
-      await answerQuestion({
-        postId: post.voId,
-        content: normalizedContent,
-        clientSubmissionId: submissionState.clientSubmissionId
-      }, t);
-      answerSubmissionRef.current = null;
-      toast.success(t('forum.public.answerPublished'));
-      setReloadToken((current) => current + 1);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t('forum.public.answerFailed'));
-      throw error;
-    }
-  }, [answerReturnPath, isAuthenticated, post?.voId, post?.voIsQuestion, redirectToDetailLogin, t]);
-
-  const handleAcceptAnswer = useCallback(async (answerId: LongId) => {
-    if (!post?.voId) {
-      return;
-    }
-
-    if (!isAuthenticated) {
-      redirectToDetailLogin(answerReturnPath);
-      throw new Error(t('forum.loginRequiredToReact'));
-    }
-
-    try {
-      await acceptQuestionAnswer({
-        postId: post.voId,
-        answerId
-      }, t);
-      toast.success(t('forum.public.answerAccepted'));
-      setReloadToken((current) => current + 1);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error(message || t('forum.public.answerAcceptFailed'));
-      throw error;
-    }
-  }, [answerReturnPath, isAuthenticated, post?.voId, redirectToDetailLogin, t]);
-
   const handleSavePostEdit = useCallback(async (
     targetPostId: LongId,
     title: string,
@@ -1584,10 +1654,30 @@ export const PublicForumDetail = ({
               currentUserId={currentUserId || '0'}
               showSectionTitle={false}
               postTitleHeadingLevel={1}
-              onAnswerQuestion={handleAnswerQuestion}
-              onAnswerEditorUploadingChange={onAnswerEditorUploadingChange}
-              onAcceptAnswer={handleAcceptAnswer}
-              answerAutoFocusKey={answerAutoFocusKey}
+              questionAnswerSection={post?.voIsQuestion ? (
+                <PostAnswerLifecycleSection
+                  postIdentifier={getForumPostRouteIdentifier(post)}
+                  answerPage={answerPageData}
+                  loading={loadingAnswers}
+                  error={answerError}
+                  sort={answerSort}
+                  pageIndex={Math.max(1, answerPageIndex)}
+                  targetAnswerPublicId={answerPublicId}
+                  targetUnavailable={answerTargetUnavailable}
+                  isAuthenticated={isAuthenticated}
+                  isQuestionAuthor={isCurrentUserAuthor}
+                  currentUserId={currentUserId || '0'}
+                  displayTimeZone={displayTimeZone}
+                  autoFocusKey={answerAutoFocusKey}
+                  onRequireLogin={() => redirectToDetailLogin(answerReturnPath)}
+                  onPageChange={(nextPage) => onAnswerStateChange(nextPage, answerSort)}
+                  onSortChange={(nextSort) => onAnswerStateChange(1, nextSort)}
+                  onReload={() => setAnswerReloadToken((current) => current + 1)}
+                  onAuthorClick={(userId) => handleOpenAuthorProfileWhileEditorIdle(String(userId))}
+                  onReport={(targetId) => handleOpenReport('PostAnswer', targetId)}
+                  onUploadingChange={onAnswerEditorUploadingChange}
+                />
+              ) : undefined}
               onEdit={() => void handleEditPostAction()}
               onViewHistory={() => void handleViewPostHistory()}
               onAuthorClick={(userId) => handleOpenAuthorProfileWhileEditorIdle(String(userId))}

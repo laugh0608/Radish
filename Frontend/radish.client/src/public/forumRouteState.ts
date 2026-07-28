@@ -1,3 +1,5 @@
+import type { PostAnswerSort } from '@radish/http';
+
 export type PublicListSort = 'newest' | 'hottest';
 export type PublicForumRouteSort = 'newest' | 'hottest' | 'pending' | 'answers' | 'votes' | 'deadline';
 export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
@@ -38,6 +40,9 @@ export interface PublicForumDetailRoute {
   postId: string;
   postPublicId?: string;
   commentId?: string;
+  answerPublicId?: string;
+  answerPage?: number;
+  answerSort?: PostAnswerSort;
   intent?: PublicForumDetailIntent;
 }
 
@@ -122,6 +127,11 @@ function normalizePostPublicId(value: string | undefined): string | undefined {
 
   const normalized = value.trim().toLowerCase();
   return /^pst_[a-f0-9]{32}$/.test(normalized) ? normalized : undefined;
+}
+
+function normalizeAnswerPublicId(value: string | null | undefined): string | undefined {
+  const normalized = value?.trim().toLowerCase();
+  return normalized && /^ans_[a-f0-9]{32}$/.test(normalized) ? normalized : undefined;
 }
 
 function normalizeDetailIntent(value: string | null): PublicForumDetailIntent | undefined {
@@ -269,12 +279,18 @@ export function parsePublicForumRoute(pathname: string, search: string): PublicF
   if (postId || postPublicId) {
     const params = new URLSearchParams(search);
     const commentId = normalizePositiveIntegerString(params.get('commentId') ?? undefined);
+    const answerPublicId = normalizeAnswerPublicId(params.get('answer'));
+    const answerPage = normalizePositiveInteger(params.get('answerPage') ?? undefined);
+    const answerSort = params.get('answerSort') === 'latest' ? 'latest' : undefined;
     const intent = normalizeDetailIntent(params.get('intent'));
     return {
       kind: 'detail',
       postId: postId ?? postPublicId!,
       ...(postPublicId ? { postPublicId } : {}),
       ...(commentId ? { commentId } : {}),
+      ...(answerPublicId ? { answerPublicId } : {}),
+      ...(answerPage && answerPage > 1 ? { answerPage } : {}),
+      ...(answerSort ? { answerSort } : {}),
       ...(intent ? { intent } : {})
     };
   }
@@ -297,6 +313,15 @@ export function buildPublicForumPath(route: PublicForumRoute): string {
     const search = new URLSearchParams();
     if (route.commentId) {
       search.set('commentId', route.commentId);
+    }
+    if (route.answerPublicId) {
+      search.set('answer', route.answerPublicId);
+    }
+    if (route.answerPage && route.answerPage > 1) {
+      search.set('answerPage', String(route.answerPage));
+    }
+    if (route.answerSort === 'latest') {
+      search.set('answerSort', 'latest');
     }
     if (route.intent) {
       search.set('intent', route.intent);

@@ -46,6 +46,7 @@ export const zhCore = {
   'common.confirm': '确认',
   'common.save': '保存',
   'common.delete': '删除',
+  'common.edit': '编辑',
   'common.show': '显示',
   'common.hide': '隐藏',
   'common.retry': '重试',

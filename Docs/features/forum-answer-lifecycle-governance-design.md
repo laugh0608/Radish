@@ -1,8 +1,8 @@
 # F4-O 论坛问答回答生命周期与治理闭环
 
-> **状态**：F4-O-A/B 已完成；等待批准进入 F4-O-C Pencil 与正式 Web
+> **状态**：F4-O-A/B/C 已完成；等待批准进入 F4-O-D Gateway 成组验收
 >
-> **复核日期**：2026-07-27（Asia/Shanghai）
+> **复核日期**：2026-07-28（Asia/Shanghai）
 >
 > **适用范围**：正式 Web 论坛问答、Main / Message 数据库、API、`@radish/http` 和 `radish.client`
 >
@@ -14,7 +14,7 @@ F4-O 选择“论坛问答回答生命周期与治理闭环”为当前唯一功
 
 F4-O-A 审计时，问答已经能发布问题、提交回答和采纳答案，也具备提交意图去重与正式 Web 入口；但 `PostAnswer` 仍是早期 MVP 内容对象：所有回答随帖子详情一次性加载，写入继续寄居 `PostService`，没有独立附件类型、公开标识、编辑 / 删除、版本恢复、举报治理、可靠通知和采纳变更审计。继续增加排序、奖励或独立问答页会放大这层权威缺口。
 
-F4-O-B 已完成上述服务端权威补齐。当前剩余工作属于 B -> C 外部契约复核、Pencil、正式 Web 和 D 批运行态验收，不应再把本节的 A 批历史基线误读为当前实现状态。
+F4-O-B 已完成服务端权威补齐，F4-O-C 已完成外部标识收敛、PC / mobile Pencil 和正式 Web 接入。当前剩余工作是 D 批 strict verify 与 Gateway 成组验收，不应再把本节的 A 批历史基线误读为当前实现状态。
 
 核心裁决如下：
 
@@ -337,7 +337,7 @@ F4-O-B 实际落地的 Controller / `@radish/http` 契约如下。Controller 继
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | `GET` | `/api/v1/Question/Page?postIdentifier=...&pageIndex=1&pageSize=20&sort=default` | 回答分页，同时返回问题解决态与采纳摘要 |
-| `POST` | `/api/v1/Question/Answer` | 创建回答；当前兼容请求仍提交 `postId` |
+| `POST` | `/api/v1/Question/Answer` | 创建回答；新客户端提交 `postIdentifier` |
 | `POST` | `/api/v1/Question/Edit` | 按 `answerPublicId` CAS 编辑回答 |
 | `POST` | `/api/v1/Question/Delete` | 按 `answerPublicId` 幂等软删除 |
 | `GET` | `/api/v1/Question/Revisions?answerPublicId=...` | 受权版本列表 |
@@ -348,8 +348,8 @@ F4-O-B 实际落地的 Controller / `@radish/http` 契约如下。Controller 继
 
 DTO 规则：
 
-- 分页、采纳和撤销提交 `postIdentifier`；回答编辑、删除、历史和恢复提交 `answerPublicId`。
-- B 批为兼容既有回答入口，`Answer` 暂时继续使用 `CreateAnswerDto.PostId`。C 批接入前必须明确收敛到 `postIdentifier`，或把该 LongId 严格隔离在既有详情内部状态，不能扩散为新 URL、通知或页面持久化契约。
+- 分页、创建、采纳和撤销提交 `postIdentifier`；回答编辑、删除、历史和恢复提交 `answerPublicId`。
+- F4-O-C 已把 `CreatePostAnswerRequest` 收敛到 `postIdentifier`。`CreateAnswerDto.PostId` 只保留在 Controller 的旧客户端兼容边界，新 `@radish/http`、正式页面、URL、通知和页面持久化状态均不再生成该 LongId 字段。
 - 创建 / 编辑 / 恢复 / 采纳均携带 `clientSubmissionId`。
 - 编辑 / 删除 / 恢复携带 `expectedContentRevision`。
 - 采纳 / 替换 / 撤销携带 `expectedAcceptanceRevision`。
@@ -362,10 +362,11 @@ DTO 规则：
 
 ### 11.1 设计源
 
-先更新 `public-web-unified-experience.pen`：
+`public-web-unified-experience.pen` 已完成以下更新：
 
-- `P04 / P11`：回答分页、已采纳摘要、回答锚点和动作层级；
-- 新增 PC / mobile 回答编辑、历史、删除确认、采纳替换 / 撤销与目标不可用状态画板；
+- `P04 / P11`：回答区固定为问题状态、已采纳回答、其他回答分页、composer 和帖子讨论区，并补回答锚点与动作层级；
+- `P26 - PC Answer Lifecycle States`：回答编辑、历史、删除确认、采纳 / 替换 / 撤销、CAS 冲突与目标不可用状态；
+- `P27 - Mobile Answer Bottom Sheet States`：移动动作 Bottom Sheet、历史恢复、并发冲突与治理不可用状态；
 - 治理工作台复用既有 Console Case 画板，只补 `PostAnswer` 目标摘要和定位。
 
 ### 11.2 页面
@@ -449,11 +450,13 @@ B 批不安装或更新依赖，不修改 Pencil 和 `radish.client` 页面；�
 
 ### F4-O-C：Pencil 与正式 Web
 
-- 先收口 B -> C 外部标识契约，避免新页面继续扩大兼容 LongId；
-- 先更新 PC / mobile 权威 Pencil；
-- 实现回答分页、作者生命周期、采纳变更、历史恢复、举报和通知定位；
-- 覆盖四主题、双语、键盘、焦点、窄屏、长正文、附件与冲突态；
-- 正式 Web 与 WebOS 只复用共享组件，不建设第二套业务。
+- **完成状态（2026-07-28）**：B -> C 外部标识已收敛，PC / mobile 权威 Pencil 与正式 `/forum/post/:postPublicId` 回答生命周期均已落地；代码侧构建、类型检查和定向契约 / 路由 / 通知 / 控制器 / 仓储回归通过，尚未启动服务或执行 Gateway smoke。
+- 新页面只通过 `postIdentifier + answerPublicId` 读写和定位；Controller 内部保留旧 `PostId` 兼容解析，不向外扩散。
+- 服务端分页把已采纳回答独立返回并从普通分页排除，页面保持一次展示、受控页码 / 排序与 Back / Forward 状态。
+- 共享 `PostAnswerLifecycleSection` 覆盖创建、编辑、历史、恢复、软删除、举报、采纳 / 替换 / 撤销、CAS 冲突、附件上传锁和目标不可用。
+- 通知携带有效 `answerPublicId` 时直接进入正式 Web 精确定位；客户端按页查找、一次高亮，失效后停留帖子并显示通用状态。
+- 四主题使用语义 token，`zh / en` 独立资源；PC Dialog、mobile Bottom Sheet、键盘焦点、reduced-motion、窄屏、长正文和附件状态已纳入实现。
+- WebOS 仅保留既有兼容入口；本批不增加 WebOS 专用业务实现，后续如迁移必须复用同一共享组件。
 
 ### F4-O-D：Gateway 成组验收
 

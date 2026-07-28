@@ -328,6 +328,22 @@ test('parsePublicForumRoute 应解析公开帖子详情评论定位与参与意�
   });
 });
 
+test('parsePublicForumRoute 应保留回答 PublicId、分页与排序状态', () => {
+  const route = parsePublicForumRoute(
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    '?answer=ANS_0123456789ABCDEF0123456789ABCDEF&answerPage=3&answerSort=latest',
+  );
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    answerPublicId: 'ans_0123456789abcdef0123456789abcdef',
+    answerPage: 3,
+    answerSort: 'latest',
+  });
+});
+
 test('parsePublicForumRoute 应解析公开论坛发帖入口与受控作者态意图', () => {
   assert.deepEqual(parsePublicForumRoute('/forum/compose', '?category=2042219067430928384'), {
     kind: 'compose',
@@ -377,6 +393,16 @@ test('buildPublicForumPath 应稳定回写公开帖子详情 intent 参数', () 
   assert.equal(
     path,
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=2042219067430928385&intent=comment'
+  );
+  assert.equal(
+    buildPublicForumPath({
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      answerPublicId: 'ans_0123456789abcdef0123456789abcdef',
+      answerPage: 3,
+      answerSort: 'latest',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?answer=ans_0123456789abcdef0123456789abcdef&answerPage=3&answerSort=latest',
   );
   assert.equal(
     buildPublicForumPath({

@@ -6,9 +6,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`等待批准进入 F4-O-C Pencil 与正式 Web`
-- **产品下一顺位**：`把已完成的 PostAnswer 服务端生命周期接入 PC / mobile 正式论坛页面`
-- **复核日期**：`2026-07-27`
+- **工程第一顺位**：`等待批准进入 F4-O-D strict verify 与 Gateway 成组验收`
+- **产品下一顺位**：`按多身份 PC / mobile 矩阵验收完整回答生命周期并关闭 F4-O`
+- **复核日期**：`2026-07-28`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
@@ -22,14 +22,16 @@
 - D 批修正了 `reward` 登录返回意图缺失和 Reliable Task camelCase payload 反序列化契约根因；测试数据、运行设置、浏览器、服务和备份均已清理，六库严格 migration verify 通过。
 - [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A/B 批：`PostAnswer` 已具备 PublicId、服务端分页、独立 Revision、附件引用、CAS 编辑 / 删除 / 恢复与采纳事件。
 - F4-O-B 已把回答接入第六类内容治理目标、申诉恢复、Main Reliable Outbox、answer-level 通知定位、`@radish/http` 和 `20260727_015_forum_answer_lifecycle` migration；SQLite 回归与本地开发基线通过，PostgreSQL 条件回归留待具备数据库环境的候选门禁执行。
+- F4-O-C 已完成 B -> C 外部标识收敛：新回答创建只生成 `postIdentifier` 契约，`PostId` 仅留在 Controller 旧客户端兼容边界；已采纳回答独立返回且不在普通分页重复。
+- `P04 / P11 / P26 / P27` 已固定 PC / mobile 回答层级与动作状态；正式论坛已接入分页、作者历史 / 恢复 / 删除、采纳变更、举报、附件、CAS 冲突和 answer-level 通知回访定位，代码侧验证通过，未提前执行 Gateway smoke。
 
-## 明天事项（2026-07-28，F4-O-C，待批准）
+## 下一事项（F4-O-D，待批准）
 
-1. 先完成 B -> C 契约复核：决定回答创建如何从兼容 `PostId` 收敛到 `postIdentifier`，并把 migration strict verify 尚未覆盖的采纳一致性、可见回答数、附件归属和索引检查列入 D 批前门禁。
-2. 更新 PC / mobile 权威 Pencil，固定回答分页、作者动作、采纳变更、历史恢复、举报和通知定位的页面状态。
-3. 在正式 `/forum/post/:postPublicId` 接入回答分页与 `@radish/http` 权威契约，移除页面对一次性全量回答和旧写入入口的依赖。
-4. 实现回答作者与问题所有者动作、Revision 历史 / 恢复、CAS 冲突、治理不可用和 answer-level 回访定位。
-5. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文与附件状态；C 批只做代码侧验证，不提前启动服务或执行 Gateway smoke。
+1. 先补 migration strict verify：唯一索引、采纳指向 / `IsAccepted` 一致性、`AnswerCount` 可见回答重建一致性和历史附件归属。
+2. 重新取得当前任务的服务启动授权，明确启动命令、端口、持续时间和清理方式后再执行 Gateway smoke。
+3. 按匿名、提问者、回答者、第三方、管理员、申诉处理者及被屏蔽双方，成组验收 PC / mobile 创建、分页、编辑、恢复、删除、采纳 / 替换 / 撤销、治理限制 / 恢复和通知定位。
+4. 覆盖四主题、双语、键盘 / 焦点、窄屏、长正文、附件、并发冲突与目标失效；核对 Main / Message / Log / Auth / OpenIddict / Tenant 六库完整性。
+5. 清理测试帖子、回答、Revision、事件、举报、通知、Outbox、附件、浏览器和备份，形成批次验收记录后关闭 F4-O。
 
 ## 当前执行入口
 
@@ -53,7 +55,7 @@
 
 ## 当前不做
 
-- 未获得新一轮明确批准前，不修改 F4-O-C Pencil 或 `radish.client` 正式页面。
+- 未获得新一轮明确批准前，不启动 F4-O-D 服务、不执行 Gateway smoke，也不把 C 批代码侧完成误记为运行态验收通过。
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。

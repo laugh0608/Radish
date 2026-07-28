@@ -422,7 +422,7 @@ export interface ImageUploadOptions {
    * 业务类型
    * @default "General"
    */
-  businessType?: 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document' | 'Wiki' | 'Chat';
+  businessType?: 'General' | 'Post' | 'Comment' | 'PostAnswer' | 'Avatar' | 'Document' | 'Wiki' | 'Chat';
 
   /**
    * 是否生成缩略图
@@ -478,7 +478,7 @@ export interface DocumentUploadOptions {
    * 业务类型
    * @default "Document"
    */
-  businessType?: 'General' | 'Post' | 'Comment' | 'Document' | 'Wiki' | 'Chat';
+  businessType?: 'General' | 'Post' | 'Comment' | 'PostAnswer' | 'Document' | 'Wiki' | 'Chat';
 
   /**
    * 上传进度回调
