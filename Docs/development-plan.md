@@ -8,10 +8,10 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`等待批准进入 F4-O-C Pencil 与正式 Web`
-- **产品下一顺位**：`把 PostAnswer 权威生命周期接入 PC / mobile 正式论坛页面`
+- **工程第一顺位**：`F4-O 已关闭；进入 F4-P-A 候选只读审计`
+- **产品下一顺位**：`裁决下一项直接服务社区主轴的完整功能专题`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
-- **复核日期**：`2026-07-27`
+- **复核日期**：`2026-07-28`
 - **当前结论**：
   - 第二开发阶段完成公开 Web、Flutter Android MVP、Tauri + WebOS 验证与多端裁决；2026-07-12 起纯 Web 成为唯一正式主线，Flutter 条件维护，Tauri 冻结实验。
   - 第三阶段 P3-1 至 P3-11 已完成公开增长基础、PublicId 试点、复访链路、Web-first 信息架构、身份语义、写操作可靠性和发布候选路径验收。
@@ -39,7 +39,7 @@
   - F4-J-D 已完成并关闭：六角色、五类目标、主要申诉状态、五类来源保护恢复、用户状态纠正、Chat 跨库失败重试与双语 PC / mobile 正式路径均已通过；共同根因修复、临时数据清理、六库完整性与严格 migration verify 完成。下一顺位进入 F4-K-A。
   - F4-K 已完成 A-D 批并关闭：Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制、旧字段迁移、正式 Web 和三账号 Gateway 矩阵均已通过；验收共同根因修复、临时数据清理、六库完整性与严格 verify 完成。
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
-  - F4-M 与 F4-N 均已完成 A-D 批并关闭。F4-O-A/B 已完成：Answer PublicId / Revision、附件、分页、CAS、采纳事件、治理申诉、可靠通知、Main migration 与 HTTP 契约已落地；等待批准进入 F4-O-C Pencil 与正式 Web。
+  - F4-M、F4-N 与 F4-O 均已完成 A-D 批并关闭。F4-O 的 Answer PublicId / Revision、附件、分页、CAS、采纳事件、治理申诉、可靠通知、strict migration、正式 Web 与 Gateway 代表矩阵形成闭环；下一步进入 F4-P-A 候选只读审计。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -59,9 +59,9 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-N 均已关闭，F4-O-A/B 已完成，下一顺位等待批准进入 F4-O-C。
+- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-O 均已关闭，下一顺位进入 F4-P-A 候选只读审计。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
-- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B 至 F4-N 已关闭，功能完成线当前停在 F4-O-C 页面批准门。
+- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B 至 F4-O 已关闭，功能完成线当前进入 F4-P 候选裁决。
 - Q4、公开 head、WebOS 和 Flutter 继续按触达范围或真实问题维护，不与正式 Web 功能主线争夺顺位。
 - 主动生产使用数据采集只在计划内功能全部完成、没有其他明确任务、产品进入最终完成体复核且用户确认后重启；不得因旧记录、观察周期或新会话频繁重新排期。
 
@@ -127,7 +127,7 @@ Radish V1 固定为：
 11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成 A-D 批并关闭；Main 唯一真相、关系策略、关注事务、Direct 迁移兼容、通知抑制、正式 Web 和成组验收均已通过。
 12. [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A-D 批并关闭；Main 权威引用、私有默认、动态 ACL、事务同步、令牌、正式 Web、六身份运行态、清理和 SQLite / PostgreSQL 验证均通过。
 13. [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 与 [F4-N 论坛内容赞赏](/features/forum-content-reward)均已完成 A-D 批并关闭。
-14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A/B 批：服务端权威模型、Main migration、治理通知与 HTTP 契约已落地；等待批准进入 C 批 Pencil 与正式 Web。
+14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。下一顺位进入 F4-P-A 候选只读审计。
 
 ## P3-12-F 门禁分层
 

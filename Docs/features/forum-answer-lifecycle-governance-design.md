@@ -1,6 +1,6 @@
 # F4-O 论坛问答回答生命周期与治理闭环
 
-> **状态**：F4-O-A/B/C 已完成，D 批 strict verify 已落地；等待服务启动授权与 Gateway 成组验收
+> **状态**：F4-O A-D 批已完成并关闭；Gateway 代表矩阵、strict verify、清理与完整性复核通过
 >
 > **复核日期**：2026-07-28（Asia/Shanghai）
 >
@@ -14,7 +14,7 @@ F4-O 选择“论坛问答回答生命周期与治理闭环”为当前唯一功
 
 F4-O-A 审计时，问答已经能发布问题、提交回答和采纳答案，也具备提交意图去重与正式 Web 入口；但 `PostAnswer` 仍是早期 MVP 内容对象：所有回答随帖子详情一次性加载，写入继续寄居 `PostService`，没有独立附件类型、公开标识、编辑 / 删除、版本恢复、举报治理、可靠通知和采纳变更审计。继续增加排序、奖励或独立问答页会放大这层权威缺口。
 
-F4-O-B 已完成服务端权威补齐，F4-O-C 已完成外部标识收敛、PC / mobile Pencil 和正式 Web 接入，F4-O-D 已补 strict migration 代码门禁。当前剩余工作是取得服务启动授权并执行 Gateway 成组验收，不应再把本节的 A 批历史基线误读为当前实现状态。
+F4-O-B 已完成服务端权威补齐，F4-O-C 已完成外部标识收敛、PC / mobile Pencil 和正式 Web 接入，F4-O-D 已完成 strict migration、Gateway 代表矩阵、共同根因修正、临时数据清理和六库完整性复核。专题已关闭，不应再把本节的 A 批历史基线误读为当前实现状态。
 
 核心裁决如下：
 
@@ -460,7 +460,7 @@ B 批不安装或更新依赖，不修改 Pencil 和 `radish.client` 页面；�
 
 ### F4-O-D：Gateway 成组验收
 
-- **代码门禁状态（2026-07-28）**：strict migration 与 SQLite 正反向专项回归已完成；尚未启动服务、执行 Gateway smoke 或形成运行态验收结论。
+- **完成状态（2026-07-28）**：strict migration、Gateway PC / mobile 代表矩阵、migration 顺序兼容与正式 Web 回答区唯一所有者修正均已完成；临时数据清理、六库完整性和严格 verify 通过，详见 [F4-O-D 成组验收记录](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)。
 - 重新取得当前任务服务启动授权；
 - 覆盖匿名、提问者、回答者、第三方、管理员、申诉处理者和被屏蔽双方；
 - 验收创建、分页、编辑、恢复、删除、采纳 / 替换 / 撤销、治理限制 / 恢复和通知定位；

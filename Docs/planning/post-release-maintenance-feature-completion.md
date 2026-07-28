@@ -130,7 +130,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 与 [F4-N 论坛内容赞赏](/features/forum-content-reward)均已完成 A-D 批并关闭。F4-N 的 Main 原子资产事务、过期幂等恢复、Log 幂等审计投影、逐笔屏蔽抑制通知、migration、Pencil、正式 Web、多身份 Gateway 矩阵与清理形成闭环。
 
-[F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A/B 批：回答已具备 PublicId、服务端分页、独立 Revision、附件归属、CAS 编辑 / 删除 / 恢复、采纳事件、治理申诉、可靠通知与 Main migration；等待批准进入 F4-O-C Pencil 与正式 Web。
+[F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭：回答 PublicId、服务端分页、独立 Revision、附件归属、CAS、采纳事件、治理申诉、可靠通知、strict migration、正式 Web 与 Gateway 代表矩阵形成闭环。下一步进入 F4-P-A 候选只读审计，裁决前不直接编码。
 
 ### 最终收尾：生产使用证据采集（冻结）
 
