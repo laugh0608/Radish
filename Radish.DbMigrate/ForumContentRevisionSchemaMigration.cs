@@ -544,9 +544,9 @@ internal sealed class ForumContentRevisionSchemaMigration : ISchemaMigration
         }
 
         var attachments = db.Queryable<Attachment>().ToList().ToDictionary(item => item.Id);
-        var answers = db.DbMaintenance.IsAnyTable(nameof(PostAnswer), false)
-            ? db.Queryable<PostAnswer>().ToList().ToDictionary(item => item.Id)
-            : new Dictionary<long, PostAnswer>();
+        var answerIds = db.DbMaintenance.IsAnyTable(nameof(PostAnswer), false)
+            ? db.Queryable<PostAnswer>().Select(item => item.Id).ToList().ToHashSet()
+            : [];
         var answerRevisions = db.DbMaintenance.IsAnyTable(nameof(PostAnswerContentRevision), false)
             ? db.Queryable<PostAnswerContentRevision>().ToList().ToDictionary(item => item.Id)
             : new Dictionary<long, PostAnswerContentRevision>();
@@ -568,7 +568,7 @@ internal sealed class ForumContentRevisionSchemaMigration : ISchemaMigration
                     answerRevisions.TryGetValue(relation.RevisionId, out var answerRevision) &&
                     answerRevision.AnswerId == relation.TargetId &&
                     answerRevision.TenantId == relation.TenantId &&
-                    answers.ContainsKey(relation.TargetId),
+                    answerIds.Contains(relation.TargetId),
                 _ => false
             };
             if (!revisionExists)
