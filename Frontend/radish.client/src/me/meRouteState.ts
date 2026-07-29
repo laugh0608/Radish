@@ -9,7 +9,7 @@ export const ME_REPORTS_PATH = '/me/reports';
 export const ME_APPEALS_PATH = '/me/appeals';
 export const ME_BLOCKED_PATH = '/me/blocked';
 
-export type MeContentTab = 'posts' | 'comments' | 'quick-replies';
+export type MeContentTab = 'posts' | 'comments' | 'quick-replies' | 'bookmarks';
 export type MeAttachmentBusinessType = 'All' | 'General' | 'Post' | 'Comment' | 'Avatar' | 'Document';
 
 export interface MeDashboardRoute {
@@ -76,7 +76,7 @@ export type MeRoute =
   | MeAppealsRoute
   | MeBlockedRoute;
 
-const CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies']);
+const CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies', 'bookmarks']);
 const ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
   'All',
   'General',

@@ -12,6 +12,7 @@ import { enDiscover } from './en/discover';
 import { enDocs } from './en/docs';
 import { enForumRevision } from './en/forumRevision';
 import { enForumAnswer } from './en/forumAnswer';
+import { enPostBookmark } from './en/postBookmark';
 import { enShell } from './en/shell';
 import { zhAccount } from './zh/account';
 import { zhChat } from './zh/chat';
@@ -23,11 +24,12 @@ import { zhDiscover } from './zh/discover';
 import { zhDocs } from './zh/docs';
 import { zhForumRevision } from './zh/forumRevision';
 import { zhForumAnswer } from './zh/forumAnswer';
+import { zhPostBookmark } from './zh/postBookmark';
 import { zhShell } from './zh/shell';
 
 export const clientTranslationDomains = {
-  en: [enCore, enShell, welcomeEn, welcomeOpenSourceEn, enDiscover, enCommunity, enForumRevision, enForumAnswer, enContentReward, enChat, enAccount, enCommerce, enDocs],
-  zh: [zhCore, zhShell, welcomeZh, welcomeOpenSourceZh, zhDiscover, zhCommunity, zhForumRevision, zhForumAnswer, zhContentReward, zhChat, zhAccount, zhCommerce, zhDocs],
+  en: [enCore, enShell, welcomeEn, welcomeOpenSourceEn, enDiscover, enCommunity, enForumRevision, enForumAnswer, enPostBookmark, enContentReward, enChat, enAccount, enCommerce, enDocs],
+  zh: [zhCore, zhShell, welcomeZh, welcomeOpenSourceZh, zhDiscover, zhCommunity, zhForumRevision, zhForumAnswer, zhPostBookmark, zhContentReward, zhChat, zhAccount, zhCommerce, zhDocs],
 } as const;
 
 export const resources = {
@@ -41,6 +43,7 @@ export const resources = {
       ...enCommunity,
       ...enForumRevision,
       ...enForumAnswer,
+      ...enPostBookmark,
       ...enContentReward,
       ...enChat,
       ...enAccount,
@@ -58,6 +61,7 @@ export const resources = {
       ...zhCommunity,
       ...zhForumRevision,
       ...zhForumAnswer,
+      ...zhPostBookmark,
       ...zhContentReward,
       ...zhChat,
       ...zhAccount,

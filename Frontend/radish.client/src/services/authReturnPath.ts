@@ -27,7 +27,7 @@ const AUTH_RETURN_PATH_STORAGE_KEY = 'radish:auth:return-path';
 const AUTH_RETURN_PATH_BASE_URL = 'https://radish.local';
 const NOTIFICATIONS_RETURN_PATH = '/notifications';
 const CIRCLE_RETURN_TABS = new Set(['feed', 'following', 'followers']);
-const ME_CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies']);
+const ME_CONTENT_TABS = new Set<MeContentTab>(['posts', 'comments', 'quick-replies', 'bookmarks']);
 const ME_ATTACHMENT_BUSINESS_TYPES = new Set<MeAttachmentBusinessType>([
   'All',
   'General',
@@ -48,7 +48,14 @@ interface AuthReturnLocation {
 }
 
 export type CircleReturnTab = 'feed' | 'following' | 'followers';
-export type PublicForumPostReturnIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history' | 'reward';
+export type PublicForumPostReturnIntent =
+  | 'comment'
+  | 'quickReply'
+  | 'answer'
+  | 'edit'
+  | 'history'
+  | 'reward'
+  | 'bookmark';
 
 function getSessionStorage(): Storage | null {
   if (typeof window === 'undefined') {
@@ -239,6 +246,7 @@ function normalizePublicForumPostReturnPath(url: URL, normalizedPathname: string
     && intent !== 'edit'
     && intent !== 'history'
     && intent !== 'reward'
+    && intent !== 'bookmark'
   ) {
     return null;
   }
@@ -995,6 +1003,7 @@ export function buildPublicForumPostReturnPath(target: {
     && target.intent !== 'edit'
     && target.intent !== 'history'
     && target.intent !== 'reward'
+    && target.intent !== 'bookmark'
   ) {
     return null;
   }

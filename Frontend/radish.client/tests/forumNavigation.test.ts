@@ -318,6 +318,24 @@ test('公开论坛路由应支持发帖入口与作者态详情 intent', () => {
     buildPublicForumPath({ kind: 'detail', postId: '2042219067430928384', intent: 'edit' }),
     '/forum/post/2042219067430928384?intent=edit',
   );
+  assert.deepEqual(
+    parsePublicForumRoute('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f', '?intent=bookmark'),
+    {
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      intent: 'bookmark',
+    },
+  );
+  assert.equal(
+    buildPublicForumPath({
+      kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      intent: 'bookmark',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=bookmark',
+  );
 });
 
 test('buildPublicForumPath 应优先使用帖子 PublicId 回写公开阅读直链', () => {

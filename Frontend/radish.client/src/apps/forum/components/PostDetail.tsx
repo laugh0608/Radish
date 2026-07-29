@@ -39,6 +39,9 @@ interface PostDetailProps {
   postTitleHeadingLevel?: PostTitleHeadingLevel;
   isLiked?: boolean;
   onLike?: (postId: LongId) => void;
+  isBookmarked?: boolean;
+  bookmarkLoading?: boolean;
+  onSetBookmarkState?: (isBookmarked: boolean) => Promise<void> | void;
   onVotePoll?: (optionId: number) => Promise<void>;
   onClosePoll?: () => Promise<void>;
   onDrawLottery?: () => Promise<void>;
@@ -113,6 +116,9 @@ export const PostDetail = ({
   postTitleHeadingLevel = 4,
   isLiked = false,
   onLike,
+  isBookmarked = false,
+  bookmarkLoading = false,
+  onSetBookmarkState,
   onVotePoll,
   onClosePoll,
   onDrawLottery,
@@ -999,6 +1005,45 @@ export const PostDetail = ({
           <span className={styles.commentCount}>
             💬 {t('forum.postDetail.commentCount', { count: post.voCommentCount || 0 })}
           </span>
+          {!isReadOnly && onSetBookmarkState ? (
+            <button
+              type="button"
+              className={`${styles.bookmarkButton} ${isBookmarked ? styles.bookmarked : ''}`}
+              onClick={() => {
+                void onSetBookmarkState(!isBookmarked);
+              }}
+              disabled={bookmarkLoading}
+              aria-pressed={isBookmarked}
+              aria-busy={bookmarkLoading}
+              title={bookmarkLoading
+                ? t('forum.postDetail.bookmark.loading')
+                : !isAuthenticated
+                  ? t('forum.postDetail.bookmark.login')
+                  : isBookmarked
+                    ? t('forum.postDetail.bookmark.remove')
+                    : t('forum.postDetail.bookmark.add')}
+            >
+              <Icon
+                icon={isBookmarked ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
+                size={18}
+              />
+              <span>
+                {bookmarkLoading
+                  ? t('forum.postDetail.bookmark.loading')
+                  : isBookmarked
+                    ? t('forum.postDetail.bookmark.bookmarked')
+                    : t('forum.postDetail.bookmark.add')}
+              </span>
+              <span className={styles.bookmarkCount}>
+                {post.voCollectCount ?? 0}
+              </span>
+            </button>
+          ) : (
+            <span className={styles.commentCount}>
+              <Icon icon="mdi:bookmark-outline" size={16} />
+              {post.voCollectCount ?? 0}
+            </span>
+          )}
 
           {!isReadOnly && !!onReport && !isAuthor && (
             <button

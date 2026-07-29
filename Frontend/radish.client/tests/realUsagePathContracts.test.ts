@@ -225,6 +225,12 @@ test('P3-10 公开论坛登录回流只接受受控发帖、参与和作者态�
   });
   assert.equal(editReturnPath, `/forum/post/${postPublicId}?intent=edit`);
   assert.equal(normalizeAuthReturnPath(editReturnPath), editReturnPath);
+  const bookmarkReturnPath = buildPublicForumPostReturnPath({
+    postPublicId,
+    intent: 'bookmark',
+  });
+  assert.equal(bookmarkReturnPath, `/forum/post/${postPublicId}?intent=bookmark`);
+  assert.equal(normalizeAuthReturnPath(bookmarkReturnPath), bookmarkReturnPath);
   const composeReturnPath = buildPublicForumComposeReturnPath({ categoryId: productId });
   assert.equal(composeReturnPath, `/forum/compose?category=${productId}`);
   assert.equal(normalizeAuthReturnPath(composeReturnPath), composeReturnPath);

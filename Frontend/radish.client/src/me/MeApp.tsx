@@ -6,6 +6,7 @@ import type { MyAttachmentItem } from '@/api/attachment';
 import { coinApi, type CoinTransaction, type UserBalance } from '@/api/coin';
 import { experienceApi, type ExperienceData, type ExpTransactionData } from '@/api/experience';
 import type { UserPostQuickReply } from '@/api/forum';
+import type { UserPostBookmarkVo } from '@/api/postBookmark';
 import { getMyPet, type PetProfile } from '@/api/pet';
 import {
   getMyBrowseHistory,
@@ -80,6 +81,9 @@ const UserCommentList = lazy(() =>
 );
 const UserQuickReplyList = lazy(() =>
   import('@/apps/profile/components/UserQuickReplyList').then((module) => ({ default: module.UserQuickReplyList }))
+);
+const UserPostBookmarkList = lazy(() =>
+  import('./UserPostBookmarkList').then((module) => ({ default: module.UserPostBookmarkList }))
 );
 const UserBrowseHistoryList = lazy(() =>
   import('@/apps/profile/components/UserBrowseHistoryList').then((module) => ({ default: module.UserBrowseHistoryList }))
@@ -160,6 +164,7 @@ const meRouteDescriptor: PublicRouteDescriptor = {
 
 const contentTabs: Array<{ tab: MeContentTab; labelKey: string }> = [
   { tab: 'posts', labelKey: 'me.content.tab.posts' },
+  { tab: 'bookmarks', labelKey: 'me.content.tab.bookmarks' },
   { tab: 'comments', labelKey: 'me.content.tab.comments' },
   { tab: 'quick-replies', labelKey: 'me.content.tab.quickReplies' },
 ];
@@ -271,6 +276,14 @@ function buildForumDetailHref(postId: LongId, postPublicId?: string | null, comm
     postId: normalizedPublicId || normalizedPostId,
     ...(normalizedPublicId ? { postPublicId: normalizedPublicId } : {}),
     ...(commentId ? { commentId: String(commentId) } : {})
+  });
+}
+
+function buildBookmarkedPostHref(postPublicId: string): string {
+  return buildPublicForumPath({
+    kind: 'detail',
+    postId: postPublicId,
+    postPublicId,
   });
 }
 
@@ -952,6 +965,47 @@ export const MeApp = () => {
               t('me.preview.views', { count: firstItem.voViewCount }),
               t('me.preview.likes', { count: firstItem.voLikeCount }),
               t('me.preview.comments', { count: firstItem.voCommentCount }),
+            ],
+          } : null;
+          setContentContext({ count: items.length, preview });
+        }}
+      />
+    ) : route.tab === 'bookmarks' ? (
+      <UserPostBookmarkList
+        displayTimeZone={displayTimeZone}
+        page={route.page}
+        onPageChange={(page) => navigateToMeRoute({ ...route, page })}
+        getPostHref={buildBookmarkedPostHref}
+        onPostLinkClick={(event, href) => rememberSourceForPublicLink(event, href)}
+        onItemsLoaded={(items: UserPostBookmarkVo[]) => {
+          const firstItem = items[0];
+          const isAvailable = firstItem?.voTargetStatus === 'Available'
+            && Boolean(firstItem.voPostPublicId);
+          const preview: MeSubPagePreview | null = firstItem ? {
+            icon: isAvailable ? 'mdi:bookmark-check-outline' : 'mdi:file-hidden',
+            badge: activeContentTabLabel,
+            title: isAvailable
+              ? firstItem.voTitle?.trim() || t('me.bookmarks.untitled')
+              : t('me.bookmarks.unavailableTitle'),
+            description: isAvailable
+              ? truncatePreviewText(firstItem.voSummary, t('me.preview.noSummary'))
+              : t('me.bookmarks.unavailableDescription'),
+            meta: formatDisplayDateTime(firstItem.voBookmarkedAt),
+            href: isAvailable
+              ? buildBookmarkedPostHref(firstItem.voPostPublicId!)
+              : null,
+            rememberSource: isAvailable,
+            actionLabel: isAvailable ? t('me.preview.openPublicDetail') : undefined,
+            stats: [
+              isAvailable
+                ? t('me.bookmarks.previewAvailable')
+                : t('me.bookmarks.previewUnavailable'),
+              ...(isAvailable
+                ? [
+                    t('me.preview.views', { count: firstItem.voViewCount ?? 0 }),
+                    t('me.preview.likes', { count: firstItem.voLikeCount ?? 0 }),
+                  ]
+                : []),
             ],
           } : null;
           setContentContext({ count: items.length, preview });

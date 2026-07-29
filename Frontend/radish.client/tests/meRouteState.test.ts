@@ -25,6 +25,11 @@ test('parseMeRoute 应解析我的状态和资产正式 Web 路由', () => {
     tab: 'comments',
     page: 3,
   });
+  assert.deepEqual(parseMeRoute('/me/content', '?tab=bookmarks&page=2'), {
+    kind: 'content',
+    tab: 'bookmarks',
+    page: 2,
+  });
   assert.deepEqual(parseMeRoute('/me/content', '?tab=unknown&page=0'), {
     kind: 'content',
     tab: 'posts',
@@ -89,6 +94,7 @@ test('buildMePath 应稳定回写我的状态和资产正式 Web 路径', () => 
   assert.equal(buildMePath({ kind: 'assets' }), '/me/assets');
   assert.equal(buildMePath({ kind: 'assets-transactions' }), '/me/assets/transactions');
   assert.equal(buildMePath({ kind: 'content', tab: 'posts', page: 1 }), '/me/content');
+  assert.equal(buildMePath({ kind: 'content', tab: 'bookmarks', page: 1 }), '/me/content?tab=bookmarks');
   assert.equal(buildMePath({ kind: 'content', tab: 'quick-replies', page: 2 }), '/me/content?tab=quick-replies&page=2');
   assert.equal(buildMePath({ kind: 'history', page: 1 }), '/me/history');
   assert.equal(buildMePath({ kind: 'history', page: 3 }), '/me/history?page=3');

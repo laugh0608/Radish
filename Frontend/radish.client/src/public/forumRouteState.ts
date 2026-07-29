@@ -3,7 +3,14 @@ import type { PostAnswerSort } from '@radish/http';
 export type PublicListSort = 'newest' | 'hottest';
 export type PublicForumRouteSort = 'newest' | 'hottest' | 'pending' | 'answers' | 'votes' | 'deadline';
 export type PublicSearchTimeRange = 'all' | '24h' | '7d' | '30d' | 'custom';
-export type PublicForumDetailIntent = 'comment' | 'quickReply' | 'answer' | 'edit' | 'history' | 'reward';
+export type PublicForumDetailIntent =
+  | 'comment'
+  | 'quickReply'
+  | 'answer'
+  | 'edit'
+  | 'history'
+  | 'reward'
+  | 'bookmark';
 
 export interface PublicForumListRoute {
   kind: 'list';
@@ -141,6 +148,7 @@ function normalizeDetailIntent(value: string | null): PublicForumDetailIntent | 
     || value === 'edit'
     || value === 'history'
     || value === 'reward'
+    || value === 'bookmark'
     ? value
     : undefined;
 }

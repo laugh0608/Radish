@@ -1,6 +1,6 @@
 # F4-P 论坛帖子收藏与个人内容回访
 
-> **状态**：F4-P-B 服务端、Main migration 与统一 HTTP 客户端已完成；等待批准进入 C 批正式 Web
+> **状态**：F4-P-C 正式 Web 已完成；等待批准进入 D 批成组验收
 >
 > **复核日期**：2026-07-29（Asia/Shanghai）
 >
@@ -27,7 +27,9 @@ F4-P 选择“论坛帖子收藏与个人内容回访”为下一项既有功能
 9. 目标删除、治理限制或不可读取时，个人列表显示通用“内容不可用”占位，并允许通过 Bookmark PublicId 移除；不泄露删除或治理原因。
 10. 本专题不建设收藏夹、分组、备注、标签、公开收藏主页、协作清单、推荐算法或跨对象收藏。
 
-F4-P-B 已按上述边界落地：`UserPostBookmark` 是唯一关系真相，Repository 统一承载显式状态事务与“Post -> Bookmark”锁顺序，详情查询返回当前用户收藏态，个人分页批量组装可用摘要并脱敏不可用目标。Main migration 固定为 `20260729_017_forum_post_bookmark`，在正式 Main 的既有 User / Post baseline 上创建收藏表、重建全部 `CollectCount` 并执行严格校验；ledger 隔离自测没有 User baseline 时只建立空关系结构，不通过当前实体补建未来 baseline。`@radish/http` 已提供三项正式调用契约。B 批没有修改正式页面，也没有启动服务或执行浏览器 smoke。
+F4-P-B 已按上述边界落地：`UserPostBookmark` 是唯一关系真相，Repository 统一承载显式状态事务与“Post -> Bookmark”锁顺序，详情查询返回当前用户收藏态，个人分页批量组装可用摘要并脱敏不可用目标。Main migration 固定为 `20260729_017_forum_post_bookmark`，在正式 Main 的既有 User / Post baseline 上创建收藏表、重建全部 `CollectCount` 并执行严格校验；ledger 隔离自测没有 User baseline 时只建立空关系结构，不通过当前实体补建未来 baseline。`@radish/http` 已提供三项正式调用契约。
+
+F4-P-C 已完成两条正式 Web 路径：帖子详情通过显式目标状态收藏或取消收藏，匿名用户使用受控 `intent=bookmark` 登录回流且返回后不自动写入；`/me/content?tab=bookmarks` 提供稳定分页、Available 公开链接、Unavailable 脱敏占位和按 Bookmark PublicId 移除。页面沿用一次性来源返回，双语资源、语义主题 token、键盘焦点、loading / disabled、mobile 和 reduced-motion 静态契约均已覆盖。C 批未向列表卡片、WebOS、Flutter 或其他对象扩散，也没有启动服务或提前执行 D 批浏览器 smoke。
 
 ## 二、F4-P-A 候选审计
 
@@ -489,10 +491,12 @@ Verify：
 
 ### F4-P-C：正式 Web
 
-- 帖子详情收藏动作与登录回流；
-- `/me/content?tab=bookmarks`；
-- PC / mobile、双语、四主题和无障碍状态；
-- 不扩列表卡片收藏按钮。
+- **完成状态（2026-07-29）**：正式帖子详情已接入显式收藏状态、权威计数回写、结构化错误和受控登录回流；登录返回只聚焦动作，不自动提交。
+- `/me/content?tab=bookmarks` 已接入稳定分页、Available 公开链接、Unavailable 脱敏占位、来源返回和按 Bookmark PublicId 移除。
+- 中英文收藏文案已拆为独立业务域；页面只使用语义主题 token，并覆盖键盘焦点、`aria-pressed`、loading / disabled、mobile 与 reduced-motion 静态契约。
+- 聚焦测试、`radish.client` type-check / lint / production build、changed-only 检查与完整 `validate:baseline` 均通过；当前机器未配置 PostgreSQL 连接串，相关条件用例保持显式跳过。未启动服务或执行 D 批浏览器 smoke。
+- 列表卡片、WebOS、Flutter 和其他对象收藏保持停止线不变。
+- 完成后汇报，等待明确批准进入 F4-P-D。
 
 ### F4-P-D：成组验收
 

@@ -1105,6 +1105,55 @@
   user-select: none;
 }
 
+.bookmarkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.bookmarkButton:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 42%, var(--theme-border-soft) 58%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 56%, var(--theme-bg-surface) 44%);
+  transform: translateY(-1px);
+}
+
+.bookmarkButton:focus-visible {
+  outline: 2px solid var(--theme-brand-primary);
+  outline-offset: 2px;
+}
+
+.bookmarkButton:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.bookmarkButton.bookmarked {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 46%, transparent);
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, var(--theme-bg-surface) 30%);
+  color: var(--theme-brand-primary);
+}
+
+.bookmarkCount {
+  min-width: 1.5em;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
 .relationActions {
   display: flex;
   align-items: center;
@@ -1330,5 +1379,19 @@
   .answerActions {
     justify-content: flex-start;
     gap: 6px;
+  }
+
+  .bookmarkButton {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmarkButton {
+    transition: none;
+  }
+
+  .bookmarkButton:hover:not(:disabled) {
+    transform: none;
   }
 }

@@ -1,6 +1,8 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
+  ApiResponseError,
+  PostBookmarkErrorCode,
   createApiResponseError,
   getPostAnswerPage,
   isApiResponseNotFoundError,
@@ -10,6 +12,7 @@ import {
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import type { ContentReportTargetType } from '@/api/contentModeration';
+import { setMyPostBookmarkState } from '@/api/postBookmark';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import {
   createComment,
@@ -158,6 +161,7 @@ export const PublicForumDetail = ({
   const [loadingComments, setLoadingComments] = useState(false);
   const [loadingQuickReplies, setLoadingQuickReplies] = useState(false);
   const [loadingMoreComments, setLoadingMoreComments] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
   const [postNotFound, setPostNotFound] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -908,6 +912,13 @@ export const PublicForumDetail = ({
       intent: 'history',
     })
     : null;
+  const bookmarkReturnPath = post
+    ? buildPublicForumPostReturnPath({
+      postId: post.voId,
+      postPublicId: post.voPublicId,
+      intent: 'bookmark',
+    })
+    : null;
   const routeIntentFocusKey = post && intent
     ? `${post.voId}:${commentId ?? 'root'}:${intent}`
     : null;
@@ -944,6 +955,70 @@ export const PublicForumDetail = ({
       intent: 'reward',
     }));
   }, [post, redirectToDetailLogin]);
+
+  const handleSetBookmarkState = useCallback(async (isBookmarked: boolean) => {
+    if (!post) {
+      return;
+    }
+    if (!isAuthenticated) {
+      redirectToDetailLogin(bookmarkReturnPath);
+      return;
+    }
+
+    const postPublicId = post.voPublicId?.trim().toLowerCase();
+    if (!postPublicId) {
+      toast.error(t('forum.postDetail.bookmark.stateConflict'));
+      return;
+    }
+
+    const targetPostId = String(post.voId);
+    setBookmarkLoading(true);
+    try {
+      const state = await setMyPostBookmarkState({
+        postIdentifier: postPublicId,
+        isBookmarked,
+      }, t);
+      setPost((current) => (
+        current && String(current.voId) === targetPostId
+          ? {
+              ...current,
+              voIsBookmarked: state.voIsBookmarked,
+              voCollectCount: state.voCollectCount,
+            }
+          : current
+      ));
+      toast.success(state.voIsBookmarked
+        ? t('forum.postDetail.bookmark.added')
+        : t('forum.postDetail.bookmark.removed'));
+    } catch (error) {
+      log.warn('PublicForumDetail', '帖子收藏状态写入失败', error);
+      if (
+        error instanceof ApiResponseError
+        && error.code === PostBookmarkErrorCode.AuthenticationRequired
+      ) {
+        redirectToDetailLogin(bookmarkReturnPath);
+        return;
+      }
+
+      const message = error instanceof ApiResponseError
+        ? {
+            [PostBookmarkErrorCode.PostNotFound]: t('forum.postDetail.bookmark.postNotFound'),
+            [PostBookmarkErrorCode.PostUnavailable]: t('forum.postDetail.bookmark.postUnavailable'),
+            [PostBookmarkErrorCode.UserUnavailable]: t('forum.postDetail.bookmark.userUnavailable'),
+            [PostBookmarkErrorCode.StateConflict]: t('forum.postDetail.bookmark.stateConflict'),
+          }[error.code ?? '']
+        : null;
+      toast.error(message ?? t('forum.postDetail.bookmark.error'));
+    } finally {
+      setBookmarkLoading(false);
+    }
+  }, [
+    bookmarkReturnPath,
+    isAuthenticated,
+    post,
+    redirectToDetailLogin,
+    t,
+  ]);
 
   const navigateToComment = useCallback(async (
     targetCommentId: LongId,
@@ -1652,6 +1727,9 @@ export const PublicForumDetail = ({
               mode="interactive"
               isAuthenticated={isAuthenticated}
               currentUserId={currentUserId || '0'}
+              isBookmarked={post?.voIsBookmarked ?? false}
+              bookmarkLoading={bookmarkLoading}
+              onSetBookmarkState={handleSetBookmarkState}
               showSectionTitle={false}
               postTitleHeadingLevel={1}
               questionAnswerSection={post?.voIsQuestion ? (

@@ -86,6 +86,7 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/me/assets/transactions'), '/me/assets/transactions');
   assert.equal(normalizeAuthReturnPath('/me/content'), '/me/content');
   assert.equal(normalizeAuthReturnPath('/me/content?tab=comments&page=2'), '/me/content?tab=comments&page=2');
+  assert.equal(normalizeAuthReturnPath('/me/content?tab=bookmarks&page=2'), '/me/content?tab=bookmarks&page=2');
   assert.equal(normalizeAuthReturnPath('/me/content?tab=posts&page=1'), '/me/content');
   assert.equal(normalizeAuthReturnPath('/me/history?page=3'), '/me/history?page=3');
   assert.equal(
@@ -129,6 +130,10 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(
     normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward'),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=bookmark'),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=bookmark',
   );
   assert.equal(
     normalizeAuthReturnPath('/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward&commentId=2042219067430928385'),
@@ -273,6 +278,7 @@ test('资产正式 Web 返回路径应只构造受控资产入口', () => {
 test('个人中心正式 Web 返回路径应只构造受控子入口', () => {
   assert.equal(buildMeContentReturnPath(), '/me/content');
   assert.equal(buildMeContentReturnPath({ tab: 'comments', page: 3 }), '/me/content?tab=comments&page=3');
+  assert.equal(buildMeContentReturnPath({ tab: 'bookmarks', page: 2 }), '/me/content?tab=bookmarks&page=2');
   assert.equal(buildMeContentReturnPath({ tab: 'quick-replies', page: '2' }), '/me/content?tab=quick-replies&page=2');
   assert.equal(buildMeContentReturnPath({ tab: 'likes' as never }), null);
   assert.equal(buildMeContentReturnPath({ page: '0' }), null);
@@ -499,6 +505,13 @@ test('公开论坛返回路径只支持受控发帖、评论和作者态登录�
       intent: 'reward',
     }),
     '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=reward',
+  );
+  assert.equal(
+    buildPublicForumPostReturnPath({
+      postPublicId: 'PST_018F6B6F7C7D70008F8F8F8F8F8F8F8F',
+      intent: 'bookmark',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?intent=bookmark',
   );
   assert.equal(
     buildPublicForumPostReturnPath({
