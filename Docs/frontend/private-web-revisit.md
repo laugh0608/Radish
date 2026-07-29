@@ -17,7 +17,7 @@
 | `/workbench` | 正式 Web 功能地图、继续处理队列、公开 / 私域 / 作者态入口承接 | 现有正式 Web 路由、静态任务入口、私域状态 rail | 推荐系统、全局待办 API、WebOS Dock、窗口系统 |
 | `/notifications` | 按分类 / 未读筛选聚合通知，批量已读或删除分组，调整通知偏好并进入结构化目标 | 权威收件箱、服务端 summary、偏好、结构化 target、`revision` 对账 | Web Push、浏览器 / 移动系统通知栏推送 |
 | `/circle` | 查看关注动态、我的关注、我的粉丝，并从关系链进入公开帖子或公开个人页 | `UserFollow` 汇总、关注动态、关注 / 粉丝列表、`Post.PublicId`、`User.PublicId` | 推荐算法、短动态、转发 / 引用、私信、联邦协议 |
-| `/me` | 查看我的状态、公开主页入口、资产入口，并在 P3-12-B2 承接完整个人中心子路径 | 公开资料、经验摘要、经验明细、胡萝卜余额、近期流水、我的内容、浏览历史、附件、经验详情 | 完整资料编辑、转账、支付密码、安全设置、资产风控、论坛作者态 |
+| `/me` | 查看我的状态、公开主页入口、资产入口，并通过 `/me/content?tab=bookmarks` 复访私有帖子收藏 | 公开资料、经验摘要、经验明细、胡萝卜余额、近期流水、我的内容、帖子收藏、浏览历史、附件、经验详情 | 完整资料编辑、转账、支付密码、安全设置、资产风控、论坛作者态、收藏夹与跨对象收藏 |
 | `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` | 查看商城订单、订单详情和背包；从公开商品详情购买成功后确认订单结果 | 当前用户订单、订单状态、商品快照、背包权益 / 消耗品、订单通知回流 | 公开分享、购物车、退款、权益激活、道具使用、Console 治理 |
 | `/messages` | 复访聊天频道与一对一会话、处理陌生人消息请求、定位与搜索消息、使用 Reaction / 置顶 / 轻量阅读回执、从成员进入公开主页后返回聊天 | 频道列表、会话分区、私聊请求与归档、消息历史、搜索 cursor、`channelId/messageId` 定位、Chat Hub、精确已读游标与发送者受限回执 | 公开聊天室成员管理、完整私有群组管理、公告覆盖分析、移动系统通知 |
 | `/pet` | 领取和照顾当前用户电子宠物、查看状态与最近流水 | 宠物主档、四类照顾动作、每日次数 / 冷却、最近状态流水 | 萝卜币消耗、商城物品、社区任务奖励、Console 数值配置、公开主页名片渲染 |
@@ -46,7 +46,7 @@
 | `/workbench` | 只允许无 query / hash 的 `/workbench` | 当前作为功能地图可公开访问；进入私域子任务时由目标路由自行处理登录恢复 |
 | `/notifications` | 只允许无 query / hash 的 `/notifications` | 匿名访问时保存 `/notifications`，登录后回到通知列表 |
 | `/circle` | `/circle` 或 `/circle?tab=feed|following|followers&page={n}` | 匿名访问时保留合法 tab / page，登录后恢复到原圈子分页 |
-| `/me` | `/me`、`/me/assets`、`/me/assets/transactions`；P3-12-B2 扩展 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience` 的合法 query | 匿名访问时保存合法 `/me` 子路径，登录后回到对应私域页面 |
+| `/me` | `/me`、`/me/assets`、`/me/assets/transactions`；`/me/content` 支持受控 tab / page，包括 `tab=bookmarks`；另含 `/me/history`、`/me/attachments`、`/me/experience` 的合法 query | 匿名访问时保存合法 `/me` 子路径，登录后回到对应私域页面；从收藏进入公开详情后使用完整 `MeRoute` 精确返回原 tab / page |
 | `/shop/*` 私域 | `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory`；公开商品购买意图使用 `/shop/product/:productId?intent=purchase` | 匿名访问时保存合法商城私域路径或购买意图，登录后回到订单 / 背包 / 商品购买上下文 |
 | `/messages` | `/messages` 或 `/messages?channelId={id}&messageId={id}` | 匿名访问时保留合法频道 / 消息参数，登录后恢复定位 |
 | `/pet` | 只允许无 query / hash 的 `/pet` | 匿名访问时保存 `/pet`，登录后回到电子宠物页面 |
@@ -98,7 +98,7 @@ WebOS `/desktop` 继续保留聊天、通知中心、个人中心、萝卜坑、
 - 通知：分类 / 未读筛选、聚合触发者、权威 summary、分组 / 分类 / 全部已读、删除分组、偏好、结构化目标与 `revision` 对账；正式 Web 与 WebOS 复用同一收件箱状态。
 - 工作台：正式 Web 功能地图、继续处理队列和私域 / 作者态入口分流，不迁移 WebOS Dock 或窗口几何。
 - 圈子：关注动态、我的关注、我的粉丝和进入公开帖子 / 公开个人页的来源返回。
-- 我的：个人状态、公开主页、资产入口、我的内容、完整浏览历史、附件管理和经验详情；关注关系权威入口仍是 `/circle`。
+- 我的：个人状态、公开主页、资产入口、我的内容、私有帖子收藏、完整浏览历史、附件管理和经验详情；收藏只由 `UserPostBookmark` 与 `/me/content?tab=bookmarks` 承接，关注关系权威入口仍是 `/circle`。
 - 商城：公开商品详情登录后继续购买、订单列表、订单详情和背包；WebOS 商城窗口继续保留历史深链。
 - 消息：频道列表、`互相关注 / 陌生人私信 / 好友群组 / 公共频道` 服务端权威分区、通知定位、搜索、Reaction、置顶、轻量阅读回执、请求处理、归档、成员 ACL、消息幂等和附件访问；一对一私聊与阅读回执分别以对应权威专题为准，前端不根据频道名称、在线状态或本地计数推断关系和阅读事实。
 - 宠物：领取、命名、状态展示、四类照顾动作、每日次数 / 冷却展示和最近流水；公开 `/u/:id` 只消费同一次公开资料响应中的字段白名单 `VoPet`，不复用私域宠物状态。

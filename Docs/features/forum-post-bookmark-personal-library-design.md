@@ -480,7 +480,7 @@ Verify：
 ### F4-P-A：候选审计与权威设计
 
 - **完成状态（2026-07-28）**：候选比较、代码事实、用户路径、权威对象、接口、权限、失败恢复、migration、页面与停止线已固定。
-- 完成后汇报，等待明确批准进入 F4-P-B。
+- 本批已按批准进入 B 批；最终状态以本节后续完成记录为准。
 
 ### F4-P-B：服务端与 migration
 
@@ -489,7 +489,7 @@ Verify：
 - Main migration `20260729_017_forum_post_bookmark` 已注册；strict verify 覆盖表列索引、PublicId、关系唯一性、租户与孤立目标、稳定分页尾键及计数重建一致性。
 - `@radish/http` 已提供 `setPostBookmarkState`、`getMyPostBookmarks` 与 `removePostBookmark`，PublicId / LongId 兼容只保留在 Controller 边界。
 - 聚焦回归、完整 `validate:baseline`、changed-only 静态检查均通过；当前机器未配置 PostgreSQL 连接串，2 个 PostgreSQL 条件用例明确跳过，未表述为实跑通过。
-- 完成后汇报，等待明确批准进入 F4-P-C。
+- 本批已按批准进入 C 批；服务端与 migration 边界保持不变。
 
 ### F4-P-C：正式 Web
 
@@ -498,7 +498,7 @@ Verify：
 - 中英文收藏文案已拆为独立业务域；页面只使用语义主题 token，并覆盖键盘焦点、`aria-pressed`、loading / disabled、mobile 与 reduced-motion 静态契约。
 - 聚焦测试、`radish.client` type-check / lint / production build、changed-only 检查与完整 `validate:baseline` 均通过；当前机器未配置 PostgreSQL 连接串，相关条件用例保持显式跳过。未启动服务或执行 D 批浏览器 smoke。
 - 列表卡片、WebOS、Flutter 和其他对象收藏保持停止线不变。
-- 完成后汇报，等待明确批准进入 F4-P-D。
+- 本批已按批准进入 D 批；正式 Web 之外的停止线保持不变。
 
 ### F4-P-D：成组验收
 

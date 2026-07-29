@@ -60,6 +60,20 @@ Task<int> RestoreAsync(Expression<Func<TEntity, bool>>)                     // �
 - ✅ **可恢复**：支持恢复已软删除的记录
 - ❌ **避免**：物理删除业务数据（已标记 `[Obsolete]`）
 
+**显式包含软删除记录**：
+
+`IBaseRepository<TEntity>` 为治理列表、回收站和恢复预检提供仓储级显式重载；默认重载仍排除已软删除记录，不改变普通业务查询口径。
+
+```csharp
+Task<TEntity?> QueryByIdAsync(long id, bool includeDeleted)
+Task<(List<TEntity> data, int totalCount)> QueryPageAsync(..., bool includeDeleted)
+Task<(List<TEntity> data, int totalCount)> QueryPageAsync(..., thenByExpression, thenByType, bool includeDeleted)
+```
+
+- 只有已完成身份、权限和业务范围校验的 Service / 治理流程可以传入 `includeDeleted: true`。
+- 公开查询和普通业务列表继续使用默认重载；不要为图省事全局关闭软删除过滤器。
+- 恢复预检应使用包含软删除记录的 ID 查询确认目标，再调用 `RestoreByIdAsync`；Service 仍不得绕过 Repository 直接访问 Db。
+
 **实体要求**：
 ```csharp
 // 实体必须实现 IDeleteFilter 接口

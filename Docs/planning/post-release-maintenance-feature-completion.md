@@ -134,7 +134,9 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭：Main `UserPostBookmark` 私有权威关系、`Post.CollectCount` 可重建投影、显式状态事务、稳定个人分页、不可用目标移除、正式 Web 与代表身份 PC / mobile 成组验收形成闭环；收藏夹、推荐、公开收藏主页和跨对象收藏继续保持停止线。
 
-[F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A 批候选审计与权威设计：复用 `Tag / PostTag / Post`，统一公开帖子判定，补相关主题、标签 Gateway 首包 head 与 tags sitemap；等待批准进入 B 批服务端和 Gateway 实现。
+[F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭：复用 `Tag / PostTag / Post`，统一公开帖子判定，落地数据库侧公开计数 / 热门 / 相关聚合、标签 Gateway 首包 head、tags sitemap、正式 Web 和代表运行态矩阵；不可用标签 `noindex`、单一 JSON-LD 与 Console 软删除恢复契约均已收口。
+
+下一顺位进入 F4-R-A 单专题候选只读审计。先从仍然明确、可执行且未被既有闭环覆盖的功能或维护缺口中裁决一个专题并补设计边界，不预设候选结论，不在批准前直接编码。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

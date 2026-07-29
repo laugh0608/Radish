@@ -31,12 +31,13 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 下一批事项（F4-R-A，等待批准）
+## 明天事项（2026-07-30，F4-R-A，等待批准）
 
-1. 只读复核当前规划与既有专题，列出现有产品主线中仍然明确、可执行且未被既有闭环覆盖的功能或维护缺口。
-2. 按用户价值、权威数据边界、正式 Web 入口、长期维护成本和停止线比较候选，不预设必须继续深化论坛。
-3. 只裁决一个边界完整专题，并先形成对应功能设计 / 说明文档；专题边界获批前不直接编码。
-4. 本批不启动服务、不执行真实 smoke、不重启主动生产证据采集，也不解冻 Flutter、WebOS 或 Tauri 新功能。
+1. 新会话先只读 [当前进行中](/planning/current)；只有候选边界不足时再读 [开发路线图](/development-plan) 和直接相关专题，不默认展开历史记录。
+2. 盘点现有产品主线中仍然明确、可执行且未被既有闭环覆盖的功能或维护缺口，形成 `2~4` 个候选及其代码事实依据。
+3. 按用户价值、权威数据边界、正式 Web 入口、长期维护成本和停止线比较候选，不预设必须继续深化论坛，也不把生产证据采集当作前置。
+4. 只裁决一个边界完整专题，并先形成对应功能设计 / 说明文档；专题边界获批前不直接编码。
+5. F4-R-A 不启动服务、不执行真实 smoke，也不解冻 Flutter、WebOS 或 Tauri 新功能。
 
 ## 当前执行入口
 
@@ -50,6 +51,7 @@
 - [F4-P-D 论坛帖子收藏成组验收](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)
 - [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)
 - [F4-Q-D 论坛标签公开发现成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)
+- [2026-07-29 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-29)
 - [2026-07-28 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-28)
 - [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
 - [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)

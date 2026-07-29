@@ -29,7 +29,7 @@
 - 商城商品效力、背包使用、权益激活 / 失效与 Console 排障。
 - `default / guofeng` 主题的用户持久化、主题权益和真实页面生效。
 - client、Console 与 Auth 的 i18n 残余、格式化和双语布局稳定性。
-- 标签导流、相关主题、标签公开可见性与 SEO 深化已回拉为 [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)；A 批设计已完成，当前顺位以 [当前进行中](/planning/current) 为准。
+- 标签导流、相关主题、标签公开可见性与 SEO 深化已通过 [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)完成 A-D 批并关闭；后续标签关注、推荐、独立标签首页或 SSR / SSG 不自动回拉，新的开发顺位以 [当前进行中](/planning/current) 为准。
 
 以下事项已回拉到 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)：
 

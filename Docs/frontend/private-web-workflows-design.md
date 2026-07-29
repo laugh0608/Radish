@@ -124,7 +124,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - `/workbench` 已补齐继续处理队列、私域状态 rail 和 mobile private 底栏承接；队列仅指向现有正式 Web 路由，不新增业务 API 或路由语义。
 - E3-B 后 `/workbench` 不再只是功能地图：会汇总通知行动、聊天未读 / 提及 / 本地草稿、论坛发帖草稿、订单 / Docs / 宠物等继续处理项，并展示同步状态、草稿数、活动数和加载 / 错误提示。
 - E5-A 后 `/workbench` 对通知或消息同步失败不再只显示普通错误；会生成“活动同步不完整”的可恢复队列项，引导用户直接进入通知或消息处理，并允许稍后刷新工作台重试。
-- `/me` 首页已在个人状态与业务入口前加入隐私与安全边界提示；`/me/content`、`/me/history`、`/me/attachments` 和 `/me/experience` 已按 `P03-P06 / P23` 补任务状态、筛选上下文和移动单列节奏。
+- `/me` 首页已在个人状态与业务入口前加入隐私与安全边界提示；`/me/content`、`/me/history`、`/me/attachments` 和 `/me/experience` 已按 `P03-P06 / P23` 补任务状态、筛选上下文和移动单列节奏。F4-P 后正式代码在既有 `P03 / P23` 布局内扩展私有帖子收藏 tab、稳定分页、Unavailable 脱敏占位、按 Bookmark PublicId 移除和完整 `MeRoute` 来源返回；没有新增独立画板或页面族，不扩成收藏夹或跨对象收藏。
 
 ### 资产 / 订单 / 背包
 

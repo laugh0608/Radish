@@ -1916,7 +1916,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
 3. **个人中心**:
    - 我的帖子
    - 我的点赞
-   - 我的收藏
+   - ✅ 我的收藏（F4-P 已完成私有帖子收藏、稳定分页、不可用占位与详情返回）
    - 我的评论
    - ✅ 我的轻回应回看（已完成）
 
