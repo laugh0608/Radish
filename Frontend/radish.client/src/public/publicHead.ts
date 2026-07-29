@@ -23,6 +23,7 @@ export interface PublicHeadDescriptor {
   canonicalPath: string;
   type?: PublicOpenGraphType;
   imageUrl?: string;
+  indexable?: boolean;
 }
 
 export interface ApplyPublicHeadOptions {
@@ -121,7 +122,12 @@ function buildForumHead(route: PublicContentRouteDescriptor & { app: 'forum' }):
     return {
       title: `#${route.route.tagSlug} - Radish 论坛`,
       description: `浏览 Radish 论坛中带有 ${route.route.tagSlug} 标签的公开讨论。`,
-      canonicalPath,
+      canonicalPath: buildPublicForumPath({
+        kind: 'tag',
+        tagSlug: route.route.tagSlug,
+        sortBy: 'newest',
+        page: 1,
+      }),
     };
   }
 
@@ -471,7 +477,6 @@ export function applyPublicHead(head: PublicHeadDescriptor, options?: ApplyPubli
   upsertMetaByProperty('og:site_name', publicSiteName);
   upsertMetaByProperty('og:title', title);
   upsertMetaByProperty('og:description', description);
-  upsertMetaByProperty('og:url', canonicalUrl);
   upsertMetaByProperty('og:type', head.type ?? 'website');
   if (head.imageUrl) {
     upsertMetaByProperty('og:image', head.imageUrl);
@@ -486,7 +491,15 @@ export function applyPublicHead(head: PublicHeadDescriptor, options?: ApplyPubli
   } else {
     removeMetaByName('twitter:image');
   }
-  upsertCanonicalLink(canonicalUrl);
+  if (head.indexable === false) {
+    upsertMetaByName('robots', 'noindex, nofollow');
+    removeMetaByProperty('og:url');
+    document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
+  } else {
+    removeMetaByName('robots');
+    upsertMetaByProperty('og:url', canonicalUrl);
+    upsertCanonicalLink(canonicalUrl);
+  }
 }
 
 /**
@@ -509,5 +522,6 @@ export function resetPublicHead(): void {
   removeMetaByName('twitter:title');
   removeMetaByName('twitter:description');
   removeMetaByName('twitter:image');
+  removeMetaByName('robots');
   document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.remove();
 }

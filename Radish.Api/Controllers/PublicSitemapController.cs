@@ -15,7 +15,7 @@ namespace Radish.Api.Controllers;
 public class PublicSitemapController : ControllerBase
 {
     private static readonly Regex SectionFileNamePattern = new(
-        "^(forum|docs|shop)-([1-9][0-9]*)\\.xml$",
+        "^(forum|tags|docs|shop)-([1-9][0-9]*)\\.xml$",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private readonly IPublicSitemapService _publicSitemapService;

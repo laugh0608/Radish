@@ -20,6 +20,7 @@ import { buildPublicDocsHeadSnapshot } from '../src/public/docs/publicDocsHead.t
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
 import {
   resolveActivePublicHeadSnapshot,
+  resolvePublicStructuredData,
   updatePublicHeadRegistration,
   type PublicHeadSnapshot,
 } from '../src/public/publicHeadLifecycleContext.ts';
@@ -200,6 +201,22 @@ test('buildPublicRouteHead 应优先使用论坛帖子 PublicId 生成 canonical
     canonicalPath: '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?commentId=8',
     type: 'article',
   });
+});
+
+test('论坛标签 canonical 应忽略排序与分页查询', () => {
+  const route: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'tag',
+      tagSlug: 'csharp',
+      sortBy: 'hottest',
+      page: 3,
+    },
+  };
+
+  const head = buildPublicRouteHead(route);
+
+  assert.equal(head.canonicalPath, '/forum/tag/csharp');
 });
 
 test('buildForumPostPublicHead 应在详情加载后用 PublicId 刷新 canonical 与分享预览文案', () => {
@@ -539,6 +556,32 @@ test('head 快照应兼容 StrictMode 重放、按 route key 隔离且阻止旧 
   assert.equal(updatePublicHeadRegistration(registration, secondToken, '/forum/post/second', null), null);
 });
 
+test('不可索引的公开 head 应抑制当前路由与详情快照的结构化数据', () => {
+  const routeStructuredData = { '@type': 'CollectionPage', name: '路由基线' };
+  const detailSnapshot: PublicHeadSnapshot = {
+    head: {
+      title: '不可用标签 · Forum',
+      description: '标签不可用',
+      canonicalPath: '/forum/tag/deleted-tag',
+      indexable: false,
+    },
+    structuredData: { '@type': 'CollectionPage', name: '旧标签快照' },
+  };
+
+  assert.equal(
+    resolvePublicStructuredData(detailSnapshot.head, detailSnapshot, routeStructuredData),
+    null,
+  );
+  assert.equal(
+    resolvePublicStructuredData(
+      { ...detailSnapshot.head, indexable: true },
+      null,
+      routeStructuredData,
+    ),
+    routeStructuredData,
+  );
+});
+
 class FakeHeadNode {
   readonly attributes = new Map<string, string>();
   readonly tagName: string;
@@ -629,12 +672,33 @@ test('applyPublicHead 应统一更新分享元信息并在离开时清理公开�
     assert.equal(head.querySelector('meta[name="twitter:image"]'), null);
     assert.equal(head.querySelector('meta[name="twitter:card"]')?.getAttribute('content'), 'summary');
 
+    applyPublicHead({
+      title: '不可用标签 · Forum',
+      description: '标签不可用',
+      canonicalPath: '/forum/tag/deleted-tag',
+      indexable: false,
+    });
+
+    assert.equal(head.querySelector('meta[name="robots"]')?.getAttribute('content'), 'noindex, nofollow');
+    assert.equal(head.querySelector('link[rel="canonical"]'), null);
+    assert.equal(head.querySelector('meta[property="og:url"]'), null);
+
+    applyPublicHead({
+      title: '恢复标签 · Forum',
+      description: '标签已恢复',
+      canonicalPath: '/forum/tag/restored-tag',
+    });
+
+    assert.equal(head.querySelector('meta[name="robots"]'), null);
+    assert.equal(head.querySelector('link[rel="canonical"]')?.getAttribute('href'), `${publicDefaultOrigin}/forum/tag/restored-tag`);
+
     resetPublicHead();
 
     assert.equal(fakeDocument.title, 'Radish');
     assert.equal(head.querySelector('link[rel="canonical"]'), null);
     assert.equal(head.querySelector('meta[property="og:url"]'), null);
     assert.equal(head.querySelector('meta[name="twitter:card"]'), null);
+    assert.equal(head.querySelector('meta[name="robots"]'), null);
   } finally {
     Reflect.deleteProperty(globalThis, 'document');
   }

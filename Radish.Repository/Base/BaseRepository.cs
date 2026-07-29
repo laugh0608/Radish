@@ -797,10 +797,16 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <summary>根据 ID 查询单个实体</summary>
     /// <param name="id">实体 ID</param>
     /// <returns>实体对象，如果不存在则返回 null</returns>
-    public async Task<TEntity?> QueryByIdAsync(long id)
+    public Task<TEntity?> QueryByIdAsync(long id)
+    {
+        return QueryByIdAsync(id, includeDeleted: false);
+    }
+
+    /// <summary>根据 ID 查询单个实体，并显式控制是否包含软删除记录</summary>
+    public async Task<TEntity?> QueryByIdAsync(long id, bool includeDeleted)
     {
         return await ExecuteDbOperationAsync(
-            () => CreateTenantQueryable().Where("Id = @id", new { id }).FirstAsync());
+            () => CreateTenantQueryable(includeDeleted).Where("Id = @id", new { id }).FirstAsync());
     }
 
     /// <summary>查询第一条数据</summary>
@@ -875,18 +881,36 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     /// <param name="orderByExpression">排序表达式，可空</param>
     /// <param name="orderByType">排序类型（Asc/Desc），默认 Asc</param>
     /// <returns>分页数据和总数</returns>
-    public async Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+    public Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
         Expression<Func<TEntity, bool>>? whereExpression = null,
         int pageIndex = 1,
         int pageSize = 20,
         Expression<Func<TEntity, object>>? orderByExpression = null,
         OrderByType orderByType = OrderByType.Asc)
     {
+        return QueryPageAsync(
+            whereExpression,
+            pageIndex,
+            pageSize,
+            orderByExpression,
+            orderByType,
+            includeDeleted: false);
+    }
+
+    /// <summary>分页查询，并显式控制是否包含软删除记录</summary>
+    public async Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>>? orderByExpression,
+        OrderByType orderByType,
+        bool includeDeleted)
+    {
         if (TryGetSqliteOperationLockKey(out _))
         {
             return await ExecuteDbOperationAsync(() =>
             {
-                var query = CreateTenantQueryable();
+                var query = CreateTenantQueryable(includeDeleted);
                 if (whereExpression != null)
                 {
                     query = query.Where(whereExpression);
@@ -906,7 +930,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         RefAsync<int> totalCount = 0;
-        var query = CreateTenantQueryable();
+        var query = CreateTenantQueryable(includeDeleted);
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);
@@ -925,7 +949,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
     }
 
     /// <summary>分页查询（支持二级排序）</summary>
-    public async Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+    public Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
         Expression<Func<TEntity, bool>>? whereExpression,
         int pageIndex,
         int pageSize,
@@ -934,11 +958,33 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         Expression<Func<TEntity, object>>? thenByExpression,
         OrderByType thenByType)
     {
+        return QueryPageAsync(
+            whereExpression,
+            pageIndex,
+            pageSize,
+            orderByExpression,
+            orderByType,
+            thenByExpression,
+            thenByType,
+            includeDeleted: false);
+    }
+
+    /// <summary>分页查询（支持二级排序），并显式控制是否包含软删除记录</summary>
+    public async Task<(List<TEntity> data, int totalCount)> QueryPageAsync(
+        Expression<Func<TEntity, bool>>? whereExpression,
+        int pageIndex,
+        int pageSize,
+        Expression<Func<TEntity, object>>? orderByExpression,
+        OrderByType orderByType,
+        Expression<Func<TEntity, object>>? thenByExpression,
+        OrderByType thenByType,
+        bool includeDeleted)
+    {
         if (TryGetSqliteOperationLockKey(out _))
         {
             return await ExecuteDbOperationAsync(() =>
             {
-                var query = CreateTenantQueryable();
+                var query = CreateTenantQueryable(includeDeleted);
                 if (whereExpression != null)
                 {
                     query = query.Where(whereExpression);
@@ -965,7 +1011,7 @@ public class BaseRepository<TEntity> : IBaseRepository<TEntity> where TEntity : 
         }
 
         RefAsync<int> totalCount = 0;
-        var query = CreateTenantQueryable();
+        var query = CreateTenantQueryable(includeDeleted);
         if (whereExpression != null)
         {
             query = query.Where(whereExpression);

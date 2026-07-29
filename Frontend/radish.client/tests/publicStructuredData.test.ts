@@ -245,6 +245,7 @@ test('buildPublicRouteStructuredData 不应把数字公开 ID 写成页面名称
 
 test('applyPublicStructuredData 应复用单个 script 并支持清理', () => {
   const head = installFakeDocument();
+  assert.equal(publicStructuredDataScriptId, 'radish-public-jsonld');
 
   applyPublicStructuredData({
     '@context': 'https://schema.org',

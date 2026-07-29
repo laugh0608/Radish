@@ -172,14 +172,16 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             whereExpression = whereExpression.And(t => t.IsFixed == fixedValue);
         }
 
-        var (data, totalCount) = await QueryPageAsync(
+        var (entities, totalCount) = await _tagRepository.QueryPageAsync(
             whereExpression: whereExpression,
             pageIndex: pageIndex,
             pageSize: pageSize,
             orderByExpression: t => t.SortOrder,
             orderByType: OrderByType.Asc,
             thenByExpression: t => t.Id,
-            thenByType: OrderByType.Asc);
+            thenByType: OrderByType.Asc,
+            includeDeleted: includeDeleted);
+        var data = Mapper.Map<List<TagVo>>(entities);
 
         NormalizeVoSlugs(data);
         return new PageModel<TagVo>
@@ -374,8 +376,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             throw new ArgumentException("标签ID无效", nameof(id));
         }
 
-        var existingTags = await _tagRepository.QueryAsync(t => t.Id == id);
-        var existingTag = existingTags.FirstOrDefault();
+        var existingTag = await _tagRepository.QueryByIdAsync(id, includeDeleted: true);
         if (existingTag == null || !existingTag.IsDeleted)
         {
             return false;

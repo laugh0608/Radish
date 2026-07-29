@@ -2,7 +2,7 @@
 
 > Radish 公开内容壳层中的 forum 阅读入口说明。
 >
-> **最后更新**: 2026.07.04
+> **最后更新**: 2026.07.29
 
 ## 定位
 
@@ -19,7 +19,7 @@
 - `/forum`：公开帖子列表。
 - `/forum/type/:type`：公开类型流，当前用于 `recommend`、`hot`、`newest`。
 - `/forum/search`：公开搜索结果，支持关键词、时间范围、排序与分页。
-- `/forum/tag/:tagId`：公开标签聚合阅读。
+- `/forum/tag/:tagSlug`：公开标签聚合阅读；使用 canonical slug，提供权威公开数量、相关主题、排序与分页。
 - `/forum/compose`：登录态发帖入口；未登录时保存该路径登录回流，可携带合法 `category` query。
 - `/forum/post/:postId`：公开帖子详情；当前参数可以是 `Post.PublicId` 或旧 long 字符串，公开分享、canonical、OpenGraph、JSON-LD 和普通内容入口优先生成 `PublicId` 路径，旧 long 仅保留兼容读取。
 - `/forum/post/:postId?intent=quickReply|comment|answer|edit|history`：公开详情登录回流参与 / 作者意图，只用于未登录用户触发轻回应、根评论、回答、作者编辑或历史查看后恢复现场，不进入 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
@@ -55,6 +55,8 @@ Frontend/radish.client/src/public/forum/
 - 公开详情的轻回应输入复用帖子轻回应独立模型；根评论输入复用评论发布接口但只提交 `parentId = null`。作者态发帖、回答和编辑继续复用论坛写入可靠性治理中的 `clientSubmissionId`，不能新增临时 fetch / axios 调用或绕开 `@radish/http`。
 - 公开详情登录回流只接受 `commentId` 与 `intent` 两类查询参数，且 `intent` 必须是 `comment`、`quickReply`、`answer`、`edit` 或 `history`；`commentId` 只允许配合 `comment` / `quickReply`。普通公开来源、专题返回和分享复制继续使用 `history.state` 或 canonical 路径承载。
 - 公开 forum 的列表、搜索、标签、类型流、详情返回和状态卡动作都必须输出真实公开 `href`。普通点击可以保持 SPA 导航和来源返回；新开标签、复制链接、canonical、OpenGraph、JSON-LD 与 sitemap 不读取当前标签页来源状态。
+- 公开标签页的相关主题只读取服务端公开共现聚合，loading / empty / error / retry 保持局部边界；标签 canonical 始终使用无 `sort / page` 的 `/forum/tag/:canonicalSlug`。
+- 公开标签被禁用、删除或不存在时，运行时必须使用 `noindex, nofollow`，并移除 canonical、OpenGraph URL 和 JSON-LD；不可索引态不得保留先前标签的可索引元数据。
 - 公开详情工作区的“回答 / 轻回应 / 编辑 / 历史 / 评论”入口必须以真实 `href` 表达对应 intent，不再用纯按钮承担跳转语义；当前标签页普通点击可以拦截为原地展开、加载作者态或聚焦输入区，辅助点击和复制链接仍保留完整回流路径。
 - 移动公开详情首屏顺序固定为正文、帖子级轻回应、评论入口和评论区优先；阅读说明、边界提示和登录引导作为辅助区放在真实阅读与互动任务之后。
 - 评论树必须表达父子层级：父评论保留完整评论卡和神评状态，子回复缩进并保留沙发、引用、回复、点赞和轻回应语义；神评 / 沙发不能降级为详情页侧栏元字段。
@@ -67,6 +69,7 @@ Frontend/radish.client/src/public/forum/
 - 工作区 intent 链接支持新标签打开和复制链接；普通点击仍应保留当前页来源返回、轻回应 / 评论区聚焦和作者态现场恢复。
 - 评论回复直达 URL、点赞、投票、删除、举报治理和通知中心入口不出现在公开详情主流程。
 - 公开详情复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带 `intent`、`commentId`、来源状态或桌面窗口参数。
+- 公开标签页相关主题使用真实 `/forum/tag/:canonicalSlug` 链接；普通点击切换 SPA 标签路由，辅助点击、新标签和复制链接保持浏览器原生语义。
 - `/forum/compose` 发帖成功后回到正式 Web 帖子详情；未登录登录回流后仍留在发帖现场。
 
 ## 相关文档

@@ -207,6 +207,27 @@ export async function getTagBySlug(tagSlug: string, t: TFunction): Promise<Tag> 
 }
 
 /**
+ * 获取公开标签的相关标签
+ */
+export async function getRelatedTags(
+  tagSlug: string,
+  t: TFunction,
+  topCount: number = 8,
+  signal?: AbortSignal
+): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>(
+    `/api/v1/Tag/GetRelated/${encodeURIComponent(tagSlug)}?topCount=${topCount}`,
+    { timeout: FORUM_READ_TIMEOUT_MS, signal }
+  );
+
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, t('forum.public.tagRelatedLoadFailed'));
+  }
+
+  return response.data;
+}
+
+/**
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {

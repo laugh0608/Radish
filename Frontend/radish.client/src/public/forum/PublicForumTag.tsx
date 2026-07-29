@@ -5,6 +5,7 @@ import { Icon } from '@radish/ui/icon';
 import {
   getCurrentGodCommentsBatch,
   getPostList,
+  getRelatedTags,
   getTagBySlug,
   type CommentHighlight,
   type PostItem,
@@ -87,12 +88,17 @@ export const PublicForumTag = ({
   const [tagError, setTagError] = useState<string | null>(null);
   const [tagNotFound, setTagNotFound] = useState(false);
   const [postError, setPostError] = useState<string | null>(null);
+  const [relatedTags, setRelatedTags] = useState<Tag[]>([]);
+  const [loadingRelatedTags, setLoadingRelatedTags] = useState(false);
+  const [relatedTagsError, setRelatedTagsError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [relatedReloadToken, setRelatedReloadToken] = useState(0);
   const [isCompactViewport, setIsCompactViewport] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth <= 720 : false
   );
   const tagRequestIdRef = useRef(0);
   const postsRequestIdRef = useRef(0);
+  const relatedTagsRequestIdRef = useRef(0);
 
   useEffect(() => {
     setSortBy(routeState.sortBy);
@@ -176,6 +182,49 @@ export const PublicForumTag = ({
 
     void loadTag();
   }, [reloadToken, routeState.tagSlug, t]);
+
+  useEffect(() => {
+    const tagSlug = selectedTag?.voSlug;
+    if (!tagSlug) {
+      setRelatedTags([]);
+      setRelatedTagsError(null);
+      setLoadingRelatedTags(false);
+      return;
+    }
+
+    const requestId = ++relatedTagsRequestIdRef.current;
+    const controller = new AbortController();
+
+    const loadRelatedTags = async () => {
+      setLoadingRelatedTags(true);
+      setRelatedTagsError(null);
+      try {
+        const tags = await getRelatedTags(tagSlug, t, 8, controller.signal);
+        if (requestId !== relatedTagsRequestIdRef.current || controller.signal.aborted) {
+          return;
+        }
+
+        setRelatedTags(tags);
+      } catch (err) {
+        if (requestId !== relatedTagsRequestIdRef.current || controller.signal.aborted) {
+          return;
+        }
+
+        const message = err instanceof Error ? err.message : String(err);
+        setRelatedTags([]);
+        setRelatedTagsError(message);
+      } finally {
+        if (requestId === relatedTagsRequestIdRef.current && !controller.signal.aborted) {
+          setLoadingRelatedTags(false);
+        }
+      }
+    };
+
+    void loadRelatedTags();
+    return () => {
+      controller.abort();
+    };
+  }, [relatedReloadToken, selectedTag?.voSlug, t]);
 
   const canonicalTagRoute = useMemo<PublicForumTagRoute>(() => ({
     kind: 'tag',
@@ -283,7 +332,19 @@ export const PublicForumTag = ({
       !selectedTag
       || selectedTag.voSlug.trim().toLowerCase() !== routeState.tagSlug.trim().toLowerCase()
     ) {
-      return null;
+      if (tagState.kind !== 'notFound') {
+        return null;
+      }
+
+      const routeHead = buildLocalizedPublicRouteHead({ app: 'forum', route: routeState }, t);
+      return {
+        head: {
+          ...routeHead,
+          title: `${t('forum.public.tagUnavailableTitle')} · ${t('desktop.apps.forum.name')}`,
+          description: t('forum.public.tagUnavailableDescription'),
+          indexable: false,
+        },
+      };
     }
 
     const routeHead = buildLocalizedPublicRouteHead({ app: 'forum', route: routeState }, t);
@@ -294,7 +355,7 @@ export const PublicForumTag = ({
         description: selectedTag.voDescription?.trim() || routeHead.description,
       },
     };
-  }, [routeState, selectedTag, t]);
+  }, [routeState, selectedTag, t, tagState.kind]);
   usePublicHeadSnapshot(publicHeadSnapshot);
   const tagPostCount = useMemo(() => formatTagPostCount(selectedTag, t), [selectedTag, t]);
   const readingGuide = useMemo(
@@ -412,6 +473,57 @@ export const PublicForumTag = ({
             {t('common.retry')}
           </button>
         </div>
+      )}
+
+      {selectedTag && (
+        <section className={styles.relatedTagSection} aria-labelledby="forum-related-tags-title">
+          <div className={styles.relatedTagHeader}>
+            <div>
+              <h2 id="forum-related-tags-title" className={styles.relatedTagHeading}>
+                {t('forum.public.relatedTagsTitle')}
+              </h2>
+              <p className={styles.relatedTagIntro}>
+                {t('forum.public.relatedTagsDescription')}
+              </p>
+            </div>
+          </div>
+
+          {loadingRelatedTags ? (
+            <p className={styles.relatedTagStatus}>{t('forum.public.relatedTagsLoading')}</p>
+          ) : relatedTagsError ? (
+            <div className={styles.relatedTagStatusRow} role="status">
+              <span>{t('forum.public.relatedTagsError')}</span>
+              <button
+                type="button"
+                className={styles.relatedTagRetry}
+                onClick={() => setRelatedReloadToken((current) => current + 1)}
+              >
+                {t('common.retry')}
+              </button>
+            </div>
+          ) : relatedTags.length ? (
+            <div className={styles.relatedTagList}>
+              {relatedTags.map((tag) => (
+                <PublicForumRouteLink
+                  key={tag.voId}
+                  className={styles.relatedTagLink}
+                  route={{
+                    kind: 'tag',
+                    tagSlug: tag.voSlug,
+                    sortBy: 'newest',
+                    page: 1
+                  }}
+                  onNavigate={onOpenTag ? () => onOpenTag(tag.voSlug) : undefined}
+                >
+                  <span className={styles.relatedTagName}>#{tag.voName}</span>
+                  <span className={styles.relatedTagCount}>{formatTagPostCount(tag, t)}</span>
+                </PublicForumRouteLink>
+              ))}
+            </div>
+          ) : (
+            <p className={styles.relatedTagStatus}>{t('forum.public.relatedTagsEmpty')}</p>
+          )}
+        </section>
       )}
 
       <div className={styles.postList}>

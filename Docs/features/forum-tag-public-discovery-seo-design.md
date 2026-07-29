@@ -1,6 +1,6 @@
 # F4-Q 论坛标签公开发现、可见性与 SEO 闭环
 
-> **状态**：F4-Q-A/B 已完成；等待批准进入 C 批正式 Web
+> **状态**：F4-Q A-D 已完成；专题关闭
 >
 > **复核日期**：2026-07-29（Asia/Shanghai）
 >
@@ -17,7 +17,7 @@ F4-Q 不新增新的内容对象，也不启动推荐系统。当前标签能力
 
 F4-Q 选择在既有标签关系上完成公开发现与索引闭环。它直接服务“内容发现、讨论沉淀、公开回流”主轴，边界比圈子推荐、投票 / 抽奖运营或匿名公开聊天更稳定。
 
-F4-Q-A 完成审计与设计；F4-Q-B 已完成服务端公开读取、标签聚合、Gateway 首包 head 与 tags sitemap，不包含正式 Web 或服务启动。
+F4-Q-A 完成审计与设计；F4-Q-B 完成服务端公开读取、标签聚合、Gateway 首包 head 与 tags sitemap；F4-Q-C 完成正式 Web 相关主题、runtime canonical 与前端静态契约；F4-Q-D 完成代表身份与 PC / mobile 运行态矩阵、共同根因修正、清理和严格数据库复核。验收证据见 [F4-Q-D 成组验收记录](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)。
 
 ## 二、候选审计
 
@@ -417,19 +417,28 @@ B 批必须复核：
 
 ### F4-Q-C：正式 Web
 
+- **完成状态（2026-07-29）**：已完成。
 - 标签页接入相关主题与公开数量；
 - 收口 runtime canonical；
 - 补双语、语义主题、键盘、mobile 和 reduced-motion 契约；
 - 更新标签、SEO、发现页和论坛长期文档。
+- 实现说明：
+  - `radish.client` 通过 `@radish/http` 读取相关标签，使用结构化错误、`AbortSignal` 和 request id 隔离失效响应；
+  - 相关主题区位于标签摘要与帖子列表之间，loading / empty / error / retry 均为局部状态，不阻断帖子列表；
+  - 每个相关标签继续输出 `/forum/tag/:canonicalSlug` 真实链接，普通点击复用 SPA 导航，辅助点击与复制链接保持浏览器语义；
+  - 标签 runtime canonical 固定移除 `sort / page`，显示数量继续读取 B 批返回的公开帖子聚合；
+  - 中英文资源、主题语义 token、键盘焦点和 mobile wrap 已由前端契约测试覆盖；本批没有新增依赖动画。
 
 ### F4-Q-D：成组验收
 
-- Gateway PC / mobile 代表矩阵；
-- 热门 -> 标签 -> 相关标签 -> 帖子 -> 返回链路；
-- 禁用 / 删除 / 恢复与缓存失效；
-- 首包 head、JSON-LD、sitemap 与 canonical；
-- 清理、六库完整性与 strict migration verify；
-- 形成记录后关闭 F4-Q。
+- **完成状态（2026-07-29）**：已完成，专题关闭。
+- Gateway PC / mobile 代表矩阵覆盖匿名、普通登录用户和 Console 标签管理员，以及 `zh / en`、`default / guofeng` 代表路径；
+- 热门标签进入、相关标签切换、帖子详情与标签返回路径均通过，相关区局部失败不影响主列表；
+- 标签禁用、软删除、回收站展示、恢复和重新启用均通过；不可用标签 runtime 明确使用 `noindex, nofollow`，并移除 canonical、OpenGraph URL 与结构化数据；
+- `GET / HEAD` 首包、canonical、单份 `CollectionPage` JSON-LD、tags sitemap 分片和冷启动缓存状态均通过；
+- 验收中修正 sitemap 分片路由未识别 `tags`、Gateway / Client JSON-LD 脚本 ID 不同源、英文单数文案、通用 head 不可索引态，以及基础仓储软删除显式查询与恢复预检契约；
+- 临时 Tag、PostTag、浏览历史、审计标记和访问计数已清理，六库完整性与 strict migration verify 通过；
+- 完整证据与未覆盖项见 [F4-Q-D 成组验收记录](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)。
 
 ## 十一、停止线
 

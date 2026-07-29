@@ -39,4 +39,34 @@ public class PublicSitemapControllerTest
         Assert.Equal("https://localhost:5000", capturedPublicBaseUrl);
         service.VerifyAll();
     }
+
+    [Fact]
+    public async Task GetSection_Should_Accept_Tags_Sitemap_Shard()
+    {
+        var service = new Mock<IPublicSitemapService>(MockBehavior.Strict);
+        service
+            .Setup(sitemapService => sitemapService.GetSectionXmlAsync(
+                "tags",
+                1,
+                "https://localhost:5000"))
+            .ReturnsAsync("<urlset />");
+
+        var controller = new PublicSitemapController(service.Object, new ConfigurationBuilder().Build())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+        controller.Request.Scheme = "http";
+        controller.Request.Host = new HostString("localhost", 5100);
+        controller.Request.Headers["X-Forwarded-Proto"] = "https";
+        controller.Request.Headers["X-Forwarded-Host"] = "localhost:5000";
+
+        var result = await controller.GetSection("tags-1.xml");
+
+        var contentResult = Assert.IsType<ContentResult>(result);
+        Assert.Equal("<urlset />", contentResult.Content);
+        service.VerifyAll();
+    }
 }
