@@ -16,11 +16,16 @@ namespace Radish.Service;
 public class TagService : BaseService<Tag, TagVo>, ITagService
 {
     private readonly IBaseRepository<Tag> _tagRepository;
+    private readonly ITagDiscoveryRepository _tagDiscoveryRepository;
 
-    public TagService(IMapper mapper, IBaseRepository<Tag> baseRepository)
+    public TagService(
+        IMapper mapper,
+        IBaseRepository<Tag> baseRepository,
+        ITagDiscoveryRepository tagDiscoveryRepository)
         : base(mapper, baseRepository)
     {
         _tagRepository = baseRepository;
+        _tagDiscoveryRepository = tagDiscoveryRepository;
     }
 
     /// <summary>
@@ -77,19 +82,10 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
     /// </summary>
     public async Task<List<TagVo>> GetHotTagsAsync(int topCount = 20)
     {
-        var safeTopCount = topCount <= 0 ? 20 : Math.Min(topCount, 100);
-
-        var (data, _) = await QueryPageAsync(
-            whereExpression: t => t.IsEnabled && !t.IsDeleted,
-            pageIndex: 1,
-            pageSize: safeTopCount,
-            orderByExpression: t => t.PostCount,
-            orderByType: OrderByType.Desc,
-            thenByExpression: t => t.SortOrder,
-            thenByType: OrderByType.Asc);
-
-        NormalizeVoSlugs(data);
-        return data;
+        var tags = await _tagDiscoveryRepository.QueryHotPublicTagsAsync(Math.Clamp(topCount, 1, 20));
+        var tagVos = Mapper.Map<List<TagVo>>(tags);
+        NormalizeVoSlugs(tagVos);
+        return tagVos;
     }
 
     /// <summary>
@@ -107,7 +103,29 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
 
         var tagVo = Mapper.Map<TagVo>(resolvedTag);
         tagVo.VoSlug = TagSlugHelper.BuildCanonicalSlug(resolvedTag.Name, resolvedTag.Slug);
+        tagVo.VoPostCount = await _tagDiscoveryRepository.QueryPublicPostCountAsync(resolvedTag.Id);
         return tagVo;
+    }
+
+    /// <summary>
+    /// 获取公开标签的相关标签
+    /// </summary>
+    public async Task<List<TagVo>?> GetRelatedTagsAsync(string slug, int topCount = 8)
+    {
+        var sourceTag = await ResolvePublicTagAsync(slug);
+        if (sourceTag == null)
+        {
+            return null;
+        }
+
+        await EnsureCanonicalSlugAsync(sourceTag);
+
+        var tags = await _tagDiscoveryRepository.QueryRelatedPublicTagsAsync(
+            sourceTag.Id,
+            Math.Clamp(topCount, 1, 20));
+        var tagVos = Mapper.Map<List<TagVo>>(tags);
+        NormalizeVoSlugs(tagVos);
+        return tagVos;
     }
 
     /// <summary>

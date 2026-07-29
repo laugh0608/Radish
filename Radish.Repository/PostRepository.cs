@@ -267,7 +267,11 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
         {
             RefAsync<int> totalCount = 0;
             var query = CreateTenantQueryableFor<Post>()
-                .Where(post => post.IsPublished && !post.IsDeleted && (!hasTag || taggedPostIds.Contains(post.Id)));
+                .Where(post =>
+                    post.IsPublished &&
+                    post.IsEnabled &&
+                    !post.IsDeleted &&
+                    (!hasTag || taggedPostIds.Contains(post.Id)));
 
             if (hasCategory)
             {
@@ -393,6 +397,7 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
                     question.PostId == post.Id &&
                     question.TenantId == post.TenantId &&
                     post.IsPublished &&
+                    post.IsEnabled &&
                     !post.IsDeleted)
                 .Where((question, post) =>
                     (!hasTag || taggedPostIds.Contains(post.Id)) &&

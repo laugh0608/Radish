@@ -2,12 +2,15 @@ using Asp.Versioning;
 using Radish.Common.HttpContextTool;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
+using Radish.Api.Resources;
 using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Shared;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -29,11 +32,16 @@ public class TagController : ControllerBase
 {
     private readonly ITagService _tagService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
+    private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
-    public TagController(ITagService tagService, ICurrentUserAccessor currentUserAccessor)
+    public TagController(
+        ITagService tagService,
+        ICurrentUserAccessor currentUserAccessor,
+        IStringLocalizer<Errors> errorsLocalizer)
     {
         _tagService = tagService;
         _currentUserAccessor = currentUserAccessor;
+        _errorsLocalizer = errorsLocalizer;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -91,6 +99,14 @@ public class TagController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetHotTags(int topCount = 20)
     {
+        if (topCount is < 1 or > 20)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "热门标签返回数量必须在 1 到 20 之间",
+                TagDiscoveryErrorCodes.TopCountInvalid);
+        }
+
         var hotTags = await _tagService.GetHotTagsAsync(topCount);
 
         return new MessageModel
@@ -149,12 +165,10 @@ public class TagController : ControllerBase
 
         if (tag == null)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                MessageInfo = "标签不存在或已不可用"
-            };
+            return BuildError(
+                HttpStatusCodeEnum.NotFound,
+                "标签不存在或已不可用",
+                TagDiscoveryErrorCodes.TagUnavailable);
         }
 
         return new MessageModel
@@ -163,6 +177,44 @@ public class TagController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "获取成功",
             ResponseData = tag
+        };
+    }
+
+    /// <summary>
+    /// 获取公开标签的相关标签
+    /// </summary>
+    /// <param name="slug">来源标签 slug</param>
+    /// <param name="topCount">返回数量，范围 1-20</param>
+    [HttpGet("{slug}")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel> GetRelated(string slug, int topCount = 8)
+    {
+        if (topCount is < 1 or > 20)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                "相关标签返回数量必须在 1 到 20 之间",
+                TagDiscoveryErrorCodes.TopCountInvalid);
+        }
+
+        var relatedTags = await _tagService.GetRelatedTagsAsync(slug, topCount);
+        if (relatedTags == null)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.NotFound,
+                "标签不存在或已不可用",
+                TagDiscoveryErrorCodes.TagUnavailable);
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "获取成功",
+            ResponseData = relatedTags
         };
     }
 
@@ -458,6 +510,23 @@ public class TagController : ControllerBase
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "恢复成功",
             ResponseData = true
+        };
+    }
+
+    private MessageModel BuildError(
+        HttpStatusCodeEnum statusCode,
+        string fallbackMessage,
+        string errorCode)
+    {
+        var messageKey = TagDiscoveryErrorCodes.ResolveMessageKey(errorCode);
+        var localizedMessage = _errorsLocalizer[messageKey];
+        return new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = localizedMessage.ResourceNotFound ? fallbackMessage : localizedMessage.Value,
+            Code = errorCode,
+            MessageKey = messageKey
         };
     }
 }

@@ -738,4 +738,10 @@
   <data name="error.forum.revision_restore_key_conflict" xml:space="preserve">
     <value>该恢复操作标识已用于其他请求，请刷新后重试。</value>
   </data>
+  <data name="error.forum.tag_discovery_top_count_invalid" xml:space="preserve">
+    <value>标签返回数量必须在 1 到 20 之间。</value>
+  </data>
+  <data name="error.forum.tag_discovery_tag_unavailable" xml:space="preserve">
+    <value>标签不存在或已不可用。</value>
+  </data>
 </root>

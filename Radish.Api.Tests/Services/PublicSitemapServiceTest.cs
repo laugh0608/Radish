@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Moq;
 using Radish.Common.CacheTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Service;
@@ -21,6 +22,7 @@ public class PublicSitemapServiceTest
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var wikiDocumentRepository = new Mock<IBaseRepository<WikiDocument>>(MockBehavior.Strict);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
+        var tagDiscoveryRepository = new Mock<ITagDiscoveryRepository>(MockBehavior.Strict);
 
         postRepository
             .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Post, bool>>?>()))
@@ -31,17 +33,55 @@ public class PublicSitemapServiceTest
         productRepository
             .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<Product, bool>>?>()))
             .ReturnsAsync(PublicSitemapService.SectionPageSize * (PublicSitemapService.MaxSectionPageCount + 1));
+        tagDiscoveryRepository
+            .Setup(repository => repository.QueryIndexableTagCountAsync())
+            .ReturnsAsync(1);
 
-        var service = CreateService(cache, postRepository, wikiDocumentRepository, productRepository);
+        var service = CreateService(
+            cache,
+            postRepository,
+            wikiDocumentRepository,
+            productRepository,
+            tagDiscoveryRepository);
 
         var xml = await service.GetIndexXmlAsync("https://example.test/");
 
         Assert.Contains("<sitemapindex", xml);
         Assert.Contains("https://example.test/sitemaps/static.xml", xml);
         Assert.Contains("https://example.test/sitemaps/forum-1.xml", xml);
+        Assert.Contains("https://example.test/sitemaps/tags-1.xml", xml);
         Assert.Contains("https://example.test/sitemaps/docs-2.xml", xml);
         Assert.Contains("https://example.test/sitemaps/shop-20.xml", xml);
         Assert.DoesNotContain("https://example.test/sitemaps/shop-21.xml", xml);
+    }
+
+    [Fact]
+    public async Task GetSectionXmlAsync_Should_Build_Canonical_Public_Tag_Urls()
+    {
+        var cache = CreateCacheMock();
+        var tagDiscoveryRepository = new Mock<ITagDiscoveryRepository>(MockBehavior.Strict);
+        tagDiscoveryRepository
+            .Setup(repository => repository.QueryIndexableTagPageAsync(
+                1,
+                PublicSitemapService.SectionPageSize))
+            .ReturnsAsync(
+            [
+                new Tag("C#")
+                {
+                    Id = 5001,
+                    Slug = "csharp",
+                    PostCount = 3,
+                    CreateTime = new DateTime(2026, 1, 1, 8, 0, 0, DateTimeKind.Utc),
+                    ModifyTime = new DateTime(2026, 1, 6, 8, 0, 0, DateTimeKind.Utc)
+                }
+            ]);
+
+        var service = CreateService(cache, tagDiscoveryRepository: tagDiscoveryRepository);
+
+        var xml = await service.GetSectionXmlAsync("tags", 1, "https://example.test");
+
+        Assert.Contains("https://example.test/forum/tag/csharp", xml);
+        Assert.Contains("2026-01-06T08:00:00Z", xml);
     }
 
     [Fact]
@@ -156,12 +196,14 @@ public class PublicSitemapServiceTest
         Mock<ICaching> cache,
         Mock<IBaseRepository<Post>>? postRepository = null,
         Mock<IBaseRepository<WikiDocument>>? wikiDocumentRepository = null,
-        Mock<IBaseRepository<Product>>? productRepository = null)
+        Mock<IBaseRepository<Product>>? productRepository = null,
+        Mock<ITagDiscoveryRepository>? tagDiscoveryRepository = null)
     {
         return new PublicSitemapService(
             cache.Object,
             (postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict)).Object,
             (wikiDocumentRepository ?? new Mock<IBaseRepository<WikiDocument>>(MockBehavior.Strict)).Object,
-            (productRepository ?? new Mock<IBaseRepository<Product>>(MockBehavior.Strict)).Object);
+            (productRepository ?? new Mock<IBaseRepository<Product>>(MockBehavior.Strict)).Object,
+            (tagDiscoveryRepository ?? new Mock<ITagDiscoveryRepository>(MockBehavior.Strict)).Object);
     }
 }

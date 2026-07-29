@@ -75,4 +75,36 @@ public class PublicHeadSnapshotControllerTest
         Assert.IsType<OkObjectResult>(result);
         Assert.Equal("https://localhost:5000", capturedPublicBaseUrl);
     }
+
+    [Fact]
+    public async Task GetForumTag_Should_Return_Tag_Snapshot()
+    {
+        var service = new Mock<IPublicHeadSnapshotService>(MockBehavior.Strict);
+        service
+            .Setup(snapshotService => snapshotService.GetForumTagSnapshotAsync("csharp", It.IsAny<string>()))
+            .ReturnsAsync(new PublicHeadSnapshotVo
+            {
+                VoTitle = "C# - Radish 论坛",
+                VoCanonicalUrl = "https://localhost:5000/forum/tag/csharp"
+            });
+
+        var controller = new PublicHeadSnapshotController(service.Object, new ConfigurationBuilder().Build())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+        controller.Request.Scheme = "https";
+        controller.Request.Host = new HostString("localhost", 5000);
+
+        var result = await controller.GetForumTag("csharp");
+
+        Assert.IsType<OkObjectResult>(result);
+        service.Verify(
+            snapshotService => snapshotService.GetForumTagSnapshotAsync(
+                "csharp",
+                "https://localhost:5000"),
+            Times.Once);
+    }
 }

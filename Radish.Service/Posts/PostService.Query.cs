@@ -49,7 +49,7 @@ public partial class PostService
     public async Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null, string answerSort = "default")
     {
         var post = await _postRepository.QueryByIdAsync(postId);
-        if (post == null || post.IsDeleted)
+        if (post == null || !post.IsPublished || !post.IsEnabled || post.IsDeleted)
         {
             return null;
         }
@@ -151,7 +151,11 @@ public partial class PostService
             return null;
         }
 
-        var post = await _postRepository.QueryFirstAsync(item => item.PublicId == normalizedPublicId && !item.IsDeleted);
+        var post = await _postRepository.QueryFirstAsync(item =>
+            item.PublicId == normalizedPublicId &&
+            item.IsPublished &&
+            item.IsEnabled &&
+            !item.IsDeleted);
         return post == null
             ? null
             : await GetPostDetailAsync(post.Id, viewerUserId, answerSort);
@@ -261,6 +265,7 @@ public partial class PostService
         Expression<Func<Post, bool>> baseCondition = post =>
             pollPostIds.Contains(post.Id) &&
             post.IsPublished &&
+            post.IsEnabled &&
             !post.IsDeleted &&
             (!hasCategory || post.CategoryId == categoryValue) &&
             (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
@@ -345,6 +350,7 @@ public partial class PostService
         Expression<Func<Post, bool>> baseCondition = post =>
             lotteryPostIds.Contains(post.Id) &&
             post.IsPublished &&
+            post.IsEnabled &&
             !post.IsDeleted &&
             (!hasCategory || post.CategoryId == categoryValue) &&
             (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&

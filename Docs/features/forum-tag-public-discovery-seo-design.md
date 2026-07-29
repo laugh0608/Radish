@@ -1,6 +1,6 @@
 # F4-Q 论坛标签公开发现、可见性与 SEO 闭环
 
-> **状态**：F4-Q-A 候选审计与权威设计已完成；等待批准进入 B 批
+> **状态**：F4-Q-A/B 已完成；等待批准进入 C 批正式 Web
 >
 > **复核日期**：2026-07-29（Asia/Shanghai）
 >
@@ -17,7 +17,7 @@ F4-Q 不新增新的内容对象，也不启动推荐系统。当前标签能力
 
 F4-Q 选择在既有标签关系上完成公开发现与索引闭环。它直接服务“内容发现、讨论沉淀、公开回流”主轴，边界比圈子推荐、投票 / 抽奖运营或匿名公开聊天更稳定。
 
-F4-Q-A 只完成审计和设计，不包含代码、数据库、运行配置或服务启动。
+F4-Q-A 完成审计与设计；F4-Q-B 已完成服务端公开读取、标签聚合、Gateway 首包 head 与 tags sitemap，不包含正式 Web 或服务启动。
 
 ## 二、候选审计
 
@@ -402,12 +402,18 @@ B 批必须复核：
 
 ### F4-Q-B：公开读取、head 与 sitemap
 
+- **完成状态（2026-07-29）**：已完成。
 - 统一 forum 公开列表 / 详情的 `IsPublished && IsEnabled && !IsDeleted` 判定；
 - 落地数据库侧标签发现查询与公开数量；
 - 收紧热门标签，新增相关标签 API；
 - 增加标签 Gateway head snapshot；
 - 增加 tags sitemap 分片；
 - 补服务、Controller、Gateway、SQLite / PostgreSQL 条件测试与必要 migration verify。
+- 实现说明：
+  - 新增 `ITagDiscoveryRepository / TagDiscoveryRepository`，公开计数与共现均在数据库侧完成，并按公开帖子 ID 去重；
+  - `Tag.PostCount` 继续作为关系投影，公开详情、热门、相关和 sitemap 使用实时公开聚合；
+  - `topCount` 固定 `1~20`，非法请求和来源标签不可用均返回稳定 `Code / MessageKey`；
+  - 未新增表、字段或索引，因而本批无 migration；SQLite 已实跑聚合翻译，PostgreSQL 条件用例在配置测试连接时执行。
 
 ### F4-Q-C：正式 Web
 

@@ -62,6 +62,7 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
     private readonly IBaseRepository<WikiDocument> _wikiDocumentRepository;
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
+    private readonly ITagService _tagService;
 
 #pragma warning disable CS0618
     private static readonly Expression<Func<Product, bool>> PublicVisibleProductExpression = product =>
@@ -89,13 +90,15 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         IBaseRepository<Post> postRepository,
         IBaseRepository<WikiDocument> wikiDocumentRepository,
         IBaseRepository<Product> productRepository,
-        IAttachmentUrlResolver attachmentUrlResolver)
+        IAttachmentUrlResolver attachmentUrlResolver,
+        ITagService tagService)
     {
         _cache = cache;
         _postRepository = postRepository;
         _wikiDocumentRepository = wikiDocumentRepository;
         _productRepository = productRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
+        _tagService = tagService;
     }
 
     public Task<PublicHeadSnapshotVo?> GetStaticRouteSnapshotAsync(string routeKey, string publicBaseUrl)
@@ -130,6 +133,26 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         {
             var post = await QueryPublicPostAsync(normalizedPostKey);
             return post is null ? null : BuildForumPostSnapshot(post, normalizedBaseUrl);
+        });
+    }
+
+    public Task<PublicHeadSnapshotVo?> GetForumTagSnapshotAsync(string slug, string publicBaseUrl)
+    {
+        var normalizedSlug = slug.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedSlug))
+        {
+            return Task.FromResult<PublicHeadSnapshotVo?>(null);
+        }
+
+        var normalizedBaseUrl = NormalizePublicBaseUrl(publicBaseUrl);
+        var cacheKey = BuildCacheKey("forum-tag", normalizedSlug.ToLowerInvariant(), normalizedBaseUrl);
+
+        return GetCachedOrGenerateAsync(cacheKey, async () =>
+        {
+            var tag = await _tagService.GetPublicTagBySlugAsync(normalizedSlug);
+            return tag is null || tag.VoPostCount <= 0
+                ? null
+                : BuildForumTagSnapshot(tag, normalizedBaseUrl);
         });
     }
 
@@ -296,6 +319,40 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
                 ["author"] = BuildNamedThing("Person", NormalizeText(post.AuthorName, SiteName)),
                 ["publisher"] = BuildNamedThing("Organization", SiteName),
                 ["image"] = imageUrl
+            })
+        };
+    }
+
+    private static PublicHeadSnapshotVo BuildForumTagSnapshot(TagVo tag, string publicBaseUrl)
+    {
+        var canonicalSlug = TagSlugHelper.BuildCanonicalSlug(tag.VoName, tag.VoSlug);
+        var path = $"/forum/tag/{Uri.EscapeDataString(canonicalSlug)}";
+        var title = $"{NormalizeText(tag.VoName, "未命名标签")} - Radish 论坛";
+        var description = BuildDescription(
+            tag.VoDescription,
+            $"浏览 Radish 论坛中与“{tag.VoName}”相关的 {tag.VoPostCount} 篇公开帖子。");
+        var canonicalUrl = CombineUrl(publicBaseUrl, path);
+        var modifiedAt = ResolveUtc(tag.VoModifyTime ?? tag.VoCreateTime);
+
+        return new PublicHeadSnapshotVo
+        {
+            VoTitle = title,
+            VoDescription = description,
+            VoCanonicalPath = path,
+            VoCanonicalUrl = canonicalUrl,
+            VoOpenGraphType = "website",
+            VoModifiedAt = modifiedAt,
+            VoJsonLd = BuildJsonLd(new Dictionary<string, object?>
+            {
+                ["@context"] = "https://schema.org",
+                ["@type"] = "CollectionPage",
+                ["name"] = tag.VoName,
+                ["description"] = description,
+                ["url"] = canonicalUrl,
+                ["mainEntityOfPage"] = canonicalUrl,
+                ["dateModified"] = FormatDateTime(modifiedAt),
+                ["isPartOf"] = BuildNamedThing("WebSite", SiteName),
+                ["publisher"] = BuildNamedThing("Organization", SiteName)
             })
         };
     }

@@ -738,4 +738,10 @@
   <data name="error.forum.revision_restore_key_conflict" xml:space="preserve">
     <value>This restore operation key was already used for another request. Refresh and try again.</value>
   </data>
+  <data name="error.forum.tag_discovery_top_count_invalid" xml:space="preserve">
+    <value>The requested tag count must be between 1 and 20.</value>
+  </data>
+  <data name="error.forum.tag_discovery_tag_unavailable" xml:space="preserve">
+    <value>The tag does not exist or is unavailable.</value>
+  </data>
 </root>

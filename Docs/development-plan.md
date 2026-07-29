@@ -8,8 +8,8 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-Q-A 权威设计已完成；等待批准进入 B 批`
-- **产品下一顺位**：`统一论坛公开可见性并补标签相关主题、首包 head 与动态 sitemap`
+- **工程第一顺位**：`F4-Q-B 服务端公开发现与 SEO 契约已完成；等待批准进入 C 批`
+- **产品下一顺位**：`标签页接入相关主题、公开数量与正式 Web 契约`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
 - **复核日期**：`2026-07-29`
 - **当前结论**：
@@ -40,7 +40,7 @@
   - F4-K 已完成 A-D 批并关闭：Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制、旧字段迁移、正式 Web 和三账号 Gateway 矩阵均已通过；验收共同根因修复、临时数据清理、六库完整性与严格 verify 完成。
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
-  - F4-Q-A 已完成候选审计与权威设计，选择论坛标签公开发现、可见性与 SEO 闭环；下一步等待批准进入 B 批，统一公开帖子判定并实现相关标签、标签首包 head 和 tags sitemap。
+  - F4-Q-A/B 已完成：候选审计与权威设计后，已统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head 和 tags sitemap；下一步等待批准进入 C 批正式 Web。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -60,7 +60,7 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-P 均已关闭，F4-Q-A 设计已完成，等待批准进入 B 批。
+- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-P 均已关闭，F4-Q-A/B 已完成，等待批准进入 C 批。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
 - 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B 至 F4-P 已关闭，功能完成线当前进入 F4-Q。
 - Q4、公开 head、WebOS 和 Flutter 继续按触达范围或真实问题维护，不与正式 Web 功能主线争夺顺位。
@@ -130,7 +130,7 @@ Radish V1 固定为：
 13. [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 与 [F4-N 论坛内容赞赏](/features/forum-content-reward)均已完成 A-D 批并关闭。
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
-16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A 批候选审计与权威设计；等待批准进入 B 批服务端公开读取、Gateway head 与 sitemap。
+16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A/B 批候选设计、服务端公开读取、Gateway head 与 tags sitemap；等待批准进入 C 批正式 Web。
 
 ## P3-12-F 门禁分层
 

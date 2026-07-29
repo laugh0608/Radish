@@ -751,6 +751,14 @@ public class PostServiceTest
                 IsClosed = false,
                 EndTime = DateTime.UtcNow.AddHours(-1),
                 IsDeleted = false
+            },
+            new()
+            {
+                Id = 2004,
+                PostId = 1004,
+                IsClosed = false,
+                EndTime = DateTime.UtcNow.AddHours(2),
+                IsDeleted = false
             }
         };
 
@@ -776,6 +784,14 @@ public class PostServiceTest
                 IsPublished = true,
                 IsDeleted = false,
                 CreateTime = DateTime.UtcNow.AddMinutes(-30)
+            },
+            new(new PostInitializationOptions("已禁用投票", "正文"))
+            {
+                Id = 1004,
+                IsPublished = true,
+                IsEnabled = false,
+                IsDeleted = false,
+                CreateTime = DateTime.UtcNow.AddMinutes(-40)
             }
         };
 
@@ -2633,6 +2649,49 @@ public class PostServiceTest
         Assert.Equal(400, exception.StatusCode);
         Assert.Equal("Forum.PublishTitleTooLong", exception.ErrorCode);
         Assert.Equal("error.forum.publish_title_too_long", exception.MessageKey);
+    }
+
+    [Fact]
+    public async Task GetPostDetailAsync_Should_Not_Expose_Disabled_Post()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(9527))
+            .ReturnsAsync(new Post(new PostInitializationOptions("已禁用帖子", "正文")
+            {
+                IsPublished = true,
+                IsEnabled = false
+            })
+            {
+                Id = 9527,
+                IsDeleted = false
+            });
+        var service = new PostService(
+            Mock.Of<IMapper>(),
+            postRepository.Object,
+            Mock.Of<IBaseRepository<UserPostLike>>(),
+            Mock.Of<IBaseRepository<PostTag>>(),
+            Mock.Of<IBaseRepository<Category>>(),
+            Mock.Of<IBaseRepository<Tag>>(),
+            Mock.Of<IBaseRepository<PostPoll>>(),
+            Mock.Of<IBaseRepository<PostPollOption>>(),
+            Mock.Of<IBaseRepository<PostPollVote>>(),
+            Mock.Of<IBaseRepository<PostQuestion>>(),
+            Mock.Of<IBaseRepository<PostAnswer>>(),
+            Mock.Of<ITagService>(),
+            Mock.Of<ICoinRewardService>(),
+            Mock.Of<INotificationService>(),
+            Mock.Of<INotificationDedupService>(),
+            Mock.Of<IExperienceService>(),
+            Mock.Of<IBaseRepository<PostEditHistory>>(),
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
+
+        var result = await service.GetPostDetailAsync(9527);
+
+        Assert.Null(result);
+        postRepository.VerifyAll();
     }
 
     private static ISystemSettingProvider CreateDefaultSystemSettingProvider(
