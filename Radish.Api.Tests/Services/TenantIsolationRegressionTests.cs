@@ -184,6 +184,7 @@ public class TenantIsolationRegressionTests
 
         AssertPublicTenantOnlyFilter<Reaction>();
         AssertPublicTenantOnlyFilter<UserPostLike>();
+        AssertPublicTenantOnlyFilter<UserPostBookmark>();
         AssertPublicTenantOnlyFilter<UserCommentLike>();
         AssertPublicTenantOnlyFilter<UploadSession>();
         AssertPublicTenantOnlyFilter<UserPaymentPassword>();

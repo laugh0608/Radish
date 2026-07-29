@@ -146,6 +146,11 @@ public class PostVo
     public int VoCollectCount { get; set; }
 
     /// <summary>
+    /// 当前登录用户是否已收藏
+    /// </summary>
+    public bool VoIsBookmarked { get; set; }
+
+    /// <summary>
     /// 分享次数
     /// </summary>
     public int VoShareCount { get; set; }

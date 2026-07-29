@@ -6,9 +6,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-P-A 权威设计已完成；等待批准进入 B 批服务端与 migration`
-- **产品下一顺位**：`以私有帖子收藏补齐“阅读 -> 保存 -> 回访”，先落权威关系与幂等写入`
-- **复核日期**：`2026-07-28`
+- **工程第一顺位**：`F4-P-B 服务端与 migration 已完成；等待批准进入 C 批正式 Web`
+- **产品下一顺位**：`在帖子详情和 /me/content 落地收藏与回访正式路径`
+- **复核日期**：`2026-07-29`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
@@ -24,15 +24,16 @@
 - [F4-O-D 成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)已通过：匿名、问题作者兼管理员、回答作者的 PC / mobile 代表矩阵覆盖创建、编辑、恢复、采纳与撤销；其余权限、失败和治理边界由自动化回归覆盖。
 - D 批修正 migration 前置校验加载未来字段、正式 Web 新旧回答区重复渲染两项共同根因；临时帖子、回答、Revision、事件、通知、Outbox、浏览历史和经验副作用均已清理，六库完整性与严格 verify 通过。
 - 当前机器未配置 PostgreSQL 集成测试环境，相关条件用例保持显式跳过，不把 SQLite 结果表述为 PostgreSQL 实跑。
-- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A 批候选审计与权威设计：新增私有 Bookmark 关系作为 Main 唯一真相，`CollectCount` 只作可重建投影，写入使用显式目标状态。
+- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 B 批：私有 `UserPostBookmark`、显式状态事务、Post 行锁、个人稳定分页、不可用目标移除、详情收藏态与统一 HTTP 客户端已经落地。
+- Main migration `20260729_017_forum_post_bookmark` 只在既有 User / Post baseline 上创建关系并重建 `CollectCount`；strict verify 覆盖 PublicId、唯一关系、租户与孤立目标、稳定分页索引和投影一致性。
 - F4-P 固定帖子详情收藏与 `/me/content?tab=bookmarks` 两条正式 Web 路径；收藏不通知作者、不发奖励、不公开收藏者，也不扩收藏夹、推荐或跨对象收藏。
 
-## 明天事项（2026-07-29，F4-P-B，等待批准）
+## 明天事项（2026-07-30，F4-P-C，等待批准）
 
-1. 新会话先复核 [F4-P 权威设计](/features/forum-post-bookmark-personal-library-design) 的权威对象、Post 行锁顺序、接口和停止线；确认下一个未占用 Main migration ID，并汇报 B 批预计修改范围，获得明确批准后再进入代码。
-2. 新增 `UserPostBookmark`、专属 Repository / Service、显式状态写入、个人分页与不可用目标移除；所有收藏写入口统一按“Post -> Bookmark”锁顺序执行。
-3. 增加 Main migration 和 strict verify，覆盖 PublicId、唯一关系、租户、孤立目标、稳定分页索引与 `CollectCount` 投影一致性。
-4. 接入 `@radish/http`，完成服务端、HTTP、SQLite 与 PostgreSQL 条件回归；B 批不提前修改正式页面，也不启动服务或执行浏览器 smoke。
+1. 新会话先复核 [F4-P 权威设计](/features/forum-post-bookmark-personal-library-design) 的正式 Web 路径、登录回流、不可用占位和停止线；汇报 C 批预计修改范围，获得明确批准后再进入页面代码。
+2. 在正式帖子详情动作区接入收藏 / 取消收藏与 `VoCollectCount` 权威回写；匿名点击使用受控 `intent=bookmark` 登录返回，登录后不自动提交。
+3. 在 `/me/content?tab=bookmarks` 增加稳定分页、Available 公开链接、Unavailable 脱敏占位和按 Bookmark PublicId 移除。
+4. 补齐 `zh / en`、四主题、键盘、reduced-motion 与 PC / mobile 静态契约；C 批按开发中粒度验证，不提前启动服务或执行 D 批真实 smoke。
 
 ## 当前执行入口
 
@@ -61,7 +62,7 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- 未取得 B 批明确批准前不进入代码；不把 F4-P 扩成收藏夹、推荐、公开收藏主页、跨对象收藏或通知奖励。
+- 未取得 C 批明确批准前不进入页面代码；不把 F4-P 扩成收藏夹、推荐、公开收藏主页、跨对象收藏或通知奖励。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
 

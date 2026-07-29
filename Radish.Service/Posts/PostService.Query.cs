@@ -57,6 +57,13 @@ public partial class PostService
         await EnsurePostPublicIdBackfilledAsync(post);
 
         var postVo = Mapper.Map<PostVo>(post);
+        if (viewerUserId is > 0 && _userPostBookmarkRepository != null)
+        {
+            postVo.VoIsBookmarked = await _userPostBookmarkRepository.QueryActiveAsync(
+                post.TenantId,
+                viewerUserId.Value,
+                post.Id) != null;
+        }
 
         if (post.CategoryId > 0)
         {

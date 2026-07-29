@@ -49,6 +49,7 @@ internal static class SchemaMigrationRegistry
         ContentRewardAuditProjectionSchemaMigration.Instance,
         ForumAnswerLifecycleSchemaMigration.Instance,
         ForumAnswerLifecycleStrictSchemaMigration.Instance,
+        ForumPostBookmarkSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance,
         UserBlockNotificationSuppressionSchemaMigration.Instance

@@ -1,8 +1,8 @@
 # F4-P 论坛帖子收藏与个人内容回访
 
-> **状态**：F4-P-A 候选审计与权威设计已完成；等待批准进入 B 批服务端与 migration
+> **状态**：F4-P-B 服务端、Main migration 与统一 HTTP 客户端已完成；等待批准进入 C 批正式 Web
 >
-> **复核日期**：2026-07-28（Asia/Shanghai）
+> **复核日期**：2026-07-29（Asia/Shanghai）
 >
 > **适用范围**：正式 Web 论坛、个人中心、Main 数据库、API、`@radish/http` 和 `radish.client`
 >
@@ -26,6 +26,8 @@ F4-P 选择“论坛帖子收藏与个人内容回访”为下一项既有功能
 8. 个人中心在 `/me/content?tab=bookmarks` 提供分页收藏列表，按最近收藏时间排序，并返回真实公开帖子链接。
 9. 目标删除、治理限制或不可读取时，个人列表显示通用“内容不可用”占位，并允许通过 Bookmark PublicId 移除；不泄露删除或治理原因。
 10. 本专题不建设收藏夹、分组、备注、标签、公开收藏主页、协作清单、推荐算法或跨对象收藏。
+
+F4-P-B 已按上述边界落地：`UserPostBookmark` 是唯一关系真相，Repository 统一承载显式状态事务与“Post -> Bookmark”锁顺序，详情查询返回当前用户收藏态，个人分页批量组装可用摘要并脱敏不可用目标。Main migration 固定为 `20260729_017_forum_post_bookmark`，在正式 Main 的既有 User / Post baseline 上创建收藏表、重建全部 `CollectCount` 并执行严格校验；ledger 隔离自测没有 User baseline 时只建立空关系结构，不通过当前实体补建未来 baseline。`@radish/http` 已提供三项正式调用契约。B 批没有修改正式页面，也没有启动服务或执行浏览器 smoke。
 
 ## 二、F4-P-A 候选审计
 
@@ -389,7 +391,7 @@ Repository 从 Bookmark 关系出发稳定分页，不从 Post 反向猜测：
 
 ## 十、Migration 与严格校验
 
-使用下一个未占用的不可变 Main migration ID；设计阶段不提前固定日期编号。
+使用不可变 Main migration ID `20260729_017_forum_post_bookmark`。正式 Main 在既有 User / Post baseline 上前滚，迁移不通过当前实体 `CodeFirst` 偷建或补写基础表的未来字段；为兼容 ledger 隔离自测，没有 User baseline 且没有收藏关系时只建立空 Bookmark 结构，即使早期 migration 已物化局部 Post 结构也不误判为正式 baseline。已存在 User 但缺少 Post，或已有关系无法校验时仍失败。
 
 Apply：
 
@@ -412,7 +414,8 @@ Verify：
 
 专项回归：
 
-- SQLite 空库 Apply / Verify / 重入；
+- SQLite baseline 空关系库 Apply / Verify / 重入；
+- ledger 隔离库不创建 User，已有 User 但缺少 Post 时明确拒绝；
 - 旧库只有 `CollectCount`、没有关系表；
 - 重复关系、重复 PublicId、跨租户、孤立目标和错误计数故障注入；
 - PostgreSQL 条件集成测试；
@@ -477,10 +480,12 @@ Verify：
 
 ### F4-P-B：服务端与 migration
 
-- 新增 `UserPostBookmark`、Repository、Service、DTO / Vo 和 Controller；
-- 实现显式状态、个人分页、不可用移除和计数事务；
-- 增加 Main migration、strict verify、SQLite / PostgreSQL 条件回归；
-- 接入 `@radish/http`。
+- **完成状态（2026-07-29）**：已新增 `UserPostBookmark`、专属 Repository / Service、DTO / Vo 和 `PostBookmarkController`。
+- 显式状态、同状态幂等、Post 锁序、软删除重收、个人稳定分页、不可用目标移除和 `CollectCount` 同事务投影已落地。
+- Main migration `20260729_017_forum_post_bookmark` 已注册；strict verify 覆盖表列索引、PublicId、关系唯一性、租户与孤立目标、稳定分页尾键及计数重建一致性。
+- `@radish/http` 已提供 `setPostBookmarkState`、`getMyPostBookmarks` 与 `removePostBookmark`，PublicId / LongId 兼容只保留在 Controller 边界。
+- 聚焦回归、完整 `validate:baseline`、changed-only 静态检查均通过；当前机器未配置 PostgreSQL 连接串，2 个 PostgreSQL 条件用例明确跳过，未表述为实跑通过。
+- 完成后汇报，等待明确批准进入 F4-P-C。
 
 ### F4-P-C：正式 Web
 

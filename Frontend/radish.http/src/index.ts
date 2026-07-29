@@ -188,6 +188,25 @@ export {
 } from './forum-question-client';
 
 export type {
+  PostBookmarkErrorCodeValue,
+  PostBookmarkTargetStatus,
+  SetPostBookmarkStateRequest,
+  RemovePostBookmarkRequest,
+  GetMyPostBookmarksRequest,
+  PostBookmarkStateVo,
+  PostBookmarkRemoveVo,
+  UserPostBookmarkTagVo,
+  UserPostBookmarkVo,
+  UserPostBookmarkPageVo,
+} from './post-bookmark-contract';
+export { PostBookmarkErrorCode } from './post-bookmark-contract';
+export {
+  setPostBookmarkState,
+  getMyPostBookmarks,
+  removePostBookmark,
+} from './post-bookmark-client';
+
+export type {
   ContentRewardLongId,
   ContentRewardTargetType,
   ContentRewardReasonCode,

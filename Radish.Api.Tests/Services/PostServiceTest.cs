@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -261,6 +262,7 @@ public class PostServiceTest
         var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
         var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
         var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var bookmarkRepository = new Mock<IUserPostBookmarkRepository>(MockBehavior.Strict);
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var post = new Post(new PostInitializationOptions("问答详情帖", "这个问题应该怎么分析和解决？")
@@ -304,6 +306,15 @@ public class PostServiceTest
         postAnswerRepository
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostAnswer, bool>>?>()))
             .ReturnsAsync(new List<PostAnswer>());
+        bookmarkRepository
+            .Setup(repository => repository.QueryActiveAsync(9, 2001, 1004))
+            .ReturnsAsync(new UserPostBookmark
+            {
+                Id = 8001,
+                TenantId = 9,
+                UserId = 2001,
+                PostId = 1004
+            });
         mapper
             .Setup(m => m.Map<PostVo>(post))
             .Returns(new PostVo
@@ -344,9 +355,10 @@ public class PostServiceTest
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
-            CreateDefaultSystemSettingProvider());
+            CreateDefaultSystemSettingProvider(),
+            userPostBookmarkRepository: bookmarkRepository.Object);
 
-        var result = await service.GetPostDetailAsync(1004, viewerUserId: null);
+        var result = await service.GetPostDetailAsync(1004, viewerUserId: 2001);
 
         Assert.NotNull(result);
         Assert.True(result!.VoIsQuestion);
@@ -357,12 +369,14 @@ public class PostServiceTest
         Assert.Equal(3, result.VoQuestion.VoAnswerCount);
         Assert.Empty(result.VoQuestion.VoAnswers);
         Assert.Null(result.VoPoll);
+        Assert.True(result.VoIsBookmarked);
 
         postRepository.VerifyAll();
         postTagRepository.VerifyAll();
         postPollRepository.VerifyAll();
         postQuestionRepository.VerifyAll();
         postAnswerRepository.VerifyAll();
+        bookmarkRepository.VerifyAll();
         mapper.VerifyAll();
     }
 
