@@ -132,7 +132,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭：回答 PublicId、服务端分页、独立 Revision、附件归属、CAS、采纳事件、治理申诉、可靠通知、strict migration、正式 Web 与 Gateway 代表矩阵形成闭环。
 
-[F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A 批候选审计与权威设计：收藏固定为当前用户拥有的私有帖子关系，Main `UserPostBookmark` 是唯一真相，`Post.CollectCount` 只作投影；显式状态写入、个人收藏分页、不可用目标移除、正式 Web 与 A-D 停止线已明确，等待批准进入 B 批服务端与 migration。
+[F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭：Main `UserPostBookmark` 私有权威关系、`Post.CollectCount` 可重建投影、显式状态事务、稳定个人分页、不可用目标移除、正式 Web 与代表身份 PC / mobile 成组验收形成闭环；收藏夹、推荐、公开收藏主页和跨对象收藏继续保持停止线。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

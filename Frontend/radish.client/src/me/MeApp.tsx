@@ -157,10 +157,7 @@ const initialDashboardData: MeDashboardData = {
   loadedAt: null,
 };
 
-const meRouteDescriptor: PublicRouteDescriptor = {
-  app: 'me',
-  route: { kind: 'index' },
-};
+type MeRouteDescriptor = Extract<PublicRouteDescriptor, { app: 'me' }>;
 
 const contentTabs: Array<{ tab: MeContentTab; labelKey: string }> = [
   { tab: 'posts', labelKey: 'me.content.tab.posts' },
@@ -298,7 +295,10 @@ function isPublicDocsDetailPath(pathname: string): boolean {
   return slugSegment.length > 0 && !slugSegment.includes('/');
 }
 
-function buildSourceStateForHref(href: string): PublicRouteSourceState | null {
+function buildSourceStateForHref(
+  href: string,
+  sourceRoute: MeRouteDescriptor,
+): PublicRouteSourceState | null {
   const normalizedPath = normalizeInternalPath(href);
   if (!normalizedPath) {
     return null;
@@ -306,19 +306,19 @@ function buildSourceStateForHref(href: string): PublicRouteSourceState | null {
 
   const pathname = new URL(normalizedPath, 'https://radish.local').pathname;
   if (pathname.startsWith('/forum/post/')) {
-    return { forumDetailSourceRoute: meRouteDescriptor };
+    return { forumDetailSourceRoute: sourceRoute };
   }
 
   if (isPublicDocsDetailPath(pathname)) {
-    return { docsDetailSourceRoute: meRouteDescriptor };
+    return { docsDetailSourceRoute: sourceRoute };
   }
 
   if (pathname.startsWith('/shop/product/')) {
-    return { shopDetailSourceRoute: meRouteDescriptor };
+    return { shopDetailSourceRoute: sourceRoute };
   }
 
   if (pathname.startsWith('/u/')) {
-    return { profileSourceRoute: meRouteDescriptor };
+    return { profileSourceRoute: sourceRoute };
   }
 
   return null;
@@ -411,6 +411,10 @@ export const MeApp = () => {
   const avatarThumbnailUrl = useUserStore(state => state.avatarThumbnailUrl);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [route, setRoute] = useState<MeRoute>(() => resolveInitialMeRoute());
+  const meRouteDescriptor = useMemo<MeRouteDescriptor>(() => ({
+    app: 'me',
+    route,
+  }), [route]);
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [dashboardData, setDashboardData] = useState<MeDashboardData>(initialDashboardData);
@@ -642,18 +646,18 @@ export const MeApp = () => {
       { app: 'profile', route: selfProfileRoute }
     );
     rememberPublicRouteSourceTransfer(selfProfilePath, sourceState);
-  }, [selfProfilePath, selfProfileRoute]);
+  }, [meRouteDescriptor, selfProfilePath, selfProfileRoute]);
 
   const rememberSourceForPublicLink = useCallback((event: MouseEvent<HTMLAnchorElement>, href: string) => {
     if (!shouldHandlePlainLinkClick(event)) {
       return;
     }
 
-    const sourceState = buildSourceStateForHref(href);
+    const sourceState = buildSourceStateForHref(href, meRouteDescriptor);
     if (sourceState) {
       rememberPublicRouteSourceTransfer(href, sourceState);
     }
-  }, []);
+  }, [meRouteDescriptor]);
 
   const renderStatusPanel = (title: string, description: string, icon = 'mdi:account-circle-outline') => (
     <WebStateSlot tone={icon === 'mdi:progress-clock' ? 'loading' : 'auth'} title={title} description={description} icon={icon} />

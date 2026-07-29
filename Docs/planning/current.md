@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-P-C 正式 Web 已完成；等待批准进入 D 批成组验收`
-- **产品下一顺位**：`按代表身份与 PC / mobile 矩阵验收收藏、回访、不可用占位和移除链路`
+- **工程第一顺位**：`F4-P A-D 已完成并关闭；等待批准进入 F4-Q-A 候选只读审计`
+- **产品下一顺位**：`只读比较标签导流、圈子关系流与其他既有功能缺口，先定边界再选题`
 - **复核日期**：`2026-07-29`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
@@ -24,17 +24,16 @@
 - [F4-O-D 成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)已通过：匿名、问题作者兼管理员、回答作者的 PC / mobile 代表矩阵覆盖创建、编辑、恢复、采纳与撤销；其余权限、失败和治理边界由自动化回归覆盖。
 - D 批修正 migration 前置校验加载未来字段、正式 Web 新旧回答区重复渲染两项共同根因；临时帖子、回答、Revision、事件、通知、Outbox、浏览历史和经验副作用均已清理，六库完整性与严格 verify 通过。
 - 当前机器未配置 PostgreSQL 集成测试环境，相关条件用例保持显式跳过，不把 SQLite 结果表述为 PostgreSQL 实跑。
-- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 C 批：私有 `UserPostBookmark`、显式状态事务、Post 行锁、个人稳定分页、不可用目标移除、详情收藏态与统一 HTTP 客户端已经落地。
-- Main migration `20260729_017_forum_post_bookmark` 只在既有 User / Post baseline 上创建关系并重建 `CollectCount`；strict verify 覆盖 PublicId、唯一关系、租户与孤立目标、稳定分页索引和投影一致性。
-- 正式帖子详情已接入显式收藏 / 取消、权威计数回写和 `intent=bookmark` 登录返回；登录后不自动提交。`/me/content?tab=bookmarks` 已接入 Available 公开链接、Unavailable 脱敏占位和 Bookmark PublicId 移除。
-- C 批的中英文、语义主题 token、键盘、mobile 与 reduced-motion 静态契约已通过；收藏不通知作者、不发奖励、不公开收藏者，也不扩收藏夹、推荐或跨对象收藏。
+- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭：Main 私有关系、显式幂等状态、Post 锁序、稳定分页、不可用目标、正式 Web 与代表运行态矩阵形成闭环。
+- [F4-P-D 成组验收](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)覆盖匿名、普通收藏者、作者和第三方读者，以及 PC / mobile、`zh / en`、代表主题、同状态重试、多标签并发和无跨域副作用边界。
+- D 批修正个人内容来源被压缩到 `/me` 的统一导航契约根因；公开详情现携带完整 `MeRoute`，可精确返回原收藏标签与页码。临时数据和运行状态已清理，六库完整性与 strict migration verify 通过。
 
-## 明天事项（2026-07-30，F4-P-D，等待批准）
+## 明天事项（2026-07-30，F4-Q-A，等待批准）
 
-1. 新会话先复核 [F4-P 权威设计](/features/forum-post-bookmark-personal-library-design) 与[浏览器 Smoke 规则](/guide/browser-smoke)，说明服务启动命令、端口、运行影响和清理方式；获得 D 批与当前任务启动授权后再执行真实联调。
-2. 按匿名、普通收藏者、帖子作者和第三方读者覆盖登录回流、收藏 / 取消 / 重收、响应丢失同状态重试、多标签并发、个人列表分页与详情返回。
-3. 覆盖目标删除 / 限制 / 恢复后的 Available / Unavailable、脱敏占位和 Bookmark PublicId 移除，并复核无通知、奖励、经验或萝卜币副作用。
-4. 按 PC / mobile、`zh / en` 与代表主题完成 Gateway 页面矩阵；清理测试数据和浏览器状态后执行六库完整性与 strict migration verify，形成 D 批记录并关闭专题。
+1. 先只读复核 [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)、当前专题资产与明确维护项，不直接编码。
+2. 比较标签导流与 SEO 深化、圈子关系流深化，以及其他仍有明确用户动作缺口的既有能力；按产品主轴、长期价值、边界稳定性和实现风险裁决唯一候选。
+3. 若候选成立，先新建或更新对应专题文档，明确用户路径、权威对象、接口 / 页面归属、权限、失败恢复、停止线和 A-D 批次。
+4. 候选设计完成后汇报并等待批准；不把缺少生产使用数据作为选题或开发阻断。
 
 ## 当前执行入口
 
@@ -45,6 +44,7 @@
 - [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)
 - [F4-O-D 论坛回答生命周期成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)
 - [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)
+- [F4-P-D 论坛帖子收藏成组验收](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)
 - [2026-07-28 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-28)
 - [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
 - [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)
@@ -63,7 +63,7 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- 未取得 D 批及当前任务服务启动授权前不执行真实联调；不把 F4-P 扩成收藏夹、推荐、公开收藏主页、跨对象收藏或通知奖励。
+- F4-Q 候选裁决和专题边界未确认前不直接编码；不把已关闭的 F4-P 扩成收藏夹、推荐、公开收藏主页、跨对象收藏或通知奖励。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
 

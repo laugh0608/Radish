@@ -1,6 +1,6 @@
 # F4-P 论坛帖子收藏与个人内容回访
 
-> **状态**：F4-P-C 正式 Web 已完成；等待批准进入 D 批成组验收
+> **状态**：F4-P A-D 批已完成；专题关闭
 >
 > **复核日期**：2026-07-29（Asia/Shanghai）
 >
@@ -30,6 +30,8 @@ F4-P 选择“论坛帖子收藏与个人内容回访”为下一项既有功能
 F4-P-B 已按上述边界落地：`UserPostBookmark` 是唯一关系真相，Repository 统一承载显式状态事务与“Post -> Bookmark”锁顺序，详情查询返回当前用户收藏态，个人分页批量组装可用摘要并脱敏不可用目标。Main migration 固定为 `20260729_017_forum_post_bookmark`，在正式 Main 的既有 User / Post baseline 上创建收藏表、重建全部 `CollectCount` 并执行严格校验；ledger 隔离自测没有 User baseline 时只建立空关系结构，不通过当前实体补建未来 baseline。`@radish/http` 已提供三项正式调用契约。
 
 F4-P-C 已完成两条正式 Web 路径：帖子详情通过显式目标状态收藏或取消收藏，匿名用户使用受控 `intent=bookmark` 登录回流且返回后不自动写入；`/me/content?tab=bookmarks` 提供稳定分页、Available 公开链接、Unavailable 脱敏占位和按 Bookmark PublicId 移除。页面沿用一次性来源返回，双语资源、语义主题 token、键盘焦点、loading / disabled、mobile 和 reduced-motion 静态契约均已覆盖。C 批未向列表卡片、WebOS、Flutter 或其他对象扩散，也没有启动服务或提前执行 D 批浏览器 smoke。
+
+F4-P-D 已完成成组验收并关闭专题：匿名登录回流、收藏 / 取消 / 重收、同状态重试、多标签并发、稳定分页、不可用目标占位与移除，以及无通知、奖励、经验和萝卜币副作用均通过。D 批发现并修正个人内容来源被压缩到 `/me` 的统一导航契约根因；`PublicRouteDescriptor.me` 现携带完整 `MeRoute`，公开详情可精确返回原标签与页码。PC / mobile、`zh / en`、代表主题、清理、六库完整性和 strict migration verify 均已完成，详细证据见 [F4-P-D 成组验收记录](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)。
 
 ## 二、F4-P-A 候选审计
 
@@ -500,10 +502,11 @@ Verify：
 
 ### F4-P-D：成组验收
 
-- Gateway 代表矩阵；
-- 幂等、并发、删除 / 限制 / 恢复和不可用移除；
-- 清理、六库完整性和 strict migration verify；
-- 形成批次记录后关闭 F4-P。
+- **完成状态（2026-07-29）**：Gateway 代表矩阵、幂等、并发、删除 / 限制 / 恢复、不可用移除、PC / mobile、双语与代表主题均已通过。
+- 验收修正了个人内容来源只保留 `/me` 的统一导航契约根因，详情现在精确返回原 `MeRoute` 标签与页码。
+- 临时 Bookmark、帖子、提交记录、浏览历史及发帖成长副作用已精确清理；测试账号、分类和标签恢复到受控基线，本次修正回归新增的附件下载计数也已回退。
+- 六库完整性、strict migration verify、Client 全量测试、type-check、lint、production build 与 Gateway 健康检查通过。
+- F4-P 专题关闭，后续新增收藏夹、推荐或跨对象收藏仍需另立专题。
 
 ## 十三、停止线
 

@@ -3,6 +3,7 @@ import { useBrowserNavigationLock } from '@/bootstrap/browserNavigationLock';
 import { getApiBaseUrl } from '@/config/env';
 import { bootstrapAuth } from '@/services/authBootstrap';
 import { buildCirclePath } from '@/circle/circleRouteState';
+import { buildMePath } from '@/me/meRouteState';
 import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { PublicDiscoverApp } from './discover/PublicDiscoverApp';
 import { PublicForumApp } from './forum/PublicForumApp';
@@ -206,7 +207,7 @@ function buildPublicPath(nextRoute: PublicRouteDescriptor): string {
   }
 
   if (nextRoute.app === 'me') {
-    return '/me';
+    return buildMePath(nextRoute.route);
   }
 
   if (nextRoute.app === 'messages') {

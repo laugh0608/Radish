@@ -57,3 +57,15 @@ test('个人收藏列表区分可用与不可用目标并只通过 Bookmark Publ
   assert.match(styleSource, /:focus-visible/);
   assert.doesNotMatch(styleSource, /#[0-9a-fA-F]{3,8}\b/);
 });
+
+test('个人收藏进入公开详情应保留完整我的状态来源路由', () => {
+  const meSource = readClientSource('src/me/MeApp.tsx');
+  const navigationSource = readClientSource('src/public/publicRouteNavigation.ts');
+  const publicEntrySource = readClientSource('src/public/PublicEntry.tsx');
+
+  assert.match(navigationSource, /\| \{ app: 'me'; route: MeRoute \}/);
+  assert.match(meSource, /const meRouteDescriptor = useMemo<MeRouteDescriptor>/);
+  assert.match(meSource, /buildSourceStateForHref\(href, meRouteDescriptor\)/);
+  assert.match(publicEntrySource, /return buildMePath\(nextRoute\.route\)/);
+  assert.doesNotMatch(publicEntrySource, /if \(nextRoute\.app === 'me'\) \{\s*return '\/me';/);
+});

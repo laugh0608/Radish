@@ -6,6 +6,7 @@ import type { PublicLegalRoute } from './legalRouteState';
 import type { PublicProfileRoute } from './profileRouteState';
 import type { PublicShopRoute } from './shopRouteState';
 import type { CircleRoute } from '../circle/circleRouteState';
+import type { MeRoute } from '../me/meRouteState';
 import type { MessagesRoute } from '../messages/messagesRouteState';
 
 const PUBLIC_ROUTE_SOURCE_TRANSFER_STORAGE_KEY = 'radish:public-route-source-transfer';
@@ -19,7 +20,7 @@ export type PublicRouteDescriptor =
   | { app: 'legal'; route: PublicLegalRoute }
   | { app: 'shop'; route: PublicShopRoute }
   | { app: 'circle'; route: CircleRoute }
-  | { app: 'me'; route: { kind: 'index' } }
+  | { app: 'me'; route: MeRoute }
   | { app: 'messages'; route: MessagesRoute }
   | { app: 'notifications'; route: { kind: 'index' } };
 
