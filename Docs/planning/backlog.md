@@ -29,6 +29,7 @@
 - 商城商品效力、背包使用、权益激活 / 失效与 Console 排障。
 - `default / guofeng` 主题的用户持久化、主题权益和真实页面生效。
 - client、Console 与 Auth 的 i18n 残余、格式化和双语布局稳定性。
+- 标签导流、相关主题、标签公开可见性与 SEO 深化已回拉为 [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)；A 批设计已完成，当前顺位以 [当前进行中](/planning/current) 为准。
 
 以下事项已回拉到 [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance)：
 
@@ -49,7 +50,6 @@
 - `Chat App P2`：私聊、消息搜索、Reaction、消息置顶、阅读回执、权限细化；当前后移到 Web 信息流和评论实时方案之后
 - `P3-ext / P4-ext / P5-ext`：论坛投票 / 问答 / 抽奖更深增强；回答生命周期与治理已回拉为 [F4-O](/features/forum-answer-lifecycle-governance-design)，回答投票 / 复杂排序、投票增强和抽奖运营仍保持后置
 - 经验 / 等级 / 排行榜的更深防刷策略和后台治理增强（基础治理已回拉到当前规划）
-- 标签导流、热门标签、标签相关推荐和标签 SEO 深化：当前作为 Web 首页 / 信息流内容组织输入，是否进入实现由 `P3-10` 候选矩阵决定
 
 ### 多端深化后置项
 

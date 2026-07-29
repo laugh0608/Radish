@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-P A-D 已完成并关闭；等待批准进入 F4-Q-A 候选只读审计`
-- **产品下一顺位**：`只读比较标签导流、圈子关系流与其他既有功能缺口，先定边界再选题`
+- **工程第一顺位**：`F4-Q-A 权威设计已完成；等待批准进入 B 批`
+- **产品下一顺位**：`统一论坛公开可见性并补标签相关主题、首包 head 与动态 sitemap`
 - **复核日期**：`2026-07-29`
 - **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
@@ -27,13 +27,15 @@
 - [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭：Main 私有关系、显式幂等状态、Post 锁序、稳定分页、不可用目标、正式 Web 与代表运行态矩阵形成闭环。
 - [F4-P-D 成组验收](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)覆盖匿名、普通收藏者、作者和第三方读者，以及 PC / mobile、`zh / en`、代表主题、同状态重试、多标签并发和无跨域副作用边界。
 - D 批修正个人内容来源被压缩到 `/me` 的统一导航契约根因；公开详情现携带完整 `MeRoute`，可精确返回原收藏标签与页码。临时数据和运行状态已清理，六库完整性与 strict migration verify 通过。
+- [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A 批候选审计与权威设计：标签方向存在公开帖子判定不统一、无相关主题、无 Gateway 标签首包 head 和无 tags sitemap 四个确定性缺口；圈子主链已经完整，继续深化会进入推荐与再分发，因此后置。
+- F4-Q 固定复用 `Tag / PostTag / Post`，不新增内容对象；公开判定统一为 `IsPublished && IsEnabled && !IsDeleted`，相关标签只按公开帖子共现计算，标签 canonical 不携带排序、页码或来源状态。
 
-## 明天事项（2026-07-30，F4-Q-A，等待批准）
+## 明天事项（2026-07-30，F4-Q-B，等待批准）
 
-1. 先只读复核 [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)、当前专题资产与明确维护项，不直接编码。
-2. 比较标签导流与 SEO 深化、圈子关系流深化，以及其他仍有明确用户动作缺口的既有能力；按产品主轴、长期价值、边界稳定性和实现风险裁决唯一候选。
-3. 若候选成立，先新建或更新对应专题文档，明确用户路径、权威对象、接口 / 页面归属、权限、失败恢复、停止线和 A-D 批次。
-4. 候选设计完成后汇报并等待批准；不把缺少生产使用数据作为选题或开发阻断。
+1. 按 [F4-Q 权威设计](/features/forum-tag-public-discovery-seo-design)先统一 forum 普通 / 问答 / 投票 / 抽奖列表与详情的公开帖子判定，补 disabled 内容回归。
+2. 新增数据库侧标签发现查询，收紧热门标签并增加相关标签 API；公开数量不得直接依赖 `Tag.PostCount` 投影。
+3. 增加 `/api/public-head/forum/tag/{slug}`、Gateway 标签路径识别和 tags sitemap 分片，保持 canonical slug、缓存与失败开放口径。
+4. 完成服务端、Controller、Gateway、sitemap、head 与 SQLite / PostgreSQL 条件测试后汇报；B 批不启动服务，不进入正式 Web 或真实 smoke。
 
 ## 当前执行入口
 
@@ -45,6 +47,7 @@
 - [F4-O-D 论坛回答生命周期成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)
 - [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)
 - [F4-P-D 论坛帖子收藏成组验收](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)
+- [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)
 - [2026-07-28 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-28)
 - [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
 - [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)
@@ -55,7 +58,7 @@
 ## 并行维护线
 
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
-- 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-P 主专题并行扩张。
+- 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-Q 主专题并行扩张。
 - WebOS 只处理阻断级兼容；Flutter 只维护既有 MVP 的阻断、安全和认证兼容。
 - 主动生产使用数据采集继续冻结到计划内功能完成、没有明确维护任务且用户确认的最终收尾阶段。
 
@@ -63,7 +66,7 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-Q 候选裁决和专题边界未确认前不直接编码；不把已关闭的 F4-P 扩成收藏夹、推荐、公开收藏主页、跨对象收藏或通知奖励。
+- 未批准 F4-Q-B 前不直接编码；不把 F4-Q 扩成标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap。
 - 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
 
