@@ -170,7 +170,7 @@ npm run validate:candidate
   - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline、外部 LongId 字符串安全与联网依赖安全审计
   - `.github/workflows/candidate-quality.yml` 作为 `PR -> master` 的 required check，并保留手动与 Docker 镜像发布前复用入口；不再定时运行
   - 远程门禁在 PostgreSQL 17 服务下运行环境集成测试，确保数据库迁移与 Repository 专题不会因普通本地入口缺少连接而被跳过
-  - Docker 镜像先进行本地单平台构建与 High / Critical 漏洞扫描；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像
+  - Docker 镜像先进行本地单平台构建与分层漏洞扫描：`CRITICAL` 和存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像，例外和报告规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 
 ## 分层使用建议
 

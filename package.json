@@ -24,6 +24,7 @@
     "version:sync": "node Scripts/version-contract.mjs --sync",
     "update:time-semantics-baseline": "node Scripts/check-time-semantics.mjs --write-baseline",
     "check:dependency-security": "node Scripts/check-dependency-security.mjs",
+    "check:image-vulnerability-policy:self-test": "node --test Scripts/evaluate-image-vulnerabilities.test.mjs",
     "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
     "check:host-runtime": "node Scripts/check-host-runtime.mjs",

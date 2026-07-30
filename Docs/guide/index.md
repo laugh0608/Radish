@@ -35,6 +35,7 @@
 ### 基础设施与安全
 
 - [配置管理](/guide/configuration)
+- [镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 - [运行时配置边界与系统设置](/guide/runtime-configuration-boundaries)
 - [鉴权与授权指南](/guide/authentication)
 - [OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)
