@@ -744,4 +744,10 @@
   <data name="error.forum.tag_discovery_tag_unavailable" xml:space="preserve">
     <value>The tag does not exist or is unavailable.</value>
   </data>
+  <data name="error.leaderboard.type_unavailable" xml:space="preserve">
+    <value>This leaderboard type is not available for public access.</value>
+  </data>
+  <data name="error.leaderboard.user_rank_unavailable" xml:space="preserve">
+    <value>This leaderboard type does not support personal user ranking.</value>
+  </data>
 </root>

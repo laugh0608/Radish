@@ -1,564 +1,249 @@
-# 排行榜系统
+# F4-S 公开排行榜参与资格、隐私边界与可信度治理
 
-## 功能概述
-
-排行榜系统提供多维度的用户和商品排名功能，支持 8 种不同类型的排行榜，涵盖用户等级、财富、活跃度和商品热度等多个维度。系统采用统一的数据结构设计，支持分页查询、实时排名和个人排名查询。
-
-## 多端入口边界
-
-- 纯 Web 公开壳层：`/leaderboard` 与 `/leaderboard/:type` 承载公开榜单阅读，用户类榜单条目优先通过 `voUserPublicId` 跳转 `/u/usr_...` 公开主页，缺少公开标识时才兼容旧 `/u/:userId`；商品类榜单当前仍保持只读展示，不直接进入购买、订单或背包流程。
-- WebOS 保留入口：历史桌面工作台内仍可打开榜单应用，但不作为新增能力默认承载层。
-- Flutter 移动客户端：原生 `榜单` tab 已承载经验榜只读入口；经验榜用户条目可打开原生公开主页，并通过 Android Back 返回榜单。Flutter 当前不扩展商品榜购买、我的经验明细或管理员调整能力。
-
-## 支持的排行榜类型
-
-### 用户类排行榜
-
-#### 1. 等级排行榜 (Experience)
-- **排序依据**: 用户总经验值
-- **主要数值**: 总经验值
-- **次要数值**: 当前等级
-- **图标**: `mdi:trophy`
-- **用途**: 展示用户等级成长情况
-
-#### 2. 萝卜余额榜 (Balance)
-- **排序依据**: 用户当前萝卜币余额
-- **主要数值**: 萝卜余额
-- **次要数值**: 无
-- **图标**: `mdi:currency-usd`
-- **用途**: 展示用户财富积累情况
-
-#### 3. 萝卜花销榜 (TotalSpent)
-- **排序依据**: 用户累计消费萝卜币
-- **主要数值**: 累计花销
-- **次要数值**: 购买数量
-- **图标**: `mdi:cart`
-- **用途**: 展示用户消费活跃度
-
-#### 4. 购买达人榜 (PurchaseCount)
-- **排序依据**: 用户购买商品总数量
-- **主要数值**: 购买数量
-- **次要数值**: 累计花销
-- **图标**: `mdi:shopping`
-- **用途**: 展示用户购买频率
-
-#### 5. 发帖达人榜 (PostCount)
-- **排序依据**: 用户发帖数量
-- **主要数值**: 帖子数
-- **次要数值**: 无
-- **图标**: `mdi:post`
-- **用途**: 展示用户内容贡献度
-
-#### 6. 评论达人榜 (CommentCount)
-- **排序依据**: 用户评论数量
-- **主要数值**: 评论数
-- **次要数值**: 无
-- **图标**: `mdi:comment`
-- **用途**: 展示用户互动活跃度
-
-#### 7. 人气排行榜 (Popularity)
-- **排序依据**: 用户获得的总点赞数（帖子 + 评论）
-- **主要数值**: 总点赞数
-- **次要数值**: 无
-- **图标**: `mdi:heart`
-- **用途**: 展示用户内容受欢迎程度
-
-### 商品类排行榜
-
-#### 8. 热门商品榜 (HotProduct)
-- **排序依据**: 商品销量
-- **主要数值**: 销量
-- **次要数值**: 商品价格
-- **图标**: `mdi:fire`
-- **用途**: 展示商品热度
-
-## 技术架构
-
-### 后端实现
-
-#### 控制器层 (LeaderboardController)
-```csharp
-// 文件位置: Radish.Api/Controllers/v1/LeaderboardController.cs
-
-/// <summary>
-/// 获取排行榜数据
-/// </summary>
-[HttpGet]
-[AllowAnonymous]
-public async Task<MessageModel<PageModel<UnifiedLeaderboardItemVo>>> GetLeaderboard(
-    [FromQuery] LeaderboardType type = LeaderboardType.Experience,
-    [FromQuery] int pageIndex = 1,
-    [FromQuery] int pageSize = 50)
-```
-
-**API 端点**:
-- `GET /api/v1/Leaderboard/GetLeaderboard` - 获取排行榜数据
-- `GET /api/v1/Leaderboard/GetMyRank` - 获取当前用户排名
-- `GET /api/v1/Leaderboard/GetTypes` - 获取所有排行榜类型
-
-#### 服务层 (LeaderboardService)
-```csharp
-// 文件位置: Radish.Service/LeaderboardService.cs (688 行)
-
-public class LeaderboardService : ILeaderboardService
-{
-    // 核心方法
-    Task<PageModel<UnifiedLeaderboardItemVo>> GetLeaderboardAsync(
-        LeaderboardType type,
-        int pageIndex,
-        int pageSize,
-        long? currentUserId);
-
-    Task<int> GetUserRankAsync(LeaderboardType type, long userId);
-
-    Task<List<LeaderboardTypeVo>> GetLeaderboardTypesAsync();
-}
-```
-
-**设计特点**:
-- 使用静态配置字典存储排行榜类型元数据
-- 根据排行榜类型动态调用不同的数据查询方法
-- 统一的数据结构转换逻辑
-
-#### 仓储层 (LeaderboardRepository)
-```csharp
-// 文件位置: Radish.Repository/LeaderboardRepository.cs (288 行)
-
-public class LeaderboardRepository : ILeaderboardRepository
-{
-    // 聚合查询方法
-    Task<List<UserLeaderboardDto>> GetExperienceLeaderboardAsync(int pageIndex, int pageSize);
-    Task<List<UserLeaderboardDto>> GetBalanceLeaderboardAsync(int pageIndex, int pageSize);
-    Task<List<UserLeaderboardDto>> GetTotalSpentLeaderboardAsync(int pageIndex, int pageSize);
-    Task<List<ProductLeaderboardDto>> GetHotProductLeaderboardAsync(int pageIndex, int pageSize);
-    // ... 其他排行榜查询方法
-}
-```
-
-**性能优化**:
-- 数据库级聚合查询，避免内存过滤
-- 使用 SqlSugar 的 `Mapper` 进行多表联查
-- 分页查询减少数据传输量
-
-### 数据模型
-
-#### 统一排行榜项 ViewModel
-```csharp
-// 文件位置: Radish.Model/ViewModels/UnifiedLeaderboardItemVo.cs
-
-public class UnifiedLeaderboardItemVo
-{
-    // 通用字段
-    public LeaderboardType VoLeaderboardType { get; set; }
-    public LeaderboardCategory VoCategory { get; set; }
-    public int VoRank { get; set; }
-
-    // 用户信息（用户类排行榜）
-    public long? VoUserId { get; set; }
-    public string? VoUserPublicId { get; set; }
-    public string? VoUserName { get; set; }
-    public string? VoAvatarUrl { get; set; }
-    public int? VoCurrentLevel { get; set; }
-    public string? VoCurrentLevelName { get; set; }
-    public string? VoThemeColor { get; set; }
-    public bool VoIsCurrentUser { get; set; }
-
-    // 商品信息（商品类排行榜）
-    public long? VoProductId { get; set; }
-    public string? VoProductName { get; set; }
-    public string? VoProductIcon { get; set; }
-    public decimal? VoProductPrice { get; set; }
-
-    // 统计数值
-    public long VoPrimaryValue { get; set; }
-    public string VoPrimaryLabel { get; set; } = string.Empty;
-    public long? VoSecondaryValue { get; set; }
-    public string? VoSecondaryLabel { get; set; }
-}
-```
-
-**设计优势**:
-- 统一的数据结构支持用户和商品两种实体类型
-- 可选字段设计，根据排行榜类型填充不同字段
-- 前端可根据 `VoCategory` 字段选择不同的渲染组件
-- 用户类榜单同时保留 `VoUserId` 和 `VoUserPublicId`：前者继续服务内部接口，后者服务公开主页跳转与分享。
-
-### 前端实现
-
-#### API 客户端
-```typescript
-// 文件位置: Frontend/radish.client/src/api/leaderboard.ts
-
-export const leaderboardApi = {
-  // 获取排行榜数据
-  async getLeaderboard(
-    type: LeaderboardType = LeaderboardType.Experience,
-    pageIndex: number = 1,
-    pageSize: number = 50
-  ): Promise<PagedResponse<UnifiedLeaderboardItemData> | null>,
-
-  // 获取当前用户排名
-  async getMyRank(type: LeaderboardType): Promise<number | null>,
-
-  // 获取所有排行榜类型
-  async getTypes(): Promise<LeaderboardTypeData[] | null>
-};
-```
-
-#### 主应用组件
-```typescript
-// 文件位置: Frontend/radish.client/src/apps/LeaderboardApp.tsx
-
-export const LeaderboardApp: React.FC = () => {
-  // 使用 Tab 切换不同排行榜类型
-  // 根据 category 渲染不同的排行榜项组件
-  // 支持分页加载
-  // 高亮显示当前用户
-};
-```
-
-#### 排行榜项组件
-```typescript
-// 用户排行榜项
-// 文件位置: Frontend/radish.client/src/apps/leaderboard/UserLeaderboardItem.tsx
-export const UserLeaderboardItem: React.FC<Props> = ({ item, rank }) => {
-  // 显示用户头像、昵称、等级、主要数值、次要数值
-};
-
-// 商品排行榜项
-// 文件位置: Frontend/radish.client/src/apps/leaderboard/ProductLeaderboardItem.tsx
-export const ProductLeaderboardItem: React.FC<Props> = ({ item, rank }) => {
-  // 显示商品图标、名称、价格、销量
-};
-```
-
-## API 使用示例
-
-### 获取排行榜数据
-
-```typescript
-import { leaderboardApi, LeaderboardType } from '@/api/leaderboard';
-
-// 获取等级排行榜第一页
-const data = await leaderboardApi.getLeaderboard(
-  LeaderboardType.Experience,
-  1,
-  50
-);
-
-if (data) {
-  console.log('总记录数:', data.dataCount);
-  console.log('排行榜数据:', data.data);
-}
-```
-
-### 获取当前用户排名
-
-```typescript
-// 获取当前用户在等级排行榜中的排名
-const rank = await leaderboardApi.getMyRank(LeaderboardType.Experience);
-
-if (rank !== null) {
-  if (rank === 0) {
-    console.log('未上榜');
-  } else {
-    console.log('当前排名:', rank);
-  }
-}
-```
-
-### 获取所有排行榜类型
-
-```typescript
-// 获取所有可用的排行榜类型
-const types = await leaderboardApi.getTypes();
-
-if (types) {
-  types.forEach(type => {
-    console.log(`${type.voName}: ${type.voDescription}`);
-  });
-}
-```
-
-## 前端集成指南
-
-### 1. 导入必要的依赖
-
-```typescript
-import { leaderboardApi, LeaderboardType, LeaderboardCategory } from '@/api/leaderboard';
-import type { UnifiedLeaderboardItemData } from '@/api/leaderboard';
-```
-
-### 2. 创建状态管理
-
-```typescript
-const [leaderboardType, setLeaderboardType] = useState(LeaderboardType.Experience);
-const [leaderboardData, setLeaderboardData] = useState<UnifiedLeaderboardItemData[]>([]);
-const [pageIndex, setPageIndex] = useState(1);
-const [totalCount, setTotalCount] = useState(0);
-const [loading, setLoading] = useState(false);
-```
-
-### 3. 加载排行榜数据
-
-```typescript
-const loadLeaderboard = async () => {
-  setLoading(true);
-  try {
-    const data = await leaderboardApi.getLeaderboard(leaderboardType, pageIndex, 50);
-    if (data) {
-      setLeaderboardData(data.data);
-      setTotalCount(data.dataCount);
-    }
-  } catch (error) {
-    console.error('加载排行榜失败:', error);
-  } finally {
-    setLoading(false);
-  }
-};
-
-useEffect(() => {
-  loadLeaderboard();
-}, [leaderboardType, pageIndex]);
-```
-
-### 4. 渲染排行榜项
-
-```typescript
-{leaderboardData.map((item, index) => {
-  const rank = (pageIndex - 1) * 50 + index + 1;
-
-  if (item.voCategory === LeaderboardCategory.User) {
-    return <UserLeaderboardItem key={item.voUserPublicId ?? item.voUserId} item={item} rank={rank} />;
-  } else {
-    return <ProductLeaderboardItem key={item.voProductId} item={item} rank={rank} />;
-  }
-})}
-```
-
-## 性能优化建议
-
-### 1. 数据库层优化
-
-**使用索引**:
-```sql
--- 用户经验表索引
-CREATE INDEX idx_user_experience_total ON UserExperience(TotalExperience DESC);
-
--- 用户余额表索引
-CREATE INDEX idx_user_balance_current ON UserBalance(CurrentBalance DESC);
-
--- 商品表索引
-CREATE INDEX idx_product_sales ON Product(SalesCount DESC);
-```
-
-**查询优化**:
-- 使用 `LIMIT` 和 `OFFSET` 进行分页
-- 避免 `SELECT *`，只查询需要的字段
-- 使用 `LEFT JOIN` 而非多次查询
-
-### 2. 缓存策略
-
-**Redis 缓存**:
-```csharp
-// 缓存排行榜数据 5 分钟
-var cacheKey = $"leaderboard:{type}:{pageIndex}:{pageSize}";
-var cachedData = await _cache.GetAsync<PageModel<UnifiedLeaderboardItemVo>>(cacheKey);
-
-if (cachedData == null)
-{
-    cachedData = await QueryLeaderboardFromDatabase(type, pageIndex, pageSize);
-    await _cache.SetAsync(cacheKey, cachedData, TimeSpan.FromMinutes(5));
-}
-
-return cachedData;
-```
-
-**缓存失效策略**:
-- 用户经验变化时，清除等级排行榜缓存
-- 订单完成时，清除余额、花销、购买榜缓存
-- 帖子/评论创建时，清除对应排行榜缓存
-
-### 3. 前端优化
-
-**虚拟滚动**:
-```typescript
-// 使用 react-window 或 react-virtualized 实现虚拟滚动
-import { FixedSizeList } from 'react-window';
-
-<FixedSizeList
-  height={600}
-  itemCount={leaderboardData.length}
-  itemSize={80}
-  width="100%"
+> 状态：A-C 已完成；D 批代码侧回归通过，Gateway PC / mobile 运行态复核待取得服务启动授权
 >
-  {({ index, style }) => (
-    <div style={style}>
-      <UserLeaderboardItem item={leaderboardData[index]} rank={index + 1} />
-    </div>
-  )}
-</FixedSizeList>
+> 正式入口：纯 Web `/leaderboard`、`/leaderboard/:type`
+>
+> 多端顺位：Web 优先；Flutter 只维护既有经验榜 MVP；WebOS 仅历史兼容；Tauri 不进入当前范围
+
+## 摘要
+
+排行榜是公开只读发现能力，不是资产、消费或订单信息的公开入口。
+
+F4-S 固定以下长期边界：
+
+1. 公开榜单只保留经验、发帖、评论、人气和热门商品五类。
+2. 当前余额、累计消费和购买数量退出跨用户公开排名；本人数据继续由登录后的资产、交易与订单页面承载。
+3. 用户榜单只纳入账号启用、未删除且目标指标有效的用户；内容榜单还必须只统计公开可见内容。
+4. 列表、分页总数与“我的排名”必须复用同一资格和指标投影。
+5. 排序固定为“指标降序、同值按稳定用户或商品 ID 升序”，列表序号与个人排名不得采用不同的并列规则。
+6. 匿名读取不得创建、补写或修改用户公开身份；缺少 PublicId 时只保留既有数字 ID 兼容读取。
+7. Web 只呈现服务端确认的公开类型；元数据请求失败时仅使用同一公开白名单的本地文案，不恢复已退役敏感类型。
+
+## 1. 问题与目标
+
+治理前的实现允许匿名请求八类榜单，其中包括：
+
+- 当前余额；
+- 累计获得与累计消费；
+- 购买商品数量。
+
+同时，用户榜单先按指标分页，再单独装配用户；用户是否启用、是否删除与公开资料是否可达没有成为聚合查询的共同条件。这会造成以下问题：
+
+- 资产和消费行为越过本人可见边界；
+- 禁用或删除账号可能进入榜单候选；
+- 分页数据、总数和个人排名可能使用不同参与者集合；
+- 同值项目没有稳定第二排序键，跨页顺序可能漂移；
+- 个人排名查询把内部失败吞成 `0`，无法区分“未上榜”和“查询失败”；
+- 排行榜匿名读取复制了一套 PublicId / PublicIndex 补写逻辑，与身份服务的保留号和并发分配规则分叉。
+
+F4-S 的目标不是增加榜单玩法，而是把既有公开榜单收口为可信、可解释、不会泄露本人数据的只读产品能力。
+
+## 2. 公开类型白名单
+
+公开类型顺序由服务端元数据决定，固定如下：
+
+| 顺序 | 类型 | 路由 | 排名依据 | 公开理由 |
+|---:|---|---|---|---|
+| 1 | `Experience` | `/leaderboard` | 有效用户累计经验 | 公开成长与长期参与信号 |
+| 2 | `PostCount` | `/leaderboard/post-count` | 公开有效帖子数量 | 来源内容本身公开 |
+| 3 | `CommentCount` | `/leaderboard/comment-count` | 公开有效评论数量 | 来源内容本身公开 |
+| 4 | `Popularity` | `/leaderboard/popularity` | 公开帖子与评论获得的点赞总数 | 来源互动信号公开 |
+| 5 | `HotProduct` | `/leaderboard/hot-product` | 在售有效商品销量 | 商品聚合热度，不指向买家 |
+
+`LeaderboardType` 的既有数值不重排，避免旧请求被解释成另一种类型。公开白名单只决定哪些既有枚举值可通过排行榜 API 与客户端路由使用。
+
+## 3. 退出公开排名的类型
+
+| 类型 | 退出原因 | 正式承载位置 |
+|---|---|---|
+| `Balance` | 当前余额与累计获得属于本人资产 | `/me/assets`、个人钱包 |
+| `TotalSpent` | 累计消费属于本人交易统计 | `/me/assets`、交易记录 |
+| `PurchaseCount` | 购买频率属于本人消费行为 | `/me/orders`、订单记录 |
+
+这些类型不再由以下接口返回或接受：
+
+- `GET /api/v1/Leaderboard/GetTypes`
+- `GET /api/v1/Leaderboard/GetLeaderboard`
+- `GET /api/v1/Leaderboard/GetMyRank`
+
+旧枚举值可以保留为反序列化兼容边界，但服务端必须返回稳定的“类型不可公开”业务错误，不得查询后再过滤响应。
+
+旧 Web 路由 `/leaderboard/balance`、`/leaderboard/total-spent`、`/leaderboard/purchase-count` 统一安全回落到 `/leaderboard`。客户端不得为这些地址保留不可见 Tab、静态元数据或请求 fallback。
+
+## 4. 用户参与资格
+
+用户类榜单的共同资格为：
+
+```text
+User.Id > 0
+AND User.IsEnable = true
+AND User.IsDeleted = false
+AND 指标来源满足对应公开可见条件
 ```
 
-**懒加载**:
-```typescript
-// 使用 Intersection Observer 实现无限滚动
-const loadMore = () => {
-  if (!loading && leaderboardData.length < totalCount) {
-    setPageIndex(prev => prev + 1);
-  }
-};
+PublicId / PublicIndex 的职责：
+
+- 新用户继续由身份创建链路分配公开身份；
+- 榜单读取只消费已有公开身份，不负责补写；
+- 已有合法 PublicId 时优先返回并生成 `/u/usr_...`；
+- PublicId 缺失或非法时不公开错误值，客户端只使用既有 `/u/:userId` 兼容入口；
+- 缺少 PublicIndex 时不伪造 DisplayHandle。
+
+本专题不新增独立“退出排行榜”字段。未来若产品建立统一的公开资料可见性或排行榜退出设置，应在用户隐私契约中统一扩展，并由全部用户榜单复用，不能为单一榜单增加散点开关。
+
+## 5. 指标资格
+
+### 5.1 经验榜
+
+- `UserExperience.IsDeleted = false`；
+- 未冻结，或存在已经到期的冻结时间；
+- 永久冻结和仍在冻结期的用户不参与列表、总数和个人排名。
+
+### 5.2 发帖榜
+
+- `Post.IsPublished = true`；
+- `Post.IsEnabled = true`；
+- `Post.IsDeleted = false`；
+- 作者满足共同用户资格。
+
+### 5.3 评论榜
+
+- `Comment.IsEnabled = true`；
+- `Comment.IsDeleted = false`；
+- 作者满足共同用户资格。
+
+当前评论模型没有独立的帖子可见性投影。F4-S 只沿用既有“有效评论”指标，不顺带改变评论领域的历史计数定义；如果以后要求评论必须随父帖子可见性退出统计，应在评论公开读取专题中统一治理。
+
+### 5.4 人气榜
+
+- 只聚合符合发帖榜和评论榜内容条件的 `LikeCount`；
+- 总点赞数必须大于 `0`；
+- 帖子与评论聚合必须先应用同一用户资格，再合并；
+- 列表、总数和个人排名复用同一合并结果。
+
+### 5.5 热门商品榜
+
+- `Product.IsEnabled = true`；
+- `Product.IsOnSale = true`；
+- `Product.IsDeleted = false`；
+- `Product.SoldCount > 0`。
+
+商品榜只公开商品名称、价格、图片、销量与商品详情入口，不返回买家身份或订单数据。
+
+## 6. 排名与分页可信度
+
+所有公开榜单使用确定性全序：
+
+```text
+PrimaryValue DESC, StableEntityId ASC
 ```
 
-## 扩展指南
+- 用户榜的稳定尾键为内部 `User.Id`；
+- 商品榜的稳定尾键为内部 `Product.Id`；
+- `VoRank` 为该全序中的一基序号；
+- 同值用户不会共享名次；这是为了保证分页、URL 回访和“我的排名”严格一致；
+- `DataCount` 统计应用全部资格条件后的实体数量；
+- `PageCount` 由 `DataCount` 和规范化后的 `PageSize` 计算；
+- `GetMyRank` 返回同一全序中的位置，`0` 只表示用户不具备资格或没有有效指标；
+- 查询异常必须向上抛出并由统一错误处理记录，不能伪装成未上榜。
 
-### 添加新的排行榜类型
+当用户状态在一次请求执行期间发生并发变化时，最终用户装配仍需再次应用共同资格；允许出现短暂名次空洞，但不得把已经确认失效的用户重新补入响应。
 
-#### 1. 定义枚举
+## 7. API 契约
 
-```csharp
-// Radish.Shared/CustomEnum/LeaderboardEnums.cs
-public enum LeaderboardType
-{
-    // ... 现有类型
+### `GET /api/v1/Leaderboard/GetTypes`
 
-    /// <summary>签到达人排行榜</summary>
-    /// <remarks>按用户连续签到天数排序</remarks>
-    CheckInStreak = 9
-}
-```
+- 匿名可读；
+- 只返回五类公开元数据；
+- 顺序为经验、发帖、评论、人气、热门商品。
 
-#### 2. 添加类型配置
+### `GET /api/v1/Leaderboard/GetLeaderboard`
 
-```csharp
-// Radish.Service/LeaderboardService.cs
-[LeaderboardType.CheckInStreak] = new LeaderboardTypeVo
-{
-    VoType = LeaderboardType.CheckInStreak,
-    VoCategory = LeaderboardCategory.User,
-    VoName = "签到达人榜",
-    VoDescription = "按用户连续签到天数排序",
-    VoIcon = "mdi:calendar-check",
-    VoPrimaryLabel = "连续签到",
-    VoSortOrder = 9
-}
-```
+- 匿名可读；
+- `pageIndex` 小于 `1` 时规范化为 `1`；
+- `pageSize` 小于 `1` 时规范化为 `50`，大于 `100` 时限制为 `100`；
+- 非公开或未知类型返回 `Leaderboard.TypeUnavailable`；
+- 不执行敏感类型查询。
 
-#### 3. 实现查询方法
+### `GET /api/v1/Leaderboard/GetMyRank`
 
-```csharp
-// Radish.Repository/LeaderboardRepository.cs
-public async Task<List<UserLeaderboardDto>> GetCheckInStreakLeaderboardAsync(
-    int pageIndex,
-    int pageSize)
-{
-    return await _db.Queryable<UserCheckIn>()
-        .Where(c => !c.IsDeleted)
-        .OrderByDescending(c => c.CurrentStreak)
-        .Select(c => new UserLeaderboardDto
-        {
-            UserId = c.UserId,
-            PrimaryValue = c.CurrentStreak,
-            SecondaryValue = c.TotalCheckInDays
-        })
-        .ToPageListAsync(pageIndex, pageSize);
-}
-```
+- 需要登录；
+- 只支持四类公开用户榜；
+- `HotProduct` 返回 `Leaderboard.UserRankUnavailable`；
+- 退出公开的敏感类型和未知类型返回 `Leaderboard.TypeUnavailable`。
 
-#### 4. 在 Service 中调用
+## 8. Web 与多端边界
 
-```csharp
-// Radish.Service/LeaderboardService.cs
-private async Task<List<UserLeaderboardDto>> GetUserLeaderboardDataAsync(
-    LeaderboardType type,
-    int pageIndex,
-    int pageSize)
-{
-    return type switch
-    {
-        // ... 现有类型
-        LeaderboardType.CheckInStreak =>
-            await _leaderboardRepository.GetCheckInStreakLeaderboardAsync(pageIndex, pageSize),
-        _ => throw new ArgumentException($"不支持的排行榜类型: {type}")
-    };
-}
-```
+### 正式 Web
 
-#### 5. 更新前端枚举
+- `publicLeaderboardTypeRouteDefinitions` 只登记五类公开路由；
+- 服务端返回的类型先与公开路由白名单求交集；
+- 服务端成功返回较小类型集时，以服务端为准，不通过本地 fallback 重新扩张；
+- 类型元数据请求失败时，本地 fallback 也只能包含五类公开类型；
+- 旧敏感 slug 与未知 slug 回落到经验榜，分页同时规范化；
+- 页面沿用 F4-R 之前的既有视觉结构，本专题不提前实施 family-ui 视觉重构。
 
-```typescript
-// Frontend/radish.client/src/api/leaderboard.ts
-export enum LeaderboardType {
-  // ... 现有类型
-  /** 签到达人排行榜 */
-  CheckInStreak = 9,
-}
-```
+### Flutter
 
-### 添加实时更新功能
+- 继续只请求 `Experience = 1`；
+- 继续保持首屏只读经验榜、公开主页跳转和 Android Back 回流；
+- 不新增其他榜单 Tab，也不机械追平 Web。
 
-使用 SignalR 实现排行榜实时更新：
+### WebOS 与 Tauri
 
-```csharp
-// 后端 Hub
-public class LeaderboardHub : Hub
-{
-    public async Task SubscribeLeaderboard(LeaderboardType type)
-    {
-        await Groups.AddToGroupAsync(Context.ConnectionId, $"leaderboard_{type}");
-    }
+- WebOS `/desktop` 榜单应用只消费服务端公开类型，不保留敏感类型静态入口；
+- WebOS 不在本专题增加新功能或新布局；
+- Tauri 暂时弃用，不进入开发、CI、发布或验收门禁。
 
-    public async Task UnsubscribeLeaderboard(LeaderboardType type)
-    {
-        await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"leaderboard_{type}");
-    }
-}
+## 9. 实现边界
 
-// 数据变化时推送更新
-await _hubContext.Clients.Group($"leaderboard_{type}")
-    .SendAsync("LeaderboardUpdated", updatedData);
-```
+后端应把公开排名聚合放在 `ILeaderboardRepository` / `LeaderboardRepository`：
 
-```typescript
-// 前端订阅
-const connection = new HubConnectionBuilder()
-  .withUrl('/hubs/leaderboard')
-  .build();
+- 仓储负责用户资格、指标资格、确定性排序、分页总数与个人排名；
+- Service 负责类型门禁、分页参数规范化、公开用户与等级信息装配；
+- Controller 负责稳定业务错误和匿名 / 登录入口；
+- Controller 不直接访问仓储；
+- Service 不直接使用 `_repository.Db.Queryable`。
 
-connection.on('LeaderboardUpdated', (data) => {
-  setLeaderboardData(data);
-});
+本专题不新增数据库字段或正式 migration。用户状态、PublicId、PublicIndex、内容状态与商品状态均复用既有模型。
 
-await connection.start();
-await connection.invoke('SubscribeLeaderboard', leaderboardType);
-```
+## 10. 测试与验收
 
-## 常见问题
+### 后端定向测试
 
-### Q: 排行榜数据多久更新一次？
-A: 默认情况下，排行榜数据实时查询数据库。建议在生产环境中启用 Redis 缓存，缓存时间设置为 5-10 分钟。
+- 五类公开类型顺序和三类敏感类型拒绝；
+- Controller 的 `TypeUnavailable` / `UserRankUnavailable` 契约；
+- 禁用、删除、冻结用户不进入列表、总数或个人排名；
+- 同值指标按稳定 ID 排序，分页 `VoRank` 与个人排名一致；
+- 公开帖子 / 评论条件与人气合并；
+- 热门商品状态条件；
+- 榜单读取不补写缺失 PublicId / PublicIndex；
+- SQLite 聚合翻译；
+- 配置 PostgreSQL 测试连接时复核相同查询翻译。
 
-### Q: 如何处理大量用户的排名查询？
-A: 对于用户排名查询，建议：
-1. 使用 Redis 缓存用户排名，缓存时间 10 分钟
-2. 使用数据库索引优化查询性能
-3. 考虑使用 Redis Sorted Set 存储排行榜数据
+### 前端定向测试
 
-### Q: 排行榜支持多少用户？
-A: 理论上支持无限用户，但建议：
-1. 前端只展示 Top 100 或 Top 1000
-2. 使用分页查询，每页 50-100 条
-3. 对于超大规模用户，考虑使用预计算 + 定时任务更新
+- 公开路由只包含五类；
+- 三个旧敏感 slug 和未知 slug 回落经验榜；
+- 本地 fallback 不包含敏感类型；
+- 服务端类型结果与公开白名单求交集；
+- 路由、canonical、分享链接和分页链接不再生成敏感路径。
 
-### Q: 如何防止排行榜作弊？
-A: 建议实施以下措施：
-1. 数据验证：在业务逻辑层验证数据合法性
-2. 异常检测：监控异常增长的数据
-3. 人工审核：对 Top 排名用户进行人工审核
-4. 限流机制：限制用户操作频率
+### 验证粒度
 
-## 相关文档
+- 开发中执行后端定向测试、前端定向测试、type-check、build、changed-only lint、仓库卫生与 `git diff --check`；
+- 本专题代码侧收口不启动服务；
+- Gateway PC / mobile 真实 smoke 留到成组验收，启动前必须取得当前任务授权；
+- F4-R 后续只负责视觉重构，不重新解释 F4-S 的功能、文案、权限和类型边界。
 
-- [BaseService 扩展方法指南](../guide/base-service-advanced.md)
-- [架构规范](../architecture/specifications.md)
-- [前端设计](../frontend/design.md)
+2026-07-30 的代码侧结果见 [F4-S 公开排行榜治理代码侧验收记录](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)。当前机器未配置 PostgreSQL 条件测试连接，SQLite 结果不表述为 PostgreSQL 实跑。
+
+## 11. 非目标
+
+- 不新增赛季榜、周榜、好友榜、奖励或排行榜运营后台；
+- 不增加 Redis Sorted Set、SignalR 实时排行或新的缓存基础设施；
+- 不恢复公开资产、消费或购买行为比较；
+- 不新增独立隐私设置、全量 PublicId 迁移或排行榜参与 migration；
+- 不扩展 WebOS、Tauri 或 Flutter 多榜单能力；
+- 不在 Pencil 空闲前读取、修改 `.pen` 或提前实施页面视觉重构。

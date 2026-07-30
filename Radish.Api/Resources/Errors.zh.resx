@@ -744,4 +744,10 @@
   <data name="error.forum.tag_discovery_tag_unavailable" xml:space="preserve">
     <value>标签不存在或已不可用。</value>
   </data>
+  <data name="error.leaderboard.type_unavailable" xml:space="preserve">
+    <value>该排行榜类型不提供公开访问。</value>
+  </data>
+  <data name="error.leaderboard.user_rank_unavailable" xml:space="preserve">
+    <value>该排行榜类型不支持用户个人排名。</value>
+  </data>
 </root>

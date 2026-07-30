@@ -2,8 +2,8 @@ namespace Radish.Shared.CustomEnum;
 
 /// <summary>排行榜类型枚举</summary>
 /// <remarks>
-/// 定义系统支持的排行榜类型
-/// 每种类型有不同的数据来源和排序逻辑
+/// 定义历史线协议中的排行榜类型数值。
+/// 公开可用范围由 <see cref="LeaderboardPublicPolicy"/> 裁决，敏感类型只保留旧值兼容。
 /// </remarks>
 public enum LeaderboardType
 {
@@ -11,16 +11,16 @@ public enum LeaderboardType
     /// <remarks>按用户总经验值排序</remarks>
     Experience = 1,
 
-    /// <summary>萝卜余额排行榜</summary>
-    /// <remarks>按用户当前萝卜币余额排序</remarks>
+    /// <summary>历史萝卜余额排行榜（不再公开）</summary>
+    /// <remarks>保留旧数值，公开 API 必须拒绝该类型</remarks>
     Balance = 2,
 
-    /// <summary>萝卜花销排行榜</summary>
-    /// <remarks>按用户累计消费萝卜币排序</remarks>
+    /// <summary>历史萝卜花销排行榜（不再公开）</summary>
+    /// <remarks>保留旧数值，公开 API 必须拒绝该类型</remarks>
     TotalSpent = 3,
 
-    /// <summary>购买达人排行榜</summary>
-    /// <remarks>按用户购买商品总数量排序</remarks>
+    /// <summary>历史购买达人排行榜（不再公开）</summary>
+    /// <remarks>保留旧数值，公开 API 必须拒绝该类型</remarks>
     PurchaseCount = 4,
 
     /// <summary>热门商品排行榜</summary>

@@ -123,20 +123,17 @@ public class UnifiedLeaderboardItemVo
     /// <remarks>
     /// 根据排行榜类型不同含义不同：
     /// - 等级排行：总经验值
-    /// - 余额排行：当前余额
-    /// - 花销排行：累计消费
-    /// - 购买数量：购买商品总数
-    /// - 热门商品：销量
     /// - 发帖达人：帖子数
     /// - 评论达人：评论数
     /// - 人气排行：总点赞数
+    /// - 热门商品：销量
     /// </remarks>
     public long VoPrimaryValue { get; set; }
 
     /// <summary>
     /// 主要数值标签
     /// </summary>
-    /// <remarks>如"总经验值"、"萝卜余额"、"销量"等</remarks>
+    /// <remarks>如"总经验值"、"帖子数"、"销量"等</remarks>
     public string VoPrimaryLabel { get; set; } = string.Empty;
 
     /// <summary>
@@ -145,7 +142,6 @@ public class UnifiedLeaderboardItemVo
     /// <remarks>
     /// 用于展示额外信息：
     /// - 等级排行：当前等级
-    /// - 余额排行：累计获得
     /// - 热门商品：价格
     /// </remarks>
     public long? VoSecondaryValue { get; set; }

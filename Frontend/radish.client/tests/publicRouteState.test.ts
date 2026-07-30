@@ -17,7 +17,9 @@ import {
 } from '../src/public/shopRouteState.ts';
 import {
   buildPublicLeaderboardPath,
+  filterPublicLeaderboardTypes,
   parsePublicLeaderboardRoute,
+  publicLeaderboardTypeRouteDefinitions,
 } from '../src/public/leaderboardRouteState.ts';
 import {
   buildPublicForumPath,
@@ -295,6 +297,47 @@ test('parsePublicLeaderboardRoute 应把非法榜单类型与页码回落到默�
     typeSlug: 'experience',
     page: 1,
   });
+});
+
+test('公开排行榜路由应只登记五类非敏感榜单', () => {
+  assert.deepEqual(
+    publicLeaderboardTypeRouteDefinitions.map((definition) => definition.slug),
+    ['experience', 'post-count', 'comment-count', 'popularity', 'hot-product']
+  );
+  assert.deepEqual(
+    publicLeaderboardTypeRouteDefinitions.map((definition) => definition.type),
+    [1, 6, 7, 8, 5]
+  );
+});
+
+test('公开排行榜路由应把历史资产与消费榜单安全回落到经验榜', () => {
+  for (const slug of ['balance', 'total-spent', 'purchase-count']) {
+    assert.deepEqual(parsePublicLeaderboardRoute(`/leaderboard/${slug}`, '?page=2'), {
+      kind: 'list',
+      typeSlug: 'experience',
+      page: 2,
+    });
+  }
+});
+
+test('filterPublicLeaderboardTypes 应拒绝敏感、未知和重复服务端类型', () => {
+  const filtered = filterPublicLeaderboardTypes([
+    { voType: 1, voCategory: 1, name: 'experience' },
+    { voType: 2, voCategory: 1, name: 'balance' },
+    { voType: 6, voCategory: 1, name: 'post-count' },
+    { voType: 6, voCategory: 1, name: 'post-count-duplicate' },
+    { voType: 3, voCategory: 1, name: 'total-spent' },
+    { voType: 4, voCategory: 1, name: 'purchase-count' },
+    { voType: 999, voCategory: 1, name: 'unknown' },
+    { voType: 5, voCategory: 1, name: 'hot-product-wrong-category' },
+    { voType: 5, voCategory: 2, name: 'hot-product' },
+  ]);
+
+  assert.deepEqual(filtered, [
+    { voType: 1, voCategory: 1, name: 'experience' },
+    { voType: 6, voCategory: 1, name: 'post-count' },
+    { voType: 5, voCategory: 2, name: 'hot-product' },
+  ]);
 });
 
 test('buildPublicLeaderboardPath 应稳定回写默认与非默认榜单路径', () => {

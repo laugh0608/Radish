@@ -9,12 +9,6 @@
 export const LeaderboardType = {
   /** 等级排行榜 */
   Experience: 1,
-  /** 萝卜余额排行榜 */
-  Balance: 2,
-  /** 萝卜花销排行榜 */
-  TotalSpent: 3,
-  /** 购买达人排行榜 */
-  PurchaseCount: 4,
   /** 热门商品排行榜 */
   HotProduct: 5,
   /** 发帖达人排行榜 */

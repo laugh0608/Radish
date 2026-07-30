@@ -5,6 +5,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers.v1;
@@ -48,6 +49,16 @@ public class LeaderboardController : ControllerBase
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 50)
     {
+        if (!LeaderboardPublicPolicy.IsPublicType(type))
+        {
+            return MessageModel<PageModel<UnifiedLeaderboardItemVo>>.Message(
+                false,
+                "该排行榜类型不提供公开访问",
+                default,
+                LeaderboardErrorCodes.TypeUnavailable,
+                LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.TypeUnavailable));
+        }
+
         var currentUserId = GetCurrentUserId();
         var result = await _leaderboardService.GetLeaderboardAsync(
             type,
@@ -66,6 +77,26 @@ public class LeaderboardController : ControllerBase
     [HttpGet]
     public async Task<MessageModel<int>> GetMyRank([FromQuery] LeaderboardType type = LeaderboardType.Experience)
     {
+        if (!LeaderboardPublicPolicy.IsPublicType(type))
+        {
+            return MessageModel<int>.Message(
+                false,
+                "该排行榜类型不提供公开访问",
+                0,
+                LeaderboardErrorCodes.TypeUnavailable,
+                LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.TypeUnavailable));
+        }
+
+        if (!LeaderboardPublicPolicy.SupportsUserRank(type))
+        {
+            return MessageModel<int>.Message(
+                false,
+                "该排行榜类型不支持用户个人排名",
+                0,
+                LeaderboardErrorCodes.UserRankUnavailable,
+                LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.UserRankUnavailable));
+        }
+
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {

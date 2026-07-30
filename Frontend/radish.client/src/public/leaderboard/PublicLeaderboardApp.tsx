@@ -12,6 +12,7 @@ import { useUserStore } from '@/stores/userStore';
 import {
   createDefaultPublicLeaderboardRoute,
   buildPublicLeaderboardPath,
+  filterPublicLeaderboardTypes,
   getPublicLeaderboardRouteDefinitionBySlug,
   getPublicLeaderboardRouteDefinitionByType,
   publicLeaderboardTypeRouteDefinitions,
@@ -84,24 +85,6 @@ const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLe
     nameKey: 'leaderboard.public.types.experience.name',
     descriptionKey: 'leaderboard.public.types.experience.description',
     primaryLabelKey: 'leaderboard.public.types.experience.primaryLabel',
-  },
-  balance: {
-    icon: 'mdi:carrot',
-    nameKey: 'leaderboard.public.types.balance.name',
-    descriptionKey: 'leaderboard.public.types.balance.description',
-    primaryLabelKey: 'leaderboard.public.types.balance.primaryLabel',
-  },
-  'total-spent': {
-    icon: 'mdi:cash-multiple',
-    nameKey: 'leaderboard.public.types.totalSpent.name',
-    descriptionKey: 'leaderboard.public.types.totalSpent.description',
-    primaryLabelKey: 'leaderboard.public.types.totalSpent.primaryLabel',
-  },
-  'purchase-count': {
-    icon: 'mdi:shopping',
-    nameKey: 'leaderboard.public.types.purchaseCount.name',
-    descriptionKey: 'leaderboard.public.types.purchaseCount.description',
-    primaryLabelKey: 'leaderboard.public.types.purchaseCount.primaryLabel',
   },
   'hot-product': {
     icon: 'mdi:gift-outline',
@@ -388,6 +371,7 @@ export const PublicLeaderboardApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingTypes, setLoadingTypes] = useState(true);
+  const [hasAuthoritativeTypes, setHasAuthoritativeTypes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [typesError, setTypesError] = useState<string | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
@@ -453,12 +437,17 @@ export const PublicLeaderboardApp = ({
 
       try {
         const result = await leaderboardApi.getTypes();
-        if (!cancelled && result?.length) {
-          setTypes(result);
+        if (cancelled) {
+          return;
         }
+
+        const publicTypes = filterPublicLeaderboardTypes(result ?? []);
+        setTypes(publicTypes);
+        setHasAuthoritativeTypes(true);
       } catch (loadTypesError) {
         if (!cancelled) {
           setTypes(fallbackTypes);
+          setHasAuthoritativeTypes(false);
           setTypesError(loadTypesError instanceof Error ? loadTypesError.message : String(loadTypesError));
         }
       } finally {
@@ -472,9 +461,54 @@ export const PublicLeaderboardApp = ({
     return () => {
       cancelled = true;
     };
-  }, [fallbackTypes, reloadToken]);
+  }, [fallbackTypes, reloadToken, t]);
 
   useEffect(() => {
+    if (loadingTypes || !hasAuthoritativeTypes) {
+      return;
+    }
+
+    if (
+      types.length === 0 ||
+      types.some((type) => type.voType === activeRouteDefinition.type)
+    ) {
+      return;
+    }
+
+    const fallbackDefinition = getPublicLeaderboardRouteDefinitionByType(types[0].voType);
+    onNavigate({
+      ...createDefaultPublicLeaderboardRoute(),
+      typeSlug: fallbackDefinition.slug,
+    }, { replace: true });
+  }, [
+    activeRouteDefinition.type,
+    hasAuthoritativeTypes,
+    loadingTypes,
+    onNavigate,
+    types,
+  ]);
+
+  useEffect(() => {
+    if (loadingTypes) {
+      return;
+    }
+
+    if (hasAuthoritativeTypes && types.length === 0) {
+      requestIdRef.current += 1;
+      setItems([]);
+      setTotalPages(1);
+      setLoading(false);
+      setError(t('leaderboard.public.loadFailedDescription'));
+      return;
+    }
+
+    if (
+      hasAuthoritativeTypes &&
+      !types.some((type) => type.voType === activeRouteDefinition.type)
+    ) {
+      return;
+    }
+
     const requestId = ++requestIdRef.current;
 
     const loadLeaderboard = async () => {
@@ -518,13 +552,30 @@ export const PublicLeaderboardApp = ({
     };
 
     void loadLeaderboard();
-  }, [activeRouteDefinition.type, onNavigate, reloadToken, route.page, route.typeSlug, t]);
+  }, [
+    activeRouteDefinition.type,
+    hasAuthoritativeTypes,
+    loadingTypes,
+    onNavigate,
+    reloadToken,
+    route.page,
+    route.typeSlug,
+    t,
+    types,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadMyRank = async () => {
-      if (!isLoggedIn || activeTypeConfig.voCategory !== LeaderboardCategory.User) {
+      if (
+        !isLoggedIn ||
+        activeTypeConfig.voCategory !== LeaderboardCategory.User ||
+        (
+          hasAuthoritativeTypes &&
+          !types.some((type) => type.voType === activeRouteDefinition.type)
+        )
+      ) {
         setMyRank(null);
         return;
       }
@@ -545,7 +596,13 @@ export const PublicLeaderboardApp = ({
     return () => {
       cancelled = true;
     };
-  }, [activeRouteDefinition.type, activeTypeConfig.voCategory, isLoggedIn]);
+  }, [
+    activeRouteDefinition.type,
+    activeTypeConfig.voCategory,
+    hasAuthoritativeTypes,
+    isLoggedIn,
+    types,
+  ]);
 
   const visiblePages = useMemo(
     () => buildVisiblePages(route.page, totalPages, isCompactViewport ? 5 : 7),
