@@ -15,7 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再通过 Pencil 按页面族推进视觉重构。
+> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。
 
 ## 1. 设计目标
 
@@ -376,10 +376,11 @@ Frontend/radish.client/src/stores/
 
 [UI 设计灵感参考](/frontend/ui-design-inspiration) 收录 AFFINE、CodexApp、Cloudflare、GitHub、Discourse 与 1Panel 的界面截图，并将其提炼为布局、信息密度、设置页、管理后台、社区列表和色彩节奏参考。
 
-这些素材只用于学习现代产品的信息组织与视觉克制方法，不改变 Radish 的淡雅新中式主题方向；后续页面级或客户端级 UI 优化仍应先通过 Pencil 产出 Radish 自己的 `.pen` 设计稿，再进入实现。
+这些素材只用于学习现代产品的信息组织与视觉克制方法，不改变 Radish 的淡雅新中式主题方向。后续页面级或客户端级 UI 优化先审计当前代码并裁决 R1 / R2 / R3：代表结构和关键状态通过 Pencil 确认，相似派生页面继承既有契约直接实现并用真实截图复核。
 
 ## 12. 维护规则
 
 - 家族通用规则优先更新 RadishX family-ui；Radish 产品差异、主题权益或大规模 UI 改造前，更新本页、差异附录与 F4-R 专题。
+- Pencil 只维护共享视觉契约和主要页面，不承担功能、文案、权限或所有路由的完整镜像。
 - 若某次实现与本规范冲突，应优先修改实现，而不是绕过规范。
 - 如果后续验证发现规范本身不合理，再回到本页迭代，而不是在组件里单点妥协。

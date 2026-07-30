@@ -9,7 +9,7 @@
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`F4-R 家族 UI 统一接入与产品视觉重构；A / B 与 C-0 参考素材审计已完成`
-- **产品下一顺位**：`进入 C-1，先按 Pencil 代表画板确认共享组件与壳层，再推进页面族`
+- **产品下一顺位**：`进入 C-1，先审计当前代码并裁决 R1 / R2 / R3，再确认共享基座和代表画板`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
 - **复核日期**：`2026-07-30`
 - **当前结论**：
@@ -131,7 +131,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A 批规范、Profile、四主题和多端边界、B 批 Token / 共享主题基座与 C-0 参考素材审计已完成，下一步由 C-1 经 Pencil 推进共享组件与壳层，再进入 D 批页面族。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A 批规范、Profile、四主题和多端边界、B 批 Token / 共享主题基座与 C-0 参考素材审计已完成；C-1 采用代表页驱动流程，先裁决 R1 / R2 / R3，再经 Pencil 收敛共享基座和必要代表画板，D 批按继承关系实现页面族。
 
 ## P3-12-F 门禁分层
 

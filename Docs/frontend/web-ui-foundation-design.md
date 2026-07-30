@@ -111,11 +111,11 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 ## 同步规则
 
-1. 改共享样式时，先修改 `web-ui-foundation.pen`。
-2. 再同步到受影响的业务设计源。
-3. 再更新对应设计说明和记录。
+1. 改共享视觉契约时，先修改 `web-ui-foundation.pen`。
+2. 只同步受影响的 R1 / R2 代表画板；R3 派生页面从代码共享层继承，不复制画板。
+3. 再更新对应设计说明、继承关系和必要记录。
 4. 不允许只在某个业务 `.pen` 临时修改 header、按钮、卡片或状态槽样式。
-5. 如果业务端点确实需要新变体，先把它加入共享基座并说明适用范围。
+5. 如果业务端点确实需要新变体，先按[代表页流程](/frontend/pencil-representative-page-workflow)完成升级判断，再把合法变体加入共享基座并说明适用范围。
 
 ## 代码对齐状态
 

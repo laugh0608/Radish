@@ -107,7 +107,8 @@ Radish 四主题取值与 Profile 覆盖
 - family-ui 非破坏性更新先评估，再更新本页遵循版本。
 - 破坏性更新必须单独建立迁移窗口，不在业务功能批次里顺手跟进。
 - 通用语义优先回到 family-ui；Radish 产品差异维护在本页及对应专题。
-- 页面级视觉工作必须先完整阅读 family-ui `references.md`、逐张查看其索引的参考图，并在 [F4-R 专题](/features/family-ui-convergence-design)中维护 Radish 页面族的吸收 / 排除映射；只复制 token 不能视为完成视觉迁移。
+- 页面级视觉工作必须先完整阅读 family-ui `references.md`、逐张查看其索引的参考图，并在 [F4-R 专题](/features/family-ui-convergence-design)中维护 Radish 页面类型的吸收 / 排除映射；只复制 token 不能视为完成视觉迁移。
 - 参考图只用于内部原则提炼，不得进入 `.pen`、产品、`public/` 或对外交付物；移动端不得由桌面参考图等比缩放。
-- 页面视觉收敛必须先更新对应 `.pen` 设计源，再进入代码。
-- 每个页面族至少覆盖 PC / mobile、`zh / en`、四主题代表路径和 reduced-motion。
+- Pencil 遵循[代表页协作流程](/frontend/pencil-representative-page-workflow)：R1 / R2 先完成必要代表设计，R3 明确继承来源后直接实现，不为每条路由和文案变化复制画板。
+- 功能、按钮、文案、权限与状态机以专题文档和当前代码为准；Pencil 只约束共享视觉契约、代表结构、关键状态和响应式变化。
+- 页面族验收以代表路径覆盖 PC / mobile、`zh / en`、四主题和 reduced-motion；派生页通过继承检查、代码侧验证和真实截图复核。
