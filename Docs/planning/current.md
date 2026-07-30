@@ -38,7 +38,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展与下一步（2026-07-30，F4-R 等待 C-1B；F4-S 已关闭）
+## 今日进展（2026-07-30，F4-R 等待 C-1B；F4-S 已关闭）
 
 1. A 批已完成：建立 [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)和 [Radish UI 差异附录](/frontend/ui-addendum)，固定规范优先级、Profile、四主题、多端顺位与停止线。
 2. A 批已同步当前规划、开发路线、壳层策略、前端设计、项目入口和 Agent 协作文件，没有改写历史验收事实。
@@ -50,9 +50,19 @@
 8. 等待 Pencil 期间穿插完成 F4-S A-D：服务端公开白名单、账号 / 内容 / 商品资格、确定性排名、稳定错误契约和 Web 路由均已收口；Gateway PC / mobile、匿名 / TestUser 和 API 边界矩阵通过，详细证据见[成组验收记录](/records/f4-s-d-leaderboard-public-governance-stage-acceptance-2026-07-30)。
 9. 本轮已按当前任务授权启动并停止全部本地服务，浏览器、测试身份与头像访问计数副作用均已清理；未读取或修改 `.pen`，F4-R C / D 仍不扩 WebOS，不恢复 Tauri。
 
+## 明日事项（2026-07-31）
+
+1. 新会话先读取本页、[F4-R 专题](/features/family-ui-convergence-design)、[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)和 [UI 差异附录](/frontend/ui-addendum)，不默认展开历史记录。
+2. 首先向用户确认 Pencil 是否空闲；只有得到当前任务的明确确认后，才读取或修改 `.pen`。
+3. Pencil 空闲时进入 C-1B：先复核 `R1-F01` 共享组件、状态、主题与壳层矩阵，并再次核对 family-ui `references.md` 及 27 张参考图映射；再按 Public、Author、Private、Console 顺序处理必要 R1 / R2，不为 R3 派生页复制画板。
+4. 代表结构与契约确认前不进入页面族实现；功能、文案、按钮、权限和状态机继续服从专题文档与当前代码。
+5. Pencil 仍被占用时，不读取或修改 `.pen`；可以只读审计下一项不依赖 Pencil 的完整 F4 功能或维护候选，形成 `2~4` 个有代码事实、用户价值、权威边界、维护成本和停止线的候选，获得批准后再建专题或编码。
+6. 默认不启动服务或执行真实 smoke；只有专题准备验收且获得当前任务授权后再启动。正式顺位继续为 Web 优先、Flutter 条件式承接移动原生价值、WebOS 只兼容、Tauri 冻结；不重启主动生产证据采集。
+
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [2026-07-30 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-30)
 - [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
 - [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit)
 - [Radish UI 差异附录](/frontend/ui-addendum)

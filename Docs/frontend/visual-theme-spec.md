@@ -217,26 +217,24 @@
 - 公开内容宽度使用 `--rx-content-max-width`、`--rx-content-reading-width`、`--rx-content-narrow-width`，移动页面底部留白使用 `--rx-mobile-shell-offset`。
 - 这些组件只约束正式 Web public / private 壳层；WebOS `/desktop` 和 Console 仍按各自壳层规范维护，不直接复用 client Web shell。
 
-## 7. 页面改造优先级
+## 7. 当前视觉重构顺位
 
-### 7.1 第一批
+### 7.1 C-1B 代表设计复核
 
-首版必须优先覆盖：
+F4-R 已完成 A / B、C-0 与 C-1A。用户明确确认 Pencil 空闲后，按以下顺位推进 C-1B：
 
-- WebOS Shell
-- 论坛
-- 聊天室
-- 商城
-- 文档
-- 通知中心
-- 个人中心
+1. 先复核 `R1-F01` 共享基础：按钮、输入、选择、反馈、状态槽、Header、移动底栏、主题和响应式基线。
+2. 再按 Public、Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
+3. R3 页面明确继承来源后直接实现，不为相同布局、文案差异或路由差异复制画板；出现新布局模型、关键交互或 mobile 结构时再升级为 R1 / R2。
 
-### 7.2 第二批
+代表页编号、路由族与升级规则以 [F4-R 代表页代码事实审计](/frontend/f4-r-representative-page-audit)和 [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)为准。
 
-- 空状态与欢迎页
-- 辅助弹窗
-- 次级管理型页面
-- 边角状态与不高频页面
+### 7.2 实现与多端顺位
+
+- 代表结构和共享契约确认后，先完成正式 Web 的共享基座，再按已复核页面族成组实现和真实截图验收。
+- Flutter 等 Web 基线稳定后，只承接有明确移动原生价值的路径，不机械复制 Web。
+- WebOS `/desktop` 只保持阻断级兼容，不作为新视觉组件或页面模板来源。
+- Tauri 暂时弃用，不进入视觉设计、实现、构建或验收范围。
 
 ## 8. 主题机制规范
 
@@ -377,6 +375,13 @@ Frontend/radish.client/src/stores/
 [UI 设计灵感参考](/frontend/ui-design-inspiration) 收录 AFFINE、CodexApp、Cloudflare、GitHub、Discourse 与 1Panel 的界面截图，并将其提炼为布局、信息密度、设置页、管理后台、社区列表和色彩节奏参考。
 
 这些素材只用于学习现代产品的信息组织与视觉克制方法，不改变 Radish 的淡雅新中式主题方向。后续页面级或客户端级 UI 优化先审计当前代码并裁决 R1 / R2 / R3：代表结构和关键状态通过 Pencil 确认，相似派生页面继承既有契约直接实现并用真实截图复核。
+
+### 11.5 family-ui 参考素材门禁
+
+- 页面级视觉工作必须先完整阅读 RadishX `docs/design/family-ui/references.md`，并逐张查看其中索引的参考图；只读取 `README.md` 或复制 token 不算完成参考审计。
+- 每个代表页面族必须在 [F4-R 专题](/features/family-ui-convergence-design)中说明吸收什么、排除什么；参考图只用于内部原则提炼，不作为产品素材。
+- mobile 必须从任务优先级、导航、安全区和触控密度重新设计，不得把桌面参考图等比缩放。
+- Radish 的产品边界、四主题权益、功能、文案、按钮、权限和状态机仍以本仓库文档与当前代码为准，具体差异见 [Radish UI 差异附录](/frontend/ui-addendum)。
 
 ## 12. 维护规则
 
