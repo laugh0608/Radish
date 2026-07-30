@@ -53,6 +53,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [私域与作者态 Web 工作流设计说明](./frontend/private-web-workflows-design.md)
 - [可恢复错误与诊断复制](./frontend/recoverable-error-diagnostics.md)
 - [Pencil 代表页协作流程](./frontend/pencil-representative-page-workflow.md)
+- [F4-R C-1 代表页代码事实审计](./frontend/f4-r-representative-page-audit.md)
 - [Pencil 设计源目录](./frontend/design-sources/README.md)
 - [纯 Web 私域复访入口](./frontend/private-web-revisit.md)
 - [Flutter 移动端 handoff 与回流说明](./guide/flutter-mobile-handoff.md)

@@ -41,6 +41,7 @@ features:
 - [前端设计](/frontend/design) - Web、Flutter、WebOS 保留入口与应用集成方式
 - [Radish UI 差异附录](/frontend/ui-addendum) - family-ui 版本、Profile、四主题与多端差异
 - [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow) - 主要页面定义、R1 / R2 / R3 分级、派生页继承与真实页面复核
+- [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit) - 正式路由与页面结构盘点、代表类型评分和继承表
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 - [Client 与 Console 跨应用导航契约](/frontend/client-console-navigation-contract) - 产品端、治理端与原生壳层的跳转、返回和认证边界

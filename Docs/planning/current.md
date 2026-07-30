@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R 家族 UI 统一接入与产品视觉重构；A / B 与 C-0 参考素材审计已完成`
-- **产品下一顺位**：`进入 C-1，先审计当前代码并裁决 R1 / R2 / R3，再确认共享基座和代表画板`
+- **工程第一顺位**：`F4-R 家族 UI 统一接入与产品视觉重构；A / B、C-0 与 C-1A 代码事实审计已完成`
+- **产品下一顺位**：`进入 C-1B，先复核共享基座，再按裁决更新 R1 / R2 代表设计`
 - **复核日期**：`2026-07-30`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
@@ -17,6 +17,7 @@
 - `2026-07-30` 已裁决 F4-R 为家族 UI 统一接入与产品视觉重构专题：通用视觉遵循 RadishX `family-ui v26.7.2`，Radish 通过本地差异附录保留内容优先 Public、四主题权益、Console Workbench 与多端产品契约。
 - `2026-07-30` 已完成 C-0 参考素材审计：完整阅读 family-ui `references.md` 并逐张查看其索引的 27 张参考图，建立共享基础、Public、Private / Author、Console、暗色与移动端的吸收 / 排除映射；参考图不作为产品素材，mobile 不由桌面图缩放。
 - `2026-07-30` 已将 Pencil 协作调整为代表页驱动：功能、文案、权限和状态机服从专题与代码；R1 / R2 维护必要代表设计，R3 继承实现并通过真实页面截图复核，不再维持逐路由设计镜像。
+- `2026-07-30` 已完成 C-1A 代码事实审计：裁决 `7` 个 R1、`4` 个 R2 与 R3 继承表；Console 普通表格 / 明细和案件治理 / 审计因布局、动作与 mobile 模型不同，拆为两个完整代表类型。
 - 多端顺位调整为 Web 优先、Flutter 次级；Tauri 暂时弃用，保留历史验证资产但不进入开发、UI、CI、发布或验收门禁，未来只在桌面原生价值、目标用户和维护预算明确时重新评估。
 - PR `#65` 已集成七月下旬 Wiki 作者协作、宠物公开名片、内容治理与申诉、用户屏蔽、Wiki 附件及生产迁移编排等成组成果；CI 门禁同时修复真实数据库配置探测、SQLite 连接串解析和依赖安全问题。
 - [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)已完成 A-D 批并关闭：Main 权威引用、Wiki 私有默认、动态 ACL、受保护资源、六身份 Gateway 矩阵及 SQLite / PostgreSQL 验证形成闭环。
@@ -35,19 +36,21 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展与下一步（2026-07-30，F4-R-A / B / C-0 → C-1）
+## 今日进展与下一步（2026-07-30，F4-R-A / B / C-0 / C-1A → C-1B）
 
 1. A 批已完成：建立 [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)和 [Radish UI 差异附录](/frontend/ui-addendum)，固定规范优先级、Profile、四主题、多端顺位与停止线。
 2. A 批已同步当前规划、开发路线、壳层策略、前端设计、项目入口和 Agent 协作文件，没有改写历史验收事实。
 3. B 批已完成：复制 family-ui token，建立 Client / Console L2 兼容映射，统一共享 Ant Design 状态语义，并补主题定义与映射测试。
 4. C-0 已完成：审计 `references.md` 与全部 27 张参考图，形成 Radish 页面族参考映射并固化为 Pencil / 代码前置门禁。
-5. C-1 下一步先审计当前页面类型和代码事实，按自动升级条件与六维评分裁决 R1 / R2 / R3；再更新共享基座和命中的代表画板，最后按继承关系成组实现派生页面。
-6. A / B / C-0 未启动服务、未执行真实 smoke；C / D 仍不扩 WebOS，不恢复 Tauri。
+5. C-1A 已完成：形成[代表页代码事实审计](/frontend/f4-r-representative-page-audit)，确认 `7` 个 R1、`4` 个 R2 与 R3 路由族继承关系，并拆分两类 Console 代表工作台。
+6. C-1B 下一步先复核 `R1-F01` 共享基座，再按 Public、Author、Private、Console 顺序更新命中的 R1 / R2 代表设计；不为 R3 创建重复画板。
+7. A / B / C-0 / C-1A 未启动服务、未执行真实 smoke；C / D 仍不扩 WebOS，不恢复 Tauri。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
 - [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
+- [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit)
 - [Radish UI 差异附录](/frontend/ui-addendum)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [F4-N 论坛内容赞赏](/features/forum-content-reward)
