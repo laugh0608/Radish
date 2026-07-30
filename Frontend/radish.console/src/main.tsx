@@ -5,14 +5,17 @@ import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl } from './config/env'
 import { applySiteBranding } from './services/siteBranding'
 import { rememberClientBackTo } from './utils/clientNavigation'
-import './index.css'
 import App from './App.tsx'
 import './i18n'
 import { LanguageProvider } from './i18n/LanguageProvider'
 import { normalizeLanguage } from './locales/language'
+import '@radish/ui/family-ui-tokens.css'
+import './index.css'
 
 rememberClientBackTo(window.location.search)
 void applySiteBranding(getApiBaseUrl())
+document.documentElement.dataset.rdTheme = 'light'
+document.documentElement.dataset.rdProfile = 'workbench'
 
 export function ConsoleRoot() {
   const { i18n } = useTranslation()

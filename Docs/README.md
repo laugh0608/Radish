@@ -44,6 +44,8 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 ## 前端与交互
 
 - [前端设计](./frontend/design.md)
+- [Radish UI 差异附录](./frontend/ui-addendum.md)
+- [F4-R 家族 UI 统一接入与产品视觉重构](./features/family-ui-convergence-design.md)
 - [前端多壳层策略](./frontend/shell-strategy.md)
 - [Client 与 Console 跨应用导航契约](./frontend/client-console-navigation-contract.md)
 - [Web UI 共享基座设计说明](./frontend/web-ui-foundation-design.md)

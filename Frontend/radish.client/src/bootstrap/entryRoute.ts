@@ -28,6 +28,8 @@ export type BrowserEntryKind =
   | 'public'
   | 'root';
 
+export type RadishUiProfile = 'brand' | 'workbench';
+
 interface ResolveInitialEntryPathOptions {
   isCapacitorNativePlatform: boolean;
   isTauriRuntime: boolean;
@@ -109,6 +111,10 @@ export function resolveBrowserEntryKind(pathname: string): BrowserEntryKind {
   }
 
   return 'root';
+}
+
+export function resolveBrowserEntryProfile(entryKind: BrowserEntryKind): RadishUiProfile {
+  return entryKind === 'public' || entryKind === 'root' ? 'brand' : 'workbench';
 }
 
 export { isCirclePathname, isMessagesPathname, isNotificationsPathname };

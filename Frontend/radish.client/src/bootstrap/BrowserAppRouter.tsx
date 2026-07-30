@@ -1,7 +1,11 @@
-import { lazy, startTransition, useCallback, useEffect, useRef, useState, type ElementType } from 'react';
+import { lazy, startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState, type ElementType } from 'react';
 import { BootstrapGate } from '@/bootstrap/BootstrapGate';
 import { BrowserNavigationLockContext, type BrowserNavigationLockUpdater } from '@/bootstrap/browserNavigationLock';
-import { resolveBrowserEntryKind, type BrowserEntryKind } from '@/bootstrap/entryRoute';
+import {
+  resolveBrowserEntryKind,
+  resolveBrowserEntryProfile,
+  type BrowserEntryKind,
+} from '@/bootstrap/entryRoute';
 
 const OidcCallbackPage = lazy(() => import('@/auth/OidcCallbackPage').then((module) => ({ default: module.OidcCallbackPage })));
 const CircleEntry = lazy(() => import('@/circle/CircleEntry').then((module) => ({ default: module.CircleEntry })));
@@ -81,6 +85,10 @@ export function BrowserAppRouter() {
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
+
+  useLayoutEffect(() => {
+    document.documentElement.dataset.rdProfile = resolveBrowserEntryProfile(entryKind);
+  }, [entryKind]);
 
   const Page = resolveEntryComponent(entryKind);
   return (

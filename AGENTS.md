@@ -66,8 +66,8 @@
 
 - 技术栈：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite） / React 19 + Vite（Rolldown） + TypeScript
 - 前端结构：npm workspaces 管理 `radish.http`、`radish.client`、`radish.console`、`radish.ui`
-- 多端口径：纯 Web 是唯一正式产品主线；Flutter 仅条件式维护现有 MVP，Tauri 冻结为实验资产
-- 桌面形态：`radish.client` 的 `/desktop` 保留 WebOS 历史入口；`Clients/radish-tauri` 仅保留 Tauri 验证资产，不进入当前开发与发布门禁
+- 多端口径：Web 是正式优先主线；Flutter 是次级移动原生产品线，按明确移动价值推进；Tauri 暂时弃用并保留历史验证资产，未来等待重新评估
+- 桌面形态：`radish.client` 的 `/desktop` 保留 WebOS 历史入口；`Clients/radish-tauri` 不进入当前开发、UI、CI 与发布门禁
 - 共享组件：`radish.ui` 为源码直连的共享 UI 组件库，无需单独构建
 - HTTP 客户端：`radish.http` 为统一 API 客户端 workspace
 - 协作分支：`dev`
@@ -120,14 +120,14 @@
 ### 前端项目
 
 - `Frontend/radish.http`：统一 HTTP 客户端与相关类型封装
-- `Frontend/radish.client`：WebOS 桌面，面向用户
+- `Frontend/radish.client`：正式 Web 产品与 `/desktop` WebOS 历史入口，面向用户
 - `Frontend/radish.console`：管理后台
 - `Frontend/radish.ui`：共享组件库，供 client 和 console 直接引用源码
 
 ### 客户端项目
 
 - `Clients/radish.flutter`：Flutter Android / iOS 移动原生安装包路线
-- `Clients/radish-tauri`：Tauri 桌面安装包壳层，复用 `Frontend/radish.client` 的 WebOS 构建产物
+- `Clients/radish-tauri`：暂时弃用的 Tauri 桌面验证资产，未来重新评估时默认复用正式 Web
 
 ## 环境与命令
 
@@ -320,6 +320,7 @@ Log.Information("User {UserId} logged in", userId);
 
 ### UI 与视觉规范
 
+- 家族通用视觉遵循 RadishX `docs/design/family-ui/` `v26.7.2`；Radish 产品差异、四主题与多端边界见 `Docs/frontend/ui-addendum.md`
 - 视觉口径以 `Docs/frontend/visual-theme-spec.md` 和 `Docs/frontend/visual-color-reference.md` 为准
 - `radish.client` 必须支持 `default / guofeng` 主题切换
 - 风格方向为淡雅新中式，不做厚重国潮，不牺牲可读性

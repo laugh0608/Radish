@@ -623,9 +623,9 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 
-## Tauri 冻结实验壳验证分层
+## Tauri 暂时弃用资产验证边界
 
-Tauri 当前冻结，不进入日常开发、候选 CI 必需矩阵、签名或分发门禁，也不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；只有明确桌面原生需求与维护预算成立后才评估解冻，并以 Tauri 增强纯 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
+Tauri 当前暂时弃用，不进入开发、UI、候选 CI 必需矩阵、签名、分发或验收门禁，也不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；只有桌面原生价值、目标用户和维护预算同时明确后才重新评估，并以 Tauri 增强正式 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
 
 只有改动实际触达 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link 或历史 Tauri + WebOS 验证路径时，才补 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。单纯修改纯 Web 或 WebOS `/desktop` 不要求追加 Tauri 构建。
 

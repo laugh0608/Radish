@@ -6,19 +6,19 @@
 
 Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以帖子、评论和问答承载内容生产与讨论，以聊天、关注和通知形成复访闭环，以 Docs 沉淀可长期阅读的知识；宠物、经验、资产和商城是可选激励层，不取代社区主轴。
 
-正式产品入口采用 Web-first：PC 与 mobile 浏览器共享公开浏览、登录参与和私域复访主路径；Flutter 维持移动原生承接，WebOS 只保留历史兼容，Tauri / Rust 属于后置实验线。技术实现基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，以及 React 19 + Vite + TypeScript。
+正式产品采用 Web-first：PC 与 mobile 浏览器共享公开浏览、登录参与和私域复访主路径；Flutter 作为次级移动原生产品线承接明确移动价值，WebOS 只保留历史兼容，Tauri 暂时弃用并等待未来重新评估。技术实现基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，以及 React 19 + Vite + TypeScript。
 
 ## 当前状态
 
-- **当前阶段**：`第三开发阶段：真实使用增长与长期契约治理`
-- **当前主线**：`P3-12-F 正式版发布候选`
-- **复核日期**：`2026-07-11`
+- **当前阶段**：`Phase 4：长期维护与功能完成`
+- **当前主线**：`F4-R 家族 UI 统一接入与产品视觉重构`
+- **复核日期**：`2026-07-30`
 - **当前结论**：
-  - `Q0` 与 `E8-B` 有限产品矩阵已完成，当前无已知 `P0/P1`，项目已进入 `P3-12-F`
-  - `Q1-A` 事务后可靠任务与 `Q1-B` API 错误契约已完成；`Q1-C` 文件令牌运行时已落地，待目标库 `apply / verify` 和 PostgreSQL 并发用例
-  - Q1-C 环境门禁关闭后进入 `Q2-A` 时间语义，再推进 PostgreSQL / OpenIddict 升级与版本单一真值
-  - 合并 `master`、创建 tag 与部署是三个独立决策；当前不因文档收口自动触发任何一个动作
-  - Flutter 转维护线，WebOS 仅保留兼容入口，Tauri / Rust 继续后置，避免多端同时扩张稀释正式 Web 主线
+  - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
+  - F4-R 以 RadishX `family-ui v26.7.2` 为家族视觉基线，先接入 Token 与共享主题，再按 Pencil 页面族推进
+  - Web 为正式优先主线，Flutter 为次级移动原生产品线；WebOS 仅保留兼容入口
+  - Tauri 暂时弃用，保留历史验证资产但不进入当前开发、UI、CI 或发布门禁
+  - 合并 `master`、创建 tag 与部署仍是三个独立决策
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：
   - 快速基线：`npm run validate:baseline:quick`

@@ -1,0 +1,182 @@
+/*
+ * Radish 家族统一 UI 规范 —— CSS 参考实现
+ * family-ui v26.7.2 (2026-07-12)
+ *
+ * 真相源：docs/design/family-ui/02-color.md 等章节与 tokens/tokens.json。
+ * 用法：
+ *   - 亮色为默认；<html data-rd-theme="dark"> 切换暗色核心映射。
+ *   - Workbench 面在容器加 data-rd-profile="workbench" 抬亮底色。
+ *   - 组件只消费 --rd-*，不直接引用调色板层。
+ *   - 各项目可将现有前缀设为别名：--theme-bg-app: var(--rd-bg-app); 等。
+ */
+
+:root {
+  /* —— 调色板层 L0（只定义，不直接消费）—— */
+  --rd-palette-rouge-01: #b24057;
+  --rd-palette-rouge-02: #cd5076;
+  --rd-palette-jade-03: #4f9c83;
+  --rd-palette-ink-03: #435c74;
+  --rd-palette-earth-03: #886349;
+  --rd-palette-purple-03: #846992;
+  --rd-palette-paper-50: #fdfbf7;
+  --rd-palette-paper-100: #fbf7f0;
+  --rd-palette-paper-200: #f4efe6;
+  --rd-palette-paper-300: #efe7db;
+  --rd-palette-paper-400: #e6dccc;
+  --rd-palette-paper-500: #d9cbb9;
+  --rd-palette-ink-900: #11100f;
+  --rd-palette-ink-700: #2f2a25;
+  --rd-palette-ink-500: #6a5c4f;
+  --rd-palette-ink-300: #8d7b6c;
+
+  /* —— 语义层 L1（组件消费层，亮色）—— */
+  --rd-bg-app: #f4efe6;
+  --rd-bg-surface: #fbf7f0;
+  --rd-bg-muted: #efe7db;
+  --rd-bg-ink: #11100f;
+  --rd-bg-canvas: #f9f6f0;
+
+  --rd-text-primary: #2f2a25;
+  --rd-text-secondary: #6a5c4f;
+  --rd-text-muted: #8d7b6c;
+  --rd-text-on-accent: #fffdf8;
+  --rd-text-on-ink: #f4efe6;
+
+  --rd-border-soft: rgba(136, 99, 73, 0.16);
+  --rd-border-strong: rgba(136, 99, 73, 0.30);
+  --rd-focus-ring: rgba(67, 92, 116, 0.45);
+
+  --rd-brand-primary: #b24057;
+  --rd-brand-hover: #cd5076;
+  --rd-brand-soft: rgba(178, 64, 87, 0.12);
+  --rd-action-primary: #435c74;
+  --rd-action-hover: #55738f;
+  --rd-action-soft: rgba(67, 92, 116, 0.12);
+
+  --rd-accent-rouge: #b24057;
+  --rd-accent-jade: #4f9c83;
+  --rd-accent-ink: #435c74;
+  --rd-accent-earth: #886349;
+  --rd-accent-purple: #846992;
+  --rd-accent-grayjade: #78a496;
+
+  --rd-state-success: #4f9c83;
+  --rd-state-success-soft: rgba(79, 156, 131, 0.14);
+  --rd-state-warning: #b5826d;
+  --rd-state-warning-soft: rgba(181, 130, 109, 0.16);
+  --rd-state-danger: #c3564d;
+  --rd-state-danger-soft: rgba(195, 86, 77, 0.14);
+  --rd-state-info: #435c74;
+  --rd-state-info-soft: rgba(67, 92, 116, 0.12);
+  --rd-state-neutral: #6e736d;
+  --rd-state-neutral-soft: rgba(110, 115, 109, 0.14);
+
+  --rd-pattern-line: rgba(122, 92, 64, 0.14);
+  --rd-shadow-soft: 0 16px 40px rgba(91, 66, 44, 0.10);
+  --rd-shadow-panel: 0 8px 24px rgba(91, 66, 44, 0.08);
+  --rd-shadow-popover: 0 12px 32px rgba(91, 66, 44, 0.14);
+
+  /* —— 字体 —— */
+  --rd-font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei UI", "Noto Sans SC", sans-serif;
+  --rd-font-serif: "Songti SC", "STSong", "Noto Serif SC", serif;
+  --rd-font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+
+  /* —— 圆角 —— */
+  --rd-radius-xs: 4px;
+  --rd-radius-sm: 8px;
+  --rd-radius-md: 12px;
+  --rd-radius-lg: 16px;
+  --rd-radius-pill: 999px;
+
+  /* —— 间距 —— */
+  --rd-space-1: 4px;
+  --rd-space-2: 8px;
+  --rd-space-3: 12px;
+  --rd-space-4: 16px;
+  --rd-space-5: 24px;
+  --rd-space-6: 32px;
+  --rd-space-7: 48px;
+  --rd-space-8: 64px;
+
+  /* —— 动效 —— */
+  --rd-motion-fast: 120ms;
+  --rd-motion-base: 200ms;
+  --rd-motion-slow: 320ms;
+  --rd-motion-brand: 500ms;
+  --rd-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --rd-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --rd-ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* —— 层级 —— */
+  --rd-z-base: 0;
+  --rd-z-sticky: 100;
+  --rd-z-dropdown: 200;
+  --rd-z-overlay: 300;
+  --rd-z-modal: 400;
+  --rd-z-toast: 500;
+}
+
+/* —— Workbench 面覆盖（抬亮底色一档）—— */
+[data-rd-profile="workbench"] {
+  --rd-bg-app: #f7f4ee;
+  --rd-bg-surface: #fffdf8;
+  --rd-bg-muted: #f3eee5;
+}
+
+/* —— 暗色全表（墨底 / 印色提亮一档 / 纹样减弱 / 阴影转黑；随 v26.7.2 补全）—— */
+[data-rd-theme="dark"] {
+  --rd-bg-app: #1a1713;
+  --rd-bg-surface: #23201a;
+  --rd-bg-muted: #2b2721;
+  --rd-bg-ink: #0d0c0a;
+  --rd-bg-canvas: #201d17;
+
+  --rd-text-primary: #ede5d8;
+  --rd-text-secondary: #b8ab9a;
+  --rd-text-muted: #8d8172;
+  --rd-text-on-accent: #fffdf8;
+  --rd-text-on-ink: #ede5d8;
+
+  --rd-border-soft: rgba(237, 229, 216, 0.14);
+  --rd-border-strong: rgba(237, 229, 216, 0.26);
+  --rd-focus-ring: rgba(127, 160, 189, 0.55);
+
+  --rd-brand-primary: #cd5076;
+  --rd-brand-hover: #da738a;
+  --rd-brand-soft: rgba(205, 80, 118, 0.20);
+  --rd-action-primary: #7fa0bd;
+  --rd-action-hover: #98b4cd;
+  --rd-action-soft: rgba(127, 160, 189, 0.18);
+
+  --rd-accent-rouge: #cd5076;
+  --rd-accent-jade: #6fb39c;
+  --rd-accent-ink: #7fa0bd;
+  --rd-accent-earth: #c9997f;
+  --rd-accent-purple: #a88bb5;
+  --rd-accent-grayjade: #8fb3a5;
+
+  --rd-state-success: #6fb39c;
+  --rd-state-success-soft: rgba(111, 179, 156, 0.18);
+  --rd-state-warning: #c9997f;
+  --rd-state-warning-soft: rgba(201, 153, 127, 0.18);
+  --rd-state-danger: #d4726a;
+  --rd-state-danger-soft: rgba(212, 114, 106, 0.18);
+  --rd-state-info: #7fa0bd;
+  --rd-state-info-soft: rgba(127, 160, 189, 0.16);
+  --rd-state-neutral: #9a9a94;
+  --rd-state-neutral-soft: rgba(154, 154, 148, 0.16);
+
+  --rd-pattern-line: rgba(237, 229, 216, 0.10);
+  --rd-shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.44);
+  --rd-shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.36);
+  --rd-shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.48);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --rd-motion-fast: 0ms;
+    --rd-motion-base: 0ms;
+    --rd-motion-slow: 0ms;
+    --rd-motion-brand: 0ms;
+  }
+}

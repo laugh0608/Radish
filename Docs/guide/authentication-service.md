@@ -489,7 +489,7 @@ Web 侧 OIDC 回调由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` �
 - Token 写入统一的 `tokenService`
 - 写入 Token 后调用 `hydrateAuthUser()` 预热当前用户资料
 - 成功后优先消费一次性认证返回路径；若不存在有效返回路径，则执行 `window.location.replace('/')` 回到根入口
-- 普通浏览器根入口 `/` 会进入 `/discover` 纯 Web 公开分发页；Tauri 当前仍保留进入 `/desktop`
+- 普通浏览器根入口 `/` 会进入 `/discover` Web 公开分发页；暂时弃用的 Tauri 历史资产仍保留进入 `/desktop` 的兼容行为
 - 当前认证返回路径使用严格白名单：`/desktop` 用于工作台上下文，`/circle` 用于我的圈子登录回流，`/notifications`、`/me`、`/messages` 和 `/pet` 用于纯 Web 登录态私域复访，`/forum/post/:postId?intent=comment|quickReply` 用于公开详情轻参与回流
 
 回调页只负责协议闭环和用户资料预热，不承载登录测试 UI、天气示例或其他 demo 行为。

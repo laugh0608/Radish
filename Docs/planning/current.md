@@ -6,14 +6,17 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-Q A-D 已完成并关闭；等待批准进入 F4-R-A 单专题候选审计`
-- **产品下一顺位**：`只读审计现有功能与维护缺口，裁决下一个边界完整、长期有价值的专题`
-- **复核日期**：`2026-07-29`
-- **正式主线**：纯 Web；PC / mobile 浏览器共同验收。WebOS `/desktop` 仅历史兼容，Flutter 条件维护，Tauri 冻结。
+- **工程第一顺位**：`F4-R 家族 UI 统一接入与产品视觉重构；A / B 与 C-0 参考素材审计已完成`
+- **产品下一顺位**：`进入 C-1，先以 Pencil 确认代表画板，再收敛共享组件与壳层`
+- **复核日期**：`2026-07-30`
+- **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-07-30` 已裁决 F4-R 为家族 UI 统一接入与产品视觉重构专题：通用视觉遵循 RadishX `family-ui v26.7.2`，Radish 通过本地差异附录保留内容优先 Public、四主题权益、Console Workbench 与多端产品契约。
+- `2026-07-30` 已完成 C-0 参考素材审计：完整阅读 family-ui `references.md` 并逐张查看其索引的 27 张参考图，建立共享基础、Public、Private / Author、Console、暗色与移动端的吸收 / 排除映射；参考图不作为产品素材，mobile 不由桌面图缩放。
+- 多端顺位调整为 Web 优先、Flutter 次级；Tauri 暂时弃用，保留历史验证资产但不进入开发、UI、CI、发布或验收门禁，未来只在桌面原生价值、目标用户和维护预算明确时重新评估。
 - PR `#65` 已集成七月下旬 Wiki 作者协作、宠物公开名片、内容治理与申诉、用户屏蔽、Wiki 附件及生产迁移编排等成组成果；CI 门禁同时修复真实数据库配置探测、SQLite 连接串解析和依赖安全问题。
 - [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design)已完成 A-D 批并关闭：Main 权威引用、Wiki 私有默认、动态 ACL、受保护资源、六身份 Gateway 矩阵及 SQLite / PostgreSQL 验证形成闭环。
 - [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design)已完成 A-D 批并关闭：Post / Comment Revision、CAS、完整快照、旧历史受权兼容、安全恢复、正式 Web 与多身份 PC / mobile 矩阵均通过。
@@ -31,17 +34,20 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 明天事项（2026-07-30，F4-R-A，等待批准）
+## 今日进展与下一步（2026-07-30，F4-R-A / B / C-0 → C-1）
 
-1. 新会话先只读 [当前进行中](/planning/current)；只有候选边界不足时再读 [开发路线图](/development-plan) 和直接相关专题，不默认展开历史记录。
-2. 盘点现有产品主线中仍然明确、可执行且未被既有闭环覆盖的功能或维护缺口，形成 `2~4` 个候选及其代码事实依据。
-3. 按用户价值、权威数据边界、正式 Web 入口、长期维护成本和停止线比较候选，不预设必须继续深化论坛，也不把生产证据采集当作前置。
-4. 只裁决一个边界完整专题，并先形成对应功能设计 / 说明文档；专题边界获批前不直接编码。
-5. F4-R-A 不启动服务、不执行真实 smoke，也不解冻 Flutter、WebOS 或 Tauri 新功能。
+1. A 批已完成：建立 [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)和 [Radish UI 差异附录](/frontend/ui-addendum)，固定规范优先级、Profile、四主题、多端顺位与停止线。
+2. A 批已同步当前规划、开发路线、壳层策略、前端设计、项目入口和 Agent 协作文件，没有改写历史验收事实。
+3. B 批已完成：复制 family-ui token，建立 Client / Console L2 兼容映射，统一共享 Ant Design 状态语义，并补主题定义与映射测试。
+4. C-0 已完成：审计 `references.md` 与全部 27 张参考图，形成 Radish 页面族参考映射并固化为 Pencil / 代码前置门禁。
+5. C-1 下一步先更新 `web-ui-foundation.pen` 及 Public / Private / Console 代表画板，再按“共享组件 / 壳层 → 页面族”成组推进。
+6. A / B / C-0 未启动服务、未执行真实 smoke；C / D 仍不扩 WebOS，不恢复 Tauri。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
+- [Radish UI 差异附录](/frontend/ui-addendum)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [F4-N 论坛内容赞赏](/features/forum-content-reward)
 - [F4-N-D 论坛内容赞赏成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)
@@ -63,7 +69,7 @@
 
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-R 候选审计并行扩张。
-- WebOS 只处理阻断级兼容；Flutter 只维护既有 MVP 的阻断、安全和认证兼容。
+- WebOS 只处理阻断级兼容；Flutter 按 Web 优先顺位承接明确高价值移动原生路径，不机械追平 Web。
 - 主动生产使用数据采集继续冻结到计划内功能完成、没有明确维护任务且用户确认的最终收尾阶段。
 
 ## 当前不做
@@ -71,7 +77,7 @@
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、排行榜、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
 - F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；F4-R 候选与设计获批前不直接编码或启动真实 smoke。
-- 不解冻 Tauri，不扩展 Flutter / WebOS 新功能，不重启主动生产证据采集。
+- 不恢复 Tauri，不扩展 WebOS 新功能，不把 Flutter 做成 Web 的机械复制，也不重启主动生产证据采集。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
 
 ## 验证与文档维护

@@ -1,9 +1,9 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-07-07
+> 最后更新：2026-07-30
 
-本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 的 `P00-P18` Console 治理工作台画板和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 为当前设计基准。
+本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 使用 family-ui Workbench Profile，Radish 差异见 [UI 差异附录](/frontend/ui-addendum)；具体布局仍以 `Docs/frontend/design-sources/console-governance-workbench.pen` 的 `P00-P18` Console 治理工作台画板和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 为当前设计基准。
 
 表格、操作列、分页和弹窗 / 抽屉内表格的细化规则见 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 
@@ -11,7 +11,7 @@
 
 - Console 仍是独立后台入口，不嵌入 WebOS 窗口。
 - `@radish/ui` 已提供按钮、表格、表单、弹窗、确认框、骨架屏、图标、Toast 等基础能力；新增页面不应再创建重复的本地基础控件。
-- Console 局部样式先以 `index.css` 中的 `--console-*` CSS 变量承接主题 token，再由 `AdminLayout.css` 与 `adminFeature.css` 消费。
+- Console 局部样式先以 `index.css` 中的 `--console-*` L2 变量承接 family-ui `--rd-*`，再由 `AdminLayout.css` 与 `adminFeature.css` 消费。
 - 新增 / 明显改动页面优先按 Console 治理工作台风格收敛；历史页面不要求一次性改写，但进入重做或大幅调整时应对齐该方向。
 - `AdminLayout` 在窄屏下保持独立后台形态：`<= 768px` 时使用底部高频导航 `总览 / 治理 / 交易 / 权限 / 更多`，内容区预留底部安全距离；`更多` 面板按当前账号权限展示完整 Console 页面组，不把 PC 侧栏覆盖到主内容上。
 - Console token 生命周期由 `services/tokenService.ts` 统一维护，页面和 API 层不应各自实现独立刷新计时；刷新前置窗口使用 `refresh_at` 和动态缓冲。

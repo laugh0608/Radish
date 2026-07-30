@@ -190,7 +190,7 @@ Console 使用普通 `<a href>` 或 `window.location.assign()` 返回 `backTo`�
 - 不使用 iframe 嵌入 Console；
 - 不共享或复制 Token；
 - 不同步两端完整主题状态；
-- 不扩 Flutter 完整后台，不解冻 Tauri；
+- 不扩 Flutter 完整后台，不重新启用暂时弃用的 Tauri；
 - 不在本专题重做 Console 页面、WebOS 工作台或全局导航视觉。
 
 ## 九、验证口径

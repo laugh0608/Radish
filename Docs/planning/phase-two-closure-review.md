@@ -4,7 +4,7 @@
 >
 > 评审日期：2026-05-13（Asia/Shanghai）
 >
-> 本页承载第二开发阶段收口清单、后置边界和下一主任务判断，不作为当前多端路线依据。快速入口仍以 [当前进行中](/planning/current) 为准；当前纯 Web 为唯一正式主线，Flutter 条件维护，Tauri 冻结且不再绑定 WebOS；本页中 Tauri + WebOS 为第二阶段历史验证结论。
+> 本页承载第二开发阶段收口清单、后置边界和下一主任务判断，不作为当前多端路线依据。快速入口仍以 [当前进行中](/planning/current) 为准；当前投入顺位为 Web 优先、Flutter 次级，Tauri 暂时弃用且不再绑定 WebOS；本页中 Tauri + WebOS 为第二阶段历史验证结论。
 
 ## 评审结论
 
@@ -45,7 +45,7 @@
 | WebOS / PC 工作台 | 保持桌面工作台主路径稳定，只处理成片工作流中的阻断级缺口 |
 | 后端 + Console 治理 | 只处理新暴露的安全、权限授权一致性、治理数据可信度问题 |
 | Flutter Android MVP | 保持已验收链路稳定，不默认追加低增益微体验批次 |
-| Tauri 桌面安装包 | 保留个人开发阶段 Tauri + WebOS 验证成果；当前冻结，只有明确桌面原生需求与维护预算成立后才评估解冻 |
+| Tauri 桌面安装包 | 保留个人开发阶段 Tauri + WebOS 验证成果；当前暂时弃用，只有桌面原生价值、目标用户和维护预算同时明确后才重新评估 |
 | 构建与验证基线 | 继续维护 `validate:baseline`、`validate:baseline:host`、`validate:ci` 和 Identity Guard |
 
 ## 明确后置

@@ -1,6 +1,6 @@
 # 视觉主题规范
 
-> 本页定义 Radish 首版 `dev` 的视觉改造与主题创建规范，用于指导 **国风视觉基线、主题切换与后续 UI 改造**。
+> 本页保留 Radish 产品视觉、四主题运行时和页面气质契约。`2026-07-30` 起，家族通用颜色、字体、间距、状态语义和组件基线遵循 RadishX `family-ui v26.7.2`；项目差异见 [Radish UI 差异附录](/frontend/ui-addendum)，实施批次见 [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)。
 >
 > 本规范面向：
 >
@@ -15,11 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：
->
-> - 首版先覆盖 `radish.client`
-> - 首版先做核心页面
-> - 首版先做稳定可用的主题机制，不做“大而全”视觉治理
+> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再通过 Pencil 按页面族推进视觉重构。
 
 ## 1. 设计目标
 
@@ -272,36 +268,31 @@
 
 ### 8.2 Token 分层
 
-建议至少分为：
+当前固定分层：
 
-- `color`
-- `surface`
-- `text`
-- `border`
-- `shadow`
-- `pattern`
-- `radius`
-- `spacing`
+- family-ui L0 色板与 L1 `--rd-*` 语义 token；
+- Radish 四主题取值与 `--theme-* / --console-*` 过渡 L2；
+- 正式 Web `--rx-*`、WebOS 和页面布局等壳层 / 领域 token。
 
-### 8.3 命名建议
+### 8.3 命名
 
-推荐格式：
+家族通用组件优先使用：
 
 ```css
---theme-bg-app
---theme-bg-surface
---theme-text-primary
---theme-border-soft
---theme-brand-primary
---theme-accent-jade
---theme-pattern-line
+--rd-bg-app
+--rd-bg-surface
+--rd-text-primary
+--rd-border-soft
+--rd-brand-primary
+--rd-action-primary
+--rd-state-danger
 ```
 
 规则：
 
 - 使用“角色命名”，不用“具体颜色命名”直接绑死实现。
 - 不允许在组件里散落硬编码主题色。
-- 组件只消费 Token，不直接定义整套主题。
+- 迁移期组件可继续消费已映射的 `--theme-* / --console-* / --rx-*`，不直接定义整套主题。
 
 ### 8.4 当前推荐实现路径
 
@@ -389,6 +380,6 @@ Frontend/radish.client/src/stores/
 
 ## 12. 维护规则
 
-- 后续新增主题、换色或大规模 UI 改造前，先更新本规范。
+- 家族通用规则优先更新 RadishX family-ui；Radish 产品差异、主题权益或大规模 UI 改造前，更新本页、差异附录与 F4-R 专题。
 - 若某次实现与本规范冲突，应优先修改实现，而不是绕过规范。
 - 如果后续验证发现规范本身不合理，再回到本页迭代，而不是在组件里单点妥协。

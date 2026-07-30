@@ -22,6 +22,10 @@ export interface ThemeDefinition {
       colorBgContainer: string;
       colorTextBase: string;
       colorBorder: string;
+      colorSuccess: string;
+      colorWarning: string;
+      colorError: string;
+      colorInfo: string;
     };
   };
 }
@@ -41,6 +45,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
         colorBgContainer: '#fbfcfc',
         colorTextBase: '#23313b',
         colorBorder: '#cfdadd',
+        colorSuccess: '#4f8e77',
+        colorWarning: '#aa761f',
+        colorError: '#bb5b54',
+        colorInfo: '#4d6a80',
       },
     },
   },
@@ -56,6 +64,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
         colorBgContainer: '#fbf7f0',
         colorTextBase: '#2f2a25',
         colorBorder: '#d8c9bb',
+        colorSuccess: '#4f9c83',
+        colorWarning: '#b5826d',
+        colorError: '#c3564d',
+        colorInfo: '#435c74',
       },
     },
   },
@@ -71,6 +83,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
         colorBgContainer: '#17232b',
         colorTextBase: '#e6edf1',
         colorBorder: '#344650',
+        colorSuccess: '#72b39b',
+        colorWarning: '#d5a95f',
+        colorError: '#e07a72',
+        colorInfo: '#8bb9ca',
       },
     },
   },
@@ -86,6 +102,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
         colorBgContainer: '#fffafb',
         colorTextBase: '#3d2932',
         colorBorder: '#e8cbd5',
+        colorSuccess: '#5f947f',
+        colorWarning: '#ad7628',
+        colorError: '#c65361',
+        colorInfo: '#596f88',
       },
     },
   },
@@ -168,6 +188,7 @@ export function applyTheme(theme: ThemeId): void {
 
   const definition = themeDefinitions[theme];
   document.documentElement.dataset.theme = theme;
+  document.documentElement.dataset.rdTheme = definition.colorScheme;
   document.documentElement.style.colorScheme = definition.colorScheme;
 }
 

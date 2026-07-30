@@ -306,7 +306,7 @@ Console 已按当前任务授权加入与 client 对齐的 i18next 依赖，并�
 - 不建设在线翻译管理平台、机器翻译流水线或多语言 CMS。
 - 不新增 Profile 语言字段、数据库迁移、语言 Claim 或跨设备同步，除非另行确认。
 - 不承诺多语言 SEO URL、`hreflang` 或服务端多语言 head 快照；英文 UI 的客户端 document title 可同步，爬虫默认语言另立 SEO 契约。
-- 不解冻 Tauri，不扩展 Flutter；`/desktop` 只做阻断级兼容。
+- 不重新启用暂时弃用的 Tauri，不机械扩展 Flutter；`/desktop` 只做阻断级兼容。
 - 不借资源拆分重命名全部现有 key，不顺手重构页面结构或主题 token。
 - 不把 Console mobile 做成桌面完整能力复制，只保证现有移动管理边界在英文下可操作。
 

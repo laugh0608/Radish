@@ -1,99 +1,122 @@
 import { theme as antdThemeEngine, type ThemeConfig } from 'antd';
 
 /**
- * Radish 主题色配置
+ * Radish family-ui Workbench 亮色语义
  */
 export const radishColors = {
-  /** 主色调 - 萝卜橙 */
-  primary: '#FF6B35',
-  /** 成功色 */
-  success: '#52c41a',
-  /** 警告色 */
-  warning: '#faad14',
-  /** 错误色 */
-  error: '#ff4d4f',
-  /** 信息色 */
-  info: '#1890ff',
-  /** 背景色 */
-  background: '#f5f5f5',
-  /** 文字色 */
-  text: '#333333',
-  /** 次要文字色 */
-  textSecondary: '#666666',
-  /** 边框色 */
-  border: '#d9d9d9',
+  brand: '#b24057',
+  primary: '#435c74',
+  primaryHover: '#55738f',
+  primarySoft: 'rgba(67, 92, 116, 0.12)',
+  success: '#4f9c83',
+  warning: '#b5826d',
+  error: '#c3564d',
+  info: '#435c74',
+  background: '#f7f4ee',
+  surface: '#fffdf8',
+  muted: '#f3eee5',
+  text: '#2f2a25',
+  textSecondary: '#6a5c4f',
+  border: 'rgba(136, 99, 73, 0.16)',
 };
 
 /**
- * Ant Design 主题配置
+ * Ant Design 默认使用 family-ui Workbench Profile。
  *
  * 文档：https://ant.design/docs/react/customize-theme-cn
  */
 export const antdTheme: ThemeConfig = {
   token: {
-    // 主色调
     colorPrimary: radishColors.primary,
     colorSuccess: radishColors.success,
     colorWarning: radishColors.warning,
     colorError: radishColors.error,
     colorInfo: radishColors.info,
-
-    // 字体
+    colorBgBase: radishColors.background,
+    colorBgContainer: radishColors.surface,
+    colorTextBase: radishColors.text,
+    colorTextSecondary: radishColors.textSecondary,
+    colorBorder: radishColors.border,
+    colorLink: radishColors.primary,
+    colorLinkHover: radishColors.primaryHover,
     fontSize: 14,
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-
-    // 圆角
-    borderRadius: 6,
-
-    // 间距
+    fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei UI", "Noto Sans SC", sans-serif',
+    borderRadius: 8,
     controlHeight: 32,
-
-    // 阴影
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+    boxShadow: '0 8px 24px rgba(91, 66, 44, 0.08)',
   },
   components: {
-    // Button 组件定制
     Button: {
       controlHeight: 32,
-      borderRadius: 6,
+      borderRadius: 8,
       fontWeight: 500,
     },
-    // Table 组件定制
     Table: {
-      headerBg: '#fafafa',
-      headerColor: '#333333',
-      borderColor: '#e8e8e8',
+      headerBg: radishColors.muted,
+      headerColor: radishColors.text,
+      borderColor: radishColors.border,
     },
-    // Menu 组件定制
     Menu: {
       itemBg: 'transparent',
-      itemSelectedBg: 'rgba(255, 107, 53, 0.1)',
+      itemSelectedBg: radishColors.primarySoft,
       itemSelectedColor: radishColors.primary,
-      itemHoverBg: 'rgba(255, 107, 53, 0.05)',
+      itemHoverBg: 'rgba(67, 92, 116, 0.08)',
     },
-    // Form 组件定制
     Form: {
-      labelColor: '#333333',
+      labelColor: radishColors.text,
       labelFontSize: 14,
     },
-    // Modal 组件定制
     Modal: {
-      headerBg: '#ffffff',
-      contentBg: '#ffffff',
-      borderRadiusLG: 8,
+      headerBg: radishColors.surface,
+      contentBg: radishColors.surface,
+      borderRadiusLG: 12,
     },
   },
 };
 
 /**
- * 暗色主题配置
+ * family-ui 暗色语义。宿主可继续覆盖具体产品主题取值。
  */
 export const antdDarkTheme: ThemeConfig = {
   ...antdTheme,
   algorithm: antdThemeEngine.darkAlgorithm,
   token: {
     ...antdTheme.token,
-    colorBgBase: '#141414',
-    colorTextBase: '#ffffff',
+    colorPrimary: '#7fa0bd',
+    colorSuccess: '#6fb39c',
+    colorWarning: '#c9997f',
+    colorError: '#d4726a',
+    colorInfo: '#7fa0bd',
+    colorBgBase: '#1a1713',
+    colorBgContainer: '#23201a',
+    colorTextBase: '#ede5d8',
+    colorTextSecondary: '#b8ab9a',
+    colorBorder: 'rgba(237, 229, 216, 0.14)',
+    colorLink: '#7fa0bd',
+    colorLinkHover: '#98b4cd',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.36)',
+  },
+  components: {
+    ...antdTheme.components,
+    Table: {
+      headerBg: '#2b2721',
+      headerColor: '#ede5d8',
+      borderColor: 'rgba(237, 229, 216, 0.14)',
+    },
+    Menu: {
+      itemBg: 'transparent',
+      itemSelectedBg: 'rgba(127, 160, 189, 0.18)',
+      itemSelectedColor: '#7fa0bd',
+      itemHoverBg: 'rgba(127, 160, 189, 0.12)',
+    },
+    Form: {
+      labelColor: '#ede5d8',
+      labelFontSize: 14,
+    },
+    Modal: {
+      headerBg: '#23201a',
+      contentBg: '#23201a',
+      borderRadiusLG: 12,
+    },
   },
 };
