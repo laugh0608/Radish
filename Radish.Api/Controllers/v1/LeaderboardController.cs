@@ -45,11 +45,12 @@ public class LeaderboardController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     public async Task<MessageModel<PageModel<UnifiedLeaderboardItemVo>>> GetLeaderboard(
-        [FromQuery] LeaderboardType type = LeaderboardType.Experience,
+        [FromQuery] int type = (int)LeaderboardType.Experience,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 50)
     {
-        if (!LeaderboardPublicPolicy.IsPublicType(type))
+        var leaderboardType = (LeaderboardType)type;
+        if (!LeaderboardPublicPolicy.IsPublicType(leaderboardType))
         {
             return MessageModel<PageModel<UnifiedLeaderboardItemVo>>.Message(
                 false,
@@ -61,7 +62,7 @@ public class LeaderboardController : ControllerBase
 
         var currentUserId = GetCurrentUserId();
         var result = await _leaderboardService.GetLeaderboardAsync(
-            type,
+            leaderboardType,
             pageIndex,
             pageSize,
             currentUserId > 0 ? currentUserId : null);
@@ -75,9 +76,11 @@ public class LeaderboardController : ControllerBase
     /// <param name="type">排行榜类型</param>
     /// <returns>用户排名（0 表示未上榜）</returns>
     [HttpGet]
-    public async Task<MessageModel<int>> GetMyRank([FromQuery] LeaderboardType type = LeaderboardType.Experience)
+    public async Task<MessageModel<int>> GetMyRank(
+        [FromQuery] int type = (int)LeaderboardType.Experience)
     {
-        if (!LeaderboardPublicPolicy.IsPublicType(type))
+        var leaderboardType = (LeaderboardType)type;
+        if (!LeaderboardPublicPolicy.IsPublicType(leaderboardType))
         {
             return MessageModel<int>.Message(
                 false,
@@ -87,7 +90,7 @@ public class LeaderboardController : ControllerBase
                 LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.TypeUnavailable));
         }
 
-        if (!LeaderboardPublicPolicy.SupportsUserRank(type))
+        if (!LeaderboardPublicPolicy.SupportsUserRank(leaderboardType))
         {
             return MessageModel<int>.Message(
                 false,
@@ -103,7 +106,7 @@ public class LeaderboardController : ControllerBase
             return MessageModel<int>.Message(false, "未登录", 0);
         }
 
-        var rank = await _leaderboardService.GetUserRankAsync(type, userId);
+        var rank = await _leaderboardService.GetUserRankAsync(leaderboardType, userId);
         return MessageModel<int>.Success("查询成功", rank);
     }
 

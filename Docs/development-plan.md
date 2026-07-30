@@ -42,7 +42,7 @@
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
   - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
-  - F4-R 已完成 A / B、C-0 与 C-1A，进入等待 Pencil 空闲的 C-1B；等待期间穿插完成 F4-S 公开排行榜代码侧治理，敏感资产 / 消费榜单退出公开读取，五类公开榜单统一参与资格、稳定排名与身份只读边界，Gateway PC / mobile 运行态复核待单独授权启动服务。
+  - F4-R 已完成 A / B、C-0 与 C-1A，进入等待 Pencil 空闲的 C-1B；等待期间穿插完成并关闭 F4-S 公开排行榜治理，敏感资产 / 消费榜单退出公开读取，五类公开榜单统一参与资格、稳定排名、身份只读边界和未知类型错误契约，Gateway PC / mobile 成组验收通过。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -62,9 +62,9 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-Q 均已关闭，F4-R 家族 UI 统一接入与产品视觉重构已完成 A / B、C-0 与 C-1A，等待 Pencil 的同时已完成 F4-S 公开排行榜代码侧治理。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q 与 F4-S 均已关闭，F4-R 家族 UI 统一接入与产品视觉重构已完成 A / B、C-0 与 C-1A，等待 Pencil 空闲。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
-- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B 至 F4-Q 已关闭，功能完成线继续推进 F4-R C-1B，F4-S 等待代码侧运行态复核。
+- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线等待 Pencil 空闲后继续推进 F4-R C-1B。
 - Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级移动原生产品线按明确移动价值推进，不与 Web 优先主线并行复制功能。
 - 主动生产使用数据采集只在计划内功能全部完成、没有其他明确任务、产品进入最终完成体复核且用户确认后重启；不得因旧记录、观察周期或新会话频繁重新排期。
 
@@ -134,7 +134,7 @@ Radish V1 固定为：
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
 17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A 批规范、Profile、四主题和多端边界、B 批 Token / 共享主题基座、C-0 参考素材审计与 [C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已完成；C-1B 经 Pencil 收敛共享基座和必要 R1 / R2 代表设计，D 批按继承关系实现页面族。
-18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-C 与 D 批代码侧回归：五类公开白名单、共同参与资格、稳定全序、敏感类型拒绝、只读公开身份和 Web 路由均已收口；Gateway PC / mobile 运行态复核待取得服务启动授权。
+18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层
 

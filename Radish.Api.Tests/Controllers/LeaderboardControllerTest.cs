@@ -24,7 +24,7 @@ public sealed class LeaderboardControllerTest
         var service = new Mock<ILeaderboardService>(MockBehavior.Strict);
         var controller = CreateController(service.Object);
 
-        var result = await controller.GetLeaderboard(type);
+        var result = await controller.GetLeaderboard((int)type);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
@@ -46,7 +46,7 @@ public sealed class LeaderboardControllerTest
         var service = new Mock<ILeaderboardService>(MockBehavior.Strict);
         var controller = CreateController(service.Object, currentUserId: 1001);
 
-        var result = await controller.GetMyRank(type);
+        var result = await controller.GetMyRank((int)type);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
@@ -63,7 +63,7 @@ public sealed class LeaderboardControllerTest
         var service = new Mock<ILeaderboardService>(MockBehavior.Strict);
         var controller = CreateController(service.Object, currentUserId: 1001);
 
-        var result = await controller.GetMyRank(LeaderboardType.HotProduct);
+        var result = await controller.GetMyRank((int)LeaderboardType.HotProduct);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);

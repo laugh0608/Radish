@@ -6,7 +6,7 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R 等待 Pencil 的同时完成 F4-S 公开排行榜代码侧治理；F4-R A / B、C-0 与 C-1A 已完成`
+- **工程第一顺位**：`F4-R 等待 Pencil 空闲；F4-S 已完成 A-D 并关闭`
 - **产品下一顺位**：`等待用户明确确认 Pencil 空闲后进入 C-1B；此前不读取或修改 .pen`
 - **复核日期**：`2026-07-30`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
@@ -18,7 +18,7 @@
 - `2026-07-30` 已完成 C-0 参考素材审计：完整阅读 family-ui `references.md` 并逐张查看其索引的 27 张参考图，建立共享基础、Public、Private / Author、Console、暗色与移动端的吸收 / 排除映射；参考图不作为产品素材，mobile 不由桌面图缩放。
 - `2026-07-30` 已将 Pencil 协作调整为代表页驱动：功能、文案、权限和状态机服从专题与代码；R1 / R2 维护必要代表设计，R3 继承实现并通过真实页面截图复核，不再维持逐路由设计镜像。
 - `2026-07-30` 已完成 C-1A 代码事实审计：裁决 `7` 个 R1、`4` 个 R2 与 R3 继承表；Console 普通表格 / 明细和案件治理 / 审计因布局、动作与 mobile 模型不同，拆为两个完整代表类型。
-- `2026-07-30` 已完成 [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)代码侧收口：公开类型固定为经验、发帖、评论、人气、热门商品；余额、累计消费与购买数量退出匿名排名；列表、总数和个人排名统一资格与稳定排序，读取不再补写公开身份。后端定向测试和 Web 静态回归通过，Gateway PC / mobile 运行态复核待单独取得服务启动授权。
+- `2026-07-30` 已完成并关闭 [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)：公开类型固定为经验、发帖、评论、人气、热门商品；余额、累计消费与购买数量退出匿名排名；列表、总数和个人排名统一资格与稳定排序，读取不再补写公开身份。D 批通过 Gateway PC / mobile、匿名 / TestUser、旧路由和失败契约矩阵，并修正未知整数类型被框架枚举绑定提前截断的问题。
 - `2026-07-30` 已完成镜像漏洞门禁分层：`CRITICAL` 与存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；原始报告、策略裁决和限期精确例外均可追溯。
 - 多端顺位调整为 Web 优先、Flutter 次级；Tauri 暂时弃用，保留历史验证资产但不进入开发、UI、CI、发布或验收门禁，未来只在桌面原生价值、目标用户和维护预算明确时重新评估。
 - PR `#65` 已集成七月下旬 Wiki 作者协作、宠物公开名片、内容治理与申诉、用户屏蔽、Wiki 附件及生产迁移编排等成组成果；CI 门禁同时修复真实数据库配置探测、SQLite 连接串解析和依赖安全问题。
@@ -38,7 +38,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展与下一步（2026-07-30，F4-R 等待 C-1B；F4-S 代码侧完成）
+## 今日进展与下一步（2026-07-30，F4-R 等待 C-1B；F4-S 已关闭）
 
 1. A 批已完成：建立 [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)和 [Radish UI 差异附录](/frontend/ui-addendum)，固定规范优先级、Profile、四主题、多端顺位与停止线。
 2. A 批已同步当前规划、开发路线、壳层策略、前端设计、项目入口和 Agent 协作文件，没有改写历史验收事实。
@@ -47,8 +47,8 @@
 5. C-1A 已完成：形成[代表页代码事实审计](/frontend/f4-r-representative-page-audit)，确认 `7` 个 R1、`4` 个 R2 与 R3 路由族继承关系，并拆分两类 Console 代表工作台。
 6. Pencil 当前由其他项目使用；只有用户明确确认空闲后，C-1B 才先复核 `R1-F01`，再按 Public、Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
 7. 等待期间已完成[镜像漏洞门禁分层](/guide/image-vulnerability-gate)：五个正式镜像统一生成 Trivy JSON，由仓库内策略评估器完成分层裁决、报告工件和例外到期治理。
-8. 等待 Pencil 期间穿插完成 F4-S A-C 与 D 批代码侧回归：服务端公开白名单、账号 / 内容 / 商品资格、确定性排名、稳定错误契约和 Web 路由均已收口，详细证据见[代码侧验收记录](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)。
-9. 本轮未启动服务、未执行真实 smoke，也未读取或修改 `.pen`；F4-R C / D 仍不扩 WebOS，不恢复 Tauri。
+8. 等待 Pencil 期间穿插完成 F4-S A-D：服务端公开白名单、账号 / 内容 / 商品资格、确定性排名、稳定错误契约和 Web 路由均已收口；Gateway PC / mobile、匿名 / TestUser 和 API 边界矩阵通过，详细证据见[成组验收记录](/records/f4-s-d-leaderboard-public-governance-stage-acceptance-2026-07-30)。
+9. 本轮已按当前任务授权启动并停止全部本地服务，浏览器、测试身份与头像访问计数副作用均已清理；未读取或修改 `.pen`，F4-R C / D 仍不扩 WebOS，不恢复 Tauri。
 
 ## 当前执行入口
 
@@ -57,6 +57,7 @@
 - [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit)
 - [Radish UI 差异附录](/frontend/ui-addendum)
 - [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)
+- [F4-S-D 公开排行榜治理成组验收](/records/f4-s-d-leaderboard-public-governance-stage-acceptance-2026-07-30)
 - [F4-S 公开排行榜治理代码侧验收](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)
 - [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
 - [F4-N 论坛内容赞赏](/features/forum-content-reward)

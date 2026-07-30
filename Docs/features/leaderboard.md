@@ -1,6 +1,6 @@
 # F4-S 公开排行榜参与资格、隐私边界与可信度治理
 
-> 状态：A-C 已完成；D 批代码侧回归通过，Gateway PC / mobile 运行态复核待取得服务启动授权
+> 状态：A-D 已完成并通过 Gateway PC / mobile 成组验收；专题关闭
 >
 > 正式入口：纯 Web `/leaderboard`、`/leaderboard/:type`
 >
@@ -233,11 +233,11 @@ PrimaryValue DESC, StableEntityId ASC
 ### 验证粒度
 
 - 开发中执行后端定向测试、前端定向测试、type-check、build、changed-only lint、仓库卫生与 `git diff --check`；
-- 本专题代码侧收口不启动服务；
-- Gateway PC / mobile 真实 smoke 留到成组验收，启动前必须取得当前任务授权；
+- D 批成组验收覆盖 Gateway PC `1920 × 1080`、mobile `390 × 844` CSS viewport、匿名 / TestUser、五类公开榜单、敏感 / 未知类型失败契约和旧路由回落；
+- 真实 smoke 启动前继续遵循当前任务授权要求；
 - F4-R 后续只负责视觉重构，不重新解释 F4-S 的功能、文案、权限和类型边界。
 
-2026-07-30 的代码侧结果见 [F4-S 公开排行榜治理代码侧验收记录](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)。当前机器未配置 PostgreSQL 条件测试连接，SQLite 结果不表述为 PostgreSQL 实跑。
+2026-07-30 的代码侧结果见 [F4-S 公开排行榜治理代码侧验收记录](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)，最终运行态结论见 [F4-S-D 公开排行榜治理成组验收记录](/records/f4-s-d-leaderboard-public-governance-stage-acceptance-2026-07-30)。当前机器未配置 PostgreSQL 条件测试连接，SQLite 结果不表述为 PostgreSQL 实跑。
 
 ## 11. 非目标
 
