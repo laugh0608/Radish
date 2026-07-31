@@ -21,6 +21,7 @@
     "check:version-contract": "node Scripts/version-contract.mjs",
     "check:version-contract:self-test": "node --test Scripts/version-contract.test.mjs",
     "check:production-deploy": "node --test Scripts/production-deploy-contract.test.mjs",
+    "check:frontend-server": "node --test Scripts/frontend-server-contract.test.mjs",
     "version:sync": "node Scripts/version-contract.mjs --sync",
     "update:time-semantics-baseline": "node Scripts/check-time-semantics.mjs --write-baseline",
     "check:dependency-security": "node Scripts/check-dependency-security.mjs",

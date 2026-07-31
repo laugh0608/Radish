@@ -1,11 +1,14 @@
 import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
-import { extname, join, normalize } from 'node:path';
+import { extname, join, normalize, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const port = Number.parseInt(process.env.PORT ?? '80', 10);
-const clientRoot = '/app/client';
-const consoleRoot = '/app/console';
+const defaultClientRoot = '/app/client';
+const defaultConsoleRoot = '/app/console';
+const requestBaseUrl = new URL('http://localhost');
 const runtimeConfigPaths = new Set(['/runtime-config.js', '/console/runtime-config.js']);
+const maxLogValueLength = 256;
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -41,12 +44,91 @@ function resolveFile(root, pathname, fallback) {
   return join(root, fallback);
 }
 
-function serveFile(response, filePath) {
+function writePlainText(response, statusCode, message) {
+  response.writeHead(statusCode, { 'Content-Type': 'text/plain; charset=utf-8' });
+  response.end(message);
+}
+
+function toLogValue(value) {
+  const normalizedValue = Array.isArray(value) ? value.join(',') : String(value ?? '');
+  return JSON.stringify(normalizedValue.slice(0, maxLogValueLength));
+}
+
+function getRequestPathForLog(requestTarget) {
+  const queryIndex = requestTarget.indexOf('?');
+  return queryIndex >= 0 ? requestTarget.slice(0, queryIndex) : requestTarget;
+}
+
+function logRejectedRequest(logger, request) {
+  const forwardedFor = request.headers['x-forwarded-for'];
+  logger.warn(
+    '[frontend] Rejected invalid request target'
+      + ` method=${toLogValue(request.method)}`
+      + ` path=${toLogValue(getRequestPathForLog(request.url ?? ''))}`
+      + ` remote=${toLogValue(request.socket.remoteAddress)}`
+      + ` forwardedFor=${toLogValue(forwardedFor)}`
+  );
+}
+
+function logRequestFailure(logger, request, error) {
+  const errorSummary = error instanceof Error
+    ? `${error.name}: ${error.message}`
+    : String(error);
+
+  logger.error(
+    '[frontend] Request handling failed'
+      + ` method=${toLogValue(request.method)}`
+      + ` path=${toLogValue(getRequestPathForLog(request.url ?? ''))}`
+      + ` error=${toLogValue(errorSummary)}`
+  );
+}
+
+function parseRequestPathname(requestTarget) {
+  if (!requestTarget.startsWith('/') || requestTarget.startsWith('//')) {
+    return null;
+  }
+
+  try {
+    const url = new URL(requestTarget, requestBaseUrl);
+    if (url.origin !== requestBaseUrl.origin) {
+      return null;
+    }
+
+    return decodeURIComponent(url.pathname);
+  } catch {
+    return null;
+  }
+}
+
+function serveFile(response, filePath, logger) {
   const extension = extname(filePath).toLowerCase();
   const contentType = mimeTypes[extension] ?? 'application/octet-stream';
+  const stream = createReadStream(filePath);
 
-  response.writeHead(200, { 'Content-Type': contentType });
-  createReadStream(filePath).pipe(response);
+  stream.once('error', (error) => {
+    logger.error(`[frontend] Static file read failed path=${toLogValue(filePath)} error=${toLogValue(error.message)}`);
+
+    if (response.writableEnded) {
+      return;
+    }
+
+    if (!response.headersSent) {
+      writePlainText(response, 500, 'Internal Server Error');
+      return;
+    }
+
+    response.destroy();
+  });
+
+  stream.once('open', () => {
+    if (response.writableEnded) {
+      stream.destroy();
+      return;
+    }
+
+    response.writeHead(200, { 'Content-Type': contentType });
+    stream.pipe(response);
+  });
 }
 
 function readStringEnv(name, fallback = '') {
@@ -96,19 +178,22 @@ function serveRuntimeConfig(response) {
   response.end(script);
 }
 
-createServer((request, response) => {
+function handleRequest(request, response, options) {
   if (!request.url) {
-    response.writeHead(400);
-    response.end('Bad Request');
+    logRejectedRequest(options.logger, request);
+    writePlainText(response, 400, 'Bad Request');
     return;
   }
 
-  const url = new URL(request.url, 'http://localhost');
-  const pathname = decodeURIComponent(url.pathname);
+  const pathname = parseRequestPathname(request.url);
+  if (pathname === null) {
+    logRejectedRequest(options.logger, request);
+    writePlainText(response, 400, 'Bad Request');
+    return;
+  }
 
   if (pathname === '/healthz') {
-    response.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end('ok');
+    writePlainText(response, 200, 'ok');
     return;
   }
 
@@ -124,18 +209,47 @@ createServer((request, response) => {
   }
 
   const isConsole = pathname.startsWith('/console/');
-  const root = isConsole ? consoleRoot : clientRoot;
+  const root = isConsole ? options.consoleRoot : options.clientRoot;
   const relativePath = isConsole ? pathname.replace('/console', '') || '/' : pathname;
-  const fallback = isConsole ? 'index.html' : 'index.html';
-  const filePath = resolveFile(root, relativePath, fallback);
+  const filePath = resolveFile(root, relativePath, 'index.html');
 
   if (!existsSync(filePath)) {
-    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    response.end('Not Found');
+    writePlainText(response, 404, 'Not Found');
     return;
   }
 
-  serveFile(response, filePath);
-}).listen(port, '0.0.0.0', () => {
-  console.log(`Radish frontend server listening on ${port}`);
-});
+  serveFile(response, filePath, options.logger);
+}
+
+export function createStaticServer({
+  clientRoot = defaultClientRoot,
+  consoleRoot = defaultConsoleRoot,
+  logger = console,
+} = {}) {
+  const options = { clientRoot, consoleRoot, logger };
+
+  return createServer((request, response) => {
+    try {
+      handleRequest(request, response, options);
+    } catch (error) {
+      logRequestFailure(logger, request, error);
+
+      if (!response.writableEnded) {
+        if (!response.headersSent) {
+          writePlainText(response, 500, 'Internal Server Error');
+        } else {
+          response.destroy();
+        }
+      }
+    }
+  });
+}
+
+const isEntryPoint = process.argv[1]
+  && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+if (isEntryPoint) {
+  createStaticServer().listen(port, '0.0.0.0', () => {
+    console.log(`Radish frontend server listening on ${port}`);
+  });
+}

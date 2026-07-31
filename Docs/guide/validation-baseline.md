@@ -32,6 +32,7 @@ npm run collect:tracked
 npm run collect:m14-host-record
 npm run collect:change-regression-record
 npm run check:public-head-smoke
+npm run check:frontend-server
 npm run check:identity-impact
 npm run check:identity-impact:staged
 npm run check:backend-impact
@@ -103,6 +104,9 @@ npm run validate:candidate
 - `check:public-head-smoke`
   - 运行公开详情 HTML head 首包 smoke 检查
   - 默认检查 `/robots.txt`、`/sitemap.xml` 与公开详情 head；详细用法见 [公开详情 Head Smoke 验收](/guide/public-head-smoke)
+- `check:frontend-server`
+  - 通过原始 HTTP 请求验证生产前端静态服务器的 client、console 与 `/healthz` 入口
+  - 覆盖 `//`、非法百分号编码、absolute-form 等异常请求目标，确保返回 `400` 后进程仍可继续服务，并阻断查询参数进入拒绝日志
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
   - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
@@ -116,6 +120,7 @@ npm run validate:candidate
 - `check:dotnet-warnings`
   - 以 `--warnaserror` 构建 `Radish.slnx`，用于候选前阻断新增编译 warning
 - `validate:baseline`
+  - 运行生产迁移发布编排与前端静态服务器合约测试
   - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
   - 运行四个前端 workspace 的现有测试；`radish.client` 以 `--test-isolation=none` 兼容受限环境
   - 运行高置信敏感字面量规则自测与全仓扫描
@@ -131,6 +136,7 @@ npm run validate:candidate
   - 运行后端 `build`
   - 运行后端 `test`
 - `validate:baseline:quick`
+  - 运行产品版本、生产迁移发布编排、前端静态服务器和镜像漏洞策略的轻量合约测试
   - 只运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
   - `radish.client` 最小测试
   - `Console` 权限链路扫描
