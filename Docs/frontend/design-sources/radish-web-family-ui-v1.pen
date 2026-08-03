@@ -5032,7 +5032,7 @@
           "id": "P87Z2M",
           "name": "R1-P01 Header",
           "width": "fill_container",
-          "height": 110,
+          "height": 78,
           "justifyContent": "space_between",
           "alignItems": "center",
           "children": [
@@ -5042,39 +5042,17 @@
               "name": "R1-P01 Title Group",
               "width": 1180,
               "layout": "vertical",
-              "gap": 8,
               "children": [
-                {
-                  "type": "text",
-                  "id": "obLIJ",
-                  "name": "R1-P01 Eyebrow",
-                  "fill": "$brand",
-                  "content": "R1-P01 · PUBLIC CONTENT STREAM / PC + MOBILE / KEY STATES",
-                  "fontFamily": "$font-body",
-                  "fontSize": 11,
-                  "fontWeight": "700",
-                  "letterSpacing": 1.4
-                },
                 {
                   "type": "text",
                   "id": "SiLNd",
                   "name": "R1-P01 Title",
                   "fill": "$text-primary",
-                  "content": "公开发现：先让真实内容进入首屏",
+                  "content": "公开发现代表画板",
                   "lineHeight": 1.2,
                   "fontFamily": "$font-heading",
                   "fontSize": 40,
                   "fontWeight": "600"
-                },
-                {
-                  "type": "text",
-                  "id": "dWFTK",
-                  "name": "R1-P01 Description",
-                  "fill": "$text-secondary",
-                  "content": "代表页锚定 /discover 当前实现：论坛热帖为主内容，文档、商品与榜单作为相关 rail；不恢复已经退场的混合推荐流。",
-                  "fontFamily": "$font-body",
-                  "fontSize": 14,
-                  "fontWeight": "normal"
                 }
               ]
             },
@@ -5143,21 +5121,10 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "zKeGw",
-                  "name": "Decision / Anchor Eyebrow",
-                  "fill": "$brand",
-                  "content": "真实锚点",
-                  "fontFamily": "$font-body",
-                  "fontSize": 10,
-                  "fontWeight": "700",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
                   "id": "d7CKW2",
                   "name": "Decision / Anchor Title",
                   "fill": "$text-primary",
-                  "content": "当前代码，不画历史想象",
+                  "content": "当前实现锚点",
                   "fontFamily": "$font-heading",
                   "fontSize": 19,
                   "fontWeight": "600"
@@ -5195,21 +5162,10 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "pVooD",
-                  "name": "Decision / Color Eyebrow",
-                  "fill": "$brand",
-                  "content": "颜色裁决",
-                  "fontFamily": "$font-body",
-                  "fontSize": 10,
-                  "fontWeight": "700",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
                   "id": "iFyDz",
                   "name": "Decision / Color Title",
                   "fill": "$text-primary",
-                  "content": "灰玉品牌 · 墨蓝操作",
+                  "content": "灰玉品牌与墨蓝操作色",
                   "fontFamily": "$font-heading",
                   "fontSize": 19,
                   "fontWeight": "600"
@@ -5247,21 +5203,10 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "t0MZv",
-                  "name": "Decision / Reference Eyebrow",
-                  "fill": "$brand",
-                  "content": "参考转译",
-                  "fontFamily": "$font-body",
-                  "fontSize": 10,
-                  "fontWeight": "700",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
                   "id": "OdCME",
                   "name": "Decision / Reference Title",
                   "fill": "$text-primary",
-                  "content": "吸收扫描节奏，拒绝外部壳层",
+                  "content": "参考转译边界",
                   "fontFamily": "$font-heading",
                   "fontSize": 19,
                   "fontWeight": "600"
@@ -5304,40 +5249,18 @@
                   "id": "rY7yY",
                   "name": "Representative Screen Heading",
                   "layout": "vertical",
-                  "gap": 5,
                   "children": [
-                    {
-                      "type": "text",
-                      "id": "xpdYx",
-                      "name": "Representative Screen Eyebrow",
-                      "fill": "$brand",
-                      "content": "REPRESENTATIVE SCREENS",
-                      "fontFamily": "$font-body",
-                      "fontSize": 10,
-                      "fontWeight": "700",
-                      "letterSpacing": 1.2
-                    },
                     {
                       "type": "text",
                       "id": "yIqPY",
                       "name": "Representative Screen Title",
                       "fill": "$text-primary",
-                      "content": "同一内容层级，响应式重新排队",
+                      "content": "公开发现 · PC 与移动端",
                       "fontFamily": "$font-heading",
                       "fontSize": 26,
                       "fontWeight": "600"
                     }
                   ]
-                },
-                {
-                  "type": "text",
-                  "id": "J0cNP",
-                  "name": "Representative Screen Note",
-                  "fill": "$text-muted",
-                  "content": "PC 主流 + rail · mobile 搜索 / 筛选前置并单列落位",
-                  "fontFamily": "$font-body",
-                  "fontSize": 11,
-                  "fontWeight": "normal"
                 }
               ]
             },
@@ -5372,16 +5295,6 @@
                           "fontFamily": "$font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
-                        },
-                        {
-                          "type": "text",
-                          "id": "DMYKV",
-                          "name": "Desktop Label Note",
-                          "fill": "$text-muted",
-                          "content": "真实内容优先 · rail 不争夺主叙事",
-                          "fontFamily": "$font-body",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -5442,7 +5355,6 @@
                                   "name": "Discover Intro Text",
                                   "width": 590,
                                   "layout": "vertical",
-                                  "gap": 6,
                                   "children": [
                                     {
                                       "type": "text",
@@ -5453,16 +5365,6 @@
                                       "fontFamily": "$font-heading",
                                       "fontSize": 28,
                                       "fontWeight": "600"
-                                    },
-                                    {
-                                      "type": "text",
-                                      "id": "iACRu",
-                                      "name": "Discover Intro Copy",
-                                      "fill": "$text-secondary",
-                                      "content": "浏览最新讨论、问答、投票和社区活动。",
-                                      "fontFamily": "$font-body",
-                                      "fontSize": 13,
-                                      "fontWeight": "normal"
                                     }
                                   ]
                                 },
@@ -5568,7 +5470,6 @@
                                           "id": "SjplO",
                                           "name": "Discussion Heading",
                                           "layout": "vertical",
-                                          "gap": 4,
                                           "children": [
                                             {
                                               "type": "text",
@@ -5579,16 +5480,6 @@
                                               "fontFamily": "$font-heading",
                                               "fontSize": 24,
                                               "fontWeight": "600"
-                                            },
-                                            {
-                                              "type": "text",
-                                              "id": "FGeKK",
-                                              "name": "Discussion Description",
-                                              "fill": "$text-secondary",
-                                              "content": "优先查看最近有互动的帖子。",
-                                              "fontFamily": "$font-body",
-                                              "fontSize": 12,
-                                              "fontWeight": "normal"
                                             }
                                           ]
                                         },
@@ -6207,16 +6098,6 @@
                           "fontFamily": "$font-body",
                           "fontSize": 11,
                           "fontWeight": "700"
-                        },
-                        {
-                          "type": "text",
-                          "id": "P1JhI",
-                          "name": "Mobile Label Note",
-                          "fill": "$text-muted",
-                          "content": "首个真实帖子提前",
-                          "fontFamily": "$font-body",
-                          "fontSize": 11,
-                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -6557,17 +6438,6 @@
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "kzBvr",
-                                  "name": "Mobile Discover Eyebrow",
-                                  "fill": "$brand",
-                                  "content": "PUBLIC · DISCOVER",
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 9,
-                                  "fontWeight": "700",
-                                  "letterSpacing": 1.1
-                                },
-                                {
-                                  "type": "text",
                                   "id": "v65h5s",
                                   "name": "Mobile Discover Title",
                                   "fill": "$text-primary",
@@ -6575,19 +6445,6 @@
                                   "fontFamily": "$font-heading",
                                   "fontSize": 24,
                                   "fontWeight": "600"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "k7IGeT",
-                                  "name": "Mobile Discover Copy",
-                                  "fill": "$text-secondary",
-                                  "textGrowth": "fixed-width",
-                                  "width": "fill_container",
-                                  "content": "浏览最新讨论、问答、投票和社区活动。",
-                                  "lineHeight": 1.45,
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 12,
-                                  "fontWeight": "normal"
                                 },
                                 {
                                   "id": "Biu3W",
@@ -6684,7 +6541,6 @@
                                       "id": "no3Gm",
                                       "name": "Mobile Discussion Heading",
                                       "layout": "vertical",
-                                      "gap": 3,
                                       "children": [
                                         {
                                           "type": "text",
@@ -6695,16 +6551,6 @@
                                           "fontFamily": "$font-heading",
                                           "fontSize": 22,
                                           "fontWeight": "600"
-                                        },
-                                        {
-                                          "type": "text",
-                                          "id": "nbByT",
-                                          "name": "Mobile Discussion Description",
-                                          "fill": "$text-secondary",
-                                          "content": "最近有互动的帖子",
-                                          "fontFamily": "$font-body",
-                                          "fontSize": 11,
-                                          "fontWeight": "normal"
                                         }
                                       ]
                                     },
@@ -7208,40 +7054,18 @@
                   "id": "FvCqa",
                   "name": "Key States Heading",
                   "layout": "vertical",
-                  "gap": 5,
                   "children": [
-                    {
-                      "type": "text",
-                      "id": "aPwwV",
-                      "name": "Key States Eyebrow",
-                      "fill": "$brand",
-                      "content": "KEY STATES · NO FULL-SCREEN DUPLICATION",
-                      "fontFamily": "$font-body",
-                      "fontSize": 10,
-                      "fontWeight": "700",
-                      "letterSpacing": 1.2
-                    },
                     {
                       "type": "text",
                       "id": "BRX5R",
                       "name": "Key States Title",
                       "fill": "$text-primary",
-                      "content": "状态复用共享语法，反馈留在动作附近",
+                      "content": "关键状态与操作反馈",
                       "fontFamily": "$font-heading",
                       "fontSize": 26,
                       "fontWeight": "600"
                     }
                   ]
-                },
-                {
-                  "type": "text",
-                  "id": "Q9dRy",
-                  "name": "Key States Note",
-                  "fill": "$text-muted",
-                  "content": "loading / error / empty 使用 WebStateSlot · 分享结果使用 inline feedback",
-                  "fontFamily": "$font-body",
-                  "fontSize": 11,
-                  "fontWeight": "normal"
                 }
               ]
             },
@@ -7351,21 +7175,10 @@
                   "children": [
                     {
                       "type": "text",
-                      "id": "q5Ugzh",
-                      "name": "Share Feedback Eyebrow",
-                      "fill": "$brand",
-                      "content": "COPY LINK · INLINE",
-                      "fontFamily": "$font-body",
-                      "fontSize": 10,
-                      "fontWeight": "700",
-                      "letterSpacing": 1
-                    },
-                    {
-                      "type": "text",
                       "id": "Iypez",
                       "name": "Share Feedback Title",
                       "fill": "$text-primary",
-                      "content": "复制结果不抢占阅读",
+                      "content": "复制链接反馈",
                       "fontFamily": "$font-heading",
                       "fontSize": 20,
                       "fontWeight": "600"
@@ -7474,21 +7287,10 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "i1IPI",
-                  "name": "Contract / Inheritance Eyebrow",
-                  "fill": "$brand",
-                  "content": "继承",
-                  "fontFamily": "$font-body",
-                  "fontSize": 9,
-                  "fontWeight": "700",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
                   "id": "fvA8s",
                   "name": "Contract / Inheritance Title",
                   "fill": "$text-primary",
-                  "content": "R1-F01 是共享上游",
+                  "content": "共享继承边界",
                   "fontFamily": "$font-heading",
                   "fontSize": 18,
                   "fontWeight": "600"
@@ -7524,21 +7326,10 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "SeIR2",
-                  "name": "Contract / Responsive Eyebrow",
-                  "fill": "$brand",
-                  "content": "响应式",
-                  "fontFamily": "$font-body",
-                  "fontSize": 9,
-                  "fontWeight": "700",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
                   "id": "eJ7nN",
                   "name": "Contract / Responsive Title",
                   "fill": "$text-primary",
-                  "content": "重排，不做桌面缩放",
+                  "content": "响应式重排",
                   "fontFamily": "$font-heading",
                   "fontSize": 18,
                   "fontWeight": "600"
@@ -7574,21 +7365,10 @@
               "children": [
                 {
                   "type": "text",
-                  "id": "vnb4u",
-                  "name": "Contract / Stopline Eyebrow",
-                  "fill": "$brand",
-                  "content": "停止线",
-                  "fontFamily": "$font-body",
-                  "fontSize": 9,
-                  "fontWeight": "700",
-                  "letterSpacing": 1
-                },
-                {
-                  "type": "text",
                   "id": "kjyWg",
                   "name": "Contract / Stopline Title",
                   "fill": "$text-primary",
-                  "content": "不新增推荐模型",
+                  "content": "功能停止线",
                   "fontFamily": "$font-heading",
                   "fontSize": 18,
                   "fontWeight": "600"
