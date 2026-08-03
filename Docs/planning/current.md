@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 已建立单一版本化设计源并完成 R1-F01`
-- **产品下一顺位**：`复核 /discover 当前代码事实并完成 R1-P01 Public 内容流代表设计`
+- **工程第一顺位**：`F4-R C-1B 已在单一版本化设计源完成 R1-F01 与 R1-P01`
+- **产品下一顺位**：`实现灰玉共享主题契约与 /discover R1-P01 代表页`
 - **复核日期**：`2026-08-03`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
@@ -15,8 +15,10 @@
 ## 最近结论
 
 - `2026-08-03` 已创建唯一活动设计源 `radish-web-family-ui-v1.pen`：文件名以主版本管理，普通迭代继续更新 `v1` 并由 Git 留存；原四个大型 `.pen` 不删除、不改名，统一转为只读留档。
-- `2026-08-03` 已完成 `R1-F01`：统一四主题变量矩阵、Brand / Workbench Action 前景语义、按钮 / 输入 /状态 chip、加载 / 空态 / 错误 / 权限状态槽，以及 PC / 390px mobile 壳层契约；下一顺位为 `R1-P01` Public 内容流。
-- `2026-08-03` 已将 F4-R 上游基线升级为 RadishX `family-ui v26.7.3`：通用副本使用灰玉参考默认并新增 `text-on-brand`，Radish 项目主题层显式保留 `guofeng` 胭脂品牌与四主题前景，避免上游默认值成为隐式产品契约。
+- `2026-08-03` 已完成 `R1-P01`：按当前 `/discover` 代码固定 PC“论坛热帖主流 + 相关内容 rail”、mobile 搜索 / 筛选前置与单列顺序、共享状态槽和动作附近分享反馈；旧混合推荐流、新 feed API 与路由镜像均被排除。
+- `2026-08-03` 已把 `guofeng` 品牌目标从旧胭脂改为低饱和灰玉 `#5d6c57`，悬停 `#6e736d`，常规操作继续使用墨蓝 `#435c74`；设计源已更新，当前运行时旧值待下一实现批替换。
+- `2026-08-03` 已完成 `R1-F01`：统一四主题变量矩阵、Brand / Workbench Action 前景语义、按钮 / 输入 / 状态 chip、加载 / 空态 / 错误 / 权限状态槽，以及 PC / 390px mobile 壳层契约。
+- `2026-08-03` 已将 F4-R 上游基线升级为 RadishX `family-ui v26.7.3`：通用副本使用灰玉参考默认并新增 `text-on-brand`；基线补充批当时显式保留 `guofeng` 胭脂品牌，后续 R1-P01 灰玉裁决不改写该历史事实。
 - `2026-08-03` 已复核新版全部规范正文、token 和参考索引；27 张参考图仅迁入 family-ui `reference-ui/`，Git blob 全部 `R100` 相同，既有页面族映射继续有效，并强化“观察、拆解、提炼、转译”与禁止照抄边界。
 - `2026-07-30` 已将 Pencil 协作调整为代表页驱动：功能、文案、权限和状态机服从专题与代码；R1 / R2 维护必要代表设计，R3 继承实现并通过真实页面截图复核，不再维持逐路由设计镜像。
 - `2026-07-30` 已完成 C-1A 代码事实审计：裁决 `7` 个 R1、`4` 个 R2 与 R3 继承表；Console 普通表格 / 明细和案件治理 / 审计因布局、动作与 mobile 模型不同，拆为两个完整代表类型。
@@ -43,20 +45,23 @@
 ## 今日进展（2026-08-03，v26.7.3 基线与 C-1B）
 
 1. 完整复读 family-ui `v26.7.3` 的 README、十份规范正文、参考索引与 CSS / JSON token，确认破坏点集中在项目自治、灰玉参考默认和 `text-on-brand`。
-2. family-ui CSS / JSON 副本已与上游逐字同步；Radish Client 项目层显式保留 `guofeng` 胭脂品牌，并为四主题补齐品牌实底前景。
-3. 共享主题与 Client 契约测试已升级到 v26.7.3，固定上游灰玉参考默认、Radish 胭脂项目差异及品牌 / 操作语义分离。
+2. family-ui CSS / JSON 副本已与上游逐字同步；基线升级时 Radish Client 项目层显式保留 `guofeng` 胭脂品牌，并为四主题补齐品牌实底前景。
+3. 共享主题与 Client 契约测试已升级到 v26.7.3，固定当前运行时值及品牌 / 操作语义分离；R1-P01 新灰玉目标将在实现批同步修改代码与测试。
 4. F4-R、UI 差异附录、视觉主题 / 颜色入口、总体路线、Agent 协作文件和开发日志已同步，不改写旧批次历史事实。
 5. 代码事实显示 Client 仍有 `92` 个样式文件消费 `--theme-brand-primary`，尚无页面消费 `--theme-action-primary`；该范围进入 `R1-F01` 裁决，本批不机械全仓替换。
 6. 已创建 `radish-web-family-ui-v1.pen`，在单一活动文件中建立索引、可复用组件和 `R1-F01`；文件名只在不兼容的结构性升级时递增到 `v2`。
 7. 原 `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 保持原样留档；本批未启动服务或执行真实 smoke，WebOS / Tauri 与主动生产证据采集停止线不变。
+8. 已按当前代码重新审计 `/discover`，确认真实结构为论坛热帖、热门标签、相关文档 / 商品 / 榜单 rail 与参与提示；不存在 `PublicDiscoverFeed.tsx`，专题文档中的旧混合流口径已修正。
+9. 已在同一活动设计源完成 `R1-P01` PC、390px mobile、loading / error / empty 与分享反馈，并把索引状态更新为已完成。
+10. R1-F01 与 R1-P01 已改用灰玉品牌、墨蓝操作的共享契约；Pencil 整板布局检查和高分辨率目检通过，未启动服务或执行真实 smoke。
 
 ## 下一事项（2026-08-03）
 
-1. 新会话先读取本页、[F4-R 专题](/features/family-ui-convergence-design)、[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)和 [UI 差异附录](/frontend/ui-addendum)，不默认展开历史记录。
-2. 先复核 `/discover` 当前代码与直接相关专题，确认真实内容流、筛选、侧栏、状态、入口、PC / mobile 转换和本批不改变的功能边界。
-3. 获得当前任务的 `.pen` 修改授权后，只编辑 `radish-web-family-ui-v1.pen` 的 `R1-P01`；原四个设计源仅供历史追溯，不继续同步。
-4. `R1-P01` 按新版索引复看 Public 内容流相关参考，记录吸收与排除理由；不把参考图换色、描摹或复制进交付物。
-5. `R1-P01` 确认后先实现共享组件和 `/discover` 代表页，再按真实 PC / mobile 截图复核；不机械替换全部品牌变量。
+1. 新会话先读取本页、[F4-R 专题](/features/family-ui-convergence-design)、[公开发现专题](/features/discover-public-app)、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)和 [UI 差异附录](/frontend/ui-addendum)，不默认展开历史记录。
+2. 在 `theme-tokens.css` 及对应契约测试中实现 `guofeng` 灰玉品牌、悬停、柔底和品牌前景；墨蓝操作、状态色与其他三主题保持独立，不机械全仓替换硬编码颜色。
+3. 按 `R1-P01` 收敛 `/discover` 及直接命中的共享组件：保留真实数据、路由、href、locale、加载 / 错误 / 空态和分享状态，不新增 feed API 或功能。
+4. 开发中先执行定向测试、Client build、`git diff --check` 与 changed-only 仓库卫生检查；代表实现完成后再评估阶段性 PC / mobile 真实截图复核。
+5. 设计轨下一顺位为 `R1-P02` Public 详情与互动，但不抢在 R1-P01 实现闭环前扩张新画板。
 6. 默认不启动服务或执行真实 smoke；只有专题准备验收且获得当前任务授权后再启动。Web 优先、Flutter 条件式承接、WebOS 只兼容、Tauri 冻结与生产证据采集停止线不变。
 
 ## 当前执行入口

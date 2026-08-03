@@ -15,7 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。
+> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。`R1-P01` 已把 `guofeng` 品牌目标调整为低饱和灰玉，当前运行时旧胭脂值待实现。
 
 ## 1. 设计目标
 
@@ -104,6 +104,7 @@
 - 强调色优先使用低面积高识别的方式。
 - 辅助色只用于区分模块，不可抢主品牌焦点。
 - 同一屏同时出现的强色不超过 2 组。
+- `guofeng` 品牌使用灰玉 `#5d6c57`，悬停使用 `#6e736d`；常规操作、链接和 focus 继续使用墨蓝 `#435c74`，不因更换品牌色合并两种语义。
 
 ### 4.3 色彩感受目标
 
@@ -178,7 +179,7 @@
 ### 6.4 按钮
 
 - Brand 展示面可使用品牌色 CTA；Workbench、表单、表格和常规任务主按钮使用操作色。
-- 品牌实底前景使用 `text-on-brand`，操作实底前景使用 `text-on-accent`，不能用同一个“反色文字”变量掩盖对比度差异。
+- 品牌实底前景使用 `text-on-brand`，操作实底前景使用 `text-on-action` 语义；代码迁移期间后者映射现有 `--rd-text-on-accent`，不能用同一个“反色文字”变量掩盖对比度差异。
 - 次按钮优先采用描边或柔底样式。
 - 不使用强塑料感高光或夸张渐变。
 
@@ -223,10 +224,10 @@
 
 ### 7.1 C-1B 代表设计复核
 
-F4-R 已完成 A / B、C-0 与 C-1A。C-1B 已在 `radish-web-family-ui-v1.pen` 完成 `R1-F01`，后续按以下顺位推进：
+F4-R 已完成 A / B、C-0 与 C-1A。C-1B 已在 `radish-web-family-ui-v1.pen` 完成 `R1-F01` 与 `R1-P01`，后续按以下顺位推进：
 
-1. 下一步复核 `R1-P01` Public 内容流，再完成 `R1-P02` Public 详情与互动。
-2. 随后按 Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
+1. 先实现灰玉共享主题契约与 `/discover` 代表页，并完成代码侧验证；专题准备验收时再执行 PC / mobile 真实截图复核。
+2. 设计轨下一顺位为 `R1-P02` Public 详情与互动，随后按 Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
 3. R3 页面明确继承来源后直接实现，不为相同布局、文案差异或路由差异复制画板；出现新布局模型、关键交互或 mobile 结构时再升级为 R1 / R2。
 
 代表页编号、路由族与升级规则以 [F4-R 代表页代码事实审计](/frontend/f4-r-representative-page-audit)和 [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)为准。
