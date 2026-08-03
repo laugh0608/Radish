@@ -15,7 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。`R1-P01` 已把 `guofeng` 品牌目标调整为低饱和灰玉，当前运行时旧胭脂值待实现。
+> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。`R1-P01` 的灰玉颜色目标保留，但两轮页面结构评审未通过，当前运行时旧胭脂值和 `/discover` 实现均继续后置。
 
 ## 1. 设计目标
 
@@ -227,11 +227,12 @@
 
 ### 7.1 C-1B 代表设计复核
 
-F4-R 已完成 A / B、C-0 与 C-1A。C-1B 已在 `radish-web-family-ui-v1.pen` 完成 `R1-F01` 与 `R1-P01`，后续按以下顺位推进：
+F4-R 已完成 A / B、C-0 与 C-1A。C-1B 已在 `radish-web-family-ui-v1.pen` 完成 `R1-F01`；`R1-P01` 两轮业务页面评审均未通过，后续按以下顺位推进：
 
-1. 先实现灰玉共享主题契约与 `/discover` 代表页，并完成代码侧验证；专题准备验收时再执行 PC / mobile 真实截图复核。
-2. 设计轨下一顺位为 `R1-P02` Public 详情与互动，随后按 Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
-3. R3 页面明确继承来源后直接实现，不为相同布局、文案差异或路由差异复制画板；出现新布局模型、关键交互或 mobile 结构时再升级为 R1 / R2。
+1. 重新拆解参考 `13 / 16 / 18 / 27`，并只读审计帖子之外的公开实体、API 和路由；先在同一活动设计源中用 `2~3` 个低保真 PC 构图比较多元社区结构，不继续精修失败稿。
+2. 结构方向获选后，再更新唯一 PC / mobile 代表画板与关键状态；审核通过后才实现灰玉共享主题契约、`/discover` 和对应静态测试，并在专题准备验收时执行 PC / mobile 真实截图复核。
+3. 设计轨下一顺位仍为 `R1-P02` Public 详情与互动，但不得抢在 `R1-P01` 结构与实现闭环前扩张。
+4. R3 页面明确继承来源后直接实现，不为相同布局、文案差异或路由差异复制画板；出现新布局模型、关键交互或 mobile 结构时再升级为 R1 / R2。
 
 代表页编号、路由族与升级规则以 [F4-R 代表页代码事实审计](/frontend/f4-r-representative-page-audit)和 [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)为准。
 
