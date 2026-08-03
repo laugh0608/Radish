@@ -82,10 +82,9 @@ npm run dev
 
 正式 Web 的跨页面视觉改造先看设计源，再进代码：
 
-- 共享 header、按钮、pill、卡片、状态槽和移动 tab 样板以 [Web UI 共享基座设计说明](./web-ui-foundation-design.md) 与 `Docs/frontend/design-sources/web-ui-foundation.pen` 为准。
-- 公开浏览、公开详情、公开集合页和 mobile 公开单列以 [公开 Web 统一体验设计说明](./public-web-unified-experience-design.md) 与 `public-web-unified-experience.pen` 为准。
-- 私域首页、资产 / 订单 / 背包、作者工作台、编辑器 / 版本回看和 mobile 私域单列以 [私域与作者态 Web 工作流设计说明](./private-web-workflows-design.md) 与 `private-web-workflows.pen` 为准。
-- Console 治理和后台工作台继续以 [Console 样式与 Token 使用说明](./console-style-guide.md)、[Console 治理工作台设计端点](./console-governance-workbench-design.md) 和 `console-governance-workbench.pen` 为准。
+- 唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`；共享 header、按钮、pill、卡片、状态槽和移动 tab 以其中 `R1-F01` 与[Web UI 共享基座设计说明](./web-ui-foundation-design.md)为准。
+- Public、Private / Author 与 Console 的 R1 / R2 均在同一活动设计源内维护；页面功能和实现边界分别以[公开 Web 统一体验设计说明](./public-web-unified-experience-design.md)、[私域与作者态 Web 工作流设计说明](./private-web-workflows-design.md)、[Console 样式与 Token 使用说明](./console-style-guide.md)和[Console 治理工作台设计端点](./console-governance-workbench-design.md)为准。
+- `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 只读留档，不再作为当前设计修改入口。
 
 当前 `radish.client` 已落地的共享 Web shell 代码入口：
 

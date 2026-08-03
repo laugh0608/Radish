@@ -6,14 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R 已完成 family-ui v26.7.3 破坏性基线补充批，等待 Pencil 空闲进入 C-1B`
-- **产品下一顺位**：`等待用户明确确认 Pencil 空闲后进入 C-1B；此前不读取或修改 .pen`
+- **工程第一顺位**：`F4-R C-1B 已建立单一版本化设计源并完成 R1-F01`
+- **产品下一顺位**：`复核 /discover 当前代码事实并完成 R1-P01 Public 内容流代表设计`
 - **复核日期**：`2026-08-03`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-03` 已创建唯一活动设计源 `radish-web-family-ui-v1.pen`：文件名以主版本管理，普通迭代继续更新 `v1` 并由 Git 留存；原四个大型 `.pen` 不删除、不改名，统一转为只读留档。
+- `2026-08-03` 已完成 `R1-F01`：统一四主题变量矩阵、Brand / Workbench Action 前景语义、按钮 / 输入 /状态 chip、加载 / 空态 / 错误 / 权限状态槽，以及 PC / 390px mobile 壳层契约；下一顺位为 `R1-P01` Public 内容流。
 - `2026-08-03` 已将 F4-R 上游基线升级为 RadishX `family-ui v26.7.3`：通用副本使用灰玉参考默认并新增 `text-on-brand`，Radish 项目主题层显式保留 `guofeng` 胭脂品牌与四主题前景，避免上游默认值成为隐式产品契约。
 - `2026-08-03` 已复核新版全部规范正文、token 和参考索引；27 张参考图仅迁入 family-ui `reference-ui/`，Git blob 全部 `R100` 相同，既有页面族映射继续有效，并强化“观察、拆解、提炼、转译”与禁止照抄边界。
 - `2026-07-30` 已将 Pencil 协作调整为代表页驱动：功能、文案、权限和状态机服从专题与代码；R1 / R2 维护必要代表设计，R3 继承实现并通过真实页面截图复核，不再维持逐路由设计镜像。
@@ -38,24 +40,24 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-03，v26.7.3 基线补充批）
+## 今日进展（2026-08-03，v26.7.3 基线与 C-1B）
 
 1. 完整复读 family-ui `v26.7.3` 的 README、十份规范正文、参考索引与 CSS / JSON token，确认破坏点集中在项目自治、灰玉参考默认和 `text-on-brand`。
 2. family-ui CSS / JSON 副本已与上游逐字同步；Radish Client 项目层显式保留 `guofeng` 胭脂品牌，并为四主题补齐品牌实底前景。
 3. 共享主题与 Client 契约测试已升级到 v26.7.3，固定上游灰玉参考默认、Radish 胭脂项目差异及品牌 / 操作语义分离。
 4. F4-R、UI 差异附录、视觉主题 / 颜色入口、总体路线、Agent 协作文件和开发日志已同步，不改写旧批次历史事实。
 5. 代码事实显示 Client 仍有 `92` 个样式文件消费 `--theme-brand-primary`，尚无页面消费 `--theme-action-primary`；该范围进入 `R1-F01` 裁决，本批不机械全仓替换。
-6. 本批未启动服务、未执行真实 smoke、未修改 `.pen`，WebOS / Tauri 与主动生产证据采集停止线不变。
+6. 已创建 `radish-web-family-ui-v1.pen`，在单一活动文件中建立索引、可复用组件和 `R1-F01`；文件名只在不兼容的结构性升级时递增到 `v2`。
+7. 原 `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 保持原样留档；本批未启动服务或执行真实 smoke，WebOS / Tauri 与主动生产证据采集停止线不变。
 
 ## 下一事项（2026-08-03）
 
 1. 新会话先读取本页、[F4-R 专题](/features/family-ui-convergence-design)、[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)和 [UI 差异附录](/frontend/ui-addendum)，不默认展开历史记录。
-2. 首先向用户确认 Pencil 是否空闲；只有得到当前任务的明确确认后，才读取或修改 `.pen`。
-3. Pencil 空闲时进入 C-1B，先复核 `R1-F01`：明确品牌 CTA、Workbench 主操作、激活态、`text-on-brand / text-on-accent`、四主题和 PC / mobile 壳层矩阵。
-4. `R1-F01` 应按新版索引复看与共享基础相关的参考图，记录吸收与排除理由；不把参考图换色、描摹或复制进设计交付物。
-5. 代表结构与契约确认前不进入页面族实现，也不机械替换现有品牌变量；功能、文案、按钮、权限和状态机继续服从专题文档与当前代码。
-6. Pencil 仍被占用时，只读审计下一项不依赖 Pencil 的完整 F4 功能或维护候选，形成 `2~4` 个有代码事实、用户价值、权威边界、维护成本和停止线的候选，获得批准后再建专题或编码。
-7. 默认不启动服务或执行真实 smoke；只有专题准备验收且获得当前任务授权后再启动。Web 优先、Flutter 条件式承接、WebOS 只兼容、Tauri 冻结与生产证据采集停止线不变。
+2. 先复核 `/discover` 当前代码与直接相关专题，确认真实内容流、筛选、侧栏、状态、入口、PC / mobile 转换和本批不改变的功能边界。
+3. 获得当前任务的 `.pen` 修改授权后，只编辑 `radish-web-family-ui-v1.pen` 的 `R1-P01`；原四个设计源仅供历史追溯，不继续同步。
+4. `R1-P01` 按新版索引复看 Public 内容流相关参考，记录吸收与排除理由；不把参考图换色、描摹或复制进交付物。
+5. `R1-P01` 确认后先实现共享组件和 `/discover` 代表页，再按真实 PC / mobile 截图复核；不机械替换全部品牌变量。
+6. 默认不启动服务或执行真实 smoke；只有专题准备验收且获得当前任务授权后再启动。Web 优先、Flutter 条件式承接、WebOS 只兼容、Tauri 冻结与生产证据采集停止线不变。
 
 ## 当前执行入口
 
@@ -96,9 +98,9 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；F4-R C-1B 代表设计复核前不提前实施页面视觉。
+- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；F4-R 各页面族在对应 R1 / R2 复核前不提前实施其视觉改造。
 - 不恢复 Tauri，不扩展 WebOS 新功能，不把 Flutter 做成 Web 的机械复制，也不重启主动生产证据采集。
-- 用户明确确认 Pencil 空闲前，不读取或修改任何 `.pen` 文件，也不提前实现尚未复核的 F4-R 页面视觉。
+- 不继续修改历史 `.pen` 留档，不为路由、主题、文案或等价状态复制完整画板；任何后续 `.pen` 修改仍需当前任务的明确授权。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
 
 ## 验证与文档维护

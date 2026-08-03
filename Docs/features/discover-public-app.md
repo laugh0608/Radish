@@ -2,7 +2,7 @@
 
 > Radish 纯 Web 默认入口 `/discover` 的公开内容流说明。
 >
-> **最后更新**: 2026.07.04
+> **最后更新**: 2026.08.03
 
 ## 定位
 
@@ -10,7 +10,9 @@
 
 当前它属于公开内容壳层，不等同于 WebOS 工作台，也不等同于完整推荐系统或个人圈子。
 
-`2026-07-04` D61 后，`/discover` 同时承接 `public-web-unified-experience.pen` 的 `P01 - Public App Home` 与 `P02 - Discover Content Stream` 当前发布前职责：首屏保留产品级 `Radish / 公开入口` 头部、紧凑公开脉搏、真实帖子讨论流和公共内容亮点；移动端在真实内容前提供搜索 / 筛选快捷入口，但不把页面改成营销首页、路由矩阵或大面积说明页。
+`2026-07-04` D61 后，`/discover` 承接旧 `public-web-unified-experience.pen` 中 `P01 - Public App Home` 与 `P02 - Discover Content Stream` 的发布前职责：首屏保留产品级 `Radish / 公开入口` 头部、紧凑公开脉搏、真实帖子讨论流和公共内容亮点；移动端在真实内容前提供搜索 / 筛选快捷入口，但不把页面改成营销首页、路由矩阵或大面积说明页。
+
+`2026-08-03` 起旧文件只读留档，后续视觉裁决进入 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-P01`；本页与当前代码继续负责功能、入口、数据和停止线。
 
 ## 内容流范围
 

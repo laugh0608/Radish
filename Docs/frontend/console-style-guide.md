@@ -1,9 +1,9 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-07-30
+> 最后更新：2026-08-03
 
-本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 使用 family-ui Workbench Profile，Radish 差异见 [UI 差异附录](/frontend/ui-addendum)；具体布局以 `Docs/frontend/design-sources/console-governance-workbench.pen` 的页面类型代表画板和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 为当前设计基准。
+本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 使用 family-ui Workbench Profile，Radish 差异见 [UI 差异附录](/frontend/ui-addendum)；当前代表设计进入 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-C01 / R1-C02` 与 `R2-C03`，布局和功能边界同时服从 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)。旧 `console-governance-workbench.pen` 只读留档。
 
 `P00-P18` 是既有阶段形成的代表类型与历史资产，不要求后续路由逐页复制画板。新增或改动页面按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)裁决 R1 / R2 / R3；普通表格、设置、详情和治理派生页优先继承已有类型并在真实代码中复核。
 

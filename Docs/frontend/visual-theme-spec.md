@@ -223,10 +223,10 @@
 
 ### 7.1 C-1B 代表设计复核
 
-F4-R 已完成 A / B、C-0 与 C-1A。用户明确确认 Pencil 空闲后，按以下顺位推进 C-1B：
+F4-R 已完成 A / B、C-0 与 C-1A。C-1B 已在 `radish-web-family-ui-v1.pen` 完成 `R1-F01`，后续按以下顺位推进：
 
-1. 先复核 `R1-F01` 共享基础：按钮、输入、选择、反馈、状态槽、Header、移动底栏、主题和响应式基线。
-2. 再按 Public、Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
+1. 下一步复核 `R1-P01` Public 内容流，再完成 `R1-P02` Public 详情与互动。
+2. 随后按 Author、Private、Console 顺序更新命中的 R1 / R2 代表设计。
 3. R3 页面明确继承来源后直接实现，不为相同布局、文案差异或路由差异复制画板；出现新布局模型、关键交互或 mobile 结构时再升级为 R1 / R2。
 
 代表页编号、路由族与升级规则以 [F4-R 代表页代码事实审计](/frontend/f4-r-representative-page-audit)和 [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)为准。

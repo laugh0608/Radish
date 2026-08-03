@@ -76,11 +76,13 @@
 
 ## 设计源文件
 
-目标源文件：
+当前活动设计源：
 
 ```text
-Docs/frontend/design-sources/console-governance-workbench.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
+
+Console 代表设计使用 `R1-C01 / R1-C02` 与 `R2-C03`。旧 `console-governance-workbench.pen` 保留为只读历史资产；下表记录其历史画板与既有功能边界，不再作为后续修改入口。
 
 规则：
 

@@ -253,7 +253,7 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 
 ### 7.1 设计源
 
-进入前端实现前，先更新 `Docs/frontend/design-sources/private-web-workflows.pen` 中现有 `P13 - Messages Workspace`，覆盖：
+进入同类前端视觉实现前，在 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-W01` 中维护必要代表差异；旧 `private-web-workflows.pen` 只读留档。覆盖：
 
 - 公开个人页“发消息”动作；
 - PC 会话列表中的待处理请求、接受、拒绝和阻断状态；

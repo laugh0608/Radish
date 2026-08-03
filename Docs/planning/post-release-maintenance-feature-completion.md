@@ -136,7 +136,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭：复用 `Tag / PostTag / Post`，统一公开帖子判定，落地数据库侧公开计数 / 热门 / 相关聚合、标签 Gateway 首包 head、tags sitemap、正式 Web 和代表运行态矩阵；不可用标签 `noindex`、单一 JSON-LD 与 Console 软删除恢复契约均已收口。
 
-[F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已完成 A / B、family-ui `v26.7.3` 破坏性基线补充批、C-0 与 C-1A，等待用户确认 Pencil 空闲后进入 C-1B 代表设计；等待期间已完成并关闭 [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)，余额、累计消费和购买数量退出公开榜单，五类公开类型统一资格、排序、身份只读边界与未知类型错误契约，Gateway PC / mobile 成组验收通过。
+[F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已完成 A / B、family-ui `v26.7.3` 破坏性基线补充批、C-0 与 C-1A；C-1B 已建立单一版本化设计源并完成 `R1-F01`，下一步为 `R1-P01`。期间已完成并关闭 [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)，余额、累计消费和购买数量退出公开榜单，五类公开类型统一资格、排序、身份只读边界与未知类型错误契约，Gateway PC / mobile 成组验收通过。
 
 ### 最终收尾：生产使用证据采集（冻结）
 

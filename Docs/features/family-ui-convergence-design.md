@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-03 更新（Asia/Shanghai）
 >
-> 状态：A / B、v26.7.3 破坏性基线补充批、C-0 与 C-1A 代码事实审计已完成；C-1B 共享基座与代表画板待推进
+> 状态：A / B、v26.7.3 破坏性基线补充批、C-0 与 C-1A 已完成；C-1B 已建立单一版本化设计源并完成 `R1-F01`，下一步为 `R1-P01`
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -129,7 +129,7 @@ Radish 页面族 / 功能专题：路由、流程、状态、权限与布局
 - 27 张参考图仅从原素材目录迁入 family-ui `reference-ui/`，Git blob 全部 `R100` 相同，既有页面族吸收 / 排除映射继续有效；
 - 新版进一步明确品牌色、操作色和状态色分工。代码事实显示现有 Client 仍有 `92` 个样式文件消费 `--theme-brand-primary`，尚无页面消费 `--theme-action-primary`；该事实进入 `R1-F01` 语义裁决，不在基线补充批机械全仓替换。
 
-本补充批只建立可追溯基线和兼容层，不提前改变页面视觉；品牌 CTA、常规主操作、激活态与相应前景色由 C-1B 代表设计确认后按页面族治理。
+本补充批只建立可追溯基线和兼容层，没有机械改变页面视觉。后续 `R1-F01` 已确认 Brand CTA、Workbench Action、激活态及各自实底前景的共享语义；具体页面仍由对应 R1 / R2 组合与代码复核治理。
 
 ## 7. 主题运行时
 
@@ -200,14 +200,9 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 ### 9.2 设计源
 
-现有设计源继续按职责维护，但不再承担路由、功能、文案和状态的完整镜像：
+当前唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。共享基础、Public、Private / Author 与 Console 的 R1 / R2 均在该文件内维护；`v1` 在普通设计迭代中持续演进并由 Git 留存，只有不兼容的结构性升级才新建 `v2`。
 
-- `web-ui-foundation.pen`：共享 token、壳层、按钮、状态槽和基础组件。
-- `public-web-unified-experience.pen`：Public 页面族。
-- `private-web-workflows.pen`：Private / Author 页面族。
-- `console-governance-workbench.pen`：Console 页面类型。
-
-既有大型 `.pen` 保留为历史设计资产，不在本专题一次性重写。[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已按自动升级条件和六维评分裁决一个基础矩阵与六类完整页面类型：
+`web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 保留为只读历史资产，不删除、不改名、不继续同步。[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已按自动升级条件和六维评分裁决一个基础矩阵与六类完整页面类型：
 
 1. 共享组件、状态、主题和壳层矩阵；
 2. Public 内容流；
@@ -245,7 +240,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射；v26.7.3 仅迁址且图片 blob 不变，映射继续有效，设计时仍须按新版“观察、拆解、提炼、转译”边界复核相关参考。
 - C-1A 已完成当前代码与页面类型审计，确认 `7` 个 R1、`4` 个 R2 及 R3 继承表。
-- C-1B 按共享基座、Public、Author、Private、Console 顺序复核和更新代表设计。
+- C-1B 已建立单一版本化活动设计源并完成 `R1-F01` 共享基座；下一步为 `R1-P01` Public 内容流，再按 Public 详情、Author、Private、Console 顺序推进。
 - 更新共享基座和命中的 R1 / R2 代表画板，不为 R3 派生页面创建重复画板。
 - 收敛按钮、输入、状态 chip、表格、卡片、Modal、空态、Header 和移动底栏。
 - 先实现共享组件和 R1 代表页，完成真实截图复核后再进入派生页面。

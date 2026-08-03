@@ -45,8 +45,10 @@
 ## 设计源
 
 ```text
-Docs/frontend/design-sources/public-web-unified-experience.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
+
+当前 Public 代表设计使用 `R1-P01 / R1-P02` 与 `R2-P03`。旧 `public-web-unified-experience.pen` 保留为只读历史资产；下表记录其历史画板与现有功能边界，不再作为后续修改入口。
 
 画板：
 
@@ -85,7 +87,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 ### 壳层与导航
 
 - Public / Private 页面共享同一套产品级主导航，不再维护公开页、私域页和工作台页三套全局入口。
-- PC 头部统一使用 `web-ui-foundation.pen` / `F02` 的纸感横匾：主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`。
+- PC 头部统一使用 `radish-web-family-ui-v1.pen` / `R1-F01` 的共享 Header：主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`。
 - 移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`；`/me`、`/circle`、`/pet` 归属“我的”，`/messages` 归属“聊天”，`/notifications` 作为右上角通知动作，Docs、商城、榜单、规则和 `/desktop` 兼容入口由“更多”进入 `/workbench` 承接。
 - “更多”默认进入 `/workbench` 正式 Web 功能地图，不直接打开 `/desktop`；`/desktop` 只作为 WebOS 历史入口和旧深链承接点。
 - 公开浏览页的主动作是继续阅读、筛选、搜索、分享或登录参与，不承载完整私域工作台。

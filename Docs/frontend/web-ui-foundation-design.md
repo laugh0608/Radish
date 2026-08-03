@@ -18,35 +18,37 @@
 >
 > 更新：2026-07-08（Asia/Shanghai）：E8 首日已将 `radish.client` Public / Private 主导航收敛为 PC `发现 / 论坛 / 聊天 / 更多` + 右侧 `通知 / 账号`，移动底栏为 `发现 / 论坛 / 聊天 / 更多 / 我的`；`/workbench` 是“更多”功能地图，`/desktop` 只保留历史入口。
 >
-> 状态：共享基座设计源 `F01-F03` 与 `E7-D` Auth 授权确认参考画板已创建；`radish.client` Public `P01-P14`、Private `/workbench`、Console 首轮代表页和 Auth 授权页均已完成当前阶段代码对齐或参考画板收口，E8 后 public / private 默认共用产品级主导航，后续继续按 E8 页面族治理跨源一致性
+> 更新：2026-08-03（Asia/Shanghai）：F4-R C-1B 建立唯一活动设计源 `radish-web-family-ui-v1.pen` 并完成 `R1-F01`；原四个大型设计源只读留档，不再跨文件同步。
+>
+> 状态：当前共享基座以 `R1-F01` 与同文件可复用组件区为准；下一代表页为 `R1-P01` Public 内容流
 
 ## 设计源
 
 ```text
-Docs/frontend/design-sources/web-ui-foundation.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
 
 画板：
 
 | 画板 | 职责 |
 | --- | --- |
-| `F01 - Web UI Foundation` | 共享 token、public / private header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab 和同步规则 |
-| `F02 - Client Shell Common Components` | client 公共壳层组件契约，覆盖 PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource 和 public / private 真实路由族 |
-| `F03 - Radish WebOS Liquid Glass Navigation Concept` | WebOS 历史导航概念留档，不作为 P3-12 正式 Web 默认体验入口 |
-| `E7-D - Auth Consent Information Hierarchy` | Auth 授权确认页具体决策卡参考，覆盖请求应用、当前账号、返回位置、权限用途、敏感边界、技术信息下沉、动作区安全距离和移动端确认动作 |
+| `00 - Design Source Index` | 活动源、主版本、留档边界、R1 / R2 进度和真相源说明 |
+| `Component / *` | Button、State Chip、Text Field、Navigation Item、State Slot、Web Header 与 Mobile Tab Bar 可复用组件 |
+| `R1-F01 - Shared Foundation` | 四主题、品牌 / 操作语义、控件、状态、PC / mobile 壳层与继承停止线 |
+
+旧 `web-ui-foundation.pen` 中的 `F01-F03` 与 `E7-D` 保留为历史画板；需要追溯旧批次时只读查看，不再作为当前修改落点。
 
 ## 目标
 
-- 解决多 `.pen` 业务设计源之间 header、按钮、卡片和状态槽样式分叉的问题。
-- 保留 `public-web-unified-experience.pen`、`private-web-workflows.pen` 和 `console-governance-workbench.pen` 的端点边界。
-- 让业务设计源复制共享样式样板，而不是各自重新发明基础组件。
+- 在单一活动 `.pen` 中固定 header、按钮、卡片和状态槽的共享契约，消除跨文件同步。
+- 让 Public、Private / Author 与 Console 代表画板复用同文件组件，而不是各自重新发明基础组件。
 - 在进入视觉代码实现前，先固定跨端点的视觉契约。
 
 ## 分层方案
 
 ### 共享基座
 
-`web-ui-foundation.pen` 只承载共享样板和合法变体，不承载业务页面。
+`radish-web-family-ui-v1.pen` 的 `R1-F01` 与可复用组件区承载共享样板和合法变体；业务 R1 / R2 在同一文件的独立代表区组合这些契约。
 
 当前包含：
 
@@ -56,23 +58,21 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 - 内容卡片、右侧 rail、加载 / 空态 / 错误 / 权限状态槽。
 - 移动 Web shell 与图标上 / 文字下的底部 tab 样板；底栏为左右 inset、64px 高、真胶囊端点和柔和品牌色激活态。
 - Client 公共壳层组件契约：PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource、PC header 解剖、移动端底部 tab 和 public / private / commerce / author 路由族覆盖。
-- 跨设计源同步规则。
+- 同文件继承与停止线规则。
 
-### 业务设计源
+### 同文件代表页
 
-业务 `.pen` 文件继续按端点拆分：
+业务代表设计不再按端点拆分成多个活动 `.pen`：
 
-- `public-web-unified-experience.pen`：公开 Web 阅读 / 浏览端点。
-- `private-web-workflows.pen`：登录态私域与作者态端点。
-- `console-governance-workbench.pen`：Console 治理端点。
+- Public：`R1-P01 / R1-P02` 与 `R2-P03`；
+- Private / Author：`R1-W01 / R1-A01` 与 `R2-W02 / R2-A02`；
+- Console：`R1-C01 / R1-C02` 与 `R2-C03`。
 
-业务源可以有不同信息架构、导航项和页面密度，但不得自行分叉共享样式。
+各代表区可以有不同信息架构、导航职责和页面密度，但不得自行分叉共享样式。原三个业务 `.pen` 只读留档。
 
 ### 评审看板
 
-后续如需阶段级横向审阅，可按需新增轻量 `web-ui-review-board.pen`，只放关键画板截图或代表性 frame，不承载完整编辑源。
-
-当前暂不创建评审看板，避免过早增加同步成本。
+阶段级横向审阅在同一活动文件内新增轻量 review frame，或使用目标节点导出截图；不再创建独立评审 `.pen`。
 
 ## 必须一致
 
@@ -111,10 +111,10 @@ Docs/frontend/design-sources/web-ui-foundation.pen
 
 ## 同步规则
 
-1. 改共享视觉契约时，先修改 `web-ui-foundation.pen`。
-2. 只同步受影响的 R1 / R2 代表画板；R3 派生页面从代码共享层继承，不复制画板。
+1. 改共享视觉契约时，先修改 `radish-web-family-ui-v1.pen` 的 `R1-F01` 或对应可复用组件。
+2. 在同一文件内只更新受影响的 R1 / R2 代表画板；R3 派生页面从代码共享层继承，不复制画板。
 3. 再更新对应设计说明、继承关系和必要记录。
-4. 不允许只在某个业务 `.pen` 临时修改 header、按钮、卡片或状态槽样式。
+4. 不允许在历史业务 `.pen` 或某个业务代表页内临时分叉 header、按钮、卡片或状态槽样式。
 5. 如果业务端点确实需要新变体，先按[代表页流程](/frontend/pencil-representative-page-workflow)完成升级判断，再把合法变体加入共享基座并说明适用范围。
 
 ## 代码对齐状态

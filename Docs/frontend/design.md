@@ -59,14 +59,13 @@
 - `/workbench` 当前作为正式 Web “更多”功能地图与社区活动中心，除公开浏览、登录态私域、后台治理和历史桌面四组功能地图外，还会汇总通知行动、聊天未读 / 提及 / 草稿、论坛草稿、订单 / Docs / 宠物等继续处理项；公共头部“更多”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - `/legal` 当前作为公开用户承诺入口，承载社区内容规范、隐私边界、账号安全、通知、虚拟商品和退款 / 不退款边界；`/legal` 与登录态 `/me` 复用同一套隐私与安全边界组件，帮助用户区分公开、本人私域、仅 Console 和不可公开数据。
 - 正式 Web 当前已形成共享头部视觉和动作基线：PC 主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`；移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`。`/me`、`/circle`、`/pet` 归属“我的”，`/messages` 归属“聊天”，Docs、商城、榜单、规则、Console、订单 / 背包、作者态和 `/desktop` 兼容入口由“更多”进入 `/workbench` 承接；共享头部和移动底栏由 `components/web-shell/WebShellHeader` 承接，页面状态槽由 `WebStateSlot` 承接
-- `P3-12-D2` 已将公开 Web 统一体验设计源 `Docs/frontend/design-sources/public-web-unified-experience.pen` 扩展为 `P01-P16` 公开社区 App 页面族；F4-K / F4-N 后续补充公开主页状态画板和内容赞赏 `P04B / P11B` PC / mobile 状态画板，覆盖公开首页、发现流、论坛列表 / 详情、紧凑评论树、轻回应、内容赞赏、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流；实现口径见 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
-- `P3-12-D3` 已将私域与作者态 Web 工作流设计源 `Docs/frontend/design-sources/private-web-workflows.pen` 扩展为 `P01-P30` 真实路由驱动页面族，覆盖 `/workbench`、`/me` 系列、资产流水、订单、背包、通知、消息、圈子、宠物、论坛作者态、Docs 作者态和移动端 10 个单任务页面；实现口径见 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
-- `P3-12-D4 / D7` 已将 Web UI 共享基座设计源 `Docs/frontend/design-sources/web-ui-foundation.pen` 扩展为 `F01-F02`，统一 header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab、client 公共壳层组件契约和 5 项以内浮动胶囊移动底栏；E8 后 `radish.client` public / private 默认共用产品级主导航，跨业务设计源的视觉样式先在 [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 确认，再同步到具体 `.pen`
-- 上述大范围画板是既有阶段形成的历史设计资产；`2026-07-30` 起采用[代表页驱动 Pencil 协作](/frontend/pencil-representative-page-workflow)，后续只维护共享基座、R1 / R2 代表结构和关键状态，不再按路由、主题、文案或功能点扩张完整页面镜像
+- `2026-08-03` 起唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`：已建立索引、可复用组件和 `R1-F01`，后续 Public、Private / Author、Console 的 R1 / R2 也在同一文件维护；普通迭代继续更新 `v1`，只有不兼容的结构性升级才新建下一主版本
+- `P3-12-D2 / D3 / D4 / D7` 历史批次曾分别扩展 `public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `web-ui-foundation.pen`；这些文件及 `console-governance-workbench.pen` 现均只读留档，不再跨文件同步，功能口径继续见对应页面族说明
+- `2026-07-30` 起采用[代表页驱动 Pencil 协作](/frontend/pencil-representative-page-workflow)，只维护共享基座、R1 / R2 代表结构和关键状态，不按路由、主题、文案或功能点扩张完整页面镜像
 - `P3-12-D8` 已将共享 Web shell 首批落入 `radish.client` 代码：`Frontend/radish.client/src/components/web-shell/` 提供 `WebShellHeader`、`WebStateSlot` 和对应类型，公开 / 私域页面优先复用该目录，不再各自维护分叉 header、状态卡、移动 tab 或内容宽度硬编码
 - 正式 Web 可恢复错误反馈遵循 [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics)：页面级加载失败、上传失败、聊天发送失败和通知目标缺失必须提供可继续行动的恢复路径与有限诊断上下文
 - 进入跨页面视觉代码实现前，必须先确认对应设计说明、共享基座和代表页继承关系；R1 / R2 先确认必要 Pencil，R3 直接继承实现并截图复核，任何级别都不得把 public、private 或 Console 的 header、按钮、卡片样式写成分叉版本
-- Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
+- Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度；旧设计稿在 `console-governance-workbench.pen` 留档，当前代表设计进入 `radish-web-family-ui-v1.pen` 的 `R1-C01 / R1-C02`，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；内容治理、经验治理、订单 / 商品、文档治理、用户管理和权限矩阵已补任务流提示和证据 rail，移动端内容治理优先按“筛选队列 -> 目标证据 -> 处理动作 -> 留痕回看”顺序承载；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
 - `/discover` 当前已从公开导航聚合页推进为公开内容流：首屏和内容区会复用公开帖子、公开文档、商品和榜单入口，让用户先在同一页面判断下一步阅读路径，再进入 forum / docs / leaderboard / shop / 公开主页
 - `/discover` 当前继续保留公开来源返回；从公开专题页顶部回到“社区发现”时，应优先回到公开发现语境，而不是每次都丢回桌面或其他专题默认页

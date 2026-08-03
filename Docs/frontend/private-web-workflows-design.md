@@ -45,8 +45,10 @@
 ## 设计源
 
 ```text
-Docs/frontend/design-sources/private-web-workflows.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
+
+当前 Private / Author 代表设计使用 `R1-W01 / R1-A01` 与 `R2-W02 / R2-A02`。旧 `private-web-workflows.pen` 保留为只读历史资产；下表记录其历史画板与既有功能边界，不再作为后续修改入口。
 
 画板：
 

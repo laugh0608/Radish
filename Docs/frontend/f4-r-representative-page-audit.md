@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30（Asia/Shanghai）
 >
-> 状态：C-1A 已完成；下一步进入 C-1B 共享基座与 R1 / R2 代表设计复核
+> 状态：C-1A 已完成；C-1B 已建立单一版本化设计源并完成 `R1-F01`，下一步为 `R1-P01`
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -63,17 +63,17 @@ C-1A 最终裁决为：
 
 ## 4. R1 完整代表类型
 
-| 编号 | 代表类型与真实锚点 | B/L/S/R/M/U | 总分 | 自动升级依据 | 设计源 |
+| 编号 | 代表类型与真实锚点 | B/L/S/R/M/U | 总分 | 自动升级依据 | 活动设计源 |
 | --- | --- | --- | --- | --- | --- |
-| `R1-F01` | 共享组件、状态、主题与壳层矩阵 | `2/2/2/2/2/1` | `11` | 改变跨 Public、Private / Author、Console 复用契约 | `web-ui-foundation.pen` |
-| `R1-P01` | Public 内容流；锚点 `/discover` | `2/2/1/2/2/1` | `10` | 建立家族化内容流和 Public 响应式语法 | `public-web-unified-experience.pen` |
-| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `public-web-unified-experience.pen` |
-| `R1-A01` | Author 编辑 / 发布；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `private-web-workflows.pen` |
-| `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `private-web-workflows.pen` |
-| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `console-governance-workbench.pen` |
-| `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `console-governance-workbench.pen` |
+| `R1-F01` | 共享组件、状态、主题与壳层矩阵 | `2/2/2/2/2/1` | `11` | 改变跨 Public、Private / Author、Console 复用契约 | `radish-web-family-ui-v1.pen`（已完成） |
+| `R1-P01` | Public 内容流；锚点 `/discover` | `2/2/1/2/2/1` | `10` | 建立家族化内容流和 Public 响应式语法 | `radish-web-family-ui-v1.pen` |
+| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen` |
+| `R1-A01` | Author 编辑 / 发布；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen` |
+| `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen` |
+| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen` |
+| `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
 
-R1 只要求在对应设计源中维护一张可定位的代表画板，PC / mobile 和关键状态优先并置，不为主题、locale、权限和每个状态复制完整页面。
+R1 只要求在唯一活动设计源中维护一张可定位的代表画板，PC / mobile 和关键状态优先并置，不为主题、locale、权限和每个状态复制完整页面。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
 
 ## 5. R2 局部设计类型
 
@@ -111,8 +111,8 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 
 ## 8. C-1B 执行顺序
 
-1. 在 `web-ui-foundation.pen` 复核 `R1-F01`，先固定共享壳层、控件、状态、四主题和响应式语法。
-2. 按 `R1-P01 → R1-P02 → R1-A01 → R1-W01 → R1-C01 → R1-C02` 更新或复核代表画板。
+1. `R1-F01` 已在 `radish-web-family-ui-v1.pen` 完成，固定共享壳层、控件、状态、四主题和响应式语法。
+2. 下一步在同一活动设计源中按 `R1-P01 → R1-P02 → R1-A01 → R1-W01 → R1-C01 → R1-C02` 更新或复核代表画板。
 3. R2 只补必要差异，不扩为路由镜像。
 4. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现。
 5. 代表页代码落地后才启动阶段性 PC / mobile 真实截图复核，并以复核结果驱动 R3 成组实现。
