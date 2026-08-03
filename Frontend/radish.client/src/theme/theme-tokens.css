@@ -1,3 +1,12 @@
+:root,
+:root[data-theme='guofeng'] {
+  /* Radish 默认内建主题显式保留胭脂品牌，不继承 family-ui 的灰玉参考默认值。 */
+  --rd-text-on-brand: #fffdf8;
+  --rd-brand-primary: #b24057;
+  --rd-brand-hover: #cd5076;
+  --rd-brand-soft: rgba(178, 64, 87, 0.12);
+}
+
 :root {
   --theme-font-sans: var(--rd-font-sans);
   --theme-font-serif: var(--rd-font-serif);
@@ -20,7 +29,9 @@
   --theme-text-muted: var(--rd-text-muted);
   --theme-text-tertiary: var(--theme-text-muted);
   --theme-text-placeholder: var(--theme-text-muted);
-  --theme-text-inverse: var(--rd-text-on-accent);
+  --theme-text-on-brand: var(--rd-text-on-brand);
+  --theme-text-on-accent: var(--rd-text-on-accent);
+  --theme-text-inverse: var(--theme-text-on-accent);
   --theme-border-soft: var(--rd-border-soft);
   --theme-border-strong: var(--rd-border-strong);
   --theme-focus-ring: var(--rd-focus-ring);
@@ -89,6 +100,8 @@
   --rx-text-primary: var(--theme-text-primary);
   --rx-text-secondary: var(--theme-text-secondary);
   --rx-text-muted: var(--theme-text-muted);
+  --rx-text-on-brand: var(--theme-text-on-brand);
+  --rx-text-on-accent: var(--theme-text-on-accent);
   --rx-border-soft: var(--theme-border-soft);
   --rx-border-strong: var(--theme-border-strong);
   --rx-brand-primary: var(--theme-brand-primary);
@@ -127,6 +140,7 @@
   --rd-text-primary: #23313b;
   --rd-text-secondary: #5d6b75;
   --rd-text-muted: #7d8a92;
+  --rd-text-on-brand: #ffffff;
   --rd-text-on-accent: #ffffff;
   --rd-border-soft: rgba(84, 108, 122, 0.16);
   --rd-border-strong: rgba(84, 108, 122, 0.28);
@@ -194,6 +208,7 @@
   --rd-text-primary: #e6edf1;
   --rd-text-secondary: #b5c3cb;
   --rd-text-muted: #82939d;
+  --rd-text-on-brand: #0f171d;
   --rd-text-on-accent: #10171d;
   --rd-text-on-ink: #e6edf1;
   --theme-text-placeholder: #71838d;
@@ -260,6 +275,7 @@
   --rd-text-primary: #3d2932;
   --rd-text-secondary: #725661;
   --rd-text-muted: #987986;
+  --rd-text-on-brand: #ffffff;
   --rd-text-on-accent: #ffffff;
   --rd-border-soft: rgba(171, 104, 126, 0.18);
   --rd-border-strong: rgba(171, 104, 126, 0.32);

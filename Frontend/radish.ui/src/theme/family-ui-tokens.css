@@ -1,6 +1,6 @@
 /*
  * Radish 家族统一 UI 规范 —— CSS 参考实现
- * family-ui v26.7.2 (2026-07-12)
+ * family-ui v26.7.3 (2026-07-31)
  *
  * 真相源：docs/design/family-ui/02-color.md 等章节与 tokens/tokens.json。
  * 用法：
@@ -39,6 +39,7 @@
   --rd-text-primary: #2f2a25;
   --rd-text-secondary: #6a5c4f;
   --rd-text-muted: #8d7b6c;
+  --rd-text-on-brand: #fffdf8;
   --rd-text-on-accent: #fffdf8;
   --rd-text-on-ink: #f4efe6;
 
@@ -46,9 +47,9 @@
   --rd-border-strong: rgba(136, 99, 73, 0.30);
   --rd-focus-ring: rgba(67, 92, 116, 0.45);
 
-  --rd-brand-primary: #b24057;
-  --rd-brand-hover: #cd5076;
-  --rd-brand-soft: rgba(178, 64, 87, 0.12);
+  --rd-brand-primary: #5d6c57;
+  --rd-brand-hover: #6e736d;
+  --rd-brand-soft: rgba(120, 164, 150, 0.16);
   --rd-action-primary: #435c74;
   --rd-action-hover: #55738f;
   --rd-action-soft: rgba(67, 92, 116, 0.12);
@@ -123,7 +124,7 @@
   --rd-bg-muted: #f3eee5;
 }
 
-/* —— 暗色全表（墨底 / 印色提亮一档 / 纹样减弱 / 阴影转黑；随 v26.7.2 补全）—— */
+/* —— 暗色全表（墨底 / 印色提亮 / 纹样减弱 / 阴影转黑）—— */
 [data-rd-theme="dark"] {
   --rd-bg-app: #1a1713;
   --rd-bg-surface: #23201a;
@@ -134,6 +135,7 @@
   --rd-text-primary: #ede5d8;
   --rd-text-secondary: #b8ab9a;
   --rd-text-muted: #8d8172;
+  --rd-text-on-brand: #1a1713;
   --rd-text-on-accent: #fffdf8;
   --rd-text-on-ink: #ede5d8;
 
@@ -141,9 +143,9 @@
   --rd-border-strong: rgba(237, 229, 216, 0.26);
   --rd-focus-ring: rgba(127, 160, 189, 0.55);
 
-  --rd-brand-primary: #cd5076;
-  --rd-brand-hover: #da738a;
-  --rd-brand-soft: rgba(205, 80, 118, 0.20);
+  --rd-brand-primary: #8fb3a5;
+  --rd-brand-hover: #a7c4b9;
+  --rd-brand-soft: rgba(143, 179, 165, 0.20);
   --rd-action-primary: #7fa0bd;
   --rd-action-hover: #98b4cd;
   --rd-action-soft: rgba(127, 160, 189, 0.18);

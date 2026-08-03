@@ -1,6 +1,6 @@
 # 视觉颜色参考
 
-> 本页保留 Radish 配色来源、四主题锚点和项目评审参考。`2026-07-30` 起，家族 L0 / L1 颜色真相源遵循 RadishX `family-ui v26.7.2`；项目差异见 [Radish UI 差异附录](/frontend/ui-addendum)。
+> 本页保留 Radish 配色来源、四主题锚点和项目评审参考。`2026-08-03` 起，家族 L0 / L1 颜色真相源遵循 RadishX `family-ui v26.7.3`；上游灰玉默认值仅是参考实现，Radish 项目配色见 [Radish UI 差异附录](/frontend/ui-addendum)。
 >
 > 关联文档：
 >
@@ -100,13 +100,14 @@
 
 ### 3.2 品牌主色
 
-用于品牌强调、主按钮、激活态和当前焦点。
+用于产品身份、品牌 CTA 和小面积品牌焦点。常规界面主操作、链接和 Workbench 激活态使用独立的操作色语义。
 
 推荐来源：
 
 - 主品牌色：`#b24057`
 - 主品牌悬停：`#cd5076`
 - 主品牌柔化底：`#cd94b2`
+- Workbench 主操作：`#435c74`
 
 使用原则：
 
@@ -139,7 +140,7 @@
 
 - 成功：`#4f9c83`
 - 警告：`#b5826d`
-- 错误：`#b24057`
+- 错误：`#c3564d`
 - 信息：`#435c74`
 - 禁用：`#6e736d` 或对应模块低饱和浅色
 
@@ -154,9 +155,11 @@
 | `theme-bg-muted` | `#efe7db` | 次级分区底色 |
 | `theme-text-primary` | `#2f2a25` | 主文本 |
 | `theme-text-secondary` | `#6a5c4f` | 次级文本 |
+| `theme-text-on-brand` | `#fffdf8` | 胭脂品牌实底前景 |
 | `theme-border-soft` | `#d9cbb9` | 弱边框 |
-| `theme-brand-primary` | `#b24057` | 主按钮 / 激活态 |
+| `theme-brand-primary` | `#b24057` | 品牌识别 / Brand CTA |
 | `theme-brand-soft` | `#ecd3db` | 主品牌柔化背景 |
+| `theme-action-primary` | `#435c74` | Workbench 主操作 / 链接 / 激活态 |
 | `theme-accent-jade` | `#4f9c83` | 成功 / 辅助强调 |
 | `theme-accent-ink` | `#435c74` | 信息 / 导航强调 |
 | `theme-accent-earth` | `#886349` | 暖色辅助 / 标签 |
@@ -180,7 +183,7 @@
 ### 5.1 要做
 
 - 用浅底、深字、低饱和层次作为整体基础。
-- 用主品牌色控制焦点（如主按钮、右键菜单的伪印章微标），而不是控制整页背景。
+- 用品牌色表达身份、Brand CTA 和伪印章微标；常规主操作、链接和 Workbench 激活态使用操作色。
 - 用辅助色区分模块气质，但保持整体系统一致性。
 - 让纹样色比正文和边框更轻，始终退后一级（例如使用 `0.05~0.15` 透明度的 SVG `mask-image` 映射 `var(--theme-pattern-edge)`）。
 - 善用排版：大标题引入衬线字体（宋体 / `var(--theme-font-serif)`），正文维持无衬线黑体，增大 `line-height`，通过实体的间距制造“留白感”。

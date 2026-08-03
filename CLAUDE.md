@@ -328,7 +328,7 @@ Log.Information("User {UserId} logged in", userId);
 
 ### 前端视觉与主题规范
 
-- 家族通用视觉遵循 RadishX `docs/design/family-ui/` `v26.7.2`；Radish 产品差异、四主题与多端边界见 `Docs/frontend/ui-addendum.md`
+- 家族通用视觉遵循 RadishX `docs/design/family-ui/` `v26.7.3`；灰玉仅为上游参考默认值，Radish 产品配色、四主题与多端边界见 `Docs/frontend/ui-addendum.md`
 - 视觉口径以 `Docs/frontend/visual-theme-spec.md` 与 `Docs/frontend/visual-color-reference.md` 为准
 - Pencil 协作遵循 `Docs/frontend/pencil-representative-page-workflow.md`：先审计专题文档与当前代码，再按自动升级条件和六维评分裁决 R1 / R2 / R3
 - R1 / R2 维护必要代表画板，R3 明确继承来源后直接实现并通过真实 PC / mobile 截图复核；禁止为每条路由、主题、文案或等价状态复制完整画板

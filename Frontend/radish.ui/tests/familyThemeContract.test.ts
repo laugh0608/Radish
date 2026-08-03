@@ -13,12 +13,16 @@ test('family-ui token 副本应固定并声明接入版本', () => {
     readFileSync(resolve(testDirectory, '../src/theme/family-ui-tokens.json'), 'utf8'),
   ) as { meta?: { version?: string } };
 
-  assert.match(css, /family-ui v26\.7\.2/);
-  assert.equal(json.meta?.version, 'v26.7.2');
+  assert.match(css, /family-ui v26\.7\.3/);
+  assert.match(css, /--rd-text-on-brand:\s*#fffdf8/);
+  assert.match(css, /--rd-brand-primary:\s*#5d6c57/);
+  assert.equal(json.meta?.version, 'v26.7.3');
 });
 
 test('共享 Ant Design 亮色主题应使用 family-ui Workbench 状态语义', () => {
+  assert.equal(radishColors.brand, '#b24057');
   assert.equal(radishColors.primary, '#435c74');
+  assert.notEqual(radishColors.brand, radishColors.primary);
   assert.equal(antdTheme.token?.colorPrimary, '#435c74');
   assert.equal(antdTheme.token?.colorSuccess, '#4f9c83');
   assert.equal(antdTheme.token?.colorWarning, '#b5826d');

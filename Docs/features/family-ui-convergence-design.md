@@ -1,10 +1,10 @@
 # F4-R 家族 UI 统一接入与产品视觉重构
 
-> 日期：2026-07-30（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-03 更新（Asia/Shanghai）
 >
-> 状态：A / B、C-0 与 C-1A 代码事实审计已完成；C-1B 共享基座与代表画板待推进
+> 状态：A / B、v26.7.3 破坏性基线补充批、C-0 与 C-1A 代码事实审计已完成；C-1B 共享基座与代表画板待推进
 >
-> 上游规范：RadishX `docs/design/family-ui/` `v26.7.2`
+> 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
 > 项目差异：[Radish UI 差异附录](/frontend/ui-addendum)
 
@@ -31,7 +31,7 @@ Radish 已有成熟的功能、主题和页面族基础，但视觉契约存在�
 - Console 使用独立 `--console-*`，部分状态仍来自 Ant Design 默认值；
 - `@radish/ui` 默认主题仍保留早期橙色与通用红黄绿蓝，宿主覆盖不完整。
 
-family-ui 与 Radish 现有纸币色板高度同源，适合成为通用语义层。但上游接入表早于 Radish 最近两周的主题和页面实现，不能直接把其中的现状描述当作代码真相。迁移必须以当前仓库代码与 `Docs/` 为依据。
+family-ui 与 Radish 现有纸币色板高度同源，适合成为通用语义层。`v26.7.3` 起上游只提供通用语义、参考 token 和视觉参考，不再维护具体项目配色、接入状态或迁移计划；Radish 的主题身份、页面事实和升级节奏必须由当前仓库代码与 `Docs/` 自主维护。
 
 ## 2. 产品决策
 
@@ -119,6 +119,17 @@ Radish 页面族 / 功能专题：路由、流程、状态、权限与布局
 - Success、Warning、Danger、Info、Neutral 使用 family-ui 状态语义。
 - 所有状态必须至少通过图标 / 文字 / 颜色中的两个通道表达。
 - Ant Design 的 `colorSuccess / colorWarning / colorError / colorInfo` 必须由同一主题定义提供，不再依赖共享默认的荧光状态色。
+
+### 6.4 v26.7.3 破坏性基线复核
+
+`2026-08-03` 已完成上游 `v26.7.3` 破坏性更新复核：
+
+- family-ui CSS / JSON 副本保持与上游逐字一致，通用参考默认品牌由胭脂改为灰玉，并新增亮暗两套 `text-on-brand`；
+- 灰玉默认值不构成 Radish 产品决策，Client 项目主题层显式保留 `guofeng` 胭脂品牌，并为四主题固定品牌实底前景；
+- 27 张参考图仅从原素材目录迁入 family-ui `reference-ui/`，Git blob 全部 `R100` 相同，既有页面族吸收 / 排除映射继续有效；
+- 新版进一步明确品牌色、操作色和状态色分工。代码事实显示现有 Client 仍有 `92` 个样式文件消费 `--theme-brand-primary`，尚无页面消费 `--theme-action-primary`；该事实进入 `R1-F01` 语义裁决，不在基线补充批机械全仓替换。
+
+本补充批只建立可追溯基线和兼容层，不提前改变页面视觉；品牌 CTA、常规主操作、激活态与相应前景色由 C-1B 代表设计确认后按页面族治理。
 
 ## 7. 主题运行时
 
@@ -226,12 +237,13 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 - 统一 `@radish/ui` / Ant Design 状态语义。
 - 接入 Console Workbench L2。
 - 补主题定义与映射测试。
+- `2026-08-03` 完成 v26.7.3 破坏性基线补充批：同步上游副本、新增 `text-on-brand`、显式保留 Radish 四主题品牌前景与 `guofeng` 胭脂身份。
 
 退出条件：不改变业务行为，Client、Console、`@radish/ui` 构建与定向测试通过。
 
 ### F4-R-C：Pencil 与共享组件视觉收敛
 
-- C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射。
+- C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射；v26.7.3 仅迁址且图片 blob 不变，映射继续有效，设计时仍须按新版“观察、拆解、提炼、转译”边界复核相关参考。
 - C-1A 已完成当前代码与页面类型审计，确认 `7` 个 R1、`4` 个 R2 及 R3 继承表。
 - C-1B 按共享基座、Public、Author、Private、Console 顺序复核和更新代表设计。
 - 更新共享基座和命中的 R1 / R2 代表画板，不为 R3 派生页面创建重复画板。
@@ -280,6 +292,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 | --- | --- |
 | 一次性修改数千处 Token 引用 | 使用 L2 兼容层，按页面族迁移 |
 | family-ui 接入破坏四主题权益 | 保留 `data-theme` 和服务端契约，只增加语义映射 |
+| 上游参考默认色被误当成 Radish 品牌决策 | 上游副本原样保留，四主题在项目层显式覆盖品牌与品牌前景 |
 | Public 被改成营销页 | 内容首屏和现有信息架构列入停止线 |
 | Console 与 Client 再次分叉 | 状态语义和 Ant Design 配置从共享层治理 |
 | Flutter 机械复制 Web | 共享语义，布局和组件保持原生自治 |
@@ -292,7 +305,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 F4-R 只有同时满足以下条件才关闭：
 
 1. Radish 已固定并记录遵循的 family-ui 版本。
-2. 四主题、Console 和共享 UI 使用一致的 L1 语义。
+2. 四主题、Console 和共享 UI 使用一致的 L1 语义，并区分 `text-on-brand` 与 `text-on-accent`。
 3. 新共享样式不再新增无归属硬编码颜色。
 4. Public、Private / Author、Console 的代表类型完成必要 Pencil 与代码收敛，派生页继承关系和真实截图复核可追溯。
 5. Flutter 建立可维护的语义映射，不要求 Web 像素复制。

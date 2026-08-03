@@ -84,8 +84,21 @@ test('family-ui token 副本与 Client L2 应保持可追溯关系', () => {
   );
   const clientTokens = readFileSync(resolve(clientRoot, 'src/theme/theme-tokens.css'), 'utf8');
 
-  assert.match(familyTokens, /family-ui v26\.7\.2/);
+  assert.match(familyTokens, /family-ui v26\.7\.3/);
+  assert.match(familyTokens, /--rd-text-on-brand:\s*#fffdf8/);
+  assert.match(familyTokens, /--rd-brand-primary:\s*#5d6c57/);
   assert.match(familyTokens, /--rd-state-warning:\s*#b5826d/);
   assert.match(clientTokens, /--theme-bg-app:\s*var\(--rd-bg-app\)/);
+  assert.match(clientTokens, /--theme-text-on-brand:\s*var\(--rd-text-on-brand\)/);
+  assert.match(clientTokens, /--theme-text-on-accent:\s*var\(--rd-text-on-accent\)/);
+  assert.match(clientTokens, /--theme-text-inverse:\s*var\(--theme-text-on-accent\)/);
   assert.match(clientTokens, /--theme-state-danger:\s*var\(--rd-state-danger\)/);
+  assert.match(
+    clientTokens,
+    /:root,\s*:root\[data-theme='guofeng'\]\s*\{[\s\S]*?--rd-text-on-brand:\s*#fffdf8;[\s\S]*?--rd-brand-primary:\s*#b24057;/,
+  );
+  assert.match(
+    clientTokens,
+    /:root\[data-theme='theme-dark-night'\]\s*\{[\s\S]*?--rd-text-on-brand:\s*#0f171d;/,
+  );
 });
