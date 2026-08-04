@@ -59,7 +59,7 @@
 - `/workbench` 当前作为正式 Web “更多”功能地图与社区活动中心，除公开浏览、登录态私域、后台治理和历史桌面四组功能地图外，还会汇总通知行动、聊天未读 / 提及 / 草稿、论坛草稿、订单 / Docs / 宠物等继续处理项；公共头部“更多”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - `/legal` 当前作为公开用户承诺入口，承载社区内容规范、隐私边界、账号安全、通知、虚拟商品和退款 / 不退款边界；`/legal` 与登录态 `/me` 复用同一套隐私与安全边界组件，帮助用户区分公开、本人私域、仅 Console 和不可公开数据。
 - 正式 Web 当前已形成共享头部视觉和动作基线：PC 主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`；移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`。`/me`、`/circle`、`/pet` 归属“我的”，`/messages` 归属“聊天”，Docs、商城、榜单、规则、Console、订单 / 背包、作者态和 `/desktop` 兼容入口由“更多”进入 `/workbench` 承接；共享头部和移动底栏由 `components/web-shell/WebShellHeader` 承接，页面状态槽由 `WebStateSlot` 承接
-- `2026-08-03` 起唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`：已建立索引、可复用组件和 `R1-F01`，后续 Public、Private / Author、Console 的 R1 / R2 也在同一文件维护；普通迭代继续更新 `v1`，只有不兼容的结构性升级才新建下一主版本
+- `2026-08-03` 起唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`；`2026-08-04` 已确认 `R1-P01 / 社区发现 / PC 1440` 并清理旧 PC / mobile 与全部失败研究，当前文件只保留该 PC、`8` 个必要组件母版和主题变量。后续 R1 / R2 继续在同一文件维护，普通迭代更新 `v1`，只有不兼容升级才新建下一主版本
 - `P3-12-D2 / D3 / D4 / D7` 历史批次曾分别扩展 `public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `web-ui-foundation.pen`；这些文件及 `console-governance-workbench.pen` 现均只读留档，不再跨文件同步，功能口径继续见对应页面族说明
 - `2026-07-30` 起采用[代表页驱动 Pencil 协作](/frontend/pencil-representative-page-workflow)，只维护共享基座、R1 / R2 代表结构和关键状态，不按路由、主题、文案或功能点扩张完整页面镜像
 - `P3-12-D8` 已将共享 Web shell 首批落入 `radish.client` 代码：`Frontend/radish.client/src/components/web-shell/` 提供 `WebShellHeader`、`WebStateSlot` 和对应类型，公开 / 私域页面优先复用该目录，不再各自维护分叉 header、状态卡、移动 tab 或内容宽度硬编码
