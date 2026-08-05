@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-P01 已完成设计、实现与 Gateway PC / mobile 运行态闭环；当前进入 R1-P02 / Public 详情与互动的代码事实和设计边界审计`
-- **产品下一顺位**：`先核对 /forum/post/:id 等 Public 详情与互动的当前功能、状态、权限和专题文档，再裁决 R1-P02 必要 PC / mobile 代表设计；不把 R1-P01 的内容流结构机械复制到详情页`
+- **工程第一顺位**：`F4-R C-1B 的 R1-P02 / Public 详情与互动已完成代码事实、功能边界和代表设计范围审计`
+- **产品下一顺位**：`确认连续文章阅读面、统一帖子操作带、条件回答区、紧凑轻回应 / 评论流和线程索引方向，再进入 R1-P02 低保真 PC 构图比较`
 - **复核日期**：`2026-08-05`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-05` 已完成 [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)：现有 API、权限与写入边界保持不变；代表设计固定为普通帖子登录读者的 PC 1440 / Mobile 390 完整画板，加问答、身份回流和既有浮层关键状态。当前结构债集中在参与入口重复、解释型侧栏、卡片套卡片、mobile 辅助区长尾，以及 `PublicForumDetail.tsx` 达 `2292` 行；Pencil 方向确认前不进入代码。
 - `2026-08-05` [R1-P01 公开发现成组实现与运行态验收](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)已关闭：migration 与 host runtime 通过；Gateway 匿名 / 种子管理员登录回流、PC `1440 × 1000`、mobile `390 × 844`、`zh / en`、`default / guofeng`、真实链接和 Console 治理只读路径通过，页面无横向溢出。
 - `2026-08-05` 运行态修正统一 JSON `long` 字符串契约与前端 `number` 假设不一致的根因；公开计数现使用字符串 wire contract、`BigInt` locale 格式化和独立复数判别量，不再回显 i18n 资源键。
 - `2026-08-05` 已完成并确认 [R1-P01 mobile 与统一公开读模型设计](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)：`390px` 代表页将搜索和真实内容前置，把参与动作放入精选讨论，并把社区脉搏、贡献者上下文与知识主题分别嵌入首屏、中段和流后；首轮反馈后，混合流已从异色列表拼接重构为焦点事件、连续编号轨道和嵌入式贡献者节点。画板无裁切、溢出或失效图标，`2x` 视觉自检通过，用户已确认。
@@ -50,7 +51,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-05，R1-P01 设计、实现与运行态收口）
+## 今日进展（2026-08-05，R1-P01 闭环与 R1-P02 审计）
 
 1. 在已确认 PC 基准上完成并确认 `R1-P01 / 社区发现 / Mobile 390`，首轮反馈后把异色列表拼接收敛为焦点事件、连续编号轨道和嵌入式贡献者节点。
 2. 新增 Channel 匿名摘要字段、默认 Hidden migration、版本化写入、append-only 审计、Console 页面与独立 `view / manage` 权限；不把 Public 频道自动开放。
@@ -59,17 +60,20 @@
 5. 后端构建 `0` warning；专题测试 `57` 通过、`6` 个 PostgreSQL 条件用例显式跳过；Client `489`、Console `61` 项全量测试及两端 production build 通过。
 6. 应用本批 migration 并启动完整宿主，通过 host runtime、Gateway 匿名 / 登录态、PC / mobile、双语、代表主题、真实链接和 Console 治理只读路径复核；没有提交频道公开状态变更。
 7. 运行态发现并修正 `long` 字符串 wire contract 与前端计数类型不一致的根因，补齐定向测试、全量 Client 测试和 production build 后关闭 `R1-P01`。
+8. 完成 `R1-P02` 路由、权限、状态、专题和 PC / mobile 结构审计；固定连续阅读—讨论主轴、唯一帖子操作带、条件回答区和非重复线程索引，并明确视觉实现前拆分超限详情容器。
 
 ## 当前下一步
 
-1. 按 `R1-P02 / Public 详情与互动` 读取当前代码与专题文档，核对 `/forum/post/:id` 的详情、评论、问答、轻回应、登录回流、权限和状态边界。
-2. 对照 C-1A 六维评分与当前实现，确认需要保留的 PC / mobile 代表结构和关键状态；若专题边界缺失或过期，先补设计文档再改代码。
-3. 在用户确认代表设计后成组实现与验证，不提前扩入 R3 页面，也不机械沿用 R1-P01 的混合内容轨道。
+1. 用户确认 `R1-P02` 的连续阅读面、统一帖子操作带、条件回答区、紧凑轻回应 / 评论流和线程索引方向。
+2. 获确认后在唯一活动设计源建立 `2～3` 个低保真 PC 构图，比较正文宽度、操作带和线程索引关系；方向获选后只保留唯一 PC / mobile 正式画板与必要关键状态。
+3. 代表设计通过后再拆分 `PublicForumDetail.tsx` 并成组实现；不提前扩入 R3 页面，也不机械沿用 R1-P01 的混合内容轨道。
 4. 全局灰玉品牌 token 仍进入共享主题批单独治理，不随单个详情页顺手扩散。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)
+- [公开 forum 应用结构](/features/forum-public-app)
 - [R1-P01 公开发现成组实现](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)
 - [R1-P01 mobile 与统一公开读模型设计](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)
 - [社区发现 Public App](/features/discover-public-app)

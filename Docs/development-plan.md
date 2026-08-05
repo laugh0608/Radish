@@ -8,10 +8,10 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R 家族 UI 统一接入与产品视觉重构；R1-P01 PC 已确认为 Public 内容流视觉基准`
-- **产品下一顺位**：`独立设计 R1-P01 mobile，并收口混合公共信息流读模型；共同确认后再进入 /discover 与灰玉运行时实现`
+- **工程第一顺位**：`F4-R 家族 UI 统一接入与产品视觉重构；R1-P01 已关闭，R1-P02 代码事实与设计边界审计已完成`
+- **产品下一顺位**：`确认 R1-P02 的连续阅读面、统一帖子操作带、条件回答区和线程索引方向，再进入低保真 PC 构图比较`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
-- **复核日期**：`2026-08-04`
+- **复核日期**：`2026-08-05`
 - **当前结论**：
   - 第二开发阶段完成公开 Web、Flutter Android MVP、Tauri + WebOS 验证与多端裁决；2026-07-30 起当前投入顺位调整为 Web 优先、Flutter 次级，Tauri 暂时弃用并等待未来重新评估。
   - 第三阶段 P3-1 至 P3-11 已完成公开增长基础、PublicId 试点、复访链路、Web-first 信息架构、身份语义、写操作可靠性和发布候选路径验收。
@@ -42,7 +42,7 @@
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
   - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
-  - F4-R 已完成 A / B、C-0、C-1A 与 family-ui `v26.7.3` 破坏性基线补充批，并在 C-1B 建立唯一活动设计源 `radish-web-family-ui-v1.pen`、完成 `R1-F01`；`R1-P01 / 社区发现 / PC 1440` 已确认并成为 Public 内容流视觉基准，当前下一顺位为 mobile 独立重排和混合公共信息流读模型，二者收口前不进入页面实现或 `R1-P02`。F4-S 公开排行榜治理已穿插完成并关闭。
+  - F4-R 已完成 A / B、C-0、C-1A 与 family-ui `v26.7.3` 破坏性基线补充批，并在 C-1B 建立唯一活动设计源 `radish-web-family-ui-v1.pen`、完成 `R1-F01`；`R1-P01 / 社区发现` 的 PC / mobile、统一公开读模型、代码实现与 Gateway 运行态复核已关闭。`R1-P02 / Public 详情与互动` 已完成代码事实与设计边界审计，当前等待用户确认代表结构后进入 Pencil。F4-S 公开排行榜治理已穿插完成并关闭。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -62,7 +62,7 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q 与 F4-S 均已关闭，F4-R 已完成 A / B、v26.7.3 基线补充批、C-0、C-1A 和 C-1B `R1-F01`；`R1-P01` PC 已确认，下一步完成 mobile 独立重排和混合公共信息流读模型。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q 与 F4-S 均已关闭，F4-R 已完成 A / B、v26.7.3 基线补充批、C-0、C-1A、`R1-F01` 和 `R1-P01` 完整闭环；`R1-P02` 审计已完成，下一步确认代表结构并进入低保真 PC 构图。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
 - 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线继续推进 F4-R C-1B 的 R1 / R2 代表设计与继承实现。
 - Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级移动原生产品线按明确移动价值推进，不与 Web 优先主线并行复制功能。
@@ -133,7 +133,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A 批规范、Profile、四主题和多端边界、B 批 Token / 共享主题基座、family-ui `v26.7.3` 破坏性基线补充批、C-0 参考素材审计与 [C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已完成；C-1B 已建立单一版本化设计源并完成 `R1-F01`，`R1-P01 / 社区发现 / PC 1440` 已确认并清理废稿，当前先完成 mobile 与统一公开读模型，再进入灰玉共享主题和 `/discover` 实现。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A 批规范、Profile、四主题和多端边界、B 批 Token / 共享主题基座、family-ui `v26.7.3` 破坏性基线补充批、C-0 参考素材审计与 [C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已完成；C-1B 已建立单一版本化设计源并完成 `R1-F01`，`R1-P01 / 社区发现` 已完成 PC / mobile、统一公开读模型、实现与运行态闭环。[R1-P02 代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)已完成，当前等待代表结构确认后进入 Pencil。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层

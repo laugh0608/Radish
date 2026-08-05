@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-05 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01` PC / mobile、代码实现与运行态复核已完成，当前进入 `R1-P02`
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01` 已关闭，`R1-P02` 代码事实与设计边界审计已完成，等待代表设计方向确认
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -67,7 +67,7 @@ C-1A 最终裁决为：
 | --- | --- | --- | --- | --- | --- |
 | `R1-F01` | 共享组件、状态、主题与壳层矩阵 | `2/2/2/2/2/1` | `11` | 改变跨 Public、Private / Author、Console 复用契约 | `radish-web-family-ui-v1.pen`（已完成） |
 | `R1-P01` | Public 内容流；锚点 `/discover` | `2/2/1/2/2/1` | `10` | 建立家族化内容流和 Public 响应式语法 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
-| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen` |
+| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（代码事实与设计边界审计已完成；待 Pencil） |
 | `R1-A01` | Author 编辑 / 发布；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen` |
 | `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen` |
 | `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen` |
@@ -76,6 +76,8 @@ C-1A 最终裁决为：
 R1 只在唯一活动设计源中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
 
 `R1-P01` 的稳定代码事实现为：`/discover` 只消费统一 `PublicDiscoverFeedVo`，由服务端按 snapshot cutoff 与稳定 keyset 游标合并 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`；Channel 摘要必须经 Console 显式 opt-in，页面不再自行拼装帖子、热门标签、Wiki 或商品列表。分类、`#标签` 与结构化状态仍由 Forum 列表 / 详情分层表达，不挤入紧凑混合轨道。`2026-08-04`—`08-05` 已完成公开能力审计、PC / mobile 视觉确认、代码实现与 Gateway 阶段性运行态复核，最终结构以国风暖白表面、无衬线层级、克制圆角阴影、灰玉品牌语义、墨蓝操作语义和内嵌数据反馈建立现代自然紧凑气质；活动设计源只保留正式 PC / mobile 和必要母版。匿名 / 登录回流、双语、代表主题、Console 治理只读路径与横向溢出检查均通过，运行态发现的 Int64 wire contract 偏差已在统一 HTTP 契约层修正。详见[结构研究记录](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)、[设计记录](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)与[实现记录](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)。全局品牌 token 尚未机械替换，继续由共享主题批治理。
+
+`R1-P02` 已于 `2026-08-05` 完成[代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)。当前 `/forum/post/:id` 已包含正文、受控 intent、收藏、Post / Comment 赞赏、问答回答生命周期、轻回应、根评论、作者版本与举报，但页面同时存在重复参与入口、解释型侧栏、卡片套卡片和 mobile 辅助区长尾；`PublicForumDetail.tsx` 为 `2292` 行，超过项目硬上限。代表设计固定为普通帖子登录读者的 PC 1440 / Mobile 390 完整画板，加问答、身份回流和既有浮层的关键状态区；目标结构采用连续文章阅读面、统一帖子操作带、条件回答区、紧凑轻回应和连续评论流。现有 API、权限和写入边界保持不变，Pencil 方向确认前不进入代码。
 
 ## 5. R2 局部设计类型
 
@@ -117,5 +119,6 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 2. 参考 `13 / 16 / 18 / 27` 的结构转译，以及帖子之外公开实体、API、路由、权限与失败边界审计已经完成。
 3. `R1-P01` 的统一公开读模型、Channel opt-in 治理、`@radish/http`、页面结构、双语资源和静态测试已经成组实现，代码侧构建与定向回归通过。
 4. `R1-P01` 阶段性 PC / mobile 真实截图与交互复核已通过并关闭；未暴露需要回写 Pencil 的共享结构偏差。
-5. 当前设计轨按 `R1-P02 → R1-A01 → R1-W01 → R1-C01 → R1-C02` 更新或复核代表画板；R2 只补必要差异，不扩为路由镜像。
-6. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现；代表页代码落地并完成截图复核后，以复核结果驱动 R3 成组实现。
+5. `R1-P02` 已完成代码事实与设计边界审计；用户确认连续阅读面、统一帖子操作带和线程索引方向后，再在活动设计源比较 `2～3` 个低保真 PC 构图，并收敛为唯一 PC / mobile 正式画板。
+6. 后续设计轨继续按 `R1-A01 → R1-W01 → R1-C01 → R1-C02` 更新或复核代表画板；R2 只补必要差异，不扩为路由镜像。
+7. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现；代表页代码落地并完成截图复核后，以复核结果驱动 R3 成组实现。
