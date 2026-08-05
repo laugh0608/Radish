@@ -199,6 +199,7 @@ test('公开社区发现页应为跨入口导航提供公开链接并保留壳�
 
 test('公开社区发现页应由统一读模型驱动单一连续内容流', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
+  const contractSource = readFileSync(resolve(clientRoot, '../radish.http/src/public-discover-contract.ts'), 'utf8');
 
   assert.match(source, /getPublicDiscoverFeed\(\{ pageSize: DISCOVER_PAGE_SIZE \}\)/);
   assert.match(source, /cursor: feed\.voNextCursor/);
@@ -207,6 +208,10 @@ test('公开社区发现页应由统一读模型驱动单一连续内容流', ()
   assert.match(source, /items\.map\(\(item, index\) =>/);
   assert.match(source, /index === 2 && renderContributorStrip\(styles\.mobileContributorNode\)/);
   assert.match(source, /feed\?\.voHasMore/);
+  assert.match(contractSource, /voValue: string;/);
+  assert.match(contractSource, /voDiscoverableChannelCount: string;/);
+  assert.match(source, /format\(BigInt\(normalized\)\)/);
+  assert.match(source, /count: getPublicDiscoverPluralCount\(metricValue\)/);
   assert.doesNotMatch(source, /getPostList|getPublicWikiList|getProducts|<PostCard/);
   assert.doesNotMatch(source, /docs\.map|products\.map|featuredLeaderboardConfigs\.map/);
   assert.doesNotMatch(source, /sectionRefs|scrollToSection|previewSection|rememberSection/);

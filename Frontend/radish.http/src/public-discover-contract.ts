@@ -45,7 +45,7 @@ export interface PublicDiscoverTargetVo {
 
 export interface PublicDiscoverMetricVo {
   voKind: PublicDiscoverMetricKind;
-  voValue: number;
+  voValue: string;
 }
 
 export interface PublicDiscoverItemVo {
@@ -62,9 +62,9 @@ export interface PublicDiscoverItemVo {
 export interface PublicDiscoverPulseVo {
   voWindowStartedAtUtc: string;
   voWindowEndedAtUtc: string;
-  voDiscoverableChannelCount: number;
-  voEligibleItemCount: number;
-  voKnowledgeContributionCount: number;
+  voDiscoverableChannelCount: string;
+  voEligibleItemCount: string;
+  voKnowledgeContributionCount: string;
 }
 
 export interface PublicDiscoverFeedVo {

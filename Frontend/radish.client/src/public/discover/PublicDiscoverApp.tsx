@@ -17,7 +17,11 @@ import {
   type PublicDiscoverItemKind,
   type PublicDiscoverItemVo,
 } from '@radish/http';
-import { formatLocalizedNumber, formatLocalizedRelativeTime } from '@radish/ui';
+import {
+  formatLocalizedNumber,
+  formatLocalizedRelativeTime,
+  resolveIntlLocale,
+} from '@radish/ui';
 import { Icon } from '@radish/ui/icon';
 import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
@@ -174,6 +178,22 @@ function getMetricLabelKey(item: PublicDiscoverItemVo): string | null {
     default:
       return null;
   }
+}
+
+function formatPublicDiscoverCount(
+  value: string,
+  language: string | null | undefined,
+): string {
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) {
+    return value;
+  }
+
+  return new Intl.NumberFormat(resolveIntlLocale(language)).format(BigInt(normalized));
+}
+
+function getPublicDiscoverPluralCount(value: string): number {
+  return value.trim() === '1' ? 1 : 2;
 }
 
 function getContributorInitial(displayName: string): string {
@@ -427,14 +447,15 @@ export const PublicDiscoverApp = ({
 
   const renderItemMeta = (item: PublicDiscoverItemVo, isFocus = false) => {
     const metricKey = getMetricLabelKey(item);
+    const metricValue = item.voPrimaryMetric?.voValue;
     return (
       <div className={isFocus ? styles.focusMetaLine : styles.itemMetaLine}>
         {item.voActor && <span>{item.voActor.voDisplayName}</span>}
-        {metricKey && item.voPrimaryMetric && (
+        {metricKey && metricValue !== undefined && (
           <span>
             {t(metricKey, {
-              count: item.voPrimaryMetric.voValue,
-              formattedCount: formatLocalizedNumber(item.voPrimaryMetric.voValue, i18n.language),
+              count: getPublicDiscoverPluralCount(metricValue),
+              formattedCount: formatPublicDiscoverCount(metricValue, i18n.language),
             })}
           </span>
         )}
@@ -661,15 +682,15 @@ export const PublicDiscoverApp = ({
                 </div>
                 <div className={styles.pulseMetrics}>
                   <div>
-                    <strong>{formatLocalizedNumber(feed.voPulse.voDiscoverableChannelCount, i18n.language)}</strong>
+                    <strong>{formatPublicDiscoverCount(feed.voPulse.voDiscoverableChannelCount, i18n.language)}</strong>
                     <span>{t('discover.public.pulseChannels')}</span>
                   </div>
                   <div>
-                    <strong>{formatLocalizedNumber(feed.voPulse.voEligibleItemCount, i18n.language)}</strong>
+                    <strong>{formatPublicDiscoverCount(feed.voPulse.voEligibleItemCount, i18n.language)}</strong>
                     <span>{t('discover.public.pulseItems')}</span>
                   </div>
                   <div>
-                    <strong>{formatLocalizedNumber(feed.voPulse.voKnowledgeContributionCount, i18n.language)}</strong>
+                    <strong>{formatPublicDiscoverCount(feed.voPulse.voKnowledgeContributionCount, i18n.language)}</strong>
                     <span>{t('discover.public.pulseKnowledge')}</span>
                   </div>
                 </div>
