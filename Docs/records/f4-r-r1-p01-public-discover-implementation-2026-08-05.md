@@ -2,7 +2,7 @@
 
 > 日期：2026-08-05（Asia/Shanghai）
 >
-> 状态：代码侧实现与分层验证通过；阶段性 Gateway PC / mobile 运行态验收待当前任务明确授权启动服务
+> 状态：代码侧实现、分层验证与 Gateway PC / mobile 阶段性运行态验收通过；`R1-P01` 已关闭
 >
 > 范围：Channel 匿名摘要治理、统一公开读模型、Console 管理、`@radish/http`、`/discover` PC / mobile 与对应文档测试
 
@@ -50,11 +50,22 @@
 
 PostgreSQL migration 用例没有伪装为已实跑；SQLite migration、仓储资格、精确租户、原子事件、幂等、版本冲突、稳定游标、纯文本映射与整流失败边界均有定向覆盖。
 
-## 5. 未执行与下一步
+## 5. 运行态验收
 
-本批未启动 API、Gateway、Auth、Client 或 Console，因此没有执行 Gateway 页面访问、真实匿名 / 登录态请求、PC / mobile 浏览器截图或 `check:host-runtime`。下一步应在取得当前任务启动授权后：
+当前任务取得启动授权后，通过 `./start.sh` 启动 API、Gateway、Auth、Client 与 Console，并完成以下阶段性验收：
 
-1. 运行 migration 并复核默认 Hidden、Console 开关、冲突和历史事件；
-2. 覆盖匿名与登录态 `/discover`、频道登录回流、Docs / Forum / profile 真实链接；
-3. 覆盖 PC / mobile、`zh / en`、`default / guofeng` 代表矩阵和加载 / 空态 / 失败态；
-4. 按真实截图修正共享结构偏差，确认无横向溢出后关闭 `R1-P01`，再进入 `R1-P02`。
+| 验证 | 结果 |
+| --- | --- |
+| `Radish.DbMigrate apply` 与 migration doctor | `chat.20260805_018_chat_channel_discoverability` 已应用；既有公共频道保持默认 `Hidden` |
+| `npm run check:host-runtime -- --details` | Gateway、API、Auth 均返回 `200` |
+| Gateway `/discover` 匿名 / 种子管理员登录回流 | 通过；登录后返回 `/discover` 并显示当前账号，feed 仍保持同一公开边界 |
+| Public feed 响应与失败关闭 | migration 前真实返回 `503` 且页面进入错误态；migration 后返回 `200` 与 `Cache-Control: no-store` |
+| PC / mobile 代表视图 | `1440 × 1000` 与 `390 × 844` 通过；正文和 Console 均无页面级横向溢出 |
+| locale / theme | `zh / en`、`default / guofeng` 通过 |
+| 公开交互 | Forum / Docs / profile 真实链接、来源返回与复制链接反馈通过 |
+| Console 登录与治理只读路径 | OIDC 登录、`view / manage` 资格、2 个默认 Hidden 频道、显式查询、历史抽屉、PC / mobile 导航通过 |
+| Console 写入前置门禁 | 未填写原因时确认按钮禁用；本次浏览器复核未提交频道状态变更，版本冲突、幂等、事件与实际写入继续由后端定向测试覆盖 |
+
+运行态发现后端 `long` 按统一 JSON 规则输出为字符串，而前端公开契约误写为 `number`，导致 i18n 复数选择收到字符串并回显资源键。现已把计数契约改为字符串，在显示层使用 `BigInt` 做 locale 格式化并仅传数值复数判别量；修复后 `@radish/http`、Client 定向与全量测试、type-check、lint 和 production build 均通过。
+
+当前机器仍未配置 PostgreSQL 集成测试环境，相关条件用例保持显式跳过；浏览器能力未提供 DPR 覆盖，PC 实际上限为 `1440 × 1000`，与本代表页 `PC 1440` 基准一致。上述限制不阻断 `R1-P01` 关闭，下一顺位进入 `R1-P02 / Public 详情与互动` 的代码事实与设计边界审计。

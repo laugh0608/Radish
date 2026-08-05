@@ -6,18 +6,20 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-P01 PC / mobile、Channel 摘要治理、统一公开读模型与 /discover 已完成代码侧闭环；当前准备阶段性 Gateway PC / mobile 运行态验收`
-- **产品下一顺位**：`取得当前任务启动授权后，成组复核 migration、Console 治理、匿名 / 登录态 feed、双语、代表主题和真实截图；收口偏差后关闭 R1-P01，再进入 R1-P02`
+- **工程第一顺位**：`F4-R C-1B 的 R1-P01 已完成设计、实现与 Gateway PC / mobile 运行态闭环；当前进入 R1-P02 / Public 详情与互动的代码事实和设计边界审计`
+- **产品下一顺位**：`先核对 /forum/post/:id 等 Public 详情与互动的当前功能、状态、权限和专题文档，再裁决 R1-P02 必要 PC / mobile 代表设计；不把 R1-P01 的内容流结构机械复制到详情页`
 - **复核日期**：`2026-08-05`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-05` [R1-P01 公开发现成组实现与运行态验收](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)已关闭：migration 与 host runtime 通过；Gateway 匿名 / 种子管理员登录回流、PC `1440 × 1000`、mobile `390 × 844`、`zh / en`、`default / guofeng`、真实链接和 Console 治理只读路径通过，页面无横向溢出。
+- `2026-08-05` 运行态修正统一 JSON `long` 字符串契约与前端 `number` 假设不一致的根因；公开计数现使用字符串 wire contract、`BigInt` locale 格式化和独立复数判别量，不再回显 i18n 资源键。
 - `2026-08-05` 已完成并确认 [R1-P01 mobile 与统一公开读模型设计](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)：`390px` 代表页将搜索和真实内容前置，把参与动作放入精选讨论，并把社区脉搏、贡献者上下文与知识主题分别嵌入首屏、中段和流后；首轮反馈后，混合流已从异色列表拼接重构为焦点事件、连续编号轨道和嵌入式贡献者节点。画板无裁切、溢出或失效图标，`2x` 视觉自检通过，用户已确认。
 - `2026-08-05` 已完成 [R1-P01 公开发现成组实现](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)：Channel 默认 Hidden、migration、版本化 opt-in、append-only 审计、Console `view / manage` 权限和精确租户治理形成闭环；既有 Public 频道不会自动进入匿名流。
 - `2026-08-05` “社区正在发生”已落地为统一只读投影：公开 Wiki 首次发布、当前跨帖神评、帖子、问答与显式开放的频道摘要由服务端按 snapshot cutoff 和稳定 keyset 游标合并，响应 `no-store` 且整流失败关闭；`@radish/http` 与 `/discover` 只消费该投影，不再拼接旧列表接口。
-- `2026-08-05` `/discover` 已按获批设计实现首条焦点事件、连续编号轨道、嵌入式贡献者、社区脉搏和 PC 非对称洞察区；Client 全量 `489`、Console 全量 `61`、后端专题 `57` 项测试通过，前后端 production build 通过。当前未启动服务，PostgreSQL 条件用例和 Gateway 真实截图没有伪装为已完成。
+- `2026-08-05` `/discover` 已按获批设计实现首条焦点事件、连续编号轨道、嵌入式贡献者、社区脉搏和 PC 非对称洞察区；Client 全量 `489`、Console 全量 `61`、后端专题 `57` 项测试及前后端 production build 通过。PostgreSQL 条件用例仍因本机未配置而显式跳过，不把 SQLite migration 与 Gateway 运行态表述为 PostgreSQL 实跑。
 - `2026-08-04` 已完成 [R1-P01 公开社区发现结构研究](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)，并确认 `R1-P01 / 社区发现 / PC 1440` 为首个正式 Public 内容流视觉基准：采用现代自然紧凑表面、非对称主次、连续扫描行、Geist 无衬线、`10–16px` 克制圆角、极轻阴影和内嵌数据反馈；灰玉 `#5d6c57`、墨蓝 `#435c74` 与国风暖白 `#f4efe6 / #fbf7f0` 形成 Radish 家族色。
 - `2026-08-04` 已按最终裁决清理活动设计源：旧“社区脉搏”PC / mobile、全部参考试验与失败稿均已删除；当前活动源保留已确认的 `1440 × 900` PC、`390px` mobile、`8` 个必要组件母版和主题变量，失败稿继续只由 Git 追溯。
 - `2026-08-03` 已创建唯一活动设计源 `radish-web-family-ui-v1.pen`：文件名以主版本管理，普通迭代继续更新 `v1` 并由 Git 留存；原四个大型 `.pen` 不删除、不改名，统一转为只读留档。
@@ -48,21 +50,22 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-05，R1-P01 设计与代码侧收口）
+## 今日进展（2026-08-05，R1-P01 设计、实现与运行态收口）
 
 1. 在已确认 PC 基准上完成并确认 `R1-P01 / 社区发现 / Mobile 390`，首轮反馈后把异色列表拼接收敛为焦点事件、连续编号轨道和嵌入式贡献者节点。
 2. 新增 Channel 匿名摘要字段、默认 Hidden migration、版本化写入、append-only 审计、Console 页面与独立 `view / manage` 权限；不把 Public 频道自动开放。
 3. 完成 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question` 统一公开读模型、数据库侧资格与 keyset 查询、snapshot 游标、纯文本投影、`no-store` 和整流失败关闭。
 4. 完成 `@radish/http` 契约与 `/discover` PC / mobile 页面，首项焦点不再假设具体来源，跨入口保留真实 `href`，数量文案按 locale 与英文单复数输出。
 5. 后端构建 `0` warning；专题测试 `57` 通过、`6` 个 PostgreSQL 条件用例显式跳过；Client `489`、Console `61` 项全量测试及两端 production build 通过。
-6. 同步功能专题、F4-R 设计专题、代表页审计、当前规划、开发日志和实现记录；本轮未启动服务、未执行 Gateway 真实 smoke，也未提前进入 `R1-P02`。
+6. 应用本批 migration 并启动完整宿主，通过 host runtime、Gateway 匿名 / 登录态、PC / mobile、双语、代表主题、真实链接和 Console 治理只读路径复核；没有提交频道公开状态变更。
+7. 运行态发现并修正 `long` 字符串 wire contract 与前端计数类型不一致的根因，补齐定向测试、全量 Client 测试和 production build 后关闭 `R1-P01`。
 
 ## 当前下一步
 
-1. 在新的当前任务中说明启动命令、端口、运行影响和清理方式，取得明确授权后启动前后端。
-2. 先复核 migration 与 Console opt-in，再覆盖匿名 / 登录态 feed、频道回流、PC / mobile、双语、`default / guofeng` 和代表失败态。
-3. 依据真实截图成组修正结构偏差，补齐阶段性验收记录后关闭 `R1-P01`。
-4. `R1-P01` 运行态关闭后再进入 `R1-P02 / Public 详情与互动`；全局灰玉品牌 token 进入共享主题批单独治理。
+1. 按 `R1-P02 / Public 详情与互动` 读取当前代码与专题文档，核对 `/forum/post/:id` 的详情、评论、问答、轻回应、登录回流、权限和状态边界。
+2. 对照 C-1A 六维评分与当前实现，确认需要保留的 PC / mobile 代表结构和关键状态；若专题边界缺失或过期，先补设计文档再改代码。
+3. 在用户确认代表设计后成组实现与验证，不提前扩入 R3 页面，也不机械沿用 R1-P01 的混合内容轨道。
+4. 全局灰玉品牌 token 仍进入共享主题批单独治理，不随单个详情页顺手扩散。
 
 ## 当前执行入口
 
