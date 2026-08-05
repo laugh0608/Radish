@@ -1511,9 +1511,9 @@
                         {
                           "type": "text",
                           "id": "Tr2l3",
-                          "name": "Live Status Text",
+                          "name": "Activity Window Text",
                           "fill": "$text-secondary",
-                          "content": "326 人在线",
+                          "content": "近 24h · 43 条",
                           "fontFamily": "Geist",
                           "fontSize": 12,
                           "fontWeight": "500"
@@ -1551,7 +1551,7 @@
                           "id": "cE20K",
                           "name": "Filter Label",
                           "fill": "$text-primary",
-                          "content": "为你推荐",
+                          "content": "最新公开",
                           "fontFamily": "Geist",
                           "fontSize": 12,
                           "fontWeight": "550"
@@ -2293,7 +2293,7 @@
                                   "id": "GX2vw",
                                   "name": "Community Pulse Sort Label",
                                   "fill": "$text-secondary",
-                                  "content": "综合热度",
+                                  "content": "最新公开",
                                   "fontFamily": "Geist",
                                   "fontSize": 10,
                                   "fontWeight": "600"
@@ -2561,7 +2561,7 @@
                                       "id": "Q9DzLV",
                                       "name": "Community Type Mark / Public Moment",
                                       "fill": "$brand",
-                                      "content": "友",
+                                      "content": "知",
                                       "fontFamily": "Geist",
                                       "fontSize": 11,
                                       "fontWeight": "650"
@@ -2584,7 +2584,7 @@
                                       "textGrowth": "fixed-width-height",
                                       "width": "fill_container",
                                       "height": 18,
-                                      "content": "青禾分享了新主题的移动端对比",
+                                      "content": "青禾发布了「移动端配色复核」",
                                       "lineHeight": 1.12,
                                       "fontFamily": "Geist",
                                       "fontSize": 13,
@@ -2602,7 +2602,7 @@
                                           "id": "JWNT5",
                                           "name": "Community Item Meta / Public Moment",
                                           "fill": "$text-muted",
-                                          "content": "公开动态 · 3 张图片",
+                                          "content": "公开知识页 · 首次发布",
                                           "fontFamily": "Geist",
                                           "fontSize": 10,
                                           "fontWeight": "500"
@@ -2635,7 +2635,7 @@
                                 {
                                   "type": "frame",
                                   "id": "t5nAZA",
-                                  "name": "Natural Discussion Responses 2",
+                                  "name": "Public Knowledge State",
                                   "height": 28,
                                   "fill": "$bg-app",
                                   "cornerRadius": 999,
@@ -2649,19 +2649,19 @@
                                     {
                                       "type": "icon",
                                       "id": "e734n",
-                                      "name": "Public Moment Reaction Icon",
+                                      "name": "Public Knowledge Icon",
                                       "width": 13,
                                       "height": 13,
-                                      "icon": "heart",
+                                      "icon": "book-open",
                                       "library": "lucide",
                                       "fill": "$brand"
                                     },
                                     {
                                       "type": "text",
                                       "id": "J0J8sq",
-                                      "name": "Public Moment Reaction Count",
+                                      "name": "Public Knowledge Label",
                                       "fill": "$text-secondary",
-                                      "content": "96",
+                                      "content": "公开",
                                       "fontFamily": "Geist Mono",
                                       "fontSize": 10,
                                       "fontWeight": "650"
@@ -2797,7 +2797,7 @@
                                   "textGrowth": "fixed-width-height",
                                   "width": 250,
                                   "height": 18,
-                                  "content": "墨川的评论正在被社区持续引用",
+                                  "content": "墨川的公开评论，当前 286 个赞",
                                   "lineHeight": 1.15,
                                   "fontFamily": "Geist",
                                   "fontSize": 10,
@@ -3367,7 +3367,7 @@
                             {
                               "type": "frame",
                               "id": "t8pgwx",
-                              "name": "Community Pulse Live Badge",
+                              "name": "Community Pulse Today Badge",
                               "fill": "$brand-soft",
                               "cornerRadius": 999,
                               "gap": 5,
@@ -3388,9 +3388,9 @@
                                 {
                                   "type": "text",
                                   "id": "jqzIY",
-                                  "name": "Community Pulse Live Label",
+                                  "name": "Community Pulse Window Label",
                                   "fill": "$brand",
-                                  "content": "实时",
+                                  "content": "近 24h",
                                   "fontFamily": "Geist",
                                   "fontSize": 10,
                                   "fontWeight": "600"
@@ -3409,7 +3409,7 @@
                             {
                               "type": "frame",
                               "id": "j4azt",
-                              "name": "Pulse Metric / 今日浏览",
+                              "name": "Pulse Metric / 公开频道",
                               "width": "fill_container",
                               "layout": "vertical",
                               "gap": 2,
@@ -3417,9 +3417,9 @@
                                 {
                                   "type": "text",
                                   "id": "PhfZd",
-                                  "name": "今日浏览 Metric Value",
+                                  "name": "公开频道 Metric Value",
                                   "fill": "$text-primary",
-                                  "content": "1,287",
+                                  "content": "12",
                                   "fontFamily": "Geist Mono",
                                   "fontSize": 18,
                                   "fontWeight": "650"
@@ -3427,9 +3427,9 @@
                                 {
                                   "type": "text",
                                   "id": "saote",
-                                  "name": "今日浏览 Metric Label",
+                                  "name": "公开频道 Metric Label",
                                   "fill": "$text-secondary",
-                                  "content": "今日浏览",
+                                  "content": "公开频道",
                                   "fontFamily": "Geist",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -3439,7 +3439,7 @@
                             {
                               "type": "frame",
                               "id": "a4w9f",
-                              "name": "Pulse Metric / 新增讨论",
+                              "name": "Pulse Metric / 新增内容",
                               "width": "fill_container",
                               "layout": "vertical",
                               "gap": 2,
@@ -3447,7 +3447,7 @@
                                 {
                                   "type": "text",
                                   "id": "I9Gww9",
-                                  "name": "新增讨论 Metric Value",
+                                  "name": "新增内容 Metric Value",
                                   "fill": "$text-primary",
                                   "content": "43",
                                   "fontFamily": "Geist Mono",
@@ -3457,9 +3457,9 @@
                                 {
                                   "type": "text",
                                   "id": "faiWo",
-                                  "name": "新增讨论 Metric Label",
+                                  "name": "新增内容 Metric Label",
                                   "fill": "$text-secondary",
-                                  "content": "新增讨论",
+                                  "content": "新增内容",
                                   "fontFamily": "Geist",
                                   "fontSize": 10,
                                   "fontWeight": "normal"
@@ -5150,6 +5150,2261 @@
                   ]
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "uUWJC",
+      "x": 1560,
+      "y": 0,
+      "name": "R1-P01 / 社区发现 / Mobile 390",
+      "theme": {
+        "productTheme": "guofeng"
+      },
+      "clip": true,
+      "width": 390,
+      "fill": "$bg-app",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "C3PM5Z",
+          "name": "Mobile Public Header",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 10,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "oykK9",
+              "name": "Mobile Radish Brand",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "m3jewk",
+                  "name": "Radish Brand Mark",
+                  "width": 30,
+                  "height": 30,
+                  "fill": "$brand",
+                  "cornerRadius": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "x23Slq",
+                      "name": "Radish Brand Initial",
+                      "fill": "$text-on-brand",
+                      "content": "R",
+                      "fontFamily": "Noto Serif SC",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "pJBK3",
+                  "name": "Radish Wordmark",
+                  "fill": "$text-primary",
+                  "content": "Radish",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "JQj24",
+              "name": "Header Flexible Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "XM1eA",
+              "name": "Mobile Header Actions",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "aIHU9",
+                  "name": "Header Action / Notifications",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "Tc7fw",
+                      "name": "Notifications Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "bell",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "W2dcO",
+                  "name": "Header Action / Account",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "pPWx9",
+                      "name": "Account Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "user-round",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "mccNQ",
+          "name": "Mobile Discover Content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            14,
+            16,
+            12,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "Uau4Z",
+              "name": "Community Search Entry",
+              "width": "fill_container",
+              "height": 44,
+              "fill": "$bg-surface",
+              "cornerRadius": 12,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#2436420A",
+                "offset": {
+                  "x": 0,
+                  "y": 3
+                },
+                "blur": 10
+              },
+              "gap": 10,
+              "padding": [
+                0,
+                12
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "hStZJ",
+                  "name": "Search Icon",
+                  "width": 18,
+                  "height": 18,
+                  "icon": "search",
+                  "library": "lucide",
+                  "fill": "$action"
+                },
+                {
+                  "type": "text",
+                  "id": "aelhf",
+                  "name": "Search Placeholder",
+                  "fill": "$text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "搜索问题、标签和公开内容",
+                  "fontFamily": "Geist",
+                  "fontSize": 13,
+                  "fontWeight": "550"
+                },
+                {
+                  "type": "icon",
+                  "id": "z1pZpi",
+                  "name": "Open Search Icon",
+                  "width": 17,
+                  "height": 17,
+                  "icon": "chevron-right",
+                  "library": "lucide",
+                  "fill": "$text-muted"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "p3sTL",
+              "name": "Mobile Discover Filters",
+              "width": "fill_container",
+              "height": 34,
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "YCiFP",
+                  "name": "Filter / 全部",
+                  "height": 34,
+                  "fill": "$brand-soft",
+                  "cornerRadius": "$radius-pill",
+                  "stroke": "$brand",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    13
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "GyJvG",
+                      "name": "全部 Filter Label",
+                      "fill": "$brand",
+                      "content": "全部",
+                      "fontFamily": "Geist",
+                      "fontSize": 12,
+                      "fontWeight": "650"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "I6PF5",
+                  "name": "Filter / 最新",
+                  "height": 34,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-pill",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    13
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "O8rRwM",
+                      "name": "最新 Filter Label",
+                      "fill": "$text-secondary",
+                      "content": "最新",
+                      "fontFamily": "Geist",
+                      "fontSize": 12,
+                      "fontWeight": "550"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "OagFr",
+                  "name": "Filter / 问答",
+                  "height": 34,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-pill",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    13
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "c9kk3t",
+                      "name": "问答 Filter Label",
+                      "fill": "$text-secondary",
+                      "content": "问答",
+                      "fontFamily": "Geist",
+                      "fontSize": 12,
+                      "fontWeight": "550"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "dJRRp",
+                  "name": "Filter / 热门",
+                  "height": 34,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-pill",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "padding": [
+                    0,
+                    13
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UYYgz",
+                      "name": "热门 Filter Label",
+                      "fill": "$text-secondary",
+                      "content": "热门",
+                      "fontFamily": "Geist",
+                      "fontSize": 12,
+                      "fontWeight": "550"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "A0OjWV",
+              "name": "Mobile Discover Introduction",
+              "width": "fill_container",
+              "gap": 8,
+              "padding": [
+                2,
+                0
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "b5dd0",
+                  "name": "Mobile Discover Title Group",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 3,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "CITtX",
+                      "name": "Mobile Discover Title",
+                      "fill": "$text-primary",
+                      "content": "社区发现",
+                      "fontFamily": "Geist",
+                      "fontSize": 26,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "text",
+                      "id": "E2uxcW",
+                      "name": "Mobile Discover Scope",
+                      "fill": "$text-secondary",
+                      "content": "好问题、公开动态与知识更新",
+                      "fontFamily": "Geist",
+                      "fontSize": 12,
+                      "fontWeight": "450"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZevSJ",
+                  "name": "Community Live Status",
+                  "height": 30,
+                  "fill": "$brand-soft",
+                  "cornerRadius": "$radius-pill",
+                  "gap": 6,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "xQ8LO",
+                      "name": "Live Indicator",
+                      "fill": "$success",
+                      "width": 6,
+                      "height": 6
+                    },
+                    {
+                      "type": "text",
+                      "id": "nBiJ6",
+                      "name": "Mobile Activity Window Label",
+                      "fill": "$brand",
+                      "content": "近 24h · 43 条",
+                      "fontFamily": "Geist",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hrUsL",
+              "name": "Featured Discussion / Mobile",
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 16,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#2436420D",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "x76Pt",
+                  "name": "Featured Discussion Meta",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "x34qi",
+                      "name": "Active Question Badge",
+                      "height": 24,
+                      "fill": "$brand-soft",
+                      "cornerRadius": "$radius-pill",
+                      "gap": 6,
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "CgEbu",
+                          "name": "Active Question Indicator",
+                          "fill": "$brand",
+                          "width": 6,
+                          "height": 6
+                        },
+                        {
+                          "type": "text",
+                          "id": "hTUWj",
+                          "name": "Active Question Label",
+                          "fill": "$brand",
+                          "content": "正在讨论",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AYx8z",
+                      "name": "Featured Meta Spacer",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "qgOD0",
+                      "name": "Featured Discussion Time",
+                      "fill": "$text-muted",
+                      "content": "18 分钟前",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "450"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "mQDIm",
+                  "name": "Featured Discussion Copy",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "UI1rd",
+                      "name": "Featured Discussion Title",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "公共文档怎样才能被更多人看见？",
+                      "lineHeight": 1.25,
+                      "fontFamily": "Geist",
+                      "fontSize": 19,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "text",
+                      "id": "m6VYaN",
+                      "name": "Featured Discussion Description",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "从检索、标签与回访路径聊起，让知识自然进入社区循环。",
+                      "lineHeight": 1.45,
+                      "fontFamily": "Geist",
+                      "fontSize": 12,
+                      "fontWeight": "450"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "v4uWa",
+                  "name": "Featured Discussion Footer",
+                  "width": "fill_container",
+                  "height": 36,
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ssXJb",
+                      "name": "Featured Participants",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "UwvbA",
+                          "name": "Participant / 青",
+                          "width": 26,
+                          "height": 26,
+                          "fill": "$brand-soft",
+                          "cornerRadius": "$radius-pill",
+                          "stroke": "$bg-surface",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ib8TG",
+                              "name": "Participant Initial / 青",
+                              "fill": "$text-secondary",
+                              "content": "青",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "G4y2O",
+                          "name": "Participant / 远",
+                          "width": 26,
+                          "height": 26,
+                          "fill": "$action-soft",
+                          "cornerRadius": "$radius-pill",
+                          "stroke": "$bg-surface",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "E7ErR",
+                              "name": "Participant Initial / 远",
+                              "fill": "$text-secondary",
+                              "content": "远",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "d3SWKT",
+                          "name": "Participant / 南",
+                          "width": 26,
+                          "height": 26,
+                          "fill": "$bg-muted",
+                          "cornerRadius": "$radius-pill",
+                          "stroke": "$bg-surface",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EIRTB",
+                              "name": "Participant Initial / 南",
+                              "fill": "$text-secondary",
+                              "content": "南",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "LzLWU",
+                          "name": "Participant Count",
+                          "fill": "$text-secondary",
+                          "content": "24 人参与",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "YmF5j",
+                      "name": "Featured Footer Spacer",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TVZ57",
+                      "name": "Join Discussion Action",
+                      "height": 36,
+                      "fill": "$action",
+                      "cornerRadius": 9,
+                      "gap": 6,
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "A6a3Na",
+                          "name": "Join Discussion Label",
+                          "fill": "$text-on-action",
+                          "content": "参与讨论",
+                          "fontFamily": "Geist",
+                          "fontSize": 12,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "q5TcG",
+                          "name": "Join Discussion Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "arrow-up-right",
+                          "library": "lucide",
+                          "fill": "$text-on-action"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "K9PwB",
+              "name": "Community Pulse / Mobile Context",
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 14,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": [
+                13,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Xl8vP",
+                  "name": "Mobile Pulse Header",
+                  "width": "fill_container",
+                  "height": 22,
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "B0ju9U",
+                      "name": "Mobile Pulse Title",
+                      "fill": "$text-primary",
+                      "content": "社区脉搏",
+                      "fontFamily": "Geist",
+                      "fontSize": 14,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qcrEV",
+                      "name": "Mobile Pulse Header Spacer",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "mI6HV",
+                      "name": "Mobile Pulse Live Badge",
+                      "height": 22,
+                      "fill": "$brand-soft",
+                      "cornerRadius": "$radius-pill",
+                      "gap": 5,
+                      "padding": [
+                        0,
+                        8
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "l5xL9",
+                          "name": "Mobile Pulse Live Indicator",
+                          "fill": "$success",
+                          "width": 5,
+                          "height": 5
+                        },
+                        {
+                          "type": "text",
+                          "id": "wCpDP",
+                          "name": "Mobile Pulse Window Label",
+                          "fill": "$brand",
+                          "content": "近 24h",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "grAnV",
+                  "name": "Mobile Pulse Metrics",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lEQyc",
+                      "name": "Pulse Metric / 公开频道",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jFDR2",
+                          "name": "公开频道 Value",
+                          "fill": "$text-primary",
+                          "content": "12",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 17,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "VJPl0",
+                          "name": "公开频道 Label",
+                          "fill": "$text-secondary",
+                          "content": "公开频道",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "450"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FBMEy",
+                      "name": "Pulse Metric / 新增内容",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "thyrq",
+                          "name": "新增内容 Value",
+                          "fill": "$text-primary",
+                          "content": "43",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 17,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "IzP7t",
+                          "name": "新增内容 Label",
+                          "fill": "$text-secondary",
+                          "content": "新增内容",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "450"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "h1FNDu",
+                      "name": "Pulse Metric / 知识贡献",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iLMFa",
+                          "name": "知识贡献 Value",
+                          "fill": "$text-primary",
+                          "content": "19",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 17,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "dJ0BA",
+                          "name": "知识贡献 Label",
+                          "fill": "$text-secondary",
+                          "content": "知识贡献",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "450"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TyhR0",
+              "name": "Community Activity Timeline / Mobile",
+              "clip": true,
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 18,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#2436420A",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 14
+              },
+              "layout": "vertical",
+              "gap": 14,
+              "padding": [
+                16,
+                14,
+                14,
+                14
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UXhct",
+                  "name": "Activity Timeline Header",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 4,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "g87W0Y",
+                      "name": "Activity Timeline Header Row",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ec1jC",
+                          "name": "Activity Timeline Title",
+                          "fill": "$text-primary",
+                          "content": "社区正在发生",
+                          "fontFamily": "Geist",
+                          "fontSize": 16,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Fqdqt",
+                          "name": "Activity Count",
+                          "height": 24,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            9
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "PkHhI",
+                              "name": "Activity Count Label",
+                              "fill": "$brand",
+                              "content": "05",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "T8r1OF",
+                          "name": "Activity Header Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WY2E9",
+                          "name": "Activity Sort Control",
+                          "height": 28,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "gap": 5,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "QeBYR",
+                              "name": "Activity Sort Label",
+                              "fill": "$text-secondary",
+                              "content": "最新公开",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "icon",
+                              "id": "ZxYce",
+                              "name": "Activity Sort Icon",
+                              "width": 12,
+                              "height": 12,
+                              "icon": "chevrons-up-down",
+                              "library": "lucide",
+                              "fill": "$text-muted"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "prXj2",
+                      "name": "Activity Timeline Scope",
+                      "fill": "$text-muted",
+                      "content": "近 24 小时 · 公开内容按时间展开",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "450"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "crCZY",
+                  "name": "Focus Event / Public Channel",
+                  "width": "fill_container",
+                  "fill": "$action",
+                  "cornerRadius": 14,
+                  "layout": "vertical",
+                  "gap": 11,
+                  "padding": [
+                    13,
+                    14
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "HlY9O",
+                      "name": "Focus Event Meta",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "e2xWOw",
+                          "name": "Focus Event Number",
+                          "opacity": 0.72,
+                          "fill": "$text-on-action",
+                          "content": "01",
+                          "fontFamily": "Geist Mono",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HmmW6",
+                          "name": "Focus Event Separator",
+                          "opacity": 0.42,
+                          "fill": "$text-on-action",
+                          "content": "/",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "450"
+                        },
+                        {
+                          "type": "text",
+                          "id": "RIARz",
+                          "name": "Focus Event Type",
+                          "fill": "$text-on-action",
+                          "content": "公共频道",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "650"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Q0PQk1",
+                          "name": "Focus Meta Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "eT3hM",
+                          "name": "Focus Event Time",
+                          "opacity": 0.72,
+                          "fill": "$text-on-action",
+                          "content": "3 分钟",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "450"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "oCr2Z",
+                      "name": "Focus Event Title",
+                      "fill": "$text-on-action",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "视觉系统怎样兼顾辨识与长时间阅读",
+                      "lineHeight": 1.28,
+                      "fontFamily": "Geist",
+                      "fontSize": 15,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AGY0f",
+                      "name": "Focus Event Footer",
+                      "width": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u7SPim",
+                          "name": "Focus Event Detail",
+                          "opacity": 0.72,
+                          "fill": "$text-on-action",
+                          "content": "品牌讨论 · 28 条回应",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "450"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Ykdnw",
+                          "name": "Focus Footer Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cbGiL",
+                          "name": "Open Focus Event",
+                          "width": 28,
+                          "height": 28,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 999,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "tJDOy",
+                              "name": "Open Focus Event Icon",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "arrow-up-right",
+                              "library": "lucide",
+                              "fill": "$action"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "u986d",
+                  "name": "Activity Timeline List",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "iU7eQ",
+                      "name": "Timeline Event 02 / 公开动态",
+                      "width": "fill_container",
+                      "height": 82,
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "X1GqFI",
+                          "name": "Timeline Index 02",
+                          "width": 24,
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            11,
+                            0,
+                            0,
+                            0
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "kE6Xb",
+                              "name": "Timeline Number 02",
+                              "fill": "$brand",
+                              "content": "02",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Sk0o9",
+                              "name": "Timeline Rail 02",
+                              "width": 1,
+                              "height": "fill_container",
+                              "fill": "$border-soft"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vTZIW",
+                          "name": "Timeline Copy 02",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "stroke": "$border-soft",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "layout": "vertical",
+                          "gap": 4,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "wNX9a",
+                              "name": "Timeline Meta 02",
+                              "width": "fill_container",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "e1lnZE",
+                                  "name": "Timeline Type 02",
+                                  "fill": "$brand",
+                                  "content": "公开动态",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "ellipse",
+                                  "id": "UIdZO",
+                                  "name": "Timeline Meta Dot 02",
+                                  "fill": "$text-muted",
+                                  "width": 3,
+                                  "height": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "s0LyBy",
+                                  "name": "Timeline Time 02",
+                                  "fill": "$text-muted",
+                                  "content": "12 分钟",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "450"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "OYWhU",
+                              "name": "Timeline Title 02",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "青禾发布了「移动端配色复核」",
+                              "lineHeight": 1.25,
+                              "fontFamily": "Geist",
+                              "fontSize": 13,
+                              "fontWeight": "620"
+                            },
+                            {
+                              "type": "text",
+                              "id": "n5XI0",
+                              "name": "Timeline Detail 02",
+                              "fill": "$text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "公开知识页 · 首次发布",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "450"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bySdr",
+                      "name": "Timeline Event 03 / 跨帖神评",
+                      "width": "fill_container",
+                      "height": 82,
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "J0jP09",
+                          "name": "Timeline Index 03",
+                          "width": 24,
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            11,
+                            0,
+                            0,
+                            0
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wJvSW",
+                              "name": "Timeline Number 03",
+                              "fill": "$text-secondary",
+                              "content": "03",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "AdKEJ",
+                              "name": "Timeline Rail 03",
+                              "width": 1,
+                              "height": "fill_container",
+                              "fill": "$border-soft"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lYMtE",
+                          "name": "Timeline Copy 03",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "stroke": "$border-soft",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "layout": "vertical",
+                          "gap": 4,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "rXPyY",
+                              "name": "Timeline Meta 03",
+                              "width": "fill_container",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "PtM13",
+                                  "name": "Timeline Type 03",
+                                  "fill": "$text-secondary",
+                                  "content": "跨帖神评",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "ellipse",
+                                  "id": "qP5yr",
+                                  "name": "Timeline Meta Dot 03",
+                                  "fill": "$text-muted",
+                                  "width": 3,
+                                  "height": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "edWxl",
+                                  "name": "Timeline Time 03",
+                                  "fill": "$text-muted",
+                                  "content": "18 分钟",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "450"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "vTi3e",
+                              "name": "Timeline Title 03",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "高级感不是留白，而是信息之间有秩序",
+                              "lineHeight": 1.25,
+                              "fontFamily": "Geist",
+                              "fontSize": 13,
+                              "fontWeight": "620"
+                            },
+                            {
+                              "type": "text",
+                              "id": "hGgrz",
+                              "name": "Timeline Detail 03",
+                              "fill": "$text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "墨川 · 286 个赞",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "450"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EJb1A",
+                      "name": "Timeline Contributor Context",
+                      "width": "fill_container",
+                      "height": 76,
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "dXoSK",
+                          "name": "Contributor Timeline Index",
+                          "width": 24,
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 5,
+                          "padding": [
+                            8,
+                            0,
+                            0,
+                            0
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Iy9dM",
+                              "name": "Contributor Timeline Mark",
+                              "width": 22,
+                              "height": 22,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "PhkaV",
+                                  "name": "Contributor Timeline Icon",
+                                  "width": 11,
+                                  "height": 11,
+                                  "icon": "sparkles",
+                                  "library": "lucide",
+                                  "fill": "$brand"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "it3M3",
+                              "name": "Contributor Timeline Rail",
+                              "width": 1,
+                              "height": "fill_container",
+                              "fill": "$border-soft"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "pj8tw",
+                          "name": "Weekly Contributors Cluster",
+                          "width": "fill_container",
+                          "height": 64,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 14,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            11
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "xeif2",
+                              "name": "Contributor Avatar Stack",
+                              "width": 60,
+                              "height": 30,
+                              "gap": -12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "NmUKH",
+                                  "name": "青禾 Avatar",
+                                  "width": 28,
+                                  "height": 28,
+                                  "fill": "$brand",
+                                  "cornerRadius": 999,
+                                  "stroke": "$bg-surface",
+                                  "strokeWidth": 2,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "YsRra",
+                                      "name": "青禾 Initial",
+                                      "fill": "$text-on-brand",
+                                      "content": "青",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 9,
+                                      "fontWeight": "650"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "mV311",
+                                  "name": "远山 Avatar",
+                                  "width": 28,
+                                  "height": 28,
+                                  "fill": "$action-soft",
+                                  "cornerRadius": 999,
+                                  "stroke": "$bg-surface",
+                                  "strokeWidth": 2,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Bn7qE",
+                                      "name": "远山 Initial",
+                                      "fill": "$action",
+                                      "content": "远",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 9,
+                                      "fontWeight": "650"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "oFjfY",
+                                  "name": "南枝 Avatar",
+                                  "width": 28,
+                                  "height": 28,
+                                  "fill": "$bg-muted",
+                                  "cornerRadius": 999,
+                                  "stroke": "$bg-surface",
+                                  "strokeWidth": 2,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "UddkW",
+                                      "name": "南枝 Initial",
+                                      "fill": "$text-secondary",
+                                      "content": "南",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 9,
+                                      "fontWeight": "650"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "gI89d",
+                              "name": "Contributor Cluster Copy",
+                              "width": "fill_container",
+                              "layout": "vertical",
+                              "gap": 2,
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "Xwp19",
+                                  "name": "Contributor Cluster Title",
+                                  "fill": "$text-primary",
+                                  "content": "本周贡献者",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 11,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "M2fWGU",
+                                  "name": "Contributor Cluster Names",
+                                  "fill": "$text-secondary",
+                                  "content": "青禾 · 远山 · 南枝",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "450"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "BcGD2",
+                              "name": "Open Contributor Ranking",
+                              "gap": 3,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ifLaJ",
+                                  "name": "Contributor Ranking Label",
+                                  "fill": "$action",
+                                  "content": "榜单",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "icon",
+                                  "id": "UvtOq",
+                                  "name": "Contributor Ranking Icon",
+                                  "width": 12,
+                                  "height": 12,
+                                  "icon": "arrow-up-right",
+                                  "library": "lucide",
+                                  "fill": "$action"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "N5S6MZ",
+                      "name": "Timeline Event 04 / 帖子",
+                      "width": "fill_container",
+                      "height": 82,
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "QomCS",
+                          "name": "Timeline Index 04",
+                          "width": 24,
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            11,
+                            0,
+                            0,
+                            0
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NoMMa",
+                              "name": "Timeline Number 04",
+                              "fill": "$brand",
+                              "content": "04",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "YLPkI",
+                              "name": "Timeline Rail 04",
+                              "width": 1,
+                              "height": "fill_container",
+                              "fill": "$border-soft"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "eGd9e",
+                          "name": "Timeline Copy 04",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "stroke": "$border-soft",
+                          "strokeWidth": {
+                            "bottom": 1
+                          },
+                          "layout": "vertical",
+                          "gap": 4,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "I7pDQ",
+                              "name": "Timeline Meta 04",
+                              "width": "fill_container",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "GnNAp",
+                                  "name": "Timeline Type 04",
+                                  "fill": "$brand",
+                                  "content": "帖子",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "ellipse",
+                                  "id": "RjuCx",
+                                  "name": "Timeline Meta Dot 04",
+                                  "fill": "$text-muted",
+                                  "width": 3,
+                                  "height": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "vnTEZ",
+                                  "name": "Timeline Time 04",
+                                  "fill": "$text-muted",
+                                  "content": "38 分钟",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "450"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Ri1Yy",
+                              "name": "Timeline Title 04",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "把搜索、筛选和阅读顺序放回同一任务",
+                              "lineHeight": 1.25,
+                              "fontFamily": "Geist",
+                              "fontSize": 13,
+                              "fontWeight": "620"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cLOsI",
+                              "name": "Timeline Detail 04",
+                              "fill": "$text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "#移动体验 · 16 条评论",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "450"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "HoFXb",
+                      "name": "Timeline Event 05 / 问答",
+                      "width": "fill_container",
+                      "height": 82,
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "z5oUW",
+                          "name": "Timeline Index 05",
+                          "width": 24,
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            11,
+                            0,
+                            0,
+                            0
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Z0ziC",
+                              "name": "Timeline Number 05",
+                              "fill": "$action",
+                              "content": "05",
+                              "fontFamily": "Geist Mono",
+                              "fontSize": 10,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ZM9J5",
+                          "name": "Timeline Copy 05",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "stroke": "$border-soft",
+                          "layout": "vertical",
+                          "gap": 4,
+                          "justifyContent": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "aAy60",
+                              "name": "Timeline Meta 05",
+                              "width": "fill_container",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "jo466",
+                                  "name": "Timeline Type 05",
+                                  "fill": "$action",
+                                  "content": "问答",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "ellipse",
+                                  "id": "hlsf6",
+                                  "name": "Timeline Meta Dot 05",
+                                  "fill": "$text-muted",
+                                  "width": 3,
+                                  "height": 3
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "YBJk4",
+                                  "name": "Timeline Time 05",
+                                  "fill": "$text-muted",
+                                  "content": "2 小时",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "450"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "sGXYr",
+                              "name": "Timeline Title 05",
+                              "fill": "$text-primary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "资格、隐私与稳定排序如何共同成立",
+                              "lineHeight": 1.25,
+                              "fontFamily": "Geist",
+                              "fontSize": 13,
+                              "fontWeight": "620"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZETio",
+                              "name": "Timeline Detail 05",
+                              "fill": "$text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "问答 · 9 个回答",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "450"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Kfnvv",
+                  "name": "Activity Timeline Footer",
+                  "width": "fill_container",
+                  "height": 42,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 12,
+                  "gap": 7,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MzIRx",
+                      "name": "Browse All Activity Label",
+                      "fill": "$action",
+                      "content": "浏览全部社区新鲜事",
+                      "fontFamily": "Geist",
+                      "fontSize": 11,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "icon",
+                      "id": "m5HPn",
+                      "name": "Browse All Activity Icon",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "arrow-right",
+                      "library": "lucide",
+                      "fill": "$action"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ZBfd5",
+              "name": "Knowledge And Topics / Mobile",
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 16,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#2436420A",
+                "offset": {
+                  "x": 0,
+                  "y": 3
+                },
+                "blur": 12
+              },
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "IDHAU",
+                  "name": "Mobile Knowledge Header",
+                  "width": "fill_container",
+                  "height": 24,
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "E0gxd",
+                      "name": "Mobile Knowledge Title",
+                      "fill": "$text-primary",
+                      "content": "知识与主题",
+                      "fontFamily": "Geist",
+                      "fontSize": 14,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fPvee",
+                      "name": "Mobile Knowledge Header Spacer",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "xd6g1",
+                      "name": "Browse All Knowledge",
+                      "fill": "$action",
+                      "content": "浏览全部",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "m6KYq",
+                  "name": "Latest Knowledge Entry / Mobile",
+                  "width": "fill_container",
+                  "height": 62,
+                  "fill": "$brand-soft",
+                  "cornerRadius": 12,
+                  "gap": 10,
+                  "padding": [
+                    0,
+                    11
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "L5HzI",
+                      "name": "Latest Knowledge Icon Tile",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "$bg-surface",
+                      "cornerRadius": 10,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "z1FIV",
+                          "name": "Latest Knowledge Icon",
+                          "width": 17,
+                          "height": 17,
+                          "icon": "book-open",
+                          "library": "lucide",
+                          "fill": "$brand"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "G569V",
+                      "name": "Latest Knowledge Copy",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 3,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ElUCV",
+                          "name": "Latest Knowledge Meta",
+                          "fill": "$brand",
+                          "content": "知识新页 · 6 分钟前",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "rrh1h",
+                          "name": "Latest Knowledge Title",
+                          "fill": "$text-primary",
+                          "content": "公开标签与 SEO",
+                          "fontFamily": "Geist",
+                          "fontSize": 13,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "icon",
+                      "id": "B6Ov70",
+                      "name": "Open Latest Knowledge",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "arrow-up-right",
+                      "library": "lucide",
+                      "fill": "$action"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "R80yTf",
+                  "name": "Mobile Topics Header",
+                  "width": "fill_container",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "wvAEC",
+                      "name": "Mobile Topics Label",
+                      "fill": "$text-secondary",
+                      "content": "热门主题",
+                      "fontFamily": "Geist",
+                      "fontSize": 11,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Dmdu1",
+                      "name": "Mobile Topics Header Spacer",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "text",
+                      "id": "D82fT",
+                      "name": "Mobile Topics Count",
+                      "fill": "$text-muted",
+                      "content": "5 个话题活跃",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "450"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "lMJqY",
+                  "name": "Mobile Topic Row One",
+                  "width": "fill_container",
+                  "gap": 7,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "AcvG2",
+                      "name": "Topic / 公开阅读",
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": "$radius-pill",
+                      "padding": [
+                        0,
+                        10
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U3HdlT",
+                          "name": "公开阅读 Topic Label",
+                          "fill": "$text-secondary",
+                          "content": "公开阅读",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "550"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eorYW",
+                      "name": "Topic / 界面设计",
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": "$radius-pill",
+                      "padding": [
+                        0,
+                        10
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "t3J73P",
+                          "name": "界面设计 Topic Label",
+                          "fill": "$text-secondary",
+                          "content": "界面设计",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "550"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "r65Y2",
+                      "name": "Topic / 移动体验",
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": "$radius-pill",
+                      "padding": [
+                        0,
+                        10
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jCYmN",
+                          "name": "移动体验 Topic Label",
+                          "fill": "$text-secondary",
+                          "content": "移动体验",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "550"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jMiEO",
+                  "name": "Mobile Topic Row Two",
+                  "width": "fill_container",
+                  "gap": 7,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "PMmmf",
+                      "name": "Topic / 知识协作",
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": "$radius-pill",
+                      "padding": [
+                        0,
+                        10
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "NxMXc",
+                          "name": "知识协作 Topic Label",
+                          "fill": "$text-secondary",
+                          "content": "知识协作",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "550"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NtGZ7",
+                      "name": "Topic / 社区治理",
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": "$radius-pill",
+                      "padding": [
+                        0,
+                        10
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "r6aU6",
+                          "name": "社区治理 Topic Label",
+                          "fill": "$text-secondary",
+                          "content": "社区治理",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "550"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "fhQGc",
+          "name": "Mobile Navigation Area",
+          "width": "fill_container",
+          "fill": "$bg-app",
+          "padding": [
+            10,
+            16,
+            16,
+            16
+          ],
+          "children": [
+            {
+              "id": "oQUiG",
+              "type": "ref",
+              "ref": "zT5M8",
+              "name": "Mobile Primary Navigation",
+              "width": "fill_container"
             }
           ]
         }

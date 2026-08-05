@@ -15,6 +15,8 @@ export const CONSOLE_PERMISSIONS = {
   ordersRetry: 'console.orders.retry',
   ordersRemark: 'console.orders.remark',
   usersView: 'console.users.view',
+  channelDiscoverabilityView: 'console.channel-discoverability.view',
+  channelDiscoverabilityManage: 'console.channel-discoverability.manage',
   benefitsView: 'console.benefits.view',
   benefitsRevoke: 'console.benefits.revoke',
   rolesView: 'console.roles.view',

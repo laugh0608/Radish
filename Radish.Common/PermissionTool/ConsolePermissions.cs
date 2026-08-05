@@ -19,6 +19,8 @@ public static class ConsolePermissions
     public const string OrdersRetry = "console.orders.retry";
     public const string OrdersRemark = "console.orders.remark";
     public const string UsersView = "console.users.view";
+    public const string ChannelDiscoverabilityView = "console.channel-discoverability.view";
+    public const string ChannelDiscoverabilityManage = "console.channel-discoverability.manage";
     public const string BenefitsView = "console.benefits.view";
     public const string BenefitsRevoke = "console.benefits.revoke";
     public const string RolesView = "console.roles.view";
@@ -96,6 +98,9 @@ public static class ConsolePermissions
             ["/api/v1/Category/UpdateSort/.+"] = new[] { CategoriesSort },
             ["/api/v1/User/GetUserList"] = new[] { UsersView },
             ["/api/v1/User/GetUserById/\\d+"] = new[] { UsersView },
+            ["/api/v1/ChannelDiscoverability/GetPage"] = new[] { ChannelDiscoverabilityView },
+            ["/api/v1/ChannelDiscoverability/GetHistory"] = new[] { ChannelDiscoverabilityView },
+            ["/api/v1/ChannelDiscoverability/UpdateVisibility/.+"] = new[] { ChannelDiscoverabilityManage },
             ["/api/v1/Client/GetClients"] = new[] { ApplicationsView },
             ["/api/v1/Client/GetClient/.+"] = new[] { ApplicationsView, ApplicationsEdit },
             ["/api/v1/Client/CreateClient"] = new[] { ApplicationsCreate },
@@ -214,6 +219,8 @@ public static class ConsolePermissions
         OrdersRetry,
         OrdersRemark,
         UsersView,
+        ChannelDiscoverabilityView,
+        ChannelDiscoverabilityManage,
         BenefitsView,
         BenefitsRevoke,
         RolesView,

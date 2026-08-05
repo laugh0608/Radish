@@ -1,13 +1,26 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type MouseEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  createApiResponseError,
+  getPublicDiscoverFeed,
+  PublicDiscoverItemKinds,
+  PublicDiscoverMetricKinds,
+  PublicDiscoverTargetKinds,
+  type PublicDiscoverFeedVo,
+  type PublicDiscoverItemKind,
+  type PublicDiscoverItemVo,
+} from '@radish/http';
+import { formatLocalizedNumber, formatLocalizedRelativeTime } from '@radish/ui';
 import { Icon } from '@radish/ui/icon';
-import { PostCard } from '@/apps/forum/components/PostCard';
-import type { WikiDocumentVo } from '@/apps/wiki/types/wiki';
-import { getHotTags, getPostList, type PostItem, type Tag } from '@/api/forum';
-import { getProducts, type ProductListItem } from '@/api/shop';
-import { DEFAULT_TIME_ZONE, getBrowserTimeZoneId } from '@/utils/dateTime';
-import { getPublicWikiList } from '../docs/publicDocsApi';
-import { getForumPostRouteIdentifier, resolvePublicProfileUserId } from '../forum/publicForumUtils';
+import { buildMessagesPath } from '@/messages/messagesRouteState';
+import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import { buildPublicDiscoverPath, type PublicDiscoverRoute } from '../discoverRouteState';
 import { buildPublicDocsPath, type PublicDocsRoute } from '../docsRouteState';
 import {
@@ -16,12 +29,18 @@ import {
   type PublicLeaderboardRoute,
 } from '../leaderboardRouteState';
 import { buildPublicForumPath, type PublicForumRoute } from '../forumRouteState';
-import { buildPublicShopPath, createDefaultPublicShopProductsRoute, type PublicShopRoute } from '../shopRouteState';
+import { buildPublicProfilePath } from '../profileRouteState';
+import {
+  buildPublicShopPath,
+  createDefaultPublicShopProductsRoute,
+  type PublicShopRoute,
+} from '../shopRouteState';
 import { buildPublicShareUrl } from '../publicHead';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { usePublicShareLink } from '../hooks/usePublicShareLink';
-import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
 import styles from './PublicDiscoverApp.module.css';
+
+const DISCOVER_PAGE_SIZE = 10;
 
 interface PublicDiscoverAppProps {
   route: PublicDiscoverRoute;
@@ -30,6 +49,8 @@ interface PublicDiscoverAppProps {
   onNavigateToDocs: (route: PublicDocsRoute, options?: { replace?: boolean }) => void;
   onNavigateToLeaderboard: (route: PublicLeaderboardRoute, options?: { replace?: boolean }) => void;
   onNavigateToShop: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
+  onNavigateToMessages: (channelId: string) => void;
+  onNavigateToProfile: (userPublicId: string) => void;
 }
 
 interface SectionStatusAction {
@@ -44,6 +65,13 @@ interface SectionStatusCardProps {
   description: string;
   primaryAction?: SectionStatusAction;
   secondaryAction?: SectionStatusAction;
+}
+
+interface ContributorSummary {
+  publicId: string;
+  displayName: string;
+  avatarUrl?: string | null;
+  contributionCount: number;
 }
 
 function shouldHandlePublicDiscoverLink(event: MouseEvent<HTMLAnchorElement>): boolean {
@@ -103,6 +131,82 @@ function SectionStatusCard({
   );
 }
 
+function getItemKindLabelKey(kind: PublicDiscoverItemKind): string {
+  switch (kind) {
+    case PublicDiscoverItemKinds.ChannelSummary:
+      return 'discover.public.feedKindChannel';
+    case PublicDiscoverItemKinds.MemberActivity:
+      return 'discover.public.feedKindMemberActivity';
+    case PublicDiscoverItemKinds.HighlightedComment:
+      return 'discover.public.feedKindHighlightedComment';
+    case PublicDiscoverItemKinds.Question:
+      return 'discover.public.feedKindQuestion';
+    default:
+      return 'discover.public.feedKindPost';
+  }
+}
+
+function getItemKindIcon(kind: PublicDiscoverItemKind): string {
+  switch (kind) {
+    case PublicDiscoverItemKinds.ChannelSummary:
+      return 'mdi:forum-outline';
+    case PublicDiscoverItemKinds.MemberActivity:
+      return 'mdi:book-open-page-variant-outline';
+    case PublicDiscoverItemKinds.HighlightedComment:
+      return 'mdi:format-quote-close';
+    case PublicDiscoverItemKinds.Question:
+      return 'mdi:help-circle-outline';
+    default:
+      return 'mdi:file-document-outline';
+  }
+}
+
+function getMetricLabelKey(item: PublicDiscoverItemVo): string | null {
+  switch (item.voPrimaryMetric?.voKind) {
+    case PublicDiscoverMetricKinds.RecentReplies:
+      return 'discover.public.feedMetricRecentReplies';
+    case PublicDiscoverMetricKinds.Likes:
+      return 'discover.public.feedMetricLikes';
+    case PublicDiscoverMetricKinds.Comments:
+      return 'discover.public.feedMetricComments';
+    case PublicDiscoverMetricKinds.Answers:
+      return 'discover.public.feedMetricAnswers';
+    default:
+      return null;
+  }
+}
+
+function getContributorInitial(displayName: string): string {
+  return Array.from(displayName.trim())[0]?.toUpperCase() ?? 'R';
+}
+
+function collectContributors(items: PublicDiscoverItemVo[]): ContributorSummary[] {
+  const contributorMap = new Map<string, ContributorSummary>();
+  for (const item of items) {
+    const actor = item.voActor;
+    if (!actor?.voPublicId) {
+      continue;
+    }
+
+    const current = contributorMap.get(actor.voPublicId);
+    if (current) {
+      current.contributionCount += 1;
+      continue;
+    }
+
+    contributorMap.set(actor.voPublicId, {
+      publicId: actor.voPublicId,
+      displayName: actor.voDisplayName,
+      avatarUrl: actor.voAvatarThumbnailUrl,
+      contributionCount: 1,
+    });
+  }
+
+  return Array.from(contributorMap.values())
+    .sort((left, right) => right.contributionCount - left.contributionCount)
+    .slice(0, 3);
+}
+
 export const PublicDiscoverApp = ({
   route,
   onNavigate,
@@ -110,19 +214,20 @@ export const PublicDiscoverApp = ({
   onNavigateToDocs,
   onNavigateToLeaderboard,
   onNavigateToShop,
+  onNavigateToMessages,
+  onNavigateToProfile,
 }: PublicDiscoverAppProps) => {
-  const { t } = useTranslation();
-  const [forumPosts, setForumPosts] = useState<PostItem[]>([]);
-  const [hotTags, setHotTags] = useState<Tag[]>([]);
-  const [featuredDocument, setFeaturedDocument] = useState<WikiDocumentVo | null>(null);
-  const [featuredProduct, setFeaturedProduct] = useState<ProductListItem | null>(null);
-  const [loadingForum, setLoadingForum] = useState(true);
-  const [forumError, setForumError] = useState<string | null>(null);
+  const { t, i18n } = useTranslation();
+  const [feed, setFeed] = useState<PublicDiscoverFeedVo | null>(null);
+  const [items, setItems] = useState<PublicDiscoverItemVo[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const buildDiscoverShareUrl = useCallback(
     () => buildPublicShareUrl(buildPublicDiscoverPath(route)),
-    [route]
+    [route],
   );
   const { copyShareLink, shareBusy, shareState } = usePublicShareLink({
     buildShareUrl: buildDiscoverShareUrl,
@@ -131,60 +236,69 @@ export const PublicDiscoverApp = ({
   useEffect(() => {
     let cancelled = false;
 
-    const loadCommunity = async () => {
-      setLoadingForum(true);
-      setForumError(null);
-
+    const loadInitialFeed = async () => {
+      setLoading(true);
+      setLoadError(null);
+      setLoadMoreError(null);
       try {
-        const [postPage, tagList] = await Promise.all([
-          getPostList(null, t, 1, 8, 'newest'),
-          getHotTags(t, 6),
-        ]);
+        const response = await getPublicDiscoverFeed({ pageSize: DISCOVER_PAGE_SIZE });
+        if (!response.ok || !response.data) {
+          throw createApiResponseError(response, t('discover.public.feedLoadFailedDescription'));
+        }
+
         if (!cancelled) {
-          setForumPosts(postPage.data ?? []);
-          setHotTags(tagList ?? []);
+          setFeed(response.data);
+          setItems(response.data.voItems);
         }
       } catch (error) {
         if (!cancelled) {
-          setForumPosts([]);
-          setHotTags([]);
-          setForumError(error instanceof Error ? error.message : String(error));
+          setFeed(null);
+          setItems([]);
+          setLoadError(error instanceof Error ? error.message : t('discover.public.feedLoadFailedDescription'));
         }
       } finally {
         if (!cancelled) {
-          setLoadingForum(false);
+          setLoading(false);
         }
       }
     };
 
-    const loadRelatedContent = async () => {
-      const [documentResult, productResult] = await Promise.allSettled([
-        getPublicWikiList({ pageIndex: 1, pageSize: 1 }),
-        getProducts(t, undefined, undefined, undefined, 1, 1),
-      ]);
-      if (cancelled) {
-        return;
-      }
-
-      setFeaturedDocument(
-        documentResult.status === 'fulfilled' ? documentResult.value.data?.[0] ?? null : null
-      );
-      setFeaturedProduct(
-        productResult.status === 'fulfilled' && productResult.value.ok
-          ? productResult.value.data?.data?.[0] ?? null
-          : null
-      );
-    };
-
-    void Promise.all([loadCommunity(), loadRelatedContent()]);
+    void loadInitialFeed();
     return () => {
       cancelled = true;
     };
   }, [reloadToken, t]);
 
+  const loadMore = useCallback(async () => {
+    if (!feed?.voHasMore || !feed.voNextCursor || loadingMore) {
+      return;
+    }
+
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const response = await getPublicDiscoverFeed({
+        cursor: feed.voNextCursor,
+        pageSize: DISCOVER_PAGE_SIZE,
+      });
+      if (!response.ok || !response.data) {
+        throw createApiResponseError(response, t('discover.public.feedLoadMoreFailed'));
+      }
+
+      const knownKeys = new Set(items.map((item) => item.voKey));
+      const nextItems = response.data.voItems.filter((item) => !knownKeys.has(item.voKey));
+      setItems((current) => [...current, ...nextItems]);
+      setFeed(response.data);
+    } catch (error) {
+      setLoadMoreError(error instanceof Error ? error.message : t('discover.public.feedLoadMoreFailed'));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [feed, items, loadingMore, t]);
+
   const handlePublicDiscoverLinkClick = useCallback((
     event: MouseEvent<HTMLAnchorElement>,
-    action: () => void
+    action: () => void,
   ) => {
     if (!shouldHandlePublicDiscoverLink(event)) {
       return;
@@ -210,7 +324,6 @@ export const PublicDiscoverApp = ({
   const docsListRoute = useMemo<PublicDocsRoute>(() => ({ kind: 'list' }), []);
   const leaderboardRoute = useMemo<PublicLeaderboardRoute>(() => createDefaultPublicLeaderboardRoute(), []);
   const shopProductsRoute = useMemo<PublicShopRoute>(() => createDefaultPublicShopProductsRoute(), []);
-
   const discoverHomeHref = buildPublicDiscoverPath(discoverHomeRoute);
   const forumListHref = buildPublicForumPath(forumListRoute);
   const forumHotHref = buildPublicForumPath(forumHotRoute);
@@ -219,8 +332,165 @@ export const PublicDiscoverApp = ({
   const docsListHref = buildPublicDocsPath(docsListRoute);
   const leaderboardHref = buildPublicLeaderboardPath(leaderboardRoute);
   const shopProductsHref = buildPublicShopPath(shopProductsRoute);
-  const spotlightPosts = forumPosts.slice(0, 5);
-  const spotlightTags = hotTags.slice(0, 6);
+  const contributors = useMemo(() => collectContributors(items), [items]);
+
+  const getItemHref = useCallback((item: PublicDiscoverItemVo): string => {
+    if (item.voTarget.voKind === PublicDiscoverTargetKinds.Messages && item.voTarget.voChannelId) {
+      return buildMessagesPath({ channelId: item.voTarget.voChannelId });
+    }
+
+    if (item.voTarget.voKind === PublicDiscoverTargetKinds.Docs && item.voTarget.voDocumentSlug) {
+      return buildPublicDocsPath({ kind: 'detail', slug: item.voTarget.voDocumentSlug });
+    }
+
+    if (item.voTarget.voPostPublicId) {
+      return buildPublicForumPath({
+        kind: 'detail',
+        postId: item.voTarget.voPostPublicId,
+        ...(item.voTarget.voCommentId ? { commentId: item.voTarget.voCommentId } : {}),
+      });
+    }
+
+    return discoverHomeHref;
+  }, [discoverHomeHref]);
+
+  const navigateToItem = useCallback((item: PublicDiscoverItemVo) => {
+    if (item.voTarget.voKind === PublicDiscoverTargetKinds.Messages && item.voTarget.voChannelId) {
+      onNavigateToMessages(item.voTarget.voChannelId);
+      return;
+    }
+
+    if (item.voTarget.voKind === PublicDiscoverTargetKinds.Docs && item.voTarget.voDocumentSlug) {
+      onNavigateToDocs({ kind: 'detail', slug: item.voTarget.voDocumentSlug });
+      return;
+    }
+
+    if (item.voTarget.voPostPublicId) {
+      onNavigateToForum({
+        kind: 'detail',
+        postId: item.voTarget.voPostPublicId,
+        ...(item.voTarget.voCommentId ? { commentId: item.voTarget.voCommentId } : {}),
+      });
+    }
+  }, [onNavigateToDocs, onNavigateToForum, onNavigateToMessages]);
+
+  const renderContributorStrip = (className: string) => {
+    if (contributors.length === 0) {
+      return null;
+    }
+
+    return (
+      <section className={className} aria-label={t('discover.public.contributorsTitle')}>
+        <div className={styles.contributorHeading}>
+          <h2>{t('discover.public.contributorsTitle')}</h2>
+          <span>{t('discover.public.contributorsWindow')}</span>
+        </div>
+        <div className={styles.contributorList}>
+          {contributors.map((contributor) => {
+            const profileHref = buildPublicProfilePath({
+              kind: 'detail',
+              userId: contributor.publicId,
+              tab: 'posts',
+              page: 1,
+            });
+            return (
+              <a
+                key={contributor.publicId}
+                className={styles.contributorItem}
+                href={profileHref}
+                onClick={(event) => handlePublicDiscoverLinkClick(
+                  event,
+                  () => onNavigateToProfile(contributor.publicId),
+                )}
+              >
+                {contributor.avatarUrl ? (
+                  <img src={contributor.avatarUrl} alt="" className={styles.contributorAvatar} />
+                ) : (
+                  <span className={styles.contributorAvatarFallback} aria-hidden="true">
+                    {getContributorInitial(contributor.displayName)}
+                  </span>
+                )}
+                  <span className={styles.contributorCopy}>
+                    <strong>{contributor.displayName}</strong>
+                  <small>{t('discover.public.contributorCount', {
+                    count: contributor.contributionCount,
+                    formattedCount: formatLocalizedNumber(contributor.contributionCount, i18n.language),
+                  })}</small>
+                  </span>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
+
+  const renderItemMeta = (item: PublicDiscoverItemVo, isFocus = false) => {
+    const metricKey = getMetricLabelKey(item);
+    return (
+      <div className={isFocus ? styles.focusMetaLine : styles.itemMetaLine}>
+        {item.voActor && <span>{item.voActor.voDisplayName}</span>}
+        {metricKey && item.voPrimaryMetric && (
+          <span>
+            {t(metricKey, {
+              count: item.voPrimaryMetric.voValue,
+              formattedCount: formatLocalizedNumber(item.voPrimaryMetric.voValue, i18n.language),
+            })}
+          </span>
+        )}
+        {item.voTarget.voRequiresAuthentication && (
+          <span>{t('discover.public.feedRequiresSignIn')}</span>
+        )}
+      </div>
+    );
+  };
+
+  const renderFeedItem = (item: PublicDiscoverItemVo, index: number) => {
+    const isFocus = index === 0;
+    const relativeTime = formatLocalizedRelativeTime(item.voOccurredAtUtc, i18n.language);
+    const href = getItemHref(item);
+    if (isFocus) {
+      return (
+        <a
+          className={styles.focusEvent}
+          href={href}
+          onClick={(event) => handlePublicDiscoverLinkClick(event, () => navigateToItem(item))}
+        >
+          <div className={styles.focusTopline}>
+            <span className={styles.focusKind}>
+              <Icon icon={getItemKindIcon(item.voKind)} size={17} />
+              {t(getItemKindLabelKey(item.voKind))}
+            </span>
+            <time dateTime={item.voOccurredAtUtc}>{relativeTime}</time>
+          </div>
+          <h2>{item.voTitle}</h2>
+          {item.voSummary && <p>{item.voSummary}</p>}
+          {renderItemMeta(item, true)}
+        </a>
+      );
+    }
+
+    return (
+      <a
+        className={styles.timelineEvent}
+        href={href}
+        data-kind={item.voKind}
+        onClick={(event) => handlePublicDiscoverLinkClick(event, () => navigateToItem(item))}
+      >
+        <span className={styles.timelineNumber}>{String(index + 1).padStart(2, '0')}</span>
+        <span className={styles.timelineNode} aria-hidden="true" />
+        <span className={styles.timelineContent}>
+          <span className={styles.itemTopline}>
+            <span>{t(getItemKindLabelKey(item.voKind))}</span>
+            <time dateTime={item.voOccurredAtUtc}>{relativeTime}</time>
+          </span>
+          <strong className={styles.timelineTitle}>{item.voTitle}</strong>
+          {item.voSummary && <span className={styles.timelineSummary}>{item.voSummary}</span>}
+          {renderItemMeta(item)}
+        </span>
+      </a>
+    );
+  };
 
   return (
     <div className={styles.page}>
@@ -244,14 +514,17 @@ export const PublicDiscoverApp = ({
           >
             <Icon icon="mdi:magnify" size={18} />
             <span>{t('discover.public.mobileSearchPlaceholder')}</span>
-            <Icon icon="mdi:chevron-right" size={18} />
+            <Icon icon="mdi:arrow-right" size={17} />
           </a>
           <div className={styles.mobileFilterRow} aria-label={t('discover.public.mobileFilterLabel')}>
             <a
               className={`${styles.mobileFilterChip} ${styles.mobileFilterChipActive}`}
               href={discoverHomeHref}
               aria-current="page"
-              onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigate(discoverHomeRoute, { replace: true }))}
+              onClick={(event) => handlePublicDiscoverLinkClick(
+                event,
+                () => onNavigate(discoverHomeRoute, { replace: true }),
+              )}
             >
               {t('discover.public.discussionAll')}
             </a>
@@ -271,209 +544,193 @@ export const PublicDiscoverApp = ({
             </a>
             <a
               className={styles.mobileFilterChip}
-              href={forumHotHref}
-              onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumHotRoute))}
+              href={docsListHref}
+              onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToDocs(docsListRoute))}
             >
-              {t('discover.public.mobileFilterHot')}
+              {t('discover.public.mobileFilterKnowledge')}
             </a>
           </div>
         </section>
 
-        <section className={styles.pulseHome}>
-          <div className={styles.pulseIntroCard}>
-            <h1 className={styles.pageTitle}>{t('discover.public.pulseTitle')}</h1>
-            <p className={styles.pageIntro}>{t('discover.public.pulseIntro')}</p>
-            <div className={styles.heroActions}>
-              <a
-                className={styles.primaryButton}
-                href={forumListHref}
-                onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumListRoute))}
-              >
-                <Icon icon="mdi:forum-outline" size={18} />
-                <span>{t('discover.public.openForum')}</span>
-              </a>
-              <a
-                className={styles.secondaryButton}
-                href={forumSearchHref}
-                onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumSearchRoute))}
-              >
-                <Icon icon="mdi:magnify" size={18} />
-                <span>{t('discover.public.searchCommunity')}</span>
-              </a>
-              <button type="button" className={styles.secondaryButton} onClick={() => void copyShareLink()} disabled={shareBusy}>
-                <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
-                <span>{shareBusy ? t('discover.public.shareSubmitting') : t('discover.public.shareAction')}</span>
-              </button>
-            </div>
+        <div className={styles.workspace}>
+          <section className={styles.flowPanel} aria-labelledby="public-discover-flow-title">
+            <header className={styles.flowHeader}>
+              <div className={styles.flowTitleGroup}>
+                <h1 id="public-discover-flow-title">{t('discover.public.flowTitle')}</h1>
+                {!loading && <span className={styles.flowCount}>{items.length}</span>}
+              </div>
+              <div className={styles.flowTools}>
+                <span className={styles.latestMode}>
+                  <Icon icon="mdi:clock-outline" size={16} />
+                  {t('discover.public.latestPublic')}
+                </span>
+                <button
+                  type="button"
+                  className={styles.iconButton}
+                  onClick={() => void copyShareLink()}
+                  disabled={shareBusy}
+                  aria-label={shareBusy ? t('discover.public.shareSubmitting') : t('discover.public.shareAction')}
+                >
+                  <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+                </button>
+              </div>
+            </header>
+
             {shareState !== 'idle' && (
               <p className={styles.shareFeedback} data-state={shareState}>
                 {shareState === 'success' ? t('discover.public.shareSuccess') : t('discover.public.shareFailed')}
               </p>
             )}
-          </div>
-        </section>
 
-        <section className={styles.communityBoard}>
-          <div className={styles.discussionPanel}>
-            <div className={styles.discussionHeader}>
-              <div className={styles.sectionHeading}>
-                <h2 className={styles.sectionTitle}>{t('discover.public.discussionTitle')}</h2>
-                <p className={styles.sectionDescription}>{t('discover.public.discussionDescription')}</p>
+            <div className={styles.flowBody}>
+              {loading ? (
+                <SectionStatusCard
+                  tone="loading"
+                  title={t('discover.public.feedLoadingTitle')}
+                  description={t('discover.public.feedLoadingDescription')}
+                />
+              ) : loadError ? (
+                <SectionStatusCard
+                  tone="error"
+                  title={t('discover.public.feedLoadFailedTitle')}
+                  description={loadError}
+                  secondaryAction={{
+                    label: t('common.retry'),
+                    onClick: () => setReloadToken((current) => current + 1),
+                  }}
+                />
+              ) : items.length === 0 ? (
+                <SectionStatusCard
+                  tone="empty"
+                  title={t('discover.public.feedEmptyTitle')}
+                  description={t('discover.public.feedEmptyDescription')}
+                  primaryAction={{
+                    label: t('discover.public.openForum'),
+                    href: forumListHref,
+                    onClick: () => onNavigateToForum(forumListRoute),
+                  }}
+                />
+              ) : (
+                <div className={styles.timeline}>
+                  {items.map((item, index) => (
+                    <Fragment key={item.voKey}>
+                      {renderFeedItem(item, index)}
+                      {index === 2 && renderContributorStrip(styles.mobileContributorNode)}
+                    </Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {!loading && !loadError && items.length > 0 && (
+              <footer className={styles.flowFooter}>
+                {loadMoreError && <p className={styles.loadMoreError}>{loadMoreError}</p>}
+                {feed?.voHasMore ? (
+                  <button
+                    type="button"
+                    className={styles.loadMoreButton}
+                    onClick={() => void loadMore()}
+                    disabled={loadingMore}
+                  >
+                    <span>{loadingMore ? t('discover.public.feedLoadingMore') : t('discover.public.feedLoadMore')}</span>
+                    <Icon icon={loadingMore ? 'mdi:progress-clock' : 'mdi:arrow-down'} size={17} />
+                  </button>
+                ) : (
+                  <a
+                    className={styles.allCommunityLink}
+                    href={forumListHref}
+                    onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumListRoute))}
+                  >
+                    <span>{t('discover.public.viewAllCommunity')}</span>
+                    <Icon icon="mdi:arrow-right" size={18} />
+                  </a>
+                )}
+              </footer>
+            )}
+          </section>
+
+          <aside className={styles.insightRail}>
+            {feed && (
+              <section className={styles.pulseCard} aria-labelledby="public-discover-pulse-title">
+                <div className={styles.railHeading}>
+                  <div>
+                    <span>{t('discover.public.pulseEyebrow')}</span>
+                    <h2 id="public-discover-pulse-title">{t('discover.public.pulseCardTitle')}</h2>
+                  </div>
+                  <Icon icon="mdi:pulse" size={20} />
+                </div>
+                <div className={styles.pulseMetrics}>
+                  <div>
+                    <strong>{formatLocalizedNumber(feed.voPulse.voDiscoverableChannelCount, i18n.language)}</strong>
+                    <span>{t('discover.public.pulseChannels')}</span>
+                  </div>
+                  <div>
+                    <strong>{formatLocalizedNumber(feed.voPulse.voEligibleItemCount, i18n.language)}</strong>
+                    <span>{t('discover.public.pulseItems')}</span>
+                  </div>
+                  <div>
+                    <strong>{formatLocalizedNumber(feed.voPulse.voKnowledgeContributionCount, i18n.language)}</strong>
+                    <span>{t('discover.public.pulseKnowledge')}</span>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {renderContributorStrip(styles.contributorCard)}
+
+            <section className={styles.contextCard} aria-labelledby="public-discover-context-title">
+              <div className={styles.contextHeader}>
+                <h2 id="public-discover-context-title">{t('discover.public.contextTitle')}</h2>
+                <span>{t('discover.public.contextHint')}</span>
               </div>
-              <div className={styles.discussionTabRow} aria-label={t('discover.public.discussionTabsLabel')}>
-                <span className={styles.discussionTabActive}>{t('discover.public.discussionAll')}</span>
+              <div className={styles.contextLinks}>
                 <a
-                  className={styles.discussionTab}
-                  href={forumListHref}
-                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumListRoute))}
+                  href={docsListHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToDocs(docsListRoute))}
                 >
-                  {t('discover.public.mobileFilterLatest')}
+                  <span className={styles.contextIcon}><Icon icon="mdi:bookshelf" size={19} /></span>
+                  <span><strong>{t('discover.public.contextDocsTitle')}</strong><small>{t('discover.public.contextDocsDescription')}</small></span>
                 </a>
                 <a
-                  className={styles.discussionTab}
                   href={forumQuestionHref}
                   onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumQuestionRoute))}
                 >
-                  {t('discover.public.mobileFilterQuestion')}
+                  <span className={styles.contextIcon}><Icon icon="mdi:help-circle-outline" size={19} /></span>
+                  <span><strong>{t('discover.public.contextQuestionsTitle')}</strong><small>{t('discover.public.contextQuestionsDescription')}</small></span>
                 </a>
                 <a
-                  className={styles.discussionTab}
-                  href={forumHotHref}
-                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumHotRoute))}
-                >
-                  {t('discover.public.mobileFilterHot')}
-                </a>
-              </div>
-            </div>
-
-            {loadingForum ? (
-              <SectionStatusCard
-                tone="loading"
-                title={t('discover.public.forumLoadingTitle')}
-                description={t('discover.public.forumLoadingDescription')}
-              />
-            ) : forumError ? (
-              <SectionStatusCard
-                tone="error"
-                title={t('discover.public.forumLoadFailedTitle')}
-                description={forumError}
-                secondaryAction={{
-                  label: t('common.retry'),
-                  onClick: () => setReloadToken((current) => current + 1),
-                }}
-              />
-            ) : spotlightPosts.length === 0 ? (
-              <SectionStatusCard
-                tone="empty"
-                title={t('discover.public.forumEmptyTitle')}
-                description={t('discover.public.forumEmptyDescription')}
-                primaryAction={{
-                  label: t('discover.public.viewAllForum'),
-                  href: forumListHref,
-                  onClick: () => onNavigateToForum(forumListRoute),
-                }}
-              />
-            ) : (
-              <>
-                <div className={styles.discussionList}>
-                  {spotlightPosts.map((post) => (
-                    <PostCard
-                      key={post.voId}
-                      post={post}
-                      displayTimeZone={displayTimeZone}
-                      onClick={() => onNavigateToForum({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
-                      href={buildPublicForumPath({ kind: 'detail', postId: getForumPostRouteIdentifier(post) })}
-                      variant="publicCompact"
-                      resolveAuthorProfileId={resolvePublicProfileUserId}
-                      onTagClick={(_, tagSlug) => onNavigateToForum({ kind: 'tag', tagSlug, sortBy: 'newest', page: 1 })}
-                      onQuestionClick={() => onNavigateToForum(forumQuestionRoute)}
-                      onPollClick={() => onNavigateToForum({ kind: 'poll', sortBy: 'newest', page: 1 })}
-                      onLotteryClick={() => onNavigateToForum({ kind: 'lottery', sortBy: 'newest', page: 1 })}
-                    />
-                  ))}
-                </div>
-                {spotlightTags.length > 0 && (
-                  <div className={styles.tagRail}>
-                    {spotlightTags.map((tag) => {
-                      const tagRoute: PublicForumRoute = {
-                        kind: 'tag',
-                        tagSlug: tag.voSlug,
-                        sortBy: 'newest',
-                        page: 1,
-                      };
-
-                      return (
-                        <a
-                          key={tag.voId}
-                          className={styles.tagChip}
-                          href={buildPublicForumPath(tagRoute)}
-                          onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(tagRoute))}
-                        >
-                          #{tag.voName}
-                        </a>
-                      );
-                    })}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-
-          <aside className={styles.publicRail}>
-            <section className={styles.railCard}>
-              <div className={styles.railCardHeader}>
-                <h2 className={styles.railTitle}>{t('discover.public.railHighlightsTitle')}</h2>
-              </div>
-              <div className={styles.railList}>
-                <a
-                  className={styles.railItem}
-                  href={featuredDocument ? buildPublicDocsPath({ kind: 'detail', slug: featuredDocument.voSlug }) : docsListHref}
-                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => (
-                    featuredDocument
-                      ? onNavigateToDocs({ kind: 'detail', slug: featuredDocument.voSlug })
-                      : onNavigateToDocs(docsListRoute)
-                  ))}
-                >
-                  <span className={styles.railBadge}>{t('discover.public.railDocLabel')}</span>
-                  <span className={styles.railText}>{featuredDocument?.voTitle ?? t('discover.public.railDocFallback')}</span>
-                </a>
-                <a
-                  className={styles.railItem}
-                  href={featuredProduct ? buildPublicShopPath({ kind: 'detail', productId: String(featuredProduct.voId) }) : shopProductsHref}
-                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => (
-                    featuredProduct
-                      ? onNavigateToShop({ kind: 'detail', productId: String(featuredProduct.voId) })
-                      : onNavigateToShop(shopProductsRoute)
-                  ))}
-                >
-                  <span className={styles.railBadge}>{t('discover.public.railShopLabel')}</span>
-                  <span className={styles.railText}>{featuredProduct?.voName ?? t('discover.public.railShopFallback')}</span>
-                </a>
-                <a
-                  className={styles.railItem}
                   href={leaderboardHref}
                   onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToLeaderboard(leaderboardRoute))}
                 >
-                  <span className={styles.railBadge}>{t('discover.public.railLeaderboardLabel')}</span>
-                  <span className={styles.railText}>{t('discover.public.railLeaderboardText')}</span>
+                  <span className={styles.contextIcon}><Icon icon="mdi:chart-box-outline" size={19} /></span>
+                  <span><strong>{t('discover.public.contextLeaderboardTitle')}</strong><small>{t('discover.public.contextLeaderboardDescription')}</small></span>
+                </a>
+                <a
+                  href={shopProductsHref}
+                  onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToShop(shopProductsRoute))}
+                >
+                  <span className={styles.contextIcon}><Icon icon="mdi:shopping-outline" size={19} /></span>
+                  <span><strong>{t('discover.public.contextShopTitle')}</strong><small>{t('discover.public.contextShopDescription')}</small></span>
                 </a>
               </div>
             </section>
 
-            <section className={`${styles.railCard} ${styles.participationCard}`}>
-              <h2 className={styles.railTitle}>{t('discover.public.participationTitle')}</h2>
-              <p className={styles.railDescription}>{t('discover.public.participationDescription')}</p>
+            <section className={styles.participationCard}>
+              <span className={styles.participationIcon}><Icon icon="mdi:sprout-outline" size={20} /></span>
+              <div>
+                <h2>{t('discover.public.participationTitle')}</h2>
+                <p>{t('discover.public.participationDescription')}</p>
+              </div>
               <a
-                className={styles.primaryButton}
-                href={forumListHref}
-                onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumListRoute))}
+                href={forumHotHref}
+                onClick={(event) => handlePublicDiscoverLinkClick(event, () => onNavigateToForum(forumHotRoute))}
               >
-                <Icon icon="mdi:comment-text-outline" size={18} />
-                <span>{t('discover.public.participationAction')}</span>
+                {t('discover.public.participationAction')}
+                <Icon icon="mdi:arrow-right" size={17} />
               </a>
             </section>
           </aside>
-        </section>
+        </div>
       </main>
     </div>
   );

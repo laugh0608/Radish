@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'dashboard', 'applications', 'profile', 'systemTools', 'users', 'moderation', 'orders', 'products', 'settings', 'documents', 'roles', 'taxonomy', 'stickers', 'coins', 'experience'];
+const domainNames = ['core', 'shell', 'dashboard', 'applications', 'profile', 'systemTools', 'users', 'channelDiscoverability', 'moderation', 'orders', 'products', 'settings', 'documents', 'roles', 'taxonomy', 'stickers', 'coins', 'experience'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   return domainNames.flatMap((domain) => {
@@ -25,6 +25,9 @@ test('Console 中英文资源键应完全对齐且不存在跨域重复键', () 
 });
 
 test('Console 高频业务数量文案应覆盖英文单复数', async () => {
+  const enKeys = collectKeys('en');
+  assert.ok(enKeys.includes('channelDiscoverability.filter.count_one'));
+  assert.ok(enKeys.includes('channelDiscoverability.filter.count_other'));
   const i18next = await import('i18next');
   const instance = i18next.default.createInstance();
   await instance.init({
@@ -44,6 +47,8 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
           'products.list.productCount_other': '{{count}} products',
           'documents.filter.active_one': '{{count}} filter',
           'documents.filter.active_other': '{{count}} filters',
+          'channelDiscoverability.filter.count_one': '{{count}} filter',
+          'channelDiscoverability.filter.count_other': '{{count}} filters',
           'documents.count.documents_one': '{{count}} document',
           'documents.count.documents_other': '{{count}} documents',
           'documents.count.versions_one': '{{count}} version',
@@ -79,6 +84,8 @@ test('Console 高频业务数量文案应覆盖英文单复数', async () => {
   assert.equal(instance.t('documents.filter.active', { count: 0 }), '0 filters');
   assert.equal(instance.t('documents.filter.active', { count: 1 }), '1 filter');
   assert.equal(instance.t('documents.filter.active', { count: 2 }), '2 filters');
+  assert.equal(instance.t('channelDiscoverability.filter.count', { count: 1 }), '1 filter');
+  assert.equal(instance.t('channelDiscoverability.filter.count', { count: 2 }), '2 filters');
   assert.equal(instance.t('documents.count.documents', { count: 0 }), '0 documents');
   assert.equal(instance.t('documents.count.documents', { count: 1 }), '1 document');
   assert.equal(instance.t('documents.count.documents', { count: 2 }), '2 documents');

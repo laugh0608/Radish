@@ -1,0 +1,60 @@
+.channel-discoverability-page .channel-discoverability-name {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.channel-discoverability-name__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 10px;
+  background: var(--color-bg-secondary);
+  font-size: 18px;
+}
+
+.channel-discoverability-name__copy {
+  min-width: 0;
+}
+
+.channel-discoverability-name__copy strong,
+.channel-discoverability-name__copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-discoverability-name__copy span,
+.channel-discoverability-modal-note,
+.channel-discoverability-history-summary {
+  color: var(--color-text-secondary);
+}
+
+.channel-discoverability-modal-note {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 12px;
+  background: var(--color-bg-secondary);
+  line-height: 1.65;
+}
+
+.channel-discoverability-modal-field {
+  display: grid;
+  gap: 8px;
+}
+
+.channel-discoverability-modal-field label {
+  font-weight: 650;
+}
+
+.channel-discoverability-history-summary {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}

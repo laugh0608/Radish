@@ -9,6 +9,7 @@ namespace Radish.Model;
 [Tenant(configId: "Chat")]
 [SugarIndex("idx_channel_tenant_sort", nameof(TenantId), OrderByType.Asc, nameof(Sort), OrderByType.Asc)]
 [SugarIndex("idx_channel_tenant_slug", nameof(TenantId), OrderByType.Asc, nameof(Slug), OrderByType.Asc)]
+[SugarIndex("idx_channel_tenant_discover", nameof(TenantId), OrderByType.Asc, nameof(DiscoverVisibility), OrderByType.Asc, nameof(LastMessageTime), OrderByType.Desc)]
 public class Channel : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
 {
     /// <summary>所属分类 Id（可空）</summary>
@@ -34,6 +35,14 @@ public class Channel : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     /// <summary>频道类型</summary>
     [SugarColumn(IsNullable = false)]
     public ChannelType Type { get; set; } = ChannelType.Public;
+
+    /// <summary>匿名发现页可读取的频道摘要级别；与登录态频道类型相互独立。</summary>
+    [SugarColumn(IsNullable = false, DefaultValue = "0")]
+    public ChannelDiscoverVisibility DiscoverVisibility { get; set; } = ChannelDiscoverVisibility.Hidden;
+
+    /// <summary>公开摘要可见性修订号；仅在可见性实际变化时递增。</summary>
+    [SugarColumn(IsNullable = false, DefaultValue = "0")]
+    public int DiscoverVisibilityVersion { get; set; }
 
     /// <summary>是否启用</summary>
     [SugarColumn(IsNullable = false)]
@@ -110,4 +119,14 @@ public enum ChannelType
 
     /// <summary>私有频道（预留）</summary>
     Private = 3
+}
+
+/// <summary>频道在匿名社区发现页中的摘要可见性。</summary>
+public enum ChannelDiscoverVisibility
+{
+    /// <summary>不进入匿名发现读模型。</summary>
+    Hidden = 0,
+
+    /// <summary>仅允许输出经过约束的频道摘要，不包含消息、成员或在线状态。</summary>
+    Summary = 1
 }

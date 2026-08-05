@@ -9,6 +9,7 @@ import { HangfirePage } from '../pages/SystemTools/HangfirePage';
 
 const applicationsPage = lazy(() => import('../pages/Applications').then(module => ({ default: module.Applications })));
 const categoryListPage = lazy(() => import('../pages/Categories').then(module => ({ default: module.CategoryList })));
+const channelDiscoverabilityPage = lazy(() => import('../pages/ChannelDiscoverability').then(module => ({ default: module.ChannelDiscoverabilityPage })));
 const coinAdminPage = lazy(() => import('../pages/Coins').then(module => ({ default: module.CoinAdminPage })));
 const dashboardPage = lazy(() => import('../pages/Dashboard').then(module => ({ default: module.Dashboard })));
 const documentGovernancePage = lazy(() => import('../pages/Documents').then(module => ({ default: module.DocumentGovernancePage })));
@@ -76,6 +77,10 @@ const router = createBrowserRouter(
         {
           path: 'users/:userId',
           element: withRouteGuard('user-detail', createElement(userDetailPage)),
+        },
+        {
+          path: 'channel-discoverability',
+          element: withRouteGuard('channel-discoverability', createElement(channelDiscoverabilityPage)),
         },
         {
           path: 'roles',

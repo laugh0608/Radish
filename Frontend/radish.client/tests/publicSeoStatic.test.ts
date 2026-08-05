@@ -166,7 +166,7 @@ test('公开发现和论坛列表不应渲染教学式阅读说明卡', () => {
   const i18nSource = readLocaleResources();
 
   assert.doesNotMatch(discoverSource, /discoverGuideItems|heroTitleRow|heroGuideGrid|pulseKicker|discussionKicker/);
-  assert.doesNotMatch(discoverSource, /summaryCards|routeGuideCards|routeGuideMap|PublicDiscoverFeed/);
+  assert.doesNotMatch(discoverSource, /summaryCards|routeGuideCards|routeGuideMap/);
   assert.doesNotMatch(discoverSource, /featuredLeaderboardConfigs|forumSectionCueDefinitions|docsSectionCueDefinitions|shopSectionCueDefinitions/);
   assert.doesNotMatch(discoverStylesSource, /heroGuide|streamBoundary|streamKicker/);
   assert.doesNotMatch(forumListSource, /PublicReadingGuide|readingGuide|forum\.public\.guide\.label|listRailRulesTitle|sideRuleList/);
@@ -181,26 +181,33 @@ test('公开社区发现页应为跨入口导航提供公开链接并保留壳�
   assert.match(source, /buildPublicDocsPath/);
   assert.match(source, /buildPublicLeaderboardPath/);
   assert.match(source, /buildPublicShopPath/);
+  assert.match(source, /buildMessagesPath/);
+  assert.match(source, /buildPublicProfilePath/);
   assert.match(source, /shouldHandlePublicDiscoverLink\(event\)/);
   assert.match(source, /href=\{forumListHref\}/);
   assert.match(source, /href=\{forumSearchHref\}/);
   assert.match(source, /href=\{forumQuestionHref\}/);
   assert.match(source, /href=\{forumHotHref\}/);
-  assert.match(source, /href=\{buildPublicForumPath\(tagRoute\)\}/);
-  assert.match(source, /featuredDocument \? buildPublicDocsPath\(\{ kind: 'detail', slug: featuredDocument\.voSlug \}\) : docsListHref/);
-  assert.match(source, /featuredProduct \? buildPublicShopPath\(\{ kind: 'detail', productId: String\(featuredProduct\.voId\) \}\) : shopProductsHref/);
   assert.match(source, /href=\{leaderboardHref\}/);
+  assert.match(source, /const getItemHref = useCallback/);
+  assert.match(source, /return buildMessagesPath\(\{ channelId: item\.voTarget\.voChannelId \}\)/);
+  assert.match(source, /return buildPublicDocsPath\(\{ kind: 'detail', slug: item\.voTarget\.voDocumentSlug \}\)/);
+  assert.match(source, /postId: item\.voTarget\.voPostPublicId/);
+  assert.match(source, /userId: contributor\.publicId/);
   assert.match(source, /handlePublicDiscoverLinkClick\(event,/);
 });
 
-test('公开社区发现页应保持单一社区内容主流并只加载少量辅助内容', () => {
+test('公开社区发现页应由统一读模型驱动单一连续内容流', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
 
-  assert.match(source, /getPostList\(null, t, 1, 8, 'newest'\)/);
-  assert.match(source, /const spotlightPosts = forumPosts\.slice\(0, 5\)/);
-  assert.match(source, /getPublicWikiList\(\{ pageIndex: 1, pageSize: 1 \}\)/);
-  assert.match(source, /getProducts\(t, undefined, undefined, undefined, 1, 1\)/);
-  assert.equal((source.match(/<PostCard/g) ?? []).length, 1);
+  assert.match(source, /getPublicDiscoverFeed\(\{ pageSize: DISCOVER_PAGE_SIZE \}\)/);
+  assert.match(source, /cursor: feed\.voNextCursor/);
+  assert.match(source, /PublicDiscoverItemKinds\.ChannelSummary/);
+  assert.match(source, /const isFocus = index === 0;/);
+  assert.match(source, /items\.map\(\(item, index\) =>/);
+  assert.match(source, /index === 2 && renderContributorStrip\(styles\.mobileContributorNode\)/);
+  assert.match(source, /feed\?\.voHasMore/);
+  assert.doesNotMatch(source, /getPostList|getPublicWikiList|getProducts|<PostCard/);
   assert.doesNotMatch(source, /docs\.map|products\.map|featuredLeaderboardConfigs\.map/);
   assert.doesNotMatch(source, /sectionRefs|scrollToSection|previewSection|rememberSection/);
 });

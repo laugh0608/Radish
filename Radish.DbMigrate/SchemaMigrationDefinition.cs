@@ -52,6 +52,7 @@ internal static class SchemaMigrationRegistry
         ForumPostBookmarkSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance,
-        UserBlockNotificationSuppressionSchemaMigration.Instance
+        UserBlockNotificationSuppressionSchemaMigration.Instance,
+        ChatChannelDiscoverabilitySchemaMigration.Instance
     ];
 }

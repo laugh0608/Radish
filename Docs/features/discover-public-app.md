@@ -2,7 +2,7 @@
 
 > Radish 纯 Web 默认入口 `/discover` 的公开内容流说明。
 >
-> **最后更新**: 2026.08.04
+> **最后更新**: 2026.08.05
 
 ## 定位
 
@@ -14,21 +14,20 @@
 
 `2026-08-03` 起旧文件只读留档，后续视觉裁决进入 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-P01`；本页与当前代码继续负责功能、入口、数据和停止线。
 
-`R1-P01` 首轮稿把真实 `newest` 数据误概括为热帖主流；第二轮虽分开分类、标签和结构化状态，但帖子仍占据绝大多数视觉篇幅。`2026-08-04` 经过参考转译、公开能力审计、低保真比较和多轮视觉重校准后，`R1-P01 / 社区发现 / PC 1440` 已确认为正式 PC 视觉基准。它保留 Radish 顶部公共导航和社区发现信息架构，使用现代自然紧凑表面、国风暖白、Geist 无衬线、克制圆角阴影、灰玉品牌色、墨蓝操作色与内嵌数据反馈；“社区正在发生”在同一扫描轴中并置公共频道话题、成员公开动态、跨帖神评、帖子和问答。活动设计源已删除旧 PC / mobile 与全部失败稿，只保留该 PC、`8` 个必要组件母版和主题变量；mobile 将在下一轮按移动主任务独立设计，详见[结构研究记录](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)。
+`R1-P01` 首轮稿把真实 `newest` 数据误概括为热帖主流；第二轮虽分开分类、标签和结构化状态，但帖子仍占据绝大多数视觉篇幅。`2026-08-04` 经过参考转译、公开能力审计、低保真比较和多轮视觉重校准后，`R1-P01 / 社区发现 / PC 1440` 已确认为正式 PC 视觉基准。它保留 Radish 顶部公共导航和社区发现信息架构，使用现代自然紧凑表面、国风暖白、Geist 无衬线、克制圆角阴影、灰玉品牌语义、墨蓝操作语义与内嵌数据反馈；“社区正在发生”在同一扫描轴中并置公共频道话题、成员公开动态、跨帖神评、帖子和问答。`2026-08-05` 已在同一活动源中完成并确认唯一 `R1-P01 / 社区发现 / Mobile 390`：搜索与真实内容前置，社区脉搏、贡献者和知识主题分别作为首屏、中段和流后上下文，不缩放 PC，也不把右栏机械堆到末尾。首轮 mobile 评审指出混合流仍像异色列表块拼接，修订稿改为“焦点事件 + 连续编号轨道 + 嵌入式贡献者人物节点”：当前页第一条真实内容承担墨蓝焦点面，其余内容共享同一时间轴、排版和分隔节奏，不再重复图标盒与逐行箭头。节点、`2x` 视觉自检和用户评审均已通过；统一读模型、Channel opt-in 治理和页面结构现已完成代码侧落地，阶段性 Gateway PC / mobile 运行态验收仍待单独授权启动服务。
 
 ## 当前实现事实
 
-截至 `2026-08-04`，`/discover` 代码没有因本轮设计研究而修改，实际只复用以下公开数据：
+截至 `2026-08-05`，`/discover` 已按统一公开读模型完成代码侧改造：
 
-- 最新帖子：`getPostList(null, t, 1, 8, 'newest')` 读取公开帖子，页面展示前 `5` 条 `PostCard(publicCompact)`；卡片优先使用 `Post.PublicId` 路径，并输出可新标签打开的真实 `href`。
-- 热门标签：`getHotTags` 读取最多 `6` 个标签，附在帖子主流之后，不改变帖子排序。
-- 相关文档：只读取公开文档列表首项，在右侧“相关内容”中链接 `/docs/:slug`；无数据或失败时回退到公开文档列表入口。
-- 相关商品：只读取公开商品首项，在右侧“相关内容”中链接 `/shop/product/:productId`；无数据或失败时回退到公开商品列表入口。
-- 榜单入口：右侧固定指向公开榜单，不在 `/discover` 内复制榜单筛选或排名逻辑。
-- 公开主页入口：从帖子作者、榜单或作者入口进入 `/u/:identifier`，其中 `identifier` 优先为 `User.PublicId`，并输出真实公开 `href`。
-- 移动公开任务入口：在 `390px` 级视口下提供搜索、全部、最新、问答、热门；这些入口只复用既有 `/forum/search`、`/discover`、`/forum`、`/forum/question` 和 hottest 列表路由。
+- `GET /api/v1/PublicDiscover/GetFeed` 统一读取 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`，采用 snapshot cutoff 与稳定 keyset 游标，并显式输出 `VoPulse`。
+- `Channel.DiscoverVisibility` 默认 `Hidden`；只有 Console 中具备 `console.channel-discoverability.manage` 的治理者显式开启 `Summary` 后，合格公共频道才输出元数据和安全聚合。变更使用期望版本、原因和 append-only 事件留痕，不会按 `ChannelType.Public` 自动开放。
+- `Frontend/radish.http` 提供统一契约与 `getPublicDiscoverFeed`；页面不再并行调用帖子、标签、Wiki、商品等列表接口拼装首屏。
+- PC 使用“主内容流 + 洞察区”非对称结构；mobile 前置搜索与“全部 / 最新 / 问答 / 知识”，并把贡献者节点嵌入第三条内容后。第一条真实内容使用焦点事件，其余内容按统一编号轨道连续扫描。
+- 频道、文档、帖子 / 评论和贡献者均输出真实 `href`，普通点击继续由公共壳层接管；频道目标仍进入登录态 `/messages`，不会开放匿名消息正文。
+- Docs、问答、榜单和商城只作为紧凑上下文入口，不在 `/discover` 复制各自列表、筛选、交易或治理逻辑。
 
-本轮审计确认 `getTopCategories`、`getFixedTags`、问答 / 投票筛选、公开 Wiki、商品和榜单可以直接组合为摘要模块，但这些能力尚未进入当前页面代码，也不会因为出现在设计稿中自动成为已批准范围。聊天室的 `Public` 频道仍要求登录，`/circle` 只聚合当前用户关注作者的论坛帖子，神评也只随帖子详情公开；公共频道摘要、成员公开短动态和跨帖神评集合都必须先设计新的公开读模型与隐私边界。
+本批没有把 `/circle`、通知、历史神评快照或现有授权聊天室接口伪装成匿名来源，也没有新增短动态写模型。全局 `guofeng` 品牌 token 会影响全部页面族，未随本页局部实现改色；本页只消费现有 `accent-jade / accent-ink / action` 等语义 token。
 
 首批不包含：
 
@@ -39,12 +38,112 @@
 - 订单、背包、账号设置或 Console 排障入口
 - 统一搜索 API、跨类型推荐读模型或公开聊天室路由
 
+## `R1-P01` 统一公开读模型
+
+### 定位与权威边界
+
+统一公开读模型服务于“社区正在发生”的匿名可读混合流，但它不是推荐系统、匿名聊天室或新的动态写入产品：
+
+1. 首批统一返回 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question` 五种结构化 item；帖子与问答复用既有公开资格和公开标识，不另建平行可见性规则。
+2. `PublicDiscoverFeedVo` 是只读 API 投影，不是新的业务真相源；每次读取都从频道、Wiki、论坛和用户当前权威状态得出资格。
+3. 首批不新增“短动态”实体或发布入口。`MemberActivity` 只表达已经公开的成员贡献事件，不能从 `/circle`、通知、浏览记录或其他私域关系流复制数据。
+4. `ChannelType.Public` 只表示登录态频道类型，不等于匿名公开。频道摘要必须另行显式选择公开摘要资格，不能调用现有 `[Authorize]` 的 Channel / Message 接口后在前端脱敏。
+5. `HighlightedComment` 使用当前 Comment 与 Post 作为内容、可见性和目标权威；`CommentHighlight.ContentSnapshot` 只保留历史统计用途，不能作为公共流当前正文。
+6. 用户屏蔽继续遵循 F4-K：它隔离互动和私域分发，不删除匿名公开内容，也不让公共 feed 按登录用户产生不同 SEO 或缓存版本。
+
+### 来源与公开资格
+
+| item | 首批来源 | 必须同时满足 | 明确不读取 |
+| --- | --- | --- | --- |
+| `ChannelSummary` | Chat 库 `Channel` 与安全聚合 | `Type=Public`、启用、未软删除、`DiscoverVisibility=Summary`、名称 / slug 有效 | 消息正文、附件、在线人数、成员名单、Reaction、Pin、阅读回执 |
+| `MemberActivity` | Main 库成员拥有的公开 Wiki 首次发布 | Wiki 已发布、`Visibility=Public`、未软删除、`PublishedAt` 有效；Owner 用户启用、未删除且有合法 `PublicId` | 草稿、审核意见、受限文档、关注流、通知、任意“短动态”正文 |
+| `HighlightedComment` | `CommentHighlight + Comment + Post + User` | 当前神评、`HighlightType=1`、点赞数大于 `0`；Comment 启用且未删除；父 Post 已发布、启用、未删除且有合法 `PublicId`；作者公开身份有效 | 沙发、历史快照正文、不可用帖子 / 评论、治理理由 |
+| `Post` | 既有公开帖子查询 | 完整复用当前公开帖子资格、分类 / 标签 / 状态和 `PublicId` 契约 | 草稿、禁用 / 删除内容、客户端自造热度 |
+| `Question` | 既有公开问答筛选 | 先满足公开帖子资格，再按既有结构化问答状态识别 | 回答私有状态、悬赏或未批准扩展 |
+
+为 `Channel` 增加的匿名摘要开关固定为 `DiscoverVisibility`：`Hidden=0`、`Summary=1`，默认 `Hidden`。`Summary` 只允许输出频道名称、描述、slug、最后活动时间和可选的近 `24` 小时有效消息数量；目标继续使用现有 `buildMessagesPath({ channelId })` 进入登录后的 `/messages`，不得扩展为匿名消息详情。现有频道治理入口负责显式开启或关闭该字段，迁移不得根据 `ChannelType.Public` 自动批量开启。
+
+`MemberActivity` 首批只接受公开 Wiki 的首次发布，`VoOccurredAtUtc` 使用不可变的 `PublishedAt`。Wiki 后续编辑、帖子 / 问答发布、排行榜变化和资料修改都不重复包装为动态；若未来扩充 allowlist，必须逐类补公开资格、撤回语义、去重和目标路由，不接受“所有审计事件直接上流”。
+
+跨帖神评表示“从不同公开帖子汇集当前神评”，不表示评论被其他内容引用。其展示正文从当前 Comment 生成纯文本摘要，作者来自当前公开身份，父帖标题作为来源说明，跳转使用 `Post.PublicId + Comment.Id` 复用现有评论定位；评论编辑后展示当前正文，取消神评、禁用、删除或父帖退出公开后立即失去资格。
+
+### Vo 与 HTTP 契约
+
+新增公开接口：
+
+```text
+GET /api/v1/PublicDiscover/GetFeed?cursor={opaque}&pageSize={1..50}
+```
+
+- `[AllowAnonymous]`；默认 `pageSize=20`，`/discover` 首屏可以按设计密度请求较小页。
+- `cursor` 只能由上一次响应取得；非法、版本未知或字段越界返回 `400 / PublicDiscover.CursorInvalid`。
+- `pageSize` 超界返回 `400 / PublicDiscover.PageSizeInvalid`，不静默改成另一个大小。
+- Controller 只注入 `IPublicDiscoverService`，不直接注入仓储或组合来源。
+
+响应使用显式 Vo，不返回匿名对象：
+
+```text
+PublicDiscoverFeedVo
+├── VoItems: PublicDiscoverItemVo[]
+├── VoPulse: PublicDiscoverPulseVo
+├── VoNextCursor: string?
+├── VoHasMore: bool
+└── VoGeneratedAtUtc: DateTime
+
+PublicDiscoverItemVo
+├── VoKey: string
+├── VoKind: PublicDiscoverItemKind
+├── VoOccurredAtUtc: DateTime
+├── VoTitle / VoSummary: string
+├── VoActor: PublicDiscoverActorVo?
+├── VoTarget: PublicDiscoverTargetVo
+└── VoPrimaryMetric: PublicDiscoverMetricVo?
+
+PublicDiscoverPulseVo
+├── VoWindowStartedAtUtc / VoWindowEndedAtUtc: DateTime
+├── VoDiscoverableChannelCount: long
+├── VoEligibleItemCount: long
+└── VoKnowledgeContributionCount: long
+```
+
+`VoKey` 只作稳定渲染键，不是授权标识。`VoActor` 只允许 `VoPublicId / VoDisplayName / VoAvatarThumbnailUrl` 公共白名单；`VoTarget` 使用枚举区分 `Messages / Docs / ForumPost`，并按类型携带 `VoChannelId`、`VoDocumentSlug`、`VoPostPublicId`、`VoCommentId` 与 `VoRequiresAuthentication`。`VoChannelId` 只用于复用当前登录态消息路由，不能绕过 Channel / Message 的服务端授权；频道 slug 当前不是租户内唯一约束，不能单独作为深链标识。前端继续通过既有 route builder 生成真实 `href` 和当前标签页的 `history.state`，API 不接收或返回来源回跳状态。
+
+`VoTitle / VoSummary` 必须由服务端从当前权威内容生成纯文本摘要：移除 Markdown / HTML、控制字符与附件表达，按 Unicode 文本安全截断；不得返回消息正文、草稿、审核备注或历史 CommentHighlight 快照。跨类型指标使用枚举语义，例如 `RecentReplies / Likes / Comments / Answers`，不返回已经本地化的自由文本标签。
+
+`VoPulse` 只表达可从当前权威数据重算的聚合：当前显式开放摘要的频道数、以 `VoWindowEndedAtUtc` 为截止点的近 `24` 小时合格 item 总数，以及同一窗口内的公开 Wiki 首次发布数。三项都由仓储执行数据库侧 `COUNT`，窗口终点与首次请求的 `SnapshotCutoffUtc` 相同，续页沿用同一窗口；设计中的数值只是样例。首批不得把累计 `ViewCount` 包装成“今日浏览”，也不新增曝光埋点或分析事件来支撑装饰性数字。
+
+### 稳定排序、去重与游标
+
+1. 首批采用确定性的时间序，不提供“为你推荐”“综合热度”或个性化参数；设计源中的 PC / mobile 控件统一改为“最新公开”。
+2. 排序键固定为 `VoOccurredAtUtc DESC, KindOrder ASC, SourceId DESC`。`KindOrder` 仅在时间完全相同时消除不确定性，不作为推荐权重。
+3. 首次请求记录 `SnapshotCutoffUtc`；后续游标编码 `Version + SnapshotCutoffUtc + LastOccurredAtUtc + LastKindOrder + LastSourceId`，使用 Base64Url 的不透明版本化 payload。
+4. 继续翻页只读取 `OccurredAtUtc <= SnapshotCutoffUtc` 且严格位于上一排序键之后的数据；刷新页面才接收新发布或重新取得资格的 item。
+5. Question 只以 `Question` 出现，不再作为普通 `Post` 重复输出；其余不同源对象即使指向同一帖子也保持各自语义，不做客户端去重或随机轮换。
+6. 每个来源在仓储侧按同一游标窗口最多取 `pageSize + 1` 条，Service 合并后再截取；禁止把全表读入内存排序，也禁止在 `PublicDiscoverApp.tsx` 拼接多个列表后自行续页。
+
+### 隐私、治理、缓存与失败
+
+- 可见性、启用、软删除、发布状态和当前神评资格在每次数据库读取时共同判断；举报存在本身不改变公开性，真正的治理动作沿原领域字段收回资格。
+- actor 驱动的 `MemberActivity / HighlightedComment` 在用户禁用、删除或公共身份失效时整体退出；不会降级为泄漏历史名称的匿名动态。
+- 频道关闭摘要资格、Wiki 转为非公开、评论 / 帖子禁用或删除后，不允许靠旧缓存继续展示。
+- 首批完整 feed 响应使用 `Cache-Control: no-store`，只允许一次请求内的批量查询和映射复用；在所有来源都有可靠的租户级 revision 与同步失效生产者前，不启用 Redis、内存或 CDN 跨请求页缓存，也不以短 TTL 代替撤回正确性。
+- 某个来源数据库或资格查询失败时，整个 `GetFeed` 返回稳定 `503 / PublicDiscover.SourceUnavailable`；不能返回缺少某类来源的“成功”页，否则同一游标会产生跳项和重复。Docs、问答、榜单与商城的静态上下文入口仍可使用，但不能伪装成已成功读取的内容模块。
+- 日志只记录租户、来源类型、候选数、淘汰数、页大小、游标版本和耗时，不记录消息 / 评论正文、私人身份或完整游标 payload。
+
+### 分层与实现状态
+
+- `Radish.Model` 定义枚举和全部 `Vo`；`Radish.IService` 先定义 `IPublicDiscoverService`。
+- 各来源通过返回实体的现有或专属仓储完成数据库侧资格与 keyset 窗口查询；Service 只组合仓储结果并映射 Vo，禁止直接使用 `_repository.Db.Queryable`。
+- CommentHighlight 的公共集合必须使用能联动 Comment / Post 当前资格的专属仓储方法，不能复用当前只按 `PostId` 返回快照的 Controller / BaseService 查询。
+- `Frontend/radish.http` 增加统一类型与 `getPublicDiscoverFeed`；`radish.client` 只消费该客户端，不新增 fetch / axios 封装。
+- `2026-08-05` 已按以上分层完成实现，并由仓储 / 服务定向测试、前端静态契约、双语资源测试、type-check、lint 和 production build 约束；全局灰玉品牌 token 不属于本次局部页面实现。
+
 ### 分类、标签与结构化状态
 
 - 分类是帖子的唯一主归属，使用品牌柔底、无 `#` 的独立 chip，并进入公开分类页。
 - 标签是一篇帖子可拥有的横向主题，使用较轻的 `#标签` chip，并进入公开标签页；标签不得冒充分类，也不承担帖子状态。
 - 问答、投票、抽奖、精华和置顶属于结构化状态，继续使用状态 chip；它们与分类、标签分组排列，不复用同一视觉样式。
-- 实现批中的 `PostCard(publicCompact)` 仍需明确区分这三类语义；具体位置、换行和主次关系以已确认 PC 与待完成 mobile 的共同契约为准，不由旧页面样式反向决定。
+- 统一流首批只展示类型、标题、摘要、actor 和结构化指标，不在紧凑轨道中复制完整 `PostCard` 的分类 / 标签 / 状态组；进入 Forum 详情或列表后继续由既有卡片明确区分三类语义。
 
 ## `P3-10-D` / `R1-P01` 信息结构口径
 
@@ -75,18 +174,16 @@ D61 后的首屏实现要求：
 - PC 首屏应至少露出公共头部和一组具有明显主次差异的真实社区内容，不以同尺寸卡片网格或单一帖子长流占满首屏。
 - 移动首屏应优先保证第一张可读内容卡片尽早出现；头部次级动作可以继续图标化，说明型卡片不应连续堆叠。
 - hero / guide / summary 只能保留帮助用户理解内容来源的最小信息；如果后续改版需要新增大面积引导、插画或营销文案，必须先进入设计源文件评审。
-- 空态、加载态和部分失败态必须继续说明内容来源、下一落点和公开边界，但不能用长文案替代真实内容。
+- 空态、加载态、整流失败和续页失败态必须继续说明内容来源、下一落点和公开边界，但不能用长文案替代真实内容。
 
 ### 内容卡片优先级
 
-跨实体能力审计、低保真比较和 PC 视觉裁决已经完成，代码实现仍遵守以下能力优先级：
+跨实体能力审计、低保真比较和代码实现已经完成，当前能力优先级为：
 
-1. 当前帖子仍只按现有 `newest` 排序，不在客户端伪造热度或推荐顺序。
-2. 当前文档和商品各只读取一项、榜单只有入口；这些事实不能直接推导它们在新首页中的最终模块尺寸。
-3. 问答、投票、分类、标签、Docs、商品和公开榜单可作为内容、活动、知识、激励或紧凑导航模块；作者只能来自帖子或榜单的既有线索，圈子不能作为匿名首页摘要模块。
-4. 不以“已有一个 API”作为上首页的充分理由，也不为了避免新读模型而把所有多元内容伪装成帖子筛选。
-
-若需要跨类型排序、个性化、推荐解释、置顶、去重或分页续读，应先设计 feed API / 读模型；不要在 `PublicDiscoverApp.tsx` 内继续堆叠临时排序和来源拼装规则。
+1. 跨类型顺序、snapshot cutoff、去重与分页只由 `PublicDiscover` 服务端读模型负责，客户端不伪造热度、推荐或来源权重。
+2. Docs、榜单和商品在本页只承担上下文导航，不读取各自列表来填充装饰性摘要。
+3. 问答与帖子共享公开资格但保持不同 item 语义；圈子、投票、分类和标签不因已有接口就自动进入匿名混合流。
+4. 若后续增加来源、推荐解释或个性化，必须扩展专题契约、撤回语义和版本化游标，不能在 `PublicDiscoverApp.tsx` 重新堆叠来源拼装规则。
 
 ### 与相邻页面分工
 
@@ -100,18 +197,17 @@ D61 后的首屏实现要求：
 | `/circle` | 登录态关系链复访入口 | 关注流、粉丝列表、私域动态、推荐算法 |
 | `/me` | 登录态个人状态复访入口 | 完整个人中心、完整钱包、账号设置 |
 
-### 代码进入条件
+### 实现闭环与验收停止线
 
-进入 `/discover` 页面结构代码改造前，应先满足：
-
-- `R1-P01 / 社区发现 / PC 1440` 已通过业务和视觉审核；进入页面实现前仍需完成 mobile 代表画板，并确认 PC / mobile 的共享契约与结构差异。
-- 现有 `publicSeoStatic.test.ts` 中“单一社区内容主流并只加载少量辅助内容”的旧断言已经重新裁决，并与获选的多元社区结构保持一致。
+- `R1-P01 / 社区发现` PC / mobile 已通过业务和视觉审核，统一公开读模型和 Channel opt-in 范围已获确认并完成代码实现。
+- `publicSeoStatic.test.ts` 已从旧的“帖子主流 + 少量辅助内容”改为约束统一 feed、连续轨道、稳定游标消费和真实跨入口链接。
 - 不改变 `/discover` 公开集合页 canonical、OpenGraph、JSON-LD 和 sitemap 口径。
 - 不把来源返回状态写入 URL、分享链接或 head 输出。
 - 不新增推荐系统、关系链私域数据、登录后工作台操作或 Console 入口。
-- 若实现“社区正在发生”，必须先新增统一公开读模型；禁止匿名直读现有授权聊天室 API，也不得把 `/circle` 私域关注流或尚不存在的短动态对象伪装成公开数据。
+- “社区正在发生”必须按本文统一公开读模型实现；禁止匿名直读现有授权聊天室 API，也不得把 `/circle` 私域关注流或尚不存在的短动态对象伪装成公开数据。
 - 不破坏普通点击保留来源返回、新标签打开使用真实公开 `href` 的契约。
-- PC 与移动两种代表视图都能证明没有横向溢出、按钮文字挤压或首屏只剩说明文字；PC Pencil 基准已通过节点布局检查，mobile 待下一轮完成。
+- PC 与移动两种代表视图都必须证明没有横向溢出、按钮文字挤压或首屏只剩说明文字；两张 Pencil 画板的节点检查与用户评审均已通过。
+- 代码侧验证通过后仍不能直接把专题写为运行态关闭；必须在当前任务明确授权启动前后端后，再完成 Gateway 匿名 / 登录态、PC / mobile、双语和代表主题截图复核。
 
 ## 前端结构
 
@@ -121,8 +217,10 @@ Frontend/radish.client/src/public/discover/
 ├── PublicDiscoverApp.module.css
 
 Frontend/radish.client/src/public/components/PublicShellHeader.tsx
-Frontend/radish.client/src/apps/forum/components/PostCard.tsx
 Frontend/radish.client/src/components/web-shell/                  # WebStateSlot
+
+Frontend/radish.http/src/public-discover-contract.ts
+Frontend/radish.http/src/public-discover-client.ts
 ```
 
 ## URL 与来源返回
@@ -147,7 +245,7 @@ Frontend/radish.client/src/components/web-shell/                  # WebStateSlot
 - 页面可以增加登录后轻互动入口，但不能把工作台动作搬进首屏内容流。
 - 新增内容来源前应先确认已有公开 API、公开 head、移动 / PC 布局和来源返回语义。
 - 从 `/discover` 进入 `/circle` 或公开详情后再继续打开内容详情时，来源交接只允许使用当前标签页的一次性状态；不得把来源状态固化进分享 URL 或 SEO 输出。
-- 若后续需要跨类型排序、推荐解释或个性化，应先单独设计 feed API 或读模型，不在当前页面内堆叠 ad hoc 排序逻辑。
+- 跨类型时间序只由统一公开读模型负责；若后续需要推荐解释或个性化，仍须单独设计，不在当前页面或现有游标上追加 ad hoc 权重。
 
 ## 验证要点
 
@@ -157,3 +255,7 @@ Frontend/radish.client/src/components/web-shell/                  # WebStateSlot
 - 公开主页入口优先进入 `/u/usr_...`，旧 LongId 仅保留兼容。
 - 卡片右键打开新标签、复制链接和普通点击都能进入同一公开详情；只有普通点击额外保留来源返回状态。
 - head、canonical、OpenGraph 和 JSON-LD 不携带登录后状态或来源状态。
+- Channel 默认不进入匿名流；只有显式 `DiscoverVisibility=Summary` 才输出元数据和安全聚合，响应中不存在消息正文、在线人数或成员名单。
+- 社区脉搏只显示 `VoPulse` 的公开频道、近 `24` 小时新增内容和知识贡献；不把累计浏览量伪装成日增量，窗口与分页 snapshot cutoff 保持一致。
+- Wiki 转私有、频道关闭摘要、神评失效、Comment / Post 禁用或删除、actor 失效后立即退出；CommentHighlight 历史快照不能绕过当前资格。
+- 相同 cutoff 下多页遍历无重复、无跳项且刷新后才看到新 item；非法游标、来源失败、无跨请求缓存和 `Cache-Control: no-store` 均有定向测试。

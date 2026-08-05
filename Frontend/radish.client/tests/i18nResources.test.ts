@@ -5,7 +5,9 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import i18next from 'i18next';
 import { enChat } from '../src/locales/en/chat.ts';
+import { enDiscover } from '../src/locales/en/discover.ts';
 import { zhChat } from '../src/locales/zh/chat.ts';
+import { zhDiscover } from '../src/locales/zh/discover.ts';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
@@ -138,6 +140,26 @@ test('client 高频数量文案应按英文单复数规则解析', async () => {
 
   await instance.changeLanguage('zh');
   assert.equal(instance.t('shop.productCount', { count: 2 }), '2 件商品');
+});
+
+test('公开发现指标与贡献者数量应按当前语言解析单复数', async () => {
+  const instance = i18next.createInstance();
+  await instance.init({
+    lng: 'en',
+    resources: {
+      en: { translation: enDiscover },
+      zh: { translation: zhDiscover },
+    },
+  });
+
+  assert.equal(instance.t('discover.public.feedMetricLikes', { count: 1, formattedCount: '1' }), '1 like');
+  assert.equal(instance.t('discover.public.feedMetricLikes', { count: 2, formattedCount: '2' }), '2 likes');
+  assert.equal(instance.t('discover.public.contributorCount', { count: 1, formattedCount: '1' }), '1 item');
+  assert.equal(instance.t('discover.public.contributorCount', { count: 2, formattedCount: '2' }), '2 items');
+
+  await instance.changeLanguage('zh');
+  assert.equal(instance.t('discover.public.feedMetricLikes', { count: 2, formattedCount: '2' }), '2 个赞');
+  assert.equal(instance.t('discover.public.contributorCount', { count: 2, formattedCount: '2' }), '2 项');
 });
 
 test('聊天回应无障碍文案应按数量解析中英文单复数', async () => {

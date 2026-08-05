@@ -1265,6 +1265,33 @@ internal static partial class InitialDataSeeder
                 ControllerName = "Wiki",
                 ActionName = "AdminReviewDraft",
                 Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50174L,
+                ApiModuleName = "Get channel discoverability page",
+                LinkUrl = "/api/v1/ChannelDiscoverability/GetPage",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "GetPage",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50175L,
+                ApiModuleName = "Get channel discoverability history",
+                LinkUrl = "/api/v1/ChannelDiscoverability/GetHistory",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "GetHistory",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50176L,
+                ApiModuleName = "Update channel discoverability",
+                LinkUrl = "/api/v1/ChannelDiscoverability/UpdateVisibility/.+",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "UpdateVisibility",
+                Roles = new[] { 10000L, 10001L }
             }
         };
 

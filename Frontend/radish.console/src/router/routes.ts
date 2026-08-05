@@ -6,6 +6,7 @@ export const ROUTES = {
   PRODUCTS: '/products',
   ORDERS: '/orders',
   USERS: '/users',
+  CHANNEL_DISCOVERABILITY: '/channel-discoverability',
   USER_DETAIL: '/users/:userId',
   ROLES: '/roles',
   ROLE_PERMISSIONS: '/roles/:roleId/permissions',

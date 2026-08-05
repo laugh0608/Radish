@@ -10,6 +10,7 @@ export const zhShell = {
   'console.route.products': '商品管理',
   'console.route.orders': '订单管理',
   'console.route.users': '用户管理',
+  'console.route.channel-discoverability': '频道公开摘要',
   'console.route.user-detail': '用户详情',
   'console.route.roles': '角色管理',
   'console.route.role-permissions': '权限配置',

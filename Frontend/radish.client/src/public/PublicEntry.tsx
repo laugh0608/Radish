@@ -553,6 +553,8 @@ export const PublicEntry = () => {
       onNavigateToDocs={navigateToDocsRoute}
       onNavigateToLeaderboard={navigateToLeaderboardRoute}
       onNavigateToShop={navigateToShopRoute}
+      onNavigateToMessages={(channelId) => navigateToRoute({ app: 'messages', route: { channelId } })}
+      onNavigateToProfile={(userId) => navigateToProfileRoute({ kind: 'detail', userId, tab: 'posts', page: 1 })}
     />
   ) : route.app === 'leaderboard' ? (
     <PublicLeaderboardApp

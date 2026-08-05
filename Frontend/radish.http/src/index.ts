@@ -207,6 +207,25 @@ export {
 } from './post-bookmark-client';
 
 export type {
+  PublicDiscoverItemKind,
+  PublicDiscoverTargetKind,
+  PublicDiscoverMetricKind,
+  PublicDiscoverActorVo,
+  PublicDiscoverTargetVo,
+  PublicDiscoverMetricVo,
+  PublicDiscoverItemVo,
+  PublicDiscoverPulseVo,
+  PublicDiscoverFeedVo,
+  GetPublicDiscoverFeedRequest,
+} from './public-discover-contract';
+export {
+  PublicDiscoverItemKinds,
+  PublicDiscoverTargetKinds,
+  PublicDiscoverMetricKinds,
+} from './public-discover-contract';
+export { getPublicDiscoverFeed } from './public-discover-client';
+
+export type {
   ContentRewardLongId,
   ContentRewardTargetType,
   ContentRewardReasonCode,

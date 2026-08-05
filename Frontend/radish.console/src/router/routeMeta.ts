@@ -122,6 +122,17 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     defaultEntry: false,
   },
   {
+    key: 'channel-discoverability',
+    path: '/channel-discoverability',
+    title: '频道公开摘要',
+    group: 'governance',
+    iconKey: 'moderation',
+    sidebarOrder: 25,
+    requiredPermission: CONSOLE_PERMISSIONS.channelDiscoverabilityView,
+    sidebarVisible: true,
+    searchVisible: true,
+  },
+  {
     key: 'roles',
     path: '/roles',
     title: '角色管理',

@@ -10,6 +10,7 @@ export const enShell = {
   'console.route.products': 'Products',
   'console.route.orders': 'Orders',
   'console.route.users': 'Users',
+  'console.route.channel-discoverability': 'Channel summaries',
   'console.route.user-detail': 'User details',
   'console.route.roles': 'Roles',
   'console.route.role-permissions': 'Role permissions',
