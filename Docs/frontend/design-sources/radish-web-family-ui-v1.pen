@@ -11830,6 +11830,3119 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "dKMb0",
+      "x": 1560,
+      "y": 2240,
+      "name": "R1-P02 / 帖子详情 / Mobile 390",
+      "theme": {
+        "productTheme": "guofeng"
+      },
+      "clip": true,
+      "width": 390,
+      "fill": "$bg-app",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "rnWHO",
+          "name": "R1-P02 / Mobile Public Header",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 10,
+          "padding": [
+            0,
+            16
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "I1LjH",
+              "name": "Mobile Radish Brand",
+              "gap": 9,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "C6MTd3",
+                  "name": "Radish Brand Mark",
+                  "width": 30,
+                  "height": 30,
+                  "fill": "$brand",
+                  "cornerRadius": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pLDJT",
+                      "name": "Radish Brand Initial",
+                      "fill": "$text-on-brand",
+                      "content": "R",
+                      "fontFamily": "Noto Serif SC",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "AtNIi",
+                  "name": "Radish Wordmark",
+                  "fill": "$text-primary",
+                  "content": "Radish",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RHf3P",
+              "name": "Header Flexible Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "gYwxi",
+              "name": "Mobile Header Actions",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JdWEM",
+                  "name": "Header Action / Notifications",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "LbJql",
+                      "name": "Notifications Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "bell",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kAR6o",
+                  "name": "Header Action / Account",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "pflWf",
+                      "name": "Account Icon",
+                      "width": 17,
+                      "height": 17,
+                      "icon": "user-round",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "V7OFb",
+          "name": "R1-P02 / Mobile Detail Content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            12,
+            16
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "v2Pm3i",
+              "name": "Mobile / 社区与线程紧凑入口",
+              "width": "fill_container",
+              "height": 40,
+              "fill": "$bg-surface",
+              "cornerRadius": 10,
+              "stroke": "$border-soft",
+              "gap": 8,
+              "padding": [
+                0,
+                8
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "reoYg",
+                  "name": "Mobile / 社区导航入口",
+                  "width": "fill_container",
+                  "height": 32,
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "R3DHwg",
+                      "name": "Mobile / 社区图标",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "users",
+                      "library": "lucide",
+                      "fill": "$brand"
+                    },
+                    {
+                      "type": "text",
+                      "id": "I1sEEP",
+                      "name": "Mobile / 社区名称",
+                      "fill": "$text-primary",
+                      "content": "社区共建",
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "wU33b",
+                      "name": "Mobile / 社区入口说明",
+                      "fill": "$text-muted",
+                      "content": "社区",
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "eFX6c",
+                  "name": "Mobile / 紧凑入口分隔",
+                  "fill": "$border-soft",
+                  "width": 1,
+                  "height": 20
+                },
+                {
+                  "type": "frame",
+                  "id": "VIn4g",
+                  "name": "Mobile / 本帖导航入口",
+                  "width": 118,
+                  "height": 32,
+                  "gap": 7,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "aDZFW",
+                      "name": "Mobile / 本帖导航图标",
+                      "width": 14,
+                      "height": 14,
+                      "icon": "list-tree",
+                      "library": "lucide",
+                      "fill": "$action"
+                    },
+                    {
+                      "type": "text",
+                      "id": "W5u58",
+                      "name": "Mobile / 本帖导航文字",
+                      "fill": "$action",
+                      "content": "本帖导航 · 4",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Rnmeg",
+              "name": "Mobile / 文章阅读面",
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 12,
+              "stroke": "$border-soft",
+              "layout": "vertical",
+              "gap": 16,
+              "padding": [
+                18,
+                16,
+                22,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "kKJiB",
+                  "name": "Mobile / 路径与分享",
+                  "width": "fill_container",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "KTt6e",
+                      "name": "Mobile / 路径",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ap4B8",
+                          "name": "Mobile / 路径论坛",
+                          "fill": "$text-muted",
+                          "content": "论坛",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "TnA2s",
+                          "name": "Mobile / 路径箭头",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        },
+                        {
+                          "type": "text",
+                          "id": "sDP26",
+                          "name": "Mobile / 路径社区",
+                          "fill": "$text-secondary",
+                          "content": "社区共建",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "500"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "bQM9S",
+                      "name": "Mobile / 路径弹性间隔",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FuF5Q",
+                      "name": "Mobile / 顶部分享",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "xT6fn",
+                          "name": "Mobile / 分享图标",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "share-2",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        },
+                        {
+                          "type": "text",
+                          "id": "uUYBh",
+                          "name": "Mobile / 分享文字",
+                          "fill": "$text-muted",
+                          "content": "分享",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aIrEt",
+                  "name": "Mobile / 分类标签",
+                  "gap": 7,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "EmKl0",
+                      "name": "Mobile / 标签 普通帖",
+                      "height": 26,
+                      "fill": "$brand-soft",
+                      "cornerRadius": 999,
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "xI6hq",
+                          "name": "Mobile / 标签文字 普通帖",
+                          "fill": "$brand",
+                          "content": "普通帖",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "O66SZQ",
+                      "name": "Mobile / 标签 # 生活记录",
+                      "height": 26,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 999,
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "VP5hA",
+                          "name": "Mobile / 标签文字 # 生活记录",
+                          "fill": "$text-secondary",
+                          "content": "# 生活记录",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WS8AH",
+                      "name": "Mobile / 标签 # 邻里共建",
+                      "height": 26,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 999,
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "o48hdJ",
+                          "name": "Mobile / 标签文字 # 邻里共建",
+                          "fill": "$text-secondary",
+                          "content": "# 邻里共建",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "VgGhr",
+                  "name": "Mobile / 帖子标题",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "周末把旧阳台改成了共享香草角，记录一下三天的共建过程",
+                  "lineHeight": 1.32,
+                  "fontFamily": "$font-body",
+                  "fontSize": 25,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "frame",
+                  "id": "WGxWf",
+                  "name": "Mobile / 作者元信息",
+                  "width": "fill_container",
+                  "gap": 10,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "X6yWhZ",
+                      "name": "Mobile / 作者头像",
+                      "width": 36,
+                      "height": 36,
+                      "fill": "$brand-soft",
+                      "cornerRadius": 999,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "x7ZJJQ",
+                          "name": "Mobile / 作者头像字",
+                          "fill": "$brand",
+                          "content": "山",
+                          "fontFamily": "$font-body",
+                          "fontSize": 14,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XUvHo",
+                      "name": "Mobile / 作者信息",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "x8BkJ",
+                          "name": "Mobile / 作者昵称",
+                          "fill": "$text-primary",
+                          "content": "山岚",
+                          "fontFamily": "$font-body",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "V9AskX",
+                          "name": "Mobile / 发布时间",
+                          "fill": "$text-muted",
+                          "content": "2026-08-05 20:14 · 编辑于 21:03",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "GZUkg",
+                      "name": "Mobile / 阅读数",
+                      "fill": "$text-muted",
+                      "content": "阅读 428",
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "zi9kj",
+                  "name": "Mobile / 摘要引文",
+                  "width": "fill_container",
+                  "fill": "$bg-muted",
+                  "cornerRadius": 8,
+                  "gap": 10,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 2,
+                      "id": "AgBc0",
+                      "name": "Mobile / 引文标记",
+                      "fill": "$brand",
+                      "width": 3,
+                      "height": 50
+                    },
+                    {
+                      "type": "text",
+                      "id": "K6uHO",
+                      "name": "Mobile / 引文内容",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "没有宏大的计划，只是几盆薄荷、迷迭香和邻居们留下的小木牌。",
+                      "lineHeight": 1.65,
+                      "fontFamily": "$font-body",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "OwzIx",
+                  "name": "Mobile / 引言",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "上周五，楼道尽头那块一直堆着旧纸箱的公共阳台终于被清了出来。起因只是群里有人问了一句：这里能不能放几盆大家都可以摘的香草？没想到当晚就有十几个人报名。",
+                  "lineHeight": 1.78,
+                  "fontFamily": "$font-body",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "e2hciU",
+                  "name": "Mobile / 小标题一",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "从一张征集纸开始",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$font-body",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "Z6Vdg",
+                  "name": "Mobile / 段落一",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "我们没有先建复杂的群，也没有列很长的规则，只在电梯旁贴了一张认领表。有人负责清理，有人带来旧木箱，还有人把家里多余的花盆、麻绳和标签笔放在门口。三天里每个人只做一件小事，阳台就慢慢有了样子。",
+                  "lineHeight": 1.78,
+                  "fontFamily": "$font-body",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "OhyPj",
+                  "name": "Mobile / 三天共建进程",
+                  "width": "fill_container",
+                  "cornerRadius": 8,
+                  "stroke": "$border-soft",
+                  "layout": "vertical",
+                  "gap": 9,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lAwyi",
+                      "name": "Mobile / 共建进程 01",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "fLucp",
+                          "name": "Mobile / 进程编号 01",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "MVHXE",
+                              "name": "Mobile / 进程编号文字 01",
+                              "fill": "$brand",
+                              "content": "01",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Etu3C",
+                          "name": "Mobile / 进程内容 01",
+                          "fill": "$text-secondary",
+                          "content": "周五晚 · 清出旧纸箱，确认排水口",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "z1xzL",
+                      "name": "Mobile / 共建进程 02",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "MvEaX",
+                          "name": "Mobile / 进程编号 02",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "X0xCMV",
+                              "name": "Mobile / 进程编号文字 02",
+                              "fill": "$brand",
+                              "content": "02",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "SiJ5N",
+                          "name": "Mobile / 进程内容 02",
+                          "fill": "$text-secondary",
+                          "content": "周六上午 · 组装木架，铺好防水垫",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XRaXq",
+                      "name": "Mobile / 共建进程 03",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VsDuc",
+                          "name": "Mobile / 进程编号 03",
+                          "width": 24,
+                          "height": 22,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "DDWhy",
+                              "name": "Mobile / 进程编号文字 03",
+                              "fill": "$brand",
+                              "content": "03",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "BBF4O",
+                          "name": "Mobile / 进程内容 03",
+                          "fill": "$text-secondary",
+                          "content": "周日下午 · 种下香草，挂上认领木牌",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "UVQLL",
+                  "name": "Mobile / 小标题二",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "最意外的是认领方式",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$font-body",
+                  "fontSize": 20,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "qiDAH",
+                  "name": "Mobile / 段落二",
+                  "fill": "$text-primary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "大家没有把花盆分成“我的”和“你的”，而是在木牌背面写下浇水频率与可采摘时间。经过的人可以顺手照看，也可以剪一小枝带走。现在薄荷、罗勒和迷迭香已经各有两位照料者，下周准备补一箱耐阴香草。",
+                  "lineHeight": 1.78,
+                  "fontFamily": "$font-body",
+                  "fontSize": 15,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "jz0Q8",
+                  "name": "Mobile / 正文后内联线程导航",
+                  "width": "fill_container",
+                  "fill": "$bg-muted",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "q9cRL",
+                      "name": "Mobile / 内联导航标题行",
+                      "width": "fill_container",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "y9xf5K",
+                          "name": "Mobile / 内联导航标题",
+                          "fill": "$text-primary",
+                          "content": "本帖导航",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Y4d0ud",
+                          "name": "Mobile / 内联导航弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "MVxBD",
+                          "name": "Mobile / 阅读进度",
+                          "fill": "$brand",
+                          "content": "正文已读",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "auEM7",
+                      "name": "Mobile / 内联导航项目",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "o8WyN",
+                          "name": "Mobile / 导航 正文",
+                          "height": 28,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 999,
+                          "stroke": "$brand-soft",
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mF2hG",
+                              "name": "Mobile / 导航文字 正文",
+                              "fill": "$brand",
+                              "content": "正文",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "V3fEh",
+                          "name": "Mobile / 导航 轻回应 12",
+                          "height": 28,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 999,
+                          "stroke": "$border-soft",
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qe8DU",
+                              "name": "Mobile / 导航文字 轻回应 12",
+                              "fill": "$text-secondary",
+                              "content": "轻回应 12",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KGmvK",
+                          "name": "Mobile / 导航 回帖 38",
+                          "height": 28,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 999,
+                          "stroke": "$border-soft",
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "A3Vc3",
+                              "name": "Mobile / 导航文字 回帖 38",
+                              "fill": "$text-secondary",
+                              "content": "回帖 38",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "C8pEPM",
+                          "name": "Mobile / 导航 页尾",
+                          "height": 28,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 999,
+                          "stroke": "$border-soft",
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "tB88a",
+                              "name": "Mobile / 导航文字 页尾",
+                              "fill": "$text-secondary",
+                              "content": "页尾",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uu9M4",
+              "name": "Mobile / 帖子互动与轻回应",
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 12,
+              "stroke": "$border-soft",
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "g8Mme6",
+                  "name": "Mobile / 数据与操作",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    16,
+                    16,
+                    14,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "G73Tv",
+                      "name": "Mobile / 数据与表情摘要",
+                      "width": "fill_container",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "e3TbY",
+                          "name": "Mobile / 帖子数据",
+                          "fill": "$text-secondary",
+                          "content": "428 阅读  ·  12 轻回应  ·  38 回帖",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "iZPPl",
+                          "name": "Mobile / 数据弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "t43IEh",
+                          "name": "Mobile / 表情回应摘要",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "CQeN1",
+                              "name": "Mobile / 表情回应参与者 1",
+                              "width": 23,
+                              "height": 23,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "vPTO0",
+                                  "name": "Mobile / 表情回应符号 1",
+                                  "fill": "$brand",
+                                  "content": "🌱",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "euE02",
+                              "name": "Mobile / 表情回应参与者 2",
+                              "width": 23,
+                              "height": 23,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "E3mjo",
+                                  "name": "Mobile / 表情回应符号 2",
+                                  "fill": "$brand",
+                                  "content": "👍",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "LdrUA",
+                              "name": "Mobile / 表情回应参与者 3",
+                              "width": 23,
+                              "height": 23,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "YX4xe",
+                                  "name": "Mobile / 表情回应符号 3",
+                                  "fill": "$brand",
+                                  "content": "♥",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "u3nUV",
+                              "name": "Mobile / 表情回应次数",
+                              "fill": "$text-muted",
+                              "content": "+5",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "yWr3N",
+                      "name": "Mobile / 帖子统一操作带",
+                      "width": "fill_container",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "sCTl5",
+                          "name": "Mobile / 帖子操作 点赞",
+                          "width": 54,
+                          "height": 36,
+                          "fill": "$action-soft",
+                          "cornerRadius": 8,
+                          "gap": 5,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "jig3f",
+                              "name": "Mobile / 帖子操作图标 点赞",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "heart",
+                              "library": "lucide",
+                              "fill": "$action"
+                            },
+                            {
+                              "type": "text",
+                              "id": "H2DOjj",
+                              "name": "Mobile / 帖子操作文字 点赞",
+                              "fill": "$action",
+                              "content": "赞 24",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "o7NX1",
+                          "name": "Mobile / 帖子操作 表情回应",
+                          "width": 60,
+                          "height": 36,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 8,
+                          "gap": 5,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "olFEX",
+                              "name": "Mobile / 帖子操作图标 表情回应",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "smile-plus",
+                              "library": "lucide",
+                              "fill": "$text-secondary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "y4q06",
+                              "name": "Mobile / 帖子操作文字 表情回应",
+                              "fill": "$text-secondary",
+                              "content": "表情 8",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "c0uTV",
+                          "name": "Mobile / 帖子操作 收藏",
+                          "width": 48,
+                          "height": 36,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 8,
+                          "gap": 5,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "FbdES",
+                              "name": "Mobile / 帖子操作图标 收藏",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "bookmark",
+                              "library": "lucide",
+                              "fill": "$text-secondary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "n79jgz",
+                              "name": "Mobile / 帖子操作文字 收藏",
+                              "fill": "$text-secondary",
+                              "content": "收藏",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UFQR7",
+                          "name": "Mobile / 帖子操作 赞赏",
+                          "width": 48,
+                          "height": 36,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 8,
+                          "gap": 5,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "IFDO7",
+                              "name": "Mobile / 帖子操作图标 赞赏",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "sprout",
+                              "library": "lucide",
+                              "fill": "$warning"
+                            },
+                            {
+                              "type": "text",
+                              "id": "weCKZ",
+                              "name": "Mobile / 帖子操作文字 赞赏",
+                              "fill": "$warning",
+                              "content": "赞赏",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Y4UgwJ",
+                          "name": "Mobile / 帖子操作 回帖",
+                          "width": 52,
+                          "height": 36,
+                          "fill": "$action",
+                          "cornerRadius": 8,
+                          "gap": 5,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "ualwh",
+                              "name": "Mobile / 帖子操作图标 回帖",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "reply",
+                              "library": "lucide",
+                              "fill": "$text-on-action"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mIjoJ",
+                              "name": "Mobile / 帖子操作文字 回帖",
+                              "fill": "$text-on-action",
+                              "content": "回帖",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "UCLZx",
+                          "name": "Mobile / 帖子操作 更多",
+                          "width": 36,
+                          "height": 36,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 8,
+                          "gap": 5,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "NWDTX",
+                              "name": "Mobile / 帖子操作图标 更多",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "ellipsis",
+                              "library": "lucide",
+                              "fill": "$text-muted"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "EN8PC",
+                  "name": "Mobile / 互动分隔线",
+                  "fill": "$border-soft",
+                  "width": "fill_container",
+                  "height": 1
+                },
+                {
+                  "type": "frame",
+                  "id": "iO3c0",
+                  "name": "Mobile / 轻回应与赞赏",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "padding": [
+                    14,
+                    16,
+                    18,
+                    16
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bKL8l",
+                      "name": "Mobile / 轻回应标题行",
+                      "width": "fill_container",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "x0RpS1",
+                          "name": "Mobile / 轻回应标题组",
+                          "gap": 7,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "p1UJe",
+                              "name": "Mobile / 轻回应图标",
+                              "width": 15,
+                              "height": 15,
+                              "icon": "message-circle-heart",
+                              "library": "lucide",
+                              "fill": "$brand"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cy1tZ",
+                              "name": "Mobile / 轻回应标题",
+                              "fill": "$text-primary",
+                              "content": "轻回应",
+                              "fontFamily": "$font-body",
+                              "fontSize": 13,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "z6qW4",
+                              "name": "Mobile / 轻回应数量",
+                              "height": 18,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "padding": [
+                                0,
+                                7
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "CG8qv",
+                                  "name": "Mobile / 轻回应数量文字",
+                                  "fill": "$brand",
+                                  "content": "12",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 10,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "p2aaj1",
+                          "name": "Mobile / 轻回应弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "snDEm",
+                          "name": "Mobile / 查看全部轻回应",
+                          "fill": "$action",
+                          "content": "查看全部",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D4RdsN",
+                      "name": "Mobile / 轻回应摘录",
+                      "width": "fill_container",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "yplZt",
+                          "name": "Mobile / 轻回应 周六来帮忙",
+                          "height": 30,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "gap": 5,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "u6Y8t",
+                              "name": "Mobile / 轻回应头像 周六来帮忙",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "cS3B9",
+                                  "name": "Mobile / 轻回应头像字 周六来帮忙",
+                                  "fill": "$brand",
+                                  "content": "青",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 8,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "hJzqR",
+                              "name": "Mobile / 轻回应内容 周六来帮忙",
+                              "fill": "$text-secondary",
+                              "content": "周六来帮忙",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "awODa",
+                          "name": "Mobile / 轻回应 薄荷认领",
+                          "height": 30,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "gap": 5,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "I3vqd",
+                              "name": "Mobile / 轻回应头像 薄荷认领",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "KDb9k",
+                                  "name": "Mobile / 轻回应头像字 薄荷认领",
+                                  "fill": "$brand",
+                                  "content": "月",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 8,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "q4YWrA",
+                              "name": "Mobile / 轻回应内容 薄荷认领",
+                              "fill": "$text-secondary",
+                              "content": "薄荷认领",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FgaGr",
+                          "name": "Mobile / 轻回应 带一袋营养土",
+                          "height": 30,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "gap": 5,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "xCsCt",
+                              "name": "Mobile / 轻回应头像 带一袋营养土",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 999,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "BzX1R",
+                                  "name": "Mobile / 轻回应头像字 带一袋营养土",
+                                  "fill": "$brand",
+                                  "content": "白",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 8,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "RGeA4",
+                              "name": "Mobile / 轻回应内容 带一袋营养土",
+                              "fill": "$text-secondary",
+                              "content": "带一袋营养土",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FFfVx",
+                      "name": "Mobile / 轻回应输入",
+                      "width": "fill_container",
+                      "height": 40,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 8,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "XE6Zk",
+                          "name": "Mobile / 轻回应输入提示",
+                          "fill": "$text-muted",
+                          "content": "写一句轻回应…",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XINYv",
+                          "name": "Mobile / 轻回应输入弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Q2VowV",
+                          "name": "Mobile / 轻回应发送",
+                          "width": 26,
+                          "height": 26,
+                          "fill": "$action",
+                          "cornerRadius": 7,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "o9eL6",
+                              "name": "Mobile / 轻回应发送图标",
+                              "width": 12,
+                              "height": 12,
+                              "icon": "send",
+                              "library": "lucide",
+                              "fill": "$text-on-action"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hsOdl",
+                      "name": "Mobile / 克制赞赏摘要",
+                      "width": "fill_container",
+                      "height": 60,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 8,
+                      "gap": 9,
+                      "padding": [
+                        0,
+                        11
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "uhFYX",
+                          "name": "Mobile / 赞赏图标面",
+                          "width": 30,
+                          "height": 30,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 8,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "cqgWW",
+                              "name": "Mobile / 赞赏图标",
+                              "width": 15,
+                              "height": 15,
+                              "icon": "sprout",
+                              "library": "lucide",
+                              "fill": "$warning"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "QlNOF",
+                          "name": "Mobile / 赞赏说明",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UQl3e",
+                              "name": "Mobile / 赞赏标题",
+                              "fill": "$text-primary",
+                              "content": "萝卜赞赏",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "JdPbk",
+                              "name": "Mobile / 赞赏合计",
+                              "fill": "$text-muted",
+                              "content": "3 人 · 共 30 萝卜币",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "D8XfZz",
+                          "name": "Mobile / 赞赏弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Ilqii",
+                          "name": "Mobile / 赞赏成员",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "croBX",
+                              "name": "Mobile / 赞赏成员 青",
+                              "width": 23,
+                              "height": 23,
+                              "fill": "$bg-surface",
+                              "cornerRadius": 999,
+                              "stroke": "$border-soft",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "YEThS",
+                                  "name": "Mobile / 赞赏成员字 青",
+                                  "fill": "$brand",
+                                  "content": "青",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "tq63w",
+                              "name": "Mobile / 赞赏成员 月",
+                              "width": 23,
+                              "height": 23,
+                              "fill": "$bg-surface",
+                              "cornerRadius": 999,
+                              "stroke": "$border-soft",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "BSm9r",
+                                  "name": "Mobile / 赞赏成员字 月",
+                                  "fill": "$brand",
+                                  "content": "月",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "rB7Y4",
+                              "name": "Mobile / 赞赏成员 白",
+                              "width": 23,
+                              "height": 23,
+                              "fill": "$bg-surface",
+                              "cornerRadius": 999,
+                              "stroke": "$border-soft",
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "C2v4a",
+                                  "name": "Mobile / 赞赏成员字 白",
+                                  "fill": "$brand",
+                                  "content": "白",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "icon",
+                          "id": "FIx7Z",
+                          "name": "Mobile / 赞赏明细箭头",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "uyaT5",
+              "name": "Mobile / 回帖讨论区",
+              "width": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 12,
+              "stroke": "$border-soft",
+              "layout": "vertical",
+              "gap": 16,
+              "padding": [
+                18,
+                16,
+                20,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "p0Joo",
+                  "name": "Mobile / 回帖标题与排序",
+                  "width": "fill_container",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "j6T1Th",
+                      "name": "Mobile / 回帖标题组",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "v2tu4Y",
+                          "name": "Mobile / 回帖标题印记",
+                          "width": 28,
+                          "height": 28,
+                          "fill": "$action-soft",
+                          "cornerRadius": 8,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "I2x4E",
+                              "name": "Mobile / 回帖标题图标",
+                              "width": 15,
+                              "height": 15,
+                              "icon": "messages-square",
+                              "library": "lucide",
+                              "fill": "$action"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "L6wAQ",
+                          "name": "Mobile / 回帖标题",
+                          "fill": "$text-primary",
+                          "content": "回帖",
+                          "fontFamily": "$font-body",
+                          "fontSize": 20,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WdqTA",
+                          "name": "Mobile / 回帖数量签",
+                          "height": 20,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UBLKr",
+                              "name": "Mobile / 回帖数量",
+                              "fill": "$brand",
+                              "content": "38",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "XOgHt",
+                      "name": "Mobile / 回帖标题弹性间隔",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "a2jSys",
+                      "name": "Mobile / 回帖排序",
+                      "height": 30,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 8,
+                      "gap": 2,
+                      "padding": 3,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "prroJ",
+                          "name": "Mobile / 回帖排序 最热",
+                          "width": 38,
+                          "height": 24,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bV5ZN",
+                              "name": "Mobile / 回帖排序文字 最热",
+                              "fill": "$action",
+                              "content": "最热",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EjKvf",
+                          "name": "Mobile / 回帖排序 最新",
+                          "width": 38,
+                          "height": 24,
+                          "fill": "#FFFFFF00",
+                          "cornerRadius": 6,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "VGvde",
+                              "name": "Mobile / 回帖排序文字 最新",
+                              "fill": "$text-muted",
+                              "content": "最新",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "M9Ag5P",
+                  "name": "Mobile / 根回帖输入",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 8,
+                  "gap": 9,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Q3sjmn",
+                      "name": "Mobile / 当前读者头像",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "$brand-soft",
+                      "cornerRadius": 999,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "UtVup",
+                          "name": "Mobile / 当前读者头像字",
+                          "fill": "$brand",
+                          "content": "青",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "ZAWaJ",
+                      "name": "Mobile / 根回帖输入提示",
+                      "fill": "$text-muted",
+                      "content": "写一条回帖，参与这场讨论…",
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DKHQo",
+                      "name": "Mobile / 根回帖输入弹性间隔",
+                      "width": "fill_container",
+                      "height": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "V6dNs",
+                      "name": "Mobile / 发布回帖",
+                      "height": 30,
+                      "fill": "$action",
+                      "cornerRadius": 7,
+                      "gap": 5,
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "EnD1D",
+                          "name": "Mobile / 发布回帖图标",
+                          "width": 12,
+                          "height": 12,
+                          "icon": "send",
+                          "library": "lucide",
+                          "fill": "$text-on-action"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fnvpd",
+                          "name": "Mobile / 发布回帖文字",
+                          "fill": "$text-on-action",
+                          "content": "发布",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "pMqzi",
+                  "name": "Mobile / 神评父回帖",
+                  "width": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 10,
+                  "stroke": "$action",
+                  "layout": "vertical",
+                  "gap": 11,
+                  "padding": [
+                    15,
+                    13
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "w9ah8q",
+                      "name": "Mobile / 神评父回帖元信息",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "dvek3",
+                          "name": "Mobile / 神评父回帖头像",
+                          "width": 32,
+                          "height": 32,
+                          "fill": "$action-soft",
+                          "cornerRadius": 999,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "V4Maz2",
+                              "name": "Mobile / 神评父回帖头像字",
+                              "fill": "$action",
+                              "content": "鹿",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gfixA",
+                          "name": "Mobile / 神评父回帖作者组",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "HXO04",
+                              "name": "Mobile / 神评父回帖作者行",
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "qp2xT",
+                                  "name": "Mobile / 神评父回帖作者",
+                                  "fill": "$text-primary",
+                                  "content": "白鹿",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "IFkUH",
+                                  "name": "Mobile / 神评徽章",
+                                  "height": 19,
+                                  "fill": "$action-soft",
+                                  "cornerRadius": 999,
+                                  "gap": 3,
+                                  "padding": [
+                                    0,
+                                    6
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "MtSvM",
+                                      "name": "Mobile / 神评图标",
+                                      "width": 10,
+                                      "height": 10,
+                                      "icon": "sparkles",
+                                      "library": "lucide",
+                                      "fill": "$action"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "duH9r",
+                                      "name": "Mobile / 神评文字",
+                                      "fill": "$action",
+                                      "content": "神评",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 9,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "lvRWl",
+                              "name": "Mobile / 神评父回帖时间",
+                              "fill": "$text-muted",
+                              "content": "昨天 21:08",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bdAXf",
+                          "name": "Mobile / 神评父回帖弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "kvhAU",
+                          "name": "Mobile / 神评楼层",
+                          "fill": "$text-muted",
+                          "content": "#8",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "pF6pu",
+                      "name": "Mobile / 神评父回帖正文",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "如果下周还开放，我可以带两只不用的长花箱和一袋营养土。建议木牌背面再写上浇水频率，这样临时来帮忙的人也不容易浇多。",
+                      "lineHeight": 1.65,
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IyRxk",
+                      "name": "Mobile / 神评父回帖操作",
+                      "width": "fill_container",
+                      "gap": 15,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "HYylG",
+                          "name": "Mobile / 神评点赞",
+                          "fill": "$action",
+                          "content": "赞 24",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gmSPP",
+                          "name": "Mobile / 神评表情回应",
+                          "fill": "$text-muted",
+                          "content": "🌱 4",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Cd4N1",
+                          "name": "Mobile / 神评赞赏",
+                          "fill": "$text-muted",
+                          "content": "赞赏 6",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I0WF5E",
+                          "name": "Mobile / 神评回复",
+                          "fill": "$text-muted",
+                          "content": "回复",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "b4Xx0",
+                          "name": "Mobile / 神评操作弹性间隔",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "Zhx2S",
+                          "name": "Mobile / 神评更多",
+                          "fill": "$text-muted",
+                          "content": "···",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ArtbS",
+                      "name": "Mobile / 子回帖线程",
+                      "width": "fill_container",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "rectangle",
+                          "cornerRadius": 2,
+                          "id": "oMWAl",
+                          "name": "Mobile / 子回帖引导线",
+                          "fill": "$action-soft",
+                          "width": 2,
+                          "height": 300
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zTx4Y",
+                          "name": "Mobile / 子回帖内容",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 9,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "F56WKv",
+                              "name": "Mobile / 子回帖标题行",
+                              "width": "fill_container",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "fxKUA",
+                                  "name": "Mobile / 子回帖标题",
+                                  "fill": "$text-secondary",
+                                  "content": "2 条子回帖",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "W4JC3",
+                                  "name": "Mobile / 子回帖标题弹性间隔",
+                                  "width": "fill_container",
+                                  "height": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "tiAMV",
+                                  "name": "Mobile / 子回帖收起",
+                                  "fill": "$action",
+                                  "content": "收起",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "U4WFke",
+                              "name": "Mobile / 子回帖 1",
+                              "width": "fill_container",
+                              "fill": "$bg-muted",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 7,
+                              "padding": 10,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "DljPo",
+                                  "name": "Mobile / 子回帖元信息 1",
+                                  "width": "fill_container",
+                                  "gap": 6,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "TwbpV",
+                                      "name": "Mobile / 子回帖作者 1",
+                                      "fill": "$text-primary",
+                                      "content": "青禾",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "y4xKNE",
+                                      "name": "Mobile / 子回帖徽章 1",
+                                      "height": 18,
+                                      "fill": "$brand-soft",
+                                      "cornerRadius": 999,
+                                      "padding": [
+                                        0,
+                                        6
+                                      ],
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "M1ug0t",
+                                          "name": "Mobile / 子回帖徽章文字 1",
+                                          "fill": "$brand",
+                                          "content": "沙发",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 9,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "XtcMz",
+                                      "name": "Mobile / 子回帖时间 1",
+                                      "fill": "$text-muted",
+                                      "content": "昨天 21:12",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 9,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "kasWk",
+                                  "name": "Mobile / 子回帖正文 1",
+                                  "fill": "$text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "先占个沙发。我家有两株多余的迷迭香苗，周六上午带过来。",
+                                  "lineHeight": 1.55,
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "N90Cyv",
+                                  "name": "Mobile / 子回帖操作 1",
+                                  "width": "fill_container",
+                                  "gap": 13,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "VVLgR",
+                                      "name": "Mobile / 子回帖点赞 1",
+                                      "fill": "$text-muted",
+                                      "content": "赞 3",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "sBxsC",
+                                      "name": "Mobile / 子回帖表情 1",
+                                      "fill": "$text-muted",
+                                      "content": "🌱 1",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "pvFRm",
+                                      "name": "Mobile / 子回帖赞赏 1",
+                                      "fill": "$text-muted",
+                                      "content": "赞赏 1",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "QQGc0",
+                                      "name": "Mobile / 子回帖回复 1",
+                                      "fill": "$text-muted",
+                                      "content": "回复",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "tqWJD",
+                              "name": "Mobile / 子回帖 2",
+                              "width": "fill_container",
+                              "fill": "$bg-muted",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 7,
+                              "padding": 10,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "xEvrp",
+                                  "name": "Mobile / 子回帖元信息 2",
+                                  "width": "fill_container",
+                                  "gap": 6,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "PTfTH",
+                                      "name": "Mobile / 子回帖作者 2",
+                                      "fill": "$text-primary",
+                                      "content": "山岚",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "mTLyQ",
+                                      "name": "Mobile / 子回帖时间 2",
+                                      "fill": "$text-muted",
+                                      "content": "昨天 21:18",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 9,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "uBhjo",
+                                  "name": "Mobile / 子回帖正文 2",
+                                  "fill": "$text-primary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "太好了，我在认领表上先给你留一格，木箱也一起量尺寸。",
+                                  "lineHeight": 1.55,
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "wyHWp",
+                                  "name": "Mobile / 子回帖操作 2",
+                                  "width": "fill_container",
+                                  "gap": 13,
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Vtse8",
+                                      "name": "Mobile / 子回帖点赞 2",
+                                      "fill": "$text-muted",
+                                      "content": "赞 2",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ix58I",
+                                      "name": "Mobile / 子回帖表情 2",
+                                      "fill": "$text-muted",
+                                      "content": "🌱 1",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "s6LGQ5",
+                                      "name": "Mobile / 子回帖赞赏 2",
+                                      "fill": "$text-muted",
+                                      "content": "赞赏 0",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "yrtUJ",
+                                      "name": "Mobile / 子回帖回复 2",
+                                      "fill": "$text-muted",
+                                      "content": "回复",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 11,
+                                      "fontWeight": "normal"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "bRTNT",
+                              "name": "Mobile / 继续子回帖",
+                              "width": "fill_container",
+                              "height": 38,
+                              "fill": "$bg-muted",
+                              "cornerRadius": 8,
+                              "padding": [
+                                0,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "r00ZG",
+                                  "name": "Mobile / 继续子回帖提示",
+                                  "fill": "$text-muted",
+                                  "content": "回复这组回帖…",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "hQAkV",
+                                  "name": "Mobile / 继续子回帖弹性间隔",
+                                  "width": "fill_container",
+                                  "height": 1
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "Hs9jJ",
+                                  "name": "Mobile / 继续子回帖按钮",
+                                  "height": 24,
+                                  "fill": "$action",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    0,
+                                    8
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "jIAXT",
+                                      "name": "Mobile / 继续子回帖按钮文字",
+                                      "fill": "$text-on-action",
+                                      "content": "回复",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 10,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "G8vDvh",
+                  "name": "Mobile / 普通回帖 2",
+                  "width": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 8,
+                  "stroke": "$border-soft",
+                  "layout": "vertical",
+                  "gap": 9,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "v2KhiT",
+                      "name": "Mobile / 普通回帖元信息 2",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "fdj1T",
+                          "name": "Mobile / 普通回帖头像 2",
+                          "width": 30,
+                          "height": 30,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bv6oS",
+                              "name": "Mobile / 普通回帖头像字 2",
+                              "fill": "$text-secondary",
+                              "content": "禾",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Bfh8G",
+                          "name": "Mobile / 普通回帖作者组 2",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "f7VPKQ",
+                              "name": "Mobile / 普通回帖作者 2",
+                              "fill": "$text-primary",
+                              "content": "禾木",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Hi8vL",
+                              "name": "Mobile / 普通回帖时间 2",
+                              "fill": "$text-muted",
+                              "content": "昨天 21:26",
+                              "fontFamily": "$font-body",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "vsbQK",
+                          "name": "Mobile / 普通回帖弹性间隔 2",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "Z0e3aR",
+                          "name": "Mobile / 普通回帖楼层 2",
+                          "fill": "$text-muted",
+                          "content": "#12",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "C2Kf3U",
+                      "name": "Mobile / 普通回帖正文 2",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "看完很想在我们楼也试试。背阴那一侧适合种什么？如果后面整理清单，能不能把日照时长也写进去。",
+                      "lineHeight": 1.6,
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "D6PHO",
+                      "name": "Mobile / 普通回帖操作 2",
+                      "width": "fill_container",
+                      "gap": 15,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "GDNiD",
+                          "name": "Mobile / 普通回帖点赞 2",
+                          "fill": "$text-muted",
+                          "content": "赞 8",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "MlxIT",
+                          "name": "Mobile / 普通回帖表情 2",
+                          "fill": "$text-muted",
+                          "content": "👍 3",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "t5k9q",
+                          "name": "Mobile / 普通回帖赞赏 2",
+                          "fill": "$text-muted",
+                          "content": "赞赏 2",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "I79DRI",
+                          "name": "Mobile / 普通回帖回复 2",
+                          "fill": "$text-muted",
+                          "content": "回复",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "ob7AU",
+                          "name": "Mobile / 普通回帖操作弹性间隔 2",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "c6rkwu",
+                          "name": "Mobile / 普通回帖更多 2",
+                          "fill": "$text-muted",
+                          "content": "···",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hzmRR",
+                  "name": "Mobile / 普通回帖 3",
+                  "width": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 8,
+                  "stroke": "$border-soft",
+                  "layout": "vertical",
+                  "gap": 9,
+                  "padding": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "AMca5",
+                      "name": "Mobile / 普通回帖元信息 3",
+                      "width": "fill_container",
+                      "gap": 9,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "lGF2Y",
+                          "name": "Mobile / 普通回帖头像 3",
+                          "width": 30,
+                          "height": 30,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "y6GLC",
+                              "name": "Mobile / 普通回帖头像字 3",
+                              "fill": "$text-secondary",
+                              "content": "舟",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "v4aFV",
+                          "name": "Mobile / 普通回帖作者组 3",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "SWRb1",
+                              "name": "Mobile / 普通回帖作者 3",
+                              "fill": "$text-primary",
+                              "content": "一叶舟",
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "XnjGb",
+                              "name": "Mobile / 普通回帖时间 3",
+                              "fill": "$text-muted",
+                              "content": "今天 09:12",
+                              "fontFamily": "$font-body",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zAFlD",
+                          "name": "Mobile / 普通回帖弹性间隔 3",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "bnnHN",
+                          "name": "Mobile / 普通回帖楼层 3",
+                          "fill": "$text-muted",
+                          "content": "#38",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "xqlIl",
+                      "name": "Mobile / 普通回帖正文 3",
+                      "fill": "$text-primary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "木箱边角最好再磨圆一点，周末会有小朋友来摘薄荷。我有砂纸和一小罐木蜡油，可以顺路带上。",
+                      "lineHeight": 1.6,
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "OBucU",
+                      "name": "Mobile / 普通回帖操作 3",
+                      "width": "fill_container",
+                      "gap": 15,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Wschl",
+                          "name": "Mobile / 普通回帖点赞 3",
+                          "fill": "$text-muted",
+                          "content": "赞 1",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "R1xUan",
+                          "name": "Mobile / 普通回帖表情 3",
+                          "fill": "$text-muted",
+                          "content": "♥ 1",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "X00t9",
+                          "name": "Mobile / 普通回帖赞赏 3",
+                          "fill": "$text-muted",
+                          "content": "赞赏 1",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "text",
+                          "id": "kX59w",
+                          "name": "Mobile / 普通回帖回复 3",
+                          "fill": "$text-muted",
+                          "content": "回复",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lXG3I",
+                          "name": "Mobile / 普通回帖操作弹性间隔 3",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "rJRGR",
+                          "name": "Mobile / 普通回帖更多 3",
+                          "fill": "$text-muted",
+                          "content": "···",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hDvzu",
+                  "name": "Mobile / 回帖分页",
+                  "width": "fill_container",
+                  "gap": 7,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "outU6",
+                      "name": "Mobile / 回帖页 1",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "$action",
+                      "cornerRadius": 7,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ti9ED",
+                          "name": "Mobile / 回帖页码 1",
+                          "fill": "$text-on-action",
+                          "content": "1",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "WW4N4",
+                      "name": "Mobile / 回帖页 2",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 7,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kLDIU",
+                          "name": "Mobile / 回帖页码 2",
+                          "fill": "$text-secondary",
+                          "content": "2",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "TXDwh",
+                      "name": "Mobile / 回帖页 3",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 7,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U3XJI",
+                          "name": "Mobile / 回帖页码 3",
+                          "fill": "$text-secondary",
+                          "content": "3",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kufJl",
+                      "name": "Mobile / 回帖页 …",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 7,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "aMttc",
+                          "name": "Mobile / 回帖页码 …",
+                          "fill": "$text-secondary",
+                          "content": "…",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "GrGdg",
+                      "name": "Mobile / 回帖页 13",
+                      "width": 28,
+                      "height": 28,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 7,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lFSIV",
+                          "name": "Mobile / 回帖页码 13",
+                          "fill": "$text-secondary",
+                          "content": "13",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Q7vNTY",
+          "name": "R1-P02 / Mobile Navigation Area",
+          "width": "fill_container",
+          "fill": "$bg-app",
+          "padding": [
+            10,
+            16,
+            16,
+            16
+          ],
+          "children": [
+            {
+              "id": "luE4r",
+              "type": "ref",
+              "ref": "zT5M8",
+              "name": "R1-P02 / Mobile Primary Navigation",
+              "width": "fill_container",
+              "descendants": {
+                "SIwif": {
+                  "fill": "#FFFFFF00"
+                },
+                "Bopp3": {
+                  "fill": "$text-muted"
+                },
+                "LIbsn": {
+                  "fill": "$text-muted",
+                  "fontWeight": "500"
+                },
+                "LSzAZ": {
+                  "fill": "$brand-soft"
+                },
+                "uIdEd": {
+                  "fill": "$brand"
+                },
+                "KxTM8": {
+                  "fill": "$brand",
+                  "fontWeight": "600"
+                }
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
   "themes": {
