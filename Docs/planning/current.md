@@ -7,13 +7,15 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`F4-R C-1B 的 R1-W01 已完成并关闭；下一顺位为 R1-C01`
-- **产品下一顺位**：`按既定顺位进入 R1-C01 的专题与能力边界复核；未经新一轮方案确认不修改画板或代码`
+- **产品下一顺位**：`R1-C01 PC 正式代表画板已确认；下一步制作 Mobile 390 × 844 列表、全屏详情任务和必要小型关键状态`
 - **复核日期**：`2026-08-08`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-08` 已完成并确认 `R1-C01 / Console 订单管理 / PC 1440` 正式代表画板：正式 Console Workbench 使用紧凑数据带、筛选—表格连续工作面和显式选择后的按需详情 inspector；订单表格按 family-ui `ui-ref-06` 收敛为约 `48.5px` 的单行密度，订单号、时间、用户、商品 / 数量、金额、精确状态和操作独立成列，不使用双行单元格。下一步只在唯一活动 `.pen` 中制作 Mobile 列表、全屏详情任务和必要小型关键状态，整组设计确认前不进入代码实现。
+- `2026-08-08` 已完成 [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)：正式 `/console/orders` 已承接列表、独立详情、筛选 / 分页、备注、履约重试和受权资源回跳，现有 API、权限、结构化错误、LongId 与事务边界足以进入代表设计；当前结构债集中在卡片与大缝隙、重复摘要 / 动作、主表被常驻右栏挤窄，以及 mobile 仍依赖横向表格。正式方向建议采用连续表格主轴 + 按需详情 inspector，并校正 `Failed` 筛选、可重试统计、LongId 输入和通用发放文案；确认前未修改 `.pen` 或代码。
 - `2026-08-08` 已完成并关闭 [R1-W01 Private 消息工作区成组实现与运行态验收](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)：唯一活动 `.pen` 已形成 PC `1440`、Mobile `390` 与必要关键状态代表画板；正式 `/messages` 落地连续会话列表 / 消息主轴 / 按需成员上下文、搜索与在线成员互斥、紧凑 Pin、Mobile 单任务流与共享 Bottom Sheet，并统一 `720px` 结构断点和账户切换 reset。Gateway 普通 User + Accepted 互关 Direct 覆盖文本、引用、图片、Reaction、Pin、已读边界、搜索、成员互斥、焦点恢复与无横向溢出；运行态修正 Mobile 按钮可访问名称和 Chat 私密附件绑定消息后的 ACL 查询翻译错误。后端 `1194` 项、Client `509` 项测试、Lint、三项 type-check 与 production build 通过；临时 Main / Chat / Message / Log / OpenIddict 数据和上传文件均已清零，服务端口已停止。
 - `2026-08-08` 已完成并关闭 [R1-A01 Author 编辑代表页成组实现与运行态验收](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)：正式 `/docs/edit/:id` 已按确认设计落地标题 / Markdown 正文主轴、紧凑版本与动作上下文、PC `320px` context rail 和 Mobile Bottom Sheet；Gateway 下普通 Owner `TestUser` + Published 正式 v1 + `Editing` 共享草稿 v2 + Accepted Editor 覆盖 PC `1440 × 1024` 与 Mobile `390 × 844`，无横向溢出。运行态发现并修正移动端标题被动作区挤压的问题，任务头由 `261px` 收敛到 `170px`；Client `504` 项测试、Lint 与 production build 通过，临时文档、通知、审计和登录会话增量均已清零。
 - `2026-08-08` 已完成 [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)：ChatMessage 举报按 tenant / channel / reporter `CanView` 在快照与写入前失败关闭，LongId 全链保持字符串；失败重试复用原键并允许 Pending Direct 模糊结果同键回放；History / MessageWindow 统一稳定 404，Client 在权威失权时清理服务端缓存并隐藏旧正文。后端全量 `1193` 项、Client 全量 `501` 项测试与 production build 通过；撤回权限仍冻结待裁决。
@@ -61,7 +63,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-08，R1-P02 / R1-A01 / R1-W01）
+## 今日进展（2026-08-08，R1-P02 / R1-A01 / R1-W01 / R1-C01）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
@@ -83,16 +85,20 @@
 18. 成组实现完成时 Client 全量 `509` 项测试、ESLint、Client / UI / HTTP type-check 与 production build 通过，为后续运行态验收建立静态基线。
 19. 获得当前任务授权后完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844 @ DPR 3` smoke；连续分栏、详情 / 列表切换、搜索 / 成员互斥、Pin、已读边界、焦点恢复、受保护图片和无横向溢出均通过，干净移动会话控制台 `0 error / 0 warning`。
 20. 运行态修正 Mobile 会话头按钮可访问名称，以及 Chat 附件绑定消息后 nullable 谓词被 SQLSugar 错译导致的合法私密缩略图 `404`；后端全量 `1194` 项通过，临时账号、Direct、消息、Reaction、Pin、通知、审计、OIDC 与上传文件均已精确清零，五库完整性通过且端口停止。
+21. 完成 R1-C01 `/console/orders` 的专题、API / Service、权限、URL、LongId、跨资源回跳和 PC / mobile 结构复核；服务端能力门禁通过，未修改 `.pen` 或运行时代码。
+22. 形成待确认的“连续表格主轴 + 按需详情 inspector”PC 方向，明确消除任务流卡、常驻摘要和大卡片缝隙，并冻结未落地日期范围、排序、批量、退款、导出与手工状态修改能力。
+23. 在唯一活动 `.pen` 中完成并确认 R1-C01 PC `1440 × 900` 正式代表画板；按 family-ui `ui-ref-06` 将订单表收敛为单行薄表格，保留精确状态、受权资源回跳、备注和服务端复核的履约重试边界。
 
 ## 当前下一步
 
-1. 按 `R1-A01 → R1-W01 → R1-C01 → R1-C02` 既定顺位，下一轮进入 `R1-C01` 的专题与能力边界复核；先确认正式 Web、历史复用面和既有 API 的承接关系，再裁决代表设计级别。
-2. 本轮不启动 `R1-C01`，不追加 R1-W01 等价整页或非必要关键状态；新的画板或代码改动仍需新一轮方案确认。
+1. 在唯一活动 `.pen` 中制作 R1-C01 Mobile `390 × 844` 连续订单列表，不缩放 PC 表格；顶部只保留结果数、筛选计数和刷新，筛选进入按需层。
+2. 制作 Mobile 全屏订单详情任务与只读 Operator、重试确认 / `409`、详情 `404` / 列表 stale、筛选空结果等必要小型关键状态；整组画板确认前不进入 Console 代码实现或运行态复核。
 3. 全局灰玉品牌 token 与共享 MarkdownEditor 主题治理均保持独立边界，不在单页局部硬编码覆盖。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)
 - [R1-W01 Private 消息工作区成组实现](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)
 - [R1-A01 Author 编辑代表页成组实现](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)
 - [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)

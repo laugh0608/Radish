@@ -70,7 +70,7 @@ C-1A 最终裁决为：
 | `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
 | `R1-A01` | Author 编辑 / 协作 / 提交审核；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
 | `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen`（readiness 与能力门禁已完成） |
-| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen` |
+| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen`（readiness 与 PC 已确认，Mobile / 关键状态待完成） |
 | `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
 
 R1 只在唯一活动设计源中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
@@ -82,6 +82,8 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 `R1-A01` 已于 `2026-08-08` 完成[设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)。正式代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”；普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 随后已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。同日完成 PC / mobile 正式代表设计、页面实现与 Gateway 运行态验收；标题 / Markdown 正文主轴、`320px` context rail、Mobile Bottom Sheet、权限停止线与临时数据清理均已关闭，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
 `R1-W01` 已于 `2026-08-08` 完成[消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)。正式 `/messages` 与 WebOS 共用同一 Chat 核心，主体能力没有迁移缺口；举报 ACL / LongId、失败重试幂等和历史错误契约已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合，撤回能力证据与频道角色权限另需裁决。R1-A01 关闭后，R1-W01 已切换为下一正式代表设计顺位；Pencil 可用前不提前制作画板。
+
+`R1-C01` 已于 `2026-08-08` 完成[Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)。正式 `/console/orders` 已承接列表、独立详情、URL 深链、筛选 / 分页、备注、履约重试和用户 / 商品 / 扣款流水回跳；现有 API、权限、结构化错误、LongId 与事务边界足以进入代表设计。PC `1440 × 900` 正式代表画板已确认：使用连续表格主轴与按需详情 inspector，订单表按 `ui-ref-06` 收敛为单行薄表格，并移除任务流卡、常驻摘要和大卡片缝隙。下一步制作 mobile 卡片列表、全屏详情任务和必要小型关键状态，整组确认前不进入代码。
 
 ## 5. R2 局部设计类型
 
