@@ -2,11 +2,7 @@ import { type ChangeEvent, type ClipboardEvent, useCallback, useEffect, useMemo,
 import { useTranslation } from 'react-i18next';
 import type { ChannelMessageSearchItemVo } from '@radish/http';
 import { toast } from '@radish/ui/toast';
-import {
-  attachmentImageAccept,
-  isSupportedAttachmentImageFile,
-  isSupportedAttachmentImageMimeType,
-} from '@radish/ui';
+import { isSupportedAttachmentImageFile, isSupportedAttachmentImageMimeType } from '@radish/ui';
 import { uploadImage } from '@/api/attachment';
 import type { ContentReportTargetType } from '@/api/contentModeration';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
@@ -58,10 +54,9 @@ import {
   type PendingImageDraft,
 } from './chatApp.helpers';
 import { ChatChannelSidebar } from './ChatChannelSidebar';
-import { ChatComposerStatus } from './ChatComposerStatus';
+import { ChatComposer } from './ChatComposer';
 import { ChatConversationHeader } from './ChatConversationHeader';
 import { ChatMemberPanel } from './ChatMemberPanel';
-import { ChatMentionMenu } from './ChatMentionMenu';
 import { ChatMessageContent } from './ChatMessageContent';
 import { ChatMessageList } from './ChatMessageList';
 import { ChatMessageSearchPanel } from './ChatMessageSearchPanel';
@@ -140,13 +135,13 @@ export const ChatApp = ({
   const [pendingImage, setPendingImage] = useState<PendingImageDraft | null>(null);
   const [hasMoreOlderHistory, setHasMoreOlderHistory] = useState<Record<string, boolean>>({});
   const [hasMoreNewerHistory, setHasMoreNewerHistory] = useState<Record<string, boolean>>({});
-  const [typingAt, setTypingAt] = useState(0);
   const [mentionContext, setMentionContext] = useState<MentionContext | null>(null);
   const [mentionOptions, setMentionOptions] = useState<UserMentionOption[]>([]);
   const [mentionLoading, setMentionLoading] = useState(false);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
   const [onlineMembers, setOnlineMembers] = useState<ChannelMemberVo[]>([]);
-  const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(true);
+  const [memberPanelOpen, setMemberPanelOpen] = useState(false);
+  const [memberLoadError, setMemberLoadError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
   const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: string } | null>(null);
@@ -282,7 +277,7 @@ export const ChatApp = ({
 
   useEffect(() => {
     if (searchRestoreRevision > 0) {
-      setMemberPanelCollapsed(true);
+      setMemberPanelOpen(false);
       setSearchMounted(true);
       setSearchOpen(true);
     }
@@ -308,10 +303,16 @@ export const ChatApp = ({
   }, [onSearchVisibilityChange]);
 
   const openMessageSearch = useCallback(() => {
-    setMemberPanelCollapsed(true);
+    setMemberPanelOpen(false);
     setSearchMounted(true);
     setSearchOpen(true);
   }, []);
+
+  useEffect(() => {
+    if (isCompactViewport) {
+      setMemberPanelOpen(false);
+    }
+  }, [isCompactViewport]);
 
   const handleOpenSearchResult = useCallback((item: ChannelMessageSearchItemVo) => {
     const target = {
@@ -555,20 +556,23 @@ export const ChatApp = ({
   const loadOnlineMembers = useCallback(async (channelId: EntityIdValue) => {
     if (!isPersistedEntityId(channelId)) {
       setOnlineMembers([]);
+      setMemberLoadError(null);
       return;
     }
 
     setLoadingMembers(true);
+    setMemberLoadError(null);
     try {
       const members = await getChannelOnlineMembers(channelId);
       setOnlineMembers(members);
     } catch (error) {
       log.error('ChatApp', '加载在线成员失败:', error);
       setOnlineMembers([]);
+      setMemberLoadError(getErrorMessage(error, t('chat.membersLoadFailed')));
     } finally {
       setLoadingMembers(false);
     }
-  }, []);
+  }, [t]);
 
   const loadOlderHistory = useCallback(async () => {
     if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreOlderHistory[activeChannelKey]) {
@@ -1066,6 +1070,7 @@ export const ChatApp = ({
       setReplyTarget(null);
       setPendingImage(null);
       setOnlineMembers([]);
+      setMemberLoadError(null);
       loadedDraftChannelRef.current = null;
       clearMessageNavigation();
       closeMentionDropdown();
@@ -1073,6 +1078,8 @@ export const ChatApp = ({
       return;
     }
 
+    setOnlineMembers([]);
+    setMemberLoadError(null);
     const draft = loadChannelDraft(currentUserIdKey, activeChannelId);
     setMessageInput(draft?.content ?? '');
     setReplyTarget(draft?.replyTarget ?? null);
@@ -1089,15 +1096,10 @@ export const ChatApp = ({
       void loadInitialHistory(activeChannelId);
     }
 
-    const initialMemberTimer = window.setTimeout(() => {
-      void loadOnlineMembers(activeChannelId);
-    }, 240);
-
     return () => {
-      window.clearTimeout(initialMemberTimer);
       void chatHub.leaveChannel(activeChannelId);
     };
-  }, [activeChannelId, clearMessageHighlight, clearMessageNavigation, closeMentionDropdown, currentUserIdKey, loadInitialHistory, loadMessageWindow, loadOnlineMembers, messageNavigationTargetRef]);
+  }, [activeChannelId, clearMessageHighlight, clearMessageNavigation, closeMentionDropdown, currentUserIdKey, loadInitialHistory, loadMessageWindow, messageNavigationTargetRef]);
 
   useEffect(() => {
     if (!activeChannelId || !areEntityIdsEqual(loadedDraftChannelRef.current, activeChannelId)) {
@@ -1108,10 +1110,11 @@ export const ChatApp = ({
   }, [activeChannelId, currentUserIdKey, messageInput, pendingImage, replyTarget]);
 
   useEffect(() => {
-    if (!activeChannelId) {
+    if (!activeChannelId || !memberPanelOpen) {
       return;
     }
 
+    void loadOnlineMembers(activeChannelId);
     const timer = window.setInterval(() => {
       void loadOnlineMembers(activeChannelId);
     }, MEMBER_REFRESH_INTERVAL_MS);
@@ -1119,7 +1122,7 @@ export const ChatApp = ({
     return () => {
       window.clearInterval(timer);
     };
-  }, [activeChannelId, loadOnlineMembers]);
+  }, [activeChannelId, loadOnlineMembers, memberPanelOpen]);
 
   useEffect(() => {
     if (!activeChannelId || activeMessages.length === 0) {
@@ -1197,11 +1200,13 @@ export const ChatApp = ({
       } else {
         void loadInitialHistory(activeChannelId);
       }
-      void loadOnlineMembers(activeChannelId);
+      if (memberPanelOpen) {
+        void loadOnlineMembers(activeChannelId);
+      }
     }
 
     previousConnectionStateRef.current = connectionState;
-  }, [activeChannelId, connectionState, loadInitialHistory, loadMessageWindow, loadOnlineMembers, messageNavigationTargetRef, setChannelMessages, updateHistoryAvailability]);
+  }, [activeChannelId, connectionState, loadInitialHistory, loadMessageWindow, loadOnlineMembers, memberPanelOpen, messageNavigationTargetRef, setChannelMessages, updateHistoryAvailability]);
 
   useEffect(() => {
     if (!mentionContext || !mentionContext.keyword.trim()) {
@@ -1266,12 +1271,19 @@ export const ChatApp = ({
         {(!searchOpen || !isCompactViewport) && (
           <ChatConversationHeader
             activeChannel={activeChannel}
-            showBackToList={hasRoutedChannel || (isCompactViewport && Boolean(activeChannelId))}
+            showBackToList={isCompactViewport && (hasRoutedChannel || Boolean(activeChannelId))}
             onBackToList={hasRoutedChannel ? onBackToConversationList : () => setActiveChannel(null)}
             connectionHint={connectionHint}
             routeUnavailable={routeUnavailable}
             searchOpen={searchOpen}
             onOpenSearch={openMessageSearch}
+            compact={isCompactViewport}
+            showMembersAction={!isCompactViewport && activeChannelId !== null && !conversationContextUnavailable}
+            memberPanelOpen={memberPanelOpen}
+            onToggleMembers={() => {
+              setSearchOpen(false);
+              setMemberPanelOpen((current) => !current);
+            }}
             onOpenUserProfile={(target) => handleOpenUserProfile(target.userId, target.userName, target.avatarUrl, target.publicId)}
             onConversationChanged={handleConversationChanged}
           />
@@ -1326,138 +1338,44 @@ export const ChatApp = ({
               onLoadNewerHistory={() => { void loadNewerHistory({ scrollToBottomWhenDone: true }); }}
             />
 
-            <footer className={styles.inputArea}>
-              {activeChannelId && !canSendInActiveChannel && (
-                <div className={styles.composerRestriction} role="status">
-                  {t(conversationNoticeKey || 'chat.inputConversationUnavailable')}
-                </div>
-              )}
-              <ChatComposerStatus
-                typingUsers={conversationContextUnavailable ? [] : typingUsers}
-                replyTarget={conversationContextUnavailable ? null : replyTarget}
-                pendingImage={pendingImage}
-                pendingImagePreviewUrl={pendingImagePreviewUrl}
-                activeChannelId={activeChannelId}
-                hasComposerContent={hasComposerContent}
-                uploadingImage={uploadingImage}
-                imageUploadProgress={imageUploadProgress}
-                onOpenUserProfile={handleOpenUserProfile}
-                onCancelReply={() => setReplyTarget(null)}
-                onRemovePendingImage={handleRemovePendingImage}
-              />
-
-              <div className={styles.inputRow}>
-                <div className={styles.inputWrap}>
-                  <textarea
-                    ref={textareaRef}
-                    className={styles.input}
-                    value={messageInput}
-                    onChange={(event) => {
-                      const nextValue = event.target.value;
-                      setMessageInput(nextValue);
-                      updateMentionContext(nextValue, event.target.selectionStart);
-
-                      const now = Date.now();
-                      if (activeChannelId && now - typingAt >= 2000) {
-                        setTypingAt(now);
-                        void chatHub.startTyping(activeChannelId);
-                      }
-                    }}
-                    onClick={(event) => {
-                      updateMentionContext(messageInput, event.currentTarget.selectionStart);
-                    }}
-                    onKeyUp={(event) => {
-                      updateMentionContext(messageInput, event.currentTarget.selectionStart);
-                    }}
-                    onPaste={handleComposerPaste}
-                    onKeyDown={(event) => {
-                      if (isMentionOpen) {
-                        if (event.key === 'ArrowDown') {
-                          event.preventDefault();
-                          setMentionSelectedIndex((prev) => (
-                            mentionOptions.length > 0 ? (prev + 1) % mentionOptions.length : 0
-                          ));
-                          return;
-                        }
-
-                        if (event.key === 'ArrowUp') {
-                          event.preventDefault();
-                          setMentionSelectedIndex((prev) => (
-                            mentionOptions.length > 0 ? (prev - 1 + mentionOptions.length) % mentionOptions.length : 0
-                          ));
-                          return;
-                        }
-
-                        if ((event.key === 'Enter' || event.key === 'Tab') && mentionOptions[mentionSelectedIndex]) {
-                          event.preventDefault();
-                          applyMentionSelection(mentionOptions[mentionSelectedIndex]);
-                          return;
-                        }
-
-                        if (event.key === 'Escape') {
-                          event.preventDefault();
-                          closeMentionDropdown();
-                          return;
-                        }
-                      }
-
-                      if (event.key === 'Escape' && replyTarget) {
-                        event.preventDefault();
-                        setReplyTarget(null);
-                        return;
-                      }
-
-                      if (event.key === 'Enter' && !event.shiftKey) {
-                        event.preventDefault();
-                        void handleSendMessage();
-                      }
-                    }}
-                    placeholder={composerPlaceholder}
-                    disabled={!activeChannelId || !canSendInActiveChannel}
-                  />
-
-                  {isMentionOpen && (
-                    <ChatMentionMenu
-                      keyword={mentionContext?.keyword ?? ''}
-                      loading={mentionLoading}
-                      options={mentionOptions}
-                      selectedIndex={mentionSelectedIndex}
-                      apiBaseUrl={apiBaseUrl}
-                      onSelect={applyMentionSelection}
-                      onSelectIndex={setMentionSelectedIndex}
-                    />
-                  )}
-                </div>
-
-                <div className={styles.actionColumn}>
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept={attachmentImageAccept}
-                    className={styles.hiddenFileInput}
-                    onChange={(event) => {
-                      void handleImageSelected(event);
-                    }}
-                  />
-                  <button
-                    className={styles.imageButton}
-                    type="button"
-                    disabled={!activeChannelId || !canSendAttachment || uploadingImage}
-                    onClick={() => imageInputRef.current?.click()}
-                  >
-                    {uploadingImage ? t('chat.uploading') : t('chat.image')}
-                  </button>
-                  <button
-                    className={styles.sendButton}
-                    type="button"
-                    disabled={!activeChannelId || !canSendInActiveChannel || uploadingImage || !hasComposerContent}
-                    onClick={() => { void handleSendMessage(); }}
-                  >
-                    {t('chat.send')}
-                  </button>
-                </div>
-              </div>
-            </footer>
+            <ChatComposer
+              activeChannelId={activeChannelId}
+              canSend={canSendInActiveChannel}
+              canSendAttachment={canSendAttachment}
+              conversationNoticeKey={conversationNoticeKey}
+              typingUsers={conversationContextUnavailable ? [] : typingUsers}
+              replyTarget={conversationContextUnavailable ? null : replyTarget}
+              pendingImage={pendingImage}
+              pendingImagePreviewUrl={pendingImagePreviewUrl}
+              hasComposerContent={hasComposerContent}
+              uploadingImage={uploadingImage}
+              imageUploadProgress={imageUploadProgress}
+              messageInput={messageInput}
+              placeholder={composerPlaceholder}
+              textareaRef={textareaRef}
+              imageInputRef={imageInputRef}
+              mentionOpen={isMentionOpen}
+              mentionKeyword={mentionContext?.keyword ?? ''}
+              mentionLoading={mentionLoading}
+              mentionOptions={mentionOptions}
+              mentionSelectedIndex={mentionSelectedIndex}
+              apiBaseUrl={apiBaseUrl}
+              onMessageInputChange={(value, cursor) => {
+                setMessageInput(value);
+                updateMentionContext(value, cursor);
+              }}
+              onRefreshMentionContext={(cursor) => updateMentionContext(messageInput, cursor)}
+              onSelectMention={applyMentionSelection}
+              onSelectMentionIndex={setMentionSelectedIndex}
+              onCloseMention={closeMentionDropdown}
+              onStartTyping={(channelId) => { void chatHub.startTyping(channelId); }}
+              onPaste={handleComposerPaste}
+              onImageSelected={(event) => { void handleImageSelected(event); }}
+              onSend={() => { void handleSendMessage(); }}
+              onOpenUserProfile={handleOpenUserProfile}
+              onCancelReply={() => setReplyTarget(null)}
+              onRemovePendingImage={handleRemovePendingImage}
+            />
           </div>}
 
           {searchMounted && (
@@ -1470,15 +1388,13 @@ export const ChatApp = ({
               onOpenResult={handleOpenSearchResult}
             />
           )}
-          {!searchOpen && activeChannelId !== null && !conversationContextUnavailable && (
+          {memberPanelOpen && !searchOpen && activeChannelId !== null && !conversationContextUnavailable && (
             <ChatMemberPanel
-              collapsed={memberPanelCollapsed}
               members={onlineMembers}
               loading={loadingMembers}
-              onToggleCollapsed={() => {
-                setSearchOpen(false);
-                setMemberPanelCollapsed((current) => !current);
-              }}
+              loadError={memberLoadError}
+              onClose={() => setMemberPanelOpen(false)}
+              onRetry={() => { void loadOnlineMembers(activeChannelId); }}
               onOpenUserProfile={handleOpenUserProfile}
               renderAvatarVisual={renderAvatarVisual}
             />

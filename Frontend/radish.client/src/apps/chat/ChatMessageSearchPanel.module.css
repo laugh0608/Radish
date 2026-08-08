@@ -1,6 +1,6 @@
 .panel {
-  width: min(390px, 34vw);
-  min-width: 320px;
+  width: 280px;
+  min-width: 280px;
   min-height: 0;
   display: flex;
   flex-direction: column;

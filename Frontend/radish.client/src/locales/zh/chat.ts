@@ -122,7 +122,6 @@ export const zhChat = {
   'chat.pin.pin': '置顶消息',
   'chat.pin.unpin': '取消置顶',
   'chat.pin.updating': '更新中…',
-  'chat.pin.revision': 'revision {{revision}}',
   'chat.pin.authoritativeHint': '撤回或失权后自动刷新',
   'chat.pin.pinned': '消息已置顶',
   'chat.pin.unpinned': '已取消消息置顶',

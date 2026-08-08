@@ -12,9 +12,9 @@
 .main {
   flex: 1 1 auto;
   min-height: 0;
-  width: min(1560px, calc(100vw - 32px));
+  width: min(1440px, calc(100vw - 24px));
   margin: 0 auto;
-  padding: 18px 0 22px;
+  padding: 12px 0 16px;
   display: flex;
 }
 
@@ -29,12 +29,12 @@
   flex: 1 1 auto;
   min-width: 0;
   min-height: 620px;
-  height: calc(100dvh - var(--rx-shell-header-height) - 40px);
+  height: calc(100dvh - var(--rx-shell-header-height) - 28px);
   border: 1px solid var(--theme-border-soft);
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
   background: var(--theme-bg-surface);
-  box-shadow: var(--theme-shadow-soft);
+  box-shadow: none;
 }
 
 .stateShell {

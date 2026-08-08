@@ -194,7 +194,7 @@
   max-height: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 720px) {
   .summaryButton,
   .directBoundary {
     font-size: 0.75rem;

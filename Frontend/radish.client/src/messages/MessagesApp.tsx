@@ -14,6 +14,7 @@ import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
 import { buildMessagesReturnPath } from '@/services/authReturnPath';
 import { chatHub } from '@/services/chatHub';
 import { useAuthStore } from '@/stores/authStore';
+import { useChatStore } from '@/stores/chatStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import { buildMessagesPath, createDefaultMessagesRoute, parseMessagesRoute } from './messagesRouteState';
@@ -41,6 +42,8 @@ export const MessagesApp = () => {
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const chatHubOwnerRef = useRef(Symbol('messages-page-chat'));
+  const previousChatAccountRef = useRef<string | null>(null);
+  const resetChatStore = useChatStore(state => state.reset);
 
   const navigateToMessagesRoute = useCallback((
     nextRoute: ReturnType<typeof createDefaultMessagesRoute>,
@@ -158,6 +161,15 @@ export const MessagesApp = () => {
       void chatHub.release(owner);
     };
   }, [loggedIn]);
+
+  useEffect(() => {
+    const nextAccountKey = loggedIn ? userId.trim() : null;
+    const previousAccountKey = previousChatAccountRef.current;
+    if (previousAccountKey && previousAccountKey !== nextAccountKey) {
+      resetChatStore();
+    }
+    previousChatAccountRef.current = nextAccountKey;
+  }, [loggedIn, resetChatStore, userId]);
 
   const handleOpenUserProfile = useCallback((target: ChatAppProfileNavigationTarget) => {
     const targetUserId = resolvePublicUserRouteIdentifier({

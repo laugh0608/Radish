@@ -11,11 +11,12 @@ import {
 import { normalizeBrowserVisibleUrl } from '../../utils/browserVisibleUrl.ts';
 
 export const CHAT_DRAFT_STORAGE_KEY = 'radish.chat.drafts.v1';
+export const CHAT_COMPACT_BREAKPOINT_PX = 720;
 export const MENTION_PATTERN = /@\[(?<name>[^\]]+)\]\((?<id>\d+)\)/g;
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 export function isCompactChatViewport(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth <= 720;
+  return typeof window !== 'undefined' && window.innerWidth <= CHAT_COMPACT_BREAKPOINT_PX;
 }
 
 export interface MentionContext {

@@ -331,9 +331,10 @@ test('聊天正式 Web 页面应把聊天窗口作为主体而不是仪表盘卡
   assert.match(messagesSource, /hideMobileNav=\{route\.channelId !== undefined \|\| searchVisible\}/);
   assert.match(messagesSource, /messages\.web\.chatWorkspaceLabel/);
   assert.doesNotMatch(messagesSource, /summaryPanel|messageRail|summaryCards|channelQueue/);
-  assert.match(messagesStylesSource, /width: min\(1560px, calc\(100vw - 32px\)\)/);
-  assert.match(messagesStylesSource, /height: calc\(100dvh - var\(--rx-shell-header-height\) - 40px\)/);
-  assert.match(chatSource, /useState\(true\)/);
+  assert.match(messagesStylesSource, /width: min\(1440px, calc\(100vw - 24px\)\)/);
+  assert.match(messagesStylesSource, /height: calc\(100dvh - var\(--rx-shell-header-height\) - 28px\)/);
+  assert.match(messagesStylesSource, /border-radius: 0;[\s\S]*box-shadow: none;/);
+  assert.match(chatSource, /\[memberPanelOpen, setMemberPanelOpen\] = useState\(false\)/);
   assert.match(chatSource, /chatAppFocused/);
   assert.match(chatSidebarSource, /key: 'mutual'[\s\S]*key: 'stranger'[\s\S]*key: 'group'[\s\S]*key: 'public'/);
   assert.match(chatSidebarSource, /voConversationKind/);

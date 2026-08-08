@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { tokenService } from '@/services/tokenService';
 import { useUserStore } from './userStore';
 import { useNotificationStore } from './notificationStore';
+import { useChatStore } from './chatStore';
 import { log } from '@/utils/logger';
 
 interface AuthStore {
@@ -69,7 +70,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
     const notificationStore = useNotificationStore.getState();
     notificationStore.reset();
 
-    // 4. 更新认证状态
+    // 4. 清除账号级消息状态
+    useChatStore.getState().reset();
+
+    // 5. 更新认证状态
     set({ isAuthenticated: false });
 
     log.info('AuthStore', '登出完成');

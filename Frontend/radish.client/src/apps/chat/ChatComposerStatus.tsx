@@ -3,7 +3,7 @@ import type { ChannelMessageVo, EntityIdValue } from '@/types/chat';
 import { getMessagePreviewText, type PendingImageDraft } from './chatApp.helpers';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { ChatProtectedImage } from './ChatProtectedImage';
-import styles from './ChatApp.module.css';
+import styles from './ChatComposer.module.css';
 
 interface ComposerTypingUser {
   userId: EntityIdValue;

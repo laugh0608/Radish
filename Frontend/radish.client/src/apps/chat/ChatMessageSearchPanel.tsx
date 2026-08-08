@@ -1,4 +1,4 @@
-import { type FormEvent, type KeyboardEvent, useMemo } from 'react';
+import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChatMessageSearchScopes, type ChannelMessageSearchItemVo } from '@radish/http';
 import { Icon } from '@radish/ui/icon';
@@ -63,6 +63,8 @@ export function ChatMessageSearchPanel({
   onOpenResult,
 }: ChatMessageSearchPanelProps) {
   const { t, i18n } = useTranslation();
+  const keywordInputRef = useRef<HTMLInputElement | null>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   const search = useChatMessageSearch({ activeChannelId, accountKey });
   const currentScopeUnavailable = search.scope === ChatMessageSearchScopes.CurrentChannel && !activeChannelId;
   const visibleItems = useMemo(
@@ -76,6 +78,35 @@ export function ChatMessageSearchPanel({
   const resultCountLabel = useMemo(() => t('chat.search.resultCount', {
     count: visibleItems.length,
   }), [t, visibleItems.length]);
+
+  useEffect(() => {
+    if (hidden) {
+      const restoreTarget = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      if (!restoreTarget) {
+        return;
+      }
+
+      const restoreFrame = window.requestAnimationFrame(() => {
+        const focusTarget = restoreTarget.isConnected
+          ? restoreTarget
+          : document.querySelector<HTMLElement>('[data-chat-search-trigger="true"]');
+        focusTarget?.focus();
+      });
+      return () => window.cancelAnimationFrame(restoreFrame);
+    }
+
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const focusFrame = window.requestAnimationFrame(() => keywordInputRef.current?.focus());
+    return () => window.cancelAnimationFrame(focusFrame);
+  }, [hidden]);
+
+  useEffect(() => () => {
+    restoreFocusRef.current?.focus();
+    restoreFocusRef.current = null;
+  }, []);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -128,7 +159,7 @@ export function ChatMessageSearchPanel({
           <span className={styles.visuallyHidden}>{t('chat.search.keyword')}</span>
           <Icon icon="mdi:magnify" size={19} />
           <input
-            autoFocus
+            ref={keywordInputRef}
             value={search.keyword}
             onChange={(event) => search.setKeyword(event.target.value)}
             onKeyDown={handleKeywordKeyDown}

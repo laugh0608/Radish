@@ -122,7 +122,6 @@ export const enChat = {
   'chat.pin.pin': 'Pin message',
   'chat.pin.unpin': 'Unpin',
   'chat.pin.updating': 'Updating…',
-  'chat.pin.revision': 'revision {{revision}}',
   'chat.pin.authoritativeHint': 'Refreshes after recall or access changes',
   'chat.pin.pinned': 'Message pinned',
   'chat.pin.unpinned': 'Message unpinned',

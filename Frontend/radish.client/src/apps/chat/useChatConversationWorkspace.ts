@@ -7,10 +7,7 @@ import type { ChannelVo, ChatChannelListView, DirectConversationAction } from '@
 import { areEntityIdsEqual, normalizeEntityId } from '@/types/chat';
 import { log } from '@/utils/logger';
 import { subscribeUserInteractionChanged } from '@/services/userInteractionSync';
-
-function isCompactChatViewport(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth <= 720;
-}
+import { isCompactChatViewport } from './chatApp.helpers';
 
 interface UseChatConversationWorkspaceOptions {
   routedChannelId?: string;

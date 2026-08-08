@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ChatMessagePinStateVo } from '@radish/http';
+import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import { getIntlLocale } from '@/locales/language';
 import { getMessagePreviewText } from './chatApp.helpers';
@@ -11,6 +12,7 @@ interface ChatPinnedMessagesProps {
   loading: boolean;
   loadError: string | null;
   canManage: boolean;
+  compact: boolean;
   pendingMessageId: string | null;
   onRetry: () => void;
   onNavigate: (messageId: string) => void;
@@ -22,6 +24,7 @@ export const ChatPinnedMessages = ({
   loading,
   loadError,
   canManage,
+  compact,
   pendingMessageId,
   onRetry,
   onNavigate,
@@ -42,7 +45,7 @@ export const ChatPinnedMessages = ({
   }), [locale]);
 
   useEffect(() => {
-    if (!open) {
+    if (!open || compact) {
       return;
     }
 
@@ -55,7 +58,7 @@ export const ChatPinnedMessages = ({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open]);
+  }, [compact, open]);
 
   useEffect(() => {
     if (items.length === 0) {
@@ -69,7 +72,9 @@ export const ChatPinnedMessages = ({
 
   const close = () => {
     setOpen(false);
-    requestAnimationFrame(() => openButtonRef.current?.focus());
+    if (!compact) {
+      requestAnimationFrame(() => openButtonRef.current?.focus());
+    }
   };
 
   const navigate = (messageId: string) => {
@@ -89,6 +94,51 @@ export const ChatPinnedMessages = ({
   if (!latest) {
     return loading ? <span className={styles.srOnly}>{t('chat.pin.loading')}</span> : null;
   }
+
+  const pinnedList = (
+    <>
+      <div className={styles.list}>
+        {items.map((item) => {
+          const pending = pendingMessageId === item.voMessageId;
+          return (
+            <article key={item.voId} className={styles.item}>
+              <div className={styles.itemMeta}>
+                <span>{item.voMessage.voUserName}</span>
+                <time dateTime={item.voPinnedAt}>{dateFormatter.format(new Date(item.voPinnedAt))}</time>
+              </div>
+              <button
+                type="button"
+                className={styles.itemPreview}
+                onClick={() => navigate(item.voMessageId)}
+              >
+                {getMessagePreviewText(item.voMessage, t)}
+              </button>
+              <div className={styles.itemFooter}>
+                <span>{t('chat.pin.pinnedBy', { name: item.voPinnedByName })}</span>
+                <span className={styles.itemActions}>
+                  <button type="button" onClick={() => navigate(item.voMessageId)}>
+                    <Icon icon="mdi:target" size={14} />
+                    {t('chat.pin.locate')}
+                  </button>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => { void onSetPinned(item.voMessageId, false); }}
+                      disabled={pending}
+                    >
+                      <Icon icon="mdi:pin-off" size={14} />
+                      {pending ? t('chat.pin.updating') : t('chat.pin.unpin')}
+                    </button>
+                  )}
+                </span>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <footer className={styles.panelFooter}>{t('chat.pin.authoritativeHint')}</footer>
+    </>
+  );
 
   return (
     <>
@@ -118,75 +168,50 @@ export const ChatPinnedMessages = ({
         </button>
       </div>
 
-      {open && <button type="button" className={styles.backdrop} onClick={close} aria-label={t('common.close')} />}
-      {open && (
-        <aside
-          id="chat-pinned-message-panel"
-          className={styles.panel}
-          role="dialog"
-          aria-labelledby="chat-pinned-message-title"
+      {open && compact && (
+        <BottomSheet
+          isOpen
+          onClose={close}
+          closeLabel={t('chat.pin.close')}
+          title={t('chat.pin.title')}
+          height="min(72%, 620px)"
+          className={styles.mobileSheet}
+          bodyClassName={styles.mobileSheetBody}
         >
-          <div className={styles.sheetHandle} aria-hidden="true" />
-          <header className={styles.panelHeader}>
-            <span>
-              <strong id="chat-pinned-message-title">{t('chat.pin.title')}</strong>
-              <small>{t('chat.pin.capacity', { count: items.length, limit: 20 })}</small>
-            </span>
-            <button
-              ref={closeButtonRef}
-              type="button"
-              className={styles.closeButton}
-              onClick={close}
-              aria-label={t('chat.pin.close')}
-            >
-              <Icon icon="mdi:close" size={18} />
-            </button>
-          </header>
-
-          <div className={styles.list}>
-            {items.map((item) => {
-              const pending = pendingMessageId === item.voMessageId;
-              return (
-                <article key={item.voId} className={styles.item}>
-                  <div className={styles.itemMeta}>
-                    <span>{item.voMessage.voUserName}</span>
-                    <time dateTime={item.voPinnedAt}>{dateFormatter.format(new Date(item.voPinnedAt))}</time>
-                  </div>
-                  <button
-                    type="button"
-                    className={styles.itemPreview}
-                    onClick={() => navigate(item.voMessageId)}
-                  >
-                    {getMessagePreviewText(item.voMessage, t)}
-                  </button>
-                  <div className={styles.itemFooter}>
-                    <span>{t('chat.pin.pinnedBy', { name: item.voPinnedByName })}</span>
-                    <span className={styles.itemActions}>
-                      <button type="button" onClick={() => navigate(item.voMessageId)}>
-                        <Icon icon="mdi:target" size={14} />
-                        {t('chat.pin.locate')}
-                      </button>
-                      {canManage && (
-                        <button
-                          type="button"
-                          onClick={() => { void onSetPinned(item.voMessageId, false); }}
-                          disabled={pending}
-                        >
-                          <Icon icon="mdi:pin-off" size={14} />
-                          {pending ? t('chat.pin.updating') : t('chat.pin.unpin')}
-                        </button>
-                      )}
-                    </span>
-                  </div>
-                </article>
-              );
-            })}
+          <div id="chat-pinned-message-panel" className={styles.mobilePanel}>
+            <small className={styles.mobileCapacity}>{t('chat.pin.capacity', { count: items.length, limit: 20 })}</small>
+            {pinnedList}
           </div>
-          <footer className={styles.panelFooter}>
-            <span>{t('chat.pin.revision', { revision: state?.voRevision ?? '0' })}</span>
-            <span>{t('chat.pin.authoritativeHint')}</span>
-          </footer>
-        </aside>
+        </BottomSheet>
+      )}
+
+      {open && !compact && (
+        <>
+          <button type="button" className={styles.backdrop} onClick={close} aria-label={t('common.close')} />
+          <aside
+            id="chat-pinned-message-panel"
+            className={styles.panel}
+            role="dialog"
+            aria-labelledby="chat-pinned-message-title"
+          >
+            <header className={styles.panelHeader}>
+              <span>
+                <strong id="chat-pinned-message-title">{t('chat.pin.title')}</strong>
+                <small>{t('chat.pin.capacity', { count: items.length, limit: 20 })}</small>
+              </span>
+              <button
+                ref={closeButtonRef}
+                type="button"
+                className={styles.closeButton}
+                onClick={close}
+                aria-label={t('chat.pin.close')}
+              >
+                <Icon icon="mdi:close" size={18} />
+              </button>
+            </header>
+            {pinnedList}
+          </aside>
+        </>
       )}
     </>
   );

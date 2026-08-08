@@ -166,6 +166,7 @@ export const ChatMessageList = ({
           loading={pinLoading}
           loadError={pinLoadError}
           canManage={canPinMessages}
+          compact={compact}
           pendingMessageId={pinPendingMessageId}
           onRetry={retryPinLoad}
           onNavigate={onNavigateToMessage}
