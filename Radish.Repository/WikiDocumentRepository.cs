@@ -17,6 +17,76 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
         _unitOfWorkManage = unitOfWorkManage;
     }
 
+    public async Task<WikiDocumentDraft?> QueryLatestTerminalDraftAsync(long documentId)
+    {
+        if (documentId <= 0)
+        {
+            return null;
+        }
+
+        var terminalStates = TerminalDraftStates();
+        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<WikiDocumentDraft>()
+            .Where(draft =>
+                draft.DocumentId == documentId &&
+                terminalStates.Contains(draft.ReviewState) &&
+                !draft.IsDeleted)
+            .OrderByDescending(draft => draft.Id)
+            .FirstAsync());
+    }
+
+    public async Task<List<WikiTerminalDraftEvidence>> QueryLatestTerminalDraftEvidenceAsync(
+        IReadOnlyCollection<long> documentIds)
+    {
+        var normalizedDocumentIds = documentIds
+            .Where(documentId => documentId > 0)
+            .Distinct()
+            .ToArray();
+        if (normalizedDocumentIds.Length == 0)
+        {
+            return [];
+        }
+
+        var terminalStates = TerminalDraftStates();
+        return await ExecuteDbOperationAsync(async () =>
+        {
+            var latestDraftIdentities = await CreateTenantQueryableFor<WikiDocumentDraft>()
+                .Where(draft =>
+                    normalizedDocumentIds.Contains(draft.DocumentId) &&
+                    terminalStates.Contains(draft.ReviewState) &&
+                    !draft.IsDeleted)
+                .GroupBy(draft => draft.DocumentId)
+                .Select(draft => new
+                {
+                    draft.DocumentId,
+                    DraftId = SqlFunc.AggregateMax(draft.Id)
+                })
+                .ToListAsync();
+            var latestDraftIds = latestDraftIdentities
+                .Select(identity => identity.DraftId)
+                .ToArray();
+            if (latestDraftIds.Length == 0)
+            {
+                return [];
+            }
+
+            return await CreateTenantQueryableFor<WikiDocumentDraft>()
+                .Where(draft => latestDraftIds.Contains(draft.Id) && !draft.IsDeleted)
+                .Select(draft => new WikiTerminalDraftEvidence
+                {
+                    DraftId = draft.Id,
+                    DocumentId = draft.DocumentId,
+                    Title = draft.Title,
+                    Slug = draft.Slug,
+                    Summary = draft.Summary,
+                    DraftVersion = draft.DraftVersion,
+                    ReviewState = draft.ReviewState,
+                    PayloadPurgedAt = draft.PayloadPurgedAt,
+                    ModifyTime = draft.ModifyTime
+                })
+                .ToListAsync();
+        });
+    }
+
     public async Task<int> SaveDraftAsync(WikiDraftSaveCommand command)
     {
         var editing = (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Editing;
@@ -175,7 +245,7 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
                 MarkdownContent = command.Draft.MarkdownContent,
                 CoverAttachmentId = command.Draft.CoverAttachmentId,
                 ParentId = command.FinalParentId,
-                Version = command.ExpectedDocumentVersion + 1,
+                Version = command.Draft.BaseDocumentVersion + 1,
                 ModifyTime = command.NowUtc,
                 ModifyBy = command.OperatorName,
                 ModifyId = command.OperatorId
@@ -183,7 +253,7 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
             .Where(document =>
                 document.Id == command.DocumentId &&
                 document.TenantId == command.TenantId &&
-                document.Version == command.ExpectedDocumentVersion &&
+                document.Version == command.Draft.BaseDocumentVersion &&
                 document.ActiveDraftId == command.Draft.Id &&
                 !document.IsDeleted)
             .ExecuteCommandAsync());
@@ -204,9 +274,8 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
                 !draft.IsDeleted &&
                 draft.PayloadPurgedAt == null &&
                 (draft.ReviewState == applied || draft.ReviewState == rejected || draft.ReviewState == withdrawn) &&
-                ((draft.ReviewedAt != null && draft.ReviewedAt <= cutoffUtc) ||
-                 (draft.ReviewedAt == null && draft.ModifyTime != null && draft.ModifyTime <= cutoffUtc)))
-            .OrderBy(draft => draft.ReviewedAt ?? draft.ModifyTime)
+                (draft.ModifyTime ?? draft.ReviewedAt ?? draft.CreateTime) <= cutoffUtc)
+            .OrderBy(draft => draft.ModifyTime ?? draft.ReviewedAt ?? draft.CreateTime)
             .OrderBy(draft => draft.Id)
             .Take(batchSize)
             .Select(draft => draft.Id)
@@ -345,4 +414,11 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
             return await query.ToListAsync();
         });
     }
+
+    private static int[] TerminalDraftStates() =>
+    [
+        (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Applied,
+        (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Rejected,
+        (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Withdrawn
+    ];
 }

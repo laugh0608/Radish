@@ -1,8 +1,8 @@
 # F4-R C-1 代表页代码事实审计
 
-> 日期：2026-07-30；2026-08-06 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-08 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01` 已关闭，`R1-P02` 能力覆盖裁决已确认，恢复 PC 代表设计
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02` 已关闭，`R1-A01` 设计前能力覆盖门禁已完成代码与静态验收
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -67,8 +67,8 @@ C-1A 最终裁决为：
 | --- | --- | --- | --- | --- | --- |
 | `R1-F01` | 共享组件、状态、主题与壳层矩阵 | `2/2/2/2/2/1` | `11` | 改变跨 Public、Private / Author、Console 复用契约 | `radish-web-family-ui-v1.pen`（已完成） |
 | `R1-P01` | Public 内容流；锚点 `/discover` | `2/2/1/2/2/1` | `10` | 建立家族化内容流和 Public 响应式语法 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
-| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（能力裁决已确认；继续 PC 方向收敛） |
-| `R1-A01` | Author 编辑 / 发布；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen` |
+| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
+| `R1-A01` | Author 编辑 / 协作 / 提交审核；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen`（readiness 与能力门禁已完成） |
 | `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen` |
 | `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen` |
 | `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
@@ -77,7 +77,9 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 
 `R1-P01` 的稳定代码事实现为：`/discover` 只消费统一 `PublicDiscoverFeedVo`，由服务端按 snapshot cutoff 与稳定 keyset 游标合并 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`；Channel 摘要必须经 Console 显式 opt-in，页面不再自行拼装帖子、热门标签、Wiki 或商品列表。分类、`#标签` 与结构化状态仍由 Forum 列表 / 详情分层表达，不挤入紧凑混合轨道。`2026-08-04`—`08-05` 已完成公开能力审计、PC / mobile 视觉确认、代码实现与 Gateway 阶段性运行态复核，最终结构以国风暖白表面、无衬线层级、克制圆角阴影、灰玉品牌语义、墨蓝操作语义和内嵌数据反馈建立现代自然紧凑气质；活动设计源只保留正式 PC / mobile 和必要母版。匿名 / 登录回流、双语、代表主题、Console 治理只读路径与横向溢出检查均通过，运行态发现的 Int64 wire contract 偏差已在统一 HTTP 契约层修正。详见[结构研究记录](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)、[设计记录](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)与[实现记录](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)。全局品牌 token 尚未机械替换，继续由共享主题批治理。
 
-`R1-P02` 已于 `2026-08-05` 完成[代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)，并于 `2026-08-06` 完成[正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)。已确认普通帖子正式 Web 承接帖子 / 回帖点赞、reaction 和回帖的回帖；作者删除、投票和抽奖作为作者 / 类型状态保留；基础资料设置进入后续 Private Web；资产复杂能力独立后置。能力审计冻结已经解除，下一步只恢复普通帖子 PC 代表设计，方向确认前不进入 Mobile 或代码。
+`R1-P02` 已于 `2026-08-05` 完成[代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)，并于 `2026-08-06` 完成[正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)。随后已完成 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收；普通帖子正式 Web 已承接帖子 / 回帖点赞、reaction、赞赏和两级回帖，详见[实现记录](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)。
+
+`R1-A01` 已于 `2026-08-08` 完成[设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)。正式代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”；普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 随后已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。活动源可用后进入 PC 代表设计，确认后才继续 Mobile 与页面视觉实现。
 
 ## 5. R2 局部设计类型
 
@@ -119,8 +121,9 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 2. 参考 `13 / 16 / 18 / 27` 的结构转译，以及帖子之外公开实体、API、路由、权限与失败边界审计已经完成。
 3. `R1-P01` 的统一公开读模型、Channel opt-in 治理、`@radish/http`、页面结构、双语资源和静态测试已经成组实现，代码侧构建与定向回归通过。
 4. `R1-P01` 阶段性 PC / mobile 真实截图与交互复核已通过并关闭；未暴露需要回写 Pencil 的共享结构偏差。
-5. `R1-P02` 的正式 Web 能力覆盖裁决已确认；按完整能力清单重新收敛普通帖子唯一 PC 方案，评审通过后再进入 mobile 正式画板。
-6. 后续设计轨继续按 `R1-A01 → R1-W01 → R1-C01 → R1-C02` 更新或复核代表画板；R2 只补必要差异，不扩为路由镜像。
-7. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现；代表页代码落地并完成截图复核后，以复核结果驱动 R3 成组实现。
+5. `R1-P02` 的 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收已关闭。
+6. `R1-A01` readiness、代码能力修复与静态验收已完成；活动源可用后进入 PC 代表设计，确认后继续 Mobile。
+7. 后续设计轨保持 `R1-A01 → R1-W01 → R1-C01 → R1-C02`；R2 只补必要差异，不扩为路由镜像。
+8. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现；代表页代码落地并完成截图复核后，以复核结果驱动 R3 成组实现。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

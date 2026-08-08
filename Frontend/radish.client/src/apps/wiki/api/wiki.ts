@@ -14,6 +14,8 @@ import {
   type SubmitWikiDraftRequest,
   type WikiAuthorDocumentVo,
   type WikiAuthorDraftDetailVo,
+  type WikiAuthorRevisionDetailVo,
+  type WikiAuthorRevisionHistoryVo,
   type WikiDocumentCollaboratorVo,
 } from '@radish/http';
 import type { TFunction } from 'i18next';
@@ -83,6 +85,32 @@ export async function getWikiAuthorDraft(documentId: LongId, t: TFunction): Prom
   return await ensureOk(
     apiGet<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorGetById/${encodeURIComponent(String(documentId))}`, { withAuth: true }),
     t('wiki.author.feedback.loadDetailFailed'),
+  );
+}
+
+export async function getWikiAuthorRevisionHistory(
+  documentId: LongId,
+  t: TFunction,
+): Promise<WikiAuthorRevisionHistoryVo> {
+  return await ensureOk(
+    apiGet<WikiAuthorRevisionHistoryVo>(
+      `/api/v1/Wiki/AuthorGetRevisionHistory/${encodeURIComponent(String(documentId))}`,
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.loadRevisionsFailed'),
+  );
+}
+
+export async function getWikiAuthorRevisionDetail(
+  revisionId: LongId,
+  t: TFunction,
+): Promise<WikiAuthorRevisionDetailVo> {
+  return await ensureOk(
+    apiGet<WikiAuthorRevisionDetailVo>(
+      `/api/v1/Wiki/AuthorGetRevisionDetail/${encodeURIComponent(String(revisionId))}`,
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.loadRevisionDetailFailed'),
   );
 }
 

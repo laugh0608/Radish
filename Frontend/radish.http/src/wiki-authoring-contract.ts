@@ -30,20 +30,55 @@ export type WikiReviewActionValue = typeof WikiReviewAction[keyof typeof WikiRev
 
 export interface WikiAuthorDocumentVo {
   voDocumentId: WikiLongId;
-  voDraftId?: WikiLongId | null;
+  voDraftId: WikiLongId | null;
+  voActiveDraftId: WikiLongId | null;
+  voLatestDraftId: WikiLongId | null;
   voTitle: string;
   voSlug: string;
+  voDocumentSlug: string;
   voSummary?: string | null;
   voDocumentVersion: number;
-  voDraftVersion?: number | null;
-  voReviewState?: WikiDraftReviewStateValue | null;
+  voDraftVersion: number | null;
+  voReviewState: WikiDraftReviewStateValue | null;
   voStatus: number;
   voAuthorRole: string;
   voCanEdit: boolean;
   voCanSubmit: boolean;
   voCanManageCollaborators: boolean;
+  voIsActiveDraft: boolean;
+  voCanStartDraft: boolean;
+  voHasDraftPayload: boolean;
+  voPayloadPurgedAt: string | null;
   voCreateTime: string;
   voModifyTime?: string | null;
+}
+
+export interface WikiAuthorRevisionItemVo {
+  voId: WikiLongId;
+  voDocumentId: WikiLongId;
+  voVersion: number;
+  voTitle: string;
+  voChangeSummary?: string | null;
+  voSourceType: string;
+  voCreateTime: string;
+  voCreateBy: string;
+  voIsCurrent: boolean;
+}
+
+export interface WikiAuthorRevisionDetailVo extends WikiAuthorRevisionItemVo {
+  voMarkdownContent: string;
+}
+
+export interface WikiAuthorRevisionHistoryVo {
+  voDocumentId: WikiLongId;
+  voTitle: string;
+  voSlug: string;
+  voDocumentVersion: number;
+  voStatus: number;
+  voActiveDraftId: WikiLongId | null;
+  voAuthorRole: string;
+  voCanStartDraft: boolean;
+  voRevisions: WikiAuthorRevisionItemVo[];
 }
 
 export interface WikiDocumentCollaboratorVo {
@@ -75,6 +110,7 @@ export interface WikiAuthorDraftDetailVo {
   voOwnerUserName: string;
   voTitle: string;
   voSlug: string;
+  voDocumentSlug: string;
   voSummary?: string | null;
   voMarkdownContent: string;
   voCoverAttachmentId?: WikiLongId | null;
@@ -88,6 +124,10 @@ export interface WikiAuthorDraftDetailVo {
   voCanEdit: boolean;
   voCanSubmit: boolean;
   voCanManageCollaborators: boolean;
+  voIsActiveDraft: boolean;
+  voCanStartDraft: boolean;
+  voHasDraftPayload: boolean;
+  voPayloadPurgedAt: string | null;
   voReadOnlyReason?: string | null;
   voChangeSummary?: string | null;
   voReviewComment?: string | null;

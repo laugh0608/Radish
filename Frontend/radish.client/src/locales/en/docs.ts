@@ -388,6 +388,7 @@ export const enDocs = {
   'wiki.author.editor.boundary': 'Saving updates content, summaries, directory placement, and access fields. Publishing, archiving, and permission governance remain in Console.',
   'wiki.author.editor.currentVisibility': 'Current visibility: {{visibility}}',
   'wiki.author.editor.authorReadOnlyNotice': 'This account can only read the working draft. The server will continue to reject unauthorized saves.',
+  'wiki.author.editor.payloadPurgedNotice': 'This terminal draft payload has been cleared by the retention policy. Version, collaborator, and review timeline evidence remains available.',
   'wiki.author.editor.documentVersion': 'Document version',
   'wiki.author.editor.draftVersion': 'Draft version',
   'wiki.author.editor.versionEvidence': 'Document v{{document}} · draft v{{draft}} · {{role}}',

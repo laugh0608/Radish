@@ -248,6 +248,30 @@ public class WikiController : ControllerBase
             : MessageModel<WikiAuthorDraftDetailVo>.Success("查询成功", result);
     }
 
+    [HttpGet("{documentId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<WikiAuthorRevisionHistoryVo>> AuthorGetRevisionHistory(long documentId)
+    {
+        var result = await _wikiDocumentService.AuthorGetRevisionHistoryAsync(
+            documentId, Current.UserId, Current.IsSystemOrAdmin());
+        return result == null
+            ? BuildFailure(StatusCodes.Status404NotFound, "文档或版本不存在", default(WikiAuthorRevisionHistoryVo)!,
+                "Wiki.RevisionNotFound", "error.wiki.revision_not_found")
+            : MessageModel<WikiAuthorRevisionHistoryVo>.Success("查询成功", result);
+    }
+
+    [HttpGet("{revisionId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<WikiAuthorRevisionDetailVo>> AuthorGetRevisionDetail(long revisionId)
+    {
+        var result = await _wikiDocumentService.AuthorGetRevisionDetailAsync(
+            revisionId, Current.UserId, Current.IsSystemOrAdmin());
+        return result == null
+            ? BuildFailure(StatusCodes.Status404NotFound, "版本不存在", default(WikiAuthorRevisionDetailVo)!,
+                "Wiki.RevisionNotFound", "error.wiki.revision_not_found")
+            : MessageModel<WikiAuthorRevisionDetailVo>.Success("查询成功", result);
+    }
+
     [HttpPost]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     public Task<MessageModel<WikiAuthorDraftDetailVo>> AuthorCreate([FromBody] CreateWikiAuthorDraftDto dto) =>

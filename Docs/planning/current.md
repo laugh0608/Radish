@@ -6,14 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-P02 已完成设计、成组实现和 Gateway PC / mobile 运行态验收；下一步按 C-1B 选择下一代表页`
-- **产品下一顺位**：`复核剩余 R1 / R2 候选的专题边界与代表价值，先确认下一页设计顺位，再进入对应实现`
+- **工程第一顺位**：`F4-R C-1B 的 R1-A01 设计前能力门禁已完成代码与静态验收；等待 Pencil 可用后进入 PC 正式代表设计`
+- **产品下一顺位**：`按已冻结身份完成 /docs/edit/:id 的 PC 1440 正式代表画板；确认后再做 Mobile 与必要关键状态区`
 - **复核日期**：`2026-08-08`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-08` 已完成 [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)：新增关系授权的 Author Revision history / detail，支持最新终态证据与载荷清理标记，统一 Author 写响应 evidence，并将 Apply 唯一绑定服务端 `Draft.BaseDocumentVersion`；Pending Invitee 的 Draft / Revision 附件、正式 Slug / Published 公开链接和终态保留时间锚同时按最窄权限闭合。后端全量 `1179` 项与 Client 全量 `492` 项测试、production build 通过；PostgreSQL 条件用例因本机未配置继续显式跳过。
+- `2026-08-08` 已完成 [R1-A01 Author 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)：正式 Web 已承接创建、共享草稿、保存、提交 / 撤回、协作者和冲突恢复主体流程，WebOS 没有应迁回普通 Author 的独占能力；代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”。审计发现的四项代码缺口已由同日修复批闭合。
 - `2026-08-08` 已完成并关闭 [R1-P02 帖子详情成组实现与运行态验收](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)：正式详情按已确认 PC / Mobile 代表设计落地，接入帖子 / 回帖点赞、reaction、赞赏和两级回帖；`PublicForumDetail.tsx` 从 `2292` 行收敛到 `1500` 行。Gateway 下普通读者 `TestUser` + 普通帖子覆盖 PC `1440 × 1000`、mobile `390 × 844`、`zh-CN / en-US`、`default / guofeng`、点赞 / reaction 可逆写入、两级回帖目标、来源 / 分享与无横向溢出；本地赞赏开关按既有默认关闭边界保持不变。
 - `2026-08-06` [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)的四项推进决策已确认：正式帖子详情承接点赞、reaction 与回帖的回帖；作者删除、投票和抽奖按作者 / 类型状态保留；基础资料、头像和显示时区进入正式 Private Web；转账、资产安全和统计脱离 F4-R，后续单独裁决迁移或退役。R1-P02 的 PC / Mobile 正式代表设计随后均已确认并进入成组代码实现。
 - `2026-08-06` R1-P02 多轮评审暴露出跨页面族风险：现有代表页审计能够判断布局和视觉复用，但没有证明正式 Web 已承接项目现有能力。R1-P02 Pencil 暂停继续修补，改为先建立正式 Web、WebOS 历史实现、既有专题与 API / Service 的能力覆盖矩阵；不把“当前 Public 未接入”自动固化为长期产品边界。
@@ -55,24 +57,33 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-08，R1-P02 成组实现）
+## 今日进展（2026-08-08，R1-P02 收口 / R1-A01 能力门禁）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
 3. 将超限详情容器拆分为控制器、正式视图、回答分页、实时评论、定位高亮和公开 Head 领域模块，主容器收敛至 `1500` 行。
 4. 新增 R1-P02 能力与响应式静态契约测试，并同步既有 SEO、上传导航保护和双语资源门禁。
 5. Client 全量 `491` 项测试、ESLint `0` warning 与 production build 通过；Gateway PC / mobile smoke 随后完成，R1-P02 已关闭。
+6. 按 C-1B 顺位完成 R1-A01 专题、正式 Web、HTTP / Service、Console 与 WebOS 历史实现的紧凑能力覆盖门禁，未修改 `.pen` 或运行时代码。
+7. 固定普通 Owner 的可编辑共享草稿代表身份，以及 PC 编辑主轴、mobile 单任务流、关键状态区和 `R2-A02` 差异边界。
+8. 识别四项不能由视觉层规避的 Author 能力缺口；方案获批后先闭合设计前能力门禁，不提前进入页面视觉实现。
+9. 按获批方案闭合 Author Revision、终态与写响应 evidence、Apply 基准版本 CAS，并补关系授权、附件、保留期、正式 Slug 和事务回滚测试。
+10. R1-A01 能力门禁已解除；未修改 `.pen` 或页面视觉，未启动服务。
 
 ## 当前下一步
 
-1. 回到 F4-R C-1B 候选矩阵，复核剩余 R1 / R2 页面的专题文档、当前代码事实和代表设计价值。
-2. 提出下一代表页顺位与设计 / 实现边界，获得确认后再进入对应 Pencil 或代码批次。
-3. R1-P02 只处理后续明确回归，不因选择下一代表页重新展开全量审计或复制等价画板。
-4. 全局灰玉品牌 token 仍进入共享主题批单独治理，不在单页局部实现中修改。
+1. Pencil 可用后按 readiness 记录制作 `/docs/edit/:id` PC 1440 正式代表画板；PC 确认后再做 Mobile 和必要关键状态区。
+2. 设计确认前不进入 R1-A01 页面视觉实现；`R1-W01` 不抢占当前顺位，R1-P02 只处理明确回归。
+3. 全局灰玉品牌 token 与共享 MarkdownEditor 主题治理均保持独立边界，不在单页局部硬编码覆盖。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)
+- [R1-A01 Author 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)
+- [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
+- [私域与作者态 Web 工作流](/frontend/private-web-workflows-design)
+- [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
 - [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)
 - [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)
 - [R1-P02 帖子详情成组实现](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)

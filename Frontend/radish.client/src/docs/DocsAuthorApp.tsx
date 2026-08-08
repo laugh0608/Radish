@@ -16,6 +16,9 @@ import {
   type SaveWikiAuthorDraftRequest,
   type WikiAuthorDocumentVo,
   type WikiAuthorDraftDetailVo,
+  type WikiAuthorRevisionDetailVo,
+  type WikiAuthorRevisionHistoryVo,
+  type WikiAuthorRevisionItemVo,
 } from '@radish/http';
 import type { LongId } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -23,9 +26,8 @@ import {
   createWikiAuthorDraft,
   getWikiAuthorDraft,
   getWikiAuthorList,
-  getWikiDocumentById,
-  getWikiRevisionDetail,
-  getWikiRevisionList,
+  getWikiAuthorRevisionDetail,
+  getWikiAuthorRevisionHistory,
   getWikiTree,
   inviteWikiAuthorCollaborator,
   removeWikiAuthorCollaborator,
@@ -42,12 +44,7 @@ import {
   normalizeOptionalLongId,
   type EditorDraft,
 } from '@/apps/wiki/wikiApp.helpers';
-import type {
-  WikiDocumentDetailVo,
-  WikiDocumentRevisionDetailVo,
-  WikiDocumentRevisionItemVo,
-  WikiDocumentTreeNodeVo,
-} from '@/apps/wiki/types/wiki';
+import type { WikiDocumentTreeNodeVo } from '@/apps/wiki/types/wiki';
 import { WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 import { WebStateSlot, type WebStateSlotTone } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
@@ -68,6 +65,7 @@ import {
   formatDocsAuthorNumber,
   getDocsAuthorSourceText,
   getDocsAuthorSummaryPreview,
+  resolveDocsAuthorPublicReadSlug,
   validateDocsAuthorDraft,
 } from './docsAuthorPresentation';
 import { DocsAuthorEditorPage, type DocsAuthorEditorState } from './DocsAuthorEditorPage';
@@ -89,9 +87,9 @@ interface CollectionState {
 }
 
 interface RevisionState {
-  document: WikiDocumentDetailVo | null;
-  revisions: WikiDocumentRevisionItemVo[];
-  selectedRevision: WikiDocumentRevisionDetailVo | null;
+  history: WikiAuthorRevisionHistoryVo | null;
+  revisions: WikiAuthorRevisionItemVo[];
+  selectedRevision: WikiAuthorRevisionDetailVo | null;
   selectedRevisionId: LongId | null;
   loading: boolean;
   loadingDetail: boolean;
@@ -117,7 +115,7 @@ const initialEditorState: DocsAuthorEditorState = {
 };
 
 const initialRevisionState: RevisionState = {
-  document: null,
+  history: null,
   revisions: [],
   selectedRevision: null,
   selectedRevisionId: null,
@@ -359,7 +357,7 @@ export function DocsAuthorApp() {
     }));
 
     try {
-      const detail = await getWikiRevisionDetail(revisionId, t);
+      const detail = await getWikiAuthorRevisionDetail(revisionId, t);
       if (accountEpoch !== accountEpochRef.current) {
         return;
       }
@@ -390,17 +388,15 @@ export function DocsAuthorApp() {
     });
 
     try {
-      const [document, revisions] = await Promise.all([
-        getWikiDocumentById(documentId, true, t),
-        getWikiRevisionList(documentId, t),
-      ]);
+      const history = await getWikiAuthorRevisionHistory(documentId, t);
       if (accountEpoch !== accountEpochRef.current) {
         return;
       }
+      const revisions = history.voRevisions;
       const selectedRevisionId = revisions.find((revision) => revision.voIsCurrent)?.voId ?? revisions[0]?.voId ?? null;
 
       setRevisionState({
-        document,
+        history,
         revisions,
         selectedRevision: null,
         selectedRevisionId,
@@ -1022,6 +1018,13 @@ function DocsMinePage({ state, language, onReload, onNavigate, onStartDraft }: D
   const ownedCount = countOwnedDocuments(state.documents);
   const collaboratingCount = countCollaboratingDocuments(state.documents);
   const submittedCount = state.documents.filter((document) => document.voReviewState === WikiDraftReviewState.Submitted).length;
+  const previewPublicReadSlug = previewDocument
+    ? resolveDocsAuthorPublicReadSlug({
+        status: previewDocument.voStatus,
+        documentVersion: previewDocument.voDocumentVersion,
+        documentSlug: previewDocument.voDocumentSlug,
+      })
+    : null;
 
   return (
     <div className={styles.authorWorkspace}>
@@ -1112,16 +1115,17 @@ function DocsMinePage({ state, language, onReload, onNavigate, onStartDraft }: D
                 <span className={styles.railChip}>{t('wiki.author.document.versionPair', { document: previewDocument.voDocumentVersion, draft: previewDocument.voDraftVersion ?? '-' })}</span>
               </div>
               <div className={styles.railActionList}>
-                {previewDocument.voDraftId && previewDocument.voCanEdit ? (
+                {previewDocument.voLatestDraftId ? (
                   <a
                     className={styles.railLink}
                     href={buildDocsAuthorPath({ kind: 'edit', documentId: previewDocument.voDocumentId })}
                     onClick={(event) => onNavigate(event, { kind: 'edit', documentId: previewDocument.voDocumentId })}
                   >
-                    <Icon icon="mdi:pencil-outline" size={18} />
-                    <span>{t('wiki.author.actions.edit')}</span>
+                    <Icon icon={previewDocument.voCanEdit ? 'mdi:pencil-outline' : 'mdi:file-eye-outline'} size={18} />
+                    <span>{t(previewDocument.voCanEdit ? 'wiki.author.actions.edit' : 'wiki.author.editor.evidence')}</span>
                   </a>
-                ) : previewDocument.voCanEdit ? (
+                ) : null}
+                {previewDocument.voCanStartDraft ? (
                   <button type="button" className={styles.railLink} onClick={() => onStartDraft(previewDocument.voDocumentId)}>
                     <Icon icon="mdi:file-plus-outline" size={18} />
                     <span>{t('wiki.author.actions.startDraft')}</span>
@@ -1135,7 +1139,7 @@ function DocsMinePage({ state, language, onReload, onNavigate, onStartDraft }: D
                   <Icon icon="mdi:history" size={18} />
                   <span>{t('wiki.author.actions.revisions')}</span>
                 </a>
-                {previewDocument.voDocumentVersion > 0 ? <a className={styles.railLink} href={buildPublicDocsPath({ kind: 'detail', slug: previewDocument.voSlug })}>
+                {previewPublicReadSlug ? <a className={styles.railLink} href={buildPublicDocsPath({ kind: 'detail', slug: previewPublicReadSlug })}>
                   <Icon icon="mdi:book-open-page-variant-outline" size={18} />
                   <span>{t('wiki.author.actions.publicReading')}</span>
                 </a> : null}
@@ -1217,9 +1221,15 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
   const { t } = useTranslation();
   const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voDocumentId };
   const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voDocumentId };
-  const publicHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
+  const publicReadSlug = resolveDocsAuthorPublicReadSlug({
+    status: document.voStatus,
+    documentVersion: document.voDocumentVersion,
+    documentSlug: document.voDocumentSlug,
+  });
+  const publicHref = publicReadSlug
+    ? buildPublicDocsPath({ kind: 'detail', slug: publicReadSlug })
+    : null;
   const isPendingInvitee = document.voAuthorRole === 'Invitee';
-  const canStartDraft = !document.voDraftId && document.voAuthorRole === 'Owner';
 
   return (
     <article className={styles.documentRow}>
@@ -1240,19 +1250,24 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
         </div>
       </div>
       <div className={styles.documentActions}>
-        {document.voDraftId && (document.voCanEdit || isPendingInvitee) ? (
+        {document.voLatestDraftId ? (
           <a
-            className={styles.primaryButton}
+            className={document.voCanStartDraft ? styles.secondaryButton : styles.primaryButton}
             href={buildDocsAuthorPath(editRoute)}
             onClick={(event) => onNavigate(event, editRoute)}
           >
-            {t(isPendingInvitee ? 'wiki.author.actions.respondInvitation' : 'wiki.author.actions.edit')}
+            {t(isPendingInvitee
+              ? 'wiki.author.actions.respondInvitation'
+              : document.voCanEdit
+                ? 'wiki.author.actions.edit'
+                : 'wiki.author.editor.evidence')}
           </a>
-        ) : canStartDraft ? (
+        ) : null}
+        {document.voCanStartDraft ? (
           <button type="button" className={styles.primaryButton} onClick={() => onStartDraft(document.voDocumentId)}>
             {t('wiki.author.actions.startDraft')}
           </button>
-        ) : <span className={styles.readOnlyButton}>{t('wiki.author.access.readOnly')}</span>}
+        ) : !document.voLatestDraftId ? <span className={styles.readOnlyButton}>{t('wiki.author.access.readOnly')}</span> : null}
         <a
           className={styles.secondaryButton}
           href={buildDocsAuthorPath(revisionsRoute)}
@@ -1260,7 +1275,7 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
         >
           {t('wiki.author.actions.revisions')}
         </a>
-        {document.voDocumentVersion > 0 ? <a className={styles.secondaryButton} href={publicHref}>
+        {publicHref ? <a className={styles.secondaryButton} href={publicHref}>
           {t('wiki.author.actions.read')}
         </a> : null}
       </div>
@@ -1284,11 +1299,18 @@ function DocsRevisionsPage({
   protectedAttachments,
 }: DocsRevisionsPageProps) {
   const { t } = useTranslation();
-  const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
-    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
+  const publicReadSlug = state.history
+    ? resolveDocsAuthorPublicReadSlug({
+        status: state.history.voStatus,
+        documentVersion: state.history.voDocumentVersion,
+        documentSlug: state.history.voSlug,
+      })
+    : null;
+  const publicReadHref = publicReadSlug
+    ? buildPublicDocsPath({ kind: 'detail', slug: publicReadSlug })
     : null;
   const currentRevision = state.revisions.find((revision) => revision.voIsCurrent) ?? null;
-  const selectedVersion = state.selectedRevision?.voVersion ?? currentRevision?.voVersion ?? state.document?.voVersion ?? '-';
+  const selectedVersion = state.selectedRevision?.voVersion ?? currentRevision?.voVersion ?? state.history?.voDocumentVersion ?? '-';
 
   return (
     <div className={styles.authorWorkspace}>
@@ -1296,7 +1318,7 @@ function DocsRevisionsPage({
         <div className={styles.panelHeader}>
           <div>
             <p className={styles.kicker}>Revision History</p>
-            <h1 className={styles.pageTitle}>{state.document?.voTitle || t('wiki.author.revisions.title')}</h1>
+            <h1 className={styles.pageTitle}>{state.history?.voTitle || t('wiki.author.revisions.title')}</h1>
             <p className={styles.pageIntro}>{t('wiki.author.revisions.intro')}</p>
           </div>
           <div className={styles.headerActions}>

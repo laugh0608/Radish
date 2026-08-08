@@ -10,6 +10,8 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
 {
     Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(long userId, int pageIndex, int pageSize);
     Task<WikiAuthorDraftDetailVo?> AuthorGetByIdAsync(long documentId, long userId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorRevisionHistoryVo?> AuthorGetRevisionHistoryAsync(long documentId, long userId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorRevisionDetailVo?> AuthorGetRevisionDetailAsync(long revisionId, long userId, bool isSystemOrAdmin = false);
     Task<WikiAuthorDraftDetailVo> AuthorCreateAsync(CreateWikiAuthorDraftDto dto, long userId, string userName, long tenantId);
     Task<WikiAuthorDraftDetailVo> AuthorStartDraftAsync(long documentId, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
     Task<WikiAuthorDraftDetailVo> AuthorSaveDraftAsync(long draftId, SaveWikiAuthorDraftDto dto, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);

@@ -1,8 +1,8 @@
 # Docs / Wiki 普通作者贡献与协作设计
 
-> 状态：`F4-G-A-D` 已完成，专题关闭；验收结论见 [F4-G-D 成组验收记录](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20)。
+> 状态：`F4-G-A-D` 已按当时矩阵完成；`2026-08-08` 的 F4-R 设计前复核发现的 Author Revision、终态证据、写响应证据与 Apply 基准版本 CAS 漂移已完成代码修复和静态验收。详见 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)与[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)。
 >
-> 最后更新：2026-07-20
+> 最后更新：2026-08-08
 >
 > 本文负责普通作者、协作者、工作草稿、审核应用和冲突恢复的长期边界。公开阅读、固定文档同步和 Console 既有治理仍以 [文档系统方案](/guide/document-system) 为准。
 >
@@ -209,6 +209,8 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 
 - `GET Wiki/AuthorGetList`
 - `GET Wiki/AuthorGetById/{documentId}`
+- `GET Wiki/AuthorGetRevisionHistory/{documentId}`
+- `GET Wiki/AuthorGetRevisionDetail/{revisionId}`
 - `POST Wiki/AuthorCreate`
 - `POST Wiki/AuthorStartDraft/{documentId}`
 - `PUT Wiki/AuthorSaveDraft/{draftId}`
@@ -219,7 +221,7 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 - `POST Wiki/AuthorRespondInvitation/{collaboratorId}`
 - `POST Wiki/AuthorRemoveCollaborator/{collaboratorId}`
 
-`AuthorCreate` 创建新文档身份与首份草稿；既有文档在没有活跃草稿时，由所有者通过 `AuthorStartDraft` 从当前正式版本创建下一份草稿。旧 `Create / Update` HTTP 作者写入口已经删除，WebOS 兼容写入也复用 Author Service，不得恢复平行正文写入口。
+`AuthorCreate` 创建新文档身份与首份草稿；既有文档在没有活跃草稿时，由所有者通过 `AuthorStartDraft` 从当前正式版本创建下一份草稿。Author Revision 只读入口按 Owner、Pending Invitee、Accepted Editor 与 System / Admin 关系授权，不复用 Console 权限接口，也不向普通 Author 返回内部创建者 LongId。旧 `Create / Update` HTTP 作者写入口已经删除，WebOS 兼容写入也复用 Author Service，不得恢复平行正文写入口。
 
 ### 8.2 Console API
 
@@ -234,8 +236,9 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 详情契约必须明确返回：
 
 - 当前用户的 `VoAuthorRole / VoCanEdit / VoCanSubmit / VoCanManageCollaborators`
-- `VoDraftId / VoDraftVersion / VoBaseDocumentVersion / VoReviewState`
-- 正式 `VoVersion / VoStatus / VoVisibility`
+- `VoDraftId / VoActiveDraftId / VoLatestDraftId / VoDraftVersion / VoBaseDocumentVersion / VoReviewState`
+- `VoIsActiveDraft / VoCanStartDraft / VoHasDraftPayload / VoPayloadPurgedAt`
+- 正式 `VoDocumentVersion / VoDocumentStatus / VoDocumentSlug` 与草稿 `VoSlug` 分离，公开链接不得使用未应用的草稿 Slug
 - 只读原因和允许动作，不让前端通过角色名或 `SourceType` 猜测权限
 
 稳定错误至少包括：

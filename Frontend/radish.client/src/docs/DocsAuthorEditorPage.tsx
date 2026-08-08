@@ -29,7 +29,11 @@ import { WebStateSlot } from '@/components/web-shell';
 import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { buildPublicDocsPath } from '@/public/docsRouteState';
 import { log } from '@/utils/logger';
-import { formatDocsAuthorNumber, getDocsAuthorSummaryPreview } from './docsAuthorPresentation';
+import {
+  formatDocsAuthorNumber,
+  getDocsAuthorSummaryPreview,
+  resolveDocsAuthorPublicReadSlug,
+} from './docsAuthorPresentation';
 import { buildDocsAuthorPath, type DocsAuthorRoute } from './docsAuthorRouteState';
 import { shouldHandleAuthorLinkClick } from './useDocsAuthorNavigation';
 import styles from './DocsAuthorApp.module.css';
@@ -174,14 +178,24 @@ export function DocsAuthorEditorPage({
   const pageIntro = route.kind === 'compose'
     ? t('wiki.author.editor.createIntro')
     : t('wiki.author.editor.editIntro');
-  const publicReadHref = state.document && state.document.voDocumentVersion > 0 && state.document.voSlug.trim()
-    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
+  const publicReadSlug = state.document
+    ? resolveDocsAuthorPublicReadSlug({
+        status: state.document.voDocumentStatus,
+        documentVersion: state.document.voDocumentVersion,
+        documentSlug: state.document.voDocumentSlug,
+      })
+    : null;
+  const publicReadHref = publicReadSlug
+    ? buildPublicDocsPath({ kind: 'detail', slug: publicReadSlug })
     : null;
   const ownInvitation = state.document?.voCollaborators.find((collaborator) =>
     collaborator.voUserPublicId === currentUserPublicId
       && collaborator.voInviteState === WikiCollaboratorState.Pending
   ) ?? null;
   const reviewSubmitted = state.document?.voReviewState === WikiDraftReviewState.Submitted;
+  const readOnlyNotice = state.document?.voHasDraftPayload === false
+    ? t('wiki.author.editor.payloadPurgedNotice')
+    : state.document?.voReadOnlyReason || t('wiki.author.editor.authorReadOnlyNotice');
   const runCollaborationAction = async (action: () => Promise<void>) => {
     setCollaborationBusy(true);
     try {
@@ -271,7 +285,7 @@ export function DocsAuthorEditorPage({
         {readOnly && state.document ? (
           <div className={styles.inlineNotice}>
             <Icon icon="mdi:lock-outline" size={20} />
-            <span>{state.document.voReadOnlyReason || t('wiki.author.editor.authorReadOnlyNotice')}</span>
+            <span>{readOnlyNotice}</span>
           </div>
         ) : null}
 

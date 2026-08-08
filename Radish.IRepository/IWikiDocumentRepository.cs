@@ -8,6 +8,8 @@ namespace Radish.IRepository;
 /// <summary>Wiki 文档仓储接口</summary>
 public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
 {
+    Task<WikiDocumentDraft?> QueryLatestTerminalDraftAsync(long documentId);
+    Task<List<WikiTerminalDraftEvidence>> QueryLatestTerminalDraftEvidenceAsync(IReadOnlyCollection<long> documentIds);
     Task<int> SaveDraftAsync(WikiDraftSaveCommand command);
     Task<int> TransitionDraftAsync(WikiDraftTransitionCommand command);
     Task<bool> TryAddCollaboratorAsync(WikiDocumentCollaborator collaborator);
@@ -33,6 +35,19 @@ public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
         Expression<Func<WikiDocument, bool>>? whereExpression,
         Expression<Func<WikiDocument, object>>? orderByExpression,
         OrderByType orderByType);
+}
+
+public sealed class WikiTerminalDraftEvidence
+{
+    public long DraftId { get; set; }
+    public long DocumentId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string? Summary { get; set; }
+    public int DraftVersion { get; set; }
+    public int ReviewState { get; set; }
+    public DateTime? PayloadPurgedAt { get; set; }
+    public DateTime? ModifyTime { get; set; }
 }
 
 public sealed record WikiDraftSaveCommand(
@@ -65,7 +80,6 @@ public sealed record WikiDraftTransitionCommand(
 public sealed record WikiDraftApplyCommand(
     long DocumentId,
     long TenantId,
-    int ExpectedDocumentVersion,
     WikiDocumentDraft Draft,
     long? FinalParentId,
     long OperatorId,

@@ -157,6 +157,8 @@
 - 正式 Web 作者入口面向登录用户，所有写入统一经过作者草稿、协作与审核契约：
   - `Wiki/AuthorGetList`
   - `Wiki/AuthorGetById/{documentId}`
+  - `Wiki/AuthorGetRevisionHistory/{documentId}`
+  - `Wiki/AuthorGetRevisionDetail/{revisionId}`
   - `Wiki/AuthorCreate`
   - `Wiki/AuthorStartDraft/{documentId}`
   - `Wiki/AuthorSaveDraft/{draftId}`

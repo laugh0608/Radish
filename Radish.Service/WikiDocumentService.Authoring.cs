@@ -39,10 +39,19 @@ public partial class WikiDocumentService
         var draftIds = documents.Where(document => document.ActiveDraftId.HasValue)
             .Select(document => document.ActiveDraftId!.Value)
             .ToList();
-        var drafts = draftIds.Count == 0
+        var activeDrafts = draftIds.Count == 0
             ? []
             : await _wikiDraftRepository!.QueryAsync(draft => draftIds.Contains(draft.Id) && !draft.IsDeleted);
-        var draftMap = drafts.ToDictionary(draft => draft.Id);
+        var activeDraftMap = activeDrafts.ToDictionary(draft => draft.Id);
+        var terminalDocumentIds = documents
+            .Where(document => !document.ActiveDraftId.HasValue)
+            .Select(document => document.Id)
+            .ToList();
+        var terminalDraftEvidence = terminalDocumentIds.Count == 0
+            ? []
+            : await _wikiDocumentRepository.QueryLatestTerminalDraftEvidenceAsync(terminalDocumentIds);
+        var latestTerminalDraftByDocumentId = terminalDraftEvidence
+            .ToDictionary(draft => draft.DocumentId);
 
         return new PageModel<WikiAuthorDocumentVo>
         {
@@ -52,28 +61,59 @@ public partial class WikiDocumentService
             PageCount = (int)Math.Ceiling(total / (double)pageSize),
             Data = documents.Select(document =>
             {
-                draftMap.TryGetValue(document.ActiveDraftId.GetValueOrDefault(), out var draft);
+                WikiDocumentDraft? activeDraft = null;
+                var hasActiveDraftCandidate = document.ActiveDraftId.HasValue &&
+                                              activeDraftMap.TryGetValue(
+                                                  document.ActiveDraftId.Value,
+                                                  out activeDraft);
+                var isActiveDraft = hasActiveDraftCandidate &&
+                                    activeDraft!.DocumentId == document.Id &&
+                                    activeDraft.TenantId == document.TenantId &&
+                                    IsActiveDraftState(activeDraft.ReviewState);
+                WikiTerminalDraftEvidence? terminalDraft = null;
+                if (!isActiveDraft)
+                {
+                    activeDraft = null;
+                    if (!document.ActiveDraftId.HasValue)
+                    {
+                        latestTerminalDraftByDocumentId.TryGetValue(document.Id, out terminalDraft);
+                    }
+                }
+                var selectedDraftId = activeDraft?.Id ?? terminalDraft?.DraftId;
+                var selectedDraftVersion = activeDraft?.DraftVersion ?? terminalDraft?.DraftVersion;
+                var selectedReviewState = activeDraft?.ReviewState ?? terminalDraft?.ReviewState;
+                var selectedPayloadPurgedAt = activeDraft?.PayloadPurgedAt ?? terminalDraft?.PayloadPurgedAt;
                 var isOwner = document.OwnerUserId == userId;
                 collaboratorStateByDocumentId.TryGetValue(document.Id, out var collaboratorState);
                 var isAcceptedEditor = collaboratorState == (int)WikiDocumentCollaboratorState.Accepted;
                 return new WikiAuthorDocumentVo
                 {
                     VoDocumentId = document.Id,
-                    VoDraftId = draft?.Id,
-                    VoTitle = draft?.Title ?? document.Title,
-                    VoSlug = draft?.Slug ?? document.Slug,
-                    VoSummary = draft?.Summary ?? document.Summary,
+                    VoDraftId = selectedDraftId,
+                    VoActiveDraftId = document.ActiveDraftId,
+                    VoLatestDraftId = selectedDraftId,
+                    VoTitle = activeDraft?.Title ?? terminalDraft?.Title ?? document.Title,
+                    VoSlug = activeDraft?.Slug ?? terminalDraft?.Slug ?? document.Slug,
+                    VoDocumentSlug = document.Slug,
+                    VoSummary = activeDraft?.Summary ?? terminalDraft?.Summary ?? document.Summary,
                     VoDocumentVersion = document.Version,
-                    VoDraftVersion = draft?.DraftVersion,
-                    VoReviewState = draft?.ReviewState,
+                    VoDraftVersion = selectedDraftVersion,
+                    VoReviewState = selectedReviewState,
                     VoStatus = document.Status,
                     VoAuthorRole = isOwner ? "Owner" : isAcceptedEditor ? "Editor" : "Invitee",
-                    VoCanEdit = draft != null && IsEditableDraftState(draft.ReviewState) &&
+                    VoCanEdit = isActiveDraft && activeDraft != null &&
+                                IsEditableDraftState(activeDraft.ReviewState) &&
                                 (isOwner || isAcceptedEditor),
-                    VoCanSubmit = isOwner && draft != null && IsEditableDraftState(draft.ReviewState),
+                    VoCanSubmit = isOwner && isActiveDraft && activeDraft != null &&
+                                  IsEditableDraftState(activeDraft.ReviewState),
                     VoCanManageCollaborators = isOwner,
+                    VoIsActiveDraft = isActiveDraft,
+                    VoCanStartDraft = isOwner && !document.ActiveDraftId.HasValue &&
+                                      IsAuthorEditableSource(document),
+                    VoHasDraftPayload = selectedDraftId.HasValue && selectedPayloadPurgedAt == null,
+                    VoPayloadPurgedAt = selectedPayloadPurgedAt,
                     VoCreateTime = document.CreateTime,
-                    VoModifyTime = draft?.ModifyTime ?? document.ModifyTime
+                    VoModifyTime = activeDraft?.ModifyTime ?? terminalDraft?.ModifyTime ?? document.ModifyTime
                 };
             }).ToList()
         };
@@ -86,7 +126,7 @@ public partial class WikiDocumentService
     {
         EnsureAuthoringAvailable();
         var document = await _wikiDocumentRepository.QueryByIdAsync(documentId);
-        if (document == null || document.IsDeleted || document.ActiveDraftId == null)
+        if (document == null || document.IsDeleted)
         {
             return null;
         }
@@ -97,10 +137,90 @@ public partial class WikiDocumentService
             return null;
         }
 
-        var draft = await _wikiDraftRepository!.QueryByIdAsync(document.ActiveDraftId.Value);
-        return draft == null || draft.IsDeleted
+        var draft = document.ActiveDraftId.HasValue
+            ? await _wikiDraftRepository!.QueryByIdAsync(document.ActiveDraftId.Value)
+            : await FindLatestTerminalDraftAsync(document.Id);
+        if (draft == null || draft.IsDeleted)
+        {
+            return null;
+        }
+        if (document.ActiveDraftId.HasValue &&
+            (draft.DocumentId != document.Id ||
+             draft.TenantId != document.TenantId ||
+             !IsActiveDraftState(draft.ReviewState)))
+        {
+            return null;
+        }
+        return draft.DocumentId != document.Id || draft.TenantId != document.TenantId
             ? null
             : await BuildDraftDetailWithEvidenceAsync(document, draft, role);
+    }
+
+    public async Task<WikiAuthorRevisionHistoryVo?> AuthorGetRevisionHistoryAsync(
+        long documentId,
+        long userId,
+        bool isSystemOrAdmin = false)
+    {
+        EnsureAuthoringAvailable();
+        var document = await _wikiDocumentRepository.QueryByIdAsync(documentId);
+        if (document == null || document.IsDeleted)
+        {
+            return null;
+        }
+
+        var role = await ResolveAuthorRoleAsync(document, userId, isSystemOrAdmin);
+        if (role == null)
+        {
+            return null;
+        }
+
+        var revisions = await _wikiDocumentRevisionRepository.QueryWithOrderAsync(
+            revision => revision.DocumentId == document.Id,
+            revision => revision.Version,
+            OrderByType.Desc);
+        return new WikiAuthorRevisionHistoryVo
+        {
+            VoDocumentId = document.Id,
+            VoTitle = document.Title,
+            VoSlug = document.Slug,
+            VoDocumentVersion = document.Version,
+            VoStatus = document.Status,
+            VoActiveDraftId = document.ActiveDraftId,
+            VoAuthorRole = role,
+            VoCanStartDraft = (role is "Owner" or "Administrator") &&
+                              !document.ActiveDraftId.HasValue &&
+                              IsAuthorEditableSource(document),
+            VoRevisions = revisions
+                .Select(revision => MapRevisionItem(revision, document.Version))
+                .ToList()
+        };
+    }
+
+    public async Task<WikiAuthorRevisionDetailVo?> AuthorGetRevisionDetailAsync(
+        long revisionId,
+        long userId,
+        bool isSystemOrAdmin = false)
+    {
+        EnsureAuthoringAvailable();
+        if (revisionId <= 0)
+        {
+            return null;
+        }
+
+        var revision = await _wikiDocumentRevisionRepository.QueryByIdAsync(revisionId);
+        if (revision == null)
+        {
+            return null;
+        }
+
+        var document = await _wikiDocumentRepository.QueryByIdAsync(revision.DocumentId);
+        if (document == null || document.IsDeleted ||
+            await ResolveAuthorRoleAsync(document, userId, isSystemOrAdmin) == null)
+        {
+            return null;
+        }
+
+        return MapAuthorRevisionDetail(revision, document.Version);
     }
 
     [UseTran]
@@ -170,7 +290,7 @@ public partial class WikiDocumentService
         }
         document.ActiveDraftId = draft.Id;
         await SyncDraftAttachmentReferencesAsync(document, draft, userId, userName, now);
-        return BuildDraftDetail(document, draft, "Owner");
+        return await BuildDraftDetailWithEvidenceAsync(document, draft, "Owner");
     }
 
     [UseTran]
@@ -226,7 +346,7 @@ public partial class WikiDocumentService
         }
         document.ActiveDraftId = draft.Id;
         await SyncDraftAttachmentReferencesAsync(document, draft, userId, userName, now);
-        return BuildDraftDetail(document, draft, role);
+        return await BuildDraftDetailWithEvidenceAsync(document, draft, role);
     }
 
     [UseTran]
@@ -284,7 +404,7 @@ public partial class WikiDocumentService
             DateTime.UtcNow);
         draft = await _wikiDraftRepository!.QueryByIdAsync(draft.Id)
             ?? throw AuthorNotFound();
-        return BuildDraftDetail(document, draft, role);
+        return await BuildDraftDetailWithEvidenceAsync(document, draft, role);
     }
 
     [UseTran]
@@ -305,7 +425,7 @@ public partial class WikiDocumentService
         if (draft.ReviewState == (int)WikiDocumentDraftState.Submitted &&
             draft.DraftVersion == dto.ExpectedDraftVersion + 1)
         {
-            return BuildDraftDetail(document, draft, role);
+            return await BuildDraftDetailWithEvidenceAsync(document, draft, role);
         }
         await EnsureCanOpenContributionAsync(userId);
         var now = DateTime.UtcNow;
@@ -321,7 +441,7 @@ public partial class WikiDocumentService
             if (currentDraft.ReviewState == (int)WikiDocumentDraftState.Submitted &&
                 currentDraft.DraftVersion == dto.ExpectedDraftVersion + 1)
             {
-                return BuildDraftDetail(currentDocument, currentDraft, currentRole);
+                return await BuildDraftDetailWithEvidenceAsync(currentDocument, currentDraft, currentRole);
             }
             if (!IsEditableDraftState(currentDraft.ReviewState))
             {
@@ -332,7 +452,7 @@ public partial class WikiDocumentService
         await AddReviewEventAsync(document, draft, WikiDocumentReviewActions.Submit, userId, userName,
             NormalizeOptional(dto.ChangeSummary), draft.DraftVersion + 1, now);
         draft = await _wikiDraftRepository!.QueryByIdAsync(draft.Id) ?? throw AuthorNotFound();
-        return BuildDraftDetail(document, draft, role);
+        return await BuildDraftDetailWithEvidenceAsync(document, draft, role);
     }
 
     [UseTran]
@@ -353,7 +473,7 @@ public partial class WikiDocumentService
         if (draft.ReviewState == (int)WikiDocumentDraftState.Withdrawn &&
             draft.DraftVersion == expectedDraftVersion + 1)
         {
-            return BuildDraftDetail(document, draft, role);
+            return await BuildDraftDetailWithEvidenceAsync(document, draft, role);
         }
         var now = DateTime.UtcNow;
         var affected = await _wikiDocumentRepository.TransitionDraftAsync(new WikiDraftTransitionCommand(
@@ -368,7 +488,7 @@ public partial class WikiDocumentService
             if (currentDraft.ReviewState == (int)WikiDocumentDraftState.Withdrawn &&
                 currentDraft.DraftVersion == expectedDraftVersion + 1)
             {
-                return BuildDraftDetail(currentDocument, currentDraft, currentRole);
+                return await BuildDraftDetailWithEvidenceAsync(currentDocument, currentDraft, currentRole);
             }
             if (currentDraft.ReviewState is not ((int)WikiDocumentDraftState.Editing or
                 (int)WikiDocumentDraftState.Submitted or
@@ -387,7 +507,7 @@ public partial class WikiDocumentService
             null, expectedDraftVersion + 1, now);
         document.ActiveDraftId = null;
         draft = await _wikiDraftRepository!.QueryByIdAsync(draft.Id) ?? throw AuthorNotFound();
-        return BuildDraftDetail(document, draft, role);
+        return await BuildDraftDetailWithEvidenceAsync(document, draft, role);
     }
 
     public async Task<IReadOnlyList<WikiDocumentCollaboratorVo>> AuthorGetCollaboratorsAsync(
@@ -685,6 +805,7 @@ public partial class WikiDocumentService
         var comment = NormalizeOptional(dto.Comment);
         int targetState;
         string eventAction;
+        var draftTransitioned = false;
         if (string.Equals(action, WikiDocumentReviewActions.RequestChanges, StringComparison.OrdinalIgnoreCase))
         {
             EnsureReviewComment(comment);
@@ -692,7 +813,7 @@ public partial class WikiDocumentService
             eventAction = WikiDocumentReviewActions.RequestChanges;
             if (draft.ReviewState == targetState && draft.DraftVersion == dto.ExpectedDraftVersion + 1)
             {
-                return BuildDraftDetail(document, draft, "Reviewer");
+                return await BuildDraftDetailWithEvidenceAsync(document, draft, "Reviewer");
             }
         }
         else if (string.Equals(action, WikiDocumentReviewActions.Reject, StringComparison.OrdinalIgnoreCase))
@@ -702,7 +823,7 @@ public partial class WikiDocumentService
             eventAction = WikiDocumentReviewActions.Reject;
             if (draft.ReviewState == targetState && draft.DraftVersion == dto.ExpectedDraftVersion + 1)
             {
-                return BuildDraftDetail(document, draft, "Reviewer");
+                return await BuildDraftDetailWithEvidenceAsync(document, draft, "Reviewer");
             }
         }
         else if (string.Equals(action, WikiDocumentReviewActions.Apply, StringComparison.OrdinalIgnoreCase))
@@ -711,9 +832,15 @@ public partial class WikiDocumentService
             eventAction = WikiDocumentReviewActions.Apply;
             if (draft.ReviewState == targetState &&
                 draft.DraftVersion == dto.ExpectedDraftVersion + 1 &&
-                document.Version == dto.ExpectedDocumentVersion + 1)
+                dto.ExpectedDocumentVersion == draft.BaseDocumentVersion &&
+                document.Version == draft.BaseDocumentVersion + 1)
             {
-                return BuildDraftDetail(document, draft, "Reviewer");
+                return await BuildDraftDetailWithEvidenceAsync(document, draft, "Reviewer");
+            }
+            if (dto.ExpectedDocumentVersion != draft.BaseDocumentVersion ||
+                document.Version != draft.BaseDocumentVersion)
+            {
+                throw Conflict("正式文档版本已变化", "Wiki.DocumentVersionConflict", "error.wiki.document_version_conflict");
             }
             await ValidateParentDocumentAsync(dto.FinalParentId, document.Id);
             await ValidateWikiAttachmentReferencesAsync(
@@ -724,19 +851,31 @@ public partial class WikiDocumentService
                 reviewerId);
             var normalizedSlug = await EnsureUniqueSlugForUpdateAsync(draft.Slug, draft.Title, document.Id);
             draft.Slug = normalizedSlug;
-            var applied = await _wikiDocumentRepository.ApplyDraftToDocumentAsync(new WikiDraftApplyCommand(
-                document.Id, tenantId, dto.ExpectedDocumentVersion, draft, dto.FinalParentId,
-                reviewerId, reviewerNameValue, now));
-            if (applied != 1)
+            var transitioned = await _wikiDocumentRepository.TransitionDraftAsync(new WikiDraftTransitionCommand(
+                draft.Id, tenantId, dto.ExpectedDraftVersion, [(int)WikiDocumentDraftState.Submitted],
+                targetState, draft.ChangeSummary, comment, reviewerId, reviewerNameValue, now));
+            if (transitioned != 1)
             {
                 var currentDraft = await _wikiDraftRepository.QueryByIdAsync(draft.Id);
                 var currentDocument = await _wikiDocumentRepository.QueryByIdAsync(document.Id);
                 if (currentDraft?.ReviewState == (int)WikiDocumentDraftState.Applied &&
                     currentDraft.DraftVersion == dto.ExpectedDraftVersion + 1 &&
-                    currentDocument?.Version == dto.ExpectedDocumentVersion + 1)
+                    currentDocument?.Version == currentDraft.BaseDocumentVersion + 1)
                 {
-                    return BuildDraftDetail(currentDocument, currentDraft, "Reviewer");
+                    return await BuildDraftDetailWithEvidenceAsync(currentDocument, currentDraft, "Reviewer");
                 }
+                if (currentDraft?.ReviewState != (int)WikiDocumentDraftState.Submitted)
+                {
+                    throw Conflict("草稿审核状态已变化", "Wiki.DraftStateConflict", "error.wiki.draft_state_conflict");
+                }
+                throw Conflict("草稿版本或审核状态已变化", "Wiki.DraftVersionConflict", "error.wiki.draft_version_conflict");
+            }
+            draftTransitioned = true;
+            var applied = await _wikiDocumentRepository.ApplyDraftToDocumentAsync(new WikiDraftApplyCommand(
+                document.Id, tenantId, draft, dto.FinalParentId,
+                reviewerId, reviewerNameValue, now));
+            if (applied != 1)
+            {
                 throw Conflict("正式文档版本已变化", "Wiki.DocumentVersionConflict", "error.wiki.document_version_conflict");
             }
             document.Title = draft.Title;
@@ -745,7 +884,7 @@ public partial class WikiDocumentService
             document.MarkdownContent = draft.MarkdownContent;
             document.CoverAttachmentId = draft.CoverAttachmentId;
             document.ParentId = dto.FinalParentId;
-            document.Version = dto.ExpectedDocumentVersion + 1;
+            document.Version = draft.BaseDocumentVersion + 1;
             await SyncDocumentAttachmentReferencesAsync(
                 document,
                 reviewerId,
@@ -758,22 +897,25 @@ public partial class WikiDocumentService
             throw new BusinessException("审核动作无效", 400, "Wiki.InvalidReviewAction", "error.wiki.invalid_review_action");
         }
 
-        var transitioned = await _wikiDocumentRepository.TransitionDraftAsync(new WikiDraftTransitionCommand(
-            draft.Id, tenantId, dto.ExpectedDraftVersion, [(int)WikiDocumentDraftState.Submitted],
-            targetState, draft.ChangeSummary, comment, reviewerId, reviewerNameValue, now));
-        if (transitioned != 1)
+        if (!draftTransitioned)
         {
-            var currentDraft = await _wikiDraftRepository.QueryByIdAsync(draft.Id);
-            if (currentDraft?.ReviewState == targetState &&
-                currentDraft.DraftVersion == dto.ExpectedDraftVersion + 1)
+            var transitioned = await _wikiDocumentRepository.TransitionDraftAsync(new WikiDraftTransitionCommand(
+                draft.Id, tenantId, dto.ExpectedDraftVersion, [(int)WikiDocumentDraftState.Submitted],
+                targetState, draft.ChangeSummary, comment, reviewerId, reviewerNameValue, now));
+            if (transitioned != 1)
             {
-                return BuildDraftDetail(document, currentDraft, "Reviewer");
+                var currentDraft = await _wikiDraftRepository.QueryByIdAsync(draft.Id);
+                if (currentDraft?.ReviewState == targetState &&
+                    currentDraft.DraftVersion == dto.ExpectedDraftVersion + 1)
+                {
+                    return await BuildDraftDetailWithEvidenceAsync(document, currentDraft, "Reviewer");
+                }
+                if (currentDraft?.ReviewState != (int)WikiDocumentDraftState.Submitted)
+                {
+                    throw Conflict("草稿审核状态已变化", "Wiki.DraftStateConflict", "error.wiki.draft_state_conflict");
+                }
+                throw Conflict("草稿版本或审核状态已变化", "Wiki.DraftVersionConflict", "error.wiki.draft_version_conflict");
             }
-            if (currentDraft?.ReviewState != (int)WikiDocumentDraftState.Submitted)
-            {
-                throw Conflict("草稿审核状态已变化", "Wiki.DraftStateConflict", "error.wiki.draft_state_conflict");
-            }
-            throw Conflict("草稿版本或审核状态已变化", "Wiki.DraftVersionConflict", "error.wiki.draft_version_conflict");
         }
         if (targetState is (int)WikiDocumentDraftState.Applied or (int)WikiDocumentDraftState.Rejected &&
             await _wikiDocumentRepository.SetActiveDraftAsync(
@@ -798,7 +940,7 @@ public partial class WikiDocumentService
         }
         draft = await _wikiDraftRepository.QueryByIdAsync(draft.Id) ?? throw AuthorNotFound();
         document.ActiveDraftId = targetState == (int)WikiDocumentDraftState.ChangesRequested ? draft.Id : null;
-        return BuildDraftDetail(document, draft, "Reviewer");
+        return await BuildDraftDetailWithEvidenceAsync(document, draft, "Reviewer");
     }
 
     private WikiAuthoringOptions AuthoringOptions => _documentOptions.Authoring;
@@ -861,12 +1003,20 @@ public partial class WikiDocumentService
 
     private static void EnsureCustomDocument(WikiDocument document)
     {
-        if (string.Equals(document.SourceType, "BuiltIn", StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(document.SourceType, "LocalMirror", StringComparison.OrdinalIgnoreCase))
+        if (!IsAuthorEditableSource(document))
         {
             throw new BusinessException("固定文档为只读内容", 409,
                 "Wiki.ReadOnlySource", "error.wiki.read_only_source");
         }
+    }
+
+    private static bool IsAuthorEditableSource(WikiDocument document) =>
+        !string.Equals(document.SourceType, "BuiltIn", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(document.SourceType, "LocalMirror", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<WikiDocumentDraft?> FindLatestTerminalDraftAsync(long documentId)
+    {
+        return await _wikiDocumentRepository.QueryLatestTerminalDraftAsync(documentId);
     }
 
     private async Task<(WikiDocument document, WikiDocumentDraft draft, string role)> RequireDraftAccessAsync(
@@ -928,7 +1078,8 @@ public partial class WikiDocumentService
         WikiDocumentDraft draft,
         string role)
     {
-        var editable = IsEditableDraftState(draft.ReviewState) &&
+        var isActiveDraft = document.ActiveDraftId == draft.Id && IsActiveDraftState(draft.ReviewState);
+        var editable = isActiveDraft && IsEditableDraftState(draft.ReviewState) &&
                        role is "Owner" or "Editor" or "Administrator";
         return new WikiAuthorDraftDetailVo
         {
@@ -937,6 +1088,7 @@ public partial class WikiDocumentService
             VoOwnerUserId = document.OwnerUserId,
             VoTitle = draft.Title,
             VoSlug = draft.Slug,
+            VoDocumentSlug = document.Slug,
             VoSummary = draft.Summary,
             VoMarkdownContent = draft.MarkdownContent,
             VoCoverAttachmentId = draft.CoverAttachmentId,
@@ -950,6 +1102,12 @@ public partial class WikiDocumentService
             VoCanEdit = editable,
             VoCanSubmit = editable && (role == "Owner" || role == "Administrator"),
             VoCanManageCollaborators = role is "Owner" or "Administrator",
+            VoIsActiveDraft = isActiveDraft,
+            VoCanStartDraft = !document.ActiveDraftId.HasValue &&
+                              (role is "Owner" or "Administrator") &&
+                              IsAuthorEditableSource(document),
+            VoHasDraftPayload = draft.PayloadPurgedAt == null,
+            VoPayloadPurgedAt = draft.PayloadPurgedAt,
             VoReadOnlyReason = editable ? null : ResolveReadOnlyReason(draft.ReviewState),
             VoChangeSummary = draft.ChangeSummary,
             VoReviewComment = draft.ReviewComment,
@@ -1046,6 +1204,22 @@ public partial class WikiDocumentService
         VoDocumentVersion = reviewEvent.DocumentVersion,
         VoDraftVersion = reviewEvent.DraftVersion,
         VoCreateTime = reviewEvent.CreateTime
+    };
+
+    private static WikiAuthorRevisionDetailVo MapAuthorRevisionDetail(
+        WikiDocumentRevision revision,
+        int currentVersion) => new()
+    {
+        VoId = revision.Id,
+        VoDocumentId = revision.DocumentId,
+        VoVersion = revision.Version,
+        VoTitle = revision.Title,
+        VoMarkdownContent = revision.MarkdownContent,
+        VoChangeSummary = revision.ChangeSummary,
+        VoSourceType = revision.SourceType,
+        VoCreateTime = revision.CreateTime,
+        VoCreateBy = revision.CreateBy,
+        VoIsCurrent = revision.Version == currentVersion
     };
 
     private async Task AddReviewEventAsync(

@@ -8,6 +8,7 @@ import {
   getDocsAuthorStatusText,
   getDocsAuthorSummaryPreview,
   getDocsAuthorVisibilityText,
+  resolveDocsAuthorPublicReadSlug,
   validateDocsAuthorDraft,
 } from '../src/docs/docsAuthorPresentation.ts';
 
@@ -67,4 +68,19 @@ test('Docs 作者态校验应使用当前语言且保留结构化访问规则', 
 test('Docs 作者态数字格式应跟随语言区域', () => {
   assert.equal(formatDocsAuthorNumber(12345, 'en-US'), '12,345');
   assert.equal(formatDocsAuthorNumber(12345, 'zh-CN'), '12,345');
+});
+
+test('Docs 作者具体公开链接只接受未删除的已发布正式版本', () => {
+  const published = {
+    status: 1,
+    documentVersion: 2,
+    documentSlug: ' published-guide ',
+  };
+
+  assert.equal(resolveDocsAuthorPublicReadSlug(published), 'published-guide');
+  assert.equal(resolveDocsAuthorPublicReadSlug({ ...published, status: 0 }), null);
+  assert.equal(resolveDocsAuthorPublicReadSlug({ ...published, status: 2 }), null);
+  assert.equal(resolveDocsAuthorPublicReadSlug({ ...published, documentVersion: 0 }), null);
+  assert.equal(resolveDocsAuthorPublicReadSlug({ ...published, documentSlug: ' ' }), null);
+  assert.equal(resolveDocsAuthorPublicReadSlug({ ...published, isDeleted: true }), null);
 });

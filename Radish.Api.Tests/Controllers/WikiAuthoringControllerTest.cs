@@ -1,17 +1,60 @@
+using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
 
 public sealed class WikiAuthoringControllerTest
 {
+    [Theory]
+    [InlineData(nameof(WikiController.AuthorGetRevisionHistory))]
+    [InlineData(nameof(WikiController.AuthorGetRevisionDetail))]
+    public void AuthorRevisionReads_ShouldRequireClientWithoutConsolePermission(string methodName)
+    {
+        var method = typeof(WikiController).GetMethod(
+            methodName,
+            BindingFlags.Instance | BindingFlags.Public);
+
+        Assert.NotNull(method);
+        var authorize = Assert.Single(method.GetCustomAttributes<AuthorizeAttribute>());
+        Assert.Equal(AuthorizationPolicies.Client, authorize.Policy);
+        Assert.Empty(method.GetCustomAttributes<RequireConsolePermissionAttribute>());
+    }
+
+    [Theory]
+    [InlineData(nameof(WikiController.GetRevisionList))]
+    [InlineData(nameof(WikiController.GetRevisionDetail))]
+    public void ConsoleRevisionReads_ShouldKeepDocsViewPermission(string methodName)
+    {
+        var method = typeof(WikiController).GetMethod(
+            methodName,
+            BindingFlags.Instance | BindingFlags.Public);
+
+        Assert.NotNull(method);
+        var authorize = Assert.Single(method.GetCustomAttributes<AuthorizeAttribute>());
+        Assert.Equal(AuthorizationPolicies.Client, authorize.Policy);
+        var permission = Assert.Single(
+            method.GetCustomAttributes<RequireConsolePermissionAttribute>());
+        var permissionField = typeof(RequireConsolePermissionAttribute).GetField(
+            "_permissions",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(permissionField);
+        Assert.Equal(
+            [ConsolePermissions.DocsView],
+            Assert.IsType<string[]>(permissionField.GetValue(permission)));
+    }
+
     [Fact]
     public async Task AuthorCreate_ShouldAllowOrdinaryAuthenticatedUser()
     {
@@ -45,6 +88,41 @@ public sealed class WikiAuthoringControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
         Assert.Equal("Wiki.DraftNotFound", result.Code);
+    }
+
+    [Fact]
+    public async Task AuthorGetRevisionHistory_ShouldUseRelationAuthorizedAuthorContract()
+    {
+        var service = new Mock<IWikiDocumentService>(MockBehavior.Strict);
+        service.Setup(item => item.AuthorGetRevisionHistoryAsync(20001, 10001, false))
+            .ReturnsAsync(new WikiAuthorRevisionHistoryVo
+            {
+                VoDocumentId = 20001,
+                VoAuthorRole = "Owner",
+                VoCanStartDraft = true
+            });
+        var controller = CreateController(service.Object, 10001, "Author", 7);
+
+        var result = await controller.AuthorGetRevisionHistory(20001);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("Owner", result.ResponseData!.VoAuthorRole);
+        Assert.True(result.ResponseData.VoCanStartDraft);
+    }
+
+    [Fact]
+    public async Task AuthorGetRevisionDetail_ShouldNotLeakInaccessibleRevision()
+    {
+        var service = new Mock<IWikiDocumentService>(MockBehavior.Strict);
+        service.Setup(item => item.AuthorGetRevisionDetailAsync(50001, 10001, false))
+            .ReturnsAsync((WikiAuthorRevisionDetailVo?)null);
+        var controller = CreateController(service.Object, 10001, "Author", 7);
+
+        var result = await controller.AuthorGetRevisionDetail(50001);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(404, result.StatusCode);
+        Assert.Equal("Wiki.RevisionNotFound", result.Code);
     }
 
     [Fact]

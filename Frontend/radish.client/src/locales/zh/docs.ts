@@ -388,6 +388,7 @@ export const zhDocs = {
   'wiki.author.editor.boundary': '保存只维护正文、摘要、目录位置和访问字段；发布、归档和权限治理仍由 Console 处理。',
   'wiki.author.editor.currentVisibility': '当前可见性：{{visibility}}',
   'wiki.author.editor.authorReadOnlyNotice': '当前账号只能查看这份工作草稿，服务端将继续拒绝未授权保存。',
+  'wiki.author.editor.payloadPurgedNotice': '这份终态草稿的正文已按保留策略清理；版本、协作者和审核时间线证据仍可查看。',
   'wiki.author.editor.documentVersion': '正式版本',
   'wiki.author.editor.draftVersion': '草稿版本',
   'wiki.author.editor.versionEvidence': '正式 v{{document}} · 草稿 v{{draft}} · {{role}}',
