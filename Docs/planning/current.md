@@ -6,15 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-C01 正式 Console 代码与静态验证已完成；保持在运行态验收停止线`
-- **产品下一顺位**：`等待后续明确授权再执行 /console/orders 的 Gateway PC 1440 / Mobile 390 smoke；不提前推进 R1-C02`
+- **工程第一顺位**：`F4-R C-1B 的 R1-C01 已完成并关闭；下一任务进入 R1-C02 设计前代码事实与能力覆盖门禁`
+- **产品下一顺位**：`复核 /console/moderation 的案件队列、证据、决定、纠正动作、冲突、权限与 PC → mobile 任务转换；门禁结论确认前不进入代表设计或代码`
 - **复核日期**：`2026-08-08`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
-- `2026-08-08` 已完成 [R1-C01 Console 订单表格—明细成组实现](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)：PC 落地约 `48px` 单行薄表格与显式选择后的 inspector；Mobile 落地连续三列订单行、按需筛选层、五项胶囊导航和隐藏全局导航的全屏详情任务。只读 Operator、重试确认 / `409`、备注冲突、详情不可用 / 列表 stale、筛选空结果均按局部状态闭合；`Failed`、可重试统计、LongId 文本输入和“重试发放”文案已校正。Console `66 / 66` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过；按任务停止线未启动服务、浏览器或 R1-C02。
+- `2026-08-08` 已完成并关闭 [R1-C01 Console 订单表格—明细成组实现与运行态验收](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)：PC 落地约 `48px` 单行薄表格与显式选择后的 inspector；Mobile 落地连续三列订单行、按需筛选层、五项胶囊导航和隐藏全局导航的全屏详情任务。只读 Operator、重试确认 / `409`、备注冲突、详情不可用 / 列表 stale、筛选空结果、LongId URL 与受权资源回跳均通过。Console `66 / 66` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过；Gateway PC `1440 × 900` / Mobile `390 × 844` CSS viewport 无横向溢出，稳定态浏览器控制台 `0 error / 0 warning`。六库已按验收前 SHA-256 原样还原并通过完整性检查，临时数据清零、端口停止；未修改 Pencil 或推进 R1-C02。
 - `2026-08-08` 已完成并确认 R1-C01 整组正式代表设计：PC `1440 × 900` 使用约 `48.5px` 单行薄表格和按需详情 inspector；Mobile `390 × 844` 使用连续三列订单行、Client 风格五项胶囊导航和隐藏全局导航的全屏详情任务，中列承载商品类型 / 单价与支付证据；只读 Operator、重试确认 / `409`、详情 `404` / 列表 stale、筛选空结果以局部状态板表达。全部画板布局检查零告警，下一步进入正式 Console 代码实现。
 - `2026-08-08` 已完成 [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)：正式 `/console/orders` 已承接列表、独立详情、筛选 / 分页、备注、履约重试和受权资源回跳，现有 API、权限、结构化错误、LongId 与事务边界足以进入代表设计；当前结构债集中在卡片与大缝隙、重复摘要 / 动作、主表被常驻右栏挤窄，以及 mobile 仍依赖横向表格。正式方向建议采用连续表格主轴 + 按需详情 inspector，并校正 `Failed` 筛选、可重试统计、LongId 输入和通用发放文案；确认前未修改 `.pen` 或代码。
 - `2026-08-08` 已完成并关闭 [R1-W01 Private 消息工作区成组实现与运行态验收](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)：唯一活动 `.pen` 已形成 PC `1440`、Mobile `390` 与必要关键状态代表画板；正式 `/messages` 落地连续会话列表 / 消息主轴 / 按需成员上下文、搜索与在线成员互斥、紧凑 Pin、Mobile 单任务流与共享 Bottom Sheet，并统一 `720px` 结构断点和账户切换 reset。Gateway 普通 User + Accepted 互关 Direct 覆盖文本、引用、图片、Reaction、Pin、已读边界、搜索、成员互斥、焦点恢复与无横向溢出；运行态修正 Mobile 按钮可访问名称和 Chat 私密附件绑定消息后的 ACL 查询翻译错误。后端 `1194` 项、Client `509` 项测试、Lint、三项 type-check 与 production build 通过；临时 Main / Chat / Message / Log / OpenIddict 数据和上传文件均已清零，服务端口已停止。
@@ -92,12 +92,14 @@
 24. 完成并确认 R1-C01 Mobile `390 × 844` 连续订单列表、全屏详情任务和必要关键状态；订单行补齐商品类型 / 单价与支付证据中列，底部导航复用 Client 胶囊视觉并保持 Console 五项真实入口。
 25. 按确认设计完成正式 `/console/orders` 代码：PC 薄表格 / 按需 inspector、Mobile 三列订单行 / `BottomSheet` 筛选 / 全屏详情，以及只读、冲突、不可用、stale 和空结果状态均已落地。
 26. 同批校正全部 `Failed` 与可重试统计、LongId 字符串输入和通用“重试发放”文案；Console `66 / 66` 测试、Lint、strict type-check、production build 与变更卫生检查通过，未启动服务或浏览器。
+27. 获得当前任务授权后使用 Gateway 完成 PC `1440 × 900` 与 Mobile `390 × 844` CSS viewport smoke；列表、inspector、三列移动行、按需筛选、全屏详情、Console 五项真实入口、分页、LongId URL 与资源回跳均通过且无横向溢出。
+28. 管理员与临时只读 Operator 覆盖重试确认 / `409`、备注成功 / 冲突、详情 `404`、列表 stale、筛选空结果和写入口隐藏；稳定态浏览器控制台 `0 error / 0 warning`。服务已停止，六库原样还原且完整性通过，临时数据清零。
 
 ## 当前下一步
 
-1. R1-C01 代码与静态验证已经完成，保持当前 API、权限、URL、LongId、幂等、结构化错误和事务边界；先复核并交付本批差异，不追加设计或新能力。
-2. 后续如需关闭 R1-C01 运行态验收，必须在新任务中先说明 Gateway、Console 相关启动命令、端口、运行影响和清理方式，再取得 PC `1440` / Mobile `390` smoke 明确授权。
-3. R1-C01 运行态裁决前不提前推进 R1-C02；全局灰玉品牌 token 继续保持独立边界。
+1. R1-C01 已完成并关闭，保持现有 API、权限、URL、LongId、幂等、结构化错误和事务边界；其页面作为普通 Console 表格 / 明细的 R3 继承基线。
+2. 下一任务进入 `R1-C02`：先读取当前规划与代表页审计，核对 `/console/moderation` 的专题、正式页面、API / Service、权限、URL 状态、案件证据与决定 / 纠正动作，再形成设计前代码事实与能力覆盖门禁。
+3. 门禁结论确认前不修改 Pencil、不进入 `R1-C02` 代表设计或代码；全局灰玉品牌 token 继续保持独立边界。
 
 ## 当前执行入口
 
