@@ -70,7 +70,7 @@ C-1A 最终裁决为：
 | `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
 | `R1-A01` | Author 编辑 / 协作 / 提交审核；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
 | `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen`（readiness 与能力门禁已完成） |
-| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen`（readiness 与 PC 已确认，Mobile / 关键状态待完成） |
+| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen`（PC / Mobile / 必要关键状态已确认，代码待实现） |
 | `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
 
 R1 只在唯一活动设计源中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
@@ -83,7 +83,7 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 
 `R1-W01` 已于 `2026-08-08` 完成[消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)。正式 `/messages` 与 WebOS 共用同一 Chat 核心，主体能力没有迁移缺口；举报 ACL / LongId、失败重试幂等和历史错误契约已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合，撤回能力证据与频道角色权限另需裁决。R1-A01 关闭后，R1-W01 已切换为下一正式代表设计顺位；Pencil 可用前不提前制作画板。
 
-`R1-C01` 已于 `2026-08-08` 完成[Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)。正式 `/console/orders` 已承接列表、独立详情、URL 深链、筛选 / 分页、备注、履约重试和用户 / 商品 / 扣款流水回跳；现有 API、权限、结构化错误、LongId 与事务边界足以进入代表设计。PC `1440 × 900` 正式代表画板已确认：使用连续表格主轴与按需详情 inspector，订单表按 `ui-ref-06` 收敛为单行薄表格，并移除任务流卡、常驻摘要和大卡片缝隙。下一步制作 mobile 卡片列表、全屏详情任务和必要小型关键状态，整组确认前不进入代码。
+`R1-C01` 已于 `2026-08-08` 完成[Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)，并完成 PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态正式代表设计。PC 使用连续单行薄表格与按需详情 inspector；Mobile 使用连续三列订单行、Client 风格五项胶囊导航和隐藏全局导航的全屏详情任务，中列承载商品类型 / 单价与支付证据。下一步按已确认设计实现正式 `/console/orders`，现有 API、权限、结构化错误、LongId、幂等与事务边界保持不变。
 
 ## 5. R2 局部设计类型
 
@@ -128,7 +128,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 5. `R1-P02` 的 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收已关闭。
 6. `R1-A01` readiness、能力修复、PC / mobile 正式代表设计、页面实现和 Gateway 运行态验收已完成并关闭。
 7. 后续设计轨切换为 `R1-W01 → R1-C01 → R1-C02`；R2 只补必要差异，不扩为路由镜像。
-8. Pencil 可用后直接按既有 readiness 与能力门禁进入 R1-W01 PC 正式代表设计，不重新全量审计；确认后再继续 Mobile 与必要关键状态区。
+8. `R1-W01` 已完成并关闭；`R1-C01` readiness 与 PC / Mobile / 必要关键状态设计已确认，下一步完成正式 Console 代码实现与验收后再切换 `R1-C02`。
 9. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现；代表页代码落地并完成截图复核后，以复核结果驱动 R3 成组实现。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

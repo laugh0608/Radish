@@ -32182,6 +32182,4202 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "ZizhY",
+      "x": 12400,
+      "y": 0,
+      "name": "R1-C01 / Console 订单列表 / Mobile 390",
+      "context": "Console 订单管理 mobile 默认代表稿。390×844 不压缩 PC 表格，使用连续订单行；顶部仅保留结果数、筛选和刷新，点按订单进入全屏详情任务；全局底部功能栏只在列表态出现。",
+      "theme": {
+        "productTheme": "guofeng"
+      },
+      "clip": true,
+      "width": 390,
+      "height": 844,
+      "fill": "$bg-app",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "p7osor",
+          "name": "Mobile Console Web Header",
+          "width": "fill_container",
+          "height": 60,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 9,
+          "padding": [
+            0,
+            14
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "dR5LC",
+              "name": "Console Brand Mark",
+              "width": 30,
+              "height": 30,
+              "fill": "$brand",
+              "cornerRadius": 10,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "qASzP",
+                  "name": "Console Brand Glyph",
+                  "fill": "$text-on-brand",
+                  "content": "萝",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "NK2Fk",
+              "name": "Console Wordmark",
+              "fill": "$text-primary",
+              "content": "Radish Console",
+              "fontFamily": "Noto Serif SC",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "AY5YP",
+              "name": "Header Flexible Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "mTap7",
+              "name": "Header Action / Notifications",
+              "width": 34,
+              "height": 34,
+              "fill": "$bg-muted",
+              "cornerRadius": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "QObfZ",
+                  "name": "Notifications Icon",
+                  "width": 16,
+                  "height": 16,
+                  "icon": "bell",
+                  "library": "lucide",
+                  "fill": "$text-secondary"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "vRJJx",
+              "name": "Header Action / Account",
+              "width": 34,
+              "height": 34,
+              "fill": "$brand-soft",
+              "cornerRadius": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZziYw",
+                  "name": "Account Initial",
+                  "fill": "$brand",
+                  "content": "管",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ZsTrn",
+          "name": "Mobile Orders Main",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 8,
+          "padding": [
+            12,
+            12,
+            10,
+            12
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "PdNez",
+              "name": "Orders Title and Controls",
+              "width": "fill_container",
+              "height": 46,
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "SWDYl",
+                  "name": "Orders Title Block",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 2,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "G3vni",
+                      "name": "Orders Page Title",
+                      "fill": "$text-primary",
+                      "content": "订单管理",
+                      "fontFamily": "Noto Serif SC",
+                      "fontSize": 20,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "V6P1C",
+                      "name": "Orders Result Count",
+                      "fill": "$text-secondary",
+                      "content": "共 186 条 · 第 1 / 24 页",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "PbzBD",
+                  "name": "Refresh Orders Button",
+                  "width": 36,
+                  "height": 36,
+                  "fill": "$bg-surface",
+                  "cornerRadius": 9,
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "e0bN51",
+                      "name": "Refresh Orders Icon",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "refresh-cw",
+                      "library": "lucide",
+                      "fill": "$text-secondary"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "Fqp0w",
+                  "name": "Open Filters Button",
+                  "height": 36,
+                  "fill": "$bg-surface",
+                  "cornerRadius": 9,
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "gap": 5,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "A0Mlns",
+                      "name": "Filter Orders Icon",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "sliders-horizontal",
+                      "library": "lucide",
+                      "fill": "$brand"
+                    },
+                    {
+                      "type": "text",
+                      "id": "nw3dN",
+                      "name": "Filter Orders Label",
+                      "fill": "$text-primary",
+                      "content": "筛选",
+                      "fontFamily": "Geist",
+                      "fontSize": 11,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "P62KNF",
+              "name": "Current Page Statistics Rail",
+              "width": "fill_container",
+              "height": 30,
+              "fill": "$bg-surface",
+              "cornerRadius": 9,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "gap": 8,
+              "padding": [
+                0,
+                10
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "RLQJ3",
+                  "name": "Current Page Amount",
+                  "fill": "$text-primary",
+                  "content": "本页 1,510 胡萝卜",
+                  "fontFamily": "Geist",
+                  "fontSize": 10,
+                  "fontWeight": "650"
+                },
+                {
+                  "type": "frame",
+                  "id": "iJNtf",
+                  "name": "Statistics Separator One",
+                  "width": 1,
+                  "height": 12,
+                  "fill": "$border-soft"
+                },
+                {
+                  "type": "text",
+                  "id": "Rh7MO",
+                  "name": "Current Page Failed",
+                  "fill": "$danger",
+                  "content": "失败 3",
+                  "fontFamily": "Geist",
+                  "fontSize": 10,
+                  "fontWeight": "650"
+                },
+                {
+                  "type": "frame",
+                  "id": "orNW4",
+                  "name": "Statistics Separator Two",
+                  "width": 1,
+                  "height": 12,
+                  "fill": "$border-soft"
+                },
+                {
+                  "type": "text",
+                  "id": "eavlY",
+                  "name": "Current Page Retryable",
+                  "fill": "$warning",
+                  "content": "可重试 1",
+                  "fontFamily": "Geist",
+                  "fontSize": 10,
+                  "fontWeight": "650"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "KEtlL",
+              "name": "Continuous Mobile Order List",
+              "clip": true,
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 12,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "RWoAU",
+                  "name": "Order Row 01",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$brand-soft",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "f8NDf",
+                      "name": "Order Row 01 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tvTSq",
+                          "name": "Order Row 01 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802451",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "d5M8J",
+                          "name": "Order Row 01 / Time",
+                          "fill": "$text-muted",
+                          "content": "14:32",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Kd3Z6",
+                          "name": "Order Row 01 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "so5wU",
+                          "name": "Order Row 01 / Status Chip",
+                          "height": 18,
+                          "fill": "$danger-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "JDAES",
+                              "name": "Order Row 01 / Status Label",
+                              "fill": "$danger",
+                              "content": "发放失败",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fi1ku",
+                      "name": "Order Row 01 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ZbZIt",
+                          "name": "Order Row 01 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qKjR8",
+                              "name": "Order Row 01 / Product",
+                              "fill": "$text-primary",
+                              "content": "主题头像框 × 1",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Qij1T",
+                              "name": "Order Row 01 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_9q7m · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "w9XTi",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "ZmdG1",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "权益商品 · 单价 160",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Ezbxq",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$success",
+                              "content": "支付成功",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "bh4Nh",
+                          "name": "Order Row 01 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "160",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "u29oo",
+                          "name": "Order Row 01 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$brand"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yknaN",
+                  "name": "Order Row 02",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "jwd3d",
+                      "name": "Order Row 02 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "M39vX1",
+                          "name": "Order Row 02 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802447",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ZdYBS",
+                          "name": "Order Row 02 / Time",
+                          "fill": "$text-muted",
+                          "content": "14:18",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "nnHSf",
+                          "name": "Order Row 02 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "e5Mba",
+                          "name": "Order Row 02 / Status Chip",
+                          "height": 18,
+                          "fill": "$success-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "chydL",
+                              "name": "Order Row 02 / Status Label",
+                              "fill": "$success",
+                              "content": "已完成",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "b6Cr8",
+                      "name": "Order Row 02 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "hR6WU",
+                          "name": "Order Row 02 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "Tw64Y",
+                              "name": "Order Row 02 / Product",
+                              "fill": "$text-primary",
+                              "content": "限定昵称色 × 2",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "nOLjF",
+                              "name": "Order Row 02 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_2k4c · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "s7TsJL",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "FGqaH",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "权益商品 · 单价 120",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "S6oJhc",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$success",
+                              "content": "支付成功",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Slt7i",
+                          "name": "Order Row 02 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "240",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "OgrbH",
+                          "name": "Order Row 02 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "CJIru",
+                  "name": "Order Row 03",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "a4PfCl",
+                      "name": "Order Row 03 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zrlCq",
+                          "name": "Order Row 03 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802439",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Pz1Df",
+                          "name": "Order Row 03 / Time",
+                          "fill": "$text-muted",
+                          "content": "13:56",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VylMd",
+                          "name": "Order Row 03 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "NzuI3",
+                          "name": "Order Row 03 / Status Chip",
+                          "height": 18,
+                          "fill": "$warning-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "T7LmD",
+                              "name": "Order Row 03 / Status Label",
+                              "fill": "$warning",
+                              "content": "待发放",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "F4bCkO",
+                      "name": "Order Row 03 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "ZZkO5",
+                          "name": "Order Row 03 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "PHNPL",
+                              "name": "Order Row 03 / Product",
+                              "fill": "$text-primary",
+                              "content": "高级表情包 × 1",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "a2bh5R",
+                              "name": "Order Row 03 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_6b8p · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "z1qmE",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wkUzt",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "消耗品 · 单价 80",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "GL8RS",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$success",
+                              "content": "支付成功",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "B0PYHu",
+                          "name": "Order Row 03 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "80",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "NP3eT",
+                          "name": "Order Row 03 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DhBck",
+                  "name": "Order Row 04",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "jbyFb",
+                      "name": "Order Row 04 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iUpua",
+                          "name": "Order Row 04 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802431",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "x276i9",
+                          "name": "Order Row 04 / Time",
+                          "fill": "$text-muted",
+                          "content": "13:21",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Zjhx6",
+                          "name": "Order Row 04 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CHTAI",
+                          "name": "Order Row 04 / Status Chip",
+                          "height": 18,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "leJpX",
+                              "name": "Order Row 04 / Status Label",
+                              "fill": "$text-secondary",
+                              "content": "已取消",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VHzRq",
+                      "name": "Order Row 04 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "CRXP1",
+                          "name": "Order Row 04 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "y69dX",
+                              "name": "Order Row 04 / Product",
+                              "fill": "$text-primary",
+                              "content": "动态铭牌 × 1",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "YqZMP",
+                              "name": "Order Row 04 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_4r1d · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "lrcMB",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "YBSqQ",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "权益商品 · 单价 120",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "pab3c",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$text-muted",
+                              "content": "未支付",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mC8O4",
+                          "name": "Order Row 04 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "120",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "ipoZu",
+                          "name": "Order Row 04 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "U5rTB",
+                  "name": "Order Row 05",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bhBtr",
+                      "name": "Order Row 05 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Q7Um0",
+                          "name": "Order Row 05 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802426",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "suC5D",
+                          "name": "Order Row 05 / Time",
+                          "fill": "$text-muted",
+                          "content": "12:47",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "gxR9C",
+                          "name": "Order Row 05 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "m8VH9",
+                          "name": "Order Row 05 / Status Chip",
+                          "height": 18,
+                          "fill": "$action-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "wSATX",
+                              "name": "Order Row 05 / Status Label",
+                              "fill": "$action",
+                              "content": "发放中",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SKF82",
+                      "name": "Order Row 05 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "T4meA",
+                          "name": "Order Row 05 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "c0SEh",
+                              "name": "Order Row 05 / Product",
+                              "fill": "$text-primary",
+                              "content": "主题头像框 × 1",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "d3pBkd",
+                              "name": "Order Row 05 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_1t5h · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KFA1h",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "BZkzN",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "权益商品 · 单价 160",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "yQOH3",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$success",
+                              "content": "支付成功",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "auZW3",
+                          "name": "Order Row 05 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "160",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "Iugmy",
+                          "name": "Order Row 05 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZkXep",
+                  "name": "Order Row 06",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "qkDuj",
+                      "name": "Order Row 06 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ChZPh",
+                          "name": "Order Row 06 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802418",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "x8QVG",
+                          "name": "Order Row 06 / Time",
+                          "fill": "$text-muted",
+                          "content": "12:19",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xOGGf",
+                          "name": "Order Row 06 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "sMDLf",
+                          "name": "Order Row 06 / Status Chip",
+                          "height": 18,
+                          "fill": "$success-soft",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "CTsoP",
+                              "name": "Order Row 06 / Status Label",
+                              "fill": "$success",
+                              "content": "已完成",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Q7UST",
+                      "name": "Order Row 06 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "b0PuY",
+                          "name": "Order Row 06 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NdstY",
+                              "name": "Order Row 06 / Product",
+                              "fill": "$text-primary",
+                              "content": "限定昵称色 × 1",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "dWseF",
+                              "name": "Order Row 06 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_3n2v · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bHz4p",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "nLrIC",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "权益商品 · 单价 120",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "j3IgCf",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$success",
+                              "content": "支付成功",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "Wh9Yu",
+                          "name": "Order Row 06 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "120",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "c5aqi7",
+                          "name": "Order Row 06 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VmIdU",
+                  "name": "Order Row 07",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 5,
+                  "padding": [
+                    9,
+                    10
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "DKs6u",
+                      "name": "Order Row 07 / Identity",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 7,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jFdCx",
+                          "name": "Order Row 07 / Order Number",
+                          "fill": "$text-primary",
+                          "content": "#RDS-802407",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "eoJHZ",
+                          "name": "Order Row 07 / Time",
+                          "fill": "$text-muted",
+                          "content": "11:43",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "c3GIGf",
+                          "name": "Order Row 07 / Identity Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "Ikutp",
+                          "name": "Order Row 07 / Status Chip",
+                          "height": 18,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            7
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "d5ZWGM",
+                              "name": "Order Row 07 / Status Label",
+                              "fill": "$text-secondary",
+                              "content": "退款完成",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "650"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Bb61n",
+                      "name": "Order Row 07 / Summary",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "bmDk1",
+                          "name": "Order Row 07 / Product and User",
+                          "width": 132,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "xOgas",
+                              "name": "Order Row 07 / Product",
+                              "fill": "$text-primary",
+                              "content": "高级表情包 × 3",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "550"
+                            },
+                            {
+                              "type": "text",
+                              "id": "sfOnX",
+                              "name": "Order Row 07 / User",
+                              "fill": "$text-secondary",
+                              "content": "u_8d6x · 普通 User",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "EmtVm",
+                          "name": "Order Row / Product and Payment Evidence",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 2,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "a7d6C",
+                              "name": "Order Row / Product Type and Unit Price",
+                              "fill": "$text-secondary",
+                              "content": "消耗品 · 单价 80",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Sjx7K",
+                              "name": "Order Row / Payment Evidence",
+                              "fill": "$success",
+                              "content": "支付成功",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "tv7Dh",
+                          "name": "Order Row 07 / Total Amount",
+                          "fill": "$text-primary",
+                          "content": "240",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "hDWF9",
+                          "name": "Order Row 07 / Open Detail",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "chevron-right",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "b461a",
+                  "name": "Mobile Orders Pagination",
+                  "width": "fill_container",
+                  "height": 39,
+                  "fill": "$bg-muted",
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    9
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "eZcvD",
+                      "name": "Previous Page Disabled",
+                      "fill": "$text-muted",
+                      "content": "上一页",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "550"
+                    },
+                    {
+                      "type": "text",
+                      "id": "BT846",
+                      "name": "Current Page Indicator",
+                      "fill": "$text-secondary",
+                      "content": "1 / 24",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "650"
+                    },
+                    {
+                      "type": "text",
+                      "id": "d4Cv49",
+                      "name": "Next Page Action",
+                      "fill": "$brand",
+                      "content": "下一页",
+                      "fontFamily": "Geist",
+                      "fontSize": 10,
+                      "fontWeight": "650"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "SlSHz",
+          "name": "Mobile Console Floating Navigation Zone",
+          "width": "fill_container",
+          "height": 76,
+          "fill": "$bg-app",
+          "padding": [
+            0,
+            12,
+            12,
+            12
+          ],
+          "alignItems": "end",
+          "children": [
+            {
+              "id": "S7nywu",
+              "type": "ref",
+              "ref": "zT5M8",
+              "name": "Mobile Console High-frequency Navigation / Client Style",
+              "width": "fill_container",
+              "height": 64,
+              "descendants": {
+                "SIwif": {
+                  "name": "Mobile Navigation / Overview",
+                  "fill": "#FFFFFF00"
+                },
+                "Bopp3": {
+                  "name": "Mobile Navigation / Overview / Icon",
+                  "icon": "layout-dashboard",
+                  "fill": "$text-muted"
+                },
+                "LIbsn": {
+                  "name": "Mobile Navigation / Overview / Label",
+                  "content": "总览",
+                  "fill": "$text-muted",
+                  "fontWeight": "500"
+                },
+                "LSzAZ": {
+                  "name": "Mobile Navigation / Governance",
+                  "fill": "#FFFFFF00"
+                },
+                "uIdEd": {
+                  "name": "Mobile Navigation / Governance / Icon",
+                  "icon": "shield",
+                  "fill": "$text-muted"
+                },
+                "KxTM8": {
+                  "name": "Mobile Navigation / Governance / Label",
+                  "content": "治理",
+                  "fill": "$text-muted",
+                  "fontWeight": "500"
+                },
+                "zYuLe": {
+                  "name": "Mobile Navigation / Commerce",
+                  "fill": "$brand-soft"
+                },
+                "P53E5": {
+                  "name": "Mobile Navigation / Commerce / Icon",
+                  "icon": "shopping-bag",
+                  "fill": "$brand"
+                },
+                "A3p0If": {
+                  "name": "Mobile Navigation / Commerce / Label",
+                  "content": "交易",
+                  "fill": "$brand",
+                  "fontWeight": "600"
+                },
+                "UQ2Tv": {
+                  "name": "Mobile Navigation / Access",
+                  "fill": "#FFFFFF00"
+                },
+                "n9ztcE": {
+                  "name": "Mobile Navigation / Access / Icon",
+                  "icon": "users",
+                  "fill": "$text-muted"
+                },
+                "DeEy5": {
+                  "name": "Mobile Navigation / Access / Label",
+                  "content": "权限",
+                  "fill": "$text-muted",
+                  "fontWeight": "500"
+                },
+                "mGZ9F": {
+                  "name": "Mobile Navigation / More",
+                  "fill": "#FFFFFF00"
+                },
+                "wBzHL": {
+                  "name": "Mobile Navigation / More / Icon",
+                  "icon": "grid-2x2",
+                  "fill": "$text-muted"
+                },
+                "p678Ql": {
+                  "name": "Mobile Navigation / More / Label",
+                  "content": "更多",
+                  "fill": "$text-muted",
+                  "fontWeight": "500"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "soMLH",
+      "x": 12870,
+      "y": 0,
+      "name": "R1-C01 / Console 订单详情任务 / Mobile 390",
+      "context": "Console 订单 mobile 全屏详情任务。由列表进入，隐藏共享底部导航；单列承载精确状态与动作、订单快照、支付证据、发放结果、失败原因和管理员备注。返回后恢复筛选、页码与滚动上下文。重试动作仍由服务端复核最新订单状态。",
+      "theme": {
+        "productTheme": "guofeng"
+      },
+      "clip": true,
+      "width": 390,
+      "height": 844,
+      "fill": "$bg-app",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "SBrvB",
+          "name": "Mobile Console Web Header",
+          "width": "fill_container",
+          "height": 60,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 9,
+          "padding": [
+            0,
+            14
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "vbTPn",
+              "name": "Console Brand Mark",
+              "width": 30,
+              "height": 30,
+              "fill": "$brand",
+              "cornerRadius": 10,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "e2yac",
+                  "name": "Console Brand Glyph",
+                  "fill": "$text-on-brand",
+                  "content": "萝",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "pZrph",
+              "name": "Console Wordmark",
+              "fill": "$text-primary",
+              "content": "Radish Console",
+              "fontFamily": "Noto Serif SC",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "ZlHBL",
+              "name": "Header Flexible Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "q2h0J",
+              "name": "Header Action / Account",
+              "width": 34,
+              "height": 34,
+              "fill": "$brand-soft",
+              "cornerRadius": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "nP98i",
+                  "name": "Account Initial",
+                  "fill": "$brand",
+                  "content": "管",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "x3ABhO",
+          "name": "Mobile Order Detail Task Header",
+          "width": "fill_container",
+          "height": 50,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 8,
+          "padding": [
+            0,
+            10
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "hX2yg",
+              "name": "Back to Orders Button",
+              "width": 34,
+              "height": 34,
+              "fill": "$bg-muted",
+              "cornerRadius": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "qFpHp",
+                  "name": "Back to Orders Icon",
+                  "width": 17,
+                  "height": 17,
+                  "icon": "arrow-left",
+                  "library": "lucide",
+                  "fill": "$text-primary"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iGQon",
+              "name": "Order Detail Task Identity",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 1,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "xpc0J",
+                  "name": "Order Detail Task Title",
+                  "fill": "$text-primary",
+                  "content": "订单详情",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 16,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "B4pd2B",
+                  "name": "Order Detail Task Number",
+                  "fill": "$text-secondary",
+                  "content": "#RDS-802451",
+                  "fontFamily": "Geist",
+                  "fontSize": 9,
+                  "fontWeight": "550"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "Qffjn",
+              "name": "Refresh Order Detail Button",
+              "width": 34,
+              "height": 34,
+              "fill": "$bg-muted",
+              "cornerRadius": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "HXfR8",
+                  "name": "Refresh Order Detail Icon",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "refresh-cw",
+                  "library": "lucide",
+                  "fill": "$text-secondary"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Aig40",
+          "name": "Mobile Order Detail Main",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "padding": [
+            10,
+            12
+          ],
+          "children": [
+            {
+              "type": "frame",
+              "id": "ppXWC",
+              "name": "Continuous Order Detail Surface",
+              "clip": true,
+              "width": "fill_container",
+              "height": "fill_container",
+              "fill": "$bg-surface",
+              "cornerRadius": 12,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "layout": "vertical",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "ttaEF",
+                  "name": "Order Status and Primary Facts",
+                  "width": "fill_container",
+                  "height": 78,
+                  "fill": "$danger-soft",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 8,
+                  "padding": [
+                    10,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "EfDhL",
+                      "name": "Order Status Line",
+                      "width": "fill_container",
+                      "height": 22,
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "aRyN9",
+                          "name": "Exact Order Status Chip",
+                          "height": 22,
+                          "fill": "$danger",
+                          "cornerRadius": 999,
+                          "padding": [
+                            0,
+                            8
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "WOmlF",
+                              "name": "Exact Order Status Label",
+                              "fill": "$text-on-brand",
+                              "content": "发放失败",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "KZqrq",
+                          "name": "Order Status Stage",
+                          "fill": "$danger",
+                          "content": "GrantEntitlement",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "QawzL",
+                          "name": "Order Status Flexible Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "f8KpEu",
+                          "name": "Order Total Amount",
+                          "fill": "$text-primary",
+                          "content": "160 胡萝卜",
+                          "fontFamily": "Geist",
+                          "fontSize": 13,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "n2RGk",
+                      "name": "Order Product and Created Time",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "I43Rl",
+                          "name": "Order Product Summary",
+                          "fill": "$text-primary",
+                          "content": "主题头像框 × 1",
+                          "fontFamily": "Geist",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "iTJUM",
+                          "name": "Order Product Summary Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "aTc60",
+                          "name": "Order Created Time",
+                          "fill": "$text-secondary",
+                          "content": "2026-08-08 14:32",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "P4XTzS",
+                  "name": "Order Snapshot Section",
+                  "width": "fill_container",
+                  "height": 110,
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": [
+                    9,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "TXvcu",
+                      "name": "Order Snapshot Heading",
+                      "width": "fill_container",
+                      "height": 20,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fiW0Q",
+                          "name": "Order Snapshot Title",
+                          "fill": "$text-primary",
+                          "content": "订单快照",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "m4XSd6",
+                          "name": "Order Snapshot Heading Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "OD8Rw",
+                          "name": "Order Snapshot Immutable Hint",
+                          "fill": "$text-muted",
+                          "content": "创建时信息",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aHOpj",
+                      "name": "Snapshot Row One",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "cqIa3",
+                          "name": "Snapshot Row One / Left",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "igT17",
+                              "name": "Snapshot Row One / Left Label",
+                              "fill": "$text-muted",
+                              "content": "用户",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "HizyX",
+                              "name": "Snapshot Row One / Left Value",
+                              "fill": "$text-primary",
+                              "content": "u_9q7m",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "A4AYMK",
+                          "name": "Snapshot Row One / Right",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "UaIXn",
+                              "name": "Snapshot Row One / Right Label",
+                              "fill": "$text-muted",
+                              "content": "商品快照",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "EbbVt",
+                              "name": "Snapshot Row One / Right Value",
+                              "fill": "$text-primary",
+                              "content": "主题头像框",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "urZYf",
+                      "name": "Snapshot Row Two",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "xfnGv",
+                          "name": "Snapshot Row Two / Left",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "qVI5o",
+                              "name": "Snapshot Row Two / Left Label",
+                              "fill": "$text-muted",
+                              "content": "数量",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "ORkQV",
+                              "name": "Snapshot Row Two / Left Value",
+                              "fill": "$text-primary",
+                              "content": "1",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "H8eHn",
+                          "name": "Snapshot Row Two / Right",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bMXKb",
+                              "name": "Snapshot Row Two / Right Label",
+                              "fill": "$text-muted",
+                              "content": "单价 / 总额",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "J64qtZ",
+                              "name": "Snapshot Row Two / Right Value",
+                              "fill": "$text-primary",
+                              "content": "160 / 160",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "W25sN",
+                  "name": "Payment and Fulfillment Evidence Section",
+                  "width": "fill_container",
+                  "height": 112,
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 6,
+                  "padding": [
+                    9,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "k1qEXm",
+                      "name": "Payment Evidence Heading",
+                      "width": "fill_container",
+                      "height": 20,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TUFdb",
+                          "name": "Payment Evidence Title",
+                          "fill": "$text-primary",
+                          "content": "支付与发放证据",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "mJaeK",
+                          "name": "Payment Evidence Heading Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "TnE0A",
+                          "name": "Payment Evidence Link",
+                          "fill": "$brand",
+                          "content": "查看流水",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "650"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xkNyp",
+                      "name": "Evidence Row One",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "plwuc",
+                          "name": "Evidence Row One / Left",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "L8OuJ5",
+                              "name": "Evidence Row One / Left Label",
+                              "fill": "$text-muted",
+                              "content": "支付状态",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "S3SnJ",
+                              "name": "Evidence Row One / Left Value",
+                              "fill": "$text-primary",
+                              "content": "已支付",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "jisie",
+                          "name": "Evidence Row One / Right",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "NE56V",
+                              "name": "Evidence Row One / Right Label",
+                              "fill": "$text-muted",
+                              "content": "支付流水",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "etjm6",
+                              "name": "Evidence Row One / Right Value",
+                              "fill": "$text-primary",
+                              "content": "pay_6fa1…d82",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "epFZw",
+                      "name": "Evidence Row Two",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "STLO6",
+                          "name": "Evidence Row Two / Left",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "H6onk",
+                              "name": "Evidence Row Two / Left Label",
+                              "fill": "$text-muted",
+                              "content": "当前阶段",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mumL5",
+                              "name": "Evidence Row Two / Left Value",
+                              "fill": "$text-primary",
+                              "content": "GrantEntitlement",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "dCBgC",
+                          "name": "Evidence Row Two / Right",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 1,
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "g6FKw",
+                              "name": "Evidence Row Two / Right Label",
+                              "fill": "$text-muted",
+                              "content": "尝试次数",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "text",
+                              "id": "UdNLM",
+                              "name": "Evidence Row Two / Right Value",
+                              "fill": "$text-primary",
+                              "content": "3",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "C3u3Z",
+                  "name": "Compact Order State Timeline",
+                  "width": "fill_container",
+                  "height": 86,
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 7,
+                  "padding": [
+                    9,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RjWII",
+                      "name": "Order State Timeline Title",
+                      "fill": "$text-primary",
+                      "content": "状态进度",
+                      "fontFamily": "Noto Serif SC",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "wg78z",
+                      "name": "Order State Timeline Steps",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "gap": 5,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "iNaMl",
+                          "name": "Timeline Step / Created",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "o5BOqz",
+                              "name": "Timeline Step / Created / Step",
+                              "gap": 5,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "u3VCk",
+                                  "name": "Timeline Step / Created / Dot",
+                                  "fill": "$success",
+                                  "width": 7,
+                                  "height": 7
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "t7ygE8",
+                                  "name": "Timeline Step / Created / Label",
+                                  "fill": "$text-primary",
+                                  "content": "已创建",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "650"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "CnyK9",
+                              "name": "Timeline Step / Created / Time",
+                              "fill": "$text-muted",
+                              "content": "14:32",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "n7Rdj4",
+                          "name": "Timeline Connector One",
+                          "width": 14,
+                          "height": 1,
+                          "fill": "$border-soft"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "rFD8I",
+                          "name": "Timeline Step / Paid",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "OUq25",
+                              "name": "Timeline Step / Paid / Step",
+                              "gap": 5,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "MojoG",
+                                  "name": "Timeline Step / Paid / Dot",
+                                  "fill": "$success",
+                                  "width": 7,
+                                  "height": 7
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "iSkLD",
+                                  "name": "Timeline Step / Paid / Label",
+                                  "fill": "$text-primary",
+                                  "content": "已支付",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "650"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "L9knYv",
+                              "name": "Timeline Step / Paid / Time",
+                              "fill": "$text-muted",
+                              "content": "14:32",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DJrM4",
+                          "name": "Timeline Connector Two",
+                          "width": 14,
+                          "height": 1,
+                          "fill": "$border-soft"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "V9jQT",
+                          "name": "Timeline Step / Failed",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 3,
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "ELOSA",
+                              "name": "Timeline Step / Failed / Step",
+                              "gap": 5,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "ellipse",
+                                  "id": "dZoz2",
+                                  "name": "Timeline Step / Failed / Dot",
+                                  "fill": "$danger",
+                                  "width": 7,
+                                  "height": 7
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "DXbze",
+                                  "name": "Timeline Step / Failed / Label",
+                                  "fill": "$text-primary",
+                                  "content": "发放失败",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "650"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "iUVCr",
+                              "name": "Timeline Step / Failed / Time",
+                              "fill": "$text-muted",
+                              "content": "14:33",
+                              "fontFamily": "Geist",
+                              "fontSize": 8,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ApsQE",
+                  "name": "Fulfillment Failure Result",
+                  "width": "fill_container",
+                  "height": 66,
+                  "fill": "$danger-soft",
+                  "stroke": "$border-soft",
+                  "strokeWidth": {
+                    "bottom": 1
+                  },
+                  "layout": "vertical",
+                  "gap": 4,
+                  "padding": [
+                    8,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "JSQEv",
+                      "name": "Fulfillment Failure Heading",
+                      "width": "fill_container",
+                      "height": 18,
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "b17jI",
+                          "name": "Fulfillment Failure Icon",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "circle-alert",
+                          "library": "lucide",
+                          "fill": "$danger"
+                        },
+                        {
+                          "type": "text",
+                          "id": "HduDH",
+                          "name": "Fulfillment Failure Title",
+                          "fill": "$danger",
+                          "content": "EntitlementVersionConflict",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "s1Ch3v",
+                      "name": "Fulfillment Failure Description",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width-height",
+                      "width": "fill_container",
+                      "height": 28,
+                      "content": "发放前置版本已变化。允许发起重试，但服务端仍会复核最新订单状态。",
+                      "fontFamily": "Geist",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kC0G3",
+                  "name": "Administrator Note Section",
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "layout": "vertical",
+                  "gap": 7,
+                  "padding": [
+                    9,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "XQ6xj",
+                      "name": "Administrator Note Heading",
+                      "width": "fill_container",
+                      "height": 20,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tlNaj",
+                          "name": "Administrator Note Title",
+                          "fill": "$text-primary",
+                          "content": "管理员备注",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 13,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hocwR",
+                          "name": "Administrator Note Heading Spacer",
+                          "width": "fill_container",
+                          "height": 1
+                        },
+                        {
+                          "type": "text",
+                          "id": "ozGCb",
+                          "name": "Administrator Note Saved State",
+                          "fill": "$success",
+                          "content": "已保存 14:36",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MUKyY",
+                      "name": "Administrator Note Input",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "fill": "$bg-app",
+                      "cornerRadius": 9,
+                      "stroke": "$border-soft",
+                      "strokeWidth": 1,
+                      "padding": [
+                        9,
+                        10
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Pa9UV",
+                          "name": "Administrator Note Content",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width-height",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "content": "用户反馈头像框未到账；已核对支付成功，等待重试发放。",
+                          "fontFamily": "Geist",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "wWMsp",
+          "name": "Mobile Order Detail Sticky Actions",
+          "width": "fill_container",
+          "height": 64,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "top": 1
+          },
+          "gap": 8,
+          "padding": [
+            10,
+            12
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "DwxuZ",
+              "name": "Save Administrator Note Button",
+              "width": "fill_container",
+              "height": 42,
+              "fill": "$bg-surface",
+              "cornerRadius": 9,
+              "stroke": "$border-soft",
+              "strokeWidth": 1,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Pr9zd",
+                  "name": "Save Administrator Note Label",
+                  "fill": "$text-primary",
+                  "content": "保存备注",
+                  "fontFamily": "Geist",
+                  "fontSize": 11,
+                  "fontWeight": "650"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "qAWcg",
+              "name": "Retry Fulfillment Button",
+              "width": "fill_container",
+              "height": 42,
+              "fill": "$brand",
+              "cornerRadius": 9,
+              "gap": 6,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon",
+                  "id": "cMDVk",
+                  "name": "Retry Fulfillment Icon",
+                  "width": 15,
+                  "height": 15,
+                  "icon": "rotate-ccw",
+                  "library": "lucide",
+                  "fill": "$text-on-brand"
+                },
+                {
+                  "type": "text",
+                  "id": "fB4xw",
+                  "name": "Retry Fulfillment Label",
+                  "fill": "$text-on-brand",
+                  "content": "重试发放",
+                  "fontFamily": "Geist",
+                  "fontSize": 11,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "FD71Y",
+      "x": 13380,
+      "y": 0,
+      "name": "R1-C01 / Console 订单必要关键状态",
+      "context": "R1-C01 必要局部状态板，不复制默认整页。覆盖只读 Operator、重试确认与 409 并发冲突、详情 404 / 列表陈旧、筛选空结果；不扩展退款、删除、手工改状态、物流、完整审计时间线等未落地能力。",
+      "theme": {
+        "productTheme": "guofeng"
+      },
+      "width": 1220,
+      "height": 844,
+      "fill": "$bg-app",
+      "layout": "vertical",
+      "gap": 14,
+      "padding": [
+        22,
+        24,
+        24,
+        24
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "Q6OuC",
+          "name": "Orders Key States Heading",
+          "width": "fill_container",
+          "height": 54,
+          "gap": 10,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "FqhvM",
+              "name": "Orders Key States Title Block",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 3,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CWNp6",
+                  "name": "Orders Key States Title",
+                  "fill": "$text-primary",
+                  "content": "订单管理 · 必要关键状态",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 24,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "WF2rO",
+                  "name": "Orders Key States Description",
+                  "fill": "$text-secondary",
+                  "content": "局部状态，不复制整页；所有写入仍以服务端最新状态、权限与幂等边界为准。",
+                  "fontFamily": "Geist",
+                  "fontSize": 11,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "QiGfK",
+              "name": "Local States Only Badge",
+              "height": 28,
+              "fill": "$brand-soft",
+              "cornerRadius": 999,
+              "padding": [
+                0,
+                10
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jmu48",
+                  "name": "Local States Only Label",
+                  "fill": "$brand",
+                  "content": "4 组局部状态",
+                  "fontFamily": "Geist",
+                  "fontSize": 10,
+                  "fontWeight": "650"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "WsSZh",
+          "name": "Orders Key States Grid",
+          "width": "fill_container",
+          "height": "fill_container",
+          "layout": "vertical",
+          "gap": 14,
+          "children": [
+            {
+              "type": "frame",
+              "id": "WIRkt",
+              "name": "Orders Key States Row One",
+              "width": "fill_container",
+              "height": "fill_container",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "lhfhJ",
+                  "name": "Key State / Read-only Operator",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gbITJ",
+                      "name": "Key State / Read-only Operator / Heading",
+                      "width": "fill_container",
+                      "height": 72,
+                      "fill": "$bg-muted",
+                      "stroke": "$border-soft",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "AINXH",
+                          "name": "Key State / Read-only Operator / Kicker",
+                          "fill": "$brand",
+                          "content": "权限边界",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ROyBU",
+                          "name": "Key State / Read-only Operator / Title",
+                          "fill": "$text-primary",
+                          "content": "只读 Operator",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "fj5Oc",
+                          "name": "Key State / Read-only Operator / Description",
+                          "fill": "$text-secondary",
+                          "content": "读取订单详情，但不暴露任何写入入口。",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cJxVe",
+                      "name": "Key State / Read-only Operator / Body",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        12,
+                        14,
+                        14,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "VvLDq",
+                          "name": "Read-only Operator Permission Banner",
+                          "width": "fill_container",
+                          "height": 38,
+                          "fill": "$warning-soft",
+                          "cornerRadius": 9,
+                          "gap": 7,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "Plyy1",
+                              "name": "Read-only Operator Permission Icon",
+                              "width": 15,
+                              "height": 15,
+                              "icon": "shield-alert",
+                              "library": "lucide",
+                              "fill": "$warning"
+                            },
+                            {
+                              "type": "text",
+                              "id": "yZilW",
+                              "name": "Read-only Operator Permission Text",
+                              "fill": "$text-primary",
+                              "content": "当前角色仅可查看；重试发放与保存备注均隐藏。",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XRtW8",
+                          "name": "Read-only Order Detail Fragment",
+                          "clip": true,
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "cornerRadius": 10,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "GD7Dx",
+                              "name": "Read-only Order Status",
+                              "width": "fill_container",
+                              "height": 54,
+                              "fill": "$danger-soft",
+                              "gap": 8,
+                              "padding": [
+                                8,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "VSRid",
+                                  "name": "Read-only Exact Status Chip",
+                                  "height": 22,
+                                  "fill": "$danger",
+                                  "cornerRadius": 999,
+                                  "padding": [
+                                    0,
+                                    8
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "Qdgn9",
+                                      "name": "Read-only Exact Status Label",
+                                      "fill": "$text-on-brand",
+                                      "content": "发放失败",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "u5TOO",
+                                  "name": "Read-only Order Number",
+                                  "fill": "$text-primary",
+                                  "content": "#RDS-802451",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "I60OAC",
+                                  "name": "Read-only Status Spacer",
+                                  "width": "fill_container",
+                                  "height": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "Lb587",
+                                  "name": "Read-only Amount",
+                                  "fill": "$text-primary",
+                                  "content": "160 胡萝卜",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 11,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "l4WRUi",
+                              "name": "Read-only Evidence Rows",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "layout": "vertical",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "n53COt",
+                                  "name": "Read-only Evidence / Payment",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "stroke": "$border-soft",
+                                  "strokeWidth": {
+                                    "top": 1
+                                  },
+                                  "gap": 8,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "N7QvD",
+                                      "name": "Read-only Evidence / Payment / Label",
+                                      "fill": "$text-muted",
+                                      "content": "支付",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 9,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "z7sD0F",
+                                      "name": "Read-only Evidence / Payment / Spacer",
+                                      "width": "fill_container",
+                                      "height": 1
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "gWWIA",
+                                      "name": "Read-only Evidence / Payment / Value",
+                                      "fill": "$success",
+                                      "content": "已支付",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "sp6ZD",
+                                  "name": "Read-only Evidence / Fulfillment",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "stroke": "$border-soft",
+                                  "strokeWidth": {
+                                    "top": 1
+                                  },
+                                  "gap": 8,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "B3QHMe",
+                                      "name": "Read-only Evidence / Fulfillment / Label",
+                                      "fill": "$text-muted",
+                                      "content": "发放",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 9,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "H2aai",
+                                      "name": "Read-only Evidence / Fulfillment / Spacer",
+                                      "width": "fill_container",
+                                      "height": 1
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "L7smfF",
+                                      "name": "Read-only Evidence / Fulfillment / Value",
+                                      "fill": "$danger",
+                                      "content": "EntitlementVersionConflict",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "rTcE2",
+                                  "name": "Read-only Evidence / Remark",
+                                  "width": "fill_container",
+                                  "height": "fill_container",
+                                  "stroke": "$border-soft",
+                                  "strokeWidth": {
+                                    "top": 1
+                                  },
+                                  "gap": 8,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "p5F2h",
+                                      "name": "Read-only Evidence / Remark / Label",
+                                      "fill": "$text-muted",
+                                      "content": "管理员备注",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 9,
+                                      "fontWeight": "normal"
+                                    },
+                                    {
+                                      "type": "frame",
+                                      "id": "OkrWN",
+                                      "name": "Read-only Evidence / Remark / Spacer",
+                                      "width": "fill_container",
+                                      "height": 1
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "oyrfT",
+                                      "name": "Read-only Evidence / Remark / Value",
+                                      "fill": "$text-secondary",
+                                      "content": "仅查看当前版本",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X7n6a",
+                          "name": "Read-only Operator Footer",
+                          "width": "fill_container",
+                          "height": 38,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 9,
+                          "gap": 7,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "mG4g8",
+                              "name": "Read-only Operator Footer Icon",
+                              "width": 14,
+                              "height": 14,
+                              "icon": "eye",
+                              "library": "lucide",
+                              "fill": "$text-secondary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "aTHru",
+                              "name": "Read-only Operator Footer Text",
+                              "fill": "$text-secondary",
+                              "content": "保留刷新与返回，不出现禁用的伪动作。",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "550"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "aDOoQ",
+                  "name": "Key State / Confirm and Conflict",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "S06yB",
+                      "name": "Key State / Confirm and Conflict / Heading",
+                      "width": "fill_container",
+                      "height": 72,
+                      "fill": "$bg-muted",
+                      "stroke": "$border-soft",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "b6QFc",
+                          "name": "Key State / Confirm and Conflict / Kicker",
+                          "fill": "$brand",
+                          "content": "写入边界",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "VS2yU",
+                          "name": "Key State / Confirm and Conflict / Title",
+                          "fill": "$text-primary",
+                          "content": "重试确认与 409 冲突",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "haYVu",
+                          "name": "Key State / Confirm and Conflict / Description",
+                          "fill": "$text-secondary",
+                          "content": "确认层复述订单、阶段与影响；冲突后保留现场并要求刷新。",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "U6a9Q",
+                      "name": "Key State / Confirm and Conflict / Body",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        12,
+                        14,
+                        14,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "d0Ih9A",
+                          "name": "Retry Fulfillment Confirmation Fragment",
+                          "width": "fill_container",
+                          "height": 142,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 11,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "gap": 8,
+                          "padding": [
+                            11,
+                            12
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "OncWj",
+                              "name": "Retry Confirmation Heading",
+                              "width": "fill_container",
+                              "height": 22,
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "RBA1d",
+                                  "name": "Retry Confirmation Warning Mark",
+                                  "width": 22,
+                                  "height": 22,
+                                  "fill": "$warning-soft",
+                                  "cornerRadius": 7,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "icon",
+                                      "id": "w1vOby",
+                                      "name": "Retry Confirmation Warning Icon",
+                                      "width": 13,
+                                      "height": 13,
+                                      "icon": "triangle-alert",
+                                      "library": "lucide",
+                                      "fill": "$warning"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "mGkkt",
+                                  "name": "Retry Confirmation Title",
+                                  "fill": "$text-primary",
+                                  "content": "确认重试发放？",
+                                  "fontFamily": "Noto Serif SC",
+                                  "fontSize": 14,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "ykWc5",
+                              "name": "Retry Confirmation Description",
+                              "fill": "$text-secondary",
+                              "textGrowth": "fixed-width-height",
+                              "width": "fill_container",
+                              "height": 34,
+                              "content": "#RDS-802451 · GrantEntitlement\n服务端会再次校验订单状态、权限与幂等结果。",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "bdfrI",
+                              "name": "Retry Confirmation Actions",
+                              "width": "fill_container",
+                              "height": "fill_container",
+                              "gap": 8,
+                              "justifyContent": "end",
+                              "alignItems": "end",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "X4grU",
+                                  "name": "Cancel Retry Button",
+                                  "width": 70,
+                                  "height": 32,
+                                  "fill": "$bg-surface",
+                                  "cornerRadius": 8,
+                                  "stroke": "$border-soft",
+                                  "strokeWidth": 1,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "HTGDS",
+                                      "name": "Cancel Retry Label",
+                                      "fill": "$text-secondary",
+                                      "content": "取消",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "I9euj",
+                                  "name": "Confirm Retry Button",
+                                  "width": 88,
+                                  "height": 32,
+                                  "fill": "$brand",
+                                  "cornerRadius": 8,
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "xRNxG",
+                                      "name": "Confirm Retry Label",
+                                      "fill": "$text-on-brand",
+                                      "content": "确认重试",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "AlW4X",
+                          "name": "Retry Fulfillment Conflict Result",
+                          "width": "fill_container",
+                          "height": 42,
+                          "fill": "$danger-soft",
+                          "cornerRadius": 9,
+                          "gap": 7,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "bzp26",
+                              "name": "Retry Fulfillment Conflict Code",
+                              "fill": "$danger",
+                              "content": "409",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "vNpx5",
+                              "name": "Retry Fulfillment Conflict Text",
+                              "fill": "$text-primary",
+                              "content": "订单状态已变化，请刷新后重试。",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "bT0k2",
+                          "name": "Administrator Note Conflict Result",
+                          "width": "fill_container",
+                          "height": 42,
+                          "fill": "$warning-soft",
+                          "cornerRadius": 9,
+                          "gap": 7,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "u5zVSE",
+                              "name": "Administrator Note Conflict Code",
+                              "fill": "$warning",
+                              "content": "备注 409",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "750"
+                            },
+                            {
+                              "type": "text",
+                              "id": "Pahn2",
+                              "name": "Administrator Note Conflict Text",
+                              "fill": "$text-primary",
+                              "content": "其他管理员已更新；保留草稿并加载最新版本。",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "w6y2n",
+              "name": "Orders Key States Row Two",
+              "width": "fill_container",
+              "height": "fill_container",
+              "gap": 14,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "E5Xf5a",
+                  "name": "Key State / Missing Detail",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "a8HS1q",
+                      "name": "Key State / Missing Detail / Heading",
+                      "width": "fill_container",
+                      "height": 72,
+                      "fill": "$bg-muted",
+                      "stroke": "$border-soft",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "hCEoh",
+                          "name": "Key State / Missing Detail / Kicker",
+                          "fill": "$brand",
+                          "content": "陈旧读取",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "Y4RIv",
+                          "name": "Key State / Missing Detail / Title",
+                          "fill": "$text-primary",
+                          "content": "详情 404 / 列表已过期",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "qA7CQ",
+                          "name": "Key State / Missing Detail / Description",
+                          "fill": "$text-secondary",
+                          "content": "保留列表上下文，明确详情不可用，不猜测订单去向。",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BPEzZ",
+                      "name": "Key State / Missing Detail / Body",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        12,
+                        14,
+                        14,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "EWvwf",
+                          "name": "Stale List Context Fragment",
+                          "width": "fill_container",
+                          "height": 60,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 10,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "gap": 6,
+                          "padding": [
+                            8,
+                            10
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "WaeaI",
+                              "name": "Stale List Order Identity",
+                              "width": "fill_container",
+                              "height": 18,
+                              "gap": 7,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "k4yUCk",
+                                  "name": "Stale List Order Number",
+                                  "fill": "$text-primary",
+                                  "content": "#RDS-802451",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "D1K3o1",
+                                  "name": "Stale List Order Status",
+                                  "fill": "$danger",
+                                  "content": "发放失败",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "650"
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "C06iWf",
+                                  "name": "Stale List Order Spacer",
+                                  "width": "fill_container",
+                                  "height": 1
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "DvW9B",
+                                  "name": "Stale List Context Hint",
+                                  "fill": "$brand",
+                                  "content": "保留第 1 页 / 滚动位置",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "WDIdS",
+                              "name": "Stale List Order Summary",
+                              "fill": "$text-secondary",
+                              "content": "主题头像框 × 1 · u_9q7m · 160 胡萝卜",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "wk9F8",
+                          "name": "Order Detail Not Found State",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "layout": "vertical",
+                          "gap": 8,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "NTbWO",
+                              "name": "Order Detail Not Found Mark",
+                              "width": 44,
+                              "height": 44,
+                              "fill": "$bg-muted",
+                              "cornerRadius": 14,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "EchLj",
+                                  "name": "Order Detail Not Found Icon",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "file-x",
+                                  "library": "lucide",
+                                  "fill": "$text-muted"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "gcEte",
+                              "name": "Order Detail Not Found Title",
+                              "fill": "$text-primary",
+                              "content": "订单详情不存在或已不可访问",
+                              "fontFamily": "Noto Serif SC",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "D8fDj",
+                              "name": "Order Detail Not Found Description",
+                              "fill": "$text-secondary",
+                              "content": "404 · 列表结果可能已经过期，请返回并刷新。",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "R5nqSP",
+                              "name": "Order Detail Not Found Actions",
+                              "gap": 8,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "dJB2g",
+                                  "name": "Return to Orders Button",
+                                  "height": 34,
+                                  "fill": "$bg-surface",
+                                  "cornerRadius": 8,
+                                  "stroke": "$border-soft",
+                                  "strokeWidth": 1,
+                                  "padding": [
+                                    0,
+                                    12
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "g9YC2r",
+                                      "name": "Return to Orders Label",
+                                      "fill": "$text-primary",
+                                      "content": "返回列表",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "650"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "N0TJqi",
+                                  "name": "Refresh Stale Orders Button",
+                                  "height": 34,
+                                  "fill": "$brand",
+                                  "cornerRadius": 8,
+                                  "padding": [
+                                    0,
+                                    12
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "L3vgC5",
+                                      "name": "Refresh Stale Orders Label",
+                                      "fill": "$text-on-brand",
+                                      "content": "刷新列表",
+                                      "fontFamily": "Geist",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "VfAqu",
+                  "name": "Key State / Filter Empty",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": "fill_container",
+                  "fill": "$bg-surface",
+                  "cornerRadius": 16,
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "F8Vdy",
+                      "name": "Key State / Filter Empty / Heading",
+                      "width": "fill_container",
+                      "height": 72,
+                      "fill": "$bg-muted",
+                      "stroke": "$border-soft",
+                      "strokeWidth": {
+                        "bottom": 1
+                      },
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        11,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "TtkvM",
+                          "name": "Key State / Filter Empty / Kicker",
+                          "fill": "$brand",
+                          "content": "筛选状态",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "mvoYd",
+                          "name": "Key State / Filter Empty / Title",
+                          "fill": "$text-primary",
+                          "content": "筛选结果为空",
+                          "fontFamily": "Noto Serif SC",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        },
+                        {
+                          "type": "text",
+                          "id": "LZsnT",
+                          "name": "Key State / Filter Empty / Description",
+                          "fill": "$text-secondary",
+                          "content": "底部筛选条件已生效；空结果只提供清除筛选与刷新。",
+                          "fontFamily": "Geist",
+                          "fontSize": 9,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "msTaw",
+                      "name": "Key State / Filter Empty / Body",
+                      "width": "fill_container",
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": [
+                        12,
+                        14,
+                        14,
+                        14
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "YdYY3",
+                          "name": "Filtered Mobile List Toolbar",
+                          "width": "fill_container",
+                          "height": 46,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 10,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "gap": 8,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "DF6iN",
+                              "name": "Filtered Mobile Result Count",
+                              "fill": "$text-primary",
+                              "content": "0 条结果",
+                              "fontFamily": "Geist",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "vhuSm",
+                              "name": "Filtered Mobile Toolbar Spacer",
+                              "width": "fill_container",
+                              "height": 1
+                            },
+                            {
+                              "type": "frame",
+                              "id": "z2yccf",
+                              "name": "Active Filters Button",
+                              "height": 30,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 8,
+                              "gap": 5,
+                              "padding": [
+                                0,
+                                9
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "Ty9AL",
+                                  "name": "Active Filters Icon",
+                                  "width": 13,
+                                  "height": 13,
+                                  "icon": "sliders-horizontal",
+                                  "library": "lucide",
+                                  "fill": "$brand"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "nyFqz",
+                                  "name": "Active Filters Label",
+                                  "fill": "$brand",
+                                  "content": "筛选 2",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 9,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "eEAKE",
+                          "name": "Filtered Orders Empty State",
+                          "width": "fill_container",
+                          "height": "fill_container",
+                          "fill": "$bg-app",
+                          "cornerRadius": 10,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "layout": "vertical",
+                          "gap": 8,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "PmOkF",
+                              "name": "Filtered Orders Empty Mark",
+                              "width": 44,
+                              "height": 44,
+                              "fill": "$brand-soft",
+                              "cornerRadius": 14,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "LXnhj",
+                                  "name": "Filtered Orders Empty Icon",
+                                  "width": 20,
+                                  "height": 20,
+                                  "icon": "list-filter",
+                                  "library": "lucide",
+                                  "fill": "$brand"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "LYl8F",
+                              "name": "Filtered Orders Empty Title",
+                              "fill": "$text-primary",
+                              "content": "没有符合条件的订单",
+                              "fontFamily": "Noto Serif SC",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            },
+                            {
+                              "type": "text",
+                              "id": "mQONf",
+                              "name": "Filtered Orders Empty Description",
+                              "fill": "$text-secondary",
+                              "content": "状态：发放失败 · 用户：u_9q7m",
+                              "fontFamily": "Geist",
+                              "fontSize": 10,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "frame",
+                              "id": "YU9CT",
+                              "name": "Clear Order Filters Button",
+                              "height": 34,
+                              "fill": "$brand",
+                              "cornerRadius": 8,
+                              "padding": [
+                                0,
+                                14
+                              ],
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "A4M7PB",
+                                  "name": "Clear Order Filters Label",
+                                  "fill": "$text-on-brand",
+                                  "content": "清除筛选",
+                                  "fontFamily": "Geist",
+                                  "fontSize": 10,
+                                  "fontWeight": "700"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "CUJaw",
+                              "name": "Filtered Orders Refresh Hint",
+                              "fill": "$text-muted",
+                              "content": "也可刷新当前查询，不新增“创建订单”入口。",
+                              "fontFamily": "Geist",
+                              "fontSize": 9,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "themes": {
