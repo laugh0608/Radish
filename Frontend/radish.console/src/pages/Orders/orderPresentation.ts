@@ -26,6 +26,37 @@ export function isOrderInStatus(order: Order, status: Exclude<OrderStatusName, '
   return normalizeOrderStatus(order.voStatus) === status;
 }
 
+export interface OrderPageSummary {
+  failedCount: number;
+  retryableCount: number;
+  totalAmount: number;
+}
+
+function normalizeOrderAmount(value: unknown): number {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  if (typeof value === 'string') {
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  return 0;
+}
+
+export function summarizeOrderPage(orders: Order[]): OrderPageSummary {
+  return orders.reduce<OrderPageSummary>((summary, order) => ({
+    failedCount: summary.failedCount + (isOrderInStatus(order, 'Failed') ? 1 : 0),
+    retryableCount: summary.retryableCount + (order.voCanRetryFulfillment === true ? 1 : 0),
+    totalAmount: summary.totalAmount + normalizeOrderAmount(order.voTotalPrice),
+  }), {
+    failedCount: 0,
+    retryableCount: 0,
+    totalAmount: 0,
+  });
+}
+
 export function getOrderStatusColor(value: unknown): string {
   switch (normalizeOrderStatus(value)) {
     case 'Pending':

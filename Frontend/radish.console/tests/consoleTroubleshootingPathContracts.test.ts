@@ -45,9 +45,9 @@ test('Console 商品与订单详情 footer 动作应继承列表权限态', () =
   const orderListSource = readConsoleSource('src/pages/Orders/OrderList.tsx');
 
   assert.match(productListSource, /onEdit=\{canEditProduct \? handleEditProduct : undefined\}/);
-  assert.match(orderListSource, /onRetry=\{canRetryOrder \? \(\) => \{/);
+  assert.match(orderListSource, /onRetry=\{canRetryOrder \? handleRetry : undefined\}/);
   assert.doesNotMatch(productListSource, /<ProductDetail[\s\S]*onEdit=\{handleEditProduct\}/);
-  assert.doesNotMatch(orderListSource, /<OrderDetail[\s\S]*onRetry=\{\(\) => \{/);
+  assert.doesNotMatch(orderListSource, /<OrderDetail[\s\S]*onRetry=\{handleRetry\}/);
 });
 
 test('Console 深层写入 handler 应复核权限态', () => {

@@ -310,7 +310,7 @@ export async function adminRevokeBenefit(
 }
 
 /**
- * 重试发放权益
+ * 重试订单履约发放（兼容既有 RetryGrantBenefit 接口名）
  */
 export async function retryGrantBenefit(orderId: string): Promise<void> {
   const response = await apiPost<null>(
@@ -320,7 +320,7 @@ export async function retryGrantBenefit(orderId: string): Promise<void> {
   );
 
   if (!response.ok) {
-    throw createApiResponseError(response, '重试发放权益失败');
+    throw createApiResponseError(response, '重试发放失败');
   }
 }
 

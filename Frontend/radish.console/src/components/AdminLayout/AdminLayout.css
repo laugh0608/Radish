@@ -313,8 +313,15 @@
   }
 
   .admin-content {
-    padding: 18px 14px 112px;
+    padding: 18px 14px calc(96px + env(safe-area-inset-bottom));
     min-width: 0;
+  }
+
+  .admin-content--mobile-task {
+    height: 100dvh;
+    min-height: 100dvh;
+    padding: 0;
+    overflow: hidden;
   }
 
   .admin-breadcrumb {
@@ -323,32 +330,34 @@
 
   .admin-mobile-nav {
     position: fixed;
-    right: 12px;
-    bottom: 12px;
-    left: 12px;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    left: max(12px, env(safe-area-inset-left));
     z-index: 30;
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 4px;
+    height: 64px;
     min-width: 0;
     padding: 6px;
-    background: var(--console-bg-surface);
-    border: 1px solid var(--console-border-subtle);
-    border-radius: var(--console-radius-panel);
-    box-shadow: var(--console-shadow-card);
+    background: color-mix(in srgb, var(--console-bg-surface) 90%, var(--console-bg-muted) 10%);
+    border: 1px solid color-mix(in srgb, var(--console-border-subtle) 86%, transparent 14%);
+    border-radius: 999px;
+    box-shadow: 0 16px 36px color-mix(in srgb, var(--console-text-primary) 14%, transparent 86%);
+    backdrop-filter: blur(18px);
   }
 
   .admin-mobile-nav__item {
     display: grid;
     gap: 3px;
     min-width: 0;
-    height: 56px;
+    height: 52px;
     place-items: center;
     padding: 5px 2px;
     color: var(--console-text-secondary);
     background: transparent;
     border: 1px solid transparent;
-    border-radius: var(--console-radius-control);
+    border-radius: 999px;
     font: inherit;
     cursor: pointer;
   }
@@ -360,8 +369,8 @@
 
   .admin-mobile-nav__item--active {
     color: var(--console-brand-primary);
-    background: var(--console-bg-muted);
-    border-color: var(--console-border-muted);
+    background: color-mix(in srgb, var(--console-bg-muted) 78%, var(--console-bg-surface) 22%);
+    border-color: color-mix(in srgb, var(--console-brand-primary) 24%, transparent 76%);
   }
 
   .admin-mobile-nav__icon {
