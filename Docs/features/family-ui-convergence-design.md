@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-08 更新（Asia/Shanghai）
 >
-> 状态：A / B、v26.7.3 破坏性基线补充批、C-0 与 C-1A 已完成；C-1B 的 `R1-P01 / R1-P02` 已关闭，`R1-A01` 设计前能力覆盖门禁已完成代码与静态验收
+> 状态：A / B、v26.7.3 破坏性基线补充批、C-0 与 C-1A 已完成；C-1B 的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 已关闭，下一顺位为 `R1-C02` 设计前门禁
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -204,11 +204,13 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-05` 的 [R1-P02 代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)确认了公开详情当时的接入事实和结构债；后续评审证明当前页面未传入共享组件回调不能自动成为长期产品边界。`2026-08-06` 的[正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)确认四项推进决定，随后已完成 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收，详见[实现记录](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)。
 
-`2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。活动设计源可用后进入 PC 正式代表设计，不由代码修复提前替代视觉确认。
+`2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
+
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。`R1-C01` 也完成订单表格—明细 readiness、PC / Mobile / 必要关键状态、正式 Console 实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)。下一任务进入 `R1-C02 / Console 案件治理与审计` 的设计前代码事实与能力覆盖门禁。
 
 ### 9.2 设计源
 
-当前唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。文件保留已确认的 `R1-P01 / 社区发现`、`R1-P02 / 帖子详情` PC / mobile 正式代表画板，以及必要组件母版和主题变量；失败研究只由 Git 历史留存。后续 R1 / R2 继续在该文件中新增或替换必要代表设计。`v1` 在普通设计迭代中持续演进并由 Git 留存，只有不兼容的结构性升级才新建 `v2`。
+当前唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。文件保留已确认的 `R1-P01 / 社区发现`、`R1-P02 / 帖子详情`、`R1-A01 / Author 编辑`、`R1-W01 / Private 消息工作区` 与 `R1-C01 / Console 订单表格—明细` PC / mobile 正式代表画板，以及必要组件母版、关键状态和主题变量；失败研究只由 Git 历史留存。后续 R1 / R2 继续在该文件中新增或替换必要代表设计。`v1` 在普通设计迭代中持续演进并由 Git 留存，只有不兼容的结构性升级才新建 `v2`。
 
 `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 保留为只读历史资产，不删除、不改名、不继续同步。[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已按自动升级条件和六维评分裁决一个基础矩阵与六类完整页面类型：
 
@@ -248,7 +250,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射；v26.7.3 仅迁址且图片 blob 不变，映射继续有效，设计时仍须按新版“观察、拆解、提炼、转译”边界复核相关参考。
 - C-1A 已完成当前代码与页面类型审计，确认 `7` 个 R1、`4` 个 R2 及 R3 继承表。
-- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；`R1-P01 / 社区发现` 与 `R1-P02 / Public 详情与互动` 的 PC / mobile、页面实现及运行态复核均已关闭。`R1-A01 / Author 编辑、协作与提交审核` 已完成 readiness、能力修复与静态验收，下一步进入 PC 代表设计；全局共享主题色继续单独成组治理。
+- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；`R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。下一任务从 `R1-C02` 设计前门禁开始；全局共享主题色继续单独成组治理。
 - 更新共享基座和命中的 R1 / R2 代表画板，不为 R3 派生页面创建重复画板。
 - 收敛按钮、输入、状态 chip、表格、卡片、Modal、空态、Header 和移动底栏。
 - 先实现共享组件和 R1 代表页，完成真实截图复核后再进入派生页面。

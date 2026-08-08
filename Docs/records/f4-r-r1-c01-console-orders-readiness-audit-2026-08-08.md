@@ -2,7 +2,7 @@
 
 > 日期：2026-08-08（Asia/Shanghai）
 >
-> 状态：静态审计与 PC / Mobile / 必要关键状态正式代表设计已确认；正式代码与静态验证已完成，详见[成组实现记录](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)
+> 状态：静态审计、PC / Mobile / 必要关键状态正式代表设计、正式代码、静态验证与 Gateway 运行态验收均已完成，详见[成组实现记录](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)
 >
 > 范围：正式 Console `/console/orders`、订单 HTTP / Service、权限、跨资源回跳、PC / mobile 结构，以及 `R1-C01` 对普通 Console 资源页的代表边界；本记录保留设计前事实，后续实现未修改活动 `.pen` 或启动服务
 

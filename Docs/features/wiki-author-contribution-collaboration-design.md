@@ -1,6 +1,6 @@
 # Docs / Wiki 普通作者贡献与协作设计
 
-> 状态：`F4-G-A-D` 已按当时矩阵完成；`2026-08-08` 的 F4-R 设计前复核发现的 Author Revision、终态证据、写响应证据与 Apply 基准版本 CAS 漂移已完成代码修复和静态验收。详见 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)与[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)。
+> 状态：`F4-G-A-D` 已按当时矩阵完成；`2026-08-08` 的 F4-R 设计前复核发现的 Author Revision、终态证据、写响应证据与 Apply 基准版本 CAS 漂移已完成代码修复和静态验收，R1-A01 PC / mobile 代表设计、Author 编辑任务面与 Gateway 验收随后关闭。详见 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)、[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)与[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 >
 > 最后更新：2026-08-08
 >

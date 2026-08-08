@@ -4,7 +4,7 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.19
+> **最后更新**: 2026.08.08
 >
 > **关联文档**：
 > [聊天室 App 文档总览](./chat-app-index.md) ·
@@ -25,6 +25,7 @@
 > 本文目录与职责以当前 `apps/chat`、`services/chatHub.ts`、`stores/chatStore.ts` 和 `api/chat.ts` 为准；不再保留尚未落地的嵌套组件目录作为当前结构。
 > `2026-07-08` 起，普通浏览器 `/messages` 收敛为正式 Web “聊天”工作区。它复用 `ChatApp`、聊天 API 与 `ChatHub`，支持 `channelId/messageId` 定位、公开个人页返回“聊天”、会话分区和移动端输入区适配；WebOS `/desktop?app=chat&channelId=...&messageId=...` 仍作为历史工作台深链保留。
 > `2026-07-19` 一对一私聊与 F4-C 搜索、F4-D Reaction、F4-E 置顶、F4-F 轻量阅读回执均已完成 A-D 批并关闭。正式 `/messages` 与 WebOS 共用同一 `ChatApp`、API、Store 和 Hub 生命周期；搜索结果保持独立分页状态，Reaction / 置顶使用带 revision 的权威状态，回执使用服务端单调游标与受限摘要，不建立页面级重复真相源。
+> `2026-08-08` R1-W01 已完成 PC / mobile 代表设计、实现与 Gateway 验收：PC 使用连续会话列表、消息主轴和按需成员上下文，搜索与成员面板互斥；mobile 使用列表—详情单任务流，Pin 使用共享 Bottom Sheet。输入区拆为独立 `ChatComposer`，账号变化会统一 reset Chat 状态。
 
 在 `AppRegistry.tsx` 中新增：
 
@@ -49,8 +50,8 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  ChatApp 1100×750（可调整）                                   │
 │ ┌─────────────┬──────────────────────────┬────────────────┐ │
-│ │ 频道侧边栏   │  消息主区域              │ 成员列表（可收起）│ │
-│ │  240px      │  flex-grow               │  200px         │ │
+│ │ 会话侧边栏   │  消息主区域              │ 成员上下文（按需）│ │
+│ │  300px      │  flex-grow               │  280px         │ │
 │ │             │                          │                │ │
 │ │ 会话分区     │ ┌──────────────────────┐ │ 在线 (3)       │ │
 │ │             │ │  消息历史             │ │ • 小萝卜       │ │
@@ -67,7 +68,7 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**三栏响应式**：Chat 工作区不高于 `860px` 时隐藏成员列表，不高于 `680px` 时收紧频道侧栏和输入区；正式 `/messages` 页面不高于 `720px` 时切换为列表 / 详情单列视图。
+**响应式工作区**：PC 默认使用 `300px` 会话栏 + 弹性消息主轴，在线成员上下文按需打开为 `280px`；搜索与成员面板互斥，避免同时挤压消息主轴。正式 `/messages` 不高于 `720px` 时切换为列表 / 详情单列视图，Pin、关系确认等次级任务进入共享 Bottom Sheet。
 
 当前实现补充：
 - 右侧成员面板已支持展开 / 收起与在线成员头像展示。
@@ -90,6 +91,8 @@ Frontend/radish.client/src/apps/chat/
 ├── ChatApp.module.css
 ├── ChatChannelSidebar.tsx         # 会话分区、频道列表与搜索入口
 ├── ChatConversationHeader.tsx     # 会话状态与动作
+├── ChatComposer.tsx               # 输入、附件、引用与发送任务
+├── ChatComposer.module.css
 ├── ChatMessageList.tsx            # 消息、回应、回执与动作
 ├── ChatMessageContent.tsx         # 正文、mention 与附件展示
 ├── ChatMessageSearchPanel.tsx     # F4-C 搜索工作区
@@ -97,6 +100,7 @@ Frontend/radish.client/src/apps/chat/
 ├── ChatReadReceiptIndicator.tsx   # F4-F Direct / Private 回执
 ├── ChatMemberPanel.tsx            # 在线成员面板
 ├── ChatMentionMenu.tsx            # @mention 候选
+├── useChatHistoryAvailability.ts  # 权威历史不可用与缓存失败关闭
 ├── useChatConversationWorkspace.ts
 ├── useChatMessageNavigation.ts
 ├── useChatMessageSearch.ts

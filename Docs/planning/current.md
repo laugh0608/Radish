@@ -6,7 +6,7 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-C01 已完成并关闭；下一任务进入 R1-C02 设计前代码事实与能力覆盖门禁`
+- **工程第一顺位**：`F4-R C-1B 的 R1-C01 已完成并关闭；2026-08-09 进入 R1-C02 设计前代码事实与能力覆盖门禁`
 - **产品下一顺位**：`复核 /console/moderation 的案件队列、证据、决定、纠正动作、冲突、权限与 PC → mobile 任务转换；门禁结论确认前不进入代表设计或代码`
 - **复核日期**：`2026-08-08`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
@@ -14,6 +14,7 @@
 
 ## 最近结论
 
+- `2026-08-08` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-08)：按 Asia/Shanghai 日期复核 `11` 个提交和 `131` 个变更文件，确认今日依次关闭 R1-P02、R1-A01、R1-W01 与 R1-C01；代码—文档反查已修正 Public Forum 互动能力、F4-R 总专题、Chat / Author 当前说明、Console Orders 指南、八月日志和记录索引。明日只进入 R1-C02 设计前门禁，不提前修改 Pencil 或代码。
 - `2026-08-08` 已完成并关闭 [R1-C01 Console 订单表格—明细成组实现与运行态验收](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)：PC 落地约 `48px` 单行薄表格与显式选择后的 inspector；Mobile 落地连续三列订单行、按需筛选层、五项胶囊导航和隐藏全局导航的全屏详情任务。只读 Operator、重试确认 / `409`、备注冲突、详情不可用 / 列表 stale、筛选空结果、LongId URL 与受权资源回跳均通过。Console `66 / 66` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过；Gateway PC `1440 × 900` / Mobile `390 × 844` CSS viewport 无横向溢出，稳定态浏览器控制台 `0 error / 0 warning`。六库已按验收前 SHA-256 原样还原并通过完整性检查，临时数据清零、端口停止；未修改 Pencil 或推进 R1-C02。
 - `2026-08-08` 已完成并确认 R1-C01 整组正式代表设计：PC `1440 × 900` 使用约 `48.5px` 单行薄表格和按需详情 inspector；Mobile `390 × 844` 使用连续三列订单行、Client 风格五项胶囊导航和隐藏全局导航的全屏详情任务，中列承载商品类型 / 单价与支付证据；只读 Operator、重试确认 / `409`、详情 `404` / 列表 stale、筛选空结果以局部状态板表达。全部画板布局检查零告警，下一步进入正式 Console 代码实现。
 - `2026-08-08` 已完成 [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)：正式 `/console/orders` 已承接列表、独立详情、筛选 / 分页、备注、履约重试和受权资源回跳，现有 API、权限、结构化错误、LongId 与事务边界足以进入代表设计；当前结构债集中在卡片与大缝隙、重复摘要 / 动作、主表被常驻右栏挤窄，以及 mobile 仍依赖横向表格。正式方向建议采用连续表格主轴 + 按需详情 inspector，并校正 `Failed` 筛选、可重试统计、LongId 输入和通用发放文案；确认前未修改 `.pen` 或代码。
@@ -95,7 +96,7 @@
 27. 获得当前任务授权后使用 Gateway 完成 PC `1440 × 900` 与 Mobile `390 × 844` CSS viewport smoke；列表、inspector、三列移动行、按需筛选、全屏详情、Console 五项真实入口、分页、LongId URL 与资源回跳均通过且无横向溢出。
 28. 管理员与临时只读 Operator 覆盖重试确认 / `409`、备注成功 / 冲突、详情 `404`、列表 stale、筛选空结果和写入口隐藏；稳定态浏览器控制台 `0 error / 0 warning`。服务已停止，六库原样还原且完整性通过，临时数据清零。
 
-## 当前下一步
+## 明日事项（2026-08-09）
 
 1. R1-C01 已完成并关闭，保持现有 API、权限、URL、LongId、幂等、结构化错误和事务边界；其页面作为普通 Console 表格 / 明细的 R3 继承基线。
 2. 下一任务进入 `R1-C02`：先读取当前规划与代表页审计，核对 `/console/moderation` 的专题、正式页面、API / Service、权限、URL 状态、案件证据与决定 / 纠正动作，再形成设计前代码事实与能力覆盖门禁。
@@ -104,6 +105,7 @@
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [2026-08-08 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-08)
 - [R1-C01 Console 订单表格—明细成组实现](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)
 - [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)
 - [R1-W01 Private 消息工作区成组实现](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)

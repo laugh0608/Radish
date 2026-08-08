@@ -4,7 +4,7 @@
 >
 > 适用入口：正式 Web `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，以及 Console `/documents`。
 
-> 当前实现提示：`2026-08-08` 的 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)发现的 Revision 关系授权、终态证据、写响应证据与 Apply 基准版本 CAS 已完成[代码修复和静态验收](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)；本批未启动服务，普通账号 Gateway 运行态仍随 R1-A01 代表页实现统一复核。
+> 当前实现提示：`2026-08-08` 的 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)发现的 Revision 关系授权、终态证据、写响应证据与 Apply 基准版本 CAS 已完成[代码修复和静态验收](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)；随后已完成 PC / mobile 正式代表设计、Author 编辑任务面实现与普通 Owner / Accepted Editor Gateway 验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
 本文面向文档所有者、协作者和 Console 审核者，说明当前文档贡献流程怎么使用。底层数据、并发和权限设计见 [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)，公开阅读与固定文档边界见 [文档系统方案](/guide/document-system)。
 

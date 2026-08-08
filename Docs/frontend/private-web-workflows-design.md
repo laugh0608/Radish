@@ -44,7 +44,9 @@
 >
 > 更新：2026-08-08（Asia/Shanghai）：Pencil 被占用期间临时完成 `R1-W01` readiness，并按后续授权闭合举报 ACL / LongId、失败重试幂等和历史错误契约，详见[审计记录](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)与[修复记录](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)。该准备不抢占 `R1-A01`，也不提前制作 W01 画板。
 >
-> 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；治理申诉的 Gateway PC / mobile 成组验收进入 F4-J-D，后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
+> 更新：2026-08-08（Asia/Shanghai）：`R1-A01` 随后完成 PC / mobile 正式代表设计、Author 编辑任务面实现与 Gateway 验收；`R1-W01` 完成 PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 验收。两者均继续复用正式 Web 壳层和既有服务契约，旧 `P01-P30` 不恢复为活动设计源。
+>
+> 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；当前 Private / Author 活动代表以 `radish-web-family-ui-v1.pen` 中已关闭的 `R1-A01 / R1-W01` 为准，后续新增能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
 
 ## 设计源
 
