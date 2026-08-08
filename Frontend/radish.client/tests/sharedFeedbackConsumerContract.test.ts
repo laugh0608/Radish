@@ -65,23 +65,21 @@ test('MarkdownEditor 正式消费者在上传中阻止提交和会卸载编辑�
   const docsAuthorSource = `${readSource('src/docs/DocsAuthorApp.tsx')}\n${readSource('src/docs/DocsAuthorEditorPage.tsx')}`;
   const docsAuthorNavigationSource = readSource('src/docs/useDocsAuthorNavigation.ts');
   assert.match(docsAuthorSource, /if \(isEditorUploading\) \{\s*event\.preventDefault\(\);/);
-  assert.match(docsAuthorSource, /onSubmit=\{handleEditorSubmit\}/);
+  assert.match(docsAuthorSource, /onSubmit=\{\(event\) => \{\s*if \(isEditorUploading\) \{\s*event\.preventDefault\(\);/);
   assert.match(docsAuthorSource, /aria-disabled=\{isEditorUploading\}/);
-  assert.match(docsAuthorSource, /disabled=\{readOnly \|\| state\.submitting \|\| isEditorUploading\}/);
+  assert.match(docsAuthorSource, /disabled=\{readOnly \|\| state\.submitting \|\| isEditorUploading[^}]*\}/);
   assert.match(docsAuthorSource, /isEditorUploading=\{isEditorUploading\}/);
   assert.match(docsAuthorSource, /onEditorUploadingChange=\{setIsEditorUploading\}/);
-  assert.match(docsAuthorSource, /useDocsAuthorNavigation\(isEditorUploading\)/);
+  assert.match(docsAuthorSource, /useDocsAuthorNavigation\(\{\s*navigationLocked: isEditorUploading,/);
   assert.match(docsAuthorNavigationSource, /useBrowserNavigationLock\(navigationLocked\)/);
   assert.match(docsAuthorNavigationSource, /window\.addEventListener\('beforeunload', handleBeforeUnload\)/);
   assert.match(docsAuthorNavigationSource, /window\.history\.go\(restoreDelta\)/);
   assert.match(docsAuthorNavigationSource, /window\.history\.pushState\([\s\S]*?lockedHistoryStateRef\.current[\s\S]*?lockedPath/);
   assert.doesNotMatch(docsAuthorNavigationSource, /window\.history\.forward\(\)/);
-  assert.match(docsAuthorSource, /onClick=\{preventEditorNavigationWhileUploading\}/);
+  assert.match(docsAuthorSource, /onClick=\{handleExternalAuthorNavigation\}/);
   assert.match(docsAuthorSource, /navigationLocked=\{isEditorUploading\}/);
-  assert.ok(
-    countMatches(docsAuthorSource, /preventNavigationWhileUploading\(event\)/g) >= 4,
-    'DocsAuthorApp 顶部与 rail 导航必须逐一接入上传离开保护',
-  );
+  assert.match(docsAuthorSource, /const handleRouteLinkClick[\s\S]*if \(isEditorUploading\) \{\s*return;\s*\}/);
+  assert.match(docsAuthorSource, /onNavigate=\{handleRouteLinkClick\}/);
 
   const wikiSource = readSource('src/apps/wiki/WikiApp.tsx');
   assert.match(wikiSource, /const closeEditor = \(\) => \{\s*if \(isEditorUploading\)/);

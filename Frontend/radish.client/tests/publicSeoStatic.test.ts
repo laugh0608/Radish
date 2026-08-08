@@ -419,8 +419,10 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
   const docsAuthorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorApp.tsx'), 'utf8');
   const docsAuthorEditorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorPage.tsx'), 'utf8');
+  const docsAuthorEditorContextSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorContext.tsx'), 'utf8');
   const docsAuthorPresentationSource = readFileSync(resolve(clientRoot, 'src/docs/docsAuthorPresentation.ts'), 'utf8');
   const wikiApiSource = readFileSync(resolve(clientRoot, 'src/apps/wiki/api/wiki.ts'), 'utf8');
+  const docsAuthorWorkspaceSource = `${docsAuthorSource}\n${docsAuthorEditorSource}\n${docsAuthorEditorContextSource}`;
 
   assert.match(mainSource, /import \{ BrowserAppRouter \} from '@\/bootstrap\/BrowserAppRouter';/);
   assert.match(browserRouterSource, /const DocsAuthorEntry = lazy/);
@@ -453,6 +455,8 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.doesNotMatch(docsAuthorSource, /voCollaborators:\s*\[\]/);
   assert.doesNotMatch(docsAuthorSource, /voReviewEvents:\s*\[\]/);
   assert.match(docsAuthorEditorSource, /voHasDraftPayload === false/);
+  assert.match(docsAuthorEditorSource, /state\.document\?\.voCanSubmit/);
+  assert.match(docsAuthorEditorContextSource, /document\.voCanManageCollaborators/);
   assert.match(docsAuthorPresentationSource, /status === WikiDocumentStatus\.Published/);
   assert.match(docsAuthorPresentationSource, /\(documentVersion \?\? 0\) > 0/);
   assert.match(docsAuthorPresentationSource, /&& !isDeleted/);
@@ -464,14 +468,16 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.equal((docsAuthorEditorSource.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 1);
   assert.match(docsAuthorSource, /const treeRef = useRef<WikiDocumentTreeNodeVo\[\]>\(\[\]\);/);
   assert.match(docsAuthorSource, /treeRef\.current = collectionState\.tree;/);
-  assert.match(docsAuthorEditorSource, /preventNavigationWhileUploading\(event\);[\s\S]*onNavigate\(event, \{ kind: 'revisions', documentId: route\.documentId \}\);/);
+  assert.match(docsAuthorSource, /const handleRouteLinkClick[\s\S]*if \(isEditorUploading\) \{\s*return;\s*\}[\s\S]*navigateToRoute\(nextRoute\);/);
+  assert.match(docsAuthorEditorContextSource, /onNavigate\(event, \{ kind: 'revisions', documentId: route\.documentId \}\)/);
   assert.match(docsAuthorEditorSource, /href=\{publicReadHref\}/);
-  assert.doesNotMatch(docsAuthorSource, /publishWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /unpublishWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /archiveWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /rollbackWikiRevision/);
-  assert.doesNotMatch(docsAuthorSource, /deleteWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /restoreWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /reviewWikiDraft/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /publishWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /unpublishWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /archiveWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /rollbackWikiRevision/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /deleteWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /restoreWikiDocument/);
 });
 
 test('公开商城复用的商品列表组件应提供公开链接能力', () => {

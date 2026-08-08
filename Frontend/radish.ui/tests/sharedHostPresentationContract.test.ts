@@ -53,6 +53,14 @@ test('MarkdownEditor 上传契约支持真实进度和宿主错误处理', () =>
   assert.doesNotMatch(markdownEditorSource, /error instanceof Error && error\.message/);
 });
 
+test('MarkdownEditor 允许宿主收敛分栏模式并注入工具栏前导内容', () => {
+  assert.match(markdownEditorSource, /allowSplit\?: boolean;/);
+  assert.match(markdownEditorSource, /toolbarLead\?: ReactNode;/);
+  assert.match(markdownEditorSource, /!allowSplit && preferredMode === 'split' \? 'edit' : preferredMode/);
+  assert.match(markdownEditorSource, /\{allowSplit \? \([\s\S]*setMode\('split'\)/);
+  assert.match(markdownEditorSource, /<div className=\{styles\.toolbarLead\}>\{toolbarLead\}<\/div>/);
+});
+
 test('Modal、BottomSheet 与 ConfirmDialog 不持有宿主语言默认值', () => {
   assert.match(modalSource, /closeLabel: string;/);
   assert.match(modalSource, /closeDisabled\?: boolean;/);

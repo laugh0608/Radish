@@ -199,6 +199,8 @@ export interface MarkdownEditorProps {
   disabled?: boolean;
   showToolbar?: boolean;
   theme?: 'dark' | 'light';
+  allowSplit?: boolean;
+  toolbarLead?: ReactNode;
   toolbarExtras?: ReactNode;
   className?: string;
   /**
@@ -254,6 +256,8 @@ export const MarkdownEditor = ({
   disabled = false,
   showToolbar = true,
   theme = 'dark',
+  allowSplit = true,
+  toolbarLead,
   toolbarExtras,
   className = '',
   onImageUpload,
@@ -266,9 +270,11 @@ export const MarkdownEditor = ({
   onUserMentionSearch,
   protectedAttachments,
 }: MarkdownEditorProps) => {
-  const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(
-    defaultMode ?? (typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit')
-  );
+  const [mode, setMode] = useState<'edit' | 'preview' | 'split'>(() => {
+    const preferredMode = defaultMode
+      ?? (typeof window !== 'undefined' && window.innerWidth > 768 ? 'split' : 'edit');
+    return !allowSplit && preferredMode === 'split' ? 'edit' : preferredMode;
+  });
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -296,6 +302,12 @@ export const MarkdownEditor = ({
       setMentionContext(null);
     }
   }, [disabled, uploading]);
+
+  useEffect(() => {
+    if (!allowSplit && mode === 'split') {
+      setMode('edit');
+    }
+  }, [allowSplit, mode]);
 
   // 常用 Emoji
   const emojis = [
@@ -768,6 +780,12 @@ export const MarkdownEditor = ({
       {/* 工具栏 */}
       {showToolbar && (
         <div className={styles.toolbar}>
+          {toolbarLead && (
+            <>
+              <div className={styles.toolbarLead}>{toolbarLead}</div>
+              <div className={styles.toolbarDivider} />
+            </>
+          )}
           <div className={styles.toolbarGroup}>
             <button
               type="button"
@@ -945,15 +963,17 @@ export const MarkdownEditor = ({
             >
               <Icon icon="mdi:eye" size={18} />
             </button>
-            <button
-              type="button"
-              className={`${styles.toolbarButton} ${mode === 'split' ? styles.active : ''}`}
-              onClick={() => setMode('split')}
-              title={labels.toolbar.split}
-              disabled={disabled || uploading}
-            >
-              <Icon icon="mdi:format-columns" size={18} />
-            </button>
+            {allowSplit ? (
+              <button
+                type="button"
+                className={`${styles.toolbarButton} ${mode === 'split' ? styles.active : ''}`}
+                onClick={() => setMode('split')}
+                title={labels.toolbar.split}
+                disabled={disabled || uploading}
+              >
+                <Icon icon="mdi:format-columns" size={18} />
+              </button>
+            ) : null}
           </div>
         </div>
       )}

@@ -52,10 +52,22 @@ export function shouldHandleAuthorLinkClick(event: MouseEvent<HTMLAnchorElement>
 
 interface DocsAuthorNavigation {
   route: DocsAuthorRoute;
-  navigateToRoute: (nextRoute: DocsAuthorRoute, options?: { replace?: boolean }) => void;
+  navigateToRoute: (nextRoute: DocsAuthorRoute, options?: { replace?: boolean; skipConfirmation?: boolean }) => void;
 }
 
-export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNavigation {
+interface DocsAuthorNavigationOptions {
+  navigationLocked: boolean;
+  confirmRequired?: boolean;
+  confirmMessage?: string;
+  onConfirmNavigation?: () => void;
+}
+
+export function useDocsAuthorNavigation({
+  navigationLocked,
+  confirmRequired = false,
+  confirmMessage = '',
+  onConfirmNavigation,
+}: DocsAuthorNavigationOptions): DocsAuthorNavigation {
   const [route, setRoute] = useState<DocsAuthorRoute>(() => resolveInitialDocsAuthorRoute());
   const historyPositionRef = useRef(
     typeof window === 'undefined' ? 0 : readDocsAuthorHistoryPosition(window.history.state) ?? 0,
@@ -66,8 +78,21 @@ export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNa
 
   useBrowserNavigationLock(navigationLocked);
 
-  const navigateToRoute = useCallback((nextRoute: DocsAuthorRoute, options?: { replace?: boolean }) => {
-    if (navigationLocked) {
+  const confirmNavigation = useCallback(() => {
+    if (!confirmRequired) {
+      return true;
+    }
+
+    if (!window.confirm(confirmMessage)) {
+      return false;
+    }
+
+    onConfirmNavigation?.();
+    return true;
+  }, [confirmMessage, confirmRequired, onConfirmNavigation]);
+
+  const navigateToRoute = useCallback((nextRoute: DocsAuthorRoute, options?: { replace?: boolean; skipConfirmation?: boolean }) => {
+    if (navigationLocked || (!options?.skipConfirmation && !confirmNavigation())) {
       return;
     }
 
@@ -82,7 +107,7 @@ export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNa
     }
 
     setRoute(nextRoute);
-  }, [navigationLocked]);
+  }, [confirmNavigation, navigationLocked]);
 
   useEffect(() => {
     const currentPosition = readDocsAuthorHistoryPosition(window.history.state);
@@ -106,7 +131,7 @@ export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNa
       }
 
       const nextPosition = readDocsAuthorHistoryPosition(window.history.state);
-      if (navigationLocked) {
+      if (navigationLocked || !confirmNavigation()) {
         if (nextPosition !== null) {
           const restoreDelta = historyPositionRef.current - nextPosition;
           if (restoreDelta !== 0) {
@@ -138,10 +163,10 @@ export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNa
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [navigationLocked, route]);
+  }, [confirmNavigation, navigationLocked, route]);
 
   useEffect(() => {
-    if (!navigationLocked) {
+    if (!navigationLocked && !confirmRequired) {
       lockedPathRef.current = null;
       lockedHistoryStateRef.current = null;
       return;
@@ -149,10 +174,10 @@ export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNa
 
     lockedPathRef.current = buildDocsAuthorPath(route);
     lockedHistoryStateRef.current = buildDocsAuthorHistoryState(historyPositionRef.current);
-  }, [navigationLocked, route]);
+  }, [confirmRequired, navigationLocked, route]);
 
   useEffect(() => {
-    if (!navigationLocked) {
+    if (!navigationLocked && !confirmRequired) {
       return;
     }
 
@@ -165,7 +190,7 @@ export function useDocsAuthorNavigation(navigationLocked: boolean): DocsAuthorNa
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [navigationLocked]);
+  }, [confirmRequired, navigationLocked]);
 
   useEffect(() => {
     const canonicalPath = buildDocsAuthorPath(route);

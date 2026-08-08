@@ -10,8 +10,8 @@
 }
 
 .themeLight {
-  border-color: #e2e8f0;
-  background-color: #ffffff;
+  border-color: var(--theme-border-soft, #e2e8f0);
+  background-color: var(--theme-bg-surface, #ffffff);
 }
 
 .toolbar {
@@ -25,8 +25,15 @@
 }
 
 .themeLight .toolbar {
-  background-color: #f1f5f9;
-  border-bottom-color: #e2e8f0;
+  background-color: color-mix(in srgb, var(--theme-bg-muted, #f1f5f9) 72%, var(--theme-bg-surface, #ffffff) 28%);
+  border-bottom-color: var(--theme-border-soft, #e2e8f0);
+}
+
+.toolbarLead {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .toolbarGroup {
@@ -51,7 +58,7 @@
 }
 
 .themeLight .toolbarButton {
-  color: #64748b;
+  color: var(--theme-text-secondary, #64748b);
 }
 
 .toolbarButton:hover:not(:disabled) {
@@ -60,8 +67,8 @@
 }
 
 .themeLight .toolbarButton:hover:not(:disabled) {
-  background-color: #e2e8f0;
-  color: #0f172a;
+  background-color: var(--theme-bg-muted, #e2e8f0);
+  color: var(--theme-text-primary, #0f172a);
 }
 
 .toolbarButton:active:not(:disabled) {
@@ -79,8 +86,8 @@
 }
 
 .themeLight .toolbarButton.active {
-  background-color: #3b82f6;
-  color: #fff;
+  background-color: var(--theme-brand-primary, #3b82f6);
+  color: var(--theme-surface-highlight, #fff);
 }
 
 .toolbarButton.active:hover:not(:disabled) {
@@ -95,7 +102,7 @@
 }
 
 .themeLight .toolbarDivider {
-  background-color: #e2e8f0;
+  background-color: var(--theme-border-soft, #e2e8f0);
 }
 
 .toolbarSpacer {
@@ -130,8 +137,8 @@
 }
 
 .themeLight .emojiPicker {
-  background-color: #ffffff;
-  border-color: #e2e8f0;
+  background-color: var(--theme-bg-surface, #ffffff);
+  border-color: var(--theme-border-soft, #e2e8f0);
   box-shadow: 0 10px 18px rgba(15, 23, 42, 0.12);
 }
 
@@ -161,7 +168,7 @@
 }
 
 .themeLight .emojiButton:hover {
-  background-color: #e2e8f0;
+  background-color: var(--theme-bg-muted, #e2e8f0);
 }
 
 .emojiButton:active {
@@ -199,7 +206,8 @@
 }
 
 .themeLight .textarea {
-  color: #0f172a;
+  color: var(--theme-text-primary, #0f172a);
+  font-family: var(--theme-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
 }
 
 .textarea::placeholder {
@@ -207,7 +215,7 @@
 }
 
 .themeLight .textarea::placeholder {
-  color: #94a3b8;
+  color: var(--theme-text-muted, #94a3b8);
 }
 
 .textarea:disabled {
@@ -227,7 +235,7 @@
 }
 
 .themeLight .preview {
-  color: #0f172a;
+  color: var(--theme-text-primary, #0f172a);
 }
 
 .previewEmpty {
@@ -253,7 +261,7 @@
 .themeLight .textarea::-webkit-scrollbar-track,
 .themeLight .preview::-webkit-scrollbar-track,
 .themeLight .emojiPicker::-webkit-scrollbar-track {
-  background-color: #e2e8f0;
+  background-color: var(--theme-bg-muted, #e2e8f0);
 }
 
 .textarea::-webkit-scrollbar-thumb,
@@ -266,7 +274,7 @@
 .themeLight .textarea::-webkit-scrollbar-thumb,
 .themeLight .preview::-webkit-scrollbar-thumb,
 .themeLight .emojiPicker::-webkit-scrollbar-thumb {
-  background-color: #cbd5f5;
+  background-color: var(--theme-border-strong, #cbd5f5);
 }
 
 .textarea::-webkit-scrollbar-thumb:hover,
@@ -278,7 +286,7 @@
 .themeLight .textarea::-webkit-scrollbar-thumb:hover,
 .themeLight .preview::-webkit-scrollbar-thumb:hover,
 .themeLight .emojiPicker::-webkit-scrollbar-thumb:hover {
-  background-color: #94a3b8;
+  background-color: var(--theme-text-muted, #94a3b8);
 }
 
 /* 上传状态 */

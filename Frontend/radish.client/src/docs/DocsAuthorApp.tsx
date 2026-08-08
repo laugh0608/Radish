@@ -68,6 +68,12 @@ import {
   resolveDocsAuthorPublicReadSlug,
   validateDocsAuthorDraft,
 } from './docsAuthorPresentation';
+import {
+  areDocsAuthorDraftsEqual,
+  countCollaboratingDocsAuthorDocuments,
+  countOwnedDocsAuthorDocuments,
+  pickDocsAuthorPreviewDocument,
+} from './docsAuthorEditorPresentation';
 import { DocsAuthorEditorPage, type DocsAuthorEditorState } from './DocsAuthorEditorPage';
 import { createDocsProtectedAttachmentOptions } from './docsProtectedAttachments';
 import {
@@ -77,6 +83,7 @@ import {
 } from './docsAuthorRouteState';
 import { shouldHandleAuthorLinkClick, useDocsAuthorNavigation } from './useDocsAuthorNavigation';
 import styles from './DocsAuthorApp.module.css';
+import editorStyles from './DocsAuthorEditorPage.module.css';
 
 interface CollectionState {
   tree: WikiDocumentTreeNodeVo[];
@@ -106,6 +113,7 @@ const initialCollectionState: CollectionState = {
 
 const initialEditorState: DocsAuthorEditorState = {
   draft: EMPTY_DRAFT,
+  baselineDraft: EMPTY_DRAFT,
   document: null,
   loading: false,
   submitting: false,
@@ -123,10 +131,6 @@ const initialRevisionState: RevisionState = {
   loadingDetail: false,
   error: null,
 };
-
-function canEditDocument(document: WikiAuthorDraftDetailVo | null): boolean {
-  return document?.voCanEdit === true;
-}
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
@@ -174,18 +178,6 @@ function buildSaveAuthorDraftRequest(draft: EditorDraft, expectedDraftVersion: n
   };
 }
 
-function countOwnedDocuments(documents: WikiAuthorDocumentVo[]): number {
-  return documents.filter((document) => document.voAuthorRole.toLowerCase() === 'owner').length;
-}
-
-function countCollaboratingDocuments(documents: WikiAuthorDocumentVo[]): number {
-  return documents.filter((document) => document.voAuthorRole.toLowerCase() !== 'owner').length;
-}
-
-function pickPreviewDocument(documents: WikiAuthorDocumentVo[]): WikiAuthorDocumentVo | null {
-  return documents[0] ?? null;
-}
-
 function buildRouteReturnPath(route: DocsAuthorRoute): string {
   if (route.kind === 'compose') {
     return buildDocsAuthorComposeReturnPath();
@@ -216,7 +208,19 @@ export function DocsAuthorApp() {
   const [collectionState, setCollectionState] = useState<CollectionState>(initialCollectionState);
   const [editorState, setEditorState] = useState<DocsAuthorEditorState>(initialEditorState);
   const [isEditorUploading, setIsEditorUploading] = useState(false);
-  const { route, navigateToRoute } = useDocsAuthorNavigation(isEditorUploading);
+  const isEditorDirty = !areDocsAuthorDraftsEqual(editorState.draft, editorState.baselineDraft);
+  const acknowledgeEditorDraft = useCallback(() => {
+    setEditorState((current) => ({
+      ...current,
+      baselineDraft: current.draft,
+    }));
+  }, []);
+  const { route, navigateToRoute } = useDocsAuthorNavigation({
+    navigationLocked: isEditorUploading,
+    confirmRequired: isEditorDirty,
+    confirmMessage: t('wiki.author.editor.unsavedLeaveConfirm'),
+    onConfirmNavigation: acknowledgeEditorDraft,
+  });
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
   const protectedAttachmentRouteDocumentId = route.kind === 'edit' || route.kind === 'revisions'
     ? route.documentId
@@ -301,6 +305,7 @@ export function DocsAuthorApp() {
       setEditorState({
         ...initialEditorState,
         draft,
+        baselineDraft: draft,
         sortSuggestion: draft.sort,
       });
       return;
@@ -324,6 +329,7 @@ export function DocsAuthorApp() {
       const draft = createDraftFromDocument(document);
       setEditorState({
         draft,
+        baselineDraft: draft,
         document,
         loading: false,
         submitting: false,
@@ -502,9 +508,23 @@ export function DocsAuthorApp() {
     navigateToRoute(nextRoute);
   };
 
-  const preventEditorNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
+  const handleExternalAuthorNavigation = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!shouldHandleAuthorLinkClick(event)) {
+      return;
+    }
+
+    if (isEditorUploading) {
       event.preventDefault();
+      return;
+    }
+
+    if (isEditorDirty && !window.confirm(t('wiki.author.editor.unsavedLeaveConfirm'))) {
+      event.preventDefault();
+      return;
+    }
+
+    if (isEditorDirty) {
+      acknowledgeEditorDraft();
     }
   };
 
@@ -583,7 +603,7 @@ export function DocsAuthorApp() {
       return;
     }
 
-    if (route.kind === 'edit' && !canEditDocument(editorState.document)) {
+    if (route.kind === 'edit' && editorState.document?.voCanEdit !== true) {
       toast.error(t('wiki.author.feedback.editUnavailable'));
       return;
     }
@@ -600,11 +620,22 @@ export function DocsAuthorApp() {
           return;
         }
         toast.success(t('wiki.author.feedback.created'));
+        const createdDraft = createDraftFromDocument(created);
+        setEditorState({
+          draft: createdDraft,
+          baselineDraft: createdDraft,
+          document: created,
+          loading: false,
+          submitting: false,
+          error: null,
+          sortSuggestion: createdDraft.sort,
+          conflict: null,
+        });
         await loadCollections();
         if (accountEpoch !== accountEpochRef.current) {
           return;
         }
-        navigateToRoute({ kind: 'edit', documentId: created.voDocumentId });
+        navigateToRoute({ kind: 'edit', documentId: created.voDocumentId }, { skipConfirmation: true });
         return;
       }
 
@@ -630,6 +661,7 @@ export function DocsAuthorApp() {
         ...current,
         document: saved,
         draft: createDraftFromDocument(saved),
+        baselineDraft: createDraftFromDocument(saved),
         conflict: null,
       }));
       await loadCollections();
@@ -695,6 +727,11 @@ export function DocsAuthorApp() {
     const detail = editorState.document;
     if (!detail?.voCanSubmit) {
       toast.error(t('wiki.author.feedback.submitUnavailable'));
+      return;
+    }
+
+    if (isEditorDirty) {
+      toast.error(t('wiki.author.editor.saveBeforeSubmit'));
       return;
     }
 
@@ -843,9 +880,11 @@ export function DocsAuthorApp() {
           route={route}
           tree={collectionState.tree}
           state={editorState}
+          isDirty={isEditorDirty}
           isEditorUploading={isEditorUploading}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
           onNavigate={handleRouteLinkClick}
+          onExternalNavigate={handleExternalAuthorNavigation}
           onParentChange={handleParentChange}
           onSetDraft={setDraft}
           onSave={handleSave}
@@ -901,67 +940,71 @@ export function DocsAuthorApp() {
         navigationLocked={isEditorUploading}
       />
 
-      <main className={styles.main}>
-        <section className={styles.authorHero} aria-label={t('wiki.author.heroAriaLabel')}>
-          <div className={styles.authorHeroCopy}>
-            <p className={styles.kicker}>Author Workspace</p>
-            <h1 className={styles.authorHeroTitle}>{t('wiki.author.title')}</h1>
-            <p className={styles.authorHeroDescription}>{t('wiki.author.heroDescription')}</p>
-          </div>
-          <div className={styles.authorSummaryGrid}>
-            <div className={styles.authorSummaryCard}>
-              <span className={styles.authorSummaryIcon}>
-                <Icon icon="mdi:file-tree-outline" size={20} />
-              </span>
-              <strong>{formatDocsAuthorNumber(collectionState.tree.length, i18n.resolvedLanguage)}</strong>
-              <span>{t('wiki.author.metrics.directoryNodes')}</span>
-            </div>
-            <div className={styles.authorSummaryCard}>
-              <span className={styles.authorSummaryIcon}>
-                <Icon icon="mdi:file-document-multiple-outline" size={20} />
-              </span>
-              <strong>{formatDocsAuthorNumber(collectionState.totalDocuments, i18n.resolvedLanguage)}</strong>
-              <span>{t('wiki.author.metrics.totalDocuments')}</span>
-            </div>
-            <div className={styles.authorSummaryCard}>
-              <span className={styles.authorSummaryIcon}>
-                <Icon icon={loggedIn ? 'mdi:shield-check-outline' : 'mdi:shield-alert-outline'} size={20} />
-              </span>
-              <strong>{loggedIn ? t('wiki.author.access.writable') : t('wiki.author.access.restricted')}</strong>
-              <span>{t(`wiki.author.route.${route.kind}`)}</span>
-            </div>
-          </div>
-        </section>
+      <main className={`${styles.main} ${route.kind === 'compose' || route.kind === 'edit' ? editorStyles.editorMain : ''}`}>
+        {route.kind !== 'compose' && route.kind !== 'edit' ? (
+          <>
+            <section className={styles.authorHero} aria-label={t('wiki.author.heroAriaLabel')}>
+              <div className={styles.authorHeroCopy}>
+                <p className={styles.kicker}>Author Workspace</p>
+                <h1 className={styles.authorHeroTitle}>{t('wiki.author.title')}</h1>
+                <p className={styles.authorHeroDescription}>{t('wiki.author.heroDescription')}</p>
+              </div>
+              <div className={styles.authorSummaryGrid}>
+                <div className={styles.authorSummaryCard}>
+                  <span className={styles.authorSummaryIcon}>
+                    <Icon icon="mdi:file-tree-outline" size={20} />
+                  </span>
+                  <strong>{formatDocsAuthorNumber(collectionState.tree.length, i18n.resolvedLanguage)}</strong>
+                  <span>{t('wiki.author.metrics.directoryNodes')}</span>
+                </div>
+                <div className={styles.authorSummaryCard}>
+                  <span className={styles.authorSummaryIcon}>
+                    <Icon icon="mdi:file-document-multiple-outline" size={20} />
+                  </span>
+                  <strong>{formatDocsAuthorNumber(collectionState.totalDocuments, i18n.resolvedLanguage)}</strong>
+                  <span>{t('wiki.author.metrics.totalDocuments')}</span>
+                </div>
+                <div className={styles.authorSummaryCard}>
+                  <span className={styles.authorSummaryIcon}>
+                    <Icon icon={loggedIn ? 'mdi:shield-check-outline' : 'mdi:shield-alert-outline'} size={20} />
+                  </span>
+                  <strong>{loggedIn ? t('wiki.author.access.writable') : t('wiki.author.access.restricted')}</strong>
+                  <span>{t(`wiki.author.route.${route.kind}`)}</span>
+                </div>
+              </div>
+            </section>
 
-        <div className={styles.navBar}>
-          <a
-            className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
-            href={mineHref}
-            onClick={(event) => handleRouteLinkClick(event, { kind: 'mine' })}
-            aria-disabled={isEditorUploading}
-          >
-            <Icon icon="mdi:file-document-multiple-outline" size={18} />
-            <span>{t('wiki.author.actions.myDocuments')}</span>
-          </a>
-          <a
-            className={route.kind === 'compose' ? styles.navItemActive : styles.navItem}
-            href={composeHref}
-            onClick={(event) => handleRouteLinkClick(event, { kind: 'compose' })}
-            aria-disabled={isEditorUploading}
-          >
-            <Icon icon="mdi:plus-box-outline" size={18} />
-            <span>{t('wiki.author.actions.create')}</span>
-          </a>
-          <a
-            className={styles.navItem}
-            href={buildPublicDocsPath({ kind: 'list' })}
-            onClick={preventEditorNavigationWhileUploading}
-            aria-disabled={isEditorUploading}
-          >
-            <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-            <span>{t('wiki.author.actions.publicReading')}</span>
-          </a>
-        </div>
+            <div className={styles.navBar}>
+              <a
+                className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
+                href={mineHref}
+                onClick={(event) => handleRouteLinkClick(event, { kind: 'mine' })}
+                aria-disabled={isEditorUploading}
+              >
+                <Icon icon="mdi:file-document-multiple-outline" size={18} />
+                <span>{t('wiki.author.actions.myDocuments')}</span>
+              </a>
+              <a
+                className={styles.navItem}
+                href={composeHref}
+                onClick={(event) => handleRouteLinkClick(event, { kind: 'compose' })}
+                aria-disabled={isEditorUploading}
+              >
+                <Icon icon="mdi:plus-box-outline" size={18} />
+                <span>{t('wiki.author.actions.create')}</span>
+              </a>
+              <a
+                className={styles.navItem}
+                href={buildPublicDocsPath({ kind: 'list' })}
+                onClick={handleExternalAuthorNavigation}
+                aria-disabled={isEditorUploading}
+              >
+                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+                <span>{t('wiki.author.actions.publicReading')}</span>
+              </a>
+            </div>
+          </>
+        ) : null}
 
         {renderContent()}
       </main>
@@ -1014,9 +1057,9 @@ interface DocsMinePageProps {
 function DocsMinePage({ state, language, onReload, onNavigate, onStartDraft }: DocsMinePageProps) {
   const { t } = useTranslation();
   const hasDocuments = state.documents.length > 0;
-  const previewDocument = pickPreviewDocument(state.documents);
-  const ownedCount = countOwnedDocuments(state.documents);
-  const collaboratingCount = countCollaboratingDocuments(state.documents);
+  const previewDocument = pickDocsAuthorPreviewDocument(state.documents);
+  const ownedCount = countOwnedDocsAuthorDocuments(state.documents);
+  const collaboratingCount = countCollaboratingDocsAuthorDocuments(state.documents);
   const submittedCount = state.documents.filter((document) => document.voReviewState === WikiDraftReviewState.Submitted).length;
   const previewPublicReadSlug = previewDocument
     ? resolveDocsAuthorPublicReadSlug({
