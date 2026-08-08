@@ -93,3 +93,20 @@ test('私聊实时连接应在启动竞态结束后恢复最新连接意图', ()
   assert.match(shellSource, /chatHub\.acquire\(owner\)[\s\S]*chatHub\.release\(owner\)/);
   assert.doesNotMatch(chatSource, /void chatHub\.start\(\);/);
 });
+
+test('失败消息重试应复用原始发送请求，只有新写入才生成幂等键', () => {
+  const chatSource = readClientSource('src/apps/chat/ChatApp.tsx');
+  const helperSource = readClientSource('src/apps/chat/chatApp.helpers.ts');
+  const retryHandlerStart = chatSource.indexOf('const handleRetryMessage');
+  const retryHandlerEnd = chatSource.indexOf('const handleDismissFailedMessage');
+  const retryHandlerSource = chatSource.slice(retryHandlerStart, retryHandlerEnd);
+
+  assert.ok(retryHandlerStart >= 0 && retryHandlerEnd > retryHandlerStart);
+  assert.match(retryHandlerSource, /buildFailedMessageRetryRequest\(message\)/);
+  assert.doesNotMatch(retryHandlerSource, /buildClientRequestId\(/);
+  assert.doesNotMatch(retryHandlerSource, /voCanSend/);
+  assert.match(retryHandlerSource, /areEntityIdsEqual\(channelId, activeChannelId\)/);
+  assert.equal([...chatSource.matchAll(/buildClientRequestId\(/g)].length, 1);
+  assert.match(helperSource, /clientRequestId = message\.voClientRequestId\?\.trim\(\)/);
+  assert.match(helperSource, /clientRequestId,[\s\S]*channelId: message\.voChannelId,[\s\S]*type: message\.voType/);
+});

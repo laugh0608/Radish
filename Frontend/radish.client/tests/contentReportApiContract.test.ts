@@ -19,6 +19,20 @@ test('共享举报反馈应保留结构化错误，并且未知错误只展示�
   assert.match(modalSource, /closeOnOverlayClick=\{!submitting\}/);
 });
 
+test('聊天消息举报应把 Snowflake LongId 作为字符串传递到共享举报契约', () => {
+  const apiSource = readFileSync(resolve(clientRoot, 'src/api/contentModeration.ts'), 'utf8');
+  const modalSource = readFileSync(resolve(clientRoot, 'src/components/ContentReportModal.tsx'), 'utf8');
+  const chatSource = readFileSync(resolve(clientRoot, 'src/apps/chat/ChatApp.tsx'), 'utf8');
+  const messageListSource = readFileSync(resolve(clientRoot, 'src/apps/chat/ChatMessageList.tsx'), 'utf8');
+
+  assert.doesNotMatch(messageListSource, /toNumericId|Number\(message\.voId\)/);
+  assert.match(messageListSource, /onOpenReport\('ChatMessage', messageIdKey\)/);
+  assert.match(chatSource, /reportTarget[\s\S]{0,120}targetId: string/);
+  assert.match(chatSource, /handleOpenReport = useCallback\(\(targetType: ContentReportTargetType, targetId: string\)/);
+  assert.match(modalSource, /targetId: number \| string/);
+  assert.match(apiSource, /targetContentId: string/);
+});
+
 test('我的举报应只读取本人收件与精简结果，不暴露治理写动作', () => {
   const apiSource = readFileSync(resolve(clientRoot, 'src/api/contentModeration.ts'), 'utf8');
   const reportsSource = readFileSync(resolve(clientRoot, 'src/me/MeReportsPage.tsx'), 'utf8');

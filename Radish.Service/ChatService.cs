@@ -215,26 +215,31 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
         if (!access.CanView)
         {
-            return new List<ChannelMessageVo>();
+            throw CreateChannelTargetUnavailableException();
         }
 
         var safePageSize = Math.Clamp(pageSize, 1, 50);
         var messages = afterMessageId.HasValue && afterMessageId.Value > 0
             ? await QueryChannelMessagesAsync(
-                m => m.ChannelId == channelId && m.Id > afterMessageId.Value,
+                m => m.ChannelId == channelId &&
+                     (m.TenantId == tenantId || m.TenantId == 0) &&
+                     m.Id > afterMessageId.Value,
                 safePageSize,
                 OrderByType.Asc)
             : await QueryChannelMessagesAsync(
                 beforeMessageId.HasValue && beforeMessageId.Value > 0
-                    ? (System.Linq.Expressions.Expression<Func<ChannelMessage, bool>>)(m => m.ChannelId == channelId && m.Id < beforeMessageId.Value)
-                    : m => m.ChannelId == channelId,
+                    ? (System.Linq.Expressions.Expression<Func<ChannelMessage, bool>>)(m =>
+                        m.ChannelId == channelId &&
+                        (m.TenantId == tenantId || m.TenantId == 0) &&
+                        m.Id < beforeMessageId.Value)
+                    : m => m.ChannelId == channelId && (m.TenantId == tenantId || m.TenantId == 0),
                 safePageSize,
                 OrderByType.Desc);
 
         return await MapChannelMessagesAsync(messages);
     }
 
-    public async Task<ChannelMessageWindowVo?> GetMessageWindowAsync(
+    public async Task<ChannelMessageWindowVo> GetMessageWindowAsync(
         long tenantId,
         long userId,
         long channelId,
@@ -244,32 +249,42 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     {
         if (channelId <= 0 || messageId <= 0)
         {
-            return null;
+            throw new ArgumentException("频道或消息 Id 无效");
         }
 
         var access = await _chatChannelAccessService.GetAccessAsync(tenantId, userId, channelId);
         if (!access.CanView)
         {
-            return null;
+            throw CreateChannelTargetUnavailableException();
         }
 
-        var anchorMessage = await _messageRepository.QueryFirstIncludingDeletedAsync(m => m.ChannelId == channelId && m.Id == messageId);
-        if (anchorMessage == null)
+        var anchorMessage = await _messageRepository.QueryFirstIncludingDeletedAsync(m =>
+            m.ChannelId == channelId &&
+            (m.TenantId == tenantId || m.TenantId == 0) &&
+            m.Id == messageId);
+        if (anchorMessage == null ||
+            anchorMessage.Id != messageId ||
+            anchorMessage.ChannelId != channelId ||
+            anchorMessage.TenantId != 0 && anchorMessage.TenantId != tenantId)
         {
-            return null;
+            throw CreateChannelTargetUnavailableException();
         }
 
         var safeBeforeCount = Math.Clamp(beforeCount, 0, 50);
         var safeAfterCount = Math.Clamp(afterCount, 0, 50);
         var olderMessages = safeBeforeCount > 0
             ? await QueryChannelMessagesAsync(
-                m => m.ChannelId == channelId && m.Id < messageId,
+                m => m.ChannelId == channelId &&
+                     (m.TenantId == tenantId || m.TenantId == 0) &&
+                     m.Id < messageId,
                 safeBeforeCount,
                 OrderByType.Desc)
             : new List<ChannelMessage>();
         var newerMessages = safeAfterCount > 0
             ? await QueryChannelMessagesAsync(
-                m => m.ChannelId == channelId && m.Id > messageId,
+                m => m.ChannelId == channelId &&
+                     (m.TenantId == tenantId || m.TenantId == 0) &&
+                     m.Id > messageId,
                 safeAfterCount,
                 OrderByType.Asc)
             : new List<ChannelMessage>();
@@ -287,8 +302,14 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             VoChannelId = channelId,
             VoAnchorMessageId = anchorMessage.Id,
             VoMessages = await MapChannelMessagesAsync(combinedMessages),
-            VoHasMoreBefore = await _messageRepository.QueryExistsIncludingDeletedAsync(m => m.ChannelId == channelId && m.Id < oldestLoadedMessageId),
-            VoHasMoreAfter = await _messageRepository.QueryExistsIncludingDeletedAsync(m => m.ChannelId == channelId && m.Id > newestLoadedMessageId)
+            VoHasMoreBefore = await _messageRepository.QueryExistsIncludingDeletedAsync(m =>
+                m.ChannelId == channelId &&
+                (m.TenantId == tenantId || m.TenantId == 0) &&
+                m.Id < oldestLoadedMessageId),
+            VoHasMoreAfter = await _messageRepository.QueryExistsIncludingDeletedAsync(m =>
+                m.ChannelId == channelId &&
+                (m.TenantId == tenantId || m.TenantId == 0) &&
+                m.Id > newestLoadedMessageId)
         };
     }
 
@@ -676,6 +697,12 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             statusCode == StatusCodes.Status403Forbidden ? "Chat.SendForbidden" : "Chat.ChannelUnavailable",
             statusCode == StatusCodes.Status403Forbidden ? "error.chat.send_forbidden" : "error.chat.channel_unavailable");
     }
+
+    private static BusinessException CreateChannelTargetUnavailableException() => new(
+        "频道、消息不存在或无权访问",
+        StatusCodes.Status404NotFound,
+        "Chat.ChannelUnavailable",
+        "error.chat.channel_unavailable");
 
     private static void ValidateDirectSendRequest(
         ChatChannelAccessResult access,

@@ -29,6 +29,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IChannelMessageRepository _channelMessageRepository;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
     private readonly IBaseRepository<PostAnswer>? _postAnswerRepository;
@@ -43,6 +44,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository,
         IChannelMessageRepository channelMessageRepository,
+        IChatChannelAccessService chatChannelAccessService,
         IBaseRepository<Product> productRepository,
         IBaseRepository<PostQuickReply> postQuickReplyRepository,
         IBaseRepository<User> userRepository,
@@ -56,6 +58,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         _postRepository = postRepository;
         _commentRepository = commentRepository;
         _channelMessageRepository = channelMessageRepository;
+        _chatChannelAccessService = chatChannelAccessService;
         _productRepository = productRepository;
         _postQuickReplyRepository = postQuickReplyRepository;
         _postAnswerRepository = postAnswerRepository;
@@ -77,7 +80,11 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         }
 
         var targetType = ParseTargetType(dto.TargetType);
-        var targetSnapshot = await ResolveReportTargetSnapshotAsync(targetType, dto.TargetContentId);
+        var targetSnapshot = await ResolveReportSubmissionTargetSnapshotAsync(
+            targetType,
+            dto.TargetContentId,
+            tenantId,
+            reporterUserId);
         if (targetSnapshot.TargetUserId < 0)
         {
             throw new BusinessException("举报目标用户不存在", 404, "Moderation.TargetUserNotFound", "error.moderation.target_user_not_found");

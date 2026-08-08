@@ -102,5 +102,7 @@ test('正式消息搜索应使用专属 API、内存状态和权威消息窗口�
   assert.match(chatSource, /searchHideRevision <= handledSearchHideRevisionRef\.current/);
   assert.match(chatSource, /handledSearchHideRevisionRef\.current = searchHideRevision/);
   assert.match(chatSource, /if \(isCompactViewport\) \{\s*setSearchOpen\(false\)/);
-  assert.doesNotMatch(chatSource, /setLoadingHistory\(true\);\s*setChannelMessages\(channelId, \[\]\);\s*updateHistoryAvailability\(channelId, false, false\);\s*try \{\s*const windowData/);
+  assert.match(chatSource, /setLoadingHistory\(true\);\s*clearServerMessages\(channelId\);\s*try \{\s*const windowData/);
+  assert.match(chatSource, /historyUnavailable=\{historyUnavailable\}/);
+  assert.match(chatSource, /navigatingToMessage=\{Boolean\(messageNavigationTarget\)\}/);
 });

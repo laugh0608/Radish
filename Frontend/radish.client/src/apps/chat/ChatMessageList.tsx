@@ -1,5 +1,6 @@
 import { useMemo, type ReactNode, type RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Icon } from '@radish/ui/icon';
 import type {
   ChatMessageReactionStateVo,
   ChatReadReceiptMode,
@@ -20,7 +21,6 @@ import {
   getFallbackUserName,
   getMessagePreviewText,
   resolveMediaUrl,
-  toNumericId,
 } from './chatApp.helpers';
 import { resolveVisibleUserDisplayName } from '@/utils/userIdentityDisplay';
 import { getIntlLocale } from '@/locales/language';
@@ -30,12 +30,15 @@ import { ChatPinnedMessages } from './ChatPinnedMessages';
 import { ChatReadReceiptIndicator } from './ChatReadReceiptIndicator';
 import { useChatMessagePins } from './useChatMessagePins';
 import styles from './ChatApp.module.css';
+import searchStyles from './ChatSearchControls.module.css';
 
 interface ChatMessageListProps {
   activeChannelId: EntityIdValue | null;
   activeChannelKey: string;
   messages: ChannelMessageVo[];
   loadingHistory: boolean;
+  historyUnavailable: boolean;
+  navigatingToMessage: boolean;
   highlightedMessageId: string | null;
   currentUserIdKey: string;
   apiBaseUrl: string;
@@ -67,7 +70,7 @@ interface ChatMessageListProps {
   ) => void;
   onReply: (message: ChannelMessageVo) => void;
   onRecall: (messageId: EntityIdValue) => void;
-  onOpenReport: (targetType: ContentReportTargetType, targetId: number) => void;
+  onOpenReport: (targetType: ContentReportTargetType, targetId: string) => void;
   onRetryMessage: (message: ChannelMessageVo) => void;
   onCopyFailedMessageDiagnostics: (message: ChannelMessageVo) => void;
   onDismissFailedMessage: (message: ChannelMessageVo) => void;
@@ -83,6 +86,8 @@ export const ChatMessageList = ({
   activeChannelKey,
   messages,
   loadingHistory,
+  historyUnavailable,
+  navigatingToMessage,
   highlightedMessageId,
   currentUserIdKey,
   apiBaseUrl,
@@ -136,6 +141,22 @@ export const ChatMessageList = ({
     canPinMessages,
     refreshAfterTargetUnavailable: messageTargetUnavailable,
   });
+
+  if (navigatingToMessage) {
+    return <div className={styles.placeholder}>{t('chat.loadingHistory')}</div>;
+  }
+
+  if (historyUnavailable || messageTargetUnavailable) {
+    return (
+      <div className={searchStyles.messageTargetUnavailable} role="alert">
+        <Icon icon="mdi:message-off-outline" size={20} />
+        <span>
+          <strong>{t(historyUnavailable ? 'chat.historyUnavailableTitle' : 'chat.search.targetUnavailableTitle')}</strong>
+          {t(historyUnavailable ? 'chat.historyUnavailableDescription' : 'chat.search.targetUnavailableDescription')}
+        </span>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -277,9 +298,8 @@ export const ChatMessageList = ({
                         type="button"
                         className={styles.reportButton}
                         onClick={() => {
-                          const messageId = toNumericId(message.voId);
-                          if (messageId > 0) {
-                            onOpenReport('ChatMessage', messageId);
+                          if (messageIdKey) {
+                            onOpenReport('ChatMessage', messageIdKey);
                           }
                         }}
                       >

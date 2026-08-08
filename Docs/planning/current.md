@@ -14,6 +14,8 @@
 
 ## 最近结论
 
+- `2026-08-08` 已完成 [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)：ChatMessage 举报按 tenant / channel / reporter `CanView` 在快照与写入前失败关闭，LongId 全链保持字符串；失败重试复用原键并允许 Pending Direct 模糊结果同键回放；History / MessageWindow 统一稳定 404，Client 在权威失权时清理服务端缓存并隐藏旧正文。后端全量 `1193` 项、Client 全量 `501` 项测试与 production build 通过；撤回权限仍冻结待裁决。
+- `2026-08-08` 已完成 [R1-W01 消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)：正式 `/messages` 与 WebOS 已共用同一 ChatApp / API / Store / Hub，Direct、搜索、Reaction、Pin、回执与实时主体能力均已承接；审计发现 ChatMessage 举报 ACL / LongId、失败重试幂等和 History / MessageWindow 错误契约三组代码阻断，撤回能力证据与频道角色权限另需裁决。该临时 readiness 不改变 `R1-A01` 第一顺位。
 - `2026-08-08` 已完成 [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)：新增关系授权的 Author Revision history / detail，支持最新终态证据与载荷清理标记，统一 Author 写响应 evidence，并将 Apply 唯一绑定服务端 `Draft.BaseDocumentVersion`；Pending Invitee 的 Draft / Revision 附件、正式 Slug / Published 公开链接和终态保留时间锚同时按最窄权限闭合。后端全量 `1179` 项与 Client 全量 `492` 项测试、production build 通过；PostgreSQL 条件用例因本机未配置继续显式跳过。
 - `2026-08-08` 已完成 [R1-A01 Author 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)：正式 Web 已承接创建、共享草稿、保存、提交 / 撤回、协作者和冲突恢复主体流程，WebOS 没有应迁回普通 Author 的独占能力；代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”。审计发现的四项代码缺口已由同日修复批闭合。
 - `2026-08-08` 已完成并关闭 [R1-P02 帖子详情成组实现与运行态验收](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)：正式详情按已确认 PC / Mobile 代表设计落地，接入帖子 / 回帖点赞、reaction、赞赏和两级回帖；`PublicForumDetail.tsx` 从 `2292` 行收敛到 `1500` 行。Gateway 下普通读者 `TestUser` + 普通帖子覆盖 PC `1440 × 1000`、mobile `390 × 844`、`zh-CN / en-US`、`default / guofeng`、点赞 / reaction 可逆写入、两级回帖目标、来源 / 分享与无横向溢出；本地赞赏开关按既有默认关闭边界保持不变。
@@ -69,16 +71,20 @@
 8. 识别四项不能由视觉层规避的 Author 能力缺口；方案获批后先闭合设计前能力门禁，不提前进入页面视觉实现。
 9. 按获批方案闭合 Author Revision、终态与写响应 evidence、Apply 基准版本 CAS，并补关系授权、附件、保留期、正式 Slug 和事务回滚测试。
 10. R1-A01 能力门禁已解除；未修改 `.pen` 或页面视觉，未启动服务。
+11. Pencil 被占用期间临时完成 R1-W01 紧凑 readiness；确认正式 `/messages` 与 WebOS 没有能力分叉，并冻结代表身份、关键状态、PC → mobile 输入和 R2 / R3 边界。
+12. 按后续授权闭合 R1-W01 的举报 ACL / LongId、失败重试幂等和 History / MessageWindow 404，并补 Client 缓存 fail-closed；能力门禁已解除，撤回权限保持冻结。
 
 ## 当前下一步
 
 1. Pencil 可用后按 readiness 记录制作 `/docs/edit/:id` PC 1440 正式代表画板；PC 确认后再做 Mobile 和必要关键状态区。
-2. 设计确认前不进入 R1-A01 页面视觉实现；`R1-W01` 不抢占当前顺位，R1-P02 只处理明确回归。
+2. 设计确认前不进入 R1-A01 页面视觉实现；`R1-W01` readiness 与能力门禁已完成但不抢占当前顺位。
 3. 全局灰玉品牌 token 与共享 MarkdownEditor 主题治理均保持独立边界，不在单页局部硬编码覆盖。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)
+- [R1-W01 消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)
 - [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)
 - [R1-A01 Author 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)
 - [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)

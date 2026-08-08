@@ -4,7 +4,9 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.20
+> **最后更新**: 2026.08.08
+>
+> `2026-08-08` 的 [R1-W01 设计前能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)确认正式 `/messages` 与 WebOS 继续共用同一 Chat 核心；审计发现的 ChatMessage 举报 ACL / LongId、失败重试幂等和历史错误契约漂移已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合。既有 A-D 完成事实不改写，撤回证据与频道角色权限仍需另行裁决。
 
 ---
 

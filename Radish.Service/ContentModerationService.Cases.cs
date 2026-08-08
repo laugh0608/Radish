@@ -25,19 +25,11 @@ public partial class ContentModerationService
 
         var repository = RequireCaseRepository();
         var targetType = ParseTargetType(dto.TargetType);
-        ResolvedReportTargetSnapshot targetSnapshot;
-        try
-        {
-            targetSnapshot = await ResolveReportTargetSnapshotAsync(targetType, dto.TargetContentId);
-        }
-        catch (InvalidOperationException)
-        {
-            throw new BusinessException(
-                "举报目标不存在或已不可用",
-                404,
-                "Moderation.TargetUnavailable",
-                "error.moderation.target_unavailable");
-        }
+        var targetSnapshot = await ResolveReportSubmissionTargetSnapshotAsync(
+            targetType,
+            dto.TargetContentId,
+            tenantId,
+            reporterUserId);
 
         if (targetSnapshot.TargetUserId < 0)
         {

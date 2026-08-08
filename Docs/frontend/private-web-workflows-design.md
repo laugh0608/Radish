@@ -42,6 +42,8 @@
 >
 > 更新：2026-08-08（Asia/Shanghai）：`R1-A01` 已完成设计前代码事实、能力覆盖门禁修复与静态验收，正式代表锚点固定为 `/docs/edit/:id` 的普通 Owner 共享草稿；Author Revision 读取、终态审核证据、写响应证据与 Apply 基准版本 CAS 已闭合，不由 Pencil 暗中扩写。移动壳层继续服从共享 `WebShellHeader`，不恢复历史 Private 专属底栏。
 >
+> 更新：2026-08-08（Asia/Shanghai）：Pencil 被占用期间临时完成 `R1-W01` readiness，并按后续授权闭合举报 ACL / LongId、失败重试幂等和历史错误契约，详见[审计记录](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)与[修复记录](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)。该准备不抢占 `R1-A01`，也不提前制作 W01 画板。
+>
 > 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；治理申诉的 Gateway PC / mobile 成组验收进入 F4-J-D，后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
 
 ## 设计源

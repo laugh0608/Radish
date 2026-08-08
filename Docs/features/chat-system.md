@@ -40,7 +40,7 @@ Radish 聊天室是正式 Web `/messages` 与 WebOS `/desktop` 共用的频道�
 
 ---
 
-## 当前实现快照（2026-07-19）
+## 当前实现快照（2026-08-08）
 
 - P0/P1 核心链路已落地：`Channel/GetList`、`ChannelMessage/GetHistory`、`Send`、`Recall`、`ChatHub`、`@mention`、引用回复、图片消息、在线成员列表、草稿恢复、重连补拉。
 - `ChatHub` 频道组命名采用 `channel:{tenantId}:{channelId}`，用户组采用 `user:{userId}`。
@@ -55,6 +55,7 @@ Radish 聊天室是正式 Web `/messages` 与 WebOS `/desktop` 共用的频道�
 - `ChatMessage` 举报进入 Main 内容治理案件并保留创建时快照；受权治理人员可复核当前目标，限制决定通过 Main 可靠任务请求 Chat 库精确撤回，消费成功后案件才结案。消息已撤回、删除或不可读时保留失效状态，不向 Console 开放普通私聊浏览。
 - 2026-07-18 一对一私聊批次 A-D 已完成并关闭：继续复用 `Channel / ChannelMember / ChannelMessage`，`DirectConversation` 只承担参与者、请求和阻断状态；成员 ACL、幂等、附件访问、正式 Web 页面与成组验收均已落地。
 - 2026-07-19 F4-C 至 F4-F 已完成 A-D 批并关闭：搜索采用派生 `SearchText`、成员 ACL、快照 cursor 和现有消息窗口定位；Reaction、置顶分别采用 Chat 库专属状态与 revision；轻量阅读回执复用 `LastReadMessageId` 原子单调游标，Public / Announcement 不对外展示，普通 Private 仅发送者查看人数与读者分页，Accepted Direct 展示对端已读边界。REST 负责权威读写，Hub 按各专题广播完整状态或无个人数据失效提示，正式 `/messages` 与 WebOS 复用同一实现。
+- 2026-08-08 R1-W01 能力门禁修复已闭合 ChatMessage reporter `CanView`、LongId 字符串、失败重试原键回放和 History / MessageWindow 统一 404；治理回源、撤回权限与实时协议保持不变。
 
 ---
 

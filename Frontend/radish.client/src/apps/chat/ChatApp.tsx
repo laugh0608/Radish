@@ -2,7 +2,6 @@ import { type ChangeEvent, type ClipboardEvent, useCallback, useEffect, useMemo,
 import { useTranslation } from 'react-i18next';
 import type { ChannelMessageSearchItemVo } from '@radish/http';
 import { toast } from '@radish/ui/toast';
-import { Icon } from '@radish/ui/icon';
 import {
   attachmentImageAccept,
   isSupportedAttachmentImageFile,
@@ -41,6 +40,7 @@ import {
   buildAvatarStyle,
   buildAvatarText,
   buildClientRequestId,
+  buildFailedMessageRetryRequest,
   clearChannelDraft,
   findMentionContext,
   getConnectionHint,
@@ -67,6 +67,7 @@ import { ChatMessageList } from './ChatMessageList';
 import { ChatMessageSearchPanel } from './ChatMessageSearchPanel';
 import { canSendConversationAttachment, resolveConversationNoticeKey } from './chatConversationPresentation';
 import { useChatConversationWorkspace } from './useChatConversationWorkspace';
+import { useChatHistoryAvailability } from './useChatHistoryAvailability';
 import { useChatMessageNavigation } from './useChatMessageNavigation';
 import { useChatMessageReactions } from './useChatMessageReactions';
 import { useActiveChatReadSurface } from './useActiveChatReadSurface';
@@ -148,7 +149,7 @@ export const ChatApp = ({
   const [memberPanelCollapsed, setMemberPanelCollapsed] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchMounted, setSearchMounted] = useState(false);
-  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: number } | null>(null);
+  const [reportTarget, setReportTarget] = useState<{ targetType: ContentReportTargetType; targetId: string } | null>(null);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactChatViewport());
 
   const messageScrollRef = useRef<HTMLDivElement | null>(null);
@@ -184,10 +185,10 @@ export const ChatApp = ({
     () => channels.find((channel) => areEntityIdsEqual(channel.voId, activeChannelId)) || null,
     [channels, activeChannelId]
   );
-  const canSendInActiveChannel = Boolean(activeChannel?.voCanSend);
+  const channelCanSend = Boolean(activeChannel?.voCanSend);
   const canReactInActiveChannel = Boolean(activeChannel?.voCanReact);
   const canPinInActiveChannel = Boolean(activeChannel?.voCanPinMessages);
-  const canSendAttachment = canSendConversationAttachment(activeChannel);
+  const channelCanSendAttachment = canSendConversationAttachment(activeChannel);
   const conversationNoticeKey = resolveConversationNoticeKey(activeChannel);
   const isDirectRequestFirstMessage = activeChannel?.voDirectRequestStatus === 'pending' && activeChannel.voCanSend;
 
@@ -199,6 +200,7 @@ export const ChatApp = ({
     return messageMap[getEntityKey(activeChannelId)] || [];
   }, [activeChannelId, messageMap]);
   const activeChannelKey = useMemo(() => getEntityKey(activeChannelId), [activeChannelId]);
+  const { historyUnavailable, markHistoryAvailable, handleHistoryError, clearServerMessages } = useChatHistoryAvailability(activeChannelId);
   const { stickerGroups } = useStickerCatalog();
   const {
     reactionStateMap,
@@ -233,6 +235,9 @@ export const ChatApp = ({
     activeMessages,
     setActiveChannel,
   });
+  const conversationContextUnavailable = historyUnavailable || messageTargetUnavailable || Boolean(messageNavigationTarget);
+  const canSendInActiveChannel = channelCanSend && !conversationContextUnavailable;
+  const canSendAttachment = channelCanSendAttachment && !conversationContextUnavailable;
   const readReceipts = useChatReadReceipts({
     accountKey: currentUserIdKey, activeChannelId, messages: activeMessages, connectionState,
     loadErrorMessage: t('chat.receipt.loadFailed'),
@@ -254,7 +259,7 @@ export const ChatApp = ({
 
   const connectionHint = useMemo(() => getConnectionHint(connectionState, t), [connectionState, t]);
 
-  const isMentionOpen = mentionContext !== null;
+  const isMentionOpen = mentionContext !== null && !conversationContextUnavailable;
   const composerPlaceholder = !activeChannelId
     ? t('chat.inputSelectChannel')
     : !canSendInActiveChannel
@@ -507,18 +512,20 @@ export const ChatApp = ({
     try {
       const history = await getChannelHistory(channelId, { pageSize: PAGE_SIZE });
       setChannelMessages(channelId, history);
+      markHistoryAvailable(channelId);
       updateHistoryAvailability(channelId, history.length >= PAGE_SIZE, false);
 
       requestAnimationFrame(() => {
         scrollToBottom();
       });
     } catch (error) {
+      if (handleHistoryError(channelId, error)) updateHistoryAvailability(channelId, false, false);
       log.error('ChatApp', '加载历史消息失败:', error);
       toast.error(t('chat.loadHistoryFailed'));
     } finally {
       setLoadingHistory(false);
     }
-  }, [scrollToBottom, setChannelMessages, t, updateHistoryAvailability]);
+  }, [handleHistoryError, markHistoryAvailable, scrollToBottom, setChannelMessages, t, updateHistoryAvailability]);
 
   const loadMessageWindow = useCallback(async (target: MessageNavigationTarget) => {
     const channelId = target.channelId;
@@ -527,10 +534,12 @@ export const ChatApp = ({
     }
 
     setLoadingHistory(true);
+    clearServerMessages(channelId);
 
     try {
       const windowData = await getChannelMessageWindow(channelId, target.messageId);
       setChannelMessages(channelId, windowData.voMessages);
+      markHistoryAvailable(channelId);
       updateHistoryAvailability(channelId, windowData.voHasMoreBefore, windowData.voHasMoreAfter);
       completeMessageWindow(target, getEntityKey(windowData.voAnchorMessageId));
 
@@ -541,7 +550,7 @@ export const ChatApp = ({
     } finally {
       setLoadingHistory(false);
     }
-  }, [completeMessageWindow, failMessageWindow, setChannelMessages, t, updateHistoryAvailability]);
+  }, [clearServerMessages, completeMessageWindow, failMessageWindow, markHistoryAvailable, setChannelMessages, t, updateHistoryAvailability]);
 
   const loadOnlineMembers = useCallback(async (channelId: EntityIdValue) => {
     if (!isPersistedEntityId(channelId)) {
@@ -589,13 +598,14 @@ export const ChatApp = ({
       }));
       return older.length > 0 ? ('loaded' as const) : ('exhausted' as const);
     } catch (error) {
+      if (handleHistoryError(activeChannelId, error)) updateHistoryAvailability(activeChannelId, false, false);
       log.error('ChatApp', '加载更多历史消息失败:', error);
       toast.error(t('chat.loadMoreHistoryFailed'));
       return 'failed' as const;
     } finally {
       setLoadingHistory(false);
     }
-  }, [activeChannelId, activeChannelKey, activeMessages, hasMoreOlderHistory, loadingHistory, prependChannelMessages, t]);
+  }, [activeChannelId, activeChannelKey, activeMessages, handleHistoryError, hasMoreOlderHistory, loadingHistory, prependChannelMessages, t, updateHistoryAvailability]);
 
   const loadNewerHistory = useCallback(async (options?: { scrollToBottomWhenDone?: boolean }) => {
     if (!activeChannelId || !activeChannelKey || loadingHistory || !hasMoreNewerHistory[activeChannelKey]) {
@@ -633,6 +643,7 @@ export const ChatApp = ({
 
       return newer.length > 0 ? ('loaded' as const) : ('exhausted' as const);
     } catch (error) {
+      if (handleHistoryError(activeChannelId, error)) updateHistoryAvailability(activeChannelId, false, false);
       log.error('ChatApp', '加载较新消息失败:', error);
       toast.error(t('chat.loadNewerHistoryFailed'));
       return 'failed' as const;
@@ -644,19 +655,21 @@ export const ChatApp = ({
     activeChannelKey,
     activeMessages,
     appendChannelMessages,
+    handleHistoryError,
     hasMoreNewerHistory,
     loadingHistory,
     scrollToBottom,
     t,
+    updateHistoryAvailability,
   ]);
 
-  const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: number) => {
+  const handleOpenReport = useCallback((targetType: ContentReportTargetType, targetId: string) => {
     if (!currentUserIdKey) {
       toast.error(t('report.loginRequired'));
       return;
     }
 
-    if (targetId <= 0) {
+    if (!isPersistedEntityId(targetId)) {
       return;
     }
 
@@ -926,38 +939,31 @@ export const ChatApp = ({
   const handleRetryMessage = useCallback((message: ChannelMessageVo) => {
     const channelId = message.voChannelId;
     const messageId = message.voId;
-    if (!isPersistedEntityId(channelId) || !isTemporaryEntityId(messageId)) {
+    if (!isPersistedEntityId(channelId) || !isTemporaryEntityId(messageId) || !areEntityIdsEqual(channelId, activeChannelId)) {
       return;
     }
 
-    if (!activeChannel?.voCanSend) {
-      toast.error(t(conversationNoticeKey || 'chat.inputConversationUnavailable'));
+    const retryRequest = buildFailedMessageRetryRequest(message);
+    if (!retryRequest) {
+      toast.error(message.voLocalError || t('chat.sendFailed'));
       return;
     }
 
-    const clientRequestId = buildClientRequestId(channelId);
     const retryMessage: ChannelMessageVo = {
       ...message,
-      voClientRequestId: clientRequestId,
       voLocalStatus: 'sending',
       voLocalError: null,
     };
 
     void sendOptimisticMessage(
       retryMessage,
-      {
-        channelId,
-        type: message.voType,
-        content: message.voContent?.trim() || undefined,
-        replyToId: isPersistedEntityId(message.voReplyToId) ? message.voReplyToId : undefined,
-        attachmentId: isPersistedEntityId(message.voAttachmentId) ? message.voAttachmentId : undefined,
-      },
+      retryRequest,
       {
         failureFallbackMessage: message.voType === 2 ? t('chat.imageSendFailed') : t('chat.sendFailed'),
         refreshConversationAfterSuccess: isDirectRequestFirstMessage,
       }
     );
-  }, [activeChannel, conversationNoticeKey, isDirectRequestFirstMessage, sendOptimisticMessage, t]);
+  }, [activeChannelId, isDirectRequestFirstMessage, sendOptimisticMessage, t]);
 
   const handleDismissFailedMessage = useCallback((message: ChannelMessageVo) => {
     const channelId = message.voChannelId;
@@ -1273,20 +1279,13 @@ export const ChatApp = ({
 
         <div className={`${styles.contentArea} ${searchOpen ? searchStyles.contentAreaSearch : ''}`}>
           {(!searchOpen || !isCompactViewport) && <div className={styles.messageColumn}>
-            {messageTargetUnavailable && (
-              <div className={searchStyles.messageTargetUnavailable} role="alert">
-                <Icon icon="mdi:message-off-outline" size={20} />
-                <span>
-                  <strong>{t('chat.search.targetUnavailableTitle')}</strong>
-                  {t('chat.search.targetUnavailableDescription')}
-                </span>
-              </div>
-            )}
             <ChatMessageList
               activeChannelId={activeChannelId}
               activeChannelKey={activeChannelKey}
               messages={activeMessages}
               loadingHistory={loadingHistory}
+              historyUnavailable={historyUnavailable}
+              navigatingToMessage={Boolean(messageNavigationTarget)}
               highlightedMessageId={highlightedMessageId}
               currentUserIdKey={currentUserIdKey}
               apiBaseUrl={apiBaseUrl}
@@ -1334,8 +1333,8 @@ export const ChatApp = ({
                 </div>
               )}
               <ChatComposerStatus
-                typingUsers={typingUsers}
-                replyTarget={replyTarget}
+                typingUsers={conversationContextUnavailable ? [] : typingUsers}
+                replyTarget={conversationContextUnavailable ? null : replyTarget}
                 pendingImage={pendingImage}
                 pendingImagePreviewUrl={pendingImagePreviewUrl}
                 activeChannelId={activeChannelId}
@@ -1471,7 +1470,7 @@ export const ChatApp = ({
               onOpenResult={handleOpenSearchResult}
             />
           )}
-          {!searchOpen && activeChannelId !== null && (
+          {!searchOpen && activeChannelId !== null && !conversationContextUnavailable && (
             <ChatMemberPanel
               collapsed={memberPanelCollapsed}
               members={onlineMembers}

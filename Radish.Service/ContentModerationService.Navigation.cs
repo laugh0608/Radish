@@ -1,3 +1,4 @@
+using Radish.Common.Exceptions;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
@@ -7,6 +8,47 @@ namespace Radish.Service;
 
 public partial class ContentModerationService
 {
+    private async Task<ResolvedReportTargetSnapshot> ResolveReportSubmissionTargetSnapshotAsync(
+        ContentReportTargetTypeEnum targetType,
+        long targetContentId,
+        long tenantId,
+        long reporterUserId)
+    {
+        if (targetType != ContentReportTargetTypeEnum.ChatMessage)
+        {
+            try
+            {
+                return await ResolveReportTargetSnapshotAsync(targetType, targetContentId);
+            }
+            catch (InvalidOperationException)
+            {
+                throw ReportTargetUnavailable();
+            }
+        }
+
+        var normalizedTenantId = Math.Max(tenantId, 0);
+        var message = await _channelMessageRepository.QueryFirstIncludingDeletedAsync(candidate =>
+            candidate.Id == targetContentId &&
+            (candidate.TenantId == normalizedTenantId || candidate.TenantId == 0));
+        if (message == null ||
+            message.ChannelId <= 0 ||
+            message.TenantId != 0 && message.TenantId != normalizedTenantId)
+        {
+            throw ReportTargetUnavailable();
+        }
+
+        var access = await _chatChannelAccessService.GetAccessAsync(
+            normalizedTenantId,
+            reporterUserId,
+            message.ChannelId);
+        if (!access.Exists || !access.CanView)
+        {
+            throw ReportTargetUnavailable();
+        }
+
+        return BuildChatMessageTargetSnapshot(message);
+    }
+
     private async Task<ResolvedReportTargetSnapshot> ResolveReportTargetSnapshotAsync(
         ContentReportTargetTypeEnum targetType,
         long targetContentId)
@@ -70,14 +112,22 @@ public partial class ContentModerationService
             throw new InvalidOperationException("目标聊天室消息不存在");
         }
 
-        return new ResolvedReportTargetSnapshot
-        {
-            TargetUserId = message.UserId,
-            TargetUserName = message.UserName,
-            TargetChannelId = message.ChannelId > 0 ? message.ChannelId : null,
-            SnapshotSummary = message.IsDeleted ? "消息已撤回" : BuildMessageSnapshot(message)
-        };
+        return BuildChatMessageTargetSnapshot(message);
     }
+
+    private static ResolvedReportTargetSnapshot BuildChatMessageTargetSnapshot(ChannelMessage message) => new()
+    {
+        TargetUserId = message.UserId,
+        TargetUserName = message.UserName,
+        TargetChannelId = message.ChannelId > 0 ? message.ChannelId : null,
+        SnapshotSummary = message.IsDeleted ? "消息已撤回" : BuildMessageSnapshot(message)
+    };
+
+    private static BusinessException ReportTargetUnavailable() => new(
+        "举报目标不存在或已不可用",
+        404,
+        "Moderation.TargetUnavailable",
+        "error.moderation.target_unavailable");
 
     private async Task<ResolvedReportTargetSnapshot> ResolveProductTargetSnapshotAsync(long productId)
     {

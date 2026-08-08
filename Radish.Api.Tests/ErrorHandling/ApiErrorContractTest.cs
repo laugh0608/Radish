@@ -77,6 +77,26 @@ public class ApiErrorContractTest
     }
 
     [Fact]
+    public async Task ExceptionHandler_ShouldPreserveChatUnavailableNotFoundContract()
+    {
+        var handler = new ApiExceptionHandler(NullLogger<ApiExceptionHandler>.Instance);
+        var context = CreateApiContext();
+        var exception = new BusinessException(
+            "频道、消息不存在或无权访问",
+            StatusCodes.Status404NotFound,
+            "Chat.ChannelUnavailable",
+            "error.chat.channel_unavailable");
+
+        var handled = await handler.TryHandleAsync(context, exception, CancellationToken.None);
+
+        Assert.True(handled);
+        Assert.Equal(StatusCodes.Status404NotFound, context.Response.StatusCode);
+        var json = await ReadResponseJsonAsync(context);
+        Assert.Equal("Chat.ChannelUnavailable", json.RootElement.GetProperty("code").GetString());
+        Assert.Equal("error.chat.channel_unavailable", json.RootElement.GetProperty("messageKey").GetString());
+    }
+
+    [Fact]
     public async Task ExceptionHandler_Should_Expose_Only_Normalized_Scalar_MessageArguments()
     {
         var handler = new ApiExceptionHandler(NullLogger<ApiExceptionHandler>.Instance);

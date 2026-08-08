@@ -8,6 +8,7 @@ using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
+using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Service;
@@ -347,6 +348,346 @@ public class ContentModerationServiceTest
         createdReport.TargetSnapshotChannelId.ShouldBeNull();
         createdReport.TargetSnapshotTitle.ShouldBe("创建时帖子标题");
         createdReport.TargetSnapshotSummary.ShouldBe("创建时评论内容");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SubmitReportAsync_ShouldAllowAcceptedOrBlockedDirectParticipantWhenHistoryIsReadable(
+        bool hasInteractionBarrier)
+    {
+        const long tenantId = 5;
+        const long reporterUserId = 41001;
+        const long messageId = 91001;
+        const long channelId = 88;
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        var message = new ChannelMessage
+        {
+            Id = messageId,
+            TenantId = tenantId,
+            ChannelId = channelId,
+            UserId = 42001,
+            UserName = "target",
+            Type = MessageType.Text,
+            Content = "被阻断后的历史消息仍可举报"
+        };
+        channelMessageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync((Expression<Func<ChannelMessage, bool>> predicate) =>
+                predicate.Compile()(message) ? message : null);
+        chatAccessService
+            .Setup(service => service.GetAccessAsync(tenantId, reporterUserId, channelId, false))
+            .ReturnsAsync(new ChatChannelAccessResult(
+                true,
+                ChannelType.Private,
+                true,
+                false,
+                true,
+                false,
+                true,
+                DirectRequestStatus: DirectConversationRequestStatus.Accepted,
+                DirectRequestedByUserId: reporterUserId,
+                DirectPeerUserId: message.UserId,
+                DirectConversationId: 8800,
+                HasMessages: true,
+                HasInteractionBarrier: hasInteractionBarrier));
+        contentReportRepository
+            .Setup(repository => repository.QueryExistsAsync(It.IsAny<Expression<Func<ContentReport, bool>>>()))
+            .ReturnsAsync(false);
+        ContentReport? createdReport = null;
+        contentReportRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<ContentReport>()))
+            .Callback<ContentReport>(report => createdReport = report)
+            .ReturnsAsync(71001);
+        var service = CreateService(
+            contentReportRepository: contentReportRepository,
+            channelMessageRepository: channelMessageRepository,
+            chatAccessService: chatAccessService);
+
+        var result = await service.SubmitReportAsync(
+            new SubmitContentReportDto
+            {
+                TargetType = "ChatMessage",
+                TargetContentId = messageId,
+                ReasonType = "Abuse"
+            },
+            reporterUserId,
+            "reporter",
+            tenantId);
+
+        result.ShouldBe(71001);
+        createdReport.ShouldNotBeNull();
+        createdReport!.TenantId.ShouldBe(tenantId);
+        createdReport.TargetSnapshotChannelId.ShouldBe(channelId);
+        createdReport.TargetSnapshotSummary.ShouldBe(message.Content);
+        chatAccessService.Verify(
+            access => access.GetAccessAsync(tenantId, reporterUserId, channelId, false),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitCaseReportAsync_ShouldAllowDeclinedDirectParticipantWhenHistoryIsReadable()
+    {
+        const long tenantId = 5;
+        const long reporterUserId = 41001;
+        const long messageId = 91002;
+        const long channelId = 89;
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        var caseRepository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        var message = new ChannelMessage
+        {
+            Id = messageId,
+            TenantId = tenantId,
+            ChannelId = channelId,
+            UserId = 42001,
+            UserName = "target",
+            Type = MessageType.Text,
+            Content = "已拒绝会话的历史消息"
+        };
+        channelMessageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync((Expression<Func<ChannelMessage, bool>> predicate) =>
+                predicate.Compile()(message) ? message : null);
+        channelMessageRepository
+            .Setup(repository => repository.QueryByIdsIncludingDeletedAsync(
+                It.Is<List<long>>(ids => ids.Count == 1 && ids[0] == messageId)))
+            .ReturnsAsync([message]);
+        chatAccessService
+            .Setup(service => service.GetAccessAsync(tenantId, reporterUserId, channelId, false))
+            .ReturnsAsync(new ChatChannelAccessResult(
+                true,
+                ChannelType.Private,
+                true,
+                false,
+                true,
+                false,
+                true,
+                DirectRequestStatus: DirectConversationRequestStatus.Declined,
+                DirectRequestedByUserId: reporterUserId,
+                DirectPeerUserId: message.UserId,
+                DirectConversationId: 8900,
+                HasMessages: true));
+        ContentModerationReportWriteCommand? capturedCommand = null;
+        caseRepository
+            .Setup(repository => repository.SubmitReportAsync(It.IsAny<ContentModerationReportWriteCommand>()))
+            .ReturnsAsync((ContentModerationReportWriteCommand command) =>
+            {
+                capturedCommand = command;
+                var report = new ContentReport
+                {
+                    Id = 71002,
+                    PublicId = "report-public-71002",
+                    TenantId = command.TenantId,
+                    ReportTargetType = command.TargetType,
+                    TargetContentId = command.TargetContentId,
+                    TargetUserId = command.TargetUserId,
+                    TargetUserName = command.TargetUserName,
+                    TargetSnapshotChannelId = command.TargetChannelId,
+                    TargetSnapshotTitle = command.SnapshotTitle,
+                    TargetSnapshotSummary = command.SnapshotSummary,
+                    ReporterUserId = command.ReporterUserId,
+                    ReporterUserName = command.ReporterUserName,
+                    ReasonType = command.ReasonType,
+                    ReasonDetail = command.ReasonDetail,
+                    CreateTime = command.NowUtc
+                };
+                return new ContentModerationReportWriteResult(
+                    new ContentModerationCase
+                    {
+                        Id = 72002,
+                        TenantId = command.TenantId,
+                        PublicId = "case-public-72002"
+                    },
+                    report,
+                    false);
+            });
+        var service = CreateService(
+            channelMessageRepository: channelMessageRepository,
+            moderationCaseRepository: caseRepository,
+            chatAccessService: chatAccessService);
+
+        var result = await service.SubmitCaseReportAsync(
+            new SubmitContentReportDto
+            {
+                TargetType = "ChatMessage",
+                TargetContentId = messageId,
+                ReasonType = "Abuse"
+            },
+            reporterUserId,
+            "reporter",
+            tenantId);
+
+        capturedCommand.ShouldNotBeNull();
+        capturedCommand!.TenantId.ShouldBe(tenantId);
+        capturedCommand.TargetChannelId.ShouldBe(channelId);
+        capturedCommand.SnapshotSummary.ShouldBe(message.Content);
+        result.VoTargetChannelId.ShouldBe(channelId);
+        result.VoTargetSnapshotSummary.ShouldBe(message.Content);
+        chatAccessService.Verify(
+            access => access.GetAccessAsync(tenantId, reporterUserId, channelId, false),
+            Times.Once);
+    }
+
+    [Fact]
+    public async Task SubmitReportAsync_ShouldRejectUnreadablePrivateMessageBeforeLegacyWrite()
+    {
+        const long tenantId = 5;
+        const long reporterUserId = 41001;
+        const long channelId = 90;
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        channelMessageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync(new ChannelMessage
+            {
+                Id = 91003,
+                TenantId = tenantId,
+                ChannelId = channelId,
+                UserId = 42001,
+                Type = MessageType.Text,
+                Content = "private"
+            });
+        chatAccessService
+            .Setup(service => service.GetAccessAsync(tenantId, reporterUserId, channelId, false))
+            .ReturnsAsync(new ChatChannelAccessResult(
+                true,
+                ChannelType.Private,
+                false,
+                false,
+                false,
+                false,
+                false));
+        var service = CreateService(
+            contentReportRepository: contentReportRepository,
+            channelMessageRepository: channelMessageRepository,
+            chatAccessService: chatAccessService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.SubmitReportAsync(
+            new SubmitContentReportDto
+            {
+                TargetType = "ChatMessage",
+                TargetContentId = 91003,
+                ReasonType = "Abuse"
+            },
+            reporterUserId,
+            "admin-reporter",
+            tenantId));
+
+        exception.StatusCode.ShouldBe(404);
+        exception.ErrorCode.ShouldBe("Moderation.TargetUnavailable");
+        exception.MessageKey.ShouldBe("error.moderation.target_unavailable");
+        chatAccessService.Verify(
+            access => access.GetAccessAsync(tenantId, reporterUserId, channelId, false),
+            Times.Once);
+        contentReportRepository.Verify(
+            repository => repository.AddAsync(It.IsAny<ContentReport>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SubmitCaseReportAsync_ShouldRejectUnreadablePrivateMessageBeforeCaseWrite()
+    {
+        const long tenantId = 5;
+        const long reporterUserId = 41001;
+        const long channelId = 91;
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        var caseRepository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        channelMessageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync(new ChannelMessage
+            {
+                Id = 91004,
+                TenantId = tenantId,
+                ChannelId = channelId,
+                UserId = 42001,
+                Type = MessageType.Text,
+                Content = "private"
+            });
+        chatAccessService
+            .Setup(service => service.GetAccessAsync(tenantId, reporterUserId, channelId, false))
+            .ReturnsAsync(new ChatChannelAccessResult(
+                true,
+                ChannelType.Private,
+                false,
+                false,
+                false,
+                false,
+                true));
+        var service = CreateService(
+            channelMessageRepository: channelMessageRepository,
+            moderationCaseRepository: caseRepository,
+            chatAccessService: chatAccessService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.SubmitCaseReportAsync(
+            new SubmitContentReportDto
+            {
+                TargetType = "ChatMessage",
+                TargetContentId = 91004,
+                ReasonType = "Abuse"
+            },
+            reporterUserId,
+            "reporter",
+            tenantId));
+
+        exception.StatusCode.ShouldBe(404);
+        exception.ErrorCode.ShouldBe("Moderation.TargetUnavailable");
+        exception.MessageKey.ShouldBe("error.moderation.target_unavailable");
+        caseRepository.Verify(
+            repository => repository.SubmitReportAsync(It.IsAny<ContentModerationReportWriteCommand>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task SubmitCaseReportAsync_ShouldRejectCrossTenantMessageBeforeAccessOrWrite()
+    {
+        const long tenantId = 5;
+        const long reporterUserId = 41001;
+        var channelMessageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var chatAccessService = new Mock<IChatChannelAccessService>(MockBehavior.Strict);
+        var caseRepository = new Mock<IContentModerationCaseRepository>(MockBehavior.Strict);
+        var crossTenantMessage = new ChannelMessage
+        {
+            Id = 91005,
+            TenantId = 6,
+            ChannelId = 92,
+            UserId = 42001,
+            Type = MessageType.Text,
+            Content = "cross-tenant"
+        };
+        channelMessageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
+            .ReturnsAsync((Expression<Func<ChannelMessage, bool>> predicate) =>
+                predicate.Compile()(crossTenantMessage) ? crossTenantMessage : null);
+        var service = CreateService(
+            channelMessageRepository: channelMessageRepository,
+            moderationCaseRepository: caseRepository,
+            chatAccessService: chatAccessService);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() => service.SubmitCaseReportAsync(
+            new SubmitContentReportDto
+            {
+                TargetType = "ChatMessage",
+                TargetContentId = crossTenantMessage.Id,
+                ReasonType = "Abuse"
+            },
+            reporterUserId,
+            "reporter",
+            tenantId));
+
+        exception.StatusCode.ShouldBe(404);
+        exception.ErrorCode.ShouldBe("Moderation.TargetUnavailable");
+        exception.MessageKey.ShouldBe("error.moderation.target_unavailable");
+        chatAccessService.Verify(
+            access => access.GetAccessAsync(It.IsAny<long>(), It.IsAny<long>(), It.IsAny<long>(), It.IsAny<bool>()),
+            Times.Never);
+        caseRepository.Verify(
+            repository => repository.SubmitReportAsync(It.IsAny<ContentModerationReportWriteCommand>()),
+            Times.Never);
     }
 
     [Fact]
@@ -965,7 +1306,8 @@ public class ContentModerationServiceTest
         Mock<IBaseRepository<Comment>>? commentRepository = null,
         Mock<IChannelMessageRepository>? channelMessageRepository = null,
         Mock<IBaseRepository<PostQuickReply>>? postQuickReplyRepository = null,
-        Mock<IContentModerationCaseRepository>? moderationCaseRepository = null)
+        Mock<IContentModerationCaseRepository>? moderationCaseRepository = null,
+        Mock<IChatChannelAccessService>? chatAccessService = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var basePostRepository = postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
@@ -981,6 +1323,7 @@ public class ContentModerationServiceTest
             basePostRepository.Object,
             baseCommentRepository.Object,
             (channelMessageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict)).Object,
+            (chatAccessService ?? new Mock<IChatChannelAccessService>(MockBehavior.Strict)).Object,
             productRepository.Object,
             basePostQuickReplyRepository.Object,
             userRepository.Object,

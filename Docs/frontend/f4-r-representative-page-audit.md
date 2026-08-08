@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-08 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02` 已关闭，`R1-A01` 设计前能力覆盖门禁已完成代码与静态验收
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02` 已关闭，`R1-A01 / R1-W01` 设计前能力门禁均已通过，当前仍先推进 `R1-A01` 代表设计
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -69,7 +69,7 @@ C-1A 最终裁决为：
 | `R1-P01` | Public 内容流；锚点 `/discover` | `2/2/1/2/2/1` | `10` | 建立家族化内容流和 Public 响应式语法 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
 | `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
 | `R1-A01` | Author 编辑 / 协作 / 提交审核；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen`（readiness 与能力门禁已完成） |
-| `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen` |
+| `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen`（readiness 与能力门禁已完成） |
 | `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen` |
 | `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
 
@@ -80,6 +80,8 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 `R1-P02` 已于 `2026-08-05` 完成[代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)，并于 `2026-08-06` 完成[正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)。随后已完成 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收；普通帖子正式 Web 已承接帖子 / 回帖点赞、reaction、赞赏和两级回帖，详见[实现记录](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)。
 
 `R1-A01` 已于 `2026-08-08` 完成[设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)。正式代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”；普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 随后已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。活动源可用后进入 PC 代表设计，确认后才继续 Mobile 与页面视觉实现。
+
+`R1-W01` 已于 `2026-08-08` 临时完成[消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)。正式 `/messages` 与 WebOS 共用同一 Chat 核心，主体能力没有迁移缺口；举报 ACL / LongId、失败重试幂等和历史错误契约已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合，撤回能力证据与频道角色权限另需裁决。该 readiness 不提前制作 W01 画板，也不改变 `R1-A01 → R1-W01` 顺位。
 
 ## 5. R2 局部设计类型
 

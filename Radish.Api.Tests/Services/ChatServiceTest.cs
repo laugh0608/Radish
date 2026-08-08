@@ -235,6 +235,109 @@ public class ChatServiceTest
     }
 
     [Fact]
+    public async Task GetHistoryAsync_ShouldThrowChannelUnavailableWhenAccessCannotView()
+    {
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var service = CreateService(
+            messageRepository: messageRepository,
+            accessResult: new ChatChannelAccessResult(
+                true,
+                ChannelType.Private,
+                false,
+                false,
+                false,
+                false,
+                true));
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.GetHistoryAsync(5, 10001, 1, null, null, 50));
+
+        exception.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        exception.ErrorCode.ShouldBe("Chat.ChannelUnavailable");
+        exception.MessageKey.ShouldBe("error.chat.channel_unavailable");
+        messageRepository.Verify(
+            repository => repository.QueryPageIncludingDeletedAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>?>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<Expression<Func<ChannelMessage, object>>?>(),
+                It.IsAny<OrderByType>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetHistoryAsync_ShouldReturnEmptyWhenReadableChannelHasNoMessages()
+    {
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryPageIncludingDeletedAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>?>(),
+                1,
+                50,
+                It.IsAny<Expression<Func<ChannelMessage, object>>?>(),
+                OrderByType.Desc))
+            .ReturnsAsync((new List<ChannelMessage>(), 0));
+        var service = CreateService(messageRepository: messageRepository);
+
+        var result = await service.GetHistoryAsync(5, 10001, 1, null, null, 50);
+
+        result.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task GetMessageWindowAsync_ShouldThrowChannelUnavailableWhenAccessCannotView()
+    {
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        var service = CreateService(
+            messageRepository: messageRepository,
+            accessResult: new ChatChannelAccessResult(
+                true,
+                ChannelType.Private,
+                false,
+                false,
+                false,
+                false,
+                true));
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.GetMessageWindowAsync(5, 10001, 1, 90001, 25, 25));
+
+        exception.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        exception.ErrorCode.ShouldBe("Chat.ChannelUnavailable");
+        exception.MessageKey.ShouldBe("error.chat.channel_unavailable");
+        messageRepository.Verify(
+            repository => repository.QueryFirstIncludingDeletedAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetMessageWindowAsync_ShouldThrowChannelUnavailableWhenAnchorBindingIsInvalid()
+    {
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryFirstIncludingDeletedAsync(
+                It.IsAny<Expression<Func<ChannelMessage, bool>>>() ))
+            .ReturnsAsync(new ChannelMessage
+            {
+                Id = 90001,
+                TenantId = 5,
+                ChannelId = 2,
+                UserId = 10002,
+                Type = MessageType.Text,
+                Content = "wrong-channel"
+            });
+        var service = CreateService(messageRepository: messageRepository);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.GetMessageWindowAsync(5, 10001, 1, 90001, 25, 25));
+
+        exception.StatusCode.ShouldBe(StatusCodes.Status404NotFound);
+        exception.ErrorCode.ShouldBe("Chat.ChannelUnavailable");
+        exception.MessageKey.ShouldBe("error.chat.channel_unavailable");
+    }
+
+    [Fact]
     public async Task RecallMessageAsync_Should_Return_ChannelId_When_Message_Already_Recalled()
     {
         var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
@@ -582,7 +685,7 @@ public class ChatServiceTest
             });
         messageRepository
             .SetupSequence(repository => repository.QueryFirstIncludingDeletedAsync(
-                It.IsAny<Expression<Func<ChannelMessage, bool>>>() ))
+                It.IsAny<Expression<Func<ChannelMessage, bool>>>()))
             .ReturnsAsync((ChannelMessage?)null)
             .ReturnsAsync(existingMessage);
         messageRepository

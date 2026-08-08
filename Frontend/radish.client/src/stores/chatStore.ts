@@ -20,6 +20,7 @@ import {
   normalizeEntityId,
 } from '@/types/chat';
 import { mergeChannelLastMessage } from '@/utils/chatChannelProjection';
+import { retainLocalChatMessages } from '@/utils/chatHistoryAvailability';
 
 export type ChatConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -46,6 +47,7 @@ interface ChatStore {
   setConnectionState: (state: ChatConnectionState) => void;
   notifyConversationStateChanged: () => void;
   setChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
+  clearChannelServerMessages: (channelId: EntityIdValue) => void;
   prependChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   appendChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   addMessage: (message: ChannelMessageVo) => void;
@@ -149,12 +151,6 @@ function mergeMessageRecord(current: ChannelMessageVo, incoming: ChannelMessageV
   return merged;
 }
 
-function extractLocalMessages(messages: ChannelMessageVo[]): ChannelMessageVo[] {
-  return messages.filter((message) => (
-    isTemporaryEntityId(message.voId) || message.voLocalStatus === 'sending' || message.voLocalStatus === 'failed'
-  ));
-}
-
 function mergeMessages(base: ChannelMessageVo[], incoming: ChannelMessageVo[]): ChannelMessageVo[] {
   const result = base.map(normalizeMessage);
 
@@ -209,7 +205,21 @@ export const useChatStore = create<ChatStore>((set, get) => ({
     set((state) => ({
       messageMap: {
         ...state.messageMap,
-        [channelKey]: mergeMessages(messages, extractLocalMessages(state.messageMap[channelKey] || [])),
+        [channelKey]: mergeMessages(messages, retainLocalChatMessages(state.messageMap[channelKey] || [])),
+      },
+    }));
+  },
+
+  clearChannelServerMessages: (channelId: EntityIdValue) => {
+    const channelKey = getChannelKey(channelId);
+    if (!channelKey) {
+      return;
+    }
+
+    set((state) => ({
+      messageMap: {
+        ...state.messageMap,
+        [channelKey]: retainLocalChatMessages(state.messageMap[channelKey] || []),
       },
     }));
   },

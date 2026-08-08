@@ -1,6 +1,11 @@
-import type { ChannelMessageVo, EntityIdValue } from '../../types/chat.ts';
+import type {
+  ChannelMessageVo,
+  EntityIdValue,
+  SendChannelMessageRequest,
+} from '../../types/chat.ts';
 import {
   isPersistedEntityId,
+  isTemporaryEntityId,
   normalizeEntityId,
 } from '../../types/chat.ts';
 import { normalizeBrowserVisibleUrl } from '../../utils/browserVisibleUrl.ts';
@@ -46,21 +51,48 @@ export interface MessageFocusTarget {
   signature: string;
 }
 
-export function toNumericId(value: EntityIdValue | null | undefined): number {
-  if (typeof value === 'number') {
-    return Number.isFinite(value) ? value : 0;
-  }
-
-  if (typeof value === 'string') {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  }
-
-  return 0;
-}
-
 export function getEntityKey(value: EntityIdValue | null | undefined): string {
   return normalizeEntityId(value) ?? '';
+}
+
+export function buildFailedMessageRetryRequest(
+  message: ChannelMessageVo
+): SendChannelMessageRequest | null {
+  const clientRequestId = message.voClientRequestId?.trim();
+  if (
+    message.voLocalStatus !== 'failed'
+    || !isTemporaryEntityId(message.voId)
+    || !isPersistedEntityId(message.voChannelId)
+    || !clientRequestId
+    || (message.voType !== 1 && message.voType !== 2)
+  ) {
+    return null;
+  }
+
+  if (message.voType === 1 && !message.voContent?.trim()) {
+    return null;
+  }
+
+  if (message.voReplyToId != null && !isPersistedEntityId(message.voReplyToId)) {
+    return null;
+  }
+
+  if (message.voAttachmentId != null && !isPersistedEntityId(message.voAttachmentId)) {
+    return null;
+  }
+
+  if (message.voType === 2 && !isPersistedEntityId(message.voAttachmentId)) {
+    return null;
+  }
+
+  return {
+    clientRequestId,
+    channelId: message.voChannelId,
+    type: message.voType,
+    ...(message.voContent != null ? { content: message.voContent } : {}),
+    ...(message.voReplyToId != null ? { replyToId: message.voReplyToId } : {}),
+    ...(message.voAttachmentId != null ? { attachmentId: message.voAttachmentId } : {}),
+  };
 }
 
 export function formatChatTime(time: string, locale: 'zh-CN' | 'en-US' = 'zh-CN'): string {

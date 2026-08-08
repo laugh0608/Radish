@@ -46,6 +46,8 @@ Radish 已具备公开频道消息、未读状态、实时同步、图片、引�
 
 批次 A 已新增 `ChatChannelAccessService` 并接入频道列表 / 详情、消息历史 / 窗口 / 发送 / 撤回、已读、在线成员、Hub 加组 / 输入状态和 Chat 附件访问；`clientRequestId` 已持久化并由唯一索引与同参回放约束。公开个人页入口、请求生命周期和会话分区仍未开放。
 
+`2026-08-08` 的 [R1-W01 能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)补齐此前实现漂移：举报在快照前复用 reporter `CanView`，History / Window 无权或错绑统一 404，客户端失败重试复用原键并在权威失权时清理服务端消息缓存；本专题权限和能力边界不变。
+
 ## 3. 用户路径
 
 ### 3.1 从公开个人页发起
