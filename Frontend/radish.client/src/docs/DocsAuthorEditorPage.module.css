@@ -758,34 +758,35 @@
   }
 
   .editorTaskTitleRow {
-    display: contents;
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
 
   .editorTaskTitleRow h1 {
-    align-self: center;
+    align-self: auto;
     font-size: 23px;
     line-height: 1.18;
   }
 
   .editorPrimaryActions {
-    display: flex;
-    align-self: center;
-    justify-content: flex-end;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
     gap: 6px;
-    width: auto;
+    width: 100%;
   }
 
   .editorSaveState {
-    flex: 0 0 100%;
-    justify-content: flex-end;
-    min-height: 20px;
+    justify-content: flex-start;
+    min-height: 36px;
     white-space: nowrap;
   }
 
   .editorSaveButton,
   .editorSubmitButton {
-    min-width: 96px;
+    min-width: 86px;
     width: auto;
   }
 

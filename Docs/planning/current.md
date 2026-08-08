@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-A01 设计前能力门禁已完成代码与静态验收；等待 Pencil 可用后进入 PC 正式代表设计`
-- **产品下一顺位**：`按已冻结身份完成 /docs/edit/:id 的 PC 1440 正式代表画板；确认后再做 Mobile 与必要关键状态区`
+- **工程第一顺位**：`F4-R C-1B 的 R1-A01 已完成正式代表设计、代码实现与 Gateway PC / mobile 运行态验收；下一顺位切换为 R1-W01`
+- **产品下一顺位**：`Pencil 可用后按既有 readiness 与能力门禁制作 /messages 的 PC 正式代表设计；确认后再做 Mobile 与必要关键状态区`
 - **复核日期**：`2026-08-08`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-08` 已完成并关闭 [R1-A01 Author 编辑代表页成组实现与运行态验收](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)：正式 `/docs/edit/:id` 已按确认设计落地标题 / Markdown 正文主轴、紧凑版本与动作上下文、PC `320px` context rail 和 Mobile Bottom Sheet；Gateway 下普通 Owner `TestUser` + Published 正式 v1 + `Editing` 共享草稿 v2 + Accepted Editor 覆盖 PC `1440 × 1024` 与 Mobile `390 × 844`，无横向溢出。运行态发现并修正移动端标题被动作区挤压的问题，任务头由 `261px` 收敛到 `170px`；Client `504` 项测试、Lint 与 production build 通过，临时文档、通知、审计和登录会话增量均已清零。
 - `2026-08-08` 已完成 [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)：ChatMessage 举报按 tenant / channel / reporter `CanView` 在快照与写入前失败关闭，LongId 全链保持字符串；失败重试复用原键并允许 Pending Direct 模糊结果同键回放；History / MessageWindow 统一稳定 404，Client 在权威失权时清理服务端缓存并隐藏旧正文。后端全量 `1193` 项、Client 全量 `501` 项测试与 production build 通过；撤回权限仍冻结待裁决。
 - `2026-08-08` 已完成 [R1-W01 消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)：正式 `/messages` 与 WebOS 已共用同一 ChatApp / API / Store / Hub，Direct、搜索、Reaction、Pin、回执与实时主体能力均已承接；审计发现 ChatMessage 举报 ACL / LongId、失败重试幂等和 History / MessageWindow 错误契约三组代码阻断，撤回能力证据与频道角色权限另需裁决。该临时 readiness 不改变 `R1-A01` 第一顺位。
 - `2026-08-08` 已完成 [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)：新增关系授权的 Author Revision history / detail，支持最新终态证据与载荷清理标记，统一 Author 写响应 evidence，并将 Apply 唯一绑定服务端 `Draft.BaseDocumentVersion`；Pending Invitee 的 Draft / Revision 附件、正式 Slug / Published 公开链接和终态保留时间锚同时按最窄权限闭合。后端全量 `1179` 项与 Client 全量 `492` 项测试、production build 通过；PostgreSQL 条件用例因本机未配置继续显式跳过。
@@ -59,7 +60,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-08，R1-P02 收口 / R1-A01 能力门禁）
+## 今日进展（2026-08-08，R1-P02 / R1-A01 收口）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
@@ -73,16 +74,20 @@
 10. R1-A01 能力门禁已解除；未修改 `.pen` 或页面视觉，未启动服务。
 11. Pencil 被占用期间临时完成 R1-W01 紧凑 readiness；确认正式 `/messages` 与 WebOS 没有能力分叉，并冻结代表身份、关键状态、PC → mobile 输入和 R2 / R3 边界。
 12. 按后续授权闭合 R1-W01 的举报 ACL / LongId、失败重试幂等和 History / MessageWindow 404，并补 Client 缓存 fail-closed；能力门禁已解除，撤回权限保持冻结。
+13. 完成并确认 R1-A01 PC / Mobile 正式代表设计，将标题与 Markdown 正文固定为编辑主轴，并把目录、状态、属性与协作者收口到统一 context rail / Bottom Sheet。
+14. 正式 Author 页面按代表设计落地；运行态复核修正 Mobile 标题与动作区争抢宽度，`390px` 任务头由 `261px` 收敛为 `170px`。
+15. Gateway 以普通 Owner、Published 正式 v1、`Editing` 草稿 v2 和 Accepted Editor 完成 PC / mobile smoke；临时 Main / Message / Log / OpenIddict 数据均已精确清零，服务端口已停止。
 
 ## 当前下一步
 
-1. Pencil 可用后按 readiness 记录制作 `/docs/edit/:id` PC 1440 正式代表画板；PC 确认后再做 Mobile 和必要关键状态区。
-2. 设计确认前不进入 R1-A01 页面视觉实现；`R1-W01` readiness 与能力门禁已完成但不抢占当前顺位。
+1. Pencil 可用后按 readiness 记录制作 `/messages` PC 正式代表画板；PC 确认后再做 Mobile 和必要关键状态区。
+2. `R1-W01` readiness 与能力门禁均已完成，不重新全量审计；Pencil 仍被占用时不提前进入 R1-C01 / R1-C02。
 3. 全局灰玉品牌 token 与共享 MarkdownEditor 主题治理均保持独立边界，不在单页局部硬编码覆盖。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-A01 Author 编辑代表页成组实现](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)
 - [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)
 - [R1-W01 消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)
 - [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)

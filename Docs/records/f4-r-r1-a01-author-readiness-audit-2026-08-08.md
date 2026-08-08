@@ -2,7 +2,7 @@
 
 > 日期：2026-08-08（Asia/Shanghai）
 >
-> 状态：静态审计完成；审计发现的能力缺口已于同日完成代码修复和静态验收，R1-A01 等待 PC 正式代表设计
+> 状态：静态审计完成；能力缺口、正式代表设计、页面实现与运行态验收均已于同日闭合，R1-A01 已关闭
 >
 > 范围：`/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，以及对应 HTTP、Service、Console 与 WebOS 历史实现；本审计本身未修改 `.pen` 或运行时代码，后续修复见[能力门禁实现记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)
 
@@ -123,8 +123,8 @@
 后续顺序：
 
 1. Revision Author 读取、终态证据、写响应证据和 Apply `BaseDocumentVersion` CAS 已按获批方案修复并补测试。
-2. Pencil 可用后，在唯一活动源中制作 `R1-A01` PC 正式代表画板；确认后再做 Mobile 和关键状态区。
-3. 设计确认前不进入 R1-A01 页面视觉实现；`R1-W01` 不抢占该顺位。
+2. PC / Mobile 正式代表设计、页面实现与 Gateway 运行态验收已完成，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
+3. R1-A01 已关闭，后续顺位切换为 `R1-W01`；Pencil 可用前不提前进入下一代表设计。
 
 ## 8. 能力门禁闭环
 
