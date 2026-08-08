@@ -112,6 +112,7 @@ test('公开论坛回答上传状态覆盖详情退出、浏览器历史与顶�
   const postDetailSource = readSource('src/apps/forum/components/PostDetail.tsx');
   const answerLifecycleSource = readSource('src/apps/forum/components/PostAnswerLifecycleSection.tsx');
   const publicDetailSource = readSource('src/public/forum/PublicForumDetail.tsx');
+  const publicDetailViewSource = readSource('src/public/forum/PublicForumDetailView.tsx');
   const publicDetailNavigationGuardSource = readSource('src/public/forum/usePublicForumDetailNavigationGuard.ts');
   const publicAppSource = readSource('src/public/forum/PublicForumApp.tsx');
   const publicEntrySource = readSource('src/public/PublicEntry.tsx');
@@ -133,12 +134,13 @@ test('公开论坛回答上传状态覆盖详情退出、浏览器历史与顶�
     countMatches(publicDetailNavigationGuardSource, /if \(!navigationLocked\)/g) >= 6,
     '公开详情的跨目标入口必须统一受回答上传状态保护',
   );
+  assert.match(publicDetailSource, /onBack=\{handleBackWhileEditorIdle\}/);
   assert.ok(
-    countMatches(publicDetailSource, /handlePublicForumLinkClick\(event, handleBackWhileEditorIdle\)/g) >= 2,
-    '公开详情顶部与侧栏返回入口都必须接入回答上传保护',
+    countMatches(publicDetailViewSource, /handlePublicForumLinkClick\(event, onBack\)/g) >= 2,
+    '公开详情顶部与社区返回入口都必须接入回答上传保护',
   );
-  assert.match(publicDetailSource, /onAuthorClick=\{\(userId\) => handleOpenAuthorProfileWhileEditorIdle/);
-  assert.match(publicDetailSource, /onTagClick=\{\(_, tagSlug\) => handleOpenTagWhileEditorIdle/);
+  assert.match(publicDetailSource, /onAuthorClick: \(userId\) => handleOpenAuthorProfileWhileEditorIdle/);
+  assert.match(publicDetailSource, /onTagClick: \(_, tagSlug\) => handleOpenTagWhileEditorIdle/);
   assert.match(publicAppSource, /navigationLocked: boolean/);
   assert.match(publicAppSource, /if \(!navigationLocked\) \{\s*onNavigate\(/);
   assert.match(publicAppSource, /onAnswerEditorUploadingChange=\{onNavigationLockChange\}/);

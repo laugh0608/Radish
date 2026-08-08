@@ -324,12 +324,12 @@ test('Forum 详情 head 应复用中英文路由基线、应用名与空内容 f
   assert.equal(enHead.title, '运行时帖子原题 · Forum');
   assert.equal(
     enHead.description,
-    'This public entry keeps reading first. Signed-in users can add quick replies and root discussion comments from the post detail page.',
+    'This public entry keeps reading first. Signed-in users can add quick replies and root replies from the post detail page.',
   );
   assert.equal(zhHead.title, '运行时帖子原题 · 论坛');
   assert.equal(
     zhHead.description,
-    '这个公开页面优先承载阅读；登录用户可在帖子详情页直接发布轻回应和根评论。',
+    '这个公开页面优先承载阅读；登录用户可在帖子详情页直接发布轻回应和根回帖。',
   );
   assert.equal(enUntitledHead.title, 'Post details · Forum');
   assert.equal(defaultHead.title, '论坛帖子 - Radish 论坛');

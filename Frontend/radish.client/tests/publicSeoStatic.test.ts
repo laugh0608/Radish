@@ -525,7 +525,7 @@ test('公开壳层的 head DOM 写入应只由 lifecycle owner 调用 helper', (
 
 test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
   const detailSources = [
-    'src/public/forum/PublicForumDetail.tsx',
+    'src/public/forum/usePublicForumPostHead.ts',
     'src/public/docs/PublicDocsApp.tsx',
     'src/public/profile/PublicProfileApp.tsx',
     'src/public/shop/PublicShopApp.tsx',
@@ -541,7 +541,7 @@ test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
 test('Docs 与 Forum 详情应以 keyed remount 和实体身份校验形成 head 双保险', () => {
   const docsSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
   const forumAppSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
-  const forumDetailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const forumDetailSource = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumPostHead.ts'), 'utf8');
 
   assert.equal(docsSource.includes("key={`docs-${route.slug}-${route.anchor ?? 'root'}`}"), true);
   assert.match(docsSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
@@ -602,7 +602,7 @@ test('公开用户承诺页应进入公共壳层并归属工作台入口', () =>
 });
 
 test('公开论坛详情加载后应向唯一 head owner 提交共用 canonical 快照', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const source = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumPostHead.ts'), 'utf8');
 
   assert.match(source, /usePublicHeadSnapshot\(publicHeadSnapshot\)/);
   assert.match(source, /buildForumPostPublicHead/);
@@ -620,6 +620,7 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   const statusSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicStatusCard.tsx'), 'utf8');
   const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const detailViewSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetailView.tsx'), 'utf8');
   const listSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumList.tsx'), 'utf8');
   const stylesSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.module.css'), 'utf8');
   const searchSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumSearch.tsx'), 'utf8');
@@ -632,15 +633,17 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   assert.match(statusSource, /href: primaryAction\.href/);
   assert.match(statusSource, /href: secondaryAction\.href/);
   assert.match(appSource, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicForumPath\(fallbackBrowseRoute\);/);
-  assert.match(detailSource, /href=\{backHref\}/);
-  assert.match(detailSource, /secondaryAction=\{\{[\s\S]*label: backLabel,[\s\S]*href: backHref,[\s\S]*onClick: handleBackWhileEditorIdle[\s\S]*\}\}/);
+  assert.match(detailViewSource, /href=\{backHref\}/);
+  assert.match(detailViewSource, /secondaryAction=\{\{ label: backLabel, href: backHref, onClick: onBack \}\}/);
+  assert.match(detailSource, /onBack=\{handleBackWhileEditorIdle\}/);
   assert.match(listSource, /PublicForumPagination/);
   assert.match(listSource, /route=\{createDefaultSearchRoute\(\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, selectedCategoryId, 'hottest'\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, nextCategoryId\)\}/);
   assert.match(listSource, /styles\.sidePanelAction/);
-  assert.match(stylesSource, /\.workspaceActionButtons \.workspaceActionButton \{\s*flex: 1 1 150px;/);
-  assert.doesNotMatch(stylesSource, /\n {2}\.workspaceActionButton \{\n {4}flex:/);
+  assert.match(stylesSource, /\.detailForumGrid \{\s*grid-template-columns: minmax\(190px, 220px\) minmax\(0, 820px\) minmax\(220px, 250px\);/);
+  assert.match(stylesSource, /@media \(max-width: 1120px\)[\s\S]*\.detailCommunityRail,[\s\S]*\.detailThreadRail \{\s*display: none;/);
+  assert.match(stylesSource, /@media \(max-width: 720px\)[\s\S]*\.detailActionBand \{[\s\S]*overflow-x: auto;/);
   assert.match(searchSource, /route=\{backToListRoute\}/);
   assert.match(searchSource, /route=\{defaultSearchRoute\}/);
   assert.match(searchSource, /route=\{buildSearchRoute\(1, sortBy, value\)\}/);
@@ -672,6 +675,8 @@ test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器
 
 test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const detailViewSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetailView.tsx'), 'utf8');
+  const answerPageSource = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumAnswerPage.ts'), 'utf8');
   const postDetailSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PostDetail.tsx'), 'utf8');
   const answerLifecycleSource = readFileSync(
     resolve(clientRoot, 'src/apps/forum/components/PostAnswerLifecycleSection.tsx'),
@@ -685,17 +690,18 @@ test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指�
   assert.match(detailSource, /intent: 'answer'/);
   assert.match(detailSource, /intent: 'edit'/);
   assert.match(detailSource, /intent: 'history'/);
-  assert.match(detailSource, /href=\{answerReturnPath\}/);
-  assert.match(detailSource, /href=\{quickReplyReturnPath\}/);
-  assert.match(detailSource, /href=\{editReturnPath\}/);
-  assert.match(detailSource, /href=\{historyReturnPath\}/);
-  assert.match(detailSource, /href=\{commentReturnPath\}/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, handleAnswerAction\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, handleQuickReplyAction\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, \(\) => void handleEditPostAction\(\)\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, \(\) => void handleViewPostHistory\(\)\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, handleCommentAction\)/);
-  assert.match(detailSource, /getPostAnswerPage\(/);
+  assert.match(detailSource, /href: answerReturnPath/);
+  assert.match(detailSource, /href: quickReplyReturnPath/);
+  assert.match(detailSource, /href: editReturnPath/);
+  assert.match(detailSource, /href: historyReturnPath/);
+  assert.match(detailSource, /href: commentReturnPath/);
+  assert.match(detailSource, /onActivate: handleAnswerAction/);
+  assert.match(detailSource, /onActivate: handleQuickReplyAction/);
+  assert.match(detailSource, /onActivate: \(\) => void handleEditPostAction\(\)/);
+  assert.match(detailSource, /onActivate: \(\) => void handleViewPostHistory\(\)/);
+  assert.match(detailSource, /onActivate: handleCommentAction/);
+  assert.match(detailViewSource, /handlePublicForumLinkClick\(event, action\.onActivate\)/);
+  assert.match(answerPageSource, /getPostAnswerPage\(/);
   assert.match(detailSource, /<PostAnswerLifecycleSection/);
   assert.match(answerLifecycleSource, /createPostAnswer\(/);
   assert.match(answerLifecycleSource, /acceptPostAnswer\(/);

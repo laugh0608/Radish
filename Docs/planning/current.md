@@ -6,15 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-P02 已确认完整能力边界；下一步基于既有家族 UI 基线重整普通帖子 PC 低保真方案`
-- **产品下一顺位**：`评审 R1-P02 唯一 PC 方向；确认后再进入 Mobile 画板与代码实现`
-- **复核日期**：`2026-08-06`
+- **工程第一顺位**：`F4-R C-1B 的 R1-P02 已完成设计、成组实现和 Gateway PC / mobile 运行态验收；下一步按 C-1B 选择下一代表页`
+- **产品下一顺位**：`复核剩余 R1 / R2 候选的专题边界与代表价值，先确认下一页设计顺位，再进入对应实现`
+- **复核日期**：`2026-08-08`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
-- `2026-08-06` [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)的四项推进决策已确认：正式帖子详情承接点赞、reaction 与回帖的回帖；作者删除、投票和抽奖按作者 / 类型状态保留；基础资料、头像和显示时区进入正式 Private Web；转账、资产安全和统计脱离 F4-R，后续单独裁决迁移或退役。R1-P02 能力审计冻结解除，但仍须先通过 PC 代表设计评审。
+- `2026-08-08` 已完成并关闭 [R1-P02 帖子详情成组实现与运行态验收](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)：正式详情按已确认 PC / Mobile 代表设计落地，接入帖子 / 回帖点赞、reaction、赞赏和两级回帖；`PublicForumDetail.tsx` 从 `2292` 行收敛到 `1500` 行。Gateway 下普通读者 `TestUser` + 普通帖子覆盖 PC `1440 × 1000`、mobile `390 × 844`、`zh-CN / en-US`、`default / guofeng`、点赞 / reaction 可逆写入、两级回帖目标、来源 / 分享与无横向溢出；本地赞赏开关按既有默认关闭边界保持不变。
+- `2026-08-06` [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)的四项推进决策已确认：正式帖子详情承接点赞、reaction 与回帖的回帖；作者删除、投票和抽奖按作者 / 类型状态保留；基础资料、头像和显示时区进入正式 Private Web；转账、资产安全和统计脱离 F4-R，后续单独裁决迁移或退役。R1-P02 的 PC / Mobile 正式代表设计随后均已确认并进入成组代码实现。
 - `2026-08-06` R1-P02 多轮评审暴露出跨页面族风险：现有代表页审计能够判断布局和视觉复用，但没有证明正式 Web 已承接项目现有能力。R1-P02 Pencil 暂停继续修补，改为先建立正式 Web、WebOS 历史实现、既有专题与 API / Service 的能力覆盖矩阵；不把“当前 Public 未接入”自动固化为长期产品边界。
 - `2026-08-06` 已确认长期视觉演进原则：F4-R 当前批次负责建立并落地新的 Radish 家族 UI 基线；本批完成后的视觉重构默认根据最新 family-ui、项目差异附录、已确认代表页和正式代码进行优化与更新，不从零重新设计。只有全新产品形态、现有信息架构无法承载目标任务或功能边界发生结构性变化并获裁决时，才重新建立页面范式。
 - `2026-08-05` 已完成 [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)：现有 API、权限与写入边界保持不变；代表设计固定为普通帖子登录读者的 PC 1440 / Mobile 390 完整画板，加问答、身份回流和既有浮层关键状态。当前结构债集中在参与入口重复、解释型侧栏、卡片套卡片、mobile 辅助区长尾，以及 `PublicForumDetail.tsx` 达 `2292` 行；Pencil 方向确认前不进入代码。
@@ -54,29 +55,27 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-05，R1-P01 闭环与 R1-P02 审计）
+## 今日进展（2026-08-08，R1-P02 成组实现）
 
-1. 在已确认 PC 基准上完成并确认 `R1-P01 / 社区发现 / Mobile 390`，首轮反馈后把异色列表拼接收敛为焦点事件、连续编号轨道和嵌入式贡献者节点。
-2. 新增 Channel 匿名摘要字段、默认 Hidden migration、版本化写入、append-only 审计、Console 页面与独立 `view / manage` 权限；不把 Public 频道自动开放。
-3. 完成 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question` 统一公开读模型、数据库侧资格与 keyset 查询、snapshot 游标、纯文本投影、`no-store` 和整流失败关闭。
-4. 完成 `@radish/http` 契约与 `/discover` PC / mobile 页面，首项焦点不再假设具体来源，跨入口保留真实 `href`，数量文案按 locale 与英文单复数输出。
-5. 后端构建 `0` warning；专题测试 `57` 通过、`6` 个 PostgreSQL 条件用例显式跳过；Client `489`、Console `61` 项全量测试及两端 production build 通过。
-6. 应用本批 migration 并启动完整宿主，通过 host runtime、Gateway 匿名 / 登录态、PC / mobile、双语、代表主题、真实链接和 Console 治理只读路径复核；没有提交频道公开状态变更。
-7. 运行态发现并修正 `long` 字符串 wire contract 与前端计数类型不一致的根因，补齐定向测试、全量 Client 测试和 production build 后关闭 `R1-P01`。
-8. 完成 `R1-P02` 路由、权限、状态、专题和 PC / mobile 结构审计；固定连续阅读—讨论主轴、唯一帖子操作带、条件回答区和非重复线程索引，并明确视觉实现前拆分超限详情容器。
+1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
+2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
+3. 将超限详情容器拆分为控制器、正式视图、回答分页、实时评论、定位高亮和公开 Head 领域模块，主容器收敛至 `1500` 行。
+4. 新增 R1-P02 能力与响应式静态契约测试，并同步既有 SEO、上传导航保护和双语资源门禁。
+5. Client 全量 `491` 项测试、ESLint `0` warning 与 production build 通过；Gateway PC / mobile smoke 随后完成，R1-P02 已关闭。
 
 ## 当前下一步
 
-1. 依据已确认裁决修订 R1-P02 产品边界与代表状态，普通帖子 PC 方案必须体现帖子 / 回帖点赞、reaction、回帖的回帖，以及克制的轻回应和赞赏层级。
-2. 基于现有活动设计与新家族 UI 基线重新收敛唯一 PC 主方案，提供截图、差异和推荐结论；未经确认不进入 Mobile 或代码实现。
-3. PC 方向确认后再完成 Mobile 和代码拆分实现；局部差异不再复制多套残缺整页。
-4. F4-R 当前批次完成后，后续视觉工作默认基于已落地家族 UI 规范优化更新，不从零重设计；全局灰玉品牌 token 仍进入共享主题批单独治理。
+1. 回到 F4-R C-1B 候选矩阵，复核剩余 R1 / R2 页面的专题文档、当前代码事实和代表设计价值。
+2. 提出下一代表页顺位与设计 / 实现边界，获得确认后再进入对应 Pencil 或代码批次。
+3. R1-P02 只处理后续明确回归，不因选择下一代表页重新展开全量审计或复制等价画板。
+4. 全局灰玉品牌 token 仍进入共享主题批单独治理，不在单页局部实现中修改。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
 - [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)
 - [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)
+- [R1-P02 帖子详情成组实现](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)
 - [公开 forum 应用结构](/features/forum-public-app)
 - [R1-P01 公开发现成组实现](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)
 - [R1-P01 mobile 与统一公开读模型设计](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)
