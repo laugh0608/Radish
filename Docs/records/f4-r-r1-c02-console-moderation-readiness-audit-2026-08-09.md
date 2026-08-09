@@ -2,7 +2,7 @@
 
 > 日期：2026-08-09（Asia/Shanghai）
 >
-> 状态：静态审计已完成；现有服务端能力门禁通过，Console 前端能力门禁已由同日前端实现批闭合；尚未进入 Pencil 或正式代表设计
+> 状态：静态审计已完成；现有服务端能力门禁通过，Console 前端能力门禁已由同日前端实现批闭合；正式代表设计随后已完成并等待确认
 >
 > 范围：正式 Console `/console/moderation` 的案件与申诉工作区、HTTP / Service / Repository、权限、URL 状态、PC / mobile 结构，以及 `R1-C02` 对治理与审计页面的代表边界；本批未修改 `.pen`、运行时代码、API、数据库或权限
 
@@ -189,7 +189,7 @@
 ## 11. 下一步与停止线
 
 1. 第 5 节窄前端能力批已按[实现记录](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)闭合：`PostAnswer`、案件 URL / mobile task、stale / unavailable 和只读权限表面均已完成，Console `73 / 73` 测试及静态门禁通过。
-2. 下一步在另行获得明确授权后进入唯一活动 `.pen` 的 R1-C02 PC `1440`、Mobile `390` 与必要关键状态代表设计。
+2. 唯一活动 `.pen` 的 R1-C02 PC `1440`、Mobile `390` 与必要关键状态已按[正式代表设计记录](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)完成，当前等待确认。
 3. 设计确认后才成组实现正式 Console 视觉结构，并在专题准备验收时另行申请启动服务和 Gateway PC / mobile smoke 授权。
 
-当前不修改 Pencil、不启动服务或浏览器，也不提前推进 R2-C03。
+当前不修改运行时代码、不启动服务或浏览器，也不提前推进 R2-C03。

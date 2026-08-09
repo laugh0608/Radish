@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-C02 前端能力门禁已关闭；下一步等待授权进入正式代表设计`
-- **产品下一顺位**：`在唯一活动 .pen 中完成 /console/moderation 的 PC 1440、Mobile 390 与必要关键状态代表设计；确认前不进入正式视觉实现`
+- **工程第一顺位**：`F4-R C-1B 的 R1-C02 正式代表设计已完成；下一步等待确认后进入正式 Console 视觉实现`
+- **产品下一顺位**：`按已完成代表设计成组实现 /console/moderation 的 PC 三段治理桌、Mobile 连续队列 / 全屏任务与必要关键状态；确认前不修改运行时代码`
 - **复核日期**：`2026-08-09`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)：PC `1440 × 900` 固定为案件队列—受权证据—决定边界三段治理桌，Mobile `390 × 844` 固定为带 Console 五项真实入口的连续案件队列与隐藏全局导航的单案件全屏任务；关键状态覆盖 View-only、Reviewer 无 Action、`409`、stale / unavailable、筛选空结果和申诉 / Chat 边界。四个顶层画板均无 placeholder、裁切或溢出；当前等待确认，未修改运行时代码、API 或权限，未启动服务或浏览器。
 - `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)：补齐 PostAnswer 筛选 / 双语 / Revision 前置校验，以 URL 驱动案件显式选择、筛选、分页和 Case / Appeal mobile 全屏任务；队列 stale、详情 unavailable / stale、View-only 权限表面和 handler 写入冻结均已闭合。Console `73 / 73` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过；未修改 Pencil、API、数据库、权限、LongId、幂等或事务边界，未启动服务或浏览器。
 - `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)：服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化 `404 / 409` 和 Main / Chat 事务边界足够，不需要新增 API、数据库或权限；Console 前端仍需先闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、队列 / 详情 stale / unavailable，以及 View-only 写入表面。该窄能力批确认并关闭前不修改 Pencil、不进入代表设计，也不推进 R2-C03。
 - `2026-08-08` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-08)：按 Asia/Shanghai 日期复核 `11` 个提交和 `131` 个变更文件，确认今日依次关闭 R1-P02、R1-A01、R1-W01 与 R1-C01；代码—文档反查已修正 Public Forum 互动能力、F4-R 总专题、Chat / Author 当前说明、Console Orders 指南、八月日志和记录索引。明日只进入 R1-C02 设计前门禁，不提前修改 Pencil 或代码。
@@ -99,16 +100,18 @@
 28. 管理员与临时只读 Operator 覆盖重试确认 / `409`、备注成功 / 冲突、详情 `404`、列表 stale、筛选空结果和写入口隐藏；稳定态浏览器控制台 `0 error / 0 warning`。服务已停止，六库原样还原且完整性通过，临时数据清零。
 29. 完成 R1-C02 `/console/moderation` 静态 readiness：服务端能力门禁通过；识别并冻结 PostAnswer、案件 URL / mobile task、stale / unavailable 和 View-only 权限表面四组前端门禁，未修改 `.pen`、运行时代码或 API。
 30. 按确认方案关闭 R1-C02 窄前端能力门禁：六类目标、URL / mobile task、权威读取状态与权限停止线落地；Console `73 / 73` 测试和静态构建通过，仍未修改 `.pen` 或启动服务。
+31. 在唯一活动 `.pen` 中完成 R1-C02 PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态正式代表设计；四个顶层画板无 placeholder、裁切或溢出，等待确认后进入代码。
 
 ## 当前执行事项（2026-08-09）
 
-1. R1-C02 静态审计和窄前端能力门禁均已完成，保持现有 API、权限、LongId、幂等、结构化错误和事务边界，不新增原因 / 证据 / 动作结果筛选或自动治理能力。
-2. 下一步另行取得明确授权后，进入唯一活动 `.pen` 的 PC `1440`、Mobile `390` 与必要关键状态代表设计；先确认结构和状态，不提前写正式视觉代码。
-3. 当前不启动服务、浏览器或 R2-C03；真实 Gateway PC / mobile smoke 留到代表设计成组实现准备验收时申请。
+1. R1-C02 静态审计、窄前端能力门禁与正式代表设计均已完成；保持现有 API、权限、LongId、幂等、结构化错误和事务边界，不新增原因 / 证据 / 动作结果筛选或自动治理能力。
+2. 当前等待用户确认 PC 三段治理桌、Mobile 连续队列 / 全屏任务和必要关键状态；确认后成组实现正式 Console 视觉结构。
+3. 当前不启动服务、浏览器或 R2-C03；真实 Gateway PC / mobile smoke 留到代码、测试和静态构建完成并准备专题验收时申请。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)
 - [2026-08-08 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-08)
