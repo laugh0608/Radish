@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-09 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的六个 R1 与 `R2-C03` 已关闭；`R2-P03` readiness 已完成并进入窄前端能力门禁
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的六个 R1 与 `R2-C03` 已关闭；`R2-P03` readiness、能力门禁与局部代表设计已完成，等待设计确认
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -89,7 +89,7 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 
 `R2-C03` 已于 `2026-08-09` 完成[Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)，随后由[代码能力门禁实现](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)闭合内建角色保护、只读矩阵、授权单调版本 / 原子 CAS、系统设置结构化冲突、配置—审计共同提交、显式 Medium 确认和 Settings / Profile 真实性。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-c03-console-settings-permissions-representative-design-2026-08-09)已确认，并由同日[正式实现与 Gateway 验收](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)落地：PC 增强权限矩阵 / 内建保护、Low / Medium 设置确认与 dirty / CAS / `409` 表面；Mobile 使用三个独立页面内容承接连续角色目录、当前角色只读权限详情和 Low 设置 `BottomSheet`，权限项同时展示技术 key、含义与授权状态，Medium 在列表和提交 handler 双重保持 PC-only。实现继续复用 `AdminLayout`、Console 五项真实入口、R1-C01 高密度资源表面和 R1-C02 权限 / 冲突状态，不复制 Settings / Profile 路由，不新增移动任务壳层；Settings / Profile 只表现已有自服务能力，不进入 `console.*`。Console `83 / 83` 测试、Lint、strict type-check、production build 与权限扫描通过；Gateway PC `1440 × 900` 与 Mobile `390 × 844` 的真实角色、权限、Low / Medium、unavailable、空结果、导航和无横向溢出复核通过，稳定态干净页签无 `warning / error`。运行态发现并修正系统设置表单初始 `config` 未装载时解引用风险等级的根因；未保存角色授权或系统设置，临时 OIDC 登录增量已精确清理，服务端口已停止。`R2-C03` 已关闭。
 
-`R2-P03` 已于 `2026-08-09` 完成 [Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)。Docs 详情、商品详情、公开主页与 Legal 继续继承 `R1-P02 / R1-F01`，不升级为 R1，也不复制四个完整路由画板。现有 API、权限、URL、LongId、购买幂等、关系版本、举报治理事务与存储边界足够；Pencil 前只需关闭正式商品详情缺失 `Product` 举报，以及公开主页次要统计竞态覆盖主资料 `404 / unavailable`、未读取粉丝数被显示为 `—` 两项窄前端门禁。门禁确认并关闭前不修改 Pencil，不提前推进 R3。
+`R2-P03` 已于 `2026-08-09` 完成 [Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)，并由同日[能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)闭合正式商品 `Product` 举报与公开主页权威加载。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)已完成：两个 PC 代表区固定长内容阅读结构，以及商品 / 公开主页动作层级；三个独立 Mobile `390 × 844` 页面分别承接 Legal 长文、商品详情和公开主页，复用既有 Public 壳层与 Client 胶囊导航，不使用外部说明板或多页合并容器；必要关键状态覆盖权威 `404`、商品 unavailable、统计 / 关系 unavailable、真实空态和共享商品举报。六板均无 placeholder、裁切、塌陷或横向溢出，当前等待设计确认，不提前进入正式视觉代码或 R3。
 
 ## 5. R2 局部设计类型
 
@@ -136,6 +136,6 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 7. `R1-W01 → R1-C01 → R1-C02` 设计轨已全部关闭；R2 只补必要差异，不扩为路由镜像。
 8. `R1-W01` 与 `R1-C01` 均已完成并关闭；`R1-C01` 的 readiness、PC / Mobile / 必要关键状态设计、正式 Console 代码、静态验证和 Gateway 运行态验收已形成闭环。
 9. `R2-C03` readiness、代码能力门禁、局部代表设计、正式页面代码与 Gateway PC / mobile 运行态验收均已完成，专题关闭。
-10. `R2-P03` readiness 已完成；当前先关闭正式商品举报与公开主页权威加载两项窄前端门禁，随后才进入局部代表设计，不提前推进 R3 页面。
+10. `R2-P03` readiness、正式商品举报 / 公开主页权威加载能力门禁与局部代表设计均已完成；当前等待设计确认，确认前不进入正式视觉代码，也不提前推进 R3 页面。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

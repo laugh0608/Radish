@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-P03 Public 只读详情变体；代码能力门禁已关闭，等待 Pencil 授权进入局部代表设计`
-- **产品下一顺位**：`在唯一活动 .pen 中完成 R2-P03 局部代表设计并等待确认；不提前推进正式实现或 R3 页面`
+- **工程第一顺位**：`F4-R R2-P03 Public 只读详情变体；局部代表设计与 Pencil 静态复核已完成，等待设计确认`
+- **产品下一顺位**：`设计确认后进入 R2-P03 正式 UI 成组实现与代码侧验证；不提前推进 R3 页面`
 - **复核日期**：`2026-08-09`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-09` 已完成 [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)：唯一活动 `.pen` 新增 Public 长内容结构 PC、商品与公开主页动作结构 PC、Legal 长文 Mobile、商品详情 Mobile、公开主页 Mobile 和必要关键状态六个顶层设计板。三个 Mobile `390 × 844` 页面均为独立页面，复用既有 Public 壳层与 Client 胶囊导航，不使用外部说明板或多页合并容器；商品把价格 / 购买前置并弱化举报，公开主页先显示真实身份 / 权威统计再进入关系动作，状态覆盖权威 `404`、商品 unavailable、统计 / 关系 unavailable、真实空态和共享商品举报。六板无 placeholder、裁切、塌陷或横向溢出，当前等待设计确认，尚未进入正式视觉代码、启动服务 / 浏览器或推进 R3。
 - `2026-08-09` 已完成 [R2-P03 Public 只读详情变体能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)：正式商品详情以当前字符串 LongId 复用既有 `Product` 举报弹窗，匿名沿用统一提示且不新增 URL intent；公开主页由主资料独立裁决 `404 / unavailable`，统计以规范化公开 identifier 局部加载 / 重试，未取得权威结果时不伪造零值或粉丝数。公开统计、帖子和评论 consumer 继续保留结构化错误；Client `512 / 512` 测试、Lint、type-check 与 production build 通过。本批未修改 Pencil、启动服务或浏览器，下一步等待 Pencil 授权。
 - `2026-08-09` 已完成 [R2-P03 Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)：分级继续保持 R2，Docs 详情、商品详情、公开主页与 Legal 继承 R1-P02 / R1-F01，不复制四个完整路由。现有 API、权限、URL、LongId、购买幂等、关系版本、治理事务和存储边界足够；Pencil 前只需关闭两项窄前端门禁：正式商品详情复用既有 `Product` 举报弹窗，以及公开主页以主资料权威区分 `404 / unavailable`、把统计失败局部化并停止伪装未读取粉丝数。当前未修改 Pencil、运行时代码或 API，未启动服务 / 浏览器，也未推进 R3。
 - `2026-08-09` 已完成并关闭 [R2-C03 Console 设置与权限矩阵正式实现及 Gateway 验收](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)：PC 落地只读 / 内建角色保护、Low 轻量确认、Medium 显式确认，以及 dirty、CAS 版本、结构化 `409` 草稿保留；Mobile 落地独立连续角色目录、以权威快照渲染的只读权限详情与 Low 设置 `BottomSheet`，权限 key 同时展示含义，Medium 在列表和提交 handler 双重保持 PC-only。Console `83 / 83` 测试、Lint、普通 / strict type-check、production build 与权限扫描通过；Gateway PC `1440 × 900`、Mobile `390 × 844`、真实角色 / 设置读取、unavailable、空结果、五项胶囊导航和无横向溢出通过，稳定态干净页签无 `warning / error`。运行态修正系统设置初始 `config` 未装载时的空值崩溃；未保存角色授权或系统设置，临时 OIDC 增量已精确清理，服务已停止。API、权限、URL、LongId、CAS、结构化错误、事务和存储边界保持不变。
@@ -76,7 +77,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 最近进展（2026-08-08—09，六个 R1 / R2-C03 / R2-P03 readiness）
+## 最近进展（2026-08-08—09，六个 R1 / R2-C03 / R2-P03 设计）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
@@ -117,16 +118,18 @@
 37. 获授权后完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 运行态验收；修正系统设置初始空值崩溃，角色 / 权限 / 设置真实读取、Low / Medium、unavailable、空结果、五项导航和无横向溢出通过，干净页签无 `warning / error`。未产生权限或配置写入，临时 OIDC 增量已精确清理，服务停止。
 38. 选择 `R2-P03` 为下一顺位并完成 readiness：正式 Docs、Shop、Profile、Legal 与 WebOS / API 能力反查通过；识别正式商品举报和公开主页权威加载两项窄前端门禁，尚未修改 Pencil、运行时代码或 API。
 39. 按确认方案关闭 R2-P03 窄前端能力门禁：商品详情接入共享 `Product` 举报；公开主页拆分主资料、统计和内容权威状态，停止伪造统计值并保留结构化错误。Client `512 / 512` 测试与静态构建通过，尚未修改 Pencil 或启动服务。
+40. 获当前任务明确授权后，在唯一活动 `.pen` 中完成 R2-P03 两个 PC 代表区、三个独立 Mobile `390 × 844` 页面和必要关键状态局部代表设计；复用既有 Public Header 与 Client 胶囊导航，六板通过截图和节点边界复核，未启动服务或浏览器，等待设计确认。
 
 ## 当前执行事项（2026-08-09）
 
-1. R2-P03 readiness 与代码能力门禁已完成，分级保持 R2；Docs 详情、商品详情、公开主页与 Legal 继续继承 R1-P02 / R1-F01，不复制四个完整路由。
-2. 当前等待 Pencil 明确授权后进入局部代表设计，只覆盖 PC 长内容、PC 商品 / 公开主页动作详情、Mobile `390px` 信息顺序和必要关键状态。
-3. 设计确认前不进入正式页面视觉实现；不新增 API、权限、URL、LongId 形态或移动壳层，也不提前推进 R3 页面。
+1. R2-P03 readiness、代码能力门禁与局部代表设计已完成，分级保持 R2；Docs 详情、商品详情、公开主页与 Legal 继续继承 R1-P02 / R1-F01，不复制四个完整路由。
+2. 当前等待设计确认；六个代表板已固定 PC 长内容、PC 商品 / 公开主页动作层级、三个独立 Mobile `390 × 844` 页面和必要关键状态。
+3. 设计确认前不进入正式页面视觉实现；不新增 API、权限、URL、LongId 形态或移动壳层，也不提前推进 R3 页面。确认后先完成正式 UI 成组实现与代码侧验证，Gateway smoke 仍需另行启动授权。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)
 - [R2-P03 Public 只读详情变体能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)
 - [R2-P03 Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)
 - [R2-C03 Console 设置与权限矩阵正式实现](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)
@@ -195,7 +198,7 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 未获当前任务 Pencil 授权前不修改唯一活动 `.pen`，不提前实施 R3 派生页面视觉改造。
+- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 设计确认前不进入正式页面视觉实现，不提前实施 R3 派生页面视觉改造。
 - 不恢复 Tauri，不扩展 WebOS 新功能，不把 Flutter 做成 Web 的机械复制，也不重启主动生产证据采集。
 - 不继续修改历史 `.pen` 留档，不为路由、主题、文案或等价状态复制完整画板；任何后续 `.pen` 修改仍需当前任务的明确授权。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。
