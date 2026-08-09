@@ -1,8 +1,8 @@
 # F4-R C-1 代表页代码事实审计
 
-> 日期：2026-07-30；2026-08-08 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-09 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 已关闭，下一顺位为 `R1-C02` 设计前门禁
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 已关闭；`R1-C02` 静态审计已完成，前端能力门禁待确认和闭合
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -84,6 +84,8 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 `R1-W01` 已于 `2026-08-08` 完成[消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)。正式 `/messages` 与 WebOS 共用同一 Chat 核心，主体能力没有迁移缺口；举报 ACL / LongId、失败重试幂等和历史错误契约已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、连续会话列表 / 消息主轴 / 按需成员上下文、搜索与成员互斥、紧凑 Pin、Mobile 单任务流和 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。撤回能力证据与频道角色权限仍需另行裁决，不在代表页中暗示扩权。
 
 `R1-C01` 已于 `2026-08-08` 完成[Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)、PC `1440 × 900` / Mobile `390 × 844` 与必要关键状态正式代表设计，以及[正式代码、静态验证和 Gateway 运行态验收](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)。PC 使用连续单行薄表格与按需详情 inspector；Mobile 使用连续三列订单行、Client 风格五项胶囊导航和隐藏全局导航的全屏详情任务，中列承载商品类型 / 单价与支付证据。只读 Operator、重试 `409`、备注冲突、详情不可用、列表 stale、筛选空结果、LongId URL 与受权资源回跳均通过；现有 API、权限、结构化错误、LongId、幂等与事务边界保持不变。下一任务从 `R1-C02` 设计前代码事实与能力覆盖门禁开始。
+
+`R1-C02` 已于 `2026-08-09` 完成[Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)。服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化错误和 Main / Chat 事务边界足以支撑代表设计；Console 前端仍需先闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、stale / unavailable，以及 View-only 写入表面。该窄能力批确认并关闭前，不进入唯一活动 `.pen` 的 PC / mobile 正式代表设计。
 
 ## 5. R2 局部设计类型
 

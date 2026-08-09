@@ -1,8 +1,8 @@
 # 内容治理系统说明
 
-> **适用范围**：帖子、评论、轻回应、聊天消息、商品的用户举报，Console 案件与申诉处理，以及目标处置、禁言 / 封禁和纠正后的当前状态
+> **适用范围**：帖子、评论、回答、轻回应、聊天消息、商品的用户举报，Console 案件与申诉处理，以及目标处置、禁言 / 封禁和纠正后的当前状态
 >
-> **最后更新**：2026-07-25（Asia/Shanghai）
+> **最后更新**：2026-08-09（Asia/Shanghai）
 >
 > **权威设计**：[内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) · [内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 
@@ -33,7 +33,7 @@
 
 ## 举报者使用说明
 
-登录用户可以从帖子、评论、轻回应、聊天消息或商品的既有举报入口提交原因和不超过 500 字的补充说明。
+登录用户可以从帖子、评论、回答、轻回应、聊天消息或商品的既有举报入口提交原因和不超过 500 字的补充说明。
 
 `POST /api/v1/ContentModeration/Report` 返回 `ContentReportReceiptVo`：
 
@@ -59,7 +59,7 @@
 | `ContentModerationCase` | 同一目标本处理周期的状态、决定、版本、公开结果和内部备注 |
 | `ContentModerationEvidence` | 追加式举报快照、当前目标快照、治理备注和动作结果 |
 | `ContentModerationCaseEvent` | 案件状态、证据、决定、动作请求 / 结果、通知和纠正动作时间线 |
-| `ContentModerationTargetAction` | 五类目标 Restrict / Restore 的来源、版本、幂等键和执行结果 |
+| `ContentModerationTargetAction` | 六类目标 Restrict / Restore 的来源、版本、幂等键和执行结果 |
 | `ContentModerationAppeal` | 被处置用户的一次申诉、版本、复核结果、纠正范围和公开说明 |
 | `ContentModerationAppealEvent` | 申诉提交、接手、证据、决定、纠正、失败重试和通知时间线 |
 | `UserModerationAction` | 禁言、封禁、解除和迁移校准的不可变动作流水 |
@@ -77,8 +77,9 @@
 
 目标处置结果使用 `Keep / Restricted / Unavailable / ActionPending / ActionFailed`。其中：
 
-- Post、Comment、PostQuickReply、Product 在 Main 事务内执行限制。
-- Post / Comment 使用 `EditCount`，Product 使用 `Version` 校验目标版本；版本变化时拒绝覆盖。
+- Post、Comment、PostAnswer、PostQuickReply、Product 在 Main 事务内执行限制。
+- Post / Comment 使用 `EditCount`，PostAnswer 使用 `ContentRevision`，Product 使用 `Version` 校验目标版本；版本变化时拒绝覆盖。
+- 被限制的 PostAnswer 如果正被采纳，会在同一事务中清除采纳并追加采纳事件；后续恢复不会自动重新采纳。
 - ChatMessage 通过 Main 可靠 Outbox 请求 Chat 库精确撤回；任务完成前案件保持处理中，不能提前显示“已采取措施”。
 
 用户动作使用 `Mute / Ban / Unmute / Unban`：
@@ -95,7 +96,7 @@
 
 - 申诉状态使用 `Submitted / Reviewing / ReliefPending / ReliefFailed / Resolved / Withdrawn`。
 - 复核结果使用 `Upheld / PartiallyGranted / Granted`；部分采纳必须明确 `TargetContent / Mute / Ban` 中的纠正范围。
-- Post、Comment、PostQuickReply、Product 在 Main 事务内按来源与版本恢复；ChatMessage 通过可靠 Outbox 恢复消息可见性、搜索投影以及由同一治理动作移除的 Reaction / Pin。
+- Post、Comment、PostAnswer、PostQuickReply、Product 在 Main 事务内按来源与版本恢复；ChatMessage 通过可靠 Outbox 恢复消息可见性、搜索投影以及由同一治理动作移除的 Reaction / Pin。
 - 用户限制只在 `UserModerationState.SourceCaseId` 仍指向原案件时解除；后续限制、自然到期或独立纠正不会被申诉反向覆盖。
 - `ReliefPending / ReliefFailed` 都不是“已纠正”；只有所有选定纠正项成功、已被后续状态替代或确认无需执行后才能进入终态。
 - 申诉正文、举报者、证据和操作员不向普通通知、举报者或无 `console.moderation.appeal` 权限的角色披露。
@@ -155,9 +156,11 @@ Main migration `20260721_008_content_moderation_case`：
 
 申诉与纠正由 Main `20260725_009_content_moderation_appeal` 和 Chat `20260725_010_chat_moderation_relief` 承接：
 
-- 创建 Appeal / AppealEvent / TargetAction，并为五类目标及用户动作补治理来源。
+- 创建 Appeal / AppealEvent / TargetAction，并为当时五类目标及用户动作补治理来源。
 - 只对可证明由原案件造成的历史限制回填可恢复来源；无法唯一证明的历史状态保持不可自动恢复。
 - Chat 迁移补消息、Reaction、Pin 的来源标记和跨库恢复校验，不补造申诉、不重开案件。
+
+F4-O 的 Main `20260727_015_forum_answer_lifecycle` 与顺序校验 migration `20260728_016_forum_answer_lifecycle_strict` 随后把 PostAnswer 补为第六类治理目标；回答继续复用现有 Case / Evidence / TargetAction / Appeal 聚合，不另建治理表或 Console 运营台。
 
 已有数据库必须按 `doctor → 备份 → apply → verify` 前滚；不得依赖 API 启动或 Code First 静默补结构。详细规则见[数据库结构变更协作口径](/guide/database-schema-change-governance)。
 
@@ -170,11 +173,11 @@ Main migration `20260721_008_content_moderation_case`：
 - HTTP 示例：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http`、`Radish.Api.ContentModeration.Appeal.http`
 - Repository / migration 测试：`Radish.Api.Tests/Repositories/ContentModerationCaseRepositoryTest.cs`、`ContentModerationCaseSchemaMigrationTest.cs`
 
-修改治理契约时，至少覆盖案件聚合、重复举报、Case / Appeal / State 版本、操作键回放与冲突、五类目标限制与恢复、Chat 任务重试、申诉资格、通知隐私和 SQLite / PostgreSQL migration。
+修改治理契约时，至少覆盖案件聚合、重复举报、Case / Appeal / State 版本、操作键回放与冲突、六类目标限制与恢复、Chat 任务重试、申诉资格、通知隐私和 SQLite / PostgreSQL migration。
 
 ## 不做范围
 
 - 不读取未举报私聊，不复制附件二进制，不扩大管理员数据可见范围。
 - 不建设机器审核、风险评分、自动封禁、敏感词平台或推荐降权。
 - 不提供二次申诉、多级仲裁、工单、举报撤回、催办、申诉附件或管理员对话。
-- 不建立反射式通用治理适配器；五类真实目标保持明确、可测试的领域边界。
+- 不建立反射式通用治理适配器；六类真实目标保持明确、可测试的领域边界。

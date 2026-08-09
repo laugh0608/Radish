@@ -61,6 +61,8 @@
 > `2026-07-21` 更新：F4-I-B 已完成 Case / Evidence / Event / UserModerationState、五类目标处置、Chat 可靠任务、新案件 API 与 `console.moderation.view / review / action` 分权。F4-I-C 随后已更新 `P02 / P07`、迁移 `/moderation` 并在消费者清零后删除旧 `Review / ApplyUserAction` 等 HTTP 入口。
 >
 > `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
+>
+> `2026-08-09` 更新：F4-O 已把 PostAnswer 补为第六类治理目标；R1-C02 [设计前能力门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)确认服务端 Case / Appeal、权限、版本、幂等与事务能力足够，但 Console 仍需先闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL、stale / unavailable 和 View-only 写入表面。门禁解除前不修改唯一活动 `.pen`；现有队列只承接已落地的状态、目标类型与关键词筛选，不把历史设计稿中的原因、证据可用性或动作结果筛选当成当前 API 承诺。
 
 ## 目标
 

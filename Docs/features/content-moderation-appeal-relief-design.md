@@ -8,6 +8,8 @@
 >
 > **前置专题**：[F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) · [内容治理系统说明](/guide/content-moderation) · [通知中心深化与通知治理](/features/notification-center-deepening)
 
+> **完成后扩展**：F4-O 已于 2026-07-28 把 PostAnswer 补为第六类治理目标，并按本专题来源、版本与纠正语义支持受权恢复；恢复回答不会自动恢复旧采纳。以下“五类目标”与对应矩阵保留 F4-J 当时的完成事实，现行六类口径以[内容治理系统说明](/guide/content-moderation)和 [F4-O 专题](/features/forum-answer-lifecycle-governance-design)为准。
+
 ## 一、结论摘要
 
 F4-J 选择“内容治理申诉与处置纠正”为当前唯一完整功能专题。它在现有“举报 → 案件 → 证据 → 决定 → 动作 → 结果”之后增加独立的“决定通知 → 申诉 → 复核 → 纠正动作 → 最终结果”，但不改写原案件、原举报或历史动作。
