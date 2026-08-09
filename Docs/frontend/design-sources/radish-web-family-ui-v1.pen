@@ -64415,12 +64415,12 @@
                   "type": "frame",
                   "id": "pJth3",
                   "x": 158,
-                  "y": 148,
+                  "y": 154,
                   "name": "公开主页 PC / 身份资料",
-                  "width": 440,
-                  "height": 108,
+                  "width": 280,
+                  "height": 76,
                   "layout": "vertical",
-                  "gap": 12,
+                  "gap": 14,
                   "children": [
                     {
                       "type": "frame",
@@ -64462,62 +64462,6 @@
                       "fontFamily": "$font-body",
                       "fontSize": 12,
                       "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "O6Q1r",
-                      "name": "公开主页 PC / 等级与加入时间",
-                      "height": 24,
-                      "gap": 6,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "M8X7IY",
-                          "name": "公开主页 PC / 用户等级",
-                          "height": 24,
-                          "fill": "$brand-soft",
-                          "cornerRadius": 12,
-                          "gap": 5,
-                          "padding": [
-                            0,
-                            9
-                          ],
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "PiUZm",
-                              "name": "公开主页 PC / 等级图标",
-                              "width": 13,
-                              "height": 13,
-                              "icon": "sprout",
-                              "library": "lucide",
-                              "fill": "$brand"
-                            },
-                            {
-                              "type": "text",
-                              "id": "cdK3r",
-                              "name": "公开主页 PC / 等级文字",
-                              "fill": "$brand",
-                              "content": "Lv.12 社区共建者",
-                              "fontFamily": "$font-body",
-                              "fontSize": 11,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "ndWrI",
-                          "name": "公开主页 PC / 加入时间",
-                          "fill": "$text-muted",
-                          "content": "2021 年加入",
-                          "fontFamily": "$font-body",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
                     }
                   ]
                 },
@@ -64785,6 +64729,133 @@
                           "fontFamily": "$font-body",
                           "fontSize": 13,
                           "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "RTulj",
+                  "x": 460,
+                  "y": 148,
+                  "name": "公开主页 PC / 等级徽章与加入时间",
+                  "width": 220,
+                  "height": 108,
+                  "layout": "vertical",
+                  "gap": 14,
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "dUE2r",
+                      "name": "公开主页 PC / 等级与徽章",
+                      "width": "fill_container",
+                      "height": 28,
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "M8X7IY",
+                          "name": "公开主页 PC / 等级",
+                          "height": 26,
+                          "fill": "$brand-soft",
+                          "cornerRadius": 12,
+                          "gap": 5,
+                          "padding": [
+                            0,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "PiUZm",
+                              "name": "公开主页 PC / 等级图标",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "sprout",
+                              "library": "lucide",
+                              "fill": "$brand"
+                            },
+                            {
+                              "type": "text",
+                              "id": "cdK3r",
+                              "name": "公开主页 PC / 等级文字",
+                              "fill": "$brand",
+                              "content": "Lv.12",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "g9h2U",
+                          "name": "公开主页 PC / 公开等级徽章",
+                          "height": 26,
+                          "fill": "$action-soft",
+                          "cornerRadius": 13,
+                          "gap": 5,
+                          "padding": [
+                            0,
+                            9
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon",
+                              "id": "Pk118",
+                              "name": "公开主页 PC / 公开等级徽章图标",
+                              "width": 13,
+                              "height": 13,
+                              "icon": "award",
+                              "library": "lucide",
+                              "fill": "$action"
+                            },
+                            {
+                              "type": "text",
+                              "id": "wighw",
+                              "name": "公开主页 PC / 公开等级徽章文字",
+                              "fill": "$action",
+                              "content": "社区共建者",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "nMj4N",
+                      "name": "公开主页 PC / 加入时间信息",
+                      "height": 24,
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "DUfZm",
+                          "name": "公开主页 PC / 加入时间图标",
+                          "width": 14,
+                          "height": 14,
+                          "icon": "calendar-days",
+                          "library": "lucide",
+                          "fill": "$text-muted"
+                        },
+                        {
+                          "type": "text",
+                          "id": "ndWrI",
+                          "name": "公开主页 PC / 加入时间",
+                          "fill": "$text-muted",
+                          "content": "2021 年加入",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         }
                       ]
                     }
