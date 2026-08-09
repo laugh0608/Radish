@@ -1,10 +1,10 @@
 # Console 治理工作台设计端点
 
-> 状态：`P00-P18` 设计与 Console 首轮视觉 / 交互治理已收口；`P02 / P07` 已承接内容治理案件与申诉复核工作台，正式页面已完成 Case / Evidence / Appeal / Relief 契约迁移；移动 Console 继续只作为响应式只读管理后台参考
+> 状态：`P00-P18` 是只读历史设计资产；正式 Console 已由 `R1-C01 / R1-C02` 建立 PC / Mobile 契约，`R2-C03` readiness 已完成并进入代码能力门禁
 >
 > 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 最近更新：2026-07-25（Asia/Shanghai）
+> 最近更新：2026-08-09（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
 >
@@ -62,7 +62,9 @@
 >
 > `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
 >
-> `2026-08-09` 更新：F4-O 已把 PostAnswer 补为第六类治理目标；R1-C02 [设计前能力门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)确认服务端 Case / Appeal、权限、版本、幂等与事务能力足够，同日[前端能力批](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)已闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL / mobile task、stale / unavailable 和 View-only 写入表面。[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)现已固定 PC 队列—证据—决定三段治理桌、Mobile 连续案件队列 / 保留顶部品牌栏且隐藏五项底部导航的单案件全屏任务及必要关键状态，等待确认后进入成组实现；现有队列只承接已落地的状态、目标类型与关键词筛选，不把历史设计稿中的原因、证据可用性或动作结果筛选当成当前 API 承诺。
+> `2026-08-09` 更新：F4-O 已把 PostAnswer 补为第六类治理目标；R1-C02 [设计前能力门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)确认服务端 Case / Appeal、权限、版本、幂等与事务能力足够，同日[前端能力批](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)已闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL / mobile task、stale / unavailable 和 View-only 写入表面。[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)固定 PC 队列—证据—决定三段治理桌、Mobile 连续案件队列 / 保留顶部品牌栏且隐藏五项底部导航的单案件全屏任务及必要关键状态，并已由[正式实现与 Gateway 验收](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)关闭；现有队列只承接已落地的状态、目标类型与关键词筛选，不把历史设计稿中的原因、证据可用性或动作结果筛选当成当前 API 承诺。
+>
+> `2026-08-09` 更新：R1-C02 正式实现与 Gateway 验收已经关闭；[R2-C03 readiness](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)确认设置与权限矩阵继续保持 R2，并复用 Console 五项真实入口。Mobile 权限矩阵固定只读，System Config 默认只读且只允许 Low 风险写入，Medium 设置与角色授权写入保持 PC-only；本类型不新增隐藏全局导航的任务壳层。内建角色保护、只读矩阵路由、授权单调版本 / 原子 CAS、系统设置结构化冲突与配置—审计共同提交先进入代码能力门禁，关闭前不修改 Pencil。
 
 ## 目标
 

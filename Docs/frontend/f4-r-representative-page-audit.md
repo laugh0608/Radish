@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-09 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02` 已关闭；下一顺位为 `R2-C03` 设计前代码事实与能力覆盖审计
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的六个 R1 已关闭；`R2-C03` readiness 已完成，下一顺位为代码能力门禁
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -87,6 +87,8 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 
 `R1-C02` 已于 `2026-08-09` 完成[Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)。服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化错误和 Main / Chat 事务边界足以支撑代表设计；随后由同日[前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、stale / unavailable，以及 View-only 写入表面。唯一活动 `.pen` 中的[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)已经确认，并由[正式成组实现与 Gateway 验收](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)落地 PC 三段治理桌、Mobile 连续三列案件队列 / 按需筛选，以及保留 Console 顶部品牌栏且隐藏五项底部导航的全屏任务；PC `1440 × 900` 与 Mobile `390 × 844` 无横向溢出，真实管理员读取、空结果、申诉空队列与详情 unavailable 通过，权限、冲突和 stale 边界继续由自动化分层守卫。`R1-C02` 已关闭，下一步从 `R2-C03` 设计前代码事实与能力覆盖审计开始。
 
+`R2-C03` 已于 `2026-08-09` 完成[Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)。本类型继续保持 R2：复用 `AdminLayout`、Console 五项真实入口、R1-C01 高密度资源表面和 R1-C02 权限 / 冲突状态，只补权限矩阵、设置分区、危险确认与 Mobile 只读 / Low 风险差异。代码事实同时暴露出内建角色保护、只读矩阵路由、授权单调版本 / 原子 CAS、系统设置结构化冲突与配置—审计共同提交等能力门禁；该门禁完成前不修改 Pencil。Mobile 权限矩阵保持只读，Medium 设置和角色授权写入保持 PC-only；R2 不新增隐藏全局导航的任务壳层。
+
 ## 5. R2 局部设计类型
 
 | 编号 | 局部类型 | B/L/S/R/M/U | 总分 | 只需确认的差异 | 继承来源 |
@@ -129,8 +131,8 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 4. `R1-P01` 阶段性 PC / mobile 真实截图与交互复核已通过并关闭；未暴露需要回写 Pencil 的共享结构偏差。
 5. `R1-P02` 的 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收已关闭。
 6. `R1-A01` readiness、能力修复、PC / mobile 正式代表设计、页面实现和 Gateway 运行态验收已完成并关闭。
-7. 后续设计轨切换为 `R1-W01 → R1-C01 → R1-C02`；R2 只补必要差异，不扩为路由镜像。
+7. `R1-W01 → R1-C01 → R1-C02` 设计轨已全部关闭；R2 只补必要差异，不扩为路由镜像。
 8. `R1-W01` 与 `R1-C01` 均已完成并关闭；`R1-C01` 的 readiness、PC / Mobile / 必要关键状态设计、正式 Console 代码、静态验证和 Gateway 运行态验收已形成闭环。
-9. 每完成一个 R1，先对照当前代码确认功能与文案，再进入对应共享组件和代表页实现；代表页代码落地并完成截图复核后，以复核结果驱动 R3 成组实现。
+9. `R2-C03` readiness 已完成；下一步先关闭代码能力门禁，再进入关键区块 / 状态设计，之后才以复核结果驱动对应 R3 成组实现。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。
