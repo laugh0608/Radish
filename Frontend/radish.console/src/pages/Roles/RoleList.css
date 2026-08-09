@@ -11,3 +11,33 @@
 .role-form-full-width {
   width: 100%;
 }
+.role-list-mobile-row {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.role-list-mobile-row__header,
+.role-list-mobile-row__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.role-list-mobile-row p {
+  margin: 0;
+  color: var(--console-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.role-list-mobile-row__meta {
+  flex-wrap: wrap;
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.role-list-mobile-row__meta code {
+  overflow-wrap: anywhere;
+}

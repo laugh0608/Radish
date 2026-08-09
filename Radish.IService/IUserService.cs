@@ -67,6 +67,11 @@ public interface IUserService : IBaseService<User, UserVo>
     Task<bool> ChangeDisplayNameAsync(long userId, string displayName, UserDisplayNameChangeContext context);
 
     /// <summary>
+    /// 在单一事务中更新当前用户资料与展示名审计。
+    /// </summary>
+    Task<bool> UpdateMyProfileAsync(long userId, UpdateMyProfileDto request, UserDisplayNameChangeContext context);
+
+    /// <summary>
     /// 搜索用户（用于@提及功能）
     /// </summary>
     /// <param name="keyword">搜索关键词（匹配用户名）</param>

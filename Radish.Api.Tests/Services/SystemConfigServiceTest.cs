@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Moq;
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -166,7 +167,7 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.PostTitleMinLengthKey)!;
         var service = CreateService(new Mock<ISystemConfigRepository>());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(async () =>
             await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
             {
                 Value = "4",
@@ -177,6 +178,7 @@ public class SystemConfigServiceTest
             }));
 
         Assert.Contains("需要填写修改原因", exception.Message);
+        Assert.Equal("SystemConfig.ReasonRequired", exception.ErrorCode);
     }
 
     [Fact]
@@ -185,28 +187,15 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.PostTitleMinLengthKey)!;
         var repository = new Mock<ISystemConfigRepository>();
         var logRepository = new Mock<ISystemConfigChangeLogRepository>();
-        SystemConfigRecord? capturedRecord = null;
-        SystemConfigChangeLogRecord? capturedLog = null;
+        SystemConfigMutation? capturedMutation = null;
 
         repository
             .Setup(item => item.GetByKeyAsync(definition.Key))
             .ReturnsAsync((SystemConfigRecord?)null);
         repository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigRecord>()))
-            .Callback<SystemConfigRecord>(record => capturedRecord = record)
-            .ReturnsAsync((SystemConfigRecord record) =>
-            {
-                record.Id = 21;
-                return record;
-            });
-        logRepository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
-            .Callback<SystemConfigChangeLogRecord>(record => capturedLog = record)
-            .ReturnsAsync((SystemConfigChangeLogRecord record) =>
-            {
-                record.Id = 3;
-                return record;
-            });
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .Callback<SystemConfigMutation>(mutation => capturedMutation = mutation)
+            .ReturnsAsync((SystemConfigMutation mutation) => SuccessfulMutation(mutation, 21));
 
         var service = CreateService(repository, logRepository);
 
@@ -222,16 +211,15 @@ public class SystemConfigServiceTest
         Assert.NotNull(updatedConfig);
         Assert.True(updatedConfig!.VoIsOverridden);
         Assert.Equal("4", updatedConfig.VoEffectiveValue);
-        Assert.NotNull(capturedRecord);
-        Assert.Equal(definition.Key, capturedRecord!.Key);
-        Assert.Equal("4", capturedRecord.Value);
-        Assert.Equal(1, capturedRecord.Version);
+        Assert.NotNull(capturedMutation?.NextRecord);
+        Assert.Equal(definition.Key, capturedMutation!.NextRecord!.Key);
+        Assert.Equal("4", capturedMutation.NextRecord.Value);
         Assert.Equal(1, updatedConfig.VoVersion);
-        Assert.NotNull(capturedLog);
-        Assert.Equal(SystemConfigRiskLevel.Medium, capturedLog!.RiskLevel);
-        Assert.Equal(definition.RiskLevel, capturedLog.ConfirmRiskLevel);
-        Assert.Equal(definition.Key, capturedLog.ConfirmKey);
-        Assert.Equal("提高标题有效信息量", capturedLog.Reason);
+        Assert.NotNull(capturedMutation.ChangeLog);
+        Assert.Equal(SystemConfigRiskLevel.Medium, capturedMutation.ChangeLog!.RiskLevel);
+        Assert.Equal(definition.RiskLevel, capturedMutation.ChangeLog.ConfirmRiskLevel);
+        Assert.Equal(definition.Key, capturedMutation.ChangeLog.ConfirmKey);
+        Assert.Equal("提高标题有效信息量", capturedMutation.ChangeLog.Reason);
     }
 
     [Fact]
@@ -244,7 +232,7 @@ public class SystemConfigServiceTest
             .ReturnsAsync((SystemConfigRecord?)null);
         var service = CreateService(repository);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(async () =>
             await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
             {
                 Value = "201",
@@ -255,6 +243,7 @@ public class SystemConfigServiceTest
             }));
 
         Assert.Contains("不能大于 200", exception.Message);
+        Assert.Equal("SystemConfig.InvalidValue", exception.ErrorCode);
     }
 
     [Fact]
@@ -263,7 +252,7 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
         var repository = new Mock<ISystemConfigRepository>();
         var logRepository = new Mock<ISystemConfigChangeLogRepository>();
-        SystemConfigRecord? capturedRecord = null;
+        SystemConfigMutation? capturedMutation = null;
         var existedRecord = new SystemConfigRecord
         {
             Id = 12,
@@ -282,12 +271,9 @@ public class SystemConfigServiceTest
             .Setup(item => item.GetByKeyAsync(definition.Key))
             .ReturnsAsync(existedRecord);
         repository
-            .Setup(item => item.UpdateAsync(It.IsAny<SystemConfigRecord>()))
-            .Callback<SystemConfigRecord>(record => capturedRecord = record)
-            .ReturnsAsync((SystemConfigRecord record) => record);
-        logRepository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
-            .ReturnsAsync((SystemConfigChangeLogRecord record) => record);
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .Callback<SystemConfigMutation>(mutation => capturedMutation = mutation)
+            .ReturnsAsync((SystemConfigMutation mutation) => SuccessfulMutation(mutation, 12));
 
         var service = CreateService(repository, logRepository);
 
@@ -301,9 +287,9 @@ public class SystemConfigServiceTest
             ExpectedVersion = 2
         });
 
-        Assert.NotNull(capturedRecord);
-        Assert.Equal("/uploads/new/site.ico", capturedRecord!.Value);
-        Assert.Equal(3, capturedRecord.Version);
+        Assert.NotNull(capturedMutation?.NextRecord);
+        Assert.Equal("/uploads/new/site.ico", capturedMutation!.NextRecord!.Value);
+        Assert.Equal(2, capturedMutation.ExpectedVersion);
         Assert.NotNull(updatedConfig);
         Assert.Equal(3, updatedConfig!.VoVersion);
     }
@@ -314,7 +300,7 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
         var repository = new Mock<ISystemConfigRepository>();
         var logRepository = new Mock<ISystemConfigChangeLogRepository>();
-        SystemConfigRecord? capturedRecord = null;
+        SystemConfigMutation? capturedMutation = null;
 
         repository
             .Setup(item => item.GetByKeyAsync(definition.Key))
@@ -332,12 +318,9 @@ public class SystemConfigServiceTest
                 ModifyTime = DateTime.Now.AddHours(-1)
             });
         repository
-            .Setup(item => item.UpdateAsync(It.IsAny<SystemConfigRecord>()))
-            .Callback<SystemConfigRecord>(record => capturedRecord = record)
-            .ReturnsAsync((SystemConfigRecord record) => record);
-        logRepository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
-            .ReturnsAsync((SystemConfigChangeLogRecord record) => record);
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .Callback<SystemConfigMutation>(mutation => capturedMutation = mutation)
+            .ReturnsAsync((SystemConfigMutation mutation) => SuccessfulMutation(mutation, 12));
 
         var service = CreateService(repository, logRepository);
 
@@ -351,8 +334,8 @@ public class SystemConfigServiceTest
             ExpectedVersion = 0
         });
 
-        Assert.NotNull(capturedRecord);
-        Assert.Equal(1, capturedRecord!.Version);
+        Assert.NotNull(capturedMutation?.NextRecord);
+        Assert.Equal(5, capturedMutation!.ObservedDefaultRecordVersion);
         Assert.NotNull(updatedConfig);
         Assert.Equal(1, updatedConfig!.VoVersion);
     }
@@ -379,8 +362,15 @@ public class SystemConfigServiceTest
             });
 
         var service = CreateService(repository);
+        repository
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .ReturnsAsync(new SystemConfigMutationResult
+            {
+                IsVersionConflict = true,
+                CurrentVersion = 3
+            });
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(async () =>
             await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
             {
                 Value = "/uploads/new/site.ico",
@@ -392,8 +382,8 @@ public class SystemConfigServiceTest
             }));
 
         Assert.Equal("系统设置已被其他管理员修改，请刷新后重试", exception.Message);
-        repository.Verify(item => item.UpdateAsync(It.IsAny<SystemConfigRecord>()), Times.Never);
-        repository.Verify(item => item.CreateAsync(It.IsAny<SystemConfigRecord>()), Times.Never);
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal("SystemConfig.VersionConflict", exception.ErrorCode);
     }
 
     [Fact]
@@ -402,28 +392,15 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
         var repository = new Mock<ISystemConfigRepository>();
         var logRepository = new Mock<ISystemConfigChangeLogRepository>();
-        SystemConfigRecord? capturedRecord = null;
-        SystemConfigChangeLogRecord? capturedLog = null;
+        SystemConfigMutation? capturedMutation = null;
 
         repository
             .Setup(item => item.GetByKeyAsync(definition.Key))
             .ReturnsAsync((SystemConfigRecord?)null);
         repository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigRecord>()))
-            .Callback<SystemConfigRecord>(record => capturedRecord = record)
-            .ReturnsAsync((SystemConfigRecord record) =>
-            {
-                record.Id = 12;
-                return record;
-            });
-        logRepository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
-            .Callback<SystemConfigChangeLogRecord>(record => capturedLog = record)
-            .ReturnsAsync((SystemConfigChangeLogRecord record) =>
-            {
-                record.Id = 1;
-                return record;
-            });
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .Callback<SystemConfigMutation>(mutation => capturedMutation = mutation)
+            .ReturnsAsync((SystemConfigMutation mutation) => SuccessfulMutation(mutation, 12));
 
         var service = CreateService(repository, logRepository);
 
@@ -445,20 +422,19 @@ public class SystemConfigServiceTest
         Assert.NotNull(updatedConfig);
         Assert.True(updatedConfig!.VoIsOverridden);
         Assert.Equal("/uploads/custom/site.ico", updatedConfig.VoEffectiveValue);
-        Assert.NotNull(capturedRecord);
-        Assert.Equal(definition.Key, capturedRecord!.Key);
-        Assert.Equal(definition.Category, capturedRecord.Category);
-        Assert.Equal(definition.Description, capturedRecord.Description);
-        Assert.True(capturedRecord.IsEnabled);
-        Assert.Equal(1, capturedRecord.Version);
+        Assert.NotNull(capturedMutation?.NextRecord);
+        Assert.Equal(definition.Key, capturedMutation!.NextRecord!.Key);
+        Assert.Equal(definition.Category, capturedMutation.NextRecord.Category);
+        Assert.Equal(definition.Description, capturedMutation.NextRecord.Description);
+        Assert.True(capturedMutation.NextRecord.IsEnabled);
         Assert.Equal(1, updatedConfig.VoVersion);
-        Assert.NotNull(capturedLog);
-        Assert.Equal(SystemConfigChangeAction.UpdateOverride, capturedLog!.ActionType);
-        Assert.Equal(definition.DefaultValue, capturedLog.OldValue);
-        Assert.Equal("/uploads/custom/site.ico", capturedLog.NewValue);
-        Assert.Equal("更新站点图标", capturedLog.Reason);
-        Assert.Equal(1001, capturedLog.OperatorUserId);
-        Assert.Equal("admin", capturedLog.OperatorUserName);
+        Assert.NotNull(capturedMutation.ChangeLog);
+        Assert.Equal(SystemConfigChangeAction.UpdateOverride, capturedMutation.ChangeLog!.ActionType);
+        Assert.Equal(definition.DefaultValue, capturedMutation.ChangeLog.OldValue);
+        Assert.Equal("/uploads/custom/site.ico", capturedMutation.ChangeLog.NewValue);
+        Assert.Equal("更新站点图标", capturedMutation.ChangeLog.Reason);
+        Assert.Equal(1001, capturedMutation.ChangeLog.OperatorUserId);
+        Assert.Equal("admin", capturedMutation.ChangeLog.OperatorUserName);
     }
 
     [Fact]
@@ -467,9 +443,8 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
         var repository = new Mock<ISystemConfigRepository>();
         repository
-            .Setup(item => item.DeleteByKeyAsync(definition.Key))
-            .ReturnsAsync(true);
-
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .ReturnsAsync((SystemConfigMutation mutation) => SuccessfulMutation(mutation));
         var service = CreateService(repository);
 
         var updatedConfig = await service.UpdateConfigAsync(definition.Id, new UpdateSystemConfigDto
@@ -481,8 +456,8 @@ public class SystemConfigServiceTest
         Assert.NotNull(updatedConfig);
         Assert.False(updatedConfig!.VoIsOverridden);
         Assert.Equal(definition.DefaultValue, updatedConfig.VoEffectiveValue);
-        repository.Verify(item => item.DeleteByKeyAsync(definition.Key), Times.Once);
-        repository.Verify(item => item.CreateAsync(It.IsAny<SystemConfigRecord>()), Times.Never);
+        repository.Verify(item => item.ApplyMutationAsync(It.Is<SystemConfigMutation>(mutation =>
+            mutation.Key == definition.Key && mutation.NextRecord == null)), Times.Once);
     }
 
     [Fact]
@@ -490,7 +465,7 @@ public class SystemConfigServiceTest
     {
         var service = CreateService(new Mock<ISystemConfigRepository>());
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        var exception = await Assert.ThrowsAsync<BusinessException>(async () =>
             await service.CreateConfigAsync(new CreateSystemConfigDto
             {
                 Category = "测试",
@@ -508,7 +483,7 @@ public class SystemConfigServiceTest
         var definition = SystemConfigDefaults.GetDefinitionByKey(SystemConfigDefaults.SiteFaviconKey)!;
         var repository = new Mock<ISystemConfigRepository>();
         var logRepository = new Mock<ISystemConfigChangeLogRepository>();
-        SystemConfigChangeLogRecord? capturedLog = null;
+        SystemConfigMutation? capturedMutation = null;
 
         repository
             .Setup(item => item.GetByKeyAsync(definition.Key))
@@ -526,16 +501,9 @@ public class SystemConfigServiceTest
                 ModifyTime = DateTime.Now.AddHours(-1)
             });
         repository
-            .Setup(item => item.DeleteByKeyAsync(definition.Key))
-            .ReturnsAsync(true);
-        logRepository
-            .Setup(item => item.CreateAsync(It.IsAny<SystemConfigChangeLogRecord>()))
-            .Callback<SystemConfigChangeLogRecord>(record => capturedLog = record)
-            .ReturnsAsync((SystemConfigChangeLogRecord record) =>
-            {
-                record.Id = 2;
-                return record;
-            });
+            .Setup(item => item.ApplyMutationAsync(It.IsAny<SystemConfigMutation>()))
+            .Callback<SystemConfigMutation>(mutation => capturedMutation = mutation)
+            .ReturnsAsync((SystemConfigMutation mutation) => SuccessfulMutation(mutation));
 
         var service = CreateService(repository, logRepository);
 
@@ -559,12 +527,12 @@ public class SystemConfigServiceTest
         Assert.NotNull(restoredConfig);
         Assert.False(restoredConfig!.VoIsOverridden);
         Assert.Equal(definition.DefaultValue, restoredConfig.VoEffectiveValue);
-        Assert.NotNull(capturedLog);
-        Assert.Equal(SystemConfigChangeAction.RestoreDefault, capturedLog!.ActionType);
-        Assert.Equal("/uploads/custom/site.ico", capturedLog.OldValue);
-        Assert.Equal(definition.DefaultValue, capturedLog.NewValue);
-        Assert.Equal("回滚到默认图标", capturedLog.Reason);
-        Assert.Equal("10.0.0.2", capturedLog.RequestIp);
+        Assert.NotNull(capturedMutation?.ChangeLog);
+        Assert.Equal(SystemConfigChangeAction.RestoreDefault, capturedMutation!.ChangeLog!.ActionType);
+        Assert.Equal("/uploads/custom/site.ico", capturedMutation.ChangeLog.OldValue);
+        Assert.Equal(definition.DefaultValue, capturedMutation.ChangeLog.NewValue);
+        Assert.Equal("回滚到默认图标", capturedMutation.ChangeLog.Reason);
+        Assert.Equal("10.0.0.2", capturedMutation.ChangeLog.RequestIp);
     }
 
     [Fact]
@@ -616,5 +584,21 @@ public class SystemConfigServiceTest
         return new SystemConfigService(
             repository.Object,
             (logRepository ?? new Mock<ISystemConfigChangeLogRepository>()).Object);
+    }
+
+    private static SystemConfigMutationResult SuccessfulMutation(SystemConfigMutation mutation, long recordId = 1)
+    {
+        if (mutation.NextRecord == null)
+        {
+            return new SystemConfigMutationResult();
+        }
+
+        mutation.NextRecord.Id = recordId;
+        mutation.NextRecord.Version = mutation.ExpectedVersion + 1;
+        return new SystemConfigMutationResult
+        {
+            CurrentVersion = mutation.NextRecord.Version,
+            Record = mutation.NextRecord
+        };
     }
 }

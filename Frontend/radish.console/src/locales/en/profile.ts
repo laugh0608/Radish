@@ -7,6 +7,8 @@ export const enProfile = {
   'profile.loading.tag': 'Loading',
   'profile.empty.message': 'Unable to load the signed-in user. Please sign in again.',
   'profile.empty.refresh': 'Refresh page',
+  'profile.unavailable.title': 'Profile is unavailable',
+  'profile.unavailable.retry': 'Retry loading',
   'profile.action.edit': 'Edit profile',
   'profile.action.cancel': 'Cancel',
   'profile.action.save': 'Save',

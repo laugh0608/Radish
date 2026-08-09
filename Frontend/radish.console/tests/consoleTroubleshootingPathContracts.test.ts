@@ -61,7 +61,7 @@ test('Console 深层写入 handler 应复核权限态', () => {
   assert.match(documentGovernanceSource, /if \(!canImport\) \{/);
   assert.match(documentGovernanceSource, /if \(!canExport\) \{/);
   assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !faviconConfig\) \{/);
-  assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !record\.voIsEditable\) \{/);
+  assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !record\.voIsEditable \|\| \(isCompactTable && record\.voRiskLevel !== 'Low'\)\) \{/);
 });
 
 test('Console 内容治理入口应支持用户排障深链与来源返回', () => {

@@ -205,6 +205,31 @@
   line-height: 1.6;
 }
 
+.system-config-change-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: var(--console-radius-control);
+  background: var(--console-bg-muted);
+}
+
+.system-config-change-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.system-config-change-summary span {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.system-config-change-summary strong {
+  overflow-wrap: anywhere;
+}
+
 .system-config-history-summary {
   display: flex;
   align-items: center;
@@ -231,6 +256,10 @@
 }
 
 @media (max-width: 768px) {
+  .system-config-change-summary {
+    grid-template-columns: 1fr;
+  }
+
   .system-config-filter-select,
   .system-config-filter-input {
     width: 100% !important;

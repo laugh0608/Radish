@@ -10,6 +10,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -170,6 +171,84 @@ public class UserService : BaseService<User, UserVo>, IUserService
             throw new InvalidOperationException("用户不存在或已禁用");
         }
 
+        return await ChangeDisplayNameCoreAsync(user, normalizedDisplayName, context);
+    }
+
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<bool> UpdateMyProfileAsync(long userId, UpdateMyProfileDto request, UserDisplayNameChangeContext context)
+    {
+        if (userId <= 0)
+        {
+            throw new ArgumentException("用户 ID 无效", nameof(userId));
+        }
+
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(context);
+
+        var normalizedUserName = string.IsNullOrWhiteSpace(request.UserName) ? null : request.UserName.Trim();
+        var normalizedUserEmail = string.IsNullOrWhiteSpace(request.UserEmail) ? null : request.UserEmail.Trim();
+        var normalizedAddress = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
+
+        ValidateProfileFields(normalizedUserEmail, normalizedAddress, request.Sex, request.Age);
+
+        var user = await _userBaseRepository.QueryFirstAsync(item => item.Id == userId && !item.IsDeleted && item.IsEnable);
+        if (user == null)
+        {
+            return false;
+        }
+
+        if (normalizedUserEmail != null)
+        {
+            var emailExists = await _userBaseRepository.QueryExistsAsync(item =>
+                item.UserEmail == normalizedUserEmail &&
+                !item.IsDeleted &&
+                item.Id != userId);
+            if (emailExists)
+            {
+                throw new ArgumentException("邮箱已被占用", nameof(request.UserEmail));
+            }
+        }
+
+        var displayNameChanged = false;
+        if (normalizedUserName != null)
+        {
+            await ValidateDisplayNameAsync(normalizedUserName);
+            displayNameChanged = await ChangeDisplayNameCoreAsync(user, normalizedUserName, context);
+        }
+
+        var now = DateTime.UtcNow;
+        var affectedRows = await _userBaseRepository.UpdateColumnsAsync(
+            item => new User
+            {
+                UserEmail = normalizedUserEmail ?? item.UserEmail,
+                UserSex = request.Sex ?? item.UserSex,
+                UserAge = request.Age ?? item.UserAge,
+                UserBirth = request.Birth ?? item.UserBirth,
+                UserAddress = normalizedAddress ?? item.UserAddress,
+                UpdateTime = now
+            },
+            item => item.Id == userId && !item.IsDeleted && item.IsEnable);
+
+        if (affectedRows > 0)
+        {
+            return true;
+        }
+
+        if (displayNameChanged)
+        {
+            throw new InvalidOperationException("个人资料已发生并发变化，请重新加载后重试");
+        }
+
+        return false;
+    }
+
+    private async Task<bool> ChangeDisplayNameCoreAsync(
+        User user,
+        string normalizedDisplayName,
+        UserDisplayNameChangeContext context)
+    {
+        var userId = user.Id;
+
         var storedDisplayName = user.UserName?.Trim() ?? string.Empty;
         if (string.Equals(storedDisplayName, normalizedDisplayName, StringComparison.Ordinal))
         {
@@ -214,6 +293,41 @@ public class UserService : BaseService<User, UserVo>, IUserService
         });
 
         return true;
+    }
+
+    private static void ValidateProfileFields(string? email, string? address, int? sex, int? age)
+    {
+        if (email != null)
+        {
+            if (email.Length > 200)
+            {
+                throw new ArgumentException("邮箱长度不能超过 200", nameof(email));
+            }
+
+            try
+            {
+                _ = new System.Net.Mail.MailAddress(email);
+            }
+            catch (FormatException)
+            {
+                throw new ArgumentException("邮箱格式不正确", nameof(email));
+            }
+        }
+
+        if (address is { Length: > 2000 })
+        {
+            throw new ArgumentException("地址长度不能超过 2000", nameof(address));
+        }
+
+        if (sex.HasValue && (sex.Value < (int)UserSexEnum.Unknown || sex.Value > (int)UserSexEnum.Female))
+        {
+            throw new ArgumentException("性别值不合法", nameof(sex));
+        }
+
+        if (age is < 0)
+        {
+            throw new ArgumentException("年龄不能为负数", nameof(age));
+        }
     }
 
     private async Task ValidateDisplayNameAsync(string displayName)

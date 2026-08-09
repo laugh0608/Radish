@@ -44,6 +44,10 @@ public class SystemConfigController : ControllerBase
             var configs = await _systemConfigService.GetSystemConfigsAsync();
             return MessageModel<List<SystemConfigVo>>.Success("获取成功", configs);
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw BuildUnexpectedError("获取系统配置失败，请稍后重试", ex);
@@ -60,6 +64,10 @@ public class SystemConfigController : ControllerBase
         {
             var categories = await _systemConfigService.GetConfigCategoriesAsync();
             return MessageModel<List<string>>.Success("获取成功", categories);
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -83,6 +91,10 @@ public class SystemConfigController : ControllerBase
 
             return MessageModel<SystemConfigVo>.Success("获取成功", config);
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw BuildUnexpectedError("获取配置详情失败，请稍后重试", ex);
@@ -93,6 +105,7 @@ public class SystemConfigController : ControllerBase
     [HttpPut]
     [RequireConsolePermission(ConsolePermissions.SystemConfigEdit)]
     [ProducesResponseType(typeof(MessageModel<SystemConfigVo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
     public async Task<MessageModel<SystemConfigVo>> UpdateConfig(long id, [FromBody] UpdateSystemConfigDto request)
     {
         try
@@ -110,6 +123,10 @@ public class SystemConfigController : ControllerBase
 
             return MessageModel<SystemConfigVo>.Success("更新成功", config);
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw BuildUnexpectedError("更新配置失败，请稍后重试", ex);
@@ -120,6 +137,7 @@ public class SystemConfigController : ControllerBase
     [HttpPut]
     [RequireConsolePermission(ConsolePermissions.SystemConfigEdit)]
     [ProducesResponseType(typeof(MessageModel<SystemConfigVo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
     public async Task<MessageModel<SystemConfigVo>> RestoreConfigDefault(long id, [FromBody] RestoreSystemConfigDefaultDto? request = null)
     {
         try
@@ -131,6 +149,10 @@ public class SystemConfigController : ControllerBase
             }
 
             return MessageModel<SystemConfigVo>.Success("已恢复默认", config);
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -154,6 +176,10 @@ public class SystemConfigController : ControllerBase
 
             return MessageModel<List<SystemConfigChangeLogVo>>.Success("获取成功", logs);
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw BuildUnexpectedError("获取变更历史失败，请稍后重试", ex);
@@ -176,6 +202,10 @@ public class SystemConfigController : ControllerBase
             var config = await _systemConfigService.CreateConfigAsync(request);
             return MessageModel<SystemConfigVo>.Success("创建成功", config);
         }
+        catch (BusinessException)
+        {
+            throw;
+        }
         catch (Exception ex)
         {
             throw BuildUnexpectedError("创建配置失败，请稍后重试", ex);
@@ -186,12 +216,17 @@ public class SystemConfigController : ControllerBase
     [HttpDelete]
     [RequireConsolePermission(ConsolePermissions.SystemConfigDelete)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
     public async Task<MessageModel> DeleteConfig(long id)
     {
         try
         {
             var deleted = await _systemConfigService.DeleteConfigAsync(id, BuildChangeContext());
             return deleted ? MessageModel.Success("已恢复默认") : MessageModel.Failed("配置不存在");
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {
@@ -209,6 +244,10 @@ public class SystemConfigController : ControllerBase
         {
             var settings = await _systemConfigService.GetPublicSiteSettingsAsync();
             return MessageModel<PublicSiteSettingsVo>.Success("获取成功", settings);
+        }
+        catch (BusinessException)
+        {
+            throw;
         }
         catch (Exception ex)
         {

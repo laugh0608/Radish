@@ -53,6 +53,7 @@ internal static class SchemaMigrationRegistry
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance,
         UserBlockNotificationSuppressionSchemaMigration.Instance,
-        ChatChannelDiscoverabilitySchemaMigration.Instance
+        ChatChannelDiscoverabilitySchemaMigration.Instance,
+        ConsoleRoleGovernanceSchemaMigration.Instance
     ];
 }

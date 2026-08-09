@@ -1,4 +1,7 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Http;
+using Radish.Common.AttributeTool;
+using Radish.Common.Exceptions;
 using Radish.Common.PermissionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -161,7 +164,7 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             .ToList();
 
         var apiBindings = await GetApiBindingsByResourceIdsAsync(grantedResourceIds);
-        var latestGrantTime = await GetLatestGrantTimeAsync(roleId);
+        var authorizationVersion = GetRoleAuthorizationVersion(role);
 
         return new RoleAuthorizationSnapshotVo
         {
@@ -169,7 +172,8 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             VoRoleName = role.RoleName,
             VoRoleDescription = role.RoleDescription,
             VoRoleIsEnabled = role.IsEnabled,
-            VoLastModifyTime = latestGrantTime,
+            VoRoleIsBuiltIn = RoleGovernanceService.IsBuiltInRole(role.Id, role.RoleName),
+            VoLastModifyTime = authorizationVersion,
             VoGrantedResourceIds = grantedResourceIds.OrderBy(static item => item).ToList(),
             VoGrantedPermissionKeys = grantedPermissionKeys,
             VoDerivedApiModules = apiBindings
@@ -189,6 +193,7 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
         return await GetApiBindingsByResourceIdsAsync(grantedResourceIds);
     }
 
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<bool> SaveRoleAuthorizationAsync(SaveRoleAuthorizationDto dto, long operatorId, string operatorName)
     {
         var role = await _roleRepository.QueryFirstAsync(item => item.Id == dto.RoleId && !item.IsDeleted);
@@ -197,16 +202,49 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             return false;
         }
 
+        if (RoleGovernanceService.IsBuiltInRole(role.Id, role.RoleName))
+        {
+            throw new BusinessException(
+                "System / Admin 是系统保护角色，授权固定为全部资源",
+                StatusCodes.Status409Conflict,
+                "RoleAuthorization.BuiltInProtected",
+                "error.role_authorization.built_in_protected");
+        }
+
         var resources = await GetOrderedResourcesAsync();
         var allowedResourceIds = resources.Select(resource => resource.Id).ToHashSet();
+        if (dto.ResourceIds.Any(resourceId => resourceId <= 0 || !allowedResourceIds.Contains(resourceId)))
+        {
+            throw new BusinessException(
+                "角色授权包含无效或不可用的资源",
+                StatusCodes.Status400BadRequest,
+                "RoleAuthorization.InvalidResource",
+                "error.role_authorization.invalid_resource");
+        }
+
         var selectedResourceIds = dto.ResourceIds
-            .Where(allowedResourceIds.Contains)
             .Distinct()
             .ToList();
 
         var normalizedResourceIds = NormalizeSelectedResourceIds(selectedResourceIds, resources);
-        var currentLatestGrantTime = await GetLatestGrantTimeAsync(dto.RoleId);
-        EnsureExpectedModifyTime(currentLatestGrantTime, dto.ExpectedModifyTime);
+        var currentAuthorizationVersion = GetRoleAuthorizationVersion(role);
+        EnsureExpectedModifyTime(currentAuthorizationVersion, dto.ExpectedModifyTime);
+
+        var now = NextAuthorizationVersion(currentAuthorizationVersion);
+        var versionUpdateCount = await _roleRepository.UpdateColumnsAsync(
+            item => new Role
+            {
+                ModifyId = operatorId > 0 ? operatorId : 0,
+                ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "System" : operatorName.Trim(),
+                ModifyTime = now
+            },
+            item => item.Id == dto.RoleId &&
+                    !item.IsDeleted &&
+                    item.ModifyTime == role.ModifyTime);
+        if (versionUpdateCount <= 0)
+        {
+            throw AuthorizationVersionConflict();
+        }
 
         var activeLinks = await _roleConsoleResourceRepository.QueryAsync(link => link.RoleId == dto.RoleId && !link.IsDeleted);
         var activeResourceIds = activeLinks
@@ -214,7 +252,6 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             .Distinct()
             .ToHashSet();
 
-        var now = DateTime.UtcNow;
         var resourceIdsToDelete = activeResourceIds.Except(normalizedResourceIds).ToList();
         if (resourceIdsToDelete.Count > 0)
         {
@@ -258,9 +295,8 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
 
         var linksToInsert = normalizedResourceIds
             .Except(restoredResourceIds)
-            .Select((resourceId, index) => new RoleConsoleResource
+            .Select(resourceId => new RoleConsoleResource
             {
-                Id = GenerateStableSeedId(dto.RoleId, resourceId, index),
                 RoleId = dto.RoleId,
                 ConsoleResourceId = resourceId,
                 CreateId = operatorId,
@@ -283,7 +319,7 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
     {
         if (!TimestampEquals(currentModifyTime, expectedModifyTime))
         {
-            throw new InvalidOperationException("角色授权已被其他管理员修改，请刷新后重试");
+            throw AuthorizationVersionConflict();
         }
     }
 
@@ -335,20 +371,9 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
         return NormalizeSelectedResourceIds(grantedResourceIds, allResources);
     }
 
-    private async Task<DateTime?> GetLatestGrantTimeAsync(long roleId)
+    private static DateTime GetRoleAuthorizationVersion(Role role)
     {
-        var links = await _roleConsoleResourceRepository.QueryAsync(link =>
-            link.RoleId == roleId &&
-            !link.IsDeleted);
-        if (links.Count <= 0)
-        {
-            return null;
-        }
-
-        return links
-            .Select(link => link.ModifyTime ?? link.CreateTime)
-            .OrderByDescending(static time => time)
-            .FirstOrDefault();
+        return NormalizeTimestamp(role.ModifyTime ?? role.CreateTime);
     }
 
     private async Task<List<ResourceApiBindingVo>> GetApiBindingsByResourceIdsAsync(IReadOnlyCollection<long> resourceIds)
@@ -479,10 +504,19 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
             .ToList();
     }
 
-    private static long GenerateStableSeedId(long roleId, long resourceId, int index)
+    private static DateTime NextAuthorizationVersion(DateTime currentVersion)
     {
-        // 避免依赖运行时雪花 ID，确保重复保存时主键稳定可预测。
-        return 930000000000L + (roleId * 1000) + resourceId + index;
+        var now = DateTime.UtcNow;
+        return now > currentVersion ? now : currentVersion.AddMilliseconds(1);
+    }
+
+    private static BusinessException AuthorizationVersionConflict()
+    {
+        return new BusinessException(
+            "角色授权已被其他管理员修改，请刷新后重试",
+            StatusCodes.Status409Conflict,
+            "RoleAuthorization.VersionConflict",
+            "error.role_authorization.version_conflict");
     }
 
     private static void NormalizeEntryPermission(HashSet<string> permissionKeys)

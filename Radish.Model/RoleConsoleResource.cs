@@ -7,6 +7,13 @@ namespace Radish.Model;
 /// <summary>
 /// 角色与 Console 资源授权关系
 /// </summary>
+[SugarIndex(
+    "idx_role_console_resource_unique",
+    nameof(RoleId),
+    OrderByType.Asc,
+    nameof(ConsoleResourceId),
+    OrderByType.Asc,
+    IsUnique = true)]
 public class RoleConsoleResource : RootEntityTKey<long>, IDeleteFilter
 {
     /// <summary>角色 Id</summary>

@@ -63,6 +63,7 @@ export const SystemConfigList = () => {
   useDocumentTitle(t('console.route.system-config'));
   const [configs, setConfigs] = useState<SystemConfigVo[]>([]);
   const [filteredConfigs, setFilteredConfigs] = useState<SystemConfigVo[]>([]);
+  const [loadError, setLoadError] = useState<string>();
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [faviconUploading, setFaviconUploading] = useState(false);
@@ -73,6 +74,7 @@ export const SystemConfigList = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyConfig, setHistoryConfig] = useState<SystemConfigVo>();
   const [historyLogs, setHistoryLogs] = useState<SystemConfigChangeLogVo[]>([]);
+  const [historyError, setHistoryError] = useState<string>();
   const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
   const canEditSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigEdit);
   const screens = Grid.useBreakpoint();
@@ -90,12 +92,17 @@ export const SystemConfigList = () => {
   const loadConfigs = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(undefined);
       const data = await getSystemConfigs(t);
       setConfigs(data);
       setFilteredConfigs(data);
     } catch (error) {
       log.error('SystemConfigList', '加载系统设置列表失败:', error);
-      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.loadListFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('systemConfig.feedback.loadListFailed');
+      setConfigs([]);
+      setFilteredConfigs([]);
+      setLoadError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -177,6 +184,25 @@ export const SystemConfigList = () => {
     }
   };
 
+  const requestRestoreDefaultFavicon = () => {
+    if (!faviconConfig) {
+      message.error(t('systemConfig.feedback.faviconNotReady'));
+      return;
+    }
+
+    Modal.confirm({
+      title: t('systemConfig.confirm.restoreTitle'),
+      content: t('systemConfig.confirm.restoreDescription', {
+        name: getSystemConfigName(faviconConfig, t),
+        oldValue: faviconConfig.voEffectiveValue,
+        newValue: faviconConfig.voDefaultValue,
+      }),
+      okText: t('systemConfig.confirm.apply'),
+      cancelText: t('roles.common.cancel'),
+      onOk: handleRestoreDefaultFavicon,
+    });
+  };
+
   const handleFaviconUpload: UploadProps['customRequest'] = async (options) => {
     const file = options.file;
     if (!canEditSystemConfig) {
@@ -204,6 +230,24 @@ export const SystemConfigList = () => {
       const uploadError = new Error(t('systemConfig.feedback.faviconNotReady'));
       options.onError?.(uploadError);
       message.error(uploadError.message);
+      return;
+    }
+
+    const confirmed = await new Promise<boolean>((resolve) => {
+      Modal.confirm({
+        title: t('systemConfig.confirm.updateTitle'),
+        content: t('systemConfig.confirm.updateFaviconDescription', {
+          name: file.name,
+          oldValue: faviconConfig.voEffectiveValue,
+        }),
+        okText: t('systemConfig.confirm.apply'),
+        cancelText: t('roles.common.cancel'),
+        onOk: () => resolve(true),
+        onCancel: () => resolve(false),
+      });
+    });
+    if (!confirmed) {
+      options.onError?.(new Error(t('systemConfig.feedback.cancelled')));
       return;
     }
 
@@ -250,9 +294,11 @@ export const SystemConfigList = () => {
 
   // 编辑系统设置覆盖值
   const handleEdit = (record: SystemConfigVo) => {
-    if (!canEditSystemConfig || !record.voIsEditable) {
+    if (!canEditSystemConfig || !record.voIsEditable || (isCompactTable && record.voRiskLevel !== 'Low')) {
       message.error(canEditSystemConfig
-        ? t('systemConfig.feedback.notEditable')
+        ? t(isCompactTable && record.voRiskLevel !== 'Low'
+          ? 'systemConfig.feedback.mediumDesktopOnly'
+          : 'systemConfig.feedback.notEditable')
         : t('systemConfig.feedback.editDenied'));
       return;
     }
@@ -261,16 +307,50 @@ export const SystemConfigList = () => {
     setFormVisible(true);
   };
 
+  const handleRestoreDefault = (record: SystemConfigVo) => {
+    if (!canEditSystemConfig || !record.voIsEditable || !record.voIsOverridden || record.voRiskLevel !== 'Low') {
+      return;
+    }
+
+    Modal.confirm({
+      title: t('systemConfig.confirm.restoreTitle'),
+      content: t('systemConfig.confirm.restoreDescription', {
+        name: getSystemConfigName(record, t),
+        oldValue: record.voEffectiveValue,
+        newValue: record.voDefaultValue,
+      }),
+      okText: t('systemConfig.confirm.apply'),
+      cancelText: t('roles.common.cancel'),
+      onOk: async () => {
+        try {
+          await restoreConfigDefault(record.voId, {
+            reason: t('systemConfig.reason.restoreDefault'),
+            expectedVersion: record.voVersion,
+          }, t);
+          message.success(t('systemConfig.feedback.restoreSuccess'));
+          await loadConfigs();
+        } catch (error) {
+          log.error('SystemConfigList', '恢复系统设置默认值失败:', error);
+          message.error(error instanceof Error ? error.message : t('systemConfig.feedback.restoreFailed'));
+        }
+      },
+    });
+  };
+
   const handleViewHistory = async (record: SystemConfigVo) => {
     setHistoryConfig(record);
     setHistoryVisible(true);
     setHistoryLoading(true);
+    setHistoryError(undefined);
+    setHistoryLogs([]);
     try {
       const logs = await getConfigChangeLogs(record.voId, 20, t);
       setHistoryLogs(logs);
     } catch (error) {
       log.error('SystemConfigList', '加载系统设置变更历史失败:', error);
-      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.historyLoadFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('systemConfig.feedback.historyLoadFailed');
+      setHistoryError(errorMessage);
+      message.error(errorMessage);
       setHistoryLogs([]);
     } finally {
       setHistoryLoading(false);
@@ -355,10 +435,22 @@ export const SystemConfigList = () => {
         aria-label={compact ? t('systemConfig.common.edit') : undefined}
         title={compact ? t('systemConfig.common.edit') : undefined}
         onClick={() => handleEdit(record)}
-        disabled={!canEditSystemConfig || !record.voIsEditable}
+        disabled={!canEditSystemConfig || !record.voIsEditable || (compact && record.voRiskLevel !== 'Low')}
       >
         {compact ? null : t('systemConfig.common.edit')}
       </Button>
+      {record.voRiskLevel === 'Low' ? (
+        <Button
+          variant="ghost"
+          size="small"
+          aria-label={compact ? t('systemConfig.common.restore') : undefined}
+          title={compact ? t('systemConfig.common.restore') : undefined}
+          onClick={() => handleRestoreDefault(record)}
+          disabled={!canEditSystemConfig || !record.voIsEditable || !record.voIsOverridden}
+        >
+          {compact ? t('systemConfig.common.restoreShort') : t('systemConfig.common.restore')}
+        </Button>
+      ) : null}
       <Button
         variant="ghost"
         size="small"
@@ -606,6 +698,16 @@ export const SystemConfigList = () => {
         )}
       />
 
+      {loadError ? (
+        <section className="admin-feature-card" role="alert">
+          <strong>{t('systemConfig.unavailable.title')}</strong>
+          <p>{loadError}</p>
+          <Button icon={<ReloadOutlined />} onClick={() => void loadConfigs()}>
+            {t('systemConfig.unavailable.retry')}
+          </Button>
+        </section>
+      ) : null}
+
       <ConsoleMetricGrid label={t('systemConfig.metrics.label')}>
         <ConsoleMetricCard label={t('systemConfig.metrics.registered')} value={configs.length} description={t('systemConfig.metrics.registeredDescription')} tone="info" />
         <ConsoleMetricCard label={t('systemConfig.metrics.results')} value={filteredConfigs.length} description={t('systemConfig.metrics.resultsDescription')} />
@@ -657,7 +759,7 @@ export const SystemConfigList = () => {
               </Upload>
               <Button
                 onClick={() => {
-                  void handleRestoreDefaultFavicon();
+                  requestRestoreDefaultFavicon();
                 }}
                 disabled={!canEditSystemConfig || faviconUploading || faviconSaving || isUsingDefaultFavicon}
               >
@@ -776,6 +878,7 @@ export const SystemConfigList = () => {
           setHistoryVisible(false);
           setHistoryConfig(undefined);
           setHistoryLogs([]);
+          setHistoryError(undefined);
         }}
         footer={null}
         width={960}
@@ -790,6 +893,17 @@ export const SystemConfigList = () => {
             </Tag>
           ) : null}
         </div>
+        {historyError ? (
+          <div className="system-config-risk-note" role="alert">
+            <strong>{t('systemConfig.history.unavailableTitle')}</strong>
+            <p>{historyError}</p>
+            {historyConfig ? (
+              <Button icon={<ReloadOutlined />} onClick={() => void handleViewHistory(historyConfig)}>
+                {t('systemConfig.unavailable.retry')}
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
         <div className="admin-table-scroll-region">
           <Table
             columns={historyColumns}
@@ -798,7 +912,7 @@ export const SystemConfigList = () => {
             loading={historyLoading}
             pagination={false}
             scroll={{ x: 1150 }}
-            locale={{ emptyText: t('systemConfig.history.empty') }}
+            locale={{ emptyText: historyError ? t('systemConfig.history.unavailable') : t('systemConfig.history.empty') }}
           />
         </div>
       </Modal>

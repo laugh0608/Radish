@@ -6,11 +6,13 @@ import {
   Form,
   AntInput as Input,
   AntSelect as Select,
+  Button,
   Descriptions,
   InputNumber,
   Tag,
   message,
 } from '@radish/ui';
+import { ApiResponseError } from '@radish/http';
 import {
   updateConfig,
   getConfigById,
@@ -94,19 +96,32 @@ export const SystemConfigForm = ({
   const [config, setConfig] = useState<SystemConfigVo>();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string>();
+  const [dirty, setDirty] = useState(false);
+  const [versionConflict, setVersionConflict] = useState(false);
+  const watchedValue = Form.useWatch('value', form);
 
   const loadConfigDetail = useCallback(async (id: number) => {
     try {
       setInitialLoading(true);
+      setLoadError(undefined);
+      setVersionConflict(false);
+      setConfig(undefined);
+      form.resetFields();
       const nextConfig = await getConfigById(id, t);
       setConfig(nextConfig);
       form.setFieldsValue({
         value: normalizeFormValue(nextConfig),
         reason: '',
+        confirmRiskLevel: '',
+        confirmKey: '',
       });
+      setDirty(false);
     } catch (error) {
       log.error('SystemConfigForm', '加载系统设置详情失败:', error);
-      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.loadDetailFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('systemConfig.feedback.loadDetailFailed');
+      setLoadError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setInitialLoading(false);
     }
@@ -131,24 +146,50 @@ export const SystemConfigForm = ({
         value: processedValue,
         isEnabled: true,
         reason: String(values.reason).trim(),
-        confirmRiskLevel: config.voRiskLevel,
-        confirmKey: config.voKey,
+        confirmRiskLevel: values.confirmRiskLevel?.trim(),
+        confirmKey: values.confirmKey?.trim(),
         expectedVersion: config.voVersion,
       }, t);
       message.success(t('systemConfig.feedback.updateSuccess'));
+      setDirty(false);
       onSuccess();
     } catch (error) {
       log.error('SystemConfigForm', '提交系统设置失败:', error);
-      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.updateFailed'));
+      const isConflict = error instanceof ApiResponseError &&
+        (error.httpStatus === 409 || error.statusCode === 409 || error.code === 'SystemConfig.VersionConflict');
+      if (isConflict) {
+        setVersionConflict(true);
+        message.warning(t('systemConfig.feedback.versionConflict'));
+      } else {
+        message.error(error instanceof Error ? error.message : t('systemConfig.feedback.updateFailed'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
+  const closeForm = () => {
     form.resetFields();
     setConfig(undefined);
+    setLoadError(undefined);
+    setDirty(false);
+    setVersionConflict(false);
     onCancel();
+  };
+
+  const handleCancel = () => {
+    if (!dirty) {
+      closeForm();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('systemConfig.form.discardTitle'),
+      content: t('systemConfig.form.discardDescription'),
+      okText: t('systemConfig.form.discardConfirm'),
+      cancelText: t('roles.common.cancel'),
+      onOk: closeForm,
+    });
   };
 
   useEffect(() => {
@@ -157,8 +198,24 @@ export const SystemConfigForm = ({
     } else {
       form.resetFields();
       setConfig(undefined);
+      setLoadError(undefined);
+      setDirty(false);
+      setVersionConflict(false);
     }
   }, [visible, configId, form, loadConfigDetail]);
+
+  useEffect(() => {
+    if (!visible || !dirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty, visible]);
 
   const renderValueInput = () => {
     switch (config?.voType) {
@@ -275,11 +332,44 @@ export const SystemConfigForm = ({
         </div>
       ) : null}
 
+      {config ? (
+        <div className="system-config-change-summary">
+          <div><span>{t('systemConfig.form.oldValue')}</span><strong>{config.voEffectiveValue}</strong></div>
+          <div><span>{t('systemConfig.form.newValue')}</span><strong>{watchedValue === undefined ? '-' : String(watchedValue)}</strong></div>
+          <div><span>{t('systemConfig.form.impact')}</span><strong>{getSystemConfigImpact(config, t)}</strong></div>
+          <div><span>{t('systemConfig.form.effectiveMode')}</span><strong>{t(`systemConfig.mode.${config.voEffectiveMode}`, { defaultValue: config.voEffectiveMode })}</strong></div>
+        </div>
+      ) : null}
+
+      {versionConflict ? (
+        <div className="system-config-risk-note" role="alert">
+          <strong>{t('systemConfig.form.conflictTitle')}</strong>
+          <p>{t('systemConfig.form.conflictDescription')}</p>
+          <Button onClick={() => configId && void loadConfigDetail(configId)}>
+            {t('systemConfig.form.reloadAuthority')}
+          </Button>
+        </div>
+      ) : null}
+
+      {loadError ? (
+        <div className="system-config-risk-note" role="alert">
+          <strong>{t('systemConfig.form.unavailableTitle')}</strong>
+          <p>{loadError}</p>
+          <Button onClick={() => configId && void loadConfigDetail(configId)}>
+            {t('systemConfig.form.retry')}
+          </Button>
+        </div>
+      ) : null}
+
       <Form
         form={form}
         layout="vertical"
         disabled={initialLoading || !config?.voIsEditable}
         className="system-config-edit-form"
+        onValuesChange={() => {
+          setDirty(true);
+          setVersionConflict(false);
+        }}
       >
         <Form.Item
           name="value"
@@ -307,6 +397,42 @@ export const SystemConfigForm = ({
         >
           {renderValueInput()}
         </Form.Item>
+        {config?.voRiskLevel !== 'Low' ? (
+          <>
+            <Form.Item
+              name="confirmRiskLevel"
+              label={t('systemConfig.form.confirmRiskLevel')}
+              rules={[
+                { required: true, message: t('systemConfig.form.confirmRiskLevelRequired') },
+                {
+                  validator: async (_, value) => {
+                    if (String(value ?? '').trim().toLowerCase() !== config.voRiskLevel.toLowerCase()) {
+                      throw new Error(t('systemConfig.form.confirmRiskLevelMismatch', { value: config.voRiskLevel }));
+                    }
+                  },
+                },
+              ]}
+            >
+              <Input placeholder={t('systemConfig.form.confirmRiskLevelPlaceholder', { value: config.voRiskLevel })} />
+            </Form.Item>
+            <Form.Item
+              name="confirmKey"
+              label={t('systemConfig.form.confirmKey')}
+              rules={[
+                { required: true, message: t('systemConfig.form.confirmKeyRequired') },
+                {
+                  validator: async (_, value) => {
+                    if (String(value ?? '').trim() !== config.voKey) {
+                      throw new Error(t('systemConfig.form.confirmKeyMismatch'));
+                    }
+                  },
+                },
+              ]}
+            >
+              <Input placeholder={config.voKey} />
+            </Form.Item>
+          </>
+        ) : null}
         <Form.Item
           name="reason"
           label={t('systemConfig.form.reason')}

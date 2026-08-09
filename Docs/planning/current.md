@@ -105,16 +105,18 @@
 31. 在唯一活动 `.pen` 中完成并确认 R1-C02 PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态正式代表设计；四个顶层画板无 placeholder、裁切或溢出。
 32. 按确认设计完成正式 `/console/moderation` 代码：PC 三段治理桌、Mobile 连续三列队列 / `BottomSheet` 筛选 / 保留品牌栏的全屏任务，以及必要权限与失败状态表面均已落地；Console `75 / 75` 测试和静态构建通过。
 33. 获授权完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` CSS viewport 验收；三段治理桌、三列队列、按需筛选、五项胶囊导航、品牌栏全屏任务、空结果和详情 unavailable 通过且无横向溢出，并修正 Mobile 列表工具栏、未选详情占位与刷新图标尺寸。
+34. 按 R2-C03 readiness 成组关闭角色内建保护、命令与唯一性、权限矩阵聚合版本 / 事务 CAS、系统设置配置—审计共同提交、结构化 400 / 409、显式 Medium 确认和 Settings / Profile 真实性门禁；后端 `1206` 项与 Console `78` 项测试通过，尚未修改 Pencil 或启动服务。
 
 ## 当前执行事项（2026-08-09）
 
-1. R2-C03 readiness 已确认现有角色 / 资源和系统设置主体能力，但治理安全与错误契约尚不足以支撑危险确认设计；R2 分级和既有 Console 壳层继承关系保持不变。
-2. 下一步成组实现角色聚合保护、只读权限矩阵可达、单调版本 / 原子 CAS、结构化 400 / 409、系统设置配置—审计共同提交，以及 Settings / Profile 真实能力校正。
-3. 能力门禁完成前不修改 R2-C03 Pencil；本轮 readiness 不启动服务或浏览器，不提前推进其他 R2 / R3 页面。
+1. R2-C03 代码能力门禁已关闭；角色、权限矩阵、系统设置与 Settings / Profile 的真实写入边界足以支撑危险确认和关键状态设计，R2 分级与既有 Console 壳层继承关系保持不变。
+2. 下一步在唯一活动 `.pen` 中完成 R2-C03 局部代表设计，确认 PC `1440`、Mobile `390`、只读 Operator、内建保护、dirty、并发 `409`、unavailable 和 Medium 显式确认；开始前需取得当前任务明确 Pencil 授权。
+3. 代表设计确认后再收口正式页面与运行态验收；不提前推进其他 R2 / R3 页面，不扩张权限种类、High / Critical 设置或移动危险写入。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-C03 Console 设置与权限矩阵能力门禁实现](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)
 - [R2-C03 Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计成组实现](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)

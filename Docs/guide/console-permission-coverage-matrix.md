@@ -44,8 +44,8 @@
 | Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`AdminGetOrder/.+`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情已改为独立真实接口加载，并支持订单到用户 / 商品治理回跳；失败重试 footer 仅在 `console.orders.retry` 下传入写入回调 |
 | Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 未落地操作已收口，不再保留伪权限 |
 | User Detail | `/users/:userId` | `console.users.view` | 无额外操作权限 | 当前页面仍以 mock 为主，无新增真实资源依赖 | ✅ | 路由边界已稳定，后续若接真接口需重新补矩阵 |
-| Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ⚠️ | 映射与种子已覆盖；R2-C03 审计发现内建角色、保留名、唯一性与更新命令边界仍需能力门禁 |
-| Role Permissions | `/roles/:roleId/permissions` | 当前误设为 `console.roles.edit`，应按读取能力使用 `console.roles.view` | `console.roles.edit` | `ConsoleAuthorization/GetResourceTree`、`GetRoleAuthorization/.+`、`GetRolePermissionPreview/.+`、`SaveRoleAuthorization` | ⚠️ | 服务端读取已允许 view / edit，页面也有只读态，但路由使 view-only Operator 不可达；授权版本、事务与结构化 409 仍待闭合 |
+| Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 内建角色、保留名、活动名称唯一性和明确更新命令已由服务端权威约束；Mobile 只开放列表与权限查看 |
+| Role Permissions | `/roles/:roleId/permissions` | `console.roles.view` | `console.roles.edit` | `ConsoleAuthorization/GetResourceTree`、`GetRoleAuthorization/.+`、`GetRolePermissionPreview/.+`、`SaveRoleAuthorization` | ✅ | View-only Operator 可达；内建角色与 Mobile 只读，保存使用 Role 聚合版本、事务内 CAS 和结构化 `409` |
 | Categories | `/categories` | `console.categories.view` | `console.categories.create/edit/delete/restore/toggle/sort` | `Category/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 分类与标签已拆分为独立后台模块 |
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
 | Documents | `/documents` | `console.docs.view` | `console.docs.review/publish/archive/delete/restore/permissions/rollback/import/export` | `Wiki/AdminGetReviewQueue`、`AdminGetDraftById/\\d+`、`AdminReviewDraft/\\d+`、`AdminGetList`、`AdminGetTree`、`AdminGetById/\\d+`、`GetRevisionList/\\d+`、`GetRevisionDetail/\\d+`、`Publish/\\d+`、`Unpublish/\\d+`、`Archive/\\d+`、`Delete/\\d+`、`Restore/\\d+`、`UpdateAccessPolicy/\\d+`、`Rollback/\\d+`、`ImportMarkdown`、`ExportMarkdown/\\d+` | ✅ | Console 承接草稿审核与文档治理；`review` 只负责 RequestChanges / Reject / Apply，Publish 继续独立授权；作者正文创建 / 编辑归正式 Web Author 入口 |
@@ -54,7 +54,7 @@
 | Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review`、`console.moderation.appeal`、`console.moderation.action` | 案件：`GetCaseQueue`、`GetCase/.+`、`GetCaseEvents`、`CaptureEvidence`、`ReviewCase`、`ApplyCorrectiveAction`；申诉：`GetAppealQueue`、`GetAppeal/.+`、`GetAppealEvents`、`StartAppealReview`、`CaptureAppealEvidence`、`ReviewAppeal`、`ExecuteAppealRelief` | ✅ | Case 与 Appeal 页面均已迁移到权威 API。View 可读案件和脱敏申诉队列，Review 处理原案件，Appeal 读取申诉正文并复核，Action 执行用户动作与已获准纠正；四类权限不互相替代 |
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 管理端查询指定用户余额、交易流水与调账能力；流水支持按业务类型 / 业务 ID 定位订单扣款；调账后同页刷新 `ADMIN_ADJUST` 流水用于人工复核 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
-| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ⚠️ | 映射与种子已覆盖；R2-C03 审计确认 Low / Medium 领域范围，但结构化 400 / 409、原子 CAS、配置—审计共同提交与显式 Medium 确认仍需能力门禁。Create / Delete 仅兼容旧路由，不扩为动态设置能力 |
+| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | Low / Medium 写入已具备结构化 400 / 409、持久化点 CAS、配置—审计共同提交和显式 Medium 确认；Mobile 只编辑 Low。Create / Delete 仅兼容旧路由，不扩为动态设置能力 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
 ## 3. `authOnly` 路由矩阵
@@ -63,7 +63,7 @@
 
 | 路由 | 类型 | 真实依赖 | 是否进入 ConsolePermissions | 备注 |
 | --- | --- | --- | --- | --- |
-| `/profile` | `authOnly` | `User/GetMyProfile`、`User/UpdateMyProfile`、`Attachment/UploadImage`、`User/SetMyAvatar` | 否 | 真实个人资料与头像能力；仍不按 `console.*` 控制，R2-C03 能力门禁需闭合整组更新一致性与加载失败状态 |
+| `/profile` | `authOnly` | `User/GetMyProfile`、`User/UpdateMyProfile`、`Attachment/UploadImage`、`User/SetMyAvatar` | 否 | 真实个人资料与头像能力；仍不按 `console.*` 控制，资料与展示名审计在同一事务命令中提交，加载失败可重试 |
 | `/settings` | `authOnly` | `User/GetMyTimePreference`、`User/UpdateMyTimePreference`、`User/ChangeMyLoginPassword`；语言使用正式 i18n 持久化 | 否 | 时区与密码为真实能力；通知、主题、分页、2FA、会话超时仍是显式禁用项 |
 | `/theme-test` | `authOnly` | 无后台依赖 | 否 | 调试/展示页，不纳入治理主线 |
 
@@ -93,17 +93,17 @@
 
 ### 5.1 已完成
 
-- 已接入权限治理的 Console 主页面，路由访问权限已基本具备来源；Role Permissions 的 view-only 路由错配已进入 R2-C03 能力门禁
+- 已接入权限治理的 Console 主页面均具备稳定路由来源；Role Permissions 已按 view-only 读取边界放行
 - 页面真实调用的 Console 专属后台接口当前已基本完成 `ConsolePermissions + DbMigrate` 对齐
 - `Users` 未落地能力已从页面、前后端权限常量与文档口径中一并清理
 - 默认 `Test` 角色已被收口为普通用户基线，不再保留任何 Console 资源授权，也不再保留标签管理等后台 API 权限
 
-### 5.2 R2-C03 当前门禁
+### 5.2 R2-C03 能力门禁结论
 
-- 资源映射 / 种子覆盖不等于角色聚合安全已关闭；内建角色保护、保留名、唯一性和命令更新边界仍需服务端权威约束
-- 权限矩阵必须补单调版本、事务内 CAS 聚合替换与结构化 `409`，不能继续以活动关联最大修改时间代表权威版本
-- 系统设置必须补结构化 400 / 409、持久化点原子 CAS、配置与审计共同提交和用户显式 Medium 确认
-- 详细代码事实、Mobile 停止线和验证口径见 [R2-C03 readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)
+- 角色聚合已具备内建保护、保留名、唯一性与明确命令更新边界
+- 权限矩阵已使用 Role 聚合版本、事务内 CAS 与结构化 `409`，纯删除 / 清空同样推进版本
+- 系统设置已具备结构化 400 / 409、持久化点 CAS、配置—审计共同提交和用户显式 Medium 确认
+- 详细代码事实、Mobile 停止线与验证证据见 [readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)和 [能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)
 
 ### 5.3 工具化校验已落地
 

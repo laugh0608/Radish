@@ -727,138 +727,40 @@ public class UserController : ControllerBase
     public async Task<MessageModel> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
         var userId = Current.UserId;
-
-        var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
-        var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
-        var normalizedAddress = string.IsNullOrWhiteSpace(dto.Address) ? null : dto.Address.Trim();
-        var sex = dto.Sex;
-        var age = dto.Age;
-        var birth = dto.Birth;
-        var now = DateTime.UtcNow;
-
-        if (normalizedUserEmail != null)
+        bool updated;
+        try
         {
-            if (normalizedUserEmail.Length > 200)
-            {
-                return new MessageModel
+            updated = await _userService.UpdateMyProfileAsync(
+                userId,
+                dto,
+                new UserDisplayNameChangeContext
                 {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "邮箱长度不能超过 200"
-                };
-            }
-
-            try
-            {
-                _ = new System.Net.Mail.MailAddress(normalizedUserEmail);
-            }
-            catch
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "邮箱格式不正确"
-                };
-            }
+                    OperatorUserId = userId,
+                    OperatorUserName = Current.UserName,
+                    Source = UserDisplayNameChangeSources.Profile,
+                    Reason = "用户个人资料修改"
+                });
         }
-
-        if (normalizedAddress != null && normalizedAddress.Length > 2000)
+        catch (ArgumentException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "地址长度不能超过 2000"
+                MessageInfo = ex.Message
             };
         }
-
-        if (sex.HasValue && (sex.Value < (int)UserSexEnum.Unknown || sex.Value > (int)UserSexEnum.Female))
+        catch (InvalidOperationException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "性别值不合法"
+                MessageInfo = ex.Message
             };
         }
 
-        if (age.HasValue && age.Value < 0)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "年龄不能为负数"
-            };
-        }
-
-        if (normalizedUserEmail != null)
-        {
-            var emailExists = await _userService.QueryExistsAsync(u =>
-                u.UserEmail == normalizedUserEmail &&
-                !u.IsDeleted &&
-                u.Id != userId);
-
-            if (emailExists)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "邮箱已被占用"
-                };
-            }
-        }
-
-        if (normalizedUserName != null)
-        {
-            try
-            {
-                await _userService.ChangeDisplayNameAsync(
-                    userId,
-                    normalizedUserName,
-                    new UserDisplayNameChangeContext
-                    {
-                        OperatorUserId = userId,
-                        OperatorUserName = Current.UserName,
-                        Source = UserDisplayNameChangeSources.Profile,
-                        Reason = "用户个人资料修改"
-                    });
-            }
-            catch (ArgumentException ex)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = ex.Message
-                };
-            }
-            catch (InvalidOperationException ex)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = ex.Message
-                };
-            }
-        }
-
-        var affectedRows = await _userService.UpdateColumnsAsync(
-            u => new User
-            {
-                UserEmail = normalizedUserEmail ?? u.UserEmail,
-                UserSex = sex ?? u.UserSex,
-                UserAge = age ?? u.UserAge,
-                UserBirth = birth ?? u.UserBirth,
-                UserAddress = normalizedAddress ?? u.UserAddress,
-                UpdateTime = now
-            },
-            u => u.Id == userId && !u.IsDeleted);
-
-        if (affectedRows <= 0)
+        if (!updated)
         {
             return new MessageModel
             {

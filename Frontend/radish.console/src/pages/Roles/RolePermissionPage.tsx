@@ -6,10 +6,13 @@ import {
   Button,
   Checkbox,
   Descriptions,
+  AntModal as Modal,
   Space,
   Tag,
   message,
 } from '@radish/ui';
+import { Grid } from 'antd';
+import { ApiResponseError } from '@radish/http';
 import { LeftOutlined, ReloadOutlined, SafetyOutlined } from '@radish/ui';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
@@ -173,6 +176,8 @@ export const RolePermissionPage = () => {
   const { roleId } = useParams<{ roleId: string }>();
   const canEditRole = usePermission(CONSOLE_PERMISSIONS.rolesEdit);
   const normalizedRoleId = roleId?.trim();
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -180,6 +185,8 @@ export const RolePermissionPage = () => {
   const [snapshot, setSnapshot] = useState<RoleAuthorizationSnapshotVo | null>(null);
   const [savedPreview, setSavedPreview] = useState<ResourceApiBindingVo[]>([]);
   const [selectedResourceIds, setSelectedResourceIds] = useState<string[]>([]);
+  const [loadError, setLoadError] = useState<string>();
+  const [versionConflict, setVersionConflict] = useState(false);
   const savingRequestRef = useRef(false);
 
   const resourceIndex = useMemo(() => buildResourceIndex(resourceTree), [resourceTree]);
@@ -221,6 +228,7 @@ export const RolePermissionPage = () => {
   const snapshotTimeText = formatAuthorizationTime(snapshot?.voLastModifyTime, language, t);
   const changedResourceCount = addedResourceIds.length + removedResourceIds.length;
   const liveApiDelta = livePreview.length - savedPreview.length;
+  const canMutateRole = canEditRole && !isMobile && snapshot?.voRoleIsBuiltIn !== true;
 
   const isDirty = useMemo(() => {
     if (!snapshot) {
@@ -238,13 +246,13 @@ export const RolePermissionPage = () => {
   }, [selectedResourceIds, snapshot]);
 
   const saveDisabled = shouldDisableRoleAuthorizationSave({
-    canEditRole,
+    canEditRole: canMutateRole,
     isDirty,
     loading,
     saving,
   });
   const toggleDisabled = shouldDisableRoleAuthorizationToggle({
-    canEditRole,
+    canEditRole: canMutateRole,
     loading,
     saving,
   });
@@ -258,6 +266,12 @@ export const RolePermissionPage = () => {
 
     try {
       setLoading(true);
+      setLoadError(undefined);
+      setVersionConflict(false);
+      setResourceTree([]);
+      setSnapshot(null);
+      setSavedPreview([]);
+      setSelectedResourceIds([]);
       const [tree, currentSnapshot, preview] = await Promise.all([
         getResourceTree(),
         getRoleAuthorization(normalizedRoleId),
@@ -270,7 +284,9 @@ export const RolePermissionPage = () => {
       setSelectedResourceIds(sortResourceIds(currentSnapshot.voGrantedResourceIds ?? []));
     } catch (error) {
       log.error('RolePermissionPage', '加载角色授权信息失败:', error);
-      message.error(error instanceof Error ? error.message : t('rolePermissions.feedback.loadFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('rolePermissions.feedback.loadFailed');
+      setLoadError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -279,6 +295,19 @@ export const RolePermissionPage = () => {
   useEffect(() => {
     void loadAuthorization();
   }, [loadAuthorization]);
+
+  useEffect(() => {
+    if (!isDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const handleToggleNode = (node: ConsoleResourceTreeNodeVo, checked: boolean) => {
     if (toggleDisabled) {
@@ -293,7 +322,7 @@ export const RolePermissionPage = () => {
     }));
   };
 
-  const handleSave = async () => {
+  const performSave = async () => {
     if (saveDisabled) {
       return;
     }
@@ -314,12 +343,41 @@ export const RolePermissionPage = () => {
       await loadAuthorization();
     } catch (error) {
       log.error('RolePermissionPage', '保存角色权限失败:', error);
-      message.error(error instanceof Error ? error.message : t('rolePermissions.feedback.saveFailed'));
+      const isConflict = error instanceof ApiResponseError &&
+        (error.httpStatus === 409 || error.statusCode === 409 || error.code === 'RoleAuthorization.VersionConflict');
+      if (isConflict) {
+        setVersionConflict(true);
+        message.warning(t('rolePermissions.feedback.conflict'));
+      } else {
+        message.error(error instanceof Error ? error.message : t('rolePermissions.feedback.saveFailed'));
+      }
     } finally {
       savingRequestRef.current = false;
       setSaving(false);
     }
   };
+
+  const handleSave = () => {
+    if (saveDisabled) {
+      return;
+    }
+
+    Modal.confirm({
+      title: t('rolePermissions.confirm.title'),
+      content: t('rolePermissions.confirm.description', {
+        added: addedResourceIds.length,
+        removed: removedResourceIds.length,
+        sensitive: sensitivePermissionKeys.length,
+      }),
+      okText: t('roles.common.confirm'),
+      cancelText: t('roles.common.cancel'),
+      onOk: performSave,
+    });
+  };
+
+  const confirmDiscardChanges = () => (
+    !isDirty || window.confirm(t('rolePermissions.confirm.discard'))
+  );
 
   const visualStateCache = new Map<string, NodeVisualState>();
 
@@ -337,14 +395,20 @@ export const RolePermissionPage = () => {
         )}
         actions={(
           <div className="role-permission-page__actions">
-            <Button icon={<LeftOutlined />} onClick={() => navigate('/roles')}>
+            <Button icon={<LeftOutlined />} onClick={() => {
+              if (confirmDiscardChanges()) {
+                navigate('/roles');
+              }
+            }}>
               {t('rolePermissions.actions.back')}
             </Button>
             <Button
               icon={<ReloadOutlined />}
               disabled={loading || saving}
               onClick={() => {
-                void loadAuthorization();
+                if (confirmDiscardChanges()) {
+                  void loadAuthorization();
+                }
               }}
             >
               {t('rolePermissions.actions.refresh')}
@@ -353,7 +417,7 @@ export const RolePermissionPage = () => {
               variant="primary"
               icon={<SafetyOutlined />}
               onClick={() => {
-                void handleSave();
+                handleSave();
               }}
               disabled={saveDisabled}
             >
@@ -362,6 +426,30 @@ export const RolePermissionPage = () => {
           </div>
         )}
       />
+
+      {loadError ? (
+        <section className="admin-feature-card role-permission-page__unavailable" role="alert">
+          <strong>{t('rolePermissions.unavailable.title')}</strong>
+          <p>{loadError}</p>
+          <Button icon={<ReloadOutlined />} onClick={() => void loadAuthorization()}>
+            {t('rolePermissions.actions.retry')}
+          </Button>
+        </section>
+      ) : null}
+
+      {versionConflict ? (
+        <section className="admin-feature-card role-permission-page__conflict" role="alert">
+          <strong>{t('rolePermissions.conflict.title')}</strong>
+          <p>{t('rolePermissions.conflict.description')}</p>
+          <Button icon={<ReloadOutlined />} onClick={() => {
+            if (confirmDiscardChanges()) {
+              void loadAuthorization();
+            }
+          }}>
+            {t('rolePermissions.conflict.reload')}
+          </Button>
+        </section>
+      ) : null}
 
       <ConsoleMetricGrid label={t('rolePermissions.metrics.ariaLabel')}>
         <ConsoleMetricCard label={t('rolePermissions.metrics.selected')} value={selectedResourceIds.length} description={t('rolePermissions.metrics.selectedDescription')} tone="info" />
@@ -394,7 +482,7 @@ export const RolePermissionPage = () => {
         <div className="governance-task-flow__item">
           <span>4</span>
           <strong>{t('rolePermissions.flow.saveTitle')}</strong>
-          <p>{t(canEditRole ? (isDirty ? 'rolePermissions.flow.saveDirty' : 'rolePermissions.flow.saveSynced') : 'rolePermissions.flow.saveReadOnly')}</p>
+          <p>{t(canMutateRole ? (isDirty ? 'rolePermissions.flow.saveDirty' : 'rolePermissions.flow.saveSynced') : 'rolePermissions.flow.saveReadOnly')}</p>
         </div>
       </section>
 
@@ -421,9 +509,12 @@ export const RolePermissionPage = () => {
                 key: 'roleStatus',
                 label: t('rolePermissions.context.status'),
                 children: (
-                  <Tag color={snapshot?.voRoleIsEnabled ? 'success' : 'error'}>
-                    {t(snapshot?.voRoleIsEnabled ? 'roles.status.enabled' : 'roles.status.disabled')}
-                  </Tag>
+                  <Space size={6}>
+                    <Tag color={snapshot?.voRoleIsEnabled ? 'success' : 'error'}>
+                      {t(snapshot?.voRoleIsEnabled ? 'roles.status.enabled' : 'roles.status.disabled')}
+                    </Tag>
+                    {snapshot?.voRoleIsBuiltIn ? <Tag color="gold">{t('roles.status.builtIn')}</Tag> : null}
+                  </Space>
                 ),
               },
               {
@@ -572,7 +663,7 @@ export const RolePermissionPage = () => {
 
           <div className="admin-feature-rail__callout">
             <span>{t('rolePermissions.rail.saveState')}</span>
-            <strong>{t(canEditRole ? (saveDisabled ? 'rolePermissions.rail.waiting' : 'rolePermissions.rail.canSave') : 'rolePermissions.rail.readOnly')}</strong>
+            <strong>{t(canMutateRole ? (saveDisabled ? 'rolePermissions.rail.waiting' : 'rolePermissions.rail.canSave') : 'rolePermissions.rail.readOnly')}</strong>
             <p>{t(isDirty ? 'rolePermissions.rail.dirtyDescription' : 'rolePermissions.rail.syncedDescription')}</p>
           </div>
 

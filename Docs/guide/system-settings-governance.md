@@ -1,6 +1,6 @@
 # 系统设置治理专题
 
-> 状态：低 / 中风险设置范围已阶段收束；写入一致性进入 R2-C03 能力门禁
+> 状态：低 / 中风险设置范围与写入一致性已阶段收束；R2-C03 进入代表设计
 >
 > 最后更新：2026-08-09（Asia/Shanghai）
 >
@@ -27,7 +27,7 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 
 第九批后，低 / 中风险系统设置首轮治理阶段收束。当前不继续默认开放第十批设置；后续设置扩面只在真实运营缺口、发布候选回归或独立专题评审确认边界后回拉。
 
-`2026-08-09` 的 R2-C03 代码事实审计对“阶段收束”作了边界校正：现有定义注册表、Low / Medium 范围、业务消费点和审计字段继续有效，但写入安全尚未完整闭环。控制器当前会把值校验、确认缺失、风险拒绝与版本冲突统一包装为 `500 System.UnexpectedError`；`ExpectedVersion` 仍是先读后写，覆盖值和变更日志又写入两个独立 JSON 边界；Console 的 Medium 确认参数由程序自动填充，通用变更摘要与恢复默认也未形成一致交互。下一步先补结构化 400 / 409、存储点原子 CAS、配置—审计共同提交和用户显式确认，详见 [R2-C03 readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)。该门禁不自动扩面第十批设置，也不开放 High / Critical。
+`2026-08-09` 已按 R2-C03 readiness 关闭写入一致性门禁：值校验、确认缺失与风险拒绝保留结构化 `400`，版本冲突返回稳定 `409 SystemConfig.VersionConflict`；JSON 覆盖值与审计由仓储协调器在跨进程锁内执行 CAS，并通过恢复日志共同提交。Console 的 Medium 确认值改为用户显式输入，提交前展示旧值、新值、影响范围和生效方式；恢复默认复用同一版本与审计边界。详见 [能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)。该收口不扩面第十批设置，也不开放 High / Critical。
 
 `2026-06-24` 身份语义补充：注册页 `DisplayName` 慎重设置提示本身不属于系统设置；展示名改名冷却 / 滚动窗口 / 窗口内最大次数已完成代码级定义、服务端消费和审计记录，进入当前已注册设置。`PublicIndex` 靓号保留列表 / 靓号规则已完成代码级定义、服务端消费和配置错误暴露，进入当前已注册设置；人工指定保留号仍需后续权限动作与审计专题承接。
 
@@ -140,7 +140,7 @@ Console 前端也必须按同一权限边界执行：普通设置编辑、favico
 
 敏感值应脱敏入库或只记录摘要，不保存明文。审计日志不可由普通设置页删除。
 
-当前实现先使用 `DataBases/SystemConfigs/system-config-change-logs.json` 记录系统设置专用历史，字段覆盖设置键、旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间。该历史只按已注册设置定义查询；普通设置页不提供删除历史能力。
+当前实现使用 `DataBases/SystemConfigs/system-config-change-logs.json` 记录系统设置专用历史，字段覆盖设置键、旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间。覆盖值与审计写入由同一个仓储协调器持有进程内信号量和跨进程文件锁，并先写完整恢复日志，再原子替换两个 JSON 文件；中断后的下一次读取会按恢复日志重放，损坏或空存储文件按配置错误关闭。该历史只按已注册设置定义查询；普通设置页不提供删除历史能力。
 
 ## 7. 读取与生效
 
@@ -228,8 +228,8 @@ Console 的界面动作、状态、风险等级、生效方式、筛选和校验
 - `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
 - 设置列表 / 详情返回 `MinNumberValue`、`MaxNumberValue`、`RequiresInteger` 与 `ImpactSummary`，供 Console 展示校验规则与影响范围。
 - 设置列表 / 详情返回 `VoVersion`：没有覆盖值时为 `0`，已有覆盖值时为持久化记录版本号。
-- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级、确认设置键和 `ExpectedVersion`，成功变更后写入系统设置专用审计历史并递增覆盖记录版本。
-- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数和 `ExpectedVersion`，版本不匹配时返回“系统设置已被其他管理员修改，请刷新后重试”。
+- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级、确认设置键和 `ExpectedVersion`。版本检查发生在持久化锁内，覆盖值与审计共同成功后才返回，并递增覆盖记录版本。
+- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数和 `ExpectedVersion`；版本不匹配时返回结构化 `409 SystemConfig.VersionConflict`，不写配置或审计。
 - `GetConfigChangeLogs` 查询已注册设置的最近变更历史。
 - `ISystemSettingProvider` 面向业务服务提供统一读取入口，覆盖值非法时直接暴露配置错误。
 - 旧 `CreateConfig` 路由保留兼容但拒绝 Console 新增未知设置。

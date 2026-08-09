@@ -147,7 +147,7 @@ export const consoleRouteMeta: readonly ConsoleRouteMeta[] = [
     key: 'role-permissions',
     path: '/roles/:roleId/permissions',
     title: '权限配置',
-    requiredPermission: CONSOLE_PERMISSIONS.rolesEdit,
+    requiredPermission: CONSOLE_PERMISSIONS.rolesView,
     searchVisible: false,
     defaultEntry: false,
   },

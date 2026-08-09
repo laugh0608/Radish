@@ -13,11 +13,5 @@ public interface ISystemConfigRepository
 
     Task<SystemConfigRecord?> GetByKeyAsync(string key);
 
-    Task<SystemConfigRecord> CreateAsync(SystemConfigRecord record);
-
-    Task<SystemConfigRecord?> UpdateAsync(SystemConfigRecord record);
-
-    Task<bool> DeleteAsync(long id);
-
-    Task<bool> DeleteByKeyAsync(string key);
+    Task<SystemConfigMutationResult> ApplyMutationAsync(SystemConfigMutation mutation);
 }
