@@ -56,6 +56,8 @@ export const RoleList = () => {
   const isMobile = !screens.md;
   const enabledRoles = roles.filter((role) => role.voIsEnabled).length;
   const customScopeRoles = roles.filter((role) => role.voAuthorityScope === 1).length;
+  const builtInRoles = roles.filter((role) => role.voIsBuiltIn).length;
+  const customRoles = roles.length - builtInRoles;
 
   // 加载角色列表
   const loadRoles = useCallback(async () => {
@@ -280,38 +282,119 @@ export const RoleList = () => {
       ),
     },
   ];
-  const mobileColumns: TableColumnsType<RoleVo> = [
-    {
-      title: t('roles.table.compactRole'),
-      key: 'compactRole',
-      render: (_, record) => (
-        <div className="role-list-mobile-row">
-          <div className="role-list-mobile-row__header">
-            <strong>{record.voRoleName}</strong>
-            <Space size={6} wrap>
-              <Tag color={record.voIsEnabled ? 'success' : 'error'}>
-                {t(record.voIsEnabled ? 'roles.status.enabled' : 'roles.status.disabled')}
-              </Tag>
-              {record.voIsBuiltIn ? <Tag color="gold">{t('roles.status.builtIn')}</Tag> : null}
-            </Space>
-          </div>
-          <p>{record.voRoleDescription || '-'}</p>
-          <div className="role-list-mobile-row__meta">
-            <span>{getAuthorityScopeText(record.voAuthorityScope)}</span>
-            <code>{record.voId}</code>
+  if (isMobile) {
+    return (
+      <div className="admin-feature-page role-list-page role-list-page--mobile">
+        <ConsolePageHeader
+          title={t('roles.page.title')}
+          status={(
+            <ConsoleStatusChip tone="neutral">
+              {t('roles.mobile.readOnly')}
+            </ConsoleStatusChip>
+          )}
+          actions={(
             <Button
-              variant="ghost"
-              size="small"
-              icon={<SafetyOutlined />}
-              onClick={() => navigate(`/roles/${record.voId}/permissions`)}
+              icon={<ReloadOutlined />}
+              disabled={loading}
+              onClick={loadRoles}
             >
-              {t('roles.actions.viewPermissions')}
+              {t('roles.actions.refresh')}
             </Button>
+          )}
+        />
+
+        {loadError ? (
+          <section className="admin-feature-card" role="alert">
+            <strong>{t('roles.unavailable.title')}</strong>
+            <p>{loadError}</p>
+            <Button icon={<ReloadOutlined />} onClick={() => void loadRoles()}>
+              {t('roles.actions.retry')}
+            </Button>
+          </section>
+        ) : null}
+
+        <section className="role-list-mobile-metrics" aria-label={t('roles.metrics.ariaLabel')}>
+          <div>
+            <strong>{roles.length}</strong>
+            <span>{t('roles.mobile.metrics.total')}</span>
           </div>
-        </div>
-      ),
-    },
-  ];
+          <div>
+            <strong>{customRoles}</strong>
+            <span>{t('roles.mobile.metrics.custom')}</span>
+          </div>
+          <div>
+            <strong>{builtInRoles}</strong>
+            <span>{t('roles.mobile.metrics.builtIn')}</span>
+          </div>
+        </section>
+
+        <section className="role-list-mobile-directory" aria-labelledby="mobile-role-directory-title">
+          <div className="role-list-mobile-directory__header">
+            <div>
+              <h2 id="mobile-role-directory-title">{t('roles.mobile.directoryTitle')}</h2>
+              <p>{t('roles.mobile.directoryDescription')}</p>
+            </div>
+            <ConsoleStatusChip tone={loading ? 'info' : 'neutral'}>
+              {t(loading ? 'roles.status.loading' : 'roles.count.roles', { count: roles.length })}
+            </ConsoleStatusChip>
+          </div>
+
+          {!loading && !loadError && roles.length === 0 ? (
+            <div className="role-list-mobile-empty">
+              <strong>{t('roles.mobile.emptyTitle')}</strong>
+              <span>{t('roles.mobile.emptyDescription')}</span>
+            </div>
+          ) : null}
+
+          <div className="role-list-mobile-directory__list">
+            {roles.map((role) => (
+              <article className="role-list-mobile-card" key={role.voId}>
+                <div className="role-list-mobile-card__header">
+                  <div>
+                    <strong>{role.voRoleName}</strong>
+                    <span>{getAuthorityScopeText(role.voAuthorityScope)}</span>
+                  </div>
+                  <Space size={6} wrap>
+                    <Tag color={role.voIsEnabled ? 'success' : 'error'}>
+                      {t(role.voIsEnabled ? 'roles.status.enabled' : 'roles.status.disabled')}
+                    </Tag>
+                    {role.voIsBuiltIn ? <Tag color="gold">{t('roles.status.builtIn')}</Tag> : null}
+                  </Space>
+                </div>
+                <p>{role.voRoleDescription || t('roles.mobile.noDescription')}</p>
+                {role.voIsBuiltIn ? (
+                  <div className="role-list-mobile-card__protection">
+                    <SafetyOutlined />
+                    <span>{t('roles.mobile.builtInProtection')}</span>
+                  </div>
+                ) : null}
+                <div className="role-list-mobile-card__footer">
+                  <code>{role.voId}</code>
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    icon={<SafetyOutlined />}
+                    onClick={() => navigate(`/roles/${role.voId}/permissions`)}
+                  >
+                    {t('roles.actions.viewPermissions')}
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="role-list-mobile-boundary">
+          <SafetyOutlined />
+          <div>
+            <strong>{t('roles.mobile.boundaryTitle')}</strong>
+            <span>{t('roles.mobile.boundaryDescription')}</span>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-feature-page role-list-page">
       <ConsolePageHeader
@@ -376,7 +459,7 @@ export const RoleList = () => {
 
           <section className="admin-table-panel">
             <Table
-              columns={isMobile ? mobileColumns : columns}
+              columns={columns}
               dataSource={roles}
               rowKey="voId"
               loading={loading}

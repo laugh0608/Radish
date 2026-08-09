@@ -3,15 +3,18 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   AntModal as Modal,
+  BottomSheet,
   Form,
   AntInput as Input,
   AntSelect as Select,
   Button,
   Descriptions,
   InputNumber,
+  SettingOutlined,
   Tag,
   message,
 } from '@radish/ui';
+import { Grid } from 'antd';
 import { ApiResponseError } from '@radish/http';
 import {
   updateConfig,
@@ -29,6 +32,13 @@ interface SystemConfigFormProps {
   configId?: number;
   onCancel: () => void;
   onSuccess: () => void;
+}
+
+interface SystemConfigFormValues {
+  value?: string | number;
+  reason?: string;
+  confirmRiskLevel?: string;
+  confirmKey?: string;
 }
 
 const hasNumberConstraint = (value?: number | null): value is number => (
@@ -100,6 +110,9 @@ export const SystemConfigForm = ({
   const [dirty, setDirty] = useState(false);
   const [versionConflict, setVersionConflict] = useState(false);
   const watchedValue = Form.useWatch('value', form);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+  const mobileRiskBlocked = isMobile && config !== undefined && config.voRiskLevel !== 'Low';
 
   const loadConfigDetail = useCallback(async (id: number) => {
     try {
@@ -127,14 +140,13 @@ export const SystemConfigForm = ({
     }
   }, [form, t]);
 
-  const handleSubmit = async () => {
+  const performSubmit = async (values: SystemConfigFormValues) => {
     if (!configId || !config) {
       message.error(t('systemConfig.feedback.notReady'));
       return;
     }
 
     try {
-      const values = await form.validateFields();
       setLoading(true);
 
       let processedValue = String(values.value);
@@ -145,7 +157,7 @@ export const SystemConfigForm = ({
       await updateConfig(configId, {
         value: processedValue,
         isEnabled: true,
-        reason: String(values.reason).trim(),
+        reason: values.reason?.trim() ?? '',
         confirmRiskLevel: values.confirmRiskLevel?.trim(),
         confirmKey: values.confirmKey?.trim(),
         expectedVersion: config.voVersion,
@@ -166,6 +178,42 @@ export const SystemConfigForm = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!config) {
+      message.error(t('systemConfig.feedback.notReady'));
+      return;
+    }
+
+    if (isMobile && config.voRiskLevel !== 'Low') {
+      message.error(t('systemConfig.feedback.mediumDesktopOnly'));
+      return;
+    }
+
+    let values: SystemConfigFormValues;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    if (config.voRiskLevel === 'Low') {
+      Modal.confirm({
+        title: t('systemConfig.confirm.lowTitle'),
+        content: t('systemConfig.confirm.lowDescription', {
+          key: config.voKey,
+          oldValue: config.voEffectiveValue,
+          newValue: String(values.value ?? ''),
+        }),
+        okText: t('systemConfig.confirm.apply'),
+        cancelText: t('roles.common.cancel'),
+        onOk: () => performSubmit(values),
+      });
+      return;
+    }
+
+    await performSubmit(values);
   };
 
   const closeForm = () => {
@@ -189,6 +237,25 @@ export const SystemConfigForm = ({
       okText: t('systemConfig.form.discardConfirm'),
       cancelText: t('roles.common.cancel'),
       onOk: closeForm,
+    });
+  };
+
+  const requestReloadAuthority = () => {
+    if (!configId) {
+      return;
+    }
+
+    if (!dirty) {
+      void loadConfigDetail(configId);
+      return;
+    }
+
+    Modal.confirm({
+      title: t('systemConfig.form.reloadConfirmTitle'),
+      content: t('systemConfig.form.reloadConfirmDescription'),
+      okText: t('systemConfig.form.reloadAuthority'),
+      cancelText: t('roles.common.cancel'),
+      onOk: () => loadConfigDetail(configId),
     });
   };
 
@@ -282,6 +349,11 @@ export const SystemConfigForm = ({
         label: t('systemConfig.form.effectiveMode'),
         children: t(`systemConfig.mode.${config.voEffectiveMode}`, { defaultValue: config.voEffectiveMode }),
       },
+      {
+        key: 'version',
+        label: t('systemConfig.form.version'),
+        children: <code>{config.voVersion}</code>,
+      },
     ];
 
     if (config.voType === 'number') {
@@ -303,20 +375,8 @@ export const SystemConfigForm = ({
     return items;
   };
 
-  return (
-    <Modal
-      title={t('systemConfig.form.title')}
-      open={visible}
-      onOk={handleSubmit}
-      onCancel={handleCancel}
-      confirmLoading={loading}
-      okButtonProps={{
-        disabled: initialLoading || !config?.voIsEditable,
-      }}
-      width={640}
-      destroyOnHidden
-      forceRender
-    >
+  const formContent = (
+    <>
       {config ? (
         <Descriptions
           column={1}
@@ -341,11 +401,28 @@ export const SystemConfigForm = ({
         </div>
       ) : null}
 
+      {dirty && config ? (
+        <div className="system-config-dirty-note">
+          <strong>{t('systemConfig.form.dirtyTitle')}</strong>
+          <span>{t('systemConfig.form.dirtyDescription', {
+            oldValue: config.voEffectiveValue,
+            newValue: watchedValue === undefined ? '-' : String(watchedValue),
+          })}</span>
+        </div>
+      ) : null}
+
+      {config ? (
+        <div className="system-config-cas-note">
+          <strong>{t('systemConfig.form.casTitle', { version: config.voVersion })}</strong>
+          <span>{t('systemConfig.form.casDescription')}</span>
+        </div>
+      ) : null}
+
       {versionConflict ? (
         <div className="system-config-risk-note" role="alert">
           <strong>{t('systemConfig.form.conflictTitle')}</strong>
           <p>{t('systemConfig.form.conflictDescription')}</p>
-          <Button onClick={() => configId && void loadConfigDetail(configId)}>
+          <Button onClick={requestReloadAuthority}>
             {t('systemConfig.form.reloadAuthority')}
           </Button>
         </div>
@@ -397,7 +474,7 @@ export const SystemConfigForm = ({
         >
           {renderValueInput()}
         </Form.Item>
-        {config?.voRiskLevel !== 'Low' ? (
+        {config && config.voRiskLevel !== 'Low' ? (
           <>
             <Form.Item
               name="confirmRiskLevel"
@@ -449,6 +526,64 @@ export const SystemConfigForm = ({
           />
         </Form.Item>
       </Form>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <BottomSheet
+        isOpen={visible}
+        onClose={handleCancel}
+        closeLabel={t('roles.common.cancel')}
+        title={t('systemConfig.form.title')}
+        height="88%"
+        closeOnOverlayClick={false}
+        className="system-config-edit-sheet"
+        footer={(
+          <div className="system-config-edit-sheet__actions">
+            <Button onClick={handleCancel} disabled={loading}>
+              {t('roles.common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={loading || initialLoading || !config?.voIsEditable || mobileRiskBlocked}
+              onClick={() => void handleSubmit()}
+            >
+              {t(loading ? 'systemConfig.form.saving' : 'systemConfig.form.saveLow')}
+            </Button>
+          </div>
+        )}
+      >
+        {mobileRiskBlocked ? (
+          <div className="system-config-mobile-boundary system-config-edit-sheet__boundary">
+            <SettingOutlined />
+            <div>
+              <strong>{t('systemConfig.mobile.boundaryTitle')}</strong>
+              <span>{t('systemConfig.mobile.boundaryDescription')}</span>
+            </div>
+          </div>
+        ) : formContent}
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <Modal
+      title={t('systemConfig.form.title')}
+      open={visible}
+      onOk={handleSubmit}
+      onCancel={handleCancel}
+      confirmLoading={loading}
+      okText={t('systemConfig.form.save')}
+      cancelText={t('roles.common.cancel')}
+      okButtonProps={{
+        disabled: initialLoading || !config?.voIsEditable,
+      }}
+      width={640}
+      destroyOnHidden
+      forceRender
+    >
+      {formContent}
     </Modal>
   );
 };

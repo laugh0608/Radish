@@ -230,6 +230,45 @@
   overflow-wrap: anywhere;
 }
 
+.system-config-dirty-note,
+.system-config-cas-note {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--console-radius-control);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.system-config-dirty-note {
+  color: var(--console-warning-text);
+  background: var(--console-warning-bg);
+  border: 1px solid var(--console-warning-border);
+}
+
+.system-config-cas-note {
+  color: var(--console-text-secondary);
+  background: var(--console-bg-muted);
+  border: 1px solid var(--console-border-subtle);
+}
+
+.system-config-dirty-note strong,
+.system-config-cas-note strong {
+  color: var(--console-text-primary);
+}
+
+.system-config-edit-sheet__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+
+.system-config-edit-sheet__actions .ant-btn {
+  width: 100%;
+}
+
 .system-config-history-summary {
   display: flex;
   align-items: center;
@@ -255,7 +294,168 @@
   text-overflow: ellipsis;
 }
 
+.system-config-mobile-list {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.system-config-mobile-list__header,
+.system-config-mobile-card__footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.system-config-mobile-list__header h2 {
+  margin: 0;
+  color: var(--console-text-primary);
+  font-size: 16px;
+}
+
+.system-config-mobile-list__header p {
+  margin: 3px 0 0;
+  color: var(--console-text-secondary);
+  font-size: 11px;
+}
+
+.system-config-mobile-list__items {
+  overflow: hidden;
+  background: var(--console-bg-surface);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+}
+
+.system-config-mobile-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-bottom: 1px solid var(--console-border-subtle);
+}
+
+.system-config-mobile-card:last-child {
+  border-bottom: 0;
+}
+
+.system-config-mobile-card--editable {
+  background: color-mix(in srgb, var(--console-brand-primary) 7%, var(--console-bg-surface) 93%);
+}
+
+.system-config-mobile-card__description {
+  margin: 0;
+  color: var(--console-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.system-config-mobile-card__footer {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.system-config-mobile-card__state {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: var(--console-text-secondary);
+  font-size: 11px;
+}
+
+.system-config-mobile-empty {
+  display: grid;
+  gap: 4px;
+  padding: 20px;
+  text-align: center;
+  background: var(--console-bg-surface);
+  border: 1px dashed var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+}
+
+.system-config-mobile-empty strong {
+  color: var(--console-text-primary);
+}
+
+.system-config-mobile-empty span {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.system-config-mobile-boundary {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 12px;
+  color: var(--console-warning-text);
+  background: var(--console-warning-bg);
+  border: 1px solid var(--console-warning-border);
+  border-radius: var(--console-radius-control);
+}
+
+.system-config-mobile-boundary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.system-config-mobile-boundary strong {
+  color: var(--console-text-primary);
+  font-size: 12px;
+}
+
+.system-config-mobile-boundary span {
+  color: var(--console-text-secondary);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
 @media (max-width: 768px) {
+  .system-config-list-page {
+    gap: 14px;
+  }
+
+  .system-config-list-page .console-page-header {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .system-config-list-page .console-page-header__icon,
+  .system-config-list-page .console-page-header__eyebrow,
+  .system-config-list-page .console-page-header__copy > p {
+    display: none;
+  }
+
+  .system-config-list-page .console-page-header__actions {
+    width: auto;
+  }
+
+  .system-config-list-page .console-page-header__actions .ant-btn {
+    width: auto;
+  }
+
+  .system-config-list-page .console-toolbar {
+    padding: 14px;
+  }
+
+  .system-config-edit-sheet.radish-bottom-sheet {
+    max-height: 88dvh;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .system-config-edit-sheet .radish-bottom-sheet-body {
+    padding-top: 8px;
+  }
+
+  .system-config-edit-sheet .system-config-change-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .system-config-change-summary {
     grid-template-columns: 1fr;
   }

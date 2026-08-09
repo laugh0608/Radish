@@ -656,24 +656,6 @@ export const SystemConfigList = () => {
     },
   ];
 
-  const compactColumns: TableColumnsType<SystemConfigVo> = [
-    {
-      title: t('systemConfig.table.compactSetting'),
-      key: 'compactConfig',
-      width: 224,
-      render: (_, record) => renderCompactConfig(record),
-    },
-    {
-      title: t('systemConfig.table.actions'),
-      key: 'action',
-      width: 60,
-      render: (_, record) => renderConfigActions(record, true),
-    },
-  ];
-
-  const tableColumns = isCompactTable ? compactColumns : desktopColumns;
-  const tableScrollX = isCompactTable ? 292 : 1700;
-
   return (
     <div className="admin-feature-page system-config-list-page">
       <ConsolePageHeader
@@ -708,16 +690,18 @@ export const SystemConfigList = () => {
         </section>
       ) : null}
 
-      <ConsoleMetricGrid label={t('systemConfig.metrics.label')}>
-        <ConsoleMetricCard label={t('systemConfig.metrics.registered')} value={configs.length} description={t('systemConfig.metrics.registeredDescription')} tone="info" />
-        <ConsoleMetricCard label={t('systemConfig.metrics.results')} value={filteredConfigs.length} description={t('systemConfig.metrics.resultsDescription')} />
-        <ConsoleMetricCard label={t('systemConfig.metrics.overridden')} value={overriddenConfigs} description={t('systemConfig.metrics.overriddenDescription')} tone="warning" />
-        <ConsoleMetricCard label={t('systemConfig.metrics.editable')} value={editableConfigs} description={t('systemConfig.metrics.editableDescription')} tone="success" />
-      </ConsoleMetricGrid>
+      {!isCompactTable ? (
+        <ConsoleMetricGrid label={t('systemConfig.metrics.label')}>
+          <ConsoleMetricCard label={t('systemConfig.metrics.registered')} value={configs.length} description={t('systemConfig.metrics.registeredDescription')} tone="info" />
+          <ConsoleMetricCard label={t('systemConfig.metrics.results')} value={filteredConfigs.length} description={t('systemConfig.metrics.resultsDescription')} />
+          <ConsoleMetricCard label={t('systemConfig.metrics.overridden')} value={overriddenConfigs} description={t('systemConfig.metrics.overriddenDescription')} tone="warning" />
+          <ConsoleMetricCard label={t('systemConfig.metrics.editable')} value={editableConfigs} description={t('systemConfig.metrics.editableDescription')} tone="success" />
+        </ConsoleMetricGrid>
+      ) : null}
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
-          <section className="branding-card">
+          {!isCompactTable ? <section className="branding-card">
             <div className="branding-card__main">
               <div className="branding-card__preview">
                 {faviconPreviewUrl ? (
@@ -774,7 +758,7 @@ export const SystemConfigList = () => {
                 {t('systemConfig.branding.reload')}
               </Button>
             </div>
-          </section>
+          </section> : null}
 
           <ConsoleToolbar
             title={t('systemConfig.filter.title')}
@@ -816,23 +800,102 @@ export const SystemConfigList = () => {
             </div>
           </ConsoleToolbar>
 
-          <section className="admin-table-panel">
-            <Table
-              columns={tableColumns}
-              dataSource={filteredConfigs}
-              rowKey="voId"
-              loading={loading}
-              pagination={{
-                showSizeChanger: true,
-                showQuickJumper: true,
-                showTotal: (total) => t('systemConfig.pagination.total', { count: total }),
-              }}
-              scroll={{ x: tableScrollX }}
-            />
-          </section>
+          {isCompactTable ? (
+            <section className="system-config-mobile-list" aria-label={t('systemConfig.table.compactSetting')}>
+              <div className="system-config-mobile-list__header">
+                <div>
+                  <h2>{t('systemConfig.mobile.listTitle')}</h2>
+                  <p>{t('systemConfig.mobile.resultCount', { count: filteredConfigs.length })}</p>
+                </div>
+                <ConsoleStatusChip tone={loading ? 'info' : 'neutral'}>
+                  {loading ? t('roles.status.loading') : t('systemConfig.filter.none')}
+                </ConsoleStatusChip>
+              </div>
+
+              {!loading && !loadError && filteredConfigs.length === 0 ? (
+                <div className="system-config-mobile-empty">
+                  <strong>{t('systemConfig.mobile.emptyTitle')}</strong>
+                  <span>{t('systemConfig.mobile.emptyDescription')}</span>
+                </div>
+              ) : null}
+
+              <div className="system-config-mobile-list__items">
+                {filteredConfigs.map((record) => {
+                  const mobileEditable = canEditSystemConfig
+                    && record.voIsEditable
+                    && record.voRiskLevel === 'Low';
+                  return (
+                    <article
+                      className={`system-config-mobile-card${mobileEditable ? ' system-config-mobile-card--editable' : ''}`}
+                      key={record.voId}
+                    >
+                      {renderCompactConfig(record)}
+                      <p className="system-config-mobile-card__description">
+                        {getSystemConfigDescription(record, t)}
+                      </p>
+                      <div className="system-config-mobile-card__footer">
+                        <div className="system-config-mobile-card__state">
+                          <Tag color={getRiskTagColor(record.voRiskLevel)}>{record.voRiskLevel}</Tag>
+                          <span>{formatEffectiveMode(record.voEffectiveMode)}</span>
+                        </div>
+                        <Space size={6} wrap>
+                          {record.voRiskLevel === 'Low' ? (
+                            <Button
+                              variant="primary"
+                              size="small"
+                              icon={<EditOutlined />}
+                              disabled={!mobileEditable}
+                              onClick={() => handleEdit(record)}
+                            >
+                              {t('systemConfig.mobile.editLow')}
+                            </Button>
+                          ) : (
+                            <Button size="small" disabled>
+                              {t('systemConfig.mobile.mediumPcOnly')}
+                            </Button>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="small"
+                            icon={<ClockCircleOutlined />}
+                            onClick={() => void handleViewHistory(record)}
+                          >
+                            {t('systemConfig.common.history')}
+                          </Button>
+                        </Space>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+
+              <div className="system-config-mobile-boundary">
+                <SettingOutlined />
+                <div>
+                  <strong>{t('systemConfig.mobile.boundaryTitle')}</strong>
+                  <span>{t('systemConfig.mobile.boundaryDescription')}</span>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className="admin-table-panel">
+              <Table
+                columns={desktopColumns}
+                dataSource={filteredConfigs}
+                rowKey="voId"
+                loading={loading}
+                pagination={{
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => t('systemConfig.pagination.total', { count: total }),
+                }}
+                scroll={{ x: 1700 }}
+              />
+            </section>
+          )}
         </main>
 
-        <aside className="admin-table-aside">
+        {!isCompactTable ? <aside className="admin-table-aside">
           <h3>{t('systemConfig.summary.title')}</h3>
           <p className="admin-feature-subtle">{t('systemConfig.summary.description')}</p>
           <div className="admin-table-summary">
@@ -861,7 +924,7 @@ export const SystemConfigList = () => {
               </span>
             </div>
           </div>
-        </aside>
+        </aside> : null}
       </div>
 
       <SystemConfigForm

@@ -94,6 +94,19 @@ function collectSensitivePermissionKeys(permissionKeys: string[]): string[] {
     .slice(0, 8);
 }
 
+function collectResourceNodes(node: ConsoleResourceTreeNodeVo): ConsoleResourceTreeNodeVo[] {
+  return [
+    node,
+    ...node.voChildren.flatMap((child) => collectResourceNodes(child)),
+  ];
+}
+
+function getPermissionMeaning(node: ConsoleResourceTreeNodeVo, t: TFunction): string {
+  return t(`rolePermissions.meaning.${node.voResourceKey}`, {
+    defaultValue: node.voTitle,
+  });
+}
+
 interface ResourceNodeProps {
   node: ConsoleResourceTreeNodeVo;
   level: number;
@@ -204,6 +217,7 @@ export const RolePermissionPage = () => {
     [snapshot]
   );
   const savedResourceIdSet = useMemo(() => new Set(savedResourceIds), [savedResourceIds]);
+  const mobileGrantedResourceIdSet = useMemo(() => new Set(savedResourceIds), [savedResourceIds]);
   const addedResourceIds = useMemo(
     () => selectedResourceIds.filter((resourceId) => !savedResourceIdSet.has(resourceId)),
     [selectedResourceIds, savedResourceIdSet]
@@ -229,6 +243,10 @@ export const RolePermissionPage = () => {
   const changedResourceCount = addedResourceIds.length + removedResourceIds.length;
   const liveApiDelta = livePreview.length - savedPreview.length;
   const canMutateRole = canEditRole && !isMobile && snapshot?.voRoleIsBuiltIn !== true;
+  const mobileResourceGroups = useMemo(() => resourceTree.map((root) => ({
+    root,
+    nodes: collectResourceNodes(root),
+  })), [resourceTree]);
 
   const isDirty = useMemo(() => {
     if (!snapshot) {
@@ -381,6 +399,137 @@ export const RolePermissionPage = () => {
 
   const visualStateCache = new Map<string, NodeVisualState>();
 
+  if (isMobile) {
+    return (
+      <div className="admin-feature-page role-permission-page role-permission-page--mobile">
+        <section className="role-permission-mobile-header">
+          <Button
+            variant="ghost"
+            icon={<LeftOutlined />}
+            aria-label={t('rolePermissions.actions.back')}
+            onClick={() => {
+              if (confirmDiscardChanges()) {
+                navigate('/roles');
+              }
+            }}
+          >
+            {t('rolePermissions.actions.back')}
+          </Button>
+          <div>
+            <h1>{t('rolePermissions.mobile.title')}</h1>
+            <span>{snapshot?.voRoleName ?? normalizedRoleId ?? '-'}</span>
+          </div>
+          <ConsoleStatusChip tone="neutral">
+            {t('rolePermissions.mobile.readOnly')}
+          </ConsoleStatusChip>
+        </section>
+
+        {loadError ? (
+          <section className="admin-feature-card role-permission-page__unavailable" role="alert">
+            <strong>{t('rolePermissions.unavailable.title')}</strong>
+            <p>{loadError}</p>
+            <Button icon={<ReloadOutlined />} onClick={() => void loadAuthorization()}>
+              {t('rolePermissions.actions.retry')}
+            </Button>
+          </section>
+        ) : null}
+
+        <section className="role-permission-mobile-context">
+          <div className="role-permission-mobile-context__icon">
+            <SafetyOutlined />
+          </div>
+          <div className="role-permission-mobile-context__copy">
+            <div className="role-permission-mobile-context__title">
+              <strong>{snapshot?.voRoleName ?? t('rolePermissions.context.unloaded')}</strong>
+              {snapshot?.voRoleIsBuiltIn ? <Tag color="gold">{t('roles.status.builtIn')}</Tag> : null}
+            </div>
+            <span>{snapshot?.voRoleDescription || t('rolePermissions.mobile.noDescription')}</span>
+          </div>
+          <strong className="role-permission-mobile-context__count">
+            {t('rolePermissions.mobile.grantedCount', {
+              count: snapshot?.voGrantedPermissionKeys.length ?? 0,
+            })}
+          </strong>
+        </section>
+
+        {snapshot?.voRoleIsBuiltIn ? (
+          <section className="role-permission-mobile-protection">
+            <SafetyOutlined />
+            <span>{t('rolePermissions.mobile.builtInProtection')}</span>
+          </section>
+        ) : null}
+
+        <section className="role-permission-mobile-matrix" aria-label={t('rolePermissions.matrix.title')}>
+          {loading ? (
+            <div className="role-permission-mobile-empty">
+              <strong>{t('rolePermissions.state.loading')}</strong>
+              <span>{t('rolePermissions.metrics.waiting')}</span>
+            </div>
+          ) : null}
+
+          {!loading && !loadError && mobileResourceGroups.length === 0 ? (
+            <div className="role-permission-mobile-empty">
+              <strong>{t('rolePermissions.mobile.emptyTitle')}</strong>
+              <span>{t('rolePermissions.mobile.emptyDescription')}</span>
+            </div>
+          ) : null}
+
+          {mobileResourceGroups.map(({ root, nodes }) => {
+            const grantedCount = nodes.filter((node) => mobileGrantedResourceIdSet.has(node.voId)).length;
+            return (
+              <section className="role-permission-mobile-group" key={root.voId}>
+                <div className="role-permission-mobile-group__header">
+                  <h2>{root.voTitle}</h2>
+                  <span>{t('rolePermissions.mobile.groupCount', { granted: grantedCount, total: nodes.length })}</span>
+                </div>
+                <div className="role-permission-mobile-group__list">
+                  {nodes.map((node) => {
+                    const granted = mobileGrantedResourceIdSet.has(node.voId);
+                    return (
+                      <div
+                        className={`role-permission-mobile-key${granted ? ' role-permission-mobile-key--granted' : ''}`}
+                        key={node.voId}
+                      >
+                        <div className="role-permission-mobile-key__copy">
+                          <code>{node.voResourceKey}</code>
+                          <span>{getPermissionMeaning(node, t)}</span>
+                        </div>
+                        <ConsoleStatusChip tone={granted ? 'success' : 'neutral'}>
+                          {t(granted ? 'rolePermissions.mobile.allowed' : 'rolePermissions.mobile.notGranted')}
+                        </ConsoleStatusChip>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </section>
+
+        <section className="role-permission-mobile-boundary">
+          <SafetyOutlined />
+          <div>
+            <strong>{t('rolePermissions.mobile.boundaryTitle')}</strong>
+            <span>{t('rolePermissions.mobile.boundaryDescription')}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="small"
+            icon={<ReloadOutlined />}
+            disabled={loading}
+            onClick={() => {
+              if (confirmDiscardChanges()) {
+                void loadAuthorization();
+              }
+            }}
+          >
+            {t('rolePermissions.actions.refresh')}
+          </Button>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-feature-page role-permission-page">
       <ConsolePageHeader
@@ -389,8 +538,10 @@ export const RolePermissionPage = () => {
         description={t('rolePermissions.page.description')}
         icon={<SafetyOutlined />}
         status={(
-          <ConsoleStatusChip tone={isDirty ? 'warning' : 'success'}>
-            {t(isDirty ? 'rolePermissions.state.pending' : 'rolePermissions.state.synced')}
+          <ConsoleStatusChip tone={!canMutateRole ? 'neutral' : (isDirty ? 'warning' : 'success')}>
+            {t(!canMutateRole
+              ? 'rolePermissions.state.readOnly'
+              : (isDirty ? 'rolePermissions.state.pending' : 'rolePermissions.state.synced'))}
           </ConsoleStatusChip>
         )}
         actions={(
@@ -413,16 +564,18 @@ export const RolePermissionPage = () => {
             >
               {t('rolePermissions.actions.refresh')}
             </Button>
-            <Button
-              variant="primary"
-              icon={<SafetyOutlined />}
-              onClick={() => {
-                handleSave();
-              }}
-              disabled={saveDisabled}
-            >
-              {t(saving ? 'rolePermissions.actions.saving' : 'rolePermissions.actions.save')}
-            </Button>
+            {canMutateRole ? (
+              <Button
+                variant="primary"
+                icon={<SafetyOutlined />}
+                onClick={() => {
+                  handleSave();
+                }}
+                disabled={saveDisabled}
+              >
+                {t(saving ? 'rolePermissions.actions.saving' : 'rolePermissions.actions.save')}
+              </Button>
+            ) : null}
           </div>
         )}
       />
@@ -533,6 +686,16 @@ export const RolePermissionPage = () => {
           />
         </div>
       </ConsoleToolbar>
+
+      {snapshot?.voRoleIsBuiltIn ? (
+        <section className="role-permission-protected-role">
+          <SafetyOutlined />
+          <div>
+            <strong>{t('rolePermissions.protection.title')}</strong>
+            <span>{t('rolePermissions.protection.description')}</span>
+          </div>
+        </section>
+      ) : null}
 
       <div className="role-permission-workspace">
         <main className="role-permission-workspace__main">

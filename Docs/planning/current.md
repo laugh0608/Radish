@@ -6,15 +6,19 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-C03 readiness 已完成；下一步成组实现 Console 设置与权限矩阵代码能力门禁`
-- **产品下一顺位**：`先闭合内建角色保护、只读矩阵、单调版本 / 原子 CAS、结构化冲突、设置审计与个人设置真实性，再进入 R2 局部代表设计`
+- **工程第一顺位**：`F4-R R2-C03 设计、实现、静态验证与 Gateway PC / mobile 运行态验收已关闭；等待下一批规划裁决`
+- **产品下一顺位**：`本轮不提前推进其他 R2 / R3 页面；下一专题由后续规划选择`
 - **复核日期**：`2026-08-09`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
-- `2026-08-09` 已完成 [R2-C03 Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)：分级继续保持 R2，沿用 `AdminLayout`、Console 五项真实入口与 R1-C01 / C02，不建立新壳层；但只读权限矩阵路由不可达、内建 `System / Admin` 无权威保护、授权版本 / 事务不可靠、系统设置冲突被包装为 500、配置与审计未共同提交，以及 Settings / Profile 真实能力口径偏旧，构成设计前代码门禁。下一步先成组修复并通过静态验证，未获授权前不修改 Pencil。
+- `2026-08-09` 已完成并关闭 [R2-C03 Console 设置与权限矩阵正式实现及 Gateway 验收](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)：PC 落地只读 / 内建角色保护、Low 轻量确认、Medium 显式确认，以及 dirty、CAS 版本、结构化 `409` 草稿保留；Mobile 落地独立连续角色目录、以权威快照渲染的只读权限详情与 Low 设置 `BottomSheet`，权限 key 同时展示含义，Medium 在列表和提交 handler 双重保持 PC-only。Console `83 / 83` 测试、Lint、普通 / strict type-check、production build 与权限扫描通过；Gateway PC `1440 × 900`、Mobile `390 × 844`、真实角色 / 设置读取、unavailable、空结果、五项胶囊导航和无横向溢出通过，稳定态干净页签无 `warning / error`。运行态修正系统设置初始 `config` 未装载时的空值崩溃；未保存角色授权或系统设置，临时 OIDC 增量已精确清理，服务已停止。API、权限、URL、LongId、CAS、结构化错误、事务和存储边界保持不变。
+
+- `2026-08-09` 已完成并确认 [R2-C03 Console 设置与权限矩阵局部代表设计](/records/f4-r-r2-c03-console-settings-permissions-representative-design-2026-08-09)：唯一活动 `.pen` 包含权限矩阵与内建角色 PC、系统设置与确认 PC、角色结构只读 Mobile、权限矩阵只读 Mobile、Low 设置编辑 Mobile 和必要关键状态六个独立顶层设计板；Mobile 页面复用 `AdminLayout`、Console 五项入口与共享 `Mobile Tab Bar`，不使用外部说明板或多页面合并容器，并固定为“角色目录选择—当前角色权限详情—设置列表选择 / Low 编辑底板”三条直接任务流。设计覆盖只读 Operator、`System / Admin` 内建保护、dirty / 离开保护、并发 `409`、unavailable / stale、真实空态和 Medium 显式确认；Settings / Profile 仅表现已有自服务能力，不进入 `console.*`。Pencil 静态复核已通过，正式代码随后按确认设计落地。
+- `2026-08-09` 已完成 [R2-C03 Console 设置与权限矩阵代码能力门禁](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)：内建角色保护、角色命令与唯一性、权限矩阵单调聚合版本 / 原子 CAS、系统设置配置—审计共同提交、结构化 `400 / 409`、显式 Medium 确认和 Settings / Profile 真实性已闭合；后端 `1206` 项与 Console `78` 项测试通过。该门禁没有修改 Pencil、启动服务或浏览器，后续设计继续保持现有 API、权限、URL、LongId、事务和存储边界。
+- `2026-08-09` 已完成 [R2-C03 Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)：分级继续保持 R2，沿用 `AdminLayout`、Console 五项真实入口与 R1-C01 / C02，不建立新壳层；审计识别出只读权限矩阵路由不可达、内建 `System / Admin` 无权威保护、授权版本 / 事务不可靠、系统设置冲突被包装为 500、配置与审计未共同提交，以及 Settings / Profile 真实能力口径偏旧等设计前代码门禁，上述门禁已由同日能力批关闭。
 - `2026-08-09` 已完成并关闭 [R1-C02 Console 案件治理 / 审计成组实现与 Gateway 验收](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)：PC 落地案件队列—受权证据—决定边界三段治理桌；Mobile 落地连续三列案件队列、按需筛选、五项胶囊导航，以及保留 `60px` Console 品牌栏、隐藏底部导航的单任务详情。Gateway PC `1440 × 900`、Mobile `390 × 844`、管理员真实读取、筛选空结果、申诉空队列与详情 `404` / unavailable 通过且无横向溢出；运行态同步修正 Mobile 列表通用工具栏、未选详情占位与刷新图标尺寸。View-only、Reviewer 无 Action、`409`、stale 和申诉 / Chat 边界继续由定向测试守卫；未触发治理写操作或新增临时业务数据。
 - `2026-08-09` 已完成并确认 [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)：PC `1440 × 900` 固定为案件队列—受权证据—决定边界三段治理桌，Mobile `390 × 844` 固定为带 Console 五项真实入口的连续案件队列，以及保留顶部品牌栏、隐藏五项底部导航的单案件全屏任务；关键状态覆盖 View-only、Reviewer 无 Action、`409`、stale / unavailable、筛选空结果和申诉 / Chat 边界。四个顶层画板均无 placeholder、裁切或溢出，后续正式代码已按该设计落地。
 - `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)：补齐 PostAnswer 筛选 / 双语 / Revision 前置校验，以 URL 驱动案件显式选择、筛选、分页和 Case / Appeal mobile 全屏任务；队列 stale、详情 unavailable / stale、View-only 权限表面和 handler 写入冻结均已闭合。Console `73 / 73` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过；未修改 Pencil、API、数据库、权限、LongId、幂等或事务边界，未启动服务或浏览器。
@@ -106,16 +110,21 @@
 32. 按确认设计完成正式 `/console/moderation` 代码：PC 三段治理桌、Mobile 连续三列队列 / `BottomSheet` 筛选 / 保留品牌栏的全屏任务，以及必要权限与失败状态表面均已落地；Console `75 / 75` 测试和静态构建通过。
 33. 获授权完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` CSS viewport 验收；三段治理桌、三列队列、按需筛选、五项胶囊导航、品牌栏全屏任务、空结果和详情 unavailable 通过且无横向溢出，并修正 Mobile 列表工具栏、未选详情占位与刷新图标尺寸。
 34. 按 R2-C03 readiness 成组关闭角色内建保护、命令与唯一性、权限矩阵聚合版本 / 事务 CAS、系统设置配置—审计共同提交、结构化 400 / 409、显式 Medium 确认和 Settings / Profile 真实性门禁；后端 `1206` 项与 Console `78` 项测试通过，尚未修改 Pencil 或启动服务。
+35. 获当前任务明确授权后，在唯一活动 `.pen` 中完成 R2-C03 两个 PC 关键区块、三个独立 Mobile `390 × 844` 页面和必要关键状态局部代表设计；六个顶层设计板通过截图与节点边界复核，未启动服务或浏览器，等待设计确认。
+36. 用户确认 R2-C03 设计后完成正式 Console 实现；角色 / 权限 Mobile 只读路径、权限 key 含义、内建保护、Low 设置 `BottomSheet`、Medium PC-only、dirty / CAS / `409` 与真实空态均落地，Console `83 / 83` 测试和全部静态门禁通过，未启动服务或浏览器。
+37. 获授权后完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 运行态验收；修正系统设置初始空值崩溃，角色 / 权限 / 设置真实读取、Low / Medium、unavailable、空结果、五项导航和无横向溢出通过，干净页签无 `warning / error`。未产生权限或配置写入，临时 OIDC 增量已精确清理，服务停止。
 
 ## 当前执行事项（2026-08-09）
 
-1. R2-C03 代码能力门禁已关闭；角色、权限矩阵、系统设置与 Settings / Profile 的真实写入边界足以支撑危险确认和关键状态设计，R2 分级与既有 Console 壳层继承关系保持不变。
-2. 下一步在唯一活动 `.pen` 中完成 R2-C03 局部代表设计，确认 PC `1440`、Mobile `390`、只读 Operator、内建保护、dirty、并发 `409`、unavailable 和 Medium 显式确认；开始前需取得当前任务明确 Pencil 授权。
-3. 代表设计确认后再收口正式页面与运行态验收；不提前推进其他 R2 / R3 页面，不扩张权限种类、High / Critical 设置或移动危险写入。
+1. R2-C03 readiness、代码能力门禁、确认后的局部代表设计、正式代码、静态验证与 Gateway PC / mobile 运行态验收均已完成，专题关闭。
+2. R2 分级、既有 Console 壳层、Settings / Profile 自服务边界和角色 / 设置真实契约保持不变；未扩张权限种类、High / Critical 设置或移动危险写入。
+3. 当前等待下一批规划裁决；本轮不提前推进其他 R2 / R3 页面。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-C03 Console 设置与权限矩阵正式实现](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)
+- [R2-C03 Console 设置与权限矩阵局部代表设计](/records/f4-r-r2-c03-console-settings-permissions-representative-design-2026-08-09)
 - [R2-C03 Console 设置与权限矩阵能力门禁实现](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)
 - [R2-C03 Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计成组实现](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)
