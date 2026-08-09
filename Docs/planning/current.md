@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-P03 Public 只读详情变体；readiness 已完成，等待确认后关闭窄前端能力门禁`
-- **产品下一顺位**：`先补正式商品举报与公开主页权威加载，再进入 R2-P03 局部代表设计；不提前推进 R3 页面`
+- **工程第一顺位**：`F4-R R2-P03 Public 只读详情变体；代码能力门禁已关闭，等待 Pencil 授权进入局部代表设计`
+- **产品下一顺位**：`在唯一活动 .pen 中完成 R2-P03 局部代表设计并等待确认；不提前推进正式实现或 R3 页面`
 - **复核日期**：`2026-08-09`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-09` 已完成 [R2-P03 Public 只读详情变体能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)：正式商品详情以当前字符串 LongId 复用既有 `Product` 举报弹窗，匿名沿用统一提示且不新增 URL intent；公开主页由主资料独立裁决 `404 / unavailable`，统计以规范化公开 identifier 局部加载 / 重试，未取得权威结果时不伪造零值或粉丝数。公开统计、帖子和评论 consumer 继续保留结构化错误；Client `512 / 512` 测试、Lint、type-check 与 production build 通过。本批未修改 Pencil、启动服务或浏览器，下一步等待 Pencil 授权。
 - `2026-08-09` 已完成 [R2-P03 Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)：分级继续保持 R2，Docs 详情、商品详情、公开主页与 Legal 继承 R1-P02 / R1-F01，不复制四个完整路由。现有 API、权限、URL、LongId、购买幂等、关系版本、治理事务和存储边界足够；Pencil 前只需关闭两项窄前端门禁：正式商品详情复用既有 `Product` 举报弹窗，以及公开主页以主资料权威区分 `404 / unavailable`、把统计失败局部化并停止伪装未读取粉丝数。当前未修改 Pencil、运行时代码或 API，未启动服务 / 浏览器，也未推进 R3。
 - `2026-08-09` 已完成并关闭 [R2-C03 Console 设置与权限矩阵正式实现及 Gateway 验收](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)：PC 落地只读 / 内建角色保护、Low 轻量确认、Medium 显式确认，以及 dirty、CAS 版本、结构化 `409` 草稿保留；Mobile 落地独立连续角色目录、以权威快照渲染的只读权限详情与 Low 设置 `BottomSheet`，权限 key 同时展示含义，Medium 在列表和提交 handler 双重保持 PC-only。Console `83 / 83` 测试、Lint、普通 / strict type-check、production build 与权限扫描通过；Gateway PC `1440 × 900`、Mobile `390 × 844`、真实角色 / 设置读取、unavailable、空结果、五项胶囊导航和无横向溢出通过，稳定态干净页签无 `warning / error`。运行态修正系统设置初始 `config` 未装载时的空值崩溃；未保存角色授权或系统设置，临时 OIDC 增量已精确清理，服务已停止。API、权限、URL、LongId、CAS、结构化错误、事务和存储边界保持不变。
 
@@ -115,16 +116,18 @@
 36. 用户确认 R2-C03 设计后完成正式 Console 实现；角色 / 权限 Mobile 只读路径、权限 key 含义、内建保护、Low 设置 `BottomSheet`、Medium PC-only、dirty / CAS / `409` 与真实空态均落地，Console `83 / 83` 测试和全部静态门禁通过，未启动服务或浏览器。
 37. 获授权后完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 运行态验收；修正系统设置初始空值崩溃，角色 / 权限 / 设置真实读取、Low / Medium、unavailable、空结果、五项导航和无横向溢出通过，干净页签无 `warning / error`。未产生权限或配置写入，临时 OIDC 增量已精确清理，服务停止。
 38. 选择 `R2-P03` 为下一顺位并完成 readiness：正式 Docs、Shop、Profile、Legal 与 WebOS / API 能力反查通过；识别正式商品举报和公开主页权威加载两项窄前端门禁，尚未修改 Pencil、运行时代码或 API。
+39. 按确认方案关闭 R2-P03 窄前端能力门禁：商品详情接入共享 `Product` 举报；公开主页拆分主资料、统计和内容权威状态，停止伪造统计值并保留结构化错误。Client `512 / 512` 测试与静态构建通过，尚未修改 Pencil 或启动服务。
 
 ## 当前执行事项（2026-08-09）
 
-1. R2-P03 readiness 已完成，分级保持 R2；Docs 详情、商品详情、公开主页与 Legal 继续继承 R1-P02 / R1-F01，不复制四个完整路由。
-2. 当前等待确认后关闭窄前端能力门禁：正式商品详情复用既有 `Product` 举报；公开主页主资料独立决定 `404 / unavailable`，统计与内容失败局部化，未读取粉丝数不伪装为权威值。
-3. 能力门禁关闭前不修改 Pencil；本轮不新增 API、权限、URL、LongId 形态或移动壳层，也不提前推进 R3 页面。
+1. R2-P03 readiness 与代码能力门禁已完成，分级保持 R2；Docs 详情、商品详情、公开主页与 Legal 继续继承 R1-P02 / R1-F01，不复制四个完整路由。
+2. 当前等待 Pencil 明确授权后进入局部代表设计，只覆盖 PC 长内容、PC 商品 / 公开主页动作详情、Mobile `390px` 信息顺序和必要关键状态。
+3. 设计确认前不进入正式页面视觉实现；不新增 API、权限、URL、LongId 形态或移动壳层，也不提前推进 R3 页面。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-P03 Public 只读详情变体能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)
 - [R2-P03 Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)
 - [R2-C03 Console 设置与权限矩阵正式实现](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)
 - [R2-C03 Console 设置与权限矩阵局部代表设计](/records/f4-r-r2-c03-console-settings-permissions-representative-design-2026-08-09)
@@ -192,7 +195,7 @@
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 能力门禁关闭前不修改 Pencil，不提前实施 R3 派生页面视觉改造。
+- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 未获当前任务 Pencil 授权前不修改唯一活动 `.pen`，不提前实施 R3 派生页面视觉改造。
 - 不恢复 Tauri，不扩展 WebOS 新功能，不把 Flutter 做成 Web 的机械复制，也不重启主动生产证据采集。
 - 不继续修改历史 `.pen` 留档，不为路由、主题、文案或等价状态复制完整画板；任何后续 `.pen` 修改仍需当前任务的明确授权。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。

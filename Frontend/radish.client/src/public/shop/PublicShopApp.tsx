@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createApiResponseError, isApiResponseNotFoundError } from '@radish/http';
+import { toast } from '@radish/ui/toast';
 import { PurchaseModal } from '@/apps/shop/components/PurchaseModal';
+import { ContentReportModal } from '@/components/ContentReportModal';
 import {
   checkCanBuy,
   getCategories,
@@ -176,6 +178,7 @@ export const PublicShopApp = ({
   const [purchasing, setPurchasing] = useState(false);
   const [purchasePasscodeUpgradePrompt, setPurchasePasscodeUpgradePrompt] = useState<string | null>(null);
   const [handledPurchaseIntentKey, setHandledPurchaseIntentKey] = useState<string | null>(null);
+  const [reportProductId, setReportProductId] = useState<LongId | null>(null);
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -516,7 +519,17 @@ export const PublicShopApp = ({
     setPurchaseError(null);
     setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(false);
+    setReportProductId(null);
   }, [route]);
+
+  const handleOpenProductReport = useCallback((productId: LongId) => {
+    if (!loggedIn) {
+      toast.error(t('report.loginRequired'));
+      return;
+    }
+
+    setReportProductId(productId);
+  }, [loggedIn, t]);
 
   const handleRequestPurchase = useCallback(async (product: Product) => {
     const returnPath = buildShopProductPurchaseReturnPath(product.voId);
@@ -914,6 +927,7 @@ export const PublicShopApp = ({
         purchaseActionIcon={purchaseActionIcon}
         onBack={handleBackFromDetail}
         onCopyShare={() => void copyShareLink()}
+        onReport={handleOpenProductReport}
         onPurchaseLinkClick={handlePurchaseLinkClick}
       />
     );
@@ -971,6 +985,15 @@ export const PublicShopApp = ({
           passcodeUpgradePrompt={purchasePasscodeUpgradePrompt}
           onClose={handleClosePurchaseModal}
           onConfirm={handleConfirmPurchase}
+        />
+      )}
+
+      {reportProductId !== null && (
+        <ContentReportModal
+          isOpen={true}
+          targetType="Product"
+          targetId={reportProductId}
+          onClose={() => setReportProductId(null)}
         />
       )}
     </div>

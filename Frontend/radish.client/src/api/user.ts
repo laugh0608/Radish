@@ -239,7 +239,7 @@ export async function getPublicUserStats(identifier: PublicUserIdentifier): Prom
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载用户统计失败');
+    throw createApiResponseError(response, '加载用户统计失败');
   }
 
   return response.data;
@@ -255,7 +255,7 @@ export async function getPublicUserPosts(
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载用户帖子失败');
+    throw createApiResponseError(response, '加载用户帖子失败');
   }
 
   return response.data;
@@ -271,7 +271,7 @@ export async function getPublicUserComments(
   );
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '加载用户评论失败');
+    throw createApiResponseError(response, '加载用户评论失败');
   }
 
   return response.data;

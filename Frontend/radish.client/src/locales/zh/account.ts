@@ -658,6 +658,7 @@ export const zhAccount = {
   'profile.public.loadFailedTitle': '公开主页加载失败',
   'profile.public.notFoundTitle': '用户主页不存在',
   'profile.public.notFoundDescription': '目标公开主页不存在或暂时不可访问。',
+  'profile.public.statsUnavailable': '公开统计暂时不可用，基础资料和公开内容仍可继续浏览。',
   'profile.public.contentLoadFailedTitle': '公开内容加载失败',
   'profile.public.postsEmptyTitle': '暂时还没有公开帖子',
   'profile.public.postsEmptyDescription': '这个用户目前还没有发布公开帖子。',

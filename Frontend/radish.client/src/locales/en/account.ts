@@ -658,6 +658,7 @@ export const enAccount = {
   'profile.public.loadFailedTitle': 'Profile load failed',
   'profile.public.notFoundTitle': 'Profile not found',
   'profile.public.notFoundDescription': 'The requested public profile does not exist or is unavailable.',
+  'profile.public.statsUnavailable': 'Public stats are temporarily unavailable. The profile and public content remain readable.',
   'profile.public.contentLoadFailedTitle': 'Content load failed',
   'profile.public.postsEmptyTitle': 'No public posts yet',
   'profile.public.postsEmptyDescription': 'This user has not published any public posts yet.',

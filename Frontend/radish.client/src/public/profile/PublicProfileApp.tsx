@@ -241,6 +241,7 @@ export const PublicProfileApp = ({
   const { t } = useTranslation();
   const pageRef = useRef<HTMLDivElement>(null);
   const profileRequestIdRef = useRef(0);
+  const statsRequestIdRef = useRef(0);
   const contentRequestIdRef = useRef(0);
   const messageIntentHandledRef = useRef<string | null>(null);
   const activeRouteUserIdRef = useRef(route.userId);
@@ -254,12 +255,15 @@ export const PublicProfileApp = ({
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileNotFound, setProfileNotFound] = useState(false);
+  const [loadingStats, setLoadingStats] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
   const [posts, setPosts] = useState<PublicUserPost[]>([]);
   const [comments, setComments] = useState<PublicUserComment[]>([]);
   const [loadingContent, setLoadingContent] = useState(true);
   const [contentError, setContentError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
+  const [statsReloadToken, setStatsReloadToken] = useState(0);
   const [contentReloadToken, setContentReloadToken] = useState(0);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
@@ -301,6 +305,7 @@ export const PublicProfileApp = ({
 
   useEffect(() => {
     const requestId = ++profileRequestIdRef.current;
+    statsRequestIdRef.current += 1;
 
     const loadProfile = async () => {
       setLoadingProfile(true);
@@ -308,19 +313,18 @@ export const PublicProfileApp = ({
       setProfileNotFound(false);
       setProfile(null);
       setStats(null);
+      setStatsError(null);
+      setLoadingStats(false);
 
       try {
-        const [profileResult, statsResult] = await Promise.all([
-          getPublicProfile(route.userId),
-          getPublicUserStats(route.userId),
-        ]);
+        const profileResult = await getPublicProfile(route.userId);
 
         if (requestId !== profileRequestIdRef.current) {
           return;
         }
 
         setProfile(profileResult);
-        setStats(statsResult);
+        setLoadingStats(true);
       } catch (error) {
         if (requestId !== profileRequestIdRef.current) {
           return;
@@ -328,7 +332,6 @@ export const PublicProfileApp = ({
 
         const message = error instanceof Error ? error.message : String(error);
         setProfile(null);
-        setStats(null);
         setProfileNotFound(isApiResponseNotFoundError(error));
         setProfileError(message);
       } finally {
@@ -345,6 +348,47 @@ export const PublicProfileApp = ({
     () => resolvePublicProfileRouteIdentifier(profile, route.userId),
     [profile, route.userId]
   );
+
+  useEffect(() => {
+    const requestId = ++statsRequestIdRef.current;
+
+    if (!profile) {
+      setStats(null);
+      setStatsError(null);
+      setLoadingStats(false);
+      return;
+    }
+
+    const loadStats = async () => {
+      setLoadingStats(true);
+      setStatsError(null);
+      setStats(null);
+
+      try {
+        const result = await getPublicUserStats(profileRouteIdentifier);
+        if (requestId !== statsRequestIdRef.current) {
+          return;
+        }
+
+        setStats(result);
+      } catch (error) {
+        if (requestId !== statsRequestIdRef.current) {
+          return;
+        }
+
+        const message = error instanceof Error ? error.message : String(error);
+        setStats(null);
+        setStatsError(message);
+        log.warn('PublicProfileApp', '加载公开主页统计失败', error);
+      } finally {
+        if (requestId === statsRequestIdRef.current) {
+          setLoadingStats(false);
+        }
+      }
+    };
+
+    void loadStats();
+  }, [profile, profileRouteIdentifier, statsReloadToken]);
 
   useEffect(() => {
     if (!profile || profileRouteIdentifier === route.userId) {
@@ -881,23 +925,51 @@ export const PublicProfileApp = ({
                   </div>
                 </div>
 
-                <div className={styles.statsGrid}>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>{t('profile.stats.postsLabel')}</span>
-                    <span className={styles.statValue}>{stats?.voPostCount ?? 0}</span>
-                  </div>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>{t('profile.stats.commentsLabel')}</span>
-                    <span className={styles.statValue}>{stats?.voCommentCount ?? 0}</span>
-                  </div>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>{t('profile.stats.likesLabel')}</span>
-                    <span className={styles.statValue}>{stats?.voTotalLikeCount ?? 0}</span>
-                  </div>
-                  <div className={styles.statCard}>
-                    <span className={styles.statLabel}>{t('profile.public.followersLabel')}</span>
-                    <span className={styles.statValue}>{followStatus?.voFollowerCount ?? '—'}</span>
-                  </div>
+                <div className={styles.statsGrid} aria-busy={loadingStats}>
+                  {loadingStats && (
+                    <>
+                      {[t('profile.stats.postsLabel'), t('profile.stats.commentsLabel'), t('profile.stats.likesLabel')].map((label) => (
+                        <div key={label} className={styles.statCard}>
+                          <span className={styles.statLabel}>{label}</span>
+                          <span className={styles.statValue}>…</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                  {stats && (
+                    <>
+                      <div className={styles.statCard}>
+                        <span className={styles.statLabel}>{t('profile.stats.postsLabel')}</span>
+                        <span className={styles.statValue}>{stats.voPostCount}</span>
+                      </div>
+                      <div className={styles.statCard}>
+                        <span className={styles.statLabel}>{t('profile.stats.commentsLabel')}</span>
+                        <span className={styles.statValue}>{stats.voCommentCount}</span>
+                      </div>
+                      <div className={styles.statCard}>
+                        <span className={styles.statLabel}>{t('profile.stats.likesLabel')}</span>
+                        <span className={styles.statValue}>{stats.voTotalLikeCount}</span>
+                      </div>
+                    </>
+                  )}
+                  {statsError && !loadingStats && (
+                    <div className={styles.statsFeedback} role="status">
+                      <span>{t('profile.public.statsUnavailable')}</span>
+                      <button
+                        type="button"
+                        className={styles.inlineLinkButton}
+                        onClick={() => setStatsReloadToken((current) => current + 1)}
+                      >
+                        {t('common.retry')}
+                      </button>
+                    </div>
+                  )}
+                  {followStatus && (
+                    <div className={styles.statCard}>
+                      <span className={styles.statLabel}>{t('profile.public.followersLabel')}</span>
+                      <span className={styles.statValue}>{followStatus.voFollowerCount}</span>
+                    </div>
+                  )}
                 </div>
               </section>
 

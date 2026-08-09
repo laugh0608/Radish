@@ -76,6 +76,7 @@ interface PublicShopDetailViewProps {
   purchaseActionIcon: string;
   onBack: () => void;
   onCopyShare: () => void;
+  onReport: (productId: LongId) => void;
   onPurchaseLinkClick: (event: MouseEvent<HTMLAnchorElement>, product: Product) => void;
 }
 
@@ -676,6 +677,7 @@ export function PublicShopDetailView({
   purchaseActionIcon,
   onBack,
   onCopyShare,
+  onReport,
   onPurchaseLinkClick
 }: PublicShopDetailViewProps) {
   const { t, i18n } = useTranslation();
@@ -709,6 +711,14 @@ export function PublicShopDetailView({
             >
               <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
               <span>{shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}</span>
+            </button>
+            <button
+              type="button"
+              className={styles.secondaryButton}
+              onClick={() => onReport(product.voId)}
+            >
+              <Icon icon="mdi:flag-outline" size={18} />
+              <span>{t('report.action')}</span>
             </button>
           </div>
           <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>

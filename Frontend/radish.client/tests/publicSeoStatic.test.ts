@@ -66,6 +66,22 @@ test('公开商城详情购买入口应指向正式 Web 购买回流路径', () 
   assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
 });
 
+test('公开商品详情应复用共享商品举报并保持匿名守卫', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
+  const detailSource = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopViews.tsx'), 'utf8');
+
+  assert.match(source, /import \{ ContentReportModal \} from '@\/components\/ContentReportModal';/);
+  assert.match(source, /const \[reportProductId, setReportProductId\] = useState<LongId \| null>\(null\);/);
+  assert.match(source, /if \(!loggedIn\) \{\s+toast\.error\(t\('report\.loginRequired'\)\);\s+return;/);
+  assert.match(source, /onReport=\{handleOpenProductReport\}/);
+  assert.match(source, /targetType="Product"/);
+  assert.match(source, /targetId=\{reportProductId\}/);
+  assert.match(detailSource, /onReport: \(productId: LongId\) => void;/);
+  assert.match(detailSource, /onClick=\{\(\) => onReport\(product\.voId\)\}/);
+  assert.match(detailSource, /t\('report\.action'\)/);
+  assert.doesNotMatch(source, /intent=report|intent: 'report'/);
+});
+
 test('公开商品榜单文案应指向商品详情购买而不是阻断购买能力', () => {
   const source = readLocaleResources();
 
@@ -126,9 +142,30 @@ test('公开个人页内容查询不应依赖内部用户 ID', () => {
   assert.doesNotMatch(source, /GetUserStats/);
   assert.doesNotMatch(source, /GetUserPosts/);
   assert.doesNotMatch(source, /GetUserComments/);
-  assert.match(source, /getPublicUserStats\(route\.userId\)/);
+  assert.match(source, /getPublicUserStats\(profileRouteIdentifier\)/);
   assert.match(source, /getPublicUserPosts\(profileRouteIdentifier, route\.page, 10\)/);
   assert.match(source, /getPublicUserComments\(profileRouteIdentifier, route\.page, 10\)/);
+});
+
+test('公开个人页应由主资料独立裁决存在性并局部降级统计', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
+  const apiSource = readFileSync(resolve(clientRoot, 'src/api/user.ts'), 'utf8');
+
+  assert.match(source, /const profileResult = await getPublicProfile\(route\.userId\);/);
+  assert.doesNotMatch(source, /Promise\.all\(\[\s*getPublicProfile/);
+  assert.match(source, /setProfileNotFound\(isApiResponseNotFoundError\(error\)\)/);
+  assert.match(source, /const result = await getPublicUserStats\(profileRouteIdentifier\);/);
+  assert.match(source, /setStatsError\(message\)/);
+  assert.match(source, /profile\.public\.statsUnavailable/);
+  assert.match(source, /setStatsReloadToken\(\(current\) => current \+ 1\)/);
+  assert.doesNotMatch(source, /stats\?\.voPostCount \?\? 0/);
+  assert.doesNotMatch(source, /stats\?\.voCommentCount \?\? 0/);
+  assert.doesNotMatch(source, /stats\?\.voTotalLikeCount \?\? 0/);
+  assert.doesNotMatch(source, /followStatus\?\.voFollowerCount \?\? '—'/);
+  assert.match(source, /\{followStatus && \(\s*<div className=\{styles\.statCard\}>/);
+  assert.match(apiSource, /throw createApiResponseError\(response, '加载用户统计失败'\);/);
+  assert.match(apiSource, /throw createApiResponseError\(response, '加载用户帖子失败'\);/);
+  assert.match(apiSource, /throw createApiResponseError\(response, '加载用户评论失败'\);/);
 });
 
 test('公开个人页返回、tab 和分页应提供公开链接并保留壳层导航拦截', () => {
