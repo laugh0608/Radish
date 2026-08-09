@@ -2,9 +2,9 @@
 
 > 日期：2026-08-09（Asia/Shanghai）
 >
-> 状态：正式代码与静态验证已完成；Gateway PC / mobile 运行态验收待另行授权
+> 状态：正式代码、静态验证与 Gateway PC / mobile 运行态验收已完成
 >
-> 范围：`/console/moderation` 的案件 / 申诉工作区、Console Mobile 任务壳层、双语资源与定向契约测试；未修改 Pencil、服务端 API、权限、URL、LongId、幂等、结构化错误或事务边界，未启动服务或浏览器
+> 范围：`/console/moderation` 的案件 / 申诉工作区、Console Mobile 任务壳层、双语资源、定向契约测试与 Gateway 运行态复核；未修改 Pencil、服务端 API、权限、URL、LongId、幂等、结构化错误或事务边界
 
 ## 1. 结论
 
@@ -47,8 +47,12 @@
 
 新增 / 更新的契约测试固定 PC 三段工作台、Mobile 三列队列、按需筛选、保留品牌栏的全屏任务、工作区切换和图标按钮可访问名称；既有测试继续守卫 URL、权限、冲突、stale / unavailable 与申诉脱敏边界。
 
-## 5. 待验收与停止线
+## 5. Gateway 运行态验收
 
-- 本批按任务边界未启动服务或浏览器，不能把静态完成表述为 Gateway 运行态验收完成。
-- 下一步应在另行明确授权后启动当前前后端，并按 Gateway 入口复核 PC `1440 × 900`、Mobile `390 × 844`、管理员 / View-only / Reviewer 无 Action、`409`、stale / unavailable、空结果与申诉 / Chat 代表状态。
-- 运行态验收完成、临时数据与服务清理后才能关闭 `R1-C02`；当前不提前推进 `R2-C03`。
+- 获得当前任务授权后启动 Gateway、API、Auth、Client 与 Console，并只通过 `https://localhost:5000/console/moderation` 完成正式入口复核。
+- PC `1440 × 900` CSS viewport：未选择时保持连续队列，显式选择真实案件后形成队列—受权证据—决定边界三段治理桌；文档宽度与 viewport 一致，无横向溢出。
+- Mobile `390 × 844` CSS viewport：列表使用 `Radish Console` 品牌栏、连续三列案件行、按需 `BottomSheet` 筛选和五项胶囊导航；详情保留品牌栏与第二层任务栏，隐藏队列和全局底部导航，返回后恢复列表 URL 状态。
+- 运行态发现并关闭两项壳层偏差：Mobile 列表原先仍使用通用工具栏，且未选择时挂载了空详情占位；现统一使用品牌栏、移除 breadcrumb，并隐藏未选详情。刷新图标的实际触控面不变，图形尺寸校正为 `14px`。
+- 管理员真实数据读取、筛选空结果、申诉空队列、案件详情 `404` / unavailable 和写入口冻结均通过。View-only、Reviewer 无 Action、`409` 草稿保留、队列 / 详情 stale、申诉脱敏与 Action-only relief 未向共享本地业务数据写入临时角色或冲突记录，继续由能力门禁、权限 handler 与 Console 契约测试分层守卫。
+- 完成运行中样式校正后重启整组服务，并以干净浏览器标签重新复核 PC 与 Mobile 稳定态；页面控制台为 `0 error / 0 warning`。
+- 本次没有触发决定、纠正动作或申诉写操作，没有新增业务验收数据；验收产生的 `radish-console` 临时 OIDC authorization 与 `16` 条轮换 token 已按精确关联清零，六库 `PRAGMA quick_check` 均为 `ok`，五个服务端口和浏览器标签已关闭。`R1-C02` 至此关闭，下一顺位回到 `R2-C03` 的设计前代码事实与能力覆盖审计，不在本批提前实现。

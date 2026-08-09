@@ -140,7 +140,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const activeMenuKey = getActiveMenuKey(location.pathname);
   const mobileTaskActive = isMobileLayout && isConsoleMobileTask(location.search, activeMenuKey);
-  const mobileTaskKeepsHeader = isMobileLayout
+  const mobileModerationHeader = isMobileLayout && activeMenuKey === 'moderation';
+  const mobileTaskKeepsHeader = mobileModerationHeader
     && isModerationDetailTask(location.search, activeMenuKey);
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(
     () => sidebarGroups.map((group) => ({
@@ -362,9 +363,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       </Sider>
       <Layout className={collapsed ? 'collapsed' : ''}>
         {!mobileTaskActive || mobileTaskKeepsHeader ? (
-          <Header className={mobileTaskKeepsHeader ? 'admin-header admin-header--mobile-task' : 'admin-header'}>
+          <Header
+            className={[
+              'admin-header',
+              mobileModerationHeader ? 'admin-header--mobile-brand' : '',
+              mobileTaskKeepsHeader ? 'admin-header--mobile-task' : '',
+            ].filter(Boolean).join(' ')}
+          >
             <div className="admin-header-left">
-              {mobileTaskKeepsHeader ? (
+              {mobileModerationHeader ? (
                 <span className="admin-mobile-task-brand" aria-label="Radish Console">
                   <span className="admin-mobile-task-brand__mark" aria-hidden="true">萝</span>
                   <strong>Radish Console</strong>
@@ -387,11 +394,11 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   />
                 )
               )}
-              {!mobileTaskKeepsHeader ? <ClientBackLink /> : null}
+              {!mobileModerationHeader ? <ClientBackLink /> : null}
             </div>
             <div className="admin-header-right">
-              {!mobileTaskKeepsHeader ? <LanguageSwitcher /> : null}
-              {!mobileTaskKeepsHeader ? (
+              {!mobileModerationHeader ? <LanguageSwitcher /> : null}
+              {!mobileModerationHeader ? (
                 <SearchOutlined
                   className="admin-search-icon"
                   onClick={() => setSearchVisible(true)}
@@ -410,7 +417,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     icon={<UserOutlined />}
                     src={getAvatarUrl(user?.voAvatarUrl)}
                   />
-                  {!mobileTaskKeepsHeader ? (
+                  {!mobileModerationHeader ? (
                     <span className="admin-username">
                       {loading ? t('common.loading') : displayUserName}
                     </span>
@@ -427,7 +434,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             mobileTaskKeepsHeader ? 'admin-content--mobile-task-with-header' : '',
           ].filter(Boolean).join(' ')}
         >
-          {!mobileTaskActive ? <AppBreadcrumb /> : null}
+          {!mobileTaskActive && !mobileModerationHeader ? <AppBreadcrumb /> : null}
           {children}
         </Content>
       </Layout>

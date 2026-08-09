@@ -53,7 +53,7 @@ test('Console Mobile 全屏订单任务应隐藏全局导航且五项入口沿�
   assert.match(source, /const mobileTaskActive = isMobileLayout && isConsoleMobileTask/);
   assert.match(source, /isOrderDetailTask\(search, activeMenuKey\)[\s\S]*isModerationDetailTask\(search, activeMenuKey\)/);
   assert.match(source, /isMobileLayout && !mobileTaskActive/);
-  assert.match(source, /!mobileTaskActive \? <AppBreadcrumb \/>/);
+  assert.match(source, /!mobileTaskActive && !mobileModerationHeader \? <AppBreadcrumb \/>/);
   assert.match(styles, /\.admin-content--mobile-task[\s\S]*height: 100dvh/);
   assert.match(styles, /\.admin-mobile-nav[\s\S]*border-radius: 999px/);
   assert.match(styles, /\.admin-mobile-nav__item[\s\S]*border-radius: 999px/);

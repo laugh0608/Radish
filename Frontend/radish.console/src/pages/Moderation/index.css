@@ -602,10 +602,19 @@
     gap: 6px;
   }
 
+  .moderation-mobile-toolbar button[aria-label] svg {
+    width: 14px;
+    height: 14px;
+  }
+
   .moderation-case-workbench {
     display: block;
     min-height: 0;
     box-shadow: none;
+  }
+
+  .moderation-case-detail {
+    display: none;
   }
 
   .moderation-case-queue {

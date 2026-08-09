@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-09 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 已关闭；`R1-C02` 正式代码与静态验证已完成，等待 Gateway PC / mobile 运行态验收
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02` 已关闭；下一顺位为 `R2-C03` 设计前代码事实与能力覆盖审计
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -85,7 +85,7 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 
 `R1-C01` 已于 `2026-08-08` 完成[Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)、PC `1440 × 900` / Mobile `390 × 844` 与必要关键状态正式代表设计，以及[正式代码、静态验证和 Gateway 运行态验收](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)。PC 使用连续单行薄表格与按需详情 inspector；Mobile 使用连续三列订单行、Client 风格五项胶囊导航和隐藏全局导航的全屏详情任务，中列承载商品类型 / 单价与支付证据。只读 Operator、重试 `409`、备注冲突、详情不可用、列表 stale、筛选空结果、LongId URL 与受权资源回跳均通过；现有 API、权限、结构化错误、LongId、幂等与事务边界保持不变。下一任务从 `R1-C02` 设计前代码事实与能力覆盖门禁开始。
 
-`R1-C02` 已于 `2026-08-09` 完成[Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)。服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化错误和 Main / Chat 事务边界足以支撑代表设计；随后由同日[前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、stale / unavailable，以及 View-only 写入表面。唯一活动 `.pen` 中的[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)已经确认，并由[正式成组实现](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)落地 PC 三段治理桌、Mobile 连续三列案件队列 / 按需筛选，以及保留 Console 顶部品牌栏且隐藏五项底部导航的全屏任务；Console `75 / 75` 测试与静态构建通过，下一步只做 Gateway PC / mobile 专题验收，不提前推进 R2-C03。
+`R1-C02` 已于 `2026-08-09` 完成[Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)。服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化错误和 Main / Chat 事务边界足以支撑代表设计；随后由同日[前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、stale / unavailable，以及 View-only 写入表面。唯一活动 `.pen` 中的[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)已经确认，并由[正式成组实现与 Gateway 验收](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)落地 PC 三段治理桌、Mobile 连续三列案件队列 / 按需筛选，以及保留 Console 顶部品牌栏且隐藏五项底部导航的全屏任务；PC `1440 × 900` 与 Mobile `390 × 844` 无横向溢出，真实管理员读取、空结果、申诉空队列与详情 unavailable 通过，权限、冲突和 stale 边界继续由自动化分层守卫。`R1-C02` 已关闭，下一步从 `R2-C03` 设计前代码事实与能力覆盖审计开始。
 
 ## 5. R2 局部设计类型
 

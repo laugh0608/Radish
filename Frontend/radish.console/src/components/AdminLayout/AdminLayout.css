@@ -328,6 +328,7 @@
     overflow: hidden;
   }
 
+  .admin-header--mobile-brand,
   .admin-header--mobile-task {
     height: 60px;
     min-height: 60px;
@@ -356,6 +357,7 @@
     border-radius: 10px;
   }
 
+  .admin-header--mobile-brand .admin-user,
   .admin-header--mobile-task .admin-user {
     width: 34px;
     height: 34px;

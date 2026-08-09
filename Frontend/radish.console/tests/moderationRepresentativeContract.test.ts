@@ -40,8 +40,10 @@ test('R1-C02 案件选择应以 URL 为真相源并驱动 Mobile 全屏任务', 
   assert.match(layoutSource, /function isModerationDetailTask/);
   assert.match(layoutSource, /isConsoleMobileTask\(location\.search, activeMenuKey\)/);
   assert.match(layoutSource, /mobileTaskKeepsHeader/);
+  assert.match(layoutSource, /mobileModerationHeader/);
   assert.match(layoutSource, /admin-layout--mobile-task-with-header/);
   assert.match(layoutSource, /admin-mobile-task-brand/);
+  assert.match(layoutSource, /!mobileTaskActive && !mobileModerationHeader/);
   assert.match(
     layoutStyles,
     /admin-content--mobile-task-with-header[\s\S]*height: calc\(100dvh - 60px\)/,
@@ -80,6 +82,8 @@ test('R1-C02 正式实现应承接 PC 三段工作台与 Mobile 按需任务结�
   );
   assert.match(styles, /moderation-desktop-filter-bar[\s\S]*display: none/);
   assert.match(styles, /moderation-mobile-toolbar[\s\S]*display: flex/);
+  assert.match(styles, /moderation-mobile-toolbar button\[aria-label\] svg[\s\S]*width: 14px[\s\S]*height: 14px/);
+  assert.match(styles, /moderation-case-workbench[\s\S]*display: block[\s\S]*moderation-case-detail[\s\S]*display: none/);
   assert.match(
     styles,
     /moderation-case-page\[data-task-active='true'\] \.moderation-case-detail-grid[\s\S]*overflow: visible/,
