@@ -191,7 +191,7 @@
 ## 11. 下一步与停止线
 
 1. 第 5 节窄前端能力批已按[实现记录](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)闭合：`PostAnswer`、案件 URL / mobile task、stale / unavailable 和只读权限表面均已完成，Console `73 / 73` 测试及静态门禁通过。
-2. 唯一活动 `.pen` 的 R1-C02 PC `1440`、Mobile `390` 与必要关键状态已按[正式代表设计记录](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)完成，当前等待确认。
-3. 设计确认后才成组实现正式 Console 视觉结构，并在专题准备验收时另行申请启动服务和 Gateway PC / mobile smoke 授权。
+2. 唯一活动 `.pen` 的 R1-C02 PC `1440`、Mobile `390` 与必要关键状态已按[正式代表设计记录](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)完成并确认。
+3. 正式 Console 视觉结构已由[成组实现记录](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)闭合代码与静态验证；下一步在专题运行态验收前另行申请启动服务和 Gateway PC / mobile smoke 授权。
 
-当前不修改运行时代码、不启动服务或浏览器，也不提前推进 R2-C03。
+当前不启动服务或浏览器，也不提前推进 R2-C03。

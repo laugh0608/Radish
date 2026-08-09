@@ -12,12 +12,13 @@ import {
 import {
   AntInput as Input,
   AntSelect as Select,
+  BottomSheet,
   Button,
   Checkbox,
   Space,
   message,
 } from '@radish/ui';
-import { LeftOutlined, ReloadOutlined, SafetyOutlined } from '@radish/ui';
+import { LeftOutlined, ReloadOutlined } from '@radish/ui';
 import {
   captureModerationAppealEvidence,
   executeModerationAppealRelief,
@@ -28,9 +29,6 @@ import {
   startModerationAppealReview,
 } from '@/api/moderationApi';
 import {
-  ConsoleMetricCard,
-  ConsoleMetricGrid,
-  ConsolePageHeader,
   ConsoleStatusChip,
 } from '@/components/ConsolePage';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
@@ -142,6 +140,7 @@ export const ModerationAppealsWorkspace = ({
   const [queueReadState, setQueueReadState] = useState<QueueReadState>('loading');
   const [detailReadState, setDetailReadState] = useState<DetailReadState>('idle');
   const [submitting, setSubmitting] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [conflictNotice, setConflictNotice] = useState(false);
   const [draft, setDraft] = useState<AppealDraft>(createAppealDraft);
   const draftAppealIdRef = useRef<string | null>(null);
@@ -278,6 +277,7 @@ export const ModerationAppealsWorkspace = ({
   const reliefPendingCount = queueItems.filter(
     (item) => item.voStatus === 'ReliefPending' || item.voStatus === 'ReliefFailed',
   ).length;
+  const activeFilterCount = [statusFilter >= 0, Boolean(keyword)].filter(Boolean).length;
   const isResolved = detail?.voStatus === 'Resolved' || detail?.voStatus === 'Withdrawn';
   const actionsAreAuthoritative = queueReadState === 'ready'
     && (!canAppeal || detailReadState === 'ready');
@@ -467,101 +467,136 @@ export const ModerationAppealsWorkspace = ({
     await Promise.all(reads);
   };
 
+  const applyFilters = () => {
+    setKeyword(keywordInput.trim());
+    if (selectedAppealId) {
+      closeAppeal(true);
+    }
+    setFilterSheetOpen(false);
+  };
+
+  const resetFilters = () => {
+    setStatusFilter(-1);
+    setKeywordInput('');
+    setKeyword('');
+    if (selectedAppealId) {
+      closeAppeal(true);
+    }
+    setFilterSheetOpen(false);
+  };
+
+  const filterControls = (
+    <div className="moderation-filter-controls moderation-appeal-filter-controls">
+      <Select
+        value={statusFilter}
+        aria-label={t('moderation.appeal.filter.status')}
+        className="moderation-filter-control moderation-filter-control--md"
+        options={[
+          { value: -1, label: t('moderation.appeal.filter.allStatuses') },
+          ...['Submitted', 'Reviewing', 'ReliefPending', 'ReliefFailed', 'Resolved', 'Withdrawn']
+            .map((status, value) => ({
+              value,
+              label: t(`moderation.appeal.status.${status}`),
+            })),
+        ]}
+        onChange={(status) => {
+          setStatusFilter(status);
+          if (selectedAppealId) {
+            closeAppeal(true);
+          }
+        }}
+      />
+      <Input
+        value={keywordInput}
+        aria-label={t('moderation.appeal.filter.keyword')}
+        className="moderation-filter-control moderation-filter-control--xl"
+        placeholder={t('moderation.appeal.filter.keyword')}
+        onChange={(event) => setKeywordInput(event.target.value)}
+        onPressEnter={applyFilters}
+      />
+      <div className="moderation-filter-actions">
+        <Button variant="primary" onClick={applyFilters}>
+          {t('moderation.query')}
+        </Button>
+        <Button onClick={resetFilters}>
+          {t('moderation.reset')}
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div
       className="admin-feature-page moderation-appeal-page"
       data-task-active={selectedAppealId ? 'true' : 'false'}
     >
-      <ConsolePageHeader
-        eyebrow={t('moderation.title')}
-        title={t('moderation.appeal.title')}
-        description={t('moderation.appeal.description')}
-        icon={<SafetyOutlined />}
-        status={(
-          <Space wrap>
-            <ConsoleStatusChip tone={canAppeal ? 'success' : 'neutral'}>
-              {t(canAppeal ? 'moderation.appeal.canReview' : 'moderation.appeal.queueOnly')}
-            </ConsoleStatusChip>
-            <ConsoleStatusChip tone={canAction ? 'warning' : 'neutral'}>
-              {t(canAction ? 'moderation.appeal.canRelief' : 'moderation.appeal.noReliefPermission')}
-            </ConsoleStatusChip>
-          </Space>
-        )}
-        actions={(
-          <Space wrap>
-            {returnTo ? <Button onClick={() => navigate(returnTo)}>{t('moderation.backToSource')}</Button> : null}
-            <Button onClick={onOpenCases ?? (() => navigate(buildModerationPath({ returnTo })))}>
-              {t('moderation.appeal.openCases')}
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              disabled={loadingQueue || loadingDetail}
-              onClick={() => void refreshWorkspace()}
-            >
-              {loadingQueue || loadingDetail ? t('moderation.loading') : t('moderation.refresh')}
-            </Button>
-          </Space>
-        )}
-      />
+      <header className="moderation-workspace-header">
+        <div className="moderation-workspace-header__copy">
+          <h1>{t('moderation.appeal.title')}</h1>
+          <span>{t('moderation.appeal.resultSummary', { total: queueTotal, visible: queueItems.length })}</span>
+        </div>
+        <div className="moderation-workspace-header__actions">
+          <ConsoleStatusChip tone={canAppeal ? 'success' : 'neutral'}>
+            {t(canAppeal ? 'moderation.appeal.canReview' : 'moderation.appeal.queueOnly')}
+          </ConsoleStatusChip>
+          <ConsoleStatusChip tone={canAction ? 'warning' : 'neutral'}>
+            {t(canAction ? 'moderation.appeal.canRelief' : 'moderation.appeal.noReliefPermission')}
+          </ConsoleStatusChip>
+          {returnTo ? <Button size="small" onClick={() => navigate(returnTo)}>{t('moderation.backToSource')}</Button> : null}
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            disabled={loadingQueue || loadingDetail}
+            onClick={() => void refreshWorkspace()}
+          >
+            {loadingQueue || loadingDetail ? t('moderation.loading') : t('moderation.refresh')}
+          </Button>
+        </div>
+      </header>
 
-      <ConsoleMetricGrid label={t('moderation.appeal.metricsLabel')}>
-        <ConsoleMetricCard label={t('moderation.appeal.metric.total')} value={queueTotal} tone="info" />
-        <ConsoleMetricCard label={t('moderation.appeal.metric.reviewing')} value={reviewingCount} tone="warning" />
-        <ConsoleMetricCard label={t('moderation.appeal.metric.relief')} value={reliefPendingCount} tone={reliefPendingCount ? 'danger' : 'neutral'} />
-        <ConsoleMetricCard label={t('moderation.appeal.metric.visible')} value={queueItems.length} />
-      </ConsoleMetricGrid>
+      <nav className="moderation-workspace-switch" aria-label={t('moderation.workspaceSwitch')}>
+        <button
+          type="button"
+          onClick={onOpenCases ?? (() => navigate(buildModerationPath({ returnTo })))}
+        >
+          {t('moderation.workspaceCases')}
+        </button>
+        <button type="button" data-active="true">{t('moderation.workspaceAppeals')}</button>
+      </nav>
 
-      <section className="admin-feature-card moderation-appeal-filters">
-        <Select
-          value={statusFilter}
-          aria-label={t('moderation.appeal.filter.status')}
-          className="moderation-filter-control moderation-filter-control--md"
-          options={[
-            { value: -1, label: t('moderation.appeal.filter.allStatuses') },
-            ...['Submitted', 'Reviewing', 'ReliefPending', 'ReliefFailed', 'Resolved', 'Withdrawn']
-              .map((status, value) => ({
-                value,
-                label: t(`moderation.appeal.status.${status}`),
-              })),
-          ]}
-          onChange={(status) => {
-            setStatusFilter(status);
-            if (selectedAppealId) {
-              closeAppeal(true);
-            }
-          }}
-        />
-        <Input
-          value={keywordInput}
-          aria-label={t('moderation.appeal.filter.keyword')}
-          className="moderation-filter-control moderation-filter-control--xl"
-          placeholder={t('moderation.appeal.filter.keyword')}
-          onChange={(event) => setKeywordInput(event.target.value)}
-          onPressEnter={() => {
-            setKeyword(keywordInput.trim());
-            if (selectedAppealId) {
-              closeAppeal(true);
-            }
-          }}
-        />
-        <Button variant="primary" onClick={() => {
-          setKeyword(keywordInput.trim());
-          if (selectedAppealId) {
-            closeAppeal(true);
-          }
-        }}>
-          {t('moderation.query')}
-        </Button>
-        <Button onClick={() => {
-          setStatusFilter(-1);
-          setKeywordInput('');
-          setKeyword('');
-          if (selectedAppealId) {
-            closeAppeal(true);
-          }
-        }}>
-          {t('moderation.reset')}
-        </Button>
+      <section className="moderation-metric-strip" aria-label={t('moderation.appeal.metricsLabel')}>
+        <div><span>{t('moderation.appeal.metric.total')}</span><strong>{queueTotal}</strong></div>
+        <div><span>{t('moderation.appeal.metric.reviewing')}</span><strong>{reviewingCount}</strong></div>
+        <div data-tone={reliefPendingCount ? 'danger' : 'neutral'}><span>{t('moderation.appeal.metric.relief')}</span><strong>{reliefPendingCount}</strong></div>
+        <div><span>{t('moderation.appeal.metric.visible')}</span><strong>{queueItems.length}</strong></div>
+      </section>
+
+      <section className="moderation-desktop-filter-bar">
+        <div>
+          <strong>{t('moderation.filtersTitle')}</strong>
+          <span>{t('moderation.activeFilterCount', { count: activeFilterCount })}</span>
+        </div>
+        {filterControls}
+      </section>
+
+      <section className="moderation-mobile-toolbar">
+        <div>
+          <strong>{t('moderation.appeal.mobileResults', { count: queueTotal })}</strong>
+          <span>{t('moderation.activeFilterCount', { count: activeFilterCount })}</span>
+        </div>
+        <div>
+          <Button size="small" onClick={() => setFilterSheetOpen(true)}>
+            {t('moderation.filterAction')}
+          </Button>
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            children={null}
+            aria-label={t('moderation.refresh')}
+            disabled={loadingQueue || loadingDetail}
+            onClick={() => void refreshWorkspace()}
+          />
+        </div>
       </section>
 
       <div className="moderation-appeal-mobile-boundary" role="note">
@@ -593,21 +628,33 @@ export const ModerationAppealsWorkspace = ({
                 data-active={item.voAppealPublicId === selectedAppealId}
                 onClick={() => selectAppeal(item.voAppealPublicId)}
               >
-                <span className="moderation-case-queue-item__topline">
+                <span className="moderation-case-queue-item__identity">
                   <strong>{item.voAppealPublicId}</strong>
+                  <span>{t('moderation.workspaceAppeals')}</span>
+                </span>
+                <span className="moderation-case-queue-item__evidence">
+                  <strong>{item.voCasePublicId}</strong>
+                  <span>v{item.voVersion}</span>
+                  <span>{formatDateTime(item.voSubmittedAt)}</span>
+                </span>
+                <span className="moderation-case-queue-item__result">
                   <ConsoleStatusChip tone={statusTone(item.voStatus)}>
                     {t(`moderation.appeal.status.${item.voStatus}`)}
                   </ConsoleStatusChip>
-                </span>
-                <span>{item.voCasePublicId}</span>
-                <span className="moderation-case-queue-item__bottomline">
                   <small>{formatDateTime(item.voSubmittedAt)}</small>
-                  <small>v{item.voVersion}</small>
+                  <span aria-hidden="true">›</span>
                 </span>
               </button>
             ))}
             {!loadingQueue && queueItems.length === 0
-              ? <p className="admin-feature-rail__empty">{t('moderation.appeal.queueEmpty')}</p>
+              ? (
+                <div className="moderation-case-queue-empty">
+                  <strong>{t('moderation.appeal.queueEmpty')}</strong>
+                  {activeFilterCount > 0 ? (
+                    <Button size="small" onClick={resetFilters}>{t('moderation.reset')}</Button>
+                  ) : null}
+                </div>
+              )
               : null}
           </div>
           <div className="moderation-case-pagination">
@@ -630,13 +677,34 @@ export const ModerationAppealsWorkspace = ({
         >
           {selectedAppealId ? (
             <header className="moderation-case-task-header">
-              <Button variant="ghost" size="small" icon={<LeftOutlined />} onClick={() => closeAppeal()}>
-                {t('moderation.appeal.backToQueue')}
-              </Button>
-              <strong>{selectedAppealId}</strong>
-              <Button variant="ghost" size="small" onClick={() => closeAppeal()}>
-                {t('moderation.appeal.closeDetail')}
-              </Button>
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<LeftOutlined />}
+                children={null}
+                aria-label={t('moderation.appeal.backToQueue')}
+                onClick={() => closeAppeal()}
+              />
+              <div className="moderation-case-task-header__identity">
+                <span className="moderation-case-task-header__title">
+                  <strong>{t('moderation.appeal.taskTitle')}</strong>
+                  {selectedSummary ? (
+                    <ConsoleStatusChip tone={statusTone(selectedSummary.voStatus)}>
+                      {t(`moderation.appeal.status.${selectedSummary.voStatus}`)}
+                    </ConsoleStatusChip>
+                  ) : null}
+                </span>
+                <small>{selectedAppealId}{selectedSummary ? ` · v${selectedSummary.voVersion}` : ''}</small>
+              </div>
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<ReloadOutlined />}
+                children={null}
+                aria-label={t('moderation.appeal.retryDetail')}
+                disabled={loadingDetail || loadingQueue}
+                onClick={() => void refreshWorkspace()}
+              />
             </header>
           ) : null}
 
@@ -942,6 +1010,17 @@ export const ModerationAppealsWorkspace = ({
           )}
         </main>
       </section>
+
+      <BottomSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        closeLabel={t('moderation.closeFilters')}
+        title={t('moderation.filterAction')}
+        height="auto"
+        className="moderation-filter-sheet"
+      >
+        {filterControls}
+      </BottomSheet>
     </div>
   );
 };

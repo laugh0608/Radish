@@ -140,6 +140,8 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const activeMenuKey = getActiveMenuKey(location.pathname);
   const mobileTaskActive = isMobileLayout && isConsoleMobileTask(location.search, activeMenuKey);
+  const mobileTaskKeepsHeader = isMobileLayout
+    && isModerationDetailTask(location.search, activeMenuKey);
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(
     () => sidebarGroups.map((group) => ({
       key: `group:${group.key}`,
@@ -326,7 +328,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <Layout className={mobileTaskActive ? 'admin-layout admin-layout--mobile-task' : 'admin-layout'}>
+    <Layout
+      className={[
+        'admin-layout',
+        mobileTaskActive ? 'admin-layout--mobile-task' : '',
+        mobileTaskKeepsHeader ? 'admin-layout--mobile-task-with-header' : '',
+      ].filter(Boolean).join(' ')}
+    >
       <Sider
         trigger={null}
         collapsible
@@ -353,10 +361,15 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         />
       </Sider>
       <Layout className={collapsed ? 'collapsed' : ''}>
-        {!mobileTaskActive ? (
-          <Header className="admin-header">
+        {!mobileTaskActive || mobileTaskKeepsHeader ? (
+          <Header className={mobileTaskKeepsHeader ? 'admin-header admin-header--mobile-task' : 'admin-header'}>
             <div className="admin-header-left">
-              {isMobileLayout ? (
+              {mobileTaskKeepsHeader ? (
+                <span className="admin-mobile-task-brand" aria-label="Radish Console">
+                  <span className="admin-mobile-task-brand__mark" aria-hidden="true">萝</span>
+                  <strong>Radish Console</strong>
+                </span>
+              ) : isMobileLayout ? (
                 <AppstoreOutlined
                   className="admin-trigger"
                   onClick={handleToggle}
@@ -374,14 +387,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                   />
                 )
               )}
-              <ClientBackLink />
+              {!mobileTaskKeepsHeader ? <ClientBackLink /> : null}
             </div>
             <div className="admin-header-right">
-              <LanguageSwitcher />
-              <SearchOutlined
-                className="admin-search-icon"
-                onClick={() => setSearchVisible(true)}
-              />
+              {!mobileTaskKeepsHeader ? <LanguageSwitcher /> : null}
+              {!mobileTaskKeepsHeader ? (
+                <SearchOutlined
+                  className="admin-search-icon"
+                  onClick={() => setSearchVisible(true)}
+                />
+              ) : null}
               <Dropdown
                 menu={{
                   items: userMenuItems,
@@ -395,15 +410,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     icon={<UserOutlined />}
                     src={getAvatarUrl(user?.voAvatarUrl)}
                   />
-                  <span className="admin-username">
-                    {loading ? t('common.loading') : displayUserName}
-                  </span>
+                  {!mobileTaskKeepsHeader ? (
+                    <span className="admin-username">
+                      {loading ? t('common.loading') : displayUserName}
+                    </span>
+                  ) : null}
                 </div>
               </Dropdown>
             </div>
           </Header>
         ) : null}
-        <Content className={mobileTaskActive ? 'admin-content admin-content--mobile-task' : 'admin-content'}>
+        <Content
+          className={[
+            'admin-content',
+            mobileTaskActive ? 'admin-content--mobile-task' : '',
+            mobileTaskKeepsHeader ? 'admin-content--mobile-task-with-header' : '',
+          ].filter(Boolean).join(' ')}
+        >
           {!mobileTaskActive ? <AppBreadcrumb /> : null}
           {children}
         </Content>

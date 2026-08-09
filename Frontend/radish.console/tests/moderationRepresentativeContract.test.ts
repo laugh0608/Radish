@@ -30,6 +30,7 @@ test('R1-C02 案件选择应以 URL 为真相源并驱动 Mobile 全屏任务', 
   const pageSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
   const appealSource = readConsoleSource('src/pages/Moderation/ModerationAppealsWorkspace.tsx');
   const layoutSource = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
+  const layoutStyles = readConsoleSource('src/components/AdminLayout/AdminLayout.css');
   const styles = readConsoleSource('src/pages/Moderation/index.css');
 
   assert.match(pageSource, /parseModerationCasePublicId\(searchParams\.get\('case'\)\)/);
@@ -38,8 +39,51 @@ test('R1-C02 案件选择应以 URL 为真相源并驱动 Mobile 全屏任务', 
   assert.match(appealSource, /data-console-fullscreen-task=\{selectedAppealId \? 'moderation-appeal'/);
   assert.match(layoutSource, /function isModerationDetailTask/);
   assert.match(layoutSource, /isConsoleMobileTask\(location\.search, activeMenuKey\)/);
-  assert.match(styles, /moderation-case-page\[data-task-active='true'\][\s\S]*height: 100dvh/);
-  assert.match(styles, /moderation-case-task-header[\s\S]*position: sticky/);
+  assert.match(layoutSource, /mobileTaskKeepsHeader/);
+  assert.match(layoutSource, /admin-layout--mobile-task-with-header/);
+  assert.match(layoutSource, /admin-mobile-task-brand/);
+  assert.match(
+    layoutStyles,
+    /admin-content--mobile-task-with-header[\s\S]*height: calc\(100dvh - 60px\)/,
+  );
+  assert.match(styles, /moderation-case-page\[data-task-active='true'\][\s\S]*height: 100%/);
+  assert.match(styles, /moderation-case-task-header[\s\S]*position: sticky[\s\S]*min-height: 50px/);
+});
+
+test('R1-C02 正式实现应承接 PC 三段工作台与 Mobile 按需任务结构', () => {
+  const pageSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
+  const appealSource = readConsoleSource('src/pages/Moderation/ModerationAppealsWorkspace.tsx');
+  const styles = readConsoleSource('src/pages/Moderation/index.css');
+
+  for (const source of [pageSource, appealSource]) {
+    assert.match(source, /moderation-workspace-switch/);
+    assert.match(source, /moderation-metric-strip/);
+    assert.match(source, /moderation-mobile-toolbar/);
+    assert.match(source, /<BottomSheet/);
+  }
+
+  assert.match(pageSource, /moderation-case-detail-grid/);
+  assert.match(pageSource, /moderation-case-evidence-pane/);
+  assert.match(pageSource, /moderation-case-decision-pane/);
+  assert.match(pageSource, /moderation-case-mobile-actions/);
+  assert.match(
+    styles,
+    /moderation-case-workbench[\s\S]*grid-template-columns: minmax\(280px, 330px\) minmax\(0, 1fr\)/,
+  );
+  assert.match(
+    styles,
+    /moderation-case-detail-grid[\s\S]*grid-template-columns: minmax\(360px, 1\.35fr\) minmax\(300px, 0\.95fr\)/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width: 768px\)[\s\S]*moderation-case-queue-item[\s\S]*grid-template-columns: minmax\(0, 1\.02fr\) minmax\(0, 1\.1fr\) minmax\(72px, 0\.72fr\)/,
+  );
+  assert.match(styles, /moderation-desktop-filter-bar[\s\S]*display: none/);
+  assert.match(styles, /moderation-mobile-toolbar[\s\S]*display: flex/);
+  assert.match(
+    styles,
+    /moderation-case-page\[data-task-active='true'\] \.moderation-case-detail-grid[\s\S]*overflow: visible/,
+  );
 });
 
 test('R1-C02 权威读取失败应区分 stale 与 unavailable 并冻结写入', () => {

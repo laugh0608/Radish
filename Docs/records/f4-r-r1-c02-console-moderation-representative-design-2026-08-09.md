@@ -2,7 +2,7 @@
 
 > 日期：2026-08-09（Asia/Shanghai）
 >
-> 状态：PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态代表设计已完成，等待确认后进入正式 Console 视觉实现
+> 状态：PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态代表设计已确认；正式代码与静态验证已完成
 >
 > 活动设计源：`Docs/frontend/design-sources/radish-web-family-ui-v1.pen`
 >
@@ -44,7 +44,6 @@ PC 代表身份为 Reviewer，具备案件读取与决定权限但没有 Action 
 
 ## 5. 下一步与停止线
 
-1. 先由用户确认本组正式代表设计；确认前不进入运行时代码。
-2. 确认后成组实现 `/console/moderation` 的 PC 三段治理桌、Mobile 连续案件队列与全屏单案件任务，并按本记录关键状态闭合正式视觉表面。
-3. 正式实现保持现有 API、权限、URL、LongId、幂等、结构化错误和 Main / Chat 事务边界，不新增原因 / 证据可用性 / 动作结果筛选或自动治理能力。
-4. 代码、测试和静态构建完成后，再按专题验收条件另行申请启动服务与 Gateway PC / mobile smoke；当前不推进 `R2-C03`。
+1. 本组正式代表设计已经用户确认，并由[成组实现记录](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)落地 PC 三段治理桌、Mobile 连续案件队列与全屏单案件任务。
+2. 正式实现保持现有 API、权限、URL、LongId、幂等、结构化错误和 Main / Chat 事务边界，未新增原因 / 证据可用性 / 动作结果筛选或自动治理能力。
+3. 代码、测试和静态构建已经完成；下一步按专题验收条件另行申请启动服务与 Gateway PC / mobile smoke，当前不推进 `R2-C03`。

@@ -6,15 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R C-1B 的 R1-C02 正式代表设计已完成；下一步等待确认后进入正式 Console 视觉实现`
-- **产品下一顺位**：`按已完成代表设计成组实现 /console/moderation 的 PC 三段治理桌、Mobile 连续队列 / 全屏任务与必要关键状态；确认前不修改运行时代码`
+- **工程第一顺位**：`F4-R C-1B 的 R1-C02 正式代码与静态验证已完成；下一步执行 Gateway PC / mobile 专题验收`
+- **产品下一顺位**：`另行授权启动当前前后端后，复核 /console/moderation 的 PC 三段治理桌、Mobile 连续队列 / 全屏任务与必要关键状态`
 - **复核日期**：`2026-08-09`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
-- `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)：PC `1440 × 900` 固定为案件队列—受权证据—决定边界三段治理桌，Mobile `390 × 844` 固定为带 Console 五项真实入口的连续案件队列，以及保留顶部品牌栏、隐藏五项底部导航的单案件全屏任务；关键状态覆盖 View-only、Reviewer 无 Action、`409`、stale / unavailable、筛选空结果和申诉 / Chat 边界。四个顶层画板均无 placeholder、裁切或溢出；当前等待确认，未修改运行时代码、API 或权限，未启动服务或浏览器。
+- `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计成组实现](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)：PC 落地案件队列—受权证据—决定边界三段治理桌；Mobile 落地连续三列案件队列、按需筛选，以及保留 `60px` Console 品牌栏、隐藏五项底部导航的单任务详情。既有 View-only、Reviewer 无 Action、`409`、stale / unavailable、空结果和申诉 / Chat 边界保持不变；Console `75 / 75` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过，未启动服务或浏览器。
+- `2026-08-09` 已完成并确认 [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)：PC `1440 × 900` 固定为案件队列—受权证据—决定边界三段治理桌，Mobile `390 × 844` 固定为带 Console 五项真实入口的连续案件队列，以及保留顶部品牌栏、隐藏五项底部导航的单案件全屏任务；关键状态覆盖 View-only、Reviewer 无 Action、`409`、stale / unavailable、筛选空结果和申诉 / Chat 边界。四个顶层画板均无 placeholder、裁切或溢出，后续正式代码已按该设计落地。
 - `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)：补齐 PostAnswer 筛选 / 双语 / Revision 前置校验，以 URL 驱动案件显式选择、筛选、分页和 Case / Appeal mobile 全屏任务；队列 stale、详情 unavailable / stale、View-only 权限表面和 handler 写入冻结均已闭合。Console `73 / 73` 测试、Lint、strict type-check、production build、repo hygiene 与 `git diff --check` 通过；未修改 Pencil、API、数据库、权限、LongId、幂等或事务边界，未启动服务或浏览器。
 - `2026-08-09` 已完成 [R1-C02 Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)：服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化 `404 / 409` 和 Main / Chat 事务边界足够，不需要新增 API、数据库或权限；Console 前端仍需先闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、队列 / 详情 stale / unavailable，以及 View-only 写入表面。该窄能力批确认并关闭前不修改 Pencil、不进入代表设计，也不推进 R2-C03。
 - `2026-08-08` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-08)：按 Asia/Shanghai 日期复核 `11` 个提交和 `131` 个变更文件，确认今日依次关闭 R1-P02、R1-A01、R1-W01 与 R1-C01；代码—文档反查已修正 Public Forum 互动能力、F4-R 总专题、Chat / Author 当前说明、Console Orders 指南、八月日志和记录索引。明日只进入 R1-C02 设计前门禁，不提前修改 Pencil 或代码。
@@ -68,7 +69,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 今日进展（2026-08-08，R1-P02 / R1-A01 / R1-W01 / R1-C01）
+## 最近进展（2026-08-08—09，R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
@@ -100,17 +101,19 @@
 28. 管理员与临时只读 Operator 覆盖重试确认 / `409`、备注成功 / 冲突、详情 `404`、列表 stale、筛选空结果和写入口隐藏；稳定态浏览器控制台 `0 error / 0 warning`。服务已停止，六库原样还原且完整性通过，临时数据清零。
 29. 完成 R1-C02 `/console/moderation` 静态 readiness：服务端能力门禁通过；识别并冻结 PostAnswer、案件 URL / mobile task、stale / unavailable 和 View-only 权限表面四组前端门禁，未修改 `.pen`、运行时代码或 API。
 30. 按确认方案关闭 R1-C02 窄前端能力门禁：六类目标、URL / mobile task、权威读取状态与权限停止线落地；Console `73 / 73` 测试和静态构建通过，仍未修改 `.pen` 或启动服务。
-31. 在唯一活动 `.pen` 中完成 R1-C02 PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态正式代表设计；四个顶层画板无 placeholder、裁切或溢出，等待确认后进入代码。
+31. 在唯一活动 `.pen` 中完成并确认 R1-C02 PC `1440 × 900`、Mobile `390 × 844` 与必要关键状态正式代表设计；四个顶层画板无 placeholder、裁切或溢出。
+32. 按确认设计完成正式 `/console/moderation` 代码：PC 三段治理桌、Mobile 连续三列队列 / `BottomSheet` 筛选 / 保留品牌栏的全屏任务，以及必要权限与失败状态表面均已落地；Console `75 / 75` 测试和静态构建通过。
 
 ## 当前执行事项（2026-08-09）
 
-1. R1-C02 静态审计、窄前端能力门禁与正式代表设计均已完成；保持现有 API、权限、LongId、幂等、结构化错误和事务边界，不新增原因 / 证据 / 动作结果筛选或自动治理能力。
-2. 当前等待用户确认 PC 三段治理桌、Mobile 连续队列 / 全屏任务和必要关键状态；确认后成组实现正式 Console 视觉结构。
-3. 当前不启动服务、浏览器或 R2-C03；真实 Gateway PC / mobile smoke 留到代码、测试和静态构建完成并准备专题验收时申请。
+1. R1-C02 正式代码、定向测试与静态构建均已完成；现有 API、权限、LongId、幂等、结构化错误和事务边界保持不变，未新增原因 / 证据 / 动作结果筛选或自动治理能力。
+2. 下一步在另行明确授权后启动当前前后端，按 Gateway 入口完成 PC `1440 × 900`、Mobile `390 × 844`、权限和关键失败状态的专题验收。
+3. 当前不启动服务、浏览器或 R2-C03；运行态完成后清理临时数据与服务，再关闭 R1-C02。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R1-C02 Console 案件治理 / 审计成组实现](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)
 - [R1-C02 Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)
