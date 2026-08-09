@@ -62,7 +62,7 @@
 >
 > `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
 >
-> `2026-08-09` 更新：F4-O 已把 PostAnswer 补为第六类治理目标；R1-C02 [设计前能力门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)确认服务端 Case / Appeal、权限、版本、幂等与事务能力足够，同日[前端能力批](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)已闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL / mobile task、stale / unavailable 和 View-only 写入表面。[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)现已固定 PC 队列—证据—决定三段治理桌、Mobile 连续案件队列 / 单案件全屏任务及必要关键状态，等待确认后进入成组实现；现有队列只承接已落地的状态、目标类型与关键词筛选，不把历史设计稿中的原因、证据可用性或动作结果筛选当成当前 API 承诺。
+> `2026-08-09` 更新：F4-O 已把 PostAnswer 补为第六类治理目标；R1-C02 [设计前能力门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)确认服务端 Case / Appeal、权限、版本、幂等与事务能力足够，同日[前端能力批](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)已闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL / mobile task、stale / unavailable 和 View-only 写入表面。[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)现已固定 PC 队列—证据—决定三段治理桌、Mobile 连续案件队列 / 保留顶部品牌栏且隐藏五项底部导航的单案件全屏任务及必要关键状态，等待确认后进入成组实现；现有队列只承接已落地的状态、目标类型与关键词筛选，不把历史设计稿中的原因、证据可用性或动作结果筛选当成当前 API 承诺。
 
 ## 目标
 

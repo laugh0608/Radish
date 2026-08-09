@@ -41466,7 +41466,7 @@
       "x": 16670,
       "y": 0,
       "name": "R1-C02 / Console 案件处理任务 / Mobile 390",
-      "context": "Console 案件治理 mobile 全屏任务代表稿。选择案件后隐藏全局 header、breadcrumb 和五项导航；任务内按目标摘要、证据、决定与留痕渐进展开，Reviewer 可写但无 Action 权限。",
+      "context": "Console 案件治理 mobile 全屏任务代表稿。选择案件后保留 Console 品牌 header，隐藏 breadcrumb 和五项底部导航；任务内按目标摘要、证据、决定与留痕渐进展开，Reviewer 可写但无 Action 权限。",
       "theme": {
         "productTheme": "guofeng"
       },
@@ -41478,10 +41478,10 @@
       "children": [
         {
           "type": "frame",
-          "id": "w3gKhZ",
-          "name": "Mobile Case Task Header",
+          "id": "O2N2BK",
+          "name": "Mobile Console Web Header",
           "width": "fill_container",
-          "height": 56,
+          "height": 60,
           "fill": "$bg-surface",
           "stroke": "$border-soft",
           "strokeWidth": {
@@ -41490,7 +41490,90 @@
           "gap": 9,
           "padding": [
             0,
-            12
+            14
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "EuVKJ",
+              "name": "Console Brand Mark",
+              "width": 30,
+              "height": 30,
+              "fill": "$brand",
+              "cornerRadius": 10,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Akzjf",
+                  "name": "Console Brand Glyph",
+                  "fill": "$text-on-brand",
+                  "content": "萝",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 15,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "VU9UY",
+              "name": "Console Wordmark",
+              "fill": "$text-primary",
+              "content": "Radish Console",
+              "fontFamily": "Noto Serif SC",
+              "fontSize": 18,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "r5S7ws",
+              "name": "Header Flexible Spacer",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "d5aUVw",
+              "name": "Header Action / Account",
+              "width": 34,
+              "height": 34,
+              "fill": "$brand-soft",
+              "cornerRadius": 9,
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "O3TecR",
+                  "name": "Account Initial",
+                  "fill": "$brand",
+                  "content": "管",
+                  "fontFamily": "Noto Serif SC",
+                  "fontSize": 13,
+                  "fontWeight": "700"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "w3gKhZ",
+          "name": "Mobile Case Task Header",
+          "width": "fill_container",
+          "height": 50,
+          "fill": "$bg-surface",
+          "stroke": "$border-soft",
+          "strokeWidth": {
+            "bottom": 1
+          },
+          "gap": 9,
+          "padding": [
+            0,
+            10
           ],
           "alignItems": "center",
           "children": [

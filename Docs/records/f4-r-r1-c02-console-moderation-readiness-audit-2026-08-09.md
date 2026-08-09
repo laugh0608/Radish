@@ -6,6 +6,8 @@
 >
 > 范围：正式 Console `/console/moderation` 的案件与申诉工作区、HTTP / Service / Repository、权限、URL 状态、PC / mobile 结构，以及 `R1-C02` 对治理与审计页面的代表边界；本批未修改 `.pen`、运行时代码、API、数据库或权限
 
+> `2026-08-09` 代表设计复核补充：readiness 中“隐藏全局 header”是审计时的现有代码与首轮输入事实；正式画板已按 R1-C01 订单详情纠正为保留 Console 顶部品牌栏，只隐藏 breadcrumb 与五项底部导航。后续代码实现需收口该差异。
+
 ## 1. 结论
 
 - `R1-C02` 继续保持 R1，正式锚点为 `/console/moderation`。它同时承载案件队列、受权证据、决定、目标处置、用户动作、申诉复核、纠正执行和事件留痕，不能降为普通 Console 表格 / 明细的 R3 继承页。
