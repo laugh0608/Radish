@@ -58459,14 +58459,14 @@
                           "alignItems": "end",
                           "children": [
                             {
-                              "type": "text",
-                              "id": "p6DB8K",
-                              "name": "商品详情 PC / 币种",
-                              "fill": "$danger",
-                              "content": "¥",
-                              "fontFamily": "$font-body",
-                              "fontSize": 16,
-                              "fontWeight": "700"
+                              "type": "icon",
+                              "id": "Q95GBS",
+                              "name": "商品详情 PC / 萝卜币图标",
+                              "width": 22,
+                              "height": 22,
+                              "icon": "sprout",
+                              "library": "lucide",
+                              "fill": "$danger"
                             },
                             {
                               "type": "text",
@@ -60617,14 +60617,14 @@
                       "alignItems": "end",
                       "children": [
                         {
-                          "type": "text",
-                          "id": "NEek7",
-                          "name": "商品详情 Mobile / 币种",
-                          "fill": "$danger",
-                          "content": "¥",
-                          "fontFamily": "$font-body",
-                          "fontSize": 15,
-                          "fontWeight": "700"
+                          "type": "icon",
+                          "id": "aBCzN",
+                          "name": "商品详情 Mobile / 萝卜币图标",
+                          "width": 16,
+                          "height": 16,
+                          "icon": "sprout",
+                          "library": "lucide",
+                          "fill": "$danger"
                         },
                         {
                           "type": "text",
@@ -64260,7 +64260,7 @@
               "name": "公开主页 PC / 个人主页头图",
               "clip": true,
               "width": "fill_container",
-              "height": 260,
+              "height": 280,
               "fill": "$bg-surface",
               "cornerRadius": 16,
               "stroke": "$border-soft",
@@ -64297,7 +64297,7 @@
                     ]
                   },
                   "width": 1392,
-                  "height": 132
+                  "height": 120
                 },
                 {
                   "type": "frame",
@@ -64375,17 +64375,17 @@
                   "type": "rectangle",
                   "id": "l6wVq",
                   "x": 0,
-                  "y": 132,
+                  "y": 120,
                   "name": "公开主页 PC / 身份信息底",
                   "fill": "$bg-surface",
                   "width": 1392,
-                  "height": 128
+                  "height": 160
                 },
                 {
                   "type": "frame",
                   "id": "MYGNx",
                   "x": 34,
-                  "y": 84,
+                  "y": 72,
                   "name": "公开主页 PC / 头像",
                   "width": 104,
                   "height": 104,
@@ -64415,10 +64415,10 @@
                   "x": 158,
                   "y": 140,
                   "name": "公开主页 PC / 身份信息",
-                  "width": 320,
-                  "height": 120,
+                  "width": 360,
+                  "height": 56,
                   "layout": "vertical",
-                  "gap": 3,
+                  "gap": 2,
                   "children": [
                     {
                       "type": "text",
@@ -64427,7 +64427,7 @@
                       "fill": "$text-primary",
                       "content": "林墨",
                       "fontFamily": "$font-heading",
-                      "fontSize": 26,
+                      "fontSize": 25,
                       "fontWeight": "700"
                     },
                     {
@@ -64439,84 +64439,18 @@
                       "fontFamily": "$font-body",
                       "fontSize": 13,
                       "fontWeight": "600"
-                    },
-                    {
-                      "type": "text",
-                      "id": "odMrL",
-                      "name": "公开主页 PC / 个性签名",
-                      "fill": "$text-muted",
-                      "content": "这个用户什么都没有写～",
-                      "fontFamily": "$font-body",
-                      "fontSize": 12,
-                      "fontWeight": "normal"
-                    },
-                    {
-                      "type": "frame",
-                      "id": "O6Q1r",
-                      "name": "公开主页 PC / 等级与加入时间",
-                      "height": 24,
-                      "gap": 6,
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "frame",
-                          "id": "M8X7IY",
-                          "name": "公开主页 PC / 用户等级",
-                          "height": 24,
-                          "fill": "$brand-soft",
-                          "cornerRadius": 12,
-                          "gap": 5,
-                          "padding": [
-                            0,
-                            9
-                          ],
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "PiUZm",
-                              "name": "公开主页 PC / 等级图标",
-                              "width": 13,
-                              "height": 13,
-                              "icon": "sprout",
-                              "library": "lucide",
-                              "fill": "$brand"
-                            },
-                            {
-                              "type": "text",
-                              "id": "cdK3r",
-                              "name": "公开主页 PC / 等级文字",
-                              "fill": "$brand",
-                              "content": "Lv.12 社区共建者",
-                              "fontFamily": "$font-body",
-                              "fontSize": 11,
-                              "fontWeight": "700"
-                            }
-                          ]
-                        },
-                        {
-                          "type": "text",
-                          "id": "ndWrI",
-                          "name": "公开主页 PC / 加入时间",
-                          "fill": "$text-muted",
-                          "content": "2021 年加入",
-                          "fontFamily": "$font-body",
-                          "fontSize": 12,
-                          "fontWeight": "normal"
-                        }
-                      ]
                     }
                   ]
                 },
                 {
                   "type": "frame",
                   "id": "IJqXv",
-                  "x": 500,
-                  "y": 168,
+                  "x": 620,
+                  "y": 140,
                   "name": "公开主页 PC / 权威统计",
                   "clip": true,
                   "width": 476,
-                  "height": 72,
+                  "height": 64,
                   "fill": "$border-soft",
                   "cornerRadius": 10,
                   "gap": 1,
@@ -64526,7 +64460,7 @@
                       "id": "IWSqN",
                       "name": "公开主页 PC / 帖子",
                       "width": "fill_container",
-                      "height": 72,
+                      "height": "fill_container",
                       "fill": "$bg-surface",
                       "layout": "vertical",
                       "gap": 3,
@@ -64560,7 +64494,7 @@
                       "id": "LQli8",
                       "name": "公开主页 PC / 评论",
                       "width": "fill_container",
-                      "height": 72,
+                      "height": "fill_container",
                       "fill": "$bg-surface",
                       "layout": "vertical",
                       "gap": 3,
@@ -64594,7 +64528,7 @@
                       "id": "S1Qzul",
                       "name": "公开主页 PC / 获赞",
                       "width": "fill_container",
-                      "height": 72,
+                      "height": "fill_container",
                       "fill": "$bg-surface",
                       "layout": "vertical",
                       "gap": 3,
@@ -64628,7 +64562,7 @@
                       "id": "NIBsZ",
                       "name": "公开主页 PC / 关注者",
                       "width": "fill_container",
-                      "height": 72,
+                      "height": "fill_container",
                       "fill": "$bg-surface",
                       "layout": "vertical",
                       "gap": 3,
@@ -64662,8 +64596,8 @@
                 {
                   "type": "frame",
                   "id": "O5VLu",
-                  "x": 1020,
-                  "y": 175,
+                  "x": 744,
+                  "y": 216,
                   "name": "公开主页 PC / 关系动作",
                   "width": 352,
                   "height": 48,
@@ -64776,6 +64710,86 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "type": "text",
+                  "id": "odMrL",
+                  "x": 158,
+                  "y": 204,
+                  "name": "公开主页 PC / 个性签名",
+                  "fill": "$text-muted",
+                  "content": "这个用户什么都没有写～",
+                  "fontFamily": "$font-body",
+                  "fontSize": 12,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "O6Q1r",
+                  "x": 158,
+                  "y": 229,
+                  "name": "公开主页 PC / 等级与加入时间",
+                  "height": 24,
+                  "gap": 6,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "M8X7IY",
+                      "name": "公开主页 PC / 用户等级",
+                      "height": 24,
+                      "fill": "$brand-soft",
+                      "cornerRadius": 12,
+                      "gap": 5,
+                      "padding": [
+                        0,
+                        9
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "PiUZm",
+                          "name": "公开主页 PC / 等级图标",
+                          "width": 13,
+                          "height": 13,
+                          "icon": "sprout",
+                          "library": "lucide",
+                          "fill": "$brand"
+                        },
+                        {
+                          "type": "text",
+                          "id": "cdK3r",
+                          "name": "公开主页 PC / 等级文字",
+                          "fill": "$brand",
+                          "content": "Lv.12 社区共建者",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "ndWrI",
+                      "name": "公开主页 PC / 加入时间",
+                      "fill": "$text-muted",
+                      "content": "2021 年加入",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "rectangle",
+                  "id": "NYPKr",
+                  "x": 574,
+                  "y": 142,
+                  "name": "公开主页 PC / 身份与操作分隔线",
+                  "fill": "$border-soft",
+                  "width": 1,
+                  "height": 122
                 }
               ]
             },
