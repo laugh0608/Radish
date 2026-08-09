@@ -39,6 +39,7 @@ public sealed partial class ContentModerationCaseRepository
             TargetContentId = command.TargetContentId,
             TargetSnapshotPostId = command.TargetPostId,
             TargetSnapshotChannelId = command.TargetChannelId,
+            TargetSnapshotProductId = command.TargetProductId,
             TargetSnapshotTitle = command.SnapshotTitle,
             TargetSnapshotSummary = command.SnapshotSummary,
             TargetUserId = command.TargetUserId,

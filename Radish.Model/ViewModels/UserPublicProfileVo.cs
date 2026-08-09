@@ -19,6 +19,12 @@ public class UserPublicProfileVo
 
     public DateTime VoCreateTime { get; set; }
 
+    /// <summary>公开等级；不包含经验进度、排名或冻结状态。</summary>
+    public int VoCurrentLevel { get; set; }
+
+    /// <summary>公开等级名称。</summary>
+    public string VoCurrentLevelName { get; set; } = string.Empty;
+
     public string? VoAvatarUrl { get; set; }
 
     public string? VoAvatarThumbnailUrl { get; set; }

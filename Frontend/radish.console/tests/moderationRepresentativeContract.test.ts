@@ -11,7 +11,7 @@ function readConsoleSource(relativePath: string): string {
   return readFileSync(resolve(consoleRoot, relativePath), 'utf8');
 }
 
-test('R1-C02 应完整承接 PostAnswer 筛选、双语与 Revision 前置校验', () => {
+test('R1-C02 应完整承接回答与商品评价筛选、双语及 Revision 前置校验', () => {
   const pageSource = readConsoleSource('src/pages/Moderation/ModerationPage.tsx');
   const urlStateSource = readConsoleSource('src/pages/Moderation/moderationPageUrlState.ts');
   const zhSource = readConsoleSource('src/locales/zh/moderation.ts');
@@ -19,11 +19,13 @@ test('R1-C02 应完整承接 PostAnswer 筛选、双语与 Revision 前置校验
 
   assert.match(urlStateSource, /'PostAnswer'/);
   assert.match(pageSource, /options=\{MODERATION_TARGET_TYPES\.map/);
-  assert.match(pageSource, /\['Post', 'Comment', 'PostAnswer', 'Product'\]/);
+  assert.match(pageSource, /\['Post', 'Comment', 'PostAnswer', 'Product', 'ProductReview'\]/);
   assert.match(zhSource, /'moderation\.targetType\.PostAnswer': '回答'/);
   assert.match(enSource, /'moderation\.targetType\.PostAnswer': 'Answer'/);
-  assert.match(zhSource, /限制帖子、评论、回答或商品前/);
-  assert.match(enSource, /restricting a post, comment, answer, or product/);
+  assert.match(zhSource, /限制帖子、评论、回答、商品或商品评价前/);
+  assert.match(enSource, /restricting a post, comment, answer, product, or product review/);
+  assert.match(zhSource, /'moderation\.targetType\.ProductReview': '商品评价'/);
+  assert.match(enSource, /'moderation\.targetType\.ProductReview': 'Product review'/);
 });
 
 test('R1-C02 案件选择应以 URL 为真相源并驱动 Mobile 全屏任务', () => {

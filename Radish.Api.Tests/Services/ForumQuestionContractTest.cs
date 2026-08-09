@@ -36,6 +36,7 @@ public sealed class ForumQuestionContractTest
     public void NotificationsAndModeration_ShouldExposeAnswerLifecycle()
     {
         Assert.Equal(6, (int)ContentReportTargetTypeEnum.PostAnswer);
+        Assert.Equal(7, (int)ContentReportTargetTypeEnum.ProductReview);
         Assert.True(NotificationDefinitionRegistry.GetRequired(NotificationType.QuestionAnswered).IsProducerActive);
         Assert.True(NotificationDefinitionRegistry.GetRequired(NotificationType.AnswerAccepted).IsProducerActive);
         Assert.True(NotificationDefinitionRegistry.GetRequired(NotificationType.AnswerAcceptanceRevoked).IsProducerActive);

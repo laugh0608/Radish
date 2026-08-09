@@ -18,6 +18,9 @@ public class ContentReportVo
     /// <summary>举报目标快照所属频道 ID</summary>
     public long? VoTargetSnapshotChannelId { get; set; }
 
+    /// <summary>商品或商品评价目标所属商品 ID</summary>
+    public long? VoTargetSnapshotProductId { get; set; }
+
     /// <summary>举报目标快照标题</summary>
     public string? VoTargetSnapshotTitle { get; set; }
 
@@ -90,6 +93,9 @@ public class ContentReportQueueItemVo
 
     /// <summary>聊天室目标消息 ID</summary>
     public long? VoTargetMessageId { get; set; }
+
+    /// <summary>商城目标商品 ID</summary>
+    public long? VoTargetProductId { get; set; }
 
     /// <summary>目标导航状态（Ready/Fallback/Unavailable/Unsupported）</summary>
     public string VoTargetNavigationStatus { get; set; } = "Unavailable";
@@ -188,6 +194,9 @@ public class UserModerationActionVo
     /// <summary>来源举报目标消息 ID</summary>
     public long? VoSourceReportTargetMessageId { get; set; }
 
+    /// <summary>来源举报目标所属商品 ID</summary>
+    public long? VoSourceReportTargetProductId { get; set; }
+
     /// <summary>来源举报目标导航状态（Ready/Fallback/Unavailable/Unsupported）</summary>
     public string VoSourceReportTargetNavigationStatus { get; set; } = "Unavailable";
 
@@ -279,6 +288,7 @@ public sealed class ContentReportReceiptVo
     public long? VoTargetCommentId { get; set; }
     public long? VoTargetChannelId { get; set; }
     public long? VoTargetMessageId { get; set; }
+    public long? VoTargetProductId { get; set; }
     public string VoTargetNavigationStatus { get; set; } = "Unavailable";
     public string? VoTargetNavigationMessage { get; set; }
     public string? VoTargetSnapshotTitle { get; set; }

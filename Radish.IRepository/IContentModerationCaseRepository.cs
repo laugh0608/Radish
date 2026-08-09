@@ -163,6 +163,7 @@ public sealed record ContentModerationReportWriteCommand(
     string? TargetUserName,
     long? TargetPostId,
     long? TargetChannelId,
+    long? TargetProductId,
     string? SnapshotTitle,
     string? SnapshotSummary,
     string SnapshotHash,

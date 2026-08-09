@@ -183,4 +183,5 @@ export const enCore = {
   'report.target.quickReply': 'Quick reply',
   'report.target.chatMessage': 'Chat message',
   'report.target.product': 'Product',
+  'report.target.productReview': 'Product review',
 } as const;

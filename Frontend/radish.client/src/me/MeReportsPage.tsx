@@ -46,6 +46,10 @@ function buildReportTargetHref(report: ContentReportReceiptVo): string | null {
     return `/shop/product/${encodeURIComponent(report.voTargetContentId)}`;
   }
 
+  if (report.voTargetType === 'ProductReview' && report.voTargetProductId) {
+    return `/shop/product/${encodeURIComponent(report.voTargetProductId)}#reviews`;
+  }
+
   return null;
 }
 

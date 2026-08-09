@@ -58491,14 +58491,66 @@
                           ]
                         },
                         {
-                          "type": "text",
-                          "id": "yxVd1",
-                          "name": "商品详情 PC / 已售",
-                          "fill": "$text-secondary",
-                          "content": "已售 128",
-                          "fontFamily": "$font-body",
-                          "fontSize": 13,
-                          "fontWeight": "600"
+                          "type": "frame",
+                          "id": "hzOai",
+                          "name": "商品详情 PC / 评分与销量",
+                          "height": 48,
+                          "layout": "vertical",
+                          "gap": 2,
+                          "justifyContent": "end",
+                          "alignItems": "end",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "PTvIu",
+                              "name": "商品详情 PC / 综合评分摘要",
+                              "height": 24,
+                              "gap": 6,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "IAFRA",
+                                  "name": "商品详情 PC / 综合评分星标",
+                                  "width": 16,
+                                  "height": 16,
+                                  "icon": "star",
+                                  "library": "lucide",
+                                  "fill": "$warning"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "F6dTkv",
+                                  "name": "商品详情 PC / 综合评分数值",
+                                  "fill": "$text-primary",
+                                  "content": "4.8",
+                                  "fontFamily": "$font-heading",
+                                  "fontSize": 17,
+                                  "fontWeight": "700"
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "iPzeW",
+                                  "name": "商品详情 PC / 评价数量",
+                                  "fill": "$text-secondary",
+                                  "content": "36 条已购评价",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 12,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "H2P6y",
+                              "name": "商品详情 PC / 已售数量",
+                              "fill": "$text-muted",
+                              "content": "已售 128",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "600"
+                            }
+                          ]
                         }
                       ]
                     },
@@ -58783,7 +58835,7 @@
                 {
                   "type": "frame",
                   "id": "r82V8T",
-                  "name": "商品详情 PC / 商品详情",
+                  "name": "商品详情 PC / 商品详情与购买评价",
                   "width": 920,
                   "height": 296,
                   "fill": "$bg-surface",
@@ -58791,95 +58843,207 @@
                   "stroke": "$border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 12,
+                  "gap": 10,
                   "padding": [
-                    18,
-                    22
+                    16,
+                    18
                   ],
                   "children": [
                     {
-                      "type": "text",
-                      "id": "iMLok",
-                      "name": "商品详情 PC / 详情标题",
-                      "fill": "$text-primary",
-                      "content": "商品详情",
-                      "fontFamily": "$font-heading",
-                      "fontSize": 20,
-                      "fontWeight": "700"
-                    },
-                    {
-                      "type": "text",
-                      "id": "z5dwyc",
-                      "name": "商品详情 PC / 详情正文",
-                      "fill": "$text-secondary",
-                      "textGrowth": "fixed-width",
+                      "type": "frame",
+                      "id": "yHQHm",
+                      "name": "商品详情 PC / 详情评价标题行",
                       "width": "fill_container",
-                      "content": "徽章采用哑光金属与软珐琅工艺，正面为 Radish 社区共建标识。购买成功后进入既有订单履约流程，发放状态、收货信息与异常处理以订单详情为准。",
-                      "lineHeight": 1.65,
-                      "fontFamily": "$font-body",
-                      "fontSize": 14,
-                      "fontWeight": "normal"
+                      "height": 28,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "SKZkC",
+                          "name": "商品详情 PC / 详情评价标题",
+                          "fill": "$text-primary",
+                          "content": "商品详情 · 购买评价",
+                          "fontFamily": "$font-heading",
+                          "fontSize": 19,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "d6oVF3",
+                          "name": "商品详情 PC / 查看全部评价",
+                          "fill": "$action",
+                          "content": "查看全部 36 条  ›",
+                          "fontFamily": "$font-body",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        }
+                      ]
                     },
                     {
                       "type": "frame",
-                      "id": "Bs9HB",
-                      "name": "商品详情 PC / 商品特点",
+                      "id": "GZowS",
+                      "name": "商品详情 PC / 详情评价分栏",
                       "width": "fill_container",
-                      "height": 78,
-                      "gap": 10,
+                      "height": 220,
+                      "gap": 16,
                       "children": [
                         {
                           "type": "frame",
-                          "id": "eqT39",
-                          "name": "商品详情 PC / 共建纪念",
-                          "width": "fill_container",
-                          "height": 78,
-                          "fill": "$bg-muted",
-                          "cornerRadius": 10,
+                          "id": "e9dcjp",
+                          "name": "商品详情 PC / 商品说明区",
+                          "width": 332,
+                          "height": 220,
+                          "layout": "vertical",
                           "gap": 10,
-                          "padding": [
-                            12,
-                            14
-                          ],
-                          "alignItems": "center",
                           "children": [
                             {
-                              "type": "icon",
-                              "id": "p6XIW3",
-                              "name": "商品详情 PC / 共建纪念图标",
-                              "width": 22,
-                              "height": 22,
-                              "icon": "badge-check",
-                              "library": "lucide",
-                              "fill": "$brand"
+                              "type": "text",
+                              "id": "nfnPg",
+                              "name": "商品详情 PC / 商品说明标题",
+                              "fill": "$text-primary",
+                              "content": "商品说明",
+                              "fontFamily": "$font-body",
+                              "fontSize": 14,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "A1jcM",
+                              "name": "商品详情 PC / 商品说明正文",
+                              "fill": "$text-secondary",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "徽章采用哑光金属与软珐琅工艺，正面为 Radish 社区共建标识。购买成功后进入既有订单履约流程。",
+                              "lineHeight": 1.55,
+                              "fontFamily": "$font-body",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
                             },
                             {
                               "type": "frame",
-                              "id": "qEn3B",
-                              "name": "商品详情 PC / 共建纪念说明",
+                              "id": "j02IBN",
+                              "name": "商品详情 PC / 商品特点标签",
                               "width": "fill_container",
-                              "layout": "vertical",
-                              "gap": 2,
+                              "height": 30,
+                              "gap": 6,
                               "children": [
                                 {
-                                  "type": "text",
-                                  "id": "ofDdM",
-                                  "name": "商品详情 PC / 共建纪念名称",
-                                  "fill": "$text-primary",
-                                  "content": "共建纪念",
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
+                                  "type": "frame",
+                                  "id": "nF2TG",
+                                  "name": "商品详情 PC / 共建纪念",
+                                  "height": 28,
+                                  "fill": "$bg-muted",
+                                  "cornerRadius": 14,
+                                  "padding": [
+                                    0,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "O8Pa4",
+                                      "name": "商品详情 PC / 共建纪念文字",
+                                      "fill": "$text-secondary",
+                                      "content": "共建纪念",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "MHFqL",
+                                  "name": "商品详情 PC / 独立包装",
+                                  "height": 28,
+                                  "fill": "$bg-muted",
+                                  "cornerRadius": 14,
+                                  "padding": [
+                                    0,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "z9tYfc",
+                                      "name": "商品详情 PC / 独立包装文字",
+                                      "fill": "$text-secondary",
+                                      "content": "独立包装",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "enQwx",
+                                  "name": "商品详情 PC / 进度可查",
+                                  "height": 28,
+                                  "fill": "$bg-muted",
+                                  "cornerRadius": 14,
+                                  "padding": [
+                                    0,
+                                    9
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "OqXrj",
+                                      "name": "商品详情 PC / 进度可查文字",
+                                      "fill": "$text-secondary",
+                                      "content": "进度可查",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "oqO56",
+                              "name": "商品详情 PC / 履约说明",
+                              "width": "fill_container",
+                              "fill": "$brand-soft",
+                              "cornerRadius": 9,
+                              "gap": 7,
+                              "padding": [
+                                8,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon",
+                                  "id": "Y8kdC",
+                                  "name": "商品详情 PC / 履约说明图标",
+                                  "width": 15,
+                                  "height": 15,
+                                  "icon": "package-check",
+                                  "library": "lucide",
+                                  "fill": "$brand"
                                 },
                                 {
                                   "type": "text",
-                                  "id": "Eroqo",
-                                  "name": "商品详情 PC / 共建纪念描述",
-                                  "fill": "$text-muted",
-                                  "content": "记录公开贡献",
+                                  "id": "IUG9X",
+                                  "name": "商品详情 PC / 履约说明文字",
+                                  "fill": "$text-secondary",
+                                  "textGrowth": "fixed-width",
+                                  "width": "fill_container",
+                                  "content": "发放状态、收货信息与异常处理以订单详情为准。",
+                                  "lineHeight": 1.4,
                                   "fontFamily": "$font-body",
-                                  "fontSize": 11,
-                                  "fontWeight": "normal"
+                                  "fontSize": 10,
+                                  "fontWeight": "600"
                                 }
                               ]
                             }
@@ -58887,112 +59051,295 @@
                         },
                         {
                           "type": "frame",
-                          "id": "McQax",
-                          "name": "商品详情 PC / 独立包装",
-                          "width": "fill_container",
-                          "height": 78,
-                          "fill": "$bg-muted",
-                          "cornerRadius": 10,
-                          "gap": 10,
-                          "padding": [
-                            12,
-                            14
-                          ],
-                          "alignItems": "center",
-                          "children": [
-                            {
-                              "type": "icon",
-                              "id": "cGwcA",
-                              "name": "商品详情 PC / 独立包装图标",
-                              "width": 22,
-                              "height": 22,
-                              "icon": "package",
-                              "library": "lucide",
-                              "fill": "$brand"
-                            },
-                            {
-                              "type": "frame",
-                              "id": "jUQ4k",
-                              "name": "商品详情 PC / 独立包装说明",
-                              "width": "fill_container",
-                              "layout": "vertical",
-                              "gap": 2,
-                              "children": [
-                                {
-                                  "type": "text",
-                                  "id": "nWhs9",
-                                  "name": "商品详情 PC / 独立包装名称",
-                                  "fill": "$text-primary",
-                                  "content": "独立包装",
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 13,
-                                  "fontWeight": "700"
-                                },
-                                {
-                                  "type": "text",
-                                  "id": "p8zGM",
-                                  "name": "商品详情 PC / 独立包装描述",
-                                  "fill": "$text-muted",
-                                  "content": "适合收藏赠予",
-                                  "fontFamily": "$font-body",
-                                  "fontSize": 11,
-                                  "fontWeight": "normal"
-                                }
-                              ]
-                            }
-                          ]
+                          "id": "maa7L",
+                          "name": "商品详情 PC / 详情评价分隔",
+                          "width": 1,
+                          "height": 220,
+                          "fill": "$border-soft"
                         },
                         {
                           "type": "frame",
-                          "id": "E0Vd1",
-                          "name": "商品详情 PC / 订单履约",
+                          "id": "E0X1s",
+                          "name": "商品详情 PC / 购买评价预览",
                           "width": "fill_container",
-                          "height": 78,
-                          "fill": "$bg-muted",
-                          "cornerRadius": 10,
-                          "gap": 10,
-                          "padding": [
-                            12,
-                            14
-                          ],
-                          "alignItems": "center",
+                          "height": 220,
+                          "layout": "vertical",
+                          "gap": 7,
                           "children": [
                             {
-                              "type": "icon",
-                              "id": "NbLVA",
-                              "name": "商品详情 PC / 订单履约图标",
-                              "width": 22,
-                              "height": 22,
-                              "icon": "truck",
-                              "library": "lucide",
-                              "fill": "$brand"
+                              "type": "frame",
+                              "id": "LInMo",
+                              "name": "商品详情 PC / 评价摘要动作",
+                              "width": "fill_container",
+                              "height": 30,
+                              "justifyContent": "space_between",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "aG5O4",
+                                  "name": "商品详情 PC / 评价摘要",
+                                  "height": 30,
+                                  "gap": 7,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "o6KCEe",
+                                      "name": "商品详情 PC / 评价平均分",
+                                      "fill": "$text-primary",
+                                      "content": "★ 4.8",
+                                      "fontFamily": "$font-heading",
+                                      "fontSize": 18,
+                                      "fontWeight": "700"
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "Vsjzn",
+                                      "name": "商品详情 PC / 评价已购说明",
+                                      "fill": "$success",
+                                      "content": "36 条 · 已购评价",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "bzHsQ",
+                                  "name": "商品详情 PC / 写评价动作",
+                                  "height": 28,
+                                  "fill": "$action-soft",
+                                  "cornerRadius": 14,
+                                  "padding": [
+                                    0,
+                                    10
+                                  ],
+                                  "justifyContent": "center",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "pWBbp",
+                                      "name": "商品详情 PC / 写评价文字",
+                                      "fill": "$action",
+                                      "content": "写评价",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 10,
+                                      "fontWeight": "700"
+                                    }
+                                  ]
+                                }
+                              ]
                             },
                             {
                               "type": "frame",
-                              "id": "oLOkB",
-                              "name": "商品详情 PC / 订单履约说明",
+                              "id": "hoH40",
+                              "name": "商品详情 PC / 五星分布",
                               "width": "fill_container",
-                              "layout": "vertical",
-                              "gap": 2,
+                              "height": 26,
+                              "fill": "$bg-muted",
+                              "cornerRadius": 8,
+                              "gap": 10,
+                              "padding": [
+                                0,
+                                10
+                              ],
+                              "alignItems": "center",
                               "children": [
                                 {
                                   "type": "text",
-                                  "id": "m0zmT",
-                                  "name": "商品详情 PC / 订单履约名称",
-                                  "fill": "$text-primary",
-                                  "content": "订单履约",
+                                  "id": "i4yoO5",
+                                  "name": "商品详情 PC / 五星分布标题",
+                                  "fill": "$text-secondary",
+                                  "content": "五星分布",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 13,
+                                  "fontSize": 10,
                                   "fontWeight": "700"
                                 },
                                 {
                                   "type": "text",
-                                  "id": "ocs2B",
-                                  "name": "商品详情 PC / 订单履约描述",
+                                  "id": "ZTPNw",
+                                  "name": "商品详情 PC / 五星分布数据",
                                   "fill": "$text-muted",
-                                  "content": "进度可追踪",
+                                  "content": "5★ 22   4★ 9   3★ 4   2★ 1   1★ 0",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 11,
+                                  "fontSize": 10,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "cv2M5",
+                              "name": "商品详情 PC / 评价预览 青瓷旅者#2048",
+                              "width": "fill_container",
+                              "height": 60,
+                              "fill": "$bg-muted",
+                              "cornerRadius": 9,
+                              "layout": "vertical",
+                              "gap": 3,
+                              "padding": [
+                                7,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "LbpxK",
+                                  "name": "商品详情 PC / 评价作者 青瓷旅者#2048",
+                                  "width": "fill_container",
+                                  "height": 18,
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "Oy4Uf",
+                                      "name": "商品详情 PC / 作者与星级 青瓷旅者#2048",
+                                      "gap": 7,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "TlOl7",
+                                          "name": "商品详情 PC / 作者 青瓷旅者#2048",
+                                          "fill": "$text-primary",
+                                          "content": "青瓷旅者#2048",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 10,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "ms27u",
+                                          "name": "商品详情 PC / 星级 青瓷旅者#2048",
+                                          "fill": "$warning",
+                                          "content": "★★★★★",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 10,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "D7L6ZV",
+                                          "name": "商品详情 PC / 已购 青瓷旅者#2048",
+                                          "fill": "$success",
+                                          "content": "已购",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 9,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "ogiv3",
+                                      "name": "商品详情 PC / 时间 青瓷旅者#2048",
+                                      "fill": "$text-muted",
+                                      "content": "今天",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 9,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "tIBQ1",
+                                  "name": "商品详情 PC / 正文 青瓷旅者#2048",
+                                  "fill": "$text-secondary",
+                                  "content": "细节很精致，包装也很稳妥。",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "tRcCM",
+                              "name": "商品详情 PC / 评价预览 山岚#1024",
+                              "width": "fill_container",
+                              "height": 60,
+                              "fill": "$bg-muted",
+                              "cornerRadius": 9,
+                              "layout": "vertical",
+                              "gap": 3,
+                              "padding": [
+                                7,
+                                10
+                              ],
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "L5j2D6",
+                                  "name": "商品详情 PC / 评价作者 山岚#1024",
+                                  "width": "fill_container",
+                                  "height": 18,
+                                  "justifyContent": "space_between",
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "dTDjV",
+                                      "name": "商品详情 PC / 作者与星级 山岚#1024",
+                                      "gap": 7,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "text",
+                                          "id": "I23xy",
+                                          "name": "商品详情 PC / 作者 山岚#1024",
+                                          "fill": "$text-primary",
+                                          "content": "山岚#1024",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 10,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "SYrR8",
+                                          "name": "商品详情 PC / 星级 山岚#1024",
+                                          "fill": "$warning",
+                                          "content": "★★★★☆",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 10,
+                                          "fontWeight": "700"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "VSxUX",
+                                          "name": "商品详情 PC / 已购 山岚#1024",
+                                          "fill": "$success",
+                                          "content": "已购",
+                                          "fontFamily": "$font-body",
+                                          "fontSize": 9,
+                                          "fontWeight": "700"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "text",
+                                      "id": "PHlcI",
+                                      "name": "商品详情 PC / 时间 山岚#1024",
+                                      "fill": "$text-muted",
+                                      "content": "昨天",
+                                      "fontFamily": "$font-body",
+                                      "fontSize": 9,
+                                      "fontWeight": "500"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "c5QUo",
+                                  "name": "商品详情 PC / 正文 山岚#1024",
+                                  "fill": "$text-secondary",
+                                  "content": "纪念意义很好，订单进度清楚。",
+                                  "fontFamily": "$font-body",
+                                  "fontSize": 10,
                                   "fontWeight": "normal"
                                 }
                               ]
@@ -60140,7 +60487,7 @@
               "name": "商品详情 Mobile / 顶部商品展示",
               "clip": true,
               "width": 390,
-              "height": 258,
+              "height": 232,
               "fill": "$bg-muted",
               "layout": "none",
               "children": [
@@ -60151,7 +60498,7 @@
                   "y": 0,
                   "name": "商品详情 Mobile / 顶部商品展示图",
                   "width": 390,
-                  "height": 258,
+                  "height": 232,
                   "fill": {
                     "type": "image",
                     "enabled": true,
@@ -60215,7 +60562,7 @@
                   "type": "frame",
                   "id": "Q2Lhj",
                   "x": 319,
-                  "y": 222,
+                  "y": 196,
                   "name": "商品详情 Mobile / 图片页码",
                   "width": 55,
                   "height": 24,
@@ -60243,12 +60590,12 @@
               "id": "Cn3i2",
               "name": "商品详情 Mobile / 价格与商品信息",
               "width": 390,
-              "height": 172,
+              "height": 148,
               "fill": "$bg-surface",
               "layout": "vertical",
-              "gap": 4,
+              "gap": 3,
               "padding": [
-                12,
+                8,
                 16
               ],
               "children": [
@@ -60257,7 +60604,7 @@
                   "id": "xsi2z",
                   "name": "商品详情 Mobile / 价格与在售",
                   "width": "fill_container",
-                  "height": 44,
+                  "height": 40,
                   "justifyContent": "space_between",
                   "alignItems": "end",
                   "children": [
@@ -60285,7 +60632,7 @@
                           "fill": "$danger",
                           "content": "480",
                           "fontFamily": "$font-heading",
-                          "fontSize": 30,
+                          "fontSize": 27,
                           "fontWeight": "700"
                         },
                         {
@@ -60343,7 +60690,7 @@
                   "fill": "$text-primary",
                   "content": "社区共建者徽章",
                   "fontFamily": "$font-heading",
-                  "fontSize": 20,
+                  "fontSize": 19,
                   "fontWeight": "700"
                 },
                 {
@@ -60353,10 +60700,10 @@
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "小小实物徽章，记录你对社区协作与公开知识建设的真实贡献。",
-                  "lineHeight": 1.45,
+                  "content": "社区共建纪念徽章，哑光金属与软珐琅工艺。",
+                  "lineHeight": 1.4,
                   "fontFamily": "$font-body",
-                  "fontSize": 12,
+                  "fontSize": 11,
                   "fontWeight": "normal"
                 },
                 {
@@ -60364,8 +60711,8 @@
                   "id": "aqJZP",
                   "name": "商品详情 Mobile / 购买约束",
                   "width": "fill_container",
-                  "height": 24,
-                  "gap": 12,
+                  "height": 20,
+                  "gap": 10,
                   "alignItems": "center",
                   "children": [
                     {
@@ -60417,11 +60764,11 @@
               "id": "kdLir",
               "name": "商品详情 Mobile / 购买动作条",
               "width": 390,
-              "height": 72,
+              "height": 64,
               "fill": "$bg-surface",
               "gap": 8,
               "padding": [
-                10,
+                8,
                 16
               ],
               "alignItems": "center",
@@ -60532,15 +60879,212 @@
             },
             {
               "type": "frame",
+              "id": "Q3YxWc",
+              "name": "商品详情 Mobile / 购买评价预览",
+              "width": 390,
+              "height": 138,
+              "fill": "$bg-surface",
+              "layout": "vertical",
+              "gap": 6,
+              "padding": [
+                10,
+                16
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "M8rNBq",
+                  "name": "商品详情 Mobile / 评价标题行",
+                  "width": "fill_container",
+                  "height": 24,
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hHgSV",
+                      "name": "商品详情 Mobile / 评价标题",
+                      "fill": "$text-primary",
+                      "content": "购买评价",
+                      "fontFamily": "$font-heading",
+                      "fontSize": 15,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "MG11X",
+                      "name": "商品详情 Mobile / 评价摘要动作",
+                      "height": 24,
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "c1tOFO",
+                          "name": "商品详情 Mobile / 综合评分",
+                          "fill": "$text-primary",
+                          "content": "★ 4.8 · 36条",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "V2sNQu",
+                          "name": "商品详情 Mobile / 查看评价",
+                          "fill": "$action",
+                          "content": "全部  ›",
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cRE6x",
+                  "name": "商品详情 Mobile / 五星分布与资格",
+                  "width": "fill_container",
+                  "height": 30,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 8,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "u2BvoD",
+                      "name": "商品详情 Mobile / 五星分布",
+                      "fill": "$text-muted",
+                      "content": "5★22  4★9  3★4  2★1  1★0",
+                      "fontFamily": "$font-body",
+                      "fontSize": 9,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "lit0i",
+                      "name": "商品详情 Mobile / 写评价",
+                      "height": 22,
+                      "fill": "$action-soft",
+                      "cornerRadius": 11,
+                      "padding": [
+                        0,
+                        8
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "n9z2Z9",
+                          "name": "商品详情 Mobile / 写评价文字",
+                          "fill": "$action",
+                          "content": "写评价",
+                          "fontFamily": "$font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "yDrB7",
+                  "name": "商品详情 Mobile / 单条评价预览",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 8,
+                  "layout": "vertical",
+                  "gap": 3,
+                  "padding": [
+                    6,
+                    9
+                  ],
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "bdzE4",
+                      "name": "商品详情 Mobile / 评价作者行",
+                      "width": "fill_container",
+                      "height": 16,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "eNnqB",
+                          "name": "商品详情 Mobile / 作者已购星级",
+                          "gap": 6,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "D2ZeG5",
+                              "name": "商品详情 Mobile / 评价作者",
+                              "fill": "$text-primary",
+                              "content": "青瓷旅者#2048",
+                              "fontFamily": "$font-body",
+                              "fontSize": 9,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "lEPyN",
+                              "name": "商品详情 Mobile / 评价已购",
+                              "fill": "$success",
+                              "content": "已购",
+                              "fontFamily": "$font-body",
+                              "fontSize": 8,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "J1bWH",
+                          "name": "商品详情 Mobile / 评价星级",
+                          "fill": "$warning",
+                          "content": "★★★★★",
+                          "fontFamily": "$font-body",
+                          "fontSize": 9,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Kf0QZ",
+                      "name": "商品详情 Mobile / 评价正文",
+                      "fill": "$text-secondary",
+                      "content": "细节很精致，包装也很稳妥。",
+                      "fontFamily": "$font-body",
+                      "fontSize": 9,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
               "id": "EfHw3",
               "name": "商品详情 Mobile / 详情预览",
               "width": 390,
-              "height": 164,
+              "height": 76,
               "fill": "$bg-surface",
               "layout": "vertical",
-              "gap": 8,
+              "gap": 4,
               "padding": [
-                12,
+                10,
                 16
               ],
               "children": [
@@ -60549,7 +61093,7 @@
                   "id": "GVCYV",
                   "name": "商品详情 Mobile / 详情标题行",
                   "width": "fill_container",
-                  "height": 24,
+                  "height": 22,
                   "justifyContent": "space_between",
                   "alignItems": "center",
                   "children": [
@@ -60560,7 +61104,7 @@
                       "fill": "$text-primary",
                       "content": "商品详情",
                       "fontFamily": "$font-heading",
-                      "fontSize": 17,
+                      "fontSize": 15,
                       "fontWeight": "700"
                     },
                     {
@@ -60570,7 +61114,7 @@
                       "fill": "$action",
                       "content": "查看全部  ›",
                       "fontFamily": "$font-body",
-                      "fontSize": 11,
+                      "fontSize": 10,
                       "fontWeight": "700"
                     }
                   ]
@@ -60582,126 +61126,11 @@
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "哑光金属与软珐琅工艺，独立包装；购买成功后进入既有订单履约流程。",
-                  "lineHeight": 1.5,
+                  "content": "独立包装；购买成功后进入既有订单履约流程。",
+                  "lineHeight": 1.4,
                   "fontFamily": "$font-body",
-                  "fontSize": 11,
+                  "fontSize": 10,
                   "fontWeight": "normal"
-                },
-                {
-                  "type": "frame",
-                  "id": "i9qvu",
-                  "name": "商品详情 Mobile / 商品特点",
-                  "width": "fill_container",
-                  "height": 58,
-                  "gap": 8,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "VRMMA",
-                      "name": "商品详情 Mobile / 共建纪念",
-                      "width": "fill_container",
-                      "height": 58,
-                      "fill": "$bg-muted",
-                      "cornerRadius": 9,
-                      "layout": "vertical",
-                      "gap": 4,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "QT9Rr",
-                          "name": "商品详情 Mobile / 共建纪念图标",
-                          "width": 17,
-                          "height": 17,
-                          "icon": "badge-check",
-                          "library": "lucide",
-                          "fill": "$brand"
-                        },
-                        {
-                          "type": "text",
-                          "id": "Qd9fA",
-                          "name": "商品详情 Mobile / 共建纪念文字",
-                          "fill": "$text-secondary",
-                          "content": "共建纪念",
-                          "fontFamily": "$font-body",
-                          "fontSize": 10,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "y1wWfx",
-                      "name": "商品详情 Mobile / 独立包装",
-                      "width": "fill_container",
-                      "height": 58,
-                      "fill": "$bg-muted",
-                      "cornerRadius": 9,
-                      "layout": "vertical",
-                      "gap": 4,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "iLvOv",
-                          "name": "商品详情 Mobile / 独立包装图标",
-                          "width": 17,
-                          "height": 17,
-                          "icon": "package",
-                          "library": "lucide",
-                          "fill": "$brand"
-                        },
-                        {
-                          "type": "text",
-                          "id": "B1S4Y2",
-                          "name": "商品详情 Mobile / 独立包装文字",
-                          "fill": "$text-secondary",
-                          "content": "独立包装",
-                          "fontFamily": "$font-body",
-                          "fontSize": 10,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    },
-                    {
-                      "type": "frame",
-                      "id": "ul9kc",
-                      "name": "商品详情 Mobile / 进度可查",
-                      "width": "fill_container",
-                      "height": 58,
-                      "fill": "$bg-muted",
-                      "cornerRadius": 9,
-                      "layout": "vertical",
-                      "gap": 4,
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "icon",
-                          "id": "Tk3W2",
-                          "name": "商品详情 Mobile / 进度可查图标",
-                          "width": 17,
-                          "height": 17,
-                          "icon": "truck",
-                          "library": "lucide",
-                          "fill": "$brand"
-                        },
-                        {
-                          "type": "text",
-                          "id": "oLlKI",
-                          "name": "商品详情 Mobile / 进度可查文字",
-                          "fill": "$text-secondary",
-                          "content": "进度可查",
-                          "fontFamily": "$font-body",
-                          "fontSize": 10,
-                          "fontWeight": "700"
-                        }
-                      ]
-                    }
-                  ]
                 }
               ]
             }
@@ -64872,6 +65301,1314 @@
                           "fontFamily": "$font-body",
                           "fontSize": 11,
                           "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "zXfTY",
+      "x": 28920,
+      "y": 0,
+      "name": "R2-P03 / 商品评价必要关键状态",
+      "theme": {
+        "productTheme": "guofeng"
+      },
+      "clip": true,
+      "width": 1440,
+      "height": 900,
+      "fill": "$bg-app",
+      "layout": "vertical",
+      "gap": 20,
+      "padding": 32,
+      "children": [
+        {
+          "type": "frame",
+          "id": "IxhNE",
+          "name": "商品评价必要状态 / 标题栏",
+          "width": "fill_container",
+          "height": 48,
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "qBorI",
+              "name": "商品评价必要状态 / 标题",
+              "fill": "$text-primary",
+              "content": "商品评价必要关键状态",
+              "fontFamily": "$font-heading",
+              "fontSize": 28,
+              "fontWeight": "600"
+            },
+            {
+              "type": "frame",
+              "id": "cgQ4g",
+              "name": "商品评价必要状态 / 范围标签",
+              "gap": 8,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "w7Km7K",
+                  "name": "商品评价状态 / 局部区块",
+                  "height": 26,
+                  "fill": "$brand-soft",
+                  "cornerRadius": 13,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "HfKfZ",
+                      "name": "商品评价状态 / 局部区块 / 文字",
+                      "fill": "$brand",
+                      "content": "局部区块",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "gQvn0",
+                  "name": "商品评价状态 / 不复制路由",
+                  "height": 26,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 13,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "RfpwK",
+                      "name": "商品评价状态 / 不复制路由 / 文字",
+                      "fill": "$text-secondary",
+                      "content": "不复制完整路由",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "ZXeKM",
+                  "name": "商品评价状态 / CAS",
+                  "height": 26,
+                  "fill": "$action-soft",
+                  "cornerRadius": 13,
+                  "padding": [
+                    0,
+                    10
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "IuQPs",
+                      "name": "商品评价状态 / CAS / 文字",
+                      "fill": "$action",
+                      "content": "CAS 版本",
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "cyGLW",
+          "name": "商品评价必要状态 / 状态网格",
+          "width": "fill_container",
+          "height": 768,
+          "gap": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "wrL5r",
+              "name": "商品评价必要状态 / 第一列",
+              "width": 440,
+              "height": 768,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hv6EG",
+                  "name": "商品评价状态 / 真实零评价",
+                  "width": "fill_container",
+                  "height": 300,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-panel",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "hIElS",
+                      "name": "真实零评价 / 标题行",
+                      "width": "fill_container",
+                      "height": 30,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mqINI",
+                          "name": "真实零评价 / 标题",
+                          "fill": "$text-primary",
+                          "content": "真实零评价",
+                          "fontFamily": "$font-body",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "xueNV",
+                          "name": "真实零评价 / EMPTY",
+                          "height": 26,
+                          "fill": "$success-soft",
+                          "cornerRadius": 13,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "GtsjO",
+                              "name": "真实零评价 / EMPTY / 文字",
+                              "fill": "$success",
+                              "content": "EMPTY",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "eenTa",
+                      "name": "真实零评价 / 图标底",
+                      "width": 48,
+                      "height": 48,
+                      "fill": "$success-soft",
+                      "cornerRadius": 24,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "wGVBT",
+                          "name": "真实零评价 / 图标",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "message-square",
+                          "library": "lucide",
+                          "fill": "$success"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "Oi4yu",
+                      "name": "真实零评价 / 空态标题",
+                      "fill": "$text-primary",
+                      "content": "暂无购买评价",
+                      "fontFamily": "$font-body",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "u8WKAW",
+                      "name": "真实零评价 / 说明",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "请求已成功，当前可见评价集合确实为 0；不显示默认 5.0、示例评论或伪造星级。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P56KH",
+                      "name": "真实零评价 / 首个评价动作",
+                      "width": "fill_container",
+                      "height": 38,
+                      "fill": "$bg-surface",
+                      "cornerRadius": 19,
+                      "stroke": "$border-soft",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "WKlV0",
+                          "name": "真实零评价 / 首个评价动作 / 文字",
+                          "fill": "$text-secondary",
+                          "content": "完成购买后可成为首个评价者",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "URU9t",
+                  "name": "商品评价状态 / 无已完成购买资格",
+                  "width": "fill_container",
+                  "height": 452,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-panel",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ffunW",
+                      "name": "无购买资格 / 标题行",
+                      "width": "fill_container",
+                      "height": 30,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "T8gis",
+                          "name": "无购买资格 / 标题",
+                          "fill": "$text-primary",
+                          "content": "公开可读，当前不可写",
+                          "fontFamily": "$font-body",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "zAHS3",
+                          "name": "无购买资格 / READ ONLY",
+                          "height": 26,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 13,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "o87irA",
+                              "name": "无购买资格 / READ ONLY / 文字",
+                              "fill": "$text-secondary",
+                              "content": "READ ONLY",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "L6WpOh",
+                      "name": "无购买资格 / 公开评分摘要",
+                      "width": "fill_container",
+                      "height": 58,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 10,
+                      "padding": [
+                        0,
+                        14
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bomcH",
+                          "name": "无购买资格 / 评分",
+                          "fill": "$text-primary",
+                          "content": "★ 4.8",
+                          "fontFamily": "$font-body",
+                          "fontSize": 22,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "UClFi",
+                          "name": "无购买资格 / 评价数",
+                          "fill": "$text-secondary",
+                          "content": "36 条已购评价",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "kD43R",
+                      "name": "无购买资格 / 公开说明",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "匿名与未购买用户仍可阅读综合评分、五星分布和公开评价。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gshRo",
+                      "name": "无购买资格 / 权威资格说明",
+                      "width": "fill_container",
+                      "fill": "$warning-soft",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oIPBX",
+                          "name": "无购买资格 / 资格标题",
+                          "fill": "$text-primary",
+                          "content": "仅 Completed 订单可评价",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "W88EgT",
+                          "name": "无购买资格 / 资格正文",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "资格由服务端订单证据裁决；Pending、Paid、Failed 与 Refunded 都不放行。",
+                          "lineHeight": 1.5,
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "VXQ4t",
+                      "name": "无购买资格 / 查看订单",
+                      "width": "fill_container",
+                      "height": 38,
+                      "fill": "$bg-surface",
+                      "cornerRadius": 19,
+                      "stroke": "$border-soft",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "C5uOZY",
+                          "name": "无购买资格 / 查看订单 / 文字",
+                          "fill": "$text-secondary",
+                          "content": "查看我的订单",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "ekMzw",
+                      "name": "无购买资格 / 禁止说明",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "页面明确说明原因，不用 disabled 按钮代替错误语义。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U2DZm",
+              "name": "商品评价必要状态 / 第二列",
+              "width": 440,
+              "height": 768,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "eLy8O",
+                  "name": "商品评价状态 / dirty 离开保护",
+                  "width": "fill_container",
+                  "height": 360,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-panel",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "rt6FH",
+                      "name": "dirty 离开保护 / 标题行",
+                      "width": "fill_container",
+                      "height": 30,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kAVqv",
+                          "name": "dirty 离开保护 / 标题",
+                          "fill": "$text-primary",
+                          "content": "本人评价草稿",
+                          "fontFamily": "$font-body",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "G2ZFoR",
+                          "name": "dirty 离开保护 / UNSAVED",
+                          "height": 26,
+                          "fill": "$warning-soft",
+                          "cornerRadius": 13,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "dwf8b",
+                              "name": "dirty 离开保护 / UNSAVED / 文字",
+                              "fill": "$warning",
+                              "content": "UNSAVED",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "J7M9X",
+                      "name": "dirty 离开保护 / 五星选择",
+                      "width": "fill_container",
+                      "height": 34,
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "D8PTFA",
+                          "name": "dirty 离开保护 / 第 1 星",
+                          "width": 22,
+                          "height": 22,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "$warning"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "Jr6Dq",
+                          "name": "dirty 离开保护 / 第 2 星",
+                          "width": 22,
+                          "height": 22,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "$warning"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "g9gwr6",
+                          "name": "dirty 离开保护 / 第 3 星",
+                          "width": 22,
+                          "height": 22,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "$warning"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "f03sA",
+                          "name": "dirty 离开保护 / 第 4 星",
+                          "width": 22,
+                          "height": 22,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "$warning"
+                        },
+                        {
+                          "type": "icon",
+                          "id": "BF8fW",
+                          "name": "dirty 离开保护 / 第 5 星",
+                          "width": 22,
+                          "height": 22,
+                          "icon": "star",
+                          "library": "lucide",
+                          "fill": "$warning"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "fTecO",
+                      "name": "dirty 离开保护 / 评论草稿",
+                      "width": "fill_container",
+                      "height": 72,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 10,
+                      "stroke": "$border-soft",
+                      "strokeWidth": 1,
+                      "padding": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "ryKtQ",
+                          "name": "dirty 离开保护 / 评论草稿文字",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "细节很精致，准备补充包装体验……",
+                          "lineHeight": 1.5,
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "NLtwb",
+                      "name": "dirty 离开保护 / 离开确认",
+                      "width": "fill_container",
+                      "fill": "$warning-soft",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 5,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "tS2EC",
+                          "name": "dirty 离开保护 / 离开标题",
+                          "fill": "$text-primary",
+                          "content": "离开此页？",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "m83CM",
+                          "name": "dirty 离开保护 / 离开说明",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "未保存星级和评论会丢失；保存中锁定关闭。",
+                          "lineHeight": 1.5,
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aRrI8",
+                      "name": "dirty 离开保护 / 动作",
+                      "width": "fill_container",
+                      "height": 38,
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "J74uh",
+                          "name": "dirty 离开保护 / 留在页面",
+                          "width": "fill_container",
+                          "height": 38,
+                          "fill": "$action",
+                          "cornerRadius": 19,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "mjkNN",
+                              "name": "dirty 离开保护 / 留在页面 / 文字",
+                              "fill": "$text-on-action",
+                              "content": "留在页面",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FYtTd",
+                          "name": "dirty 离开保护 / 放弃离开",
+                          "width": "fill_container",
+                          "height": 38,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 19,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "r4C6j",
+                              "name": "dirty 离开保护 / 放弃离开 / 文字",
+                              "fill": "$text-secondary",
+                              "content": "放弃并离开",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "devil",
+                  "name": "商品评价状态 / CAS 409",
+                  "width": "fill_container",
+                  "height": 392,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-panel",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "U6UEf",
+                      "name": "CAS 409 / 标题行",
+                      "width": "fill_container",
+                      "height": 30,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "s4Qk99",
+                          "name": "CAS 409 / 标题",
+                          "fill": "$text-primary",
+                          "content": "评价已发生变化",
+                          "fontFamily": "$font-body",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "d6RzX",
+                          "name": "CAS 409 / CONFLICT",
+                          "height": 26,
+                          "fill": "$danger-soft",
+                          "cornerRadius": 13,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "E0APz",
+                              "name": "CAS 409 / CONFLICT / 文字",
+                              "fill": "$danger",
+                              "content": "409 CONFLICT",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "ThCQ7",
+                      "name": "CAS 409 / 说明",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "提交时 ExpectedVersion=2，服务端当前版本=3。不会覆盖另一窗口或治理动作。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pRSiP",
+                      "name": "CAS 409 / 版本比较",
+                      "width": "fill_container",
+                      "height": 90,
+                      "fill": "$bg-muted",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 7,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "x4w2Rm",
+                          "name": "CAS 409 / 本地版本",
+                          "width": "fill_container",
+                          "height": 24,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "EdMM3",
+                              "name": "CAS 409 / 本地标签",
+                              "fill": "$text-secondary",
+                              "content": "本地草稿",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "bFuGI",
+                              "name": "CAS 409 / 本地值",
+                              "fill": "$warning",
+                              "content": "5★ · 待提交",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "WMPD2",
+                          "name": "CAS 409 / 服务端版本",
+                          "width": "fill_container",
+                          "height": 24,
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "yI3xT",
+                              "name": "CAS 409 / 服务端标签",
+                              "fill": "$text-secondary",
+                              "content": "服务端当前",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            },
+                            {
+                              "type": "text",
+                              "id": "PKGbT",
+                              "name": "CAS 409 / 服务端值",
+                              "fill": "$success",
+                              "content": "4★ · v3",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "c3jfy",
+                      "name": "CAS 409 / 草稿保留",
+                      "fill": "$danger",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "本地星级与评论保留在编辑器中；先比较差异或重新加载，再显式重试。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "i2zT7g",
+                      "name": "CAS 409 / 动作",
+                      "width": "fill_container",
+                      "height": 38,
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "y6oZ0",
+                          "name": "CAS 409 / 比较差异",
+                          "width": "fill_container",
+                          "height": 38,
+                          "fill": "$action",
+                          "cornerRadius": 19,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "oc8L5",
+                              "name": "CAS 409 / 比较差异 / 文字",
+                              "fill": "$text-on-action",
+                              "content": "比较差异",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "NlOUX",
+                          "name": "CAS 409 / 重新加载",
+                          "width": "fill_container",
+                          "height": 38,
+                          "fill": "$bg-surface",
+                          "cornerRadius": 19,
+                          "stroke": "$border-soft",
+                          "strokeWidth": 1,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "VeMXk",
+                              "name": "CAS 409 / 重新加载 / 文字",
+                              "fill": "$text-secondary",
+                              "content": "重新加载",
+                              "fontFamily": "$font-body",
+                              "fontSize": 11,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "VDySh",
+              "name": "商品评价必要状态 / 第三列",
+              "width": 464,
+              "height": 768,
+              "layout": "vertical",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "s2Vke",
+                  "name": "商品评价状态 / unavailable 与 stale",
+                  "width": "fill_container",
+                  "height": 400,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-panel",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "w2ypD",
+                      "name": "unavailable stale / 标题行",
+                      "width": "fill_container",
+                      "height": 30,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jE4W5",
+                          "name": "unavailable stale / 标题",
+                          "fill": "$text-primary",
+                          "content": "评价区局部降级",
+                          "fontFamily": "$font-body",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "JF3sh",
+                          "name": "unavailable stale / DEGRADED",
+                          "height": 26,
+                          "fill": "$bg-muted",
+                          "cornerRadius": 13,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "XUn0K",
+                              "name": "unavailable stale / DEGRADED / 文字",
+                              "fill": "$text-secondary",
+                              "content": "DEGRADED",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "cD0Az",
+                      "name": "unavailable stale / unavailable 提示",
+                      "width": "fill_container",
+                      "fill": "$danger-soft",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        11,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "h0R5Y",
+                          "name": "unavailable stale / unavailable 标题",
+                          "fill": "$text-primary",
+                          "content": "评价暂不可用",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "MuUMe",
+                          "name": "unavailable stale / unavailable 说明",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "综合评分与列表读取失败；商品主资料、价格与购买动作仍按各自权威状态工作。",
+                          "lineHeight": 1.5,
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "P2uCq3",
+                      "name": "unavailable stale / stale 提示",
+                      "width": "fill_container",
+                      "fill": "$warning-soft",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        11,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "MUpxf",
+                          "name": "unavailable stale / stale 标题",
+                          "fill": "$text-primary",
+                          "content": "上次读取 · 可能已过期",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "z5POoT",
+                          "name": "unavailable stale / stale 说明",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "可保留最后成功的 4.8 / 36 条并明确标注时间；不得假装实时或静默刷新。",
+                          "lineHeight": 1.5,
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IIrgs",
+                      "name": "unavailable stale / 重试读取",
+                      "width": "fill_container",
+                      "height": 38,
+                      "fill": "$action",
+                      "cornerRadius": 19,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bNZio",
+                          "name": "unavailable stale / 重试读取 / 文字",
+                          "fill": "$text-on-action",
+                          "content": "重试评价读取",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "LS2Us",
+                      "name": "unavailable stale / 边界",
+                      "fill": "$text-muted",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "评价失败不覆盖商品主体 404 / unavailable，也不阻断合法举报。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 10,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "I4yPL",
+                  "name": "商品评价状态 / 治理隐藏",
+                  "width": "fill_container",
+                  "height": 352,
+                  "fill": "$bg-surface",
+                  "cornerRadius": "$radius-panel",
+                  "stroke": "$border-soft",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": 10,
+                  "padding": 18,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "kUfSY",
+                      "name": "治理隐藏 / 标题行",
+                      "width": "fill_container",
+                      "height": 30,
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "gc4bj",
+                          "name": "治理隐藏 / 标题",
+                          "fill": "$text-primary",
+                          "content": "评价已被治理隐藏",
+                          "fontFamily": "$font-body",
+                          "fontSize": 18,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FDIs9",
+                          "name": "治理隐藏 / HIDDEN",
+                          "height": 26,
+                          "fill": "$danger-soft",
+                          "cornerRadius": 13,
+                          "padding": [
+                            0,
+                            10
+                          ],
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "SSJ1h",
+                              "name": "治理隐藏 / HIDDEN / 文字",
+                              "fill": "$danger",
+                              "content": "HIDDEN",
+                              "fontFamily": "$font-body",
+                              "fontSize": 10,
+                              "fontWeight": "700"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ojjFB",
+                      "name": "治理隐藏 / 图标底",
+                      "width": 46,
+                      "height": 46,
+                      "fill": "$danger-soft",
+                      "cornerRadius": 23,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon",
+                          "id": "Amj2a",
+                          "name": "治理隐藏 / 图标",
+                          "width": 20,
+                          "height": 20,
+                          "icon": "eye-off",
+                          "library": "lucide",
+                          "fill": "$danger"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "FGpbm",
+                      "name": "治理隐藏 / 说明",
+                      "fill": "$text-secondary",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "该条评价不再进入公开列表、评价数量、平均分或五星分布；本人也不能绕过治理动作恢复。",
+                      "lineHeight": 1.5,
+                      "fontFamily": "$font-body",
+                      "fontSize": 11,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hZLiV",
+                      "name": "治理隐藏 / 本人状态",
+                      "width": "fill_container",
+                      "fill": "$bg-muted",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 4,
+                      "padding": [
+                        10,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "IjjQ1",
+                          "name": "治理隐藏 / 本人状态标题",
+                          "fill": "$text-primary",
+                          "content": "当前不可修改",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "text",
+                          "id": "TwhOC",
+                          "name": "治理隐藏 / 本人状态说明",
+                          "fill": "$text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "保留治理案件与申诉入口；恢复必须匹配原动作和 CAS 结果版本。",
+                          "lineHeight": 1.5,
+                          "fontFamily": "$font-body",
+                          "fontSize": 10,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "j9U7ba",
+                      "name": "治理隐藏 / 查看治理结果",
+                      "width": "fill_container",
+                      "height": 38,
+                      "fill": "$bg-surface",
+                      "cornerRadius": 19,
+                      "stroke": "$border-soft",
+                      "strokeWidth": 1,
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "o2iRsf",
+                          "name": "治理隐藏 / 查看治理结果 / 文字",
+                          "fill": "$text-secondary",
+                          "content": "查看治理结果",
+                          "fontFamily": "$font-body",
+                          "fontSize": 11,
+                          "fontWeight": "700"
                         }
                       ]
                     }

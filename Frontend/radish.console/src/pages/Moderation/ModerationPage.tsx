@@ -391,7 +391,7 @@ const ModerationCasesWorkspace = () => {
       return;
     }
 
-    const requiresTargetRevision = ['Post', 'Comment', 'PostAnswer', 'Product']
+    const requiresTargetRevision = ['Post', 'Comment', 'PostAnswer', 'Product', 'ProductReview']
       .includes(detail.voCase.voTargetType);
     if (
       decisionDraft.targetDisposition === 2

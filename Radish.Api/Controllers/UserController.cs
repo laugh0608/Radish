@@ -46,6 +46,7 @@ public class UserController : ControllerBase
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly IUserAdornmentService _userAdornmentService;
     private readonly IPetService _petService;
+    private readonly IExperienceService _experienceService;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -58,7 +59,8 @@ public class UserController : ControllerBase
         IAttachmentService attachmentService,
         IOptions<TimeOptions> timeOptions,
         IUserAdornmentService userAdornmentService,
-        IPetService petService)
+        IPetService petService,
+        IExperienceService experienceService)
     {
         _userService = userService;
         _currentUserAccessor = currentUserAccessor;
@@ -70,6 +72,7 @@ public class UserController : ControllerBase
         _timeOptions = timeOptions.Value;
         _userAdornmentService = userAdornmentService;
         _petService = petService;
+        _experienceService = experienceService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -666,6 +669,7 @@ public class UserController : ControllerBase
         var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
         var adornment = await _userAdornmentService.GetUserAdornmentAsync(user.Uuid);
         var pet = await _petService.GetPublicCardAsync(user.Uuid, user.VoTenantId);
+        var publicLevel = await ResolvePublicLevelAsync(user.Uuid);
 
         var profile = new UserPublicProfileVo
         {
@@ -676,6 +680,8 @@ public class UserController : ControllerBase
             VoDisplayName = user.VoDisplayName,
             VoDisplayHandle = user.VoDisplayHandle,
             VoCreateTime = user.VoCreateTime,
+            VoCurrentLevel = publicLevel.Level,
+            VoCurrentLevelName = publicLevel.LevelName,
             VoAvatarUrl = avatar?.Url,
             VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,
             VoAdornment = adornment,
@@ -689,6 +695,18 @@ public class UserController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = profile
         };
+    }
+
+    private async Task<(int Level, string LevelName)> ResolvePublicLevelAsync(long userId)
+    {
+        var experiences = await _experienceService.GetUserExperiencesAsync([userId]);
+        if (experiences.TryGetValue(userId, out var experience))
+        {
+            return (experience.VoCurrentLevel, experience.VoCurrentLevelName);
+        }
+
+        var initialLevel = await _experienceService.GetLevelConfigAsync(0);
+        return (0, initialLevel?.VoLevelName ?? "凡人");
     }
 
     /// <summary>

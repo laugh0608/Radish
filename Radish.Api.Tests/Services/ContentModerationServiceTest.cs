@@ -350,6 +350,70 @@ public class ContentModerationServiceTest
         createdReport.TargetSnapshotSummary.ShouldBe("创建时评论内容");
     }
 
+    [Fact]
+    public async Task SubmitReportAsync_ShouldPersistProductReviewSnapshotAndParentProduct()
+    {
+        var contentReportRepository = new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict);
+        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
+        var productReviewRepository = new Mock<IBaseRepository<ProductReview>>(MockBehavior.Strict);
+        productReviewRepository
+            .Setup(repository => repository.QueryFirstAsync(
+                It.IsAny<Expression<Func<ProductReview, bool>>?>()))
+            .ReturnsAsync(new ProductReview
+            {
+                Id = 81001,
+                TenantId = 5,
+                ProductId = 71001,
+                UserId = 31001,
+                AuthorName = "review-author",
+                Rating = 4,
+                Comment = "评价快照正文",
+                Version = 3
+            });
+        productRepository
+            .Setup(repository => repository.QueryFirstAsync(
+                It.IsAny<Expression<Func<Product, bool>>?>()))
+            .ReturnsAsync(new Product
+            {
+                Id = 71001,
+                TenantId = 5,
+                Name = "青玉头像框"
+            });
+        contentReportRepository
+            .Setup(repository => repository.QueryExistsAsync(
+                It.IsAny<Expression<Func<ContentReport, bool>>>() ))
+            .ReturnsAsync(false);
+        ContentReport? createdReport = null;
+        contentReportRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<ContentReport>()))
+            .Callback<ContentReport>(report => createdReport = report)
+            .ReturnsAsync(91001);
+        var service = CreateService(
+            contentReportRepository: contentReportRepository,
+            productRepository: productRepository,
+            productReviewRepository: productReviewRepository);
+
+        var reportId = await service.SubmitReportAsync(
+            new SubmitContentReportDto
+            {
+                TargetType = "ProductReview",
+                TargetContentId = 81001,
+                ReasonType = "Abuse"
+            },
+            41001,
+            "reporter",
+            5);
+
+        reportId.ShouldBe(91001);
+        createdReport.ShouldNotBeNull();
+        createdReport!.ReportTargetType.ShouldBe((int)ContentReportTargetTypeEnum.ProductReview);
+        createdReport.TargetContentId.ShouldBe(81001);
+        createdReport.TargetSnapshotProductId.ShouldBe(71001);
+        createdReport.TargetUserId.ShouldBe(31001);
+        createdReport.TargetSnapshotTitle.ShouldBe("青玉头像框");
+        createdReport.TargetSnapshotSummary.ShouldBe("评价快照正文");
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -1307,12 +1371,14 @@ public class ContentModerationServiceTest
         Mock<IChannelMessageRepository>? channelMessageRepository = null,
         Mock<IBaseRepository<PostQuickReply>>? postQuickReplyRepository = null,
         Mock<IContentModerationCaseRepository>? moderationCaseRepository = null,
-        Mock<IChatChannelAccessService>? chatAccessService = null)
+        Mock<IChatChannelAccessService>? chatAccessService = null,
+        Mock<IBaseRepository<Product>>? productRepository = null,
+        Mock<IBaseRepository<ProductReview>>? productReviewRepository = null)
     {
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var basePostRepository = postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var baseCommentRepository = commentRepository ?? new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
-        var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
+        var baseProductRepository = productRepository ?? new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
         var basePostQuickReplyRepository = postQuickReplyRepository ?? new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
 
@@ -1324,9 +1390,10 @@ public class ContentModerationServiceTest
             baseCommentRepository.Object,
             (channelMessageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict)).Object,
             (chatAccessService ?? new Mock<IChatChannelAccessService>(MockBehavior.Strict)).Object,
-            productRepository.Object,
+            baseProductRepository.Object,
             basePostQuickReplyRepository.Object,
             userRepository.Object,
-            moderationCaseRepository: moderationCaseRepository?.Object);
+            moderationCaseRepository: moderationCaseRepository?.Object,
+            productReviewRepository: productReviewRepository?.Object);
     }
 }

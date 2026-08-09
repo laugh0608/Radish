@@ -210,6 +210,23 @@ export {
 } from './post-bookmark-client';
 
 export type {
+  ProductReviewLongId,
+  ProductReviewErrorCodeValue,
+  ProductReviewVo,
+  ProductReviewSummaryVo,
+  ProductReviewPageVo,
+  MyProductReviewVo,
+  UpsertProductReviewRequest,
+} from './product-review-contract';
+export { ProductReviewErrorCode } from './product-review-contract';
+export {
+  getProductReviews,
+  getMyProductReview,
+  upsertProductReview,
+  deleteProductReview,
+} from './product-review-client';
+
+export type {
   PublicDiscoverItemKind,
   PublicDiscoverTargetKind,
   PublicDiscoverMetricKind,

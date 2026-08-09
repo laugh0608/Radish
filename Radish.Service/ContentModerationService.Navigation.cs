@@ -61,6 +61,7 @@ public partial class ContentModerationService
             ContentReportTargetTypeEnum.Product => await ResolveProductTargetSnapshotAsync(targetContentId),
             ContentReportTargetTypeEnum.PostQuickReply => await ResolvePostQuickReplyTargetSnapshotAsync(targetContentId),
             ContentReportTargetTypeEnum.PostAnswer => await ResolvePostAnswerTargetSnapshotAsync(targetContentId),
+            ContentReportTargetTypeEnum.ProductReview => await ResolveProductReviewTargetSnapshotAsync(targetContentId),
             _ => throw new ArgumentException("不支持的举报目标类型")
         };
     }
@@ -141,6 +142,7 @@ public partial class ContentModerationService
         {
             TargetUserId = product.CreateId < 0 ? -1 : product.CreateId,
             TargetUserName = product.CreateBy,
+            TargetProductId = product.Id,
             SnapshotTitle = BuildTitleSnapshot(product.Name),
             SnapshotSummary = BuildTextSnapshot(product.Description)
         };
@@ -192,6 +194,41 @@ public partial class ContentModerationService
         };
     }
 
+    private async Task<ResolvedReportTargetSnapshot> ResolveProductReviewTargetSnapshotAsync(long reviewId)
+    {
+        if (_productReviewRepository == null)
+        {
+            throw new InvalidOperationException("商品评价治理仓储未注册");
+        }
+
+        var review = await _productReviewRepository.QueryFirstAsync(item =>
+            item.Id == reviewId && !item.IsDeleted);
+        if (review == null)
+        {
+            throw new InvalidOperationException("目标商品评价不存在");
+        }
+
+        var product = await _productRepository.QueryFirstAsync(item =>
+            item.Id == review.ProductId && !item.IsDeleted);
+        if (product == null)
+        {
+            throw new InvalidOperationException("评价所属商品不存在");
+        }
+
+        return new ResolvedReportTargetSnapshot
+        {
+            TargetUserId = review.UserId,
+            TargetUserName = review.AuthorName,
+            TargetProductId = review.ProductId,
+            SnapshotTitle = BuildTitleSnapshot(product.Name),
+            SnapshotSummary = BuildTextSnapshot(
+                string.IsNullOrWhiteSpace(review.Comment)
+                    ? $"{review.Rating} 星已购评价"
+                    : review.Comment),
+            ContentRevision = review.Version
+        };
+    }
+
     private async Task<string?> ResolvePostTitleAsync(long postId)
     {
         if (postId <= 0)
@@ -214,6 +251,7 @@ public partial class ContentModerationService
         public string? TargetUserName { get; init; }
         public long? TargetPostId { get; init; }
         public long? TargetChannelId { get; init; }
+        public long? TargetProductId { get; init; }
         public string? SnapshotTitle { get; init; }
         public string? SnapshotSummary { get; init; }
         public int? ContentRevision { get; init; }
@@ -227,6 +265,7 @@ public partial class ContentModerationService
         public long? TargetCommentId { get; init; }
         public long? TargetChannelId { get; init; }
         public long? TargetMessageId { get; init; }
+        public long? TargetProductId { get; init; }
         public string NavigationStatus { get; init; } = TargetNavigationStatusUnavailable;
         public string? NavigationMessage { get; init; }
         public string? SnapshotTitle { get; init; }
@@ -289,6 +328,14 @@ public partial class ContentModerationService
         public BenefitType? BenefitType { get; init; }
         public ConsumableType? ConsumableType { get; init; }
         public string? SnapshotTitle { get; init; }
+        public string? SnapshotSummary { get; init; }
+    }
+
+    private sealed class ProductReviewNavigationRecord
+    {
+        public long ReviewId { get; init; }
+        public long ProductId { get; init; }
+        public bool IsAvailable { get; init; }
         public string? SnapshotSummary { get; init; }
     }
 
@@ -382,10 +429,18 @@ public partial class ContentModerationService
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostAnswer
                 ? report.TargetContentId
                 : 0));
-        var productMap = await BuildProductNavigationMapAsync(reports.Select(report =>
-            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
+        var productReviewMap = await BuildProductReviewNavigationMapAsync(reports.Select(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.ProductReview
                 ? report.TargetContentId
                 : 0));
+        var productMap = await BuildProductNavigationMapAsync(reports.SelectMany(report =>
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
+                ? new[] { report.TargetContentId }
+                : report.TargetSnapshotProductId.HasValue
+                    ? new[] { report.TargetSnapshotProductId.Value }
+                    : productReviewMap.TryGetValue(report.TargetContentId, out var review)
+                        ? new[] { review.ProductId }
+                        : Array.Empty<long>()));
 
         return reports.ToDictionary(
             report => report.Id,
@@ -396,7 +451,8 @@ public partial class ContentModerationService
                 commentNavigationMap,
                 quickReplyNavigationMap,
                 answerNavigationMap,
-                productMap));
+                productMap,
+                productReviewMap));
     }
 
     private async Task<ReportTargetNavigationSnapshot> BuildReportNavigationSnapshotAsync(ContentReport report)
@@ -421,10 +477,17 @@ public partial class ContentModerationService
             report.ReportTargetType == (int)ContentReportTargetTypeEnum.PostAnswer
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
-        var productMap = await BuildProductNavigationMapAsync(
-            report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
+        var productReviewMap = await BuildProductReviewNavigationMapAsync(
+            report.ReportTargetType == (int)ContentReportTargetTypeEnum.ProductReview
                 ? new[] { report.TargetContentId }
                 : Array.Empty<long>());
+        var productId = report.ReportTargetType == (int)ContentReportTargetTypeEnum.Product
+            ? report.TargetContentId
+            : report.TargetSnapshotProductId
+              ?? productReviewMap.GetValueOrDefault(report.TargetContentId)?.ProductId
+              ?? 0;
+        var productMap = await BuildProductNavigationMapAsync(
+            productId > 0 ? new[] { productId } : Array.Empty<long>());
 
         return BuildReportTargetNavigationSnapshot(
             report,
@@ -433,7 +496,36 @@ public partial class ContentModerationService
             commentNavigationMap,
             quickReplyNavigationMap,
             answerNavigationMap,
-            productMap);
+            productMap,
+            productReviewMap);
+    }
+
+    private async Task<Dictionary<long, ProductReviewNavigationRecord>> BuildProductReviewNavigationMapAsync(
+        IEnumerable<long> reviewIds)
+    {
+        var normalizedReviewIds = reviewIds.Where(id => id > 0).Distinct().ToList();
+        if (normalizedReviewIds.Count == 0 || _productReviewRepository == null)
+        {
+            return new Dictionary<long, ProductReviewNavigationRecord>();
+        }
+
+        var reviews = await _productReviewRepository.QueryAsync(item => normalizedReviewIds.Contains(item.Id));
+        return reviews
+            .GroupBy(item => item.Id)
+            .ToDictionary(group => group.Key, group =>
+            {
+                var item = group.First();
+                return new ProductReviewNavigationRecord
+                {
+                    ReviewId = item.Id,
+                    ProductId = item.ProductId,
+                    IsAvailable = !item.IsDeleted,
+                    SnapshotSummary = BuildTextSnapshot(
+                        string.IsNullOrWhiteSpace(item.Comment)
+                            ? $"{item.Rating} 星已购评价"
+                            : item.Comment)
+                };
+            });
     }
 
     private async Task<Dictionary<long, ForumPostNavigationRecord>> BuildPostNavigationMapAsync(IEnumerable<long> postIds)
@@ -751,6 +843,24 @@ public partial class ContentModerationService
             : null;
     }
 
+    private static long? ResolveSnapshotProductId(ContentReport report, long? currentProductId = null)
+    {
+        if (currentProductId.HasValue && currentProductId.Value > 0)
+        {
+            return currentProductId.Value;
+        }
+
+        if (report.TargetSnapshotProductId.HasValue && report.TargetSnapshotProductId.Value > 0)
+        {
+            return report.TargetSnapshotProductId.Value;
+        }
+
+        return (ContentReportTargetTypeEnum)report.ReportTargetType == ContentReportTargetTypeEnum.Product &&
+               report.TargetContentId > 0
+            ? report.TargetContentId
+            : null;
+    }
+
     private static string? ResolveSnapshotTitle(ContentReport report, string? currentSnapshotTitle)
     {
         return !string.IsNullOrWhiteSpace(report.TargetSnapshotTitle)
@@ -769,6 +879,7 @@ public partial class ContentModerationService
     {
         return report.TargetSnapshotPostId.HasValue
             || report.TargetSnapshotChannelId.HasValue
+            || report.TargetSnapshotProductId.HasValue
             || !string.IsNullOrWhiteSpace(report.TargetSnapshotTitle)
             || !string.IsNullOrWhiteSpace(report.TargetSnapshotSummary);
     }
@@ -780,7 +891,8 @@ public partial class ContentModerationService
         IReadOnlyDictionary<long, ForumCommentNavigationRecord>? commentNavigationMap = null,
         IReadOnlyDictionary<long, ForumQuickReplyNavigationRecord>? quickReplyNavigationMap = null,
         IReadOnlyDictionary<long, ForumAnswerNavigationRecord>? answerNavigationMap = null,
-        IReadOnlyDictionary<long, ProductNavigationRecord>? productMap = null)
+        IReadOnlyDictionary<long, ProductNavigationRecord>? productMap = null,
+        IReadOnlyDictionary<long, ProductReviewNavigationRecord>? productReviewMap = null)
     {
         var targetType = (ContentReportTargetTypeEnum)report.ReportTargetType;
         var targetTypeName = ToReportTargetTypeName(report.ReportTargetType);
@@ -803,6 +915,45 @@ public partial class ContentModerationService
                 NavigationMessage = isPostAvailable ? null : "帖子已删除或不存在",
                 SnapshotTitle = ResolveSnapshotTitle(report, postNavigation?.SnapshotTitle),
                 SnapshotSummary = ResolveSnapshotSummary(report, postNavigation?.SnapshotSummary)
+            };
+        }
+
+
+        if (targetType == ContentReportTargetTypeEnum.ProductReview)
+        {
+            ProductReviewNavigationRecord? review = null;
+            if (productReviewMap != null)
+            {
+                productReviewMap.TryGetValue(report.TargetContentId, out review);
+            }
+            var productId = ResolveSnapshotProductId(report, review?.ProductId);
+            ProductNavigationRecord? product = null;
+            if (productId.HasValue && productMap != null)
+            {
+                productMap.TryGetValue(productId.Value, out product);
+            }
+
+            var productAvailable = product is { IsDeleted: false, IsEnabled: true } &&
+                                   !ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(
+                                       product.ProductType,
+                                       product.BenefitType,
+                                       product.ConsumableType);
+            var reviewAvailable = review?.IsAvailable == true;
+            return new ReportTargetNavigationSnapshot
+            {
+                TargetTypeName = targetTypeName,
+                TargetContentId = report.TargetContentId,
+                TargetProductId = productId,
+                NavigationStatus = productAvailable
+                    ? reviewAvailable ? TargetNavigationStatusReady : TargetNavigationStatusFallback
+                    : TargetNavigationStatusUnavailable,
+                NavigationMessage = productAvailable
+                    ? reviewAvailable
+                        ? "可从商品详情评价区回看"
+                        : "评价已限制或删除，已降级为所属商品回看"
+                    : "评价所属商品已不可用",
+                SnapshotTitle = ResolveSnapshotTitle(report, product?.SnapshotTitle),
+                SnapshotSummary = ResolveSnapshotSummary(report, review?.SnapshotSummary)
             };
         }
 
@@ -948,6 +1099,7 @@ public partial class ContentModerationService
                 {
                     TargetTypeName = targetTypeName,
                     TargetContentId = report.TargetContentId,
+                    TargetProductId = report.TargetContentId,
                     NavigationStatus = TargetNavigationStatusUnavailable,
                     NavigationMessage = "商品已删除或不存在",
                     SnapshotTitle = ResolveSnapshotTitle(report, null),
@@ -979,6 +1131,7 @@ public partial class ContentModerationService
             {
                 TargetTypeName = targetTypeName,
                 TargetContentId = report.TargetContentId,
+                TargetProductId = report.TargetContentId,
                 NavigationStatus = navigationStatus,
                 NavigationMessage = navigationMessage,
                 SnapshotTitle = ResolveSnapshotTitle(report, product.SnapshotTitle),
@@ -1034,6 +1187,7 @@ public partial class ContentModerationService
             VoTargetCommentId = navigation.TargetCommentId,
             VoTargetChannelId = navigation.TargetChannelId,
             VoTargetMessageId = navigation.TargetMessageId,
+            VoTargetProductId = navigation.TargetProductId,
             VoTargetNavigationStatus = navigation.NavigationStatus,
             VoTargetNavigationMessage = navigation.NavigationMessage,
             VoTargetSnapshotTitle = navigation.SnapshotTitle,
@@ -1075,6 +1229,7 @@ public partial class ContentModerationService
             VoSourceReportTargetCommentId = sourceNavigation?.TargetCommentId,
             VoSourceReportTargetChannelId = sourceNavigation?.TargetChannelId,
             VoSourceReportTargetMessageId = sourceNavigation?.TargetMessageId,
+            VoSourceReportTargetProductId = sourceNavigation?.TargetProductId,
             VoSourceReportTargetNavigationStatus = sourceNavigation?.NavigationStatus ?? TargetNavigationStatusUnavailable,
             VoSourceReportTargetNavigationMessage = sourceNavigation?.NavigationMessage,
             VoSourceReportTargetSnapshotTitle = sourceNavigation?.SnapshotTitle,

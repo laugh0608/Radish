@@ -74,5 +74,6 @@ test('治理 URL 解析应拒绝非法公开标识、枚举与分页', () => {
     'PostQuickReply',
     'ChatMessage',
     'Product',
+    'ProductReview',
   ]);
 });

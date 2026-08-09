@@ -457,7 +457,12 @@ public sealed partial class ContentModerationCaseRepository
                         targetAction,
                         targetActionResult,
                         targetActionResult == "Restricted",
-                        command.ExpectedTargetVersion,
+                        targetActionResult == "Restricted" &&
+                        moderationCase.TargetType is
+                            (int)ContentReportTargetTypeEnum.Product or
+                            (int)ContentReportTargetTypeEnum.ProductReview
+                            ? command.ExpectedTargetVersion + 1
+                            : command.ExpectedTargetVersion,
                         command.NowUtc);
                     await DbProtectedClient.Updateable(targetAction).ExecuteCommandAsync();
                 }
@@ -964,6 +969,7 @@ public sealed partial class ContentModerationCaseRepository
             ContentReportTargetTypeEnum.PostQuickReply => await RestrictQuickReplyAsync(moderationCase, targetActionId, command),
             ContentReportTargetTypeEnum.PostAnswer => await RestrictAnswerAsync(moderationCase, targetActionId, command),
             ContentReportTargetTypeEnum.Product => await RestrictProductAsync(moderationCase, targetActionId, command),
+            ContentReportTargetTypeEnum.ProductReview => await RestrictProductReviewAsync(moderationCase, targetActionId, command),
             _ => throw new ContentModerationTargetActionException("Unsupported")
         };
     }
@@ -1265,6 +1271,55 @@ public sealed partial class ContentModerationCaseRepository
                 item.TenantId == command.TenantId &&
                 item.Version == command.ExpectedTargetVersion.Value &&
                 item.IsOnSale &&
+                !item.IsDeleted)
+            .ExecuteCommandAsync();
+        if (affected != 1)
+        {
+            throw new ContentModerationTargetActionException("VersionConflict");
+        }
+
+        return "Restricted";
+    }
+
+    private async Task<string> RestrictProductReviewAsync(
+        ContentModerationCase moderationCase,
+        long targetActionId,
+        ContentModerationCaseReviewWriteCommand command)
+    {
+        var review = await DbProtectedClient.Queryable<ProductReview>()
+            .Where(item =>
+                item.Id == moderationCase.TargetContentId &&
+                item.TenantId == command.TenantId)
+            .FirstAsync();
+        if (review == null)
+        {
+            throw new ContentModerationTargetActionException("TargetUnavailable");
+        }
+        if (review.IsDeleted)
+        {
+            return "AlreadyRestricted";
+        }
+        if (!command.ExpectedTargetVersion.HasValue || review.Version != command.ExpectedTargetVersion.Value)
+        {
+            throw new ContentModerationTargetActionException("VersionConflict");
+        }
+
+        var affected = await DbProtectedClient.Updateable<ProductReview>()
+            .SetColumns(item => new ProductReview
+            {
+                IsDeleted = true,
+                ModerationTargetActionId = targetActionId,
+                DeletedAt = command.NowUtc,
+                DeletedBy = command.OperatorName,
+                Version = item.Version + 1,
+                ModifyTime = command.NowUtc,
+                ModifyBy = command.OperatorName,
+                ModifyId = command.OperatorUserId
+            })
+            .Where(item =>
+                item.Id == moderationCase.TargetContentId &&
+                item.TenantId == command.TenantId &&
+                item.Version == command.ExpectedTargetVersion.Value &&
                 !item.IsDeleted)
             .ExecuteCommandAsync();
         if (affected != 1)

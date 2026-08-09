@@ -10,6 +10,7 @@ export const MODERATION_TARGET_TYPES = [
   'PostQuickReply',
   'ChatMessage',
   'Product',
+  'ProductReview',
 ] as const satisfies readonly ContentModerationTargetType[];
 
 export function parseModerationCasePublicId(value: string | null): string | undefined {

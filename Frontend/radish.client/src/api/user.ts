@@ -66,6 +66,8 @@ export interface PublicUserProfile {
   voDisplayName?: string | null;
   voDisplayHandle?: string | null;
   voCreateTime: string;
+  voCurrentLevel: number;
+  voCurrentLevelName: string;
   voAvatarUrl?: string | null;
   voAvatarThumbnailUrl?: string | null;
   voAdornment?: UserAdornment | null;

@@ -33,6 +33,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
     private readonly IBaseRepository<PostAnswer>? _postAnswerRepository;
+    private readonly IBaseRepository<ProductReview>? _productReviewRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
     private readonly IContentModerationCaseRepository? _moderationCaseRepository;
@@ -50,7 +51,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IBaseRepository<User> userRepository,
         IUnitOfWorkManage? unitOfWorkManage = null,
         IContentModerationCaseRepository? moderationCaseRepository = null,
-        IBaseRepository<PostAnswer>? postAnswerRepository = null)
+        IBaseRepository<PostAnswer>? postAnswerRepository = null,
+        IBaseRepository<ProductReview>? productReviewRepository = null)
         : base(mapper, baseRepository)
     {
         _contentReportRepository = baseRepository;
@@ -62,6 +64,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         _productRepository = productRepository;
         _postQuickReplyRepository = postQuickReplyRepository;
         _postAnswerRepository = postAnswerRepository;
+        _productReviewRepository = productReviewRepository;
         _userRepository = userRepository;
         _unitOfWorkManage = unitOfWorkManage;
         _moderationCaseRepository = moderationCaseRepository;
@@ -116,6 +119,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             TargetContentId = dto.TargetContentId,
             TargetSnapshotPostId = targetSnapshot.TargetPostId,
             TargetSnapshotChannelId = targetSnapshot.TargetChannelId,
+            TargetSnapshotProductId = targetSnapshot.TargetProductId,
             TargetSnapshotTitle = targetSnapshot.SnapshotTitle,
             TargetSnapshotSummary = targetSnapshot.SnapshotSummary,
             TargetUserId = targetSnapshot.TargetUserId,
@@ -850,7 +854,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             "product" => ContentReportTargetTypeEnum.Product,
             "postquickreply" => ContentReportTargetTypeEnum.PostQuickReply,
             "postanswer" => ContentReportTargetTypeEnum.PostAnswer,
-            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、PostAnswer、ChatMessage、Product 或 PostQuickReply")
+            "productreview" => ContentReportTargetTypeEnum.ProductReview,
+            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、PostAnswer、ChatMessage、Product、ProductReview 或 PostQuickReply")
         };
     }
 
@@ -1003,6 +1008,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             (int)ContentReportTargetTypeEnum.Product => "Product",
             (int)ContentReportTargetTypeEnum.PostQuickReply => "PostQuickReply",
             (int)ContentReportTargetTypeEnum.PostAnswer => "PostAnswer",
+            (int)ContentReportTargetTypeEnum.ProductReview => "ProductReview",
             _ => "Unknown"
         };
     }

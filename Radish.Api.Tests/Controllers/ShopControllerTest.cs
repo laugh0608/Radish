@@ -194,7 +194,8 @@ public class ShopControllerTest
             Mock.Of<IUserInventoryService>(),
             Mock.Of<IUserBrowseHistoryService>(),
             currentUserAccessorMock.Object,
-            CreateErrorsLocalizer());
+            CreateErrorsLocalizer(),
+            Mock.Of<IProductReviewService>());
     }
 
     private static IStringLocalizer<Errors> CreateErrorsLocalizer()

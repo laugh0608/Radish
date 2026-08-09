@@ -183,4 +183,5 @@ export const zhCore = {
   'report.target.quickReply': '轻回应',
   'report.target.chatMessage': '聊天室消息',
   'report.target.product': '商品',
+  'report.target.productReview': '商品评价',
 } as const;
