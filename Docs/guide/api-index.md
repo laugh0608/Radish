@@ -137,7 +137,7 @@
 对应范围：
 
 - 当前用户资料
-- 公开资料：`User/GetPublicProfile` 的 `identifier` 支持 `usr_...` PublicId 与旧 LongId 字符串双读，返回 `UserPublicProfileVo.VoPublicId / VoPublicIndex / VoDisplayName / VoDisplayHandle / VoUserId`
+- 公开资料：`User/GetPublicProfile` 的 `identifier` 支持 `usr_...` PublicId 与旧 LongId 字符串双读，返回 `UserPublicProfileVo.VoPublicId / VoPublicIndex / VoDisplayName / VoDisplayHandle / VoUserId`，以及只读安全投影 `VoCurrentLevel / VoCurrentLevelName`；不返回经验、进度、排名或冻结状态
 - 公开资料内容：`User/GetPublicUserStats`、`Post/GetPublicUserPosts`、`Comment/GetPublicUserComments` 均使用 `identifier` 查询公开用户内容，公开页面不得再通过 `UserPublicProfileVo.VoUserId` 串接后续请求
 - 当前用户资料：`User/GetMyProfile` 返回 `VoPublicId / VoPublicIndex / VoDisplayHandle`，同时保留本人可见的 `VoUserName / VoUserEmail`
 - 提及搜索：`User/SearchForMention` 只面向登录态用户，搜索范围限定为 `DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 或 `PublicId`；不得把 `LoginName`、`Email` 或内部 `Id` 做普通用户公开搜索字段
@@ -280,12 +280,18 @@ Wiki 附件的上传、正文 / 封面绑定和受控资源读取示例同时收
 - `Shop/Purchase`
 - `Shop/GetMyOrders`
 - `Shop/GetOrder/{orderId}`
+- `Shop/GetProductReviews/{productId}`
+- `Shop/GetMyProductReview/{productId}`
+- `Shop/UpsertProductReview/{productId}`
+- `Shop/DeleteProductReview/{reviewId}`
 - `Shop/GetMyBenefits`
 - `Shop/GetMyInventory`
 - `Shop/AdminGetOrders`
 - `Coin/AdminGetTransactions`
 
 管理端购买排障当前依赖订单与胡萝卜流水的业务上下文关联：商城购买扣款流水使用 `transactionType=CONSUME`、`businessType=Order`、`businessId=OrderId`，Console 可从订单详情跳转到上述筛选结果。
+
+商品评价公开读取返回数据库聚合的综合评分、五星分布与稳定分页；本人写入只允许 Completed 购买者，按用户 / 商品唯一关系和 `ExpectedVersion` CAS 更新。`ProductReview` 继续复用内容治理 / 申诉链路，不新增 Console 权限或独立评价后台。
 
 ### 聊天
 

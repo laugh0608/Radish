@@ -1,6 +1,6 @@
 # 6. 商城后端设计与接口边界
 
-> 版本：v2.1 | 最后更新：2026-07-14
+> 版本：v2.2 | 最后更新：2026-08-09
 >
 > 入口页：[商城系统设计方案](/guide/shop-system)
 
@@ -13,11 +13,13 @@
 | Controller | `ShopController` | 身份、权限、HTTP 契约和结果包装 |
 | Service | `ProductService` | 商品查询、配置校验、上下架和购买资格 |
 | Service | `OrderService` | 购买事务、订单快照、支付和履约重试 |
+| Service | `ProductReviewService` | Completed 资格、本人评价 CAS、公开聚合与治理可见性 |
 | Service | `UserBenefitService` | 持续权益发放、查询、选择、停用、过期和撤销 |
 | Service | `UserAdornmentService` | 批量读取 Badge / Title 当前选择并输出最小公开身份装饰 |
 | Service | `UserInventoryService` | 消耗品查询、条件扣减、真实效果和使用幂等 |
 | Repository | `IUserBenefitRepository` | 权益选择、过期、撤销的事务仓储和原子 upsert |
 | Repository | `IUserInventoryRepository` | 背包条件扣减和聚合数量并发保护 |
+| Repository | `IProductReviewRepository` | 单用户单商品唯一关系、版本写入、稳定分页和数据库聚合 |
 | Job | `ShopJob` | 超时订单和权益过期的批处理编排 |
 | DbMigrate | schema ledger migrations | 显式建表、回填、doctor 和 verify |
 
@@ -28,6 +30,10 @@ Controller 不直接访问仓储；Service 不使用 `_repository.Db.Queryable` 
 ```text
 Product
   └─ 当前配置、库存和可售状态
+
+ProductReview
+  ├─ Completed 订单资格证据、1..5 星与可选评论
+  └─ 单用户单商品唯一关系、Version 与治理来源
 
 Order
   ├─ 商品与有效期快照
@@ -63,6 +69,10 @@ ShopEntitlementOperation
 | `GET` | `/api/v1/Shop/GetMyInventory` | Client | 消耗品聚合背包 |
 | `POST` | `/api/v1/Shop/UseItem` | Client | 使用结果和操作流水 ID |
 | `POST` | `/api/v1/Shop/UseRenameCard` | Client | 改名卡使用结果 |
+| `GET` | `/api/v1/Shop/GetProductReviews/{productId}` | 匿名 | 综合评分、五星分布和稳定分页评价 |
+| `GET` | `/api/v1/Shop/GetMyProductReview/{productId}` | Client | 本人评价、Completed 资格和版本 |
+| `PUT` | `/api/v1/Shop/UpsertProductReview/{productId}` | Client | 创建、编辑或本人恢复评价 |
+| `DELETE` | `/api/v1/Shop/DeleteProductReview/{reviewId}` | Client | 按本人和 `expectedVersion` 软删除评价 |
 
 外部 LongId 由服务端按 `long` 绑定，但 JSON 和前端类型必须保持字符串。
 
@@ -102,6 +112,10 @@ Console 权限是服务端强制约束，不以按钮是否显示作为安全边
 
 选择、停用、过期和撤销由专属仓储原子更新 `UserActiveBenefit`、兼容字段和操作流水。并发请求不能产生同类型多个指针，也不能让旧停用请求删除新选择。
 
+### 商品评价事务
+
+创建、编辑、本人恢复和删除在 Main 事务内重新校验租户、用户、商品与 Completed 订单资格；`(TenantId, ProductId, UserId)` 唯一约束防止重复评价。编辑 / 删除以 `ExpectedVersion` CAS，治理限制与申诉恢复继续校验来源动作、结果版本和父商品可用性。公开聚合只统计未删除评价。
+
 ## 6.6 幂等边界
 
 | 动作 | 幂等键 | 持久化保护 |
@@ -111,6 +125,7 @@ Console 权限是服务端强制约束，不以按钮是否显示作为安全边
 | 启用/停用 | 由目标权益和当前指针决定 | 原子 upsert / 条件删除 + 操作事实防重 |
 | 过期 | 服务端业务键 | 条件过期 + 唯一操作事实 + Outbox 业务键 |
 | 撤销 | 目标权益当前状态 | 条件撤销 + 操作事实 |
+| 商品评价编辑 / 删除 | `ExpectedVersion` | 唯一关系 + 单调版本 CAS |
 
 同一幂等键绑定不同请求摘要必须返回冲突，不能采用“最后一次请求覆盖前一次”的语义。
 
@@ -150,12 +165,13 @@ Console 权限是服务端强制约束，不以按钮是否显示作为安全边
 2. `20260713_002_shop_entitlement_operation`
 3. `20260713_003_user_active_benefit`
 4. `20260714_001_shop_entitlement_operation_subject_nullability`
+5. `20260809_020_product_review`
 
 `Radish.DbMigrate` 负责：
 
 - `doctor`：报告支付证据、历史资源字段、多激活、无效指针和 pending migration；不能用目标结构预检阻断负责修复该结构的 pending migration。
 - `apply`：在锁和 ledger 保护下执行显式迁移与安全回填。
-- `verify`：检查字段、唯一索引、选择归属、实时有效性和不可用商品状态。
+- `verify`：检查字段、唯一索引、选择归属、实时有效性、不可用商品状态，以及商品评价的五星范围、版本、Completed 订单证据和商品租户边界。
 
 运行时 Code First 不得在 baseline 后静默补商城字段。
 
@@ -176,6 +192,7 @@ Console 权限是服务端强制约束，不以按钮是否显示作为安全边
 - `UserBenefitRepositoryTest`
 - 三个商城 schema migration 测试
 - `ShopJobTest`
+- `ProductReviewServiceTest`、`ProductReviewRepositoryTest` 与 `ProductReviewSchemaMigrationTest`
 
 开发中执行定向或全量后端测试；真实 Gateway smoke 只在专题准备验收且当前任务获得服务启动授权后执行。
 

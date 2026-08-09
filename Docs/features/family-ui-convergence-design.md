@@ -206,11 +206,11 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02` 与 `R2-C03` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。当前进入 [R2-P03 Public 只读详情变体 readiness](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)：先补正式商品举报与公开主页权威加载，再做不复制四个完整路由的局部代表设计。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02` 与 `R2-C03` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。`R2-P03 Public 只读详情变体` 已完成正式商品举报 / 公开主页权威加载、商品评价 / 公开等级能力门禁和不复制四个完整路由的局部代表设计并获确认；下一步进入正式商品详情与公开主页实现。
 
 ### 9.2 设计源
 
-当前唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。文件保留已确认的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02` 与 `R2-C03` 必要代表画板、组件母版、关键状态和主题变量；失败研究只由 Git 历史留存。后续 R1 / R2 继续在该文件中新增或替换必要代表设计。`v1` 在普通设计迭代中持续演进并由 Git 留存，只有不兼容的结构性升级才新建 `v2`。
+当前唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。文件保留已确认的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02`、`R2-C03` 与 `R2-P03` 必要代表画板、组件母版、关键状态和主题变量；失败研究只由 Git 历史留存。后续 R1 / R2 继续在该文件中新增或替换必要代表设计。`v1` 在普通设计迭代中持续演进并由 Git 留存，只有不兼容的结构性升级才新建 `v2`。
 
 `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 保留为只读历史资产，不删除、不改名、不继续同步。[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已按自动升级条件和六维评分裁决一个基础矩阵与六类完整页面类型：
 
@@ -250,7 +250,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射；v26.7.3 仅迁址且图片 blob 不变，映射继续有效，设计时仍须按新版“观察、拆解、提炼、转译”边界复核相关参考。
 - C-1A 已完成当前代码与页面类型审计，确认 `7` 个 R1、`4` 个 R2 及 R3 继承表。
-- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；六个 R1 与 `R2-C03` 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。当前从 `R2-P03` readiness 进入窄前端能力门禁；全局共享主题色继续单独成组治理。
+- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；六个 R1 与 `R2-C03` 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。`R2-P03` 的 readiness、两批能力门禁与局部代表设计已完成并确认，下一步进入正式页面实现；全局共享主题色继续单独成组治理。
 - 更新共享基座和命中的 R1 / R2 代表画板，不为 R3 派生页面创建重复画板。
 - 收敛按钮、输入、状态 chip、表格、卡片、Modal、空态、Header 和移动底栏。
 - 先实现共享组件和 R1 代表页，完成真实截图复核后再进入派生页面。

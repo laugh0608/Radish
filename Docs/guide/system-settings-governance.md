@@ -1,6 +1,6 @@
 # 系统设置治理专题
 
-> 状态：低 / 中风险设置范围与写入一致性已阶段收束；R2-C03 进入代表设计
+> 状态：低 / 中风险设置范围、写入一致性和 R2-C03 PC / mobile 正式页面及运行态验收已收束
 >
 > 最后更新：2026-08-09（Asia/Shanghai）
 >
@@ -28,6 +28,8 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 第九批后，低 / 中风险系统设置首轮治理阶段收束。当前不继续默认开放第十批设置；后续设置扩面只在真实运营缺口、发布候选回归或独立专题评审确认边界后回拉。
 
 `2026-08-09` 已按 R2-C03 readiness 关闭写入一致性门禁：值校验、确认缺失与风险拒绝保留结构化 `400`，版本冲突返回稳定 `409 SystemConfig.VersionConflict`；JSON 覆盖值与审计由仓储协调器在跨进程锁内执行 CAS，并通过恢复日志共同提交。Console 的 Medium 确认值改为用户显式输入，提交前展示旧值、新值、影响范围和生效方式；恢复默认复用同一版本与审计边界。详见 [能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)。该收口不扩面第十批设置，也不开放 High / Critical。
+
+同日正式页面已按确认设计落地并通过 Gateway 复核：PC 的 Low 使用旧值 / 新值轻量确认，Medium 要求风险等级和完整 key；Mobile 列表只允许 Low 进入共享 `BottomSheet`，Medium 在列表和提交 handler 双重保持 PC-only。dirty、离开确认、`ExpectedVersion` 与结构化 `409` 草稿保留在两端保持同一语义。详见 [R2-C03 正式实现记录](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)。
 
 `2026-06-24` 身份语义补充：注册页 `DisplayName` 慎重设置提示本身不属于系统设置；展示名改名冷却 / 滚动窗口 / 窗口内最大次数已完成代码级定义、服务端消费和审计记录，进入当前已注册设置。`PublicIndex` 靓号保留列表 / 靓号规则已完成代码级定义、服务端消费和配置错误暴露，进入当前已注册设置；人工指定保留号仍需后续权限动作与审计专题承接。
 

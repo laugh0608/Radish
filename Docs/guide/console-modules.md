@@ -106,6 +106,8 @@
 - ✅ 详情加载与编辑链路已对齐到资源映射
 - ✅ 角色列表已按表格 CRUD 页面基座对齐
 - ✅ 角色权限配置已按权限配置型页面基座承载
+- ✅ View-only Operator 和内建 `System / Admin` 均为只读；授权使用 Role 聚合版本与原子 CAS，冲突保留本地草稿
+- ✅ Mobile 使用连续角色目录与独立只读权限详情，权限项同时展示技术 key、含义和已授权状态，不提供保存或批量授权入口
 
 ## 3.6 Products
 
@@ -233,6 +235,7 @@
 - ✅ 系统设置变更历史落盘到 `DataBases/SystemConfigs/system-config-change-logs.json`，用于记录旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间
 - ✅ 当前开放 `Site.Branding.FaviconUrl`、账号身份长度、帖子标题 / 正文 / 摘要长度、评论内容长度、论坛轻回应内容 / 返回条数 / 冷却 / 去重窗口，以及神评 / 沙发稳定窗口和替换阈值设置
 - ✅ Medium 设置必须填写修改原因并确认风险等级 / 设置键，High / Critical 设置不开放编辑
+- ✅ Low / Medium 写入使用 `ExpectedVersion` 与结构化 `409`，覆盖值和审计共同提交；冲突保留本地草稿并要求人工重新读取
 - ✅ 数字设置已展示数值范围、整数约束和影响范围摘要，前端控件按规则约束输入，后端仍是最终校验权威
 - ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
 - ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`
@@ -241,6 +244,7 @@
 - ✅ 已按表格 CRUD + 配置面板页面基座对齐
 - ✅ 数字设置控件宽度、变更历史表格滚动和移动端分页换行已按 Console 表格交互口径收口
 - ✅ 设置定义使用稳定 `voKey` 解析本地名称、说明和影响摘要；未知定义与设置值保留服务端原文，语言偏好不写入 SystemConfig
+- ✅ PC 的 Low 使用旧值 / 新值轻量确认，Medium 显式确认风险等级和完整 key；Mobile 只允许 Low 进入共享 `BottomSheet`，Medium 在列表和提交 handler 双重保持 PC-only
 
 ## 3.11 Coins
 
@@ -275,7 +279,7 @@
 
 ### 当前边界
 
-- 服务端已建立 Case / Evidence / Event / TargetAction / Appeal / AppealEvent / UserModerationState 权威契约，五类目标统一进入案件、决定、动作、申诉和纠正链路。
+- 服务端已建立 Case / Evidence / Event / TargetAction / Appeal / AppealEvent / UserModerationState 权威契约，七类目标统一进入案件、决定、动作、申诉和纠正链路。
 - 权限拆分为 `console.moderation.view / review / appeal / action`：View 读取案件与脱敏申诉队列，Review 处理原案件，Appeal 查看申诉正文并复核，Action 执行用户动作和已获准的纠正。
 - 正式页面已经迁移到 Case / Appeal API；旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口已删除，不再作为兼容消费者。
 - 当前不新增批量治理、敏感词策略或自动化处罚平台。

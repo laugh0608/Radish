@@ -98,12 +98,13 @@
 - `Users` 未落地能力已从页面、前后端权限常量与文档口径中一并清理
 - 默认 `Test` 角色已被收口为普通用户基线，不再保留任何 Console 资源授权，也不再保留标签管理等后台 API 权限
 
-### 5.2 R2-C03 能力门禁结论
+### 5.2 R2-C03 门禁与正式实现结论
 
 - 角色聚合已具备内建保护、保留名、唯一性与明确命令更新边界
 - 权限矩阵已使用 Role 聚合版本、事务内 CAS 与结构化 `409`，纯删除 / 清空同样推进版本
 - 系统设置已具备结构化 400 / 409、持久化点 CAS、配置—审计共同提交和用户显式 Medium 确认
-- 详细代码事实、Mobile 停止线与验证证据见 [readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)和 [能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)
+- PC / Mobile 正式页面已落地只读 Operator、内建保护、权限 key 含义、Low `BottomSheet`、Medium PC-only、dirty / 离开保护和冲突草稿，并通过 Gateway 复核
+- 详细代码事实、Mobile 停止线与验证证据见 [readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)、[能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)和[正式实现记录](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)
 
 ### 5.3 工具化校验已落地
 

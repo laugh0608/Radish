@@ -8,7 +8,7 @@
 >
 > **关联文档**：[Console 治理工作台设计端点](/frontend/console-governance-workbench-design) · [用户承诺与隐私边界](/guide/user-commitments) · [写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)
 
-> **完成后扩展**：F4-O 已于 2026-07-28 把 PostAnswer 补为第六类治理目标，复用本专题的 Case / Evidence、权限、版本和事务边界，以及 F4-J 的 TargetAction / Appeal。以下“五类目标”与对应矩阵保留 F4-I 当时的完成事实；现行六类口径以[内容治理系统说明](/guide/content-moderation)和 [F4-O 专题](/features/forum-answer-lifecycle-governance-design)为准。
+> **完成后扩展**：F4-O 已于 2026-07-28 把 PostAnswer 补为第六类治理目标；R2-P03 又于 2026-08-09 把 ProductReview 补为第七类目标。两者都复用本专题的 Case / Evidence、权限、版本和事务边界，以及 F4-J 的 TargetAction / Appeal。以下“五类目标”与对应矩阵保留 F4-I 当时的完成事实；现行七类口径以[内容治理系统说明](/guide/content-moderation)、[F4-O 专题](/features/forum-answer-lifecycle-governance-design)和[R2-P03 能力门禁记录](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)为准。
 
 ## 一、结论摘要
 

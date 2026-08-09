@@ -4,11 +4,11 @@
 >
 > **复核日期**：2026-07-25（Asia/Shanghai）
 >
-> **适用范围**：正式 Web 被处置用户申诉入口、Main 内容治理案件与五类目标、Console `/moderation`；WebOS 只复用现有治理通知与正式 Web 跳转，Flutter 不新增治理页面
+> **适用范围**：正式 Web 被处置用户申诉入口、Main 内容治理案件与现行七类目标、Console `/moderation`；WebOS 只复用现有治理通知与正式 Web 跳转，Flutter 不新增治理页面
 >
 > **前置专题**：[F4-I 内容治理案件、证据与动作一致性](/features/content-moderation-case-evidence-action-design) · [内容治理系统说明](/guide/content-moderation) · [通知中心深化与通知治理](/features/notification-center-deepening)
 
-> **完成后扩展**：F4-O 已于 2026-07-28 把 PostAnswer 补为第六类治理目标，并按本专题来源、版本与纠正语义支持受权恢复；恢复回答不会自动恢复旧采纳。以下“五类目标”与对应矩阵保留 F4-J 当时的完成事实，现行六类口径以[内容治理系统说明](/guide/content-moderation)和 [F4-O 专题](/features/forum-answer-lifecycle-governance-design)为准。
+> **完成后扩展**：F4-O 已于 2026-07-28 把 PostAnswer 补为第六类治理目标，并按本专题来源、版本与纠正语义支持受权恢复；恢复回答不会自动恢复旧采纳。R2-P03 又于 2026-08-09 把 ProductReview 补为第七类目标，恢复时继续校验来源动作、结果版本和父商品可用性。以下“五类目标”与对应矩阵保留 F4-J 当时的完成事实，现行七类口径以[内容治理系统说明](/guide/content-moderation)、[F4-O 专题](/features/forum-answer-lifecycle-governance-design)和[R2-P03 能力门禁记录](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)为准。
 
 ## 一、结论摘要
 
