@@ -169,8 +169,9 @@ test('Console 内容治理应只消费案件 API 并保留冲突草稿', () => {
   assert.match(appealSource, /caseDetail\?\.voPublicResultCode/);
   assert.match(appealSource, /loadAppeal\(selectedAppealId, false\)/);
   assert.match(appealSource, /conflictDraftPreserved/);
-  assert.match(appealSource, /linkedAppealId && canAppeal/);
-  assert.match(appealSource, /appealPublicId,[\s\S]*replace: true/);
+  assert.match(appealSource, /parseModerationAppealPublicId\(searchParams\.get\('appeal'\)\)/);
+  assert.match(appealSource, /void loadAppeal\(selectedAppealId\)/);
+  assert.match(appealSource, /appealPublicId,[\s\S]*buildModerationPath/);
   assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-write-panel[\s\S]*display: none/);
   assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-desktop-action[\s\S]*display: none/);
 });

@@ -50,7 +50,8 @@ test('Console Mobile 全屏订单任务应隐藏全局导航且五项入口沿�
   const source = readConsoleSource('src/components/AdminLayout/AdminLayout.tsx');
   const styles = readConsoleSource('src/components/AdminLayout/AdminLayout.css');
 
-  assert.match(source, /const mobileTaskActive = isMobileLayout && isOrderDetailTask/);
+  assert.match(source, /const mobileTaskActive = isMobileLayout && isConsoleMobileTask/);
+  assert.match(source, /isOrderDetailTask\(search, activeMenuKey\)[\s\S]*isModerationDetailTask\(search, activeMenuKey\)/);
   assert.match(source, /isMobileLayout && !mobileTaskActive/);
   assert.match(source, /!mobileTaskActive \? <AppBreadcrumb \/>/);
   assert.match(styles, /\.admin-content--mobile-task[\s\S]*height: 100dvh/);

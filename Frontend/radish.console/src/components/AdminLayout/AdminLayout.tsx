@@ -76,6 +76,25 @@ function isOrderDetailTask(search: string, activeMenuKey: string): boolean {
     && (/^[1-9]\d*$/u.test(orderId) || orderNo.length > 0);
 }
 
+function isModerationDetailTask(search: string, activeMenuKey: string): boolean {
+  if (activeMenuKey !== 'moderation') {
+    return false;
+  }
+
+  const searchParams = new URLSearchParams(search);
+  const view = searchParams.get('view');
+  const casePublicId = searchParams.get('case')?.trim() ?? '';
+  const appealPublicId = searchParams.get('appeal')?.trim() ?? '';
+  return view === 'appeals'
+    ? /^apl_[a-zA-Z0-9_-]{1,156}$/u.test(appealPublicId)
+    : /^mod_[a-zA-Z0-9_-]{1,156}$/u.test(casePublicId);
+}
+
+function isConsoleMobileTask(search: string, activeMenuKey: string): boolean {
+  return isOrderDetailTask(search, activeMenuKey)
+    || isModerationDetailTask(search, activeMenuKey);
+}
+
 const menuIconMap: Record<ConsoleRouteIconKey, ReactNode> = {
   dashboard: <DashboardOutlined />,
   application: <AppstoreOutlined />,
@@ -120,7 +139,7 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   );
   const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const activeMenuKey = getActiveMenuKey(location.pathname);
-  const mobileTaskActive = isMobileLayout && isOrderDetailTask(location.search, activeMenuKey);
+  const mobileTaskActive = isMobileLayout && isConsoleMobileTask(location.search, activeMenuKey);
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(
     () => sidebarGroups.map((group) => ({
       key: `group:${group.key}`,
