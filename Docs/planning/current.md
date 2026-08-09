@@ -15,7 +15,7 @@
 ## 最近结论
 
 - `2026-08-09` 已完成 [R2-P03 商品评价与公开等级能力门禁](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)：公开资料只增加当前等级 / 等级名；商品评价固定 Completed 订单资格、每用户每商品一条、`1..5` 星、可选 `500` 字评论、唯一约束、数据库聚合和单调 CAS，并以 `ProductReview` 复用既有治理 / 申诉权限与事务。后端 `1220 passed / 39 skipped`，HTTP `36 / 36`、Client `514 / 514`、Console `83 / 83` 及静态构建通过；未启动服务或浏览器。
-- `2026-08-09` 已按反馈与已关闭能力门禁补完 [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)：PC Header 对齐 R1-P02、分栏间距为 `16px`，长内容、商品详情、公开主页保持独立；商品 Mobile 固定顶部大图—商品信息—购买动作—评价摘要 / 预览—详情，公开主页保留主题背景、`昵称#公开ID` 与公开等级。新增评价零态、资格、dirty、`409`、unavailable / stale 和治理 / 申诉状态板，共八个顶层画板均无 placeholder、裁切、塌陷或横向溢出，当前等待整组设计确认。
+- `2026-08-09` 已按两轮反馈与已关闭能力门禁补完 [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)：三张 PC 统一为 `24px` 外边距、`12px` 核心分栏和 `14–20px` 主要卡片内距，长内容、商品详情、公开主页保持独立；PC / Mobile 购买与发消息主按钮统一暖白前景。商品 Mobile 固定顶部大图—商品信息—购买动作—评价摘要 / 预览—详情，公开主页按“林墨 / `LinMo#10006` / 个性签名”分层并保留公开等级。连同评价零态、资格、dirty、`409`、unavailable / stale 和治理 / 申诉状态，共八个顶层画板均无 placeholder、裁切、塌陷或横向溢出，当前等待整组设计确认。
 - `2026-08-09` 已确认 [R2-P03 商品评价与公开等级范围](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)：不扩入公开经验详情、用户背景上传、评价媒体 / 回复 / 有用 / 追评 / 标签 / 推荐排序 / 实时刷新，不新增 Console 权限、审批流或独立评价中心。
 - `2026-08-09` 已完成 [R2-P03 Public 只读详情变体能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)：正式商品详情以当前字符串 LongId 复用既有 `Product` 举报弹窗，匿名沿用统一提示且不新增 URL intent；公开主页由主资料独立裁决 `404 / unavailable`，统计以规范化公开 identifier 局部加载 / 重试，未取得权威结果时不伪造零值或粉丝数。公开统计、帖子和评论 consumer 继续保留结构化错误；Client `512 / 512` 测试、Lint、type-check 与 production build 通过。本批未修改 Pencil、启动服务或浏览器，下一步等待 Pencil 授权。
 - `2026-08-09` 已完成 [R2-P03 Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)：分级继续保持 R2，Docs 详情、商品详情、公开主页与 Legal 继承 R1-P02 / R1-F01，不复制四个完整路由。现有 API、权限、URL、LongId、购买幂等、关系版本、治理事务和存储边界足够；Pencil 前只需关闭两项窄前端门禁：正式商品详情复用既有 `Product` 举报弹窗，以及公开主页以主资料权威区分 `404 / unavailable`、把统计失败局部化并停止伪装未读取粉丝数。当前未修改 Pencil、运行时代码或 API，未启动服务 / 浏览器，也未推进 R3。
@@ -124,6 +124,7 @@
 41. 按第一轮反馈把 PC Header 对齐正式 Client、将商品 / 公开主页拆为独立 PC 页面并收紧间距；商品 Mobile 改为顶部大图电商结构，公开主页 Mobile 增加主题背景、`昵称#公开ID` 与等级提示。七板静态复核通过；商品评价和公开等级经反查确认需要新增窄能力门禁，方案等待确认。
 42. 用户确认商品评价与公开等级窄范围后，完成 Main 评价实体 / 迁移、Completed 资格、唯一关系、五星聚合、CAS 生命周期、公开等级安全投影和 `ProductReview` 治理 / 申诉；共享 HTTP、Client 与 Console 契约及分层测试全部通过。
 43. 在唯一活动 `.pen` 中为 PC / Mobile 商品页补综合评分、五星分布和已购评价预览，并新增零评价、资格、dirty、`409`、unavailable / stale 与治理 / 申诉关键状态板；八板静态复核通过，等待整组设计确认。
+44. 按第二轮反馈把三张 PC 主区统一收紧为 `24px` 外边距、`12px` 分栏和更紧凑卡片内距，修复 PC / Mobile 购买与发消息深底深字，并将公开主页身份拆成昵称、`用户名#公开ID` 与个性签名三层；五个受影响画板静态复核零告警。
 
 ## 当前执行事项（2026-08-09）
 

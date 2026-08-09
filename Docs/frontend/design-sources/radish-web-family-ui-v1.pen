@@ -56487,27 +56487,27 @@
           "width": 1440,
           "height": 832,
           "fill": "$bg-app",
-          "gap": 16,
+          "gap": 12,
           "padding": [
+            12,
+            24,
             18,
-            51,
-            30,
-            51
+            24
           ],
           "children": [
             {
               "type": "frame",
               "id": "KnX9Z",
               "name": "文档目录",
-              "width": 220,
+              "width": 212,
               "height": "fill_container",
               "fill": "$bg-surface",
               "cornerRadius": "$radius-panel",
               "stroke": "$border-soft",
               "strokeWidth": 1,
               "layout": "vertical",
-              "gap": 8,
-              "padding": 18,
+              "gap": 7,
+              "padding": 16,
               "children": [
                 {
                   "type": "text",
@@ -56526,7 +56526,7 @@
                   "name": "文档目录 / 当前集合",
                   "fill": "$text-muted",
                   "textGrowth": "fixed-width",
-                  "width": 184,
+                  "width": "fill_container",
                   "content": "公开知识与使用指南",
                   "lineHeight": 1.5,
                   "fontFamily": "$font-body",
@@ -56809,17 +56809,17 @@
               "type": "frame",
               "id": "CvR6m",
               "name": "文档详情连续阅读面",
-              "width": 820,
+              "width": 904,
               "height": "fill_container",
               "fill": "$bg-surface",
               "cornerRadius": "$radius-panel",
               "stroke": "$border-soft",
               "strokeWidth": 1,
               "layout": "vertical",
-              "gap": 10,
+              "gap": 8,
               "padding": [
-                18,
-                28
+                16,
+                20
               ],
               "children": [
                 {
@@ -56906,7 +56906,7 @@
                   "name": "文档详情 / 标题",
                   "fill": "$text-primary",
                   "textGrowth": "fixed-width",
-                  "width": 764,
+                  "width": "fill_container",
                   "content": "社区协作与内容发布指南",
                   "lineHeight": 1.5,
                   "fontFamily": "$font-heading",
@@ -56919,7 +56919,7 @@
                   "name": "文档详情 / 摘要",
                   "fill": "$text-secondary",
                   "textGrowth": "fixed-width",
-                  "width": 764,
+                  "width": "fill_container",
                   "content": "了解公开发布、协作编辑与内容治理的真实边界，再开始贡献内容。",
                   "lineHeight": 1.5,
                   "fontFamily": "$font-body",
@@ -57075,7 +57075,7 @@
                       "name": "正文 / 段落一",
                       "fill": "$text-secondary",
                       "textGrowth": "fixed-width",
-                      "width": 764,
+                      "width": "fill_container",
                       "content": "公开文档用于沉淀可被社区持续引用的知识。账号资料、私有历史与治理证据不会因为文档公开而一并暴露。",
                       "lineHeight": 1.5,
                       "fontFamily": "$font-body",
@@ -57111,7 +57111,7 @@
                           "name": "正文 / 边界提示 Text",
                           "fill": "$brand",
                           "textGrowth": "fixed-width",
-                          "width": 710,
+                          "width": "fill_container",
                           "content": "只展示已发布正文与公开附件；受保护资源继续按当前身份读取。",
                           "lineHeight": 1.5,
                           "fontFamily": "$font-body",
@@ -57286,7 +57286,7 @@
                       "name": "正文 / 段落二",
                       "fill": "$text-secondary",
                       "textGrowth": "fixed-width",
-                      "width": 764,
+                      "width": "fill_container",
                       "content": "发现违规内容时，从原内容目标提交举报；处理结果只向举报人展示精简回执。",
                       "lineHeight": 1.5,
                       "fontFamily": "$font-body",
@@ -57300,10 +57300,10 @@
               "type": "frame",
               "id": "Hp7dG",
               "name": "长内容辅助栏",
-              "width": 266,
+              "width": 252,
               "height": "fill_container",
               "layout": "vertical",
-              "gap": 12,
+              "gap": 10,
               "children": [
                 {
                   "type": "frame",
@@ -57315,8 +57315,8 @@
                   "stroke": "$border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 10,
-                  "padding": 16,
+                  "gap": 8,
+                  "padding": 14,
                   "children": [
                     {
                       "type": "text",
@@ -57335,7 +57335,7 @@
                       "name": "文档来源 / 路径",
                       "fill": "$text-secondary",
                       "textGrowth": "fixed-width",
-                      "width": 216,
+                      "width": "fill_container",
                       "content": "文档 / 社区协作 / 发布指南",
                       "lineHeight": 1.5,
                       "fontFamily": "$font-body",
@@ -57468,8 +57468,8 @@
                   "stroke": "$border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 8,
-                  "padding": 16,
+                  "gap": 7,
+                  "padding": 14,
                   "children": [
                     {
                       "type": "text",
@@ -57488,7 +57488,7 @@
                       "name": "Legal 锚点 / 原文",
                       "fill": "$text-muted",
                       "textGrowth": "fixed-width",
-                      "width": 216,
+                      "width": "fill_container",
                       "content": "中文原文 · 单一发布版本",
                       "lineHeight": 1.5,
                       "fontFamily": "$font-body",
@@ -58108,12 +58108,12 @@
           "height": 832,
           "fill": "$bg-app",
           "layout": "vertical",
-          "gap": 12,
+          "gap": 10,
           "padding": [
+            12,
+            24,
             18,
-            32,
-            28,
-            32
+            24
           ],
           "children": [
             {
@@ -58172,13 +58172,13 @@
               "id": "ue9KE",
               "name": "商品详情 PC / 购买主区",
               "width": "fill_container",
-              "height": 438,
+              "height": 430,
               "fill": "$bg-surface",
               "cornerRadius": 16,
               "stroke": "$border-soft",
               "strokeWidth": 1,
-              "gap": 24,
-              "padding": 18,
+              "gap": 16,
+              "padding": 14,
               "children": [
                 {
                   "type": "frame",
@@ -58768,13 +58768,13 @@
                               "height": 18,
                               "icon": "shopping-bag",
                               "library": "lucide",
-                              "fill": "#000000"
+                              "fill": "#FFFDF8"
                             },
                             {
                               "type": "text",
                               "id": "R4hEM",
                               "name": "商品详情 PC / 购买文字",
-                              "fill": "#000000",
+                              "fill": "#FFFDF8",
                               "content": "立即购买",
                               "fontFamily": "$font-body",
                               "fontSize": 15,
@@ -58829,24 +58829,24 @@
               "id": "ZzKdO",
               "name": "商品详情 PC / 详情与边界",
               "width": "fill_container",
-              "height": 296,
-              "gap": 16,
+              "height": 324,
+              "gap": 12,
               "children": [
                 {
                   "type": "frame",
                   "id": "r82V8T",
                   "name": "商品详情 PC / 商品详情与购买评价",
-                  "width": 920,
-                  "height": 296,
+                  "width": 940,
+                  "height": "fill_container",
                   "fill": "$bg-surface",
                   "cornerRadius": 14,
                   "stroke": "$border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 10,
+                  "gap": 8,
                   "padding": [
-                    16,
-                    18
+                    14,
+                    16
                   ],
                   "children": [
                     {
@@ -58885,15 +58885,15 @@
                       "id": "GZowS",
                       "name": "商品详情 PC / 详情评价分栏",
                       "width": "fill_container",
-                      "height": 220,
-                      "gap": 16,
+                      "height": "fill_container",
+                      "gap": 12,
                       "children": [
                         {
                           "type": "frame",
                           "id": "e9dcjp",
                           "name": "商品详情 PC / 商品说明区",
                           "width": 332,
-                          "height": 220,
+                          "height": "fill_container",
                           "layout": "vertical",
                           "gap": 10,
                           "children": [
@@ -59054,7 +59054,7 @@
                           "id": "maa7L",
                           "name": "商品详情 PC / 详情评价分隔",
                           "width": 1,
-                          "height": 220,
+                          "height": "fill_container",
                           "fill": "$border-soft"
                         },
                         {
@@ -59062,7 +59062,7 @@
                           "id": "E0X1s",
                           "name": "商品详情 PC / 购买评价预览",
                           "width": "fill_container",
-                          "height": 220,
+                          "height": "fill_container",
                           "layout": "vertical",
                           "gap": 7,
                           "children": [
@@ -59355,17 +59355,18 @@
                   "id": "Xrzc8",
                   "name": "商品详情 PC / 服务与治理边界",
                   "width": 440,
-                  "height": 296,
+                  "height": "fill_container",
                   "fill": "$bg-surface",
                   "cornerRadius": 14,
                   "stroke": "$border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 12,
+                  "gap": 10,
                   "padding": [
-                    18,
-                    20
+                    16,
+                    18
                   ],
+                  "justifyContent": "space_between",
                   "children": [
                     {
                       "type": "text",
@@ -60861,13 +60862,13 @@
                       "height": 17,
                       "icon": "shopping-bag",
                       "library": "lucide",
-                      "fill": "#000000"
+                      "fill": "#FFFDF8"
                     },
                     {
                       "type": "text",
                       "id": "zBSlR",
                       "name": "商品详情 Mobile / 立即购买文字",
-                      "fill": "#000000",
+                      "fill": "#FFFDF8",
                       "content": "立即购买",
                       "fontFamily": "$font-body",
                       "fontSize": 14,
@@ -61346,7 +61347,7 @@
                     ]
                   },
                   "width": 390,
-                  "height": 124
+                  "height": 96
                 },
                 {
                   "type": "icon",
@@ -61417,17 +61418,17 @@
                   "type": "rectangle",
                   "id": "nZhDi",
                   "x": 0,
-                  "y": 124,
+                  "y": 96,
                   "name": "公开主页 Mobile / 身份信息底",
                   "fill": "$bg-surface",
                   "width": 390,
-                  "height": 94
+                  "height": 122
                 },
                 {
                   "type": "frame",
                   "id": "CfcF5",
                   "x": 18,
-                  "y": 82,
+                  "y": 54,
                   "name": "公开主页 Mobile / 头像",
                   "width": 86,
                   "height": 86,
@@ -61455,10 +61456,10 @@
                   "type": "text",
                   "id": "CFUTc",
                   "x": 116,
-                  "y": 138,
-                  "name": "公开主页 Mobile / 昵称与公开ID",
+                  "y": 102,
+                  "name": "公开主页 Mobile / 昵称",
                   "fill": "$text-primary",
-                  "content": "林墨#1024",
+                  "content": "林墨",
                   "fontFamily": "$font-heading",
                   "fontSize": 22,
                   "fontWeight": "700"
@@ -61467,7 +61468,7 @@
                   "type": "frame",
                   "id": "Ktsju",
                   "x": 116,
-                  "y": 171,
+                  "y": 174,
                   "name": "公开主页 Mobile / 用户等级",
                   "width": 132,
                   "height": 24,
@@ -61503,12 +61504,36 @@
                   "type": "text",
                   "id": "hOY2l",
                   "x": 270,
-                  "y": 176,
+                  "y": 179,
                   "name": "公开主页 Mobile / 加入时间",
                   "fill": "$text-muted",
                   "content": "2021 年加入",
                   "fontFamily": "$font-body",
                   "fontSize": 10,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "k08Yzp",
+                  "x": 116,
+                  "y": 131,
+                  "name": "公开主页 Mobile / 用户名与公开ID",
+                  "fill": "$text-secondary",
+                  "content": "LinMo#10006",
+                  "fontFamily": "$font-body",
+                  "fontSize": 12,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "grXow",
+                  "x": 116,
+                  "y": 151,
+                  "name": "公开主页 Mobile / 个性签名",
+                  "fill": "$text-muted",
+                  "content": "这个用户什么都没有写～",
+                  "fontFamily": "$font-body",
+                  "fontSize": 11,
                   "fontWeight": "normal"
                 }
               ]
@@ -61722,13 +61747,13 @@
                           "height": 16,
                           "icon": "message-circle",
                           "library": "lucide",
-                          "fill": "#000000"
+                          "fill": "#FFFDF8"
                         },
                         {
                           "type": "text",
                           "id": "EDwKU",
                           "name": "公开主页 Mobile / 发消息文字",
-                          "fill": "#000000",
+                          "fill": "#FFFDF8",
                           "content": "发消息",
                           "fontFamily": "$font-body",
                           "fontSize": 12,
@@ -64221,12 +64246,12 @@
           "height": 832,
           "fill": "$bg-app",
           "layout": "vertical",
-          "gap": 16,
+          "gap": 12,
           "padding": [
+            12,
+            24,
             18,
-            32,
-            28,
-            32
+            24
           ],
           "children": [
             {
@@ -64271,8 +64296,8 @@
                       }
                     ]
                   },
-                  "width": 1376,
-                  "height": 156
+                  "width": 1392,
+                  "height": 132
                 },
                 {
                   "type": "frame",
@@ -64313,7 +64338,7 @@
                 {
                   "type": "frame",
                   "id": "CraOl",
-                  "x": 1250,
+                  "x": 1266,
                   "y": 18,
                   "name": "公开主页 PC / 分享主页",
                   "width": 106,
@@ -64350,17 +64375,17 @@
                   "type": "rectangle",
                   "id": "l6wVq",
                   "x": 0,
-                  "y": 156,
+                  "y": 132,
                   "name": "公开主页 PC / 身份信息底",
                   "fill": "$bg-surface",
-                  "width": 1376,
-                  "height": 104
+                  "width": 1392,
+                  "height": 128
                 },
                 {
                   "type": "frame",
                   "id": "MYGNx",
                   "x": 34,
-                  "y": 108,
+                  "y": 84,
                   "name": "公开主页 PC / 头像",
                   "width": 104,
                   "height": 104,
@@ -64388,29 +64413,49 @@
                   "type": "frame",
                   "id": "pJth3",
                   "x": 158,
-                  "y": 168,
+                  "y": 140,
                   "name": "公开主页 PC / 身份信息",
-                  "width": 300,
-                  "height": 76,
+                  "width": 320,
+                  "height": 120,
                   "layout": "vertical",
-                  "gap": 5,
+                  "gap": 3,
                   "children": [
                     {
                       "type": "text",
                       "id": "DIm3L",
-                      "name": "公开主页 PC / 昵称与公开ID",
+                      "name": "公开主页 PC / 昵称",
                       "fill": "$text-primary",
-                      "content": "林墨#1024",
+                      "content": "林墨",
                       "fontFamily": "$font-heading",
                       "fontSize": 26,
                       "fontWeight": "700"
                     },
                     {
+                      "type": "text",
+                      "id": "cnBSz",
+                      "name": "公开主页 PC / 用户名与公开ID",
+                      "fill": "$text-secondary",
+                      "content": "LinMo#10006",
+                      "fontFamily": "$font-body",
+                      "fontSize": 13,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "odMrL",
+                      "name": "公开主页 PC / 个性签名",
+                      "fill": "$text-muted",
+                      "content": "这个用户什么都没有写～",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
                       "type": "frame",
                       "id": "O6Q1r",
                       "name": "公开主页 PC / 等级与加入时间",
-                      "height": 26,
-                      "gap": 8,
+                      "height": 24,
+                      "gap": 6,
                       "alignItems": "center",
                       "children": [
                         {
@@ -64617,7 +64662,7 @@
                 {
                   "type": "frame",
                   "id": "O5VLu",
-                  "x": 1004,
+                  "x": 1020,
                   "y": 175,
                   "name": "公开主页 PC / 关系动作",
                   "width": 352,
@@ -64644,13 +64689,13 @@
                           "height": 17,
                           "icon": "message-circle",
                           "library": "lucide",
-                          "fill": "#000000"
+                          "fill": "#FFFDF8"
                         },
                         {
                           "type": "text",
                           "id": "mFwYh",
                           "name": "公开主页 PC / 发消息文字",
-                          "fill": "#000000",
+                          "fill": "#FFFDF8",
                           "content": "发消息",
                           "fontFamily": "$font-body",
                           "fontSize": 13,
@@ -64739,16 +64784,16 @@
               "id": "NV6Te",
               "name": "公开主页 PC / 内容与资料",
               "width": "fill_container",
-              "height": 510,
-              "gap": 16,
+              "height": "fill_container",
+              "gap": 12,
               "children": [
                 {
                   "type": "frame",
                   "id": "bBFVD",
                   "name": "公开主页 PC / 公开内容",
                   "clip": true,
-                  "width": 910,
-                  "height": 510,
+                  "width": 940,
+                  "height": "fill_container",
                   "fill": "$bg-surface",
                   "cornerRadius": 14,
                   "stroke": "$border-soft",
@@ -64851,10 +64896,10 @@
                         "bottom": 1
                       },
                       "layout": "vertical",
-                      "gap": 9,
+                      "gap": 7,
                       "padding": [
-                        20,
-                        22
+                        16,
+                        18
                       ],
                       "children": [
                         {
@@ -64940,10 +64985,10 @@
                         "bottom": 1
                       },
                       "layout": "vertical",
-                      "gap": 9,
+                      "gap": 7,
                       "padding": [
-                        20,
-                        22
+                        16,
+                        18
                       ],
                       "children": [
                         {
@@ -65056,17 +65101,17 @@
                   "type": "frame",
                   "id": "Hvl81",
                   "name": "公开主页 PC / 公开资料",
-                  "width": 450,
-                  "height": 510,
+                  "width": 440,
+                  "height": "fill_container",
                   "fill": "$bg-surface",
                   "cornerRadius": 14,
                   "stroke": "$border-soft",
                   "strokeWidth": 1,
                   "layout": "vertical",
-                  "gap": 14,
+                  "gap": 12,
                   "padding": [
-                    20,
-                    22
+                    16,
+                    18
                   ],
                   "children": [
                     {
