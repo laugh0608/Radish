@@ -64262,7 +64262,7 @@
               "name": "公开主页 PC / 个人主页头图",
               "clip": true,
               "width": "fill_container",
-              "height": 296,
+              "height": 276,
               "fill": "$bg-surface",
               "cornerRadius": 16,
               "stroke": "$border-soft",
@@ -64299,7 +64299,7 @@
                     ]
                   },
                   "width": 1392,
-                  "height": 120
+                  "height": 136
                 },
                 {
                   "type": "frame",
@@ -64377,17 +64377,17 @@
                   "type": "rectangle",
                   "id": "l6wVq",
                   "x": 0,
-                  "y": 120,
+                  "y": 136,
                   "name": "公开主页 PC / 身份信息底",
                   "fill": "$bg-surface",
                   "width": 1392,
-                  "height": 176
+                  "height": 140
                 },
                 {
                   "type": "frame",
                   "id": "MYGNx",
                   "x": 34,
-                  "y": 72,
+                  "y": 84,
                   "name": "公开主页 PC / 头像",
                   "width": 104,
                   "height": 104,
@@ -64415,9 +64415,9 @@
                   "type": "frame",
                   "id": "pJth3",
                   "x": 158,
-                  "y": 137,
+                  "y": 148,
                   "name": "公开主页 PC / 身份信息",
-                  "width": 360,
+                  "width": 170,
                   "height": 64,
                   "layout": "vertical",
                   "gap": 8,
@@ -64447,12 +64447,12 @@
                 {
                   "type": "frame",
                   "id": "IJqXv",
-                  "x": 520,
-                  "y": 178,
+                  "x": 660,
+                  "y": 148,
                   "name": "公开主页 PC / 权威统计",
                   "clip": true,
-                  "width": 476,
-                  "height": 72,
+                  "width": 440,
+                  "height": 64,
                   "fill": "$border-soft",
                   "cornerRadius": 10,
                   "gap": 1,
@@ -64599,7 +64599,7 @@
                   "type": "frame",
                   "id": "O5VLu",
                   "x": 1020,
-                  "y": 190,
+                  "y": 218,
                   "name": "公开主页 PC / 关系动作",
                   "width": 352,
                   "height": 48,
@@ -64714,22 +64714,10 @@
                   ]
                 },
                 {
-                  "type": "text",
-                  "id": "odMrL",
-                  "x": 158,
-                  "y": 213,
-                  "name": "公开主页 PC / 个性签名",
-                  "fill": "$text-muted",
-                  "content": "这个用户什么都没有写～",
-                  "fontFamily": "$font-body",
-                  "fontSize": 12,
-                  "fontWeight": "normal"
-                },
-                {
                   "type": "frame",
                   "id": "O6Q1r",
-                  "x": 158,
-                  "y": 246,
+                  "x": 350,
+                  "y": 214,
                   "name": "公开主页 PC / 等级与加入时间",
                   "height": 24,
                   "gap": 6,
@@ -64777,6 +64765,45 @@
                       "name": "公开主页 PC / 加入时间",
                       "fill": "$text-muted",
                       "content": "2021 年加入",
+                      "fontFamily": "$font-body",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "w2S3k9",
+                  "x": 350,
+                  "y": 148,
+                  "name": "公开主页 PC / 个性签名资料条",
+                  "width": 270,
+                  "height": 48,
+                  "fill": "$bg-muted",
+                  "cornerRadius": 10,
+                  "gap": 8,
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon",
+                      "id": "zOYqj",
+                      "name": "公开主页 PC / 个性签名图标",
+                      "width": 15,
+                      "height": 15,
+                      "icon": "quote",
+                      "library": "lucide",
+                      "fill": "$brand"
+                    },
+                    {
+                      "type": "text",
+                      "id": "odMrL",
+                      "name": "公开主页 PC / 个性签名",
+                      "fill": "$text-secondary",
+                      "content": "这个用户什么都没有写～",
                       "fontFamily": "$font-body",
                       "fontSize": 12,
                       "fontWeight": "normal"
