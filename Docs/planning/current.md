@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-A02 Author 列表、修订与 Forum 发布差异局部代表设计`
-- **产品下一顺位**：`在唯一活动设计源中完成 Docs Mine、Docs Revisions、Forum Compose 与必要关键状态的 R2 局部代表板`
+- **工程第一顺位**：`F4-R R2-A02 局部代表设计确认与正式视觉实现`
+- **产品下一顺位**：`人工确认 Docs Mine、Docs Revisions、Forum Compose 七张代表板；确认后按稿落地正式页面`
 - **复核日期**：`2026-08-10`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-10` 已完成 [R2-A02 Author 列表、修订与 Forum 发布差异局部代表设计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)：唯一活动设计源新增 Docs Mine、Docs Revisions、Forum Compose 的三个 PC `1440 × 900`、三个 Mobile `390 × 844` 和一个 `1440 × 860` 必要关键状态板。Mine 固定权威筛选—连续列表—从属上下文，Revisions 固定时间线 / 版本选择器—独立详情，正式 Forum Compose 固定页面态共享 Composer 与账号草稿；状态覆盖首次读取、unavailable / stale、Revision 详情独立失败、发布锁定和单一安全反馈。七板均结束 placeholder，原生根边界审计 `outOfRoot = 0`，逐板截图无裁切、塌陷或横向溢出，设计已通过 Pen 原生保存落盘；未启动服务 / 浏览器或修改正式页面代码，等待人工确认后进入正式视觉实现。
 - `2026-08-10` 已完成 [R2-A02 Author 列表、修订与 Forum 发布差异能力门禁](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)：`AuthorGetList` 落地数据库权威范围 / 草稿阶段筛选、稳定分页、结构化无效参数与列表请求代际；Revision history / detail 独立 unavailable / stale 和请求代际；正式 Forum Compose 使用页面内共享核心，WebOS 保留薄 Bottom Sheet 外壳；版本化本地草稿按账号隔离并与 Workbench 共源；发布器系统文案完成双语且失败只反馈一次。后端全量 `1224 passed / 39 skipped`，HTTP `37 / 37`、Client `533 / 533`、type-check、Lint 与 production build 通过；未启动服务 / 浏览器，未修改 Pencil、数据库、migration、权限或业务范围。下一步进入 R2 局部代表设计。
 - `2026-08-10` 已完成 [R2-A02 Author 列表、修订与 Forum 发布差异 readiness](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)：分级继续保持 `R2`，Docs Mine / Revisions 与 Forum Compose 继承 `R1-A01 / R1-P02`，不新增数据库、权限、业务实体或移动壳层。Pencil 前需先关闭五组门禁：AuthorGetList 权威筛选 / 稳定分页 / 角色本地化，Revision history/detail 独立状态与请求代际，共享 Composer 核心 / WebOS Sheet / 正式页面承载分层，Forum 本地草稿按账号隔离并与 Workbench 共源，以及发布器双语 / 单一结构化反馈。该审计未修改运行时代码、Pencil、API 或数据库，未启动服务 / 浏览器；门禁方案等待确认。
 - `2026-08-10` 已完成并关闭 [R2-W02 Private 仪表 / 任务侧栏正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)：六个正式入口统一使用“主任务宽列—紧凑摘要—窄辅助轨”，Mobile 固定主任务先于默认收起的辅助信息；共享 `WebTaskRailDisclosure` 提供 `720px` 折叠语义，Circle / Pet / Me 已删除辅助轨前置。Client `526 / 526`、type-check、Lint、production build 与静态契约通过；Gateway PC `1440 × 980`、Mobile `390 × 844` 无横向溢出，实际折叠交互和 Me / Workbench / Private Shop 顺序通过，浏览器 `0 error`，服务已停止。种子库没有 Pet、订单、权益或背包业务数据，因此本批只复核对应空态，有数据结构继续由自动化与构建守卫；未制造业务数据或修改后端边界。下一步进入 `R2-A02` readiness，不提前推进 R3。
@@ -149,18 +150,20 @@
 60. 获授权完成 Gateway PC `1440 × 980` 与 Mobile `390 × 844` 成组验收；无横向溢出、折叠交互、关键几何顺序与 `0 error` 通过，服务已停止，R2-W02 关闭。
 61. 完成 R2-A02 readiness：三个正式 Author 入口、WebOS 历史能力、Wiki / Forum 契约与响应式事实反查通过；专题保持 R2，但 Pencil 前需先关闭五组能力门禁，方案等待确认。本批未修改运行时代码、Pencil、API、数据库或权限，未启动服务 / 浏览器。
 62. 按确认方案关闭 R2-A02 五组能力门禁：Author 权威列表、Revision 独立状态与竞态、共享 Forum Composer、账号草稿隔离 / Workbench 共源和双语 / 单一反馈均落地；后端、HTTP、Client、类型、Lint 与生产构建通过，下一步进入局部代表设计。
+63. 在唯一活动 `.pen` 中完成 R2-A02 三个 PC、三个 Mobile 与必要关键状态局部代表设计；七板 placeholder、逐板截图和原生根边界审计通过，等待人工确认后进入正式视觉实现。
 
 ## 当前事项（2026-08-10）
 
 1. `R2-P03` 与 `R2-W02` 均已形成设计—实现—Gateway 运行态闭环并关闭；不重开其 Pencil 范围或扩张冻结边界。
 2. Notifications、Me、Circle、Pet、Private Shop 与 Workbench 已正式继承 `R1-F01 / R1-W01`；共享任务轨折叠是唯一响应式契约，不建立新壳层或页面专属变体。
-3. `R2-A02` 五组能力门禁已关闭；当前只进入 Docs Mine、Docs Revisions、Forum Compose 与必要关键状态的 R2 局部代表设计。
-4. 代表设计继续继承 `R1-A01 / R1-P02`，不改变本批冻结的 API、权限、LongId、幂等、账号存储、WebOS 外壳或业务范围，也不提前成组推进 R3。
+3. `R2-A02` 五组能力门禁和七张局部代表板已完成；当前等待人工确认，确认后只按稿落地 Docs Mine、Docs Revisions 与 Forum Compose 正式视觉。
+4. 代表设计继续继承 `R1-A01 / R1-P02`，正式实现不得改变本批冻结的 API、权限、LongId、幂等、账号存储、WebOS 外壳或业务范围，也不提前成组推进 R3。
 5. 继续冻结新移动壳层、WebOS 新功能、Tauri 恢复、Flutter 机械追平和主动生产证据采集。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-A02 Author 列表、修订与 Forum 发布差异局部代表设计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)
 - [R2-A02 Author 列表、修订与 Forum 发布差异能力门禁实现](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)
 - [R2-A02 Author 列表、修订与 Forum 发布差异设计前代码事实与能力覆盖审计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)
 - [R2-W02 Private 仪表 / 任务侧栏正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)

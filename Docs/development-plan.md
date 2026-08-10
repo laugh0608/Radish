@@ -8,8 +8,8 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-A02 Author 列表、修订与 Forum 发布差异局部代表设计`
-- **产品下一顺位**：`完成 Docs Mine、Docs Revisions、Forum Compose 与必要关键状态的 R2 局部代表板`
+- **工程第一顺位**：`F4-R R2-A02 局部代表设计确认与正式视觉实现`
+- **产品下一顺位**：`人工确认七张 R2-A02 代表板；确认后按稿落地 Docs Mine、Docs Revisions 与 Forum Compose`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
 - **复核日期**：`2026-08-10`
 - **当前结论**：
@@ -42,7 +42,7 @@
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
   - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
-  - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、`R2-C03`、`R2-P03` 与 [R2-W02](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10) 的代表设计、正式实现和 Gateway 运行态闭环；最后一个未关闭 R2 类型 `R2-A02` 已完成 [readiness](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)与[五组能力门禁](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)，当前进入局部代表设计，不提前推进 R3。F4-S 公开排行榜治理已穿插完成并关闭。
+  - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、`R2-C03`、`R2-P03` 与 [R2-W02](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10) 的代表设计、正式实现和 Gateway 运行态闭环；最后一个未关闭 R2 类型 `R2-A02` 已完成 [readiness](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)、[五组能力门禁](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)与[七张局部代表板](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)，当前等待人工确认后进入正式视觉实现，不提前推进 R3。F4-S 公开排行榜治理已穿插完成并关闭。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -62,7 +62,7 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q 与 F4-S 均已关闭，F4-R 已完成 A / B、v26.7.3 基线补充批、C-0、C-1A、`R1-F01`、六个 R1，以及 `R2-C03 / R2-P03 / R2-W02` 的设计、实现和运行态闭环；`R2-A02` readiness 与五组能力门禁已完成，当前进入局部代表设计。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q 与 F4-S 均已关闭，F4-R 已完成 A / B、v26.7.3 基线补充批、C-0、C-1A、`R1-F01`、六个 R1，以及 `R2-C03 / R2-P03 / R2-W02` 的设计、实现和运行态闭环；`R2-A02` readiness、五组能力门禁和七张局部代表板已完成，当前等待人工确认后进入正式视觉实现。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
 - 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线继续推进 F4-R C-1B 的 R1 / R2 代表设计与继承实现。
 - Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级移动原生产品线按明确移动价值推进，不与 Web 优先主线并行复制功能。
@@ -133,7 +133,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1，以及 `R2-C03 / R2-P03 / R2-W02` 均已形成设计—实现—运行态闭环。[R2-A02 readiness](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)确认继续保持 R2，[五组能力门禁](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)已关闭，当前进入 Docs Mine、Docs Revisions 与 Forum Compose 局部代表设计；后续视觉工作继续依据家族 UI 基线优化，不从零重新设计。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1，以及 `R2-C03 / R2-P03 / R2-W02` 均已形成设计—实现—运行态闭环。[R2-A02 readiness](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)确认继续保持 R2，[五组能力门禁](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)与[七张局部代表板](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)已完成，当前等待人工确认后进入正式视觉实现；后续视觉工作继续依据家族 UI 基线优化，不从零重新设计。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层
