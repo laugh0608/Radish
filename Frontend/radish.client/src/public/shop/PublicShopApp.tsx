@@ -52,6 +52,7 @@ interface PublicShopAppProps {
     onBack: () => void;
   } | null;
   onNavigate: (route: PublicShopRoute, options?: { replace?: boolean }) => void;
+  onNavigationConfirmChange: (message: string | null) => void;
 }
 
 type PublicStatusTone = 'loading' | 'empty' | 'error' | 'notFound';
@@ -143,7 +144,8 @@ export const PublicShopApp = ({
   route,
   fallbackProductsRoute,
   detailBackAction,
-  onNavigate
+  onNavigate,
+  onNavigationConfirmChange,
 }: PublicShopAppProps) => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
@@ -178,7 +180,10 @@ export const PublicShopApp = ({
   const [purchasing, setPurchasing] = useState(false);
   const [purchasePasscodeUpgradePrompt, setPurchasePasscodeUpgradePrompt] = useState<string | null>(null);
   const [handledPurchaseIntentKey, setHandledPurchaseIntentKey] = useState<string | null>(null);
-  const [reportProductId, setReportProductId] = useState<LongId | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    type: 'Product' | 'ProductReview';
+    id: LongId;
+  } | null>(null);
 
   const pageTitle = route.kind === 'detail'
     ? t('shop.public.detailTitle')
@@ -519,7 +524,7 @@ export const PublicShopApp = ({
     setPurchaseError(null);
     setPurchasePasscodeUpgradePrompt(null);
     setIsPurchaseModalOpen(false);
-    setReportProductId(null);
+    setReportTarget(null);
   }, [route]);
 
   const handleOpenProductReport = useCallback((productId: LongId) => {
@@ -528,8 +533,21 @@ export const PublicShopApp = ({
       return;
     }
 
-    setReportProductId(productId);
+    setReportTarget({ type: 'Product', id: productId });
   }, [loggedIn, t]);
+
+  const handleOpenProductReviewReport = useCallback((reviewId: LongId) => {
+    if (!loggedIn) {
+      toast.error(t('report.loginRequired'));
+      return;
+    }
+
+    setReportTarget({ type: 'ProductReview', id: reviewId });
+  }, [loggedIn, t]);
+
+  const handleReviewDirtyChange = useCallback((dirty: boolean) => {
+    onNavigationConfirmChange(dirty ? t('shop.review.leaveConfirm') : null);
+  }, [onNavigationConfirmChange, t]);
 
   const handleRequestPurchase = useCallback(async (product: Product) => {
     const returnPath = buildShopProductPurchaseReturnPath(product.voId);
@@ -914,6 +932,7 @@ export const PublicShopApp = ({
         product={selectedProduct}
         loggedIn={loggedIn}
         authReady={authReady}
+        reviewIntent={route.intent === 'review'}
         detailBackLabel={detailBackLabel}
         detailBackHref={detailBackHref}
         detailBackHint={detailBackHint}
@@ -928,6 +947,8 @@ export const PublicShopApp = ({
         onBack={handleBackFromDetail}
         onCopyShare={() => void copyShareLink()}
         onReport={handleOpenProductReport}
+        onReportReview={handleOpenProductReviewReport}
+        onReviewDirtyChange={handleReviewDirtyChange}
         onPurchaseLinkClick={handlePurchaseLinkClick}
       />
     );
@@ -944,7 +965,7 @@ export const PublicShopApp = ({
       />
 
       <main className={styles.main}>
-        <section className={styles.sectionCard}>
+        <section className={`${styles.sectionCard} ${route.kind === 'detail' ? styles.detailSectionCard : ''}`}>
           <div className={styles.sectionHeader}>
             <div className={styles.sectionHeading}>
               <div className={styles.sectionTitleRow}>
@@ -988,12 +1009,12 @@ export const PublicShopApp = ({
         />
       )}
 
-      {reportProductId !== null && (
+      {reportTarget !== null && (
         <ContentReportModal
           isOpen={true}
-          targetType="Product"
-          targetId={reportProductId}
-          onClose={() => setReportProductId(null)}
+          targetType={reportTarget.type}
+          targetId={reportTarget.id}
+          onClose={() => setReportTarget(null)}
         />
       )}
     </div>

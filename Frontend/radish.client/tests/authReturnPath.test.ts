@@ -33,6 +33,7 @@ import {
   buildShopOrderReturnPath,
   buildShopOrdersReturnPath,
   buildShopProductPurchaseReturnPath,
+  buildShopProductReviewReturnPath,
   consumeAuthReturnPath,
   normalizeAuthReturnPath,
   rememberAuthReturnPath,
@@ -103,6 +104,10 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(
     normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase'),
     '/shop/product/2042219067430928384?intent=purchase',
+  );
+  assert.equal(
+    normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=review'),
+    '/shop/product/2042219067430928384?intent=review',
   );
   assert.equal(normalizeAuthReturnPath('/shop/orders'), '/shop/orders');
   assert.equal(normalizeAuthReturnPath('/shop/order/2042219067430928385'), '/shop/order/2042219067430928385');
@@ -188,6 +193,8 @@ test('normalizeAuthReturnPath 只接受受控私域入口、正式 Web 交易回
   assert.equal(normalizeAuthReturnPath('/pet#care'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=read'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=review&from=discover'), null);
+  assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=review&intent=review'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase&from=discover'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase&intent=purchase'), null);
   assert.equal(normalizeAuthReturnPath('/shop/product/2042219067430928384?intent=purchase#confirm'), null);
@@ -326,6 +333,12 @@ test('商城正式 Web 返回路径应保留购买、订单和库存上下文', 
   assert.equal(buildShopProductPurchaseReturnPath(0), null);
   assert.equal(buildShopProductPurchaseReturnPath('02042219067430928384'), null);
   assert.equal(buildShopProductPurchaseReturnPath('abc'), null);
+  assert.equal(
+    buildShopProductReviewReturnPath('2042219067430928384'),
+    '/shop/product/2042219067430928384?intent=review',
+  );
+  assert.equal(buildShopProductReviewReturnPath('0'), null);
+  assert.equal(buildShopProductReviewReturnPath('abc'), null);
   assert.equal(buildShopOrdersReturnPath(), '/shop/orders');
   assert.equal(buildShopOrderReturnPath('2042219067430928385'), '/shop/order/2042219067430928385');
   assert.equal(buildShopOrderReturnPath(15), '/shop/order/15');

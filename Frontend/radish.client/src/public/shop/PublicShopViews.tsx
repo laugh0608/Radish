@@ -7,6 +7,11 @@ import type { LongId } from '@/api/user';
 import type { Product, ProductCategory, ProductListItem } from '@/types/shop';
 import { resolveMediaUrl } from '@/utils/media';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
+import {
+  ProductReviewCompactSummary,
+  PublicProductReviews,
+} from './PublicProductReviews';
+import { usePublicProductReviews } from './usePublicProductReviews';
 import styles from './PublicShopApp.module.css';
 
 type PublicShopTranslate = (key: string, options?: Record<string, unknown>) => string;
@@ -63,6 +68,7 @@ interface PublicShopDetailViewProps {
   product: Product;
   loggedIn: boolean;
   authReady: boolean;
+  reviewIntent: boolean;
   detailBackLabel: string;
   detailBackHref: string;
   detailBackHint: string;
@@ -77,6 +83,8 @@ interface PublicShopDetailViewProps {
   onBack: () => void;
   onCopyShare: () => void;
   onReport: (productId: LongId) => void;
+  onReportReview: (reviewId: LongId) => void;
+  onReviewDirtyChange: (dirty: boolean) => void;
   onPurchaseLinkClick: (event: MouseEvent<HTMLAnchorElement>, product: Product) => void;
 }
 
@@ -664,6 +672,7 @@ export function PublicShopDetailView({
   product,
   loggedIn,
   authReady,
+  reviewIntent,
   detailBackLabel,
   detailBackHref,
   detailBackHint,
@@ -678,6 +687,8 @@ export function PublicShopDetailView({
   onBack,
   onCopyShare,
   onReport,
+  onReportReview,
+  onReviewDirtyChange,
   onPurchaseLinkClick
 }: PublicShopDetailViewProps) {
   const { t, i18n } = useTranslation();
@@ -689,40 +700,16 @@ export function PublicShopDetailView({
       ? t('shop.public.detailRailPurchaseSignedIn')
       : t('shop.public.detailRailPurchaseGuest')
     : t('shop.public.detailRailPurchaseUnavailable');
+  const reviewController = usePublicProductReviews({
+    productId: product.voId,
+    loggedIn,
+    authReady,
+    onDirtyChange: onReviewDirtyChange,
+  });
 
   return (
     <div className={styles.detailLayout}>
       <article className={styles.detailCard}>
-        <div className={styles.detailTopbar}>
-          <div className={styles.detailTopbarActions}>
-            <a
-              className={styles.secondaryButton}
-              href={detailBackHref}
-              onClick={(event) => handlePublicShopLinkClick(event, onBack)}
-            >
-              <Icon icon="mdi:arrow-left" size={18} />
-              <span>{detailBackLabel}</span>
-            </a>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={onCopyShare}
-              disabled={shareBusy}
-            >
-              <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
-              <span>{shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}</span>
-            </button>
-            <button
-              type="button"
-              className={styles.secondaryButton}
-              onClick={() => onReport(product.voId)}
-            >
-              <Icon icon="mdi:flag-outline" size={18} />
-              <span>{t('report.action')}</span>
-            </button>
-          </div>
-          <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
-        </div>
         {shareState !== 'idle' ? (
           <p className={styles.shareFeedback} data-state={shareState}>
             {shareState === 'success' ? t('shop.public.shareSuccess') : t('shop.public.shareFailed')}
@@ -730,7 +717,42 @@ export function PublicShopDetailView({
         ) : null}
 
         <div className={styles.detailHero}>
-          <ProductImage product={product} />
+          <div className={styles.detailImageShell}>
+            <ProductImage product={product} />
+            <div className={styles.detailTopbar}>
+              <div className={styles.detailTopbarActions}>
+                <a
+                  className={styles.secondaryButton}
+                  href={detailBackHref}
+                  aria-label={detailBackLabel}
+                  onClick={(event) => handlePublicShopLinkClick(event, onBack)}
+                >
+                  <Icon icon="mdi:arrow-left" size={18} />
+                  <span>{detailBackLabel}</span>
+                </a>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  aria-label={shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}
+                  onClick={onCopyShare}
+                  disabled={shareBusy}
+                >
+                  <Icon icon={shareBusy ? 'mdi:progress-clock' : 'mdi:link-variant'} size={18} />
+                  <span>{shareBusy ? t('shop.public.shareSubmitting') : t('shop.public.shareAction')}</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  aria-label={t('report.action')}
+                  onClick={() => onReport(product.voId)}
+                >
+                  <Icon icon="mdi:flag-outline" size={18} />
+                  <span>{t('report.action')}</span>
+                </button>
+              </div>
+              <span className={styles.readOnlyBadge}>{t('shop.public.readOnlyBadge')}</span>
+            </div>
+          </div>
 
           <div className={styles.detailBody}>
             <div className={styles.detailTitleRow}>
@@ -746,7 +768,8 @@ export function PublicShopDetailView({
 
             <div className={styles.priceBlock}>
               <span className={styles.priceValue}>
-                {formatProductPrice(product.voPrice, i18n.resolvedLanguage ?? i18n.language)} {t('shop.currency.carrot')}
+                <Icon icon="mdi:carrot" size={28} />
+                {formatProductPrice(product.voPrice, i18n.resolvedLanguage ?? i18n.language)}
               </span>
               {product.voOriginalPrice && product.voOriginalPrice > product.voPrice ? (
                 <span className={styles.priceOriginal}>
@@ -754,6 +777,8 @@ export function PublicShopDetailView({
                 </span>
               ) : null}
             </div>
+
+            <ProductReviewCompactSummary controller={reviewController} />
 
             <div className={styles.metaGrid}>
               <div className={styles.metaItem}>
@@ -773,8 +798,39 @@ export function PublicShopDetailView({
                 <span className={styles.metaValue}>{product.voDurationDisplay || t('shop.public.durationFallback')}</span>
               </div>
             </div>
+
+            <section className={styles.purchasePanel} aria-label={t('shop.public.detailRailPurchaseTitle')}>
+              <div>
+                <strong>{t('shop.public.purchaseTitle')}</strong>
+                <p>{purchaseStateDescription}</p>
+              </div>
+              {purchaseError ? (
+                <p className={styles.purchaseFeedback} data-state="error">{purchaseError}</p>
+              ) : null}
+              {purchaseReturnPath ? (
+                <a
+                  className={styles.primaryLink}
+                  href={purchaseReturnPath}
+                  aria-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
+                  data-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
+                  onClick={(event) => onPurchaseLinkClick(event, product)}
+                >
+                  <Icon icon={purchaseActionIcon} size={18} />
+                  <span>{purchaseActionLabel}</span>
+                </a>
+              ) : null}
+            </section>
           </div>
         </div>
+
+        <PublicProductReviews
+          productId={String(product.voId)}
+          loggedIn={loggedIn}
+          authReady={authReady}
+          reviewIntent={reviewIntent}
+          controller={reviewController}
+          onReportReview={onReportReview}
+        />
 
         <section className={styles.detailSection}>
           <h2 className={styles.sectionTitle}>{t('shop.section.detail')}</h2>
@@ -816,35 +872,6 @@ export function PublicShopDetailView({
             <Icon icon="mdi:arrow-left" size={18} />
             <span>{detailBackLabel}</span>
           </a>
-        </section>
-
-        <section className={styles.railPanel}>
-          <div className={styles.railPanelHeader}>
-            <span className={styles.railIcon}>
-              <Icon icon={loggedIn ? 'mdi:cart-check' : 'mdi:login-variant'} size={18} />
-            </span>
-            <div>
-              <h2 className={styles.railTitle}>{t('shop.public.detailRailPurchaseTitle')}</h2>
-              <p className={styles.railText}>{purchaseStateDescription}</p>
-            </div>
-          </div>
-          {purchaseError ? (
-            <p className={styles.purchaseFeedback} data-state="error">
-              {purchaseError}
-            </p>
-          ) : null}
-          {purchaseReturnPath ? (
-            <a
-              className={`${styles.primaryLink} ${styles.railAction}`}
-              href={purchaseReturnPath}
-              aria-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
-              data-disabled={!authReady || purchaseBusy || !productAvailableForPurchase}
-              onClick={(event) => onPurchaseLinkClick(event, product)}
-            >
-              <Icon icon={purchaseActionIcon} size={18} />
-              <span>{purchaseActionLabel}</span>
-            </a>
-          ) : null}
         </section>
 
         <section className={styles.railPanel}>

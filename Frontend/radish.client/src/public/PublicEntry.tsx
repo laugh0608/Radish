@@ -243,6 +243,7 @@ export const PublicEntry = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const [route, setRoute] = useState<PublicContentRouteDescriptor>(() => parsePublicRoute());
   const [isForumDetailNavigationLocked, setIsForumDetailNavigationLocked] = useState(false);
+  const [publicNavigationConfirmMessage, setPublicNavigationConfirmMessage] = useState<string | null>(null);
   const [lastDiscoverRoute, setLastDiscoverRoute] = useState<PublicDiscoverRoute>(() => {
     const parsedRoute = parsePublicDiscoverRoute(window.location.pathname, window.location.search);
     return parsedRoute ?? createDefaultPublicDiscoverRoute();
@@ -264,6 +265,7 @@ export const PublicEntry = () => {
   const lockedPathRef = useRef<string | null>(null);
   const lockedHistoryStateRef = useRef<Record<string, unknown> | null>(null);
   const lockedRouteSourceStateRef = useRef<PublicRouteSourceState | null>(null);
+  const publicHistoryRestoreRef = useRef<{ position: number; path: string } | null>(null);
 
   useBrowserNavigationLock(isForumDetailNavigationLocked);
 
@@ -278,6 +280,19 @@ export const PublicEntry = () => {
     }
 
     setIsForumDetailNavigationLocked(locked);
+  }, [route, routeSourceState]);
+
+  const handlePublicNavigationConfirmChange = useCallback((message: string | null) => {
+    if (message) {
+      lockedPathRef.current = buildPublicPath(route);
+      lockedHistoryStateRef.current = buildPublicHistoryState(
+        routeSourceState,
+        historyPositionRef.current,
+      );
+      lockedRouteSourceStateRef.current = routeSourceState;
+    }
+
+    setPublicNavigationConfirmMessage(message);
   }, [route, routeSourceState]);
 
   useEffect(() => {
@@ -307,9 +322,17 @@ export const PublicEntry = () => {
   useEffect(() => {
     const handlePopState = () => {
       const nextHistoryPosition = readPublicHistoryPosition(window.history.state);
+      const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      const pendingRestore = publicHistoryRestoreRef.current;
+      if (pendingRestore) {
+        publicHistoryRestoreRef.current = null;
+        if (pendingRestore.position === nextHistoryPosition && pendingRestore.path === currentPath) {
+          return;
+        }
+      }
+
       if (isForumDetailNavigationLocked) {
         const stablePath = lockedPathRef.current ?? buildPublicPath(route);
-        const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         if (nextHistoryPosition === historyPositionRef.current && currentPath === stablePath) {
           return;
         }
@@ -335,6 +358,41 @@ export const PublicEntry = () => {
         return;
       }
 
+      if (publicNavigationConfirmMessage && !window.confirm(publicNavigationConfirmMessage)) {
+        const stablePath = lockedPathRef.current ?? buildPublicPath(route);
+        if (nextHistoryPosition === historyPositionRef.current && currentPath === stablePath) {
+          return;
+        }
+
+        if (nextHistoryPosition !== null) {
+          const restoreDelta = historyPositionRef.current - nextHistoryPosition;
+          if (restoreDelta !== 0) {
+            publicHistoryRestoreRef.current = {
+              position: historyPositionRef.current,
+              path: stablePath,
+            };
+            window.history.go(restoreDelta);
+            return;
+          }
+        }
+
+        const stableSourceState = lockedRouteSourceStateRef.current ?? routeSourceState;
+        window.history.pushState(
+          buildPublicHistoryState(
+            stableSourceState,
+            historyPositionRef.current,
+            lockedHistoryStateRef.current,
+          ),
+          '',
+          stablePath,
+        );
+        return;
+      }
+
+      if (publicNavigationConfirmMessage) {
+        setPublicNavigationConfirmMessage(null);
+      }
+
       const nextRoute = parsePublicRoute();
       historyPositionRef.current = nextHistoryPosition ?? 0;
       setRoute(nextRoute);
@@ -357,10 +415,10 @@ export const PublicEntry = () => {
     return () => {
       window.removeEventListener('popstate', handlePopState);
     };
-  }, [isForumDetailNavigationLocked, route, routeSourceState]);
+  }, [isForumDetailNavigationLocked, publicNavigationConfirmMessage, route, routeSourceState]);
 
   useEffect(() => {
-    if (!isForumDetailNavigationLocked) {
+    if (!isForumDetailNavigationLocked && !publicNavigationConfirmMessage) {
       return;
     }
 
@@ -373,7 +431,7 @@ export const PublicEntry = () => {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isForumDetailNavigationLocked]);
+  }, [isForumDetailNavigationLocked, publicNavigationConfirmMessage]);
 
   const navigateToRoute = useCallback((nextRoute: PublicRouteDescriptor, options?: PublicNavigateOptions) => {
     if (isForumDetailNavigationLocked) {
@@ -383,18 +441,26 @@ export const PublicEntry = () => {
     const currentRoute = parsePublicRoute();
     const nextPath = buildPublicPath(nextRoute);
     const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-
-    if (
-      nextRoute.app === 'circle'
+    const navigatesOutsidePublicContent = nextRoute.app === 'circle'
       || nextRoute.app === 'me'
       || nextRoute.app === 'messages'
-      || nextRoute.app === 'notifications'
-    ) {
-      window.location.href = nextPath;
+      || nextRoute.app === 'notifications';
+
+    if (!navigatesOutsidePublicContent
+      && !shouldCommitPublicRouteUpdate(currentRoute, nextRoute, currentPath, nextPath)) {
       return;
     }
 
-    if (!shouldCommitPublicRouteUpdate(currentRoute, nextRoute, currentPath, nextPath)) {
+    if (publicNavigationConfirmMessage && !window.confirm(publicNavigationConfirmMessage)) {
+      return;
+    }
+
+    if (publicNavigationConfirmMessage) {
+      setPublicNavigationConfirmMessage(null);
+    }
+
+    if (navigatesOutsidePublicContent) {
+      window.location.href = nextPath;
       return;
     }
 
@@ -430,7 +496,7 @@ export const PublicEntry = () => {
     }
     setRouteSourceState(nextRouteSourceState);
     setRoute(nextRoute);
-  }, [isForumDetailNavigationLocked]);
+  }, [isForumDetailNavigationLocked, publicNavigationConfirmMessage]);
 
   const navigateToDocsRoute = useCallback((nextRoute: PublicDocsRoute, options?: PublicNavigateOptions) => {
     navigateToRoute({ app: 'docs', route: nextRoute }, options);
@@ -571,6 +637,7 @@ export const PublicEntry = () => {
       fallbackProductsRoute={lastShopProductsRoute}
       detailBackAction={shopDetailBackAction}
       onNavigate={navigateToShopRoute}
+      onNavigationConfirmChange={handlePublicNavigationConfirmChange}
     />
   ) : route.app === 'docs' ? (
     <PublicDocsApp

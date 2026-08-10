@@ -567,11 +567,12 @@ function normalizeShopReturnPath(url: URL, normalizedPathname: string): string |
       }
     }
 
-    if (url.searchParams.getAll('intent').length !== 1 || url.searchParams.get('intent') !== 'purchase') {
+    const intents = url.searchParams.getAll('intent');
+    if (intents.length !== 1 || (intents[0] !== 'purchase' && intents[0] !== 'review')) {
       return null;
     }
 
-    return `/shop/product/${productMatched[1]}?intent=purchase`;
+    return `/shop/product/${productMatched[1]}?intent=${intents[0]}`;
   }
 
   if (normalizedPathname === '/shop/orders') {
@@ -840,6 +841,15 @@ export function buildShopProductPurchaseReturnPath(productId: string): string | 
   }
 
   return `/shop/product/${normalizedProductId}?intent=purchase`;
+}
+
+export function buildShopProductReviewReturnPath(productId: string): string | null {
+  const normalizedProductId = String(productId).trim();
+  if (!POSITIVE_LONG_ID_PATTERN.test(normalizedProductId)) {
+    return null;
+  }
+
+  return `/shop/product/${normalizedProductId}?intent=review`;
 }
 
 export function buildShopOrdersReturnPath(): string {

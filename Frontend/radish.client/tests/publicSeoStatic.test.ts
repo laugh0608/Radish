@@ -71,11 +71,12 @@ test('公开商品详情应复用共享商品举报并保持匿名守卫', () =>
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopViews.tsx'), 'utf8');
 
   assert.match(source, /import \{ ContentReportModal \} from '@\/components\/ContentReportModal';/);
-  assert.match(source, /const \[reportProductId, setReportProductId\] = useState<LongId \| null>\(null\);/);
+  assert.match(source, /type: 'Product' \| 'ProductReview';/);
+  assert.match(source, /setReportTarget\(\{ type: 'Product', id: productId \}\)/);
   assert.match(source, /if \(!loggedIn\) \{\s+toast\.error\(t\('report\.loginRequired'\)\);\s+return;/);
   assert.match(source, /onReport=\{handleOpenProductReport\}/);
-  assert.match(source, /targetType="Product"/);
-  assert.match(source, /targetId=\{reportProductId\}/);
+  assert.match(source, /targetType=\{reportTarget\.type\}/);
+  assert.match(source, /targetId=\{reportTarget\.id\}/);
   assert.match(detailSource, /onReport: \(productId: LongId\) => void;/);
   assert.match(detailSource, /onClick=\{\(\) => onReport\(product\.voId\)\}/);
   assert.match(detailSource, /t\('report\.action'\)/);
@@ -162,7 +163,7 @@ test('公开个人页应由主资料独立裁决存在性并局部降级统计',
   assert.doesNotMatch(source, /stats\?\.voCommentCount \?\? 0/);
   assert.doesNotMatch(source, /stats\?\.voTotalLikeCount \?\? 0/);
   assert.doesNotMatch(source, /followStatus\?\.voFollowerCount \?\? '—'/);
-  assert.match(source, /\{followStatus && \(\s*<div className=\{styles\.statCard\}>/);
+  assert.match(source, /\{followStatus \? \(\s*<div className=\{styles\.statCard\}>/);
   assert.match(apiSource, /throw createApiResponseError\(response, '加载用户统计失败'\);/);
   assert.match(apiSource, /throw createApiResponseError\(response, '加载用户帖子失败'\);/);
   assert.match(apiSource, /throw createApiResponseError\(response, '加载用户评论失败'\);/);

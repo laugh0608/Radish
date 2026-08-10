@@ -224,11 +224,16 @@ test('parsePublicShopRoute 应保留商品详情的大整数字符串 ID', () =>
   });
 });
 
-test('parsePublicShopRoute 应保留正式 Web 购买意图并拒绝其他意图', () => {
+test('parsePublicShopRoute 应保留正式 Web 购买与评价意图并拒绝其他意图', () => {
   assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=purchase'), {
     kind: 'detail',
     productId: '2042219067430928384',
     intent: 'purchase',
+  });
+  assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=review'), {
+    kind: 'detail',
+    productId: '2042219067430928384',
+    intent: 'review',
   });
   assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=read'), {
     kind: 'detail',
@@ -266,6 +271,14 @@ test('buildPublicShopPath 应回写公开商城列表和详情路径', () => {
       intent: 'purchase',
     }),
     '/shop/product/2042219067430928384?intent=purchase'
+  );
+  assert.equal(
+    buildPublicShopPath({
+      kind: 'detail',
+      productId: '2042219067430928384',
+      intent: 'review',
+    }),
+    '/shop/product/2042219067430928384?intent=review'
   );
 });
 

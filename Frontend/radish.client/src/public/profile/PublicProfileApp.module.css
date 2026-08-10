@@ -14,7 +14,7 @@
 
 .main {
   flex: 1 0 auto;
-  width: min(1376px, calc(100vw - 32px));
+  width: min(1392px, calc(100vw - 48px));
   margin: 0 auto;
   padding: 22px 0 40px;
   min-width: 0;
@@ -22,7 +22,7 @@
 
 .profileLayout {
   display: grid;
-  grid-template-columns: minmax(0, 920px) minmax(320px, 440px);
+  grid-template-columns: minmax(0, 936px) minmax(320px, 440px);
   gap: 16px;
   align-items: start;
   min-width: 0;
@@ -47,7 +47,58 @@
 
 .summaryCard,
 .contentCard {
+  min-width: 0;
+}
+
+.summaryCard {
+  overflow: hidden;
+}
+
+.contentCard {
   padding: 1.3rem;
+}
+
+.profileCover {
+  position: relative;
+  height: 136px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 24%, color-mix(in srgb, var(--theme-surface-highlight) 62%, transparent) 0 9%, transparent 9.5%),
+    linear-gradient(132deg, color-mix(in srgb, var(--theme-brand-primary) 72%, var(--theme-bg-surface) 28%), color-mix(in srgb, var(--theme-accent-jade) 56%, var(--theme-brand-hover) 44%));
+}
+
+.coverPattern {
+  position: absolute;
+  inset: 0;
+  opacity: 0.44;
+  background:
+    radial-gradient(ellipse at 14% 104%, transparent 0 46%, color-mix(in srgb, var(--theme-bg-surface) 46%, transparent) 47% 49%, transparent 50%),
+    radial-gradient(ellipse at 68% 116%, transparent 0 50%, color-mix(in srgb, var(--theme-bg-surface) 38%, transparent) 51% 53%, transparent 54%);
+}
+
+.coverSeal {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid color-mix(in srgb, var(--theme-text-inverse) 56%, transparent);
+  border-radius: 12px;
+  color: var(--theme-text-inverse);
+  font-family: var(--theme-font-serif);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.summarySurface {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  padding: 14px 18px 18px;
 }
 
 .summaryHeader {
@@ -56,7 +107,10 @@
   justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-bottom: 0.65rem;
+  position: absolute;
+  top: -122px;
+  left: 18px;
+  z-index: 1;
 }
 
 .readOnlyBadge {
@@ -96,6 +150,100 @@
   gap: 1rem;
   align-items: start;
   min-width: 0;
+}
+
+.profileIdentityGrid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.18fr) minmax(170px, 0.66fr) minmax(280px, 1fr);
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.profileIdentityPrimary {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.profileIdentityPrimary .avatar {
+  width: 5.6rem;
+  height: 5.6rem;
+  margin-top: -42px;
+  border: 4px solid var(--theme-bg-surface);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--theme-text-primary) 16%, transparent);
+}
+
+.userNameRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.userNameRow .userName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileBio {
+  margin: 2px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.levelPanel {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  padding-left: 18px;
+  border-left: 1px solid var(--theme-border-soft);
+}
+
+.levelLabel {
+  color: var(--theme-text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.levelValueRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.levelValueRow > strong {
+  color: var(--theme-brand-primary);
+  font-size: 1.18rem;
+}
+
+.levelNameBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-accent-earth) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-accent-earth) 10%, var(--theme-bg-surface) 90%);
+  color: color-mix(in srgb, var(--theme-accent-earth) 72%, var(--theme-text-primary) 28%);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.profileAuthority {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  min-width: 0;
+}
+
+.profileAuthority .summaryActions {
+  width: 100%;
 }
 
 .avatar {
@@ -323,6 +471,40 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.85rem;
   margin-top: 1.2rem;
+}
+
+.profileAuthority .statsGrid {
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(48px, 1fr));
+  gap: 5px;
+  margin-top: 0;
+}
+
+.profileAuthority .statCard {
+  justify-items: end;
+  gap: 1px;
+  padding: 4px 6px;
+  border-radius: 10px;
+  background: transparent;
+}
+
+.profileAuthority .statValue {
+  font-size: 1.05rem;
+}
+
+.profileAuthority .statLabel {
+  font-size: 0.7rem;
+}
+
+.statsLoading {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: 100%;
+  color: var(--theme-text-secondary);
+  font-size: 0.78rem;
 }
 
 .statCard {
@@ -720,6 +902,58 @@
 }
 
 @media (max-width: 780px) {
+  .profileCover {
+    height: 116px;
+  }
+
+  .summarySurface {
+    padding: 14px;
+  }
+
+  .summaryHeader {
+    top: -102px;
+    left: 14px;
+  }
+
+  .profileIdentityGrid {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .profileIdentityPrimary {
+    align-items: end;
+  }
+
+  .profileIdentityPrimary .avatar {
+    width: 4.8rem;
+    height: 4.8rem;
+    margin-top: -38px;
+  }
+
+  .levelPanel {
+    padding: 12px 0 0;
+    border-top: 1px solid var(--theme-border-soft);
+    border-left: 0;
+  }
+
+  .profileAuthority {
+    justify-items: stretch;
+  }
+
+  .profileAuthority .statsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .profileAuthority .statCard {
+    justify-items: start;
+    padding: 6px 2px;
+  }
+
+  .statsLoading {
+    justify-content: flex-start;
+  }
+
   .contentHeader,
   .summaryHeader,
   .itemTopRow,
@@ -727,6 +961,10 @@
   .statusActions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .summaryCard .summaryHeader {
+    align-items: flex-start;
   }
 
   .itemFooter {
@@ -805,8 +1043,11 @@
 
   .summaryCard,
   .contentCard {
-    padding: 1rem;
     border-radius: 1.2rem;
+  }
+
+  .contentCard {
+    padding: 1rem;
   }
 
   .summaryHeader {

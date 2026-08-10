@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-P03 Public 只读详情变体；代表设计已确认，下一开发日进入正式商品详情与公开主页实现`
-- **产品下一顺位**：`先按确认稿接入公开等级与商品评价，再成组执行 PC / mobile 静态与运行态验收；不提前推进 R3`
-- **复核日期**：`2026-08-09`
+- **工程第一顺位**：`F4-R R2-W02 Private 仪表 / 任务侧栏；先执行设计前代码事实与能力覆盖审计`
+- **产品下一顺位**：`反查 Notifications、Me、Circle、Pet、Private Shop 与 Workbench 的主任务、状态摘要、辅助侧栏和 mobile 排序；先裁决继承与能力门禁，不提前修改 Pencil 或推进 R3`
+- **复核日期**：`2026-08-10`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-10` 已完成并关闭 [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)：商品详情接入综合评分、五星分布、稳定分页、Completed 资格、本人评价 CRUD、dirty 离开确认、CAS `409` 草稿保留、unavailable / stale 和 `ProductReview` 举报；公开主页接入昵称 / `用户名#公开ID`、真实签名空态、当前等级 / 等级名、加入时间和独立权威统计。DbMigrate 补齐商品评价迁移后，Gateway 以匿名与种子管理员覆盖 PC `1440 × 900`、Mobile `390 × 844`、零评价、临时 Completed 资格、创建 / 编辑 / 删除、登录回跳、dirty、真实 CAS 冲突和举报弹窗；新页签稳定态 `0 warning / 0 error`，临时订单与评价均已精确清理。Client `518 / 518`、type-check、Lint 与 production build 通过；未修改 Pencil，下一步进入 `R2-W02` 设计前审计。
 - `2026-08-09` 已完成 [R2-P03 商品评价与公开等级能力门禁](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)：公开资料只增加当前等级 / 等级名；商品评价固定 Completed 订单资格、每用户每商品一条、`1..5` 星、可选 `500` 字评论、唯一约束、数据库聚合和单调 CAS，并以 `ProductReview` 复用既有治理 / 申诉权限与事务。后端 `1220 passed / 39 skipped`，HTTP `36 / 36`、Client `514 / 514`、Console `83 / 83` 及静态构建通过；未启动服务或浏览器。
 - `2026-08-09` 已按七轮反馈完成并确认 [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)：三张 PC 统一为 `24px` 外边距、`12px` 核心分栏和 `14–20px` 主要卡片内距，长内容、商品详情、公开主页保持独立；PC / Mobile 购买与发消息主按钮统一暖白前景。商品 Mobile 固定顶部大图—商品信息—购买动作—评价摘要 / 预览—详情；公开主页按昵称、`用户名#公开ID`、签名、等级 / 等级名和加入时间分区，PC 右侧统计 / 操作保持既有结构。商品价格统一使用 `carrot` 萝卜图标。连同评价零态、资格、dirty、`409`、unavailable / stale 和治理 / 申诉状态，共八个顶层画板均无 placeholder、裁切、塌陷或横向溢出。
 - `2026-08-09` 已确认 [R2-P03 商品评价与公开等级范围](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)：不扩入公开经验详情、用户背景上传、评价媒体 / 回复 / 有用 / 追评 / 标签 / 推荐排序 / 实时刷新，不新增 Console 权限、审批流或独立评价中心。
@@ -79,7 +80,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 最近进展（2026-08-08—09，六个 R1 / R2-C03 / R2-P03 设计）
+## 最近进展（2026-08-08—10，六个 R1 / R2-C03 / R2-P03）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
@@ -130,18 +131,25 @@
 47. 第五轮反馈保留 Mobile，只重做 PC 公开主页头部：封面 / 信息底由 `120 / 176px` 调整为 `136 / 140px`，主身份、签名 / 等级、统计 / 操作拆成三个横向区块，整卡收敛到 `276px`；PC 截图和节点边界复核通过。
 48. 第六轮反馈继续简化 PC 用户头部：删除签名资料条与三套对齐线，改为左侧完整身份列、右侧统一右边界的统计 / 操作列；昵称与账号合并到标题行，Mobile 保持不变，PC 截图和节点边界复核通过。
 49. 第七轮反馈按指定信息归属利用 PC 中间留白：左侧保留昵称 / 账号与签名，中间展示当前等级、等级名徽章式视觉及加入时间，右侧统计 / 操作完全不变；徽章式视觉继续只消费现有公开等级名，不新增徽章能力。
+50. 按确认稿完成正式商品详情：综合评分、五星分布、稳定分页、Completed 资格、本人评价 CRUD、dirty、CAS `409`、unavailable / stale 与评价举报已接入；Mobile DOM 顺序固定为大图—信息—购买—评价—详情，LongId 保持字符串。
+51. 完成正式公开主页身份区：昵称 / `用户名#公开ID`、真实签名空态、当前等级 / 等级名、加入时间和独立权威统计分别加载；未取得统计结果时不伪造零值，未新增背景上传、徽章实体或公开经验详情。
+52. Client 全量 `518 / 518`、type-check、Lint 与 production build 通过；本批没有修改 Pencil。
+53. 获当前任务授权后执行 DbMigrate `apply`，补齐本地商品评价迁移与种子数据；Gateway、API、Auth 与 Client 健康检查通过。
+54. 使用匿名与种子管理员完成 Gateway PC `1440 × 900`、Mobile `390 × 844` 成组验收：零评价、Completed 资格、评价创建 / 编辑 / 删除、dirty 拦截、真实 CAS 冲突、`ProductReview` 举报弹窗、公开主页等级 / 统计、双语 / 主题和无横向溢出均通过。
+55. 运行态修正评价登录回跳丢失意图，以及资格 / 冲突错误泄露服务端原始文案；受控 `intent=review` 可在登录后滚动并打开符合资格的评价编辑器。临时订单与评价精确清零，新页签稳定态 `0 warning / 0 error`，`R2-P03` 关闭。
 
-## 明日事项（2026-08-10）
+## 当前事项（2026-08-10）
 
-1. R2-P03 readiness、两轮能力门禁、七轮 Pencil 反馈与整组设计确认均已完成；明日直接从确认稿进入正式商品详情与公开主页实现，不再复制路由或重开设计范围。
-2. 商品详情接入现有评价 contract：真实综合评分 / 五星分布 / 稳定分页、Completed 资格、本人创建 / 编辑 / 删除、dirty 离开保护、CAS `409` 草稿保留，以及评价局部 unavailable / stale、举报与申诉回流；LongId 继续保持字符串。
-3. 公开主页接入已存在的 `VoCurrentLevel / VoCurrentLevelName`，按确认的 PC / Mobile 身份结构展示昵称、`用户名#公开ID`、签名、等级 / 等级名、加入时间和权威统计；不新增徽章实体、主页背景上传或公开经验详情。
-4. 先完成 Client 定向测试、type-check、Lint、production build、文档与仓库卫生检查；正式代码成组完成后再申请启动 Gateway、API、Auth、Client 并执行 PC `1440` / Mobile `390` smoke。
-5. 不新增权限、审批流、评价媒体 / 回复 / 有用、动态 key、实时刷新、新移动壳层或 R3 页面；局部失败不得覆盖商品 / 公开主页主体裁决。
+1. `R2-P03` 已形成设计—实现—Gateway 运行态闭环并关闭；不重开其 Pencil 范围，也不扩入评价媒体、回复、有用、独立评价中心或公开经验详情。
+2. 下一步进入 `R2-W02 Private 仪表 / 任务侧栏` 设计前代码事实与能力覆盖审计，先核对正式 Web、WebOS 历史实现、API、权限、状态与 mobile 任务流。
+3. 审计范围固定为 Notifications、Me、Circle、Pet、Private Shop 与 Workbench 的主任务、状态摘要、辅助侧栏排序 / 折叠和已有表单；不得借视觉专题扩张业务能力。
+4. 先判断 `R1-F01 / R1-W01` 是否足以继承，以及是否存在必须先关闭的窄代码门禁；审计完成前不修改 Pencil、不启动服务或浏览器，也不推进 R3 页面。
+5. 继续冻结新移动壳层、WebOS 新功能、Tauri 恢复、Flutter 机械追平和主动生产证据采集。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)
 - [R2-P03 商品评价与公开等级能力门禁实现](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)
 - [R2-P03 商品评价与公开等级范围审计](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)
 - [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)
