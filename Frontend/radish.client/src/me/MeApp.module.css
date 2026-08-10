@@ -109,6 +109,13 @@
   overflow-wrap: anywhere;
 }
 
+.identityError {
+  margin: 8px 0 0;
+  color: var(--theme-state-warning);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .identityActions {
   min-width: 220px;
   display: grid;

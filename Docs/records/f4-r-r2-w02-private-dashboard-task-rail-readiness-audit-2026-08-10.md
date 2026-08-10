@@ -2,7 +2,7 @@
 
 > 日期：2026-08-10（Asia/Shanghai）
 >
-> 状态：readiness 已完成；窄前端能力门禁方案等待确认
+> 状态：readiness 已完成；五组窄前端能力门禁已由[实现批](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)关闭
 >
 > 范围：正式 Web 的 Notifications、Me、Circle、Pet、Private Shop 与 Workbench；反查 WebOS 历史实现、共享 API / Store、PC / mobile 主次顺序和既有表单
 
@@ -17,7 +17,7 @@
 - 现有正式 Web 路由、共享 API / Store 与已有表单，不把 WebOS 窗口、Dock 或桌面结构迁回浏览器主线；
 - `private-web-workflows-design` 已冻结的 Private 页面边界，不把转账、资产安全、公开经验详情、完整移动商城或宠物经济扩展带入 F4-R。
 
-当前不能直接进入 Pencil。审计发现五组会让代表设计建立在错误运行时语义上的窄前端门禁：权威读取状态、未保存草稿保护、Pet 模糊结果重试幂等、Private Shop 结构化错误 / 本地化，以及超限的 Me 页面容器。它们均可在现有前端边界内关闭。
+审计发现的五组窄前端门禁——权威读取状态、未保存草稿保护、Pet 模糊结果重试幂等、Private Shop 结构化错误 / 本地化，以及超限的 Me 页面容器——已于同日由[能力门禁实现批](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)在现有前端边界内关闭。
 
 ## 2. 正式路由与能力覆盖
 
@@ -96,9 +96,7 @@ PC 允许“主任务 + 辅助轨”，但摘要必须靠近它所解释的任�
 
 ## 5. 停止线与后续顺位
 
-本 readiness 未修改 Pencil、运行时代码、API、数据库、权限或业务范围，也未启动服务 / 浏览器。
-
-方案确认后，下一批只成组关闭第 3 节五组前端门禁并补定向测试、type-check、Lint、Client build 与仓库卫生检查。能力门禁通过后再裁决 `R2-W02` 需要的局部 Pencil 区块；当前不占用 Pencil，也不提前实施六个页面的视觉重构或任何 R3 页面。
+本 readiness 自身未修改 Pencil、运行时代码、API、数据库、权限或业务范围，也未启动服务 / 浏览器。五组门禁已经通过同日实现批和 Client 定向验证关闭；下一步等待 Pencil 可用与当前任务授权，再裁决 `R2-W02` 的局部代表区块。当前继续不占用 Pencil，也不提前实施六个页面的视觉重构或任何 R3 页面。
 
 ## 6. 主要证据
 

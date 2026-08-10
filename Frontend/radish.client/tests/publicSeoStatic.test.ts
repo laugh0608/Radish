@@ -8,7 +8,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(testDir, '..');
 
 function readLocaleResources(): string {
-  const domainNames = ['core', 'shell', 'discover', 'community', 'forumRevision', 'chat', 'account', 'commerce', 'docs'];
+  const domainNames = ['core', 'shell', 'discover', 'community', 'notification', 'forumRevision', 'chat', 'account', 'commerce', 'docs'];
   return ['en', 'zh']
     .flatMap((language) => domainNames.map((domain) =>
       readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
@@ -814,6 +814,7 @@ test('公开论坛详情应复用统一举报组件覆盖帖子、轻回应和�
 test('登录态私域入口生成公开链接前应复用 PublicId 校验', () => {
   const circleSource = readFileSync(resolve(clientRoot, 'src/circle/CircleApp.tsx'), 'utf8');
   const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');
+  const meDashboardSource = readFileSync(resolve(clientRoot, 'src/me/MeDashboardView.tsx'), 'utf8');
   const leaderboardSource = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
   const publicIdSource = readFileSync(resolve(clientRoot, 'src/public/publicId.ts'), 'utf8');
 
@@ -825,7 +826,7 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.match(circleSource, /href=\{buildCirclePath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
   assert.doesNotMatch(circleSource, /voPublicId\?\.trim\(\)/);
   assert.match(meSource, /resolvePublicUserRouteIdentifier/);
-  assert.match(meSource, /href=\{buildMePath\(\{ kind: 'assets-transactions' \}\)\}/);
+  assert.match(meDashboardSource, /href=\{buildMePath\(\{ kind: 'assets-transactions' \}\)\}/);
   assert.match(meSource, /function isPublicDocsDetailPath/);
   assert.match(meSource, /if \(isPublicDocsDetailPath\(pathname\)\) \{/);
   assert.match(meSource, /rememberPublicRouteSourceTransfer\(href, sourceState\)/);

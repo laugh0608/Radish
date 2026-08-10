@@ -12,6 +12,7 @@ import { enDiscover } from './en/discover';
 import { enDocs } from './en/docs';
 import { enForumRevision } from './en/forumRevision';
 import { enForumAnswer } from './en/forumAnswer';
+import { enNotification } from './en/notification';
 import { enPostBookmark } from './en/postBookmark';
 import { enShell } from './en/shell';
 import { zhAccount } from './zh/account';
@@ -24,12 +25,13 @@ import { zhDiscover } from './zh/discover';
 import { zhDocs } from './zh/docs';
 import { zhForumRevision } from './zh/forumRevision';
 import { zhForumAnswer } from './zh/forumAnswer';
+import { zhNotification } from './zh/notification';
 import { zhPostBookmark } from './zh/postBookmark';
 import { zhShell } from './zh/shell';
 
 export const clientTranslationDomains = {
-  en: [enCore, enShell, welcomeEn, welcomeOpenSourceEn, enDiscover, enCommunity, enForumRevision, enForumAnswer, enPostBookmark, enContentReward, enChat, enAccount, enCommerce, enDocs],
-  zh: [zhCore, zhShell, welcomeZh, welcomeOpenSourceZh, zhDiscover, zhCommunity, zhForumRevision, zhForumAnswer, zhPostBookmark, zhContentReward, zhChat, zhAccount, zhCommerce, zhDocs],
+  en: [enCore, enShell, welcomeEn, welcomeOpenSourceEn, enDiscover, enCommunity, enNotification, enForumRevision, enForumAnswer, enPostBookmark, enContentReward, enChat, enAccount, enCommerce, enDocs],
+  zh: [zhCore, zhShell, welcomeZh, welcomeOpenSourceZh, zhDiscover, zhCommunity, zhNotification, zhForumRevision, zhForumAnswer, zhPostBookmark, zhContentReward, zhChat, zhAccount, zhCommerce, zhDocs],
 } as const;
 
 export const resources = {
@@ -41,6 +43,7 @@ export const resources = {
       ...welcomeOpenSourceEn,
       ...enDiscover,
       ...enCommunity,
+      ...enNotification,
       ...enForumRevision,
       ...enForumAnswer,
       ...enPostBookmark,
@@ -59,6 +62,7 @@ export const resources = {
       ...welcomeOpenSourceZh,
       ...zhDiscover,
       ...zhCommunity,
+      ...zhNotification,
       ...zhForumRevision,
       ...zhForumAnswer,
       ...zhPostBookmark,

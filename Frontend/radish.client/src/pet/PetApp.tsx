@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { useBrowserNavigationLock } from '@/bootstrap/browserNavigationLock';
 import {
   carePet,
   claimPet,
@@ -39,6 +40,7 @@ import {
   type PetStatDelta,
   type PetStatKey,
 } from './petPresentation';
+import { hasAuthoritativePetCareAdvance, isAmbiguousPetCareError } from './petCareRetry';
 import { buildPetPath } from './petRouteState';
 import styles from './PetApp.module.css';
 
@@ -58,7 +60,10 @@ interface FeedbackNotice {
 
 interface LoadPetDataOptions {
   silent?: boolean;
+  preserveProfileDraft?: boolean;
 }
+
+type PetLoadState = 'idle' | 'loading' | 'ready' | 'unavailable' | 'stale';
 
 const initialPageData: PetPageData = {
   pet: null,
@@ -131,6 +136,9 @@ export const PetApp = () => {
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [pageData, setPageData] = useState<PetPageData>(initialPageData);
+  const pageDataRef = useRef<PetPageData>(initialPageData);
+  const pendingCareKeysRef = useRef<Map<PetCareActionType, string>>(new Map());
+  const [loadState, setLoadState] = useState<PetLoadState>('idle');
   const [loading, setLoading] = useState(false);
   const [claimName, setClaimName] = useState('');
   const [profileName, setProfileName] = useState('');
@@ -141,6 +149,34 @@ export const PetApp = () => {
   const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackNotice | null>(null);
   const [nowTick, setNowTick] = useState(() => Date.now());
+  const profileDirty = pageData.pet !== null && (
+    profileName !== pageData.pet.voName || isPublic !== pageData.pet.voIsPublic
+  );
+  useBrowserNavigationLock(profileDirty);
+
+  const updatePageData = useCallback((updater: (current: PetPageData) => PetPageData) => {
+    setPageData((current) => {
+      const next = updater(current);
+      pageDataRef.current = next;
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!profileDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [profileDirty]);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -186,12 +222,13 @@ export const PetApp = () => {
     });
   }, [authReady, loggedIn, redirecting]);
 
-  const loadPetData = useCallback(async (options: LoadPetDataOptions = {}) => {
+  const loadPetData = useCallback(async (options: LoadPetDataOptions = {}): Promise<PetPageData | null> => {
     if (!loggedIn) {
-      return;
+      return null;
     }
 
     setLoading(true);
+    setLoadState('loading');
     if (!options.silent) {
       setError(null);
       setFeedback(null);
@@ -199,20 +236,28 @@ export const PetApp = () => {
     try {
       const pet = await getMyPet(t);
       const logs = pet ? (await getPetLogs(1, 8, t)).voItems : [];
-      setPageData({
+      const nextPageData = {
         pet,
         logs,
         loadedAt: new Date().toISOString(),
-      });
+      };
+      pageDataRef.current = nextPageData;
+      setPageData(nextPageData);
+      setLoadState('ready');
       setNowTick(Date.now());
-      setProfileName(pet?.voName ?? '');
-      setIsPublic(pet?.voIsPublic ?? false);
+      if (!options.preserveProfileDraft) {
+        setProfileName(pet?.voName ?? '');
+        setIsPublic(pet?.voIsPublic ?? false);
+      }
+      return nextPageData;
     } catch (err) {
       const message = getErrorMessage(err, t('pet.error.load'));
+      setLoadState(pageDataRef.current.loadedAt ? 'stale' : 'unavailable');
       if (!options.silent) {
         setError(message);
       }
       log.warn('PetApp', '加载电子宠物失败', err);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -244,11 +289,14 @@ export const PetApp = () => {
     setFeedback(null);
     try {
       const pet = await claimPet({ name: claimName.trim() || t('pet.claim.placeholder') }, t);
-      setPageData({
+      const nextPageData = {
         pet,
         logs: [],
         loadedAt: new Date().toISOString(),
-      });
+      };
+      pageDataRef.current = nextPageData;
+      setPageData(nextPageData);
+      setLoadState('ready');
       setProfileName(pet.voName);
       setIsPublic(pet.voIsPublic);
       setClaimName('');
@@ -282,7 +330,7 @@ export const PetApp = () => {
         name: profileName.trim() || pageData.pet.voName,
         isPublic,
       }, t);
-      setPageData(current => ({
+      updatePageData(current => ({
         ...current,
         pet,
         loadedAt: new Date().toISOString(),
@@ -302,7 +350,7 @@ export const PetApp = () => {
     } finally {
       setSavingProfile(false);
     }
-  }, [isPublic, pageData.pet, profileName, t]);
+  }, [isPublic, pageData.pet, profileName, t, updatePageData]);
 
   const handleCare = useCallback(async (action: PetCareActionState) => {
     const availability = resolvePetActionAvailability(action, nowTick);
@@ -313,16 +361,22 @@ export const PetApp = () => {
     setActiveAction(action.voActionType);
     setError(null);
     setFeedback(null);
+    const beforeSnapshot = pageDataRef.current;
+    const idempotencyKey = pendingCareKeysRef.current.get(action.voActionType)
+      ?? buildIdempotencyKey(action.voActionType);
+    pendingCareKeysRef.current.set(action.voActionType, idempotencyKey);
     try {
       const result = await carePet({
         actionType: action.voActionType,
-        idempotencyKey: buildIdempotencyKey(action.voActionType),
+        idempotencyKey,
       }, t);
-      setPageData(current => ({
+      pendingCareKeysRef.current.delete(action.voActionType);
+      updatePageData(current => ({
         pet: result.voPet,
         logs: [result.voLog, ...current.logs.filter(item => item.voId !== result.voLog.voId)].slice(0, 8),
         loadedAt: new Date().toISOString(),
       }));
+      setLoadState('ready');
       setProfileName(result.voPet.voName);
       setIsPublic(result.voPet.voIsPublic);
       setNowTick(Date.now());
@@ -340,11 +394,33 @@ export const PetApp = () => {
       const message = getErrorMessage(err, t('pet.error.care'));
       setError(message);
       log.warn('PetApp', '照顾电子宠物失败', err);
-      void loadPetData({ silent: true });
+      const ambiguous = isAmbiguousPetCareError(err);
+      if (!ambiguous) {
+        pendingCareKeysRef.current.delete(action.voActionType);
+      }
+
+      const reconciled = await loadPetData({ silent: true, preserveProfileDraft: true });
+      if (ambiguous && reconciled && hasAuthoritativePetCareAdvance(
+        beforeSnapshot.pet,
+        beforeSnapshot.logs,
+        reconciled.pet,
+        reconciled.logs,
+        action.voActionType,
+      )) {
+        pendingCareKeysRef.current.delete(action.voActionType);
+      }
     } finally {
       setActiveAction(null);
     }
-  }, [activeAction, language, loadPetData, nowTick, t]);
+  }, [activeAction, language, loadPetData, nowTick, t, updatePageData]);
+
+  const handleRefresh = useCallback(() => {
+    if (profileDirty && !window.confirm(t('pet.profile.discardConfirm'))) {
+      return;
+    }
+
+    void loadPetData();
+  }, [loadPetData, profileDirty, t]);
 
   const formatCooldownLabel = useCallback((cooldownMs: number) => {
     const parts = getCooldownDisplayParts(cooldownMs);
@@ -485,7 +561,7 @@ export const PetApp = () => {
               <Icon icon="mdi:account-heart-outline" size={18} />
               <span>{t('pet.openMe')}</span>
             </a>
-            <button type="button" className={styles.secondaryButton} onClick={() => void loadPetData()} disabled={loading}>
+            <button type="button" className={styles.secondaryButton} onClick={handleRefresh} disabled={loading}>
               <Icon icon={loading ? 'mdi:loading' : 'mdi:refresh'} size={18} className={loading ? styles.spin : undefined} />
               <span>{loading ? t('pet.refreshing') : t('pet.refresh')}</span>
             </button>
@@ -597,7 +673,7 @@ export const PetApp = () => {
                     />
                     <span>{t('pet.profile.public')}</span>
                   </label>
-                  <button type="submit" className={styles.primaryButton} disabled={savingProfile}>
+                  <button type="submit" className={styles.primaryButton} disabled={savingProfile || !profileDirty}>
                     <Icon icon={savingProfile ? 'mdi:loading' : 'mdi:content-save-outline'} size={18} className={savingProfile ? styles.spin : undefined} />
                     <span>{savingProfile ? t('pet.profile.saving') : t('pet.profile.save')}</span>
                   </button>
@@ -752,13 +828,34 @@ export const PetApp = () => {
       );
     }
 
-    if (loading && !pageData.loadedAt) {
+    if ((loadState === 'idle' || loadState === 'loading') && !pageData.loadedAt) {
       return renderStatusPanel(t('pet.loadingTitle'), t('pet.loadingDescription'), 'mdi:progress-clock');
+    }
+
+    if (loadState === 'unavailable' && !pageData.loadedAt) {
+      return (
+        <section className={styles.stateShell}>
+          <WebStateSlot
+            tone="error"
+            title={t('pet.unavailableTitle')}
+            description={error || t('pet.error.load')}
+            actions={[{ label: t('common.retry'), onClick: handleRefresh }]}
+          />
+        </section>
+      );
     }
 
     return (
       <>
         {error ? <p className={styles.errorBanner}>{error}</p> : null}
+        {loadState === 'stale' || (loadState === 'loading' && pageData.loadedAt) ? (
+          <div className={styles.authorityBanner} data-tone={loadState === 'stale' ? 'warning' : 'loading'} role="status">
+            <span>{t(loadState === 'stale' ? 'pet.staleDescription' : 'pet.refreshingAuthority')}</span>
+            {loadState === 'stale' ? (
+              <button type="button" onClick={handleRefresh}>{t('common.retry')}</button>
+            ) : null}
+          </div>
+        ) : null}
         {renderFeedback()}
         {pageData.pet ? renderPetDashboard(pageData.pet) : renderClaimPanel()}
       </>
@@ -773,6 +870,7 @@ export const PetApp = () => {
         brandMark="萝"
         brandName={t('pet.title')}
         brandSubline={t('pet.shellSubline')}
+        navigationLocked={profileDirty}
         onBrandClick={() => {
           window.location.href = buildPetPath();
         }}

@@ -262,6 +262,13 @@ export function ShopWebApp() {
           routeKind: route.kind,
           ...error.target,
         },
+        context: {
+          code: error.code,
+          messageKey: error.messageKey,
+          statusCode: error.statusCode,
+          httpStatus: error.httpStatus,
+          traceId: error.traceId,
+        },
       });
       setDiagnosticCopyState('copied');
     } catch (copyError) {

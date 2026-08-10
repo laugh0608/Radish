@@ -11,7 +11,7 @@ import { zhDiscover } from '../src/locales/zh/discover.ts';
 
 const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const localesDirectory = path.resolve(testDirectory, '../src/locales');
-const domainNames = ['core', 'shell', 'discover', 'community', 'forumRevision', 'forumAnswer', 'postBookmark', 'contentReward', 'chat', 'account', 'commerce', 'docs'];
+const domainNames = ['core', 'shell', 'discover', 'community', 'notification', 'forumRevision', 'forumAnswer', 'postBookmark', 'contentReward', 'chat', 'account', 'commerce', 'docs'];
 
 function collectKeys(language: 'en' | 'zh'): string[] {
   const domainFiles = domainNames.map((domain) => path.join(localesDirectory, language, `${domain}.ts`));

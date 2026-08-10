@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type {
   NotificationCategory,
@@ -8,6 +8,7 @@ import type {
 import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import { NotificationCenter } from '@/apps/notification/NotificationCenter';
+import { useBrowserNavigationLock } from '@/bootstrap/browserNavigationLock';
 import { WebStateSlot } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
@@ -38,6 +39,7 @@ export const NotificationsApp = () => {
   const summary = useNotificationStore((state) => state.summary);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
   const unreadOccurrenceCount = useNotificationStore((state) => state.unreadOccurrenceCount);
+  const loadState = useNotificationStore((state) => state.loadState);
   const connectionState = useNotificationStore((state) => state.connectionState);
   const preferences = useNotificationStore((state) => state.preferences);
   const preferencesLoading = useNotificationStore((state) => state.preferencesLoading);
@@ -47,6 +49,7 @@ export const NotificationsApp = () => {
   const [redirecting, setRedirecting] = useState(false);
   const [preferenceError, setPreferenceError] = useState<string | null>(null);
   const [preferenceDraft, setPreferenceDraft] = useState<UpdateNotificationPreferenceDto[]>([]);
+  const allowDirtyNavigationRef = useRef(false);
 
   useEffect(() => {
     const cleanup = bootstrapAuth({ apiBaseUrl });
@@ -105,6 +108,32 @@ export const NotificationsApp = () => {
     setPreferenceDraft(buildNotificationPreferenceUpdates(preferences));
   }, [preferences]);
 
+  const preferencesDirty = JSON.stringify(preferenceDraft) !== JSON.stringify(
+    buildNotificationPreferenceUpdates(preferences),
+  );
+  useBrowserNavigationLock(preferencesDirty);
+
+  useEffect(() => {
+    if (!preferencesDirty) {
+      allowDirtyNavigationRef.current = false;
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (allowDirtyNavigationRef.current) {
+        return;
+      }
+
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [preferencesDirty]);
+
   const updatePreference = useCallback((
     category: NotificationCategory,
     field: 'inAppEnabled' | 'realtimePreviewEnabled',
@@ -131,9 +160,22 @@ export const NotificationsApp = () => {
     _group: NotificationInboxGroupVo,
     target: NotificationWebNavigationTarget,
   ) => {
+    if (preferencesDirty) {
+      if (!window.confirm(t('notification.preferences.leaveConfirm'))) {
+        return true;
+      }
+
+      allowDirtyNavigationRef.current = true;
+    }
+
     if (target.surface === 'web' && target.sourceState) {
       rememberPublicRouteSourceTransfer(target.href, target.sourceState);
     }
+    if (preferencesDirty) {
+      window.location.href = target.surface === 'web' ? target.href : resolveConsoleExternalUrl(target.href);
+      return true;
+    }
+
     if (target.surface === 'web') {
       window.history.pushState({}, '', target.href);
       window.dispatchEvent(new PopStateEvent('popstate', { state: {} }));
@@ -141,16 +183,21 @@ export const NotificationsApp = () => {
       window.location.href = resolveConsoleExternalUrl(target.href);
     }
     return true;
-  }, []);
+  }, [preferencesDirty, t]);
 
   const connectionLabel = connectionState === 'connected'
     ? t('notification.web.connected')
     : t(connectionState === 'connecting' || connectionState === 'reconnecting'
       ? 'notification.web.connecting'
       : 'notification.web.disconnected');
-  const preferencesDirty = JSON.stringify(preferenceDraft) !== JSON.stringify(
-    buildNotificationPreferenceUpdates(preferences),
-  );
+  const hasAuthoritativeSummary = summary !== null;
+  const summaryStatusKey = loadState === 'error'
+    ? hasAuthoritativeSummary
+      ? 'notification.web.summaryStale'
+      : 'notification.web.summaryUnavailable'
+    : loadState === 'ready' && hasAuthoritativeSummary
+      ? null
+      : 'notification.web.summaryLoading';
 
   let content;
   if (!authReady || redirecting || !loggedIn) {
@@ -173,12 +220,12 @@ export const NotificationsApp = () => {
           <div className={styles.summaryCards} aria-label={t('notification.web.summaryLabel')}>
             <div className={styles.summaryCard}>
               <Icon icon="mdi:bell-badge-outline" size={23} />
-              <strong>{unreadCount}</strong>
+              <strong>{hasAuthoritativeSummary ? unreadCount : '—'}</strong>
               <span>{t('notification.web.unreadMetric')}</span>
             </div>
             <div className={styles.summaryCard}>
               <Icon icon="mdi:layers-triple-outline" size={23} />
-              <strong>{unreadOccurrenceCount}</strong>
+              <strong>{hasAuthoritativeSummary ? unreadOccurrenceCount : '—'}</strong>
               <span>{t('notification.web.occurrenceMetric')}</span>
             </div>
             <div className={styles.summaryCard}>
@@ -187,6 +234,11 @@ export const NotificationsApp = () => {
               <span>{t('notification.web.revisionMetric')}</span>
             </div>
           </div>
+          {summaryStatusKey ? (
+            <p className={styles.summaryState} data-tone={loadState === 'error' ? 'warning' : 'loading'} role="status">
+              {t(summaryStatusKey)}
+            </p>
+          ) : null}
         </section>
 
         <div className={styles.notificationWorkspace}>
@@ -207,7 +259,7 @@ export const NotificationsApp = () => {
                       <Icon icon={definition.icon} size={17} />
                       {t(definition.labelKey)}
                     </span>
-                    <strong>{getUnreadCategoryCount(summary, definition.category)}</strong>
+                    <strong>{hasAuthoritativeSummary ? getUnreadCategoryCount(summary, definition.category) : '—'}</strong>
                   </div>
                 ))}
               </div>
@@ -285,6 +337,7 @@ export const NotificationsApp = () => {
         brandMark="萝"
         brandName={t('notification.title')}
         brandSubline={t('notification.web.shellSubline')}
+        navigationLocked={preferencesDirty}
         onBrandClick={() => { window.location.href = '/notifications'; }}
       />
       <main className={styles.main}>{content}</main>

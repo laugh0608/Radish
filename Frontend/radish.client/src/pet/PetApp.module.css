@@ -267,6 +267,35 @@
   font-size: 14px;
 }
 
+.authorityBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  color: var(--theme-text-secondary);
+  background: var(--theme-bg-muted);
+  font-size: 13px;
+}
+
+.authorityBanner[data-tone='warning'] {
+  border-color: color-mix(in srgb, var(--theme-state-warning) 34%, var(--theme-border-soft));
+  color: var(--theme-state-warning);
+}
+
+.authorityBanner button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
 .feedbackBanner {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
