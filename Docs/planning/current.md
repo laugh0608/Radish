@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-W02 Private 仪表 / 任务侧栏；先执行设计前代码事实与能力覆盖审计`
-- **产品下一顺位**：`反查 Notifications、Me、Circle、Pet、Private Shop 与 Workbench 的主任务、状态摘要、辅助侧栏和 mobile 排序；先裁决继承与能力门禁，不提前修改 Pencil 或推进 R3`
+- **工程第一顺位**：`F4-R R2-W02 Private 仪表 / 任务侧栏；窄前端能力门禁方案待确认`
+- **产品下一顺位**：`先关闭权威读取状态、dirty 离开保护、Pet 重试幂等、Private Shop 错误契约和 Me 超限容器，再进入 R2 局部代表设计`
 - **复核日期**：`2026-08-10`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-10` 已完成 [R2-W02 Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)：Notifications、Me、Circle、Pet、Private Shop 与 Workbench 均有正式 Web 路由和足够的既有 API / Store，继续保持 R2 并继承 R1-F01 / R1-W01，不新增 API、数据库、权限或移动壳层。Pencil 前需成组关闭五类窄前端门禁：权威读取失败伪装零值 / 未领取、通知偏好与 Pet 资料 dirty 离开丢失、Pet 模糊结果重试换键、Private Shop 结构化错误 / 本地化丢失，以及 `1816` 行 Me 容器超限。Mobile 代表输入固定为主任务先于完整辅助轨；本批未修改 Pencil 或运行时代码，未启动服务 / 浏览器，能力门禁方案等待确认。
 - `2026-08-10` 已完成并关闭 [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)：商品详情接入综合评分、五星分布、稳定分页、Completed 资格、本人评价 CRUD、dirty 离开确认、CAS `409` 草稿保留、unavailable / stale 和 `ProductReview` 举报；公开主页接入昵称 / `用户名#公开ID`、真实签名空态、当前等级 / 等级名、加入时间和独立权威统计。DbMigrate 补齐商品评价迁移后，Gateway 以匿名与种子管理员覆盖 PC `1440 × 900`、Mobile `390 × 844`、零评价、临时 Completed 资格、创建 / 编辑 / 删除、登录回跳、dirty、真实 CAS 冲突和举报弹窗；新页签稳定态 `0 warning / 0 error`，临时订单与评价均已精确清理。Client `518 / 518`、type-check、Lint 与 production build 通过；未修改 Pencil，下一步进入 `R2-W02` 设计前审计。
 - `2026-08-09` 已完成 [R2-P03 商品评价与公开等级能力门禁](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)：公开资料只增加当前等级 / 等级名；商品评价固定 Completed 订单资格、每用户每商品一条、`1..5` 星、可选 `500` 字评论、唯一约束、数据库聚合和单调 CAS，并以 `ProductReview` 复用既有治理 / 申诉权限与事务。后端 `1220 passed / 39 skipped`，HTTP `36 / 36`、Client `514 / 514`、Console `83 / 83` 及静态构建通过；未启动服务或浏览器。
 - `2026-08-09` 已按七轮反馈完成并确认 [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)：三张 PC 统一为 `24px` 外边距、`12px` 核心分栏和 `14–20px` 主要卡片内距，长内容、商品详情、公开主页保持独立；PC / Mobile 购买与发消息主按钮统一暖白前景。商品 Mobile 固定顶部大图—商品信息—购买动作—评价摘要 / 预览—详情；公开主页按昵称、`用户名#公开ID`、签名、等级 / 等级名和加入时间分区，PC 右侧统计 / 操作保持既有结构。商品价格统一使用 `carrot` 萝卜图标。连同评价零态、资格、dirty、`409`、unavailable / stale 和治理 / 申诉状态，共八个顶层画板均无 placeholder、裁切、塌陷或横向溢出。
@@ -80,7 +81,7 @@
 - [F4-Q-D 成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)覆盖匿名、普通登录用户和 Console 管理员，以及 PC / mobile、`zh / en`、`default / guofeng` 代表路径；热门进入、相关切换、禁用 / 删除 / 恢复、`GET / HEAD`、canonical、JSON-LD 和 sitemap 均已通过。
 - D 批按共同根因修正 tags sitemap 分片路由、首包 / runtime JSON-LD 单一脚本、英文数量复数、不可用标签 `noindex`、Console 软删除列表和恢复预检契约；临时标签、PostTag、审计与访问计数已清理，六库完整性及 strict migration verify 通过。
 
-## 最近进展（2026-08-08—10，六个 R1 / R2-C03 / R2-P03）
+## 最近进展（2026-08-08—10，六个 R1 / R2-C03 / R2-P03 / R2-W02 readiness）
 
 1. 按已确认的 PC / Mobile 正式代表设计重构帖子详情：PC 三栏服务社区返回、正文主轴和线程索引，移动端折叠为顶部紧凑入口与正文后行内索引。
 2. 接入现有帖子 / 回帖点赞、表情回应、赞赏和回帖的回帖；两级评论、神评 / 沙发、收藏、举报、问答与修订边界保持不变。
@@ -137,18 +138,20 @@
 53. 获当前任务授权后执行 DbMigrate `apply`，补齐本地商品评价迁移与种子数据；Gateway、API、Auth 与 Client 健康检查通过。
 54. 使用匿名与种子管理员完成 Gateway PC `1440 × 900`、Mobile `390 × 844` 成组验收：零评价、Completed 资格、评价创建 / 编辑 / 删除、dirty 拦截、真实 CAS 冲突、`ProductReview` 举报弹窗、公开主页等级 / 统计、双语 / 主题和无横向溢出均通过。
 55. 运行态修正评价登录回跳丢失意图，以及资格 / 冲突错误泄露服务端原始文案；受控 `intent=review` 可在登录后滚动并打开符合资格的评价编辑器。临时订单与评价精确清零，新页签稳定态 `0 warning / 0 error`，`R2-P03` 关闭。
+56. 完成 R2-W02 readiness：六个 Private / Workbench 入口的正式 Web、WebOS、API / Store 与响应式事实反查通过；专题保持 R2，但 Pencil 前需先关闭五组窄前端门禁，方案等待确认。本批未修改运行时代码、Pencil、API、数据库或权限，未启动服务 / 浏览器。
 
 ## 当前事项（2026-08-10）
 
 1. `R2-P03` 已形成设计—实现—Gateway 运行态闭环并关闭；不重开其 Pencil 范围，也不扩入评价媒体、回复、有用、独立评价中心或公开经验详情。
-2. 下一步进入 `R2-W02 Private 仪表 / 任务侧栏` 设计前代码事实与能力覆盖审计，先核对正式 Web、WebOS 历史实现、API、权限、状态与 mobile 任务流。
-3. 审计范围固定为 Notifications、Me、Circle、Pet、Private Shop 与 Workbench 的主任务、状态摘要、辅助侧栏排序 / 折叠和已有表单；不得借视觉专题扩张业务能力。
-4. 先判断 `R1-F01 / R1-W01` 是否足以继承，以及是否存在必须先关闭的窄代码门禁；审计完成前不修改 Pencil、不启动服务或浏览器，也不推进 R3 页面。
+2. `R2-W02` readiness 已完成；六个入口继续继承 `R1-F01 / R1-W01`，不建立新壳层、不新增后端能力，也不把 WebOS 窗口结构迁回正式 Web。
+3. 下一步等待确认并成组关闭五类窄前端门禁：权威读取状态、通知偏好 / Pet 资料 dirty 离开保护、Pet 模糊结果重试幂等、Private Shop 结构化错误 / 本地化和 Me 容器拆分。
+4. 能力门禁通过后再裁决 Notifications、Me、Circle、Pet、Private Shop 与 Workbench 的 R2 局部代表区块；Mobile 固定主任务先于完整辅助轨，确认前不修改 Pencil、不启动服务或浏览器，也不推进 R3 页面。
 5. 继续冻结新移动壳层、WebOS 新功能、Tauri 恢复、Flutter 机械追平和主动生产证据采集。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-W02 Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)
 - [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)
 - [R2-P03 商品评价与公开等级能力门禁实现](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)
 - [R2-P03 商品评价与公开等级范围审计](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)
