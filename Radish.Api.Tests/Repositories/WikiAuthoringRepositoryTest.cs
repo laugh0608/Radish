@@ -89,6 +89,113 @@ public sealed class WikiAuthoringRepositoryTest
     }
 
     [Fact]
+    public async Task QueryAuthorPageAsync_ShouldFilterScopeAndDraftStageWithStablePaging()
+    {
+        var (path, db, repository) = CreateRepository();
+        using (db)
+        {
+            try
+            {
+                db.CodeFirst.InitTables<WikiDocument>();
+                db.CodeFirst.InitTables<WikiDocumentDraft>();
+                db.CodeFirst.InitTables<WikiDocumentCollaborator>();
+                var now = DateTime.UtcNow;
+                db.Insertable(new[]
+                {
+                    new WikiDocument
+                    {
+                        Id = 21001, TenantId = 0, Title = "Owned editable", Slug = "owned-editable",
+                        MarkdownContent = "", SourceType = "Custom", OwnerUserId = 10001,
+                        ActiveDraftId = 31001, ModifyTime = now.AddMinutes(-4), CreateId = 10001, CreateBy = "Owner"
+                    },
+                    new WikiDocument
+                    {
+                        Id = 21002, TenantId = 0, Title = "Owned submitted", Slug = "owned-submitted",
+                        MarkdownContent = "", SourceType = "Custom", OwnerUserId = 10001,
+                        ActiveDraftId = 31002, ModifyTime = now.AddMinutes(-2), CreateId = 10001, CreateBy = "Owner"
+                    },
+                    new WikiDocument
+                    {
+                        Id = 21003, TenantId = 0, Title = "Collaborating terminal", Slug = "collaborating-terminal",
+                        MarkdownContent = "", SourceType = "Custom", OwnerUserId = 10002,
+                        ModifyTime = now.AddMinutes(-3), CreateId = 10002, CreateBy = "Owner"
+                    },
+                    new WikiDocument
+                    {
+                        Id = 21004, TenantId = 0, Title = "Collaborating none", Slug = "collaborating-none",
+                        MarkdownContent = "", SourceType = "Custom", OwnerUserId = 10002,
+                        ModifyTime = now.AddMinutes(-1), CreateId = 10002, CreateBy = "Owner"
+                    },
+                    new WikiDocument
+                    {
+                        Id = 21005, TenantId = 0, Title = "Unrelated", Slug = "unrelated",
+                        MarkdownContent = "", SourceType = "Custom", OwnerUserId = 10003,
+                        ModifyTime = now, CreateId = 10003, CreateBy = "Owner"
+                    }
+                }).ExecuteCommand();
+                db.Insertable(new[]
+                {
+                    new WikiDocumentDraft
+                    {
+                        Id = 31001, TenantId = 0, DocumentId = 21001, BaseDocumentVersion = 1,
+                        Title = "Owned editable", Slug = "owned-editable", MarkdownContent = "body",
+                        ReviewState = (int)WikiDocumentDraftState.Editing, CreateId = 10001, CreateBy = "Owner"
+                    },
+                    new WikiDocumentDraft
+                    {
+                        Id = 31002, TenantId = 0, DocumentId = 21002, BaseDocumentVersion = 1,
+                        Title = "Owned submitted", Slug = "owned-submitted", MarkdownContent = "body",
+                        ReviewState = (int)WikiDocumentDraftState.Submitted, CreateId = 10001, CreateBy = "Owner"
+                    },
+                    new WikiDocumentDraft
+                    {
+                        Id = 31003, TenantId = 0, DocumentId = 21003, BaseDocumentVersion = 1,
+                        Title = "Collaborating terminal", Slug = "collaborating-terminal", MarkdownContent = "body",
+                        ReviewState = (int)WikiDocumentDraftState.Applied, CreateId = 10002, CreateBy = "Owner"
+                    }
+                }).ExecuteCommand();
+                db.Insertable(new[]
+                {
+                    new WikiDocumentCollaborator
+                    {
+                        Id = 41003, TenantId = 0, DocumentId = 21003, UserId = 10001,
+                        InviteState = (int)WikiDocumentCollaboratorState.Accepted,
+                        InvitedBy = 10002, CreateId = 10002, CreateBy = "Owner"
+                    },
+                    new WikiDocumentCollaborator
+                    {
+                        Id = 41004, TenantId = 0, DocumentId = 21004, UserId = 10001,
+                        InviteState = (int)WikiDocumentCollaboratorState.Pending,
+                        InvitedBy = 10002, CreateId = 10002, CreateBy = "Owner"
+                    }
+                }).ExecuteCommand();
+
+                var firstPage = await repository.QueryAuthorPageAsync(new WikiAuthorDocumentPageQuery(
+                    10001, WikiAuthorDocumentScope.All, WikiAuthorDraftStage.All, 1, 2));
+                var secondPage = await repository.QueryAuthorPageAsync(new WikiAuthorDocumentPageQuery(
+                    10001, WikiAuthorDocumentScope.All, WikiAuthorDraftStage.All, 2, 2));
+                var ownedEditable = await repository.QueryAuthorPageAsync(new WikiAuthorDocumentPageQuery(
+                    10001, WikiAuthorDocumentScope.Owned, WikiAuthorDraftStage.Editable, 1, 20));
+                var collaboratingTerminal = await repository.QueryAuthorPageAsync(new WikiAuthorDocumentPageQuery(
+                    10001, WikiAuthorDocumentScope.Collaborating, WikiAuthorDraftStage.Terminal, 1, 20));
+                var collaboratingNone = await repository.QueryAuthorPageAsync(new WikiAuthorDocumentPageQuery(
+                    10001, WikiAuthorDocumentScope.Collaborating, WikiAuthorDraftStage.None, 1, 20));
+
+                Assert.Equal(4, firstPage.totalCount);
+                Assert.Equal([21004L, 21002L], firstPage.data.Select(document => document.Id));
+                Assert.Equal([21003L, 21001L], secondPage.data.Select(document => document.Id));
+                Assert.Equal(21001, Assert.Single(ownedEditable.data).Id);
+                Assert.Equal(21003, Assert.Single(collaboratingTerminal.data).Id);
+                Assert.Equal(21004, Assert.Single(collaboratingNone.data).Id);
+            }
+            finally
+            {
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     [Trait("Database", "PostgreSQL")]
     public async Task QueryLatestTerminalDraftsAsync_ShouldTranslateOnPostgreSql()
     {

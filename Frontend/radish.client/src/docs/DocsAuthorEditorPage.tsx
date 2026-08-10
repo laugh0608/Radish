@@ -31,6 +31,7 @@ import { buildPublicDocsPath } from '@/public/docsRouteState';
 import { log } from '@/utils/logger';
 import {
   countDocsAuthorMarkdownCharacters,
+  getDocsAuthorRoleText,
   getDocsAuthorInitial,
   getDocsAuthorOutline,
 } from './docsAuthorEditorPresentation';
@@ -180,6 +181,9 @@ export function DocsAuthorEditorPage({
   const reviewSubmitted = state.document?.voReviewState === WikiDraftReviewState.Submitted;
   const reviewChangesRequested = state.document?.voReviewState === WikiDraftReviewState.ChangesRequested;
   const reviewStateText = getDraftReviewStateText(state.document?.voReviewState, t);
+  const authorRoleText = state.document
+    ? getDocsAuthorRoleText(state.document.voAuthorRole, t)
+    : t('wiki.author.editor.modeCreate');
   const pageTitle = route.kind === 'compose'
     ? t('wiki.author.editor.createTitle')
     : state.document?.voTitle || t('wiki.author.editor.editTitle');
@@ -319,7 +323,7 @@ export function DocsAuthorEditorPage({
             <span>{t('wiki.author.editor.versionEvidence', {
               document: state.document?.voDocumentVersion ?? 0,
               draft: state.document?.voDraftVersion ?? 0,
-              role: state.document?.voAuthorRole ?? t('wiki.author.editor.modeCreate'),
+              role: authorRoleText,
             })}</span>
           </div>
           {state.document ? (
@@ -427,7 +431,7 @@ export function DocsAuthorEditorPage({
               <span>Markdown · {t('wiki.author.editor.characterCount', { count: countDocsAuthorMarkdownCharacters(state.draft.markdownContent) })}</span>
               <span>{t('wiki.author.editor.draftStatus', {
                 version: state.document?.voDraftVersion ?? 0,
-                role: state.document?.voAuthorRole ?? t('wiki.author.editor.modeCreate'),
+                role: authorRoleText,
               })}</span>
             </footer>
           </section>

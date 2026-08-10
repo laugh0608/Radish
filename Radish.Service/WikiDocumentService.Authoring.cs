@@ -14,28 +14,30 @@ namespace Radish.Service;
 
 public partial class WikiDocumentService
 {
-    public async Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(long userId, int pageIndex, int pageSize)
+    public async Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(
+        long userId,
+        WikiAuthorDocumentScope scope,
+        WikiAuthorDraftStage draftStage,
+        int pageIndex,
+        int pageSize)
     {
         EnsureAuthoringAvailable();
         pageIndex = Math.Max(1, pageIndex);
         pageSize = pageSize is > 0 and <= 100 ? pageSize : 20;
-        var collaboratorRelations = await _wikiCollaboratorRepository!.QueryAsync(item =>
+        var (documents, total) = await _wikiDocumentRepository.QueryAuthorPageAsync(
+            new WikiAuthorDocumentPageQuery(userId, scope, draftStage, pageIndex, pageSize));
+        var documentIds = documents.Select(document => document.Id).ToList();
+        var collaboratorRelations = documentIds.Count == 0
+            ? []
+            : await _wikiCollaboratorRepository!.QueryAsync(item =>
                 item.UserId == userId &&
+                documentIds.Contains(item.DocumentId) &&
                 (item.InviteState == (int)WikiDocumentCollaboratorState.Pending ||
                  item.InviteState == (int)WikiDocumentCollaboratorState.Accepted) &&
                 !item.IsDeleted);
         var collaboratorStateByDocumentId = collaboratorRelations
             .GroupBy(item => item.DocumentId)
             .ToDictionary(group => group.Key, group => group.First().InviteState);
-        var collaboratorDocumentIds = collaboratorStateByDocumentId.Keys.ToList();
-        var (documents, total) = await _wikiDocumentRepository.QueryPageAsync(
-            document =>
-                !document.IsDeleted &&
-                (document.OwnerUserId == userId || collaboratorDocumentIds.Contains(document.Id)),
-            pageIndex,
-            pageSize,
-            document => document.ModifyTime ?? document.CreateTime,
-            OrderByType.Desc);
         var draftIds = documents.Where(document => document.ActiveDraftId.HasValue)
             .Select(document => document.ActiveDraftId!.Value)
             .ToList();

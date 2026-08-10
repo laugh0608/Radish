@@ -184,3 +184,8 @@ Authorization: Bearer {{Access_Token}}
 
 ### 23. 匿名读取已发布 Public 文档当前附件（其他状态预期 404）
 GET {{Gateway_HostAddress}}/_assets/attachments/{{WikiAttachmentId}}
+
+### 24. 获取作者文档列表（数据库权威范围、草稿阶段与稳定分页）
+GET {{Gateway_HostAddress}}/api/v1/Wiki/AuthorGetList?scope=all&draftStage=all&pageIndex=1&pageSize=20
+Authorization: Bearer {{Access_Token}}
+Accept: application/json

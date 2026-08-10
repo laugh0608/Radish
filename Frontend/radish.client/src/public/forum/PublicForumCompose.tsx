@@ -21,7 +21,7 @@ import {
   type ClientSubmissionState,
 } from '@/utils/clientSubmission';
 import { log } from '@/utils/logger';
-import { PublishPostModal } from '@/apps/forum/components/PublishPostModal';
+import { ForumPostComposer } from '@/apps/forum/components/ForumPostComposer';
 import { buildPostSubmissionFingerprint } from '@/apps/forum/utils/forumSubmissionFingerprint';
 import {
   buildPublicForumPath,
@@ -118,9 +118,9 @@ export function PublicForumCompose({
         return;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
+      log.warn('PublicForumCompose', '公开论坛分类加载失败', error);
       setCategories([]);
-      setCategoriesError(message);
+      setCategoriesError(t('forum.public.composeCategoriesErrorDescription'));
     } finally {
       if (requestId === categoryRequestRef.current) {
         setCategoriesLoading(false);
@@ -161,26 +161,20 @@ export function PublicForumCompose({
     );
     publishSubmissionRef.current = submissionState;
 
-    try {
-      const postId = await publishPost({
-        title,
-        content,
-        clientSubmissionId: submissionState.clientSubmissionId,
-        categoryId: nextCategoryId,
-        tagNames,
-        isQuestion: Boolean(isQuestion),
-        poll: poll ?? undefined,
-        lottery: lottery ?? undefined
-      }, t);
+    const postId = await publishPost({
+      title,
+      content,
+      clientSubmissionId: submissionState.clientSubmissionId,
+      categoryId: nextCategoryId,
+      tagNames,
+      isQuestion: Boolean(isQuestion),
+      poll: poll ?? undefined,
+      lottery: lottery ?? undefined
+    }, t);
 
-      publishSubmissionRef.current = null;
-      publishedPostIdRef.current = String(postId);
-      toast.success(t('forum.public.composePublished'));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error(message);
-      throw error;
-    }
+    publishSubmissionRef.current = null;
+    publishedPostIdRef.current = String(postId);
+    toast.success(t('forum.public.composePublished'));
   }, [t]);
 
   const handleCloseComposer = useCallback(() => {
@@ -285,6 +279,19 @@ export function PublicForumCompose({
               }}
             />
           )}
+
+          {canOpenComposer && (
+            <ForumPostComposer
+              isOpen={true}
+              surface="page"
+              isAuthenticated={isAuthenticated}
+              categories={categories}
+              selectedCategoryId={selectedCategoryId}
+              loginReturnPath={loginReturnPath}
+              onClose={handleCloseComposer}
+              onPublish={handlePublish}
+            />
+          )}
         </div>
 
         <aside className={styles.composeRail} aria-label={t('forum.public.composeRailLabel')}>
@@ -353,15 +360,6 @@ export function PublicForumCompose({
         </aside>
       </div>
 
-      <PublishPostModal
-        isOpen={canOpenComposer}
-        isAuthenticated={isAuthenticated}
-        categories={categories}
-        selectedCategoryId={selectedCategoryId}
-        loginReturnPath={loginReturnPath}
-        onClose={handleCloseComposer}
-        onPublish={handlePublish}
-      />
     </section>
   );
 }

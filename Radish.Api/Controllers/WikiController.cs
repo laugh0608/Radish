@@ -229,10 +229,28 @@ public class WikiController : ControllerBase
     [HttpGet]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     public async Task<MessageModel<PageModel<WikiAuthorDocumentVo>>> AuthorGetList(
+        string scope = "all",
+        string draftStage = "all",
         int pageIndex = 1,
         int pageSize = 20)
     {
-        var result = await _wikiDocumentService.AuthorGetListAsync(Current.UserId, pageIndex, pageSize);
+        if (!TryParseAuthorScope(scope, out var parsedScope) ||
+            !TryParseAuthorDraftStage(draftStage, out var parsedDraftStage))
+        {
+            return BuildFailure(
+                StatusCodes.Status400BadRequest,
+                "作者列表查询参数无效",
+                default(PageModel<WikiAuthorDocumentVo>)!,
+                "Wiki.AuthorListQueryInvalid",
+                "error.wiki.author_list_query_invalid");
+        }
+
+        var result = await _wikiDocumentService.AuthorGetListAsync(
+            Current.UserId,
+            parsedScope,
+            parsedDraftStage,
+            pageIndex,
+            pageSize);
         return MessageModel<PageModel<WikiAuthorDocumentVo>>.Success("查询成功", result);
     }
 
@@ -581,6 +599,32 @@ public class WikiController : ControllerBase
             responseData,
             businessException?.ErrorCode ?? "Wiki.ValidationFailed",
             businessException?.MessageKey ?? "error.wiki.validation_failed");
+    }
+
+    private static bool TryParseAuthorScope(string value, out WikiAuthorDocumentScope scope)
+    {
+        scope = value.Trim().ToLowerInvariant() switch
+        {
+            "all" => WikiAuthorDocumentScope.All,
+            "owned" => WikiAuthorDocumentScope.Owned,
+            "collaborating" => WikiAuthorDocumentScope.Collaborating,
+            _ => (WikiAuthorDocumentScope)(-1)
+        };
+        return Enum.IsDefined(scope);
+    }
+
+    private static bool TryParseAuthorDraftStage(string value, out WikiAuthorDraftStage draftStage)
+    {
+        draftStage = value.Trim().ToLowerInvariant() switch
+        {
+            "all" => WikiAuthorDraftStage.All,
+            "editable" => WikiAuthorDraftStage.Editable,
+            "submitted" => WikiAuthorDraftStage.Submitted,
+            "terminal" => WikiAuthorDraftStage.Terminal,
+            "none" => WikiAuthorDraftStage.None,
+            _ => (WikiAuthorDraftStage)(-1)
+        };
+        return Enum.IsDefined(draftStage);
     }
 
     private static MessageModel<T> BuildFailure<T>(

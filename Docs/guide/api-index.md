@@ -155,7 +155,7 @@
   - `Wiki/GetBySlug/{slug}`
   - `Wiki/GetById/{id}`
 - 正式 Web 作者入口面向登录用户，所有写入统一经过作者草稿、协作与审核契约：
-  - `Wiki/AuthorGetList`
+  - `Wiki/AuthorGetList`：使用 `scope=all|owned|collaborating`、`draftStage=all|editable|submitted|terminal|none` 与 `pageIndex / pageSize` 执行数据库权威筛选和稳定分页；未知词元返回 `Wiki.AuthorListQueryInvalid`
   - `Wiki/AuthorGetById/{documentId}`
   - `Wiki/AuthorGetRevisionHistory/{documentId}`
   - `Wiki/AuthorGetRevisionDetail/{revisionId}`

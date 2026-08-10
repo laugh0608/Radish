@@ -2,7 +2,7 @@
 
 > Radish 公开内容壳层中的 forum 阅读入口说明。
 >
-> **最后更新**: 2026.08.08
+> **最后更新**: 2026.08.10
 
 ## 定位
 
@@ -49,6 +49,9 @@ Frontend/radish.client/src/public/forum/
 ## 维护约束
 
 - `PublicForumApp.tsx` 只负责公开 forum 的应用级状态、路由分派、详情上下文和共享数据协调。
+- `/forum/compose` 必须把共享 `ForumPostComposer` 作为页面内任务面；WebOS `ForumApp` 只通过薄 `PublishPostModal` Bottom Sheet 外壳承载同一核心，不复制发布状态机或让 Sheet 遮蔽正式路由。
+- 发布器本地草稿统一通过版本化 helper 按当前 `userId` 分区；旧 `forum_post_draft` 无 owner 记录失败关闭，Workbench、兼容 Form 和共享 Composer 读取同一账号真相源，发布成功只删除当前账号草稿。
+- 发布器系统文案与无障碍名称全部来自 `community` 双语资源；分类失败与发布失败只显示本地化安全反馈，诊断进入统一日志，父页面不得再展示原始 `error.message` 或第二次失败 toast。
 - 列表、搜索、标签、类型流和详情页面组件应优先保持页面职责清晰，不把局部展示逻辑回填到容器。
 - 跨页面复用的 URL、统计、展示文案和视图状态解析逻辑应继续收敛到 `publicForumUtils.ts` 或 `publicForumViewState.ts`。
 - 公开页共享的加载、空态和错误态优先复用 `PublicStatusCard.tsx`。

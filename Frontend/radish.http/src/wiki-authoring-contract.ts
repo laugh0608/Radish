@@ -28,6 +28,16 @@ export const WikiReviewAction = {
 
 export type WikiReviewActionValue = typeof WikiReviewAction[keyof typeof WikiReviewAction];
 
+export type WikiAuthorDocumentScope = 'all' | 'owned' | 'collaborating';
+export type WikiAuthorDraftStage = 'all' | 'editable' | 'submitted' | 'terminal' | 'none';
+
+export interface WikiAuthorListQuery {
+  scope: WikiAuthorDocumentScope;
+  draftStage: WikiAuthorDraftStage;
+  pageIndex: number;
+  pageSize: number;
+}
+
 export interface WikiAuthorDocumentVo {
   voDocumentId: WikiLongId;
   voDraftId: WikiLongId | null;

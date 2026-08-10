@@ -3,6 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getChannelList } from '@/api/chat';
 import { readDraftMap, type ChannelDraft } from '@/apps/chat/chatApp.helpers';
+import {
+  hasMeaningfulForumPostDraft,
+  loadForumPostDraft,
+} from '@/apps/forum/utils/forumPostDraftStorage';
 import { WebTaskRailDisclosure } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { buildMessagesPath } from '@/messages/messagesRouteState';
@@ -69,7 +73,6 @@ interface WorkbenchActivityState {
 
 type Translate = (key: string, options?: Record<string, unknown>) => string;
 
-const FORUM_POST_DRAFT_STORAGE_KEY = 'forum_post_draft';
 const consoleWorkbenchUrl = resolveConsoleExternalUrl('/workbench');
 
 const workbenchGroups: WorkbenchGroup[] = [
@@ -297,32 +300,8 @@ function countChatDrafts(userId: string): number {
   )).length;
 }
 
-function hasMeaningfulForumDraft(): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  const raw = window.localStorage.getItem(FORUM_POST_DRAFT_STORAGE_KEY);
-  if (!raw || raw.trim() === '{}') {
-    return false;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as unknown;
-    if (!parsed || typeof parsed !== 'object') {
-      return raw.trim().length > 0;
-    }
-
-    return Object.values(parsed).some((value) => {
-      if (typeof value === 'string') {
-        return value.trim().length > 0;
-      }
-
-      return Array.isArray(value) && value.length > 0;
-    });
-  } catch {
-    return raw.trim().length > 0;
-  }
+function hasMeaningfulForumDraft(userId: string): boolean {
+  return hasMeaningfulForumPostDraft(loadForumPostDraft(userId));
 }
 
 function buildFallbackQueue(t: Translate): WorkbenchQueueItem[] {
@@ -619,7 +598,7 @@ export const WorkbenchApp = () => {
       setActivityState((state) => ({
         ...state,
         chatDraftCount: countChatDrafts(userId),
-        hasForumDraft: hasMeaningfulForumDraft(),
+        hasForumDraft: hasMeaningfulForumDraft(userId),
       }));
     };
 
@@ -650,7 +629,7 @@ export const WorkbenchApp = () => {
       notificationError: false,
       messageError: false,
       chatDraftCount: countChatDrafts(userId),
-      hasForumDraft: hasMeaningfulForumDraft(),
+      hasForumDraft: hasMeaningfulForumDraft(userId),
     }));
 
     Promise.allSettled([
@@ -667,7 +646,7 @@ export const WorkbenchApp = () => {
         notificationError: false,
         messageError: false,
         chatDraftCount: countChatDrafts(userId),
-        hasForumDraft: hasMeaningfulForumDraft(),
+        hasForumDraft: hasMeaningfulForumDraft(userId),
       };
 
       if (notificationResult.status === 'rejected') {

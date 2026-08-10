@@ -1,4 +1,5 @@
 import type { WikiAuthorDocumentVo } from '@radish/http';
+import type { TFunction } from 'i18next';
 import type { EditorDraft } from '@/apps/wiki/wikiApp.helpers';
 
 export interface DocsAuthorOutlineItem {
@@ -74,4 +75,19 @@ export function countCollaboratingDocsAuthorDocuments(documents: WikiAuthorDocum
 
 export function pickDocsAuthorPreviewDocument(documents: WikiAuthorDocumentVo[]): WikiAuthorDocumentVo | null {
   return documents[0] ?? null;
+}
+
+export function getDocsAuthorRoleText(role: string, t: TFunction): string {
+  switch (role.toLowerCase()) {
+    case 'owner':
+      return t('wiki.author.role.owner');
+    case 'editor':
+      return t('wiki.author.role.editor');
+    case 'invitee':
+      return t('wiki.author.role.invitee');
+    case 'administrator':
+      return t('wiki.author.role.administrator');
+    default:
+      return t('wiki.author.role.unknown');
+  }
 }

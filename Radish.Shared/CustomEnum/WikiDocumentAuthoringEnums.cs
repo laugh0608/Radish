@@ -23,6 +23,22 @@ public enum WikiDocumentCollaboratorState
     Revoked = 3
 }
 
+public enum WikiAuthorDocumentScope
+{
+    All = 0,
+    Owned = 1,
+    Collaborating = 2
+}
+
+public enum WikiAuthorDraftStage
+{
+    All = 0,
+    Editable = 1,
+    Submitted = 2,
+    Terminal = 3,
+    None = 4
+}
+
 public static class WikiDocumentReviewActions
 {
     public const string Submit = "Submit";

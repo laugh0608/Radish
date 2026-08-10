@@ -4,7 +4,7 @@
 >
 > **版本**: v26.7.1
 >
-> **最后更新**: 2026.07.21
+> **最后更新**: 2026.08.10
 
 ---
 
@@ -966,91 +966,17 @@ const isAuthor = post && currentUserId > 0 && post.authorId === currentUserId;
 
 **功能目标**: 防止用户意外丢失编辑中的内容。
 
-**实现位置**: `PublishPostForm` 组件
+**实现位置**：`ForumPostComposer`、兼容 `PublishPostForm` 与 `forumPostDraftStorage`。
 
-**localStorage 存储**:
-```typescript
-const DRAFT_STORAGE_KEY = 'forum_post_draft';
+**当前存储契约**：
 
-// 存储结构
-{
-  title: string,
-  content: string,
-  savedAt: number  // 时间戳（用于后续扩展：过期清理）
-}
-```
+- 本地草稿使用版本化 envelope，键按当前登录 `userId` 分区，并在内容内再次校验 `ownerUserId`。
+- 标题、正文、标签、分类快照、编辑模式、问答、投票和抽奖配置由共享 Composer 自动保存；Workbench 通过同一 helper 判断是否存在可继续的真实写作内容。
+- 账号变化时先清空内存状态，再只读取新账号草稿。发布成功只删除当前账号记录，不影响同浏览器中的其他账号。
+- 旧无 owner 的全局草稿无法证明归属，升级后失败关闭且不自动迁移；损坏、版本不匹配或 owner 不匹配的 envelope 同样忽略。
+- 草稿只用于本地恢复，不替代服务端 `clientSubmissionId`、权限、分类和发布结果；发布失败保留草稿并只展示一次结构化本地化反馈。
 
-**自动保存逻辑**:
-```typescript
-// 监听标题和内容变化
-useEffect(() => {
-  if (title || content) {
-    try {
-      localStorage.setItem(
-        DRAFT_STORAGE_KEY,
-        JSON.stringify({ title, content, savedAt: Date.now() })
-      );
-    } catch (err) {
-      console.error('Failed to save draft:', err);
-    }
-  }
-}, [title, content]);
-```
-
-**特性**:
-- 任一字段变化时自动保存
-- 使用 try-catch 处理存储异常（如 localStorage 已满）
-- 仅在有内容时才保存（避免空白覆盖）
-
-**草稿恢复逻辑**:
-```typescript
-// 组件加载时恢复草稿
-useEffect(() => {
-  try {
-    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
-      if (draft.title || draft.content) {
-        setTitle(draft.title || '');
-        setContent(draft.content || '');
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load draft:', err);
-  }
-}, []);
-```
-
-**草稿清理**:
-```typescript
-// 发布成功后清空草稿
-const handleSubmit = () => {
-  if (!title.trim() || !content.trim()) return;
-
-  onPublish(title, content);
-
-  // 清空表单和草稿
-  setTitle('');
-  setContent('');
-  try {
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
-  } catch (err) {
-    console.error('Failed to clear draft:', err);
-  }
-};
-```
-
-**用户体验**:
-- ✅ 无需手动保存，自动持久化
-- ✅ 页面刷新后内容不丢失
-- ✅ 关闭浏览器后下次打开仍然保留
-- ✅ 发布成功后自动清空（不会保留已发布的内容）
-
-**后续优化方向**:
-- 多个草稿支持（使用唯一 key）
-- 过期草稿自动清理（基于 savedAt 时间戳）
-- 草稿列表管理界面
-- 云端同步（需要后端支持）
+当前只维护每账号一份发帖草稿。多个草稿、云端同步和草稿管理界面仍需独立价值与隐私设计，不作为自动扩展项。
 
 #### 6.10 数据同步
 

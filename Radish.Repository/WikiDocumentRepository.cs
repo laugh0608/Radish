@@ -17,6 +17,98 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
         _unitOfWorkManage = unitOfWorkManage;
     }
 
+    public Task<(List<WikiDocument> data, int totalCount)> QueryAuthorPageAsync(
+        WikiAuthorDocumentPageQuery query)
+    {
+        return ExecuteDbOperationAsync(async () =>
+        {
+            var pending = (int)Radish.Shared.CustomEnum.WikiDocumentCollaboratorState.Pending;
+            var accepted = (int)Radish.Shared.CustomEnum.WikiDocumentCollaboratorState.Accepted;
+            var editing = (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Editing;
+            var changesRequested = (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.ChangesRequested;
+            var submitted = (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Submitted;
+            var terminalStates = TerminalDraftStates();
+            var source = CreateTenantQueryableFor<WikiDocument>();
+
+            if (query.Scope == Radish.Shared.CustomEnum.WikiAuthorDocumentScope.Owned)
+            {
+                source = source.Where(document => document.OwnerUserId == query.UserId);
+            }
+            else
+            {
+                source = source.Where(document =>
+                    (query.Scope == Radish.Shared.CustomEnum.WikiAuthorDocumentScope.All &&
+                     document.OwnerUserId == query.UserId) ||
+                    SqlFunc.Subqueryable<WikiDocumentCollaborator>()
+                        .Where(collaborator =>
+                            collaborator.TenantId == document.TenantId &&
+                            collaborator.DocumentId == document.Id &&
+                            collaborator.UserId == query.UserId &&
+                            (collaborator.InviteState == pending || collaborator.InviteState == accepted) &&
+                            !collaborator.IsDeleted)
+                        .Any());
+            }
+
+            if (query.DraftStage == Radish.Shared.CustomEnum.WikiAuthorDraftStage.Editable)
+            {
+                source = source.Where(document =>
+                    document.ActiveDraftId.HasValue &&
+                    SqlFunc.Subqueryable<WikiDocumentDraft>()
+                        .Where(draft =>
+                            draft.TenantId == document.TenantId &&
+                            draft.DocumentId == document.Id &&
+                            draft.Id == document.ActiveDraftId.Value &&
+                            !draft.IsDeleted &&
+                            (draft.ReviewState == editing || draft.ReviewState == changesRequested))
+                        .Any());
+            }
+            else if (query.DraftStage == Radish.Shared.CustomEnum.WikiAuthorDraftStage.Submitted)
+            {
+                source = source.Where(document =>
+                    document.ActiveDraftId.HasValue &&
+                    SqlFunc.Subqueryable<WikiDocumentDraft>()
+                        .Where(draft =>
+                            draft.TenantId == document.TenantId &&
+                            draft.DocumentId == document.Id &&
+                            draft.Id == document.ActiveDraftId.Value &&
+                            !draft.IsDeleted &&
+                            draft.ReviewState == submitted)
+                        .Any());
+            }
+            else if (query.DraftStage == Radish.Shared.CustomEnum.WikiAuthorDraftStage.Terminal)
+            {
+                source = source.Where(document =>
+                    !document.ActiveDraftId.HasValue &&
+                    SqlFunc.Subqueryable<WikiDocumentDraft>()
+                        .Where(draft =>
+                            draft.TenantId == document.TenantId &&
+                            draft.DocumentId == document.Id &&
+                            terminalStates.Contains(draft.ReviewState) &&
+                            !draft.IsDeleted)
+                        .Any());
+            }
+            else if (query.DraftStage == Radish.Shared.CustomEnum.WikiAuthorDraftStage.None)
+            {
+                source = source.Where(document =>
+                    !document.ActiveDraftId.HasValue &&
+                    !SqlFunc.Subqueryable<WikiDocumentDraft>()
+                        .Where(draft =>
+                            draft.TenantId == document.TenantId &&
+                            draft.DocumentId == document.Id &&
+                            terminalStates.Contains(draft.ReviewState) &&
+                            !draft.IsDeleted)
+                        .Any());
+            }
+
+            RefAsync<int> totalCount = 0;
+            var documents = await source
+                .OrderByDescending(document => document.ModifyTime ?? document.CreateTime)
+                .OrderByDescending(document => document.Id)
+                .ToPageListAsync(query.PageIndex, query.PageSize, totalCount);
+            return (documents, totalCount.Value);
+        });
+    }
+
     public async Task<WikiDocumentDraft?> QueryLatestTerminalDraftAsync(long documentId)
     {
         if (documentId <= 0)

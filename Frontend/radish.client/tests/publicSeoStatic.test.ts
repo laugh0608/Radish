@@ -457,11 +457,12 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   const browserRouterSource = readFileSync(resolve(clientRoot, 'src/bootstrap/BrowserAppRouter.tsx'), 'utf8');
   const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
   const docsAuthorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorApp.tsx'), 'utf8');
+  const docsMineSource = readFileSync(resolve(clientRoot, 'src/docs/DocsMinePage.tsx'), 'utf8');
   const docsAuthorEditorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorPage.tsx'), 'utf8');
   const docsAuthorEditorContextSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorContext.tsx'), 'utf8');
   const docsAuthorPresentationSource = readFileSync(resolve(clientRoot, 'src/docs/docsAuthorPresentation.ts'), 'utf8');
   const wikiApiSource = readFileSync(resolve(clientRoot, 'src/apps/wiki/api/wiki.ts'), 'utf8');
-  const docsAuthorWorkspaceSource = `${docsAuthorSource}\n${docsAuthorEditorSource}\n${docsAuthorEditorContextSource}`;
+  const docsAuthorWorkspaceSource = `${docsAuthorSource}\n${docsMineSource}\n${docsAuthorEditorSource}\n${docsAuthorEditorContextSource}`;
 
   assert.match(mainSource, /import \{ BrowserAppRouter \} from '@\/bootstrap\/BrowserAppRouter';/);
   assert.match(browserRouterSource, /const DocsAuthorEntry = lazy/);
@@ -484,10 +485,10 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.match(wikiApiSource, /Wiki\/AuthorGetRevisionHistory\//);
   assert.match(wikiApiSource, /Wiki\/AuthorGetRevisionDetail\//);
   assert.match(wikiApiSource, /Promise<WikiAuthorRevisionDetailVo>/);
-  assert.match(docsAuthorSource, /document\.voCanStartDraft/);
-  assert.match(docsAuthorSource, /previewDocument\.voCanStartDraft/);
-  assert.match(docsAuthorSource, /document\.voLatestDraftId/);
-  assert.doesNotMatch(docsAuthorSource, /!document\.voDraftId/);
+  assert.match(docsMineSource, /document\.voCanStartDraft/);
+  assert.match(docsMineSource, /previewDocument\.voCanStartDraft/);
+  assert.match(docsMineSource, /document\.voLatestDraftId/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /!document\.voDraftId/);
   assert.match(docsAuthorSource, /document: saved/);
   assert.match(docsAuthorSource, /document: submitted/);
   assert.match(docsAuthorSource, /document: withdrawn/);
@@ -499,11 +500,11 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.match(docsAuthorPresentationSource, /status === WikiDocumentStatus\.Published/);
   assert.match(docsAuthorPresentationSource, /\(documentVersion \?\? 0\) > 0/);
   assert.match(docsAuthorPresentationSource, /&& !isDeleted/);
-  assert.match(docsAuthorSource, /documentSlug: previewDocument\.voDocumentSlug/);
-  assert.match(docsAuthorSource, /documentSlug: document\.voDocumentSlug/);
+  assert.match(docsMineSource, /documentSlug: previewDocument\.voDocumentSlug/);
+  assert.match(docsMineSource, /documentSlug: document\.voDocumentSlug/);
   assert.match(docsAuthorSource, /documentSlug: state\.history\.voSlug/);
   assert.match(docsAuthorEditorSource, /documentSlug: state\.document\.voDocumentSlug/);
-  assert.equal((docsAuthorSource.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 3);
+  assert.equal((`${docsAuthorSource}\n${docsMineSource}`.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 3);
   assert.equal((docsAuthorEditorSource.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 1);
   assert.match(docsAuthorSource, /const treeRef = useRef<WikiDocumentTreeNodeVo\[\]>\(\[\]\);/);
   assert.match(docsAuthorSource, /treeRef\.current = collectionState\.tree;/);
@@ -730,19 +731,25 @@ test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器
   const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
   const publicEntrySource = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
   const publishModalSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PublishPostModal.tsx'), 'utf8');
+  const forumPostComposerSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/ForumPostComposer.tsx'), 'utf8');
 
   assert.match(composeSource, /buildPublicForumComposeReturnPath/);
   assert.match(composeSource, /publishPost\(/);
   assert.match(composeSource, /buildPostSubmissionFingerprint/);
   assert.match(composeSource, /loginReturnPath=\{loginReturnPath\}/);
+  assert.match(composeSource, /<ForumPostComposer/);
+  assert.match(composeSource, /surface="page"/);
   assert.match(composeSource, /onNavigate\(\{ kind: 'detail', postId: publishedPostId \}, \{ replace: true \}\)/);
   assert.doesNotMatch(composeSource, /buildDesktopForumReturnPath/);
+  assert.doesNotMatch(composeSource, /<PublishPostModal/);
   assert.match(appSource, /<PublicForumCompose/);
   assert.match(appSource, /route\.kind === 'compose'/);
   assert.match(publicEntrySource, /parsedRoute\.kind === 'detail' \|\| parsedRoute\.kind === 'compose'/);
   assert.match(publicEntrySource, /nextRoute\.route\.kind !== 'detail' && nextRoute\.route\.kind !== 'compose'/);
-  assert.match(publishModalSource, /loginReturnPath\?: string \| null;/);
-  assert.match(publishModalSource, /returnPath: loginReturnPath \?\? buildDesktopForumReturnPath\(\)/);
+  assert.match(publishModalSource, /<BottomSheet/);
+  assert.match(publishModalSource, /<ForumPostComposer/);
+  assert.match(forumPostComposerSource, /loginReturnPath\?: string \| null;/);
+  assert.match(forumPostComposerSource, /returnPath: loginReturnPath \?\? buildDesktopForumReturnPath\(\)/);
 });
 
 test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {

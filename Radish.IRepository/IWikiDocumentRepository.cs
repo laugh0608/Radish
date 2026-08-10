@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Radish.IRepository.Base;
 using Radish.Model;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.IRepository;
@@ -8,6 +9,7 @@ namespace Radish.IRepository;
 /// <summary>Wiki 文档仓储接口</summary>
 public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
 {
+    Task<(List<WikiDocument> data, int totalCount)> QueryAuthorPageAsync(WikiAuthorDocumentPageQuery query);
     Task<WikiDocumentDraft?> QueryLatestTerminalDraftAsync(long documentId);
     Task<List<WikiTerminalDraftEvidence>> QueryLatestTerminalDraftEvidenceAsync(IReadOnlyCollection<long> documentIds);
     Task<int> SaveDraftAsync(WikiDraftSaveCommand command);
@@ -36,6 +38,13 @@ public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
         Expression<Func<WikiDocument, object>>? orderByExpression,
         OrderByType orderByType);
 }
+
+public sealed record WikiAuthorDocumentPageQuery(
+    long UserId,
+    WikiAuthorDocumentScope Scope,
+    WikiAuthorDraftStage DraftStage,
+    int PageIndex,
+    int PageSize);
 
 public sealed class WikiTerminalDraftEvidence
 {

@@ -1,10 +1,10 @@
 # 文档作者协作与审核使用说明
 
-> 最后更新：2026-08-08
+> 最后更新：2026-08-10
 >
 > 适用入口：正式 Web `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，以及 Console `/documents`。
 
-> 当前实现提示：`2026-08-08` 的 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)发现的 Revision 关系授权、终态证据、写响应证据与 Apply 基准版本 CAS 已完成[代码修复和静态验收](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)；随后已完成 PC / mobile 正式代表设计、Author 编辑任务面实现与普通 Owner / Accepted Editor Gateway 验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
+> 当前实现提示：`2026-08-08` 的 R1-A01 Revision 关系授权、终态证据、写响应证据与 Apply 基准版本 CAS 已完成[代码修复和静态验收](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)，并形成[成组实现与 Gateway 验收](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。`2026-08-10` 又关闭 R2-A02 的 Author 列表权威查询与 Revision 局部状态门禁，详见[能力门禁实现记录](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)。
 
 本文面向文档所有者、协作者和 Console 审核者，说明当前文档贡献流程怎么使用。底层数据、并发和权限设计见 [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)，公开阅读与固定文档边界见 [文档系统方案](/guide/document-system)。
 
@@ -22,11 +22,11 @@
 
 ## 2. 创建与保存草稿
 
-1. 登录后打开 `/docs/mine`，查看“我拥有的”和“与我协作的”文档。
+1. 登录后打开 `/docs/mine`，通过“全部 / 我拥有的 / 与我协作”和“全部 / 可编辑 / 已提交 / 已结束 / 无草稿记录”查询权威列表；列表按更新时间与 ID 稳定分页，角色名称随当前语言显示。
 2. 进入 `/docs/compose`，填写标题、可选 Slug、摘要、Markdown 正文、封面、目录建议和修改摘要。
 3. 创建成功后会同时生成稳定文档身份与第一份工作草稿；新正文不会进入公开阅读。
 4. 在 `/docs/edit/:id` 继续保存。每次保存都携带当前 `ExpectedDraftVersion`，成功后页面采用服务端返回的新版本。
-5. `/docs/revisions/:id` 只查看已经批准的正式版本；日常草稿保存不会伪造成正式 Revision。
+5. `/docs/revisions/:id` 只查看已经批准的正式版本；日常草稿保存不会伪造成正式 Revision。版本轨与正文详情独立加载，详情首次失败可局部重试，已有同版本快照刷新失败时保留快照并标记 stale。
 
 内置固定文档、已删除文档或当前无编辑权的文档保持只读，并显示原因。既有文档在上一份草稿进入终态后，由 Owner 开启下一份草稿。
 

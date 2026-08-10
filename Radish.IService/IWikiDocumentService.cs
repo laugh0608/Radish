@@ -2,13 +2,19 @@ using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.IService;
 
 /// <summary>Wiki 文档服务接口</summary>
 public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentVo>
 {
-    Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(long userId, int pageIndex, int pageSize);
+    Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(
+        long userId,
+        WikiAuthorDocumentScope scope,
+        WikiAuthorDraftStage draftStage,
+        int pageIndex,
+        int pageSize);
     Task<WikiAuthorDraftDetailVo?> AuthorGetByIdAsync(long documentId, long userId, bool isSystemOrAdmin = false);
     Task<WikiAuthorRevisionHistoryVo?> AuthorGetRevisionHistoryAsync(long documentId, long userId, bool isSystemOrAdmin = false);
     Task<WikiAuthorRevisionDetailVo?> AuthorGetRevisionDetailAsync(long revisionId, long userId, bool isSystemOrAdmin = false);

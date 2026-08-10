@@ -2,7 +2,7 @@
 
 > 日期：2026-08-10（Asia/Shanghai）
 >
-> 状态：readiness 已完成；五组设计前能力门禁等待确认
+> 状态：readiness 已完成；后续五组设计前能力门禁已由同日[实现批](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)关闭
 >
 > 范围：正式 Web `/docs/mine`、`/docs/revisions/:id` 与 `/forum/compose`；反查 `R1-A01 / R1-P02`、WebOS Wiki / Forum 历史实现、Author / Forum API、本地草稿、PC / mobile 与双语状态
 

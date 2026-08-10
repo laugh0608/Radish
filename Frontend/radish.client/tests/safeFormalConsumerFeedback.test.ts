@@ -6,8 +6,8 @@ const avatarUploadModalSource = readFileSync(
   new URL('../src/apps/profile/components/AvatarUploadModal.tsx', import.meta.url),
   'utf8',
 );
-const publishPostModalSource = readFileSync(
-  new URL('../src/apps/forum/components/PublishPostModal.tsx', import.meta.url),
+const forumPostComposerSource = readFileSync(
+  new URL('../src/apps/forum/components/ForumPostComposer.tsx', import.meta.url),
   'utf8',
 );
 const userAttachmentListSource = readFileSync(
@@ -63,13 +63,13 @@ test('头像裁切与上传以同一生命周期锁定关闭并丢弃失效任�
 
 test('论坛发布仅展示稳定本地化错误或宿主 fallback', () => {
   assert.match(
-    publishPostModalSource,
+    forumPostComposerSource,
     /resolveForumPublishErrorMessage\(error, t, t\('forum\.publishFailed'\)\)/,
   );
-  assert.doesNotMatch(publishPostModalSource, /error instanceof Error && error\.message/);
-  assert.doesNotMatch(publishPostModalSource, /typeof error === 'string'/);
-  assert.match(publishPostModalSource, /t\('forum\.publishDraftRetainedHint'\)/);
-  assert.match(publishPostModalSource, /toast\.error\(t\('forum\.publishDraftRetainedToast'\)\)/);
+  assert.doesNotMatch(forumPostComposerSource, /error instanceof Error && error\.message/);
+  assert.doesNotMatch(forumPostComposerSource, /typeof error === 'string'/);
+  assert.match(forumPostComposerSource, /t\('forum\.publishDraftRetainedHint'\)/);
+  assert.match(forumPostComposerSource, /toast\.error\(t\('forum\.publishDraftRetainedToast'\)\)/);
 });
 
 test('附件列表未知加载与删除错误仅展示宿主 fallback', () => {

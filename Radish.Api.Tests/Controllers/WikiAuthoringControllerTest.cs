@@ -8,9 +8,11 @@ using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
+using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
+using Radish.Shared.CustomEnum;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
@@ -88,6 +90,47 @@ public sealed class WikiAuthoringControllerTest
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
         Assert.Equal("Wiki.DraftNotFound", result.Code);
+    }
+
+    [Fact]
+    public async Task AuthorGetList_ShouldParseStableQueryTokens()
+    {
+        var service = new Mock<IWikiDocumentService>(MockBehavior.Strict);
+        service.Setup(item => item.AuthorGetListAsync(
+                10001,
+                WikiAuthorDocumentScope.Owned,
+                WikiAuthorDraftStage.Terminal,
+                2,
+                15))
+            .ReturnsAsync(new PageModel<WikiAuthorDocumentVo>
+            {
+                Page = 2,
+                PageSize = 15
+            });
+        var controller = CreateController(service.Object, 10001, "Author", 7);
+
+        var result = await controller.AuthorGetList("owned", "terminal", 2, 15);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(2, result.ResponseData!.Page);
+        Assert.Equal(15, result.ResponseData.PageSize);
+    }
+
+    [Theory]
+    [InlineData("owner", "all")]
+    [InlineData("all", "finished")]
+    public async Task AuthorGetList_ShouldRejectUnknownQueryTokens(string scope, string draftStage)
+    {
+        var service = new Mock<IWikiDocumentService>(MockBehavior.Strict);
+        var controller = CreateController(service.Object, 10001, "Author", 7);
+
+        var result = await controller.AuthorGetList(scope, draftStage);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal("Wiki.AuthorListQueryInvalid", result.Code);
+        Assert.Equal("error.wiki.author_list_query_invalid", result.MessageKey);
+        service.VerifyNoOtherCalls();
     }
 
     [Fact]

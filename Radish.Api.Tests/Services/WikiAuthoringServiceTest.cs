@@ -216,12 +216,13 @@ public sealed class WikiAuthoringServiceTest
             draftVersion: 2,
             activeDraftId: null);
         fixture.Draft.ModifyTime = DateTime.UtcNow;
-        fixture.Documents.Setup(item => item.QueryPageAsync(
-                It.IsAny<Expression<Func<WikiDocument, bool>>?>(),
-                1,
-                20,
-                It.IsAny<Expression<Func<WikiDocument, object>>?>(),
-                OrderByType.Desc))
+        fixture.Documents.Setup(item => item.QueryAuthorPageAsync(
+                It.Is<WikiAuthorDocumentPageQuery>(query =>
+                    query.UserId == 10001 &&
+                    query.Scope == WikiAuthorDocumentScope.All &&
+                    query.DraftStage == WikiAuthorDraftStage.All &&
+                    query.PageIndex == 1 &&
+                    query.PageSize == 20)))
             .ReturnsAsync(([fixture.Document], 1));
         fixture.Documents.Setup(item => item.QueryLatestTerminalDraftEvidenceAsync(
                 It.Is<IReadOnlyCollection<long>>(documentIds =>
@@ -241,7 +242,12 @@ public sealed class WikiAuthoringServiceTest
                 }
             ]);
 
-        var result = await fixture.Service.AuthorGetListAsync(10001, 1, 20);
+        var result = await fixture.Service.AuthorGetListAsync(
+            10001,
+            WikiAuthorDocumentScope.All,
+            WikiAuthorDraftStage.All,
+            1,
+            20);
 
         var item = Assert.Single(result.Data);
         Assert.Equal(fixture.Draft.Id, item.VoDraftId);
@@ -258,18 +264,19 @@ public sealed class WikiAuthoringServiceTest
     {
         var fixture = CreateFixture();
         fixture.Draft.DocumentId = 20002;
-        fixture.Documents.Setup(item => item.QueryPageAsync(
-                It.IsAny<Expression<Func<WikiDocument, bool>>?>(),
-                1,
-                20,
-                It.IsAny<Expression<Func<WikiDocument, object>>?>(),
-                OrderByType.Desc))
+        fixture.Documents.Setup(item => item.QueryAuthorPageAsync(
+                It.IsAny<WikiAuthorDocumentPageQuery>()))
             .ReturnsAsync(([fixture.Document], 1));
         fixture.Drafts.Setup(item => item.QueryAsync(
                 It.IsAny<Expression<Func<WikiDocumentDraft, bool>>?>()))
             .ReturnsAsync([fixture.Draft]);
 
-        var result = await fixture.Service.AuthorGetListAsync(10001, 1, 20);
+        var result = await fixture.Service.AuthorGetListAsync(
+            10001,
+            WikiAuthorDocumentScope.All,
+            WikiAuthorDraftStage.All,
+            1,
+            20);
 
         var item = Assert.Single(result.Data);
         Assert.Null(item.VoDraftId);

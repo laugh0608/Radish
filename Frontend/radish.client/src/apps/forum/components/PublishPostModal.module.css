@@ -33,6 +33,33 @@
   overflow: hidden;
 }
 
+.composerPage {
+  height: min(820px, calc(100dvh - 160px));
+  min-height: 680px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 18px;
+  background: var(--theme-bg-surface);
+}
+
+.composerFullscreen {
+  position: fixed;
+  inset: 6px;
+  z-index: 1200;
+  height: calc(100dvh - 12px);
+  min-height: 0;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 18px;
+  background: var(--theme-bg-app);
+  box-shadow: 0 24px 48px color-mix(in srgb, var(--theme-accent-ink) 18%, transparent);
+}
+
+.composerFooter {
+  flex: 0 0 auto;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-bg-muted) 16%);
+}
+
 .composerHeader {
   display: flex;
   align-items: center;
@@ -788,5 +815,16 @@
 
   .settingsDrawer {
     width: 100%;
+  }
+
+  .composerPage {
+    height: calc(100dvh - 116px);
+    min-height: 640px;
+    border-radius: 14px;
+  }
+
+  .composerFooter {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 }

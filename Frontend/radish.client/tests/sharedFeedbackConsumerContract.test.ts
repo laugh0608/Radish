@@ -16,7 +16,7 @@ const countMatches = (source: string, pattern: RegExp): number => source.match(p
 
 const markdownConsumerPaths = [
   'src/apps/forum/components/PublishPostForm.tsx',
-  'src/apps/forum/components/PublishPostModal.tsx',
+  'src/apps/forum/components/ForumPostComposer.tsx',
   'src/apps/forum/components/EditPostModal.tsx',
   'src/apps/forum/components/PostDetail.tsx',
   'src/docs/DocsAuthorEditorPage.tsx',
@@ -195,7 +195,8 @@ test('桌面论坛回答上传状态由详情目标所有者阻止跨帖切换',
 
 test('富文本编辑器与 Markdown 编辑器遵循同一宿主反馈契约', () => {
   const editorSource = readSource('src/apps/forum/components/RichTextMarkdownEditor.tsx');
-  const consumerSource = readSource('src/apps/forum/components/PublishPostModal.tsx');
+  const consumerSource = readSource('src/apps/forum/components/ForumPostComposer.tsx');
+  const sheetWrapperSource = readSource('src/apps/forum/components/PublishPostModal.tsx');
   const labelsSource = readSource('src/i18n/markdownEditorLabels.ts');
 
   assert.match(editorSource, /labels: RichTextMarkdownEditorLabels;/);
@@ -221,8 +222,12 @@ test('富文本编辑器与 Markdown 编辑器遵循同一宿主反馈契约', (
   assert.match(consumerSource, /labels=\{richTextEditorLabels\}/);
   assert.match(consumerSource, /onUploadError=\{handleEditorUploadError\}/);
   assert.match(consumerSource, /onUploadingChange=\{handleEditorUploadingChange\}/);
-  assert.match(consumerSource, /closeOnOverlayClick=\{!isComposerBusy\}/);
-  assert.match(consumerSource, /closeOnEscape=\{!isComposerBusy\}/);
+  assert.match(
+    consumerSource,
+    /const handleCloseAttempt = useCallback\(\(\) => \{\s*if \(isSubmitting \|\| isEditorUploading\) \{\s*return;/,
+  );
+  assert.match(sheetWrapperSource, /closeOnOverlayClick=\{false\}/);
+  assert.match(sheetWrapperSource, /closeOnEscape=\{false\}/);
   assert.match(consumerSource, /disabled=\{isComposerBusy\}/);
   assert.match(consumerSource, /t\('forum\.editor\.watermark'\)/);
 });

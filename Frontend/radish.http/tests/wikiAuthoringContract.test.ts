@@ -7,6 +7,7 @@ import {
   type SaveWikiAuthorDraftRequest,
   type WikiAuthorDraftDetailVo,
   type WikiAuthorDocumentVo,
+  type WikiAuthorListQuery,
   type WikiAuthorRevisionDetailVo,
   type WikiAuthorRevisionHistoryVo,
 } from '../src/wiki-authoring-contract.ts';
@@ -114,4 +115,20 @@ test('Wiki 作者列表和修订契约应显式表达下一稿能力与关系授
   assert.notEqual(document.voSlug, history.voSlug);
   assert.equal(history.voRevisions[0]?.voDocumentId, history.voDocumentId);
   assert.equal(authorDetailDoesNotExposeCreateId, true);
+});
+
+test('Wiki 作者列表查询应显式携带权威范围、草稿阶段和分页', () => {
+  const query = {
+    scope: 'collaborating',
+    draftStage: 'submitted',
+    pageIndex: 2,
+    pageSize: 20,
+  } satisfies WikiAuthorListQuery;
+
+  assert.deepEqual(query, {
+    scope: 'collaborating',
+    draftStage: 'submitted',
+    pageIndex: 2,
+    pageSize: 20,
+  });
 });

@@ -207,7 +207,7 @@ WHERE Id = draftId
 
 Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按所有者 / 协作者关系授权：
 
-- `GET Wiki/AuthorGetList`
+- `GET Wiki/AuthorGetList?scope=all|owned|collaborating&draftStage=all|editable|submitted|terminal|none&pageIndex={n}&pageSize={n}`
 - `GET Wiki/AuthorGetById/{documentId}`
 - `GET Wiki/AuthorGetRevisionHistory/{documentId}`
 - `GET Wiki/AuthorGetRevisionDetail/{revisionId}`
@@ -221,7 +221,7 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 - `POST Wiki/AuthorRespondInvitation/{collaboratorId}`
 - `POST Wiki/AuthorRemoveCollaborator/{collaboratorId}`
 
-`AuthorCreate` 创建新文档身份与首份草稿；既有文档在没有活跃草稿时，由所有者通过 `AuthorStartDraft` 从当前正式版本创建下一份草稿。Author Revision 只读入口按 Owner、Pending Invitee、Accepted Editor 与 System / Admin 关系授权，不复用 Console 权限接口，也不向普通 Author 返回内部创建者 LongId。旧 `Create / Update` HTTP 作者写入口已经删除，WebOS 兼容写入也复用 Author Service，不得恢复平行正文写入口。
+`AuthorGetList` 在专属 Repository 内按租户、Owner / Pending / Accepted 关系和当前 / 终态草稿证据完成数据库筛选，使用 `ModifyTime ?? CreateTime DESC, Id DESC` 稳定分页；未知查询词元返回结构化 `Wiki.AuthorListQueryInvalid`，不得先取全量再由 Service 或前端过滤。`AuthorCreate` 创建新文档身份与首份草稿；既有文档在没有活跃草稿时，由所有者通过 `AuthorStartDraft` 从当前正式版本创建下一份草稿。Author Revision 只读入口按 Owner、Pending Invitee、Accepted Editor 与 System / Admin 关系授权，不复用 Console 权限接口，也不向普通 Author 返回内部创建者 LongId。旧 `Create / Update` HTTP 作者写入口已经删除，WebOS 兼容写入也复用 Author Service，不得恢复平行正文写入口。
 
 ### 8.2 Console API
 
@@ -264,10 +264,10 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 
 ### 9.1 Author 页面族
 
-- `/docs/mine`：展示“我拥有的 / 与我协作的”，按草稿和审核状态筛选。
+- `/docs/mine`：展示“我拥有的 / 与我协作的”，按草稿和审核状态使用服务端权威筛选与分页；快速切换只接受最新查询响应，首次失败与已有页 stale 分开呈现，角色 code 只经双语映射展示。
 - `/docs/compose`：创建文档身份与首份工作草稿；匿名用户走统一登录回流。
 - `/docs/edit/:id`：只编辑工作草稿，顶部明确显示所有者、协作状态、正式版本和草稿版本。
-- `/docs/revisions/:id`：继续展示已批准版本，不把每次草稿保存伪装成正式版本。
+- `/docs/revisions/:id`：继续展示已批准版本，不把每次草稿保存伪装成正式版本；history 与 detail 独立裁决 unavailable / stale，并分别拒绝过期响应。
 
 PC 使用编辑器主区与协作 / 审核侧栏；mobile 使用同一页面结构，将协作者和审核时间线放入共享 Bottom Sheet 或抽屉。不得建立第二套移动 Author App。
 
