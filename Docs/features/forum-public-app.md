@@ -49,7 +49,7 @@ Frontend/radish.client/src/public/forum/
 ## 维护约束
 
 - `PublicForumApp.tsx` 只负责公开 forum 的应用级状态、路由分派、详情上下文和共享数据协调。
-- `/forum/compose` 必须把共享 `ForumPostComposer` 作为页面内任务面；WebOS `ForumApp` 只通过薄 `PublishPostModal` Bottom Sheet 外壳承载同一核心，不复制发布状态机或让 Sheet 遮蔽正式路由。
+- `/forum/compose` 必须把共享 `ForumPostComposer` 作为页面内唯一任务实例；R2-A02 已确认正式路由默认在论坛浏览上下文上以底部半屏承载，并可原位展开全屏，展开 / 收起不得重建草稿、上传或提交状态。WebOS `ForumApp` 仍只通过薄 `PublishPostModal` Bottom Sheet 外壳承载同一核心，不复制正式路由的背景、双形态承载或发布状态机。
 - 发布器本地草稿统一通过版本化 helper 按当前 `userId` 分区；旧 `forum_post_draft` 无 owner 记录失败关闭，Workbench、兼容 Form 和共享 Composer 读取同一账号真相源，发布成功只删除当前账号草稿。
 - 发布器系统文案与无障碍名称全部来自 `community` 双语资源；分类失败与发布失败只显示本地化安全反馈，诊断进入统一日志，父页面不得再展示原始 `error.message` 或第二次失败 toast。
 - 列表、搜索、标签、类型流和详情页面组件应优先保持页面职责清晰，不把局部展示逻辑回填到容器。

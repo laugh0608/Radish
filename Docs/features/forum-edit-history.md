@@ -4,7 +4,7 @@
 >
 > **版本**: v26.7.1
 >
-> **最后更新**: 2026.07.26
+> **最后更新**: 2026.08.10
 
 > **后续权威口径**：F4-M 已将“可恢复版本”从本页的编辑差异记录中分离，完整 Revision、CAS、旧历史兼容与作者恢复统一以 [论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 为准。本页继续说明 F4-M 前 `PostEditHistory / CommentEditHistory` 的兼容行为，不再作为恢复实现依据。
 
@@ -24,6 +24,8 @@
 `2026-06-20` 补充：论坛发布、评论、回答和编辑重试语义已进入 [论坛内容发布可靠性与编辑历史治理](/guide/forum-content-write-reliability-governance)。本页继续作为 `PostEditHistory` / `CommentEditHistory` 的功能说明；提交意图去重、短窗口内容指纹和频率限制以治理专题为准。
 
 `2026-06-21` 补充：Flutter 首批已承接作者帖子正文编辑和作者根评论编辑，失败重试分别复用 `forum-post-edit:` 与 `forum-comment-edit:` 提交意图 key；子评论编辑、回答编辑和完整编辑器仍后置评审。
+
+`2026-08-10` 的 R2-A02 代表设计已确认下一轮统一差异表达：版本弹层默认比较相邻的 `vN-1 → vN`，并允许切换为“选中版本 → 当前版本”；PC 使用修改前 / 修改后并排差异，Mobile 使用单列 unified diff。帖子除标题和正文外还比较分类、标签、封面与附件；评论沿用同一弹层但只比较正文，不新增独立画板或扩大受权全文读取。
 
 ---
 
@@ -156,6 +158,7 @@ dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- init
 客户端：`Frontend/radish.client`
 
 - F4-M 后帖子与评论的正式入口统一显示为“版本”，主时间线读取完整 Revision。
+- 正式版本弹层的选中快照与比较基准必须独立裁决；比较基准不可用时保留已选版本与时间线，只替换修改前表面并允许重试。
 - 旧 `PostEditHistory / CommentEditHistory` 只在版本弹窗的“早期编辑记录”折叠区按需分页读取。
 - 旧历史正文仅允许目标作者与 Admin / System 查看；匿名与其他读者只获得是否编辑、次数和最近编辑时间摘要。
 - 旧记录继续展示帖子编辑前后标题 / 正文或评论编辑前后正文，但不提供恢复动作。
