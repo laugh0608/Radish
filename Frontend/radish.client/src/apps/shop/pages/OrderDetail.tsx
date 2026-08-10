@@ -7,7 +7,7 @@ import { resolveMediaUrl } from '@/utils/media';
 import type { Order } from '@/types/shop';
 import type { LongId } from '@/api/user';
 import { getOrderStatusColor, normalizeOrderStatus, OrderStatus } from '@/api/shop';
-import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { WebStateSlot, WebTaskRailDisclosure, type WebStateSlotAction } from '@/components/web-shell';
 import type { ShopLoadError } from '../hooks/useShopData';
 import styles from './OrderDetail.module.css';
 
@@ -378,6 +378,10 @@ export const OrderDetail = ({
         </div>
 
         <aside className={styles.detailRail}>
+          <WebTaskRailDisclosure
+            label={t('shop.orderDetail.title')}
+            summary={t('shop.orderDetail.railScopeHint')}
+          >
           <section className={styles.railCard}>
             <span>{t('shop.orderDetail.railStatus')}</span>
             <strong style={{ color: getOrderStatusColor(order.voStatus) }}>{order.voStatusDisplay ?? ''}</strong>
@@ -434,6 +438,7 @@ export const OrderDetail = ({
             )}
           </div>
           <p className={styles.railHint}>{t('shop.orderDetail.railScopeHint')}</p>
+          </WebTaskRailDisclosure>
         </aside>
       </div>
 

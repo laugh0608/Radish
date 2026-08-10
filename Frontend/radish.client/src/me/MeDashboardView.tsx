@@ -2,6 +2,7 @@ import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ExperienceBar, type ExperienceBarPresentation } from '@radish/ui/experience-bar';
 import { Icon } from '@radish/ui/icon';
+import { WebTaskRailDisclosure } from '@/components/web-shell';
 import {
   absoluteCoinValue,
   formatCoinNumber,
@@ -73,6 +74,8 @@ export const MeDashboardView = ({
   const experience = data.experience;
   const balance = data.balance;
   const pet = data.pet;
+  const recentBrowseItem = data.browseHistory[0] ?? null;
+  const recentBrowseHref = recentBrowseItem ? getBrowseHistoryHref(recentBrowseItem) : null;
 
   const handleRouteLink = (event: MouseEvent<HTMLAnchorElement>, route: MeRoute) => {
     if (!shouldHandleRouteLink(event)) {
@@ -175,106 +178,149 @@ export const MeDashboardView = ({
         </button>
       </div>
 
-      <section className={styles.summaryGrid}>
-        <article className={styles.summaryCard}>
-          <div className={styles.cardHeader}>
-            <Icon icon="mdi:star-circle-outline" size={22} />
-            <h3>{t('me.experienceTitle')}</h3>
-          </div>
-          {data.errors.experience ? (
-            <p className={styles.errorText}>{data.errors.experience}</p>
-          ) : experience ? (
-            <>
-              <ExperienceBar
-                data={buildExperienceBarData(experience)}
-                size="medium"
-                showLevel={true}
-                showProgress={true}
-                showTooltip={true}
-                animated={true}
-                presentation={experienceBarPresentation}
-              />
-              <div className={styles.metricRow}>
-                <span>{t('me.totalExp')}</span>
-                <strong>{formatExperienceNumber(experience.voTotalExp, language)}</strong>
-              </div>
-              <div className={styles.metricRow}>
-                <span>{t('me.nextLevel')}</span>
-                <strong>{formatExperienceNumber(experience.voExpToNextLevel, language)}</strong>
-              </div>
-            </>
-          ) : (
-            <p className={styles.emptyText}>{t('me.experienceEmpty')}</p>
-          )}
-        </article>
-
-        <article className={styles.summaryCard}>
-          <div className={styles.cardHeader}>
-            <Icon icon="mdi:wallet-outline" size={22} />
-            <h3>{t('me.assetTitle')}</h3>
-          </div>
-          {data.errors.assets ? (
-            <p className={styles.errorText}>{data.errors.assets}</p>
-          ) : balance ? (
-            <>
-              <div className={styles.balanceValue}>{formatCoinNumber(balance.voBalance, language)} {t('me.carrotUnit')}</div>
-              <div className={styles.metricRow}>
-                <span>{t('me.frozenBalance')}</span>
-                <strong>{formatCoinNumber(balance.voFrozenBalance, language)} {t('me.carrotUnit')}</strong>
-              </div>
-              <div className={styles.metricRow}>
-                <span>{t('me.totalEarned')}</span>
-                <strong>{formatCoinNumber(balance.voTotalEarned, language)}</strong>
-              </div>
-            </>
-          ) : (
-            <p className={styles.emptyText}>{t('me.assetEmpty')}</p>
-          )}
-        </article>
-
-        <article className={styles.summaryCard}>
-          <div className={styles.cardHeader}>
-            <Icon icon="mdi:history" size={22} />
+      <div className={styles.dashboardWorkspace}>
+        <section className={`${styles.detailPanel} ${styles.revisitPanel}`}>
+          <div className={styles.panelHeader}>
             <h3>{t('me.revisitTitle')}</h3>
+            <a
+              href={buildMePath({ kind: 'history', page: 1 })}
+              onClick={(event) => handleRouteLink(event, { kind: 'history', page: 1 })}
+            >
+              {t('me.openHistory')}
+            </a>
           </div>
+          <p className={styles.revisitDescription}>{t('me.revisitDescription')}</p>
           {data.errors.browse ? (
             <p className={styles.errorText}>{data.errors.browse}</p>
-          ) : data.browseHistory.length > 0 ? (
-            <>
-              <div className={styles.balanceValue}>{data.browseHistory.length}</div>
-              <p className={styles.emptyText}>{t('me.revisitDescription')}</p>
-            </>
+          ) : recentBrowseItem ? (
+            <div className={styles.revisitTask}>
+              <span className={styles.itemIcon} data-tone="positive">
+                <Icon icon="mdi:history" size={18} />
+              </span>
+              <div className={styles.itemBody}>
+                {recentBrowseHref ? (
+                  <a href={recentBrowseHref} onClick={(event) => onRememberPublicSource(event, recentBrowseHref)}>
+                    {recentBrowseItem.voTitle}
+                  </a>
+                ) : (
+                  <strong>{recentBrowseItem.voTitle}</strong>
+                )}
+                <span>{recentBrowseItem.voTargetTypeDisplay} · {formatDisplayDateTime(recentBrowseItem.voLastViewTime)}</span>
+              </div>
+              <span className={styles.viewCount}>{t('me.viewCount', { count: recentBrowseItem.voViewCount })}</span>
+            </div>
           ) : (
             <p className={styles.emptyText}>{t('me.revisitEmpty')}</p>
           )}
-        </article>
+        </section>
 
-        <article className={styles.summaryCard}>
-          <div className={styles.cardHeader}>
-            <Icon icon="mdi:leaf" size={22} />
-            <h3>{t('me.petTitle')}</h3>
-          </div>
-          {data.errors.pet ? (
-            <p className={styles.errorText}>{data.errors.pet}</p>
-          ) : pet ? (
-            <>
-              <div className={styles.balanceValue}>{pet.voName}</div>
-              <div className={styles.metricRow}>
-                <span>{t('me.petMood')}</span>
-                <strong>{t(resolvePetMoodTranslationKey(pet.voMood))}</strong>
-              </div>
-              <div className={styles.metricRow}>
-                <span>{t('me.petStage')}</span>
-                <strong>{t(resolvePetGrowthStageTranslationKey(pet.voGrowthStage))}</strong>
-              </div>
-            </>
-          ) : (
-            <p className={styles.emptyText}>{t('me.petEmpty')}</p>
-          )}
-        </article>
-      </section>
+        <aside className={styles.dashboardRail} aria-label={t('me.overviewTitle')}>
+          <WebTaskRailDisclosure
+            label={t('me.overviewTitle')}
+            summary={t('me.overviewDescription')}
+          >
+            <section className={styles.summaryGrid}>
+              <article className={styles.summaryCard}>
+                <div className={styles.cardHeader}>
+                  <Icon icon="mdi:star-circle-outline" size={22} />
+                  <h3>{t('me.experienceTitle')}</h3>
+                </div>
+                {data.errors.experience ? (
+                  <p className={styles.errorText}>{data.errors.experience}</p>
+                ) : experience ? (
+                  <>
+                    <ExperienceBar
+                      data={buildExperienceBarData(experience)}
+                      size="medium"
+                      showLevel={true}
+                      showProgress={true}
+                      showTooltip={true}
+                      animated={true}
+                      presentation={experienceBarPresentation}
+                    />
+                    <div className={styles.metricRow}>
+                      <span>{t('me.totalExp')}</span>
+                      <strong>{formatExperienceNumber(experience.voTotalExp, language)}</strong>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span>{t('me.nextLevel')}</span>
+                      <strong>{formatExperienceNumber(experience.voExpToNextLevel, language)}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <p className={styles.emptyText}>{t('me.experienceEmpty')}</p>
+                )}
+              </article>
 
-      <section className={styles.detailGrid}>
+              <article className={styles.summaryCard}>
+                <div className={styles.cardHeader}>
+                  <Icon icon="mdi:wallet-outline" size={22} />
+                  <h3>{t('me.assetTitle')}</h3>
+                </div>
+                {data.errors.assets ? (
+                  <p className={styles.errorText}>{data.errors.assets}</p>
+                ) : balance ? (
+                  <>
+                    <div className={styles.balanceValue}>{formatCoinNumber(balance.voBalance, language)} {t('me.carrotUnit')}</div>
+                    <div className={styles.metricRow}>
+                      <span>{t('me.frozenBalance')}</span>
+                      <strong>{formatCoinNumber(balance.voFrozenBalance, language)} {t('me.carrotUnit')}</strong>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span>{t('me.totalEarned')}</span>
+                      <strong>{formatCoinNumber(balance.voTotalEarned, language)}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <p className={styles.emptyText}>{t('me.assetEmpty')}</p>
+                )}
+              </article>
+
+              <article className={styles.summaryCard}>
+                <div className={styles.cardHeader}>
+                  <Icon icon="mdi:history" size={22} />
+                  <h3>{t('me.revisitTitle')}</h3>
+                </div>
+                {data.errors.browse ? (
+                  <p className={styles.errorText}>{data.errors.browse}</p>
+                ) : data.browseHistory.length > 0 ? (
+                  <>
+                    <div className={styles.balanceValue}>{data.browseHistory.length}</div>
+                    <p className={styles.emptyText}>{t('me.revisitDescription')}</p>
+                  </>
+                ) : (
+                  <p className={styles.emptyText}>{t('me.revisitEmpty')}</p>
+                )}
+              </article>
+
+              <article className={styles.summaryCard}>
+                <div className={styles.cardHeader}>
+                  <Icon icon="mdi:leaf" size={22} />
+                  <h3>{t('me.petTitle')}</h3>
+                </div>
+                {data.errors.pet ? (
+                  <p className={styles.errorText}>{data.errors.pet}</p>
+                ) : pet ? (
+                  <>
+                    <div className={styles.balanceValue}>{pet.voName}</div>
+                    <div className={styles.metricRow}>
+                      <span>{t('me.petMood')}</span>
+                      <strong>{t(resolvePetMoodTranslationKey(pet.voMood))}</strong>
+                    </div>
+                    <div className={styles.metricRow}>
+                      <span>{t('me.petStage')}</span>
+                      <strong>{t(resolvePetGrowthStageTranslationKey(pet.voGrowthStage))}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <p className={styles.emptyText}>{t('me.petEmpty')}</p>
+                )}
+              </article>
+            </section>
+          </WebTaskRailDisclosure>
+        </aside>
+
+        <section className={styles.detailGrid}>
         <article className={styles.detailPanel}>
           <div className={styles.panelHeader}>
             <h3>{t('me.recentExperience')}</h3>
@@ -383,7 +429,8 @@ export const MeDashboardView = ({
             <p className={styles.emptyText}>{t('me.recentBrowseEmpty')}</p>
           )}
         </article>
-      </section>
+        </section>
+      </div>
     </>
   );
 };

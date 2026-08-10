@@ -69,9 +69,9 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 1fr));
-  gap: 10px;
-  margin-top: 16px;
+  grid-template-columns: repeat(3, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .summaryState {
@@ -87,19 +87,23 @@
 
 .summaryCard {
   min-width: 0;
-  padding: 14px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  padding: 9px 10px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
 }
 
 .summaryIcon {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  grid-row: 1 / span 2;
   border-radius: 8px;
   color: var(--theme-accent-ink);
   background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
@@ -107,14 +111,14 @@
 
 .summaryCard strong {
   display: block;
-  font-size: 20px;
+  font-size: 18px;
   color: var(--theme-brand-primary);
   line-height: 1.2;
 }
 
 .summaryCard span:last-child {
   display: block;
-  margin-top: 4px;
+  margin-top: 1px;
   color: var(--theme-text-secondary);
   font-size: 12px;
   line-height: 1.45;
@@ -561,10 +565,6 @@
   .withRail {
     grid-template-columns: 1fr;
   }
-
-  .circleRail {
-    order: -1;
-  }
 }
 
 @media (max-width: 720px) {
@@ -589,22 +589,14 @@
   }
 
   .summaryGrid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .summaryCard {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 12px;
-    align-items: center;
-    min-height: 68px;
-    padding: 10px;
-  }
-
-  .summaryCard:first-child {
-    grid-column: 1 / -1;
+    display: block;
+    min-height: 0;
+    padding: 8px;
   }
 
   .summaryCard strong {
@@ -613,14 +605,11 @@
   }
 
   .summaryCard span:last-child {
-    margin-top: 0;
+    margin-top: 1px;
   }
 
   .summaryIcon {
-    width: 32px;
-    height: 32px;
-    grid-row: span 2;
-    margin-bottom: 0;
+    display: none;
   }
 
   .forumLink {

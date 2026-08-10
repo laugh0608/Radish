@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } fr
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, WebTaskRailDisclosure } from '@/components/web-shell';
 import {
   getMyFollowers,
   getMyFollowing,
@@ -478,6 +478,10 @@ export const CircleApp = () => {
 
     return (
       <aside className={styles.circleRail} aria-label={t('circle.rail.label')}>
+        <WebTaskRailDisclosure
+          label={t('circle.rail.label')}
+          summary={t('circle.rail.routeDescription')}
+        >
         <section className={styles.railCard}>
           <div className={styles.railTitleRow}>
             <span className={styles.railIcon}>
@@ -588,6 +592,7 @@ export const CircleApp = () => {
             </a>
           </div>
         </section>
+        </WebTaskRailDisclosure>
       </aside>
     );
   };

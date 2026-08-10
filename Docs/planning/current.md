@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-W02 Private 仪表 / 任务侧栏正式视觉实现`
-- **产品下一顺位**：`按已确认 PC / Mobile / 关键状态代表板接入六个正式页面，随后执行 Gateway 成组验收`
+- **工程第一顺位**：`F4-R R2-A02 Author 列表、修订与 Forum 发布差异 readiness`
+- **产品下一顺位**：`先反查 Docs Mine / Revisions、Forum Compose 与 R1-A01 / R1-P02 的继承和能力边界，再裁决局部代表设计`
 - **复核日期**：`2026-08-10`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-10` 已完成并关闭 [R2-W02 Private 仪表 / 任务侧栏正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)：六个正式入口统一使用“主任务宽列—紧凑摘要—窄辅助轨”，Mobile 固定主任务先于默认收起的辅助信息；共享 `WebTaskRailDisclosure` 提供 `720px` 折叠语义，Circle / Pet / Me 已删除辅助轨前置。Client `526 / 526`、type-check、Lint、production build 与静态契约通过；Gateway PC `1440 × 980`、Mobile `390 × 844` 无横向溢出，实际折叠交互和 Me / Workbench / Private Shop 顺序通过，浏览器 `0 error`，服务已停止。种子库没有 Pet、订单、权益或背包业务数据，因此本批只复核对应空态，有数据结构继续由自动化与构建守卫；未制造业务数据或修改后端边界。下一步进入 `R2-A02` readiness，不提前推进 R3。
 - `2026-08-10` 已完成并确认 [R2-W02 Private 仪表 / 任务侧栏局部代表设计](/records/f4-r-r2-w02-private-dashboard-task-rail-representative-design-2026-08-10)：唯一活动 `.pen` 新增 PC 六页局部代表板、Mobile `390px` 六页顺序板和必要关键状态板，固定“主任务—紧凑摘要—辅助轨”及 Mobile“主任务—摘要—折叠辅助信息”顺序；覆盖权威首次读取、unavailable / stale、dirty、Pet 原幂等键重试、Private Shop 结构化诊断和 Me 局部来源失败。三板均已结束 placeholder，节点边界和截图复核无裁切、塌陷、无效图标或横向溢出；设计已通过 Pen 原生保存落盘，下一步进入正式页面实现。
 - `2026-08-10` 已完成 [R2-W02 Private 仪表 / 任务侧栏前端能力门禁](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)：Notifications / Circle / Pet / Me 显式区分权威未读取、unavailable 与 stale；通知偏好和 Pet 资料具备 dirty 离开保护；Pet 模糊照料结果保留原幂等键并以权威快照裁决；Private Shop 保留本地化结构化诊断；`MeApp.tsx` 从 `1816` 行降至 `1465` 行。Notification 词元按真实业务域从超限边缘的 community 资源拆出。Client `525 / 525`、type-check、Lint、production build 与 diff 检查通过；未修改 Pencil、API、数据库、权限或业务范围，未启动服务 / 浏览器。
 - `2026-08-10` 已完成并关闭 [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)：商品详情接入综合评分、五星分布、稳定分页、Completed 资格、本人评价 CRUD、dirty 离开确认、CAS `409` 草稿保留、unavailable / stale 和 `ProductReview` 举报；公开主页接入昵称 / `用户名#公开ID`、真实签名空态、当前等级 / 等级名、加入时间和独立权威统计。DbMigrate 补齐商品评价迁移后，Gateway 以匿名与种子管理员覆盖 PC `1440 × 900`、Mobile `390 × 844`、零评价、临时 Completed 资格、创建 / 编辑 / 删除、登录回跳、dirty、真实 CAS 冲突和举报弹窗；新页签稳定态 `0 warning / 0 error`，临时订单与评价均已精确清理。Client `518 / 518`、type-check、Lint 与 production build 通过；未修改 Pencil，下一步进入 `R2-W02` 设计前审计。
@@ -141,18 +142,22 @@
 55. 运行态修正评价登录回跳丢失意图，以及资格 / 冲突错误泄露服务端原始文案；受控 `intent=review` 可在登录后滚动并打开符合资格的评价编辑器。临时订单与评价精确清零，新页签稳定态 `0 warning / 0 error`，`R2-P03` 关闭。
 56. 完成 R2-W02 readiness：六个 Private / Workbench 入口的正式 Web、WebOS、API / Store 与响应式事实反查通过；专题保持 R2，但 Pencil 前需先关闭五组窄前端门禁，方案等待确认。本批未修改运行时代码、Pencil、API、数据库或权限，未启动服务 / 浏览器。
 57. 按确认方案关闭 R2-W02 五组前端门禁：权威状态、dirty 离开保护、Pet 同键重试、Private Shop 结构化错误和 Me 容器拆分全部落地；Client `525 / 525`、type-check、Lint 与 production build 通过，Pencil 继续不占用。
+58. 完成并确认 R2-W02 PC / Mobile / 必要关键状态局部代表设计，固定主任务优先和移动辅助信息折叠契约。
+59. 六个正式入口接入共享任务轨折叠、紧凑摘要和主任务顺序；Client `526 / 526`、type-check、Lint、production build 与静态契约通过。
+60. 获授权完成 Gateway PC `1440 × 980` 与 Mobile `390 × 844` 成组验收；无横向溢出、折叠交互、关键几何顺序与 `0 error` 通过，服务已停止，R2-W02 关闭。
 
 ## 当前事项（2026-08-10）
 
-1. `R2-P03` 已形成设计—实现—Gateway 运行态闭环并关闭；不重开其 Pencil 范围，也不扩入评价媒体、回复、有用、独立评价中心或公开经验详情。
-2. `R2-W02` readiness 与五组前端能力门禁已完成；六个入口继续继承 `R1-F01 / R1-W01`，不建立新壳层、不新增后端能力，也不把 WebOS 窗口结构迁回正式 Web。
-3. 当前保持 Pencil 不占用；设计资源可用并获得当前任务授权后，再裁决 Notifications、Me、Circle、Pet、Private Shop 与 Workbench 的 R2 局部代表区块。
-4. Mobile 固定主任务先于完整辅助轨；代表设计确认前不实施视觉重构、不启动服务或浏览器，也不推进 R3 页面。
+1. `R2-P03` 与 `R2-W02` 均已形成设计—实现—Gateway 运行态闭环并关闭；不重开其 Pencil 范围或扩张冻结边界。
+2. Notifications、Me、Circle、Pet、Private Shop 与 Workbench 已正式继承 `R1-F01 / R1-W01`；共享任务轨折叠是唯一响应式契约，不建立新壳层或页面专属变体。
+3. 当前第一顺位进入 `R2-A02` readiness，先反查 Docs Mine / Revisions、Forum Compose 与 `R1-A01 / R1-P02` 的能力、状态和响应式事实。
+4. 审计识别出窄能力门禁时先说明方案并等待确认；R2-A02 边界确认前不修改 Pencil、不实施视觉重构，也不成组推进 R3。
 5. 继续冻结新移动壳层、WebOS 新功能、Tauri 恢复、Flutter 机械追平和主动生产证据采集。
 
 ## 当前执行入口
 
 - [开发路线图](/development-plan)
+- [R2-W02 Private 仪表 / 任务侧栏正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)
 - [R2-W02 Private 仪表 / 任务侧栏前端能力门禁实现](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)
 - [R2-W02 Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)
 - [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)

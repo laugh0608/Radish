@@ -135,26 +135,30 @@
 
 .heroMetrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(120px, 1fr));
-  gap: 10px;
-  margin-top: 16px;
+  grid-template-columns: repeat(3, minmax(104px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .heroMetric {
   min-width: 0;
-  padding: 12px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  padding: 9px 10px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 8px;
   background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
 }
 
 .heroMetricIcon {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 10px;
+  grid-row: 1 / span 2;
   border-radius: 8px;
   color: var(--theme-accent-ink);
   background: color-mix(in srgb, var(--theme-brand-soft) 58%, var(--theme-bg-surface) 42%);
@@ -163,14 +167,14 @@
 .heroMetric strong {
   display: block;
   color: var(--theme-text-primary);
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.2;
   overflow-wrap: anywhere;
 }
 
 .heroMetric span:last-child {
   display: block;
-  margin-top: 4px;
+  margin-top: 1px;
   color: var(--theme-text-secondary);
   font-size: 12px;
   line-height: 1.45;
@@ -845,10 +849,6 @@
     grid-template-columns: 1fr;
   }
 
-  .petRail {
-    order: -1;
-  }
-
   .actionGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -883,25 +883,17 @@
   }
 
   .heroMetric {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    column-gap: 12px;
-    align-items: center;
-    padding: 12px;
+    display: block;
+    padding: 8px;
   }
 
   .heroMetricIcon {
-    grid-row: span 2;
-    margin-bottom: 0;
+    display: none;
   }
 
   .heroMetrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .heroMetric:first-child {
-    grid-column: 1 / -1;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .actionGrid {

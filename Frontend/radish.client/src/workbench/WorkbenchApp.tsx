@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getChannelList } from '@/api/chat';
 import { readDraftMap, type ChannelDraft } from '@/apps/chat/chatApp.helpers';
+import { WebTaskRailDisclosure } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { buildMessagesPath } from '@/messages/messagesRouteState';
 import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
@@ -754,6 +755,10 @@ export const WorkbenchApp = () => {
           </div>
 
           <aside className={styles.railPanel} aria-label={t('workbench.rail.label')}>
+            <WebTaskRailDisclosure
+              label={t('workbench.rail.label')}
+              summary={t('workbench.rail.private.value')}
+            >
             <div className={styles.railHeader}>
               <span className={styles.railIcon}>
                 <Icon icon="mdi:map-marker-path" size={20} />
@@ -781,6 +786,7 @@ export const WorkbenchApp = () => {
                 <span>{t('workbench.rail.author')}</span>
               </a>
             </div>
+            </WebTaskRailDisclosure>
           </aside>
         </section>
 

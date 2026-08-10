@@ -9,7 +9,7 @@ import { Icon } from '@radish/ui/icon';
 import { toast } from '@radish/ui/toast';
 import { NotificationCenter } from '@/apps/notification/NotificationCenter';
 import { useBrowserNavigationLock } from '@/bootstrap/browserNavigationLock';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, WebTaskRailDisclosure } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
 import { resolveConsoleExternalUrl } from '@/desktop/externalAppUrl';
 import {
@@ -247,6 +247,10 @@ export const NotificationsApp = () => {
           </div>
 
           <aside className={styles.notificationRail} aria-label={t('notification.web.railLabel')}>
+            <WebTaskRailDisclosure
+              label={t('notification.web.railLabel')}
+              summary={t('notification.preferences.description')}
+            >
             <section className={styles.railCard}>
               <div className={styles.railTitleRow}>
                 <span>{t('notification.web.categorySummary')}</span>
@@ -323,6 +327,7 @@ export const NotificationsApp = () => {
                 {preferencesSaving ? t('notification.preferences.saving') : t('notification.preferences.save')}
               </button>
             </section>
+            </WebTaskRailDisclosure>
           </aside>
         </div>
       </div>

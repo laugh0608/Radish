@@ -206,6 +206,48 @@
   font-size: 14px;
 }
 
+.dashboardWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-areas:
+    'revisit rail'
+    'details rail';
+  align-items: start;
+  gap: 14px;
+}
+
+.revisitPanel {
+  grid-area: revisit;
+}
+
+.revisitDescription {
+  margin: 8px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.revisitTask {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 32%, var(--theme-bg-surface) 68%);
+}
+
+.dashboardRail {
+  grid-area: rail;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
 .subPagePanel {
   min-width: 0;
   display: grid;
@@ -551,13 +593,13 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .summaryCard {
-  min-height: 216px;
-  padding: 18px;
+  min-height: 0;
+  padding: 14px;
 }
 
 .cardHeader,
@@ -624,10 +666,11 @@
 }
 
 .detailGrid {
+  grid-area: details;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .detailPanel {
@@ -750,6 +793,14 @@
   .detailGrid {
     grid-template-columns: 1fr;
   }
+
+  .dashboardWorkspace {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'revisit'
+      'details'
+      'rail';
+  }
 }
 
 @media (max-width: 720px) {
@@ -826,17 +877,9 @@
     text-overflow: ellipsis;
   }
 
-  .summaryGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .summaryCard {
     min-height: 0;
     padding: 14px;
-  }
-
-  .summaryCard:first-child {
-    grid-column: 1 / -1;
   }
 
   .subPagePanel {
@@ -859,7 +902,6 @@
   }
 
   .subPageRail {
-    order: -1;
     position: static;
   }
 
@@ -878,6 +920,14 @@
 
   .browseItem {
     grid-template-columns: 1fr;
+  }
+
+  .revisitTask {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .revisitTask .viewCount {
+    grid-column: 2;
   }
 
   .viewCount {

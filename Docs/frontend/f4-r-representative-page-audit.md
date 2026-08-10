@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-10 更新（Asia/Shanghai）
 >
-> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的六个 R1、`R2-C03` 与 `R2-P03` 已关闭；`R2-W02` readiness、能力门禁与局部代表设计已确认，进入正式页面实现
+> 状态：C-1A 与共享组件 / 主题基座已完成；C-1B 的六个 R1、`R2-C03 / R2-P03 / R2-W02` 已关闭；下一顺位进入 `R2-A02` readiness
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -91,7 +91,7 @@ R1 只在唯一活动设计源中维护必要代表设计，不为主题、local
 
 `R2-P03` 已于 `2026-08-09` 完成 [Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)，并由同日第一批[能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)闭合正式商品 `Product` 举报与公开主页权威加载。用户随后确认[商品评价与公开等级范围](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)，第二批[能力门禁实现](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)关闭公开等级安全投影、Completed 购买资格、单用户单商品五星评价、数据库聚合、CAS 和 `ProductReview` 治理 / 申诉。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)保持三个独立 PC 与三个独立 Mobile 页面，商品 PC / Mobile 已补综合评分、五星分布和已购评价预览；七轮反馈统一 PC `24px` 外边距 / `12px` 分栏、修正主按钮对比度，将公开身份拆为昵称、`用户名#公开ID`、个性签名和等级四层，并以 `carrot` 萝卜轮廓替代真实法币符号。`2026-08-10` 由[正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)接入评价完整生命周期、失败状态、举报，以及公开主页等级、真实签名空态和独立权威统计；Gateway 匿名与种子管理员 PC / mobile 覆盖零评价、Completed 资格、CRUD、登录回跳、dirty、真实 CAS 冲突和无横向溢出，临时数据已清理。Client `518 / 518`、type-check、Lint 与 production build 通过，`R2-P03` 关闭；下一顺位进入 `R2-W02` 设计前审计，不提前推进 R3。
 
-`R2-W02` 已于 `2026-08-10` 完成 [Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)，并由同日[前端能力门禁](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)关闭权威读取、dirty、Pet 幂等重试、Private Shop 结构化错误和 Me 超限容器。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-w02-private-dashboard-task-rail-representative-design-2026-08-10)已经确认：PC 使用六个主任务宽列—窄辅助轨关键区块，Mobile 使用六个真实 `390px` 的“主任务—摘要—折叠辅助信息”顺序，关键状态覆盖权威首次读取、unavailable / stale、dirty、原幂等键重试、Shop 诊断和 Me 局部失败。三张顶层画板没有 placeholder、裁切、塌陷、无效图标或横向溢出；下一步进入正式页面实现，不提前推进 R3。
+`R2-W02` 已于 `2026-08-10` 完成 [Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)，并由同日[前端能力门禁](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)关闭权威读取、dirty、Pet 幂等重试、Private Shop 结构化错误和 Me 超限容器。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-w02-private-dashboard-task-rail-representative-design-2026-08-10)已经确认：PC 使用六个主任务宽列—窄辅助轨关键区块，Mobile 使用六个真实 `390px` 的“主任务—摘要—折叠辅助信息”顺序，关键状态覆盖权威首次读取、unavailable / stale、dirty、原幂等键重试、Shop 诊断和 Me 局部失败。随后由[正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)接入共享 `WebTaskRailDisclosure`、紧凑摘要和主任务优先顺序；Client `526 / 526`、type-check、Lint、production build、PC `1440 × 980` 与 Mobile `390 × 844` 运行态复核通过，页面无横向溢出且浏览器 `0 error`。种子库没有 Pet、订单、权益或背包业务数据，因此对应有数据态继续由静态契约与自动化守卫；本批没有制造业务数据。`R2-W02` 已关闭，下一顺位进入 `R2-A02` readiness，不提前推进 R3。
 
 ## 5. R2 局部设计类型
 
@@ -139,7 +139,8 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 8. `R1-W01` 与 `R1-C01` 均已完成并关闭；`R1-C01` 的 readiness、PC / Mobile / 必要关键状态设计、正式 Console 代码、静态验证和 Gateway 运行态验收已形成闭环。
 9. `R2-C03` readiness、代码能力门禁、局部代表设计、正式页面代码与 Gateway PC / mobile 运行态验收均已完成，专题关闭。
 10. `R2-P03` readiness、两批能力门禁、七轮结构反馈、商品评价补充设计、正式商品详情 / 公开主页和 Gateway PC / mobile 运行态验收均已完成，专题关闭。
-11. `R2-W02` readiness、五组前端能力门禁和三张局部代表板已完成并确认；PC 固定主任务宽列与窄辅助轨，Mobile 固定主任务先于摘要和折叠辅助信息。
-12. 下一步按确认设计接入六个正式页面并执行静态与 Gateway PC / mobile 成组验收；不提前推进 R3 页面。
+11. `R2-W02` readiness、五组前端能力门禁、三张局部代表板、六个正式入口实现与 Gateway PC / mobile 成组验收均已完成，专题关闭。
+12. 下一步进入 `R2-A02` 设计前代码事实与能力覆盖审计，核对 Docs Mine / Revisions、Forum Compose 对 `R1-A01 / R1-P02` 的继承。
+13. `R2-A02` 边界关闭前不成组推进 R3 页面；发现新结构或响应式模型时仍按自动升级条件重新裁决。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

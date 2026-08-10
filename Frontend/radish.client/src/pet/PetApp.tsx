@@ -14,7 +14,7 @@ import {
   type PetStatLog,
 } from '@/api/pet';
 import { getApiBaseUrl } from '@/config/env';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, WebTaskRailDisclosure } from '@/components/web-shell';
 import { PublicShellHeader } from '@/public/components/PublicShellHeader';
 import { redirectToLogin } from '@/services/auth';
 import { bootstrapAuth, hydrateAuthUser } from '@/services/authBootstrap';
@@ -707,6 +707,10 @@ export const PetApp = () => {
           </div>
 
           <aside className={styles.petRail} aria-label={t('pet.rail.label')}>
+            <WebTaskRailDisclosure
+              label={t('pet.rail.label')}
+              summary={t(insight.descriptionKey)}
+            >
             <section className={styles.railCard}>
               <div className={styles.railTitleRow}>
                 <span className={styles.railIcon}>
@@ -813,6 +817,7 @@ export const PetApp = () => {
                 <span>{t('pet.openMe')}</span>
               </a>
             </section>
+            </WebTaskRailDisclosure>
           </aside>
         </section>
       </>

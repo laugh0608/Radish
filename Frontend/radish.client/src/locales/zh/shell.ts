@@ -211,6 +211,8 @@ export const zhShell = {
   'workbench.link.messages': '聊天',
   'workbench.link.notifications': '通知',
   'workbench.link.openDesktop': '打开历史桌面',
+  'privateTaskRail.expand': '展开',
+  'privateTaskRail.collapse': '收起',
   'dock.loginRequired': '需要登录才能访问，请先登录。',
   'desktop.accessDenied': '当前账号无权访问该应用。',
   'dock.openProfile': '打开个人主页',
