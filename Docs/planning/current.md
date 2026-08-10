@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R2-W02 Private 仪表 / 任务侧栏；五组前端能力门禁已关闭`
-- **产品下一顺位**：`保持 Pencil 不占用；设计资源可用并获授权后进入 R2 局部代表设计`
+- **工程第一顺位**：`F4-R R2-W02 Private 仪表 / 任务侧栏正式视觉实现`
+- **产品下一顺位**：`按已确认 PC / Mobile / 关键状态代表板接入六个正式页面，随后执行 Gateway 成组验收`
 - **复核日期**：`2026-08-10`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-10` 已完成并确认 [R2-W02 Private 仪表 / 任务侧栏局部代表设计](/records/f4-r-r2-w02-private-dashboard-task-rail-representative-design-2026-08-10)：唯一活动 `.pen` 新增 PC 六页局部代表板、Mobile `390px` 六页顺序板和必要关键状态板，固定“主任务—紧凑摘要—辅助轨”及 Mobile“主任务—摘要—折叠辅助信息”顺序；覆盖权威首次读取、unavailable / stale、dirty、Pet 原幂等键重试、Private Shop 结构化诊断和 Me 局部来源失败。三板均已结束 placeholder，节点边界和截图复核无裁切、塌陷、无效图标或横向溢出；设计已通过 Pen 原生保存落盘，下一步进入正式页面实现。
 - `2026-08-10` 已完成 [R2-W02 Private 仪表 / 任务侧栏前端能力门禁](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)：Notifications / Circle / Pet / Me 显式区分权威未读取、unavailable 与 stale；通知偏好和 Pet 资料具备 dirty 离开保护；Pet 模糊照料结果保留原幂等键并以权威快照裁决；Private Shop 保留本地化结构化诊断；`MeApp.tsx` 从 `1816` 行降至 `1465` 行。Notification 词元按真实业务域从超限边缘的 community 资源拆出。Client `525 / 525`、type-check、Lint、production build 与 diff 检查通过；未修改 Pencil、API、数据库、权限或业务范围，未启动服务 / 浏览器。
 - `2026-08-10` 已完成并关闭 [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)：商品详情接入综合评分、五星分布、稳定分页、Completed 资格、本人评价 CRUD、dirty 离开确认、CAS `409` 草稿保留、unavailable / stale 和 `ProductReview` 举报；公开主页接入昵称 / `用户名#公开ID`、真实签名空态、当前等级 / 等级名、加入时间和独立权威统计。DbMigrate 补齐商品评价迁移后，Gateway 以匿名与种子管理员覆盖 PC `1440 × 900`、Mobile `390 × 844`、零评价、临时 Completed 资格、创建 / 编辑 / 删除、登录回跳、dirty、真实 CAS 冲突和举报弹窗；新页签稳定态 `0 warning / 0 error`，临时订单与评价均已精确清理。Client `518 / 518`、type-check、Lint 与 production build 通过；未修改 Pencil，下一步进入 `R2-W02` 设计前审计。
 - `2026-08-09` 已完成 [R2-P03 商品评价与公开等级能力门禁](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)：公开资料只增加当前等级 / 等级名；商品评价固定 Completed 订单资格、每用户每商品一条、`1..5` 星、可选 `500` 字评论、唯一约束、数据库聚合和单调 CAS，并以 `ProductReview` 复用既有治理 / 申诉权限与事务。后端 `1220 passed / 39 skipped`，HTTP `36 / 36`、Client `514 / 514`、Console `83 / 83` 及静态构建通过；未启动服务或浏览器。
