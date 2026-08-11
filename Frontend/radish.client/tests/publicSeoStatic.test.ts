@@ -458,11 +458,12 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
   const docsAuthorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorApp.tsx'), 'utf8');
   const docsMineSource = readFileSync(resolve(clientRoot, 'src/docs/DocsMinePage.tsx'), 'utf8');
+  const docsRevisionsSource = readFileSync(resolve(clientRoot, 'src/docs/DocsRevisionsPage.tsx'), 'utf8');
   const docsAuthorEditorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorPage.tsx'), 'utf8');
   const docsAuthorEditorContextSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorContext.tsx'), 'utf8');
   const docsAuthorPresentationSource = readFileSync(resolve(clientRoot, 'src/docs/docsAuthorPresentation.ts'), 'utf8');
   const wikiApiSource = readFileSync(resolve(clientRoot, 'src/apps/wiki/api/wiki.ts'), 'utf8');
-  const docsAuthorWorkspaceSource = `${docsAuthorSource}\n${docsMineSource}\n${docsAuthorEditorSource}\n${docsAuthorEditorContextSource}`;
+  const docsAuthorWorkspaceSource = `${docsAuthorSource}\n${docsMineSource}\n${docsRevisionsSource}\n${docsAuthorEditorSource}\n${docsAuthorEditorContextSource}`;
 
   assert.match(mainSource, /import \{ BrowserAppRouter \} from '@\/bootstrap\/BrowserAppRouter';/);
   assert.match(browserRouterSource, /const DocsAuthorEntry = lazy/);
@@ -502,9 +503,9 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.match(docsAuthorPresentationSource, /&& !isDeleted/);
   assert.match(docsMineSource, /documentSlug: previewDocument\.voDocumentSlug/);
   assert.match(docsMineSource, /documentSlug: document\.voDocumentSlug/);
-  assert.match(docsAuthorSource, /documentSlug: state\.history\.voSlug/);
+  assert.match(docsRevisionsSource, /documentSlug: state\.history\.voSlug/);
   assert.match(docsAuthorEditorSource, /documentSlug: state\.document\.voDocumentSlug/);
-  assert.equal((`${docsAuthorSource}\n${docsMineSource}`.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 3);
+  assert.equal((`${docsAuthorSource}\n${docsMineSource}\n${docsRevisionsSource}`.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 3);
   assert.equal((docsAuthorEditorSource.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 1);
   assert.match(docsAuthorSource, /const treeRef = useRef<WikiDocumentTreeNodeVo\[\]>\(\[\]\);/);
   assert.match(docsAuthorSource, /treeRef\.current = collectionState\.tree;/);

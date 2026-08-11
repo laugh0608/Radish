@@ -138,6 +138,76 @@
   line-height: 1.5;
 }
 
+.comparisonToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--theme-text-secondary);
+  font-family: var(--theme-font-mono);
+  font-size: 11px;
+}
+
+.comparisonModes {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 62%, var(--theme-bg-surface) 38%);
+}
+
+.comparisonMode,
+.comparisonModeActive {
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.comparisonModeActive {
+  background: var(--theme-bg-surface);
+  color: var(--theme-brand-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-accent-ink) 10%, transparent);
+}
+
+.comparisonMode:disabled,
+.comparisonModeActive:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.comparisonNotice {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-warning) 42%, var(--theme-border-soft) 58%);
+  border-radius: var(--theme-radius-control);
+  background: color-mix(in srgb, var(--theme-state-warning) 9%, var(--theme-bg-surface) 91%);
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+}
+
+.comparisonNotice strong {
+  color: var(--theme-text-primary);
+}
+
+.comparisonNotice button {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--theme-brand-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .integrityBadge {
   flex: 0 0 auto;
   padding: 5px 8px;
@@ -439,9 +509,20 @@
 
   .summaryCard,
   .detailActions,
-  .restoreConfirmation {
+  .restoreConfirmation,
+  .comparisonToolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .comparisonModes {
+    display: flex;
+    width: 100%;
+  }
+
+  .comparisonMode,
+  .comparisonModeActive {
+    flex: 1;
   }
 
   .summaryCard > div {

@@ -56,6 +56,11 @@ test('版本页面应覆盖 PC mobile、CAS 冲突、失权清理与旧历史只
   assert.match(modalSource, /getPostEditHistory/);
   assert.match(modalSource, /getCommentEditHistory/);
   assert.match(modalSource, /buildContentRevisionRestoreFingerprint/);
+  assert.match(modalSource, /<ContentSnapshotDiff/);
+  assert.match(modalSource, /comparisonEpochRef/);
+  assert.match(modalSource, /comparisonMode === 'previous'/);
+  assert.match(modalSource, /getPostRevisionList\(targetId, pageIndex, PAGE_SIZE\)/);
+  assert.match(modalSource, /setComparisonStale\(Boolean\(comparisonDetailRef\.current\)\)/);
   assert.match(modalSource, /closeOnOverlayClick=\{!restoring && !confirmingRestore\}/);
   assert.doesNotMatch(modalSource, /localStorage|sessionStorage/);
   assert.match(modalStyles, /@media \(max-width: 768px\)/);

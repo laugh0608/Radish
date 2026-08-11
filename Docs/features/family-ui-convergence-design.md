@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。最后一个 R2 类型 `R2-A02` 已完成 readiness、五组既有能力门禁与九张确认代表板；下一步补相邻版本双快照差异、Composer 半屏 / 全屏承载状态并落地正式页面。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。六个 R1 与四个 R2 的代表类型已经形成闭环，下一步按既有继承表进入 R3 路由成组实施。
 
 ### 9.2 设计源
 
@@ -250,7 +250,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射；v26.7.3 仅迁址且图片 blob 不变，映射继续有效，设计时仍须按新版“观察、拆解、提炼、转译”边界复核相关参考。
 - C-1A 已完成当前代码与页面类型审计，确认 `7` 个 R1、`4` 个 R2 及 R3 继承表。
-- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；六个 R1，以及 `R2-C03 / R2-P03 / R2-W02` 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。最后一个 R2 类型 `R2-A02` 已完成 readiness、五组能力门禁和九张已确认第二轮代表板，当前进入双快照差异、Composer 双形态门禁与正式页面实现；全局共享主题色继续单独成组治理。
+- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；六个 R1 与四个 R2 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。全局共享主题色继续单独成组治理；后续进入 C / D 的 R3 路由继承实施，不为派生页复制画板。
 - 更新共享基座和命中的 R1 / R2 代表画板，不为 R3 派生页面创建重复画板。
 - 收敛按钮、输入、状态 chip、表格、卡片、Modal、空态、Header 和移动底栏。
 - 先实现共享组件和 R1 代表页，完成真实截图复核后再进入派生页面。

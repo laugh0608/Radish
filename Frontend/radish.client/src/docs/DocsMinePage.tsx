@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react';
+import { useEffect, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Icon } from '@radish/ui/icon';
@@ -60,7 +60,10 @@ export function DocsMinePage({
 }: DocsMinePageProps) {
   const { t } = useTranslation();
   const hasDocuments = state.documents.length > 0;
-  const previewDocument = pickDocsAuthorPreviewDocument(state.documents);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<LongId | null>(null);
+  const previewDocument = state.documents.find(
+    (document) => String(document.voDocumentId) === String(selectedDocumentId),
+  ) ?? pickDocsAuthorPreviewDocument(state.documents);
   const ownedCount = countOwnedDocsAuthorDocuments(state.documents);
   const collaboratingCount = countCollaboratingDocsAuthorDocuments(state.documents);
   const submittedCount = state.documents.filter(
@@ -73,6 +76,17 @@ export function DocsMinePage({
         documentSlug: previewDocument.voDocumentSlug,
       })
     : null;
+
+  useEffect(() => {
+    if (!previewDocument) {
+      setSelectedDocumentId(null);
+      return;
+    }
+
+    if (String(previewDocument.voDocumentId) !== String(selectedDocumentId)) {
+      setSelectedDocumentId(previewDocument.voDocumentId);
+    }
+  }, [previewDocument, selectedDocumentId]);
 
   const updateQuery = (next: Partial<Pick<WikiAuthorListQuery, 'scope' | 'draftStage' | 'pageIndex'>>) => {
     onQueryChange({
@@ -106,12 +120,6 @@ export function DocsMinePage({
               <span>{state.loading ? t('wiki.author.actions.refreshing') : t('wiki.author.actions.refresh')}</span>
             </button>
           </div>
-        </div>
-
-        <div className={styles.summaryGrid}>
-          <SummaryTile label={t('wiki.author.metrics.directoryNodes')} value={state.tree.length} language={language} />
-          <SummaryTile label={t('wiki.author.metrics.totalDocuments')} value={state.totalDocuments} language={language} />
-          <SummaryTile label={t('wiki.author.metrics.loadedDocuments')} value={state.documents.length} language={language} />
         </div>
 
         <div className={styles.authorListToolbar} aria-label={t('wiki.author.mine.filtersAriaLabel')}>
@@ -183,6 +191,8 @@ export function DocsMinePage({
                 key={document.voDocumentId}
                 document={document}
                 language={language}
+                selected={String(document.voDocumentId) === String(previewDocument?.voDocumentId)}
+                onSelect={() => setSelectedDocumentId(document.voDocumentId)}
                 onNavigate={onNavigate}
                 onStartDraft={onStartDraft}
               />
@@ -213,7 +223,7 @@ export function DocsMinePage({
         ) : null}
       </section>
 
-      <aside className={styles.authorRail} aria-label={t('wiki.author.mine.contextAriaLabel')}>
+      <aside className={`${styles.authorRail} ${styles.mineAuthorRail}`} aria-label={t('wiki.author.mine.contextAriaLabel')}>
         <section className={styles.railCard}>
           <p className={styles.railKicker}>{t('wiki.author.rail.library')}</p>
           <div className={styles.railMetricGrid}>
@@ -309,21 +319,6 @@ function MineStatusPanel({ icon, title, description, actionHref, actionLabel, on
   );
 }
 
-interface SummaryTileProps {
-  label: string;
-  value: number;
-  language?: string;
-}
-
-function SummaryTile({ label, value, language }: SummaryTileProps) {
-  return (
-    <div className={styles.summaryTile}>
-      <span className={styles.summaryLabel}>{label}</span>
-      <strong className={styles.summaryValue}>{formatDocsAuthorNumber(value, language)}</strong>
-    </div>
-  );
-}
-
 interface MineRailMetricProps {
   label: string;
   value: number;
@@ -359,11 +354,13 @@ function getDraftReviewStateText(state: number | null | undefined, t: TFunction)
 interface DocumentRowProps {
   document: WikiAuthorDocumentVo;
   language?: string;
+  selected: boolean;
+  onSelect: () => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
   onStartDraft: (documentId: LongId) => void;
 }
 
-function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentRowProps) {
+function DocumentRow({ document, language, selected, onSelect, onNavigate, onStartDraft }: DocumentRowProps) {
   const { t } = useTranslation();
   const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voDocumentId };
   const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voDocumentId };
@@ -378,7 +375,7 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
   const isPendingInvitee = document.voAuthorRole.toLowerCase() === 'invitee';
 
   return (
-    <article className={styles.documentRow}>
+    <article className={selected ? styles.documentRowSelected : styles.documentRow}>
       <div className={styles.documentMain}>
         <div className={styles.metaRow}>
           <span className={styles.statusChip}>{getDraftReviewStateText(document.voReviewState, t)}</span>
@@ -396,6 +393,14 @@ function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentR
         </div>
       </div>
       <div className={styles.documentActions}>
+        <button
+          type="button"
+          className={styles.secondaryButton}
+          aria-pressed={selected}
+          onClick={onSelect}
+        >
+          {t('wiki.author.mine.selectContext')}
+        </button>
         {document.voLatestDraftId ? (
           <a
             className={document.voCanStartDraft ? styles.secondaryButton : styles.primaryButton}

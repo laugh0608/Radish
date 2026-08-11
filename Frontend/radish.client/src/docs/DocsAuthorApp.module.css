@@ -462,7 +462,8 @@
   padding: 20px;
 }
 
-.documentRow {
+.documentRow,
+.documentRowSelected {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 16px;
@@ -470,6 +471,12 @@
   border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
   border-radius: 18px;
   background: color-mix(in srgb, var(--theme-bg-surface) 92%, var(--theme-surface-highlight) 8%);
+}
+
+.documentRowSelected {
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 48%, var(--theme-border-soft) 52%);
+  background: color-mix(in srgb, var(--theme-brand-soft) 34%, var(--theme-bg-surface) 66%);
+  box-shadow: inset 3px 0 0 var(--theme-brand-primary);
 }
 
 .documentMain {
@@ -741,6 +748,40 @@
   font-size: 22px;
 }
 
+.revisionCompareModes {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 62%, var(--theme-bg-surface) 38%);
+}
+
+.revisionCompareMode,
+.revisionCompareModeActive {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.revisionCompareModeActive {
+  background: var(--theme-bg-surface);
+  color: var(--theme-brand-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-accent-ink) 10%, transparent);
+}
+
+.revisionCompareMode:disabled,
+.revisionCompareModeActive:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
 .markdownContent {
   font-size: 14px;
   --text-primary: var(--theme-text-primary);
@@ -905,7 +946,8 @@
 
   .formGrid,
   .revisionLayout,
-  .documentRow {
+  .documentRow,
+  .documentRowSelected {
     grid-template-columns: 1fr;
   }
 
@@ -977,6 +1019,35 @@
     flex-wrap: wrap;
   }
 
+  .revisionList {
+    display: grid;
+    grid-auto-columns: minmax(132px, 46vw);
+    grid-auto-flow: column;
+    max-height: none;
+    padding-bottom: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .revisionItem,
+  .revisionItemActive {
+    min-width: 0;
+  }
+
+  .revisionPreview {
+    padding: 12px;
+  }
+
+  .revisionPreviewHeader,
+  .revisionCompareModes {
+    width: 100%;
+  }
+
+  .revisionCompareMode,
+  .revisionCompareModeActive {
+    flex: 1;
+  }
+
   .pageTitle {
     font-size: clamp(26px, 8vw, 34px);
   }
@@ -994,10 +1065,15 @@
     padding: 18px;
   }
 
-  .documentRow {
+  .documentRow,
+  .documentRowSelected {
     gap: 12px;
     padding: 14px;
     border-radius: 8px;
+  }
+
+  .mineAuthorRail {
+    display: none;
   }
 
   .documentActions {

@@ -43,6 +43,7 @@ export interface ForumPostComposerProps {
   selectedCategoryId: LongId | null;
   loginReturnPath?: string | null;
   onClose: () => void;
+  onBusyChange?: (busy: boolean) => void;
   onPublish: (
     title: string,
     content: string,
@@ -120,6 +121,7 @@ export const ForumPostComposer = ({
   selectedCategoryId,
   loginReturnPath,
   onClose,
+  onBusyChange,
   onPublish
 }: ForumPostComposerProps) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -890,6 +892,14 @@ export const ForumPostComposer = ({
   const isComposerBusy = isSubmitting || isEditorUploading;
   const canPublish = !isPublishBlocked && !isComposerBusy;
 
+  useEffect(() => {
+    onBusyChange?.(isComposerBusy);
+  }, [isComposerBusy, onBusyChange]);
+
+  useEffect(() => () => {
+    onBusyChange?.(false);
+  }, [onBusyChange]);
+
   const editorToolbarExtras = (
     <div className={styles.editorToggles}>
       <button
@@ -1014,11 +1024,17 @@ export const ForumPostComposer = ({
               type="button"
               className={styles.headerActionButton}
               onClick={() => setIsSettingsOpen((current) => !current)}
+              aria-label={t(isSettingsOpen ? 'forum.composer.settingsCollapse' : 'forum.composer.settingsOpen')}
             >
               <Icon icon="mdi:tune-vertical-variant" size={18} />
               <span>{t(isSettingsOpen ? 'forum.composer.settingsCollapse' : 'forum.composer.settingsOpen')}</span>
             </button>
-            <button type="button" className={styles.headerActionButton} onClick={() => setIsFullscreen((current) => !current)}>
+            <button
+              type="button"
+              className={styles.headerActionButton}
+              onClick={() => setIsFullscreen((current) => !current)}
+              aria-label={t(isFullscreen ? 'forum.composer.fullscreenExit' : 'forum.composer.fullscreenEnter')}
+            >
               <Icon icon={isFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'} size={18} />
               <span>{t(isFullscreen ? 'forum.composer.fullscreenExit' : 'forum.composer.fullscreenEnter')}</span>
             </button>

@@ -154,6 +154,7 @@ export const PublicForumApp = ({
             categoryId={route.categoryId}
             fallbackBrowseRoute={fallbackBrowseRoute}
             onBack={() => onNavigate(fallbackBrowseRoute)}
+            onNavigationLockChange={onNavigationLockChange}
             onNavigate={onNavigate}
           />
         ) : route.kind === 'search' ? (

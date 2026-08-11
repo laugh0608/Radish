@@ -1,0 +1,224 @@
+.diff {
+  min-width: 0;
+  max-height: min(520px, 60dvh);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 16px;
+  overflow: auto;
+  background: var(--theme-bg-surface);
+}
+
+.sideBySide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.sideHeader {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-bg-muted) 64%, var(--theme-bg-surface) 36%);
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sideHeader:nth-child(2),
+.fieldPanel:nth-child(4) {
+  border-left: 1px solid var(--theme-border-soft);
+}
+
+.fieldPanel {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-bottom: 1px solid var(--theme-border-soft);
+}
+
+.field,
+.fieldChangedBefore,
+.fieldChangedAfter {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(74px, auto) minmax(0, 1fr);
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+
+.field span,
+.fieldChangedBefore span,
+.fieldChangedAfter span {
+  color: var(--theme-text-secondary);
+}
+
+.field strong,
+.fieldChangedBefore strong,
+.fieldChangedAfter strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--theme-text-primary);
+  font-size: 11px;
+}
+
+.fieldChangedBefore,
+.lineDeleted,
+.unifiedDeleted {
+  background: color-mix(in srgb, var(--theme-state-danger) 10%, var(--theme-bg-surface) 90%);
+}
+
+.fieldChangedAfter,
+.lineInserted,
+.unifiedInserted {
+  background: color-mix(in srgb, var(--theme-state-success) 11%, var(--theme-bg-surface) 89%);
+}
+
+.sideRow {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  min-width: 0;
+}
+
+.lineCell,
+.unifiedLine {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 42px minmax(0, 1fr);
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-border-soft) 66%, transparent);
+}
+
+.lineCell:nth-child(2) {
+  border-left: 1px solid var(--theme-border-soft);
+}
+
+.lineCell code,
+.unifiedLine code {
+  min-width: 0;
+  padding: 5px 9px;
+  overflow-wrap: anywhere;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-mono);
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.lineNumber {
+  padding: 5px 8px;
+  border-right: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  color: var(--theme-text-muted);
+  font-family: var(--theme-font-mono);
+  font-size: 10px;
+  text-align: right;
+  user-select: none;
+}
+
+.lineEqual {
+  background: var(--theme-bg-surface);
+}
+
+.unified {
+  display: none;
+}
+
+.unifiedVersionPair {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-bg-muted) 64%, var(--theme-bg-surface) 36%);
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.unifiedFields {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px;
+  border-bottom: 1px solid var(--theme-border-soft);
+}
+
+.unifiedField {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.unifiedField span {
+  color: var(--theme-text-secondary);
+  font-weight: 700;
+}
+
+.unifiedField code {
+  padding: 5px 7px;
+  border-radius: 7px;
+  overflow-wrap: anywhere;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-mono);
+  white-space: pre-wrap;
+}
+
+.unifiedLine {
+  grid-template-columns: 22px 38px minmax(0, 1fr);
+}
+
+.linePrefix {
+  padding: 5px 4px;
+  color: var(--theme-text-secondary);
+  font-family: var(--theme-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  user-select: none;
+}
+
+.unavailable,
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 84px;
+  padding: 14px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.unavailable button {
+  padding: 5px 8px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-brand-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .sideBySide {
+    display: none;
+  }
+
+  .unified {
+    display: block;
+  }
+}

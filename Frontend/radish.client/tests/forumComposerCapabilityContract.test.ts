@@ -11,6 +11,7 @@ test('正式 Forum Compose 使用页面内共享发布器，WebOS 保留 Bottom 
   const composer = readSource('src/apps/forum/components/ForumPostComposer.tsx');
   const modal = readSource('src/apps/forum/components/PublishPostModal.tsx');
   const publicCompose = readSource('src/public/forum/PublicForumCompose.tsx');
+  const styles = readSource('src/apps/forum/components/PublishPostModal.module.css');
 
   assert.match(modal, /BottomSheet/);
   assert.match(modal, /ForumPostComposer/);
@@ -18,6 +19,13 @@ test('正式 Forum Compose 使用页面内共享发布器，WebOS 保留 Bottom 
   assert.match(publicCompose, /surface="page"/);
   assert.doesNotMatch(publicCompose, /PublishPostModal/);
   assert.doesNotMatch(composer, /BottomSheet/);
+  assert.match(composer, /setIsFullscreen\(\(current\) => !current\)/);
+  assert.match(composer, /aria-label=\{t\(isSettingsOpen \? 'forum\.composer\.settingsCollapse' : 'forum\.composer\.settingsOpen'\)\}/);
+  assert.match(composer, /aria-label=\{t\(isFullscreen \? 'forum\.composer\.fullscreenExit' : 'forum\.composer\.fullscreenEnter'\)\}/);
+  assert.match(composer, /onBusyChange\?\.\(isComposerBusy\)/);
+  assert.match(publicCompose, /onBusyChange=\{onNavigationLockChange\}/);
+  assert.match(styles, /\.composerPage \{[\s\S]*position: fixed;[\s\S]*height: 54dvh;/);
+  assert.match(styles, /@media \(max-width: 720px\)[\s\S]*\.composerPage \{[\s\S]*height: 72dvh;/);
 });
 
 test('共享发布器只消费账号草稿 helper、双语资源和单一结构化失败反馈', () => {

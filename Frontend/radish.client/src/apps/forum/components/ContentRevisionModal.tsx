@@ -13,6 +13,10 @@ import { Button } from '@radish/ui/button';
 import { Icon } from '@radish/ui/icon';
 import { Modal } from '@radish/ui/modal';
 import {
+  ContentSnapshotDiff,
+  type ContentSnapshot,
+} from '@/components/content-diff/ContentSnapshotDiff';
+import {
   getCommentRevisionDetail,
   getCommentEditHistory,
   getCommentRevisionList,
@@ -29,6 +33,7 @@ import {
   createClientSubmissionState,
   type ClientSubmissionState,
 } from '@/utils/clientSubmission';
+import { log } from '@/utils/logger';
 import { buildContentRevisionRestoreFingerprint } from '../utils/forumSubmissionFingerprint';
 import styles from './ContentRevisionModal.module.css';
 
@@ -124,12 +129,18 @@ export const ContentRevisionModal = ({
   const [list, setList] = useState<RevisionListState | null>(null);
   const [selectedRevisionId, setSelectedRevisionId] = useState<LongId | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<ContentRevisionDetail | null>(null);
-  const [currentDetail, setCurrentDetail] = useState<ContentRevisionDetail | null>(null);
+  const [comparisonMode, setComparisonMode] = useState<'previous' | 'current'>('previous');
+  const [comparisonDetail, setComparisonDetail] = useState<ContentRevisionDetail | null>(null);
+  const [comparisonRevisionNumber, setComparisonRevisionNumber] = useState<number | null>(null);
   const [loadingList, setLoadingList] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [loadingComparison, setLoadingComparison] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
+  const [comparisonStale, setComparisonStale] = useState(false);
+  const [comparisonMissing, setComparisonMissing] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [accessRevoked, setAccessRevoked] = useState(false);
   const [confirmingRestore, setConfirmingRestore] = useState(false);
@@ -142,11 +153,23 @@ export const ContentRevisionModal = ({
   const [legacyError, setLegacyError] = useState<string | null>(null);
   const restoreSubmissionRef = useRef<ClientSubmissionState | null>(null);
   const requestEpochRef = useRef(0);
+  const comparisonEpochRef = useRef(0);
+  const comparisonDetailRef = useRef<ContentRevisionDetail | null>(null);
+  const comparisonRevisionIdRef = useRef<LongId | null>(null);
 
   const clearSensitiveState = useCallback(() => {
     setSelectedDetail(null);
-    setCurrentDetail(null);
     setSelectedRevisionId(null);
+    setComparisonMode('previous');
+    setComparisonDetail(null);
+    setComparisonRevisionNumber(null);
+    setLoadingComparison(false);
+    setComparisonError(null);
+    setComparisonStale(false);
+    setComparisonMissing(false);
+    comparisonDetailRef.current = null;
+    comparisonRevisionIdRef.current = null;
+    comparisonEpochRef.current += 1;
     setLegacyExpanded(false);
     setLegacyItems([]);
     setLegacyTotal(0);
@@ -169,6 +192,16 @@ export const ContentRevisionModal = ({
       setLoadingDetail(true);
       setDetailError(null);
       setSelectedRevisionId(revisionId);
+      setSelectedDetail(null);
+      setComparisonDetail(null);
+      setComparisonRevisionNumber(null);
+      setLoadingComparison(false);
+      setComparisonError(null);
+      setComparisonStale(false);
+      setComparisonMissing(false);
+      comparisonDetailRef.current = null;
+      comparisonRevisionIdRef.current = null;
+      comparisonEpochRef.current += 1;
     }
 
     try {
@@ -241,17 +274,11 @@ export const ContentRevisionModal = ({
         return;
       }
 
-      const currentSummary = nextList.items.find(item => item.voIsCurrent);
-      if (currentSummary) {
-        const latest = await loadDetail(String(currentSummary.voRevisionId), { updateSelection: false });
-        setCurrentDetail(latest);
-      }
-
       if (options.preserveSelection) {
         return;
       }
 
-      const initialSummary = nextList.items.find(item => !item.voIsCurrent && item.voCanViewSnapshot)
+      const initialSummary = nextList.items.find(item => item.voIsCurrent && item.voCanViewSnapshot)
         ?? nextList.items.find(item => item.voCanViewSnapshot);
       if (initialSummary) {
         await loadDetail(String(initialSummary.voRevisionId));
@@ -271,6 +298,96 @@ export const ContentRevisionModal = ({
       }
     }
   }, [clearSensitiveState, loadDetail, targetId, targetKind]);
+
+  const loadComparison = useCallback(async (
+    currentList: RevisionListState,
+    selectedSummary: ForumContentRevisionSummaryVo,
+    mode: 'previous' | 'current',
+  ) => {
+    if (!targetKind || targetId == null) {
+      return;
+    }
+
+    const requestEpoch = requestEpochRef.current;
+    const comparisonEpoch = ++comparisonEpochRef.current;
+    setLoadingComparison(true);
+    setComparisonError(null);
+    setComparisonStale(false);
+    setComparisonMissing(false);
+    const fetchPage = async (pageIndex: number) => targetKind === 'post'
+      ? await getPostRevisionList(targetId, pageIndex, PAGE_SIZE)
+      : await getCommentRevisionList(targetId, pageIndex, PAGE_SIZE);
+    let comparisonSummary = mode === 'current'
+      ? currentList.items.find((item) => item.voIsCurrent && item.voCanViewSnapshot) ?? null
+      : currentList.items
+          .filter((item) => item.voCanViewSnapshot && item.voRevisionNumber < selectedSummary.voRevisionNumber)
+          .sort((left, right) => right.voRevisionNumber - left.voRevisionNumber)[0] ?? null;
+
+    try {
+      if (mode === 'current' && !comparisonSummary && currentList.pageIndex > 1) {
+        const firstPage = await fetchPage(1);
+        comparisonSummary = (firstPage.voItems ?? []).find(
+          (item) => item.voIsCurrent && item.voCanViewSnapshot,
+        ) ?? null;
+      } else if (
+        mode === 'previous'
+        && !comparisonSummary
+        && selectedSummary.voRevisionNumber > 1
+        && currentList.pageIndex * currentList.pageSize < currentList.total
+      ) {
+        const nextPage = await fetchPage(currentList.pageIndex + 1);
+        comparisonSummary = (nextPage.voItems ?? [])
+          .filter((item) => item.voCanViewSnapshot && item.voRevisionNumber < selectedSummary.voRevisionNumber)
+          .sort((left, right) => right.voRevisionNumber - left.voRevisionNumber)[0] ?? null;
+      }
+
+      if (requestEpoch !== requestEpochRef.current || comparisonEpoch !== comparisonEpochRef.current) {
+        return;
+      }
+
+      if (!comparisonSummary || String(comparisonSummary.voRevisionId) === String(selectedSummary.voRevisionId)) {
+        setComparisonDetail(null);
+        setComparisonRevisionNumber(null);
+        setLoadingComparison(false);
+        setComparisonError(null);
+        setComparisonStale(false);
+        setComparisonMissing(mode === 'previous');
+        comparisonDetailRef.current = null;
+        comparisonRevisionIdRef.current = null;
+        return;
+      }
+
+      const nextRevisionId = comparisonSummary.voRevisionId;
+      const preserveExisting = String(comparisonRevisionIdRef.current) === String(nextRevisionId);
+      setComparisonDetail((current) => preserveExisting ? current : null);
+      comparisonDetailRef.current = preserveExisting ? comparisonDetailRef.current : null;
+      comparisonRevisionIdRef.current = String(nextRevisionId);
+      setComparisonRevisionNumber(comparisonSummary.voRevisionNumber);
+      setLoadingComparison(true);
+      setComparisonError(null);
+      setComparisonStale(false);
+      setComparisonMissing(false);
+
+      const detail = targetKind === 'post'
+        ? await getPostRevisionDetail(String(nextRevisionId))
+        : await getCommentRevisionDetail(String(nextRevisionId));
+      if (requestEpoch !== requestEpochRef.current || comparisonEpoch !== comparisonEpochRef.current) {
+        return;
+      }
+      setComparisonDetail(detail);
+      comparisonDetailRef.current = detail;
+      setLoadingComparison(false);
+    } catch (error) {
+      if (requestEpoch !== requestEpochRef.current || comparisonEpoch !== comparisonEpochRef.current) {
+        return;
+      }
+      log.warn('ContentRevisionModal', 'Failed to load revision comparison baseline', error);
+      setLoadingComparison(false);
+      setComparisonError(t('forum.revision.comparisonUnavailable'));
+      setComparisonStale(Boolean(comparisonDetailRef.current));
+      setComparisonMissing(false);
+    }
+  }, [t, targetId, targetKind]);
 
   const loadLegacyHistory = useCallback(async (pageIndex = 1) => {
     if (!targetKind || targetId == null) {
@@ -361,6 +478,29 @@ export const ContentRevisionModal = ({
     () => list?.items.find(item => String(item.voRevisionId) === String(selectedRevisionId)) ?? null,
     [list?.items, selectedRevisionId]
   );
+  useEffect(() => {
+    if (!list?.canViewDetails || !selectedSummary || !selectedDetail) {
+      return;
+    }
+
+    void loadComparison(list, selectedSummary, comparisonMode);
+  }, [comparisonMode, list, loadComparison, selectedDetail, selectedSummary]);
+  const handleComparisonModeChange = (nextMode: 'previous' | 'current') => {
+    if (nextMode === comparisonMode) {
+      return;
+    }
+
+    comparisonEpochRef.current += 1;
+    comparisonDetailRef.current = null;
+    comparisonRevisionIdRef.current = null;
+    setComparisonMode(nextMode);
+    setComparisonDetail(null);
+    setComparisonRevisionNumber(null);
+    setLoadingComparison(false);
+    setComparisonError(null);
+    setComparisonStale(false);
+    setComparisonMissing(false);
+  };
   const totalPages = list && list.total > 0
     ? Math.max(1, Math.ceil(list.total / list.pageSize))
     : 1;
@@ -502,7 +642,12 @@ export const ContentRevisionModal = ({
               key={String(item.voRevisionId)}
               type="button"
               className={`${styles.timelineItem} ${selected ? styles.timelineItemSelected : ''}`}
-              onClick={() => void loadDetail(String(item.voRevisionId))}
+              onClick={() => {
+                if (item.voIsCurrent) {
+                  setComparisonMode('previous');
+                }
+                void loadDetail(String(item.voRevisionId));
+              }}
               disabled={!item.voCanViewSnapshot || loadingDetail}
               aria-pressed={selected}
             >
@@ -528,39 +673,34 @@ export const ContentRevisionModal = ({
     );
   };
 
-  const renderPostMetadata = (detail: PostContentRevisionDetailVo): ReactNode => (
-    <div className={styles.metadata}>
-      <strong>{detail.voTitle}</strong>
-      <span>
-        {detail.voCategoryName} · {detail.voContentType}
-      </span>
-      <span>
-        {t('forum.revision.tags', {
-          tags: detail.voTags.map(tag => tag.voTagName).join(' / ') || '-'
-        })}
-      </span>
-      <span>
-        {t('forum.revision.attachments', {
-          count: detail.voAttachmentIds.length + (detail.voCoverAttachmentId ? 1 : 0)
-        })}
-      </span>
-    </div>
-  );
+  const buildSnapshot = (detail: ContentRevisionDetail | null): ContentSnapshot | null => {
+    if (!detail) {
+      return null;
+    }
 
-  const renderSnapshot = (
-    detail: ContentRevisionDetail | null,
-    label: string,
-    tone: 'target' | 'current'
-  ): ReactNode => (
-    <section className={`${styles.snapshot} ${tone === 'target' ? styles.snapshotTarget : ''}`}>
-      <h4>{label}</h4>
-      {!detail && <p className={styles.snapshotPlaceholder}>{t('forum.revision.snapshotUnavailable')}</p>}
-      {detail && isPostRevisionDetail(detail) && renderPostMetadata(detail)}
-      {detail && (
-        <pre className={styles.snapshotContent}>{detail.voContent}</pre>
-      )}
-    </section>
-  );
+    const fields = isPostRevisionDetail(detail) ? [
+      { key: 'title', label: t('forum.revision.field.title'), value: detail.voTitle },
+      { key: 'category', label: t('forum.revision.field.category'), value: detail.voCategoryName },
+      { key: 'type', label: t('forum.revision.field.type'), value: detail.voContentType },
+      {
+        key: 'tags',
+        label: t('forum.revision.field.tags'),
+        value: detail.voTags.map((tag) => tag.voTagName).join(' / ') || '—',
+      },
+      {
+        key: 'cover',
+        label: t('forum.revision.field.cover'),
+        value: detail.voCoverAttachmentId ? String(detail.voCoverAttachmentId) : '—',
+      },
+      {
+        key: 'attachments',
+        label: t('forum.revision.field.attachments'),
+        value: detail.voAttachmentIds.map(String).join(' / ') || '—',
+      },
+    ] : [];
+
+    return { content: detail.voContent, fields };
+  };
 
   const renderDetail = (): ReactNode => {
     if (!list?.canViewDetails) {
@@ -591,6 +731,19 @@ export const ContentRevisionModal = ({
       return <div className={styles.state}>{t('forum.revision.selectVersion')}</div>;
     }
 
+    const selectedIsCurrentVersion = Boolean(selectedSummary.voIsCurrent);
+    const beforeDetail = comparisonMode === 'previous' ? comparisonDetail : selectedDetail;
+    const afterDetail = comparisonMode === 'previous' ? selectedDetail : comparisonDetail;
+    const beforeRevisionNumber = comparisonMode === 'previous'
+      ? comparisonRevisionNumber
+      : selectedSummary.voRevisionNumber;
+    const afterRevisionNumber = comparisonMode === 'previous'
+      ? selectedSummary.voRevisionNumber
+      : comparisonRevisionNumber;
+    const comparisonUnavailableText = comparisonMissing
+      ? t('forum.revision.noEarlierVersion')
+      : comparisonError || t('forum.revision.comparisonUnavailable');
+
     return (
       <div className={styles.detail}>
         <div className={styles.detailHeader}>
@@ -612,6 +765,32 @@ export const ContentRevisionModal = ({
           </span>
         </div>
 
+        <div className={styles.comparisonToolbar}>
+          <div className={styles.comparisonModes} aria-label={t('forum.revision.comparisonModeLabel')}>
+            <button
+              type="button"
+              className={comparisonMode === 'previous' ? styles.comparisonModeActive : styles.comparisonMode}
+              aria-pressed={comparisonMode === 'previous'}
+              onClick={() => handleComparisonModeChange('previous')}
+            >
+              {t('forum.revision.comparePrevious')}
+            </button>
+            <button
+              type="button"
+              className={comparisonMode === 'current' ? styles.comparisonModeActive : styles.comparisonMode}
+              aria-pressed={comparisonMode === 'current'}
+              disabled={selectedIsCurrentVersion}
+              onClick={() => handleComparisonModeChange('current')}
+            >
+              {t('forum.revision.compareCurrent')}
+            </button>
+          </div>
+          <span>{t('forum.revision.comparisonSummary', {
+            before: beforeRevisionNumber ?? '—',
+            after: afterRevisionNumber ?? '—',
+          })}</span>
+        </div>
+
         {hasRevisionConflict && (
           <div className={styles.conflict} role="alert">
             <Icon icon="mdi:alert-outline" size={20} />
@@ -622,20 +801,40 @@ export const ContentRevisionModal = ({
           </div>
         )}
 
-        <div className={styles.compare}>
-          {renderSnapshot(
-            selectedDetail,
-            t('forum.revision.targetVersion', { version: selectedSummary.voRevisionNumber }),
-            'target'
-          )}
-          {renderSnapshot(
-            currentDetail,
-            t('forum.revision.currentVersion', {
-              version: list.currentContentRevision
-            }),
-            'current'
-          )}
-        </div>
+        {comparisonStale && comparisonError ? (
+          <div className={styles.comparisonNotice} role="status">
+            <strong>{t('forum.revision.comparisonStaleTitle')}</strong>
+            <span>{comparisonError}</span>
+            <button type="button" onClick={() => void loadComparison(list, selectedSummary, comparisonMode)}>
+              {t('forum.revision.retryComparison')}
+            </button>
+          </div>
+        ) : null}
+
+        <ContentSnapshotDiff
+          before={buildSnapshot(beforeDetail)}
+          after={buildSnapshot(afterDetail)}
+          beforeLabel={t('forum.revision.versionLabel', { version: beforeRevisionNumber ?? '—' })}
+          afterLabel={t('forum.revision.versionLabel', { version: afterRevisionNumber ?? '—' })}
+          ariaLabel={t('forum.revision.diffAriaLabel')}
+          emptyText={t('forum.revision.selectVersion')}
+          beforeUnavailableText={comparisonMode === 'previous'
+            ? comparisonUnavailableText
+            : detailError || t('forum.revision.snapshotUnavailable')}
+          afterUnavailableText={comparisonMode === 'current'
+            ? comparisonUnavailableText
+            : detailError || t('forum.revision.snapshotUnavailable')}
+          loadingBefore={comparisonMode === 'previous' ? loadingComparison : loadingDetail}
+          loadingAfter={comparisonMode === 'current' ? loadingComparison : loadingDetail}
+          loadingText={t('forum.revision.comparisonLoading')}
+          onRetryBefore={comparisonMode === 'previous' && !comparisonMissing
+            ? () => void loadComparison(list, selectedSummary, comparisonMode)
+            : undefined}
+          onRetryAfter={comparisonMode === 'current' && !comparisonMissing
+            ? () => void loadComparison(list, selectedSummary, comparisonMode)
+            : undefined}
+          retryLabel={t('forum.revision.retryComparison')}
+        />
 
         {!selectedSummary.voCanRestore && (
           <p className={styles.unavailableReason}>
