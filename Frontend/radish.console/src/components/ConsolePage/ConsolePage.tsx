@@ -37,6 +37,14 @@ export interface ConsoleToolbarProps {
   children?: ReactNode;
 }
 
+export interface ConsoleResourceListProps {
+  toolbar: ReactNode;
+  mobileToolbar: ReactNode;
+  desktopList: ReactNode;
+  mobileList: ReactNode;
+  context?: ReactNode;
+}
+
 export function ConsoleStatusChip({ children, tone = 'neutral' }: ConsoleStatusChipProps) {
   return (
     <span className={`console-status-chip console-status-chip--${tone}`}>
@@ -97,5 +105,27 @@ export function ConsoleToolbar({ title, description, meta, actions, children }: 
       </div>
       {children ? <div className="console-toolbar__body">{children}</div> : null}
     </section>
+  );
+}
+
+export function ConsoleResourceList({
+  toolbar,
+  mobileToolbar,
+  desktopList,
+  mobileList,
+    context,
+}: ConsoleResourceListProps) {
+  return (
+    <div className="console-resource-list">
+      <div className="console-resource-list__main">
+        <div className="console-resource-list__desktop-toolbar">{toolbar}</div>
+        <section className="console-resource-list__surface">
+          <div className="console-resource-list__mobile-toolbar">{mobileToolbar}</div>
+          <div className="console-resource-list__desktop">{desktopList}</div>
+          <div className="console-resource-list__mobile">{mobileList}</div>
+        </section>
+      </div>
+      {context ? <aside className="admin-table-aside console-resource-list__context">{context}</aside> : null}
+    </div>
   );
 }

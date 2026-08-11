@@ -1,15 +1,3 @@
 .category-list-page {
   min-width: 0;
 }
-
-.category-list-filter-input {
-  width: 260px;
-}
-
-.category-list-filter-select {
-  width: 140px;
-}
-
-.category-list-filter-select--deleted {
-  width: 160px;
-}

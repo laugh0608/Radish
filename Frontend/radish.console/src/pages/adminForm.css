@@ -60,3 +60,29 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+@media (max-width: 768px) {
+  .taxonomy-form-modal {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
+    margin: 12px auto;
+    padding-bottom: 0;
+  }
+
+  .taxonomy-form-modal .ant-modal-content {
+    max-height: calc(100vh - 24px);
+    overflow: hidden;
+    padding: 16px;
+  }
+
+  .taxonomy-form-modal .ant-modal-body {
+    max-height: calc(100vh - 160px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .taxonomy-form-modal .ant-space,
+  .taxonomy-form-modal .ant-space-item {
+    max-width: 100%;
+  }
+}

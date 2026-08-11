@@ -1,7 +1,7 @@
 import { apiDelete, apiGet, apiPost, apiPut, createApiResponseError } from '@radish/http';
 
 export interface CategoryVo {
-  voId: number;
+  voId: string;
   voName: string;
   voSlug: string;
   voDescription?: string | null;
@@ -9,7 +9,7 @@ export interface CategoryVo {
   voIcon?: string | null;
   voCoverAttachmentId?: string | null;
   voCoverImage?: string | null;
-  voParentId?: number | null;
+  voParentId?: string | null;
   voLevel: number;
   voOrderSort: number;
   voPostCount: number;
@@ -34,7 +34,7 @@ export interface CategoryUpsertRequest {
   description?: string;
   iconAttachmentId?: string | null;
   coverAttachmentId?: string | null;
-  parentId?: number | null;
+  parentId?: string | null;
   orderSort: number;
   isEnabled: boolean;
 }
@@ -70,8 +70,8 @@ export async function getCategoryPage(params: {
   return response.data;
 }
 
-export async function createCategory(request: CategoryUpsertRequest): Promise<number> {
-  const response = await apiPost<number>('/api/v1/Category/Create', request, { withAuth: true });
+export async function createCategory(request: CategoryUpsertRequest): Promise<string> {
+  const response = await apiPost<string>('/api/v1/Category/Create', request, { withAuth: true });
   if (!response.ok || response.data === undefined) {
     throw createApiResponseError(response, '创建分类失败');
   }
@@ -79,35 +79,35 @@ export async function createCategory(request: CategoryUpsertRequest): Promise<nu
   return response.data;
 }
 
-export async function updateCategory(id: number, request: CategoryUpsertRequest): Promise<void> {
+export async function updateCategory(id: string, request: CategoryUpsertRequest): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Category/Update/${id}`, request, { withAuth: true });
   if (!response.ok) {
     throw createApiResponseError(response, '更新分类失败');
   }
 }
 
-export async function toggleCategoryStatus(id: number, enabled: boolean): Promise<void> {
+export async function toggleCategoryStatus(id: string, enabled: boolean): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Category/ToggleStatus/${id}/status?enabled=${enabled}`, {}, { withAuth: true });
   if (!response.ok) {
     throw createApiResponseError(response, '更新分类状态失败');
   }
 }
 
-export async function updateCategorySort(id: number, sortOrder: number): Promise<void> {
+export async function updateCategorySort(id: string, sortOrder: number): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Category/UpdateSort/${id}/sort?sortOrder=${sortOrder}`, {}, { withAuth: true });
   if (!response.ok) {
     throw createApiResponseError(response, '更新分类排序失败');
   }
 }
 
-export async function deleteCategory(id: number): Promise<void> {
+export async function deleteCategory(id: string): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Category/Delete/${id}`, { withAuth: true });
   if (!response.ok) {
     throw createApiResponseError(response, '删除分类失败');
   }
 }
 
-export async function restoreCategory(id: number): Promise<void> {
+export async function restoreCategory(id: string): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Category/Restore/${id}/restore`, {}, { withAuth: true });
   if (!response.ok) {
     throw createApiResponseError(response, '恢复分类失败');

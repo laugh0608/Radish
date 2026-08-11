@@ -10,23 +10,61 @@ import {
 } from '@radish/ui';
 import { createTag, updateTag, type TagVo, type TagUpsertRequest } from '@/api/tagApi';
 import { log } from '@/utils/logger';
+import '../adminForm.css';
 
 interface TagFormProps {
   visible: boolean;
   mode: 'create' | 'edit';
   tag?: TagVo;
+  canSubmit: boolean;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
-export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProps) => {
+export const TagForm = ({ visible, mode, tag, canSubmit, onCancel, onSuccess }: TagFormProps) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleRequestCancel = () => {
+    if (loading) {
+      message.warning(t('taxonomy.common.closeBusy'));
+      return;
+    }
+
+    if (!isDirty) {
+      onCancel();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('taxonomy.common.discardTitle'),
+      content: t('taxonomy.common.discardDescription'),
+      okText: t('taxonomy.common.discardConfirm'),
+      cancelText: t('taxonomy.common.continueEditing'),
+      okButtonProps: { danger: true },
+      onOk: () => {
+        setIsDirty(false);
+        onCancel();
+      },
+    });
+  };
 
   const handleSubmit = async () => {
+    if (!canSubmit) {
+      message.error(t('taxonomy.common.permissionDenied'));
+      return;
+    }
+
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    try {
       setLoading(true);
 
       const request: TagUpsertRequest = {
@@ -45,8 +83,11 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
       } else if (mode === 'edit' && tag) {
         await updateTag(tag.voId, request);
         message.success(t('tags.feedback.updated'));
+      } else {
+        return;
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (error) {
       log.error('TagForm', '提交标签表单失败:', error);
@@ -59,6 +100,7 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
   useEffect(() => {
     if (!visible) {
       form.resetFields();
+      setIsDirty(false);
       return;
     }
 
@@ -72,6 +114,7 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
         isEnabled: tag.voIsEnabled,
         isFixed: tag.voIsFixed,
       });
+      setIsDirty(false);
       return;
     }
 
@@ -84,20 +127,38 @@ export const TagForm = ({ visible, mode, tag, onCancel, onSuccess }: TagFormProp
       isEnabled: true,
       isFixed: true,
     });
+    setIsDirty(false);
   }, [visible, mode, tag, form]);
+
+  useEffect(() => {
+    if (!visible || !isDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, visible]);
 
   return (
     <Modal
       title={t(mode === 'create' ? 'tags.form.createTitle' : 'tags.form.editTitle')}
       open={visible}
       onOk={handleSubmit}
-      onCancel={onCancel}
+      onCancel={handleRequestCancel}
       confirmLoading={loading}
+      okButtonProps={{ disabled: !canSubmit }}
       width={640}
+      className="taxonomy-form-modal"
+      maskClosable={false}
+      keyboard={false}
       destroyOnHidden
       forceRender
     >
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" onValuesChange={() => setIsDirty(true)}>
         <Form.Item
           name="name"
           label={t('tags.form.name')}
